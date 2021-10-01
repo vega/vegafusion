@@ -1,4 +1,5 @@
 use crate::expression::ast::base::{Expression, ExpressionTrait, Span};
+use crate::expression::ast::identifier::Identifier;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -21,6 +22,32 @@ impl MemberExpression {
         //  - left-to-right operators have larger number to the right
         //  - right-to-left have larger number to the left
         (20.0, 20.5)
+    }
+
+    pub fn new_computed<O: Into<Expression>, P: Into<Expression>>(
+        object: O,
+        property: P,
+        span: Option<Span>,
+    ) -> Self {
+        Self {
+            object: Box::new(object.into()),
+            property: Box::new(property.into()),
+            computed: true,
+            span,
+        }
+    }
+
+    pub fn new_static<O: Into<Expression>, P: Into<Identifier>>(
+        object: O,
+        property: P,
+        span: Option<Span>,
+    ) -> Self {
+        Self {
+            object: Box::new(object.into()),
+            property: Box::new(Expression::from(property.into())),
+            computed: false,
+            span,
+        }
     }
 }
 

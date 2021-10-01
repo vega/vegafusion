@@ -44,6 +44,24 @@ pub struct Property {
     pub kind: String,
 }
 
+impl Property {
+    pub fn new_identifier<I: Into<Identifier>, E: Into<Expression>>(key: I, value: E) -> Self {
+        Self {
+            key: PropertyKey::Identifier(key.into()),
+            value: value.into(),
+            kind: "init".to_string(),
+        }
+    }
+
+    pub fn new_literal<L: Into<Literal>, E: Into<Expression>>(key: L, value: E) -> Self {
+        Self {
+            key: PropertyKey::Literal(key.into()),
+            value: value.into(),
+            kind: "init".to_string(),
+        }
+    }
+}
+
 impl fmt::Display for Property {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}: {}", self.key, self.value)
