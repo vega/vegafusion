@@ -19,3 +19,6 @@ reqwest = {version="0.11.4", features=["blocking"]}
 futures = "0.3.17"
 futures-util = "0.3.17"
 rstest = "0.11.0"
+resvg = "0.18.0"
+usvg = "0.18.0"
+tiny-skia = "0.6.1"

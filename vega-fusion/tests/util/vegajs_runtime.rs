@@ -91,14 +91,27 @@ impl VegaJsRuntime {
             // Register an op for string input value
             let all_inputs = Arc::new(Mutex::new(HashMap::<String, String>::new()));
 
-            let closure_in_val = all_inputs.clone();
+            let closure_inputs = all_inputs.clone();
             runtime.register_op(
                 "inputs",
                 // The op-layer automatically deserializes inputs
                 // and serializes the returned Result & value
                 op_sync(move |_state, args: String, _: ()| {
-                    let locked = closure_in_val.lock().unwrap();
+                    let locked = closure_inputs.lock().unwrap();
                     Ok(locked.get(&args).unwrap().clone())
+                }),
+            );
+
+            let output: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+            let closure_output = output.clone();
+            runtime.register_op(
+                "output",
+                // The op-layer automatically deserializes inputs
+                // and serializes the returned Result & value
+                op_sync(move |_state, value: String, _: ()| {
+                    let mut locked = closure_output.lock().unwrap();
+                    *locked = Some(value);
+                    Ok(())
                 }),
             );
 
@@ -146,11 +159,11 @@ import('https://cdn.skypack.dev/vega').then((imported) => {
 
                         // Execute script and retrieve return value string
                         let value_string = {
-                            let result = runtime.execute_script("<usage>", &script).unwrap();
+                            runtime.execute_script("<usage>", &script).unwrap();
+                            futures::executor::block_on(runtime.run_event_loop(false)).unwrap();
 
-                            let scope = &mut runtime.handle_scope();
-                            let value = result.get(scope).clone();
-                            value.to_rust_string_lossy(scope)
+                            let mut locked = output.lock().unwrap();
+                            locked.take().unwrap_or_else(|| "".to_string())
                         };
 
                         responder.send(value_string).unwrap();
@@ -185,7 +198,7 @@ import('https://cdn.skypack.dev/vega').then((imported) => {
 (() => {
     let expr_str = Deno.core.opSync('inputs', 'expr_str');
     let expr = vega.parseExpression(expr_str);
-    return JSON.stringify(expr)
+    Deno.core.opSync('output', JSON.stringify(expr));
 })()
 "#;
 
@@ -210,7 +223,7 @@ import('https://cdn.skypack.dev/vega').then((imported) => {
     let code = codegen(expr).code;
 
     let func = Function("_", "'use strict'; return " + code).bind(vega_functions.functionContext);
-    return JSON.stringify(func(scope))
+    Deno.core.opSync('output', JSON.stringify(func(scope)));
 })()
 "#;
         let inputs: HashMap<_, _> = vec![
@@ -222,6 +235,47 @@ import('https://cdn.skypack.dev/vega').then((imported) => {
 
         let value_string = self.execute_script(script, &inputs);
         serde_json::from_str(&value_string).unwrap()
+    }
+
+    pub fn convert_to_svg(&mut self, spec: &serde_json::Value) -> String {
+        let script = r#"
+(() => {
+    let spec_str = Deno.core.opSync('inputs', 'spec_str');
+    let spec = JSON.parse(spec_str);
+    let view = new vega.View(vega.parse(spec), {renderer: 'none'});
+    view.toSVG().then((svg) => {
+        Deno.core.opSync('output', JSON.stringify(svg));
+    });
+})()
+"#;
+        let spec_str = serde_json::to_string(&spec).unwrap();
+        println!("spec_str: {}", spec_str);
+        let inputs: HashMap<_, _> = vec![("spec_str".to_string(), spec_str)]
+            .into_iter()
+            .collect();
+
+        let value_string = self.execute_script(script, &inputs);
+        serde_json::from_str(&value_string).unwrap()
+    }
+
+    pub fn save_to_png(&mut self, spec: &serde_json::Value, path: &std::path::Path) {
+        let svg_result = self.convert_to_svg(spec);
+        let mut opt = usvg::Options::default();
+
+        // Get file's absolute directory.
+        opt.resources_dir = std::fs::canonicalize(path)
+            .ok()
+            .and_then(|p| p.parent().map(|p| p.to_path_buf()));
+        opt.fontdb.load_system_fonts();
+
+        // Customize sans serif family to a font we have
+        opt.fontdb.set_sans_serif_family("FreeSans");
+
+        let rtree = usvg::Tree::from_str(&svg_result, &opt.to_ref()).unwrap();
+        let pixmap_size = rtree.svg_node().size.to_screen_size();
+        let mut pixmap = tiny_skia::Pixmap::new(pixmap_size.width(), pixmap_size.height()).unwrap();
+        resvg::render(&rtree, usvg::FitTo::Original, pixmap.as_mut()).unwrap();
+        pixmap.save_png(path);
     }
 }
 
