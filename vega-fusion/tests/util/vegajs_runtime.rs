@@ -1,7 +1,7 @@
 use deno_core::JsRuntime;
 use deno_core::{
-    op_sync, resolve_import, ModuleLoader, ModuleSource, ModuleSourceFuture,
-    ModuleSpecifier, RuntimeOptions,
+    op_sync, resolve_import, ModuleLoader, ModuleSource, ModuleSourceFuture, ModuleSpecifier,
+    RuntimeOptions,
 };
 
 use deno_core::error::AnyError;
