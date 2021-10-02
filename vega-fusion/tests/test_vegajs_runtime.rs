@@ -1,12 +1,15 @@
+#[macro_use]
+extern crate lazy_static;
+
 mod util;
-use crate::util::vegajs_runtime::VegaJsRuntime;
+use crate::util::vegajs_runtime::vegajs_runtime;
 use serde_json::json;
 use std::collections::HashMap;
 use vega_fusion::expression::ast::base::Expression;
 
 #[test]
 fn test_vegajs_parse() {
-    let vegajs_runtime = VegaJsRuntime::new();
+    let mut vegajs_runtime = vegajs_runtime();
     let parsed = vegajs_runtime.parse_expression("(20 + 5) * 300");
 
     let expected: Expression = serde_json::value::from_value(json!({
@@ -18,7 +21,8 @@ fn test_vegajs_parse() {
             "right":{"type":"Literal","value":5.0,"raw":"5"}},
         "operator":"*",
         "right":{"type":"Literal","value":300.0,"raw":"300"}
-    })).unwrap();
+    }))
+    .unwrap();
 
     println!("value: {}", parsed);
     assert_eq!(parsed, expected);
@@ -26,7 +30,7 @@ fn test_vegajs_parse() {
 
 #[test]
 fn test_vegajs_evaluate_scalar() {
-    let vegajs_runtime = VegaJsRuntime::new();
+    let mut vegajs_runtime = vegajs_runtime();
     let result = vegajs_runtime.eval_scalar_expression("20 + 300", &Default::default());
     println!("result: {}", result);
     assert_eq!(result, json!(320));
@@ -34,7 +38,7 @@ fn test_vegajs_evaluate_scalar() {
 
 #[test]
 fn test_vegajs_evaluate_scalar_scope() {
-    let vegajs_runtime = VegaJsRuntime::new();
+    let mut vegajs_runtime = vegajs_runtime();
     let scope: HashMap<_, _> = vec![("$a".to_string(), json!(123))].into_iter().collect();
     let result = vegajs_runtime.eval_scalar_expression("20 + a", &scope);
     println!("result: {}", result);

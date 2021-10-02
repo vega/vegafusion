@@ -9,8 +9,13 @@ use deno_core::futures::FutureExt;
 use std::collections::HashMap;
 use std::pin::Pin;
 use std::rc::Rc;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 use vega_fusion::expression::ast::base::Expression;
+
+use futures::channel::{mpsc, mpsc::Sender, oneshot};
+use futures::executor::block_on;
+use futures_util::{SinkExt, StreamExt};
+use std::thread;
 
 /// Modification of the FsModuleLoader to use reqwest to load modules from URLs
 struct UrlModuleLoader {
@@ -65,43 +70,47 @@ impl ModuleLoader for UrlModuleLoader {
     }
 }
 
+#[derive(Clone)]
 pub struct VegaJsRuntime {
-    runtime: Arc<Mutex<JsRuntime>>,
-    input_val: Arc<Mutex<HashMap<String, String>>>,
+    runtime_manager: Arc<thread::JoinHandle<()>>,
+    command_sender: Sender<JsRuntimeCommand>,
 }
 
 impl VegaJsRuntime {
     pub fn new() -> Self {
-        // Initialize a runtime instance with UrlModuleLoader
-        let runtime_opts = RuntimeOptions {
-            module_loader: Some(Rc::new(UrlModuleLoader::new())),
-            ..Default::default()
-        };
-        let mut runtime = JsRuntime::new(runtime_opts);
+        let (command_sender, mut command_receiver) = mpsc::channel::<JsRuntimeCommand>(32);
+        let runtime_manager = thread::spawn(move || {
+            // # Initialize JsRuntime in the manager thread
 
-        // Register an op for string input value
-        let input_val = Arc::new(Mutex::new(HashMap::<String, String>::new()));
+            // Initialize a runtime instance with UrlModuleLoader
+            let mut runtime = JsRuntime::new(RuntimeOptions {
+                module_loader: Some(Rc::new(UrlModuleLoader::new())),
+                ..Default::default()
+            });
 
-        let closure_in_val = input_val.clone();
-        runtime.register_op(
-            "inputs",
-            // The op-layer automatically deserializes inputs
-            // and serializes the returned Result & value
-            op_sync(move |_state, args: String, _: ()| {
-                let locked = closure_in_val.lock().unwrap();
-                Ok(locked.get(&args).unwrap().clone())
-            }),
-        );
+            // Register an op for string input value
+            let all_inputs = Arc::new(Mutex::new(HashMap::<String, String>::new()));
 
-        // Save ops
-        runtime.sync_ops_cache();
+            let closure_in_val = all_inputs.clone();
+            runtime.register_op(
+                "inputs",
+                // The op-layer automatically deserializes inputs
+                // and serializes the returned Result & value
+                op_sync(move |_state, args: String, _: ()| {
+                    let locked = closure_in_val.lock().unwrap();
+                    Ok(locked.get(&args).unwrap().clone())
+                }),
+            );
 
-        // Execute script (and wait for futures to resolve) that import external modules and
-        // assigns them to top-level variables.
-        runtime
-            .execute_script(
-                "<imports>",
-                r#"
+            // Save ops
+            runtime.sync_ops_cache();
+
+            // Execute script (and wait for futures to resolve) that import external modules and
+            // assigns them to top-level variables.
+            runtime
+                .execute_script(
+                    "<imports>",
+                    r#"
 var vega;
 var vega_functions;
 var codegen;
@@ -114,80 +123,119 @@ import('https://cdn.skypack.dev/vega').then((imported) => {
     })
 })
 "#,
-            )
-            .unwrap();
+                )
+                .unwrap();
 
-        futures::executor::block_on(runtime.run_event_loop(false)).unwrap();
+            futures::executor::block_on(runtime.run_event_loop(false)).unwrap();
+
+            // Receiving and process messages
+            while let Some(cmd) = block_on(command_receiver.next()) {
+                match cmd {
+                    JsRuntimeCommand::ExecuteScript {
+                        script,
+                        inputs,
+                        responder,
+                    } => {
+                        // Update inputs with those provided in the message
+                        {
+                            let mut locked_inputs = all_inputs.lock().unwrap();
+                            for (k, v) in inputs {
+                                locked_inputs.insert(k, v);
+                            }
+                        }
+
+                        // Execute script and retrieve return value string
+                        let value_string = {
+                            let result = runtime.execute_script("<usage>", &script).unwrap();
+
+                            let scope = &mut runtime.handle_scope();
+                            let value = result.get(scope).clone();
+                            value.to_rust_string_lossy(scope)
+                        };
+
+                        responder.send(value_string).unwrap();
+                    }
+                }
+            }
+        });
 
         Self {
-            runtime: Arc::new(Mutex::new(runtime)),
-            input_val,
+            runtime_manager: Arc::new(runtime_manager),
+            command_sender,
         }
     }
 
-    pub fn set_input_value(&self, key: &str, value: String) {
-        let mut locked = self.input_val.lock().unwrap();
-        locked.insert(key.to_string(), value);
+    fn execute_script(&mut self, script: &str, inputs: &HashMap<String, String>) -> String {
+        let (resp_tx, resp_rx) = oneshot::channel::<String>();
+        let cmd = JsRuntimeCommand::ExecuteScript {
+            script: script.to_string(),
+            inputs: inputs.clone(),
+            responder: resp_tx,
+        };
+
+        // Send request
+        block_on(self.command_sender.send(cmd)).unwrap();
+
+        // Wait for result
+        futures::executor::block_on(resp_rx).unwrap()
     }
 
-    pub fn parse_expression(&self, expr: &str) -> Expression {
-        self.set_input_value("expr_str", expr.to_string());
+    pub fn parse_expression(&mut self, expr: &str) -> Expression {
+        let script = r#"
+(() => {
+    let expr_str = Deno.core.opSync('inputs', 'expr_str');
+    let expr = vega.parseExpression(expr_str);
+    return JSON.stringify(expr)
+})()
+"#;
 
-        // Now see if vega_global is available next time
-        let mut locked_runtime = self.runtime.lock();
-        let runtime = locked_runtime.as_mut().unwrap();
+        let inputs: HashMap<_, _> = vec![("expr_str".to_string(), expr.to_string())]
+            .into_iter()
+            .collect();
 
-        let result = runtime
-            .execute_script(
-                "<usage>",
-                r#"
-let expr_str = Deno.core.opSync('inputs', 'expr_str');
-let expr = vega.parseExpression(expr_str);
-JSON.stringify(expr)
-"#,
-            )
-            .unwrap();
-
-        let scope = &mut runtime.handle_scope();
-        let value = result.get(scope);
-
-        // Convert return to string and deserialize to JSON
-        let value_string = value.to_rust_string_lossy(scope);
+        let value_string = self.execute_script(script, &inputs);
         serde_json::from_str(&value_string).unwrap()
     }
 
     pub fn eval_scalar_expression(
-        &self,
+        &mut self,
         expr: &str,
         scope: &HashMap<String, serde_json::Value>,
     ) -> serde_json::Value {
-        self.set_input_value("expr_str", expr.to_string());
-        self.set_input_value("scope", serde_json::to_string(scope).unwrap());
+        let script = r#"
+(() => {
+    let expr_str = Deno.core.opSync('inputs', 'expr_str');
+    let scope = JSON.parse(Deno.core.opSync('inputs', 'scope'));
+    let expr = vega.parseExpression(expr_str);
+    let code = codegen(expr).code;
 
-        // Now see if vega_global is available next time
-        let mut locked_runtime = self.runtime.lock();
-        let runtime = locked_runtime.as_mut().unwrap();
+    let func = Function("_", "'use strict'; return " + code).bind(vega_functions.functionContext);
+    return JSON.stringify(func(scope))
+})()
+"#;
+        let inputs: HashMap<_, _> = vec![
+            ("expr_str".to_string(), expr.to_string()),
+            ("scope".to_string(), serde_json::to_string(scope).unwrap()),
+        ]
+        .into_iter()
+        .collect();
 
-        let result = runtime
-            .execute_script(
-                "<usage>",
-                r#"
-let expr_str = Deno.core.opSync('inputs', 'expr_str');
-let scope = JSON.parse(Deno.core.opSync('inputs', 'scope'));
-let expr = vega.parseExpression(expr_str);
-let code = codegen(expr).code;
-
-let func = Function("_", "'use strict'; return " + code).bind(vega_functions.functionContext);
-JSON.stringify(func(scope))
-"#,
-            )
-            .unwrap();
-
-        let scope = &mut runtime.handle_scope();
-        let value = result.get(scope);
-
-        // Convert return to string and deserialize to JSON
-        let value_string = value.to_rust_string_lossy(scope);
+        let value_string = self.execute_script(script, &inputs);
         serde_json::from_str(&value_string).unwrap()
     }
+}
+
+pub enum JsRuntimeCommand {
+    ExecuteScript {
+        script: String,
+        inputs: HashMap<String, String>,
+        responder: oneshot::Sender<String>,
+    },
+}
+
+lazy_static! {
+    static ref VEGA_JS_RUNTIME: Mutex<VegaJsRuntime> = Mutex::new(VegaJsRuntime::new());
+}
+pub fn vegajs_runtime() -> MutexGuard<'static, VegaJsRuntime> {
+    VEGA_JS_RUNTIME.lock().unwrap()
 }
