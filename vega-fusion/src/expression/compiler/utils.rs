@@ -87,6 +87,21 @@ pub fn to_numeric(value: Expr, schema: &DFSchema) -> Result<Expr> {
     Ok(numeric_value)
 }
 
+/// Cast an expression to Utf8 if not already Utf8. If already numeric, don't perform cast.
+pub fn to_string(value: Expr, schema: &DFSchema) -> Result<Expr> {
+    let dtype = data_type(&value, schema)?;
+    let utf8_value = if dtype == DataType::Utf8 || dtype == DataType::LargeUtf8 {
+        value
+    } else {
+        Expr::Cast {
+            expr: Box::new(value),
+            data_type: DataType::Utf8,
+        }
+    };
+
+    Ok(utf8_value)
+}
+
 pub trait ExprHelpers {
     fn columns(&self) -> Result<HashSet<Column>>;
     fn to_physical_expr(&self, schema: &DFSchema) -> Result<Arc<dyn PhysicalExpr>>;

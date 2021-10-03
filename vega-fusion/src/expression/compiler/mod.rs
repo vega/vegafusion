@@ -1,3 +1,5 @@
+pub mod array;
+pub mod binary;
 pub mod conditional;
 pub mod config;
 pub mod identifier;
@@ -8,6 +10,8 @@ pub mod utils;
 
 use crate::error::Result;
 use crate::expression::ast::base::Expression;
+use crate::expression::compiler::array::compile_array;
+use crate::expression::compiler::binary::compile_binary;
 use crate::expression::compiler::conditional::compile_conditional;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::identifier::compile_identifier;
@@ -32,8 +36,8 @@ pub fn compile(
         Expression::UnaryExpression(node) => compile_unary(node, config, schema),
         Expression::ConditionalExpression(node) => compile_conditional(node, config, schema),
         Expression::LogicalExpression(node) => compile_logical(node, config, schema),
-        // Expression::BinaryExpression(node) => compile_binary(node, config, schema),
-        // Expression::ArrayExpression(node) => compile_array(node, config, schema),
+        Expression::BinaryExpression(node) => compile_binary(node, config, schema),
+        Expression::ArrayExpression(node) => compile_array(node, config, schema),
         // Expression::ObjectExpression(node) => compile_object(node, config, schema),
         // Expression::CallExpression(node) => compile_call(node, config, schema),
         // Expression::MemberExpression(node) => compile_member(node, config, schema),
@@ -44,15 +48,17 @@ pub fn compile(
 #[cfg(test)]
 mod test_compile {
 
+    use crate::expression::compiler::array::array_constructor_udf;
     use crate::expression::compiler::compile;
     use crate::expression::compiler::config::CompilationConfig;
     use crate::expression::compiler::utils::ExprHelpers;
     use crate::expression::parser::parse;
-    use datafusion::arrow::datatypes::DataType;
+    use datafusion::arrow::datatypes::{DataType, Field};
     use datafusion::logical_plan::{Expr, Operator};
-    use datafusion::prelude::lit;
+    use datafusion::prelude::{concat, lit};
     use datafusion::scalar::ScalarValue;
     use std::collections::HashMap;
+    use std::sync::Arc;
 
     #[test]
     fn test_compile_literal_float() {
@@ -212,7 +218,7 @@ mod test_compile {
     }
 
     #[test]
-    fn test_eval_logical_non_boolean() {
+    fn test_compile_logical_non_boolean() {
         let expr = parse("5 && 55").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
         println!("expr: {:?}", result_expr);
@@ -233,6 +239,220 @@ mod test_compile {
         // Check evaluated value
         let result_value = result_expr.eval_to_scalar().unwrap();
         let expected_value = ScalarValue::from(55.0);
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected_value);
+    }
+
+    #[test]
+    fn test_compile_binary_mixed() {
+        let expr = parse("1 + +'2' + true * 10").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        println!("expr: {:?}", result_expr);
+
+        // 1 + +'2'
+        let t1 = Expr::BinaryExpr {
+            left: Box::new(lit(1.0)),
+            op: Operator::Plus,
+            right: Box::new(Expr::Cast {
+                expr: Box::new(lit("2")),
+                data_type: DataType::Float64,
+            }),
+        };
+
+        // true * 10
+        let t2 = Expr::BinaryExpr {
+            left: Box::new(Expr::Cast {
+                expr: Box::new(lit(true)),
+                data_type: DataType::Float64,
+            }),
+            op: Operator::Multiply,
+            right: Box::new(lit(10.0)),
+        };
+
+        let expected_expr = Expr::BinaryExpr {
+            left: Box::new(t1),
+            op: Operator::Plus,
+            right: Box::new(t2),
+        };
+
+        println!("{:?}", result_expr);
+        assert_eq!(result_expr, expected_expr);
+
+        // Check evaluated value
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected_value = ScalarValue::Float64(Some(13.0));
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected_value);
+    }
+
+    #[test]
+    fn test_compile_binary_string_addition() {
+        let expr = parse("'2' + '4'").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+
+        let expected_expr = concat(&[lit("2"), lit("4")]);
+        println!("expr: {:?}", result_expr);
+        assert_eq!(result_expr, expected_expr);
+
+        // Check evaluated value
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected_value = ScalarValue::Utf8(Some("24".to_string()));
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected_value);
+    }
+
+    #[test]
+    fn test_compile_binary_loose_equality() {
+        let expr = parse("'2.0' == 2").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+
+        let expected_expr = Expr::BinaryExpr {
+            left: Box::new(Expr::Cast {
+                expr: Box::new(lit("2.0")),
+                data_type: DataType::Float64,
+            }),
+            op: Operator::Eq,
+            right: Box::new(lit(2.0)),
+        };
+
+        println!("expr: {:?}", result_expr);
+        assert_eq!(result_expr, expected_expr);
+
+        // Check evaluated value
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected_value = ScalarValue::Boolean(Some(true));
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected_value);
+    }
+
+    #[test]
+    fn test_compile_binary_strict_equality() {
+        let expr = parse("'2.0' === 2").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+
+        // Types don't match, so this is compiled to the literal `false`
+        let expected_expr = lit(false);
+        println!("expr: {:?}", result_expr);
+        assert_eq!(result_expr, expected_expr);
+
+        // Check evaluated value
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected_value = ScalarValue::Boolean(Some(false));
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected_value);
+    }
+
+    #[test]
+    fn test_compile_array_numeric() {
+        let expr = parse("[1, 2, 3]").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+
+        let expected_expr = Expr::ScalarUDF {
+            fun: Arc::new(array_constructor_udf()),
+            args: vec![lit(1.0), lit(2.0), lit(3.0)],
+        };
+        println!("expr: {:?}", result_expr);
+        assert_eq!(result_expr, expected_expr);
+
+        // Check evaluated value
+        let result_value = result_expr.eval_to_scalar().unwrap();
+
+        let expected_value = ScalarValue::List(
+            Some(Box::new(vec![
+                ScalarValue::from(1.0),
+                ScalarValue::from(2.0),
+                ScalarValue::from(3.0),
+            ])),
+            Box::new(DataType::Float64),
+        );
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected_value);
+    }
+
+    #[test]
+    fn test_compile_array_empty() {
+        let expr = parse("[]").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+
+        let expected_expr = Expr::ScalarUDF {
+            fun: Arc::new(array_constructor_udf()),
+            args: vec![],
+        };
+        println!("expr: {:?}", result_expr);
+        assert_eq!(result_expr, expected_expr);
+
+        // Check evaluated value. Empty array is given Float64 data type
+        let result_value = result_expr.eval_to_scalar().unwrap();
+
+        let expected_value = ScalarValue::List(Some(Box::new(vec![])), Box::new(DataType::Float64));
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected_value);
+    }
+
+    #[test]
+    fn test_compile_array_2d() {
+        let expr = parse("[[1, 2], [3, 4], [5, 6]]").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+
+        let expected_expr = Expr::ScalarUDF {
+            fun: Arc::new(array_constructor_udf()),
+            args: vec![
+                Expr::ScalarUDF {
+                    fun: Arc::new(array_constructor_udf()),
+                    args: vec![lit(1.0), lit(2.0)],
+                },
+                Expr::ScalarUDF {
+                    fun: Arc::new(array_constructor_udf()),
+                    args: vec![lit(3.0), lit(4.0)],
+                },
+                Expr::ScalarUDF {
+                    fun: Arc::new(array_constructor_udf()),
+                    args: vec![lit(5.0), lit(6.0)],
+                },
+            ],
+        };
+        println!("expr: {:?}", result_expr);
+        assert_eq!(result_expr, expected_expr);
+
+        // Check evaluated value
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected_value = ScalarValue::List(
+            Some(Box::new(vec![
+                ScalarValue::List(
+                    Some(Box::new(vec![
+                        ScalarValue::from(1.0),
+                        ScalarValue::from(2.0),
+                    ])),
+                    Box::new(DataType::Float64),
+                ),
+                ScalarValue::List(
+                    Some(Box::new(vec![
+                        ScalarValue::from(3.0),
+                        ScalarValue::from(4.0),
+                    ])),
+                    Box::new(DataType::Float64),
+                ),
+                ScalarValue::List(
+                    Some(Box::new(vec![
+                        ScalarValue::from(5.0),
+                        ScalarValue::from(6.0),
+                    ])),
+                    Box::new(DataType::Float64),
+                ),
+            ])),
+            Box::new(DataType::List(Box::new(Field::new(
+                "item",
+                DataType::Float64,
+                true,
+            )))),
+        );
 
         println!("value: {:?}", result_value);
         assert_eq!(result_value, expected_value);
