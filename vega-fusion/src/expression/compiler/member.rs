@@ -2,6 +2,7 @@ use crate::error::{Result, VegaFusionError};
 use crate::expression::ast::base::Expression;
 use crate::expression::ast::identifier::Identifier;
 use crate::expression::ast::member::MemberExpression;
+use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{data_type, is_numeric_datatype, ExprHelpers};
@@ -76,7 +77,7 @@ pub fn compile_member(
             if property_string == "length" {
                 // Special case to treat foo.length as length(foo) when foo is not an object
                 // make_length()
-                todo!("Special case to treat foo.length as length(foo) when foo is not an object")
+                make_length_udf()
             } else if matches!(
                 dtype,
                 DataType::List(_)

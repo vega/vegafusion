@@ -102,6 +102,19 @@ pub fn to_string(value: Expr, schema: &DFSchema) -> Result<Expr> {
     Ok(utf8_value)
 }
 
+pub fn cast_to(value: Expr, cast_dtype: &DataType, schema: &DFSchema) -> Result<Expr> {
+    let dtype = data_type(&value, schema)?;
+    if &dtype == cast_dtype {
+        Ok(value)
+    } else {
+        // Cast non-numeric types (like UTF-8) to Float64
+        Ok(Expr::Cast {
+            expr: Box::new(value),
+            data_type: cast_dtype.clone(),
+        })
+    }
+}
+
 pub trait ExprHelpers {
     fn columns(&self) -> Result<HashSet<Column>>;
     fn to_physical_expr(&self, schema: &DFSchema) -> Result<Arc<dyn PhysicalExpr>>;

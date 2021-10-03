@@ -1,5 +1,7 @@
 pub mod array;
 pub mod binary;
+pub mod builtin_functions;
+pub mod call;
 pub mod conditional;
 pub mod config;
 pub mod identifier;
@@ -14,6 +16,7 @@ use crate::error::Result;
 use crate::expression::ast::base::Expression;
 use crate::expression::compiler::array::compile_array;
 use crate::expression::compiler::binary::compile_binary;
+use crate::expression::compiler::call::compile_call;
 use crate::expression::compiler::conditional::compile_conditional;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::identifier::compile_identifier;
@@ -44,7 +47,7 @@ pub fn compile(
         Expression::ArrayExpression(node) => compile_array(node, config, schema),
         Expression::ObjectExpression(node) => compile_object(node, config, schema),
         Expression::MemberExpression(node) => compile_member(node, config, schema),
-        // Expression::CallExpression(node) => compile_call(node, config, schema),
+        Expression::CallExpression(node) => compile_call(node, config, schema),
         _ => todo!(),
     }
 }
@@ -607,5 +610,119 @@ mod test_compile {
                 unreachable!()
             }
         }
+    }
+
+    #[test]
+    fn test_eval_call_if() {
+        let expr = parse("if(32, 7, 9)").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+
+        let expected_expr = Expr::Case {
+            expr: None,
+            when_then_expr: vec![(
+                Box::new(Expr::Cast {
+                    expr: Box::new(lit(32.0)),
+                    data_type: DataType::Boolean,
+                }),
+                Box::new(lit(7.0)),
+            )],
+            else_expr: Some(Box::new(lit(9.0))),
+        };
+        assert_eq!(result_expr, expected_expr);
+        println!("expr: {:?}", result_expr);
+
+        // Check evaluated value
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected = ScalarValue::Float64(Some(7.0));
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected);
+    }
+
+    #[test]
+    fn test_eval_call_abs() {
+        let expr = parse("abs(-2)").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        println!("expr: {:?}", result_expr);
+
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected = ScalarValue::Float64(Some(2.0));
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected);
+    }
+
+    #[test]
+    fn test_eval_call_pow() {
+        let expr = parse("pow(3, 4)").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        println!("expr: {:?}", result_expr);
+
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected = ScalarValue::Float64(Some(81.0));
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected);
+    }
+
+    #[test]
+    fn test_eval_call_round() {
+        let expr = parse("round(4.8)").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        println!("expr: {:?}", result_expr);
+
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected = ScalarValue::Float64(Some(5.0));
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected);
+    }
+
+    #[test]
+    fn test_eval_call_is_nan() {
+        let expr = parse("isNaN(NaN + 4)").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        println!("expr: {:?}", result_expr);
+
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected = ScalarValue::Boolean(Some(true));
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected);
+    }
+
+    #[test]
+    fn test_eval_length() {
+        let expr = parse("length([1, 2, 3])").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        println!("expr: {:?}", result_expr);
+
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected = ScalarValue::from(3);
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected);
+    }
+
+    #[test]
+    fn test_eval_length_member() {
+        let expr = parse("[1, 2, 3].length").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        println!("expr: {:?}", result_expr);
+
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected = ScalarValue::from(3);
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected);
+    }
+
+    #[test]
+    fn try_datetime() {
+        let expr = parse("datetime('2007-04-05T14:30:00')").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        println!("expr: {:?}", result_expr);
+
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        println!("result_value: {:?}", result_value);
     }
 }
