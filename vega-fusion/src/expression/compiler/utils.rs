@@ -105,8 +105,8 @@ pub fn to_string(value: Expr, schema: &DFSchema) -> Result<Expr> {
 pub trait ExprHelpers {
     fn columns(&self) -> Result<HashSet<Column>>;
     fn to_physical_expr(&self, schema: &DFSchema) -> Result<Arc<dyn PhysicalExpr>>;
-
     fn eval_to_scalar(&self) -> Result<ScalarValue>;
+    fn eval_to_column(&self, record_batch: &RecordBatch) -> Result<ColumnarValue>;
 }
 
 impl ExprHelpers for Expr {
@@ -157,5 +157,24 @@ impl ExprHelpers for Expr {
                 })
             }
         }
+    }
+
+    fn eval_to_column(&self, record_batch: &RecordBatch) -> Result<ColumnarValue> {
+        let schema = DFSchema::try_from(record_batch.schema().as_ref().clone()).unwrap();
+
+        let physical_expr = self.to_physical_expr(&schema)?;
+
+        let col_result = physical_expr
+            .evaluate(record_batch)
+            .with_context(|| format!("Failed to evaluate expression: {:?}", self))?;
+
+        let col_result = if let ColumnarValue::Scalar(scalar) = col_result {
+            // Convert scalar to array with length matching record batch
+            ColumnarValue::Array(scalar.to_array_of_size(record_batch.num_rows()))
+        } else {
+            col_result
+        };
+
+        Ok(col_result)
     }
 }

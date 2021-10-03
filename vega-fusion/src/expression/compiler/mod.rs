@@ -5,6 +5,8 @@ pub mod config;
 pub mod identifier;
 pub mod literal;
 pub mod logical;
+pub mod member;
+pub mod object;
 pub mod unary;
 pub mod utils;
 
@@ -17,6 +19,8 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::identifier::compile_identifier;
 use crate::expression::compiler::literal::compile_literal;
 use crate::expression::compiler::logical::compile_logical;
+use crate::expression::compiler::member::compile_member;
+use crate::expression::compiler::object::compile_object;
 use crate::expression::compiler::unary::compile_unary;
 use datafusion::logical_plan::{DFSchema, Expr};
 use utils::UNIT_SCHEMA;
@@ -38,9 +42,9 @@ pub fn compile(
         Expression::LogicalExpression(node) => compile_logical(node, config, schema),
         Expression::BinaryExpression(node) => compile_binary(node, config, schema),
         Expression::ArrayExpression(node) => compile_array(node, config, schema),
-        // Expression::ObjectExpression(node) => compile_object(node, config, schema),
+        Expression::ObjectExpression(node) => compile_object(node, config, schema),
+        Expression::MemberExpression(node) => compile_member(node, config, schema),
         // Expression::CallExpression(node) => compile_call(node, config, schema),
-        // Expression::MemberExpression(node) => compile_member(node, config, schema),
         _ => todo!(),
     }
 }
@@ -51,13 +55,21 @@ mod test_compile {
     use crate::expression::compiler::array::array_constructor_udf;
     use crate::expression::compiler::compile;
     use crate::expression::compiler::config::CompilationConfig;
+    use crate::expression::compiler::object::make_object_constructor_udf;
     use crate::expression::compiler::utils::ExprHelpers;
     use crate::expression::parser::parse;
-    use datafusion::arrow::datatypes::{DataType, Field};
-    use datafusion::logical_plan::{Expr, Operator};
-    use datafusion::prelude::{concat, lit};
+    use datafusion::arrow::record_batch::RecordBatch;
+    use datafusion::arrow::{
+        array::{ArrayRef, Float64Array, StructArray},
+        datatypes::{DataType, Field, Schema},
+    };
+    use datafusion::logical_plan::{DFSchema, Expr, Operator};
+
+    use datafusion::physical_plan::ColumnarValue;
+    use datafusion::prelude::{col, concat, lit};
     use datafusion::scalar::ScalarValue;
     use std::collections::HashMap;
+    use std::convert::TryFrom;
     use std::sync::Arc;
 
     #[test]
@@ -456,5 +468,144 @@ mod test_compile {
 
         println!("value: {:?}", result_value);
         assert_eq!(result_value, expected_value);
+    }
+
+    #[test]
+    fn test_compile_object() {
+        let expr = parse("{a: 1, 'two': {three: 3}}").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+
+        let expected_expr = Expr::ScalarUDF {
+            fun: Arc::new(make_object_constructor_udf(
+                &vec!["a".to_string(), "two".to_string()],
+                &vec![
+                    DataType::Float64,
+                    DataType::Struct(vec![Field::new("three", DataType::Float64, false)]),
+                ],
+            )),
+            args: vec![
+                lit(1.0),
+                Expr::ScalarUDF {
+                    fun: Arc::new(make_object_constructor_udf(
+                        &vec!["three".to_string()],
+                        &vec![DataType::Float64],
+                    )),
+                    args: vec![lit(3.0)],
+                },
+            ],
+        };
+
+        println!("expr: {:?}", result_expr);
+        assert_eq!(result_expr, expected_expr);
+
+        // Check evaluated value
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected_value = ScalarValue::from(vec![
+            ("a", ScalarValue::from(1.0)),
+            (
+                "two",
+                ScalarValue::from(vec![("three", ScalarValue::from(3.0))]),
+            ),
+        ]);
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected_value);
+    }
+
+    #[test]
+    fn test_eval_object_list_nested() {
+        let expr = parse("{foo: [1, 100], 'bar': [{baz: 3}, {baz: 4}]}").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        println!("expr: {:?}", result_expr);
+
+        // Check evaluated value
+        let result_value = result_expr.eval_to_scalar().unwrap();
+
+        let expected_foo = ScalarValue::List(
+            Some(Box::new(vec![
+                ScalarValue::from(1.0),
+                ScalarValue::from(100.0),
+            ])),
+            Box::new(DataType::Float64),
+        );
+
+        let bar0 = ScalarValue::from(vec![("baz", ScalarValue::from(3.0))]);
+        let bar1 = ScalarValue::from(vec![("baz", ScalarValue::from(4.0))]);
+        let expected_bar = ScalarValue::List(
+            Some(Box::new(vec![bar0.clone(), bar1])),
+            Box::new(bar0.get_datatype()),
+        );
+
+        let expected = ScalarValue::from(vec![("foo", expected_foo), ("bar", expected_bar)]);
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected);
+    }
+
+    #[test]
+    fn test_eval_object_member() {
+        let expr = parse("({a: 1, 'two': 2})['tw' + 'o']").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        println!("expr: {:?}", result_expr);
+
+        // Check evaluated value
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected = ScalarValue::Float64(Some(2.0));
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected);
+    }
+
+    #[test]
+    fn test_compile_datum_member() {
+        let expr = parse("datum['tw' + 'o'] * 3").unwrap();
+        let schema = DFSchema::try_from(Schema::new(vec![Field::new(
+            "two",
+            DataType::Float64,
+            true,
+        )]))
+        .unwrap();
+
+        let result_expr = compile(&expr, &Default::default(), Some(&schema)).unwrap();
+
+        let expected_expr = Expr::BinaryExpr {
+            left: Box::new(col("two")),
+            op: Operator::Multiply,
+            right: Box::new(lit(3.0)),
+        };
+
+        println!("expr: {:?}", result_expr);
+        assert_eq!(result_expr, expected_expr);
+    }
+
+    #[test]
+    fn test_compile_datum_nested_member() {
+        let expr = parse("datum['two'].foo * 3").unwrap();
+        // let expr = parse("[datum['two'].foo * 3, datum['two'].foo]").unwrap();
+        let foo_field = Field::new("foo", DataType::Float64, false);
+
+        let two_type = DataType::Struct(vec![foo_field.clone()]);
+        let two_field = Field::new("two", two_type, true);
+        let schema = Schema::new(vec![two_field]);
+        let schema = DFSchema::try_from(schema).unwrap();
+        let result_expr = compile(&expr, &Default::default(), Some(&schema)).unwrap();
+        println!("compiled: {:?}", result_expr);
+
+        // Make some data
+        let foo_array = Arc::new(Float64Array::from(vec![11.0, 22.0, 33.0])) as ArrayRef;
+        let two_array = Arc::new(StructArray::from(vec![(foo_field, foo_array)])) as ArrayRef;
+        let datum_rb = RecordBatch::try_from_iter(vec![("two", two_array)]).unwrap();
+        let evaluated = result_expr.eval_to_column(&datum_rb).unwrap();
+
+        match evaluated {
+            ColumnarValue::Array(evaluated) => {
+                println!("evaluated: {:?}", evaluated);
+                let evaluated = evaluated.as_any().downcast_ref::<Float64Array>().unwrap();
+                let evaluated: Vec<_> = evaluated.iter().map(|v| v.unwrap()).collect();
+                assert_eq!(evaluated, vec![33.0, 66.0, 99.0])
+            }
+            ColumnarValue::Scalar(_) => {
+                unreachable!()
+            }
+        }
     }
 }
