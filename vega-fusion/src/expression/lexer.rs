@@ -554,10 +554,6 @@ fn tokenize_ident(data: &str) -> Result<(Token, usize)> {
             raw: taken.to_string(),
         },
         "null" => Token::Null,
-        "NaN" => Token::Number {
-            value: f64::NAN,
-            raw: taken.to_string(),
-        },
         _ => Token::Identifier {
             value: taken.to_string(),
         },
