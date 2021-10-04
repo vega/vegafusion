@@ -11,6 +11,10 @@ use crate::expression::ast::{
     object::{ObjectExpression, PropertyKey},
     unary::UnaryExpression,
 };
+use std::collections::{HashSet, HashMap};
+use crate::variable::Variable;
+use crate::expression::compiler::call::{default_callables, VegaFusionCallable};
+use crate::expression::ast::literal::LiteralValue;
 
 pub trait ExpressionVisitor {
     fn visit_identifier(&mut self, _node: &Identifier) {}
@@ -46,14 +50,14 @@ pub trait MutExpressionVisitor {
 
 /// Visitor to set all spans in the expression tree to None
 #[derive(Clone, Default)]
-pub struct ClearSpanVisitor {}
-impl ClearSpanVisitor {
+pub struct ClearSpansVisitor {}
+impl ClearSpansVisitor {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl MutExpressionVisitor for ClearSpanVisitor {
+impl MutExpressionVisitor for ClearSpansVisitor {
     fn visit_identifier(&mut self, node: &mut Identifier) {
         node.span.take();
     }
@@ -99,5 +103,52 @@ impl MutExpressionVisitor for ClearSpanVisitor {
     }
     fn visit_static_member_identifier(&mut self, node: &mut Identifier) {
         node.span.take();
+    }
+}
+
+
+
+/// Visitor to collect all unbound variables in the expression
+#[derive(Clone, Default)]
+pub struct GetVariablesVisitor {
+    pub variables: HashSet<Variable>,
+    pub callables: HashMap<String, VegaFusionCallable>,
+}
+impl GetVariablesVisitor {
+    pub fn new() -> Self {
+        Self {
+            variables: Default::default(),
+            callables: default_callables(),
+        }
+    }
+}
+
+impl ExpressionVisitor for GetVariablesVisitor {
+    fn visit_identifier(&mut self, node: &Identifier) {
+        // datum does not count as a variable
+        if node.name != "datum" {
+            self.variables
+                .insert(Variable::new_signal(&node.name));
+        }
+    }
+
+    /// Collect data and scale identifiers. These show up as a literal string as the first
+    /// argument to a Data or Scale callable.
+    fn visit_called_identifier(&mut self, node: &Identifier, args: &Vec<Expression>) {
+        if let Some(callable) = self.callables.get(&node.name) {
+            if let Some(
+                Expression::Literal(Literal { value: LiteralValue::String(arg), .. })
+            ) = args.get(0) {
+                match callable {
+                    VegaFusionCallable::Data => {
+                        self.variables.insert(Variable::new_data(arg));
+                    }
+                    VegaFusionCallable::Scale => {
+                        self.variables.insert(Variable::new_scale(arg));
+                    }
+                    _ => {}
+                }
+            }
+        }
     }
 }

@@ -8,10 +8,12 @@ use crate::expression::ast::logical::LogicalExpression;
 use crate::expression::ast::member::MemberExpression;
 use crate::expression::ast::object::ObjectExpression;
 use crate::expression::ast::unary::UnaryExpression;
-use crate::expression::visitors::{ClearSpanVisitor, ExpressionVisitor, MutExpressionVisitor};
+use crate::expression::visitors::{ClearSpansVisitor, ExpressionVisitor, MutExpressionVisitor, GetVariablesVisitor};
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 use std::{fmt, fmt::Formatter};
+use crate::variable::Variable;
+use itertools::sorted;
 
 /// A Span holds the start and end indices of an AstNode in the expression source code
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, Hash)]
@@ -47,10 +49,18 @@ pub trait ExpressionTrait: std::fmt::Display {
 
 impl Expression {
     pub fn clear_spans(&mut self) {
-        let mut visitor = ClearSpanVisitor::new();
+        let mut visitor = ClearSpansVisitor::new();
         self.walk_mut(&mut visitor);
     }
 
+    pub fn get_variables(&self) -> Vec<Variable> {
+        let mut visitor = GetVariablesVisitor::new();
+        self.walk(&mut visitor);
+
+        // visitor.variables.into_iter()
+        sorted(visitor.variables).collect()
+    }
+    
     /// Walk visitor through the expression tree in a DFS traversal
     pub fn walk(&self, visitor: &mut dyn ExpressionVisitor) {
         match self {

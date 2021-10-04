@@ -7,6 +7,13 @@ use datafusion::scalar::ScalarValue;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use vega_fusion::expression::ast::base::Expression;
+use vega_fusion::data::table::VegaFusionTable;
+use vega_fusion::spec::transform::filter::FilterTransformSpec;
+use vega_fusion::spec::transform::TransformSpec;
+use vega_fusion::expression::compiler::config::CompilationConfig;
+use vega_fusion::spec::transform::extent::ExtentTransformSpec;
+use datafusion::arrow::datatypes::DataType;
+use vega_fusion::transform::utils::RecordBatchUtils;
 
 #[test]
 fn test_vegajs_parse() {
@@ -46,6 +53,53 @@ fn test_vegajs_evaluate_scalar_scope() {
     let result = vegajs_runtime.eval_scalar_expression("20 + a", &scope);
     println!("result: {}", result);
     assert_eq!(result, ScalarValue::from(143.0));
+}
+
+#[test]
+fn test_evaluate_filter_transform() {
+    let mut vegajs_runtime = vegajs_runtime();
+    let dataset = VegaFusionTable::from_json(json!([
+        {"colA": 2.0, "colB": false, "colC": "first"},
+        {"colA": 4.0, "colB": true, "colC": "second"},
+        {"colA": 6.0, "colB": false, "colC": "third"},
+        {"colA": 8.0, "colB": true, "colC": "forth"},
+        {"colA": 10.0, "colB": false, "colC": "fifth"},
+    ]), 1024).unwrap();
+
+    let signal_scope: HashMap<_, _> = vec![
+        ("a".to_string(), ScalarValue::from(6.0))
+    ].into_iter().collect();
+    let config = CompilationConfig { signal_scope, ..Default::default()};
+
+    let transforms = vec![
+        TransformSpec::Filter(FilterTransformSpec { expr: "datum.colA >= a".to_string(), extra: Default::default() }),
+        TransformSpec::Extent(ExtentTransformSpec { field: "colA".to_string(), signal: Some("extent_out".to_string()), extra: Default::default() }),
+    ];
+
+    let (result_data, result_signals) = vegajs_runtime.eval_transform(&dataset, &transforms, &config);
+
+    println!("{}\n", result_data.pretty_format(None).unwrap());
+    println!("{:#?}\n", result_signals);
+
+    // Check extent signal
+    assert_eq!(
+        result_signals,
+        vec![(
+            "extent_out".to_string(),
+            ScalarValue::List(Some(Box::new(vec![
+                ScalarValue::from(6.0),
+                ScalarValue::from(10.0)
+            ])), Box::new(DataType::Float64))
+        )].into_iter().collect()
+    );
+
+    let expected_dataset = VegaFusionTable::from_json(json!([
+        {"colA": 6, "colB": false, "colC": "third"},
+        {"colA": 8, "colB": true, "colC": "forth"},
+        {"colA": 10, "colB": false, "colC": "fifth"},
+    ]), 1024).unwrap();
+
+    assert_eq!(result_data.to_json(), expected_dataset.to_json());
 }
 
 fn bar_chart_spec() -> Value {

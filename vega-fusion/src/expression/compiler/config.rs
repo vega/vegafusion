@@ -1,4 +1,4 @@
-use crate::expression::compiler::call::{default_callables, VeagFusionCallable};
+use crate::expression::compiler::call::{default_callables, VegaFusionCallable};
 use datafusion::scalar::ScalarValue;
 use num_traits::float::FloatConst;
 use std::collections::HashMap;
@@ -6,7 +6,7 @@ use std::collections::HashMap;
 #[derive(Clone)]
 pub struct CompilationConfig {
     pub signal_scope: HashMap<String, ScalarValue>,
-    pub callable_scope: HashMap<String, VeagFusionCallable>,
+    pub callable_scope: HashMap<String, VegaFusionCallable>,
     pub constants: HashMap<String, ScalarValue>,
 }
 

@@ -47,7 +47,7 @@ impl TryFrom<&Token> for UnaryOperator {
             Token::Minus => Self::Neg,
             Token::Exclamation => Self::Not,
             t => {
-                return Err(VegaFusionError::parse_error(&format!(
+                return Err(VegaFusionError::parse(&format!(
                     "Token '{}' is not a valid prefix operator",
                     t
                 )))

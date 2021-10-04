@@ -110,7 +110,7 @@ impl TryFrom<&Token> for BinaryOperator {
             Token::LessThan => Self::LessThan,
             Token::LessThanEquals => Self::LessThanEqual,
             t => {
-                return Err(VegaFusionError::parse_error(&format!(
+                return Err(VegaFusionError::parse(&format!(
                     "Token '{}' is not a valid binary operator",
                     t
                 )))

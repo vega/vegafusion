@@ -45,7 +45,7 @@ impl TryFrom<&Token> for LogicalOperator {
             Token::LogicalOr => Self::Or,
             Token::LogicalAnd => Self::And,
             t => {
-                return Err(VegaFusionError::parse_error(&format!(
+                return Err(VegaFusionError::parse(&format!(
                     "Token '{}' is not a valid logical operator",
                     t
                 )))

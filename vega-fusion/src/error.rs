@@ -3,6 +3,7 @@ use thiserror::Error;
 
 use datafusion::error::DataFusionError;
 use std::num::ParseFloatError;
+use datafusion::arrow::error::ArrowError;
 
 pub type Result<T> = result::Result<T, VegaFusionError>;
 
@@ -28,6 +29,9 @@ pub enum VegaFusionError {
     #[error("Expression compilation error: {0}\n{1}")]
     CompilationError(String, ErrorContext),
 
+    #[error("Internal error: {0}\n{1}")]
+    InternalError(String, ErrorContext),
+
     #[error("DataFusion error: {0}\n{1}")]
     DataFusionError(DataFusionError, ErrorContext),
 }
@@ -49,6 +53,10 @@ impl VegaFusionError {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::CompilationError(msg, context)
             }
+            InternalError(msg, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::CompilationError(msg, context)
+            }
             DataFusionError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::DataFusionError(err, context)
@@ -56,12 +64,16 @@ impl VegaFusionError {
         }
     }
 
-    pub fn parse_error(message: &str) -> Self {
+    pub fn parse(message: &str) -> Self {
         Self::ParseError(message.to_string(), Default::default())
     }
 
-    pub fn compilation_error(message: &str) -> Self {
+    pub fn compilation(message: &str) -> Self {
         Self::CompilationError(message.to_string(), Default::default())
+    }
+
+    pub fn internal(message: &str) -> Self {
+        Self::InternalError(message.to_string(), Default::default())
     }
 }
 
@@ -93,12 +105,21 @@ where
 
 impl From<ParseFloatError> for VegaFusionError {
     fn from(err: ParseFloatError) -> Self {
-        Self::parse_error(&err.to_string())
+        Self::parse(&err.to_string())
     }
 }
 
 impl From<DataFusionError> for VegaFusionError {
     fn from(err: DataFusionError) -> Self {
         Self::DataFusionError(err, Default::default())
+    }
+}
+
+impl From<ArrowError> for VegaFusionError {
+    fn from(err: ArrowError) -> Self {
+        Self::DataFusionError(
+            DataFusionError::ArrowError(err),
+            Default::default()
+        )
     }
 }

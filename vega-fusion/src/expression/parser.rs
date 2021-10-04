@@ -18,7 +18,7 @@ pub fn parse(expr: &str) -> Result<Expression> {
     let result = perform_parse(&mut tokens, 0.0, expr)?;
     if !tokens.is_empty() {
         let (token, start, _) = &tokens[0];
-        return Err(VegaFusionError::parse_error(&format!(
+        return Err(VegaFusionError::parse(&format!(
             "Unexpected token {} at position {} in expression: {}",
             token.to_string(),
             start,
@@ -35,7 +35,7 @@ fn perform_parse(
     full_expr: &str,
 ) -> Result<Expression> {
     if tokens.is_empty() {
-        return Err(VegaFusionError::parse_error("Unexpected end of expression"));
+        return Err(VegaFusionError::parse("Unexpected end of expression"));
     }
 
     // Pop leading token
@@ -58,7 +58,7 @@ fn perform_parse(
         // Object literal expression
         parse_object(tokens, start, full_expr)
     } else {
-        Err(VegaFusionError::parse_error(&format!(
+        Err(VegaFusionError::parse(&format!(
             "Unexpected token: {}",
             lhs_token
         )))
@@ -132,7 +132,7 @@ fn perform_parse(
                 break;
             }
         } else {
-            Err(VegaFusionError::parse_error(&format!(
+            Err(VegaFusionError::parse(&format!(
                 "Unexpected token '{}'",
                 token
             )))
@@ -154,14 +154,14 @@ pub fn expect_token(
     expected: Token,
 ) -> Result<(Token, usize, usize)> {
     if tokens.is_empty() {
-        return Err(VegaFusionError::parse_error(&format!(
+        return Err(VegaFusionError::parse(&format!(
             "Expected {}, reached end of expression",
             expected
         )));
     }
     let (token, start, end) = tokens[0].clone();
     if token != expected {
-        return Err(VegaFusionError::parse_error(&format!(
+        return Err(VegaFusionError::parse(&format!(
             "Expected {}, received {}",
             expected, token
         )));
@@ -212,7 +212,7 @@ pub fn parse_atom(token: &Token, start: usize, end: usize) -> Result<Expression>
             span,
         }),
         _ => {
-            return Err(VegaFusionError::parse_error(&format!(
+            return Err(VegaFusionError::parse(&format!(
                 "Token not an atom: {}",
                 token
             )))
@@ -312,7 +312,7 @@ pub fn parse_call(
     let lhs = match lhs {
         Expression::Identifier(identifier) => identifier,
         _ => {
-            return Some(Err(VegaFusionError::parse_error(
+            return Some(Err(VegaFusionError::parse(
                 "Only global functions are callable",
             )))
         }
@@ -415,7 +415,7 @@ pub fn parse_static_member(
                 Expression::Identifier(ident) => Ok(Expression::from(
                     MemberExpression::new_static(lhs.clone(), ident, Some(new_span)),
                 )),
-                _ => Err(VegaFusionError::parse_error("Expected identifier")),
+                _ => Err(VegaFusionError::parse("Expected identifier")),
             }
         }
         Err(err) => Err(err),
@@ -441,7 +441,7 @@ pub fn parse_ternary(
     let consequent = if let Ok(consequent) = perform_parse(tokens, middle_bp, full_expr) {
         consequent
     } else {
-        return Some(Err(VegaFusionError::parse_error(
+        return Some(Err(VegaFusionError::parse(
             "Failed to parse consequent of ternary operator",
         )));
     };
@@ -453,7 +453,7 @@ pub fn parse_ternary(
     let alternate = if let Ok(alternate) = perform_parse(tokens, right_bp, full_expr) {
         alternate
     } else {
-        return Some(Err(VegaFusionError::parse_error(
+        return Some(Err(VegaFusionError::parse(
             "Failed to parse alternate of ternary operator",
         )));
     };
@@ -534,7 +534,7 @@ pub fn parse_object(
             Expression::Literal(key) => Property::new_literal(key, value),
             Expression::Identifier(key) => Property::new_identifier(key, value),
             _ => {
-                return Err(VegaFusionError::parse_error(
+                return Err(VegaFusionError::parse(
                     "Object key must be an identifier or a literal value",
                 ))
             }

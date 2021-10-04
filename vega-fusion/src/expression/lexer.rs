@@ -162,7 +162,7 @@ where
         current_index += ch.len_utf8();
     }
     if current_index == 0 {
-        Err(VegaFusionError::parse_error("No matches for predicate"))
+        Err(VegaFusionError::parse("No matches for predicate"))
     } else {
         Ok(&data[..current_index])
     }
@@ -172,7 +172,7 @@ where
 pub fn tokenize_single_token(data: &str) -> Result<(Token, usize)> {
     let next = match data.chars().next() {
         Some(c) => c,
-        None => return Err(VegaFusionError::parse_error("Unexpected EOF")),
+        None => return Err(VegaFusionError::parse("Unexpected EOF")),
     };
 
     let (tok, length) = match next {
@@ -197,7 +197,7 @@ pub fn tokenize_single_token(data: &str) -> Result<(Token, usize)> {
         c if c.is_digit(10) || c == '.' => tokenize_dot_or_number(data)?,
         c if c.is_alphabetic() || c == '_' => tokenize_ident(data)?,
         other => {
-            return Err(VegaFusionError::parse_error(&format!(
+            return Err(VegaFusionError::parse(&format!(
                 "Invalid character: {}",
                 other
             )))
@@ -212,12 +212,12 @@ fn tokenize_plus(data: &str) -> Result<(Token, usize)> {
     let token = match taken {
         "+" => Token::Plus,
         "++" => {
-            return Err(VegaFusionError::parse_error(
+            return Err(VegaFusionError::parse(
                 "Increment operator is not supported",
             ))
         }
         _ => {
-            return Err(VegaFusionError::parse_error(&format!(
+            return Err(VegaFusionError::parse(&format!(
                 "Invalid number of consecutive + characters: {}",
                 taken
             )))
@@ -232,12 +232,12 @@ fn tokenize_minus(data: &str) -> Result<(Token, usize)> {
     let token = match taken {
         "-" => Token::Minus,
         "--" => {
-            return Err(VegaFusionError::parse_error(
+            return Err(VegaFusionError::parse(
                 "Decrement operator is not supported",
             ))
         }
         _ => {
-            return Err(VegaFusionError::parse_error(&format!(
+            return Err(VegaFusionError::parse(&format!(
                 "Invalid number of consecutive - characters: {}",
                 taken
             )))
@@ -254,7 +254,7 @@ fn tokenize_single_char_operator(data: &str, ch: char, token: Token) -> Result<(
     let token = match taken {
         c if c == ch.to_string() => token,
         _ => {
-            return Err(VegaFusionError::parse_error(&format!(
+            return Err(VegaFusionError::parse(&format!(
                 "Invalid number of consecutive {} characters: {}",
                 ch, taken
             )))
@@ -268,13 +268,13 @@ fn tokenize_logical_or(data: &str) -> Result<(Token, usize)> {
     let taken = take_while(data, |c| Ok(c == '|'))?;
     let token = match taken {
         "|" => {
-            return Err(VegaFusionError::parse_error(
+            return Err(VegaFusionError::parse(
                 "Bitwise OR operator not supported",
             ))
         }
         "||" => Token::LogicalOr,
         _ => {
-            return Err(VegaFusionError::parse_error(&format!(
+            return Err(VegaFusionError::parse(&format!(
                 "Invalid number of consecutive | characters: {}",
                 taken
             )))
@@ -288,13 +288,13 @@ fn tokenize_logical_and(data: &str) -> Result<(Token, usize)> {
     let taken = take_while(data, |c| Ok(c == '&'))?;
     let token = match taken {
         "&" => {
-            return Err(VegaFusionError::parse_error(
+            return Err(VegaFusionError::parse(
                 "Bitwise AND operator not supported",
             ))
         }
         "&&" => Token::LogicalAnd,
         _ => {
-            return Err(VegaFusionError::parse_error(&format!(
+            return Err(VegaFusionError::parse(&format!(
                 "Invalid number of consecutive & characters: {}",
                 taken
             )))
@@ -322,24 +322,24 @@ fn tokenize_comparison_operators(data: &str) -> Result<(Token, usize)> {
         ">=" => Token::GreaterThanEquals,
         "<=" => Token::LessThanEquals,
         "=" => {
-            return Err(VegaFusionError::parse_error(
+            return Err(VegaFusionError::parse(
                 "Assignment operator is not supported",
             ))
         }
         "==" => Token::DoubleEquals,
         "===" => Token::TripleEquals,
         "<<" => {
-            return Err(VegaFusionError::parse_error(
+            return Err(VegaFusionError::parse(
                 "Bitwise left shift operator not supported",
             ))
         }
         ">>" => {
-            return Err(VegaFusionError::parse_error(
+            return Err(VegaFusionError::parse(
                 "Bitwise signed right shift operator not supported",
             ))
         }
         ">>>" => {
-            return Err(VegaFusionError::parse_error(
+            return Err(VegaFusionError::parse(
                 "Bitwise right shift operator not supported",
             ))
         }
@@ -347,7 +347,7 @@ fn tokenize_comparison_operators(data: &str) -> Result<(Token, usize)> {
         "!=" => Token::ExclamationEquals,
         "!==" => Token::ExclamationDoubleEquals,
         _ => {
-            return Err(VegaFusionError::parse_error(&format!(
+            return Err(VegaFusionError::parse(&format!(
                 "Invalid operator: {}",
                 taken
             )))
@@ -459,7 +459,7 @@ fn tokenize_string(data: &str, quote_char: char) -> Result<(Token, usize)> {
     })?;
 
     if in_string {
-        Err(VegaFusionError::parse_error(
+        Err(VegaFusionError::parse(
             "Expression ends with unterminated string",
         ))
     } else {
@@ -510,7 +510,7 @@ fn tokenize_dot_or_number(data: &str) -> Result<(Token, usize)> {
         } else {
             // Check for leading zeros. Only allowed right before decimal point (as in 0.5)
             if &taken[..2] == "00" || &taken[..1] == "0" && &taken[..2] != "0." {
-                return Err(VegaFusionError::parse_error(
+                return Err(VegaFusionError::parse(
                     "Floats may not have leading zeros",
                 ));
             }
@@ -525,7 +525,7 @@ fn tokenize_dot_or_number(data: &str) -> Result<(Token, usize)> {
         }
     } else {
         if &taken[..1] == "0" && taken.len() > 1 {
-            return Err(VegaFusionError::parse_error(
+            return Err(VegaFusionError::parse(
                 "Integers may not have leading zeros",
             ));
         }

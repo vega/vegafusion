@@ -16,9 +16,13 @@ use datafusion::scalar::ScalarValue;
 use futures::channel::{mpsc, mpsc::Sender, oneshot};
 use futures::executor::block_on;
 use futures_util::{SinkExt, StreamExt};
-use serde_json::Value;
+use serde_json::{Value, json};
 use std::thread;
 use vega_fusion::expression::compiler::utils::ScalarValueHelpers;
+use vega_fusion::data::table::VegaFusionTable;
+use vega_fusion::spec::transform::TransformSpec;
+use vega_fusion::expression::compiler::config::CompilationConfig;
+use std::time::Duration;
 
 /// Modification of the FsModuleLoader to use reqwest to load modules from URLs
 struct UrlModuleLoader {
@@ -145,7 +149,13 @@ Object.defineProperty(Date.prototype, "toJSON", {value: function() {return "__$d
                 )
                 .unwrap();
 
-            futures::executor::block_on(runtime.run_event_loop(false)).unwrap();
+            // Sometimes, on vega.parse, an error is raised about a built-in transform not being
+            // available.  There seems to be a race condition where not everything in Vega is fully
+            // initialized after a single call to run_event_loop.
+            for _ in 0..10 {
+                futures::executor::block_on(runtime.run_event_loop(true)).unwrap();
+                thread::sleep(Duration::from_millis(100));
+            }
 
             // Receiving and process messages
             while let Some(cmd) = block_on(command_receiver.next()) {
@@ -253,6 +263,84 @@ Object.defineProperty(Date.prototype, "toJSON", {value: function() {return "__$d
         ScalarValue::from_json(&value_json).unwrap()
     }
 
+    pub fn eval_transform(
+        &mut self,
+        data_table: &VegaFusionTable,
+        transforms: &[TransformSpec],
+        config: &CompilationConfig,
+    ) -> (VegaFusionTable, HashMap<String, ScalarValue>) {
+
+        // Build Vega spec compatible signals array
+        let signals: Vec<_> = config.signal_scope.iter().map(|(s, v)| {
+            json!({"name": s.clone(), "value": v.to_json().unwrap()})
+        }).collect();
+        let signals_str = serde_json::to_string(&signals).unwrap();
+
+        // Build Vega spec compatible data array
+        let mut data = vec![json!({
+            "name": "_dataset",
+            "values": data_table.to_json(),
+            "transform": transforms
+        })];
+
+        // TODO, add dataset scope values here as well
+
+        // Build array of signal values to return
+        let output_signals: Vec<_> = transforms.iter().flat_map(
+            |t| t.output_signals()
+        ).collect();
+
+        let inputs: HashMap<_, _> = vec![
+            ("data".to_string(), serde_json::to_string(&data).unwrap()),
+            ("signals".to_string(), signals_str),
+            ("output_signals".to_string(), serde_json::to_string(&output_signals).unwrap())
+        ].into_iter().collect();
+
+        let script = r#"
+(() => {
+    let data = JSON.parse(Deno.core.opSync('inputs', 'data'));
+    let signals = JSON.parse(Deno.core.opSync('inputs', 'signals'));
+    let output_signals = JSON.parse(Deno.core.opSync('inputs', 'output_signals'));
+
+    let spec = {
+        signals: signals,
+        data: data
+    };
+
+    let view = new vega.View(vega.parse(spec), {renderer: 'none'});
+
+    view.runAsync().then(() => {
+        let results = {
+            signals: {},
+            dataset: view.data("_dataset")
+        };
+        for (const sig of output_signals) {
+            results.signals[sig] = view.signal(sig);
+        }
+
+        Deno.core.opSync('output', JSON.stringify(results));
+    })
+})()
+"#;
+        let value_string = self.execute_script(script, &inputs);
+
+        let results: HashMap<String, Value> = serde_json::from_str(&value_string).unwrap();
+
+        // Parse results
+        let result_data = VegaFusionTable::from_json(
+            results.get("dataset").unwrap().clone(), 1024
+        ).unwrap();
+
+        let result_signals: HashMap<_, _> = if let Value::Object(signals) = results.get("signals").unwrap() {
+            signals.iter().map(|(sig, value)| {
+                (sig.clone(), ScalarValue::from_json(value).unwrap())
+            }).collect()
+        } else {
+            unreachable!()
+        };
+        (result_data, result_signals)
+    }
+
     pub fn convert_to_svg(&mut self, spec: &serde_json::Value) -> String {
         let script = r#"
 (() => {
@@ -274,6 +362,7 @@ Object.defineProperty(Date.prototype, "toJSON", {value: function() {return "__$d
         serde_json::from_str(&value_string).unwrap()
     }
 
+
     pub fn save_to_png(&mut self, spec: &serde_json::Value, path: &std::path::Path) {
         let svg_result = self.convert_to_svg(spec);
         let mut opt = usvg::Options::default();
@@ -294,6 +383,7 @@ Object.defineProperty(Date.prototype, "toJSON", {value: function() {return "__$d
         pixmap.save_png(path).unwrap();
     }
 }
+
 
 pub enum JsRuntimeCommand {
     ExecuteScript {

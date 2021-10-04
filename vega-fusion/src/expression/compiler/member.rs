@@ -52,7 +52,7 @@ pub fn compile_member(
         // e.g. foo.val
         property.name.clone()
     } else {
-        return Err(VegaFusionError::compilation_error(&format!(
+        return Err(VegaFusionError::compilation(&format!(
             "Invalid membership property: {}",
             node.property
         )));
@@ -88,13 +88,13 @@ pub fn compile_member(
                 if let Some(index) = index {
                     make_get_element_udf(index as i32)
                 } else {
-                    return Err(VegaFusionError::compilation_error(&format!(
+                    return Err(VegaFusionError::compilation(&format!(
                         "Non-numeric element index: {}",
                         property_string
                     )));
                 }
             } else {
-                return Err(VegaFusionError::compilation_error(&format!(
+                return Err(VegaFusionError::compilation(&format!(
                     "Invalid target for member access: {}",
                     node.object
                 )));
@@ -120,14 +120,14 @@ pub fn make_get_object_member_udf(
         {
             Some((field_index, field)) => (field_index, field.data_type().clone()),
             None => {
-                return Err(VegaFusionError::compilation_error(&format!(
+                return Err(VegaFusionError::compilation(&format!(
                     "No object property named {}",
                     property_name
                 )))
             }
         }
     } else {
-        return Err(VegaFusionError::compilation_error(
+        return Err(VegaFusionError::compilation(
             "Target of object property access is not a Struct type",
         ));
     };

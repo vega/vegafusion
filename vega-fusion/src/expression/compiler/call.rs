@@ -28,7 +28,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 #[derive(Clone)]
-pub enum VeagFusionCallable {
+pub enum VegaFusionCallable {
     /// A function that operates on the ESTree expression tree before compilation
     Macro(Arc<dyn Fn(&[Expression]) -> Result<Expression>>),
 
@@ -53,6 +53,7 @@ pub enum VeagFusionCallable {
     ///
     /// e.g. `data('brush')` or  `vlSelectionTest('brush', datum, true)`
     // Data(Arc<dyn Fn(&DioriteTable, &[Expression], &DFSchema) -> Result<Expr>>),
+    Data,
 
     /// A custom runtime function that operates on a scale dataset
     ///
@@ -86,26 +87,26 @@ pub fn compile_call(
     match &node.callee {
         Callee::Identifier(callee) => {
             let callable = config.callable_scope.get(&callee.name).ok_or_else(|| {
-                VegaFusionError::compilation_error(&format!(
+                VegaFusionError::compilation(&format!(
                     "No global function named {}",
                     callee.name
                 ))
             })?;
 
             match callable {
-                VeagFusionCallable::Macro(callable) => {
+                VegaFusionCallable::Macro(callable) => {
                     // Apply macro then recursively compile
                     let new_expr = callable(&node.arguments)?;
                     compile(&new_expr, config, Some(schema))
                 }
-                VeagFusionCallable::ScalarUDF { udf, cast } => {
+                VegaFusionCallable::ScalarUDF { udf, cast } => {
                     let args = compile_scalar_arguments(node, config, schema, cast)?;
                     Ok(Expr::ScalarUDF {
                         fun: Arc::new(udf.clone()),
                         args,
                     })
                 }
-                VeagFusionCallable::BuiltinScalarFunction { function, cast } => {
+                VegaFusionCallable::BuiltinScalarFunction { function, cast } => {
                     let args = compile_scalar_arguments(node, config, schema, cast)?;
                     Ok(Expr::ScalarFunction {
                         fun: function.clone(),
@@ -133,7 +134,7 @@ pub fn compile_call(
                 //         )
                 //     }
                 // }
-                VeagFusionCallable::Transform(callable) => {
+                VegaFusionCallable::Transform(callable) => {
                     let args = compile_scalar_arguments(node, config, schema, &None)?;
                     callable(&args, schema)
                 }
@@ -145,9 +146,9 @@ pub fn compile_call(
     }
 }
 
-pub fn default_callables() -> HashMap<String, VeagFusionCallable> {
-    let mut callables: HashMap<String, VeagFusionCallable> = HashMap::new();
-    callables.insert("if".to_string(), VeagFusionCallable::Macro(Arc::new(if_fn)));
+pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
+    let mut callables: HashMap<String, VegaFusionCallable> = HashMap::new();
+    callables.insert("if".to_string(), VegaFusionCallable::Macro(Arc::new(if_fn)));
 
     // Numeric functions built into DataFusion with names that match Vega.
     // Cast arguments to Float64
@@ -157,7 +158,7 @@ pub fn default_callables() -> HashMap<String, VeagFusionCallable> {
         let function = BuiltinScalarFunction::from_str(fun_name).unwrap();
         callables.insert(
             fun_name.to_string(),
-            VeagFusionCallable::BuiltinScalarFunction {
+            VegaFusionCallable::BuiltinScalarFunction {
                 function,
                 cast: Some(DataType::Float64),
             },
@@ -167,7 +168,7 @@ pub fn default_callables() -> HashMap<String, VeagFusionCallable> {
     // DataFusion ln is Vega log
     callables.insert(
         "log".to_string(),
-        VeagFusionCallable::BuiltinScalarFunction {
+        VegaFusionCallable::BuiltinScalarFunction {
             function: BuiltinScalarFunction::Ln,
             cast: Some(DataType::Float64),
         },
@@ -176,7 +177,7 @@ pub fn default_callables() -> HashMap<String, VeagFusionCallable> {
     // Custom udfs
     callables.insert(
         "pow".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: make_pow_udf(),
             cast: Some(DataType::Float64),
         },
@@ -184,7 +185,7 @@ pub fn default_callables() -> HashMap<String, VeagFusionCallable> {
 
     callables.insert(
         "isNaN".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: make_is_nan_udf(),
             cast: None,
         },
@@ -192,7 +193,7 @@ pub fn default_callables() -> HashMap<String, VeagFusionCallable> {
 
     callables.insert(
         "isFinite".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: make_is_finite_udf(),
             cast: None,
         },
@@ -200,7 +201,7 @@ pub fn default_callables() -> HashMap<String, VeagFusionCallable> {
 
     callables.insert(
         "isValid".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: make_is_valid_udf(),
             cast: None,
         },
@@ -208,7 +209,7 @@ pub fn default_callables() -> HashMap<String, VeagFusionCallable> {
 
     callables.insert(
         "length".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: make_length_udf(),
             cast: None,
         },
@@ -217,49 +218,49 @@ pub fn default_callables() -> HashMap<String, VeagFusionCallable> {
     // Date parts
     callables.insert(
         "year".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: YEAR_UDF.deref().clone(),
             cast: None,
         },
     );
     callables.insert(
         "month".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: MONTH_UDF.deref().clone(),
             cast: None,
         },
     );
     callables.insert(
         "date".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: DATE_UDF.deref().clone(),
             cast: None,
         },
     );
     callables.insert(
         "hours".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: HOURS_UDF.deref().clone(),
             cast: None,
         },
     );
     callables.insert(
         "minutes".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: MINUTES_UDF.deref().clone(),
             cast: None,
         },
     );
     callables.insert(
         "seconds".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: SECONDS_UDF.deref().clone(),
             cast: None,
         },
     );
     callables.insert(
         "milliseconds".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: MILLISECONDS_UDF.deref().clone(),
             cast: None,
         },
@@ -267,49 +268,49 @@ pub fn default_callables() -> HashMap<String, VeagFusionCallable> {
 
     callables.insert(
         "utcyear".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: UTCYEAR_UDF.deref().clone(),
             cast: None,
         },
     );
     callables.insert(
         "utcmonth".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: UTCMONTH_UDF.deref().clone(),
             cast: None,
         },
     );
     callables.insert(
         "utcdate".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: UTCDATE_UDF.deref().clone(),
             cast: None,
         },
     );
     callables.insert(
         "utchours".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: UTCHOURS_UDF.deref().clone(),
             cast: None,
         },
     );
     callables.insert(
         "utcminutes".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: UTCMINUTES_UDF.deref().clone(),
             cast: None,
         },
     );
     callables.insert(
         "utcseconds".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: UTCSECONDS_UDF.deref().clone(),
             cast: None,
         },
     );
     callables.insert(
         "utcmilliseconds".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: UTCMILLISECONDS_UDF.deref().clone(),
             cast: None,
         },
@@ -318,11 +319,11 @@ pub fn default_callables() -> HashMap<String, VeagFusionCallable> {
     // date time
     callables.insert(
         "datetime".to_string(),
-        VeagFusionCallable::Transform(Arc::new(datetime_transform)),
+        VegaFusionCallable::Transform(Arc::new(datetime_transform)),
     );
     callables.insert(
         "utc".to_string(),
-        VeagFusionCallable::ScalarUDF {
+        VegaFusionCallable::ScalarUDF {
             udf: UTC_COMPONENTS.deref().clone(),
             cast: Some(DataType::Int64),
         },
