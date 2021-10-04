@@ -8,9 +8,14 @@ use datafusion::optimizer::utils::expr_to_columns;
 use datafusion::physical_plan::planner::DefaultPhysicalPlanner;
 use datafusion::physical_plan::{ColumnarValue, PhysicalExpr};
 use datafusion::scalar::ScalarValue;
+use serde_json::{Map, Value};
 use std::collections::HashSet;
 use std::convert::TryFrom;
+use std::ops::Deref;
 use std::sync::Arc;
+
+// Prefix for special values JSON encoded as strings
+pub const DATETIME_PREFIX: &str = "__$datetime:";
 
 lazy_static! {
     pub static ref UNIT_RECORD_BATCH: RecordBatch = RecordBatch::try_from_iter(vec![(
@@ -189,5 +194,121 @@ impl ExprHelpers for Expr {
         };
 
         Ok(col_result)
+    }
+}
+
+pub trait ScalarValueHelpers {
+    fn from_json(value: &Value) -> Result<ScalarValue>;
+    fn to_json(&self) -> Result<Value>;
+}
+
+impl ScalarValueHelpers for ScalarValue {
+    fn from_json(value: &Value) -> Result<ScalarValue> {
+        let scalar_value = match value {
+            Value::Null => {
+                // Use None float64 for null
+                ScalarValue::try_from(&DataType::Float64).unwrap()
+            }
+            Value::Bool(v) => ScalarValue::from(*v),
+            Value::Number(v) => ScalarValue::from(v.as_f64().unwrap()),
+            Value::String(v) => {
+                if v.starts_with(DATETIME_PREFIX) {
+                    let ms: i64 = v.strip_prefix(DATETIME_PREFIX).unwrap().parse().unwrap();
+                    ScalarValue::TimestampMillisecond(Some(ms))
+                } else {
+                    ScalarValue::from(v.as_str())
+                }
+            }
+            Value::Object(values) => {
+                let mut values: Vec<_> = values
+                    .iter()
+                    .map(|(name, val)| Ok((name.as_str(), ScalarValue::from_json(val)?)))
+                    .collect::<Result<Vec<(&str, ScalarValue)>>>()?;
+
+                // Sort keys for stability
+                values.sort_by_key(|el| el.0);
+
+                ScalarValue::from(values)
+            }
+            Value::Array(elements) => {
+                let (elements, dtype) = if elements.is_empty() {
+                    (Vec::new(), DataType::Float64)
+                } else {
+                    let elements: Vec<_> = elements
+                        .iter()
+                        .map(|e| ScalarValue::from_json(e))
+                        .collect::<Result<Vec<ScalarValue>>>()?;
+                    let dtype = elements[0].get_datatype();
+                    (elements, dtype)
+                };
+
+                ScalarValue::List(Some(Box::new(elements)), Box::new(dtype))
+            }
+        };
+        Ok(scalar_value)
+    }
+
+    fn to_json(&self) -> Result<Value> {
+        let res = match self {
+            ScalarValue::Boolean(Some(v)) => Value::from(*v),
+            ScalarValue::Float32(Some(v)) => Value::from(*v),
+            ScalarValue::Float64(Some(v)) => Value::from(*v),
+            ScalarValue::Int8(Some(v)) => Value::from(*v),
+            ScalarValue::Int16(Some(v)) => Value::from(*v),
+            ScalarValue::Int32(Some(v)) => Value::from(*v),
+            ScalarValue::Int64(Some(v)) => Value::from(*v),
+            ScalarValue::UInt8(Some(v)) => Value::from(*v),
+            ScalarValue::UInt16(Some(v)) => Value::from(*v),
+            ScalarValue::UInt32(Some(v)) => Value::from(*v),
+            ScalarValue::UInt64(Some(v)) => Value::from(*v),
+            ScalarValue::Utf8(Some(v)) => Value::from(v.clone()),
+            ScalarValue::LargeUtf8(Some(v)) => Value::from(v.clone()),
+            ScalarValue::Binary(Some(_v)) => {
+                unimplemented!()
+            }
+            ScalarValue::LargeBinary(Some(_v)) => {
+                unimplemented!()
+            }
+            ScalarValue::Date32(Some(_v)) => {
+                unimplemented!()
+            }
+            ScalarValue::Date64(Some(_v)) => {
+                unimplemented!()
+            }
+            ScalarValue::TimestampSecond(Some(_v)) => {
+                unimplemented!()
+            }
+            ScalarValue::TimestampMillisecond(Some(_v)) => {
+                unimplemented!()
+            }
+            ScalarValue::TimestampMicrosecond(Some(_v)) => {
+                unimplemented!()
+            }
+            ScalarValue::TimestampNanosecond(Some(_v)) => {
+                unimplemented!()
+            }
+            ScalarValue::IntervalYearMonth(Some(_v)) => {
+                unimplemented!()
+            }
+            ScalarValue::IntervalDayTime(Some(_v)) => {
+                unimplemented!()
+            }
+            ScalarValue::List(Some(v), _) => Value::Array(
+                v.clone()
+                    .into_iter()
+                    .map(|v| v.to_json())
+                    .collect::<Result<Vec<_>>>()?,
+            ),
+            ScalarValue::Struct(Some(v), fields) => {
+                let mut pairs: Map<String, Value> = Default::default();
+                for (val, field) in v.iter().zip(fields.deref()) {
+                    pairs.insert(field.name().clone(), val.to_json()?);
+                }
+                Value::Object(pairs)
+            }
+            _ => Value::Null,
+        };
+
+        Ok(res)
     }
 }

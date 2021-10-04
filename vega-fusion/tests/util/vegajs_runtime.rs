@@ -12,10 +12,13 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex, MutexGuard};
 use vega_fusion::expression::ast::base::Expression;
 
+use datafusion::scalar::ScalarValue;
 use futures::channel::{mpsc, mpsc::Sender, oneshot};
 use futures::executor::block_on;
 use futures_util::{SinkExt, StreamExt};
+use serde_json::Value;
 use std::thread;
+use vega_fusion::expression::compiler::utils::ScalarValueHelpers;
 
 /// Modification of the FsModuleLoader to use reqwest to load modules from URLs
 struct UrlModuleLoader {
@@ -135,6 +138,9 @@ import('https://cdn.skypack.dev/vega').then((imported) => {
         codegen = vega.codegenExpression(vega_functions.codegenParams);
     })
 })
+
+// Install custom JSON serializers
+Object.defineProperty(Date.prototype, "toJSON", {value: function() {return "__$datetime:" + this.getTime()}})
 "#,
                 )
                 .unwrap();
@@ -213,8 +219,8 @@ import('https://cdn.skypack.dev/vega').then((imported) => {
     pub fn eval_scalar_expression(
         &mut self,
         expr: &str,
-        scope: &HashMap<String, serde_json::Value>,
-    ) -> serde_json::Value {
+        scope: &HashMap<String, ScalarValue>,
+    ) -> ScalarValue {
         let script = r#"
 (() => {
     let expr_str = Deno.core.opSync('inputs', 'expr_str');
@@ -226,15 +232,25 @@ import('https://cdn.skypack.dev/vega').then((imported) => {
     Deno.core.opSync('output', JSON.stringify(func(scope)));
 })()
 "#;
+        let scope: HashMap<_, _> = scope
+            .clone()
+            .into_iter()
+            .map(|(mut k, v)| {
+                k.insert(0, '$');
+                (k, v.to_json().unwrap())
+            })
+            .collect();
+
         let inputs: HashMap<_, _> = vec![
             ("expr_str".to_string(), expr.to_string()),
-            ("scope".to_string(), serde_json::to_string(scope).unwrap()),
+            ("scope".to_string(), serde_json::to_string(&scope).unwrap()),
         ]
         .into_iter()
         .collect();
 
         let value_string = self.execute_script(script, &inputs);
-        serde_json::from_str(&value_string).unwrap()
+        let value_json: Value = serde_json::from_str(&value_string).unwrap();
+        ScalarValue::from_json(&value_json).unwrap()
     }
 
     pub fn convert_to_svg(&mut self, spec: &serde_json::Value) -> String {
@@ -275,7 +291,7 @@ import('https://cdn.skypack.dev/vega').then((imported) => {
         let pixmap_size = rtree.svg_node().size.to_screen_size();
         let mut pixmap = tiny_skia::Pixmap::new(pixmap_size.width(), pixmap_size.height()).unwrap();
         resvg::render(&rtree, usvg::FitTo::Original, pixmap.as_mut()).unwrap();
-        pixmap.save_png(path);
+        pixmap.save_png(path).unwrap();
     }
 }
 

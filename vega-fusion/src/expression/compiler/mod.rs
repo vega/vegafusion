@@ -48,7 +48,6 @@ pub fn compile(
         Expression::ObjectExpression(node) => compile_object(node, config, schema),
         Expression::MemberExpression(node) => compile_member(node, config, schema),
         Expression::CallExpression(node) => compile_call(node, config, schema),
-        _ => todo!(),
     }
 }
 

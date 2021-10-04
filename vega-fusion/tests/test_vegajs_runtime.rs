@@ -3,6 +3,7 @@ extern crate lazy_static;
 
 mod util;
 use crate::util::vegajs_runtime::vegajs_runtime;
+use datafusion::scalar::ScalarValue;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use vega_fusion::expression::ast::base::Expression;
@@ -33,16 +34,18 @@ fn test_vegajs_evaluate_scalar() {
     let mut vegajs_runtime = vegajs_runtime();
     let result = vegajs_runtime.eval_scalar_expression("20 + 300", &Default::default());
     println!("result: {}", result);
-    assert_eq!(result, json!(320));
+    assert_eq!(result, ScalarValue::from(320.0));
 }
 
 #[test]
 fn test_vegajs_evaluate_scalar_scope() {
     let mut vegajs_runtime = vegajs_runtime();
-    let scope: HashMap<_, _> = vec![("$a".to_string(), json!(123))].into_iter().collect();
+    let scope: HashMap<_, _> = vec![("a".to_string(), ScalarValue::from(123.0))]
+        .into_iter()
+        .collect();
     let result = vegajs_runtime.eval_scalar_expression("20 + a", &scope);
     println!("result: {}", result);
-    assert_eq!(result, json!(143));
+    assert_eq!(result, ScalarValue::from(143.0));
 }
 
 fn bar_chart_spec() -> Value {
