@@ -60,7 +60,7 @@ fn test_vegajs_evaluate_scalar_scope() {
 
 #[test]
 fn test_evaluate_filter_transform() {
-    let mut vegajs_runtime = vegajs_runtime();
+    let vegajs_runtime = vegajs_runtime();
     let dataset = VegaFusionTable::from_json(
         json!([
             {"colA": 2.0, "colB": false, "colC": "first"},

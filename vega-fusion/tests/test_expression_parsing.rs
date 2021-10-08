@@ -3,23 +3,8 @@ extern crate lazy_static;
 
 mod util;
 use rstest::rstest;
-use util::vegajs_runtime::vegajs_runtime;
-use vega_fusion::expression::parser::parse;
 
-fn check_parsing(expr_str: &str) {
-    let vegajs_runtime = vegajs_runtime();
-    let expected = vegajs_runtime.parse_expression(expr_str).unwrap();
-    let mut result = parse(expr_str).unwrap();
-    result.clear_spans();
-
-    assert_eq!(
-        result,
-        expected,
-        " left: {}\nright: {}\n",
-        result.to_string(),
-        expected.to_string()
-    );
-}
+use util::check::check_parsing;
 
 mod test_parse_atoms {
     use crate::*;

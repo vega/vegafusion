@@ -236,7 +236,7 @@ impl VegaJsRuntime {
     }
 
     pub fn eval_transform(
-        &mut self,
+        &self,
         data_table: &VegaFusionTable,
         transforms: &[TransformSpec],
         config: &CompilationConfig,

@@ -24,8 +24,8 @@ use std::sync::Arc;
     into = "SerializableVegaFusionTable"
 )]
 pub struct VegaFusionTable {
-    schema: SchemaRef,
-    batches: Vec<RecordBatch>,
+    pub schema: SchemaRef,
+    pub batches: Vec<RecordBatch>,
 }
 
 impl VegaFusionTable {

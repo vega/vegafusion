@@ -5,11 +5,8 @@ mod util;
 use datafusion::scalar::ScalarValue;
 use rstest::rstest;
 use std::collections::HashMap;
-use util::vegajs_runtime::vegajs_runtime;
-use vega_fusion::expression::compiler::compile;
-use vega_fusion::expression::compiler::config::CompilationConfig;
-use vega_fusion::expression::compiler::utils::ExprHelpers;
-use vega_fusion::expression::parser::parse;
+
+use util::check::check_scalar_evaluation;
 
 fn scope_a() -> HashMap<String, ScalarValue> {
     vec![
@@ -21,35 +18,6 @@ fn scope_a() -> HashMap<String, ScalarValue> {
     .into_iter()
     .map(|(k, v)| (k.to_string(), v))
     .collect()
-}
-
-fn check_evaluation(expr_str: &str, scope: &HashMap<String, ScalarValue>) {
-    // Use block here to drop vegajs_runtime lock before the potential assert_eq error
-    // This avoids poisoning the Mutex if the assertion fails
-    let vegajs_runtime = vegajs_runtime();
-    let expected = vegajs_runtime
-        .eval_scalar_expression(expr_str, scope)
-        .unwrap();
-
-    // Vega-Fusion parse
-    let parsed = parse(expr_str).unwrap();
-
-    // Build compilation config
-    let config = CompilationConfig {
-        signal_scope: scope.clone(),
-        ..Default::default()
-    };
-
-    let compiled = compile(&parsed, &config, None).unwrap();
-    let result = compiled.eval_to_scalar().unwrap();
-
-    assert_eq!(
-        result,
-        expected,
-        " left: {}\nright: {}\n",
-        result.to_string(),
-        expected.to_string()
-    );
 }
 
 mod test_atoms {
@@ -65,7 +33,7 @@ mod test_atoms {
         case("\"world\"")
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
 
@@ -83,7 +51,7 @@ mod test_binary_kinds {
         case("2 / foo")
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
 
@@ -102,7 +70,7 @@ mod test_binary_precedence {
         case("1 + 2 * 3 / 4 % 6 / 7 * (8 + 9)")
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
 
@@ -122,7 +90,7 @@ mod test_unary {
         case("(-(-(-3)))")
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
 
@@ -141,7 +109,7 @@ mod test_logical {
         case("1 && valid || !valid && (4 || 5)")
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
 
@@ -158,7 +126,7 @@ mod test_ternary {
         case("(((1? 2: 3)? 4: 5)? 6: 7)")
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
 
@@ -172,7 +140,7 @@ mod test_call {
         case("isNaN(16) + isNaN(NaN)")
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
 
@@ -189,7 +157,7 @@ mod test_member_access {
         case("({foo: {bar: 10}})['foo']['bar']")
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
 
@@ -205,7 +173,7 @@ mod test_array_expression {
         case("[]")
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
 
@@ -222,7 +190,7 @@ mod test_object_expression {
     case("{17: 9, a: 10, 'b': 11}")
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
 
@@ -251,7 +219,7 @@ mod test_datetime {
         case("datetime(utc(87, 3))")
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
 
@@ -276,7 +244,7 @@ mod test_date_parts {
         case("utcmilliseconds(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0")
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
 
@@ -297,7 +265,7 @@ mod test_length {
         // case("data('dataB').length + 0"),
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
 
@@ -312,6 +280,6 @@ mod test_get_index {
         // case("data('dataB')[1].colA")
     )]
     fn test(expr: &str) {
-        check_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &scope_a())
     }
 }
