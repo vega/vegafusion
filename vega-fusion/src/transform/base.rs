@@ -13,6 +13,8 @@ use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::ops::Deref;
 use std::sync::Arc;
+use crate::transform::formula::FormulaTransform;
+use crate::spec::transform::formula::FormulaTransformSpec;
 
 pub trait TransformTrait: Debug + Send + Sync {
     fn call(
@@ -34,7 +36,7 @@ pub trait TransformTrait: Debug + Send + Sync {
 pub enum Transform {
     Filter(FilterTransform),
     Extent(ExtentTransform),
-    // Formula(FormulaTransform),
+    Formula(FormulaTransform),
     // Bin(BinTransform),
     // Aggregate(AggregateTransform),
     // Collect(CollectTransform),
@@ -47,6 +49,7 @@ impl Deref for Transform {
         match self {
             Transform::Filter(tx) => tx,
             Transform::Extent(tx) => tx,
+            Transform::Formula(tx) => tx,
         }
     }
 }
@@ -79,6 +82,20 @@ impl TryFrom<&ExtentTransformSpec> for Transform {
     }
 }
 
+impl From<FormulaTransform> for Transform {
+    fn from(tx: FormulaTransform) -> Self {
+        Self::Formula(tx)
+    }
+}
+
+impl TryFrom<&FormulaTransformSpec> for Transform {
+    type Error = VegaFusionError;
+
+    fn try_from(value: &FormulaTransformSpec) -> std::prelude::rust_2015::Result<Self, Self::Error> {
+        Ok(Self::Formula(FormulaTransform::try_new(value)?))
+    }
+}
+
 impl TryFrom<&TransformSpec> for Transform {
     type Error = VegaFusionError;
 
@@ -86,6 +103,7 @@ impl TryFrom<&TransformSpec> for Transform {
         match value {
             TransformSpec::Extent(tx_spec) => Self::try_from(tx_spec),
             TransformSpec::Filter(tx_spec) => Self::try_from(tx_spec),
+            TransformSpec::Formula(tx_spec) => Self::try_from(tx_spec),
         }
     }
 }
