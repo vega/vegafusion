@@ -4,7 +4,6 @@ extern crate lazy_static;
 mod util;
 
 use util::datasets::vega_json_dataset;
-
 use util::check::check_transform_evaluation;
 use vega_fusion::spec::transform::filter::FilterTransformSpec;
 use vega_fusion::spec::transform::TransformSpec;

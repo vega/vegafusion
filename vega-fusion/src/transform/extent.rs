@@ -43,8 +43,8 @@ impl TransformTrait for ExtentTransform {
 
             // Eval to single row dataframe and extract scalar values
             let result_rb = extent_df.block_flat_eval()?;
-            let min_val_array = result_rb.column_by_name("min_val")?;
-            let max_val_array = result_rb.column_by_name("max_val")?;
+            let min_val_array = result_rb.column_by_name("__min_val")?;
+            let max_val_array = result_rb.column_by_name("__max_val")?;
 
             let min_val_scalar = ScalarValue::try_from_array(min_val_array, 0).unwrap();
             let max_val_scalar = ScalarValue::try_from_array(max_val_array, 0).unwrap();
