@@ -32,6 +32,9 @@ pub enum VegaFusionError {
     #[error("Internal error: {0}\n{1}")]
     InternalError(String, ErrorContext),
 
+    #[error("Vega Specification error: {0}\n{1}")]
+    SpecificationError(String, ErrorContext),
+
     #[error("DataFusion error: {0}\n{1}")]
     DataFusionError(DataFusionError, ErrorContext),
 
@@ -63,6 +66,10 @@ impl VegaFusionError {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::CompilationError(msg, context)
             }
+            SpecificationError(msg, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::SpecificationError(msg, context)
+            }
             DataFusionError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::DataFusionError(err, context)
@@ -88,6 +95,10 @@ impl VegaFusionError {
 
     pub fn internal(message: &str) -> Self {
         Self::InternalError(message.to_string(), Default::default())
+    }
+
+    pub fn specification(message: &str) -> Self {
+        Self::SpecificationError(message.to_string(), Default::default())
     }
 }
 

@@ -63,19 +63,23 @@ pub fn check_transform_evaluation(
 ) {
     let vegajs_runtime = vegajs_runtime();
 
-    let df = data.to_dataframe().unwrap();
-    let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
-    let (result_df, result_signals) = pipeline.call(df, compilation_config).unwrap();
-
-    let result_data = VegaFusionTable::try_from(result_df).unwrap();
-
     let (expected_data, expected_signals) = vegajs_runtime
         .eval_transform(data, transform_specs, compilation_config)
         .unwrap();
 
     println!(
+        "expected data\n{}",
+        expected_data.pretty_format(Some(500)).unwrap()
+    );
+
+    let df = data.to_dataframe().unwrap();
+    let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
+    let (result_df, result_signals) = pipeline.call(df, compilation_config).unwrap();
+    let result_data = VegaFusionTable::try_from(result_df).unwrap();
+
+    println!(
         "result data\n{}",
-        result_data.pretty_format(Some(100)).unwrap()
+        result_data.pretty_format(Some(500)).unwrap()
     );
     println!("result signals: {:?}", result_signals);
 

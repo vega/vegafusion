@@ -3,9 +3,9 @@ extern crate lazy_static;
 
 mod util;
 
-use util::datasets::vega_json_dataset;
 use util::check::check_transform_evaluation;
-use vega_fusion::spec::transform::filter::FilterTransformSpec;
+use util::datasets::vega_json_dataset;
+
 use vega_fusion::spec::transform::TransformSpec;
 
 use datafusion::scalar::ScalarValue;
@@ -32,7 +32,6 @@ fn test_formula_valid() {
         &eq_config,
     );
 }
-
 
 #[test]
 fn test_formula_signal_expression() {

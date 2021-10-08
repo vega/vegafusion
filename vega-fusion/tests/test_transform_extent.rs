@@ -3,10 +3,10 @@ extern crate lazy_static;
 
 mod util;
 
-use vega_fusion::spec::transform::extent::ExtentTransformSpec;
-use vega_fusion::spec::transform::TransformSpec;
 use util::check::check_transform_evaluation;
 use util::datasets::vega_json_dataset;
+use vega_fusion::spec::transform::extent::ExtentTransformSpec;
+use vega_fusion::spec::transform::TransformSpec;
 
 #[test]
 fn test_extent_signal() {

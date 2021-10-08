@@ -5,14 +5,14 @@ use crate::expression::ast::base::Expression;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::parser::parse;
-use crate::spec::transform::filter::FilterTransformSpec;
+
+use crate::spec::transform::formula::FormulaTransformSpec;
 use crate::transform::base::TransformTrait;
 use crate::variable::Variable;
 use datafusion::dataframe::DataFrame;
+use datafusion::logical_plan::Expr;
 use datafusion::scalar::ScalarValue;
 use std::sync::Arc;
-use crate::spec::transform::formula::FormulaTransformSpec;
-use datafusion::logical_plan::Expr;
 
 /// Compiled representation for the filter transform spec
 #[derive(Debug, Clone, Serialize, Deserialize, Hash)]
@@ -26,7 +26,11 @@ impl FormulaTransform {
     pub fn try_new(spec: &FormulaTransformSpec) -> Result<Self> {
         let expr = parse(&spec.expr)?;
         let input_vars = expr.get_variables();
-        Ok(Self { expr, input_vars, as_: spec.as_.clone() })
+        Ok(Self {
+            expr,
+            input_vars,
+            as_: spec.as_.clone(),
+        })
     }
 }
 

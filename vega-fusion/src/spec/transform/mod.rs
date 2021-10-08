@@ -1,12 +1,16 @@
+pub mod aggregate;
+pub mod collect;
 pub mod extent;
 pub mod filter;
 pub mod formula;
 
 use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransformSpec};
 
+use crate::spec::transform::aggregate::AggregateTransformSpec;
+use crate::spec::transform::collect::CollectTransformSpec;
+use crate::spec::transform::formula::FormulaTransformSpec;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use crate::spec::transform::formula::FormulaTransformSpec;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -14,6 +18,8 @@ pub enum TransformSpec {
     Extent(ExtentTransformSpec),
     Filter(FilterTransformSpec),
     Formula(FormulaTransformSpec),
+    Aggregate(AggregateTransformSpec),
+    Collect(CollectTransformSpec),
 }
 
 impl Deref for TransformSpec {
@@ -24,6 +30,8 @@ impl Deref for TransformSpec {
             TransformSpec::Extent(t) => t,
             TransformSpec::Filter(t) => t,
             TransformSpec::Formula(t) => t,
+            TransformSpec::Aggregate(t) => t,
+            TransformSpec::Collect(t) => t,
         }
     }
 }
