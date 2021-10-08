@@ -26,10 +26,10 @@ fn scope_a() -> HashMap<String, ScalarValue> {
 fn check_evaluation(expr_str: &str, scope: &HashMap<String, ScalarValue>) {
     // Use block here to drop vegajs_runtime lock before the potential assert_eq error
     // This avoids poisoning the Mutex if the assertion fails
-    let expected = {
-        let mut vegajs_runtime = vegajs_runtime();
-        vegajs_runtime.eval_scalar_expression(expr_str, scope)
-    };
+    let vegajs_runtime = vegajs_runtime();
+    let expected = vegajs_runtime
+        .eval_scalar_expression(expr_str, scope)
+        .unwrap();
 
     // Vega-Fusion parse
     let parsed = parse(expr_str).unwrap();

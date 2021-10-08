@@ -1,11 +1,10 @@
-use std::fmt::Debug;
-use std::sync::Arc;
-use datafusion::dataframe::DataFrame;
+use crate::error::Result;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::variable::Variable;
-use crate::error::Result;
+use datafusion::dataframe::DataFrame;
 use datafusion::scalar::ScalarValue;
-
+use std::fmt::Debug;
+use std::sync::Arc;
 
 pub trait TransformTrait: Debug + Send + Sync {
     fn call(

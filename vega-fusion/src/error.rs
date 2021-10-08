@@ -1,9 +1,9 @@
 use std::result;
 use thiserror::Error;
 
+use datafusion::arrow::error::ArrowError;
 use datafusion::error::DataFusionError;
 use std::num::ParseFloatError;
-use datafusion::arrow::error::ArrowError;
 
 pub type Result<T> = result::Result<T, VegaFusionError>;
 
@@ -34,6 +34,12 @@ pub enum VegaFusionError {
 
     #[error("DataFusion error: {0}\n{1}")]
     DataFusionError(DataFusionError, ErrorContext),
+
+    #[error("IO Error: {0}\n{1}")]
+    IOError(std::io::Error, ErrorContext),
+
+    #[error("IO Error: {0}\n{1}")]
+    SerdeJsonError(serde_json::Error, ErrorContext),
 }
 
 impl VegaFusionError {
@@ -60,6 +66,14 @@ impl VegaFusionError {
             DataFusionError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::DataFusionError(err, context)
+            }
+            IOError(err, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::IOError(err, context)
+            }
+            SerdeJsonError(err, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::SerdeJsonError(err, context)
             }
         }
     }
@@ -103,6 +117,19 @@ where
     }
 }
 
+impl<R> ResultWithContext<R> for Option<R> {
+    fn with_context<S, F>(self, context_fn: F) -> Result<R>
+    where
+        F: FnOnce() -> S,
+        S: Into<String>,
+    {
+        match self {
+            Some(val) => Ok(val),
+            None => Err(VegaFusionError::internal(&context_fn().into())),
+        }
+    }
+}
+
 impl From<ParseFloatError> for VegaFusionError {
     fn from(err: ParseFloatError) -> Self {
         Self::parse(&err.to_string())
@@ -117,9 +144,36 @@ impl From<DataFusionError> for VegaFusionError {
 
 impl From<ArrowError> for VegaFusionError {
     fn from(err: ArrowError) -> Self {
-        Self::DataFusionError(
-            DataFusionError::ArrowError(err),
-            Default::default()
-        )
+        Self::DataFusionError(DataFusionError::ArrowError(err), Default::default())
+    }
+}
+
+impl From<std::io::Error> for VegaFusionError {
+    fn from(err: std::io::Error) -> Self {
+        Self::IOError(err, Default::default())
+    }
+}
+
+impl From<serde_json::Error> for VegaFusionError {
+    fn from(err: serde_json::Error) -> Self {
+        Self::SerdeJsonError(err, Default::default())
+    }
+}
+
+pub trait ToInternalError<T> {
+    fn internal(self, context: &str) -> Result<T>;
+}
+
+impl<T, E: std::error::Error> ToInternalError<T> for std::result::Result<T, E> {
+    fn internal(self, context: &str) -> Result<T> {
+        match self {
+            Ok(v) => Ok(v),
+            Err(err) => {
+                let context = ErrorContext {
+                    contexts: vec![context.to_string()],
+                };
+                Err(VegaFusionError::InternalError(err.to_string(), context))
+            }
+        }
     }
 }

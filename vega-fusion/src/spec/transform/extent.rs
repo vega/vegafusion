@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use serde_json::Value;
-use serde::{Serialize, Deserialize};
 use crate::spec::transform::TransformSpecTrait;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ExtentTransformSpec {
@@ -14,7 +14,7 @@ pub struct ExtentTransformSpec {
     pub extra: HashMap<String, Value>,
 }
 
-impl TransformSpecTrait for ExtentTransformSpec{
+impl TransformSpecTrait for ExtentTransformSpec {
     fn output_signals(&self) -> Vec<String> {
         self.signal.clone().into_iter().collect()
     }

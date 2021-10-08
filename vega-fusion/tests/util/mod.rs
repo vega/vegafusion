@@ -1,2 +1,2 @@
-pub mod vegajs_runtime;
 pub mod datasets;
+pub mod vegajs_runtime;

@@ -87,10 +87,7 @@ pub fn compile_call(
     match &node.callee {
         Callee::Identifier(callee) => {
             let callable = config.callable_scope.get(&callee.name).ok_or_else(|| {
-                VegaFusionError::compilation(&format!(
-                    "No global function named {}",
-                    callee.name
-                ))
+                VegaFusionError::compilation(&format!("No global function named {}", callee.name))
             })?;
 
             match callable {

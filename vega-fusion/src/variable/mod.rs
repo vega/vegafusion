@@ -1,7 +1,7 @@
 //! A variable is named value in a Vega specification. These values can be signals, scales, or
 //! datasets.
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// The namespace for a variable. It's valid for the same name to be used for a signal, scale,
 /// and dataset at the same time
@@ -12,14 +12,12 @@ pub enum VariableNamespace {
     Data,
 }
 
-
 /// An (unscoped) variable
 #[derive(Debug, Clone, PartialOrd, PartialEq, Eq, Serialize, Deserialize, Hash, Ord)]
 pub struct Variable {
     pub namespace: VariableNamespace,
     pub name: String,
 }
-
 
 impl Variable {
     pub fn new(ns: VariableNamespace, name: &str) -> Self {
@@ -44,7 +42,6 @@ impl Variable {
         Self::new(VariableNamespace::Data, id)
     }
 }
-
 
 /// A variable with scope.  In a Vega spec, variables may be defined at the top-level, or they
 /// may be defined inside nested group marks. The scope is a `Vec<usize>` and it encodes the level

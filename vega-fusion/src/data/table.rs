@@ -1,30 +1,32 @@
-use datafusion::arrow::{record_batch::RecordBatch, datatypes::SchemaRef, json};
-use datafusion::arrow::ipc::writer::StreamWriter;
-use std::io::Cursor;
-use datafusion::arrow::ipc::reader::StreamReader;
-use crate::error::{Result, VegaFusionError, ResultWithContext};
-use datafusion::datasource::MemTable;
-use std::sync::Arc;
-use datafusion::dataframe::DataFrame;
-use datafusion::execution::context::ExecutionContext;
-use datafusion::scalar::ScalarValue;
-use datafusion::arrow::datatypes::{DataType, Schema, Field};
+use crate::error::{Result, ResultWithContext, VegaFusionError};
+use crate::transform::utils::DataFrameUtils;
 use datafusion::arrow::array::{ArrayRef, StructArray};
-use serde::{Serialize, Deserialize};
-use serde_json::Value;
+use datafusion::arrow::datatypes::{DataType, Field, Schema};
+use datafusion::arrow::ipc::reader::StreamReader;
+use datafusion::arrow::ipc::writer::StreamWriter;
 use datafusion::arrow::json::writer::record_batches_to_json_rows;
 use datafusion::arrow::util::pretty::pretty_format_batches;
+use datafusion::arrow::{datatypes::SchemaRef, json, record_batch::RecordBatch};
+use datafusion::dataframe::DataFrame;
+use datafusion::datasource::MemTable;
+use datafusion::execution::context::ExecutionContext;
+use datafusion::scalar::ScalarValue;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::convert::TryFrom;
-use crate::transform::utils::DataFrameUtils;
 use std::hash::{Hash, Hasher};
+use std::io::Cursor;
+use std::sync::Arc;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(from = "SerializableVegaFusionTable", into = "SerializableVegaFusionTable")]
+#[serde(
+    from = "SerializableVegaFusionTable",
+    into = "SerializableVegaFusionTable"
+)]
 pub struct VegaFusionTable {
     schema: SchemaRef,
     batches: Vec<RecordBatch>,
 }
-
 
 impl VegaFusionTable {
     pub fn try_new(schema: SchemaRef, partitions: Vec<RecordBatch>) -> Result<Self> {
@@ -37,14 +39,15 @@ impl VegaFusionTable {
                 batches: partitions,
             })
         } else {
-            Err(VegaFusionError::internal("Mismatch between schema and batches"))
+            Err(VegaFusionError::internal(
+                "Mismatch between schema and batches",
+            ))
         }
     }
 
     pub fn num_rows(&self) -> usize {
         self.batches.iter().map(|batch| batch.num_rows()).sum()
     }
-
 
     /// Keep, at most, the first n rows
     pub fn head(&self, n: usize) -> Self {
@@ -71,7 +74,6 @@ impl VegaFusionTable {
             batches: head_batches,
         }
     }
-
 
     pub fn to_memtable(&self) -> MemTable {
         // Unwrap is safe because we perform the MemTable validation in our try_new function
@@ -123,13 +125,11 @@ impl VegaFusionTable {
 
     pub fn pretty_format(&self, max_rows: Option<usize>) -> Result<String> {
         if let Some(max_rows) = max_rows {
-            pretty_format_batches(&self.head(max_rows).batches).with_context(||
-                String::from("Failed to pretty print")
-            )
+            pretty_format_batches(&self.head(max_rows).batches)
+                .with_context(|| String::from("Failed to pretty print"))
         } else {
-            pretty_format_batches(&self.batches).with_context(||
-                String::from("Failed to pretty print")
-            )
+            pretty_format_batches(&self.batches)
+                .with_context(|| String::from("Failed to pretty print"))
         }
     }
 
@@ -156,7 +156,7 @@ impl VegaFusionTable {
                 let schema = json::reader::infer_json_schema_from_iterator(
                     values.iter().take(1024).map(|v| Ok(v.clone())),
                 )
-                    .with_context(|| "Failed to infer schema")?;
+                .with_context(|| "Failed to infer schema")?;
                 let schema_ref = Arc::new(schema);
 
                 // read record batches
@@ -174,7 +174,10 @@ impl VegaFusionTable {
                 Self::try_new(schema_ref, batches)
             }
         } else {
-            return Err(VegaFusionError::internal(&format!("Expected JSON array, not: {}", value)))
+            return Err(VegaFusionError::internal(&format!(
+                "Expected JSON array, not: {}",
+                value
+            )));
         }
     }
 }
@@ -198,13 +201,11 @@ impl TryFrom<Arc<dyn DataFrame>> for VegaFusionTable {
     }
 }
 
-
 impl Hash for VegaFusionTable {
     fn hash<H: Hasher>(&self, state: &mut H) {
         SerializableVegaFusionTable::from(self).hash(state);
     }
 }
-
 
 // Serialization
 #[derive(Clone, Debug, Serialize, Deserialize, Hash)]
@@ -215,9 +216,7 @@ pub struct SerializableVegaFusionTable {
 impl From<&VegaFusionTable> for SerializableVegaFusionTable {
     fn from(value: &VegaFusionTable) -> Self {
         let buffer: Vec<u8> = Vec::new();
-        let mut stream_writer = StreamWriter::try_new(
-            buffer, value.schema.as_ref()
-        ).unwrap();
+        let mut stream_writer = StreamWriter::try_new(buffer, value.schema.as_ref()).unwrap();
 
         for batch in &value.batches {
             stream_writer.write(batch).unwrap();

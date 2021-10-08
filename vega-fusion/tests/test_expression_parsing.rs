@@ -7,15 +7,10 @@ use util::vegajs_runtime::vegajs_runtime;
 use vega_fusion::expression::parser::parse;
 
 fn check_parsing(expr_str: &str) {
-    // Use block here to drop vegajs_runtime lock before the potential assert_eq error
-    // This avoids poisoning the Mutex if the assertion fails
-    let (result, expected) = {
-        let mut vegajs_runtime = vegajs_runtime();
-        let expected = vegajs_runtime.parse_expression(expr_str);
-        let mut result = parse(expr_str).unwrap();
-        result.clear_spans();
-        (result, expected)
-    };
+    let vegajs_runtime = vegajs_runtime();
+    let expected = vegajs_runtime.parse_expression(expr_str).unwrap();
+    let mut result = parse(expr_str).unwrap();
+    result.clear_spans();
 
     assert_eq!(
         result,

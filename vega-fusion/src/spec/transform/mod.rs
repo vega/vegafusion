@@ -1,14 +1,10 @@
-pub mod filter;
 pub mod extent;
+pub mod filter;
 
-use crate::spec::transform::{
-    filter::FilterTransformSpec,
-    extent::ExtentTransformSpec
-};
+use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransformSpec};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]

@@ -1,13 +1,13 @@
 #[macro_use]
 extern crate lazy_static;
 
+pub mod data;
 pub mod error;
 pub mod expression;
+pub mod runtime;
+pub mod spec;
 pub mod transform;
 pub mod variable;
-pub mod runtime;
-pub mod data;
-pub mod spec;
 
 #[cfg(test)]
 mod tests {

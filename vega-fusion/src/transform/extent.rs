@@ -3,15 +3,13 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::base::TransformTrait;
 use datafusion::dataframe::DataFrame;
 use datafusion::scalar::ScalarValue;
-use serde_json::Value;
-use std::collections::HashMap;
-use std::sync::Arc;
-use datafusion::logical_plan::{col, min, max};
-use crate::transform::utils::{DataFrameUtils, RecordBatchUtils};
-use crate::variable::Variable;
-use serde::{Serialize, Deserialize};
-use crate::spec::transform::extent::ExtentTransformSpec;
 
+use crate::transform::utils::{DataFrameUtils, RecordBatchUtils};
+use datafusion::logical_plan::{col, max, min};
+use std::sync::Arc;
+
+use crate::spec::transform::extent::ExtentTransformSpec;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Hash)]
 pub struct ExtentTransform {

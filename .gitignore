@@ -10,3 +10,5 @@ Cargo.lock
 **/*.rs.bk
 
 vega-fusion/tests/scratch/*
+
+vega-fusion/tests/util/vegajs_runtime/node_modules

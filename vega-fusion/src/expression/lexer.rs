@@ -267,11 +267,7 @@ fn tokenize_single_char_operator(data: &str, ch: char, token: Token) -> Result<(
 fn tokenize_logical_or(data: &str) -> Result<(Token, usize)> {
     let taken = take_while(data, |c| Ok(c == '|'))?;
     let token = match taken {
-        "|" => {
-            return Err(VegaFusionError::parse(
-                "Bitwise OR operator not supported",
-            ))
-        }
+        "|" => return Err(VegaFusionError::parse("Bitwise OR operator not supported")),
         "||" => Token::LogicalOr,
         _ => {
             return Err(VegaFusionError::parse(&format!(
@@ -287,11 +283,7 @@ fn tokenize_logical_or(data: &str) -> Result<(Token, usize)> {
 fn tokenize_logical_and(data: &str) -> Result<(Token, usize)> {
     let taken = take_while(data, |c| Ok(c == '&'))?;
     let token = match taken {
-        "&" => {
-            return Err(VegaFusionError::parse(
-                "Bitwise AND operator not supported",
-            ))
-        }
+        "&" => return Err(VegaFusionError::parse("Bitwise AND operator not supported")),
         "&&" => Token::LogicalAnd,
         _ => {
             return Err(VegaFusionError::parse(&format!(
@@ -510,9 +502,7 @@ fn tokenize_dot_or_number(data: &str) -> Result<(Token, usize)> {
         } else {
             // Check for leading zeros. Only allowed right before decimal point (as in 0.5)
             if &taken[..2] == "00" || &taken[..1] == "0" && &taken[..2] != "0." {
-                return Err(VegaFusionError::parse(
-                    "Floats may not have leading zeros",
-                ));
+                return Err(VegaFusionError::parse("Floats may not have leading zeros"));
             }
             let n: f64 = taken.parse()?;
             Ok((

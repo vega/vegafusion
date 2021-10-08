@@ -1,3 +1,4 @@
+use crate::expression::ast::literal::LiteralValue;
 use crate::expression::ast::{
     array::ArrayExpression,
     base::Expression,
@@ -11,10 +12,9 @@ use crate::expression::ast::{
     object::{ObjectExpression, PropertyKey},
     unary::UnaryExpression,
 };
-use std::collections::{HashSet, HashMap};
-use crate::variable::Variable;
 use crate::expression::compiler::call::{default_callables, VegaFusionCallable};
-use crate::expression::ast::literal::LiteralValue;
+use crate::variable::Variable;
+use std::collections::{HashMap, HashSet};
 
 pub trait ExpressionVisitor {
     fn visit_identifier(&mut self, _node: &Identifier) {}
@@ -106,8 +106,6 @@ impl MutExpressionVisitor for ClearSpansVisitor {
     }
 }
 
-
-
 /// Visitor to collect all unbound variables in the expression
 #[derive(Clone, Default)]
 pub struct GetVariablesVisitor {
@@ -127,8 +125,7 @@ impl ExpressionVisitor for GetVariablesVisitor {
     fn visit_identifier(&mut self, node: &Identifier) {
         // datum does not count as a variable
         if node.name != "datum" {
-            self.variables
-                .insert(Variable::new_signal(&node.name));
+            self.variables.insert(Variable::new_signal(&node.name));
         }
     }
 
@@ -136,9 +133,11 @@ impl ExpressionVisitor for GetVariablesVisitor {
     /// argument to a Data or Scale callable.
     fn visit_called_identifier(&mut self, node: &Identifier, args: &Vec<Expression>) {
         if let Some(callable) = self.callables.get(&node.name) {
-            if let Some(
-                Expression::Literal(Literal { value: LiteralValue::String(arg), .. })
-            ) = args.get(0) {
+            if let Some(Expression::Literal(Literal {
+                value: LiteralValue::String(arg),
+                ..
+            })) = args.get(0)
+            {
                 match callable {
                     VegaFusionCallable::Data => {
                         self.variables.insert(Variable::new_data(arg));

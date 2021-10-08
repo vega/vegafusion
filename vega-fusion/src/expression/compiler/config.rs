@@ -1,3 +1,4 @@
+use crate::data::table::VegaFusionTable;
 use crate::expression::compiler::call::{default_callables, VegaFusionCallable};
 use datafusion::scalar::ScalarValue;
 use num_traits::float::FloatConst;
@@ -6,6 +7,7 @@ use std::collections::HashMap;
 #[derive(Clone)]
 pub struct CompilationConfig {
     pub signal_scope: HashMap<String, ScalarValue>,
+    pub data_scope: HashMap<String, VegaFusionTable>,
     pub callable_scope: HashMap<String, VegaFusionCallable>,
     pub constants: HashMap<String, ScalarValue>,
 }
@@ -14,6 +16,7 @@ impl Default for CompilationConfig {
     fn default() -> Self {
         Self {
             signal_scope: Default::default(),
+            data_scope: Default::default(),
             callable_scope: default_callables(),
             constants: default_constants(),
         }

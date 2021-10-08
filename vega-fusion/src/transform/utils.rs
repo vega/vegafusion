@@ -1,11 +1,10 @@
-use std::sync::Arc;
-use datafusion::dataframe::DataFrame;
-use datafusion::arrow::record_batch::RecordBatch;
-use datafusion::arrow::datatypes::SchemaRef;
-use crate::error::{ResultWithContext, Result, VegaFusionError};
+use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::runtime::TOKIO_RUNTIME;
 use datafusion::arrow::array::ArrayRef;
-
+use datafusion::arrow::datatypes::SchemaRef;
+use datafusion::arrow::record_batch::RecordBatch;
+use datafusion::dataframe::DataFrame;
+use std::sync::Arc;
 
 pub trait DataFrameUtils {
     fn block_eval(&self) -> Result<Vec<RecordBatch>>;
@@ -29,7 +28,6 @@ impl DataFrameUtils for Arc<dyn DataFrame> {
     }
 }
 
-
 pub trait RecordBatchUtils {
     fn column_by_name(&self, name: &str) -> Result<&ArrayRef>;
     fn equals(&self, other: &RecordBatch) -> bool;
@@ -39,9 +37,10 @@ impl RecordBatchUtils for RecordBatch {
     fn column_by_name(&self, name: &str) -> Result<&ArrayRef> {
         match self.schema().column_with_name(name) {
             Some((index, _)) => Ok(self.column(index)),
-            None => {
-                Err(VegaFusionError::internal(&format!("No column named {}", name)))
-            }
+            None => Err(VegaFusionError::internal(&format!(
+                "No column named {}",
+                name
+            ))),
         }
     }
 
