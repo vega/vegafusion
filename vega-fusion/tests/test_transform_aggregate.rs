@@ -10,7 +10,8 @@ use util::equality::TablesEqualConfig;
 use vega_fusion::spec::transform::TransformSpec;
 use rstest::rstest;
 use vega_fusion::spec::transform::aggregate::{AggregateOp, AggregateTransformSpec};
-use vega_fusion::spec::values::Field;
+use vega_fusion::spec::values::{Field, SignalExpressionSpec};
+use vega_fusion::spec::transform::bin::{BinTransformSpec, BinExtent};
 
 mod test_aggregate_single {
     use crate::*;
@@ -112,4 +113,62 @@ mod test_aggregate_multi {
             &eq_config,
         );
     }
+}
+
+
+#[test]
+fn test_bin_aggregate() {
+    let dataset = vega_json_dataset("penguins");
+
+    // Note: use extent that doesn't result in -inf/inf until comparison logic can handle these
+    // when row_order is false.
+    let bin_spec = BinTransformSpec {
+        field: Field::String("Body Mass (g)".to_string()),
+        extent: BinExtent::Signal(SignalExpressionSpec {
+            signal: "[0.0, 10000]".to_string(),
+        }),
+        signal: Some("my_bins".to_string()),
+        as_: None,
+        anchor: None,
+        maxbins: None,
+        base: None,
+        step: None,
+        steps: None,
+        span: None,
+        minstep: None,
+        divide: None,
+        nice: None,
+        extra: Default::default(),
+    };
+
+    let aggregate_spec = AggregateTransformSpec {
+        groupby: vec![
+            Field::String("bin0".to_string()),
+        ],
+        fields: vec![
+            Some(Field::String("Beak Depth (mm)".to_string())),
+            Some(Field::String("Flipper Length (mm)".to_string())),
+        ],
+        ops: vec![AggregateOp::Mean, AggregateOp::Max],
+        as_: None,
+        cross: None,
+        drop: None,
+        key: None,
+        extra: Default::default(),
+    };
+
+    let transform_specs = vec![TransformSpec::Bin(bin_spec), TransformSpec::Aggregate(aggregate_spec)];
+
+    let comp_config = Default::default();
+    let eq_config = TablesEqualConfig {
+        row_order: false,
+        ..Default::default()
+    };
+
+    check_transform_evaluation(
+        &dataset,
+        transform_specs.as_slice(),
+        &comp_config,
+        &eq_config,
+    );
 }
