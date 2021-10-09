@@ -200,6 +200,9 @@ impl ExprHelpers for Expr {
 pub trait ScalarValueHelpers {
     fn from_json(value: &Value) -> Result<ScalarValue>;
     fn to_json(&self) -> Result<Value>;
+
+    fn to_f64(&self) -> Result<f64>;
+    fn to_f64x2(&self) -> Result<[f64; 2]>;
 }
 
 impl ScalarValueHelpers for ScalarValue {
@@ -310,5 +313,32 @@ impl ScalarValueHelpers for ScalarValue {
         };
 
         Ok(res)
+    }
+
+    fn to_f64(&self) -> Result<f64> {
+        Ok(match self {
+            ScalarValue::Float32(Some(e)) => *e as f64,
+            ScalarValue::Float64(Some(e)) => *e,
+            ScalarValue::Int8(Some(e)) => *e as f64,
+            ScalarValue::Int16(Some(e)) => *e as f64,
+            ScalarValue::Int32(Some(e)) => *e as f64,
+            ScalarValue::Int64(Some(e)) => *e as f64,
+            ScalarValue::UInt8(Some(e)) => *e as f64,
+            ScalarValue::UInt16(Some(e)) => *e as f64,
+            ScalarValue::UInt32(Some(e)) => *e as f64,
+            ScalarValue::UInt64(Some(e)) => *e as f64,
+            _ => {
+                return Err(VegaFusionError::internal(&format!("Cannot convert {} to f64", self)))
+            },
+        })
+    }
+
+    fn to_f64x2(&self) -> Result<[f64; 2]> {
+        if let ScalarValue::List(Some(elements), _) = self {
+            if let [v0, v1] = elements.as_slice() {
+                return Ok([v0.to_f64()?, v1.to_f64()?]);
+            }
+        }
+        return Err(VegaFusionError::internal(&format!("Cannot convert {} to [f64; 2]", self)))
     }
 }

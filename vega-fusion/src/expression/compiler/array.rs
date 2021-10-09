@@ -6,7 +6,7 @@ use datafusion::arrow::array::{
 };
 use datafusion::arrow::datatypes::{DataType, Field, Float64Type};
 use datafusion::logical_plan::{DFSchema, Expr};
-use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature};
+use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -106,7 +106,7 @@ pub fn make_array_constructor_udf() -> ScalarUDF {
     });
     ScalarUDF::new(
         "list",
-        &Signature::VariadicEqual,
+        &Signature::variadic_equal(Volatility::Immutable),
         &return_type,
         &array_constructor,
     )

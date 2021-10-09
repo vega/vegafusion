@@ -1,7 +1,7 @@
 use chrono::{DateTime, Datelike, Local, LocalResult, TimeZone, Timelike, Utc};
 use datafusion::arrow::array::{Array, ArrayRef, Int32Array, TimestampMillisecondArray};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
-use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature};
+use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
 
@@ -86,7 +86,10 @@ pub fn make_datepart_udf_local(extract_fn: fn(&DateTime<Local>) -> i32, name: &s
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int32)));
     ScalarUDF::new(
         name,
-        &Signature::Exact(vec![DataType::Timestamp(TimeUnit::Millisecond, None)]),
+        &Signature::exact(
+            vec![DataType::Timestamp(TimeUnit::Millisecond, None)],
+            Volatility::Immutable
+        ),
         &return_type,
         &part_fn,
     )
@@ -135,7 +138,10 @@ pub fn make_datepart_udf_utc(extract_fn: fn(&DateTime<Utc>) -> i32, name: &str) 
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int32)));
     ScalarUDF::new(
         name,
-        &Signature::Exact(vec![DataType::Timestamp(TimeUnit::Millisecond, None)]),
+        &Signature::exact(
+            vec![DataType::Timestamp(TimeUnit::Millisecond, None)],
+            Volatility::Immutable,
+        ),
         &return_type,
         &part_fn,
     )

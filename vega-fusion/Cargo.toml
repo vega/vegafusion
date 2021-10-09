@@ -17,6 +17,7 @@ datafusion = { path = "../../../repos/arrow-datafusion/datafusion" }
 num-traits = "0.2.14"
 itertools = "0.10.1"
 tokio = { version = "1.10.1", features = ["macros", "rt-multi-thread"] }
+float-cmp = "0.9.0"
 
 [dev-dependencies]
 reqwest = {version="0.11.4", features=["blocking"]}

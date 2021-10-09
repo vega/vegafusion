@@ -13,9 +13,7 @@ use datafusion::arrow::compute::{cast, kernels};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::error::DataFusionError;
 use datafusion::logical_plan::{col, DFSchema, Expr};
-use datafusion::physical_plan::functions::{
-    make_scalar_function, ReturnTypeFunction, ScalarFunctionImplementation, Signature,
-};
+use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
@@ -146,7 +144,7 @@ pub fn make_get_object_member_udf(
 
     Ok(ScalarUDF::new(
         &format!("get[{}]", property_name),
-        &Signature::Exact(vec![object_type.clone()]),
+        &Signature::exact(vec![object_type.clone()], Volatility::Immutable),
         &return_type,
         &get,
     ))
@@ -247,7 +245,7 @@ pub fn make_get_element_udf(index: i32) -> ScalarUDF {
     });
     ScalarUDF::new(
         &format!("get[{}]", index),
-        &Signature::Any(1),
+        &Signature::any(1, Volatility::Immutable),
         &return_type,
         &get_fn,
     )

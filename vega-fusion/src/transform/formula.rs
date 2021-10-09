@@ -13,6 +13,8 @@ use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::Expr;
 use datafusion::scalar::ScalarValue;
 use std::sync::Arc;
+use crate::data::table::VegaFusionTable;
+use std::convert::TryFrom;
 
 /// Compiled representation for the filter transform spec
 #[derive(Debug, Clone, Serialize, Deserialize, Hash)]
@@ -44,6 +46,12 @@ impl TransformTrait for FormulaTransform {
 
         // Rename with alias
         let formula_expr = formula_expr.alias(&self.as_);
+
+        println!("formula_expr: {}", formula_expr);
+        println!("schema: {}", dataframe.schema());
+
+        let explained = VegaFusionTable::try_from(dataframe.explain(true, false).unwrap()).unwrap();
+        println!("explained\n{}", explained.pretty_format(None).unwrap());
 
         let result = dataframe
             .select(vec![Expr::Wildcard, formula_expr])

@@ -46,3 +46,9 @@ pub struct FieldObject {
     #[serde(rename = "as", skip_serializing_if = "Option::is_none")]
     pub as_: Option<String>,
 }
+
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SignalExpressionSpec {
+    pub signal: String,
+}

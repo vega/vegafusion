@@ -1,4 +1,4 @@
-use crate::util::equality::{assert_tables_equal, TablesEqualConfig};
+use crate::util::equality::{assert_tables_equal, TablesEqualConfig, assert_signals_almost_equal};
 use crate::util::vegajs_runtime::vegajs_runtime;
 use datafusion::scalar::ScalarValue;
 use std::collections::HashMap;
@@ -71,6 +71,7 @@ pub fn check_transform_evaluation(
         "expected data\n{}",
         expected_data.pretty_format(Some(500)).unwrap()
     );
+    println!("expected signals: {:?}", expected_signals);
 
     let df = data.to_dataframe().unwrap();
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
@@ -84,9 +85,5 @@ pub fn check_transform_evaluation(
     println!("result signals: {:?}", result_signals);
 
     assert_tables_equal(&result_data, &expected_data, equality_config);
-    assert_eq!(
-        result_signals, expected_signals,
-        "Signals do not match\nlhs: {:?}, rhs: {:?}",
-        result_signals, expected_signals
-    );
+    assert_signals_almost_equal(result_signals, expected_signals, equality_config.tolerance);
 }

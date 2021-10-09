@@ -1,7 +1,7 @@
 use datafusion::arrow::array::{ArrayRef, BooleanArray, Float32Array, Float64Array};
 use datafusion::arrow::compute::no_simd_compare_op_scalar;
 use datafusion::arrow::datatypes::DataType;
-use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature};
+use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
 
@@ -34,5 +34,5 @@ pub fn make_is_finite_udf() -> ScalarUDF {
     let is_finite = make_scalar_function(is_finite);
 
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Boolean)));
-    ScalarUDF::new("isFinite", &Signature::Any(1), &return_type, &is_finite)
+    ScalarUDF::new("isFinite", &Signature::any(1, Volatility::Immutable), &return_type, &is_finite)
 }

@@ -1,7 +1,7 @@
 use datafusion::arrow::array::{ArrayRef, Float32Array, Float64Array};
 use datafusion::arrow::compute::math_op;
 use datafusion::arrow::datatypes::DataType;
-use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature};
+use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
 
@@ -41,7 +41,7 @@ pub fn make_pow_udf() -> ScalarUDF {
 
     ScalarUDF::new(
         "pow",
-        &Signature::Uniform(2, vec![DataType::Float32, DataType::Float64]),
+        &Signature::uniform(2, vec![DataType::Float32, DataType::Float64], Volatility::Immutable),
         &return_type,
         &pow,
     )

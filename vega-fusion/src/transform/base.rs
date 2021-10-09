@@ -19,6 +19,8 @@ use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::ops::Deref;
 use std::sync::Arc;
+use crate::transform::bin::BinTransform;
+use crate::spec::transform::bin::BinTransformSpec;
 
 pub trait TransformTrait: Debug + Send + Sync {
     fn call(
@@ -41,7 +43,7 @@ pub enum Transform {
     Filter(FilterTransform),
     Extent(ExtentTransform),
     Formula(FormulaTransform),
-    // Bin(BinTransform),
+    Bin(BinTransform),
     Aggregate(AggregateTransform),
     Collect(CollectTransform),
 }
@@ -54,6 +56,7 @@ impl Deref for Transform {
             Transform::Filter(tx) => tx,
             Transform::Extent(tx) => tx,
             Transform::Formula(tx) => tx,
+            Transform::Bin(tx) => tx,
             Transform::Aggregate(tx) => tx,
             Transform::Collect(tx) => tx,
         }
@@ -104,6 +107,20 @@ impl TryFrom<&FormulaTransformSpec> for Transform {
     }
 }
 
+impl From<BinTransform> for Transform {
+    fn from(tx: BinTransform) -> Self {
+        Self::Bin(tx)
+    }
+}
+
+impl TryFrom<&BinTransformSpec> for Transform {
+    type Error = VegaFusionError;
+
+    fn try_from(value: &BinTransformSpec) -> std::result::Result<Self, Self::Error> {
+        Ok(Self::Bin(BinTransform::try_new(&value)?))
+    }
+}
+
 impl From<CollectTransform> for Transform {
     fn from(tx: CollectTransform) -> Self {
         Self::Collect(tx)
@@ -144,6 +161,7 @@ impl TryFrom<&TransformSpec> for Transform {
             TransformSpec::Extent(tx_spec) => Self::try_from(tx_spec),
             TransformSpec::Filter(tx_spec) => Self::try_from(tx_spec),
             TransformSpec::Formula(tx_spec) => Self::try_from(tx_spec),
+            TransformSpec::Bin(tx_spec) => Self::try_from(tx_spec),
             TransformSpec::Aggregate(tx_spec) => Self::try_from(tx_spec),
             TransformSpec::Collect(tx_spec) => Self::try_from(tx_spec),
         }

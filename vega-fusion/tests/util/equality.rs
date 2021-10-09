@@ -9,6 +9,8 @@ use datafusion::logical_plan::{col, Expr};
 use std::sync::Arc;
 use vega_fusion::expression::compiler::utils::is_numeric_datatype;
 use vega_fusion::transform::utils::DataFrameUtils;
+use std::collections::{HashMap, HashSet};
+use itertools::sorted;
 
 #[derive(Debug, Clone)]
 pub struct TablesEqualConfig {
@@ -117,7 +119,7 @@ fn numeric_to_f64(s: &ScalarValue) -> f64 {
         ScalarValue::UInt16(Some(v)) => *v as f64,
         ScalarValue::UInt32(Some(v)) => *v as f64,
         ScalarValue::UInt64(Some(v)) => *v as f64,
-        _ => panic!("Non-numeric type"),
+        _ => panic!("Non-numeric value: {:?}", s),
     }
 }
 
@@ -142,22 +144,43 @@ fn assert_scalars_almost_equals(lhs: &ScalarValue, rhs: &ScalarValue, tol: f64) 
         }
         (_, _) => {
             if lhs == rhs {
+                // Equal
+            } else if lhs.is_null() && rhs.is_null() {
+                // Equal regardless of type
             } else if is_numeric_datatype(&lhs.get_datatype())
                 && is_numeric_datatype(&rhs.get_datatype())
             {
-                let lhs = numeric_to_f64(lhs);
-                let rhs = numeric_to_f64(rhs);
-                assert!(
-                    (lhs - rhs).abs() <= tol,
-                    "{} and {} are not equal to within tolerance {}",
-                    lhs,
-                    rhs,
-                    tol
-                )
+                if (lhs.is_null() || !numeric_to_f64(lhs).is_finite()) && (rhs.is_null() || !numeric_to_f64(rhs).is_finite()) {
+                    // both null, nan, inf, or -inf (which are all considered null in JSON)
+                } else {
+                    let lhs = numeric_to_f64(lhs);
+                    let rhs = numeric_to_f64(rhs);
+                    assert!(
+                        (lhs - rhs).abs() <= tol,
+                        "{} and {} are not equal to within tolerance {}",
+                        lhs,
+                        rhs,
+                        tol
+                    )
+                }
             } else {
                 // This will fail
                 assert_eq!(lhs, rhs)
             }
         }
+    }
+}
+
+
+pub fn assert_signals_almost_equal(lhs: HashMap<String, ScalarValue>, rhs: HashMap<String, ScalarValue>, tol: f64) {
+    let lhs_names: Vec<String> = sorted(lhs.keys().cloned()).collect();
+    let rhs_names: Vec<String> = sorted(rhs.keys().cloned()).collect();
+
+    assert_eq!(lhs_names, rhs_names, "Signal names do not match");
+
+    for name in &lhs_names {
+        let lhs_value = lhs.get(name).unwrap();
+        let rhs_value = rhs.get(name).unwrap();
+        assert_scalars_almost_equals(lhs_value, rhs_value, tol)
     }
 }

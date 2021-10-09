@@ -1,9 +1,7 @@
 use datafusion::arrow::array::{new_null_array, Array, Int32Array, ListArray};
 use datafusion::arrow::compute::kernels;
 use datafusion::arrow::datatypes::DataType;
-use datafusion::physical_plan::functions::{
-    ReturnTypeFunction, ScalarFunctionImplementation, Signature,
-};
+use datafusion::physical_plan::functions::{ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
@@ -67,5 +65,5 @@ pub fn make_length_udf() -> ScalarUDF {
     });
 
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int32)));
-    ScalarUDF::new("length", &Signature::Any(1), &return_type, &length_fn)
+    ScalarUDF::new("length", &Signature::any(1, Volatility::Immutable), &return_type, &length_fn)
 }

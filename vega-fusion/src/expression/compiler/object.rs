@@ -4,7 +4,7 @@ use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::arrow::array::{ArrayRef, StructArray};
 use datafusion::arrow::datatypes::{DataType, Field};
 use datafusion::logical_plan::{DFSchema, Expr};
-use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature};
+use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
 
@@ -63,7 +63,7 @@ pub fn make_object_constructor_udf(keys: &Vec<String>, value_types: &Vec<DataTyp
 
     ScalarUDF::new(
         &format!("object{{{}}}", name_csv.join(",")),
-        &Signature::Any(keys.len()),
+        &Signature::any(keys.len(), Volatility::Immutable),
         &return_type,
         &object_constructor,
     )

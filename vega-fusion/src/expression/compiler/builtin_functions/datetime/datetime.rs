@@ -5,9 +5,7 @@ use datafusion::arrow::array::{Array, ArrayRef, Int64Array, TimestampMillisecond
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::error::DataFusionError;
 use datafusion::logical_plan::{DFSchema, Expr};
-use datafusion::physical_plan::functions::{
-    BuiltinScalarFunction, ReturnTypeFunction, ScalarFunctionImplementation, Signature,
-};
+use datafusion::physical_plan::functions::{BuiltinScalarFunction, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility, TypeSignature};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
@@ -185,14 +183,14 @@ pub fn make_datetime_components_udf(utc: bool) -> ScalarUDF {
 
     // vega signature: datetime(year, month[, day, hour, min, sec, millisec])
     let sig = |n: usize| vec![DataType::Int64; n];
-    let signature = Signature::OneOf(vec![
-        Signature::Exact(sig(2)),
-        Signature::Exact(sig(3)),
-        Signature::Exact(sig(4)),
-        Signature::Exact(sig(5)),
-        Signature::Exact(sig(6)),
-        Signature::Exact(sig(7)),
-    ]);
+    let signature = Signature::one_of(vec![
+        TypeSignature::Exact(sig(2)),
+        TypeSignature::Exact(sig(3)),
+        TypeSignature::Exact(sig(4)),
+        TypeSignature::Exact(sig(5)),
+        TypeSignature::Exact(sig(6)),
+        TypeSignature::Exact(sig(7)),
+    ], Volatility::Immutable);
     ScalarUDF::new(
         "datetime_components",
         &signature,

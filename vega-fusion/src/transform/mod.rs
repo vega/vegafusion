@@ -6,3 +6,4 @@ pub mod filter;
 pub mod formula;
 pub mod pipeline;
 pub mod utils;
+pub mod bin;
