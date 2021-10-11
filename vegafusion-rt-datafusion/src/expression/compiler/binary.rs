@@ -4,7 +4,7 @@ use crate::expression::compiler::utils::{
 };
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::logical_plan::{concat, lit, DFSchema, Expr, Operator};
-use vegafusion_core::proto_gen::expression::{BinaryExpression, BinaryOperator};
+use vegafusion_core::proto::gen::expression::{BinaryExpression, BinaryOperator};
 
 
 pub fn compile_binary(

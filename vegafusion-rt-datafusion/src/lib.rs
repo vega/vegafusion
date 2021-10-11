@@ -2,6 +2,7 @@
 extern crate lazy_static;
 
 pub mod expression;
+pub mod transform;
 
 #[cfg(test)]
 mod tests {

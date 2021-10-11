@@ -1,11 +1,11 @@
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use std::convert::TryFrom;
 use crate::expression::lexer::{tokenize, Token};
-use vegafusion_core::proto_gen::expression::{Expression, UnaryOperator, BinaryOperator, LogicalOperator, Literal, Span, Identifier, UnaryExpression, BinaryExpression, LogicalExpression, CallExpression, MemberExpression, ConditionalExpression, ArrayExpression, Property, ObjectExpression};
-use vegafusion_core::proto_gen::expression::expression::Expr;
-use vegafusion_core::proto_gen::expression::literal::Value;
+use vegafusion_core::proto::gen::expression::{Expression, UnaryOperator, BinaryOperator, LogicalOperator, Literal, Span, Identifier, UnaryExpression, BinaryExpression, LogicalExpression, CallExpression, MemberExpression, ConditionalExpression, ArrayExpression, Property, ObjectExpression};
+use vegafusion_core::proto::gen::expression::expression::Expr;
+use vegafusion_core::proto::gen::expression::literal::Value;
 use crate::expression::ops::{unary_op_from_token, binary_op_from_token, logical_op_from_token};
-use vegafusion_core::proto_gen::expression::property::Key;
+use vegafusion_core::proto::gen::expression::property::Key;
 
 
 pub fn parse(expr: &str) -> Result<Expression> {
@@ -183,7 +183,7 @@ pub fn parse_atom(token: &Token, start: usize, end: usize) -> Result<Expression>
     let span = Span {start: start as i32, end: end as i32};
     let expr = match token {
         Token::Null => Expr::Literal(Literal {
-            value: Some(Value::Null(0)),
+            value: Some(Value::Null(false)),
             raw: "null".to_string(),
         }),
         Token::Bool { value, raw } => Expr::Literal(Literal {

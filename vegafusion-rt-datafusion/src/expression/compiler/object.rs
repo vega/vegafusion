@@ -6,7 +6,7 @@ use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
-use vegafusion_core::proto_gen::expression::ObjectExpression;
+use vegafusion_core::proto::gen::expression::ObjectExpression;
 
 pub fn compile_object(
     node: &ObjectExpression,

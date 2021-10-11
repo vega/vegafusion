@@ -12,6 +12,7 @@ prost = "0.8.0"
 prost-types = "0.8.0"
 arrow = {version="5.5.0", default_features=false}
 datafusion = { path = "../../../repos/arrow-datafusion/datafusion", optional=true}
+itertools = "0.10.1"
 
 [build-dependencies]
 prost-build = "0.8.0"

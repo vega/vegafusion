@@ -1,6 +1,5 @@
 syntax = "proto3";
 package expression;
-import "google/protobuf/struct.proto";
 
 // ESTree-style AST nodes
 message Span {
@@ -14,9 +13,14 @@ message Literal {
     string string = 2;
     bool boolean = 3;
     double number = 4;
-    google.protobuf.NullValue null = 5;
+    bool null = 5;
   }
 }
+
+message IdentifierABC {
+  string name = 1;
+}
+
 
 message Identifier {
   string name = 1;

@@ -1,7 +1,7 @@
 use vegafusion_core::error::{Result, VegaFusionError};
 use crate::expression::compiler::config::CompilationConfig;
 use datafusion::logical_plan::{lit, Expr};
-use vegafusion_core::proto_gen::expression::Identifier;
+use vegafusion_core::proto::gen::expression::Identifier;
 
 pub fn compile_identifier(node: &Identifier, config: &CompilationConfig) -> Result<Expr> {
     let value = if let Some(value) = config.signal_scope.get(&node.name) {

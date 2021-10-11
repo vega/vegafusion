@@ -2,7 +2,7 @@ use vegafusion_core::error::Result;
 use crate::expression::compiler::utils::{to_boolean, to_numeric};
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::logical_plan::{DFSchema, Expr};
-use vegafusion_core::proto_gen::expression::{UnaryExpression, UnaryOperator};
+use vegafusion_core::proto::gen::expression::{UnaryExpression, UnaryOperator};
 
 pub fn compile_unary(
     node: &UnaryExpression,

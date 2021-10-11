@@ -1,7 +1,7 @@
 mod utils;
 
 use wasm_bindgen::prelude::*;
-use vegafusion_core::proto_gen::expression;
+use vegafusion_core::proto::gen::expression;
 use vegafusion_core::arrow;
 use vegafusion_core::arrow::array::Float64Array;
 use vegafusion_client::expression::lexer::tokenize;

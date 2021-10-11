@@ -16,7 +16,7 @@ use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
 use std::convert::TryFrom;
 use std::sync::Arc;
-use vegafusion_core::proto_gen::expression::{MemberExpression, Expression, expression::Expr as vfExpr, Identifier};
+use vegafusion_core::proto::gen::expression::{MemberExpression, Expression, expression::Expr as vfExpr, Identifier};
 
 pub fn compile_member(
     node: &MemberExpression,

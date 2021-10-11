@@ -1,0 +1,118 @@
+syntax = "proto3";
+package transforms;
+
+import "expression.proto";
+
+// Filter
+message Filter {
+  expression.Expression expr = 1;
+}
+
+// Formula
+message Formula {
+  expression.Expression expr = 1;
+  string as = 2;
+}
+
+// Extent
+message Extent {
+  string field = 1;
+  string signal = 2;
+}
+
+// Collect
+message Collect {
+  repeated string fields = 1;
+  repeated SortOrder order = 2;
+}
+
+enum SortOrder {
+  Descending=0;
+  Ascending=1;
+}
+
+// Bin
+message Bin {
+  string field = 1;
+  expression.Expression extent = 2;
+  string signal = 3;
+  string alias_0 = 4;
+  string alias_1 = 5;
+
+  // A value in the binned domain at which to anchor the bins The bin boundaries will be shifted,
+  // if necessary, to ensure that a boundary aligns with the anchor value.
+  double anchor = 6;
+
+  // The maximum number of bins allowed
+  double maxbins = 7;
+
+  // The number base to use for automatic bin selection (e.g. base 10)
+  double base = 8;
+
+  // An exact step size to use between bins. Overrides other options.
+  double step = 9;
+
+  // A list of allowable step sizes to choose from
+  repeated double steps = 10;
+
+  // The value span over which to generate bin boundaries. Defaults to the exact extent of the data
+  double span = 11;
+
+  // A minimum distance between adjacent bins
+  double minstep = 12;
+
+  // Scale factors indicating the allowed subdivisions. The defualt value is vec![5.0, 2.0],
+  // which indicates that for base 10 numbers, the method may consider dividing bin sizes by 5 and/or 2.
+  repeated double divide = 13;
+
+  // If true, attempt to make the bin boundaries use human-friendly boundaries
+  // (e.g. whole numbers, multiples of 10, etc.)
+  bool nice = 14;
+}
+
+// Aggregate
+message Aggregate {
+  repeated string groupby = 1;
+  repeated string fields = 2;
+  repeated string aliases = 3;
+  repeated AggregateOp ops = 4;
+}
+
+enum AggregateOp {
+    Count = 0;
+    Valid = 1;
+    Missing = 2;
+    Distinct = 3;
+    Sum = 4;
+    Product = 5;
+    Mean = 6;
+    Average = 7;
+    Variance = 8;
+    Variancp = 9;
+    Stdev = 10;
+    Stdevp = 11;
+    Stderr = 12;
+    Median = 13;
+    Q1 = 14;
+    Q3 = 15;
+    Ci0 = 16;
+    Ci1 = 17;
+    Min = 18;
+    Max = 19;
+    Argmin = 20;
+    Argmax = 21;
+    Values = 22;
+}
+
+
+// Top-level transform
+message Expression {
+  oneof transform {
+    Filter filter = 1;
+    Extent extent = 2;
+    Formula formula = 3;
+    Bin bin = 4;
+    Aggregate aggregate = 5;
+    Collect collect = 6;
+  }
+}

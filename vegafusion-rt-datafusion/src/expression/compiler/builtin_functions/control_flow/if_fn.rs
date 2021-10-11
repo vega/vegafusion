@@ -1,6 +1,6 @@
 use vegafusion_core::error::{Result, VegaFusionError};
-use vegafusion_core::proto_gen::expression::{Expression, ConditionalExpression};
-use vegafusion_core::proto_gen::expression::expression::Expr;
+use vegafusion_core::proto::gen::expression::{Expression, ConditionalExpression};
+use vegafusion_core::proto::gen::expression::expression::Expr;
 
 
 /// `if(test, thenValue, elseValue)`

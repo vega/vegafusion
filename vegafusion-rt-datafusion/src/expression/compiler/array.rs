@@ -8,7 +8,7 @@ use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunct
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::ops::Deref;
 use std::sync::Arc;
-use vegafusion_core::proto_gen::expression::ArrayExpression;
+use vegafusion_core::proto::gen::expression::ArrayExpression;
 use vegafusion_core::error::Result;
 
 lazy_static! {

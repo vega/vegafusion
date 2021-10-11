@@ -1,5 +1,6 @@
-pub mod proto_gen;
 pub mod error;
+pub mod proto;
+pub mod variable;
 
 pub use arrow;
 
@@ -35,7 +36,7 @@ use prost::Message;
 #[cfg(test)]
 mod tests {
     // use crate::{create_large_shirt, serialize_shirt, deserialize_shirt};
-    use crate::proto_gen::expression;
+    use crate::proto::gen::expression;
     use prost::Message;
     use std::io::Cursor;
 

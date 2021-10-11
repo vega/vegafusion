@@ -24,7 +24,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
-use vegafusion_core::proto_gen::expression::{Expression, CallExpression};
+use vegafusion_core::proto::gen::expression::{Expression, CallExpression};
 
 #[derive(Clone)]
 pub enum VegaFusionCallable {

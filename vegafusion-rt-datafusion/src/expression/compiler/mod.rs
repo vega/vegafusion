@@ -26,7 +26,7 @@ use crate::expression::compiler::unary::compile_unary;
 use datafusion::logical_plan::{DFSchema, Expr};
 use utils::UNIT_SCHEMA;
 
-use vegafusion_core::proto_gen::expression::{Expression, expression::Expr as vfExpr};
+use vegafusion_core::proto::gen::expression::{Expression, expression::Expr as vfExpr};
 use vegafusion_core::error::Result;
 
 /// Function to compile a parsed expression into a CompiledExpression, given a scope containing

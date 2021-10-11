@@ -3,7 +3,7 @@ use crate::expression::compiler::utils::{cast_to, data_type, is_numeric_datatype
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::logical_plan::{DFSchema, Expr, Operator};
-use vegafusion_core::proto_gen::expression::{LogicalExpression, LogicalOperator};
+use vegafusion_core::proto::gen::expression::{LogicalExpression, LogicalOperator};
 
 pub fn compile_logical(
     node: &LogicalExpression,

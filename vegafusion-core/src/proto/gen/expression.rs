@@ -23,9 +23,14 @@ pub mod literal {
         Boolean(bool),
         #[prost(double, tag="4")]
         Number(f64),
-        #[prost(enumeration="::prost_types::NullValue", tag="5")]
-        Null(i32),
+        #[prost(bool, tag="5")]
+        Null(bool),
     }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct IdentifierAbc {
+    #[prost(string, tag="1")]
+    pub name: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Identifier {

@@ -2,7 +2,7 @@ use vegafusion_core::error::Result;
 use crate::expression::compiler::utils::to_boolean;
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::logical_plan::{DFSchema, Expr};
-use vegafusion_core::proto_gen::expression::ConditionalExpression;
+use vegafusion_core::proto::gen::expression::ConditionalExpression;
 
 pub fn compile_conditional(
     node: &ConditionalExpression,
