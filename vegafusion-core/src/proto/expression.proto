@@ -1,0 +1,121 @@
+syntax = "proto3";
+package expression;
+import "google/protobuf/struct.proto";
+
+// ESTree-style AST nodes
+message Span {
+  int32 start = 1;
+  int32 end = 2;
+}
+
+message Literal {
+  string raw = 1;
+  oneof value {
+    string string = 2;
+    bool boolean = 3;
+    double number = 4;
+    google.protobuf.NullValue null = 5;
+  }
+}
+
+message Identifier {
+  string name = 1;
+}
+
+
+enum UnaryOperator {
+  Pos = 0;
+  Neg = 1;
+  Not = 2;
+}
+
+message UnaryExpression {
+  UnaryOperator operator = 1;
+  bool prefix = 2;
+  Expression argument = 3;
+}
+
+enum LogicalOperator {
+  Or = 0;
+  And = 1;
+}
+
+message LogicalExpression {
+  Expression left = 1;
+  LogicalOperator operator = 2;
+  Expression right = 3;
+}
+
+enum BinaryOperator {
+  Equals = 0;
+  NotEquals = 1;
+  StrictEquals = 2;
+  NotStrictEquals = 3;
+  LessThan = 4;
+  LessThanEqual = 5;
+  GreaterThan = 6;
+  GreaterThanEqual = 7;
+  Plus = 8;
+  Minus = 9;
+  Mult = 10;
+  Div = 11;
+  Mod = 12;
+}
+
+message BinaryExpression {
+  Expression left = 1;
+  BinaryOperator operator = 2;
+  Expression right = 3;
+}
+
+message ConditionalExpression {
+  Expression test = 1;
+  Expression consequent = 2;
+  Expression alternate = 3;
+}
+
+message MemberExpression {
+  Expression object = 1;
+  Expression property = 2;
+  bool computed = 3;
+}
+
+message ArrayExpression {
+  repeated Expression elements = 1;
+}
+
+message CallExpression {
+  string callee = 1;
+  repeated Expression arguments = 2;
+}
+
+message Property {
+  oneof key {
+    Literal literal = 1;
+    Identifier identifier = 2;
+  }
+  Expression value = 3;
+  string kind = 4;
+}
+
+message ObjectExpression {
+  repeated Property properties = 1;
+
+}
+
+// Top-level expression
+message Expression {
+  oneof expr {
+    Identifier identifier = 1;
+    Literal literal = 2;
+    BinaryExpression binary = 3;
+    LogicalExpression logical = 4;
+    UnaryExpression unary = 5;
+    ConditionalExpression conditional = 6;
+    CallExpression call = 7;
+    ArrayExpression array = 8;
+    ObjectExpression object = 9;
+    MemberExpression member = 10;
+  }
+  Span span = 11;
+}

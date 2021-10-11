@@ -1,5 +1,8 @@
 [workspace]
 
 members = [
-    "vega-fusion"
+    "vega-fusion",
+    "vegafusion-core",
+    "vegafusion-client",
+    "wasm-driver",
 ]
