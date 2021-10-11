@@ -1,4 +1,4 @@
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use crate::error::{Result, ResultWithContext, VegaFusionError};
 use regex::Regex;
 use std::fmt;
 

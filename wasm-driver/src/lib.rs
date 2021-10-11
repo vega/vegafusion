@@ -4,8 +4,8 @@ use wasm_bindgen::prelude::*;
 use vegafusion_core::proto::gen::expression;
 use vegafusion_core::arrow;
 use vegafusion_core::arrow::array::Float64Array;
-use vegafusion_client::expression::lexer::tokenize;
-use vegafusion_client::expression::parser::parse;
+use vegafusion_core::expression::lexer::tokenize;
+use vegafusion_core::expression::parser::parse;
 use prost::Message;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global

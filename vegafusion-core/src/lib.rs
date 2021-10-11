@@ -1,6 +1,10 @@
+#[macro_use]
+extern crate lazy_static;
+
 pub mod error;
 pub mod proto;
 pub mod variable;
+pub mod expression;
 
 pub use arrow;
 

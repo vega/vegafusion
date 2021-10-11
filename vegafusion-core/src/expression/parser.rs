@@ -1,11 +1,11 @@
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use crate::error::{Result, ResultWithContext, VegaFusionError};
 use std::convert::TryFrom;
 use crate::expression::lexer::{tokenize, Token};
-use vegafusion_core::proto::gen::expression::{Expression, UnaryOperator, BinaryOperator, LogicalOperator, Literal, Span, Identifier, UnaryExpression, BinaryExpression, LogicalExpression, CallExpression, MemberExpression, ConditionalExpression, ArrayExpression, Property, ObjectExpression};
-use vegafusion_core::proto::gen::expression::expression::Expr;
-use vegafusion_core::proto::gen::expression::literal::Value;
+use crate::proto::gen::expression::{Expression, UnaryOperator, BinaryOperator, LogicalOperator, Literal, Span, Identifier, UnaryExpression, BinaryExpression, LogicalExpression, CallExpression, MemberExpression, ConditionalExpression, ArrayExpression, Property, ObjectExpression};
+use crate::proto::gen::expression::expression::Expr;
+use crate::proto::gen::expression::literal::Value;
+use crate::proto::gen::expression::property::Key;
 use crate::expression::ops::{unary_op_from_token, binary_op_from_token, logical_op_from_token};
-use vegafusion_core::proto::gen::expression::property::Key;
 
 
 pub fn parse(expr: &str) -> Result<Expression> {

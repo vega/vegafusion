@@ -1,7 +1,7 @@
 use crate::expression::lexer::Token;
-use vegafusion_core::error::{Result, VegaFusionError};
-use vegafusion_core::proto::gen::expression::{UnaryOperator, BinaryOperator, LogicalOperator, Expression};
-use vegafusion_core::proto::gen::expression::expression::Expr;
+use crate::error::{Result, VegaFusionError};
+use crate::proto::gen::expression::{UnaryOperator, BinaryOperator, LogicalOperator, Expression};
+use crate::proto::gen::expression::expression::Expr;
 
 
 pub fn unary_op_from_token(tok: &Token) -> Result<UnaryOperator> {
