@@ -61,8 +61,7 @@ mod test_compile {
     use crate::expression::compiler::config::CompilationConfig;
     use crate::expression::compiler::object::make_object_constructor_udf;
     use crate::expression::compiler::utils::ExprHelpers;
-
-    use vegafusion_client::expression::parser::parse;
+    use vegafusion_core::expression::parser::parse;
 
     use datafusion::arrow::record_batch::RecordBatch;
     use datafusion::arrow::{
