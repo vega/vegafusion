@@ -363,6 +363,19 @@ impl Display for Key {
     }
 }
 
+impl Key {
+    // Get string for property for use as object key. Strings should not be quoted
+    pub fn to_object_key_string(&self) -> String {
+        match self {
+            Key::Literal(v) => match v.value.as_ref().unwrap() {
+                Value::String(s) => s.clone(),
+                _ => v.to_string(),
+            },
+            Key::Identifier(v) => v.name.clone(),
+        }
+    }
+}
+
 impl Display for Property {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}: {}", self.key.as_ref().unwrap(), self.value.as_ref().unwrap())

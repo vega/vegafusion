@@ -11,7 +11,7 @@ bytes = "1.1.0"
 prost = "0.8.0"
 prost-types = "0.8.0"
 arrow = {version="5.5.0", default_features=false}
-datafusion = {version="5.0.0", optional=true}
+datafusion = { path = "../../../repos/arrow-datafusion/datafusion", optional=true}
 
 [build-dependencies]
 prost-build = "0.8.0"
