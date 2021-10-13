@@ -1,9 +1,9 @@
 mod utils;
 
 use prost::Message;
-use vegafusion_core::arrow;
+
 use vegafusion_core::arrow::array::Float64Array;
-use vegafusion_core::expression::lexer::tokenize;
+
 use vegafusion_core::expression::parser::parse;
 use vegafusion_core::proto::gen::expression;
 use wasm_bindgen::prelude::*;

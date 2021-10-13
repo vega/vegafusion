@@ -7,7 +7,7 @@ use vega_fusion::error::Result;
 
 use datafusion::logical_plan::{col, Expr};
 use itertools::sorted;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use std::sync::Arc;
 use vega_fusion::expression::compiler::utils::is_numeric_datatype;
 use vega_fusion::transform::utils::DataFrameUtils;

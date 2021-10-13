@@ -16,7 +16,7 @@ impl Display for literal::Value {
             Value::String(v) => {
                 write!(f, "\"{}\"", v)
             }
-            Value::Null(v) => {
+            Value::Null(_v) => {
                 write!(f, "null")
             }
         }

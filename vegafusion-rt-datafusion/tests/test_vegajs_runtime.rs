@@ -3,10 +3,10 @@ extern crate lazy_static;
 
 mod util;
 use crate::util::vegajs_runtime::vegajs_runtime;
-use datafusion::arrow::datatypes::DataType;
-use datafusion::scalar::ScalarValue;
+
+
 use serde_json::json;
-use std::collections::HashMap;
+
 // use vega_fusion::data::table::VegaFusionTable;
 // use vega_fusion::expression::ast::base::Expression;
 // use vega_fusion::expression::compiler::config::CompilationConfig;

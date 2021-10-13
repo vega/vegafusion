@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use vegafusion_core::proto::gen::expression as proto_expression;
-use vegafusion_core::proto::gen::expression::literal::Value;
+
 
 /// ESTree-style AST Node for identifiers
 ///
@@ -103,7 +103,7 @@ pub enum BinaryOperator {
 }
 
 impl BinaryOperator {
-    pub fn to_expr(&self) -> proto_expression::BinaryOperator {
+    pub fn to_proto(&self) -> proto_expression::BinaryOperator {
         match self {
             BinaryOperator::Equals => proto_expression::BinaryOperator::Equals,
             BinaryOperator::NotEquals => proto_expression::BinaryOperator::NotEquals,
@@ -136,7 +136,7 @@ impl BinaryExpression {
     pub fn to_proto(&self) -> proto_expression::expression::Expr {
         proto_expression::expression::Expr::Binary(Box::new(proto_expression::BinaryExpression {
             left: Some(Box::new(self.left.to_proto())),
-            operator: self.operator.to_expr() as i32,
+            operator: self.operator.to_proto() as i32,
             right: Some(Box::new(self.right.to_proto())),
         }))
     }

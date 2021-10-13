@@ -4,7 +4,7 @@ pub mod utils;
 use crate::expression::compiler::config::CompilationConfig;
 use datafusion::dataframe::DataFrame;
 use datafusion::scalar::ScalarValue;
-use std::fmt::Debug;
+
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::variable::Variable;

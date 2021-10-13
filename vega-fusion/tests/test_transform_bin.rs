@@ -9,11 +9,9 @@ use util::equality::TablesEqualConfig;
 use vega_fusion::spec::transform::TransformSpec;
 
 use vega_fusion::spec::transform::bin::{BinExtent, BinTransformSpec};
-use vega_fusion::spec::transform::collect::{
-    CollectSort, CollectTransformSpec, SortOrder, SortOrderOrList,
-};
-use vega_fusion::spec::transform::formula::FormulaTransformSpec;
-use vega_fusion::spec::values::{Field, SignalExpressionSpec, StringOrStringList};
+
+
+use vega_fusion::spec::values::{Field, SignalExpressionSpec};
 
 #[test]
 fn test_bin() {

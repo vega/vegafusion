@@ -9,7 +9,7 @@ use crate::proto::gen::expression::{
     Expression, Identifier, Literal, LogicalExpression, LogicalOperator, MemberExpression,
     ObjectExpression, Property, Span, UnaryExpression, UnaryOperator,
 };
-use std::convert::TryFrom;
+
 
 pub fn parse(expr: &str) -> Result<Expression> {
     let mut tokens = tokenize(expr)?;
@@ -271,7 +271,7 @@ pub fn parse_binary(
             let expr = Expr::Binary(Box::new(BinaryExpression {
                 left: Some(Box::new(lhs.clone())),
                 operator: op as i32,
-                right: Some(Box::new(rhs.clone())),
+                right: Some(Box::new(rhs)),
             }));
             Ok(Expression {
                 expr: Some(expr),
@@ -309,7 +309,7 @@ pub fn parse_logical(
             let expr = Expr::Logical(Box::new(LogicalExpression {
                 left: Some(Box::new(lhs.clone())),
                 operator: op as i32,
-                right: Some(Box::new(rhs.clone())),
+                right: Some(Box::new(rhs)),
             }));
             Ok(Expression {
                 expr: Some(expr),
@@ -445,7 +445,7 @@ pub fn parse_static_member(
                 end: property.span.clone().unwrap().end,
             };
 
-            if let Some(Expr::Identifier(ident)) = property.expr.as_ref() {
+            if let Some(Expr::Identifier(_ident)) = property.expr.as_ref() {
                 let expr = Expr::Member(Box::new(MemberExpression {
                     object: Some(Box::new(lhs.clone())),
                     property: Some(Box::new(property.clone())),

@@ -117,7 +117,7 @@ impl TryFrom<&BinTransformSpec> for Transform {
     type Error = VegaFusionError;
 
     fn try_from(value: &BinTransformSpec) -> std::result::Result<Self, Self::Error> {
-        Ok(Self::Bin(BinTransform::try_new(&value)?))
+        Ok(Self::Bin(BinTransform::try_new(value)?))
     }
 }
 
