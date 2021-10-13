@@ -26,8 +26,8 @@ use crate::expression::compiler::unary::compile_unary;
 use datafusion::logical_plan::{DFSchema, Expr};
 use utils::UNIT_SCHEMA;
 
-use vegafusion_core::proto::gen::expression::{Expression, expression::Expr as vfExpr};
 use vegafusion_core::error::Result;
+use vegafusion_core::proto::gen::expression::{expression::Expr as vfExpr, Expression};
 
 /// Function to compile a parsed expression into a CompiledExpression, given a scope containing
 /// a SignalValue for every unbound identifier in the expression.

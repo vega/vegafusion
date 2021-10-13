@@ -1,7 +1,9 @@
 use chrono::{DateTime, Datelike, Local, LocalResult, TimeZone, Timelike, Utc};
 use datafusion::arrow::array::{Array, ArrayRef, Int32Array, TimestampMillisecondArray};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
-use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
+use datafusion::physical_plan::functions::{
+    make_scalar_function, ReturnTypeFunction, Signature, Volatility,
+};
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
 
@@ -88,7 +90,7 @@ pub fn make_datepart_udf_local(extract_fn: fn(&DateTime<Local>) -> i32, name: &s
         name,
         &Signature::exact(
             vec![DataType::Timestamp(TimeUnit::Millisecond, None)],
-            Volatility::Immutable
+            Volatility::Immutable,
         ),
         &return_type,
         &part_fn,

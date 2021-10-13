@@ -1,14 +1,13 @@
 pub mod filter;
 pub mod utils;
 
-use std::fmt::Debug;
-use std::sync::Arc;
+use crate::expression::compiler::config::CompilationConfig;
 use datafusion::dataframe::DataFrame;
 use datafusion::scalar::ScalarValue;
+use std::fmt::Debug;
+use std::sync::Arc;
 use vegafusion_core::error::Result;
-use crate::expression::compiler::config::CompilationConfig;
 use vegafusion_core::variable::Variable;
-
 
 pub trait TransformTrait: Send + Sync {
     fn call(

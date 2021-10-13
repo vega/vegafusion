@@ -1,7 +1,6 @@
 //! A variable is named value in a Vega specification. These values can be signals, scales, or
 //! datasets.
 
-
 /// The namespace for a variable. It's valid for the same name to be used for a signal, scale,
 /// and dataset at the same time
 #[derive(Debug, Clone, PartialOrd, PartialEq, Eq, Hash, Ord)]

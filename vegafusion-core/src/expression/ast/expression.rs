@@ -1,10 +1,12 @@
-use std::fmt::{Display, Formatter};
-use crate::proto::gen::expression::{Expression, Identifier};
-use std::ops::Deref;
+use crate::expression::visitors::{
+    ClearSpansVisitor, ExpressionVisitor, GetVariablesVisitor, MutExpressionVisitor,
+};
 use crate::proto::gen::expression::expression::Expr;
+use crate::proto::gen::expression::{Expression, Identifier};
 use crate::variable::Variable;
-use crate::expression::visitors::{GetVariablesVisitor, ExpressionVisitor, MutExpressionVisitor, ClearSpansVisitor};
 use itertools::sorted;
+use std::fmt::{Display, Formatter};
+use std::ops::Deref;
 
 /// Trait that all AST node types implement
 pub trait ExpressionTrait: Display {
@@ -41,7 +43,6 @@ impl Display for Expression {
         write!(f, "{}", expr)
     }
 }
-
 
 impl Expression {
     pub fn clear_spans(&mut self) {
@@ -86,7 +87,9 @@ impl Expression {
                 visitor.visit_identifier(node);
             }
             Expr::Call(node) => {
-                let callee_id = Identifier {name: node.callee.clone()};
+                let callee_id = Identifier {
+                    name: node.callee.clone(),
+                };
                 visitor.visit_called_identifier(&callee_id, &node.arguments);
                 for arg in &node.arguments {
                     arg.walk(visitor);
@@ -148,7 +151,9 @@ impl Expression {
                 visitor.visit_identifier(node);
             }
             Expr::Call(node) => {
-                let mut callee_id = Identifier {name: node.callee.clone()};
+                let mut callee_id = Identifier {
+                    name: node.callee.clone(),
+                };
                 visitor.visit_called_identifier(&mut callee_id, &mut node.arguments);
                 for arg in &mut node.arguments {
                     arg.walk_mut(visitor);

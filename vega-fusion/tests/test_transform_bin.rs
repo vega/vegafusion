@@ -8,13 +8,12 @@ use util::datasets::vega_json_dataset;
 use util::equality::TablesEqualConfig;
 use vega_fusion::spec::transform::TransformSpec;
 
+use vega_fusion::spec::transform::bin::{BinExtent, BinTransformSpec};
 use vega_fusion::spec::transform::collect::{
     CollectSort, CollectTransformSpec, SortOrder, SortOrderOrList,
 };
-use vega_fusion::spec::values::{StringOrStringList, Field, SignalExpressionSpec};
-use vega_fusion::spec::transform::bin::{BinTransformSpec, BinExtent};
 use vega_fusion::spec::transform::formula::FormulaTransformSpec;
-
+use vega_fusion::spec::values::{Field, SignalExpressionSpec, StringOrStringList};
 
 #[test]
 fn test_bin() {

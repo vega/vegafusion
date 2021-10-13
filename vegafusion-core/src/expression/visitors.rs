@@ -1,7 +1,10 @@
-use crate::proto::gen::expression::{Identifier, Expression, Literal, BinaryExpression, LogicalExpression, UnaryExpression, ConditionalExpression, MemberExpression, CallExpression, ArrayExpression, ObjectExpression};
-use std::collections::HashSet;
-use crate::variable::Variable;
 use crate::proto::gen::expression::property::Key;
+use crate::proto::gen::expression::{
+    ArrayExpression, BinaryExpression, CallExpression, ConditionalExpression, Expression,
+    Identifier, Literal, LogicalExpression, MemberExpression, ObjectExpression, UnaryExpression,
+};
+use crate::variable::Variable;
+use std::collections::HashSet;
 
 pub trait ExpressionVisitor {
     fn visit_expression(&mut self, _expression: &Expression) {}

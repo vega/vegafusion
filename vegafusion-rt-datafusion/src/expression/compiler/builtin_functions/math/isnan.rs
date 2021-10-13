@@ -1,7 +1,9 @@
 use datafusion::arrow::array::{ArrayRef, BooleanArray, Float32Array, Float64Array};
 use datafusion::arrow::compute::no_simd_compare_op_scalar;
 use datafusion::arrow::datatypes::DataType;
-use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
+use datafusion::physical_plan::functions::{
+    make_scalar_function, ReturnTypeFunction, Signature, Volatility,
+};
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
 
@@ -34,5 +36,10 @@ pub fn make_is_nan_udf() -> ScalarUDF {
     let is_nan = make_scalar_function(is_nan);
 
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Boolean)));
-    ScalarUDF::new("isNaN", &Signature::any(1, Volatility::Immutable), &return_type, &is_nan)
+    ScalarUDF::new(
+        "isNaN",
+        &Signature::any(1, Volatility::Immutable),
+        &return_type,
+        &is_nan,
+    )
 }

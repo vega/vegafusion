@@ -1,4 +1,3 @@
-use vegafusion_core::error::{Result, VegaFusionError};
 use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
@@ -10,13 +9,18 @@ use datafusion::arrow::compute::{cast, kernels};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::error::DataFusionError;
 use datafusion::logical_plan::{col, DFSchema, Expr};
-use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility};
+use datafusion::physical_plan::functions::{
+    make_scalar_function, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
+};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
 use std::convert::TryFrom;
 use std::sync::Arc;
-use vegafusion_core::proto::gen::expression::{MemberExpression, Expression, expression::Expr as vfExpr, Identifier};
+use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::proto::gen::expression::{
+    expression::Expr as vfExpr, Expression, Identifier, MemberExpression,
+};
 
 pub fn compile_member(
     node: &MemberExpression,
@@ -44,7 +48,11 @@ pub fn compile_member(
             }
         }
         prop_str
-    } else if let Expression {expr: Some(vfExpr::Identifier(property)), ..} = node.property.as_ref().unwrap().as_ref() {
+    } else if let Expression {
+        expr: Some(vfExpr::Identifier(property)),
+        ..
+    } = node.property.as_ref().unwrap().as_ref()
+    {
         property.name.clone()
     } else {
         return Err(VegaFusionError::compilation(&format!(
@@ -55,7 +63,7 @@ pub fn compile_member(
 
     // Handle datum property access. These represent DataFusion column expressions
     match node.object.as_ref().unwrap().expr.as_ref().unwrap() {
-        vfExpr::Identifier(Identifier {name, ..}) if name == "datum" => {
+        vfExpr::Identifier(Identifier { name, .. }) if name == "datum" => {
             let col_expr = col(&property_string);
             return Ok(col_expr);
         }

@@ -1,12 +1,15 @@
 use crate::error::{Result, ResultWithContext, VegaFusionError};
-use std::convert::TryFrom;
 use crate::expression::lexer::{tokenize, Token};
-use crate::proto::gen::expression::{Expression, UnaryOperator, BinaryOperator, LogicalOperator, Literal, Span, Identifier, UnaryExpression, BinaryExpression, LogicalExpression, CallExpression, MemberExpression, ConditionalExpression, ArrayExpression, Property, ObjectExpression};
+use crate::expression::ops::{binary_op_from_token, logical_op_from_token, unary_op_from_token};
 use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::literal::Value;
 use crate::proto::gen::expression::property::Key;
-use crate::expression::ops::{unary_op_from_token, binary_op_from_token, logical_op_from_token};
-
+use crate::proto::gen::expression::{
+    ArrayExpression, BinaryExpression, BinaryOperator, CallExpression, ConditionalExpression,
+    Expression, Identifier, Literal, LogicalExpression, LogicalOperator, MemberExpression,
+    ObjectExpression, Property, Span, UnaryExpression, UnaryOperator,
+};
+use std::convert::TryFrom;
 
 pub fn parse(expr: &str) -> Result<Expression> {
     let mut tokens = tokenize(expr)?;
@@ -165,7 +168,6 @@ pub fn expect_token(
     Ok((token, start, end))
 }
 
-
 /// Check whether token is an atomic Expression
 pub fn is_atom(token: &Token) -> bool {
     matches!(
@@ -180,7 +182,10 @@ pub fn is_atom(token: &Token) -> bool {
 
 /// Parse atom token to Expression
 pub fn parse_atom(token: &Token, start: usize, end: usize) -> Result<Expression> {
-    let span = Span {start: start as i32, end: end as i32};
+    let span = Span {
+        start: start as i32,
+        end: end as i32,
+    };
     let expr = match token {
         Token::Null => Expr::Literal(Literal {
             value: Some(Value::Null(false)),
@@ -209,7 +214,10 @@ pub fn parse_atom(token: &Token, start: usize, end: usize) -> Result<Expression>
         }
     };
 
-    Ok(Expression {expr: Some(expr), span: Some(span)})
+    Ok(Expression {
+        expr: Some(expr),
+        span: Some(span),
+    })
 }
 
 pub fn parse_unary(
@@ -220,11 +228,14 @@ pub fn parse_unary(
 ) -> Result<Expression> {
     let unary_bp = op.unary_binding_power();
     let rhs = perform_parse(tokens, unary_bp, full_expr)?;
-    let new_span = Span {start: start as i32, end: rhs.span.clone().unwrap().end};
+    let new_span = Span {
+        start: start as i32,
+        end: rhs.span.clone().unwrap().end,
+    };
     let expr = Expr::Unary(Box::new(UnaryExpression {
         operator: op as i32,
         prefix: true,
-        argument: Some(Box::new(rhs))
+        argument: Some(Box::new(rhs)),
     }));
     Ok(Expression {
         expr: Some(expr),
@@ -252,9 +263,9 @@ pub fn parse_binary(
     Some(match perform_parse(tokens, right_bp, full_expr) {
         Ok(rhs) => {
             // Update lhs
-            let new_span = Span{
+            let new_span = Span {
                 start: start as i32,
-                end: rhs.span.clone().unwrap().end
+                end: rhs.span.clone().unwrap().end,
             };
 
             let expr = Expr::Binary(Box::new(BinaryExpression {
@@ -264,7 +275,7 @@ pub fn parse_binary(
             }));
             Ok(Expression {
                 expr: Some(expr),
-                span: Some(new_span)
+                span: Some(new_span),
             })
         }
         Err(err) => Err(err),
@@ -290,9 +301,9 @@ pub fn parse_logical(
     Some(match perform_parse(tokens, right_bp, full_expr) {
         Ok(rhs) => {
             // Update lhs
-            let new_span = Span{
+            let new_span = Span {
                 start: start as i32,
-                end: rhs.span.clone().unwrap().end
+                end: rhs.span.clone().unwrap().end,
             };
 
             let expr = Expr::Logical(Box::new(LogicalExpression {
@@ -302,7 +313,7 @@ pub fn parse_logical(
             }));
             Ok(Expression {
                 expr: Some(expr),
-                span: Some(new_span)
+                span: Some(new_span),
             })
         }
         Err(err) => Err(err),
@@ -354,13 +365,13 @@ pub fn parse_call(
     let (_, _, end) = expect_token(tokens, Token::CloseParen).unwrap();
 
     // Update span
-    let new_span = Span{
+    let new_span = Span {
         start: start as i32,
-        end: end as i32
+        end: end as i32,
     };
     let expr = Expr::Call(CallExpression {
         callee: lhs.name.clone(),
-        arguments
+        arguments,
     });
     Some(Ok(Expression {
         expr: Some(expr),
@@ -390,7 +401,7 @@ pub fn parse_computed_member(
             let (_, _, end) = expect_token(tokens, Token::CloseSquare).unwrap();
 
             // Update span
-            let new_span = Span{
+            let new_span = Span {
                 start: start as i32,
                 end: end as i32,
             };
@@ -399,7 +410,7 @@ pub fn parse_computed_member(
             let expr = Expr::Member(Box::new(MemberExpression {
                 object: Some(Box::new(lhs.clone())),
                 property: Some(Box::new(property)),
-                computed: true
+                computed: true,
             }));
             Ok(Expression {
                 expr: Some(expr),
@@ -409,7 +420,6 @@ pub fn parse_computed_member(
         Err(err) => Err(err),
     })
 }
-
 
 pub fn parse_static_member(
     tokens: &mut Vec<(Token, usize, usize)>,
@@ -430,21 +440,21 @@ pub fn parse_static_member(
     Some(match perform_parse(tokens, 1000.0, full_expr) {
         Ok(property) => {
             // Update span
-            let new_span = Span{
+            let new_span = Span {
                 start: start as i32,
-                end: property.span.clone().unwrap().end
+                end: property.span.clone().unwrap().end,
             };
 
             if let Some(Expr::Identifier(ident)) = property.expr.as_ref() {
                 let expr = Expr::Member(Box::new(MemberExpression {
                     object: Some(Box::new(lhs.clone())),
-                    property: Some(Box::new( property.clone())),
-                    computed: false
+                    property: Some(Box::new(property.clone())),
+                    computed: false,
                 }));
 
                 Ok(Expression {
                     expr: Some(expr),
-                    span: Some(new_span)
+                    span: Some(new_span),
                 })
             } else {
                 Err(VegaFusionError::parse("Expected identifier"))
@@ -491,15 +501,15 @@ pub fn parse_ternary(
     };
 
     // Update span
-    let new_span = Span{
+    let new_span = Span {
         start: start as i32,
-        end: alternate.span.clone().unwrap().end
+        end: alternate.span.clone().unwrap().end,
     };
 
     let expr = Expr::Conditional(Box::new(ConditionalExpression {
         test: Some(Box::new(lhs.clone())),
         consequent: Some(Box::new(consequent)),
-        alternate: Some(Box::new(alternate))
+        alternate: Some(Box::new(alternate)),
     }));
 
     Some(Ok(Expression {
@@ -536,14 +546,12 @@ pub fn parse_array(
     let (_, _, end) = expect_token(tokens, Token::CloseSquare).unwrap();
 
     // Update span
-    let new_span = Span{
+    let new_span = Span {
         start: start as i32,
         end: end as i32,
     };
 
-    let expr = Expr::Array(ArrayExpression {
-        elements
-    });
+    let expr = Expr::Array(ArrayExpression { elements });
     Ok(Expression {
         expr: Some(expr),
         span: Some(new_span),
@@ -576,20 +584,16 @@ pub fn parse_object(
         expect_token(tokens, Token::Comma).ok();
 
         let property = match key.expr.as_ref().unwrap() {
-            Expr::Literal(key) => {
-                Property {
-                    key: Some(Key::Literal(key.clone())),
-                    value: Some(value),
-                    kind: "init".to_string(),
-                }
-            }
-            Expr::Identifier(key) => {
-                Property {
-                    key: Some(Key::Identifier(key.clone())),
-                    value: Some(value),
-                    kind: "init".to_string(),
-                }
-            }
+            Expr::Literal(key) => Property {
+                key: Some(Key::Literal(key.clone())),
+                value: Some(value),
+                kind: "init".to_string(),
+            },
+            Expr::Identifier(key) => Property {
+                key: Some(Key::Identifier(key.clone())),
+                value: Some(value),
+                kind: "init".to_string(),
+            },
             _ => {
                 return Err(VegaFusionError::parse(
                     "Object key must be an identifier or a literal value",
@@ -604,14 +608,12 @@ pub fn parse_object(
     let (_, _, end) = expect_token(tokens, Token::CloseCurly).unwrap();
 
     // Update span
-    let new_span = Span{
+    let new_span = Span {
         start: start as i32,
         end: end as i32,
     };
 
-    let expr = Expr::Object(ObjectExpression {
-        properties
-    });
+    let expr = Expr::Object(ObjectExpression { properties });
 
     Ok(Expression {
         expr: Some(expr),

@@ -10,11 +10,11 @@
 // use vega_fusion::transform::pipeline::TransformPipeline;
 
 use crate::util::vegajs_runtime::vegajs_runtime;
-use vegafusion_core::expression::parser::parse;
-use std::collections::HashMap;
 use datafusion::scalar::ScalarValue;
-use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
+use std::collections::HashMap;
+use vegafusion_core::expression::parser::parse;
 use vegafusion_rt_datafusion::expression::compiler::compile;
+use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 use vegafusion_rt_datafusion::expression::compiler::utils::ExprHelpers;
 
 pub fn check_parsing(expr_str: &str) {

@@ -1,8 +1,8 @@
+use crate::spec::transform::TransformSpecTrait;
+use crate::spec::values::{Field, SignalExpressionSpec};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::spec::values::{Field, SignalExpressionSpec};
-use crate::spec::transform::TransformSpecTrait;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BinTransformSpec {

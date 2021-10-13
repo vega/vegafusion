@@ -1,6 +1,6 @@
-use vegafusion_core::error::{Result, VegaFusionError};
 use crate::expression::compiler::config::CompilationConfig;
 use datafusion::logical_plan::{lit, Expr};
+use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::expression::Identifier;
 
 pub fn compile_identifier(node: &Identifier, config: &CompilationConfig) -> Result<Expr> {

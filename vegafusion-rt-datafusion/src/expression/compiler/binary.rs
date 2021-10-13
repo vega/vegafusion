@@ -1,11 +1,10 @@
-use vegafusion_core::error::Result;
 use crate::expression::compiler::utils::{
     data_type, is_numeric_datatype, is_string_datatype, to_numeric, to_string,
 };
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::logical_plan::{concat, lit, DFSchema, Expr, Operator};
+use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::{BinaryExpression, BinaryOperator};
-
 
 pub fn compile_binary(
     node: &BinaryExpression,

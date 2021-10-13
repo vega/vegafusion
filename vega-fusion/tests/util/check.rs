@@ -1,4 +1,4 @@
-use crate::util::equality::{assert_tables_equal, TablesEqualConfig, assert_signals_almost_equal};
+use crate::util::equality::{assert_signals_almost_equal, assert_tables_equal, TablesEqualConfig};
 use crate::util::vegajs_runtime::vegajs_runtime;
 use datafusion::scalar::ScalarValue;
 use std::collections::HashMap;

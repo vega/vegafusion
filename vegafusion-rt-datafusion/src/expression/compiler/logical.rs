@@ -1,8 +1,8 @@
-use vegafusion_core::error::Result;
 use crate::expression::compiler::utils::{cast_to, data_type, is_numeric_datatype, to_boolean};
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::logical_plan::{DFSchema, Expr, Operator};
+use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::{LogicalExpression, LogicalOperator};
 
 pub fn compile_logical(

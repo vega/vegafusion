@@ -1,10 +1,10 @@
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use crate::tokio_runtime::TOKIO_RUNTIME;
 use datafusion::arrow::array::ArrayRef;
 use datafusion::arrow::datatypes::SchemaRef;
 use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::dataframe::DataFrame;
 use std::sync::Arc;
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 pub trait DataFrameUtils {
     fn block_eval(&self) -> Result<Vec<RecordBatch>>;

@@ -1,29 +1,30 @@
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use crate::expression::ast::base::Expression;
-use crate::variable::Variable;
-use crate::spec::transform::bin::{BinTransformSpec, BinExtent};
-use std::hash::{Hash, Hasher};
-use ordered_float::OrderedFloat;
+use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::expression::ast::array::ArrayExpression;
+use crate::expression::ast::base::Expression;
 use crate::expression::ast::literal::{Literal, LiteralValue};
-use crate::spec::values::SignalExpressionSpec;
-use crate::expression::parser::parse;
-use crate::error::{Result, VegaFusionError, ResultWithContext};
-use float_cmp::approx_eq;
-use crate::transform::base::TransformTrait;
-use datafusion::dataframe::DataFrame;
-use crate::expression::compiler::config::CompilationConfig;
-use datafusion::scalar::ScalarValue;
 use crate::expression::compiler::compile;
+use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{ExprHelpers, ScalarValueHelpers};
+use crate::expression::parser::parse;
+use crate::spec::transform::bin::{BinExtent, BinTransformSpec};
+use crate::spec::values::SignalExpressionSpec;
+use crate::transform::base::TransformTrait;
+use crate::variable::Variable;
 use datafusion::arrow::array::{ArrayRef, Float64Array, Int64Array};
-use datafusion::arrow::datatypes::DataType;
 use datafusion::arrow::compute::unary;
-use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
+use datafusion::arrow::datatypes::DataType;
+use datafusion::dataframe::DataFrame;
+use datafusion::logical_plan::{col, lit, Expr};
+use datafusion::physical_plan::functions::{
+    make_scalar_function, ReturnTypeFunction, Signature, Volatility,
+};
 use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion::logical_plan::{col, Expr, lit};
-
+use datafusion::scalar::ScalarValue;
+use float_cmp::approx_eq;
+use ordered_float::OrderedFloat;
+use serde::{Deserialize, Serialize};
+use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Hash)]
 pub struct BinTransform {
@@ -35,12 +36,8 @@ pub struct BinTransform {
     pub config: BinConfig,
 }
 
-
 impl BinTransform {
-    pub fn try_new(
-        transform: &BinTransformSpec,
-    ) -> Result<Self> {
-
+    pub fn try_new(transform: &BinTransformSpec) -> Result<Self> {
         let field = transform.field.field();
 
         let extent_expr = match &transform.extent {
@@ -80,7 +77,6 @@ impl BinTransform {
     }
 }
 
-
 impl TransformTrait for BinTransform {
     fn call(
         &self,
@@ -109,7 +105,7 @@ impl TransformTrait for BinTransform {
 
         let fields = ScalarValue::List(
             Some(Box::new(vec![ScalarValue::from(self.field.as_str())])),
-            Box::new(DataType::Utf8)
+            Box::new(DataType::Utf8),
         );
         let output_value = if self.signal.is_some() {
             Some(ScalarValue::from(vec![
@@ -153,7 +149,7 @@ impl TransformTrait for BinTransform {
                         let v = v as f64;
                         let bin_val = (v - start) / step;
                         let bin_ind = bin_val.floor() as i32;
-                        if approx_eq!(f64, bin_val, n as f64, ulps=1) {
+                        if approx_eq!(f64, bin_val, n as f64, ulps = 1) {
                             // Close the right-hand edge of the top bin
                             bin_starts[(n - 1) as usize]
                         } else if bin_ind < 0 {
@@ -176,7 +172,11 @@ impl TransformTrait for BinTransform {
         let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Float64)));
         let bin = ScalarUDF::new(
             "bin",
-            &Signature::uniform(1, vec![DataType::Float64, DataType::Int64], Volatility::Immutable),
+            &Signature::uniform(
+                1,
+                vec![DataType::Float64, DataType::Int64],
+                Volatility::Immutable,
+            ),
             &return_type,
             &bin,
         );
@@ -218,7 +218,6 @@ impl TransformTrait for BinTransform {
         self.signal.clone().into_iter().collect()
     }
 }
-
 
 // Port of https://github.com/vega/vega/blob/v5.9.1/packages/vega-statistics/src/bin.js
 // with credit to

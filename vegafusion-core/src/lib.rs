@@ -2,9 +2,9 @@
 extern crate lazy_static;
 
 pub mod error;
+pub mod expression;
 pub mod proto;
 pub mod variable;
-pub mod expression;
 
 pub use arrow;
 
@@ -36,7 +36,6 @@ use prost::Message;
 //     items::Shirt::decode(&mut Cursor::new(buf))
 // }
 
-
 #[cfg(test)]
 mod tests {
     // use crate::{create_large_shirt, serialize_shirt, deserialize_shirt};
@@ -53,7 +52,7 @@ mod tests {
     fn try_it() {
         let lit = expression::Literal {
             raw: "23.5000".to_string(),
-            value: Some(expression::literal::Value::Number(23.5))
+            value: Some(expression::literal::Value::Number(23.5)),
         };
 
         let mut buf = Vec::new();

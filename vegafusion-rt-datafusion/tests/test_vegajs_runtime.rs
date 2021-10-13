@@ -19,17 +19,18 @@ fn test_vegajs_parse() {
     let vegajs_runtime = vegajs_runtime();
     let parsed = vegajs_runtime.parse_expression("(20 + 5) * 300").unwrap();
 
-    let expected_estree: util::estree_expression::ESTreeExpression = serde_json::value::from_value(json!({
-        "type":"BinaryExpression",
-        "left":{
+    let expected_estree: util::estree_expression::ESTreeExpression =
+        serde_json::value::from_value(json!({
             "type":"BinaryExpression",
-            "left":{"type":"Literal","value":20.0,"raw":"20"},
-            "operator":"+",
-            "right":{"type":"Literal","value":5.0,"raw":"5"}},
-        "operator":"*",
-        "right":{"type":"Literal","value":300.0,"raw":"300"}
-    }))
-    .unwrap();
+            "left":{
+                "type":"BinaryExpression",
+                "left":{"type":"Literal","value":20.0,"raw":"20"},
+                "operator":"+",
+                "right":{"type":"Literal","value":5.0,"raw":"5"}},
+            "operator":"*",
+            "right":{"type":"Literal","value":300.0,"raw":"300"}
+        }))
+        .unwrap();
     let expected = expected_estree.to_proto();
 
     println!("value: {}", parsed);

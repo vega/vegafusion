@@ -1,5 +1,5 @@
-use crate::proto::gen::expression::MemberExpression;
 use crate::expression::ast::expression::ExpressionTrait;
+use crate::proto::gen::expression::MemberExpression;
 use std::fmt::{Display, Formatter};
 
 impl MemberExpression {

@@ -17,7 +17,6 @@ use self::super::estree_expression::ESTreeExpression;
 use vegafusion_core::proto::gen::expression::Expression;
 use vegafusion_rt_datafusion::expression::compiler::utils::ScalarValueHelpers;
 
-
 lazy_static! {
     static ref UNDEFINED_RE: Regex = Regex::new(r"\bundefined\b").unwrap();
 }

@@ -1,6 +1,6 @@
 use datafusion::logical_plan::{lit, Expr};
 use datafusion::scalar::ScalarValue;
-use vegafusion_core::proto::gen::expression::{Literal, literal};
+use vegafusion_core::proto::gen::expression::{literal, Literal};
 
 pub fn compile_literal(node: &Literal) -> Expr {
     use literal::Value::*;

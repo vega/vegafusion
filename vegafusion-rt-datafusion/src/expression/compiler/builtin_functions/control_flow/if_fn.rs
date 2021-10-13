@@ -1,7 +1,6 @@
 use vegafusion_core::error::{Result, VegaFusionError};
-use vegafusion_core::proto::gen::expression::{Expression, ConditionalExpression};
 use vegafusion_core::proto::gen::expression::expression::Expr;
-
+use vegafusion_core::proto::gen::expression::{ConditionalExpression, Expression};
 
 /// `if(test, thenValue, elseValue)`
 ///
@@ -18,7 +17,7 @@ pub fn if_fn(arguments: &[Expression]) -> Result<Expression> {
         }));
         Ok(Expression {
             expr: Some(expr),
-            span: None
+            span: None,
         })
     } else {
         return Err(VegaFusionError::compilation(&format!(

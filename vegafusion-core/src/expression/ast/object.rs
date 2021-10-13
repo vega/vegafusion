@@ -1,8 +1,8 @@
-use std::fmt::{Display, Formatter};
-use crate::proto::gen::expression::property::Key;
-use crate::proto::gen::expression::{Property, ObjectExpression};
 use crate::expression::ast::expression::ExpressionTrait;
 use crate::proto::gen::expression::literal::Value;
+use crate::proto::gen::expression::property::Key;
+use crate::proto::gen::expression::{ObjectExpression, Property};
+use std::fmt::{Display, Formatter};
 
 impl Display for Key {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -28,7 +28,12 @@ impl Key {
 
 impl Display for Property {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}: {}", self.key.as_ref().unwrap(), self.value.as_ref().unwrap())
+        write!(
+            f,
+            "{}: {}",
+            self.key.as_ref().unwrap(),
+            self.value.as_ref().unwrap()
+        )
     }
 }
 

@@ -1,6 +1,6 @@
-use std::fmt::{Display, Formatter};
-use crate::proto::gen::expression::{LogicalOperator, LogicalExpression};
 use crate::expression::ast::expression::ExpressionTrait;
+use crate::proto::gen::expression::{LogicalExpression, LogicalOperator};
+use std::fmt::{Display, Formatter};
 
 // Logical
 impl Display for LogicalOperator {

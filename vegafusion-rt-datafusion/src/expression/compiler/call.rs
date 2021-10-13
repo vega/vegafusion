@@ -1,4 +1,3 @@
-use vegafusion_core::error::{Result, VegaFusionError};
 use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
 use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
 use crate::expression::compiler::builtin_functions::datetime::date_parts::{
@@ -24,7 +23,8 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
-use vegafusion_core::proto::gen::expression::{Expression, CallExpression};
+use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::proto::gen::expression::{CallExpression, Expression};
 
 #[derive(Clone)]
 pub enum VegaFusionCallable {

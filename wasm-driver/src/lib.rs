@@ -1,12 +1,12 @@
 mod utils;
 
-use wasm_bindgen::prelude::*;
-use vegafusion_core::proto::gen::expression;
+use prost::Message;
 use vegafusion_core::arrow;
 use vegafusion_core::arrow::array::Float64Array;
 use vegafusion_core::expression::lexer::tokenize;
 use vegafusion_core::expression::parser::parse;
-use prost::Message;
+use vegafusion_core::proto::gen::expression;
+use wasm_bindgen::prelude::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -15,7 +15,7 @@ use prost::Message;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-extern {
+extern "C" {
     fn alert(s: &str);
 }
 
@@ -23,7 +23,7 @@ extern {
 pub fn greet() {
     let lit = expression::Literal {
         raw: "23.5000".to_string(),
-        value: Some(expression::literal::Value::Number(23.5))
+        value: Some(expression::literal::Value::Number(23.5)),
     };
 
     let arr = Float64Array::from(vec![1.0, 2.0, 3.0]);
@@ -34,7 +34,10 @@ pub fn greet() {
     // Unwrap is safe, since we have reserved sufficient capacity in the vector.
     expr.encode(&mut expr_bytes).unwrap();
 
-    alert(&format!("Hello, from Rust!\n{:?}\n{:?}\n{:?}\n{:?}", lit, arr, expr, expr_bytes));
+    alert(&format!(
+        "Hello, from Rust!\n{:?}\n{:?}\n{:?}\n{:?}",
+        lit, arr, expr, expr_bytes
+    ));
 }
 
 #[cfg(test)]

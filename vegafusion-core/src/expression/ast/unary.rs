@@ -1,6 +1,6 @@
-use std::fmt::{Display, Formatter};
-use crate::proto::gen::expression::{UnaryOperator, UnaryExpression};
 use crate::expression::ast::expression::ExpressionTrait;
+use crate::proto::gen::expression::{UnaryExpression, UnaryOperator};
+use std::fmt::{Display, Formatter};
 use std::ops::Deref;
 
 impl Display for UnaryOperator {

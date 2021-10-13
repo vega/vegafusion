@@ -1,8 +1,7 @@
-use crate::expression::lexer::Token;
 use crate::error::{Result, VegaFusionError};
-use crate::proto::gen::expression::{UnaryOperator, BinaryOperator, LogicalOperator, Expression};
+use crate::expression::lexer::Token;
 use crate::proto::gen::expression::expression::Expr;
-
+use crate::proto::gen::expression::{BinaryOperator, Expression, LogicalOperator, UnaryOperator};
 
 pub fn unary_op_from_token(tok: &Token) -> Result<UnaryOperator> {
     Ok(match tok {

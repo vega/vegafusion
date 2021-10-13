@@ -1,4 +1,3 @@
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use crate::transform::utils::DataFrameUtils;
 use datafusion::arrow::array::{ArrayRef, StructArray};
 use datafusion::arrow::datatypes::{DataType, Field, Schema};
@@ -17,6 +16,7 @@ use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::io::Cursor;
 use std::sync::Arc;
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(

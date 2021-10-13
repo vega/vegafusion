@@ -6,11 +6,11 @@ use vega_fusion::data::table::VegaFusionTable;
 use vega_fusion::error::Result;
 
 use datafusion::logical_plan::{col, Expr};
+use itertools::sorted;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use vega_fusion::expression::compiler::utils::is_numeric_datatype;
 use vega_fusion::transform::utils::DataFrameUtils;
-use std::collections::{HashMap, HashSet};
-use itertools::sorted;
 
 #[derive(Debug, Clone)]
 pub struct TablesEqualConfig {
@@ -150,7 +150,9 @@ fn assert_scalars_almost_equals(lhs: &ScalarValue, rhs: &ScalarValue, tol: f64) 
             } else if is_numeric_datatype(&lhs.get_datatype())
                 && is_numeric_datatype(&rhs.get_datatype())
             {
-                if (lhs.is_null() || !numeric_to_f64(lhs).is_finite()) && (rhs.is_null() || !numeric_to_f64(rhs).is_finite()) {
+                if (lhs.is_null() || !numeric_to_f64(lhs).is_finite())
+                    && (rhs.is_null() || !numeric_to_f64(rhs).is_finite())
+                {
                     // both null, nan, inf, or -inf (which are all considered null in JSON)
                 } else {
                     let lhs = numeric_to_f64(lhs);
@@ -171,8 +173,11 @@ fn assert_scalars_almost_equals(lhs: &ScalarValue, rhs: &ScalarValue, tol: f64) 
     }
 }
 
-
-pub fn assert_signals_almost_equal(lhs: HashMap<String, ScalarValue>, rhs: HashMap<String, ScalarValue>, tol: f64) {
+pub fn assert_signals_almost_equal(
+    lhs: HashMap<String, ScalarValue>,
+    rhs: HashMap<String, ScalarValue>,
+    tol: f64,
+) {
     let lhs_names: Vec<String> = sorted(lhs.keys().cloned()).collect();
     let rhs_names: Vec<String> = sorted(rhs.keys().cloned()).collect();
 

@@ -1,5 +1,5 @@
-use crate::proto::gen::expression::ConditionalExpression;
 use crate::expression::ast::expression::ExpressionTrait;
+use crate::proto::gen::expression::ConditionalExpression;
 use std::fmt::{Display, Formatter};
 
 impl ConditionalExpression {

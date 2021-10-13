@@ -7,11 +7,11 @@ use util::check::check_transform_evaluation;
 use util::datasets::vega_json_dataset;
 use util::equality::TablesEqualConfig;
 
-use vega_fusion::spec::transform::TransformSpec;
 use rstest::rstest;
 use vega_fusion::spec::transform::aggregate::{AggregateOp, AggregateTransformSpec};
+use vega_fusion::spec::transform::bin::{BinExtent, BinTransformSpec};
+use vega_fusion::spec::transform::TransformSpec;
 use vega_fusion::spec::values::{Field, SignalExpressionSpec};
-use vega_fusion::spec::transform::bin::{BinTransformSpec, BinExtent};
 
 mod test_aggregate_single {
     use crate::*;
@@ -115,7 +115,6 @@ mod test_aggregate_multi {
     }
 }
 
-
 #[test]
 fn test_bin_aggregate() {
     let dataset = vega_json_dataset("penguins");
@@ -142,9 +141,7 @@ fn test_bin_aggregate() {
     };
 
     let aggregate_spec = AggregateTransformSpec {
-        groupby: vec![
-            Field::String("bin0".to_string()),
-        ],
+        groupby: vec![Field::String("bin0".to_string())],
         fields: vec![
             Some(Field::String("Beak Depth (mm)".to_string())),
             Some(Field::String("Flipper Length (mm)".to_string())),
@@ -157,7 +154,10 @@ fn test_bin_aggregate() {
         extra: Default::default(),
     };
 
-    let transform_specs = vec![TransformSpec::Bin(bin_spec), TransformSpec::Aggregate(aggregate_spec)];
+    let transform_specs = vec![
+        TransformSpec::Bin(bin_spec),
+        TransformSpec::Aggregate(aggregate_spec),
+    ];
 
     let comp_config = Default::default();
     let eq_config = TablesEqualConfig {

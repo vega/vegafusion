@@ -1,4 +1,3 @@
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use datafusion::arrow::array::{ArrayRef, BooleanArray};
 use datafusion::arrow::datatypes::{DataType, Schema};
 use datafusion::arrow::record_batch::RecordBatch;
@@ -8,11 +7,12 @@ use datafusion::optimizer::utils::expr_to_columns;
 use datafusion::physical_plan::planner::DefaultPhysicalPlanner;
 use datafusion::physical_plan::{ColumnarValue, PhysicalExpr};
 use datafusion::scalar::ScalarValue;
+use serde_json::{Map, Value};
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 use std::sync::Arc;
-use serde_json::{Value, Map};
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 // Prefix for special values JSON encoded as strings
 pub const DATETIME_PREFIX: &str = "__$datetime:";
@@ -328,8 +328,11 @@ impl ScalarValueHelpers for ScalarValue {
             ScalarValue::UInt32(Some(e)) => *e as f64,
             ScalarValue::UInt64(Some(e)) => *e as f64,
             _ => {
-                return Err(VegaFusionError::internal(&format!("Cannot convert {} to f64", self)))
-            },
+                return Err(VegaFusionError::internal(&format!(
+                    "Cannot convert {} to f64",
+                    self
+                )))
+            }
         })
     }
 
@@ -339,6 +342,9 @@ impl ScalarValueHelpers for ScalarValue {
                 return Ok([v0.to_f64()?, v1.to_f64()?]);
             }
         }
-        return Err(VegaFusionError::internal(&format!("Cannot convert {} to [f64; 2]", self)))
+        return Err(VegaFusionError::internal(&format!(
+            "Cannot convert {} to [f64; 2]",
+            self
+        )));
     }
 }

@@ -1,18 +1,18 @@
 pub mod aggregate;
+pub mod bin;
 pub mod collect;
 pub mod extent;
 pub mod filter;
 pub mod formula;
-pub mod bin;
 
 use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransformSpec};
 
 use crate::spec::transform::aggregate::AggregateTransformSpec;
+use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
 use crate::spec::transform::formula::FormulaTransformSpec;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use crate::spec::transform::bin::BinTransformSpec;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]

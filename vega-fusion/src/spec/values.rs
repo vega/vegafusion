@@ -47,7 +47,6 @@ pub struct FieldObject {
     pub as_: Option<String>,
 }
 
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SignalExpressionSpec {
     pub signal: String,

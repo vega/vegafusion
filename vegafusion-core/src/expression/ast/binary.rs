@@ -1,6 +1,6 @@
-use std::fmt::{Display, Formatter};
-use crate::proto::gen::expression::{BinaryOperator, BinaryExpression};
 use crate::expression::ast::expression::ExpressionTrait;
+use crate::proto::gen::expression::{BinaryExpression, BinaryOperator};
+use std::fmt::{Display, Formatter};
 
 // Binary
 impl Display for BinaryOperator {
@@ -43,7 +43,6 @@ impl BinaryOperator {
         }
     }
 }
-
 
 impl BinaryExpression {
     pub fn to_operator(&self) -> BinaryOperator {

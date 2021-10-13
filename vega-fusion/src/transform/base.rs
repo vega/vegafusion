@@ -1,12 +1,14 @@
 use crate::error::{Result, VegaFusionError};
 use crate::expression::compiler::config::CompilationConfig;
 use crate::spec::transform::aggregate::AggregateTransformSpec;
+use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
 use crate::spec::transform::extent::ExtentTransformSpec;
 use crate::spec::transform::filter::FilterTransformSpec;
 use crate::spec::transform::formula::FormulaTransformSpec;
 use crate::spec::transform::TransformSpec;
 use crate::transform::aggregate::AggregateTransform;
+use crate::transform::bin::BinTransform;
 use crate::transform::collect::CollectTransform;
 use crate::transform::extent::ExtentTransform;
 use crate::transform::filter::FilterTransform;
@@ -19,8 +21,6 @@ use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::ops::Deref;
 use std::sync::Arc;
-use crate::transform::bin::BinTransform;
-use crate::spec::transform::bin::BinTransformSpec;
 
 pub trait TransformTrait: Debug + Send + Sync {
     fn call(

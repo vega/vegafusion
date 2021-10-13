@@ -1,8 +1,8 @@
-use crate::proto::gen::expression::literal::Value;
-use std::fmt::{Display, Formatter};
-use crate::expression::ast::literal;
 use crate::expression::ast::expression::ExpressionTrait;
+use crate::expression::ast::literal;
+use crate::proto::gen::expression::literal::Value;
 use crate::proto::gen::expression::Literal;
+use std::fmt::{Display, Formatter};
 
 impl Display for literal::Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

@@ -1,7 +1,7 @@
-use std::result;
-use thiserror::Error;
 use arrow::error::ArrowError;
 use std::num::ParseFloatError;
+use std::result;
+use thiserror::Error;
 
 #[cfg(feature = "datafusion")]
 use datafusion::error::DataFusionError;
@@ -181,7 +181,6 @@ impl From<serde_json::Error> for VegaFusionError {
         Self::SerdeJsonError(err, Default::default())
     }
 }
-
 
 pub trait ToInternalError<T> {
     fn internal(self, context: &str) -> Result<T>;

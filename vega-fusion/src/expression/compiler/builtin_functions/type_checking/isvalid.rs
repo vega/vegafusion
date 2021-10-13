@@ -1,7 +1,9 @@
 use datafusion::arrow::array::ArrayRef;
 use datafusion::arrow::compute::is_not_null;
 use datafusion::arrow::datatypes::DataType;
-use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
+use datafusion::physical_plan::functions::{
+    make_scalar_function, ReturnTypeFunction, Signature, Volatility,
+};
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
 
@@ -22,5 +24,10 @@ pub fn make_is_valid_udf() -> ScalarUDF {
     let is_valid = make_scalar_function(is_valid);
 
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Boolean)));
-    ScalarUDF::new("isValid", &Signature::any(1, Volatility::Immutable), &return_type, &is_valid)
+    ScalarUDF::new(
+        "isValid",
+        &Signature::any(1, Volatility::Immutable),
+        &return_type,
+        &is_valid,
+    )
 }
