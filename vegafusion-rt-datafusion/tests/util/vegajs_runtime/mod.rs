@@ -15,6 +15,7 @@ use vegafusion_core::error::{Result, ResultWithContext, ToInternalError, VegaFus
 // use vega_fusion::spec::transform::TransformSpec;
 use self::super::estree_expression::ESTreeExpression;
 use vegafusion_core::proto::gen::expression::Expression;
+use vegafusion_rt_datafusion::expression::compiler::utils::ScalarValueHelpers;
 
 
 lazy_static! {
@@ -195,49 +196,49 @@ impl VegaJsRuntime {
         Ok(estree_expr.to_proto())
     }
 
-    // /// Function to evaluate a full Vega spec and return requested data and signal values
-    // pub fn eval_spec(&self, spec: &Value, watches: &Vec<Watch>) -> Result<Vec<WatchValue>> {
-    //     let script = format!(
-    //         r#"await VegaUtils.evalSpec({}, {})"#,
-    //         serde_json::to_string(spec)?,
-    //         serde_json::to_string(watches)?,
-    //     );
-    //     let statement_result = self.nodejs_runtime.execute_statement(&script)?;
-    //     let watch_values: Vec<WatchValue> = Self::clean_and_parse_json(&statement_result)?;
-    //     Ok(watch_values)
-    // }
-    //
-    // /// Evaluate a scalar signal expression in the presence of a collection of external signal
-    // /// values
-    // pub fn eval_scalar_expression(
-    //     &self,
-    //     expr: &str,
-    //     scope: &HashMap<String, ScalarValue>,
-    // ) -> Result<ScalarValue> {
-    //     // Add special signal for the requested expression
-    //     let mut signals = vec![json!({"name": "_sig", "init": expr})];
-    //
-    //     // Add scope signals
-    //     for (sig, val) in scope {
-    //         signals.push(json!({"name": sig.clone(), "value": val.to_json()?}))
-    //     }
-    //
-    //     // Create spec
-    //     let spec = json!({ "signals": signals });
-    //
-    //     // Create watch to request value of special signal
-    //     let watches = vec![Watch {
-    //         namespace: WatchNamespace::Signal,
-    //         name: "_sig".to_string(),
-    //         path: vec![],
-    //     }];
-    //
-    //     // Evaluate spec and extract signal value
-    //     let watches = self.eval_spec(&spec, &watches)?;
-    //     let scalar_value = ScalarValue::from_json(&watches[0].value)?;
-    //     Ok(scalar_value)
-    // }
-    //
+    /// Function to evaluate a full Vega spec and return requested data and signal values
+    pub fn eval_spec(&self, spec: &Value, watches: &Vec<Watch>) -> Result<Vec<WatchValue>> {
+        let script = format!(
+            r#"await VegaUtils.evalSpec({}, {})"#,
+            serde_json::to_string(spec)?,
+            serde_json::to_string(watches)?,
+        );
+        let statement_result = self.nodejs_runtime.execute_statement(&script)?;
+        let watch_values: Vec<WatchValue> = Self::clean_and_parse_json(&statement_result)?;
+        Ok(watch_values)
+    }
+
+    /// Evaluate a scalar signal expression in the presence of a collection of external signal
+    /// values
+    pub fn eval_scalar_expression(
+        &self,
+        expr: &str,
+        scope: &HashMap<String, ScalarValue>,
+    ) -> Result<ScalarValue> {
+        // Add special signal for the requested expression
+        let mut signals = vec![json!({"name": "_sig", "init": expr})];
+
+        // Add scope signals
+        for (sig, val) in scope {
+            signals.push(json!({"name": sig.clone(), "value": val.to_json()?}))
+        }
+
+        // Create spec
+        let spec = json!({ "signals": signals });
+
+        // Create watch to request value of special signal
+        let watches = vec![Watch {
+            namespace: WatchNamespace::Signal,
+            name: "_sig".to_string(),
+            path: vec![],
+        }];
+
+        // Evaluate spec and extract signal value
+        let watches = self.eval_spec(&spec, &watches)?;
+        let scalar_value = ScalarValue::from_json(&watches[0].value)?;
+        Ok(scalar_value)
+    }
+
     // pub fn eval_transform(
     //     &self,
     //     data_table: &VegaFusionTable,

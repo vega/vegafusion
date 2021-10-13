@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 mod util;
 use util::estree_expression::ESTreeExpression;
 use crate::util::estree_expression::{Literal, LiteralValue};
