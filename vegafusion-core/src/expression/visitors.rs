@@ -4,6 +4,7 @@ use crate::variable::Variable;
 use crate::proto::gen::expression::property::Key;
 
 pub trait ExpressionVisitor {
+    fn visit_expression(&mut self, _expression: &Expression) {}
     fn visit_identifier(&mut self, _node: &Identifier) {}
     fn visit_called_identifier(&mut self, _node: &Identifier, _args: &Vec<Expression>) {}
     fn visit_literal(&mut self, _node: &Literal) {}
@@ -19,31 +20,38 @@ pub trait ExpressionVisitor {
     fn visit_static_member_identifier(&mut self, _node: &Identifier) {}
 }
 
-// pub trait MutExpressionVisitor {
-//     fn visit_identifier(&mut self, _node: &mut Identifier) {}
-//     fn visit_called_identifier(&mut self, _node: &mut Identifier, _args: &mut Vec<Expression>) {}
-//     fn visit_literal(&mut self, _node: &mut Literal) {}
-//     fn visit_binary(&mut self, _node: &mut BinaryExpression) {}
-//     fn visit_logical(&mut self, _node: &mut LogicalExpression) {}
-//     fn visit_unary(&mut self, _node: &mut UnaryExpression) {}
-//     fn visit_conditional(&mut self, _node: &mut ConditionalExpression) {}
-//     fn visit_member(&mut self, _node: &mut MemberExpression) {}
-//     fn visit_call(&mut self, _node: &mut CallExpression) {}
-//     fn visit_array(&mut self, _node: &mut ArrayExpression) {}
-//     fn visit_object(&mut self, _node: &mut ObjectExpression) {}
-//     fn visit_object_key(&mut self, _node: &mut PropertyKey) {}
-//     fn visit_static_member_identifier(&mut self, _node: &mut Identifier) {}
-// }
-//
-// /// Visitor to set all spans in the expression tree to None
-// #[derive(Clone, Default)]
-// pub struct ClearSpansVisitor {}
-// impl ClearSpansVisitor {
-//     pub fn new() -> Self {
-//         Self {}
-//     }
-// }
-//
+pub trait MutExpressionVisitor {
+    fn visit_expression(&mut self, _expression: &mut Expression) {}
+    fn visit_identifier(&mut self, _node: &mut Identifier) {}
+    fn visit_called_identifier(&mut self, _node: &mut Identifier, _args: &mut Vec<Expression>) {}
+    fn visit_literal(&mut self, _node: &mut Literal) {}
+    fn visit_binary(&mut self, _node: &mut BinaryExpression) {}
+    fn visit_logical(&mut self, _node: &mut LogicalExpression) {}
+    fn visit_unary(&mut self, _node: &mut UnaryExpression) {}
+    fn visit_conditional(&mut self, _node: &mut ConditionalExpression) {}
+    fn visit_member(&mut self, _node: &mut MemberExpression) {}
+    fn visit_call(&mut self, _node: &mut CallExpression) {}
+    fn visit_array(&mut self, _node: &mut ArrayExpression) {}
+    fn visit_object(&mut self, _node: &mut ObjectExpression) {}
+    fn visit_object_key(&mut self, _node: &mut Key) {}
+    fn visit_static_member_identifier(&mut self, _node: &mut Identifier) {}
+}
+
+/// Visitor to set all spans in the expression tree to None
+#[derive(Clone, Default)]
+pub struct ClearSpansVisitor {}
+impl ClearSpansVisitor {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl MutExpressionVisitor for ClearSpansVisitor {
+    fn visit_expression(&mut self, expression: &mut Expression) {
+        expression.span.take();
+    }
+}
+
 // impl MutExpressionVisitor for ClearSpansVisitor {
 //     fn visit_identifier(&mut self, node: &mut Identifier) {
 //         node.span.take();

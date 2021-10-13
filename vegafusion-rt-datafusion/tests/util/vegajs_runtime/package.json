@@ -1,0 +1,19 @@
+{
+  "name": "diorite-testing",
+  "version": "1.0.0",
+  "description": "package.json file for running nodejs from diorite",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "canvas": "^2.8.0",
+    "fs": "^0.0.1-security",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.1",
+    "svgo": "^2.6.1",
+    "vega": "^5.20.2"
+  }
+}

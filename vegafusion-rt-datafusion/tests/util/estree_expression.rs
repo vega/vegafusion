@@ -144,9 +144,9 @@ impl BinaryOperator {
 /// https://github.com/estree/estree/blob/0fa6c005fa452f1f970b3923d5faa38178906d08/es5.md#binaryexpression
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BinaryExpression {
-    pub left: Box<Expression>,
+    pub left: Box<ESTreeExpression>,
     pub operator: BinaryOperator,
-    pub right: Box<Expression>,
+    pub right: Box<ESTreeExpression>,
 }
 
 impl BinaryExpression {
@@ -189,9 +189,9 @@ impl LogicalOperator {
 /// https://github.com/estree/estree/blob/0fa6c005fa452f1f970b3923d5faa38178906d08/es5.md#logicalexpression
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogicalExpression {
-    pub left: Box<Expression>,
+    pub left: Box<ESTreeExpression>,
     pub operator: LogicalOperator,
-    pub right: Box<Expression>,
+    pub right: Box<ESTreeExpression>,
 }
 
 impl LogicalExpression {
@@ -241,7 +241,7 @@ impl UnaryOperator {
 pub struct UnaryExpression {
     pub operator: UnaryOperator,
     pub prefix: bool,
-    pub argument: Box<Expression>,
+    pub argument: Box<ESTreeExpression>,
 }
 
 impl UnaryExpression {
@@ -263,9 +263,9 @@ impl UnaryExpression {
 /// https://github.com/estree/estree/blob/0fa6c005fa452f1f970b3923d5faa38178906d08/es5.md#conditionalexpression
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConditionalExpression {
-    pub test: Box<Expression>,
-    pub consequent: Box<Expression>,
-    pub alternate: Box<Expression>,
+    pub test: Box<ESTreeExpression>,
+    pub consequent: Box<ESTreeExpression>,
+    pub alternate: Box<ESTreeExpression>,
 }
 
 
@@ -296,7 +296,7 @@ pub enum Callee {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CallExpression {
     pub callee: Callee,
-    pub arguments: Vec<Expression>,
+    pub arguments: Vec<ESTreeExpression>,
 }
 
 impl CallExpression {
@@ -319,7 +319,7 @@ impl CallExpression {
 /// https://github.com/estree/estree/blob/0fa6c005fa452f1f970b3923d5faa38178906d08/es5.md#arrayexpression
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArrayExpression {
-    pub elements: Vec<Expression>,
+    pub elements: Vec<ESTreeExpression>,
 }
 
 impl ArrayExpression {
@@ -362,7 +362,7 @@ impl PropertyKey {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Property {
     pub key: PropertyKey,
-    pub value: Expression,
+    pub value: ESTreeExpression,
     pub kind: String,
 }
 
@@ -400,8 +400,8 @@ impl ObjectExpression {
 /// https://github.com/estree/estree/blob/0fa6c005fa452f1f970b3923d5faa38178906d08/es5.md#property
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemberExpression {
-    pub object: Box<Expression>,
-    pub property: Box<Expression>,
+    pub object: Box<ESTreeExpression>,
+    pub property: Box<ESTreeExpression>,
     pub computed: bool,
 }
 
@@ -421,7 +421,7 @@ impl MemberExpression {
 /// Expression enum that serializes to ESTree compatible JSON object
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum Expression {
+pub enum ESTreeExpression {
     Identifier(Identifier),
     Literal(Literal),
     BinaryExpression(BinaryExpression),
@@ -434,19 +434,19 @@ pub enum Expression {
     MemberExpression(MemberExpression),
 }
 
-impl Expression {
+impl ESTreeExpression {
     pub fn to_proto(&self) -> proto_expression::Expression {
         let expr = match self {
-            Expression::Identifier(expr) => expr.to_proto(),
-            Expression::Literal(expr) => expr.to_proto(),
-            Expression::BinaryExpression(expr) => expr.to_proto(),
-            Expression::LogicalExpression(expr) => expr.to_proto(),
-            Expression::UnaryExpression(expr) => expr.to_proto(),
-            Expression::ConditionalExpression(expr) => expr.to_proto(),
-            Expression::CallExpression(expr) => expr.to_proto(),
-            Expression::ArrayExpression(expr) => expr.to_proto(),
-            Expression::ObjectExpression(expr) => expr.to_proto(),
-            Expression::MemberExpression(expr) => expr.to_proto(),
+            ESTreeExpression::Identifier(expr) => expr.to_proto(),
+            ESTreeExpression::Literal(expr) => expr.to_proto(),
+            ESTreeExpression::BinaryExpression(expr) => expr.to_proto(),
+            ESTreeExpression::LogicalExpression(expr) => expr.to_proto(),
+            ESTreeExpression::UnaryExpression(expr) => expr.to_proto(),
+            ESTreeExpression::ConditionalExpression(expr) => expr.to_proto(),
+            ESTreeExpression::CallExpression(expr) => expr.to_proto(),
+            ESTreeExpression::ArrayExpression(expr) => expr.to_proto(),
+            ESTreeExpression::ObjectExpression(expr) => expr.to_proto(),
+            ESTreeExpression::MemberExpression(expr) => expr.to_proto(),
         };
 
         proto_expression::Expression {

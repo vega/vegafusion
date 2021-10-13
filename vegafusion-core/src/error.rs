@@ -45,6 +45,9 @@ pub enum VegaFusionError {
 
     #[error("IO Error: {0}\n{1}")]
     IOError(std::io::Error, ErrorContext),
+
+    #[error("IO Error: {0}\n{1}")]
+    SerdeJsonError(serde_json::Error, ErrorContext),
 }
 
 impl VegaFusionError {
@@ -84,6 +87,10 @@ impl VegaFusionError {
             IOError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::IOError(err, context)
+            }
+            SerdeJsonError(err, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::SerdeJsonError(err, context)
             }
         }
     }
@@ -166,6 +173,12 @@ impl From<ArrowError> for VegaFusionError {
 impl From<std::io::Error> for VegaFusionError {
     fn from(err: std::io::Error) -> Self {
         Self::IOError(err, Default::default())
+    }
+}
+
+impl From<serde_json::Error> for VegaFusionError {
+    fn from(err: serde_json::Error) -> Self {
+        Self::SerdeJsonError(err, Default::default())
     }
 }
 

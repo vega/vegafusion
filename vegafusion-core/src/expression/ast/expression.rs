@@ -3,7 +3,7 @@ use crate::proto::gen::expression::{Expression, Identifier};
 use std::ops::Deref;
 use crate::proto::gen::expression::expression::Expr;
 use crate::variable::Variable;
-use crate::expression::visitors::{GetVariablesVisitor, ExpressionVisitor};
+use crate::expression::visitors::{GetVariablesVisitor, ExpressionVisitor, MutExpressionVisitor, ClearSpansVisitor};
 use itertools::sorted;
 
 /// Trait that all AST node types implement
@@ -44,10 +44,10 @@ impl Display for Expression {
 
 
 impl Expression {
-    // pub fn clear_spans(&mut self) {
-    //     let mut visitor = ClearSpansVisitor::new();
-    //     self.walk_mut(&mut visitor);
-    // }
+    pub fn clear_spans(&mut self) {
+        let mut visitor = ClearSpansVisitor::new();
+        self.walk_mut(&mut visitor);
+    }
 
     pub fn get_variables(&self) -> Vec<Variable> {
         let mut visitor = GetVariablesVisitor::new();
@@ -109,14 +109,76 @@ impl Expression {
             Expr::Member(node) => {
                 node.object.as_ref().unwrap().walk(visitor);
                 let prop_expr = node.property.as_ref().unwrap().expr.as_ref().unwrap();
-                if node.computed {
-                    node.property.as_ref().unwrap().walk(visitor);
-                } else if let Expr::Identifier(identifier) = prop_expr {
+                if let Expr::Identifier(identifier) = prop_expr {
                     visitor.visit_static_member_identifier(identifier);
                 }
+                node.property.as_ref().unwrap().walk(visitor);
                 visitor.visit_member(node);
             }
         }
+        visitor.visit_expression(self);
+    }
+
+    pub fn walk_mut(&mut self, visitor: &mut dyn MutExpressionVisitor) {
+        match self.expr.as_mut().unwrap() {
+            Expr::Binary(node) => {
+                node.left.as_mut().unwrap().walk_mut(visitor);
+                node.right.as_mut().unwrap().walk_mut(visitor);
+                visitor.visit_binary(node);
+            }
+            Expr::Logical(node) => {
+                node.left.as_mut().unwrap().walk_mut(visitor);
+                node.right.as_mut().unwrap().walk_mut(visitor);
+                visitor.visit_logical(node);
+            }
+            Expr::Unary(node) => {
+                node.argument.as_mut().unwrap().walk_mut(visitor);
+                visitor.visit_unary(node);
+            }
+            Expr::Conditional(node) => {
+                node.test.as_mut().unwrap().walk_mut(visitor);
+                node.consequent.as_mut().unwrap().walk_mut(visitor);
+                node.alternate.as_mut().unwrap().walk_mut(visitor);
+                visitor.visit_conditional(node);
+            }
+            Expr::Literal(node) => {
+                visitor.visit_literal(node);
+            }
+            Expr::Identifier(node) => {
+                visitor.visit_identifier(node);
+            }
+            Expr::Call(node) => {
+                let mut callee_id = Identifier {name: node.callee.clone()};
+                visitor.visit_called_identifier(&mut callee_id, &mut node.arguments);
+                for arg in &mut node.arguments {
+                    arg.walk_mut(visitor);
+                }
+                visitor.visit_call(node);
+            }
+            Expr::Array(node) => {
+                for el in &mut node.elements {
+                    el.walk_mut(visitor);
+                }
+                visitor.visit_array(node);
+            }
+            Expr::Object(node) => {
+                for prop in &mut node.properties {
+                    visitor.visit_object_key(prop.key.as_mut().unwrap());
+                    prop.value.as_mut().unwrap().walk_mut(visitor);
+                }
+                visitor.visit_object(node);
+            }
+            Expr::Member(node) => {
+                node.object.as_mut().unwrap().walk_mut(visitor);
+                let prop_expr = node.property.as_mut().unwrap().expr.as_mut().unwrap();
+                if let Expr::Identifier(identifier) = prop_expr {
+                    visitor.visit_static_member_identifier(identifier);
+                }
+                node.property.as_mut().unwrap().walk_mut(visitor);
+                visitor.visit_member(node);
+            }
+        }
+        visitor.visit_expression(self);
     }
 
     // pub fn walk_mut(&mut self, visitor: &mut dyn MutExpressionVisitor) {
