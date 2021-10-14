@@ -16,6 +16,9 @@ use vegafusion_core::error::{Result, ResultWithContext, ToInternalError, VegaFus
 use self::super::estree_expression::ESTreeExpression;
 use vegafusion_core::proto::gen::expression::Expression;
 use vegafusion_rt_datafusion::expression::compiler::utils::ScalarValueHelpers;
+use vegafusion_rt_datafusion::data::table::VegaFusionTable;
+use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
+use vegafusion_core::spec::transform::TransformSpec;
 
 lazy_static! {
     static ref UNDEFINED_RE: Regex = Regex::new(r"\bundefined\b").unwrap();
@@ -238,63 +241,63 @@ impl VegaJsRuntime {
         Ok(scalar_value)
     }
 
-    // pub fn eval_transform(
-    //     &self,
-    //     data_table: &VegaFusionTable,
-    //     transforms: &[TransformSpec],
-    //     config: &CompilationConfig,
-    // ) -> Result<(VegaFusionTable, HashMap<String, ScalarValue>)> {
-    //     // Initialize data vector with the input table and transforms
-    //     let mut data = vec![json!({
-    //         "name": "_dataset",
-    //         "values": data_table.to_json(),
-    //         "transform": transforms
-    //     })];
-    //
-    //     // Add additional dataset from compilation config
-    //     for (name, val) in &config.data_scope {
-    //         data.push(json!({"name": name.clone(), "values": val.to_json()}))
-    //     }
-    //
-    //     // Build signals vector from compilation config
-    //     let mut signals: Vec<Value> = vec![];
-    //     for (name, val) in &config.signal_scope {
-    //         signals.push(json!({"name": name.clone(), "value": val.to_json()?}))
-    //     }
-    //
-    //     // Initialize watches with transformed dataset
-    //     let mut watches = vec![Watch {
-    //         namespace: WatchNamespace::Data,
-    //         name: "_dataset".to_string(),
-    //         path: vec![],
-    //     }];
-    //
-    //     // Add watches for signals produced by transforms
-    //     for tx in transforms {
-    //         for name in tx.output_signals() {
-    //             watches.push(Watch {
-    //                 namespace: WatchNamespace::Signal,
-    //                 name,
-    //                 path: vec![],
-    //             })
-    //         }
-    //     }
-    //
-    //     // Evaluate spec and extract signal value
-    //     let spec = json!({
-    //         "signals": signals,
-    //         "data": data,
-    //     });
-    //     let watches = self.eval_spec(&spec, &watches)?;
-    //     let dataset = VegaFusionTable::from_json(watches[0].value.clone(), 1024)?;
-    //
-    //     let mut watch_signals = HashMap::new();
-    //     for WatchValue { watch, value } in watches.iter().skip(1) {
-    //         watch_signals.insert(watch.name.clone(), ScalarValue::from_json(value)?);
-    //     }
-    //
-    //     Ok((dataset, watch_signals))
-    // }
+    pub fn eval_transform(
+        &self,
+        data_table: &VegaFusionTable,
+        transforms: &[TransformSpec],
+        config: &CompilationConfig,
+    ) -> Result<(VegaFusionTable, HashMap<String, ScalarValue>)> {
+        // Initialize data vector with the input table and transforms
+        let mut data = vec![json!({
+            "name": "_dataset",
+            "values": data_table.to_json(),
+            "transform": transforms
+        })];
+
+        // Add additional dataset from compilation config
+        for (name, val) in &config.data_scope {
+            data.push(json!({"name": name.clone(), "values": val.to_json()}))
+        }
+
+        // Build signals vector from compilation config
+        let mut signals: Vec<Value> = vec![];
+        for (name, val) in &config.signal_scope {
+            signals.push(json!({"name": name.clone(), "value": val.to_json()?}))
+        }
+
+        // Initialize watches with transformed dataset
+        let mut watches = vec![Watch {
+            namespace: WatchNamespace::Data,
+            name: "_dataset".to_string(),
+            path: vec![],
+        }];
+
+        // Add watches for signals produced by transforms
+        for tx in transforms {
+            for name in tx.output_signals() {
+                watches.push(Watch {
+                    namespace: WatchNamespace::Signal,
+                    name,
+                    path: vec![],
+                })
+            }
+        }
+
+        // Evaluate spec and extract signal value
+        let spec = json!({
+            "signals": signals,
+            "data": data,
+        });
+        let watches = self.eval_spec(&spec, &watches)?;
+        let dataset = VegaFusionTable::from_json(watches[0].value.clone(), 1024)?;
+
+        let mut watch_signals = HashMap::new();
+        for WatchValue { watch, value } in watches.iter().skip(1) {
+            watch_signals.insert(watch.name.clone(), ScalarValue::from_json(value)?);
+        }
+
+        Ok((dataset, watch_signals))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

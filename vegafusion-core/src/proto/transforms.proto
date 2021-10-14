@@ -17,7 +17,7 @@ message Formula {
 // Extent
 message Extent {
   string field = 1;
-  string signal = 2;
+  optional string signal = 2;
 }
 
 // Collect
@@ -35,13 +35,13 @@ enum SortOrder {
 message Bin {
   string field = 1;
   expression.Expression extent = 2;
-  string signal = 3;
-  string alias_0 = 4;
-  string alias_1 = 5;
+  optional string signal = 3;
+  optional string alias_0 = 4;
+  optional string alias_1 = 5;
 
   // A value in the binned domain at which to anchor the bins The bin boundaries will be shifted,
   // if necessary, to ensure that a boundary aligns with the anchor value.
-  double anchor = 6;
+  optional double anchor = 6;
 
   // The maximum number of bins allowed
   double maxbins = 7;
@@ -50,13 +50,13 @@ message Bin {
   double base = 8;
 
   // An exact step size to use between bins. Overrides other options.
-  double step = 9;
+  optional double step = 9;
 
   // A list of allowable step sizes to choose from
   repeated double steps = 10;
 
   // The value span over which to generate bin boundaries. Defaults to the exact extent of the data
-  double span = 11;
+  optional double span = 11;
 
   // A minimum distance between adjacent bins
   double minstep = 12;

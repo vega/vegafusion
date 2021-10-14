@@ -1,7 +1,6 @@
 // use crate::util::equality::{assert_tables_equal, TablesEqualConfig, assert_signals_almost_equal};
 // use datafusion::scalar::ScalarValue;
 // use std::collections::HashMap;
-// use std::convert::TryFrom;
 // use vega_fusion::data::table::VegaFusionTable;
 // use vega_fusion::expression::compiler::compile;
 // use vega_fusion::expression::compiler::config::CompilationConfig;
@@ -12,10 +11,15 @@
 use crate::util::vegajs_runtime::vegajs_runtime;
 use datafusion::scalar::ScalarValue;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use vegafusion_core::expression::parser::parse;
 use vegafusion_rt_datafusion::expression::compiler::compile;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 use vegafusion_rt_datafusion::expression::compiler::utils::ExprHelpers;
+use vegafusion_rt_datafusion::data::table::VegaFusionTable;
+use vegafusion_core::spec::transform::TransformSpec;
+use vegafusion_rt_datafusion::transform::pipeline::TransformPipeline;
+use crate::util::equality::{TablesEqualConfig, assert_tables_equal, assert_signals_almost_equal};
 
 pub fn check_parsing(expr_str: &str) {
     let vegajs_runtime = vegajs_runtime();
@@ -62,35 +66,36 @@ pub fn check_scalar_evaluation(expr_str: &str, scope: &HashMap<String, ScalarVal
     );
 }
 
-// pub fn check_transform_evaluation(
-//     data: &VegaFusionTable,
-//     transform_specs: &[TransformSpec],
-//     compilation_config: &CompilationConfig,
-//     equality_config: &TablesEqualConfig,
-// ) {
-//     let vegajs_runtime = vegajs_runtime();
-//
-//     let (expected_data, expected_signals) = vegajs_runtime
-//         .eval_transform(data, transform_specs, compilation_config)
-//         .unwrap();
-//
-//     println!(
-//         "expected data\n{}",
-//         expected_data.pretty_format(Some(500)).unwrap()
-//     );
-//     println!("expected signals: {:?}", expected_signals);
-//
-//     let df = data.to_dataframe().unwrap();
-//     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
-//     let (result_df, result_signals) = pipeline.call(df, compilation_config).unwrap();
-//     let result_data = VegaFusionTable::try_from(result_df).unwrap();
-//
-//     println!(
-//         "result data\n{}",
-//         result_data.pretty_format(Some(500)).unwrap()
-//     );
-//     println!("result signals: {:?}", result_signals);
-//
-//     assert_tables_equal(&result_data, &expected_data, equality_config);
-//     assert_signals_almost_equal(result_signals, expected_signals, equality_config.tolerance);
-// }
+pub fn check_transform_evaluation(
+    data: &VegaFusionTable,
+    transform_specs: &[TransformSpec],
+    compilation_config: &CompilationConfig,
+    equality_config: &TablesEqualConfig,
+) {
+    let vegajs_runtime = vegajs_runtime();
+    let (expected_data, expected_signals) = vegajs_runtime
+        .eval_transform(data, transform_specs, compilation_config)
+        .unwrap();
+
+    println!(
+        "expected data\n{}",
+        expected_data.pretty_format(Some(500)).unwrap()
+    );
+    println!("expected signals: {:?}", expected_signals);
+
+    let df = data.to_dataframe().unwrap();
+    let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
+    let (result_df, result_signals) = pipeline.call(
+        df, compilation_config
+    ).unwrap();
+    let result_data = VegaFusionTable::try_from(result_df).unwrap();
+
+    println!(
+        "result data\n{}",
+        result_data.pretty_format(Some(500)).unwrap()
+    );
+    println!("result signals: {:?}", result_signals);
+
+    assert_tables_equal(&result_data, &expected_data, equality_config);
+    assert_signals_almost_equal(result_signals, expected_signals, equality_config.tolerance);
+}

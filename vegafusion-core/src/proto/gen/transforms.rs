@@ -17,8 +17,8 @@ pub struct Formula {
 pub struct Extent {
     #[prost(string, tag="1")]
     pub field: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
-    pub signal: ::prost::alloc::string::String,
+    #[prost(string, optional, tag="2")]
+    pub signal: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Collect
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -35,16 +35,16 @@ pub struct Bin {
     pub field: ::prost::alloc::string::String,
     #[prost(message, optional, tag="2")]
     pub extent: ::core::option::Option<super::expression::Expression>,
-    #[prost(string, tag="3")]
-    pub signal: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub alias_0: ::prost::alloc::string::String,
-    #[prost(string, tag="5")]
-    pub alias_1: ::prost::alloc::string::String,
+    #[prost(string, optional, tag="3")]
+    pub signal: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag="4")]
+    pub alias_0: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag="5")]
+    pub alias_1: ::core::option::Option<::prost::alloc::string::String>,
     /// A value in the binned domain at which to anchor the bins The bin boundaries will be shifted,
     /// if necessary, to ensure that a boundary aligns with the anchor value.
-    #[prost(double, tag="6")]
-    pub anchor: f64,
+    #[prost(double, optional, tag="6")]
+    pub anchor: ::core::option::Option<f64>,
     /// The maximum number of bins allowed
     #[prost(double, tag="7")]
     pub maxbins: f64,
@@ -52,14 +52,14 @@ pub struct Bin {
     #[prost(double, tag="8")]
     pub base: f64,
     /// An exact step size to use between bins. Overrides other options.
-    #[prost(double, tag="9")]
-    pub step: f64,
+    #[prost(double, optional, tag="9")]
+    pub step: ::core::option::Option<f64>,
     /// A list of allowable step sizes to choose from
     #[prost(double, repeated, tag="10")]
     pub steps: ::prost::alloc::vec::Vec<f64>,
     /// The value span over which to generate bin boundaries. Defaults to the exact extent of the data
-    #[prost(double, tag="11")]
-    pub span: f64,
+    #[prost(double, optional, tag="11")]
+    pub span: ::core::option::Option<f64>,
     /// A minimum distance between adjacent bins
     #[prost(double, tag="12")]
     pub minstep: f64,

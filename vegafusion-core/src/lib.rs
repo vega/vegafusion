@@ -5,6 +5,8 @@ pub mod error;
 pub mod expression;
 pub mod proto;
 pub mod variable;
+pub mod spec;
+pub mod transform;
 
 pub use arrow;
 
