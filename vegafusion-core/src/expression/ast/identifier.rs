@@ -13,7 +13,7 @@ impl Display for Identifier {
 impl Identifier {
     pub fn new(name: &str) -> Self {
         Self {
-            name: name.to_string()
+            name: name.to_string(),
         }
     }
 }

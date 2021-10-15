@@ -1,11 +1,11 @@
-pub mod filter;
-pub mod utils;
-pub mod pipeline;
-pub mod formula;
-pub mod extent;
-pub mod collect;
-pub mod bin;
 pub mod aggregate;
+pub mod bin;
+pub mod collect;
+pub mod extent;
+pub mod filter;
+pub mod formula;
+pub mod pipeline;
+pub mod utils;
 
 use crate::expression::compiler::config::CompilationConfig;
 use datafusion::dataframe::DataFrame;
@@ -14,7 +14,7 @@ use datafusion::scalar::ScalarValue;
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::variable::Variable;
-use std::ops::Deref;
+
 use vegafusion_core::proto::gen::transforms::expression::Transform;
 
 pub trait TransformTrait {
@@ -45,7 +45,11 @@ pub fn to_transform_trait(tx: &Transform) -> &dyn TransformTrait {
 }
 
 impl TransformTrait for Transform {
-    fn call(&self, dataframe: Arc<dyn DataFrame>, config: &CompilationConfig) -> Result<(Arc<dyn DataFrame>, Vec<ScalarValue>)> {
+    fn call(
+        &self,
+        dataframe: Arc<dyn DataFrame>,
+        config: &CompilationConfig,
+    ) -> Result<(Arc<dyn DataFrame>, Vec<ScalarValue>)> {
         to_transform_trait(self).call(dataframe, config)
     }
 

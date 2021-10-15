@@ -6,7 +6,7 @@ impl CallExpression {
     pub fn new(callee: &str, arguments: Vec<Expression>) -> Self {
         Self {
             callee: callee.to_string(),
-            arguments
+            arguments,
         }
     }
 }

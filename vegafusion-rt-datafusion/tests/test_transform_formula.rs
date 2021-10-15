@@ -2,9 +2,9 @@
 extern crate lazy_static;
 
 mod util;
+use datafusion::scalar::ScalarValue;
 use util::check::check_transform_evaluation;
 use util::datasets::vega_json_dataset;
-use datafusion::scalar::ScalarValue;
 use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;

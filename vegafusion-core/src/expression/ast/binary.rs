@@ -49,7 +49,7 @@ impl BinaryExpression {
         Self {
             left: Some(Box::new(lhs)),
             operator: *op as i32,
-            right: Some(Box::new(rhs))
+            right: Some(Box::new(rhs)),
         }
     }
 

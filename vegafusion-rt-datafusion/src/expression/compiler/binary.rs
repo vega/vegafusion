@@ -20,7 +20,6 @@ pub fn compile_binary(
     let lhs_numeric = to_numeric(lhs.clone(), schema)?;
     let rhs_numeric = to_numeric(rhs.clone(), schema)?;
 
-    
     let new_expr: Expr = match node.to_operator() {
         BinaryOperator::Minus => Expr::BinaryExpr {
             left: Box::new(lhs_numeric),

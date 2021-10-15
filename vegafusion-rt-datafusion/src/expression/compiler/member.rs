@@ -18,9 +18,7 @@ use datafusion::scalar::ScalarValue;
 use std::convert::TryFrom;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, VegaFusionError};
-use vegafusion_core::proto::gen::expression::{
-    expression::Expr as vfExpr, Expression, Identifier, MemberExpression,
-};
+use vegafusion_core::proto::gen::expression::{Identifier, MemberExpression};
 
 pub fn compile_member(
     node: &MemberExpression,
@@ -48,8 +46,7 @@ pub fn compile_member(
             }
         }
         prop_str
-    } else if let Ok(property) = node.property().as_identifier()
-    {
+    } else if let Ok(property) = node.property().as_identifier() {
         property.name.clone()
     } else {
         return Err(VegaFusionError::compilation(&format!(

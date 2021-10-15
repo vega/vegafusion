@@ -1,14 +1,14 @@
+use crate::error::Result;
 use crate::expression::ast::expression::ExpressionTrait;
-use crate::proto::gen::expression::{MemberExpression, Expression, Identifier};
+use crate::proto::gen::expression::{Expression, MemberExpression};
 use std::fmt::{Display, Formatter};
-use crate::error::{Result, ResultWithContext};
 
 impl MemberExpression {
     pub fn new_computed(object: Expression, property: Expression) -> Self {
         Self {
             object: Some(Box::new(object)),
             property: Some(Box::new(property)),
-            computed: true
+            computed: true,
         }
     }
 
@@ -18,7 +18,7 @@ impl MemberExpression {
         Ok(Self {
             object: Some(Box::new(object)),
             property: Some(Box::new(property)),
-            computed: false
+            computed: false,
         })
     }
 

@@ -4,15 +4,11 @@ extern crate lazy_static;
 pub mod error;
 pub mod expression;
 pub mod proto;
-pub mod variable;
 pub mod spec;
 pub mod transform;
+pub mod variable;
 
 pub use arrow;
-
-
-
-
 
 // Include the `items` module, which is generated from items.proto.
 // pub mod expression {

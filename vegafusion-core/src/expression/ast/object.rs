@@ -1,9 +1,9 @@
 use crate::expression::ast::expression::ExpressionTrait;
 use crate::proto::gen::expression::literal::Value;
 use crate::proto::gen::expression::property::Key;
-use crate::proto::gen::expression::{ObjectExpression, Property, Literal, Identifier, Expression};
+use crate::proto::gen::expression::{Expression, Identifier, Literal, ObjectExpression, Property};
 use std::fmt::{Display, Formatter};
-use crate::expression::ast::literal;
+
 use crate::error::{Result, VegaFusionError};
 
 impl Display for Key {
@@ -43,7 +43,9 @@ impl Property {
         } else if let Ok(literal) = key.as_literal() {
             Ok(Self::new_literal(literal.clone(), value))
         } else {
-            Err(VegaFusionError::internal("Object key must be an identifier or a literal value"))
+            Err(VegaFusionError::internal(
+                "Object key must be an identifier or a literal value",
+            ))
         }
     }
 
@@ -74,12 +76,7 @@ impl Property {
 
 impl Display for Property {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}: {}",
-            self.key(),
-            self.value()
-        )
+        write!(f, "{}: {}", self.key(), self.value())
     }
 }
 

@@ -1,12 +1,12 @@
-use crate::transform::TransformTrait;
-use vegafusion_core::error::{Result, VegaFusionError, ResultWithContext};
-use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
-use std::sync::Arc;
-use datafusion::dataframe::DataFrame;
 use crate::expression::compiler::config::CompilationConfig;
+use crate::transform::TransformTrait;
+use datafusion::dataframe::DataFrame;
+use datafusion::logical_plan::{avg, col, count, count_distinct, lit, max, min, sum, Expr};
 use datafusion::scalar::ScalarValue;
-use datafusion::logical_plan::{lit, col, avg, min, max, sum, count, Expr, count_distinct};
+use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
 use vegafusion_core::transform::aggregate::op_name;
 
 impl TransformTrait for Aggregate {
@@ -71,7 +71,7 @@ impl TransformTrait for Aggregate {
                 expr.alias(&format!(
                     "{}_{}",
                     op_name(op),
-                    (if field == "" { "null" } else { field }).to_string(),
+                    (if field.is_empty() { "null" } else { field }).to_string(),
                 ))
             };
             agg_exprs.push(expr)

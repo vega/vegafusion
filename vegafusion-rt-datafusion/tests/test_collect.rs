@@ -7,11 +7,10 @@ use util::check::check_transform_evaluation;
 use util::datasets::vega_json_dataset;
 use util::equality::TablesEqualConfig;
 use vegafusion_core::spec::transform::collect::{
-    CollectTransformSpec, CollectSort, SortOrderOrList, SortOrder
+    CollectSort, CollectTransformSpec, SortOrder, SortOrderOrList,
 };
-use vegafusion_core::spec::values::StringOrStringList;
 use vegafusion_core::spec::transform::TransformSpec;
-
+use vegafusion_core::spec::values::StringOrStringList;
 
 #[test]
 fn test_collect_multi() {

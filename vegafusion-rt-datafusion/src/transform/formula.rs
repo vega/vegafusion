@@ -1,16 +1,15 @@
-use crate::transform::TransformTrait;
-use std::sync::Arc;
-use datafusion::dataframe::DataFrame;
-use crate::expression::compiler::config::CompilationConfig;
-use datafusion::scalar::ScalarValue;
-use crate::expression::compiler::compile;
-use vegafusion_core::error::{Result, ResultWithContext};
-use datafusion::logical_plan::Expr;
-use vegafusion_core::variable::Variable;
-use vegafusion_core::proto::gen::transforms::Formula;
 use crate::data::table::VegaFusionTable;
+use crate::expression::compiler::compile;
+use crate::expression::compiler::config::CompilationConfig;
+use crate::transform::TransformTrait;
+use datafusion::dataframe::DataFrame;
+use datafusion::logical_plan::Expr;
+use datafusion::scalar::ScalarValue;
 use std::convert::TryFrom;
-
+use std::sync::Arc;
+use vegafusion_core::error::{Result, ResultWithContext};
+use vegafusion_core::proto::gen::transforms::Formula;
+use vegafusion_core::variable::Variable;
 
 impl TransformTrait for Formula {
     fn call(
@@ -18,7 +17,11 @@ impl TransformTrait for Formula {
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
     ) -> Result<(Arc<dyn DataFrame>, Vec<ScalarValue>)> {
-        let formula_expr = compile(&self.expr.as_ref().unwrap(), config, Some(dataframe.schema()))?;
+        let formula_expr = compile(
+            self.expr.as_ref().unwrap(),
+            config,
+            Some(dataframe.schema()),
+        )?;
 
         // Rename with alias
         let formula_expr = formula_expr.alias(&self.r#as);
@@ -31,7 +34,12 @@ impl TransformTrait for Formula {
 
         let result = dataframe
             .select(vec![Expr::Wildcard, formula_expr])
-            .with_context(|| format!("Formula transform failed with expression: {}", &self.expr.as_ref().unwrap()))?;
+            .with_context(|| {
+                format!(
+                    "Formula transform failed with expression: {}",
+                    &self.expr.as_ref().unwrap()
+                )
+            })?;
 
         Ok((result, Default::default()))
     }

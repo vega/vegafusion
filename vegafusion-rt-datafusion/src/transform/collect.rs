@@ -1,12 +1,11 @@
+use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use datafusion::dataframe::DataFrame;
-use std::sync::Arc;
-use crate::expression::compiler::config::CompilationConfig;
+use datafusion::logical_plan::{col, Expr};
 use datafusion::scalar::ScalarValue;
+use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
-use datafusion::logical_plan::{Expr, col};
 use vegafusion_core::proto::gen::transforms::{Collect, SortOrder};
-
 
 impl TransformTrait for Collect {
     fn call(

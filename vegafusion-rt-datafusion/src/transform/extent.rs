@@ -1,13 +1,12 @@
-use crate::transform::TransformTrait;
 use crate::expression::compiler::config::CompilationConfig;
-use vegafusion_core::error::Result;
-use std::sync::Arc;
-use datafusion::dataframe::DataFrame;
-use datafusion::scalar::ScalarValue;
-use datafusion::logical_plan::{col, min, max};
 use crate::transform::utils::{DataFrameUtils, RecordBatchUtils};
+use crate::transform::TransformTrait;
+use datafusion::dataframe::DataFrame;
+use datafusion::logical_plan::{col, max, min};
+use datafusion::scalar::ScalarValue;
+use std::sync::Arc;
+use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Extent;
-
 
 impl TransformTrait for Extent {
     fn call(

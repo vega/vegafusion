@@ -1,13 +1,17 @@
+use crate::error::{Result, VegaFusionError};
 use crate::expression::visitors::{
     ClearSpansVisitor, ExpressionVisitor, GetVariablesVisitor, MutExpressionVisitor,
 };
 use crate::proto::gen::expression::expression::Expr;
-use crate::proto::gen::expression::{Expression, Identifier, Literal, UnaryExpression, Span, BinaryExpression, LogicalExpression, CallExpression, MemberExpression, ConditionalExpression, ArrayExpression, ObjectExpression};
+use crate::proto::gen::expression::{
+    ArrayExpression, BinaryExpression, CallExpression, ConditionalExpression, Expression,
+    Identifier, Literal, LogicalExpression, MemberExpression, ObjectExpression, Span,
+    UnaryExpression,
+};
 use crate::variable::Variable;
 use itertools::sorted;
 use std::fmt::{Display, Formatter};
 use std::ops::Deref;
-use crate::error::{VegaFusionError, Result};
 
 /// Trait that all AST node types implement
 pub trait ExpressionTrait: Display {
@@ -197,22 +201,14 @@ impl Expression {
     pub fn as_identifier(&self) -> Result<&Identifier> {
         match &self.expr {
             Some(Expr::Identifier(identifier)) => Ok(identifier),
-            _ => {
-                Err(VegaFusionError::internal(
-                    "Expression is not an identifier",
-                ))
-            }
+            _ => Err(VegaFusionError::internal("Expression is not an identifier")),
         }
     }
 
     pub fn as_literal(&self) -> Result<&Literal> {
         match &self.expr {
             Some(Expr::Literal(value)) => Ok(value),
-            _ => {
-                Err(VegaFusionError::internal(
-                    "Expression is not a Literal",
-                ))
-            }
+            _ => Err(VegaFusionError::internal("Expression is not a Literal")),
         }
     }
 

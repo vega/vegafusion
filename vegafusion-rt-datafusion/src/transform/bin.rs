@@ -1,21 +1,22 @@
-use crate::transform::TransformTrait;
-use vegafusion_core::proto::gen::transforms::Bin;
-use std::sync::Arc;
-use datafusion::dataframe::DataFrame;
-use crate::expression::compiler::config::CompilationConfig;
-use datafusion::scalar::ScalarValue;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use crate::expression::compiler::compile;
+use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{ExprHelpers, ScalarValueHelpers};
-use vegafusion_core::arrow::datatypes::DataType;
+use crate::transform::TransformTrait;
+use datafusion::dataframe::DataFrame;
+use datafusion::logical_plan::{col, lit, Expr};
+use datafusion::physical_plan::functions::{
+    make_scalar_function, ReturnTypeFunction, Signature, Volatility,
+};
+use datafusion::physical_plan::udf::ScalarUDF;
+use datafusion::scalar::ScalarValue;
+use float_cmp::approx_eq;
+use std::sync::Arc;
 use vegafusion_core::arrow::array::{ArrayRef, Float64Array, Int64Array};
 use vegafusion_core::arrow::compute::unary;
-use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
-use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion::logical_plan::{col, Expr, lit};
+use vegafusion_core::arrow::datatypes::DataType;
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::proto::gen::transforms::Bin;
 use vegafusion_core::variable::Variable;
-use float_cmp::approx_eq;
-
 
 impl TransformTrait for Bin {
     fn call(
@@ -24,7 +25,11 @@ impl TransformTrait for Bin {
         config: &CompilationConfig,
     ) -> Result<(Arc<dyn DataFrame>, Vec<ScalarValue>)> {
         // Compute extent
-        let expr = compile(self.extent.as_ref().unwrap(), config, Some(dataframe.schema()))?;
+        let expr = compile(
+            self.extent.as_ref().unwrap(),
+            config,
+            Some(dataframe.schema()),
+        )?;
         let extent_scalar = expr.eval_to_scalar()?;
         let extent = extent_scalar.to_f64x2()?;
 
@@ -159,8 +164,6 @@ impl TransformTrait for Bin {
     }
 }
 
-
-
 #[derive(Clone, Debug)]
 pub struct BinParams {
     pub start: f64,
@@ -170,7 +173,7 @@ pub struct BinParams {
 }
 
 pub fn calculate_bin_params(extent: &[f64; 2], tx: &Bin) -> Result<BinParams> {
-    let [min_, max_] = extent.clone();
+    let [min_, max_] = *extent;
     if min_ > max_ {
         return Err(VegaFusionError::specification(&format!(
             "extent[1] must be greater than extent[0]: Received {:?}",
@@ -198,12 +201,15 @@ pub fn calculate_bin_params(extent: &[f64; 2], tx: &Bin) -> Result<BinParams> {
         // If steps is provided, limit step to one of the elements.
         // Choose the first element of steps that will result in fewer than maxmins
         let min_step_size = span / tx.maxbins;
-        let valid_steps: Vec<_> = tx.steps
+        let valid_steps: Vec<_> = tx
+            .steps
             .clone()
             .into_iter()
             .filter(|s| *s > min_step_size)
             .collect();
-        *valid_steps.get(0).unwrap_or_else(|| tx.steps.last().unwrap())
+        *valid_steps
+            .get(0)
+            .unwrap_or_else(|| tx.steps.last().unwrap())
     } else {
         // Otherwise, use span to determine the step size
         let level = (tx.maxbins.ln() / logb).ceil();

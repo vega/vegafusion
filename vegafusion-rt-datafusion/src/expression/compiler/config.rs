@@ -1,8 +1,8 @@
+use crate::data::table::VegaFusionTable;
 use crate::expression::compiler::call::{default_callables, VegaFusionCallable};
 use datafusion::scalar::ScalarValue;
 use num_traits::float::FloatConst;
 use std::collections::HashMap;
-use crate::data::table::VegaFusionTable;
 
 #[derive(Clone)]
 pub struct CompilationConfig {

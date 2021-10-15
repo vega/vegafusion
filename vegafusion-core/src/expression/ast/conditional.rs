@@ -17,7 +17,7 @@ impl ConditionalExpression {
     }
 
     pub fn test(&self) -> &Expression {
-         self.test.as_ref().unwrap()
+        self.test.as_ref().unwrap()
     }
 
     pub fn alternate(&self) -> &Expression {

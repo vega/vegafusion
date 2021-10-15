@@ -47,7 +47,6 @@ impl From<String> for literal::Value {
     }
 }
 
-
 impl ExpressionTrait for Literal {}
 
 impl Display for Literal {
@@ -64,14 +63,14 @@ impl Literal {
     pub fn new<V: Into<literal::Value>>(v: V, raw: &str) -> Self {
         Self {
             raw: raw.to_string(),
-            value: Some(v.into())
+            value: Some(v.into()),
         }
     }
 
     pub fn null() -> Self {
         Self {
             raw: "null".to_string(),
-            value: Some(literal::Value::Null(false))
+            value: Some(literal::Value::Null(false)),
         }
     }
 

@@ -15,10 +15,10 @@ use vegafusion_core::error::{Result, ResultWithContext, ToInternalError, VegaFus
 // use vega_fusion::spec::transform::TransformSpec;
 use self::super::estree_expression::ESTreeExpression;
 use vegafusion_core::proto::gen::expression::Expression;
-use vegafusion_rt_datafusion::expression::compiler::utils::ScalarValueHelpers;
+use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_rt_datafusion::data::table::VegaFusionTable;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
-use vegafusion_core::spec::transform::TransformSpec;
+use vegafusion_rt_datafusion::expression::compiler::utils::ScalarValueHelpers;
 
 lazy_static! {
     static ref UNDEFINED_RE: Regex = Regex::new(r"\bundefined\b").unwrap();

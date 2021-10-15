@@ -1,8 +1,7 @@
-use crate::spec::transform::collect::CollectTransformSpec;
-use crate::proto::gen::transforms::{Collect, SortOrder};
 use crate::error::{Result, VegaFusionError};
-use crate::spec::transform::collect::{SortOrder as SortOrderSpec};
-
+use crate::proto::gen::transforms::{Collect, SortOrder};
+use crate::spec::transform::collect::CollectTransformSpec;
+use crate::spec::transform::collect::SortOrder as SortOrderSpec;
 
 impl Collect {
     pub fn try_new(transform: &CollectTransformSpec) -> Result<Self> {
@@ -24,12 +23,13 @@ impl Collect {
             }
         };
 
-        let order: Vec<_> = order.iter().map(|order| {
-            match order {
+        let order: Vec<_> = order
+            .iter()
+            .map(|order| match order {
                 SortOrderSpec::Descending => SortOrder::Descending as i32,
                 SortOrderSpec::Ascending => SortOrder::Ascending as i32,
-            }
-        }).collect();
+            })
+            .collect();
 
         Ok(Self { fields, order })
     }

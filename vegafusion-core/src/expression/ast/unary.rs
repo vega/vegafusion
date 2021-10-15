@@ -1,5 +1,5 @@
 use crate::expression::ast::expression::ExpressionTrait;
-use crate::proto::gen::expression::{UnaryExpression, UnaryOperator, Expression};
+use crate::proto::gen::expression::{Expression, UnaryExpression, UnaryOperator};
 use std::fmt::{Display, Formatter};
 use std::ops::Deref;
 
@@ -35,7 +35,7 @@ impl UnaryExpression {
         Self {
             operator: *op as i32,
             prefix: true,
-            argument: Some(Box::new(arg))
+            argument: Some(Box::new(arg)),
         }
     }
 

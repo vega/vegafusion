@@ -8,9 +8,8 @@ use util::datasets::vega_json_dataset;
 use util::equality::TablesEqualConfig;
 
 use vegafusion_core::spec::transform::bin::{BinExtent, BinTransformSpec};
-use vegafusion_core::spec::values::{Field, SignalExpressionSpec};
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
+use vegafusion_core::spec::values::{Field, SignalExpressionSpec};
 
 #[test]
 fn test_bin() {
@@ -105,4 +104,3 @@ fn test_bin() {
 //         &eq_config,
 //     );
 // }
-

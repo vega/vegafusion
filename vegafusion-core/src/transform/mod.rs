@@ -1,15 +1,15 @@
-use std::convert::TryFrom;
-use crate::spec::transform::TransformSpec;
-use crate::proto::gen::transforms::expression::Transform;
 use crate::error::VegaFusionError;
-use crate::proto::gen::transforms::{Extent, Filter, Formula, Bin, Aggregate, Collect};
+use crate::proto::gen::transforms::expression::Transform;
+use crate::proto::gen::transforms::{Aggregate, Bin, Collect, Extent, Filter, Formula};
+use crate::spec::transform::TransformSpec;
+use std::convert::TryFrom;
 
-pub mod filter;
-pub mod formula;
+pub mod aggregate;
+pub mod bin;
 pub mod collect;
 pub mod extent;
-pub mod bin;
-pub mod aggregate;
+pub mod filter;
+pub mod formula;
 
 impl TryFrom<&TransformSpec> for Transform {
     type Error = VegaFusionError;

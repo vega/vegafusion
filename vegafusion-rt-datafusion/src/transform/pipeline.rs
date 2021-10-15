@@ -1,21 +1,20 @@
-use vegafusion_core::proto::gen::transforms::expression::Transform;
-use std::convert::TryFrom;
-use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_core::error::VegaFusionError;
-use vegafusion_core::error::Result;
-use std::sync::Arc;
-use datafusion::dataframe::DataFrame;
 use crate::expression::compiler::config::CompilationConfig;
-use std::collections::{HashMap, HashSet};
-use datafusion::scalar::ScalarValue;
-use vegafusion_core::variable::Variable;
-use itertools::sorted;
 use crate::transform::TransformTrait;
+use datafusion::dataframe::DataFrame;
+use datafusion::scalar::ScalarValue;
+use itertools::sorted;
+use std::collections::{HashMap, HashSet};
+use std::convert::TryFrom;
+use std::sync::Arc;
+use vegafusion_core::error::Result;
+use vegafusion_core::error::VegaFusionError;
+use vegafusion_core::proto::gen::transforms::expression::Transform;
+use vegafusion_core::spec::transform::TransformSpec;
+use vegafusion_core::variable::Variable;
 
 pub struct TransformPipeline {
     transforms: Vec<Transform>,
 }
-
 
 impl TryFrom<&[TransformSpec]> for TransformPipeline {
     type Error = VegaFusionError;
@@ -29,7 +28,6 @@ impl TryFrom<&[TransformSpec]> for TransformPipeline {
         Ok(Self { transforms })
     }
 }
-
 
 impl TransformPipeline {
     pub fn call(

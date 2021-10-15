@@ -2,14 +2,12 @@ use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::expression::lexer::{tokenize, Token};
 use crate::expression::ops::{binary_op_from_token, logical_op_from_token, unary_op_from_token};
 use crate::proto::gen::expression::expression::Expr;
-use crate::proto::gen::expression::literal::Value;
-use crate::proto::gen::expression::property::Key;
+
 use crate::proto::gen::expression::{
     ArrayExpression, BinaryExpression, BinaryOperator, CallExpression, ConditionalExpression,
     Expression, Identifier, Literal, LogicalExpression, LogicalOperator, MemberExpression,
     ObjectExpression, Property, Span, UnaryExpression, UnaryOperator,
 };
-
 
 pub fn parse(expr: &str) -> Result<Expression> {
     let mut tokens = tokenize(expr)?;
@@ -291,11 +289,12 @@ pub fn parse_call(
     start: usize,
     full_expr: &str,
 ) -> Option<Result<Expression>> {
-    let lhs = match lhs.as_identifier().with_context(|| "Only global functions are callable") {
+    let lhs = match lhs
+        .as_identifier()
+        .with_context(|| "Only global functions are callable")
+    {
         Ok(identifier) => identifier,
-        Err(err) => {
-            return Some(Err(err))
-        }
+        Err(err) => return Some(Err(err)),
     };
 
     // For precedence, see
@@ -395,9 +394,7 @@ pub fn parse_static_member(
 
             let expr = match MemberExpression::new_static(lhs.clone(), property) {
                 Ok(member) => Expr::from(member),
-                Err(err) => {
-                    return Some(Err(err))
-                }
+                Err(err) => return Some(Err(err)),
             };
             Ok(Expression::new(expr, Some(new_span)))
         }
@@ -447,7 +444,11 @@ pub fn parse_ternary(
         end: alternate.span.clone().unwrap().end,
     };
 
-    let expr = Expr::from(ConditionalExpression::new(lhs.clone(), consequent, alternate));
+    let expr = Expr::from(ConditionalExpression::new(
+        lhs.clone(),
+        consequent,
+        alternate,
+    ));
     Some(Ok(Expression::new(expr, Some(new_span))))
 }
 

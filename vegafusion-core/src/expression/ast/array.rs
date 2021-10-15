@@ -8,7 +8,6 @@ impl ArrayExpression {
     }
 }
 
-
 impl ExpressionTrait for ArrayExpression {}
 
 impl Display for ArrayExpression {

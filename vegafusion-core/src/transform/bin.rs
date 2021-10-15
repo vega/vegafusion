@@ -1,12 +1,10 @@
-use crate::spec::transform::bin::{BinTransformSpec, BinExtent};
-use crate::proto::gen::transforms::Bin;
 use crate::error::Result;
-use crate::proto::gen::expression::{ArrayExpression, Literal, Expression};
-use crate::proto::gen::expression::expression::Expr;
-use crate::spec::values::SignalExpressionSpec;
 use crate::expression::parser::parse;
-use crate::proto::gen::expression::literal::Value;
-
+use crate::proto::gen::expression::expression::Expr;
+use crate::proto::gen::expression::{ArrayExpression, Expression, Literal};
+use crate::proto::gen::transforms::Bin;
+use crate::spec::transform::bin::{BinExtent, BinTransformSpec};
+use crate::spec::values::SignalExpressionSpec;
 
 impl Bin {
     pub fn try_new(transform: &BinTransformSpec) -> Result<Self> {
@@ -19,11 +17,11 @@ impl Bin {
                     Expr::from(ArrayExpression::new(vec![
                         Expression::new(
                             Expr::from(Literal::new(extent[0], &extent[0].to_string())),
-                            None
+                            None,
                         ),
                         Expression::new(
                             Expr::from(Literal::new(extent[1], &extent[1].to_string())),
-                            None
+                            None,
                         ),
                     ])),
                     None,
@@ -53,9 +51,6 @@ impl Bin {
         })
     }
 }
-
-
-
 
 // Port of https://github.com/vega/vega/blob/v5.9.1/packages/vega-statistics/src/bin.js
 // with credit to
@@ -95,7 +90,6 @@ pub struct BinConfig {
     span: Option<f64>,
 }
 
-
 impl Default for BinConfig {
     fn default() -> Self {
         Self {
@@ -111,7 +105,6 @@ impl Default for BinConfig {
         }
     }
 }
-
 
 impl BinConfig {
     pub fn from_spec(spec: BinTransformSpec) -> Self {
