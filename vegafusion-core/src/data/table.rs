@@ -15,6 +15,9 @@ use std::hash::{Hash, Hasher};
 use crate::proto::gen::tasks::TaskValue;
 use crate::proto::gen::tasks::task_value;
 use std::convert::TryFrom;
+use super::scalar::ScalarValue;
+use arrow::array::StructArray;
+use crate::arrow::array::ArrayRef;
 
 
 #[derive(Clone, Debug)]
@@ -80,15 +83,31 @@ impl VegaFusionTable {
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
 
-    // pub fn pretty_format(&self, max_rows: Option<usize>) -> Result<String> {
-    //     if let Some(max_rows) = max_rows {
-    //         pretty_format_batches(&self.head(max_rows).batches)
-    //             .with_context(|| String::from("Failed to pretty print"))
-    //     } else {
-    //         pretty_format_batches(&self.batches)
-    //             .with_context(|| String::from("Failed to pretty print"))
-    //     }
-    // }
+    pub fn to_scalar_value(&self) -> Result<ScalarValue> {
+        if self.num_rows() == 0 {
+            // Return empty list with (arbitrary) Float64 type
+            let dtype = DataType::Float64;
+            return Ok(ScalarValue::List(
+                Some(Box::new(Vec::new())),
+                Box::new(dtype),
+            ));
+        }
+
+        let mut elements: Vec<ScalarValue> = Vec::new();
+        for batch in &self.batches {
+            let array = Arc::new(StructArray::from(batch.clone())) as ArrayRef;
+
+            for i in 0..array.len() {
+                let scalar = ScalarValue::try_from_array(&array, i).with_context(|| {
+                    "Failed to convert record batch row to ScalarValue".to_string()
+                })?;
+                elements.push(scalar)
+            }
+        }
+
+        let dtype = elements[0].get_datatype();
+        Ok(ScalarValue::List(Some(Box::new(elements)), Box::new(dtype)))
+    }
 
     pub fn to_json(&self) -> serde_json::Value {
         let mut rows: Vec<serde_json::Value> = Vec::with_capacity(self.num_rows());

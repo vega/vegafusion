@@ -8,9 +8,10 @@ use datafusion::logical_plan::{col, Expr};
 use itertools::sorted;
 use std::collections::HashMap;
 use std::sync::Arc;
-use vegafusion_rt_datafusion::data::table::VegaFusionTable;
 use vegafusion_rt_datafusion::expression::compiler::utils::is_numeric_datatype;
 use vegafusion_rt_datafusion::transform::utils::DataFrameUtils;
+use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 
 #[derive(Debug, Clone)]
 pub struct TablesEqualConfig {

@@ -11,15 +11,10 @@ use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::spec::transform::extent::ExtentTransformSpec;
 use vegafusion_core::spec::transform::filter::FilterTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_rt_datafusion::data::table::VegaFusionTable;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
+use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 
-// use vega_fusion::data::table::VegaFusionTable;
-// use vega_fusion::expression::ast::base::Expression;
-// use vega_fusion::expression::compiler::config::CompilationConfig;
-// use vega_fusion::spec::transform::extent::ExtentTransformSpec;
-// use vega_fusion::spec::transform::filter::FilterTransformSpec;
-// use vega_fusion::spec::transform::TransformSpec;
 
 #[test]
 fn test_vegajs_parse() {

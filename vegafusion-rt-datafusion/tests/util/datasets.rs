@@ -1,5 +1,5 @@
 use serde_json::Value;
-use vegafusion_rt_datafusion::data::table::VegaFusionTable;
+use vegafusion_core::data::table::VegaFusionTable;
 
 pub fn vega_json_dataset(name: &str) -> VegaFusionTable {
     // Remove trailing .json if present because we'll add it below

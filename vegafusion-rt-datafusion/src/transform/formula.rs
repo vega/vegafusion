@@ -1,4 +1,3 @@
-use crate::data::table::VegaFusionTable;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
@@ -10,6 +9,8 @@ use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Formula;
 use vegafusion_core::variable::Variable;
+use vegafusion_core::data::table::VegaFusionTable;
+use crate::data::table::VegaFusionTableUtils;
 
 impl TransformTrait for Formula {
     fn call(
@@ -29,7 +30,7 @@ impl TransformTrait for Formula {
         println!("formula_expr: {}", formula_expr);
         println!("schema: {}", dataframe.schema());
 
-        let explained = VegaFusionTable::try_from(dataframe.explain(true, false).unwrap()).unwrap();
+        let explained = VegaFusionTable::from_dataframe(dataframe.explain(true, false).unwrap()).unwrap();
         println!("explained\n{}", explained.pretty_format(None).unwrap());
 
         let result = dataframe
