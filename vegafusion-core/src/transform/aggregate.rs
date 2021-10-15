@@ -108,3 +108,31 @@ impl Aggregate {
         }
     }
 }
+
+pub fn op_name(op: AggregateOp) -> String {
+    match op {
+        AggregateOp::Count => "count",
+        AggregateOp::Valid => "valid",
+        AggregateOp::Missing => "missing",
+        AggregateOp::Distinct => "distinct",
+        AggregateOp::Sum => "sum",
+        AggregateOp::Product => "product",
+        AggregateOp::Mean => "mean",
+        AggregateOp::Average => "average",
+        AggregateOp::Variance => "variance",
+        AggregateOp::Variancp => "variancp",
+        AggregateOp::Stdev => "stdev",
+        AggregateOp::Stdevp => "stdevp",
+        AggregateOp::Stderr => "stderr",
+        AggregateOp::Median => "median",
+        AggregateOp::Q1 => "q1",
+        AggregateOp::Q3 => "q3",
+        AggregateOp::Ci0 => "ci0",
+        AggregateOp::Ci1 => "ci1",
+        AggregateOp::Min => "min",
+        AggregateOp::Max => "max",
+        AggregateOp::Argmin => "argmin",
+        AggregateOp::Argmax => "argmax",
+        AggregateOp::Values => "values",
+    }.to_string()
+}

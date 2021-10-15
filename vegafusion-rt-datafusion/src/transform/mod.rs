@@ -1,6 +1,11 @@
 pub mod filter;
 pub mod utils;
 pub mod pipeline;
+pub mod formula;
+pub mod extent;
+pub mod collect;
+pub mod bin;
+pub mod aggregate;
 
 use crate::expression::compiler::config::CompilationConfig;
 use datafusion::dataframe::DataFrame;
@@ -31,11 +36,11 @@ pub trait TransformTrait {
 pub fn to_transform_trait(tx: &Transform) -> &dyn TransformTrait {
     match tx {
         Transform::Filter(tx) => tx,
-        Transform::Extent(tx) => todo!(),
-        Transform::Formula(tx) => todo!(),
-        Transform::Bin(tx) => todo!(),
-        Transform::Aggregate(tx) => todo!(),
-        Transform::Collect(tx) => todo!(),
+        Transform::Extent(tx) => tx,
+        Transform::Formula(tx) => tx,
+        Transform::Bin(tx) => tx,
+        Transform::Aggregate(tx) => tx,
+        Transform::Collect(tx) => tx,
     }
 }
 
