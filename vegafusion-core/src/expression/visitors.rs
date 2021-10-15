@@ -9,7 +9,7 @@ use std::collections::HashSet;
 pub trait ExpressionVisitor {
     fn visit_expression(&mut self, _expression: &Expression) {}
     fn visit_identifier(&mut self, _node: &Identifier) {}
-    fn visit_called_identifier(&mut self, _node: &Identifier, _args: &Vec<Expression>) {}
+    fn visit_called_identifier(&mut self, _node: &Identifier, _args: &[Expression]) {}
     fn visit_literal(&mut self, _node: &Literal) {}
     fn visit_binary(&mut self, _node: &BinaryExpression) {}
     fn visit_logical(&mut self, _node: &LogicalExpression) {}
@@ -26,7 +26,7 @@ pub trait ExpressionVisitor {
 pub trait MutExpressionVisitor {
     fn visit_expression(&mut self, _expression: &mut Expression) {}
     fn visit_identifier(&mut self, _node: &mut Identifier) {}
-    fn visit_called_identifier(&mut self, _node: &mut Identifier, _args: &mut Vec<Expression>) {}
+    fn visit_called_identifier(&mut self, _node: &mut Identifier, _args: &mut [Expression]) {}
     fn visit_literal(&mut self, _node: &mut Literal) {}
     fn visit_binary(&mut self, _node: &mut BinaryExpression) {}
     fn visit_logical(&mut self, _node: &mut LogicalExpression) {}
