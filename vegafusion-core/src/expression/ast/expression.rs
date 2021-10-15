@@ -2,11 +2,12 @@ use crate::expression::visitors::{
     ClearSpansVisitor, ExpressionVisitor, GetVariablesVisitor, MutExpressionVisitor,
 };
 use crate::proto::gen::expression::expression::Expr;
-use crate::proto::gen::expression::{Expression, Identifier};
+use crate::proto::gen::expression::{Expression, Identifier, Literal, UnaryExpression, Span, BinaryExpression, LogicalExpression, CallExpression, MemberExpression, ConditionalExpression, ArrayExpression, ObjectExpression};
 use crate::variable::Variable;
 use itertools::sorted;
 use std::fmt::{Display, Formatter};
 use std::ops::Deref;
+use crate::error::{VegaFusionError, Result};
 
 /// Trait that all AST node types implement
 pub trait ExpressionTrait: Display {
@@ -45,6 +46,13 @@ impl Display for Expression {
 }
 
 impl Expression {
+    pub fn new(expr: Expr, span: Option<Span>) -> Self {
+        Self {
+            expr: Some(expr),
+            span,
+        }
+    }
+
     pub fn clear_spans(&mut self) {
         let mut visitor = ClearSpansVisitor::new();
         self.walk_mut(&mut visitor);
@@ -61,23 +69,23 @@ impl Expression {
     pub fn walk(&self, visitor: &mut dyn ExpressionVisitor) {
         match self.expr.as_ref().unwrap() {
             Expr::Binary(node) => {
-                node.left.as_ref().unwrap().walk(visitor);
-                node.right.as_ref().unwrap().walk(visitor);
+                node.left().walk(visitor);
+                node.right().walk(visitor);
                 visitor.visit_binary(node);
             }
             Expr::Logical(node) => {
-                node.left.as_ref().unwrap().walk(visitor);
-                node.right.as_ref().unwrap().walk(visitor);
+                node.left().walk(visitor);
+                node.right().walk(visitor);
                 visitor.visit_logical(node);
             }
             Expr::Unary(node) => {
-                node.argument.as_ref().unwrap().walk(visitor);
+                node.argument().walk(visitor);
                 visitor.visit_unary(node);
             }
             Expr::Conditional(node) => {
-                node.test.as_ref().unwrap().walk(visitor);
-                node.consequent.as_ref().unwrap().walk(visitor);
-                node.alternate.as_ref().unwrap().walk(visitor);
+                node.test().walk(visitor);
+                node.consequent().walk(visitor);
+                node.alternate().walk(visitor);
                 visitor.visit_conditional(node);
             }
             Expr::Literal(node) => {
@@ -186,67 +194,90 @@ impl Expression {
         visitor.visit_expression(self);
     }
 
-    // pub fn walk_mut(&mut self, visitor: &mut dyn MutExpressionVisitor) {
-    //     match self {
-    //         Expression::BinaryExpression(node) => {
-    //             node.left.walk_mut(visitor);
-    //             node.right.walk_mut(visitor);
-    //             visitor.visit_binary(node);
-    //         }
-    //         Expression::LogicalExpression(node) => {
-    //             node.left.walk_mut(visitor);
-    //             node.right.walk_mut(visitor);
-    //             visitor.visit_logical(node);
-    //         }
-    //         Expression::UnaryExpression(node) => {
-    //             node.argument.walk_mut(visitor);
-    //             visitor.visit_unary(node);
-    //         }
-    //         Expression::ConditionalExpression(node) => {
-    //             node.test.walk_mut(visitor);
-    //             node.consequent.walk_mut(visitor);
-    //             node.alternate.walk_mut(visitor);
-    //             visitor.visit_conditional(node);
-    //         }
-    //         Expression::Literal(node) => {
-    //             visitor.visit_literal(node);
-    //         }
-    //         Expression::Identifier(node) => {
-    //             visitor.visit_identifier(node);
-    //         }
-    //         Expression::CallExpression(node) => {
-    //             match &mut node.callee {
-    //                 Callee::Identifier(ref mut identifier) => {
-    //                     visitor.visit_called_identifier(identifier, &mut node.arguments)
-    //                 }
-    //             }
-    //             for arg in &mut node.arguments {
-    //                 arg.walk_mut(visitor);
-    //             }
-    //             visitor.visit_call(node);
-    //         }
-    //         Expression::ArrayExpression(node) => {
-    //             for el in &mut node.elements {
-    //                 el.walk_mut(visitor);
-    //             }
-    //             visitor.visit_array(node);
-    //         }
-    //         Expression::ObjectExpression(node) => {
-    //             for prop in &mut node.properties {
-    //                 visitor.visit_object_key(&mut prop.key);
-    //                 prop.value.walk_mut(visitor);
-    //             }
-    //             visitor.visit_object(node);
-    //         }
-    //         Expression::MemberExpression(node) => {
-    //             node.object.walk_mut(visitor);
-    //             if node.computed {
-    //                 node.property.walk_mut(visitor);
-    //             } else if let Expression::Identifier(identifier) = node.property.as_mut() {
-    //                 visitor.visit_static_member_identifier(identifier);
-    //             }
-    //             visitor.visit_member(node);
-    //         }
-    //     }
-    // }
+    pub fn as_identifier(&self) -> Result<&Identifier> {
+        match &self.expr {
+            Some(Expr::Identifier(identifier)) => Ok(identifier),
+            _ => {
+                Err(VegaFusionError::internal(
+                    "Expression is not an identifier",
+                ))
+            }
+        }
+    }
+
+    pub fn as_literal(&self) -> Result<&Literal> {
+        match &self.expr {
+            Some(Expr::Literal(value)) => Ok(value),
+            _ => {
+                Err(VegaFusionError::internal(
+                    "Expression is not a Literal",
+                ))
+            }
+        }
+    }
+
+    pub fn expr(&self) -> &Expr {
+        self.expr.as_ref().unwrap()
+    }
+}
+
+// Expr conversions
+impl From<Literal> for Expr {
+    fn from(v: Literal) -> Self {
+        Self::Literal(v)
+    }
+}
+
+impl From<Identifier> for Expr {
+    fn from(v: Identifier) -> Self {
+        Self::Identifier(v)
+    }
+}
+
+impl From<UnaryExpression> for Expr {
+    fn from(v: UnaryExpression) -> Self {
+        Self::Unary(Box::new(v))
+    }
+}
+
+impl From<BinaryExpression> for Expr {
+    fn from(v: BinaryExpression) -> Self {
+        Self::Binary(Box::new(v))
+    }
+}
+
+impl From<LogicalExpression> for Expr {
+    fn from(v: LogicalExpression) -> Self {
+        Self::Logical(Box::new(v))
+    }
+}
+
+impl From<CallExpression> for Expr {
+    fn from(v: CallExpression) -> Self {
+        Self::Call(v)
+    }
+}
+
+impl From<MemberExpression> for Expr {
+    fn from(v: MemberExpression) -> Self {
+        Self::Member(Box::new(v))
+    }
+}
+
+impl From<ConditionalExpression> for Expr {
+    fn from(v: ConditionalExpression) -> Self {
+        Self::Conditional(Box::new(v))
+    }
+}
+
+impl From<ArrayExpression> for Expr {
+    fn from(v: ArrayExpression) -> Self {
+        Self::Array(v)
+    }
+}
+
+impl From<ObjectExpression> for Expr {
+    fn from(v: ObjectExpression) -> Self {
+        Self::Object(v)
+    }
 }

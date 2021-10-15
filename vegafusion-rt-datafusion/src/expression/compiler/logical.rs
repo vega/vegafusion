@@ -11,8 +11,8 @@ pub fn compile_logical(
     schema: &DFSchema,
 ) -> Result<Expr> {
     // Compile branches
-    let mut compiled_lhs = compile(node.left.as_ref().unwrap(), config, Some(schema))?;
-    let mut compiled_rhs = compile(node.right.as_ref().unwrap(), config, Some(schema))?;
+    let mut compiled_lhs = compile(node.left(), config, Some(schema))?;
+    let mut compiled_rhs = compile(node.right(), config, Some(schema))?;
 
     let lhs_dtype = data_type(&compiled_lhs, schema)?;
     let rhs_dtype = data_type(&compiled_rhs, schema)?;

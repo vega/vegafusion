@@ -10,7 +10,7 @@ pub fn compile_unary(
     schema: &DFSchema,
 ) -> Result<Expr> {
     // First, compile argument
-    let argument = compile(node.argument.as_ref().unwrap(), config, Some(schema))?;
+    let argument = compile(node.argument(), config, Some(schema))?;
     let new_expr = match node.to_operator() {
         UnaryOperator::Pos => to_numeric(argument, schema)?,
         UnaryOperator::Neg => Expr::Negative(Box::new(to_numeric(argument, schema)?)),

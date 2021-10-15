@@ -15,35 +15,24 @@ impl Bin {
         let extent_expr = match &transform.extent {
             BinExtent::Value(extent) => {
                 // Convert extent value to an expression for consistency
-                Expression {
-                    expr: Some(Expr::Array(ArrayExpression {
-                        elements: vec![
-                            Expression {
-                                expr: Some(Expr::Literal(Literal {
-                                    value: Some(Value::Number(extent[0])),
-                                    raw: extent[0].to_string(),
-                                })),
-                                span: None
-                            },
-                            Expression {
-                                expr: Some(Expr::Literal(Literal {
-                                    value: Some(Value::Number(extent[1])),
-                                    raw: extent[1].to_string(),
-                                })),
-                                span: None
-                            },
-                        ],
-                    })),
-                    span: None
-                }
+                Expression::new(
+                    Expr::from(ArrayExpression::new(vec![
+                        Expression::new(
+                            Expr::from(Literal::new(extent[0], &extent[0].to_string())),
+                            None
+                        ),
+                        Expression::new(
+                            Expr::from(Literal::new(extent[1], &extent[1].to_string())),
+                            None
+                        ),
+                    ])),
+                    None,
+                )
             }
             BinExtent::Signal(SignalExpressionSpec { signal }) => parse(signal)?,
         };
 
         let config = BinConfig::from_spec(transform.clone());
-
-        let input_vars = extent_expr.get_variables();
-
         let as_ = transform.as_.clone().unwrap_or_default();
 
         Ok(Self {

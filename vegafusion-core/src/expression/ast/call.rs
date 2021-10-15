@@ -1,6 +1,15 @@
 use crate::expression::ast::expression::ExpressionTrait;
-use crate::proto::gen::expression::CallExpression;
+use crate::proto::gen::expression::{CallExpression, Expression};
 use std::fmt::{Display, Formatter};
+
+impl CallExpression {
+    pub fn new(callee: &str, arguments: Vec<Expression>) -> Self {
+        Self {
+            callee: callee.to_string(),
+            arguments
+        }
+    }
+}
 
 impl ExpressionTrait for CallExpression {}
 

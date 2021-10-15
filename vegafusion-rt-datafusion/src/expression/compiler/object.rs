@@ -19,8 +19,8 @@ pub fn compile_object(
     let mut values: Vec<Expr> = Vec::new();
     let mut value_types: Vec<DataType> = Vec::new();
     for prop in &node.properties {
-        let expr = compile(prop.value.as_ref().unwrap(), config, Some(schema))?;
-        let name = prop.key.as_ref().unwrap().to_object_key_string();
+        let expr = compile(prop.value(), config, Some(schema))?;
+        let name = prop.key().to_object_key_string();
         keys.push(name);
         value_types.push(expr.get_type(schema)?);
         values.push(expr)

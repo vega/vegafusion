@@ -1,6 +1,13 @@
 use crate::expression::ast::expression::ExpressionTrait;
-use crate::proto::gen::expression::ArrayExpression;
+use crate::proto::gen::expression::{ArrayExpression, Expression};
 use std::fmt::{Display, Formatter};
+
+impl ArrayExpression {
+    pub fn new(elements: Vec<Expression>) -> Self {
+        Self { elements }
+    }
+}
+
 
 impl ExpressionTrait for ArrayExpression {}
 

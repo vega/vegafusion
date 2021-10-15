@@ -1,11 +1,31 @@
 use crate::expression::ast::expression::ExpressionTrait;
-use crate::proto::gen::expression::ConditionalExpression;
+use crate::proto::gen::expression::{ConditionalExpression, Expression};
 use std::fmt::{Display, Formatter};
 
 impl ConditionalExpression {
+    pub fn new(test: Expression, consequent: Expression, alternate: Expression) -> Self {
+        Self {
+            test: Some(Box::new(test)),
+            consequent: Some(Box::new(consequent)),
+            alternate: Some(Box::new(alternate)),
+        }
+    }
+
     pub fn ternary_binding_power() -> (f64, f64, f64) {
         // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
         (4.8, 4.6, 4.4)
+    }
+
+    pub fn test(&self) -> &Expression {
+         self.test.as_ref().unwrap()
+    }
+
+    pub fn alternate(&self) -> &Expression {
+        self.alternate.as_ref().unwrap()
+    }
+
+    pub fn consequent(&self) -> &Expression {
+        self.consequent.as_ref().unwrap()
     }
 }
 

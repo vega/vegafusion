@@ -1,5 +1,5 @@
 use crate::expression::ast::expression::ExpressionTrait;
-use crate::proto::gen::expression::{LogicalExpression, LogicalOperator};
+use crate::proto::gen::expression::{LogicalExpression, LogicalOperator, Expression};
 use std::fmt::{Display, Formatter};
 
 // Logical
@@ -25,12 +25,28 @@ impl LogicalOperator {
 }
 
 impl LogicalExpression {
+    pub fn new(lhs: Expression, op: &LogicalOperator, rhs: Expression) -> Self {
+        Self {
+            left: Some(Box::new(lhs)),
+            operator: *op as i32,
+            right: Some(Box::new(rhs))
+        }
+    }
+
     pub fn to_operator(&self) -> LogicalOperator {
         LogicalOperator::from_i32(self.operator).unwrap()
     }
 
     pub fn infix_binding_power(&self) -> (f64, f64) {
         self.to_operator().infix_binding_power()
+    }
+
+    pub fn left(&self) -> &Expression {
+        self.left.as_ref().unwrap()
+    }
+
+    pub fn right(&self) -> &Expression {
+        self.right.as_ref().unwrap()
     }
 }
 
@@ -43,26 +59,26 @@ impl ExpressionTrait for LogicalExpression {
 impl Display for LogicalExpression {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // Use binding power to determine whether lhs and/or rhs need parens
-        let lhs_bp = self.left.as_ref().unwrap().binding_power();
-        let rhs_bp = self.right.as_ref().unwrap().binding_power();
+        let lhs_bp = self.left().binding_power();
+        let rhs_bp = self.right().binding_power();
         let self_bp = self.binding_power();
         let lhs_parens = lhs_bp.1 < self_bp.0;
         let rhs_parens = rhs_bp.0 < self_bp.1;
 
         // Write lhs
         if lhs_parens {
-            write!(f, "({})", self.left.as_ref().unwrap())?;
+            write!(f, "({})", self.left())?;
         } else {
-            write!(f, "{}", self.left.as_ref().unwrap())?;
+            write!(f, "{}", self.left())?;
         }
 
         write!(f, " {} ", self.to_operator())?;
 
         // Write rhs
         if rhs_parens {
-            write!(f, "({})", self.right.as_ref().unwrap())
+            write!(f, "({})", self.right())
         } else {
-            write!(f, "{}", self.right.as_ref().unwrap())
+            write!(f, "{}", self.right())
         }
     }
 }

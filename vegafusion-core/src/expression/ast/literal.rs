@@ -23,6 +23,31 @@ impl Display for literal::Value {
     }
 }
 
+impl From<bool> for literal::Value {
+    fn from(v: bool) -> Self {
+        Value::Boolean(v)
+    }
+}
+
+impl From<f64> for literal::Value {
+    fn from(v: f64) -> Self {
+        Value::Number(v)
+    }
+}
+
+impl From<&str> for literal::Value {
+    fn from(v: &str) -> Self {
+        Value::String(v.to_string())
+    }
+}
+
+impl From<String> for literal::Value {
+    fn from(v: String) -> Self {
+        Value::String(v)
+    }
+}
+
+
 impl ExpressionTrait for Literal {}
 
 impl Display for Literal {
@@ -32,5 +57,25 @@ impl Display for Literal {
         } else {
             write!(f, "None")
         }
+    }
+}
+
+impl Literal {
+    pub fn new<V: Into<literal::Value>>(v: V, raw: &str) -> Self {
+        Self {
+            raw: raw.to_string(),
+            value: Some(v.into())
+        }
+    }
+
+    pub fn null() -> Self {
+        Self {
+            raw: "null".to_string(),
+            value: Some(literal::Value::Null(false))
+        }
+    }
+
+    pub fn value(&self) -> &literal::Value {
+        self.value.as_ref().unwrap()
     }
 }

@@ -33,7 +33,7 @@ pub fn compile_member(
     // Get string-form of index
     let property_string = if node.computed {
         // e.g. foo[val]
-        let compiled_property = compile(node.property.as_ref().unwrap(), config, Some(schema))?;
+        let compiled_property = compile(node.property(), config, Some(schema))?;
         let evaluated_property = compiled_property.eval_to_scalar()?;
         let prop_str = evaluated_property.to_string();
         if is_numeric_datatype(&evaluated_property.get_datatype()) {
@@ -48,29 +48,26 @@ pub fn compile_member(
             }
         }
         prop_str
-    } else if let Expression {
-        expr: Some(vfExpr::Identifier(property)),
-        ..
-    } = node.property.as_ref().unwrap().as_ref()
+    } else if let Ok(property) = node.property().as_identifier()
     {
         property.name.clone()
     } else {
         return Err(VegaFusionError::compilation(&format!(
             "Invalid membership property: {}",
-            node.property.as_ref().unwrap()
+            node.property()
         )));
     };
 
     // Handle datum property access. These represent DataFusion column expressions
-    match node.object.as_ref().unwrap().expr.as_ref().unwrap() {
-        vfExpr::Identifier(Identifier { name, .. }) if name == "datum" => {
+    match node.object().as_identifier() {
+        Ok(Identifier { name, .. }) if name == "datum" => {
             let col_expr = col(&property_string);
             return Ok(col_expr);
         }
         _ => {}
     }
 
-    let compiled_object = compile(node.object.as_ref().unwrap(), config, Some(schema))?;
+    let compiled_object = compile(node.object(), config, Some(schema))?;
     let dtype = data_type(&compiled_object, schema)?;
 
     let udf = match dtype {
@@ -98,7 +95,7 @@ pub fn compile_member(
             } else {
                 return Err(VegaFusionError::compilation(&format!(
                     "Invalid target for member access: {}",
-                    node.object.as_ref().unwrap()
+                    node.object()
                 )));
             }
         }

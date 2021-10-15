@@ -1,5 +1,5 @@
 use crate::expression::ast::expression::ExpressionTrait;
-use crate::proto::gen::expression::{BinaryExpression, BinaryOperator};
+use crate::proto::gen::expression::{BinaryExpression, BinaryOperator, Expression};
 use std::fmt::{Display, Formatter};
 
 // Binary
@@ -45,12 +45,28 @@ impl BinaryOperator {
 }
 
 impl BinaryExpression {
+    pub fn new(lhs: Expression, op: &BinaryOperator, rhs: Expression) -> Self {
+        Self {
+            left: Some(Box::new(lhs)),
+            operator: *op as i32,
+            right: Some(Box::new(rhs))
+        }
+    }
+
     pub fn to_operator(&self) -> BinaryOperator {
         BinaryOperator::from_i32(self.operator).unwrap()
     }
 
     pub fn infix_binding_power(&self) -> (f64, f64) {
         self.to_operator().infix_binding_power()
+    }
+
+    pub fn left(&self) -> &Expression {
+        self.left.as_ref().unwrap()
+    }
+
+    pub fn right(&self) -> &Expression {
+        self.right.as_ref().unwrap()
     }
 }
 

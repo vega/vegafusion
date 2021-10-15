@@ -12,8 +12,8 @@ pub fn compile_binary(
     schema: &DFSchema,
 ) -> Result<Expr> {
     // First, compile argument
-    let lhs = compile(node.left.as_ref().unwrap(), config, Some(schema))?;
-    let rhs = compile(node.right.as_ref().unwrap(), config, Some(schema))?;
+    let lhs = compile(node.left(), config, Some(schema))?;
+    let rhs = compile(node.right(), config, Some(schema))?;
 
     let lhs_dtype = data_type(&lhs, schema)?;
     let rhs_dtype = data_type(&rhs, schema)?;

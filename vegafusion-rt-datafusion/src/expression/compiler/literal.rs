@@ -4,7 +4,7 @@ use vegafusion_core::proto::gen::expression::{literal, Literal};
 
 pub fn compile_literal(node: &Literal) -> Expr {
     use literal::Value::*;
-    let scalar = match node.value.as_ref().unwrap() {
+    let scalar = match node.value() {
         Number(value) => ScalarValue::Float64(Some(*value)),
         String(value) => ScalarValue::Utf8(Some(value.clone())),
         Boolean(value) => ScalarValue::Boolean(Some(*value)),

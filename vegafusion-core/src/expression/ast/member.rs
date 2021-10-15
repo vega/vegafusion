@@ -1,13 +1,40 @@
 use crate::expression::ast::expression::ExpressionTrait;
-use crate::proto::gen::expression::MemberExpression;
+use crate::proto::gen::expression::{MemberExpression, Expression, Identifier};
 use std::fmt::{Display, Formatter};
+use crate::error::{Result, ResultWithContext};
 
 impl MemberExpression {
+    pub fn new_computed(object: Expression, property: Expression) -> Self {
+        Self {
+            object: Some(Box::new(object)),
+            property: Some(Box::new(property)),
+            computed: true
+        }
+    }
+
+    pub fn new_static(object: Expression, property: Expression) -> Result<Self> {
+        // Make sure property is an identifier
+        property.as_identifier()?;
+        Ok(Self {
+            object: Some(Box::new(object)),
+            property: Some(Box::new(property)),
+            computed: false
+        })
+    }
+
     pub fn member_binding_power() -> (f64, f64) {
         // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
         //  - left-to-right operators have larger number to the right
         //  - right-to-left have larger number to the left
         (20.0, 20.5)
+    }
+
+    pub fn property(&self) -> &Expression {
+        self.property.as_ref().unwrap()
+    }
+
+    pub fn object(&self) -> &Expression {
+        self.object.as_ref().unwrap()
     }
 }
 

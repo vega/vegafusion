@@ -9,3 +9,11 @@ impl Display for Identifier {
         write!(f, "{}", self.name)
     }
 }
+
+impl Identifier {
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string()
+        }
+    }
+}

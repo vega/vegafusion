@@ -186,26 +186,13 @@ pub fn parse_atom(token: &Token, start: usize, end: usize) -> Result<Expression>
         start: start as i32,
         end: end as i32,
     };
+
     let expr = match token {
-        Token::Null => Expr::Literal(Literal {
-            value: Some(Value::Null(false)),
-            raw: "null".to_string(),
-        }),
-        Token::Bool { value, raw } => Expr::Literal(Literal {
-            value: Some(Value::Boolean(*value)),
-            raw: raw.clone(),
-        }),
-        Token::Number { value, raw } => Expr::Literal(Literal {
-            value: Some(Value::Number(*value)),
-            raw: raw.clone(),
-        }),
-        Token::String { value, raw } => Expr::Literal(Literal {
-            value: Some(Value::String(value.clone())),
-            raw: raw.clone(),
-        }),
-        Token::Identifier { value } => Expr::Identifier(Identifier {
-            name: value.clone(),
-        }),
+        Token::Null => Expr::from(Literal::null()),
+        Token::Bool { value, raw } => Expr::from(Literal::new(*value, raw)),
+        Token::Number { value, raw } => Expr::from(Literal::new(*value, raw)),
+        Token::String { value, raw } => Expr::from(Literal::new(value.clone(), raw)),
+        Token::Identifier { value } => Expr::from(Identifier::new(value)),
         _ => {
             return Err(VegaFusionError::parse(&format!(
                 "Token not an atom: {}",
@@ -232,15 +219,8 @@ pub fn parse_unary(
         start: start as i32,
         end: rhs.span.clone().unwrap().end,
     };
-    let expr = Expr::Unary(Box::new(UnaryExpression {
-        operator: op as i32,
-        prefix: true,
-        argument: Some(Box::new(rhs)),
-    }));
-    Ok(Expression {
-        expr: Some(expr),
-        span: Some(new_span),
-    })
+    let expr = Expr::from(UnaryExpression::new(&op, rhs));
+    Ok(Expression::new(expr, Some(new_span)))
 }
 
 pub fn parse_binary(
@@ -267,16 +247,8 @@ pub fn parse_binary(
                 start: start as i32,
                 end: rhs.span.clone().unwrap().end,
             };
-
-            let expr = Expr::Binary(Box::new(BinaryExpression {
-                left: Some(Box::new(lhs.clone())),
-                operator: op as i32,
-                right: Some(Box::new(rhs)),
-            }));
-            Ok(Expression {
-                expr: Some(expr),
-                span: Some(new_span),
-            })
+            let expr = Expr::from(BinaryExpression::new(lhs.clone(), &op, rhs));
+            Ok(Expression::new(expr, Some(new_span)))
         }
         Err(err) => Err(err),
     })
@@ -305,16 +277,8 @@ pub fn parse_logical(
                 start: start as i32,
                 end: rhs.span.clone().unwrap().end,
             };
-
-            let expr = Expr::Logical(Box::new(LogicalExpression {
-                left: Some(Box::new(lhs.clone())),
-                operator: op as i32,
-                right: Some(Box::new(rhs)),
-            }));
-            Ok(Expression {
-                expr: Some(expr),
-                span: Some(new_span),
-            })
+            let expr = Expr::from(LogicalExpression::new(lhs.clone(), &op, rhs));
+            Ok(Expression::new(expr, Some(new_span)))
         }
         Err(err) => Err(err),
     })
@@ -327,12 +291,10 @@ pub fn parse_call(
     start: usize,
     full_expr: &str,
 ) -> Option<Result<Expression>> {
-    let lhs = match &lhs.expr {
-        Some(Expr::Identifier(identifier)) => identifier,
-        _ => {
-            return Some(Err(VegaFusionError::parse(
-                "Only global functions are callable",
-            )))
+    let lhs = match lhs.as_identifier().with_context(|| "Only global functions are callable") {
+        Ok(identifier) => identifier,
+        Err(err) => {
+            return Some(Err(err))
         }
     };
 
@@ -369,14 +331,8 @@ pub fn parse_call(
         start: start as i32,
         end: end as i32,
     };
-    let expr = Expr::Call(CallExpression {
-        callee: lhs.name.clone(),
-        arguments,
-    });
-    Some(Ok(Expression {
-        expr: Some(expr),
-        span: Some(new_span),
-    }))
+    let expr = Expr::from(CallExpression::new(&lhs.name, arguments));
+    Some(Ok(Expression::new(expr, Some(new_span))))
 }
 
 pub fn parse_computed_member(
@@ -406,16 +362,8 @@ pub fn parse_computed_member(
                 end: end as i32,
             };
 
-            // let expr = Expression::M
-            let expr = Expr::Member(Box::new(MemberExpression {
-                object: Some(Box::new(lhs.clone())),
-                property: Some(Box::new(property)),
-                computed: true,
-            }));
-            Ok(Expression {
-                expr: Some(expr),
-                span: Some(new_span),
-            })
+            let expr = Expr::from(MemberExpression::new_computed(lhs.clone(), property));
+            Ok(Expression::new(expr, Some(new_span)))
         }
         Err(err) => Err(err),
     })
@@ -445,20 +393,13 @@ pub fn parse_static_member(
                 end: property.span.clone().unwrap().end,
             };
 
-            if let Some(Expr::Identifier(_ident)) = property.expr.as_ref() {
-                let expr = Expr::Member(Box::new(MemberExpression {
-                    object: Some(Box::new(lhs.clone())),
-                    property: Some(Box::new(property.clone())),
-                    computed: false,
-                }));
-
-                Ok(Expression {
-                    expr: Some(expr),
-                    span: Some(new_span),
-                })
-            } else {
-                Err(VegaFusionError::parse("Expected identifier"))
-            }
+            let expr = match MemberExpression::new_static(lhs.clone(), property) {
+                Ok(member) => Expr::from(member),
+                Err(err) => {
+                    return Some(Err(err))
+                }
+            };
+            Ok(Expression::new(expr, Some(new_span)))
         }
         Err(err) => Err(err),
     })
@@ -506,16 +447,8 @@ pub fn parse_ternary(
         end: alternate.span.clone().unwrap().end,
     };
 
-    let expr = Expr::Conditional(Box::new(ConditionalExpression {
-        test: Some(Box::new(lhs.clone())),
-        consequent: Some(Box::new(consequent)),
-        alternate: Some(Box::new(alternate)),
-    }));
-
-    Some(Ok(Expression {
-        expr: Some(expr),
-        span: Some(new_span),
-    }))
+    let expr = Expr::from(ConditionalExpression::new(lhs.clone(), consequent, alternate));
+    Some(Ok(Expression::new(expr, Some(new_span))))
 }
 
 pub fn parse_paren_grouping(
@@ -551,11 +484,8 @@ pub fn parse_array(
         end: end as i32,
     };
 
-    let expr = Expr::Array(ArrayExpression { elements });
-    Ok(Expression {
-        expr: Some(expr),
-        span: Some(new_span),
-    })
+    let expr = Expr::from(ArrayExpression::new(elements));
+    Ok(Expression::new(expr, Some(new_span)))
 }
 
 pub fn parse_object(
@@ -583,24 +513,7 @@ pub fn parse_object(
         // Remove comma token, if any
         expect_token(tokens, Token::Comma).ok();
 
-        let property = match key.expr.as_ref().unwrap() {
-            Expr::Literal(key) => Property {
-                key: Some(Key::Literal(key.clone())),
-                value: Some(value),
-                kind: "init".to_string(),
-            },
-            Expr::Identifier(key) => Property {
-                key: Some(Key::Identifier(key.clone())),
-                value: Some(value),
-                kind: "init".to_string(),
-            },
-            _ => {
-                return Err(VegaFusionError::parse(
-                    "Object key must be an identifier or a literal value",
-                ))
-            }
-        };
-
+        let property = Property::try_new(key, value)?;
         properties.push(property);
     }
 
@@ -613,12 +526,8 @@ pub fn parse_object(
         end: end as i32,
     };
 
-    let expr = Expr::Object(ObjectExpression { properties });
-
-    Ok(Expression {
-        expr: Some(expr),
-        span: Some(new_span),
-    })
+    let expr = Expr::from(ObjectExpression::new(properties));
+    Ok(Expression::new(expr, Some(new_span)))
 }
 
 #[cfg(test)]

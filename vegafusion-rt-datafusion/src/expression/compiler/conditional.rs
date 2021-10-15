@@ -10,9 +10,9 @@ pub fn compile_conditional(
     schema: &DFSchema,
 ) -> Result<Expr> {
     // Compile branches
-    let compiled_test = compile(node.test.as_ref().unwrap(), config, Some(schema))?;
-    let compiled_consequent = compile(node.consequent.as_ref().unwrap(), config, Some(schema))?;
-    let compiled_alternate = compile(node.alternate.as_ref().unwrap(), config, Some(schema))?;
+    let compiled_test = compile(node.test(), config, Some(schema))?;
+    let compiled_consequent = compile(node.consequent(), config, Some(schema))?;
+    let compiled_alternate = compile(node.alternate(), config, Some(schema))?;
 
     let test = to_boolean(compiled_test, schema)?;
 
