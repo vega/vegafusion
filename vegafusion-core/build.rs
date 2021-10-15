@@ -7,9 +7,12 @@ fn main() {
     let prost_config = prost_config.out_dir(outdir);
 
     prost_config
-        .compile_protos(
-            &["src/proto/expression.proto", "src/proto/transforms.proto"],
-            &["src/proto"],
-        )
+        .compile_protos(&[
+            "src/proto/expression.proto",
+            "src/proto/transforms.proto",
+            "src/proto/tasks.proto",
+        ], &[
+            "src/proto"
+        ])
         .unwrap();
 }

@@ -7,6 +7,8 @@ pub mod proto;
 pub mod spec;
 pub mod transform;
 pub mod variable;
+pub mod data;
+pub mod task_graph;
 
 pub use arrow;
 

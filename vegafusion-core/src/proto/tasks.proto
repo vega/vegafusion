@@ -1,0 +1,16 @@
+syntax = "proto3";
+package tasks;
+
+message TaskValue {
+  oneof data {
+  /*
+   * Representation of scalar as single column, single row, record batch in Arrow IPC format
+   */
+    bytes scalar = 1;
+
+  /*
+   * Serialized Arrow record batch in Arrow IPC format
+   */
+    bytes table = 2;
+  }
+}

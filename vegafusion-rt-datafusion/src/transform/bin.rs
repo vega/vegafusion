@@ -1,6 +1,6 @@
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{ExprHelpers, ScalarValueHelpers};
+use crate::expression::compiler::utils::{ExprHelpers};
 use crate::transform::TransformTrait;
 use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::{col, lit, Expr};
@@ -17,6 +17,7 @@ use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Bin;
 use vegafusion_core::variable::Variable;
+use vegafusion_core::data::scalar::ScalarValueHelpers;
 
 impl TransformTrait for Bin {
     fn call(
