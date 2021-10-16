@@ -11,26 +11,11 @@ use crate::proto::gen::transforms::{TransformPipeline, Transform, Extent};
 use crate::proto::gen::transforms::transform::TransformKind;
 use crate::task_graph::task_value::TaskValue;
 use crate::data::scalar::ScalarValue;
+use crate::proto::gen::tasks::task::TaskKind;
+use crate::proto::gen::tasks::task_value::Data;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
-
-// pub struct TaskGraphBuilder {
-//     task_scope: TaskScope,
-//     tasks: Vec<Task>,
-// }
-//
-// impl TaskGraphBuilder {
-//     pub fn new(task_scope: TaskScope) -> Self {
-//         Self { task_scope, tasks: Default::default() }
-//     }
-//
-//     pub fn add_task(&mut self, task: Task) {
-//         self.tasks.push(task);
-//     }
-//
-//     pub fn build(&self) -> TaskGraph {
-//         todo!()
-//     }
-// }
 
 struct PetgraphEdge { signal: Option<String> }
 
@@ -142,9 +127,125 @@ impl TaskGraph {
             })
         }).collect::<Result<Vec<_>>>()?;
 
-        Ok(Self {
+        let mut this = Self {
             nodes: task_nodes
-        })
+        };
+
+        this.init_identity_fingerprints()?;
+        this.update_state_fingerprints()?;
+
+        Ok(this)
+    }
+
+    fn init_identity_fingerprints(&mut self) -> Result<()> {
+        // Compute new identity fingerprints
+        let mut id_fingerprints: Vec<u64> = Vec::with_capacity(self.nodes.len());
+        for (i, node) in self.nodes.iter().enumerate() {
+            let task = node.task();
+            let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
+
+            if let TaskKind::Value(value) = task.task_kind() {
+                // Only hash the distinction between Scalar and Table, not the value itself.
+                // The state fingerprint takes the value into account.
+                task.variable().hash(&mut hasher);
+                task.scope.hash(&mut hasher);
+                match value.data.as_ref().unwrap() {
+                    Data::Scalar(_) => "scalar".hash(&mut hasher),
+                    Data::Table(_) => "data".hash(&mut hasher)
+                }
+            } else {
+                // Include id_fingerprint of parents in the hash
+                for parent_index in self.parent_indices(i)? {
+                    id_fingerprints[parent_index].hash(&mut hasher);
+                }
+
+                // Include current task in hash
+                task.hash(&mut hasher)
+            }
+
+            id_fingerprints.push(hasher.finish());
+        }
+
+        // Apply fingerprints
+        self.nodes.iter_mut().zip(id_fingerprints).map(|(node, fingerprint)| {
+            node.id_fingerprint = fingerprint;
+        });
+
+        Ok(())
+    }
+
+    /// Update state finger prints of nodes, and return indices of nodes that were updated
+    fn update_state_fingerprints(&mut self) -> Result<Vec<usize>> {
+        // Compute new identity fingerprints
+        let mut state_fingerprints: Vec<u64> = Vec::with_capacity(self.nodes.len());
+        for (i, node) in self.nodes.iter().enumerate() {
+            let task = node.task();
+            let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
+
+            if matches!(task.task_kind(), TaskKind::Value(_)) {
+                // Hash the task with inline TaskValue
+                task.hash(&mut hasher);
+            } else {
+                // Include state fingerprint of parents in the hash
+                for parent_index in self.parent_indices(i)? {
+                    state_fingerprints[parent_index].hash(&mut hasher);
+                }
+
+                // Include id fingerprint of current task
+                node.id_fingerprint.hash(&mut hasher);
+            }
+
+            state_fingerprints.push(hasher.finish());
+        }
+
+        // Apply fingerprints
+        let updated: Vec<_> = self.nodes.iter_mut().zip(state_fingerprints).enumerate().filter_map(
+            |(node_index, (node, fingerprint))| {
+                if node.state_fingerprint != fingerprint {
+                    node.state_fingerprint = fingerprint;
+                    Some(node_index)
+                } else {
+                    None
+                }
+            }).collect();
+
+        Ok(updated)
+    }
+
+    fn parent_nodes(&self, node_index: usize) -> Result<Vec<&TaskNode>> {
+        let node = self.nodes.get(node_index).with_context(
+            || format!("Node index {} out of bounds", node_index)
+        )?;
+        Ok(node.incoming.iter().map(|edge| {
+            self.nodes.get(edge.source as usize).unwrap()
+        }).collect())
+    }
+
+    fn parent_indices(&self, node_index: usize) -> Result<Vec<usize>> {
+        let node = self.nodes.get(node_index).with_context(
+            || format!("Node index {} out of bounds", node_index)
+        )?;
+        Ok(node.incoming.iter().map(|edge| {
+            edge.source as usize
+        }).collect())
+    }
+
+    fn child_nodes(&self, node_index: usize) -> Result<Vec<&TaskNode>> {
+        let node = self.nodes.get(node_index).with_context(
+            || format!("Node index {} out of bounds", node_index)
+        )?;
+        Ok(node.outgoing.iter().map(|edge| {
+            self.nodes.get(edge.target as usize).unwrap()
+        }).collect())
+    }
+
+    fn child_indices(&self, node_index: usize) -> Result<Vec<usize>> {
+        let node = self.nodes.get(node_index).with_context(
+            || format!("Node index {} out of bounds", node_index)
+        )?;
+        Ok(node.outgoing.iter().map(|edge| {
+            edge.target as usize
+        }).collect())
     }
 }
 
@@ -182,4 +283,11 @@ fn try_it() {
     let graph = TaskGraph::new(tasks, task_scope).unwrap();
 
     println!("graph:\n{:#?}", graph);
+}
+
+
+impl TaskNode {
+    pub fn task(&self) -> &Task {
+        self.task.as_ref().unwrap()
+    }
 }

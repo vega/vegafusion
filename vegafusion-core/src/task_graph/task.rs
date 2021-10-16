@@ -5,6 +5,8 @@ use std::convert::TryFrom;
 use crate::error::{Result, VegaFusionError};
 use crate::proto::gen::transforms::TransformPipeline;
 use crate::transform::TransformDependencies;
+use std::hash::{Hash, Hasher};
+use prost::Message;
 
 
 impl Task {
@@ -81,5 +83,15 @@ impl Task {
                 task.pipeline.as_ref().unwrap().output_signals()
             }
         }
+    }
+}
+
+impl Hash for Task {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let mut proto_bytes: Vec<u8> = Vec::with_capacity(self.encoded_len());
+
+        // Unwrap is safe, since we have reserved sufficient capacity in the vector.
+        self.encode(&mut proto_bytes).unwrap();
+        proto_bytes.hash(state);
     }
 }
