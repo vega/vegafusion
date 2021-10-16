@@ -1,5 +1,6 @@
 use crate::proto::gen::transforms::{Aggregate, AggregateOp};
 use crate::spec::transform::aggregate::{AggregateOp as AggregateOpSpec, AggregateTransformSpec};
+use crate::transform::TransformDependencies;
 
 impl Aggregate {
     pub fn new(transform: &AggregateTransformSpec) -> Self {
@@ -93,3 +94,6 @@ pub fn op_name(op: AggregateOp) -> String {
     }
     .to_string()
 }
+
+
+impl TransformDependencies for Aggregate {}

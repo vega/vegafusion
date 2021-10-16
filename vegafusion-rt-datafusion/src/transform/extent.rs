@@ -44,8 +44,4 @@ impl TransformTrait for Extent {
 
         Ok((dataframe, output_values))
     }
-
-    fn output_signals(&self) -> Vec<String> {
-        self.signal.clone().into_iter().collect()
-    }
 }

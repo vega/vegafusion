@@ -8,7 +8,6 @@ use std::convert::TryFrom;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Formula;
-use vegafusion_core::variable::Variable;
 use vegafusion_core::data::table::VegaFusionTable;
 use crate::data::table::VegaFusionTableUtils;
 
@@ -43,9 +42,5 @@ impl TransformTrait for Formula {
             })?;
 
         Ok((result, Default::default()))
-    }
-
-    fn input_vars(&self) -> Vec<Variable> {
-        self.expr.as_ref().unwrap().get_variables()
     }
 }

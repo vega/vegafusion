@@ -5,6 +5,9 @@ use crate::proto::gen::expression::{ArrayExpression, Expression, Literal};
 use crate::proto::gen::transforms::Bin;
 use crate::spec::transform::bin::{BinExtent, BinTransformSpec};
 use crate::spec::values::SignalExpressionSpec;
+use crate::transform::TransformDependencies;
+use crate::proto::gen::tasks::Variable;
+
 
 impl Bin {
     pub fn try_new(transform: &BinTransformSpec) -> Result<Self> {
@@ -120,5 +123,15 @@ impl BinConfig {
             steps: spec.steps,
             span: spec.span,
         }
+    }
+}
+
+impl TransformDependencies for Bin {
+    fn input_vars(&self) -> Vec<Variable> {
+        self.extent.as_ref().unwrap().get_variables()
+    }
+
+    fn output_signals(&self) -> Vec<String> {
+        self.signal.clone().into_iter().collect()
     }
 }

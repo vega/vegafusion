@@ -107,18 +107,14 @@ fn test_evaluate_filter_transform() {
     // Check extent signal
     assert_eq!(
         result_signals,
-        vec![(
-            "extent_out".to_string(),
-            ScalarValue::List(
+        vec![ScalarValue::List(
                 Some(Box::new(vec![
                     ScalarValue::from(6.0),
                     ScalarValue::from(10.0)
                 ])),
                 Box::new(DataType::Float64)
             )
-        )]
-        .into_iter()
-        .collect()
+        ]
     );
 
     let expected_dataset = VegaFusionTable::from_json(

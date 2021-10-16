@@ -6,6 +6,7 @@ use datafusion::scalar::ScalarValue;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::{Collect, SortOrder};
+use vegafusion_core::transform::TransformDependencies;
 
 impl TransformTrait for Collect {
     fn call(

@@ -8,10 +8,10 @@ use crate::proto::gen::expression::{
     Identifier, Literal, LogicalExpression, MemberExpression, ObjectExpression, Span,
     UnaryExpression,
 };
-use crate::variable::Variable;
 use itertools::sorted;
 use std::fmt::{Display, Formatter};
 use std::ops::Deref;
+use crate::proto::gen::tasks::Variable;
 
 /// Trait that all AST node types implement
 pub trait ExpressionTrait: Display {

@@ -16,7 +16,6 @@ use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Bin;
-use vegafusion_core::variable::Variable;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 
 impl TransformTrait for Bin {
@@ -154,14 +153,6 @@ impl TransformTrait for Bin {
             .with_context(|| "Failed to evaluate binning transform".to_string())?;
 
         Ok((dataframe.clone(), output_value.into_iter().collect()))
-    }
-
-    fn input_vars(&self) -> Vec<Variable> {
-        self.extent.as_ref().unwrap().get_variables()
-    }
-
-    fn output_signals(&self) -> Vec<String> {
-        self.signal.clone().into_iter().collect()
     }
 }
 

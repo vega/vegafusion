@@ -2,39 +2,24 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use datafusion::dataframe::DataFrame;
 use datafusion::scalar::ScalarValue;
-use itertools::sorted;
+use itertools::{sorted, Itertools};
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::error::VegaFusionError;
-use vegafusion_core::proto::gen::transforms::expression::Transform;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_core::variable::Variable;
+use vegafusion_core::proto::gen::transforms::{Transform, TransformPipeline};
+use vegafusion_core::transform::TransformDependencies;
+use vegafusion_core::proto::gen::tasks::Variable;
 
-pub struct TransformPipeline {
-    transforms: Vec<Transform>,
-}
 
-impl TryFrom<&[TransformSpec]> for TransformPipeline {
-    type Error = VegaFusionError;
-
-    fn try_from(value: &[TransformSpec]) -> std::result::Result<Self, Self::Error> {
-        let transforms: Vec<_> = value
-            .iter()
-            .map(Transform::try_from)
-            .collect::<Result<Vec<_>>>()?;
-
-        Ok(Self { transforms })
-    }
-}
-
-impl TransformPipeline {
-    pub fn call(
+impl TransformTrait for TransformPipeline {
+    fn call(
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, HashMap<String, ScalarValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<ScalarValue>)> {
         let mut result_df = dataframe;
         let mut result_signals: HashMap<String, ScalarValue> = Default::default();
         let mut config = config.clone();
@@ -54,28 +39,11 @@ impl TransformPipeline {
             }
         }
 
-        Ok((result_df, result_signals))
-    }
+        // Sort result signal value by signal name
+        let (_, signals_values): (Vec<_>, Vec<_>) = result_signals.into_iter().sorted_by_key(
+            |(k, v)| k.clone()
+        ).unzip();
 
-    pub fn input_vars(&self) -> Vec<Variable> {
-        let mut vars: HashSet<Variable> = Default::default();
-        for tx in &self.transforms {
-            for var in tx.input_vars() {
-                vars.insert(var);
-            }
-        }
-
-        sorted(vars).collect()
-    }
-
-    pub fn output_signals(&self) -> Vec<String> {
-        let mut signals: HashSet<String> = Default::default();
-        for tx in &self.transforms {
-            for sig in tx.output_signals() {
-                signals.insert(sig);
-            }
-        }
-
-        sorted(signals).collect()
+        Ok((result_df, signals_values))
     }
 }

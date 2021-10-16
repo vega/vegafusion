@@ -5,7 +5,7 @@ use crate::arrow::{
     record_batch::RecordBatch,
     datatypes::{SchemaRef, Schema, Field, DataType},
 };
-// use crate::arrow::util::pretty::pretty_format_batches;
+
 use crate::proto::gen::expression::literal::Value;
 use crate::arrow::json::writer::record_batches_to_json_rows;
 use crate::arrow::ipc::writer::StreamWriter;
@@ -25,7 +25,6 @@ pub struct VegaFusionTable {
     pub schema: SchemaRef,
     pub batches: Vec<RecordBatch>,
 }
-
 
 impl VegaFusionTable {
     pub fn try_new(schema: SchemaRef, partitions: Vec<RecordBatch>) -> Result<Self> {
@@ -170,7 +169,7 @@ impl VegaFusionTable {
         Ok(stream_writer.into_inner()?)
     }
 
-    pub fn from_ipc_bytes(data: Vec<u8>) -> Result<Self> {
+    pub fn from_ipc_bytes(data: &[u8]) -> Result<Self> {
         let cursor = Cursor::new(data);
         let reader = StreamReader::try_new(cursor)?;
         let schema = reader.schema();
@@ -198,56 +197,3 @@ impl Hash for VegaFusionTable {
         self.to_ipc_bytes().unwrap().hash(state)
     }
 }
-
-// impl TryFrom<VegaFusionTable> for TaskValue {
-//     type Error = VegaFusionError;
-//
-//     fn try_from(value: VegaFusionTable) -> std::result::Result<Self, Self::Error> {
-//         Ok(TaskValue {
-//             data: Some(task_value::Data::Table(value.to_ipc_bytes()?))
-//         })
-//     }
-// }
-
-// // Serialization
-// #[derive(Clone, Debug, Serialize, Deserialize, Hash)]
-// pub struct SerializableVegaFusionTable {
-//     batches: Vec<u8>,
-// }
-//
-// impl From<&VegaFusionTable> for SerializableVegaFusionTable {
-//     fn from(value: &VegaFusionTable) -> Self {
-//         let buffer: Vec<u8> = Vec::new();
-//         let mut stream_writer = StreamWriter::try_new(buffer, value.schema.as_ref()).unwrap();
-//
-//         for batch in &value.batches {
-//             stream_writer.write(batch).unwrap();
-//         }
-//
-//         stream_writer.finish().unwrap();
-//         Self {
-//             batches: stream_writer.into_inner().unwrap(),
-//         }
-//     }
-// }
-//
-// impl From<VegaFusionTable> for SerializableVegaFusionTable {
-//     fn from(value: VegaFusionTable) -> Self {
-//         Self::from(&value)
-//     }
-// }
-//
-// impl From<SerializableVegaFusionTable> for VegaFusionTable {
-//     fn from(value: SerializableVegaFusionTable) -> Self {
-//         let cursor = Cursor::new(value.batches);
-//         let reader = StreamReader::try_new(cursor).unwrap();
-//         let schema = reader.schema();
-//         let mut batches: Vec<RecordBatch> = Vec::new();
-//
-//         for batch in reader {
-//             batches.push(batch.expect("Failed to deserialize record batch"));
-//         }
-//
-//         Self { schema, batches }
-//     }
-// }

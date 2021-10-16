@@ -175,18 +175,11 @@ fn assert_scalars_almost_equals(lhs: &ScalarValue, rhs: &ScalarValue, tol: f64) 
 }
 
 pub fn assert_signals_almost_equal(
-    lhs: HashMap<String, ScalarValue>,
-    rhs: HashMap<String, ScalarValue>,
+    lhs: Vec<ScalarValue>,
+    rhs: Vec<ScalarValue>,
     tol: f64,
 ) {
-    let lhs_names: Vec<String> = sorted(lhs.keys().cloned()).collect();
-    let rhs_names: Vec<String> = sorted(rhs.keys().cloned()).collect();
-
-    assert_eq!(lhs_names, rhs_names, "Signal names do not match");
-
-    for name in &lhs_names {
-        let lhs_value = lhs.get(name).unwrap();
-        let rhs_value = rhs.get(name).unwrap();
+    for (lhs_value, rhs_value) in lhs.iter().zip(&rhs) {
         assert_scalars_almost_equals(lhs_value, rhs_value, tol)
     }
 }

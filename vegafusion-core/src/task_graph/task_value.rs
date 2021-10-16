@@ -12,11 +12,11 @@ pub enum TaskValue {
     Table(VegaFusionTable),
 }
 
-impl TryFrom<ProtoTaskValue> for TaskValue {
+impl TryFrom<&ProtoTaskValue> for TaskValue {
     type Error = VegaFusionError;
 
-    fn try_from(value: ProtoTaskValue) -> Result<Self, Self::Error> {
-        match value.data.unwrap() {
+    fn try_from(value: &ProtoTaskValue) -> Result<Self, Self::Error> {
+        match value.data.as_ref().unwrap() {
             Data::Table(value) => {
                 Ok(Self::Table(VegaFusionTable::from_ipc_bytes(value)?))
             }
@@ -31,10 +31,10 @@ impl TryFrom<ProtoTaskValue> for TaskValue {
     }
 }
 
-impl TryFrom<TaskValue> for ProtoTaskValue {
+impl TryFrom<&TaskValue> for ProtoTaskValue {
     type Error = VegaFusionError;
 
-    fn try_from(value: TaskValue) -> Result<Self, Self::Error> {
+    fn try_from(value: &TaskValue) -> Result<Self, Self::Error> {
         match value {
             TaskValue::Scalar(scalar) => {
                 let scalar_array = scalar.to_array();

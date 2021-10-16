@@ -18,9 +18,10 @@ use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_rt_datafusion::expression::compiler::compile;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 use vegafusion_rt_datafusion::expression::compiler::utils::ExprHelpers;
-use vegafusion_rt_datafusion::transform::pipeline::TransformPipeline;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
+use vegafusion_core::proto::gen::transforms::TransformPipeline;
+use vegafusion_rt_datafusion::transform::TransformTrait;
 
 pub fn check_parsing(expr_str: &str) {
     let vegajs_runtime = vegajs_runtime();

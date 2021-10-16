@@ -3,8 +3,9 @@ use crate::proto::gen::expression::{
     ArrayExpression, BinaryExpression, CallExpression, ConditionalExpression, Expression,
     Identifier, Literal, LogicalExpression, MemberExpression, ObjectExpression, UnaryExpression,
 };
-use crate::variable::Variable;
+
 use std::collections::HashSet;
+use crate::proto::gen::tasks::Variable;
 
 pub trait ExpressionVisitor {
     fn visit_expression(&mut self, _expression: &Expression) {}

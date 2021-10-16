@@ -1,96 +1,84 @@
-use datafusion::scalar::ScalarValue;
-use crate::data::table::VegaFusionTable;
-use crate::variable::{ScopedVariable, Variable};
-use crate::error::Result;
-use crate::transform::pipeline::TransformPipeline;
-use crate::expression::compiler::config::CompilationConfig;
+use crate::proto::gen::tasks::{Task, ScopedVariable, task::TaskKind, TransformsTask, Variable, ScanUrlTask};
+use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
+use crate::task_graph::task_value::TaskValue;
+use std::convert::TryFrom;
+use crate::error::{Result, VegaFusionError};
+use crate::proto::gen::transforms::TransformPipeline;
+use crate::transform::TransformDependencies;
 
-pub enum TaskValue {
-    Scalar(ScalarValue),
-    Table(VegaFusionTable),
-}
-
-
-pub enum Task {
-    Value,
-    AsyncTaskFn {
-        function: Box<AsyncTaskFn>,
-        inputs: Vec<ScopedVariable>,
-        outputs: Vec<ScopedVariable>
-    }
-}
 
 impl Task {
-    pub fn from_transforms(pipeline: &TransformPipeline) -> Self {
-        // TODO Use scope info to create ScopedVariables from the unscoped inputs and outputs
-        //      returned from pipeline
-        let inputs: Vec<_> = pipeline.input_vars().iter().map(
-            |v| ScopedVariable::new(v.namespace.clone(), &v.name, Vec::new())
-        ).collect();
+    pub fn task_kind(&self) -> &TaskKind {
+        self.task_kind.as_ref().unwrap()
+    }
+    pub fn variable(&self) -> &Variable {
+        self.variable.as_ref().unwrap()
+    }
 
-        let outputs: Vec<_> = pipeline.output_signals().iter().map(
-            |s| ScopedVariable::new_signal(s.as_str(), Vec::new())
-        ).collect();
+    pub fn scope(&self) -> &[u32] {
+        self.scope.as_slice()
+    }
 
-        Self::AsyncTaskFn {
-            function: Box::new(AsyncTaskFn::Transform(pipeline.clone())),
-            inputs,
-            outputs
+    pub fn new_value(variable: Variable, scope: &[u32], value: TaskValue) -> Self {
+        Self {
+            variable: Some(variable),
+            scope: Vec::from(scope),
+            task_kind: Some(TaskKind::Value(ProtoTaskValue::try_from(&value).unwrap()))
         }
     }
-}
 
+    pub fn to_value(&self) -> Result<TaskValue> {
+        if let TaskKind::Value(value) = self.task_kind() {
+            Ok(TaskValue::try_from(value)?)
+        } else {
+            Err(VegaFusionError::internal("Task is not a TaskValue"))
+        }
+    }
 
-pub enum AsyncTaskFn {
-     ScanUrl,
-     Transform(TransformPipeline),
-}
+    pub fn new_transforms(variable: Variable, scope: &[u32], transforms: TransformsTask) -> Self {
+        Self {
+            variable: Some(variable),
+            scope: Vec::from(scope),
+            task_kind: Some(TaskKind::Transforms(transforms))
+        }
+    }
 
-impl AsyncTaskFn {
-    fn inputs(&self) -> Vec<Variable> {
-        match self {
-            AsyncTaskFn::ScanUrl => { todo!() }
-            AsyncTaskFn::Transform(pipeline) => {
-                pipeline.input_vars()
+    pub fn as_transforms(&self) -> Result<&TransformsTask> {
+        if let TaskKind::Transforms(transforms) = self.task_kind() {
+            Ok(transforms)
+        } else {
+            Err(VegaFusionError::internal("Task is not a TransformTask"))
+        }
+    }
+
+    pub fn new_scan_url(variable: Variable, scope: &[u32], task: ScanUrlTask) -> Self {
+        Self {
+            variable: Some(variable),
+            scope: Vec::from(scope),
+            task_kind: Some(TaskKind::Url(task))
+        }
+    }
+
+    pub fn input_vars(&self) -> Vec<Variable> {
+        match self.task_kind() {
+            TaskKind::Value(_) => Vec::new(),
+            TaskKind::Url(task) => {
+                vec![task.url().clone()]
+            }
+            TaskKind::Transforms(task) => {
+                // Make sure source dataset is the first input variable
+                let mut input_vars = vec![Variable::new_data(&task.source)];
+                input_vars.extend(task.pipeline.as_ref().unwrap().input_vars());
+                input_vars
             }
         }
     }
 
-    fn output_signals(&self) -> Vec<String> {
-        match self {
-            AsyncTaskFn::ScanUrl => { todo!() }
-            AsyncTaskFn::Transform(pipeline) => {
-                pipeline.output_signals()
-            }
-        }
-    }
-
-    async fn eval(&self, inputs: &[TaskValue]) -> Result<(TaskValue, Vec<ScalarValue>)> {
-        match self {
-            AsyncTaskFn::ScanUrl => { todo!() }
-            AsyncTaskFn::Transform(pipeline) => {
-                let df = if let TaskValue::Table(table) = &inputs[0] {
-                    table.to_dataframe()?
-                } else {
-                    unreachable!("Expected Table")
-                };
-
-                // Remaining inputs added to compilation config
-                let mut config = CompilationConfig::default();
-                for (value, var) in inputs[1..].iter().zip(self.inputs()) {
-                    match value {
-                        TaskValue::Scalar(value) => {
-                            config.signal_scope.insert(var.name.clone(), value.clone());
-                        }
-                        TaskValue::Table(value) => {
-                            config.data_scope.insert(var.name.clone(), value.clone());
-                        }
-                    }
-                }
-
-                let (result_df, result_outputs) = pipeline.eval(df, &config)?;
-                let result_table = TaskValue::Table(VegaFusionTable::from_dataframe_async(&result_df).await?);
-                Ok((result_table, result_outputs))
+    pub fn output_signals(&self) -> Vec<String> {
+        match self.task_kind() {
+            TaskKind::Value(_) | TaskKind::Url(_) => Vec::new(),
+            TaskKind::Transforms(task) => {
+                task.pipeline.as_ref().unwrap().output_signals()
             }
         }
     }

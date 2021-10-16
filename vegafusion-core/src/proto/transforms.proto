@@ -106,8 +106,8 @@ enum AggregateOp {
 
 
 // Top-level transform
-message Expression {
-  oneof transform {
+message Transform {
+  oneof transform_kind {
     Filter filter = 1;
     Extent extent = 2;
     Formula formula = 3;
@@ -115,4 +115,8 @@ message Expression {
     Aggregate aggregate = 5;
     Collect collect = 6;
   }
+}
+
+message TransformPipeline {
+  repeated Transform transforms = 1;
 }

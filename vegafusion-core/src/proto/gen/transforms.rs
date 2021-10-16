@@ -86,14 +86,14 @@ pub struct Aggregate {
 }
 /// Top-level transform
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Expression {
-    #[prost(oneof="expression::Transform", tags="1, 2, 3, 4, 5, 6")]
-    pub transform: ::core::option::Option<expression::Transform>,
+pub struct Transform {
+    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6")]
+    pub transform_kind: ::core::option::Option<transform::TransformKind>,
 }
-/// Nested message and enum types in `Expression`.
-pub mod expression {
+/// Nested message and enum types in `Transform`.
+pub mod transform {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
-    pub enum Transform {
+    pub enum TransformKind {
         #[prost(message, tag="1")]
         Filter(super::Filter),
         #[prost(message, tag="2")]
@@ -107,6 +107,11 @@ pub mod expression {
         #[prost(message, tag="6")]
         Collect(super::Collect),
     }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TransformPipeline {
+    #[prost(message, repeated, tag="1")]
+    pub transforms: ::prost::alloc::vec::Vec<Transform>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]

@@ -1,6 +1,9 @@
 syntax = "proto3";
 package tasks;
 
+import "transforms.proto";
+
+// ## Task Value
 message TaskValue {
   oneof data {
   /*
@@ -13,4 +16,108 @@ message TaskValue {
    */
     bytes table = 2;
   }
+}
+
+// ## Variable
+enum VariableNamespace {
+  Signal = 0;
+  Data = 1;
+  Scale = 2;
+}
+
+message ScopedVariable {
+  string name = 1;
+  VariableNamespace namespace = 2;
+  repeated uint32 scope = 3;
+}
+
+message Variable {
+  string name = 1;
+  VariableNamespace namespace = 2;
+}
+
+// ## Scan URL Task
+message ParseFieldSpec {
+  string name = 1;
+  string datatype = 2;
+}
+
+message ParseFieldSpecs {
+  repeated ParseFieldSpec specs = 1;
+}
+
+message ScanUrlFormat {
+  /*
+   * The data format type. The currently supported data formats are json (the default),
+   * csv (comma-separated values), tsv (tab-separated values), dsv (delimited text files),
+   * and topojson.
+   */
+  string type = 1;
+
+  /*
+   * JSON encoded string:
+   * If set to auto, perform automatic type inference to determine the desired data types.
+   * Alternatively, a parsing directive object can be provided for explicit data types.
+   * Each property of the object corresponds to a field name, and the value to the desired data type
+   * (one of "boolean", "date", "number" or "string"). For example, "parse": {"modified_on": "date"}
+   * parses the modified_on field in each input record as a Date value. Specific date formats can
+   * be provided (e.g., {"foo": "date:'%m%d%Y'"}), using the d3-time-format syntax. UTC date format
+   * parsing is supported similarly (e.g., {"foo": "utc:'%m%d%Y'"}).
+   */
+  oneof parse {
+    string string = 2;
+    ParseFieldSpecs object = 3;
+  };
+
+  string property = 4;
+  repeated string header = 5;
+  string delimiter = 6;
+  string feature = 7;
+}
+
+message ScanUrlTask {
+  Variable url = 1;
+  int32 batch_size = 2;
+  ScanUrlFormat format_type = 3;
+}
+
+// ## Transform Task
+message TransformsTask {
+  string source = 1;
+  transforms.TransformPipeline pipeline = 2;
+}
+
+
+// ## Top-level Task
+message Task {
+  Variable variable = 1;
+  repeated uint32 scope = 2;
+  oneof task_kind {
+    TaskValue value = 3;
+    ScanUrlTask url = 4;
+    TransformsTask transforms = 5;
+  }
+}
+
+
+// ## Task Graph
+message IncomingEdge {
+  uint32 source = 1;
+  optional uint32 signal = 2;
+}
+
+message OutgoingEdge {
+  uint32 target = 1;
+}
+
+message TaskNode {
+  Task task = 1;
+  repeated IncomingEdge incoming = 2;
+  repeated OutgoingEdge outgoing = 3;
+  uint64 id_fingerprint = 4;
+  uint64 state_fingerprint = 5;
+}
+
+message TaskGraph {
+  repeated TaskNode nodes = 1;
 }

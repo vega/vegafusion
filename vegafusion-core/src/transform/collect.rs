@@ -2,6 +2,7 @@ use crate::error::{Result, VegaFusionError};
 use crate::proto::gen::transforms::{Collect, SortOrder};
 use crate::spec::transform::collect::CollectTransformSpec;
 use crate::spec::transform::collect::SortOrder as SortOrderSpec;
+use crate::transform::TransformDependencies;
 
 impl Collect {
     pub fn try_new(transform: &CollectTransformSpec) -> Result<Self> {
@@ -34,3 +35,5 @@ impl Collect {
         Ok(Self { fields, order })
     }
 }
+
+impl TransformDependencies for Collect {}

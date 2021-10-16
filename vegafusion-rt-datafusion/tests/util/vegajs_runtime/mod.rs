@@ -19,6 +19,7 @@ use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
+use itertools::Itertools;
 
 lazy_static! {
     static ref UNDEFINED_RE: Regex = Regex::new(r"\bundefined\b").unwrap();
@@ -246,7 +247,7 @@ impl VegaJsRuntime {
         data_table: &VegaFusionTable,
         transforms: &[TransformSpec],
         config: &CompilationConfig,
-    ) -> Result<(VegaFusionTable, HashMap<String, ScalarValue>)> {
+    ) -> Result<(VegaFusionTable, Vec<ScalarValue>)> {
         // Initialize data vector with the input table and transforms
         let mut data = vec![json!({
             "name": "_dataset",
@@ -296,7 +297,12 @@ impl VegaJsRuntime {
             watch_signals.insert(watch.name.clone(), ScalarValue::from_json(value)?);
         }
 
-        Ok((dataset, watch_signals))
+        // Sort watch signal values by signal name
+        let (_, signals_values): (Vec<_>, Vec<_>) = watch_signals.into_iter().sorted_by_key(
+            |(k, v)| k.clone()
+        ).unzip();
+
+        Ok((dataset, signals_values))
     }
 }
 
