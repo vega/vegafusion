@@ -29,10 +29,10 @@ use vegafusion_core::proto::gen::expression::{CallExpression, Expression};
 #[derive(Clone)]
 pub enum VegaFusionCallable {
     /// A function that operates on the ESTree expression tree before compilation
-    Macro(Arc<dyn Fn(&[Expression]) -> Result<Expression>>),
+    Macro(Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>),
 
     /// A function that operates on the compiled arguments and produces a new expression.
-    Transform(Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr>>),
+    Transform(Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>),
 
     /// Runtime function that is build in to DataFusion
     BuiltinScalarFunction {
