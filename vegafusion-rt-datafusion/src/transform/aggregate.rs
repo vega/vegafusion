@@ -8,9 +8,12 @@ use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
 use vegafusion_core::transform::aggregate::op_name;
+use async_trait::async_trait;
 
+
+#[async_trait]
 impl TransformTrait for Aggregate {
-    fn call(
+    async fn call(
         &self,
         dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,

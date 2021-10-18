@@ -44,7 +44,7 @@ impl TaskCall for TransformsTask {
                     data_scope,
                     ..Default::default()
                 };
-                pipeline.call(df, &config)?
+                pipeline.call(df, &config).await?
             };
             (VegaFusionTable::from_dataframe(transformed_df).await?, signal_values)
         } else {

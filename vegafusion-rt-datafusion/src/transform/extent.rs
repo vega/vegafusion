@@ -7,9 +7,11 @@ use datafusion::scalar::ScalarValue;
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Extent;
+use async_trait::async_trait;
 
+#[async_trait]
 impl TransformTrait for Extent {
-    fn call(
+    async fn call(
         &self,
         dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
@@ -24,7 +26,7 @@ impl TransformTrait for Extent {
                 .unwrap();
 
             // Eval to single row dataframe and extract scalar values
-            let result_rb = extent_df.block_flat_eval()?;
+            let result_rb = extent_df.collect_flat().await?;
             let min_val_array = result_rb.column_by_name("__min_val")?;
             let max_val_array = result_rb.column_by_name("__max_val")?;
 

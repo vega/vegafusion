@@ -17,9 +17,12 @@ use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Bin;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
+use async_trait::async_trait;
 
+
+#[async_trait]
 impl TransformTrait for Bin {
-    fn call(
+    async fn call(
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,

@@ -6,10 +6,12 @@ use datafusion::scalar::ScalarValue;
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Filter;
+use async_trait::async_trait;
 
 
+#[async_trait]
 impl TransformTrait for Filter {
-    fn call(
+    async fn call(
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,

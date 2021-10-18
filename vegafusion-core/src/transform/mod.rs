@@ -59,7 +59,7 @@ impl Transform {
     }
 }
 
-pub trait TransformDependencies {
+pub trait TransformDependencies: Send + Sync {
     fn input_vars(&self) -> Vec<Variable> {
         Vec::new()
     }

@@ -7,9 +7,12 @@ use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::{Collect, SortOrder};
 use vegafusion_core::transform::TransformDependencies;
+use async_trait::async_trait;
 
+
+#[async_trait]
 impl TransformTrait for Collect {
-    fn call(
+    async fn call(
         &self,
         dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,

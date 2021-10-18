@@ -30,14 +30,14 @@ async fn try_it() {
         Task::new_transforms(Variable::new_data("datasetA"), Default::default(), TransformsTask {
             source: "url_datasetA".to_string(),
             pipeline: Some(TransformPipeline { transforms: vec![
-                // Transform { transform_kind: Some(TransformKind::Extent(Extent {
-                //     field: "Beak Length (mm)".to_string(),
-                //     signal: Some("my_extent".to_string()),
-                // })) }
+                Transform { transform_kind: Some(TransformKind::Extent(Extent {
+                    field: "Beak Length (mm)".to_string(),
+                    signal: Some("my_extent".to_string()),
+                })) },
                 Transform { transform_kind: Some(TransformKind::Collect(Collect {
                     fields: vec!["Beak Length (mm)".to_string()],
                     order: vec![SortOrder::Ascending as i32]
-                })) }
+                })) },
             ] })
         })
     ];
@@ -45,10 +45,10 @@ async fn try_it() {
     let graph = Arc::new(TaskGraph::new(tasks, task_scope).unwrap());
 
     let graph_runtime = TaskGraphRuntime::new(20);
-    let result = graph_runtime.get_node_value(graph, 2, None).await.unwrap();
+    // let result = graph_runtime.get_node_value(graph, 2, None).await.unwrap();
+    let result = graph_runtime.get_node_value(graph, 2, Some(0)).await.unwrap();
 
     println!("result: {:?}", result);
 
     // println!("graph:\n{:#?}", graph);
 }
-

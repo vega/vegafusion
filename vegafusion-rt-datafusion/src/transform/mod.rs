@@ -18,9 +18,12 @@ use vegafusion_core::error::Result;
 use vegafusion_core::transform::TransformDependencies;
 use vegafusion_core::proto::gen::transforms::Transform;
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
+use async_trait::async_trait;
 
+
+#[async_trait]
 pub trait TransformTrait: TransformDependencies {
-    fn call(
+    async fn call(
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
@@ -38,12 +41,13 @@ pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
     }
 }
 
+#[async_trait]
 impl TransformTrait for Transform {
-    fn call(
+    async fn call(
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
     ) -> Result<(Arc<dyn DataFrame>, Vec<ScalarValue>)> {
-        to_transform_trait(self.transform_kind()).call(dataframe, config)
+        to_transform_trait(self.transform_kind()).call(dataframe, config).await
     }
 }

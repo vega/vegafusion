@@ -22,6 +22,7 @@ use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_rt_datafusion::transform::TransformTrait;
+use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
 
 pub fn check_parsing(expr_str: &str) {
     let vegajs_runtime = vegajs_runtime();
@@ -87,7 +88,8 @@ pub fn check_transform_evaluation(
 
     let df = data.to_dataframe().unwrap();
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
-    let (result_df, result_signals) = pipeline.call(df, compilation_config).unwrap();
+
+    let (result_df, result_signals) = TOKIO_RUNTIME.block_on(pipeline.call(df, compilation_config)).unwrap();
     let result_data = VegaFusionTable::from_dataframe_blocking(result_df).unwrap();
 
     println!(

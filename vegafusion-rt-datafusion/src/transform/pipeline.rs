@@ -12,10 +12,11 @@ use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_core::proto::gen::transforms::{Transform, TransformPipeline};
 use vegafusion_core::transform::TransformDependencies;
 use vegafusion_core::proto::gen::tasks::Variable;
+use async_trait::async_trait;
 
-
+#[async_trait]
 impl TransformTrait for TransformPipeline {
-    fn call(
+    async fn call(
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
@@ -25,7 +26,7 @@ impl TransformTrait for TransformPipeline {
         let mut config = config.clone();
 
         for tx in &self.transforms {
-            let tx_result = tx.call(result_df, &config)?;
+            let tx_result = tx.call(result_df, &config).await?;
 
             // Update dataframe
             result_df = tx_result.0;
