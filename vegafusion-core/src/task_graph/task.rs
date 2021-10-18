@@ -64,24 +64,16 @@ impl Task {
     pub fn input_vars(&self) -> Vec<Variable> {
         match self.task_kind() {
             TaskKind::Value(_) => Vec::new(),
-            TaskKind::Url(task) => {
-                vec![task.url().clone()]
-            }
-            TaskKind::Transforms(task) => {
-                // Make sure source dataset is the first input variable
-                let mut input_vars = vec![Variable::new_data(&task.source)];
-                input_vars.extend(task.pipeline.as_ref().unwrap().input_vars());
-                input_vars
-            }
+            TaskKind::Url(task) => task.input_vars(),
+            TaskKind::Transforms(task) => task.input_vars(),
         }
     }
 
     pub fn output_signals(&self) -> Vec<String> {
         match self.task_kind() {
-            TaskKind::Value(_) | TaskKind::Url(_) => Vec::new(),
-            TaskKind::Transforms(task) => {
-                task.pipeline.as_ref().unwrap().output_signals()
-            }
+            TaskKind::Value(_) => Vec::new(),
+            TaskKind::Url(task) => task.output_signals(),
+            TaskKind::Transforms(task) => task.output_signals(),
         }
     }
 }
@@ -94,4 +86,9 @@ impl Hash for Task {
         self.encode(&mut proto_bytes).unwrap();
         proto_bytes.hash(state);
     }
+}
+
+pub trait TaskDependencies {
+    fn input_vars(&self) -> Vec<Variable> { Vec::new() }
+    fn output_signals(&self) -> Vec<String> { Vec::new() }
 }

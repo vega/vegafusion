@@ -14,6 +14,7 @@ pub mod extent;
 pub mod filter;
 pub mod formula;
 pub mod pipeline;
+pub mod task;
 
 impl TryFrom<&TransformSpec> for TransformKind {
     type Error = VegaFusionError;
@@ -77,3 +78,4 @@ impl TransformDependencies for Transform {
         self.transform_kind().as_dependencies_trait().output_signals()
     }
 }
+

@@ -33,6 +33,9 @@ pub enum VegaFusionError {
     #[error("Internal error: {0}\n{1}")]
     InternalError(String, ErrorContext),
 
+    #[error("External error: {0}\n{1}")]
+    ExternalError(String, ErrorContext),
+
     #[error("Vega Specification error: {0}\n{1}")]
     SpecificationError(String, ErrorContext),
 
@@ -69,7 +72,11 @@ impl VegaFusionError {
             }
             InternalError(msg, mut context) => {
                 context.contexts.push(context_fn().into());
-                VegaFusionError::CompilationError(msg, context)
+                VegaFusionError::InternalError(msg, context)
+            }
+            ExternalError(msg, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::ExternalError(msg, context)
             }
             SpecificationError(msg, mut context) => {
                 context.contexts.push(context_fn().into());
@@ -107,10 +114,51 @@ impl VegaFusionError {
         Self::InternalError(message.to_string(), Default::default())
     }
 
+    pub fn external(message: &str) -> Self {
+        Self::ExternalError(message.to_string(), Default::default())
+    }
+
     pub fn specification(message: &str) -> Self {
         Self::SpecificationError(message.to_string(), Default::default())
     }
+
+    /// Duplicate error. Not a precise Clone because some of the wrapped error types aren't Clone
+    /// These are converted to internal errors
+    pub fn duplicate(&self) -> Self {
+        use VegaFusionError::*;
+        match self {
+            ParseError(msg, context) => {
+                VegaFusionError::ParseError(msg.clone(), context.clone())
+            }
+            CompilationError(msg, context) => {
+                VegaFusionError::CompilationError(msg.clone(), context.clone())
+            }
+            InternalError(msg, context) => {
+                VegaFusionError::InternalError(msg.clone(), context.clone())
+            }
+            ExternalError(msg, context) => {
+                VegaFusionError::ExternalError(msg.clone(), context.clone())
+            }
+            SpecificationError(msg, context) => {
+                VegaFusionError::SpecificationError(msg.clone(), context.clone())
+            }
+            ArrowError(err, context) => {
+                VegaFusionError::ExternalError(err.to_string(), context.clone())
+            }
+            #[cfg(feature = "datafusion")]
+            DataFusionError(err, context) => {
+                VegaFusionError::ExternalError(err.to_string(), context.clone())
+            }
+            IOError(err, context) => {
+                VegaFusionError::ExternalError(err.to_string(), context.clone())
+            }
+            SerdeJsonError(err, context) => {
+                VegaFusionError::ExternalError(err.to_string(), context.clone())
+            }
+        }
+    }
 }
+
 
 pub trait ResultWithContext<R> {
     fn with_context<S, F>(self, context_fn: F) -> Result<R>
@@ -182,19 +230,19 @@ impl From<serde_json::Error> for VegaFusionError {
     }
 }
 
-pub trait ToInternalError<T> {
-    fn internal(self, context: &str) -> Result<T>;
+pub trait ToExternalError<T> {
+    fn external(self, context: &str) -> Result<T>;
 }
 
-impl<T, E: std::error::Error> ToInternalError<T> for std::result::Result<T, E> {
-    fn internal(self, context: &str) -> Result<T> {
+impl<T, E: std::error::Error> ToExternalError<T> for std::result::Result<T, E> {
+    fn external(self, context: &str) -> Result<T> {
         match self {
             Ok(v) => Ok(v),
             Err(err) => {
                 let context = ErrorContext {
                     contexts: vec![context.to_string()],
                 };
-                Err(VegaFusionError::InternalError(err.to_string(), context))
+                Err(VegaFusionError::ExternalError(err.to_string(), context))
             }
         }
     }

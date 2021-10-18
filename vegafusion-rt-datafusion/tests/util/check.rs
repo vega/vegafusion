@@ -88,7 +88,7 @@ pub fn check_transform_evaluation(
     let df = data.to_dataframe().unwrap();
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
     let (result_df, result_signals) = pipeline.call(df, compilation_config).unwrap();
-    let result_data = VegaFusionTable::from_dataframe(result_df).unwrap();
+    let result_data = VegaFusionTable::from_dataframe_blocking(result_df).unwrap();
 
     println!(
         "result data\n{}",

@@ -29,7 +29,7 @@ impl TransformTrait for Formula {
         println!("formula_expr: {}", formula_expr);
         println!("schema: {}", dataframe.schema());
 
-        let explained = VegaFusionTable::from_dataframe(dataframe.explain(true, false).unwrap()).unwrap();
+        let explained = VegaFusionTable::from_dataframe_blocking(dataframe.explain(true, false).unwrap()).unwrap();
         println!("explained\n{}", explained.pretty_format(None).unwrap());
 
         let result = dataframe

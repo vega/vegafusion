@@ -1,6 +1,6 @@
 use crate::proto::gen::tasks::{TaskGraph, Task, Variable, TaskNode, OutgoingEdge, IncomingEdge, ScanUrlTask, TransformsTask};
 use crate::task_graph::scope::TaskScope;
-use crate::error::{Result, ResultWithContext, ToInternalError, VegaFusionError};
+use crate::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 use std::collections::HashMap;
 use petgraph::graph::NodeIndex;
 use petgraph::algo::toposort;
@@ -212,7 +212,7 @@ impl TaskGraph {
         Ok(updated)
     }
 
-    fn parent_nodes(&self, node_index: usize) -> Result<Vec<&TaskNode>> {
+    pub fn parent_nodes(&self, node_index: usize) -> Result<Vec<&TaskNode>> {
         let node = self.nodes.get(node_index).with_context(
             || format!("Node index {} out of bounds", node_index)
         )?;
@@ -221,7 +221,7 @@ impl TaskGraph {
         }).collect())
     }
 
-    fn parent_indices(&self, node_index: usize) -> Result<Vec<usize>> {
+    pub fn parent_indices(&self, node_index: usize) -> Result<Vec<usize>> {
         let node = self.nodes.get(node_index).with_context(
             || format!("Node index {} out of bounds", node_index)
         )?;
@@ -230,7 +230,7 @@ impl TaskGraph {
         }).collect())
     }
 
-    fn child_nodes(&self, node_index: usize) -> Result<Vec<&TaskNode>> {
+    pub fn child_nodes(&self, node_index: usize) -> Result<Vec<&TaskNode>> {
         let node = self.nodes.get(node_index).with_context(
             || format!("Node index {} out of bounds", node_index)
         )?;
@@ -239,13 +239,19 @@ impl TaskGraph {
         }).collect())
     }
 
-    fn child_indices(&self, node_index: usize) -> Result<Vec<usize>> {
+    pub fn child_indices(&self, node_index: usize) -> Result<Vec<usize>> {
         let node = self.nodes.get(node_index).with_context(
             || format!("Node index {} out of bounds", node_index)
         )?;
         Ok(node.outgoing.iter().map(|edge| {
             edge.target as usize
         }).collect())
+    }
+
+    pub fn node(&self, node_index: usize) -> Result<&TaskNode> {
+        self.nodes.get(node_index).with_context(
+            || format!("Node index {} out of bounds", node_index)
+        )
     }
 }
 
@@ -262,18 +268,18 @@ fn try_it() {
         Task::new_value(
             Variable::new_signal("url"),
             Default::default(),
-            TaskValue::Scalar(ScalarValue::from("file:///somewhere/over/the/rainbow.csv")),
+            TaskValue::Scalar(ScalarValue::from("https://raw.githubusercontent.com/vega/vega-datasets/master/data/penguins.json")),
         ),
         Task::new_scan_url(Variable::new_data("url_datasetA"), Default::default(), ScanUrlTask {
             url: Some(Variable::new_signal("url")),
             batch_size: 1024,
             format_type: None
         }),
-        Task::new_transforms(Variable::new_signal("datasetA"), Default::default(), TransformsTask {
+        Task::new_transforms(Variable::new_data("datasetA"), Default::default(), TransformsTask {
             source: "url_datasetA".to_string(),
             pipeline: Some(TransformPipeline { transforms: vec![
                 Transform { transform_kind: Some(TransformKind::Extent(Extent {
-                    field: "col_1".to_string(),
+                    field: "Beak Length (mm)".to_string(),
                     signal: Some("my_extent".to_string()),
                 })) }
             ] })
@@ -281,7 +287,6 @@ fn try_it() {
     ];
 
     let graph = TaskGraph::new(tasks, task_scope).unwrap();
-
     println!("graph:\n{:#?}", graph);
 }
 

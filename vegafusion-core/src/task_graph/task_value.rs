@@ -5,6 +5,7 @@ use crate::error::VegaFusionError;
 use crate::proto::gen::tasks::task_value::Data;
 use crate::data::scalar::ScalarValue;
 use arrow::record_batch::RecordBatch;
+use crate::task_graph::task::TaskDependencies;
 
 #[derive(Debug, Clone)]
 pub enum TaskValue {

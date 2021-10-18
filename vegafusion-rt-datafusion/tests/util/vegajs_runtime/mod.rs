@@ -9,7 +9,7 @@ use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
 // use vega_fusion::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, ResultWithContext, ToInternalError, VegaFusionError};
+use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 // use vega_fusion::expression::compiler::config::CompilationConfig;
 // use vega_fusion::expression::compiler::utils::ScalarValueHelpers;
 // use vega_fusion::spec::transform::TransformSpec;
@@ -47,7 +47,7 @@ impl NodeJsRuntime {
             .stderr(Stdio::piped())
             .current_dir(working_dir)
             .spawn()
-            .internal("Failed to launch nodejs")?;
+            .external("Failed to launch nodejs")?;
 
         let out = Self::child_stream_to_vec(
             proc.stdout
@@ -105,7 +105,7 @@ impl NodeJsRuntime {
         let mut locked = self
             .proc
             .lock()
-            .internal("Failed to acquire lock to nodejs process")?;
+            .external("Failed to acquire lock to nodejs process")?;
         let process_stdin = locked.stdin.as_mut().unwrap();
 
         // Maybe add a newline to statement
