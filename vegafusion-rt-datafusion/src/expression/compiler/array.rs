@@ -89,7 +89,7 @@ pub fn make_array_constructor_udf() -> ScalarUDF {
             .null_bit_buffer(flat_valid_builder.finish())
             .add_buffer(offsets.data().buffers()[0].clone())
             .add_child_data(flat_values.data().clone())
-            .build();
+            .build()?;
 
         Ok(Arc::new(ListArray::from(list_array_data)) as ArrayRef)
     };
