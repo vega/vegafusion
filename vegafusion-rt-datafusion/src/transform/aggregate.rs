@@ -9,6 +9,7 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
 use vegafusion_core::transform::aggregate::op_name;
 use async_trait::async_trait;
+use vegafusion_core::task_graph::task_value::TaskValue;
 
 
 #[async_trait]
@@ -17,7 +18,7 @@ impl TransformTrait for Aggregate {
         &self,
         dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<ScalarValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let mut agg_exprs = Vec::new();
         for (i, (field, op)) in self.fields.iter().zip(self.ops.iter()).enumerate() {
             let column = if *op == AggregateOp::Count as i32 {

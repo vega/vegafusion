@@ -64,7 +64,7 @@ pub trait TransformDependencies: Send + Sync {
         Vec::new()
     }
 
-    fn output_signals(&self) -> Vec<String> {
+    fn output_vars(&self) -> Vec<Variable> {
         Vec::new()
     }
 }
@@ -74,8 +74,8 @@ impl TransformDependencies for Transform {
         self.transform_kind().as_dependencies_trait().input_vars()
     }
 
-    fn output_signals(&self) -> Vec<String> {
-        self.transform_kind().as_dependencies_trait().output_signals()
+    fn output_vars(&self) -> Vec<Variable> {
+        self.transform_kind().as_dependencies_trait().output_vars()
     }
 }
 

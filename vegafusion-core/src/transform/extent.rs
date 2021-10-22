@@ -1,6 +1,7 @@
 use crate::proto::gen::transforms::Extent;
 use crate::spec::transform::extent::ExtentTransformSpec;
 use crate::transform::TransformDependencies;
+use crate::proto::gen::tasks::Variable;
 
 impl Extent {
     pub fn new(spec: &ExtentTransformSpec) -> Self {
@@ -12,7 +13,7 @@ impl Extent {
 }
 
 impl TransformDependencies for Extent {
-    fn output_signals(&self) -> Vec<String> {
-        self.signal.clone().into_iter().collect()
+    fn output_vars(&self) -> Vec<Variable> {
+        self.signal.clone().iter().map(|s| Variable::new_signal(s)).collect()
     }
 }

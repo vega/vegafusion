@@ -7,6 +7,7 @@ use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Filter;
 use async_trait::async_trait;
+use vegafusion_core::task_graph::task_value::TaskValue;
 
 
 #[async_trait]
@@ -15,7 +16,7 @@ impl TransformTrait for Filter {
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<ScalarValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let logical_expr = compile(
             self.expr.as_ref().unwrap(),
             config,

@@ -34,14 +34,14 @@ impl TransformDependencies for TransformPipeline {
         sorted(vars).collect()
     }
 
-    fn output_signals(&self) -> Vec<String> {
-        let mut signals: HashSet<String> = Default::default();
+    fn output_vars(&self) -> Vec<Variable> {
+        let mut vars: HashSet<Variable> = Default::default();
         for tx in &self.transforms {
-            for sig in tx.output_signals() {
-                signals.insert(sig);
+            for sig in tx.output_vars() {
+                vars.insert(sig);
             }
         }
 
-        sorted(signals).collect()
+        sorted(vars).collect()
     }
 }

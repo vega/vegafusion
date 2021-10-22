@@ -11,6 +11,7 @@ use vegafusion_core::proto::gen::transforms::Formula;
 use vegafusion_core::data::table::VegaFusionTable;
 use crate::data::table::VegaFusionTableUtils;
 use async_trait::async_trait;
+use vegafusion_core::task_graph::task_value::TaskValue;
 
 
 #[async_trait]
@@ -19,7 +20,7 @@ impl TransformTrait for Formula {
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<ScalarValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let formula_expr = compile(
             self.expr.as_ref().unwrap(),
             config,

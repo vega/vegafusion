@@ -8,6 +8,7 @@ use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Extent;
 use async_trait::async_trait;
+use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 impl TransformTrait for Extent {
@@ -15,7 +16,7 @@ impl TransformTrait for Extent {
         &self,
         dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<ScalarValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let output_values = if self.signal.is_some() {
             let field_col = col(self.field.as_str());
             let min_val = min(field_col.clone()).alias("__min_val");
@@ -35,10 +36,10 @@ impl TransformTrait for Extent {
 
             // Build two-element list of the extents
             let element_datatype = min_val_scalar.get_datatype();
-            let extent_list = ScalarValue::List(
+            let extent_list = TaskValue::Scalar(ScalarValue::List(
                 Some(Box::new(vec![min_val_scalar, max_val_scalar])),
                 Box::new(element_datatype),
-            );
+            ));
             vec![extent_list]
         } else {
             Vec::new()

@@ -131,7 +131,7 @@ impl TransformDependencies for Bin {
         self.extent.as_ref().unwrap().get_variables()
     }
 
-    fn output_signals(&self) -> Vec<String> {
-        self.signal.clone().into_iter().collect()
+    fn output_vars(&self) -> Vec<Variable> {
+        self.signal.iter().map(|s| Variable::new_signal(s)).collect()
     }
 }

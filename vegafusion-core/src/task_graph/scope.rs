@@ -7,7 +7,7 @@ pub struct TaskScope {
     pub signals: HashSet<String>,
     pub data: HashSet<String>,
     /// Mapping from signal name to the dataset with the transform that generates the signal
-    pub data_signal: HashMap<String, String>,
+    pub output_vars: HashMap<Variable, Variable>,
     pub scales: HashSet<String>,
     pub children: Vec<TaskScope>,
 }
@@ -17,7 +17,7 @@ impl TaskScope {
         Self {
             signals: Default::default(),
             data: Default::default(),
-            data_signal: Default::default(),
+            output_vars: Default::default(),
             scales: Default::default(),
             children: Default::default(),
         }
@@ -48,7 +48,7 @@ impl TaskScope {
     pub fn add_variable(&mut self, variable: &Variable, scope: &[u32]) -> Result<()> {
         let mut child = self.get_child_mut(scope)?;
 
-        match variable.namespace() {
+        match variable.ns() {
             VariableNamespace::Signal => {
                 child.signals.insert(variable.name.clone());
             }
@@ -65,7 +65,7 @@ impl TaskScope {
 
     pub fn add_data_signal(&mut self, data: &str, signal: &str, scope: &[u32]) -> Result<()> {
         let mut child = self.get_child_mut(scope)?;
-        child.data_signal.insert(signal.to_string(), data.to_string());
+        child.output_vars.insert(Variable::new_signal(signal), Variable::new_data(data));
         Ok(())
     }
 
@@ -75,7 +75,7 @@ impl TaskScope {
             let curr_scope = &usage_scope[0..level];
             let task_scope = self.get_child(curr_scope)?;
 
-            let found_it = match variable.namespace() {
+            let found_it = match variable.ns() {
                 VariableNamespace::Signal => {
                     task_scope.signals.contains(&variable.name)
                 }
@@ -91,19 +91,17 @@ impl TaskScope {
                 return Ok(Resolved {
                     var: variable.clone(),
                     scope: Vec::from(curr_scope),
-                    signal: None
+                    output_var: None
                 })
             }
 
-            // Check for data signal
-            if matches!(variable.namespace(), VariableNamespace::Signal) {
-                if let Some(data) = task_scope.data_signal.get(&variable.name) {
-                    return Ok(Resolved {
-                        var: Variable::new_data(data),
-                        scope: Vec::from(curr_scope),
-                        signal: Some(variable.name.clone())
-                    })
-                }
+            // Check for output variable
+            if let Some(main_var) = task_scope.output_vars.get(&variable) {
+                return Ok(Resolved {
+                    var: main_var.clone(),
+                    scope: Vec::from(curr_scope),
+                    output_var: Some(variable.clone())
+                })
             }
         }
 
@@ -117,5 +115,5 @@ impl TaskScope {
 pub struct Resolved {
     pub var: Variable,
     pub scope: Vec<u32>,
-    pub signal: Option<String>,
+    pub output_var: Option<Variable>,
 }

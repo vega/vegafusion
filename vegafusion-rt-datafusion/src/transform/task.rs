@@ -54,7 +54,7 @@ impl TaskCall for TransformsTask {
         // Wrap results in TaskValue
         Ok((
             TaskValue::Table(transformed),
-            signal_values.into_iter().map(TaskValue::Scalar).collect()
+            signal_values
         ))
     }
 }

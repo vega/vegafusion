@@ -18,6 +18,7 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Bin;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use async_trait::async_trait;
+use vegafusion_core::task_graph::task_value::TaskValue;
 
 
 #[async_trait]
@@ -26,7 +27,7 @@ impl TransformTrait for Bin {
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<ScalarValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         // Compute extent
         let expr = compile(
             self.extent.as_ref().unwrap(),
@@ -56,13 +57,13 @@ impl TransformTrait for Bin {
             Box::new(DataType::Utf8),
         );
         let output_value = if self.signal.is_some() {
-            Some(ScalarValue::from(vec![
+            Some(TaskValue::Scalar(ScalarValue::from(vec![
                 ("fields", fields),
                 ("fname", ScalarValue::from(fname.as_str())),
                 ("start", ScalarValue::from(start)),
                 ("step", ScalarValue::from(step)),
                 ("stop", ScalarValue::from(stop)),
-            ]))
+            ])))
         } else {
             None
         };

@@ -19,6 +19,7 @@ use vegafusion_core::transform::TransformDependencies;
 use vegafusion_core::proto::gen::transforms::Transform;
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use async_trait::async_trait;
+use vegafusion_core::task_graph::task_value::TaskValue;
 
 
 #[async_trait]
@@ -27,7 +28,7 @@ pub trait TransformTrait: TransformDependencies {
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<ScalarValue>)>;
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)>;
 }
 
 pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
@@ -47,7 +48,7 @@ impl TransformTrait for Transform {
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<ScalarValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         to_transform_trait(self.transform_kind()).call(dataframe, config).await
     }
 }

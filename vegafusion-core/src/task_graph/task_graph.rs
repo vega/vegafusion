@@ -17,7 +17,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 
-struct PetgraphEdge { signal: Option<String> }
+struct PetgraphEdge { output_var: Option<Variable> }
 
 type ScopedVariable = (Variable, Vec<u32>);
 
@@ -50,7 +50,7 @@ impl TaskGraph {
                     input_node_index.clone(),
                     node_index.clone(),
                     PetgraphEdge {
-                        signal: resolved.signal.clone()
+                        output_var: resolved.output_var.clone()
                     }
                 );
             }
@@ -87,7 +87,7 @@ impl TaskGraph {
             
             // Collect incoming node indexes
             let incoming_node_ids: Vec<_> = graph.edges_directed(*node_index, Direction::Incoming).map(
-                |edge| (edge.source(), &edge.weight().signal)
+                |edge| (edge.source(), &edge.weight().output_var)
             ).collect();
 
             // Sort incoming nodes to match order expected by the task
@@ -103,7 +103,7 @@ impl TaskGraph {
                 if let Some(signal) = signal {
                     let weight = graph.node_weight(*node_index).unwrap();
                     let (_, input_task) = tasks_map.get(weight).unwrap();
-                    let signal_index = input_task.output_signals().iter().position(|e| e == signal).with_context(
+                    let signal_index = input_task.output_vars().iter().position(|e| e == signal).with_context(
                         || "Failed to find signal"
                     )?;
                     Ok(IncomingEdge {

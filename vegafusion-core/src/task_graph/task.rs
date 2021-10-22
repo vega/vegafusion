@@ -69,11 +69,11 @@ impl Task {
         }
     }
 
-    pub fn output_signals(&self) -> Vec<String> {
+    pub fn output_vars(&self) -> Vec<Variable> {
         match self.task_kind() {
             TaskKind::Value(_) => Vec::new(),
-            TaskKind::Url(task) => task.output_signals(),
-            TaskKind::Transforms(task) => task.output_signals(),
+            TaskKind::Url(task) => task.output_vars(),
+            TaskKind::Transforms(task) => task.output_vars(),
         }
     }
 }
@@ -90,5 +90,5 @@ impl Hash for Task {
 
 pub trait TaskDependencies {
     fn input_vars(&self) -> Vec<Variable> { Vec::new() }
-    fn output_signals(&self) -> Vec<String> { Vec::new() }
+    fn output_vars(&self) -> Vec<Variable> { Vec::new() }
 }

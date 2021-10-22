@@ -43,6 +43,11 @@ impl Variable {
     pub fn new_data(id: &str) -> Self {
         Self::new(VariableNamespace::Data, id)
     }
+
+    pub fn ns(&self) -> VariableNamespace {
+        VariableNamespace::from_i32(self.namespace).unwrap()
+    }
+
 }
 
 impl Eq for Variable {}

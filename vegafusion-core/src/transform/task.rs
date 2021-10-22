@@ -10,7 +10,7 @@ impl TaskDependencies for TransformsTask {
         input_vars
     }
 
-    fn output_signals(&self) -> Vec<String> {
-        self.pipeline.as_ref().unwrap().output_signals()
+    fn output_vars(&self) -> Vec<Variable> {
+        self.pipeline.as_ref().unwrap().output_vars()
     }
 }
