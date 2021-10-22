@@ -7,6 +7,7 @@ use crate::proto::gen::expression::{
 use std::collections::HashSet;
 use crate::proto::gen::tasks::Variable;
 use crate::task_graph::task::InputVariable;
+use crate::proto::gen::expression::literal::Value;
 
 pub trait ExpressionVisitor {
     fn visit_expression(&mut self, _expression: &Expression) {}
@@ -106,51 +107,102 @@ impl MutExpressionVisitor for ClearSpansVisitor {
 //     }
 // }
 
-/// Visitor to collect all unbound variables in the expression
+/// Visitor to collect all unbound input variables in the expression
 #[derive(Clone, Default)]
-pub struct GetVariablesVisitor {
-    pub variables: HashSet<InputVariable>,
-    // pub callables: HashMap<String, VegaFusionCallable>,
+pub struct GetInputVariablesVisitor {
+    pub input_variables: HashSet<InputVariable>,
+    pub data_callables: HashSet<String>,
+    pub scale_callables: HashSet<String>,
 }
-impl GetVariablesVisitor {
+
+impl GetInputVariablesVisitor {
     pub fn new() -> Self {
+        let data_callables: HashSet<_> = vec![
+            "data", "indata", "vlSelectionTest", "vlSelectionResolve",
+        ].into_iter().map(|s| s.to_string()).collect();
+
+        let scale_callables: HashSet<_> = vec![
+            "scale", "invert", "domain", "range", "bandwidth", "gradient",
+        ].into_iter().map(|s| s.to_string()).collect();
+
         Self {
-            variables: Default::default(),
-            // callables: default_callables(),
+            input_variables: Default::default(),
+            data_callables,
+            scale_callables,
         }
     }
 }
 
-impl ExpressionVisitor for GetVariablesVisitor {
+impl ExpressionVisitor for GetInputVariablesVisitor {
     fn visit_identifier(&mut self, node: &Identifier) {
         // datum does not count as a variable
         if node.name != "datum" {
-            self.variables.insert(InputVariable{
+            self.input_variables.insert(InputVariable{
                 var: Variable::new_signal(&node.name),
                 propagate: true,
             });
         }
     }
 
-    // /// Collect data and scale identifiers. These show up as a literal string as the first
-    // /// argument to a Data or Scale callable.
-    // fn visit_called_identifier(&mut self, node: &Identifier, args: &Vec<Expression>) {
-    //     if let Some(callable) = self.callables.get(&node.name) {
-    //         if let Some(Expression::Literal(Literal {
-    //                                             value: LiteralValue::String(arg),
-    //                                             ..
-    //                                         })) = args.get(0)
-    //         {
-    //             match callable {
-    //                 VegaFusionCallable::Data => {
-    //                     self.variables.insert(Variable::new_data(arg));
-    //                 }
-    //                 VegaFusionCallable::Scale => {
-    //                     self.variables.insert(Variable::new_scale(arg));
-    //                 }
-    //                 _ => {}
-    //             }
-    //         }
-    //     }
-    // }
+    /// Collect data and scale identifiers. These show up as a literal string as the first
+    /// argument to a Data or Scale callable.
+    fn visit_called_identifier(&mut self, node: &Identifier, args: &[Expression]) {
+        if let Some(arg0) = args.get(0) {
+            if let Ok(arg0) = arg0.as_literal() {
+                if let Value::String(arg0) = arg0.value() {
+                    // Check data callable
+                    if self.data_callables.contains(&node.name) {
+                        self.input_variables.insert(InputVariable {
+                            var: Variable::new_data(arg0),
+                            propagate: true,
+                        });
+                    }
+
+                    // Check scale callable
+                    if self.scale_callables.contains(&node.name) {
+                        self.input_variables.insert(InputVariable {
+                            var: Variable::new_scale(arg0),
+                            propagate: true,
+                        });
+                    }
+
+                    // Check for modify (where propagate is false)
+                    if node.name == "modify" {
+                        self.input_variables.insert(InputVariable {
+                            var: Variable::new_data(arg0),
+                            propagate: false,
+                        });
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+/// Visitor to collect all output variables in the expression
+#[derive(Clone, Default)]
+pub struct GetUpdateVariablesVisitor {
+    pub update_variables: HashSet<Variable>,
+}
+
+impl GetUpdateVariablesVisitor {
+     pub fn new() -> Self {
+         Self { update_variables: Default::default() }
+     }
+}
+
+impl ExpressionVisitor for GetUpdateVariablesVisitor {
+    fn visit_called_identifier(&mut self, node: &Identifier, args: &[Expression]) {
+        if node.name == "modify" {
+            if let Some(arg0) = args.get(0) {
+                if let Ok(arg0) = arg0.as_literal() {
+                    if let Value::String(arg0) = arg0.value() {
+                        // First arg is a string, which holds the name of the output dataset
+                        self.update_variables.insert( Variable::new_data(arg0));
+                    }
+                }
+            }
+        }
+    }
 }

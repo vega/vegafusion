@@ -1,7 +1,5 @@
 use crate::error::{Result, VegaFusionError};
-use crate::expression::visitors::{
-    ClearSpansVisitor, ExpressionVisitor, GetVariablesVisitor, MutExpressionVisitor,
-};
+use crate::expression::visitors::{ClearSpansVisitor, ExpressionVisitor, GetInputVariablesVisitor, MutExpressionVisitor, GetUpdateVariablesVisitor};
 use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::{
     ArrayExpression, BinaryExpression, CallExpression, ConditionalExpression, Expression,
@@ -64,10 +62,17 @@ impl Expression {
     }
 
     pub fn input_vars(&self) -> Vec<InputVariable> {
-        let mut visitor = GetVariablesVisitor::new();
+        let mut visitor = GetInputVariablesVisitor::new();
         self.walk(&mut visitor);
 
-        sorted(visitor.variables).collect()
+        sorted(visitor.input_variables).collect()
+    }
+
+    pub fn update_vars(&self) -> Vec<Variable> {
+        let mut visitor = GetUpdateVariablesVisitor::new();
+        self.walk(&mut visitor);
+
+        sorted(visitor.update_variables).collect()
     }
 
     /// Walk visitor through the expression tree in a DFS traversal
