@@ -6,8 +6,8 @@ use std::collections::{HashMap, HashSet};
 use crate::spec::data::DataSpec;
 use crate::spec::signal::SignalSpec;
 use crate::spec::scale::ScaleSpec;
-use crate::spec::chart::ChartVisitor;
-use crate::error::Result;
+use crate::spec::chart::{ChartVisitor, MutChartVisitor};
+use crate::error::{Result, ResultWithContext, VegaFusionError};
 
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -70,6 +70,56 @@ impl MarkSpec {
         }
 
         Ok(())
+    }
+
+    pub fn walk_mut(&mut self, visitor: &mut dyn MutChartVisitor, scope: &[u32]) -> Result<()> {
+        // Top-level
+        let scope = Vec::from(scope);
+        for data in &mut self.data {
+            visitor.visit_data(data, &scope)?;
+        }
+        for scale in &mut self.scales {
+            visitor.visit_scale(scale, &scope)?;
+        }
+        for signal in &mut self.signals {
+            visitor.visit_signal(signal, &scope)?;
+        }
+        let mut group_index = 0;
+        for mark in &mut self.marks {
+            if mark.type_ == "group" {
+                let mut nested_scope = scope.clone();
+                nested_scope.push(group_index);
+
+                visitor.visit_group_mark(mark, &nested_scope)?;
+                mark.walk_mut(visitor, &nested_scope)?;
+
+                group_index += 1;
+            } else {
+                // Keep parent scope
+                visitor.visit_non_group_mark(mark, &scope)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn get_group_mut(&mut self, group_index: u32) -> Result<&mut MarkSpec> {
+        self.marks
+            .iter_mut()
+            .filter(|m| m.type_ == "group")
+            .nth(group_index as usize)
+            .with_context(|| format!("No group with index {}", group_index))
+    }
+
+    pub fn get_nested_group_mut(&mut self, path: &[u32]) -> Result<&mut MarkSpec> {
+        if path.is_empty() {
+            return Err(VegaFusionError::internal("Path may not be empty"))
+        }
+        let mut group = self.get_group_mut(path[0])?;
+        for group_index in &path[1..] {
+            group = group.get_group_mut(*group_index)?;
+        }
+        Ok(group)
     }
 }
 

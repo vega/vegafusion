@@ -1,8 +1,9 @@
 use crate::spec::transform::TransformSpec;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use serde::{Serialize, Deserialize};
 use serde_json::Value;
 use crate::spec::values::StringOrSignalSpec;
+use itertools::sorted;
 
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -29,6 +30,18 @@ pub struct DataSpec {
 
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
+}
+
+impl DataSpec {
+    pub fn output_signals(&self) -> Vec<String> {
+        let mut signals: HashSet<String> = Default::default();
+
+        for tx in &self.transform {
+            signals.extend(tx.output_signals())
+        }
+
+        sorted(signals).into_iter().collect()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

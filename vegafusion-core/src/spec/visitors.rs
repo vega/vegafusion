@@ -35,6 +35,12 @@ impl ChartVisitor for MakeTaskScopeVisitor {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         let task_scope = self.task_scope.get_child_mut(scope)?;
         task_scope.data.insert(data.name.clone());
+        for sig in data.output_signals() {
+            task_scope.output_var_defs.insert(
+                Variable::new_signal(&sig),
+                Variable::new_data(&data.name),
+            );
+        }
         Ok(())
     }
 

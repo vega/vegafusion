@@ -8,6 +8,7 @@ use std::convert::TryInto;
 use std::sync::Arc;
 use vegafusion_core::proto::gen::tasks::task::TaskKind;
 use vegafusion_core::proto::gen::tasks::TaskGraph;
+use vegafusion_core::task_graph::task_graph::NodeValueIndex;
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -26,12 +27,11 @@ impl TaskGraphRuntime {
     pub async fn get_node_value(
         &self,
         task_graph: Arc<TaskGraph>,
-        node_index: usize,
-        signal: Option<usize>,
+        node_value_index: NodeValueIndex,
     ) -> Result<TaskValue> {
         let mut node_value =
-            get_or_compute_node_value(task_graph, node_index, self.cache.clone()).await?;
-        Ok(match signal {
+            get_or_compute_node_value(task_graph, node_value_index.0, self.cache.clone()).await?;
+        Ok(match node_value_index.1 {
             None => node_value.0,
             Some(signal_index) => node_value.1.remove(signal_index as usize),
         })

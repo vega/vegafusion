@@ -9,6 +9,7 @@ pub mod transform;
 pub mod variable;
 pub mod data;
 pub mod task_graph;
+pub mod planning;
 
 pub use arrow;
 
