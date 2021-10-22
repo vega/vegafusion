@@ -3,7 +3,7 @@ use crate::spec::chart::ChartVisitor;
 use crate::spec::mark::MarkSpec;
 use crate::spec::data::DataSpec;
 use crate::error::{Result, VegaFusionError};
-use crate::proto::gen::tasks::{Variable, Task};
+use crate::proto::gen::tasks::{Variable, Task, DataValuesTask, DataUrlTask, DataSourceTask};
 use crate::spec::signal::SignalSpec;
 use crate::spec::scale::ScaleSpec;
 use serde_json::Value;
@@ -12,6 +12,9 @@ use crate::task_graph::task_value::TaskValue;
 use crate::data::table::VegaFusionTable;
 use crate::proto::gen::transforms::TransformPipeline;
 use std::convert::TryFrom;
+use crate::spec::values::StringOrSignalSpec;
+use crate::proto::gen::tasks::data_url_task::Url;
+use crate::expression::parser::parse;
 
 
 #[derive(Clone, Debug, Default)]
@@ -58,106 +61,83 @@ impl ChartVisitor for BuildTaskScopeVisitor {
 
 /// For a spec that is fully supported on the server, collect tasks
 #[derive(Clone, Debug)]
-pub struct MakeTasksVisitor<'a> {
-    pub task_scope: &'a TaskScope,
+pub struct MakeTasksVisitor {
     pub tasks: Vec<Task>
 }
 
-impl <'a> MakeTasksVisitor<'a> {
-    pub fn new(task_scope: &'a TaskScope) -> Self {
+impl MakeTasksVisitor {
+    pub fn new() -> Self {
         Self {
-            task_scope,
             tasks: Default::default()
         }
     }
 }
 
 
-impl <'a> ChartVisitor for MakeTasksVisitor<'a> {
+impl ChartVisitor for MakeTasksVisitor {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
-        todo!()
-        // let data_var = Variable::new_data(&signal.name);
-        // let task_scope = self.task_scope.get_child_mut(scope)?;
-        //
-        // if let Some(values) = &data.values {
-        //     let table = VegaFusionTable::from_json(values, 1024)?;
-        //     let value = TaskValue::Table(table);
-        //
-        //     if data.transform.is_empty() {
-        //         // Add value task as data_var
-        //         let task = Task::new_value(data_var, scope, value);
-        //         self.tasks.push(task);
-        //     } else {
-        //         // Add _raw suffix to data set's name to store raw values
-        //         let mut values_name = data.name.clone();
-        //         values_name.push_str("_raw");
-        //         let values_var = Variable::new_data(&values_name);
-        //
-        //         // Add raw values as Value task
-        //         let task = Task::new_value(values_var, scope, value);
-        //         self.tasks.push(task);
-        //
-        //         // Add to _raw dataset declaration to scope
-        //         task_scope.data.insert(values_name);
-        //
-        //         // Build transform task
-        //         let pipeline = TransformPipeline::try_from(&data.transform)?;
-        //         let transform_task = TransformsTask {
-        //             source: values_name.clone(),
-        //             pipeline: Some(pipeline)
-        //         };
-        //         let task = Task::new_transforms(data_var, scope, transform_task);
-        //     }
-        // } else if let Some(url) = &data.url {
-        //     // Add value task to hold URL string
-        //     let mut url_var_name = data.name.clone();
-        //     url_var_name.push_str("_url");
-        //     let url_var = Variable::new_signal(&url_var_name);
-        //     let url_value = TaskValue::Scalar(ScalarValue::from(url));
-        //
-        //     // Add value task
-        //     let task = Task::new_value(url_var.clone(), scope, url_value);
-        //     self.tasks.push(task);
-        //
-        //     // Add _url signal to signal scope
-        //     task_scope.signals.insert(url_var_name);
-        //
-        //     // Make task to load data from url
-        //     let url_task = ScanUrlTask {
-        //         url: Some(url_var),
-        //         batch_size: 8096,
-        //         format_type: None
-        //     };
-        //
-        //     if data.transform.is_empty() {
-        //         let task = Task::new_scan_url(data_var, scope, url_task);
-        //         self.tasks.push(task);
-        //     } else {
-        //         return Err(VegaFusionError::internal("url data tasks may not yet have transforms"))
-        //     }
-        // } else if let Some(source) = &data.source {
-        //     // Make transform task
-        //     let pipeline = TransformPipeline::try_from(&data.transform)?;
-        //     let transform_task = TransformsTask {
-        //         source: source.clone(),
-        //         pipeline: Some(pipeline)
-        //     };
-        //     let task = Task::new_transforms(data_var, scope, transform_task);
-        //
-        //
-        // }
-        //
-        //
-        //
-        // let task = TransformsTask {
-        //     source: data.source.unwrap_or("".to_string()),
-        //     pipeline: None
-        // };
-        // Task::new_transforms(data_var, scope, )
-        //
-        // let task_scope = self.task_scope.get_child_mut(scope)?;
-        // task_scope.data.insert(data.name.clone());
-        // Ok(())
+        let data_var = Variable::new_data(&data.name);
+
+        // Compute pipeline
+        let pipeline = if data.transform.is_empty() {
+            None
+        } else {
+            Some(TransformPipeline::try_from(data.transform.as_slice())?)
+        };
+
+        let task = if let Some(url) = &data.url {
+            let proto_url = match url {
+                StringOrSignalSpec::String(url) => {
+                    Url::String(url.clone())
+                }
+                StringOrSignalSpec::Signal(expr) => {
+                    let url_expr = parse(&expr.signal)?;
+                    Url::Expr(url_expr)
+                }
+            };
+
+            Task::new_data_url(
+                data_var, scope, DataUrlTask {
+                    batch_size: 8096,
+                    format_type: None,
+                    pipeline,
+                    url: Some(proto_url)
+                }
+            )
+        } else if let Some(source) = &data.source {
+            Task::new_data_source(data_var, scope, DataSourceTask {
+                source: source.clone(),
+                pipeline
+            })
+
+        } else {
+            let values_table = match data.values.as_ref() {
+                Some(values) => {
+                    VegaFusionTable::from_json(values, 1024)?
+                },
+                None => {
+                    // Treat as empty values array
+                    VegaFusionTable::from_json(
+                        &Value::Array(Vec::new()), 1
+                    )?
+                }
+            };
+
+            if pipeline.is_none() {
+                // If no transforms, treat as regular TaskValue task
+                Task::new_value(
+                    data_var, scope, TaskValue::Table(values_table)
+                )
+            } else {
+                // Otherwise, create data values task (which supports transforms)
+                Task::new_data_values(data_var, scope, DataValuesTask {
+                    values: values_table.to_ipc_bytes()?,
+                    pipeline
+                })
+            }
+        };
+        self.tasks.push(task);
+        Ok(())
     }
 
     fn visit_signal(&mut self, signal: &SignalSpec, scope: &[u32]) -> Result<()> {
@@ -179,4 +159,3 @@ impl <'a> ChartVisitor for MakeTasksVisitor<'a> {
         unimplemented!("Scale tasks not yet supported")
     }
 }
-

@@ -51,3 +51,10 @@ pub struct FieldObject {
 pub struct SignalExpressionSpec {
     pub signal: String,
 }
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum StringOrSignalSpec {
+    String(String),
+    Signal(SignalExpressionSpec),
+}

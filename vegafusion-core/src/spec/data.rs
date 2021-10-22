@@ -2,6 +2,7 @@ use crate::spec::transform::TransformSpec;
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use serde_json::Value;
+use crate::spec::values::StringOrSignalSpec;
 
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -12,7 +13,7 @@ pub struct DataSpec {
     pub source: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
+    pub url: Option<StringOrSignalSpec>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub format: Option<DataFormatSpec>,
