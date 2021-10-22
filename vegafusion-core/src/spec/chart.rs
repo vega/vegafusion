@@ -6,6 +6,9 @@ use crate::spec::signal::SignalSpec;
 use crate::spec::mark::MarkSpec;
 use crate::spec::scale::ScaleSpec;
 use crate::error::Result;
+use crate::task_graph::scope::TaskScope;
+use crate::spec::visitors::{MakeTaskScopeVisitor, MakeTasksVisitor};
+use crate::proto::gen::tasks::Task;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ChartSpec {
@@ -64,6 +67,18 @@ impl ChartSpec {
         }
 
         Ok(())
+    }
+
+    pub fn to_task_scope(&self) -> Result<TaskScope> {
+        let mut visitor = MakeTaskScopeVisitor::new();
+        self.walk(&mut visitor)?;
+        Ok(visitor.task_scope)
+    }
+
+    pub fn to_tasks(&self) -> Result<Vec<Task>> {
+        let mut visitor = MakeTasksVisitor::new();
+        self.walk(&mut visitor)?;
+        Ok(visitor.tasks)
     }
 }
 

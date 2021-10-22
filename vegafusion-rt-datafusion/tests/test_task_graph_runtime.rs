@@ -8,6 +8,7 @@ use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 use std::sync::Arc;
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::expression::parser::parse;
+use vegafusion_core::spec::chart::ChartSpec;
 
 
 #[tokio::test(flavor="multi_thread")]
@@ -52,6 +53,51 @@ async fn try_it() {
     let result = graph_runtime.get_node_value(graph, 2, Some(0)).await.unwrap();
 
     println!("result: {:?}", result);
+}
 
-    // println!("graph:\n{:#?}", graph);
+
+#[tokio::test(flavor="multi_thread")]
+async fn try_it_from_spec() {
+    let chart: ChartSpec = serde_json::from_str(r##"{
+  "signals": [
+    {
+      "name": "url",
+      "value": "https://raw.githubusercontent.com/vega/vega-datasets/master/data/penguins.json"
+    }
+  ],
+  "data": [
+    {
+      "name": "url_datasetA",
+      "url": {"signal": "url"}
+    },
+    {
+      "name": "datasetA",
+      "source": "url_datasetA",
+      "transform": [
+        {
+          "type": "extent",
+          "signal": "my_extent",
+          "field": "Beak Length (mm)"
+        },
+        {
+          "type": "collect",
+          "sort": {"field": "Beak Length (mm)"}
+        }
+      ]
+    }
+  ]
+}
+"##).unwrap();
+
+    let task_scope = chart.to_task_scope().unwrap();
+    let tasks = chart.to_tasks().unwrap();
+
+    println!("task_scope: {:?}", task_scope);
+    println!("tasks: {:?}", tasks);
+
+    let graph = Arc::new(TaskGraph::new(tasks, task_scope).unwrap());
+
+    let graph_runtime = TaskGraphRuntime::new(20);
+    let result = graph_runtime.get_node_value(graph, 2, Some(0)).await.unwrap();
+    println!("result: {:?}", result);
 }

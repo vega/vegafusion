@@ -18,11 +18,11 @@ use crate::expression::parser::parse;
 
 
 #[derive(Clone, Debug, Default)]
-pub struct BuildTaskScopeVisitor {
+pub struct MakeTaskScopeVisitor {
     pub task_scope: TaskScope,
 }
 
-impl BuildTaskScopeVisitor {
+impl MakeTaskScopeVisitor {
     pub fn new() -> Self {
         Self {
             task_scope: Default::default(),
@@ -31,7 +31,7 @@ impl BuildTaskScopeVisitor {
 }
 
 
-impl ChartVisitor for BuildTaskScopeVisitor {
+impl ChartVisitor for MakeTaskScopeVisitor {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         let task_scope = self.task_scope.get_child_mut(scope)?;
         task_scope.data.insert(data.name.clone());
