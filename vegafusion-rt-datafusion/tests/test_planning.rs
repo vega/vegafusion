@@ -1,23 +1,39 @@
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::planning::extract::extract_server_data;
-use vegafusion_core::proto::gen::tasks::TaskGraph;
+use vegafusion_core::proto::gen::tasks::{TaskGraph, Variable};
+use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
+use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
+use std::sync::Arc;
 
-#[test]
-fn test_extract_server_data() {
-    let mut spec = spec2();
+#[tokio::test(flavor="multi_thread")]
+async fn test_extract_server_data() {
+    let mut spec = spec1();
 
     // Get full spec's scope
     let task_scope = spec.to_task_scope().unwrap();
-    println!("{:#?}", task_scope);
+    // println!("{:#?}", task_scope);
 
     let server_spec = extract_server_data(&mut spec).unwrap();
-
-    println!("{}", serde_json::to_string_pretty(&server_spec).unwrap());
+    // println!("{}", serde_json::to_string_pretty(&server_spec).unwrap());
 
     let tasks = server_spec.to_tasks().unwrap();
-    let graph = TaskGraph::new(tasks, &task_scope).unwrap();
+    let graph = Arc::new(TaskGraph::new(tasks, &task_scope).unwrap());
     let mapping = graph.build_mapping();
-    println!("{:#?}", mapping);
+    // println!("{:#?}", mapping);
+
+    let graph_runtime = TaskGraphRuntime::new(20);
+    let data_3 = graph_runtime.get_node_value(
+        graph.clone(), mapping.get(&(Variable::new_data("data_3"), Vec::new())).unwrap()
+    ).await.unwrap();
+
+    println!("data_3:\n{}", data_3.into_table().unwrap().pretty_format(None).unwrap());
+
+    let delay_extent = graph_runtime.get_node_value(
+        graph.clone(),
+        mapping.get(&(Variable::new_signal("child__column_delay_layer_1_bin_maxbins_20_delay_extent"), Vec::new())).unwrap()
+    ).await.unwrap();
+
+    println!("delay_extent: {:?}", delay_extent.into_scalar().unwrap())
 }
 
 

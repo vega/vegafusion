@@ -39,7 +39,7 @@ impl TransformTrait for Bin {
 
         // Compute binning solution
         let params = calculate_bin_params(&extent, self)?;
-        println!("extent: {:?}\n params: {:?}", extent, params);
+
         let BinParams {
             start,
             stop,

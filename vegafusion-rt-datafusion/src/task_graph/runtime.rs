@@ -27,7 +27,7 @@ impl TaskGraphRuntime {
     pub async fn get_node_value(
         &self,
         task_graph: Arc<TaskGraph>,
-        node_value_index: NodeValueIndex,
+        node_value_index: &NodeValueIndex,
     ) -> Result<TaskValue> {
         let mut node_value =
             get_or_compute_node_value(task_graph, node_value_index.0, self.cache.clone()).await?;
