@@ -87,9 +87,9 @@ async fn get_or_compute_node_value(
                         }
                     };
 
-                    let value = match edge.signal {
+                    let value = match edge.output {
                         None => value.0,
-                        Some(signal_index) => value.1.remove(signal_index as usize),
+                        Some(output_index) => value.1.remove(output_index as usize),
                     };
                     Ok(value)
                 })

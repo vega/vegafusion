@@ -4,6 +4,7 @@ use crate::proto::gen::transforms::Formula;
 use crate::spec::transform::formula::FormulaTransformSpec;
 use crate::transform::TransformDependencies;
 use crate::proto::gen::tasks::Variable;
+use crate::task_graph::task::InputVariable;
 
 
 impl Formula {
@@ -17,7 +18,7 @@ impl Formula {
 }
 
 impl TransformDependencies for Formula {
-    fn input_vars(&self) -> Vec<Variable> {
-        self.expr.as_ref().unwrap().get_variables()
+    fn input_vars(&self) -> Vec<InputVariable> {
+        self.expr.as_ref().unwrap().input_vars()
     }
 }

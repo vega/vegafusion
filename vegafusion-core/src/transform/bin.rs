@@ -7,6 +7,7 @@ use crate::spec::transform::bin::{BinExtent, BinTransformSpec};
 use crate::spec::values::SignalExpressionSpec;
 use crate::transform::TransformDependencies;
 use crate::proto::gen::tasks::Variable;
+use crate::task_graph::task::InputVariable;
 
 
 impl Bin {
@@ -127,8 +128,8 @@ impl BinConfig {
 }
 
 impl TransformDependencies for Bin {
-    fn input_vars(&self) -> Vec<Variable> {
-        self.extent.as_ref().unwrap().get_variables()
+    fn input_vars(&self) -> Vec<InputVariable> {
+        self.extent.as_ref().unwrap().input_vars()
     }
 
     fn output_vars(&self) -> Vec<Variable> {

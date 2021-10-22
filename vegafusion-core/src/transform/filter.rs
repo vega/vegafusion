@@ -4,6 +4,7 @@ use crate::proto::gen::transforms::Filter;
 use crate::spec::transform::filter::FilterTransformSpec;
 use crate::transform::TransformDependencies;
 use crate::proto::gen::tasks::Variable;
+use crate::task_graph::task::InputVariable;
 
 
 impl Filter {
@@ -14,7 +15,7 @@ impl Filter {
 }
 
 impl TransformDependencies for Filter {
-    fn input_vars(&self) -> Vec<Variable> {
-        self.expr.as_ref().unwrap().get_variables()
+    fn input_vars(&self) -> Vec<InputVariable> {
+        self.expr.as_ref().unwrap().input_vars()
     }
 }

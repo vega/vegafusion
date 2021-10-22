@@ -9,6 +9,12 @@ use std::hash::{Hash, Hasher};
 use prost::Message;
 
 
+#[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct InputVariable {
+    pub var: Variable,
+    pub propagate: bool,
+}
+
 impl Task {
     pub fn task_kind(&self) -> &TaskKind {
         self.task_kind.as_ref().unwrap()
@@ -61,7 +67,7 @@ impl Task {
         }
     }
 
-    pub fn input_vars(&self) -> Vec<Variable> {
+    pub fn input_vars(&self) -> Vec<InputVariable> {
         match self.task_kind() {
             TaskKind::Value(_) => Vec::new(),
             TaskKind::Url(task) => task.input_vars(),
@@ -89,6 +95,6 @@ impl Hash for Task {
 }
 
 pub trait TaskDependencies {
-    fn input_vars(&self) -> Vec<Variable> { Vec::new() }
+    fn input_vars(&self) -> Vec<InputVariable> { Vec::new() }
     fn output_vars(&self) -> Vec<Variable> { Vec::new() }
 }

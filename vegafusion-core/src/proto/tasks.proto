@@ -103,11 +103,12 @@ message Task {
 // ## Task Graph
 message IncomingEdge {
   uint32 source = 1;
-  optional uint32 signal = 2;
+  optional uint32 output = 2;
 }
 
 message OutgoingEdge {
   uint32 target = 1;
+  bool propagate = 2;
 }
 
 message TaskNode {

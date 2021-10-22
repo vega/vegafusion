@@ -139,12 +139,14 @@ pub struct IncomingEdge {
     #[prost(uint32, tag="1")]
     pub source: u32,
     #[prost(uint32, optional, tag="2")]
-    pub signal: ::core::option::Option<u32>,
+    pub output: ::core::option::Option<u32>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OutgoingEdge {
     #[prost(uint32, tag="1")]
     pub target: u32,
+    #[prost(bool, tag="2")]
+    pub propagate: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TaskNode {

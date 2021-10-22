@@ -5,6 +5,7 @@ use crate::proto::gen::transforms::{Aggregate, Bin, Collect, Extent, Filter, For
 use crate::spec::transform::TransformSpec;
 use std::convert::TryFrom;
 use crate::proto::gen::tasks::Variable;
+use crate::task_graph::task::InputVariable;
 
 
 pub mod aggregate;
@@ -60,7 +61,7 @@ impl Transform {
 }
 
 pub trait TransformDependencies: Send + Sync {
-    fn input_vars(&self) -> Vec<Variable> {
+    fn input_vars(&self) -> Vec<InputVariable> {
         Vec::new()
     }
 
@@ -70,7 +71,7 @@ pub trait TransformDependencies: Send + Sync {
 }
 
 impl TransformDependencies for Transform {
-    fn input_vars(&self) -> Vec<Variable> {
+    fn input_vars(&self) -> Vec<InputVariable> {
         self.transform_kind().as_dependencies_trait().input_vars()
     }
 

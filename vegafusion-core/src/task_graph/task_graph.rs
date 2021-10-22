@@ -17,7 +17,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 
-struct PetgraphEdge { output_var: Option<Variable> }
+struct PetgraphEdge { output_var: Option<Variable>, propagate: bool }
 
 type ScopedVariable = (Variable, Vec<u32>);
 
@@ -39,7 +39,7 @@ impl TaskGraph {
         for (node_index, task) in tasks_map.values() {
             let usage_scope = task.scope();
             for input_var in task.input_vars() {
-                let resolved = task_scope.resolve_scope(&input_var, usage_scope)?;
+                let resolved = task_scope.resolve_scope(&input_var.var, usage_scope)?;
                 let input_scoped_var = (resolved.var.clone(), resolved.scope.clone());
                 let (input_node_index, _) = tasks_map.get(&input_scoped_var).with_context(
                     || format!("No variable {:?} with scope {:?}", input_scoped_var.0, input_scoped_var.1)
@@ -50,7 +50,8 @@ impl TaskGraph {
                     input_node_index.clone(),
                     node_index.clone(),
                     PetgraphEdge {
-                        output_var: resolved.output_var.clone()
+                        output_var: resolved.output_var.clone(),
+                        propagate: input_var.propagate,
                     }
                 );
             }
@@ -80,7 +81,8 @@ impl TaskGraph {
                 |node_index| {
                     let sorted_index = *toposorted_node_indexes.get(node_index).unwrap() as u32;
                     OutgoingEdge {
-                        target: sorted_index
+                        target: sorted_index,
+                        propagate: true,
                     }
                 }
             ).collect();
@@ -97,23 +99,23 @@ impl TaskGraph {
             }).collect();
 
             let incoming: Vec<_> = task.input_vars().iter().map(|var| {
-                let (node_index, signal) = *incoming_vars.get(var).unwrap();
+                let (node_index, output_var) = *incoming_vars.get(&var.var).unwrap();
                 let sorted_index = *toposorted_node_indexes.get(node_index).unwrap() as u32;
 
-                if let Some(signal) = signal {
+                if let Some(output_var) = output_var {
                     let weight = graph.node_weight(*node_index).unwrap();
                     let (_, input_task) = tasks_map.get(weight).unwrap();
-                    let signal_index = input_task.output_vars().iter().position(|e| e == signal).with_context(
-                        || "Failed to find signal"
+                    let output_index = input_task.output_vars().iter().position(|v| v == output_var).with_context(
+                        || "Failed to find output variable"
                     )?;
                     Ok(IncomingEdge {
                         source: sorted_index,
-                        signal: Some(signal_index as u32)
+                        output: Some(output_index as u32)
                     })
                 } else {
                     Ok(IncomingEdge {
                         source: sorted_index,
-                        signal: None
+                        output: None
                     })
                 }
             }).collect::<Result<Vec<_>>>()?;

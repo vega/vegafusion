@@ -6,6 +6,7 @@ use crate::proto::gen::expression::{
 
 use std::collections::HashSet;
 use crate::proto::gen::tasks::Variable;
+use crate::task_graph::task::InputVariable;
 
 pub trait ExpressionVisitor {
     fn visit_expression(&mut self, _expression: &Expression) {}
@@ -108,7 +109,7 @@ impl MutExpressionVisitor for ClearSpansVisitor {
 /// Visitor to collect all unbound variables in the expression
 #[derive(Clone, Default)]
 pub struct GetVariablesVisitor {
-    pub variables: HashSet<Variable>,
+    pub variables: HashSet<InputVariable>,
     // pub callables: HashMap<String, VegaFusionCallable>,
 }
 impl GetVariablesVisitor {
@@ -124,7 +125,10 @@ impl ExpressionVisitor for GetVariablesVisitor {
     fn visit_identifier(&mut self, node: &Identifier) {
         // datum does not count as a variable
         if node.name != "datum" {
-            self.variables.insert(Variable::new_signal(&node.name));
+            self.variables.insert(InputVariable{
+                var: Variable::new_signal(&node.name),
+                propagate: true,
+            });
         }
     }
 

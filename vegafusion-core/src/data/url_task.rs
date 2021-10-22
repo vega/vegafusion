@@ -1,5 +1,5 @@
 use crate::proto::gen::tasks::{ScanUrlTask, Variable};
-use crate::task_graph::task::TaskDependencies;
+use crate::task_graph::task::{TaskDependencies, InputVariable};
 
 impl ScanUrlTask {
     pub fn url(&self) -> &Variable {
@@ -8,7 +8,10 @@ impl ScanUrlTask {
 }
 
 impl TaskDependencies for ScanUrlTask {
-    fn input_vars(&self) -> Vec<Variable> {
-        vec![self.url().clone()]
+    fn input_vars(&self) -> Vec<InputVariable> {
+        vec![InputVariable{
+            var: self.url().clone(),
+            propagate: true,
+        }]
     }
 }

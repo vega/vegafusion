@@ -20,10 +20,10 @@ impl TaskCall for TransformsTask {
         for (input_var, input_val) in self.input_vars().iter().zip(values) {
             match input_val {
                 TaskValue::Scalar(value) => {
-                    signal_scope.insert(input_var.name.clone(), value.clone());
+                    signal_scope.insert(input_var.var.name.clone(), value.clone());
                 }
                 TaskValue::Table(table) => {
-                    data_scope.insert(input_var.name.clone(), table.clone());
+                    data_scope.insert(input_var.var.name.clone(), table.clone());
                 }
             }
         }

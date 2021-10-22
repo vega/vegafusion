@@ -6,6 +6,7 @@ use crate::proto::gen::tasks::Variable;
 use std::convert::TryFrom;
 use crate::spec::transform::TransformSpec;
 use crate::error::{VegaFusionError, Result};
+use crate::task_graph::task::InputVariable;
 
 
 impl TryFrom<&[TransformSpec]> for TransformPipeline {
@@ -23,8 +24,8 @@ impl TryFrom<&[TransformSpec]> for TransformPipeline {
 
 
 impl TransformDependencies for TransformPipeline {
-    fn input_vars(&self) -> Vec<Variable> {
-        let mut vars: HashSet<Variable> = Default::default();
+    fn input_vars(&self) -> Vec<InputVariable> {
+        let mut vars: HashSet<InputVariable> = Default::default();
         for tx in &self.transforms {
             for var in tx.input_vars() {
                 vars.insert(var);

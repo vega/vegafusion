@@ -12,6 +12,7 @@ use itertools::sorted;
 use std::fmt::{Display, Formatter};
 use std::ops::Deref;
 use crate::proto::gen::tasks::Variable;
+use crate::task_graph::task::InputVariable;
 
 /// Trait that all AST node types implement
 pub trait ExpressionTrait: Display {
@@ -62,7 +63,7 @@ impl Expression {
         self.walk_mut(&mut visitor);
     }
 
-    pub fn get_variables(&self) -> Vec<Variable> {
+    pub fn input_vars(&self) -> Vec<InputVariable> {
         let mut visitor = GetVariablesVisitor::new();
         self.walk(&mut visitor);
 

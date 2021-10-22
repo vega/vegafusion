@@ -6,9 +6,9 @@ use crate::proto::gen::tasks::{Variable, VariableNamespace};
 pub struct TaskScope {
     pub signals: HashSet<String>,
     pub data: HashSet<String>,
-    /// Mapping from signal name to the dataset with the transform that generates the signal
-    pub output_vars: HashMap<Variable, Variable>,
     pub scales: HashSet<String>,
+    /// Tasks that have definition output variables (e.g. task that produces a signal)
+    pub output_var_defs: HashMap<Variable, Variable>,
     pub children: Vec<TaskScope>,
 }
 
@@ -17,7 +17,7 @@ impl TaskScope {
         Self {
             signals: Default::default(),
             data: Default::default(),
-            output_vars: Default::default(),
+            output_var_defs: Default::default(),
             scales: Default::default(),
             children: Default::default(),
         }
@@ -65,7 +65,7 @@ impl TaskScope {
 
     pub fn add_data_signal(&mut self, data: &str, signal: &str, scope: &[u32]) -> Result<()> {
         let mut child = self.get_child_mut(scope)?;
-        child.output_vars.insert(Variable::new_signal(signal), Variable::new_data(data));
+        child.output_var_defs.insert(Variable::new_signal(signal), Variable::new_data(data));
         Ok(())
     }
 
@@ -96,7 +96,7 @@ impl TaskScope {
             }
 
             // Check for output variable
-            if let Some(main_var) = task_scope.output_vars.get(&variable) {
+            if let Some(main_var) = task_scope.output_var_defs.get(&variable) {
                 return Ok(Resolved {
                     var: main_var.clone(),
                     scope: Vec::from(curr_scope),
