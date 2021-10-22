@@ -19,15 +19,6 @@ pub mod task_value {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ScopedVariable {
-    #[prost(string, tag="1")]
-    pub name: ::prost::alloc::string::String,
-    #[prost(enumeration="VariableNamespace", tag="2")]
-    pub namespace: i32,
-    #[prost(uint32, repeated, tag="3")]
-    pub scope: ::prost::alloc::vec::Vec<u32>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Variable {
     #[prost(string, tag="1")]
     pub name: ::prost::alloc::string::String,

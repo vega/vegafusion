@@ -1,4 +1,4 @@
-use crate::proto::gen::tasks::{Task, ScopedVariable, task::TaskKind, Variable, DataUrlTask, DataValuesTask, DataSourceTask};
+use crate::proto::gen::tasks::{Task, task::TaskKind, Variable, DataUrlTask, DataValuesTask, DataSourceTask};
 use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
 use crate::task_graph::task_value::TaskValue;
 use std::convert::TryFrom;
