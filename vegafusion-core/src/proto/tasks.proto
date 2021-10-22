@@ -1,6 +1,7 @@
 syntax = "proto3";
 package tasks;
 
+import "expression.proto";
 import "transforms.proto";
 
 // ## Task Value
@@ -75,14 +76,24 @@ message ScanUrlFormat {
   string feature = 7;
 }
 
-message ScanUrlTask {
-  Variable url = 1;
-  int32 batch_size = 2;
-  ScanUrlFormat format_type = 3;
+message DataUrlTask {
+  oneof url {
+    string string = 1;
+    expression.Expression expr = 2;
+  };
+  int32 batch_size = 3;
+  ScanUrlFormat format_type = 4;
+  transforms.TransformPipeline pipeline = 5;
+}
+
+// ## Inline values task
+message DataValuesTask {
+  bytes values = 1;
+  transforms.TransformPipeline pipeline = 2;
 }
 
 // ## Transform Task
-message TransformsTask {
+message DataSourceTask {
   string source = 1;
   transforms.TransformPipeline pipeline = 2;
 }
@@ -94,8 +105,9 @@ message Task {
   repeated uint32 scope = 2;
   oneof task_kind {
     TaskValue value = 3;
-    ScanUrlTask url = 4;
-    TransformsTask transforms = 5;
+    DataValuesTask data_values = 4;
+    DataUrlTask data_url = 5;
+    DataSourceTask data_source = 6;
   }
 }
 

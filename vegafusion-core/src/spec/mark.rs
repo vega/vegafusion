@@ -6,6 +6,9 @@ use std::collections::{HashMap, HashSet};
 use crate::spec::data::DataSpec;
 use crate::spec::signal::SignalSpec;
 use crate::spec::scale::ScaleSpec;
+use crate::spec::chart::ChartVisitor;
+use crate::error::Result;
+
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MarkSpec {
@@ -35,6 +38,39 @@ pub struct MarkSpec {
 
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
+}
+
+impl MarkSpec {
+    pub fn walk(&self, visitor: &mut dyn ChartVisitor, scope: &[u32]) -> Result<()> {
+        // Top-level
+        let scope = Vec::from(scope);
+        for data in &self.data {
+            visitor.visit_data(data, &scope)?;
+        }
+        for scale in &self.scales {
+            visitor.visit_scale(scale, &scope)?;
+        }
+        for signal in &self.signals {
+            visitor.visit_signal(signal, &scope)?;
+        }
+        let mut group_index = 0;
+        for mark in &self.marks {
+            if mark.type_ == "group" {
+                let mut nested_scope = scope.clone();
+                nested_scope.push(group_index);
+
+                visitor.visit_group_mark(mark, &nested_scope)?;
+                mark.walk(visitor, &nested_scope)?;
+
+                group_index += 1;
+            } else {
+                // Keep parent scope
+                visitor.visit_non_group_mark(mark, &scope)?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 

@@ -1,4 +1,4 @@
-use crate::proto::gen::tasks::{Task, ScopedVariable, task::TaskKind, TransformsTask, Variable, ScanUrlTask};
+use crate::proto::gen::tasks::{Task, ScopedVariable, task::TaskKind, Variable, DataUrlTask, DataValuesTask, DataSourceTask};
 use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
 use crate::task_graph::task_value::TaskValue;
 use std::convert::TryFrom;
@@ -43,43 +43,45 @@ impl Task {
         }
     }
 
-    pub fn new_transforms(variable: Variable, scope: &[u32], transforms: TransformsTask) -> Self {
+    pub fn new_data_url(variable: Variable, scope: &[u32], task: DataUrlTask) -> Self {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
-            task_kind: Some(TaskKind::Transforms(transforms))
+            task_kind: Some(TaskKind::DataUrl(task))
         }
     }
 
-    pub fn as_transforms(&self) -> Result<&TransformsTask> {
-        if let TaskKind::Transforms(transforms) = self.task_kind() {
-            Ok(transforms)
-        } else {
-            Err(VegaFusionError::internal("Task is not a TransformTask"))
-        }
-    }
-
-    pub fn new_scan_url(variable: Variable, scope: &[u32], task: ScanUrlTask) -> Self {
+    pub fn new_data_values(variable: Variable, scope: &[u32], task: DataValuesTask) -> Self {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
-            task_kind: Some(TaskKind::Url(task))
+            task_kind: Some(TaskKind::DataValues(task))
+        }
+    }
+
+    pub fn new_data_source(variable: Variable, scope: &[u32], task: DataSourceTask) -> Self {
+        Self {
+            variable: Some(variable),
+            scope: Vec::from(scope),
+            task_kind: Some(TaskKind::DataSource(task))
         }
     }
 
     pub fn input_vars(&self) -> Vec<InputVariable> {
         match self.task_kind() {
             TaskKind::Value(_) => Vec::new(),
-            TaskKind::Url(task) => task.input_vars(),
-            TaskKind::Transforms(task) => task.input_vars(),
+            TaskKind::DataUrl(task) => task.input_vars(),
+            TaskKind::DataSource(task) => task.input_vars(),
+            TaskKind::DataValues(task) => task.input_vars(),
         }
     }
 
     pub fn output_vars(&self) -> Vec<Variable> {
         match self.task_kind() {
             TaskKind::Value(_) => Vec::new(),
-            TaskKind::Url(task) => task.output_vars(),
-            TaskKind::Transforms(task) => task.output_vars(),
+            TaskKind::DataUrl(task) => task.output_vars(),
+            TaskKind::DataSource(task) => task.output_vars(),
+            TaskKind::DataValues(task) => task.output_vars(),
         }
     }
 }

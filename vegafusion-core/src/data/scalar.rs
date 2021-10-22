@@ -21,6 +21,7 @@ pub trait ScalarValueHelpers {
 
     fn to_f64(&self) -> Result<f64>;
     fn to_f64x2(&self) -> Result<[f64; 2]>;
+    fn to_scalar_string(&self) -> Result<String>;
 }
 
 impl ScalarValueHelpers for ScalarValue {
@@ -164,5 +165,18 @@ impl ScalarValueHelpers for ScalarValue {
             "Cannot convert {} to [f64; 2]",
             self
         )));
+    }
+
+    fn to_scalar_string(&self) -> Result<String> {
+        Ok(match self {
+            ScalarValue::Utf8(Some(value)) => value.clone(),
+            ScalarValue::LargeUtf8(Some(value)) => value.clone(),
+            _ => {
+                return Err(VegaFusionError::internal(&format!(
+                    "Cannot convert {} to String",
+                    self
+                )))
+            }
+        })
     }
 }

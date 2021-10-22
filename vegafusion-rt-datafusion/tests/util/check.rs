@@ -91,7 +91,7 @@ pub fn check_transform_evaluation(
     let df = data.to_dataframe().unwrap();
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
 
-    let (result_df, result_signals) = TOKIO_RUNTIME.block_on(pipeline.call(df, compilation_config)).unwrap();
+    let (result_df, result_signals) = TOKIO_RUNTIME.block_on(pipeline.eval(df, compilation_config)).unwrap();
     let result_signals = result_signals.into_iter().map(|v| v.into_scalar()).collect::<Result<Vec<ScalarValue>>>().unwrap();
     let result_data = VegaFusionTable::from_dataframe_blocking(result_df).unwrap();
 

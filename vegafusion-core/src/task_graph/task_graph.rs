@@ -1,4 +1,4 @@
-use crate::proto::gen::tasks::{TaskGraph, Task, Variable, TaskNode, OutgoingEdge, IncomingEdge, ScanUrlTask, TransformsTask};
+use crate::proto::gen::tasks::{TaskGraph, Task, Variable, TaskNode, OutgoingEdge, IncomingEdge};
 use crate::task_graph::scope::TaskScope;
 use crate::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 use std::collections::HashMap;

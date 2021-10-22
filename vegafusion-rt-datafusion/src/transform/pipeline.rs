@@ -17,7 +17,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 impl TransformTrait for TransformPipeline {
-    async fn call(
+    async fn eval(
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
@@ -27,7 +27,7 @@ impl TransformTrait for TransformPipeline {
         let mut config = config.clone();
 
         for tx in &self.transforms {
-            let tx_result = tx.call(result_df, &config).await?;
+            let tx_result = tx.eval(result_df, &config).await?;
 
             // Update dataframe
             result_df = tx_result.0;

@@ -66,7 +66,7 @@ fn test_vegajs_evaluate_scalar_scope() {
 fn test_evaluate_filter_transform() {
     let vegajs_runtime = vegajs_runtime();
     let dataset = VegaFusionTable::from_json(
-        json!([
+        &json!([
             {"colA": 2.0, "colB": false, "colC": "first"},
             {"colA": 4.0, "colB": true, "colC": "second"},
             {"colA": 6.0, "colB": false, "colC": "third"},
@@ -118,7 +118,7 @@ fn test_evaluate_filter_transform() {
     );
 
     let expected_dataset = VegaFusionTable::from_json(
-        json!([
+        &json!([
             {"colA": 6, "colB": false, "colC": "third"},
             {"colA": 8, "colB": true, "colC": "forth"},
             {"colA": 10, "colB": false, "colC": "fifth"},

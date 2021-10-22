@@ -95,7 +95,7 @@ async fn get_or_compute_node_value(
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            task.call(&input_values).await
+            task.eval(&input_values).await
         };
 
         // get or construct from cache

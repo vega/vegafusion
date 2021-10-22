@@ -7,7 +7,6 @@ use std::convert::TryFrom;
 use crate::proto::gen::tasks::Variable;
 use crate::task_graph::task::InputVariable;
 
-
 pub mod aggregate;
 pub mod bin;
 pub mod collect;
@@ -15,7 +14,7 @@ pub mod extent;
 pub mod filter;
 pub mod formula;
 pub mod pipeline;
-pub mod task;
+
 
 impl TryFrom<&TransformSpec> for TransformKind {
     type Error = VegaFusionError;

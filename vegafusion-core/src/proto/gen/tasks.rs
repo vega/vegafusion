@@ -95,17 +95,37 @@ pub mod scan_url_format {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ScanUrlTask {
-    #[prost(message, optional, tag="1")]
-    pub url: ::core::option::Option<Variable>,
-    #[prost(int32, tag="2")]
+pub struct DataUrlTask {
+    #[prost(int32, tag="3")]
     pub batch_size: i32,
-    #[prost(message, optional, tag="3")]
+    #[prost(message, optional, tag="4")]
     pub format_type: ::core::option::Option<ScanUrlFormat>,
+    #[prost(message, optional, tag="5")]
+    pub pipeline: ::core::option::Option<super::transforms::TransformPipeline>,
+    #[prost(oneof="data_url_task::Url", tags="1, 2")]
+    pub url: ::core::option::Option<data_url_task::Url>,
+}
+/// Nested message and enum types in `DataUrlTask`.
+pub mod data_url_task {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Url {
+        #[prost(string, tag="1")]
+        String(::prost::alloc::string::String),
+        #[prost(message, tag="2")]
+        Expr(super::super::expression::Expression),
+    }
+}
+/// ## Inline values task
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DataValuesTask {
+    #[prost(bytes="vec", tag="1")]
+    pub values: ::prost::alloc::vec::Vec<u8>,
+    #[prost(message, optional, tag="2")]
+    pub pipeline: ::core::option::Option<super::transforms::TransformPipeline>,
 }
 /// ## Transform Task
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct TransformsTask {
+pub struct DataSourceTask {
     #[prost(string, tag="1")]
     pub source: ::prost::alloc::string::String,
     #[prost(message, optional, tag="2")]
@@ -118,7 +138,7 @@ pub struct Task {
     pub variable: ::core::option::Option<Variable>,
     #[prost(uint32, repeated, tag="2")]
     pub scope: ::prost::alloc::vec::Vec<u32>,
-    #[prost(oneof="task::TaskKind", tags="3, 4, 5")]
+    #[prost(oneof="task::TaskKind", tags="3, 4, 5, 6")]
     pub task_kind: ::core::option::Option<task::TaskKind>,
 }
 /// Nested message and enum types in `Task`.
@@ -128,9 +148,11 @@ pub mod task {
         #[prost(message, tag="3")]
         Value(super::TaskValue),
         #[prost(message, tag="4")]
-        Url(super::ScanUrlTask),
+        DataValues(super::DataValuesTask),
         #[prost(message, tag="5")]
-        Transforms(super::TransformsTask),
+        DataUrl(super::DataUrlTask),
+        #[prost(message, tag="6")]
+        DataSource(super::DataSourceTask),
     }
 }
 /// ## Task Graph

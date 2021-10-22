@@ -1,11 +1,13 @@
 use vegafusion_core::task_graph::scope::TaskScope;
-use vegafusion_core::proto::gen::tasks::{Variable, Task, ScanUrlTask, TransformsTask, TaskGraph};
+use vegafusion_core::proto::gen::tasks::{Variable, Task, TaskGraph, DataUrlTask, DataSourceTask};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::proto::gen::transforms::{TransformPipeline, Transform, Extent, Collect, SortOrder};
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 use std::sync::Arc;
+use vegafusion_core::proto::gen::tasks::data_url_task::Url;
+use vegafusion_core::expression::parser::parse;
 
 
 #[tokio::test(flavor="multi_thread")]
@@ -22,12 +24,13 @@ async fn try_it() {
             Default::default(),
             TaskValue::Scalar(ScalarValue::from("https://raw.githubusercontent.com/vega/vega-datasets/master/data/penguins.json")),
         ),
-        Task::new_scan_url(Variable::new_data("url_datasetA"), Default::default(), ScanUrlTask {
-            url: Some(Variable::new_signal("url")),
+        Task::new_data_url(Variable::new_data("url_datasetA"), Default::default(), DataUrlTask {
+            url: Some(Url::Expr(parse("url").unwrap())),
             batch_size: 1024,
-            format_type: None
+            format_type: None,
+            pipeline: None,
         }),
-        Task::new_transforms(Variable::new_data("datasetA"), Default::default(), TransformsTask {
+        Task::new_data_source(Variable::new_data("datasetA"), Default::default(), DataSourceTask {
             source: "url_datasetA".to_string(),
             pipeline: Some(TransformPipeline { transforms: vec![
                 Transform { transform_kind: Some(TransformKind::Extent(Extent {

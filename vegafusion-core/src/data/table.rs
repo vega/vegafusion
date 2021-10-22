@@ -116,8 +116,8 @@ impl VegaFusionTable {
         serde_json::Value::Array(rows)
     }
 
-    pub fn from_json(value: serde_json::Value, batch_size: usize) -> Result<Self> {
-        if let serde_json::Value::Array(values) = &value {
+    pub fn from_json(value: &serde_json::Value, batch_size: usize) -> Result<Self> {
+        if let serde_json::Value::Array(values) = value {
             if values.is_empty() {
                 // Create empty record batch
                 let schema = Arc::new(Schema::new(vec![Field::new(

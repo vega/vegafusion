@@ -14,7 +14,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 impl TransformTrait for Aggregate {
-    async fn call(
+    async fn eval(
         &self,
         dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,

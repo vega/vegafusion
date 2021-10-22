@@ -6,7 +6,7 @@ pub mod filter;
 pub mod formula;
 pub mod pipeline;
 pub mod utils;
-pub mod task;
+
 
 use crate::expression::compiler::config::CompilationConfig;
 use datafusion::dataframe::DataFrame;
@@ -24,7 +24,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 pub trait TransformTrait: TransformDependencies {
-    async fn call(
+    async fn eval(
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
@@ -44,11 +44,11 @@ pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
 
 #[async_trait]
 impl TransformTrait for Transform {
-    async fn call(
+    async fn eval(
         &self,
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
     ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
-        to_transform_trait(self.transform_kind()).call(dataframe, config).await
+        to_transform_trait(self.transform_kind()).eval(dataframe, config).await
     }
 }

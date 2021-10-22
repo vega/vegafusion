@@ -1,6 +1,9 @@
 use std::collections::{HashSet, HashMap};
 use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
+use std::convert::TryFrom;
+use crate::spec::chart::ChartSpec;
+use crate::spec::visitors::BuildTaskScopeVisitor;
 
 #[derive(Clone, Debug, Default)]
 pub struct TaskScope {
@@ -109,6 +112,16 @@ impl TaskScope {
         Err(VegaFusionError::internal(&format!(
             "Failed to resolve variable {:?} used in scope {:?}", variable, usage_scope
         )))
+    }
+}
+
+impl TryFrom<&ChartSpec> for TaskScope {
+    type Error = VegaFusionError;
+
+    fn try_from(value: &ChartSpec) -> std::result::Result<Self, Self::Error> {
+        let mut visitor = BuildTaskScopeVisitor::new();
+        value.walk(&mut visitor)?;
+        Ok(visitor.task_scope)
     }
 }
 
