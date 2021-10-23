@@ -4,17 +4,20 @@ use crate::spec::mark::MarkSpec;
 use crate::spec::data::DataSpec;
 use crate::error::{Result, VegaFusionError};
 use crate::proto::gen::tasks::{Variable, Task, DataValuesTask, DataUrlTask, DataSourceTask};
-use crate::spec::signal::SignalSpec;
-use crate::spec::scale::ScaleSpec;
+use crate::spec::signal::{SignalSpec, SignalOnEventSpec};
+use crate::spec::scale::{ScaleSpec, ScaleDomainSpec, ScaleDataReferenceSpec, ScaleArrayElementSpec, ScaleRangeSpec, ScaleBinsSpec};
 use serde_json::Value;
 use crate::data::scalar::{ScalarValue, ScalarValueHelpers};
 use crate::task_graph::task_value::TaskValue;
 use crate::data::table::VegaFusionTable;
 use crate::proto::gen::transforms::TransformPipeline;
 use std::convert::TryFrom;
-use crate::spec::values::StringOrSignalSpec;
+use crate::spec::values::{StringOrSignalSpec, SignalExpressionSpec};
 use crate::proto::gen::tasks::data_url_task::Url;
 use crate::expression::parser::parse;
+use std::collections::HashSet;
+use crate::task_graph::task_graph::ScopedVariable;
+use std::ops::Deref;
 
 
 #[derive(Clone, Debug, Default)]
@@ -163,5 +166,295 @@ impl ChartVisitor for MakeTasksVisitor {
 
     fn visit_scale(&mut self, _scale: &ScaleSpec, _scope: &[u32]) -> Result<()> {
         unimplemented!("Scale tasks not yet supported")
+    }
+}
+
+
+#[derive(Clone, Debug, Default)]
+pub struct DefinitionVarsChartVisitor {
+    pub definition_vars: HashSet<ScopedVariable>
+}
+
+impl DefinitionVarsChartVisitor {
+    pub fn new() -> Self {
+        Self {
+            definition_vars: Default::default()
+        }
+    }
+}
+
+impl ChartVisitor for DefinitionVarsChartVisitor {
+    fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
+        self.definition_vars.insert((Variable::new_data(&data.name), Vec::from(scope)));
+        Ok(())
+    }
+
+    fn visit_signal(&mut self, signal: &SignalSpec, scope: &[u32]) -> Result<()> {
+        self.definition_vars.insert((Variable::new_signal(&signal.name), Vec::from(scope)));
+        Ok(())
+    }
+
+    fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
+        self.definition_vars.insert((Variable::new_scale(&scale.name), Vec::from(scope)));
+        Ok(())
+    }
+}
+
+
+/// Collect "update variables" from the spec. These are variables that are updated somewhere other
+/// than their definition site
+#[derive(Clone, Debug, Default)]
+pub struct UpdateVarsChartVisitor {
+    pub task_scope: TaskScope,
+    pub update_vars: HashSet<ScopedVariable>
+}
+
+impl UpdateVarsChartVisitor {
+    pub fn new() -> Self {
+        Self {
+            task_scope: Default::default(),
+            update_vars: Default::default(),
+        }
+    }
+}
+
+/// Gather variables that can be updated by the spec (whether or not they are defined in the spec)
+impl ChartVisitor for UpdateVarsChartVisitor {
+    fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
+        // Dataset is an update dependency if it's not an empty stub (with or without inline values)
+        if data.source.is_some()
+            || data.on.is_some()
+            || data.url.is_some()
+            || !data.transform.is_empty()
+        {
+            self.update_vars.insert((Variable::new_data(&data.name), Vec::from(scope)));
+        }
+
+        // Look for output signals in transforms
+        for transform in &data.transform {
+            for sig in transform.output_signals() {
+                self.update_vars.insert((Variable::new_signal(&sig), Vec::from(scope)));
+            }
+        }
+
+        Ok(())
+    }
+
+    fn visit_signal(&mut self, signal: &SignalSpec, scope: &[u32]) -> Result<()> {
+        // Signal is an update variable if it's not an empty stub
+        if signal.value.is_some()
+            || signal.init.is_some()
+            || signal.update.is_some()
+            || !signal.on.is_empty()
+        {
+            self.update_vars.insert(
+                (Variable::new_signal(&signal.name), Vec::from(scope))
+            );
+        }
+
+        // Check for signal expressions that have update dependencies
+        // (in particular, the modify expression function)
+        let mut expr_strs: Vec<String> = Vec::new();
+
+        if let Some(init) = &signal.init {
+            expr_strs.push(init.clone());
+        }
+
+        if let Some(update) = &signal.update {
+            expr_strs.push(update.clone());
+        }
+
+        for on_el in &signal.on {
+            expr_strs.push(on_el.update.clone());
+            for event_spec in on_el.events.to_vec() {
+                match event_spec {
+                    SignalOnEventSpec::Signal(signal) => {
+                        expr_strs.push(signal.signal.clone());
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        // Parse expressions and look for update_vars
+        for expr_str in &expr_strs {
+            let expr = parse(expr_str)?;
+            for var in expr.update_vars() {
+                let resolved = self.task_scope.resolve_scope(&var, scope)?;
+                self.update_vars.insert(
+                    (resolved.var, resolved.scope)
+                );
+            }
+        }
+
+        Ok(())
+    }
+
+    fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
+        // Right now, consider scale variable definition as an update.
+        // When scales are supported in TaskGraph, we might need to distinguish between
+        // scales with that can be updated, and those that can't
+        self.update_vars.insert((Variable::new_scale(&scale.name), Vec::from(scope)));
+        Ok(())
+    }
+}
+
+
+
+#[derive(Clone, Debug, Default)]
+pub struct InputVarsChartVisitor {
+    pub task_scope: TaskScope,
+    pub input_vars: HashSet<ScopedVariable>
+}
+
+impl InputVarsChartVisitor {
+    pub fn new() -> Self {
+        Self {
+            task_scope: Default::default(),
+            input_vars: Default::default(),
+        }
+    }
+}
+
+impl ChartVisitor for InputVarsChartVisitor {
+    fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
+        // Look for input vars in transforms
+        for transform in &data.transform {
+            for input_var in transform.deref().input_vars()?.into_iter().map(|iv| iv.var) {
+                let resolved = self.task_scope.resolve_scope(&input_var, scope)?;
+                self.input_vars.insert((input_var, resolved.scope));
+            }
+        }
+
+        // Add input variable for source
+        if let Some(source) = &data.source {
+            let source_var = Variable::new_data(source);
+            let resolved = self.task_scope.resolve_scope(&source_var, scope)?;
+            self.input_vars.insert((source_var, resolved.scope));
+        }
+
+        Ok(())
+    }
+
+    fn visit_signal(&mut self, signal: &SignalSpec, scope: &[u32]) -> Result<()> {
+        // Collect all expression strings used in the signal definition
+        let mut expr_strs: Vec<String> = Vec::new();
+
+        if let Some(init) = &signal.init {
+            expr_strs.push(init.clone());
+        }
+
+        if let Some(update) = &signal.update {
+            expr_strs.push(update.clone());
+        }
+
+        for on_el in &signal.on {
+            expr_strs.push(on_el.update.clone());
+            for event_spec in on_el.events.to_vec() {
+                match event_spec {
+                    SignalOnEventSpec::Signal(signal) => {
+                        expr_strs.push(signal.signal.clone());
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        // Parse expressions and look for input_vars
+        for expr_str in &expr_strs {
+            let expr = parse(expr_str)?;
+            for var in expr.input_vars() {
+                let resolved = self.task_scope.resolve_scope(&var.var, scope)?;
+                self.input_vars.insert(
+                    (var.var, resolved.scope)
+                );
+            }
+        }
+
+        Ok(())
+    }
+
+    fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
+
+        let mut references: Vec<ScaleDataReferenceSpec> = Vec::new();
+        let mut signals: Vec<SignalExpressionSpec> = Vec::new();
+
+        // domain
+        if let Some(domain) = &scale.domain {
+            match domain {
+                ScaleDomainSpec::Reference(reference) => {
+                    references.push(reference.clone());
+                }
+                ScaleDomainSpec::Signal(signal_expr) => {
+                    signals.push(signal_expr.clone());
+                }
+                ScaleDomainSpec::Array(arr) => {
+                    for el in arr {
+                        if let ScaleArrayElementSpec::Signal(signal_expr) = el {
+                            signals.push(signal_expr.clone());
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // range
+        if let Some(range) = &scale.range {
+            match range {
+                ScaleRangeSpec::Reference(reference) => {
+                    references.push(reference.clone());
+                }
+                ScaleRangeSpec::Signal(signal_expr) => {
+                    signals.push(signal_expr.clone());
+                }
+                ScaleRangeSpec::Array(arr) => {
+                    for el in arr {
+                        if let ScaleArrayElementSpec::Signal(signal_expr) = el {
+                            signals.push(signal_expr.clone());
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // bins
+        if let Some(bins) = &scale.bins {
+            match bins {
+                ScaleBinsSpec::Signal(signal_expr) => {
+                    signals.push(signal_expr.clone());
+                }
+                ScaleBinsSpec::Array(arr) => {
+                    for el in arr {
+                        if let ScaleArrayElementSpec::Signal(signal_expr) = el {
+                            signals.push(signal_expr.clone());
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // Process references
+        for reference in &references {
+            // Resolve referenced data
+            let reference_var = Variable::new_data(&reference.data);
+            let resolved = self.task_scope.resolve_scope(
+                &reference_var, scope
+            )?;
+            self.input_vars.insert((reference_var, resolved.scope));
+        }
+
+        // Process signals
+        for sig in &signals {
+            let signal_var = Variable::new_signal(&sig.signal);
+            let resolved = self.task_scope.resolve_scope(
+                &signal_var, scope
+            )?;
+            self.input_vars.insert((signal_var, resolved.scope));
+        }
+
+        Ok(())
     }
 }

@@ -1,5 +1,5 @@
 use crate::error::{Result, VegaFusionError};
-use crate::expression::visitors::{ClearSpansVisitor, ExpressionVisitor, GetInputVariablesVisitor, MutExpressionVisitor, GetUpdateVariablesVisitor};
+use crate::expression::visitors::{ClearSpansVisitor, ExpressionVisitor, GetInputVariablesVisitor, MutExpressionVisitor, UpdateVariablesExprVisitor};
 use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::{
     ArrayExpression, BinaryExpression, CallExpression, ConditionalExpression, Expression,
@@ -69,7 +69,7 @@ impl Expression {
     }
 
     pub fn update_vars(&self) -> Vec<Variable> {
-        let mut visitor = GetUpdateVariablesVisitor::new();
+        let mut visitor = UpdateVariablesExprVisitor::new();
         self.walk(&mut visitor);
 
         sorted(visitor.update_variables).collect()

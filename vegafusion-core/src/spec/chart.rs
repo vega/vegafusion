@@ -7,8 +7,11 @@ use crate::spec::mark::MarkSpec;
 use crate::spec::scale::ScaleSpec;
 use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::task_graph::scope::TaskScope;
-use crate::spec::visitors::{MakeTaskScopeVisitor, MakeTasksVisitor};
+use crate::spec::visitors::{MakeTaskScopeVisitor, MakeTasksVisitor, DefinitionVarsChartVisitor, UpdateVarsChartVisitor, InputVarsChartVisitor};
 use crate::proto::gen::tasks::Task;
+use crate::task_graph::task_graph::ScopedVariable;
+use itertools::sorted;
+use crate::expression::visitors::UpdateVariablesExprVisitor;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ChartSpec {
@@ -131,6 +134,24 @@ impl ChartSpec {
             group = group.get_group_mut(*group_index)?;
         }
         Ok(group)
+    }
+
+    pub fn definition_vars(&self) -> Result<Vec<ScopedVariable>> {
+        let mut visitor = DefinitionVarsChartVisitor::new();
+        self.walk(&mut visitor)?;
+        Ok(sorted(visitor.definition_vars).collect())
+    }
+
+    pub fn update_vars(&self) -> Result<Vec<ScopedVariable>> {
+        let mut visitor = UpdateVarsChartVisitor::new();
+        self.walk(&mut visitor)?;
+        Ok(sorted(visitor.update_vars).collect())
+    }
+
+    pub fn input_vars(&self) -> Result<Vec<ScopedVariable>> {
+        let mut visitor = InputVarsChartVisitor::new();
+        self.walk(&mut visitor)?;
+        Ok(sorted(visitor.input_vars).collect())
     }
 }
 

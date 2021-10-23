@@ -42,6 +42,14 @@ pub enum SignalOnEventSpecOrList {
     Scalar(SignalOnEventSpec),
 }
 
+impl SignalOnEventSpecOrList {
+    pub fn to_vec(&self) -> Vec<SignalOnEventSpec> {
+        match self {
+            SignalOnEventSpecOrList::List(event_specs) => event_specs.clone(),
+            SignalOnEventSpecOrList::Scalar(event_spec) => vec![event_spec.clone()],
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]

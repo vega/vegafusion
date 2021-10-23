@@ -182,17 +182,17 @@ impl ExpressionVisitor for GetInputVariablesVisitor {
 
 /// Visitor to collect all output variables in the expression
 #[derive(Clone, Default)]
-pub struct GetUpdateVariablesVisitor {
+pub struct UpdateVariablesExprVisitor {
     pub update_variables: HashSet<Variable>,
 }
 
-impl GetUpdateVariablesVisitor {
+impl UpdateVariablesExprVisitor {
      pub fn new() -> Self {
          Self { update_variables: Default::default() }
      }
 }
 
-impl ExpressionVisitor for GetUpdateVariablesVisitor {
+impl ExpressionVisitor for UpdateVariablesExprVisitor {
     fn visit_called_identifier(&mut self, node: &Identifier, args: &[Expression]) {
         if node.name == "modify" {
             if let Some(arg0) = args.get(0) {

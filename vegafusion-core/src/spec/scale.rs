@@ -31,11 +31,11 @@ pub enum ScaleDomainSpec {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ScaleDataReferenceSpec {
-    data: String,
-    field: String,
+    pub data: String,
+    pub field: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    sort: Option<bool>,
+    pub sort: Option<bool>,
 
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,

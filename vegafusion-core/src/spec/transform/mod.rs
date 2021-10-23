@@ -13,6 +13,9 @@ use crate::spec::transform::collect::CollectTransformSpec;
 use crate::spec::transform::formula::FormulaTransformSpec;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
+use crate::proto::gen::tasks::Variable;
+use crate::error::Result;
+use crate::task_graph::task::InputVariable;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -47,5 +50,9 @@ pub trait TransformSpecTrait {
 
     fn output_signals(&self) -> Vec<String> {
         Default::default()
+    }
+
+    fn input_vars(&self) -> Result<Vec<InputVariable>> {
+        Ok(Default::default())
     }
 }
