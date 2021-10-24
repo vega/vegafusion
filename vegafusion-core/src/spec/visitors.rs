@@ -203,23 +203,23 @@ impl ChartVisitor for DefinitionVarsChartVisitor {
 
 /// Collect "update variables" from the spec. These are variables that are updated somewhere other
 /// than their definition site
-#[derive(Clone, Debug, Default)]
-pub struct UpdateVarsChartVisitor {
-    pub task_scope: TaskScope,
+#[derive(Clone, Debug)]
+pub struct UpdateVarsChartVisitor<'a> {
+    pub task_scope: &'a TaskScope,
     pub update_vars: HashSet<ScopedVariable>
 }
 
-impl UpdateVarsChartVisitor {
-    pub fn new() -> Self {
+impl <'a> UpdateVarsChartVisitor<'a> {
+    pub fn new(task_scope: &'a TaskScope) -> Self {
         Self {
-            task_scope: Default::default(),
+            task_scope,
             update_vars: Default::default(),
         }
     }
 }
 
 /// Gather variables that can be updated by the spec (whether or not they are defined in the spec)
-impl ChartVisitor for UpdateVarsChartVisitor {
+impl <'a> ChartVisitor for UpdateVarsChartVisitor<'a> {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         // Dataset is an update dependency if it's not an empty stub (with or without inline values)
         if data.source.is_some()
@@ -301,22 +301,22 @@ impl ChartVisitor for UpdateVarsChartVisitor {
 
 
 
-#[derive(Clone, Debug, Default)]
-pub struct InputVarsChartVisitor {
-    pub task_scope: TaskScope,
+#[derive(Clone, Debug)]
+pub struct InputVarsChartVisitor<'a> {
+    pub task_scope: &'a TaskScope,
     pub input_vars: HashSet<ScopedVariable>
 }
 
-impl InputVarsChartVisitor {
-    pub fn new() -> Self {
+impl <'a> InputVarsChartVisitor<'a> {
+    pub fn new(task_scope: &'a TaskScope) -> Self {
         Self {
-            task_scope: Default::default(),
+            task_scope,
             input_vars: Default::default(),
         }
     }
 }
 
-impl ChartVisitor for InputVarsChartVisitor {
+impl <'a> ChartVisitor for InputVarsChartVisitor<'a> {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         // Look for input vars in transforms
         for transform in &data.transform {
@@ -448,11 +448,13 @@ impl ChartVisitor for InputVarsChartVisitor {
 
         // Process signals
         for sig in &signals {
-            let signal_var = Variable::new_signal(&sig.signal);
-            let resolved = self.task_scope.resolve_scope(
-                &signal_var, scope
-            )?;
-            self.input_vars.insert((signal_var, resolved.scope));
+            let expr = parse(&sig.signal)?;
+            for input_var in expr.input_vars() {
+                let resolved = self.task_scope.resolve_scope(
+                    &input_var.var, scope
+                )?;
+                self.input_vars.insert((input_var.var, resolved.scope));
+            }
         }
 
         Ok(())

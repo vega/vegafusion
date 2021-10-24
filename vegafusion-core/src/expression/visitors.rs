@@ -56,56 +56,11 @@ impl MutExpressionVisitor for ClearSpansVisitor {
     fn visit_expression(&mut self, expression: &mut Expression) {
         expression.span.take();
     }
+    fn visit_member(&mut self, node: &mut MemberExpression) {
+        node.property.as_mut().unwrap().span.take();
+    }
 }
 
-// impl MutExpressionVisitor for ClearSpansVisitor {
-//     fn visit_identifier(&mut self, node: &mut Identifier) {
-//         node.span.take();
-//     }
-//     fn visit_called_identifier(&mut self, node: &mut Identifier, _args: &mut Vec<Expression>) {
-//         node.span.take();
-//     }
-//     fn visit_literal(&mut self, node: &mut Literal) {
-//         node.span.take();
-//     }
-//     fn visit_binary(&mut self, node: &mut BinaryExpression) {
-//         node.span.take();
-//     }
-//     fn visit_logical(&mut self, node: &mut LogicalExpression) {
-//         node.span.take();
-//     }
-//     fn visit_unary(&mut self, node: &mut UnaryExpression) {
-//         node.span.take();
-//     }
-//     fn visit_conditional(&mut self, node: &mut ConditionalExpression) {
-//         node.span.take();
-//     }
-//     fn visit_member(&mut self, node: &mut MemberExpression) {
-//         node.span.take();
-//     }
-//     fn visit_call(&mut self, node: &mut CallExpression) {
-//         node.span.take();
-//     }
-//     fn visit_array(&mut self, node: &mut ArrayExpression) {
-//         node.span.take();
-//     }
-//     fn visit_object(&mut self, node: &mut ObjectExpression) {
-//         node.span.take();
-//     }
-//     fn visit_object_key(&mut self, node: &mut PropertyKey) {
-//         match node {
-//             PropertyKey::Literal(node) => {
-//                 node.span.take();
-//             }
-//             PropertyKey::Identifier(node) => {
-//                 node.span.take();
-//             }
-//         }
-//     }
-//     fn visit_static_member_identifier(&mut self, node: &mut Identifier) {
-//         node.span.take();
-//     }
-// }
 
 /// Visitor to collect all unbound input variables in the expression
 #[derive(Clone, Default)]
@@ -113,6 +68,7 @@ pub struct GetInputVariablesVisitor {
     pub input_variables: HashSet<InputVariable>,
     pub data_callables: HashSet<String>,
     pub scale_callables: HashSet<String>,
+    pub implicit_vars: HashSet<String>,
 }
 
 impl GetInputVariablesVisitor {
@@ -125,19 +81,24 @@ impl GetInputVariablesVisitor {
             "scale", "invert", "domain", "range", "bandwidth", "gradient",
         ].into_iter().map(|s| s.to_string()).collect();
 
+        let implicit_vars: HashSet<_> = vec![
+            "datum", "event"
+        ].into_iter().map(|s| s.to_string()).collect();
+
         Self {
             input_variables: Default::default(),
             data_callables,
             scale_callables,
+            implicit_vars,
         }
     }
 }
 
 impl ExpressionVisitor for GetInputVariablesVisitor {
     fn visit_identifier(&mut self, node: &Identifier) {
-        // datum does not count as a variable
-        if node.name != "datum" {
-            self.input_variables.insert(InputVariable{
+        // implicit vars like datum and event do not count as a variables
+        if !self.implicit_vars.contains(&node.name) {
+            self.input_variables.insert(InputVariable {
                 var: Variable::new_signal(&node.name),
                 propagate: true,
             });

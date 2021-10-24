@@ -132,8 +132,9 @@ impl Expression {
                 let prop_expr = node.property.as_ref().unwrap().expr.as_ref().unwrap();
                 if let Expr::Identifier(identifier) = prop_expr {
                     visitor.visit_static_member_identifier(identifier);
+                } else {
+                    node.property.as_ref().unwrap().walk(visitor);
                 }
-                node.property.as_ref().unwrap().walk(visitor);
                 visitor.visit_member(node);
             }
         }
@@ -196,8 +197,9 @@ impl Expression {
                 let prop_expr = node.property.as_mut().unwrap().expr.as_mut().unwrap();
                 if let Expr::Identifier(identifier) = prop_expr {
                     visitor.visit_static_member_identifier(identifier);
+                } else {
+                    node.property.as_mut().unwrap().walk_mut(visitor);
                 }
-                node.property.as_mut().unwrap().walk_mut(visitor);
                 visitor.visit_member(node);
             }
         }
