@@ -190,7 +190,7 @@ pub struct MarkFromSpec {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MarkFacetSpec {
-    data: String,
+    pub data: String,
 
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,

@@ -1,6 +1,6 @@
 use crate::task_graph::scope::TaskScope;
 use crate::spec::chart::ChartVisitor;
-use crate::spec::mark::MarkSpec;
+use crate::spec::mark::{MarkSpec, MarkFacetSpec};
 use crate::spec::data::DataSpec;
 use crate::error::{Result, VegaFusionError};
 use crate::proto::gen::tasks::{Variable, Task, DataValuesTask, DataUrlTask, DataSourceTask};
@@ -314,9 +314,65 @@ impl <'a> InputVarsChartVisitor<'a> {
             input_vars: Default::default(),
         }
     }
+
+    fn process_mark_from(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
+        // Handle from data
+        if let Some(from) = &mark.from {
+            if let Some(data) = &from.data {
+                let data_var = Variable::new_data(data);
+                let resolved = self.task_scope.resolve_scope(&data_var, scope)?;
+                self.input_vars.insert(
+                    (data_var, resolved.scope)
+                );
+            }
+
+            if let Some(MarkFacetSpec { data, .. }) = &from.facet {
+                let data_var = Variable::new_data(data);
+                let resolved = self.task_scope.resolve_scope(&data_var, scope)?;
+                self.input_vars.insert(
+                    (data_var, resolved.scope)
+                );
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl <'a> ChartVisitor for InputVarsChartVisitor<'a> {
+    fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
+        // Handle from data/facet of group mark
+        self.process_mark_from(mark, scope);
+
+        // Handle signals in encodings
+        if let Some(v) = &mark.encode {
+            for encodings in v.encodings.values() {
+                for encoding in encodings.channels.values() {
+                    for channel in encoding.to_vec() {
+                        for signal in vec![&channel.signal, &channel.test].into_iter().flatten() {
+                            let expr = parse(signal)?;
+                            for input_var in expr.input_vars() {
+                                let var = input_var.var;
+                                let resolved = self.task_scope.resolve_scope(&var, scope)?;
+                                self.input_vars.insert(
+                                    (var, resolved.scope)
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn visit_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
+        // Handle from data/facet of group mark
+        self.process_mark_from(mark, scope);
+        Ok(())
+    }
+
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         // Look for input vars in transforms
         for transform in &data.transform {
