@@ -5,6 +5,7 @@ use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 use std::sync::Arc;
 use std::collections::HashSet;
+use vegafusion_core::planning::stitch::stitch_specs;
 
 #[tokio::test(flavor="multi_thread")]
 async fn test_extract_server_data() {
@@ -55,6 +56,21 @@ async fn test_extract_server_data() {
     ).await.unwrap();
 
     // println!("delay_extent: {:?}", delay_extent.into_scalar().unwrap())
+}
+
+#[tokio::test(flavor="multi_thread")]
+async fn test_extract_stitch_data() {
+    let mut spec = spec1();
+
+    // Get full spec's scope
+    let task_scope = spec.to_task_scope().unwrap();
+
+    let mut server_spec = extract_server_data(&mut spec).unwrap();
+    let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
+
+    println!("{:#?}", comm_plan);
+
+    println!("client spec:\n{}", serde_json::to_string_pretty(&spec).unwrap());
 }
 
 

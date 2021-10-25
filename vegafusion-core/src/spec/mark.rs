@@ -103,6 +103,15 @@ impl MarkSpec {
         Ok(())
     }
 
+    pub fn get_group(&self, group_index: u32) -> Result<&MarkSpec> {
+        self.marks
+            .iter()
+            .filter(|m| m.type_ == "group")
+            .nth(group_index as usize)
+            .with_context(|| format!("No group with index {}", group_index))
+    }
+
+
     pub fn get_group_mut(&mut self, group_index: u32) -> Result<&mut MarkSpec> {
         self.marks
             .iter_mut()

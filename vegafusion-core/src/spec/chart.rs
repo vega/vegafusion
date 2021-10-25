@@ -117,6 +117,25 @@ impl ChartSpec {
         Ok(visitor.tasks)
     }
 
+    pub fn get_group(&self, group_index: u32) -> Result<&MarkSpec> {
+        self.marks
+            .iter()
+            .filter(|m| m.type_ == "group")
+            .nth(group_index as usize)
+            .with_context(|| format!("No group with index {}", group_index))
+    }
+
+    pub fn get_nested_group(&self, path: &[u32]) -> Result<&MarkSpec> {
+        if path.is_empty() {
+            return Err(VegaFusionError::internal("Nested group scope may not be empty"))
+        }
+        let mut group = self.get_group(path[0])?;
+        for group_index in &path[1..] {
+            group = group.get_group(*group_index)?;
+        }
+        Ok(group)
+    }
+
     pub fn get_group_mut(&mut self, group_index: u32) -> Result<&mut MarkSpec> {
         self.marks
             .iter_mut()
@@ -134,6 +153,54 @@ impl ChartSpec {
             group = group.get_group_mut(*group_index)?;
         }
         Ok(group)
+    }
+
+    pub fn get_nested_signal(&self, path: &[u32], name: &str) -> Result<&SignalSpec> {
+        let signals = if path.is_empty() {
+            &self.signals
+        } else {
+            let group = self.get_nested_group(path)?;
+            &group.signals
+        };
+        signals
+            .iter()
+            .find(|s| s.name == name)
+            .with_context(|| format!("No signal named {} found at path {:?}", name, path))
+    }
+
+    pub fn get_nested_data(&self, path: &[u32], name: &str) -> Result<&DataSpec> {
+        let signals = if path.is_empty() {
+            &self.data
+        } else {
+            let group = self.get_nested_group(path)?;
+            &group.data
+        };
+        signals
+            .iter()
+            .find(|s| s.name == name)
+            .with_context(|| format!("No data named {} found at path {:?}", name, path))
+    }
+
+    pub fn add_nested_signal(&mut self, path: &[u32], spec: SignalSpec) -> Result<()> {
+        let signals = if path.is_empty() {
+            &mut self.signals
+        } else {
+            let group = self.get_nested_group_mut(path)?;
+            &mut group.signals
+        };
+        signals.push(spec);
+        Ok(())
+    }
+
+    pub fn add_nested_data(&mut self, path: &[u32], spec: DataSpec) -> Result<()> {
+        let data = if path.is_empty() {
+            &mut self.data
+        } else {
+            let group = self.get_nested_group_mut(path)?;
+            &mut group.data
+        };
+        data.push(spec);
+        Ok(())
     }
 
     pub fn definition_vars(&self) -> Result<Vec<ScopedVariable>> {
