@@ -8,12 +8,13 @@ use vegafusion_core::expression::parser::parse;
 use vegafusion_core::proto::gen::expression;
 use vegafusion_core::data::scalar::ScalarValue;
 use wasm_bindgen::prelude::*;
-use vegafusion_core::proto::gen::tasks::{TaskValue as ProtoTaskValue, Variable, Task, ScanUrlTask, TransformsTask, TaskGraph};
+use vegafusion_core::proto::gen::tasks::{TaskValue as ProtoTaskValue, Variable, Task, TaskGraph, DataSourceTask, DataUrlTask};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use std::convert::TryFrom;
 use vegafusion_core::task_graph::scope::TaskScope;
 use vegafusion_core::proto::gen::transforms::{TransformPipeline, Transform, Extent};
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
+use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -40,12 +41,13 @@ pub fn make_task_graph() -> TaskGraph {
             Default::default(),
             TaskValue::Scalar(ScalarValue::from("file:///somewhere/over/the/rainbow.csv")),
         ),
-        Task::new_scan_url(Variable::new_data("url_datasetA"), Default::default(), ScanUrlTask {
-            url: Some(Variable::new_signal("url")),
+        Task::new_data_url(Variable::new_data("url_datasetA"), Default::default(), DataUrlTask {
+            url: Some(Url::Expr(parse("url").unwrap())),
             batch_size: 1024,
-            format_type: None
+            format_type: None,
+            pipeline: None
         }),
-        Task::new_transforms(Variable::new_signal("datasetA"), Default::default(), TransformsTask {
+        Task::new_data_source(Variable::new_signal("datasetA"), Default::default(), DataSourceTask {
             source: "url_datasetA".to_string(),
             pipeline: Some(TransformPipeline { transforms: vec![
                 Transform { transform_kind: Some(TransformKind::Extent(Extent {
@@ -56,7 +58,7 @@ pub fn make_task_graph() -> TaskGraph {
         })
     ];
 
-    TaskGraph::new(tasks, task_scope).unwrap()
+    TaskGraph::new(tasks, &task_scope).unwrap()
 }
 
 #[wasm_bindgen]
