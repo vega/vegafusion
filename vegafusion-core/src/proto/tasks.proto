@@ -128,3 +128,12 @@ message TaskNode {
 message TaskGraph {
   repeated TaskNode nodes = 1;
 }
+
+message TaskGraphValueRequest {
+  TaskGraph task_graph = 1;
+  repeated uint32 indices = 2;
+}
+
+message TaskGraphValueResponse {
+  repeated TaskValue values = 1;
+}

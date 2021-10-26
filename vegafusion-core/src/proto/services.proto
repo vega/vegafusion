@@ -1,0 +1,20 @@
+syntax = "proto3";
+package services;
+
+import "tasks.proto";
+
+service VegaFusionRuntime {
+  rpc GetNodeValues(tasks.TaskGraphValueRequest) returns (tasks.TaskGraphValueResponse) {}
+}
+
+message VegaFusionRuntimeRequest {
+  oneof request {
+    tasks.TaskGraphValueRequest task_graph_values = 1;
+  }
+}
+
+message VegaFusionRuntimeResponse {
+  oneof response {
+    tasks.TaskGraphValueResponse task_graph_values = 1;
+  }
+}
