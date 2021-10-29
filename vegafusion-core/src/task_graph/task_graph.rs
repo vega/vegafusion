@@ -12,9 +12,11 @@ use crate::proto::gen::transforms::transform::TransformKind;
 use crate::task_graph::task_value::TaskValue;
 use crate::data::scalar::ScalarValue;
 use crate::proto::gen::tasks::task::TaskKind;
+use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
 use crate::proto::gen::tasks::task_value::Data;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use std::convert::TryFrom;
 
 
 struct PetgraphEdge { output_var: Option<Variable>, propagate: bool }
@@ -238,6 +240,23 @@ impl TaskGraph {
             }).collect();
 
         Ok(updated)
+    }
+
+    pub fn update_value(&mut self, node_index: usize, value: TaskValue) -> Result<Vec<usize>> {
+        let mut node = self.nodes.get_mut(node_index).ok_or_else(
+            || VegaFusionError::internal("Missing node")
+        )?;
+        if !matches!(node.task().task_kind(), TaskKind::Value(_)) {
+            return Err(VegaFusionError::internal("Task with index {} is not a Value"))
+        }
+
+        node.task = Some(Task {
+            variable: node.task().variable.clone(),
+            scope: node.task().scope.clone(),
+            task_kind: Some(TaskKind::Value(ProtoTaskValue::try_from(&value)?)),
+        });
+
+        self.update_state_fingerprints()
     }
 
     pub fn parent_nodes(&self, node_index: usize) -> Result<Vec<&TaskNode>> {
