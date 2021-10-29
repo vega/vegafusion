@@ -203,7 +203,7 @@ impl TaskGraph {
     }
 
     /// Update state finger prints of nodes, and return indices of nodes that were updated
-    fn update_state_fingerprints(&mut self) -> Result<Vec<usize>> {
+    pub fn update_state_fingerprints(&mut self) -> Result<Vec<usize>> {
         // Compute new identity fingerprints
         let mut state_fingerprints: Vec<u64> = Vec::with_capacity(self.nodes.len());
         for (i, node) in self.nodes.iter().enumerate() {
