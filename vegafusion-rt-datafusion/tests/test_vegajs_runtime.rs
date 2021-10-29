@@ -55,8 +55,13 @@ fn test_vegajs_evaluate_scalar_scope() {
     let scope: HashMap<_, _> = vec![("a".to_string(), ScalarValue::from(123.0))]
         .into_iter()
         .collect();
+
+    let config = CompilationConfig {
+        signal_scope: scope, ..Default::default()
+    };
+
     let result = vegajs_runtime
-        .eval_scalar_expression("20 + a", &scope)
+        .eval_scalar_expression("20 + a", &config)
         .unwrap();
     println!("result: {}", result);
     assert_eq!(result, ScalarValue::from(143.0));

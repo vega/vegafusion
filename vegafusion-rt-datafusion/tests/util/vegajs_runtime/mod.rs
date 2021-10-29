@@ -216,18 +216,24 @@ impl VegaJsRuntime {
     pub fn eval_scalar_expression(
         &self,
         expr: &str,
-        scope: &HashMap<String, ScalarValue>,
+        config: &CompilationConfig,
     ) -> Result<ScalarValue> {
         // Add special signal for the requested expression
         let mut signals = vec![json!({"name": "_sig", "init": expr})];
 
         // Add scope signals
-        for (sig, val) in scope {
+        for (sig, val) in &config.signal_scope {
             signals.push(json!({"name": sig.clone(), "value": val.to_json()?}))
         }
 
+        // Add datasets (for use in data expressions)
+        let mut data = vec![];
+        for (name, val) in &config.data_scope {
+            data.push(json!({"name": name, "values": val.to_json()}))
+        }
+
         // Create spec
-        let spec = json!({ "signals": signals });
+        let spec = json!({ "signals": signals, "data": data });
 
         // Create watch to request value of special signal
         let watches = vec![Watch {

@@ -5,8 +5,11 @@ mod util;
 use datafusion::scalar::ScalarValue;
 use rstest::rstest;
 use std::collections::HashMap;
+use serde_json::json;
 
 use util::check::check_scalar_evaluation;
+use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 
 fn scope_a() -> HashMap<String, ScalarValue> {
     vec![
@@ -18,6 +21,38 @@ fn scope_a() -> HashMap<String, ScalarValue> {
     .into_iter()
     .map(|(k, v)| (k.to_string(), v))
     .collect()
+}
+
+pub fn dataset_1() -> VegaFusionTable {
+    let json_value = json!([
+        {"colA": 2.0, "colB": false, "colC": "first"},
+        {"colA": 4.0, "colB": true, "colC": "second"},
+        {"colA": 6.0, "colB": false, "colC": "third"},
+    ]);
+    VegaFusionTable::from_json(&json_value, 1024).unwrap()
+}
+
+pub fn dataset_2() -> VegaFusionTable {
+    let json_value = json!([
+        {"colA": 40.0, "colB": true, "colC": "SECOND"},
+        {"colA": 60.0, "colB": false, "colC": "THIRD"},
+    ]);
+    VegaFusionTable::from_json(&json_value, 1024).unwrap()
+}
+
+fn datasets() -> HashMap<String, VegaFusionTable> {
+    vec![
+        ("dataA".to_string(), dataset_1()),
+        ("dataB".to_string(), dataset_2())
+    ].into_iter().collect()
+}
+
+fn config_a() -> CompilationConfig {
+    CompilationConfig {
+        signal_scope: scope_a(),
+        data_scope: datasets(),
+        ..Default::default()
+    }
 }
 
 mod test_atoms {
@@ -33,7 +68,7 @@ mod test_atoms {
         case("\"world\"")
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }
 
@@ -51,7 +86,7 @@ mod test_binary_kinds {
         case("2 / foo")
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }
 
@@ -70,7 +105,7 @@ mod test_binary_precedence {
         case("1 + 2 * 3 / 4 % 6 / 7 * (8 + 9)")
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }
 
@@ -90,7 +125,7 @@ mod test_unary {
         case("(-(-(-3)))")
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }
 
@@ -109,7 +144,7 @@ mod test_logical {
         case("1 && valid || !valid && (4 || 5)")
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }
 
@@ -126,7 +161,7 @@ mod test_ternary {
         case("(((1? 2: 3)? 4: 5)? 6: 7)")
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }
 
@@ -140,7 +175,7 @@ mod test_call {
         case("isNaN(16) + isNaN(NaN)")
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }
 
@@ -157,7 +192,7 @@ mod test_member_access {
         case("({foo: {bar: 10}})['foo']['bar']")
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }
 
@@ -173,7 +208,7 @@ mod test_array_expression {
         case("[]")
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }
 
@@ -190,7 +225,7 @@ mod test_object_expression {
     case("{17: 9, a: 10, 'b': 11}")
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }
 
@@ -219,7 +254,7 @@ mod test_datetime {
         case("datetime(utc(87, 3))")
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }
 
@@ -244,7 +279,7 @@ mod test_date_parts {
         case("utcmilliseconds(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0")
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }
 
@@ -254,18 +289,17 @@ mod test_length {
     #[rstest(
         expr,
         // Below: Add 0 to force result type to f64 even though length returns i32
-        // case("length(datum.colC) + 0"),
         case("length([1, 2, 3]) + 0"),
         case("[1, 2, 3].length + 0"),
         case("length('abc') + 0"),
         case("'abc'.length + 0"),
         case("hello.length + 0"),
         case("length(hello) + 0"),
-        // case("length(data('dataB')) + 0"),
-        // case("data('dataB').length + 0"),
+        case("length(data('dataB')) + 0"),
+        case("data('dataB').length + 0"),
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }
 
@@ -280,6 +314,6 @@ mod test_get_index {
         // case("data('dataB')[1].colA")
     )]
     fn test(expr: &str) {
-        check_scalar_evaluation(expr, &scope_a())
+        check_scalar_evaluation(expr, &config_a())
     }
 }

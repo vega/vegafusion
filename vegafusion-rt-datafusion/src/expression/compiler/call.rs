@@ -14,7 +14,7 @@ use crate::expression::compiler::builtin_functions::math::pow::make_pow_udf;
 use crate::expression::compiler::builtin_functions::type_checking::isvalid::make_is_valid_udf;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::cast_to;
+use crate::expression::compiler::utils::{cast_to, is_string_datatype};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::functions::BuiltinScalarFunction;
@@ -24,7 +24,15 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, VegaFusionError};
-use vegafusion_core::proto::gen::expression::{CallExpression, Expression};
+use vegafusion_core::proto::gen::{
+    expression::{
+        CallExpression, Expression, expression, literal,
+        Literal,
+    }
+};
+use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::data::scalar::ScalarValue;
+use crate::expression::compiler::builtin_functions::data::data::data_fn;
 
 #[derive(Clone)]
 pub enum VegaFusionCallable {
@@ -48,11 +56,10 @@ pub enum VegaFusionCallable {
         cast: Option<DataType>,
     },
 
-    /// A custom macro that inputs a dataset, and uses that to generate the Expr tree
+    /// A custom macro that inputs a dataset, and uses that to generate the DataFusion Expr tree
     ///
     /// e.g. `data('brush')` or  `vlSelectionTest('brush', datum, true)`
-    // Data(Arc<dyn Fn(&DioriteTable, &[Expression], &DFSchema) -> Result<Expr>>),
-    Data,
+    Data(Arc<dyn Fn(&VegaFusionTable, &[Expression], &DFSchema) -> Result<Expr> + Send + Sync>),
 
     /// A custom runtime function that operates on a scale dataset
     ///
@@ -107,27 +114,38 @@ pub fn compile_call(
                 args,
             })
         }
-        // VeagFusionCallable::Data(callable) => {
-        //     todo!()
-        //     // First argument must be a string with name of the dataset
-        //     if let Some(Expression::Literal(
-        //                     Literal {
-        //                         value: LiteralValue::String(arg), ..
-        //                     })) = node.arguments.get(0)
-        //     {
-        //         if let Some(dataset) = config.data_scope.get(arg) {
-        //             callable(dataset, &node.arguments[1..], schema)
-        //         } else {
-        //             diorite_bail!("No dataset named {}. Available: {:?}", arg, config.data_scope.keys())
-        //         }
-        //     } else {
-        //         diorite_bail!(
-        //             "The first argument to the {} function must be a literal \
-        //             string with the name of a dataset",
-        //             callee.name
-        //         )
-        //     }
-        // }
+        VegaFusionCallable::Data(callee) => {
+            if let Some(v) = node.arguments.get(0) {
+                match v.expr() {
+                    expression::Expr::Literal(Literal {value: Some(literal::Value::String(name)), ..}) => {
+                        if let Some(dataset) = config.data_scope.get(name) {
+                            callee(dataset, &node.arguments[1..], schema)
+                        } else {
+                            return Err(VegaFusionError::internal(
+                                &format!("No dataset named {}. Available: {:?}", name, config.data_scope.keys())
+                            ))
+                        }
+                    }
+                    _ => {
+                        return Err(VegaFusionError::internal(
+                    &format!(
+                                "The first argument to the {} function must be a literal \
+                                string with the name of a dataset",
+                                &node.callee
+                            )
+                        ))
+                    }
+                }
+            } else {
+                return Err(VegaFusionError::internal(
+                    &format!(
+                        "The first argument to the {} function must be a literal \
+                                string with the name of a dataset",
+                        &node.callee
+                    )
+                ))
+            }
+        }
         VegaFusionCallable::Transform(callable) => {
             let args = compile_scalar_arguments(node, config, schema, &None)?;
             callable(&args, schema)
@@ -319,6 +337,12 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
             udf: UTC_COMPONENTS.deref().clone(),
             cast: Some(DataType::Int64),
         },
+    );
+
+    // data
+    callables.insert(
+        "data".to_string(),
+        VegaFusionCallable::Data(Arc::new(data_fn))
     );
 
     callables

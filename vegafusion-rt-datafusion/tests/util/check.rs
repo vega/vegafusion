@@ -41,23 +41,18 @@ pub fn check_parsing(expr_str: &str) {
     );
 }
 
-pub fn check_scalar_evaluation(expr_str: &str, scope: &HashMap<String, ScalarValue>) {
+pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
     // Use block here to drop vegajs_runtime lock before the potential assert_eq error
     // This avoids poisoning the Mutex if the assertion fails
     let vegajs_runtime = vegajs_runtime();
     let expected = vegajs_runtime
-        .eval_scalar_expression(expr_str, scope)
+        .eval_scalar_expression(expr_str, &config)
         .unwrap();
 
     // Vega-Fusion parse
     let parsed = parse(expr_str).unwrap();
 
     // Build compilation config
-    let config = CompilationConfig {
-        signal_scope: scope.clone(),
-        ..Default::default()
-    };
-
     let compiled = compile(&parsed, &config, None).unwrap();
     let result = compiled.eval_to_scalar().unwrap();
 
