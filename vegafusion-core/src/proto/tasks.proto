@@ -134,6 +134,12 @@ message TaskGraphValueRequest {
   repeated uint32 indices = 2;
 }
 
+message ResponseTaskValue {
+  Variable variable = 1;
+  repeated uint32 scope = 2;
+  TaskValue value = 3;
+}
+
 message TaskGraphValueResponse {
-  repeated TaskValue values = 1;
+  repeated ResponseTaskValue response_values = 1;
 }

@@ -187,9 +187,18 @@ pub struct TaskGraphValueRequest {
     pub indices: ::prost::alloc::vec::Vec<u32>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ResponseTaskValue {
+    #[prost(message, optional, tag="1")]
+    pub variable: ::core::option::Option<Variable>,
+    #[prost(uint32, repeated, tag="2")]
+    pub scope: ::prost::alloc::vec::Vec<u32>,
+    #[prost(message, optional, tag="3")]
+    pub value: ::core::option::Option<TaskValue>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TaskGraphValueResponse {
     #[prost(message, repeated, tag="1")]
-    pub values: ::prost::alloc::vec::Vec<TaskValue>,
+    pub response_values: ::prost::alloc::vec::Vec<ResponseTaskValue>,
 }
 /// ## Variable
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
