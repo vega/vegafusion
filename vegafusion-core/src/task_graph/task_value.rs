@@ -67,7 +67,7 @@ impl TryFrom<&TaskValue> for ProtoTaskValue {
             }
             TaskValue::Table(table) => {
                 Ok(Self {
-                    data: Some(Data::Scalar(table.to_ipc_bytes()?))
+                    data: Some(Data::Table(table.to_ipc_bytes()?))
                 })
             }
         }
