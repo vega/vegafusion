@@ -33,6 +33,7 @@ use vegafusion_core::proto::gen::{
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::data::scalar::ScalarValue;
 use crate::expression::compiler::builtin_functions::data::data::data_fn;
+use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
 
 #[derive(Clone)]
 pub enum VegaFusionCallable {
@@ -343,6 +344,11 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "data".to_string(),
         VegaFusionCallable::Data(Arc::new(data_fn))
+    );
+
+    callables.insert(
+        "vlSelectionTest".to_string(),
+        VegaFusionCallable::Data(Arc::new(vl_selection_test_fn))
     );
 
     callables
