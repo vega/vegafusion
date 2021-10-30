@@ -56,7 +56,7 @@ export function addSignalListener(view, name, scope, handler) {
         view,
         name,
         signal_op,
-        _.debounce(handler, 10, {'maxWait': 30}),
+        _.debounce(handler, 20, {'maxWait': 50}),
     );
 }
 
@@ -66,7 +66,7 @@ export function addDataListener(view, name, scope, handler) {
         view,
         name,
         dataset,
-        _.debounce(handler, 10, {'maxWait': 30}),
+        _.debounce(handler, 20, {'maxWait': 50}),
     );
 }
 
