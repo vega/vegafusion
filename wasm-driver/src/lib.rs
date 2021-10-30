@@ -129,7 +129,7 @@ impl MsgReceiver {
                     let view = self.view();
                     for response_val in task_graph_vals.response_values {
                         let value = response_val.value.unwrap();
-                        let scope = response_val.scope;
+                        let scope = response_val.scope.as_slice();
                         let var = response_val.variable.unwrap();
 
                         // Convert from proto task value to task value
@@ -138,13 +138,13 @@ impl MsgReceiver {
                         match value {
                             TaskValue::Scalar(value) => {
                                 let js_value = JsValue::from_serde(&value.to_json().unwrap()).unwrap();
-                                view.set_signal(&var.name, js_value);
+                                set_signal_value(view, &var.name, scope, js_value);
                             }
                             TaskValue::Table(value) => {
                                 let js_value = JsValue::from_serde(
                                     &value.to_json()
                                 ).unwrap();
-                                view.set_data(&var.name, js_value);
+                                set_data_value(&view, &var.name, scope, js_value);
                             }
                         }
                     }
@@ -155,21 +155,21 @@ impl MsgReceiver {
     }
 
     fn view(&self) -> &View {
-        // self.view.as_ref().expect("View not initialized")
         &self.view
     }
 
-    fn add_signal_listener(&self, name: &str, handler: JsValue) {
-        self.view().add_signal_listener(name, handler);
+    fn add_signal_listener(&self, name: &str, scope: &[u32], handler: JsValue) {
+        add_signal_listener(self.view(), name, scope, handler);
     }
 
-    fn add_data_listener(&self, name: &str, handler: JsValue) {
-        self.view().add_data_listener(name, handler);
+    fn add_data_listener(&self, name: &str, scope: &[u32], handler: JsValue) {
+        add_data_listener(self.view(), name, scope, handler);
     }
 
     fn register_callbacks(&self) {
         for scoped_var in &self.comm_plan.client_to_server {
             let var_name = scoped_var.0.name.clone();
+            let scope = scoped_var.1.as_slice();
             let node_value_index = self.task_graph_mapping.get(&scoped_var).unwrap().clone();
             let server_to_client = self.server_to_client_value_indices.clone();
 
@@ -207,7 +207,7 @@ impl MsgReceiver {
                     let ret_cb = closure.as_ref().clone();
                     closure.forget();
 
-                    self.add_signal_listener(&var_name, ret_cb);
+                    self.add_signal_listener(&var_name, scope, ret_cb);
                 }
                 VariableNamespace::Data => {
                     let closure = Closure::wrap(Box::new(move |name: String, val: JsValue| {
@@ -240,7 +240,7 @@ impl MsgReceiver {
                     let ret_cb = closure.as_ref().clone();
                     closure.forget();
 
-                    self.add_data_listener(&var_name, ret_cb);
+                    self.add_data_listener(&var_name, scope,ret_cb);
                 }
                 _ => panic!("Unsupported namespace")
             }
@@ -302,6 +302,24 @@ pub fn render_vegafusion(element_id: &str, spec_str: &str, send_msg_fn: js_sys::
 #[wasm_bindgen(module = "/js/vega_utils.js")]
 extern "C" {
     fn vega_version() -> String;
+
+    #[wasm_bindgen(js_name="getSignalValue")]
+    fn get_signal_value(view: &View, name: &str, scope: &[u32]) -> JsValue;
+
+    #[wasm_bindgen(js_name="setSignalValue")]
+    fn set_signal_value(view: &View, name: &str, scope: &[u32], value: JsValue);
+
+    #[wasm_bindgen(js_name="getDataValue")]
+    fn get_data_value(view: &View, name: &str, scope: &[u32]) -> JsValue;
+
+    #[wasm_bindgen(js_name="setDataValue")]
+    pub fn set_data_value(view: &View, name: &str, scope: &[u32], value: JsValue);
+
+    #[wasm_bindgen(js_name="addSignalListener")]
+    fn add_signal_listener(view: &View, name: &str, scope: &[u32], handler: JsValue);
+
+    #[wasm_bindgen(js_name="addDataListener")]
+    fn add_data_listener(view: &View, name: &str, scope: &[u32], handler: JsValue);
 }
 
 #[wasm_bindgen(module = "vega")]
@@ -312,24 +330,6 @@ extern "C" {
 
     #[wasm_bindgen(constructor)]
     pub fn new(dataflow: JsValue) -> View;
-
-    #[wasm_bindgen(method, js_name="signal")]
-    pub fn get_signal(this: &View, signal: &str) -> JsValue;
-
-    #[wasm_bindgen(method, js_name="signal")]
-    pub fn set_signal(this: &View, signal: &str, value: JsValue);
-
-    #[wasm_bindgen(method, js_name="data")]
-    pub fn get_data(this: &View, signal: &str) -> JsValue;
-
-    #[wasm_bindgen(method, js_name="data")]
-    pub fn set_data(this: &View, signal: &str, value: JsValue);
-
-    #[wasm_bindgen(method, js_name="addSignalListener")]
-    pub fn add_signal_listener(this: &View, name: &str, handler: JsValue);
-
-    #[wasm_bindgen(method, js_name="addDataListener")]
-    pub fn add_data_listener(this: &View, name: &str, handler: JsValue);
 
     #[wasm_bindgen(method, js_name="initialize")]
     pub fn initialize(this: &View, container: Element);
