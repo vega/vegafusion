@@ -3,7 +3,7 @@ use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::task_graph::task::TaskCall;
-use moka::future::Cache;
+use moka::future::{Cache, ConcurrentCacheExt};
 use std::convert::TryInto;
 use std::sync::Arc;
 use vegafusion_core::proto::gen::tasks::{
@@ -14,7 +14,7 @@ type CacheValue = (TaskValue, Vec<TaskValue>);
 
 #[derive(Clone)]
 pub struct TaskGraphRuntime {
-    cache: Cache<u64, CacheValue>,
+    pub cache: Cache<u64, CacheValue>,
 }
 
 impl TaskGraphRuntime {

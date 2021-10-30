@@ -39,10 +39,10 @@ impl TransformTrait for TransformPipeline {
                 // transforms
                 match var.ns() {
                     VariableNamespace::Signal => {
-                        config.signal_scope.insert(var.name.clone(), val.into_scalar()?);
+                        config.signal_scope.insert(var.name.clone(), val.as_scalar()?.clone());
                     }
                     VariableNamespace::Data => {
-                        config.data_scope.insert(var.name.clone(), val.into_table()?);
+                        config.data_scope.insert(var.name.clone(), val.as_table()?.clone());
                     }
                     VariableNamespace::Scale => {
                         unimplemented!()

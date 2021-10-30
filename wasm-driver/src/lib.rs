@@ -103,7 +103,7 @@ impl MsgReceiver {
             let scope = &response_val.scope;
             let var = response_val.variable.as_ref().unwrap();
 
-            match value {
+            match &value {
                 TaskValue::Scalar(value) => {
                     let sig = self.spec.get_nested_signal_mut(scope.as_slice(), &var.name)?;
                     sig.value = Some(value.to_json()?);
@@ -135,7 +135,7 @@ impl MsgReceiver {
                         // Convert from proto task value to task value
                         let value = TaskValue::try_from(&value).unwrap();
 
-                        match value {
+                        match &value {
                             TaskValue::Scalar(value) => {
                                 let js_value = JsValue::from_serde(&value.to_json().unwrap()).unwrap();
                                 set_signal_value(view, &var.name, scope, js_value);
