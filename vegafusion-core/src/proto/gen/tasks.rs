@@ -180,11 +180,18 @@ pub struct TaskGraph {
     pub nodes: ::prost::alloc::vec::Vec<TaskNode>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct NodeValueIndex {
+    #[prost(uint32, tag="1")]
+    pub node_index: u32,
+    #[prost(uint32, optional, tag="2")]
+    pub output_index: ::core::option::Option<u32>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TaskGraphValueRequest {
     #[prost(message, optional, tag="1")]
     pub task_graph: ::core::option::Option<TaskGraph>,
-    #[prost(uint32, repeated, tag="2")]
-    pub indices: ::prost::alloc::vec::Vec<u32>,
+    #[prost(message, repeated, tag="2")]
+    pub indices: ::prost::alloc::vec::Vec<NodeValueIndex>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ResponseTaskValue {

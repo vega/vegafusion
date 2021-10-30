@@ -33,6 +33,10 @@ console_error_panic_hook = { version = "0.1.6", optional = true }
 #
 # Unfortunately, `wee_alloc` requires nightly Rust when targeting wasm for now.
 wee_alloc = { version = "0.4.5", optional = true }
+tokio-tungstenite = {version="0.15.0", optional = true}
+tokio = {version="1.12.0", features=["macros", "rt-multi-thread"], optional=true}
+futures-util = {version="0.3.17", optional=true}
+vegafusion-rt-datafusion = {path="../vegafusion-rt-datafusion", optional=true}
 
 [dependencies.web-sys]
 version = "0.3.55"
@@ -47,6 +51,12 @@ features = [
 [dev-dependencies]
 wasm-bindgen-test = "0.3.13"
 
+
 [profile.release]
-# Tell `rustc` to optimize for small code size.
-opt-level = "s"
+## Tell `rustc` to optimize for small code size.
+#opt-level = "s"
+
+
+[[example]]
+name = "websocket_server"
+required-features = ["tokio-tungstenite", "tokio", "futures-util", "vegafusion-rt-datafusion"]

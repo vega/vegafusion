@@ -1,4 +1,4 @@
-use crate::proto::gen::tasks::{TaskGraph, Task, Variable, TaskNode, OutgoingEdge, IncomingEdge};
+use crate::proto::gen::tasks::{TaskGraph, Task, Variable, TaskNode, OutgoingEdge, IncomingEdge, NodeValueIndex};
 use crate::task_graph::scope::TaskScope;
 use crate::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 use std::collections::HashMap;
@@ -22,7 +22,6 @@ use std::convert::TryFrom;
 struct PetgraphEdge { output_var: Option<Variable>, propagate: bool }
 
 pub type ScopedVariable = (Variable, Vec<u32>);
-pub type NodeValueIndex = (usize, Option<usize>);
 
 impl TaskGraph {
     pub fn new(tasks: Vec<Task>, task_scope: &TaskScope) -> Result<Self> {
@@ -152,16 +151,18 @@ impl TaskGraph {
     }
 
     pub fn build_mapping(&self) -> HashMap<ScopedVariable, NodeValueIndex> {
-        let mut mapping: HashMap<ScopedVariable, (usize, Option<usize>)> = Default::default();
+        let mut mapping: HashMap<ScopedVariable, NodeValueIndex> = Default::default();
         for (node_index, node) in self.nodes.iter().enumerate() {
             let task = node.task();
             let scope = task.scope.clone();
             let scoped_var = (task.variable().clone(), task.scope.clone());
-            mapping.insert(scoped_var, (node_index, None));
+            mapping.insert(scoped_var, NodeValueIndex::new(node_index as u32, None));
 
             for (output_index, output_var) in task.output_vars().into_iter().enumerate() {
                 let scope_output_var = (output_var, task.scope.clone());
-                mapping.insert(scope_output_var, (node_index, Some(output_index)));
+                mapping.insert(scope_output_var, NodeValueIndex::new(
+                    node_index as u32, Some(output_index as u32)
+                ));
             }
         }
         mapping
@@ -197,7 +198,7 @@ impl TaskGraph {
         }
 
         // Apply fingerprints
-        self.nodes.iter_mut().zip(id_fingerprints).map(|(node, fingerprint)| {
+        self.nodes.iter_mut().zip(id_fingerprints).for_each(|(node, fingerprint)| {
             node.id_fingerprint = fingerprint;
         });
 
@@ -242,7 +243,7 @@ impl TaskGraph {
         Ok(updated)
     }
 
-    pub fn update_value(&mut self, node_index: usize, value: TaskValue) -> Result<Vec<usize>> {
+    pub fn update_value(&mut self, node_index: usize, value: TaskValue) -> Result<Vec<NodeValueIndex>> {
         let mut node = self.nodes.get_mut(node_index).ok_or_else(
             || VegaFusionError::internal("Missing node")
         )?;
@@ -256,7 +257,17 @@ impl TaskGraph {
             task_kind: Some(TaskKind::Value(ProtoTaskValue::try_from(&value)?)),
         });
 
-        self.update_state_fingerprints()
+        let mut node_value_indexes = Vec::new();
+        for node_index in self.update_state_fingerprints()? {
+            node_value_indexes.push(NodeValueIndex::new(node_index as u32, None));
+
+            for output_index in 0..self.nodes.get(node_index as usize).unwrap().task().output_vars().len() {
+                node_value_indexes.push(NodeValueIndex::new(
+                    node_index as u32, Some(output_index as u32)
+                ));
+            }
+        }
+        Ok(node_value_indexes)
     }
 
     pub fn parent_nodes(&self, node_index: usize) -> Result<Vec<&TaskNode>> {
@@ -299,6 +310,12 @@ impl TaskGraph {
         self.nodes.get(node_index).with_context(
             || format!("Node index {} out of bounds", node_index)
         )
+    }
+}
+
+impl NodeValueIndex {
+    pub fn new(node_index: u32, output_index: Option<u32>) -> Self {
+        Self { node_index, output_index }
     }
 }
 

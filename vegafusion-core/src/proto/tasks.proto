@@ -129,9 +129,14 @@ message TaskGraph {
   repeated TaskNode nodes = 1;
 }
 
+message NodeValueIndex {
+  uint32 node_index = 1;
+  optional uint32 output_index = 2;
+}
+
 message TaskGraphValueRequest {
   TaskGraph task_graph = 1;
-  repeated uint32 indices = 2;
+  repeated NodeValueIndex indices = 2;
 }
 
 message ResponseTaskValue {

@@ -310,7 +310,6 @@ fn parse_args(args: &[Expression]) -> Result<Op> {
             }
         }
     };
-    println!("op: {:?}", op);
     Ok(op)
 }
 
@@ -345,8 +344,6 @@ pub fn vl_selection_test_fn(
             Op::Intersect => exprs.into_iter().reduce(|a, b| a.and(b)).unwrap(),
         }
     };
-
-    println!("expr: {}", expr);
 
     Ok(expr)
 }

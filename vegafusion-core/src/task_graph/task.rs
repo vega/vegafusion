@@ -1,4 +1,4 @@
-use crate::proto::gen::tasks::{Task, task::TaskKind, Variable, DataUrlTask, DataValuesTask, DataSourceTask};
+use crate::proto::gen::tasks::{Task, task::TaskKind, Variable, DataUrlTask, DataValuesTask, DataSourceTask, NodeValueIndex};
 use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
 use crate::task_graph::task_value::TaskValue;
 use std::convert::TryFrom;
@@ -100,3 +100,12 @@ pub trait TaskDependencies {
     fn input_vars(&self) -> Vec<InputVariable> { Vec::new() }
     fn output_vars(&self) -> Vec<Variable> { Vec::new() }
 }
+
+impl Hash for NodeValueIndex {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.node_index.hash(state);
+        self.output_index.hash(state);
+    }
+}
+
+impl Eq for NodeValueIndex {}

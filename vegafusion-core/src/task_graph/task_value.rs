@@ -14,11 +14,29 @@ pub enum TaskValue {
 }
 
 impl TaskValue {
+    pub fn as_scalar(&self) -> Result<&ScalarValue> {
+        match self {
+            TaskValue::Scalar(value) => Ok(value),
+            _ => {
+                return Err(VegaFusionError::internal("Value is not a scalar"))
+            }
+        }
+    }
+
     pub fn into_scalar(self) -> Result<ScalarValue> {
         match self {
             TaskValue::Scalar(value) => Ok(value),
             _ => {
                 return Err(VegaFusionError::internal("Value is not a scalar"))
+            }
+        }
+    }
+
+    pub fn as_table(&self) -> Result<&VegaFusionTable> {
+        match self {
+            TaskValue::Table(value) => Ok(value),
+            _ => {
+                return Err(VegaFusionError::internal("Value is not a table"))
             }
         }
     }

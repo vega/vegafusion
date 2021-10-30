@@ -6,22 +6,32 @@ use vegafusion_core::arrow::array::Float64Array;
 
 // use vegafusion_core::expression::parser::parse;
 use vegafusion_core::proto::gen::expression;
-use vegafusion_core::data::scalar::ScalarValue;
+use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use wasm_bindgen::prelude::*;
-use vegafusion_core::proto::gen::tasks::{TaskValue as ProtoTaskValue, Variable, Task, TaskGraph, DataSourceTask, DataUrlTask};
+use vegafusion_core::proto::gen::tasks::{TaskValue as ProtoTaskValue, Variable, Task, TaskGraph, DataSourceTask, DataUrlTask, VariableNamespace, TaskNode, TaskGraphValueRequest, NodeValueIndex, TaskGraphValueResponse};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use std::convert::TryFrom;
 use vegafusion_core::task_graph::scope::TaskScope;
 use vegafusion_core::proto::gen::transforms::{TransformPipeline, Transform, Extent};
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
+use vegafusion_core::error::Result;
 use js_sys::JSON::stringify;
-use js_sys::JsString;
+use js_sys::{JsString, Uint8Array};
 use serde_json::{json, Value};
 
 use wasm_bindgen::prelude::*;
 use vegafusion_core::spec::chart::ChartSpec;
 use web_sys::{HtmlElement, Element};
+use vegafusion_core::planning::extract::extract_server_data;
+use vegafusion_core::planning::stitch::{stitch_specs, CommPlan};
+use std::sync::{Arc, Mutex};
+use vegafusion_core::proto::gen::services::{
+    VegaFusionRuntimeRequest, vega_fusion_runtime_request, VegaFusionRuntimeResponse, vega_fusion_runtime_response
+};
+use vegafusion_core::data::table::VegaFusionTable;
+use std::collections::{HashMap, HashSet};
+use vegafusion_core::task_graph::task_graph::ScopedVariable;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -32,87 +42,262 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[wasm_bindgen]
 extern "C" {
     fn alert(s: &str);
+
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
 }
 
-// pub fn make_task_graph() -> TaskGraph {
-//     let mut task_scope = TaskScope::new();
-//     task_scope.add_variable(&Variable::new_signal("url"), Default::default());
-//     task_scope.add_variable(&Variable::new_data("url_datasetA"), Default::default());
-//     task_scope.add_variable(&Variable::new_data("datasetA"), Default::default());
-//     task_scope.add_data_signal("datasetA", "my_extent", Default::default());
-//
-//     let tasks = vec![
-//         Task::new_value(
-//             Variable::new_signal("url"),
-//             Default::default(),
-//             TaskValue::Scalar(ScalarValue::from("file:///somewhere/over/the/rainbow.csv")),
-//         ),
-//         Task::new_data_url(Variable::new_data("url_datasetA"), Default::default(), DataUrlTask {
-//             url: Some(Url::Expr(parse("url").unwrap())),
-//             batch_size: 1024,
-//             format_type: None,
-//             pipeline: None
-//         }),
-//         Task::new_data_source(Variable::new_signal("datasetA"), Default::default(), DataSourceTask {
-//             source: "url_datasetA".to_string(),
-//             pipeline: Some(TransformPipeline { transforms: vec![
-//                 Transform { transform_kind: Some(TransformKind::Extent(Extent {
-//                     field: "col_1".to_string(),
-//                     signal: Some("my_extent".to_string()),
-//                 })) }
-//             ] })
-//         })
-//     ];
-//
-//     TaskGraph::new(tasks, &task_scope).unwrap()
-// }
 
 #[wasm_bindgen]
-pub fn greet() {
-
-    // let scalar = ScalarValue::from("hello ScalarValue");
-    // let task_value = TaskValue::Scalar(scalar.clone());
-    // let proto_task_value = ProtoTaskValue::try_from(&task_value).unwrap();
-    // let new_task_value = TaskValue::try_from(&proto_task_value).unwrap();
-    //
-    // let task_graph = make_task_graph();
-    // let task_graph_repr = &format!("{:?}", task_graph)[..30];
-    //
-    // alert(&format!(
-    //     "Hello, from Rust!\n{:?}",
-    //     task_graph_repr
-    // ));
-
-    let spec: ChartSpec = serde_json::from_str(r#"
-    {"signals": [{"name": "foo", "value": 23}]}
-    "#).unwrap();
-    let dataflow = parse(JsValue::from_serde(&spec).unwrap());
-    let view = View::new(dataflow);
-    let foo = view.get_signal("foo");
-    let s1 = stringify(&foo).unwrap();
-    view.set_signal("foo", JsValue::from_serde(&json!{ 101 }).unwrap());
-    let foo = view.get_signal("foo");
-    let s2 = stringify(&foo).unwrap();
-
-    alert(&format!(
-        "Hello, {:?} to {:?}",
-        s1, s2
-    ));
+pub struct MsgReceiver {
+    element_id: String,
+    spec: ChartSpec,
+    comm_plan: CommPlan,
+    send_msg_fn: Arc<js_sys::Function>,
+    task_graph: Arc<Mutex<TaskGraph>>,
+    task_graph_mapping: HashMap<ScopedVariable, NodeValueIndex>,
+    server_to_client_value_indices: Arc<HashSet<NodeValueIndex>>,
+    view: View,
 }
 
 #[wasm_bindgen]
-pub fn render_vega(element_id: &str) {
-    let window: web_sys::Window = web_sys::window().expect("no global `window` exists");
-    let document: web_sys::Document = window.document().expect("should have a document on window");
-    let mount_element = document.get_element_by_id(element_id).unwrap();
+impl MsgReceiver {
+    fn new(element_id: &str, spec: ChartSpec, comm_plan: CommPlan, task_graph: TaskGraph, send_msg_fn: js_sys::Function) -> Self {
+        let task_graph_mapping = task_graph.build_mapping();
 
-    let chart = spec1();
-    let dataflow = parse(JsValue::from_serde(&chart).unwrap());
-    let view = View::new(dataflow);
-    view.initialize(mount_element);
-    view.hover();
-    view.run();
+        let server_to_client_value_indices: Arc<HashSet<_>> = Arc::new(comm_plan.server_to_client.iter().map(|scoped_var| {
+            task_graph_mapping.get(scoped_var).unwrap().clone()
+        }).collect());
+
+        // Mount vega chart
+        let window: web_sys::Window = web_sys::window().expect("no global `window` exists");
+        let document: web_sys::Document = window.document().expect("should have a document on window");
+        let mount_element = document.get_element_by_id(&element_id).unwrap();
+
+        // log(&format!("client spec\n:{}", serde_json::to_string_pretty(&spec).unwrap()));
+        let dataflow = parse(JsValue::from_serde(&spec).unwrap());
+
+        let view = View::new(dataflow);
+        view.initialize(mount_element);
+        view.hover();
+
+        let this = Self {
+            element_id: element_id.to_string(),
+            spec,
+            comm_plan,
+            task_graph: Arc::new(Mutex::new(task_graph)),
+            task_graph_mapping,
+            send_msg_fn: Arc::new(send_msg_fn),
+            server_to_client_value_indices,
+            view
+        };
+
+        this.register_callbacks();
+
+        this
+    }
+
+    fn init_spec(&mut self, task_graph_vals: &TaskGraphValueResponse) -> Result<()> {
+        for response_val in &task_graph_vals.response_values {
+            let value = TaskValue::try_from(response_val.value.as_ref().unwrap()).unwrap();
+            let scope = &response_val.scope;
+            let var = response_val.variable.as_ref().unwrap();
+
+            match value {
+                TaskValue::Scalar(value) => {
+                    let sig = self.spec.get_nested_signal_mut(scope.as_slice(), &var.name)?;
+                    sig.value = Some(value.to_json()?);
+                }
+                TaskValue::Table(value) => {
+                    let data = self.spec.get_nested_data_mut(scope.as_slice(), &var.name)?;
+                    data.values = Some(value.to_json());
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn receive(&mut self, bytes: Vec<u8>) {
+        // Decode message
+        let response = VegaFusionRuntimeResponse::decode(bytes.as_slice()).unwrap();
+        // log(&format!("Received msg: {:?}", response));
+
+        if let Some(response) = response.response {
+            match response {
+                vega_fusion_runtime_response::Response::TaskGraphValues(task_graph_vals) => {
+                    let view = self.view();
+                    for response_val in task_graph_vals.response_values {
+                        let value = response_val.value.unwrap();
+                        let scope = response_val.scope;
+                        let var = response_val.variable.unwrap();
+
+                        // Convert from proto task value to task value
+                        let value = TaskValue::try_from(&value).unwrap();
+
+                        match value {
+                            TaskValue::Scalar(value) => {
+                                let js_value = JsValue::from_serde(&value.to_json().unwrap()).unwrap();
+                                view.set_signal(&var.name, js_value);
+                            }
+                            TaskValue::Table(value) => {
+                                let js_value = JsValue::from_serde(
+                                    &value.to_json()
+                                ).unwrap();
+                                view.set_data(&var.name, js_value);
+                            }
+                        }
+                    }
+                    view.run();
+                }
+            }
+        }
+    }
+
+    fn view(&self) -> &View {
+        // self.view.as_ref().expect("View not initialized")
+        &self.view
+    }
+
+    fn add_signal_listener(&self, name: &str, handler: JsValue) {
+        self.view().add_signal_listener(name, handler);
+    }
+
+    fn add_data_listener(&self, name: &str, handler: JsValue) {
+        self.view().add_data_listener(name, handler);
+    }
+
+    fn register_callbacks(&self) {
+        for scoped_var in &self.comm_plan.client_to_server {
+            let var_name = scoped_var.0.name.clone();
+            let node_value_index = self.task_graph_mapping.get(&scoped_var).unwrap().clone();
+            let server_to_client = self.server_to_client_value_indices.clone();
+
+            let task_graph = self.task_graph.clone();
+            let send_msg_fn = self.send_msg_fn.clone();
+
+            // Register callbacks
+            match scoped_var.0.namespace() {
+                VariableNamespace::Signal => {
+                    let closure = Closure::wrap(Box::new(move |name: String, val: JsValue| {
+                        let val: serde_json::Value = val.into_serde().unwrap();
+                        let mut task_graph = task_graph.lock().unwrap();
+                        let updated_nodes = &task_graph.update_value(
+                            node_value_index.node_index as usize,
+                            TaskValue::Scalar(ScalarValue::from_json(&val).unwrap())
+                        ).unwrap();
+
+                        // Filter to update nodes in the comm plan
+                        let updated_nodes: Vec<_> = updated_nodes.iter().cloned().filter(|node| {
+                            server_to_client.contains(node)
+                        }).collect();
+
+                        let request_msg = VegaFusionRuntimeRequest {
+                            request: Some(vega_fusion_runtime_request::Request::TaskGraphValues(
+                                TaskGraphValueRequest {
+                                    task_graph: Some(task_graph.clone()),
+                                    indices: updated_nodes.clone()
+                                }
+                            ) )
+                        };
+
+                        Self::send_request(send_msg_fn.as_ref(), request_msg);
+                    }) as Box<dyn FnMut(String, JsValue)>);
+
+                    let ret_cb = closure.as_ref().clone();
+                    closure.forget();
+
+                    self.add_signal_listener(&var_name, ret_cb);
+                }
+                VariableNamespace::Data => {
+                    let closure = Closure::wrap(Box::new(move |name: String, val: JsValue| {
+                        let val: serde_json::Value = val.into_serde().unwrap();
+                        let mut task_graph = task_graph.lock().expect("lock task graph");
+                        let updated_nodes = &task_graph.update_value(
+                            node_value_index.node_index as usize,
+                            TaskValue::Table(
+                                VegaFusionTable::from_json(&val, 1024).unwrap()
+                            )
+                        ).unwrap();
+
+                        // Filter to update nodes in the comm plan
+                        let updated_nodes: Vec<_> = updated_nodes.iter().cloned().filter(|node| {
+                            server_to_client.contains(node)
+                        }).collect();
+
+                        let request_msg = VegaFusionRuntimeRequest {
+                            request: Some(vega_fusion_runtime_request::Request::TaskGraphValues(
+                                TaskGraphValueRequest {
+                                    task_graph: Some(task_graph.clone()),
+                                    indices: updated_nodes.clone(),
+                                }
+                            ))
+                        };
+
+                        Self::send_request(send_msg_fn.as_ref(), request_msg);
+                    }) as Box<dyn FnMut(String, JsValue)>);
+
+                    let ret_cb = closure.as_ref().clone();
+                    closure.forget();
+
+                    self.add_data_listener(&var_name, ret_cb);
+                }
+                _ => panic!("Unsupported namespace")
+            }
+        }
+    }
+
+    fn send_request(send_msg_fn: &js_sys::Function, request_msg: VegaFusionRuntimeRequest) {
+        let mut buf: Vec<u8> = Vec::new();
+        buf.reserve(request_msg.encoded_len());
+        request_msg.encode(&mut buf).unwrap();
+
+        let context: JsValue = JsValue::from_serde(&serde_json::Value::Null).unwrap();
+        let js_buffer = js_sys::Uint8Array::from(buf.as_slice());
+        send_msg_fn.call1(&context, &js_buffer);
+    }
+
+    fn initial_node_value_indices(&self) -> Vec<NodeValueIndex> {
+        self.comm_plan.server_to_client.iter().map(|scoped_var| {
+            self.task_graph_mapping.get(scoped_var).unwrap().clone()
+        }).collect()
+    }
 }
+
+
+#[wasm_bindgen]
+pub fn render_vegafusion(element_id: &str, spec_str: &str, send_msg_fn: js_sys::Function) -> MsgReceiver {
+    let mut spec: ChartSpec = serde_json::from_str(spec_str).unwrap();
+
+    // Get full spec's scope
+    let task_scope = spec.to_task_scope().unwrap();
+
+    let mut server_spec = extract_server_data(&mut spec).unwrap();
+    let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
+
+    let tasks = server_spec.to_tasks().unwrap();
+    let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
+
+    // Create closure to update chart from received messages
+    let mut receiver = MsgReceiver::new(element_id, spec, comm_plan, task_graph.clone(), send_msg_fn);
+
+    // Request initial values
+    let mut updated_node_indices: Vec<_> = receiver.initial_node_value_indices();
+
+    let request_msg = VegaFusionRuntimeRequest {
+        request: Some(vega_fusion_runtime_request::Request::TaskGraphValues(
+            TaskGraphValueRequest {
+                task_graph: Some(task_graph),
+                indices: updated_node_indices
+            }
+        ) )
+    };
+
+    MsgReceiver::send_request(receiver.send_msg_fn.as_ref(), request_msg);
+
+    receiver
+}
+
 
 #[wasm_bindgen(module = "/js/vega_utils.js")]
 extern "C" {
@@ -123,7 +308,7 @@ extern "C" {
 extern "C" {
     pub fn parse(spec: JsValue) -> JsValue;
 
-    type View;
+    pub type View;
 
     #[wasm_bindgen(constructor)]
     pub fn new(dataflow: JsValue) -> View;
@@ -133,6 +318,18 @@ extern "C" {
 
     #[wasm_bindgen(method, js_name="signal")]
     pub fn set_signal(this: &View, signal: &str, value: JsValue);
+
+    #[wasm_bindgen(method, js_name="data")]
+    pub fn get_data(this: &View, signal: &str) -> JsValue;
+
+    #[wasm_bindgen(method, js_name="data")]
+    pub fn set_data(this: &View, signal: &str, value: JsValue);
+
+    #[wasm_bindgen(method, js_name="addSignalListener")]
+    pub fn add_signal_listener(this: &View, name: &str, handler: JsValue);
+
+    #[wasm_bindgen(method, js_name="addDataListener")]
+    pub fn add_data_listener(this: &View, name: &str, handler: JsValue);
 
     #[wasm_bindgen(method, js_name="initialize")]
     pub fn initialize(this: &View, container: Element);
@@ -151,105 +348,4 @@ mod tests {
     fn it_works() {
         assert_eq!(2 + 2, 4);
     }
-}
-
-pub fn spec1() -> ChartSpec {
-    serde_json::from_str(r##"
-{
-  "$schema": "https://vega.github.io/schema/vega/v5.json",
-  "description": "A basic bar chart example, with value labels shown upon mouse hover.",
-  "width": 400,
-  "height": 200,
-  "padding": 5,
-
-  "data": [
-    {
-      "name": "table",
-      "values": [
-        {"category": "A", "amount": 28},
-        {"category": "B", "amount": 55},
-        {"category": "C", "amount": 43},
-        {"category": "D", "amount": 91},
-        {"category": "E", "amount": 81},
-        {"category": "F", "amount": 53},
-        {"category": "G", "amount": 19},
-        {"category": "H", "amount": 87}
-      ]
-    }
-  ],
-
-  "signals": [
-    {
-      "name": "tooltip",
-      "value": {},
-      "on": [
-        {"events": "rect:mouseover", "update": "datum"},
-        {"events": "rect:mouseout",  "update": "{}"}
-      ]
-    }
-  ],
-
-  "scales": [
-    {
-      "name": "xscale",
-      "type": "band",
-      "domain": {"data": "table", "field": "category"},
-      "range": "width",
-      "padding": 0.05,
-      "round": true
-    },
-    {
-      "name": "yscale",
-      "domain": {"data": "table", "field": "amount"},
-      "nice": true,
-      "range": "height"
-    }
-  ],
-
-  "axes": [
-    { "orient": "bottom", "scale": "xscale" },
-    { "orient": "left", "scale": "yscale" }
-  ],
-
-  "marks": [
-    {
-      "type": "rect",
-      "from": {"data":"table"},
-      "encode": {
-        "enter": {
-          "x": {"scale": "xscale", "field": "category"},
-          "width": {"scale": "xscale", "band": 1},
-          "y": {"scale": "yscale", "field": "amount"},
-          "y2": {"scale": "yscale", "value": 0}
-        },
-        "update": {
-          "fill": {"value": "steelblue"}
-        },
-        "hover": {
-          "fill": {"value": "red"}
-        }
-      }
-    },
-    {
-      "type": "text",
-      "encode": {
-        "enter": {
-          "align": {"value": "center"},
-          "baseline": {"value": "bottom"},
-          "fill": {"value": "#333"}
-        },
-        "update": {
-          "x": {"scale": "xscale", "signal": "tooltip.category", "band": 0.5},
-          "y": {"scale": "yscale", "signal": "tooltip.amount", "offset": -2},
-          "text": {"signal": "tooltip.amount"},
-          "fillOpacity": [
-            {"test": "datum === tooltip", "value": 0},
-            {"value": 1}
-          ]
-        }
-      }
-    }
-  ]
-}
-    "##).unwrap()
 }

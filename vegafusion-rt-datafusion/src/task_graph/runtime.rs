@@ -6,9 +6,9 @@ use crate::task_graph::task::TaskCall;
 use moka::future::Cache;
 use std::convert::TryInto;
 use std::sync::Arc;
-use vegafusion_core::proto::gen::tasks::task::TaskKind;
-use vegafusion_core::proto::gen::tasks::TaskGraph;
-use vegafusion_core::task_graph::task_graph::NodeValueIndex;
+use vegafusion_core::proto::gen::tasks::{
+    task::TaskKind, TaskGraph, NodeValueIndex
+};
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -30,10 +30,12 @@ impl TaskGraphRuntime {
         node_value_index: &NodeValueIndex,
     ) -> Result<TaskValue> {
         let mut node_value =
-            get_or_compute_node_value(task_graph, node_value_index.0, self.cache.clone()).await?;
-        Ok(match node_value_index.1 {
+            get_or_compute_node_value(
+                task_graph, node_value_index.node_index as usize, self.cache.clone()
+            ).await?;
+        Ok(match node_value_index.output_index {
             None => node_value.0,
-            Some(signal_index) => node_value.1.remove(signal_index as usize),
+            Some(output_index) => node_value.1.remove(output_index as usize),
         })
     }
 }
