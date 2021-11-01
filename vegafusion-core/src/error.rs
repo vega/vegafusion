@@ -247,3 +247,16 @@ impl<T, E: std::error::Error> ToExternalError<T> for std::result::Result<T, E> {
         }
     }
 }
+
+pub trait DuplicateResult {
+    fn duplicate(&self) -> Self;
+}
+
+impl <T> DuplicateResult for Result<T> where T: Clone {
+    fn duplicate(&self) -> Self {
+        match self {
+            Ok(v) => Ok(v.clone()),
+            Err(err) => Err(err.duplicate())
+        }
+    }
+}

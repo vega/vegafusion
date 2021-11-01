@@ -1,5 +1,5 @@
 use vegafusion_core::task_graph::scope::TaskScope;
-use vegafusion_core::proto::gen::tasks::{Variable, Task, TaskGraph, DataUrlTask, DataSourceTask};
+use vegafusion_core::proto::gen::tasks::{Variable, Task, TaskGraph, DataUrlTask, DataSourceTask, NodeValueIndex};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::proto::gen::transforms::{TransformPipeline, Transform, Extent, Collect, SortOrder};
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
@@ -50,7 +50,9 @@ async fn try_it() {
 
     let graph_runtime = TaskGraphRuntime::new(20);
     // let result = graph_runtime.get_node_value(graph, 2, None).await.unwrap();
-    let result = graph_runtime.get_node_value(graph, &(2, Some(0))).await.unwrap();
+    let result = graph_runtime.get_node_value(
+        graph, &NodeValueIndex::new(2, Some(0))
+    ).await.unwrap();
 
     println!("result: {:?}", result);
 }
@@ -98,6 +100,8 @@ async fn try_it_from_spec() {
     let graph = Arc::new(TaskGraph::new(tasks, &task_scope).unwrap());
 
     let graph_runtime = TaskGraphRuntime::new(20);
-    let result = graph_runtime.get_node_value(graph, &(2, Some(0))).await.unwrap();
+    let result = graph_runtime.get_node_value(
+        graph, &NodeValueIndex::new(2, Some(0))
+    ).await.unwrap();
     println!("result: {:?}", result);
 }

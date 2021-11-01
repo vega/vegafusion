@@ -3,24 +3,24 @@ use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::task_graph::task::TaskCall;
-use moka::future::{Cache, ConcurrentCacheExt};
 use std::convert::TryInto;
 use std::sync::Arc;
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, TaskGraph, NodeValueIndex
 };
+use crate::task_graph::cache::VegaFusionCache;
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
 #[derive(Clone)]
 pub struct TaskGraphRuntime {
-    pub cache: Cache<u64, CacheValue>,
+    pub cache: VegaFusionCache,
 }
 
 impl TaskGraphRuntime {
     pub fn new(max_capacity: usize) -> Self {
         Self {
-            cache: Cache::new(max_capacity),
+            cache: VegaFusionCache::new(max_capacity),
         }
     }
 
@@ -44,7 +44,7 @@ impl TaskGraphRuntime {
 async fn get_or_compute_node_value(
     task_graph: Arc<TaskGraph>,
     node_index: usize,
-    cache: Cache<u64, CacheValue>,
+    cache: VegaFusionCache,
 ) -> Result<CacheValue> {
     // Get the cache key for requested node
     let node = task_graph.node(node_index).unwrap();
@@ -103,8 +103,7 @@ async fn get_or_compute_node_value(
         // get or construct from cache
         let result = cache
             .get_or_try_insert_with(cache_key, fut)
-            .await
-            .map_err(|e| e.as_ref().duplicate());
+            .await;
 
         result
     }
