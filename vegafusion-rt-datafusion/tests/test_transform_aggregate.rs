@@ -155,7 +155,7 @@ fn test_bin_aggregate() {
     };
 
     let transform_specs = vec![
-        TransformSpec::Bin(bin_spec),
+        TransformSpec::Bin(Box::new(bin_spec)),
         TransformSpec::Aggregate(aggregate_spec),
     ];
 

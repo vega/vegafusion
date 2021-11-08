@@ -34,7 +34,7 @@ fn test_bin() {
         extra: Default::default(),
     };
 
-    let transform_specs = vec![TransformSpec::Bin(bin_spec)];
+    let transform_specs = vec![TransformSpec::Bin(Box::new(bin_spec))];
 
     let comp_config = Default::default();
     let eq_config = TablesEqualConfig {

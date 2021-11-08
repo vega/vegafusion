@@ -27,6 +27,7 @@ impl TryFrom<&TransformSpec> for TransformKind {
             TransformSpec::Bin(tx_spec) => Self::Bin(Bin::try_new(tx_spec)?),
             TransformSpec::Aggregate(tx_spec) => Self::Aggregate(Aggregate::new(tx_spec)),
             TransformSpec::Collect(tx_spec) => Self::Collect(Collect::try_new(tx_spec)?),
+            _ => return Err(VegaFusionError::parse(&format!("Unsupported transform: {:?}", value)))
         })
     }
 }
