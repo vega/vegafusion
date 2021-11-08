@@ -70,8 +70,8 @@ impl MsgReceiver {
         }).collect());
 
         // Mount vega chart
-        let window: web_sys::Window = web_sys::window().expect("no global `window` exists");
-        let document: web_sys::Document = window.document().expect("should have a document on window");
+        let window = web_sys::window().expect("no global `window` exists");
+        let document = window.document().expect("should have a document on window");
         let mount_element = document.get_element_by_id(&element_id).unwrap();
 
         // log(&format!("client spec\n:{}", serde_json::to_string_pretty(&spec).unwrap()));
