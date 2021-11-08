@@ -207,25 +207,39 @@ impl ChartSpec {
             .with_context(|| format!("No data named {} found at path {:?}", name, path))
     }
 
-    pub fn add_nested_signal(&mut self, path: &[u32], spec: SignalSpec) -> Result<()> {
+    pub fn add_nested_signal(&mut self, path: &[u32], spec: SignalSpec, index: Option<usize>) -> Result<()> {
         let signals = if path.is_empty() {
             &mut self.signals
         } else {
             let group = self.get_nested_group_mut(path)?;
             &mut group.signals
         };
-        signals.push(spec);
+        match index {
+            Some(index) => {
+                signals.insert(index, spec);
+            }
+            None => {
+                signals.push(spec);
+            }
+        }
         Ok(())
     }
 
-    pub fn add_nested_data(&mut self, path: &[u32], spec: DataSpec) -> Result<()> {
+    pub fn add_nested_data(&mut self, path: &[u32], spec: DataSpec, index: Option<usize>) -> Result<()> {
         let data = if path.is_empty() {
             &mut self.data
         } else {
             let group = self.get_nested_group_mut(path)?;
             &mut group.data
         };
-        data.push(spec);
+        match index {
+            Some(index) => {
+                data.insert(index, spec);
+            }
+            None => {
+                data.push(spec);
+            }
+        }
         Ok(())
     }
 

@@ -270,9 +270,9 @@ pub fn render_vegafusion(element_id: &str, spec_str: &str, send_msg_fn: js_sys::
     let mut spec: ChartSpec = serde_json::from_str(spec_str).unwrap();
 
     // Get full spec's scope
-    let task_scope = spec.to_task_scope().unwrap();
+    let mut task_scope = spec.to_task_scope().unwrap();
 
-    let mut server_spec = extract_server_data(&mut spec).unwrap();
+    let mut server_spec = extract_server_data(&mut spec, &mut task_scope).unwrap();
     let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
 
     let tasks = server_spec.to_tasks().unwrap();

@@ -12,10 +12,10 @@ async fn test_extract_server_data() {
     let mut spec = spec1();
 
     // Get full spec's scope
-    let task_scope = spec.to_task_scope().unwrap();
+    let mut task_scope = spec.to_task_scope().unwrap();
     // println!("{:#?}", task_scope);
 
-    let server_spec = extract_server_data(&mut spec).unwrap();
+    let server_spec = extract_server_data(&mut spec, &mut task_scope).unwrap();
     // println!("{}", serde_json::to_string_pretty(&server_spec).unwrap());
 
     let client_defs: HashSet<_> = spec.definition_vars().unwrap().into_iter().collect();
@@ -63,14 +63,30 @@ async fn test_extract_stitch_data() {
     let mut spec = spec1();
 
     // Get full spec's scope
-    let task_scope = spec.to_task_scope().unwrap();
+    let mut task_scope = spec.to_task_scope().unwrap();
 
-    let mut server_spec = extract_server_data(&mut spec).unwrap();
+    let mut server_spec = extract_server_data(&mut spec, &mut task_scope).unwrap();
     let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
 
     println!("{:#?}", comm_plan);
 
     println!("client spec:\n{}", serde_json::to_string_pretty(&spec).unwrap());
+}
+
+#[tokio::test(flavor="multi_thread")]
+async fn try_extract_split_server_data() {
+    let mut spec = weather_spec();
+
+    // Get full spec's scope
+    let mut task_scope = spec.to_task_scope().unwrap();
+
+    let mut server_spec = extract_server_data(&mut spec, &mut task_scope).unwrap();
+    let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
+
+    println!("{:#?}", comm_plan);
+
+    println!("server spec:\n{}\n\n", serde_json::to_string_pretty(&server_spec).unwrap());
+    println!("client spec:\n{}\n\n", serde_json::to_string_pretty(&spec).unwrap());
 }
 
 
@@ -1779,4 +1795,108 @@ fn spec2() -> ChartSpec {
     }
   ]
 }"##).unwrap()
+}
+
+fn weather_spec() -> ChartSpec {
+    serde_json::from_str(r##"
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 20,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {
+      "name": "source_0",
+      "url": "https://raw.githubusercontent.com/vega/vega-datasets/master/data/seattle-weather.csv",
+      "format": {"type": "csv", "delimiter": ","},
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["weather"],
+          "ops": ["count"],
+          "fields": [null],
+          "as": ["__count"]
+        },
+        {
+          "type": "stack",
+          "groupby": [],
+          "field": "__count",
+          "sort": {"field": ["weather"], "order": ["descending"]},
+          "as": ["__count_start", "__count_end"],
+          "offset": "zero"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "marks",
+      "type": "rect",
+      "style": ["bar"],
+      "from": {"data": "source_0"},
+      "encode": {
+        "update": {
+          "fill": {"scale": "color", "field": "weather"},
+          "ariaRoleDescription": {"value": "bar"},
+          "description": {
+            "signal": "\"Count of Records: \" + (format(datum[\"__count\"], \"\")) + \"; Weather type: \" + (isValid(datum[\"weather\"]) ? datum[\"weather\"] : \"\"+datum[\"weather\"])"
+          },
+          "xc": {"signal": "width", "mult": 0.5},
+          "width": {"value": 18},
+          "y": {"scale": "y", "field": "__count_end"},
+          "y2": {"scale": "y", "field": "__count_start"}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {
+        "data": "source_0",
+        "fields": ["__count_start", "__count_end"]
+      },
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": ["sun", "fog", "drizzle", "rain", "snow"],
+      "range": ["#e7ba52", "#c7c7c7", "#aec7e8", "#1f77b4", "#9467bd"]
+    }
+  ],
+  "axes": [
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "Count of Records",
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
+    }
+  ],
+  "legends": [
+    {"title": "Weather type", "fill": "color", "symbolType": "square"}
+  ]
+}
+    "##).unwrap()
 }

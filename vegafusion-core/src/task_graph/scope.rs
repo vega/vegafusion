@@ -15,6 +15,12 @@ pub struct TaskScope {
     pub children: Vec<TaskScope>,
 }
 
+lazy_static! {
+    pub static ref BUILT_IN_SIGNALS: HashSet<String> = vec![
+        "width", "height", "padding", "autosize", "background"
+    ].iter().map(|sig| sig.to_string()).collect();
+}
+
 impl TaskScope {
     pub fn new() -> Self {
         Self {
@@ -72,6 +78,13 @@ impl TaskScope {
         Ok(())
     }
 
+    pub fn remove_data_signal(&mut self, signal: &str, scope: &[u32]) -> Result<Variable> {
+        let mut child = self.get_child_mut(scope)?;
+        child.output_var_defs.remove(&Variable::new_signal(signal)).with_context(
+            || format!("No data signal named: {}", signal)
+        )
+    }
+
     pub fn resolve_scope(&self, variable: &Variable, usage_scope: &[u32]) -> Result<Resolved> {
         // Search for matching variable, start with full usage scope, then iterate up
         for level in (0..=usage_scope.len()).rev() {
@@ -104,6 +117,15 @@ impl TaskScope {
                     var: main_var.clone(),
                     scope: Vec::from(curr_scope),
                     output_var: Some(variable.clone())
+                })
+            }
+
+            // Check for built-in signal
+            if matches!(variable.ns(), VariableNamespace::Signal) && BUILT_IN_SIGNALS.contains(&variable.name) {
+                return Ok(Resolved {
+                    var: variable.clone(),
+                    scope: Vec::new(),
+                    output_var: None
                 })
             }
         }

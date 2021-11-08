@@ -42,7 +42,30 @@ impl DataSpec {
 
         sorted(signals).into_iter().collect()
     }
+
+    pub fn supported(&self) -> DataSupported {
+        // TODO: also add checks for supported file formats, etc.
+        let all_supported = self.transform.iter().all(|tx| {
+            tx.supported()
+        });
+        if all_supported {
+            DataSupported::Supported
+        } else {
+            match self.transform.get(0) {
+                Some(tx) if tx.supported() => DataSupported::PartiallySupported,
+                _ => DataSupported::Unsupported,
+            }
+        }
+    }
 }
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq)]
+pub enum DataSupported {
+    Supported,
+    PartiallySupported,
+    Unsupported,
+}
+
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DataFormatSpec {

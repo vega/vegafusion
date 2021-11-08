@@ -84,7 +84,7 @@ fn make_stub(
                 extra: Default::default(),
             };
 
-            to_spec.add_nested_signal(&stub_path, new_signal_spec)?;
+            to_spec.add_nested_signal(&stub_path, new_signal_spec, Some(0))?;
         }
         VariableNamespace::Data => {
             // Get initial value from client spec, if any. Initial value is only valid if
@@ -109,7 +109,7 @@ fn make_stub(
                 extra: Default::default(),
             };
 
-            to_spec.add_nested_data(&stub_path, new_data_spec)?;
+            to_spec.add_nested_data(&stub_path, new_data_spec, Some(0))?;
         }
         VariableNamespace::Scale => {
             return Err(VegaFusionError::internal("Scale stubs not yet supported"))

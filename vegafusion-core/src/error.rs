@@ -102,24 +102,24 @@ impl VegaFusionError {
         }
     }
 
-    pub fn parse(message: &str) -> Self {
-        Self::ParseError(message.to_string(), Default::default())
+    pub fn parse<S: Into<String>>(message: S) -> Self {
+        Self::ParseError(message.into(), Default::default())
     }
 
-    pub fn compilation(message: &str) -> Self {
-        Self::CompilationError(message.to_string(), Default::default())
+    pub fn compilation<S: Into<String>>(message: S) -> Self {
+        Self::CompilationError(message.into(), Default::default())
     }
 
-    pub fn internal(message: &str) -> Self {
-        Self::InternalError(message.to_string(), Default::default())
+    pub fn internal<S: Into<String>>(message: S) -> Self {
+        Self::InternalError(message.into(), Default::default())
     }
 
-    pub fn external(message: &str) -> Self {
-        Self::ExternalError(message.to_string(), Default::default())
+    pub fn external<S: Into<String>>(message: S) -> Self {
+        Self::ExternalError(message.into(), Default::default())
     }
 
-    pub fn specification(message: &str) -> Self {
-        Self::SpecificationError(message.to_string(), Default::default())
+    pub fn specification<S: Into<String>>(message: S) -> Self {
+        Self::SpecificationError(message.into(), Default::default())
     }
 
     /// Duplicate error. Not a precise Clone because some of the wrapped error types aren't Clone
