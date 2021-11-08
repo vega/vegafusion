@@ -1,24 +1,22 @@
-use std::sync::Arc;
-use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_core::error::{Result, VegaFusionError, DuplicateResult, ToExternalError};
-use async_lock::{RwLock, Mutex};
+use async_lock::{Mutex, RwLock};
+use futures::FutureExt;
 use lru::LruCache;
+use regex::internal::Input;
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::future::Future;
-use std::collections::hash_map::Entry;
-use std::panic::{AssertUnwindSafe, resume_unwind};
-use futures::FutureExt;
-use regex::internal::Input;
+use std::panic::{resume_unwind, AssertUnwindSafe};
+use std::sync::Arc;
+use vegafusion_core::error::{DuplicateResult, Result, ToExternalError};
+use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[derive(Debug, Clone)]
 struct CachedValue {
-    value: NodeValue
-    // Maybe add metrics like compute time, or a cache weight
+    value: NodeValue, // Maybe add metrics like compute time, or a cache weight
 }
 
 type NodeValue = (TaskValue, Vec<TaskValue>);
 type Initializer = Arc<RwLock<Option<Result<NodeValue>>>>;
-
 
 #[derive(Debug, Clone)]
 pub struct VegaFusionCache {
@@ -51,20 +49,27 @@ impl VegaFusionCache {
     }
 
     async fn set_value(&self, state_fingerprint: u64, value: NodeValue) -> Option<CachedValue> {
-        self.values.lock().await.put(state_fingerprint, CachedValue {value})
+        self.values
+            .lock()
+            .await
+            .put(state_fingerprint, CachedValue { value })
     }
 
     async fn remove_initializer(&self, state_fingerprint: u64) -> Option<Initializer> {
         self.initializers.write().await.remove(&state_fingerprint)
     }
 
-    pub async fn get_or_try_insert_with<F>(&self, state_fingerprint: u64, init: F) -> Result<NodeValue>
+    pub async fn get_or_try_insert_with<F>(
+        &self,
+        state_fingerprint: u64,
+        init: F,
+    ) -> Result<NodeValue>
     where
         F: Future<Output = Result<NodeValue>> + Send + 'static,
     {
         // Check if present in the values cache
         if let Some(value) = self.get_from_values(state_fingerprint).await {
-            return Ok(value.value.clone())
+            return Ok(value.value);
         }
 
         // Check if present in initializers
@@ -80,7 +85,7 @@ impl VegaFusionCache {
                 let result = result.as_ref().unwrap();
                 result.duplicate()
             }
-            Entry::Vacant(mut entry) => {
+            Entry::Vacant(entry) => {
                 // Create new initializer
                 let initializer: Initializer = Arc::new(RwLock::new(None));
 
@@ -116,10 +121,8 @@ impl VegaFusionCache {
                                 Err(e)
                             }
                         }
-                    },
-                    Ok(Err(err)) => {
-                        Err(err).external("tokio error")
                     }
+                    Ok(Err(err)) => Err(err).external("tokio error"),
                     // Panicked.
                     Err(payload) => {
                         // Remove the waiter so that others can retry.
@@ -135,19 +138,18 @@ impl VegaFusionCache {
 
 #[cfg(test)]
 mod test_cache {
-    use crate::task_graph::cache::{VegaFusionCache, NodeValue};
-    use vegafusion_core::task_graph::task_value::TaskValue;
+    use crate::task_graph::cache::{NodeValue, VegaFusionCache};
+    use tokio::time::Duration;
     use vegafusion_core::data::scalar::ScalarValue;
     use vegafusion_core::error::Result;
-    use tokio::time::Duration;
-    use futures::Future;
+    use vegafusion_core::task_graph::task_value::TaskValue;
 
     async fn make_value(value: ScalarValue) -> Result<NodeValue> {
         tokio::time::sleep(Duration::from_millis(1000));
         Ok((TaskValue::Scalar(value), Vec::new()))
     }
 
-    #[tokio::test(flavor="multi_thread")]
+    #[tokio::test(flavor = "multi_thread")]
     async fn try_cache() {
         let cache = VegaFusionCache::new(4);
 

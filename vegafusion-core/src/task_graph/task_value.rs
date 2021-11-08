@@ -1,11 +1,10 @@
-use crate::data::table::VegaFusionTable;
-use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
-use std::convert::TryFrom;
-use crate::error::{VegaFusionError, Result};
-use crate::proto::gen::tasks::task_value::Data;
 use crate::data::scalar::ScalarValue;
+use crate::data::table::VegaFusionTable;
+use crate::error::{Result, VegaFusionError};
+use crate::proto::gen::tasks::task_value::Data;
+use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
 use arrow::record_batch::RecordBatch;
-use crate::task_graph::task::TaskDependencies;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
 pub enum TaskValue {
@@ -17,31 +16,24 @@ impl TaskValue {
     pub fn as_scalar(&self) -> Result<&ScalarValue> {
         match self {
             TaskValue::Scalar(value) => Ok(value),
-            _ => {
-                return Err(VegaFusionError::internal("Value is not a scalar"))
-            }
+            _ => Err(VegaFusionError::internal("Value is not a scalar")),
         }
     }
 
     pub fn as_table(&self) -> Result<&VegaFusionTable> {
         match self {
             TaskValue::Table(value) => Ok(value),
-            _ => {
-                return Err(VegaFusionError::internal("Value is not a table"))
-            }
+            _ => Err(VegaFusionError::internal("Value is not a table")),
         }
     }
 }
-
 
 impl TryFrom<&ProtoTaskValue> for TaskValue {
     type Error = VegaFusionError;
 
     fn try_from(value: &ProtoTaskValue) -> std::result::Result<Self, Self::Error> {
         match value.data.as_ref().unwrap() {
-            Data::Table(value) => {
-                Ok(Self::Table(VegaFusionTable::from_ipc_bytes(value)?))
-            }
+            Data::Table(value) => Ok(Self::Table(VegaFusionTable::from_ipc_bytes(value)?)),
             Data::Scalar(value) => {
                 let scalar_table = VegaFusionTable::from_ipc_bytes(value)?;
                 let scalar_rb = scalar_table.to_record_batch()?;
@@ -63,14 +55,12 @@ impl TryFrom<&TaskValue> for ProtoTaskValue {
                 let scalar_rb = RecordBatch::try_from_iter(vec![("value", scalar_array)])?;
                 let ipc_bytes = VegaFusionTable::from(scalar_rb).to_ipc_bytes()?;
                 Ok(Self {
-                    data: Some(Data::Scalar(ipc_bytes))
+                    data: Some(Data::Scalar(ipc_bytes)),
                 })
             }
-            TaskValue::Table(table) => {
-                Ok(Self {
-                    data: Some(Data::Table(table.to_ipc_bytes()?))
-                })
-            }
+            TaskValue::Table(table) => Ok(Self {
+                data: Some(Data::Table(table.to_ipc_bytes()?)),
+            }),
         }
     }
 }

@@ -1,14 +1,11 @@
-
-
+use crate::error::{Result, ResultWithContext, VegaFusionError};
+use crate::spec::chart::{ChartVisitor, MutChartVisitor};
+use crate::spec::data::DataSpec;
+use crate::spec::scale::ScaleSpec;
+use crate::spec::signal::SignalSpec;
 use serde::{Deserialize, Serialize};
 use serde_json::{Number, Value};
-use std::collections::{HashMap, HashSet};
-use crate::spec::data::DataSpec;
-use crate::spec::signal::SignalSpec;
-use crate::spec::scale::ScaleSpec;
-use crate::spec::chart::{ChartVisitor, MutChartVisitor};
-use crate::error::{Result, ResultWithContext, VegaFusionError};
-
+use std::collections::HashMap;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MarkSpec {
@@ -111,7 +108,6 @@ impl MarkSpec {
             .with_context(|| format!("No group with index {}", group_index))
     }
 
-
     pub fn get_group_mut(&mut self, group_index: u32) -> Result<&mut MarkSpec> {
         self.marks
             .iter_mut()
@@ -122,7 +118,7 @@ impl MarkSpec {
 
     pub fn get_nested_group_mut(&mut self, path: &[u32]) -> Result<&mut MarkSpec> {
         if path.is_empty() {
-            return Err(VegaFusionError::internal("Path may not be empty"))
+            return Err(VegaFusionError::internal("Path may not be empty"));
         }
         let mut group = self.get_group_mut(path[0])?;
         for group_index in &path[1..] {
@@ -131,7 +127,6 @@ impl MarkSpec {
         Ok(group)
     }
 }
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MarkEncodeSpec {
@@ -162,7 +157,6 @@ impl MarkEncodingOrList {
         }
     }
 }
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MarkEncodingSpec {

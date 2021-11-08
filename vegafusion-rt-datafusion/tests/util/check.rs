@@ -11,20 +11,20 @@
 use crate::util::equality::{assert_signals_almost_equal, assert_tables_equal, TablesEqualConfig};
 use crate::util::vegajs_runtime::vegajs_runtime;
 use datafusion::scalar::ScalarValue;
-use std::collections::HashMap;
+
 use std::convert::TryFrom;
 
-use vegafusion_core::expression::parser::parse;
+use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::Result;
+use vegafusion_core::expression::parser::parse;
+use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::spec::transform::TransformSpec;
+use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 use vegafusion_rt_datafusion::expression::compiler::compile;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 use vegafusion_rt_datafusion::expression::compiler::utils::ExprHelpers;
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
-use vegafusion_core::proto::gen::transforms::TransformPipeline;
-use vegafusion_rt_datafusion::transform::TransformTrait;
 use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
+use vegafusion_rt_datafusion::transform::TransformTrait;
 
 pub fn check_parsing(expr_str: &str) {
     let vegajs_runtime = vegajs_runtime();
@@ -46,14 +46,14 @@ pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
     // This avoids poisoning the Mutex if the assertion fails
     let vegajs_runtime = vegajs_runtime();
     let expected = vegajs_runtime
-        .eval_scalar_expression(expr_str, &config)
+        .eval_scalar_expression(expr_str, config)
         .unwrap();
 
     // Vega-Fusion parse
     let parsed = parse(expr_str).unwrap();
 
     // Build compilation config
-    let compiled = compile(&parsed, &config, None).unwrap();
+    let compiled = compile(&parsed, config, None).unwrap();
     let result = compiled.eval_to_scalar().unwrap();
 
     println!("{}", result);
@@ -86,10 +86,14 @@ pub fn check_transform_evaluation(
     let df = data.to_dataframe().unwrap();
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
 
-    let (result_df, result_signals) = TOKIO_RUNTIME.block_on(pipeline.eval(df, compilation_config)).unwrap();
-    let result_signals = result_signals.into_iter().map(
-        |v| v.as_scalar().map(|v| v.clone())
-    ).collect::<Result<Vec<ScalarValue>>>().unwrap();
+    let (result_df, result_signals) = TOKIO_RUNTIME
+        .block_on(pipeline.eval(df, compilation_config))
+        .unwrap();
+    let result_signals = result_signals
+        .into_iter()
+        .map(|v| v.as_scalar().map(|v| v.clone()))
+        .collect::<Result<Vec<ScalarValue>>>()
+        .unwrap();
     let result_data = VegaFusionTable::from_dataframe_blocking(result_df).unwrap();
 
     println!(

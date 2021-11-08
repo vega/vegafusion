@@ -14,12 +14,12 @@ use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFus
 // use vega_fusion::expression::compiler::utils::ScalarValueHelpers;
 // use vega_fusion::spec::transform::TransformSpec;
 use self::super::estree_expression::ESTreeExpression;
+use itertools::Itertools;
+use vegafusion_core::data::scalar::ScalarValueHelpers;
+use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::expression::Expression;
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
-use vegafusion_core::data::scalar::ScalarValueHelpers;
-use vegafusion_core::data::table::VegaFusionTable;
-use itertools::Itertools;
 
 lazy_static! {
     static ref UNDEFINED_RE: Regex = Regex::new(r"\bundefined\b").unwrap();
@@ -308,9 +308,10 @@ impl VegaJsRuntime {
         }
 
         // Sort watch signal values by signal name
-        let (_, signals_values): (Vec<_>, Vec<_>) = watch_signals.into_iter().sorted_by_key(
-            |(k, v)| k.clone()
-        ).unzip();
+        let (_, signals_values): (Vec<_>, Vec<_>) = watch_signals
+            .into_iter()
+            .sorted_by_key(|(k, _v)| k.clone())
+            .unzip();
 
         Ok((dataset, signals_values))
     }

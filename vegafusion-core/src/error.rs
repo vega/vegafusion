@@ -127,9 +127,7 @@ impl VegaFusionError {
     pub fn duplicate(&self) -> Self {
         use VegaFusionError::*;
         match self {
-            ParseError(msg, context) => {
-                VegaFusionError::ParseError(msg.clone(), context.clone())
-            }
+            ParseError(msg, context) => VegaFusionError::ParseError(msg.clone(), context.clone()),
             CompilationError(msg, context) => {
                 VegaFusionError::CompilationError(msg.clone(), context.clone())
             }
@@ -158,7 +156,6 @@ impl VegaFusionError {
         }
     }
 }
-
 
 pub trait ResultWithContext<R> {
     fn with_context<S, F>(self, context_fn: F) -> Result<R>
@@ -252,11 +249,14 @@ pub trait DuplicateResult {
     fn duplicate(&self) -> Self;
 }
 
-impl <T> DuplicateResult for Result<T> where T: Clone {
+impl<T> DuplicateResult for Result<T>
+where
+    T: Clone,
+{
     fn duplicate(&self) -> Self {
         match self {
             Ok(v) => Ok(v.clone()),
-            Err(err) => Err(err.duplicate())
+            Err(err) => Err(err.duplicate()),
         }
     }
 }

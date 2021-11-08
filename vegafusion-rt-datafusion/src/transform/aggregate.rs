@@ -2,15 +2,14 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::{avg, col, count, count_distinct, lit, max, min, sum, Expr};
-use datafusion::scalar::ScalarValue;
+
+use async_trait::async_trait;
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
-use vegafusion_core::transform::aggregate::op_name;
-use async_trait::async_trait;
 use vegafusion_core::task_graph::task_value::TaskValue;
-
+use vegafusion_core::transform::aggregate::op_name;
 
 #[async_trait]
 impl TransformTrait for Aggregate {

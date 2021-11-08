@@ -3,9 +3,8 @@ use crate::expression::parser::parse;
 use crate::proto::gen::transforms::Filter;
 use crate::spec::transform::filter::FilterTransformSpec;
 use crate::transform::TransformDependencies;
-use crate::proto::gen::tasks::Variable;
-use crate::task_graph::task::InputVariable;
 
+use crate::task_graph::task::InputVariable;
 
 impl Filter {
     pub fn try_new(spec: &FilterTransformSpec) -> Result<Self> {

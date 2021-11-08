@@ -95,5 +95,4 @@ pub fn op_name(op: AggregateOp) -> String {
     .to_string()
 }
 
-
 impl TransformDependencies for Aggregate {}

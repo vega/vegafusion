@@ -15,7 +15,7 @@ use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
-use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask, Variable};
+use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask};
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
 

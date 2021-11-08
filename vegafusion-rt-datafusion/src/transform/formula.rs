@@ -3,16 +3,13 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::Expr;
-use datafusion::scalar::ScalarValue;
-use std::convert::TryFrom;
+
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Formula;
-use vegafusion_core::data::table::VegaFusionTable;
-use crate::data::table::VegaFusionTableUtils;
+
 use async_trait::async_trait;
 use vegafusion_core::task_graph::task_value::TaskValue;
-
 
 #[async_trait]
 impl TransformTrait for Formula {

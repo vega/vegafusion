@@ -1,24 +1,20 @@
-use std::sync::Arc;
-use crate::error::{Result, VegaFusionError, ResultWithContext};
 use crate::arrow::{
+    datatypes::{DataType, Field, Schema, SchemaRef},
     json,
     record_batch::RecordBatch,
-    datatypes::{SchemaRef, Schema, Field, DataType},
 };
+use crate::error::{Result, ResultWithContext, VegaFusionError};
+use std::sync::Arc;
 
-use crate::proto::gen::expression::literal::Value;
-use crate::arrow::json::writer::record_batches_to_json_rows;
-use crate::arrow::ipc::writer::StreamWriter;
-use std::io::Cursor;
 use crate::arrow::ipc::reader::StreamReader;
+use crate::arrow::ipc::writer::StreamWriter;
+use crate::arrow::json::writer::record_batches_to_json_rows;
 use std::hash::{Hash, Hasher};
-use crate::proto::gen::tasks::TaskValue;
-use crate::proto::gen::tasks::task_value;
-use std::convert::TryFrom;
-use super::scalar::ScalarValue;
-use arrow::array::StructArray;
-use crate::arrow::array::ArrayRef;
+use std::io::Cursor;
 
+use super::scalar::ScalarValue;
+use crate::arrow::array::ArrayRef;
+use arrow::array::StructArray;
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
@@ -131,7 +127,7 @@ impl VegaFusionTable {
                 let schema = json::reader::infer_json_schema_from_iterator(
                     values.iter().take(1024).map(|v| Ok(v.clone())),
                 )
-                    .with_context(|| "Failed to infer schema")?;
+                .with_context(|| "Failed to infer schema")?;
                 let schema_ref = Arc::new(schema);
 
                 // read record batches

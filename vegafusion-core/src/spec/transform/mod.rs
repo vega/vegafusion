@@ -8,15 +8,15 @@ pub mod unsupported;
 
 use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransformSpec};
 
+use crate::error::Result;
 use crate::spec::transform::aggregate::AggregateTransformSpec;
 use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
 use crate::spec::transform::formula::FormulaTransformSpec;
+use crate::spec::transform::unsupported::*;
+use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use crate::error::Result;
-use crate::task_graph::task::InputVariable;
-use crate::spec::transform::unsupported::*;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -24,7 +24,7 @@ pub enum TransformSpec {
     Extent(ExtentTransformSpec),
     Filter(FilterTransformSpec),
     Formula(FormulaTransformSpec),
-    Bin(Box<BinTransformSpec>),  // Box since transform is much larger than others
+    Bin(Box<BinTransformSpec>), // Box since transform is much larger than others
     Aggregate(AggregateTransformSpec),
     Collect(CollectTransformSpec),
 

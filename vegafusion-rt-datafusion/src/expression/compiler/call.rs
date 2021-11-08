@@ -14,7 +14,7 @@ use crate::expression::compiler::builtin_functions::math::pow::make_pow_udf;
 use crate::expression::compiler::builtin_functions::type_checking::isvalid::make_is_valid_udf;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{cast_to, is_string_datatype};
+use crate::expression::compiler::utils::cast_to;
 use datafusion::arrow::datatypes::DataType;
 use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::functions::BuiltinScalarFunction;
@@ -23,15 +23,12 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
-use vegafusion_core::error::{Result, VegaFusionError};
-use vegafusion_core::proto::gen::{
-    expression::{
-        CallExpression, Expression, expression, literal,
-        Literal,
-    }
-};
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::data::scalar::ScalarValue;
+use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::proto::gen::expression::{
+    expression, literal, CallExpression, Expression, Literal,
+};
+
 use crate::expression::compiler::builtin_functions::data::data::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
 
@@ -118,33 +115,34 @@ pub fn compile_call(
         VegaFusionCallable::Data(callee) => {
             if let Some(v) = node.arguments.get(0) {
                 match v.expr() {
-                    expression::Expr::Literal(Literal {value: Some(literal::Value::String(name)), ..}) => {
+                    expression::Expr::Literal(Literal {
+                        value: Some(literal::Value::String(name)),
+                        ..
+                    }) => {
                         if let Some(dataset) = config.data_scope.get(name) {
                             callee(dataset, &node.arguments[1..], schema)
                         } else {
-                            return Err(VegaFusionError::internal(
-                                &format!("No dataset named {}. Available: {:?}", name, config.data_scope.keys())
-                            ))
+                            return Err(VegaFusionError::internal(&format!(
+                                "No dataset named {}. Available: {:?}",
+                                name,
+                                config.data_scope.keys()
+                            )));
                         }
                     }
                     _ => {
-                        return Err(VegaFusionError::internal(
-                    &format!(
-                                "The first argument to the {} function must be a literal \
+                        return Err(VegaFusionError::internal(&format!(
+                            "The first argument to the {} function must be a literal \
                                 string with the name of a dataset",
-                                &node.callee
-                            )
-                        ))
+                            &node.callee
+                        )))
                     }
                 }
             } else {
-                return Err(VegaFusionError::internal(
-                    &format!(
-                        "The first argument to the {} function must be a literal \
+                return Err(VegaFusionError::internal(&format!(
+                    "The first argument to the {} function must be a literal \
                                 string with the name of a dataset",
-                        &node.callee
-                    )
-                ))
+                    &node.callee
+                )));
             }
         }
         VegaFusionCallable::Transform(callable) => {
@@ -343,12 +341,12 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     // data
     callables.insert(
         "data".to_string(),
-        VegaFusionCallable::Data(Arc::new(data_fn))
+        VegaFusionCallable::Data(Arc::new(data_fn)),
     );
 
     callables.insert(
         "vlSelectionTest".to_string(),
-        VegaFusionCallable::Data(Arc::new(vl_selection_test_fn))
+        VegaFusionCallable::Data(Arc::new(vl_selection_test_fn)),
     );
 
     callables

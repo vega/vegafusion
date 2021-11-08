@@ -1,13 +1,13 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::utils::{DataFrameUtils, RecordBatchUtils};
 use crate::transform::TransformTrait;
+use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::{col, max, min};
 use datafusion::scalar::ScalarValue;
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Extent;
-use async_trait::async_trait;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]

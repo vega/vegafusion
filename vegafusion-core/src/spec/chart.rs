@@ -1,17 +1,19 @@
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::collections::{HashMap, HashSet};
+use crate::error::{Result, ResultWithContext, VegaFusionError};
+use crate::proto::gen::tasks::Task;
 use crate::spec::data::DataSpec;
-use crate::spec::signal::SignalSpec;
 use crate::spec::mark::MarkSpec;
 use crate::spec::scale::ScaleSpec;
-use crate::error::{Result, ResultWithContext, VegaFusionError};
+use crate::spec::signal::SignalSpec;
+use crate::spec::visitors::{
+    DefinitionVarsChartVisitor, InputVarsChartVisitor, MakeTaskScopeVisitor, MakeTasksVisitor,
+    UpdateVarsChartVisitor,
+};
 use crate::task_graph::scope::TaskScope;
-use crate::spec::visitors::{MakeTaskScopeVisitor, MakeTasksVisitor, DefinitionVarsChartVisitor, UpdateVarsChartVisitor, InputVarsChartVisitor};
-use crate::proto::gen::tasks::Task;
 use crate::task_graph::task_graph::ScopedVariable;
 use itertools::sorted;
-use crate::expression::visitors::UpdateVariablesExprVisitor;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::HashMap;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ChartSpec {
@@ -127,7 +129,9 @@ impl ChartSpec {
 
     pub fn get_nested_group(&self, path: &[u32]) -> Result<&MarkSpec> {
         if path.is_empty() {
-            return Err(VegaFusionError::internal("Nested group scope may not be empty"))
+            return Err(VegaFusionError::internal(
+                "Nested group scope may not be empty",
+            ));
         }
         let mut group = self.get_group(path[0])?;
         for group_index in &path[1..] {
@@ -146,7 +150,7 @@ impl ChartSpec {
 
     pub fn get_nested_group_mut(&mut self, path: &[u32]) -> Result<&mut MarkSpec> {
         if path.is_empty() {
-            return Err(VegaFusionError::internal("Path may not be empty"))
+            return Err(VegaFusionError::internal("Path may not be empty"));
         }
         let mut group = self.get_group_mut(path[0])?;
         for group_index in &path[1..] {
@@ -207,7 +211,12 @@ impl ChartSpec {
             .with_context(|| format!("No data named {} found at path {:?}", name, path))
     }
 
-    pub fn add_nested_signal(&mut self, path: &[u32], spec: SignalSpec, index: Option<usize>) -> Result<()> {
+    pub fn add_nested_signal(
+        &mut self,
+        path: &[u32],
+        spec: SignalSpec,
+        index: Option<usize>,
+    ) -> Result<()> {
         let signals = if path.is_empty() {
             &mut self.signals
         } else {
@@ -225,7 +234,12 @@ impl ChartSpec {
         Ok(())
     }
 
-    pub fn add_nested_data(&mut self, path: &[u32], spec: DataSpec, index: Option<usize>) -> Result<()> {
+    pub fn add_nested_data(
+        &mut self,
+        path: &[u32],
+        spec: DataSpec,
+        index: Option<usize>,
+    ) -> Result<()> {
         let data = if path.is_empty() {
             &mut self.data
         } else {
@@ -262,7 +276,6 @@ impl ChartSpec {
     }
 }
 
-
 pub trait ChartVisitor {
     fn visit_data(&mut self, _data: &DataSpec, _scope: &[u32]) -> Result<()> {
         Ok(())
@@ -280,7 +293,6 @@ pub trait ChartVisitor {
         Ok(())
     }
 }
-
 
 pub trait MutChartVisitor {
     fn visit_data(&mut self, _data: &mut DataSpec, _scope: &[u32]) -> Result<()> {

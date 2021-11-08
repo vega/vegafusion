@@ -1,8 +1,7 @@
+use crate::spec::values::StringOrStringList;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::{HashMap, HashSet};
-use crate::spec::values::StringOrStringList;
-
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SignalSpec {
@@ -24,7 +23,6 @@ pub struct SignalSpec {
     pub extra: HashMap<String, Value>,
 }
 
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SignalOnSpec {
     pub events: SignalOnEventSpecOrList,
@@ -33,7 +31,6 @@ pub struct SignalOnSpec {
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -60,7 +57,6 @@ pub enum SignalOnEventSpec {
     Selector(String),
 }
 
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SignalOnSignalEvent {
     pub signal: String,
@@ -69,7 +65,6 @@ pub struct SignalOnSignalEvent {
     pub extra: HashMap<String, Value>,
 }
 
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SignalOnScaleEvent {
     pub scale: String,
@@ -77,7 +72,6 @@ pub struct SignalOnScaleEvent {
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SignalOnSourceEvent {
@@ -96,4 +90,3 @@ pub struct SignalOnSourceEvent {
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
-

@@ -1,13 +1,13 @@
-use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::planning::extract::extract_server_data;
 use vegafusion_core::proto::gen::tasks::{TaskGraph, Variable};
+use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
-use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
-use std::sync::Arc;
+
 use std::collections::HashSet;
+use std::sync::Arc;
 use vegafusion_core::planning::stitch::stitch_specs;
 
-#[tokio::test(flavor="multi_thread")]
+#[tokio::test(flavor = "multi_thread")]
 async fn test_extract_server_data() {
     let mut spec = spec1();
 
@@ -23,8 +23,16 @@ async fn test_extract_server_data() {
     let client_updates: HashSet<_> = spec.update_vars(&task_scope).unwrap().into_iter().collect();
 
     let server_defs: HashSet<_> = server_spec.definition_vars().unwrap().into_iter().collect();
-    let server_inputs: HashSet<_> = server_spec.input_vars(&task_scope).unwrap().into_iter().collect();
-    let server_updates: HashSet<_> = server_spec.update_vars(&task_scope).unwrap().into_iter().collect();
+    let server_inputs: HashSet<_> = server_spec
+        .input_vars(&task_scope)
+        .unwrap()
+        .into_iter()
+        .collect();
+    let server_updates: HashSet<_> = server_spec
+        .update_vars(&task_scope)
+        .unwrap()
+        .into_iter()
+        .collect();
 
     let client_to_server: Vec<_> = client_updates.intersection(&server_inputs).collect();
     println!("client_to_server: {:?}", client_to_server);
@@ -44,21 +52,35 @@ async fn test_extract_server_data() {
     // println!("{:#?}", mapping);
 
     let graph_runtime = TaskGraphRuntime::new(20);
-    let data_3 = graph_runtime.get_node_value(
-        graph.clone(), mapping.get(&(Variable::new_data("data_3"), Vec::new())).unwrap()
-    ).await.unwrap();
+    let _data_3 = graph_runtime
+        .get_node_value(
+            graph.clone(),
+            mapping
+                .get(&(Variable::new_data("data_3"), Vec::new()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
 
     // println!("data_3:\n{}", data_3.into_table().unwrap().pretty_format(None).unwrap());
 
-    let delay_extent = graph_runtime.get_node_value(
-        graph.clone(),
-        mapping.get(&(Variable::new_signal("child__column_delay_layer_1_bin_maxbins_20_delay_extent"), Vec::new())).unwrap()
-    ).await.unwrap();
+    let _delay_extent = graph_runtime
+        .get_node_value(
+            graph.clone(),
+            mapping
+                .get(&(
+                    Variable::new_signal("child__column_delay_layer_1_bin_maxbins_20_delay_extent"),
+                    Vec::new(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
 
     // println!("delay_extent: {:?}", delay_extent.into_scalar().unwrap())
 }
 
-#[tokio::test(flavor="multi_thread")]
+#[tokio::test(flavor = "multi_thread")]
 async fn test_extract_stitch_data() {
     let mut spec = spec1();
 
@@ -70,10 +92,13 @@ async fn test_extract_stitch_data() {
 
     println!("{:#?}", comm_plan);
 
-    println!("client spec:\n{}", serde_json::to_string_pretty(&spec).unwrap());
+    println!(
+        "client spec:\n{}",
+        serde_json::to_string_pretty(&spec).unwrap()
+    );
 }
 
-#[tokio::test(flavor="multi_thread")]
+#[tokio::test(flavor = "multi_thread")]
 async fn try_extract_split_server_data() {
     let mut spec = weather_spec();
 
@@ -85,10 +110,15 @@ async fn try_extract_split_server_data() {
 
     println!("{:#?}", comm_plan);
 
-    println!("server spec:\n{}\n\n", serde_json::to_string_pretty(&server_spec).unwrap());
-    println!("client spec:\n{}\n\n", serde_json::to_string_pretty(&spec).unwrap());
+    println!(
+        "server spec:\n{}\n\n",
+        serde_json::to_string_pretty(&server_spec).unwrap()
+    );
+    println!(
+        "client spec:\n{}\n\n",
+        serde_json::to_string_pretty(&spec).unwrap()
+    );
 }
-
 
 fn spec1() -> ChartSpec {
     serde_json::from_str(r##"

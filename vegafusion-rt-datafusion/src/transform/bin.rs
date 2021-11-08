@@ -1,7 +1,8 @@
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{ExprHelpers};
+use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::TransformTrait;
+use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::{col, lit, Expr};
 use datafusion::physical_plan::functions::{
@@ -14,12 +15,10 @@ use std::sync::Arc;
 use vegafusion_core::arrow::array::{ArrayRef, Float64Array, Int64Array};
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::DataType;
+use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Bin;
-use vegafusion_core::data::scalar::ScalarValueHelpers;
-use async_trait::async_trait;
 use vegafusion_core::task_graph::task_value::TaskValue;
-
 
 #[async_trait]
 impl TransformTrait for Bin {

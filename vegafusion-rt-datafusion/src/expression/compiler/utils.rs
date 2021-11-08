@@ -7,10 +7,10 @@ use datafusion::optimizer::utils::expr_to_columns;
 use datafusion::physical_plan::planner::DefaultPhysicalPlanner;
 use datafusion::physical_plan::{ColumnarValue, PhysicalExpr};
 use datafusion::scalar::ScalarValue;
-use serde_json::{Map, Value};
+
 use std::collections::HashSet;
 use std::convert::TryFrom;
-use std::ops::Deref;
+
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 

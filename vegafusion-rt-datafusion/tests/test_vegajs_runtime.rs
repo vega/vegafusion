@@ -8,13 +8,12 @@ use datafusion::scalar::ScalarValue;
 use serde_json::json;
 use std::collections::HashMap;
 use vegafusion_core::arrow::datatypes::DataType;
+use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::spec::transform::extent::ExtentTransformSpec;
 use vegafusion_core::spec::transform::filter::FilterTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
-use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
-
+use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 
 #[test]
 fn test_vegajs_parse() {
@@ -57,7 +56,8 @@ fn test_vegajs_evaluate_scalar_scope() {
         .collect();
 
     let config = CompilationConfig {
-        signal_scope: scope, ..Default::default()
+        signal_scope: scope,
+        ..Default::default()
     };
 
     let result = vegajs_runtime
@@ -113,13 +113,12 @@ fn test_evaluate_filter_transform() {
     assert_eq!(
         result_signals,
         vec![ScalarValue::List(
-                Some(Box::new(vec![
-                    ScalarValue::from(6.0),
-                    ScalarValue::from(10.0)
-                ])),
-                Box::new(DataType::Float64)
-            )
-        ]
+            Some(Box::new(vec![
+                ScalarValue::from(6.0),
+                ScalarValue::from(10.0)
+            ])),
+            Box::new(DataType::Float64)
+        )]
     );
 
     let expected_dataset = VegaFusionTable::from_json(

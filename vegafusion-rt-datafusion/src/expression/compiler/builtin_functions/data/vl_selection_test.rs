@@ -1,23 +1,18 @@
-
-use datafusion::prelude::col;
-use datafusion::logical_plan::{Expr, lit};
-use std::str::FromStr;
-use std::convert::TryFrom;
-use vegafusion_core::data::scalar::ScalarValue;
-use vegafusion_core::error::{Result, VegaFusionError, ResultWithContext};
-use datafusion::logical_plan::DFSchema;
 use crate::expression::compiler::utils::cast_to;
+use datafusion::logical_plan::DFSchema;
+use datafusion::logical_plan::{lit, Expr};
+use datafusion::prelude::col;
 use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::str::FromStr;
+use vegafusion_core::data::scalar::ScalarValue;
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::{
-    expression::Expression,
-    expression::expression::Expr as ProtoExpr,
-    expression::Literal,
-    expression::literal::Value as ProtoValue,
-    expression::Identifier,
+    expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
-use vegafusion_core::expression::ast::expression;
-use vegafusion_core::proto::gen::expression::literal::Value;
+
 use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::proto::gen::expression::literal::Value;
 
 /// Op
 #[derive(Debug, Clone)]
@@ -39,7 +34,12 @@ impl FromStr for Op {
         Ok(match s {
             "union" => Self::Union,
             "intersect" => Self::Intersect,
-            _ => return Err(VegaFusionError::internal(&format!("Invalid vlSelection operation: {}", s))),
+            _ => {
+                return Err(VegaFusionError::internal(&format!(
+                    "Invalid vlSelection operation: {}",
+                    s
+                )))
+            }
         })
     }
 }
@@ -50,7 +50,9 @@ impl TryFrom<ScalarValue> for Op {
     fn try_from(value: ScalarValue) -> Result<Self> {
         match value {
             ScalarValue::Utf8(Some(op)) => Self::from_str(&op),
-            _ => return Err(VegaFusionError::internal("Expected selection op to be a string")),
+            _ => Err(VegaFusionError::internal(
+                "Expected selection op to be a string",
+            )),
         }
     }
 }
@@ -75,7 +77,12 @@ impl FromStr for SelectionType {
             "R-E" => Self::RangeExc,
             "R-LE" => Self::RangeLe,
             "R-RE" => Self::RangeRe,
-            _ => return Err(VegaFusionError::internal(&format!("Invalid selection type: {}", s))),
+            _ => {
+                return Err(VegaFusionError::internal(&format!(
+                    "Invalid selection type: {}",
+                    s
+                )))
+            }
         })
     }
 }
@@ -86,7 +93,9 @@ impl TryFrom<ScalarValue> for SelectionType {
     fn try_from(value: ScalarValue) -> Result<Self> {
         match value {
             ScalarValue::Utf8(Some(op)) => Self::from_str(&op),
-            _ => return Err(VegaFusionError::internal("Expected selection type to be a string")),
+            _ => Err(VegaFusionError::internal(
+                "Expected selection type to be a string",
+            )),
         }
     }
 }
@@ -125,9 +134,12 @@ impl FieldSpec {
                     ScalarValue::List(Some(elements), _) if elements.len() == 2 => {
                         (lit(elements[0].clone()), lit(elements[1].clone()))
                     }
-                    v => return Err(VegaFusionError::internal(
-                        &format!("values must be a two-element array. Found {}", v)
-                    )),
+                    v => {
+                        return Err(VegaFusionError::internal(&format!(
+                            "values must be a two-element array. Found {}",
+                            v
+                        )))
+                    }
                 };
 
                 // Cast low/high scalar values to match the type of the field they will be compared to
@@ -178,7 +190,11 @@ impl TryFrom<ScalarValue> for FieldSpec {
 
                 let field = match values.get(*field_index) {
                     Some(ScalarValue::Utf8(Some(field))) => field.clone(),
-                    _ => return Err(VegaFusionError::internal(&format!("Expected field to be a string"))),
+                    _ => {
+                        return Err(VegaFusionError::internal(
+                            &"Expected field to be a string".to_string(),
+                        ))
+                    }
                 };
 
                 // Parse type
@@ -189,8 +205,8 @@ impl TryFrom<ScalarValue> for FieldSpec {
 
                 Ok(Self { field, typ })
             }
-            _ => return Err(VegaFusionError::internal(
-                &format!("Expected selection field specification to be an object")
+            _ => Err(VegaFusionError::internal(
+                &"Expected selection field specification to be an object".to_string(),
             )),
         }
     }
@@ -232,7 +248,11 @@ impl TryFrom<ScalarValue> for SelectionRow {
                     .with_context(|| "Missing required property 'values'".to_string())?;
                 let values = match struct_values.get(*values_index) {
                     Some(ScalarValue::List(Some(elements), _)) => elements.as_ref().clone(),
-                    _ => return Err(VegaFusionError::internal(&format!("Expected 'values' to be an array"))),
+                    _ => {
+                        return Err(VegaFusionError::internal(
+                            &"Expected 'values' to be an array".to_string(),
+                        ))
+                    }
                 };
 
                 // Parse fields
@@ -247,7 +267,11 @@ impl TryFrom<ScalarValue> for SelectionRow {
                             fields.push(FieldSpec::try_from(el.clone())?)
                         }
                     }
-                    _ => return Err(VegaFusionError::internal("Expected 'values' to be an array")),
+                    _ => {
+                        return Err(VegaFusionError::internal(
+                            "Expected 'values' to be an array",
+                        ))
+                    }
                 };
 
                 // Validate lengths
@@ -256,16 +280,18 @@ impl TryFrom<ScalarValue> for SelectionRow {
                         "Length of selection fields ({}) must match that of selection values ({})",
                         fields.len(),
                         values.len()
-                    )))
+                    )));
                 }
 
                 if values.is_empty() {
-                    return Err(VegaFusionError::internal("Selection fields not be empty"))
+                    return Err(VegaFusionError::internal("Selection fields not be empty"));
                 }
 
                 Ok(Self { values, fields })
             }
-            _ => return Err(VegaFusionError::internal("Expected selection row specification to be an object")),
+            _ => Err(VegaFusionError::internal(
+                "Expected selection row specification to be an object",
+            )),
         }
     }
 }
@@ -273,9 +299,10 @@ impl TryFrom<ScalarValue> for SelectionRow {
 fn parse_args(args: &[Expression]) -> Result<Op> {
     let n = args.len();
     if !(1..=2).contains(&n) {
-        return Err(VegaFusionError::internal(
-            &format!("vlSelectionTest requires 2 or 3 arguments. Received {}", n)
-        ))
+        return Err(VegaFusionError::internal(&format!(
+            "vlSelectionTest requires 2 or 3 arguments. Received {}",
+            n
+        )));
     }
 
     // Validate second argument

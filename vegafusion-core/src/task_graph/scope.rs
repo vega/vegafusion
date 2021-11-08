@@ -1,9 +1,6 @@
-use std::collections::{HashSet, HashMap};
 use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
-use std::convert::TryFrom;
-use crate::spec::chart::ChartSpec;
-use crate::spec::visitors::MakeTaskScopeVisitor;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug, Default)]
 pub struct TaskScope {
@@ -16,9 +13,11 @@ pub struct TaskScope {
 }
 
 lazy_static! {
-    pub static ref BUILT_IN_SIGNALS: HashSet<String> = vec![
-        "width", "height", "padding", "autosize", "background"
-    ].iter().map(|sig| sig.to_string()).collect();
+    pub static ref BUILT_IN_SIGNALS: HashSet<String> =
+        vec!["width", "height", "padding", "autosize", "background"]
+            .iter()
+            .map(|sig| sig.to_string())
+            .collect();
 }
 
 impl TaskScope {
@@ -55,7 +54,7 @@ impl TaskScope {
     }
 
     pub fn add_variable(&mut self, variable: &Variable, scope: &[u32]) -> Result<()> {
-        let mut child = self.get_child_mut(scope)?;
+        let child = self.get_child_mut(scope)?;
 
         match variable.ns() {
             VariableNamespace::Signal => {
@@ -73,16 +72,19 @@ impl TaskScope {
     }
 
     pub fn add_data_signal(&mut self, data: &str, signal: &str, scope: &[u32]) -> Result<()> {
-        let mut child = self.get_child_mut(scope)?;
-        child.output_var_defs.insert(Variable::new_signal(signal), Variable::new_data(data));
+        let child = self.get_child_mut(scope)?;
+        child
+            .output_var_defs
+            .insert(Variable::new_signal(signal), Variable::new_data(data));
         Ok(())
     }
 
     pub fn remove_data_signal(&mut self, signal: &str, scope: &[u32]) -> Result<Variable> {
-        let mut child = self.get_child_mut(scope)?;
-        child.output_var_defs.remove(&Variable::new_signal(signal)).with_context(
-            || format!("No data signal named: {}", signal)
-        )
+        let child = self.get_child_mut(scope)?;
+        child
+            .output_var_defs
+            .remove(&Variable::new_signal(signal))
+            .with_context(|| format!("No data signal named: {}", signal))
     }
 
     pub fn resolve_scope(&self, variable: &Variable, usage_scope: &[u32]) -> Result<Resolved> {
@@ -92,51 +94,47 @@ impl TaskScope {
             let task_scope = self.get_child(curr_scope)?;
 
             let found_it = match variable.ns() {
-                VariableNamespace::Signal => {
-                    task_scope.signals.contains(&variable.name)
-                }
-                VariableNamespace::Data => {
-                    task_scope.data.contains(&variable.name)
-                }
-                VariableNamespace::Scale => {
-                    task_scope.scales.contains(&variable.name)
-                }
+                VariableNamespace::Signal => task_scope.signals.contains(&variable.name),
+                VariableNamespace::Data => task_scope.data.contains(&variable.name),
+                VariableNamespace::Scale => task_scope.scales.contains(&variable.name),
             };
             if found_it {
                 // Found it in the regular signal/data/scale
                 return Ok(Resolved {
                     var: variable.clone(),
                     scope: Vec::from(curr_scope),
-                    output_var: None
-                })
+                    output_var: None,
+                });
             }
 
             // Check for output variable
-            if let Some(main_var) = task_scope.output_var_defs.get(&variable) {
+            if let Some(main_var) = task_scope.output_var_defs.get(variable) {
                 return Ok(Resolved {
                     var: main_var.clone(),
                     scope: Vec::from(curr_scope),
-                    output_var: Some(variable.clone())
-                })
+                    output_var: Some(variable.clone()),
+                });
             }
 
             // Check for built-in signal
-            if matches!(variable.ns(), VariableNamespace::Signal) && BUILT_IN_SIGNALS.contains(&variable.name) {
+            if matches!(variable.ns(), VariableNamespace::Signal)
+                && BUILT_IN_SIGNALS.contains(&variable.name)
+            {
                 return Ok(Resolved {
                     var: variable.clone(),
                     scope: Vec::new(),
-                    output_var: None
-                })
+                    output_var: None,
+                });
             }
         }
 
         // Didn't find it
         Err(VegaFusionError::internal(&format!(
-            "Failed to resolve variable {:?} used in scope {:?}", variable, usage_scope
+            "Failed to resolve variable {:?} used in scope {:?}",
+            variable, usage_scope
         )))
     }
 }
-
 
 pub struct Resolved {
     pub var: Variable,

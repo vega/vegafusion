@@ -6,10 +6,10 @@ pub use super::_scalar::ScalarValue;
 #[cfg(feature = "datafusion")]
 pub use datafusion::scalar::ScalarValue;
 
-use crate::error::{Result, VegaFusionError};
-use serde_json::{Value, Map};
-use std::convert::TryFrom;
 use crate::arrow::datatypes::DataType;
+use crate::error::{Result, VegaFusionError};
+use serde_json::{Map, Value};
+use std::convert::TryFrom;
 use std::ops::Deref;
 
 // Prefix for special values JSON encoded as strings

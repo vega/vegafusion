@@ -1,10 +1,9 @@
 use crate::spec::transform::TransformSpec;
-use std::collections::{HashMap, HashSet};
-use serde::{Serialize, Deserialize};
-use serde_json::Value;
 use crate::spec::values::StringOrSignalSpec;
 use itertools::sorted;
-
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DataSpec {
@@ -45,9 +44,7 @@ impl DataSpec {
 
     pub fn supported(&self) -> DataSupported {
         // TODO: also add checks for supported file formats, etc.
-        let all_supported = self.transform.iter().all(|tx| {
-            tx.supported()
-        });
+        let all_supported = self.transform.iter().all(|tx| tx.supported());
         if all_supported {
             DataSupported::Supported
         } else {
@@ -65,7 +62,6 @@ pub enum DataSupported {
     PartiallySupported,
     Unsupported,
 }
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DataFormatSpec {

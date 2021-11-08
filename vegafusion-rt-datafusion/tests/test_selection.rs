@@ -3,13 +3,12 @@ extern crate lazy_static;
 
 mod util;
 use rstest::*;
+use serde_json::{json, Value};
+use util::check::check_transform_evaluation;
 use vegafusion_core::data::table::VegaFusionTable;
-use serde_json::{Value, json};
-use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
-use util::check::check_transform_evaluation;
-
+use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 
 fn make_brush_r(ranges: &Vec<Vec<(&str, &str, [f64; 2])>>, typ: &str) -> VegaFusionTable {
     let mut rows: Vec<Value> = Vec::new();
@@ -95,9 +94,10 @@ fn datum() -> VegaFusionTable {
     VegaFusionTable::from_json(&json_value, 1024).unwrap()
 }
 
-
 pub fn check_vl_selection_expr(
-    selection_expr: &str, brush_dataset: VegaFusionTable, dataset: &VegaFusionTable
+    selection_expr: &str,
+    brush_dataset: VegaFusionTable,
+    dataset: &VegaFusionTable,
 ) {
     let formula_spec = FormulaTransformSpec {
         expr: selection_expr.to_string(),
@@ -108,21 +108,15 @@ pub fn check_vl_selection_expr(
     let transform_specs = vec![TransformSpec::Formula(formula_spec)];
 
     let config = CompilationConfig {
-        data_scope: vec![
-            ("brush".to_string(), brush_dataset)
-        ].into_iter().collect(),
+        data_scope: vec![("brush".to_string(), brush_dataset)]
+            .into_iter()
+            .collect(),
         ..Default::default()
     };
     let eq_config = Default::default();
 
-    check_transform_evaluation(
-        dataset,
-        transform_specs.as_slice(),
-        &config,
-        &eq_config,
-    );
+    check_transform_evaluation(dataset, transform_specs.as_slice(), &config, &eq_config);
 }
-
 
 mod test_vl_selection_test_r {
     use crate::*;
@@ -146,7 +140,6 @@ mod test_vl_selection_test_r {
     }
 }
 
-
 mod test_vl_selection_test_e_single {
     use crate::*;
 
@@ -160,7 +153,6 @@ mod test_vl_selection_test_e_single {
         check_vl_selection_expr(&expr, brush, &datum());
     }
 }
-
 
 mod test_vl_selection_test_e_multi {
     use crate::*;

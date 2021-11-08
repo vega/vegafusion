@@ -1,19 +1,18 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use datafusion::dataframe::DataFrame;
-use datafusion::scalar::ScalarValue;
-use itertools::{sorted, Itertools};
-use std::collections::{HashMap, HashSet};
-use std::convert::TryFrom;
+
+use itertools::Itertools;
+use std::collections::HashMap;
+
 use std::sync::Arc;
 use vegafusion_core::error::Result;
-use vegafusion_core::error::VegaFusionError;
-use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_core::proto::gen::transforms::{Transform, TransformPipeline};
-use vegafusion_core::transform::TransformDependencies;
-use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
+
 use async_trait::async_trait;
+use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
+use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_core::transform::TransformDependencies;
 
 #[async_trait]
 impl TransformTrait for TransformPipeline {
@@ -39,10 +38,14 @@ impl TransformTrait for TransformPipeline {
                 // transforms
                 match var.ns() {
                     VariableNamespace::Signal => {
-                        config.signal_scope.insert(var.name.clone(), val.as_scalar()?.clone());
+                        config
+                            .signal_scope
+                            .insert(var.name.clone(), val.as_scalar()?.clone());
                     }
                     VariableNamespace::Data => {
-                        config.data_scope.insert(var.name.clone(), val.as_table()?.clone());
+                        config
+                            .data_scope
+                            .insert(var.name.clone(), val.as_table()?.clone());
                     }
                     VariableNamespace::Scale => {
                         unimplemented!()
@@ -52,9 +55,10 @@ impl TransformTrait for TransformPipeline {
         }
 
         // Sort result signal value by signal name
-        let (_, signals_values): (Vec<_>, Vec<_>) = result_outputs.into_iter().sorted_by_key(
-            |(k, v)| k.clone()
-        ).unzip();
+        let (_, signals_values): (Vec<_>, Vec<_>) = result_outputs
+            .into_iter()
+            .sorted_by_key(|(k, _v)| k.clone())
+            .unzip();
 
         Ok((result_df, signals_values))
     }

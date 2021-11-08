@@ -1,11 +1,11 @@
 use crate::error::VegaFusionError;
+use crate::proto::gen::tasks::Variable;
 use crate::proto::gen::transforms::transform::TransformKind;
 use crate::proto::gen::transforms::Transform;
 use crate::proto::gen::transforms::{Aggregate, Bin, Collect, Extent, Filter, Formula};
 use crate::spec::transform::TransformSpec;
-use std::convert::TryFrom;
-use crate::proto::gen::tasks::Variable;
 use crate::task_graph::task::InputVariable;
+use std::convert::TryFrom;
 
 pub mod aggregate;
 pub mod bin;
@@ -14,7 +14,6 @@ pub mod extent;
 pub mod filter;
 pub mod formula;
 pub mod pipeline;
-
 
 impl TryFrom<&TransformSpec> for TransformKind {
     type Error = VegaFusionError;
@@ -27,7 +26,12 @@ impl TryFrom<&TransformSpec> for TransformKind {
             TransformSpec::Bin(tx_spec) => Self::Bin(Bin::try_new(tx_spec)?),
             TransformSpec::Aggregate(tx_spec) => Self::Aggregate(Aggregate::new(tx_spec)),
             TransformSpec::Collect(tx_spec) => Self::Collect(Collect::try_new(tx_spec)?),
-            _ => return Err(VegaFusionError::parse(&format!("Unsupported transform: {:?}", value)))
+            _ => {
+                return Err(VegaFusionError::parse(&format!(
+                    "Unsupported transform: {:?}",
+                    value
+                )))
+            }
         })
     }
 }
@@ -36,10 +40,11 @@ impl TryFrom<&TransformSpec> for Transform {
     type Error = VegaFusionError;
 
     fn try_from(value: &TransformSpec) -> Result<Self, Self::Error> {
-        Ok(Self { transform_kind: Some(TransformKind::try_from(value)?) })
+        Ok(Self {
+            transform_kind: Some(TransformKind::try_from(value)?),
+        })
     }
 }
-
 
 impl TransformKind {
     pub fn as_dependencies_trait(&self) -> &dyn TransformDependencies {
@@ -79,4 +84,3 @@ impl TransformDependencies for Transform {
         self.transform_kind().as_dependencies_trait().output_vars()
     }
 }
-

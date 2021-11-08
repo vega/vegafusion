@@ -1,7 +1,7 @@
+use crate::spec::values::SignalExpressionSpec;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::{HashMap, HashSet};
-use crate::spec::values::SignalExpressionSpec;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ScaleSpec {

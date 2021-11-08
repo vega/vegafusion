@@ -3,9 +3,9 @@ extern crate lazy_static;
 
 pub mod data;
 pub mod expression;
+pub mod task_graph;
 pub mod tokio_runtime;
 pub mod transform;
-pub mod task_graph;
 
 #[cfg(test)]
 mod tests {

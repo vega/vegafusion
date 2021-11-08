@@ -5,13 +5,12 @@ use datafusion::scalar::ScalarValue;
 use vegafusion_core::error::Result;
 
 use datafusion::logical_plan::{col, Expr};
-use itertools::sorted;
-use std::collections::HashMap;
+
 use std::sync::Arc;
-use vegafusion_rt_datafusion::expression::compiler::utils::is_numeric_datatype;
-use vegafusion_rt_datafusion::transform::utils::DataFrameUtils;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
+use vegafusion_rt_datafusion::expression::compiler::utils::is_numeric_datatype;
+use vegafusion_rt_datafusion::transform::utils::DataFrameUtils;
 
 #[derive(Debug, Clone)]
 pub struct TablesEqualConfig {
@@ -174,11 +173,7 @@ fn assert_scalars_almost_equals(lhs: &ScalarValue, rhs: &ScalarValue, tol: f64) 
     }
 }
 
-pub fn assert_signals_almost_equal(
-    lhs: Vec<ScalarValue>,
-    rhs: Vec<ScalarValue>,
-    tol: f64,
-) {
+pub fn assert_signals_almost_equal(lhs: Vec<ScalarValue>, rhs: Vec<ScalarValue>, tol: f64) {
     for (lhs_value, rhs_value) in lhs.iter().zip(&rhs) {
         assert_scalars_almost_equals(lhs_value, rhs_value, tol)
     }

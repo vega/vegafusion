@@ -1,13 +1,12 @@
-use crate::proto::gen::transforms::{TransformPipeline, Transform};
-use crate::transform::TransformDependencies;
-use std::collections::HashSet;
-use itertools::sorted;
+use crate::error::{Result, VegaFusionError};
 use crate::proto::gen::tasks::Variable;
-use std::convert::TryFrom;
+use crate::proto::gen::transforms::{Transform, TransformPipeline};
 use crate::spec::transform::TransformSpec;
-use crate::error::{VegaFusionError, Result};
 use crate::task_graph::task::InputVariable;
-
+use crate::transform::TransformDependencies;
+use itertools::sorted;
+use std::collections::HashSet;
+use std::convert::TryFrom;
 
 impl TryFrom<&[TransformSpec]> for TransformPipeline {
     type Error = VegaFusionError;
@@ -21,7 +20,6 @@ impl TryFrom<&[TransformSpec]> for TransformPipeline {
         Ok(Self { transforms })
     }
 }
-
 
 impl TransformDependencies for TransformPipeline {
     fn input_vars(&self) -> Vec<InputVariable> {

@@ -3,9 +3,8 @@ use crate::expression::parser::parse;
 use crate::proto::gen::transforms::Formula;
 use crate::spec::transform::formula::FormulaTransformSpec;
 use crate::transform::TransformDependencies;
-use crate::proto::gen::tasks::Variable;
-use crate::task_graph::task::InputVariable;
 
+use crate::task_graph::task::InputVariable;
 
 impl Formula {
     pub fn try_new(spec: &FormulaTransformSpec) -> Result<Self> {

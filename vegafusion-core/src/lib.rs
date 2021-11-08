@@ -1,15 +1,15 @@
 #[macro_use]
 extern crate lazy_static;
 
+pub mod data;
 pub mod error;
 pub mod expression;
+pub mod planning;
 pub mod proto;
 pub mod spec;
+pub mod task_graph;
 pub mod transform;
 pub mod variable;
-pub mod data;
-pub mod task_graph;
-pub mod planning;
 
 pub use arrow;
 

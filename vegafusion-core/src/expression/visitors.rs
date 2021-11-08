@@ -4,10 +4,10 @@ use crate::proto::gen::expression::{
     Identifier, Literal, LogicalExpression, MemberExpression, ObjectExpression, UnaryExpression,
 };
 
-use std::collections::HashSet;
+use crate::proto::gen::expression::literal::Value;
 use crate::proto::gen::tasks::Variable;
 use crate::task_graph::task::InputVariable;
-use crate::proto::gen::expression::literal::Value;
+use std::collections::HashSet;
 
 pub trait ExpressionVisitor {
     fn visit_expression(&mut self, _expression: &Expression) {}
@@ -61,7 +61,6 @@ impl MutExpressionVisitor for ClearSpansVisitor {
     }
 }
 
-
 /// Visitor to collect all unbound input variables in the expression
 #[derive(Clone, Default)]
 pub struct GetInputVariablesVisitor {
@@ -73,17 +72,28 @@ pub struct GetInputVariablesVisitor {
 
 impl GetInputVariablesVisitor {
     pub fn new() -> Self {
-        let data_callables: HashSet<_> = vec![
-            "data", "indata", "vlSelectionTest", "vlSelectionResolve",
-        ].into_iter().map(|s| s.to_string()).collect();
+        let data_callables: HashSet<_> =
+            vec!["data", "indata", "vlSelectionTest", "vlSelectionResolve"]
+                .into_iter()
+                .map(|s| s.to_string())
+                .collect();
 
         let scale_callables: HashSet<_> = vec![
-            "scale", "invert", "domain", "range", "bandwidth", "gradient",
-        ].into_iter().map(|s| s.to_string()).collect();
+            "scale",
+            "invert",
+            "domain",
+            "range",
+            "bandwidth",
+            "gradient",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect();
 
-        let implicit_vars: HashSet<_> = vec![
-            "datum", "event"
-        ].into_iter().map(|s| s.to_string()).collect();
+        let implicit_vars: HashSet<_> = vec!["datum", "event"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect();
 
         Self {
             input_variables: Default::default(),
@@ -140,7 +150,6 @@ impl ExpressionVisitor for GetInputVariablesVisitor {
     }
 }
 
-
 /// Visitor to collect all output variables in the expression
 #[derive(Clone, Default)]
 pub struct UpdateVariablesExprVisitor {
@@ -148,9 +157,11 @@ pub struct UpdateVariablesExprVisitor {
 }
 
 impl UpdateVariablesExprVisitor {
-     pub fn new() -> Self {
-         Self { update_variables: Default::default() }
-     }
+    pub fn new() -> Self {
+        Self {
+            update_variables: Default::default(),
+        }
+    }
 }
 
 impl ExpressionVisitor for UpdateVariablesExprVisitor {
@@ -160,7 +171,7 @@ impl ExpressionVisitor for UpdateVariablesExprVisitor {
                 if let Ok(arg0) = arg0.as_literal() {
                     if let Value::String(arg0) = arg0.value() {
                         // First arg is a string, which holds the name of the output dataset
-                        self.update_variables.insert( Variable::new_data(arg0));
+                        self.update_variables.insert(Variable::new_data(arg0));
                     }
                 }
             }

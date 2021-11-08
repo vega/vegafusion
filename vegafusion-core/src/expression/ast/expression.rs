@@ -1,16 +1,19 @@
 use crate::error::{Result, VegaFusionError};
-use crate::expression::visitors::{ClearSpansVisitor, ExpressionVisitor, GetInputVariablesVisitor, MutExpressionVisitor, UpdateVariablesExprVisitor};
+use crate::expression::visitors::{
+    ClearSpansVisitor, ExpressionVisitor, GetInputVariablesVisitor, MutExpressionVisitor,
+    UpdateVariablesExprVisitor,
+};
 use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::{
     ArrayExpression, BinaryExpression, CallExpression, ConditionalExpression, Expression,
     Identifier, Literal, LogicalExpression, MemberExpression, ObjectExpression, Span,
     UnaryExpression,
 };
+use crate::proto::gen::tasks::Variable;
+use crate::task_graph::task::InputVariable;
 use itertools::sorted;
 use std::fmt::{Display, Formatter};
 use std::ops::Deref;
-use crate::proto::gen::tasks::Variable;
-use crate::task_graph::task::InputVariable;
 
 /// Trait that all AST node types implement
 pub trait ExpressionTrait: Display {

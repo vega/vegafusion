@@ -1,14 +1,13 @@
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, ResultWithContext};
-use std::sync::Arc;
-use datafusion::dataframe::DataFrame;
-use vegafusion_core::arrow::datatypes::SchemaRef;
 use crate::transform::utils::DataFrameUtils;
-use vegafusion_core::arrow::util::pretty::pretty_format_batches;
+use async_trait::async_trait;
+use datafusion::dataframe::DataFrame;
 use datafusion::datasource::MemTable;
 use datafusion::execution::context::ExecutionContext;
-use async_trait::async_trait;
-
+use std::sync::Arc;
+use vegafusion_core::arrow::datatypes::SchemaRef;
+use vegafusion_core::arrow::util::pretty::pretty_format_batches;
+use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::error::{Result, ResultWithContext};
 
 #[async_trait]
 pub trait VegaFusionTableUtils {
@@ -18,7 +17,6 @@ pub trait VegaFusionTableUtils {
     fn to_memtable(&self) -> MemTable;
     fn to_dataframe(&self) -> Result<Arc<dyn DataFrame>>;
 }
-
 
 #[async_trait]
 impl VegaFusionTableUtils for VegaFusionTable {
@@ -31,7 +29,7 @@ impl VegaFusionTableUtils for VegaFusionTable {
     async fn from_dataframe(value: Arc<dyn DataFrame>) -> Result<VegaFusionTable> {
         let schema: SchemaRef = Arc::new(value.schema().into()) as SchemaRef;
         let batches = value.collect().await?;
-        Ok(Self { schema, batches})
+        Ok(Self { schema, batches })
     }
 
     fn pretty_format(&self, max_rows: Option<usize>) -> Result<String> {

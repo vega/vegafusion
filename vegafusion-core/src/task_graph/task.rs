@@ -1,13 +1,14 @@
-use crate::proto::gen::tasks::{Task, task::TaskKind, Variable, DataUrlTask, DataValuesTask, DataSourceTask, NodeValueIndex};
+use crate::error::{Result, VegaFusionError};
 use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
+use crate::proto::gen::tasks::{
+    task::TaskKind, DataSourceTask, DataUrlTask, DataValuesTask, NodeValueIndex, Task, Variable,
+};
 use crate::task_graph::task_value::TaskValue;
 use std::convert::TryFrom;
-use crate::error::{Result, VegaFusionError};
-use crate::proto::gen::transforms::TransformPipeline;
-use crate::transform::TransformDependencies;
-use std::hash::{Hash, Hasher};
-use prost::Message;
 
+use crate::transform::TransformDependencies;
+use prost::Message;
+use std::hash::{Hash, Hasher};
 
 #[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct InputVariable {
@@ -31,7 +32,7 @@ impl Task {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
-            task_kind: Some(TaskKind::Value(ProtoTaskValue::try_from(&value).unwrap()))
+            task_kind: Some(TaskKind::Value(ProtoTaskValue::try_from(&value).unwrap())),
         }
     }
 
@@ -47,7 +48,7 @@ impl Task {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
-            task_kind: Some(TaskKind::DataUrl(task))
+            task_kind: Some(TaskKind::DataUrl(task)),
         }
     }
 
@@ -55,7 +56,7 @@ impl Task {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
-            task_kind: Some(TaskKind::DataValues(task))
+            task_kind: Some(TaskKind::DataValues(task)),
         }
     }
 
@@ -63,7 +64,7 @@ impl Task {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
-            task_kind: Some(TaskKind::DataSource(task))
+            task_kind: Some(TaskKind::DataSource(task)),
         }
     }
 
@@ -97,8 +98,12 @@ impl Hash for Task {
 }
 
 pub trait TaskDependencies {
-    fn input_vars(&self) -> Vec<InputVariable> { Vec::new() }
-    fn output_vars(&self) -> Vec<Variable> { Vec::new() }
+    fn input_vars(&self) -> Vec<InputVariable> {
+        Vec::new()
+    }
+    fn output_vars(&self) -> Vec<Variable> {
+        Vec::new()
+    }
 }
 
 impl Hash for NodeValueIndex {

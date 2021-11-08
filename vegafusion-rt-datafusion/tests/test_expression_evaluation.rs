@@ -4,8 +4,8 @@ extern crate lazy_static;
 mod util;
 use datafusion::scalar::ScalarValue;
 use rstest::rstest;
-use std::collections::HashMap;
 use serde_json::json;
+use std::collections::HashMap;
 
 use util::check::check_scalar_evaluation;
 use vegafusion_core::data::table::VegaFusionTable;
@@ -43,8 +43,10 @@ pub fn dataset_2() -> VegaFusionTable {
 fn datasets() -> HashMap<String, VegaFusionTable> {
     vec![
         ("dataA".to_string(), dataset_1()),
-        ("dataB".to_string(), dataset_2())
-    ].into_iter().collect()
+        ("dataB".to_string(), dataset_2()),
+    ]
+    .into_iter()
+    .collect()
 }
 
 fn config_a() -> CompilationConfig {

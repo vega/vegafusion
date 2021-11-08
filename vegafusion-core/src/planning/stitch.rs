@@ -1,12 +1,12 @@
-use crate::task_graph::scope::TaskScope;
-use crate::spec::chart::ChartSpec;
 use crate::error::{Result, VegaFusionError};
-use std::collections::HashSet;
-use crate::proto::gen::tasks::{Variable, VariableNamespace};
+use crate::proto::gen::tasks::VariableNamespace;
+use crate::spec::chart::ChartSpec;
+use crate::spec::data::DataSpec;
+use crate::spec::signal::SignalSpec;
+use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_graph::ScopedVariable;
 use serde_json::Value;
-use crate::spec::signal::SignalSpec;
-use crate::spec::data::DataSpec;
+use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
 pub struct CommPlan {
@@ -14,18 +14,36 @@ pub struct CommPlan {
     pub client_to_server: Vec<ScopedVariable>,
 }
 
-
-pub fn stitch_specs(task_scope: &TaskScope, server_spec: &mut ChartSpec, client_spec: &mut ChartSpec) -> Result<CommPlan> {
-
+pub fn stitch_specs(
+    task_scope: &TaskScope,
+    server_spec: &mut ChartSpec,
+    client_spec: &mut ChartSpec,
+) -> Result<CommPlan> {
     // Get client spec variable types
     let client_defs: HashSet<_> = client_spec.definition_vars().unwrap().into_iter().collect();
-    let client_inputs: HashSet<_> = client_spec.input_vars(&task_scope).unwrap().into_iter().collect();
-    let client_updates: HashSet<_> = client_spec.update_vars(&task_scope).unwrap().into_iter().collect();
+    let client_inputs: HashSet<_> = client_spec
+        .input_vars(task_scope)
+        .unwrap()
+        .into_iter()
+        .collect();
+    let client_updates: HashSet<_> = client_spec
+        .update_vars(task_scope)
+        .unwrap()
+        .into_iter()
+        .collect();
 
     // Get server spec variable types
     let server_defs: HashSet<_> = server_spec.definition_vars().unwrap().into_iter().collect();
-    let server_inputs: HashSet<_> = server_spec.input_vars(&task_scope).unwrap().into_iter().collect();
-    let server_updates: HashSet<_> = server_spec.update_vars(&task_scope).unwrap().into_iter().collect();
+    let server_inputs: HashSet<_> = server_spec
+        .input_vars(task_scope)
+        .unwrap()
+        .into_iter()
+        .collect();
+    let server_updates: HashSet<_> = server_spec
+        .update_vars(task_scope)
+        .unwrap()
+        .into_iter()
+        .collect();
 
     // Determine communication requirements
     let server_to_client: HashSet<_> = client_inputs
@@ -59,7 +77,6 @@ pub fn stitch_specs(task_scope: &TaskScope, server_spec: &mut ChartSpec, client_
     })
 }
 
-
 fn make_stub(
     stub_var: ScopedVariable,
     to_spec: &mut ChartSpec,
@@ -89,7 +106,9 @@ fn make_stub(
         VariableNamespace::Data => {
             // Get initial value from client spec, if any. Initial value is only valid if
             // there are no transforms
-            let stub_spec = from_spec.get_nested_data(stub_path.as_slice(), &stub_name).ok();
+            let stub_spec = from_spec
+                .get_nested_data(stub_path.as_slice(), &stub_name)
+                .ok();
             let stub_values: Option<Value> = stub_spec.and_then(|s| {
                 if s.transform.is_empty() {
                     None

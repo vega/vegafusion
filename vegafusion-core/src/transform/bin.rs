@@ -2,13 +2,12 @@ use crate::error::Result;
 use crate::expression::parser::parse;
 use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::{ArrayExpression, Expression, Literal};
+use crate::proto::gen::tasks::Variable;
 use crate::proto::gen::transforms::Bin;
 use crate::spec::transform::bin::{BinExtent, BinTransformSpec};
 use crate::spec::values::SignalExpressionSpec;
-use crate::transform::TransformDependencies;
-use crate::proto::gen::tasks::Variable;
 use crate::task_graph::task::InputVariable;
-
+use crate::transform::TransformDependencies;
 
 impl Bin {
     pub fn try_new(transform: &BinTransformSpec) -> Result<Self> {
@@ -133,6 +132,9 @@ impl TransformDependencies for Bin {
     }
 
     fn output_vars(&self) -> Vec<Variable> {
-        self.signal.iter().map(|s| Variable::new_signal(s)).collect()
+        self.signal
+            .iter()
+            .map(|s| Variable::new_signal(s))
+            .collect()
     }
 }

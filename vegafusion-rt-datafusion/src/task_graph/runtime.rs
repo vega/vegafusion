@@ -2,13 +2,11 @@ use async_recursion::async_recursion;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
+use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use std::convert::TryInto;
 use std::sync::Arc;
-use vegafusion_core::proto::gen::tasks::{
-    task::TaskKind, TaskGraph, NodeValueIndex
-};
-use crate::task_graph::cache::VegaFusionCache;
+use vegafusion_core::proto::gen::tasks::{task::TaskKind, NodeValueIndex, TaskGraph};
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -29,10 +27,12 @@ impl TaskGraphRuntime {
         task_graph: Arc<TaskGraph>,
         node_value_index: &NodeValueIndex,
     ) -> Result<TaskValue> {
-        let mut node_value =
-            get_or_compute_node_value(
-                task_graph, node_value_index.node_index as usize, self.cache.clone()
-            ).await?;
+        let mut node_value = get_or_compute_node_value(
+            task_graph,
+            node_value_index.node_index as usize,
+            self.cache.clone(),
+        )
+        .await?;
         Ok(match node_value_index.output_index {
             None => node_value.0,
             Some(output_index) => node_value.1.remove(output_index as usize),
@@ -80,7 +80,7 @@ async fn get_or_compute_node_value(
             let input_values = input_values
                 .into_iter()
                 .zip(input_edges)
-                .map(|(mut value, edge)| {
+                .map(|(value, edge)| {
                     // Convert outer JoinHandle error to internal VegaFusionError so we can propagate it.
                     let mut value = match value {
                         Ok(value) => value?,
@@ -101,9 +101,7 @@ async fn get_or_compute_node_value(
         };
 
         // get or construct from cache
-        let result = cache
-            .get_or_try_insert_with(cache_key, fut)
-            .await;
+        let result = cache.get_or_try_insert_with(cache_key, fut).await;
 
         result
     }
