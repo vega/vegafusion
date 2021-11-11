@@ -7,7 +7,7 @@ use std::io::{Read, Write};
 use std::ops::Deref;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
-use std::thread;
+use std::{fs, thread};
 // use vega_fusion::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 // use vega_fusion::expression::compiler::config::CompilationConfig;
@@ -18,6 +18,7 @@ use itertools::Itertools;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::expression::Expression;
+use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 
@@ -239,7 +240,7 @@ impl VegaJsRuntime {
         let watches = vec![Watch {
             namespace: WatchNamespace::Signal,
             name: "_sig".to_string(),
-            path: vec![],
+            scope: vec![],
         }];
 
         // Evaluate spec and extract signal value
@@ -277,7 +278,7 @@ impl VegaJsRuntime {
         let mut watches = vec![Watch {
             namespace: WatchNamespace::Data,
             name: "_dataset".to_string(),
-            path: vec![],
+            scope: vec![],
         }];
 
         // Add watches for signals produced by transforms
@@ -286,7 +287,7 @@ impl VegaJsRuntime {
                 watches.push(Watch {
                     namespace: WatchNamespace::Signal,
                     name,
-                    path: vec![],
+                    scope: vec![],
                 })
             }
         }
@@ -315,6 +316,78 @@ impl VegaJsRuntime {
 
         Ok((dataset, signals_values))
     }
+
+    pub fn export_spec_single(
+        &self,
+        spec: &ChartSpec,
+        format: ExportImageFormat
+    ) -> Result<ExportImage> {
+        // Write input spec out to a temp file
+        let spec_tmpfile = tempfile::NamedTempFile::new().unwrap();
+        let spec_tmppath = spec_tmpfile.path().to_str().unwrap();
+        let spec_str = serde_json::to_string(spec).unwrap();
+        fs::write(spec_tmppath, spec_str).expect("Failed to write temp file");
+
+        // Create temporary file for result
+        let result_tmpfile = tempfile::NamedTempFile::new().unwrap();
+        let result_tmppath = result_tmpfile.path().to_str().unwrap();
+
+        let _res_out = self.nodejs_runtime.execute_statement(&format!("\
+    spec = fs.readFileSync('{spec_tmppath}', {{encoding: 'utf8'}});\
+    await VegaUtils.exportSingle(JSON.parse(spec), '{result_tmppath}', {format})\
+    ", spec_tmppath=spec_tmppath, result_tmppath=result_tmppath, format=serde_json::to_string(&format).unwrap(),
+        )).expect("export single failed");
+
+        let result_str = fs::read_to_string( result_tmppath).with_context(
+            || format!("Failed to read {}", result_tmppath)
+        )?;
+
+        let result_img: ExportImage = serde_json::from_str(&result_str).unwrap();
+        Ok(result_img)
+    }
+
+
+    pub fn vega_export_spec_sequence(
+        &self,
+        spec: &ChartSpec,
+        format: ExportImageFormat,
+        updates: Vec<ExportUpdateBatch>,
+        watches: Vec<Watch>
+    ) -> Result<Vec<(ExportImage, Vec<WatchValue>)>> {
+        // Write input spec out to a temp file
+        let spec_tmpfile = tempfile::NamedTempFile::new().unwrap();
+        let spec_tmppath = spec_tmpfile.path().to_str().unwrap();
+        let spec_str = serde_json::to_string(spec).unwrap();
+        fs::write(spec_tmppath, spec_str).expect("Failed to write temp file");
+
+        // Create temporary file for result
+        let result_tmpfile = tempfile::NamedTempFile::new().unwrap();
+        let result_tmppath = result_tmpfile.path().to_str().unwrap();
+
+        let updates_json_str = serde_json::to_string(&updates).unwrap();
+        let watches_json_str = serde_json::to_string(&watches).unwrap();
+
+        let _res_out = self.nodejs_runtime.execute_statement(&format!("\
+    spec = fs.readFileSync('{spec_tmppath}', {{encoding: 'utf8'}});\
+    await VegaUtils.exportSequence(JSON.parse(spec), '{result_tmppath}', {format}, {updates}, {watches})",
+                                                         spec_tmppath=spec_tmppath,
+                                                         result_tmppath=result_tmppath,
+                                                         updates=updates_json_str,
+                                                         watches=watches_json_str,
+                                                         format=serde_json::to_string(&format).unwrap(),
+        )).unwrap();
+
+        if _res_out != "undefined" {
+            println!("nodejs command output: {}", _res_out);
+        }
+
+        let result_str = fs::read_to_string( result_tmppath).with_context(
+            || format!("Failed to read {}", result_tmppath)
+        )?;
+
+        let result_img: Vec<(ExportImage, Vec<WatchValue>)> = serde_json::from_str(&result_str).unwrap();
+        Ok(result_img)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -328,7 +401,7 @@ pub enum WatchNamespace {
 pub struct Watch {
     pub namespace: WatchNamespace,
     pub name: String,
-    pub path: Vec<usize>,
+    pub scope: Vec<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -341,6 +414,70 @@ pub struct WatchValue {
 pub struct WatchValues {
     pub values: Vec<WatchValue>,
 }
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ExportImageFormat {
+    Png, Svg
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ExportImage {
+    Png(String),
+    Svg(String),
+}
+
+impl ExportImage {
+    pub fn save(&self, path: &str, add_ext: bool) -> Result<String> {
+        let mut path = path.to_string();
+        match self {
+            ExportImage::Svg(svg) => {
+                if !add_ext || path.ends_with(".svg") {
+                    fs::write(&path, svg)
+                } else {
+                    path.push_str(".svg");
+                    fs::write(&path, svg)
+                }.with_context(
+                    || format!("Failed to write svg image to {}", path)
+                )?
+            }
+            ExportImage::Png(png_b64) => {
+                let png_bytes = base64::decode(png_b64).external("Failed to decdode base64 encoded png image")?;
+                if !add_ext || path.ends_with(".png") {
+                    fs::write(&path, png_bytes)
+                } else {
+                    path.push_str(".png");
+                    fs::write(&path, png_bytes)
+                }.with_context(
+                    || format!("Failed to write png image to {}", path)
+                )?
+            }
+        };
+
+        Ok(path)
+    }
+}
+
+
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ExportUpdateNamespace {
+    Signal, Data
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExportUpdate {
+    pub namespace: ExportUpdateNamespace,
+    pub name: String,
+    pub scope: Vec<usize>,
+    pub value: Value,
+}
+
+pub type ExportUpdateBatch = Vec<ExportUpdate>;
+
+
 
 lazy_static! {
     static ref NODE_JS_RUNTIME: Arc<NodeJsRuntime> = Arc::new(NodeJsRuntime::try_new().unwrap());

@@ -228,16 +228,16 @@ impl From<serde_json::Error> for VegaFusionError {
 }
 
 pub trait ToExternalError<T> {
-    fn external(self, context: &str) -> Result<T>;
+    fn external<S: Into<String>>(self, context: S) -> Result<T>;
 }
 
 impl<T, E: std::error::Error> ToExternalError<T> for std::result::Result<T, E> {
-    fn external(self, context: &str) -> Result<T> {
+    fn external<S: Into<String>>(self, context: S) -> Result<T> {
         match self {
             Ok(v) => Ok(v),
             Err(err) => {
                 let context = ErrorContext {
-                    contexts: vec![context.to_string()],
+                    contexts: vec![context.into()],
                 };
                 Err(VegaFusionError::ExternalError(err.to_string(), context))
             }

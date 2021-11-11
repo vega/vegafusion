@@ -30,3 +30,5 @@ reqwest = {version="0.11.4", features=["blocking"]}
 futures = "0.3.17"
 futures-util = "0.3.17"
 rstest = "0.11.0"
+tempfile = "3.2.0"
+base64 = "0.13.0"
