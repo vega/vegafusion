@@ -8,6 +8,7 @@ use std::ops::Deref;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::{fs, thread};
+use std::convert::TryFrom;
 // use vega_fusion::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 // use vega_fusion::expression::compiler::config::CompilationConfig;
@@ -18,8 +19,10 @@ use itertools::Itertools;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::expression::Expression;
+use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::spec::transform::TransformSpec;
+use vegafusion_core::task_graph::task_graph::ScopedVariable;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 
 lazy_static! {
@@ -347,7 +350,7 @@ impl VegaJsRuntime {
     }
 
 
-    pub fn vega_export_spec_sequence(
+    pub fn export_spec_sequence(
         &self,
         spec: &ChartSpec,
         format: ExportImageFormat,
@@ -397,11 +400,57 @@ pub enum WatchNamespace {
     Data,
 }
 
+
+impl TryFrom<VariableNamespace> for WatchNamespace {
+    type Error = VegaFusionError;
+
+    fn try_from(value: VariableNamespace) -> Result<Self> {
+        match value {
+            VariableNamespace::Signal => Ok(Self::Signal),
+            VariableNamespace::Data => Ok(Self::Data),
+            _ => {
+                return Err(VegaFusionError::internal("Scale namespace not supported"))
+            }
+        }
+    }
+}
+
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Watch {
     pub namespace: WatchNamespace,
     pub name: String,
-    pub scope: Vec<usize>,
+    pub scope: Vec<u32>,
+}
+
+impl Watch {
+    pub fn to_scoped_variable(&self) -> ScopedVariable {
+        (
+            match self.namespace {
+                WatchNamespace::Signal => {
+                    Variable::new_signal(&self.name)
+                }
+                WatchNamespace::Data => {
+                    Variable::new_data(&self.name)
+                }
+            },
+            self.scope.clone(),
+        )
+    }
+}
+
+impl TryFrom<ScopedVariable> for Watch {
+    type Error = VegaFusionError;
+
+    fn try_from(value: ScopedVariable) -> Result<Self> {
+        let tmp = value.0.namespace();
+        let tmp = WatchNamespace::try_from(tmp)?;
+        Ok(Self {
+            namespace: tmp,
+            name: value.0.name.clone(),
+            scope: value.1.clone(),
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -467,11 +516,27 @@ pub enum ExportUpdateNamespace {
     Signal, Data
 }
 
+impl TryFrom<VariableNamespace> for ExportUpdateNamespace {
+    type Error = VegaFusionError;
+
+    fn try_from(value: VariableNamespace) -> Result<Self> {
+        match value {
+            VariableNamespace::Signal => {
+                Ok(Self::Signal)
+            }
+            VariableNamespace::Data => {
+                Ok(Self::Data)
+            }
+            _ => return Err(VegaFusionError::internal("Scale namespace not supported"))
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ExportUpdate {
     pub namespace: ExportUpdateNamespace,
     pub name: String,
-    pub scope: Vec<usize>,
+    pub scope: Vec<u32>,
     pub value: Value,
 }
 

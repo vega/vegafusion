@@ -101,14 +101,14 @@ async function exportSingle(spec, file, format) {
 async function exportSequence(spec, file, format, updates, watches) {
     // create a new view instance for a given Vega JSON spec
     var view = new vega.View(vega.parse(spec), {renderer: 'none'});
-    await view.runAsync();
+    // await view.runAsync();
 
     // Normalize watches
     watches = watches || [];
 
     // initialize result array
     let result = [
-        [await viewToImageJson(view, format), getWatchValues(view, watches)]
+        // [await viewToImageJson(view, format), getWatchValues(view, watches)]
     ];
 
     for (const i of _.range(0, updates.length)) {
@@ -116,20 +116,26 @@ async function exportSequence(spec, file, format, updates, watches) {
         if (!_.isArray(update_element)) {
             update_element = [update_element];
         }
+
         for (const update of update_element) {
             let {namespace, name, scope, value} = update;
             if (namespace === "signal") {
                 let signalOp = lookupSignalOp(view, name, scope);
-                await view.update(signalOp, value).runAsync();
+                // await view.update(signalOp, value).runAsync();
+                view.update(signalOp, value);
             } else if (namespace === "data") {
                 let dataset = lookupDataOp(view, name, scope);
                 let changeset = view.changeset().remove(truthy).insert(value)
                 dataset.modified = true;
-                await view.pulse(dataset.input, changeset).runAsync();
+                // await view.pulse(dataset.input, changeset).runAsync();
+                view.pulse(dataset.input, changeset);
             } else {
                 throw `Invalid update namespace: ${namespace}`
             }
         }
+
+        await view.runAsync();
+
         result.push([await viewToImageJson(view, format), getWatchValues(view, watches)])
     }
 
