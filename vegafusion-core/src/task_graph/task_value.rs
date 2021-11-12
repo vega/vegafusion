@@ -1,10 +1,11 @@
-use crate::data::scalar::ScalarValue;
+use crate::data::scalar::{ScalarValue, ScalarValueHelpers};
 use crate::data::table::VegaFusionTable;
 use crate::error::{Result, VegaFusionError};
 use crate::proto::gen::tasks::task_value::Data;
 use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
 use arrow::record_batch::RecordBatch;
 use std::convert::TryFrom;
+use serde_json::Value;
 
 #[derive(Debug, Clone)]
 pub enum TaskValue {
@@ -24,6 +25,17 @@ impl TaskValue {
         match self {
             TaskValue::Table(value) => Ok(value),
             _ => Err(VegaFusionError::internal("Value is not a table")),
+        }
+    }
+
+    pub fn to_json(&self) -> Result<Value> {
+        match self {
+            TaskValue::Scalar(value) => {
+                value.to_json()
+            }
+            TaskValue::Table(value) => {
+                Ok(value.to_json())
+            }
         }
     }
 }

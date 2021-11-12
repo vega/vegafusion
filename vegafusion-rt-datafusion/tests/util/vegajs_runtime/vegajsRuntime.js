@@ -98,19 +98,39 @@ async function exportSingle(spec, file, format) {
 }
 
 
-async function exportSequence(spec, file, format, updates, watches) {
+async function exportSequence(spec, file, format, init, updates, watches) {
     // create a new view instance for a given Vega JSON spec
     var view = new vega.View(vega.parse(spec), {renderer: 'none'});
-    // await view.runAsync();
 
     // Normalize watches
     watches = watches || [];
 
-    // initialize result array
+    // Apply initial updates
+    // These updates must be applied before the first run command
+    for (const update of init) {
+        let {namespace, name, scope, value} = update;
+        if (namespace === "signal") {
+            let signalOp = lookupSignalOp(view, name, scope);
+            view.update(signalOp, value);
+        } else if (namespace === "data") {
+            let dataset = lookupDataOp(view, name, scope);
+            let changeset = view.changeset().remove(truthy).insert(value)
+            dataset.modified = true;
+            view.pulse(dataset.input, changeset);
+        } else {
+            throw `Invalid update namespace: ${namespace}`
+        }
+    }
+
+    // For initial updates, run is not applied until after all init updates are applied
+    await view.runAsync();
+
+    // Collect initial watch values
     let result = [
-        // [await viewToImageJson(view, format), getWatchValues(view, watches)]
+        [await viewToImageJson(view, format), getWatchValues(view, watches)]
     ];
 
+    // Apply iterative updates
     for (const i of _.range(0, updates.length)) {
         var update_element = updates[i];
         if (!_.isArray(update_element)) {
@@ -121,20 +141,16 @@ async function exportSequence(spec, file, format, updates, watches) {
             let {namespace, name, scope, value} = update;
             if (namespace === "signal") {
                 let signalOp = lookupSignalOp(view, name, scope);
-                // await view.update(signalOp, value).runAsync();
-                view.update(signalOp, value);
+                await view.update(signalOp, value).runAsync();
             } else if (namespace === "data") {
                 let dataset = lookupDataOp(view, name, scope);
                 let changeset = view.changeset().remove(truthy).insert(value)
                 dataset.modified = true;
-                // await view.pulse(dataset.input, changeset).runAsync();
-                view.pulse(dataset.input, changeset);
+                await view.pulse(dataset.input, changeset).runAsync();
             } else {
                 throw `Invalid update namespace: ${namespace}`
             }
         }
-
-        await view.runAsync();
 
         result.push([await viewToImageJson(view, format), getWatchValues(view, watches)])
     }

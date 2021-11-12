@@ -9,6 +9,7 @@ use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::{fs, thread};
 use std::convert::TryFrom;
+use dssim::{Dssim, DssimImage};
 // use vega_fusion::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 // use vega_fusion::expression::compiler::config::CompilationConfig;
@@ -354,6 +355,7 @@ impl VegaJsRuntime {
         &self,
         spec: &ChartSpec,
         format: ExportImageFormat,
+        init: ExportUpdateBatch,
         updates: Vec<ExportUpdateBatch>,
         watches: Vec<Watch>
     ) -> Result<Vec<(ExportImage, Vec<WatchValue>)>> {
@@ -367,14 +369,16 @@ impl VegaJsRuntime {
         let result_tmpfile = tempfile::NamedTempFile::new().unwrap();
         let result_tmppath = result_tmpfile.path().to_str().unwrap();
 
+        let init_json_str = serde_json::to_string(&init).unwrap();
         let updates_json_str = serde_json::to_string(&updates).unwrap();
         let watches_json_str = serde_json::to_string(&watches).unwrap();
 
         let _res_out = self.nodejs_runtime.execute_statement(&format!("\
     spec = fs.readFileSync('{spec_tmppath}', {{encoding: 'utf8'}});\
-    await VegaUtils.exportSequence(JSON.parse(spec), '{result_tmppath}', {format}, {updates}, {watches})",
+    await VegaUtils.exportSequence(JSON.parse(spec), '{result_tmppath}', {format}, {init}, {updates}, {watches})",
                                                          spec_tmppath=spec_tmppath,
                                                          result_tmppath=result_tmppath,
+                                                         init=init_json_str,
                                                          updates=updates_json_str,
                                                          watches=watches_json_str,
                                                          format=serde_json::to_string(&format).unwrap(),
@@ -506,8 +510,58 @@ impl ExportImage {
 
         Ok(path)
     }
+
+
+    pub fn to_dssim(&self, attr: &Dssim) -> Result<DssimImage<f32>> {
+        if !matches!(self, ExportImage::Png(_)) {
+            return Err(VegaFusionError::internal("Only PNG image supported"))
+        }
+        let tmpfile = tempfile::NamedTempFile::new().unwrap();
+        let tmppath = tmpfile.path().to_str().unwrap();
+        self.save(tmppath, false)?;
+
+        let img = dssim::load_image(attr, tmppath).external(
+            "Failed to create DSSIM image for comparison"
+        )?;
+        Ok(img)
+    }
+
+    pub fn compare(&self, other: &Self) -> Result<(f64, Option<Vec<u8>>)> {
+        let mut attr = Dssim::new();
+        attr.set_save_ssim_maps(1);
+        let this_img = self.to_dssim(&attr)?;
+        let other_img = other.to_dssim(&attr)?;
+        let (diff, ssim_maps) = attr.compare(&this_img, &other_img);
+        // println!("ssim_map: {:?}", ssim_map);
+
+        if diff > 0.0 {
+            let map_meta = ssim_maps[0].clone();
+            let avgssim = map_meta.ssim as f32;
+
+            let out: Vec<_> = map_meta.map.pixels().map(|ssim|{
+                let max = 1_f32 - ssim;
+                let maxsq = max * max;
+                rgb::RGBA8 {
+                    r: to_byte(maxsq * 16.0),
+                    g: to_byte(max * 3.0),
+                    b: to_byte(max / ((1_f32 - avgssim) * 4_f32)),
+                    a: 255,
+                }
+            }).collect();
+            let png_res = lodepng::encode32(&out, map_meta.map.width(), map_meta.map.height()).unwrap();
+            Ok((diff.into(), Some(png_res)))
+        } else {
+            Ok((diff.into(), None))
+        }
+    }
 }
 
+
+fn to_byte(i: f32) -> u8 {
+    if i <= 0.0 {0}
+    else if i >= 255.0/256.0 {255}
+    else {(i * 256.0) as u8}
+}
 
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

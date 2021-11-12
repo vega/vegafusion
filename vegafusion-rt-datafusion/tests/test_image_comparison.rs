@@ -16,7 +16,7 @@ mod test_image_comparison {
     use vegafusion_core::data::table::VegaFusionTable;
     use vegafusion_core::planning::extract::extract_server_data;
     use vegafusion_core::planning::stitch::stitch_specs;
-    use vegafusion_core::proto::gen::tasks::TaskGraph;
+    use vegafusion_core::proto::gen::tasks::{NodeValueIndex, TaskGraph};
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_core::task_graph::task_graph::ScopedVariable;
     use vegafusion_core::task_graph::task_value::TaskValue;
@@ -27,11 +27,20 @@ mod test_image_comparison {
     async fn test() {
         let spec_name = "flights_crossfilter_a";
 
+        // Initialize runtime
+        let vegajs_runtime = vegajs_runtime();
+
         // Load spec
         let mut crate_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).display().to_string();
-        let spec_path= format!("{}/tests/specs/{}.json", crate_dir, spec_name);
+        let spec_path= format!("{}/tests/specs/sequence/{}/spec.json", crate_dir, spec_name);
         let spec_str = fs::read_to_string(spec_path).unwrap();
         let full_spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
+
+        // Load updates
+        let updates_path= format!("{}/tests/specs/sequence/{}/updates.json", crate_dir, spec_name);
+        let updates_str = fs::read_to_string(updates_path).unwrap();
+        let full_updates: Vec<ExportUpdateBatch> = serde_json::from_str(&updates_str).unwrap();
+        println!("full_updates:\n{:#?}", full_updates);
 
         // Perform client/server planning
         let mut task_scope = full_spec.to_task_scope().unwrap();
@@ -44,92 +53,63 @@ mod test_image_comparison {
         let mut task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
 
+        // Collect watch variables and node indices
+        let watch_vars = comm_plan.server_to_client.clone();
+        let watch_indices: Vec<_> = watch_vars.iter().map(|var| {
+            task_graph_mapping.get(var).unwrap()
+        }).collect();
+
         // Initialize task graph runtime
         let runtime = TaskGraphRuntime::new(10);
 
-        // Perform full_spec export with watches
-        let full_updates: Vec<ExportUpdateBatch> = vec![
-            vec![],
-            vec![
-                ExportUpdate {
-                    namespace: ExportUpdateNamespace::Signal,
-                    name: "brush_x".to_string(),
-                    scope: vec![0],
-                    value: json!([0, 50])
-                }
-            ],
-            vec![
-                ExportUpdate {
-                    namespace: ExportUpdateNamespace::Signal,
-                    name: "brush_x".to_string(),
-                    scope: vec![0],
-                    value: json!([50, 150])
-                }
-            ],
-            // vec![
-            //     ExportUpdate {
-            //         namespace: ExportUpdateNamespace::Signal,
-            //         name: "brush_x".to_string(),
-            //         scope: vec![0],
-            //         value: json!([70, 120])
-            //     },
-            //     ExportUpdate {
-            //         namespace: ExportUpdateNamespace::Signal,
-            //         name: "brush_x".to_string(),
-            //         scope: vec![1],
-            //         value: json!([40, 80])
-            //     },
-            // ],
-            // vec![
-            //     ExportUpdate {
-            //         namespace: ExportUpdateNamespace::Signal,
-            //         name: "brush_x".to_string(),
-            //         scope: vec![0],
-            //         value: json!([0, 0])
-            //     }
-            // ],
-            // vec![
-            //     ExportUpdate {
-            //         namespace: ExportUpdateNamespace::Signal,
-            //         name: "brush_x".to_string(),
-            //         scope: vec![1],
-            //         value: json!([0, 0])}
-            // ],
-        ];
+        // Extract the initial values of all of the variables that should be sent from the
+        // server to the client
+        let mut init = Vec::new();
+        for var in &comm_plan.server_to_client {
+            let node_index = task_graph_mapping.get(&var).unwrap();
+            let value = runtime.get_node_value(
+                Arc::new(task_graph.clone()), node_index
+            ).await.unwrap();
 
-        // Build client to server watches
+            init.push(
+                ExportUpdate {
+                    namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),
+                    name: var.0.name.clone(),
+                    scope: var.1.clone(),
+                    value: value.to_json().unwrap(),
+                }
+            );
+        }
+
+        // Build watches for all of the variables that should be sent from the client to the
+        // server
         let watches: Vec<_> = comm_plan.client_to_server.iter().map(|t| {
             Watch::try_from(t.clone()).unwrap()
         }).collect();
 
-        // Export sequence for full spec
-        let vegajs_runtime = vegajs_runtime();
-        let full_export_results = vegajs_runtime.export_spec_sequence(
+        // Export sequence with full spec
+        let export_sequence_results = vegajs_runtime.export_spec_sequence(
             &full_spec,
             ExportImageFormat::Png,
+            Vec::new(),
             full_updates.clone(),
             watches,
         ).unwrap();
 
-        // Export full image SVGs
-        for (i, (export_image, _)) in full_export_results.iter().enumerate() {
-            export_image.save(&format!("{}/tests/output/crossfilter_full{}", crate_dir, i), true).unwrap();
+        // Save exported PNGs
+        for (i, (export_image, _)) in export_sequence_results.iter().enumerate() {
+            export_image.save(&format!(
+                "{}/tests/output/{}_full{}", crate_dir, spec_name, i
+            ), true).unwrap();
         }
 
-        let mut all_updates: Vec<HashMap<ScopedVariable, TaskValue>> = Vec::new();
-
-        // Update task graph with watched value updates
-        let send_watch: HashSet<_> = comm_plan.server_to_client.clone().into_iter().collect();
-        let watch_indices: Vec<_> = send_watch.iter().map(|var| {
-            task_graph_mapping.get(var).unwrap()
-        }).collect();
-
-        for (_, update_batch) in full_export_results.iter().skip(0) {
+        // Update graph with client-to-server watches, and collect values to update the client with
+        let mut server_to_client_value_batches: Vec<HashMap<ScopedVariable, TaskValue>> = Vec::new();
+        for (_, watch_values) in export_sequence_results.iter().skip(1) {
 
             // Update graph
-            for watch_value in update_batch {
+            for watch_value in watch_values {
                 let variable = watch_value.watch.to_scoped_variable();
-
                 let value = match &watch_value.watch.namespace {
                     WatchNamespace::Signal => {
                         TaskValue::Scalar(ScalarValue::from_json(&watch_value.value).unwrap())
@@ -144,23 +124,23 @@ mod test_image_comparison {
                 task_graph.update_value(index, value).unwrap();
             }
 
-            // Get updated node values
-            let mut send_updated = HashMap::new();
-            for (var, node_index) in send_watch.iter().zip(&watch_indices) {
+            // Get updated server to client values
+            let mut server_to_client_value_batch = HashMap::new();
+            for (var, node_index) in watch_vars.iter().zip(&watch_indices) {
                 let value = runtime.get_node_value(
                     Arc::new(task_graph.clone()), node_index
                 ).await.unwrap();
 
-                send_updated.insert(var.clone(), value);
+                server_to_client_value_batch.insert(var.clone(), value);
             }
 
-            all_updates.push(send_updated);
+            server_to_client_value_batches.push(server_to_client_value_batch);
         }
 
-        // Merge send updates with the original batch updates
-        let planned_updates: Vec<_> = full_updates.iter().zip(all_updates).map(
-            |(export_updates, send_updates)| {
-                let send_export_updates: Vec<_> = send_updates.iter().map(|(scoped_var, value)| {
+        // Merge the original updates with the original batch updates
+        let planned_spec_updates: Vec<_> = full_updates.iter().zip(server_to_client_value_batches).map(
+            |(full_export_updates, server_to_client_values)| {
+                let server_to_clients_export_updates: Vec<_> = server_to_client_values.iter().map(|(scoped_var, value)| {
                     let json_value = match value {
                         TaskValue::Scalar(value) => value.to_json().unwrap(),
                         TaskValue::Table(value) => value.to_json(),
@@ -176,35 +156,33 @@ mod test_image_comparison {
                 // let mut export_updates = export_updates;
                 let mut total_updates = Vec::new();
 
-                total_updates.extend(send_export_updates);
-                total_updates.extend(export_updates.clone());
+                total_updates.extend(server_to_clients_export_updates);
+                total_updates.extend(full_export_updates.clone());
 
                 // export_updates
                 total_updates
             }
         ).collect();
 
-        // Export client spec with updates from task graph
-        println!("{}", serde_json::to_string_pretty(&client_spec).unwrap());
-
-        println!("{:#?}", planned_updates);
+        // Export the planned client spec with updates from task graph
         let planned_export_images: Vec<_> = vegajs_runtime.export_spec_sequence(
             &client_spec,
             ExportImageFormat::Png,
-            planned_updates,
+            init,
+            planned_spec_updates,
             Default::default(),
         ).unwrap().into_iter().map(|(img, _)| img).collect();
 
         // Export Planned image SVGs
         for (i, server_img) in planned_export_images.into_iter().enumerate() {
-            server_img.save(&format!("{}/tests/output/crossfilter_planned{}", crate_dir, i), true);
-            // let (full_img, _) = &full_export_results[i];
+            server_img.save(&format!("{}/tests/output/{}_planned{}", crate_dir, spec_name, i), true);
+            let (full_img, _) = &export_sequence_results[i];
 
-            // let (difference, diff_img) = full_img.compare(&server_img).unwrap();
-            // println!("{} difference: {}", i, difference);
-            // if let Some(diff_img) = diff_img {
-            //     fs::write(&format!("{}/tests/output/crossfilter_diff{}.png", crate_dir, i), diff_img).unwrap();
-            // }
+            let (difference, diff_img) = full_img.compare(&server_img).unwrap();
+            println!("{} difference: {}", i, difference);
+            if let Some(diff_img) = diff_img {
+                fs::write(&format!("{}/tests/output/{}_diff{}.png", crate_dir, spec_name, i), diff_img).unwrap();
+            }
         }
     }
 }

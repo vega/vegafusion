@@ -167,8 +167,8 @@ fn try_export_sequence_helper_crossfilter() {
 
     println!("{:?}", chart_spec);
 
+    let init = Vec::new();
     let updates: Vec<ExportUpdateBatch> = vec![
-        vec![],
         vec![
             ExportUpdate {
                 namespace: ExportUpdateNamespace::Signal,
@@ -218,6 +218,7 @@ fn try_export_sequence_helper_crossfilter() {
     let res = vegajs_runtime.export_spec_sequence(
         &chart_spec,
         ExportImageFormat::Svg,
+        init,
         updates,
         watches,
     ).unwrap();

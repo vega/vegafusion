@@ -32,3 +32,7 @@ futures-util = "0.3.17"
 rstest = "0.11.0"
 tempfile = "3.2.0"
 base64 = "0.13.0"
+dssim = "3.1.0"
+rgb = "0.8.27"
+lodepng = "3.4.6"
+
