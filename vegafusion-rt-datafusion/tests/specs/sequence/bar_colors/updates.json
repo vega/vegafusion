@@ -1,0 +1,30 @@
+[
+  [
+    {
+      "namespace": "signal",
+      "name": "bar_color",
+      "scope": [],
+      "value": "yellow"
+    },
+    {
+      "namespace": "signal",
+      "name": "padding_factor",
+      "scope": [],
+      "value": 10
+    }
+  ],
+  [
+    {
+      "namespace": "signal",
+      "name": "bar_color",
+      "scope": [],
+      "value": "green"
+    },
+    {
+      "namespace": "signal",
+      "name": "padding_factor",
+      "scope": [],
+      "value": 50
+    }
+  ]
+]

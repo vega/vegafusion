@@ -25,7 +25,8 @@ mod test_image_comparison {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test() {
-        let spec_name = "flights_crossfilter_a";
+        // let spec_name = "flights_crossfilter_a";
+        let spec_name = "bar_colors";
 
         // Initialize runtime
         let vegajs_runtime = vegajs_runtime();
@@ -40,7 +41,6 @@ mod test_image_comparison {
         let updates_path= format!("{}/tests/specs/sequence/{}/updates.json", crate_dir, spec_name);
         let updates_str = fs::read_to_string(updates_path).unwrap();
         let full_updates: Vec<ExportUpdateBatch> = serde_json::from_str(&updates_str).unwrap();
-        println!("full_updates:\n{:#?}", full_updates);
 
         // Perform client/server planning
         let mut task_scope = full_spec.to_task_scope().unwrap();
@@ -64,6 +64,8 @@ mod test_image_comparison {
 
         // Extract the initial values of all of the variables that should be sent from the
         // server to the client
+        println!("comm_plan: {:#?}", comm_plan);
+        println!("server_spec: {}", serde_json::to_string_pretty(&server_spec).unwrap());
         let mut init = Vec::new();
         for var in &comm_plan.server_to_client {
             let node_index = task_graph_mapping.get(&var).unwrap();
@@ -120,7 +122,6 @@ mod test_image_comparison {
                 };
 
                 let index = task_graph_mapping.get(&variable).unwrap().node_index as usize;
-
                 task_graph.update_value(index, value).unwrap();
             }
 
@@ -153,7 +154,6 @@ mod test_image_comparison {
                     }
                 }).collect();
 
-                // let mut export_updates = export_updates;
                 let mut total_updates = Vec::new();
 
                 total_updates.extend(server_to_clients_export_updates);
@@ -164,6 +164,8 @@ mod test_image_comparison {
             }
         ).collect();
 
+        println!("client_spec:\n{}", serde_json::to_string_pretty(&client_spec).unwrap());
+        println!("init:\n{:?}", init);
         // Export the planned client spec with updates from task graph
         let planned_export_images: Vec<_> = vegajs_runtime.export_spec_sequence(
             &client_spec,
@@ -179,9 +181,10 @@ mod test_image_comparison {
             let (full_img, _) = &export_sequence_results[i];
 
             let (difference, diff_img) = full_img.compare(&server_img).unwrap();
-            println!("{} difference: {}", i, difference);
             if let Some(diff_img) = diff_img {
-                fs::write(&format!("{}/tests/output/{}_diff{}.png", crate_dir, spec_name, i), diff_img).unwrap();
+                let diff_path = format!("{}/tests/output/{}_diff{}.png", crate_dir, spec_name, i);
+                fs::write(&diff_path, diff_img).unwrap();
+                assert!(false, "Found difference in exported images.\nDiff written to {}", diff_path)
             }
         }
     }

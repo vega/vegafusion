@@ -217,10 +217,11 @@ impl<'a> UpdateVarsChartVisitor<'a> {
 /// Gather variables that can be updated by the spec (whether or not they are defined in the spec)
 impl<'a> ChartVisitor for UpdateVarsChartVisitor<'a> {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
-        // Dataset is an update dependency if it's not an empty stub (with or without inline values)
+        // Dataset is an update dependency if it's not an empty stub (without inline values)
         if data.source.is_some()
             || data.on.is_some()
             || data.url.is_some()
+            || data.values.is_some()
             || !data.transform.is_empty()
         {
             self.update_vars
