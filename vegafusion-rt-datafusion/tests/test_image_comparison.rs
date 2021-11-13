@@ -46,7 +46,11 @@ mod test_image_comparison {
         case("2d_histogram_imdb"),
         case("cumulative_window_imdb"),
         case("density_and_cumulative_histograms"),
-        case("mean_strip_plot_movies")
+        case("mean_strip_plot_movies"),
+        case("table_heatmap_cars"),
+        case("difference_from_mean"),
+        case("nested_concat_align"),
+        case("imdb_dashboard_cross_height")
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);

@@ -115,7 +115,11 @@ pub fn compile_binary(
             }
         }
         BinaryOperator::Equals => {
-            if is_string_datatype(&lhs_dtype) && is_string_datatype(&rhs_dtype) {
+            if is_null_literal(&lhs) {
+                Expr::IsNull(Box::new(rhs))
+            } else if is_null_literal(&rhs) {
+                Expr::IsNull(Box::new(lhs))
+            } else if is_string_datatype(&lhs_dtype) && is_string_datatype(&rhs_dtype) {
                 // Regular equality on strings
                 Expr::BinaryExpr {
                     left: Box::new(lhs),
@@ -133,7 +137,11 @@ pub fn compile_binary(
             // TODO: if both null, then equal. If one null, then not equal
         }
         BinaryOperator::NotEquals => {
-            if is_string_datatype(&lhs_dtype) && is_string_datatype(&rhs_dtype) {
+            if is_null_literal(&lhs) {
+                Expr::IsNotNull(Box::new(rhs))
+            } else if is_null_literal(&rhs) {
+                Expr::IsNotNull(Box::new(lhs))
+            } else if is_string_datatype(&lhs_dtype) && is_string_datatype(&rhs_dtype) {
                 // Regular inequality on strings
                 Expr::BinaryExpr {
                     left: Box::new(lhs),

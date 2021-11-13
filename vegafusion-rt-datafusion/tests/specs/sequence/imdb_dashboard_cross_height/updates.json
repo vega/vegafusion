@@ -1,0 +1,32 @@
+[
+  [
+    {
+      "namespace": "signal",
+      "name": "pts_tuple",
+      "scope": [1],
+      "value": {
+        "unit":  "concat_1",
+        "fields":  [{"field": "Major Genre", "channel": "x", "type": "E"}],
+        "values": ["Comedy"]
+      }
+    },
+    {
+      "namespace": "signal",
+      "name": "pts_toggle",
+      "scope": [1],
+      "value": true
+    }
+  ],
+  [
+    {
+      "namespace": "signal",
+      "name": "pts_tuple",
+      "scope": [1],
+      "value": {
+        "unit":  "concat_1",
+        "fields":  [{"field": "Major Genre", "channel": "x", "type": "E"}],
+        "values": ["Adventure"]
+      }
+    }
+  ]
+]
