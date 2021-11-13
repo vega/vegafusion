@@ -22,6 +22,8 @@ mod test_parse_atoms {
     fn test(expr: &str) {
         check_parsing(expr);
     }
+
+    #[test] fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_parse_binary {
@@ -35,9 +37,12 @@ mod test_parse_binary {
         case("2 % 1"),
         case("'hello' + \"world\"")
     )]
+
     fn test(expr: &str) {
         check_parsing(expr);
     }
+
+    #[test] fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_parse_binary_precedence {
@@ -54,9 +59,12 @@ mod test_parse_binary_precedence {
         case("1 + 2 * 3 / 4 % 6 / (7 * 8) + 9"),
         case("1 + 2 * 3 / 4 % 6 / 7 * (8 + 9)")
     )]
+
     fn test(expr: &str) {
         check_parsing(expr);
     }
+
+    #[test] fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_parse_unary {
@@ -75,6 +83,8 @@ mod test_parse_unary {
     fn test(expr: &str) {
         check_parsing(expr);
     }
+
+    #[test] fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_parse_logical {
@@ -93,6 +103,8 @@ mod test_parse_logical {
     fn test(expr: &str) {
         check_parsing(expr);
     }
+
+    #[test] fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_parse_ternary {
@@ -110,6 +122,8 @@ mod test_parse_ternary {
     fn test(expr: &str) {
         check_parsing(expr);
     }
+
+    #[test] fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_parse_call {
@@ -125,6 +139,8 @@ mod test_parse_call {
     fn test(expr: &str) {
         check_parsing(expr);
     }
+
+    #[test] fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_parse_computed_member_access {
@@ -142,6 +158,8 @@ mod test_parse_computed_member_access {
     fn test(expr: &str) {
         check_parsing(expr);
     }
+
+    #[test] fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_parse_static_member_access {
@@ -156,6 +174,8 @@ mod test_parse_static_member_access {
     fn test(expr: &str) {
         check_parsing(expr);
     }
+
+    #[test] fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_parse_array_literal {
@@ -171,6 +191,8 @@ mod test_parse_array_literal {
     fn test(expr: &str) {
         check_parsing(expr);
     }
+
+    #[test] fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_parse_object_literal {
@@ -187,6 +209,8 @@ mod test_parse_object_literal {
     fn test(expr: &str) {
         check_parsing(expr);
     }
+
+    #[test] fn test_marker() {} // Help IDE detect test module
 }
 
 // Expressions extracted from various Vega specs in the gallery
@@ -222,4 +246,6 @@ mod test_parse_examples {
     fn test(expr: &str) {
         check_parsing(expr);
     }
+
+    #[test] fn test_marker() {} // Help IDE detect test module
 }
