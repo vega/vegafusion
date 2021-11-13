@@ -103,7 +103,7 @@ impl<'a> MutChartVisitor for ExtractServerDataVisitor<'a> {
                     self.task_scope.add_data_signal(&server_name, sig, scope)?;
                 }
             }
-            _ => {
+            Some(DataSupported::Supported) => {
                 // DataSupported::Supported
 
                 // Add clone of full server data
@@ -123,26 +123,11 @@ impl<'a> MutChartVisitor for ExtractServerDataVisitor<'a> {
                 data.on = None;
                 data.url = None;
             }
+            _ => {
+                // Nothing to do
+            }
         }
 
-        // if self.supported_vars.contains_key(&data_var) {
-        //     // Add clone to server data
-        //     let server_data = data.clone();
-        //     if scope.is_empty() {
-        //         self.server_spec.data.push(server_data)
-        //     } else {
-        //         let server_group = self.server_spec.get_nested_group_mut(scope)?;
-        //         server_group.data.push(server_data);
-        //     }
-        //
-        //     // Clear everything except name from client spec
-        //     data.format = None;
-        //     data.source = None;
-        //     data.values = None;
-        //     data.transform = Vec::new();
-        //     data.on = None;
-        //     data.url = None;
-        // }
         Ok(())
     }
 

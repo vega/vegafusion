@@ -23,10 +23,15 @@ impl TryFrom<&[TransformSpec]> for TransformPipeline {
 
 impl TransformDependencies for TransformPipeline {
     fn input_vars(&self) -> Vec<InputVariable> {
+        let output_vars: HashSet<_> = self.output_vars().into_iter().collect();
+
         let mut vars: HashSet<InputVariable> = Default::default();
         for tx in &self.transforms {
             for var in tx.input_vars() {
-                vars.insert(var);
+                // Only include input vars that are not produced elsewhere in the pipeline
+                if !output_vars.contains(&var.var) {
+                    vars.insert(var);
+                }
             }
         }
 

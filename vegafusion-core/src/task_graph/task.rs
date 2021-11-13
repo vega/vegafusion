@@ -10,7 +10,7 @@ use crate::transform::TransformDependencies;
 use prost::Message;
 use std::hash::{Hash, Hasher};
 
-#[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct InputVariable {
     pub var: Variable,
     pub propagate: bool,

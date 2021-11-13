@@ -19,6 +19,7 @@ use self::super::estree_expression::ESTreeExpression;
 use itertools::Itertools;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::planning::stitch::CommPlan;
 use vegafusion_core::proto::gen::expression::Expression;
 use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
 use vegafusion_core::spec::chart::ChartSpec;
@@ -402,7 +403,7 @@ impl VegaJsRuntime {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum WatchNamespace {
     Signal,
@@ -421,7 +422,7 @@ impl TryFrom<VariableNamespace> for WatchNamespace {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Watch {
     pub namespace: WatchNamespace,
     pub name: String,
@@ -451,6 +452,25 @@ impl TryFrom<ScopedVariable> for Watch {
             name: value.0.name.clone(),
             scope: value.1,
         })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WatchPlan {
+    pub server_to_client: Vec<Watch>,
+    pub client_to_server: Vec<Watch>,
+}
+
+impl From<CommPlan> for WatchPlan {
+    fn from(value: CommPlan) -> Self {
+        Self {
+            server_to_client: value.server_to_client.into_iter().map(|scoped_var| {
+                Watch::try_from(scoped_var).unwrap()
+            }).sorted().collect(),
+            client_to_server: value.client_to_server.into_iter().map(|scoped_var| {
+                Watch::try_from(scoped_var).unwrap()
+            }).sorted().collect(),
+        }
     }
 }
 
