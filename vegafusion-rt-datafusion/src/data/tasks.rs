@@ -185,7 +185,10 @@ async fn read_csv(url: String) -> Result<Arc<dyn DataFrame>> {
         writeln!(file, "{}", body).unwrap();
 
         // Load through VegaFusionTable so that temp file can be deleted
-        let df = ctx.read_csv(tempdir.path().to_str().unwrap(), csv_opts).await.unwrap();
+        let df = ctx
+            .read_csv(tempdir.path().to_str().unwrap(), csv_opts)
+            .await
+            .unwrap();
         let table = VegaFusionTable::from_dataframe(df).await.unwrap();
         let df = table.to_dataframe().unwrap();
         Ok(df)

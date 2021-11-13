@@ -4,8 +4,8 @@ use crate::error::{Result, VegaFusionError};
 use crate::proto::gen::tasks::task_value::Data;
 use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
 use arrow::record_batch::RecordBatch;
-use std::convert::TryFrom;
 use serde_json::Value;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
 pub enum TaskValue {
@@ -30,12 +30,8 @@ impl TaskValue {
 
     pub fn to_json(&self) -> Result<Value> {
         match self {
-            TaskValue::Scalar(value) => {
-                value.to_json()
-            }
-            TaskValue::Table(value) => {
-                Ok(value.to_json())
-            }
+            TaskValue::Scalar(value) => value.to_json(),
+            TaskValue::Table(value) => Ok(value.to_json()),
         }
     }
 }

@@ -1,15 +1,15 @@
 use datafusion::scalar::ScalarValue;
+use dssim::{Dssim, DssimImage};
 use regex::Regex;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::io::{Read, Write};
 use std::ops::Deref;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::{fs, thread};
-use std::convert::TryFrom;
-use dssim::{Dssim, DssimImage};
 // use vega_fusion::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 // use vega_fusion::expression::compiler::config::CompilationConfig;
@@ -324,7 +324,7 @@ impl VegaJsRuntime {
     pub fn export_spec_single(
         &self,
         spec: &ChartSpec,
-        format: ExportImageFormat
+        format: ExportImageFormat,
     ) -> Result<ExportImage> {
         // Write input spec out to a temp file
         let spec_tmpfile = tempfile::NamedTempFile::new().unwrap();
@@ -336,20 +336,25 @@ impl VegaJsRuntime {
         let result_tmpfile = tempfile::NamedTempFile::new().unwrap();
         let result_tmppath = result_tmpfile.path().to_str().unwrap();
 
-        let _res_out = self.nodejs_runtime.execute_statement(&format!("\
+        let _res_out = self
+            .nodejs_runtime
+            .execute_statement(&format!(
+                "\
     spec = fs.readFileSync('{spec_tmppath}', {{encoding: 'utf8'}});\
     await VegaUtils.exportSingle(JSON.parse(spec), '{result_tmppath}', {format})\
-    ", spec_tmppath=spec_tmppath, result_tmppath=result_tmppath, format=serde_json::to_string(&format).unwrap(),
-        )).expect("export single failed");
+    ",
+                spec_tmppath = spec_tmppath,
+                result_tmppath = result_tmppath,
+                format = serde_json::to_string(&format).unwrap(),
+            ))
+            .expect("export single failed");
 
-        let result_str = fs::read_to_string( result_tmppath).with_context(
-            || format!("Failed to read {}", result_tmppath)
-        )?;
+        let result_str = fs::read_to_string(result_tmppath)
+            .with_context(|| format!("Failed to read {}", result_tmppath))?;
 
         let result_img: ExportImage = serde_json::from_str(&result_str).unwrap();
         Ok(result_img)
     }
-
 
     pub fn export_spec_sequence(
         &self,
@@ -357,7 +362,7 @@ impl VegaJsRuntime {
         format: ExportImageFormat,
         init: ExportUpdateBatch,
         updates: Vec<ExportUpdateBatch>,
-        watches: Vec<Watch>
+        watches: Vec<Watch>,
     ) -> Result<Vec<(ExportImage, Vec<WatchValue>)>> {
         // Write input spec out to a temp file
         let spec_tmpfile = tempfile::NamedTempFile::new().unwrap();
@@ -388,11 +393,11 @@ impl VegaJsRuntime {
             println!("nodejs command output: {}", _res_out);
         }
 
-        let result_str = fs::read_to_string( result_tmppath).with_context(
-            || format!("Failed to read {}", result_tmppath)
-        )?;
+        let result_str = fs::read_to_string(result_tmppath)
+            .with_context(|| format!("Failed to read {}", result_tmppath))?;
 
-        let result_img: Vec<(ExportImage, Vec<WatchValue>)> = serde_json::from_str(&result_str).unwrap();
+        let result_img: Vec<(ExportImage, Vec<WatchValue>)> =
+            serde_json::from_str(&result_str).unwrap();
         Ok(result_img)
     }
 }
@@ -404,7 +409,6 @@ pub enum WatchNamespace {
     Data,
 }
 
-
 impl TryFrom<VariableNamespace> for WatchNamespace {
     type Error = VegaFusionError;
 
@@ -412,13 +416,10 @@ impl TryFrom<VariableNamespace> for WatchNamespace {
         match value {
             VariableNamespace::Signal => Ok(Self::Signal),
             VariableNamespace::Data => Ok(Self::Data),
-            _ => {
-                return Err(VegaFusionError::internal("Scale namespace not supported"))
-            }
+            _ => Err(VegaFusionError::internal("Scale namespace not supported")),
         }
     }
 }
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Watch {
@@ -431,12 +432,8 @@ impl Watch {
     pub fn to_scoped_variable(&self) -> ScopedVariable {
         (
             match self.namespace {
-                WatchNamespace::Signal => {
-                    Variable::new_signal(&self.name)
-                }
-                WatchNamespace::Data => {
-                    Variable::new_data(&self.name)
-                }
+                WatchNamespace::Signal => Variable::new_signal(&self.name),
+                WatchNamespace::Data => Variable::new_data(&self.name),
             },
             self.scope.clone(),
         )
@@ -452,7 +449,7 @@ impl TryFrom<ScopedVariable> for Watch {
         Ok(Self {
             namespace: tmp,
             name: value.0.name.clone(),
-            scope: value.1.clone(),
+            scope: value.1,
         })
     }
 }
@@ -471,7 +468,8 @@ pub struct WatchValues {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ExportImageFormat {
-    Png, Svg
+    Png,
+    Svg,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -485,44 +483,39 @@ impl ExportImage {
     pub fn save(&self, path: &str, add_ext: bool) -> Result<String> {
         let mut path = path.to_string();
         match self {
-            ExportImage::Svg(svg) => {
-                if !add_ext || path.ends_with(".svg") {
-                    fs::write(&path, svg)
-                } else {
-                    path.push_str(".svg");
-                    fs::write(&path, svg)
-                }.with_context(
-                    || format!("Failed to write svg image to {}", path)
-                )?
+            ExportImage::Svg(svg) => if !add_ext || path.ends_with(".svg") {
+                fs::write(&path, svg)
+            } else {
+                path.push_str(".svg");
+                fs::write(&path, svg)
             }
+            .with_context(|| format!("Failed to write svg image to {}", path))?,
             ExportImage::Png(png_b64) => {
-                let png_bytes = base64::decode(png_b64).external("Failed to decdode base64 encoded png image")?;
+                let png_bytes = base64::decode(png_b64)
+                    .external("Failed to decdode base64 encoded png image")?;
                 if !add_ext || path.ends_with(".png") {
                     fs::write(&path, png_bytes)
                 } else {
                     path.push_str(".png");
                     fs::write(&path, png_bytes)
-                }.with_context(
-                    || format!("Failed to write png image to {}", path)
-                )?
+                }
+                .with_context(|| format!("Failed to write png image to {}", path))?
             }
         };
 
         Ok(path)
     }
 
-
     pub fn to_dssim(&self, attr: &Dssim) -> Result<DssimImage<f32>> {
         if !matches!(self, ExportImage::Png(_)) {
-            return Err(VegaFusionError::internal("Only PNG image supported"))
+            return Err(VegaFusionError::internal("Only PNG image supported"));
         }
         let tmpfile = tempfile::NamedTempFile::new().unwrap();
         let tmppath = tmpfile.path().to_str().unwrap();
         self.save(tmppath, false)?;
 
-        let img = dssim::load_image(attr, tmppath).external(
-            "Failed to create DSSIM image for comparison"
-        )?;
+        let img = dssim::load_image(attr, tmppath)
+            .external("Failed to create DSSIM image for comparison")?;
         Ok(img)
     }
 
@@ -538,17 +531,22 @@ impl ExportImage {
             let map_meta = ssim_maps[0].clone();
             let avgssim = map_meta.ssim as f32;
 
-            let out: Vec<_> = map_meta.map.pixels().map(|ssim|{
-                let max = 1_f32 - ssim;
-                let maxsq = max * max;
-                rgb::RGBA8 {
-                    r: to_byte(maxsq * 16.0),
-                    g: to_byte(max * 3.0),
-                    b: to_byte(max / ((1_f32 - avgssim) * 4_f32)),
-                    a: 255,
-                }
-            }).collect();
-            let png_res = lodepng::encode32(&out, map_meta.map.width(), map_meta.map.height()).unwrap();
+            let out: Vec<_> = map_meta
+                .map
+                .pixels()
+                .map(|ssim| {
+                    let max = 1_f32 - ssim;
+                    let maxsq = max * max;
+                    rgb::RGBA8 {
+                        r: to_byte(maxsq * 16.0),
+                        g: to_byte(max * 3.0),
+                        b: to_byte(max / ((1_f32 - avgssim) * 4_f32)),
+                        a: 255,
+                    }
+                })
+                .collect();
+            let png_res =
+                lodepng::encode32(&out, map_meta.map.width(), map_meta.map.height()).unwrap();
             Ok((diff.into(), Some(png_res)))
         } else {
             Ok((diff.into(), None))
@@ -556,18 +554,21 @@ impl ExportImage {
     }
 }
 
-
 fn to_byte(i: f32) -> u8 {
-    if i <= 0.0 {0}
-    else if i >= 255.0/256.0 {255}
-    else {(i * 256.0) as u8}
+    if i <= 0.0 {
+        0
+    } else if i >= 255.0 / 256.0 {
+        255
+    } else {
+        (i * 256.0) as u8
+    }
 }
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ExportUpdateNamespace {
-    Signal, Data
+    Signal,
+    Data,
 }
 
 impl TryFrom<VariableNamespace> for ExportUpdateNamespace {
@@ -575,13 +576,9 @@ impl TryFrom<VariableNamespace> for ExportUpdateNamespace {
 
     fn try_from(value: VariableNamespace) -> Result<Self> {
         match value {
-            VariableNamespace::Signal => {
-                Ok(Self::Signal)
-            }
-            VariableNamespace::Data => {
-                Ok(Self::Data)
-            }
-            _ => return Err(VegaFusionError::internal("Scale namespace not supported"))
+            VariableNamespace::Signal => Ok(Self::Signal),
+            VariableNamespace::Data => Ok(Self::Data),
+            _ => Err(VegaFusionError::internal("Scale namespace not supported")),
         }
     }
 }
@@ -595,8 +592,6 @@ pub struct ExportUpdate {
 }
 
 pub type ExportUpdateBatch = Vec<ExportUpdate>;
-
-
 
 lazy_static! {
     static ref NODE_JS_RUNTIME: Arc<NodeJsRuntime> = Arc::new(NodeJsRuntime::try_new().unwrap());

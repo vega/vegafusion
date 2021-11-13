@@ -2,13 +2,16 @@
 extern crate lazy_static;
 
 mod util;
-use crate::util::vegajs_runtime::{ExportImage, ExportImageFormat, ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace, vegajs_runtime, Watch, WatchNamespace};
+use crate::util::vegajs_runtime::{
+    vegajs_runtime, ExportImage, ExportImageFormat, ExportUpdate, ExportUpdateBatch,
+    ExportUpdateNamespace, Watch, WatchNamespace,
+};
 
 use datafusion::scalar::ScalarValue;
 use serde_json::json;
 use std::collections::HashMap;
 use std::fs;
-use num_traits::real::Real;
+
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::spec::chart::ChartSpec;
@@ -137,30 +140,35 @@ fn test_evaluate_filter_transform() {
     assert_eq!(result_data.to_json(), expected_dataset.to_json());
 }
 
-
 #[test]
 fn test_export_single_image() {
-    let mut crate_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).display().to_string();
+    let crate_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .display()
+        .to_string();
 
-    let spec_path= format!("{}/tests/specs/lets_make_a_bar_chart.json", crate_dir);
+    let spec_path = format!("{}/tests/specs/lets_make_a_bar_chart.json", crate_dir);
     let spec_str = fs::read_to_string(spec_path).expect("Failed to read spec");
-    let chart_spec: ChartSpec = serde_json::from_str(&spec_str).expect("Failed to parse JSON as chart");
+    let chart_spec: ChartSpec =
+        serde_json::from_str(&spec_str).expect("Failed to parse JSON as chart");
 
     let vegajs_runtime = vegajs_runtime();
-    let res = vegajs_runtime.export_spec_single(
-        &chart_spec, ExportImageFormat::Png
-    ).expect("Failed to export single spec");
+    let res = vegajs_runtime
+        .export_spec_single(&chart_spec, ExportImageFormat::Png)
+        .expect("Failed to export single spec");
 
     res.save(
         &format!("{}/tests/output/lets_make_a_bar_chart.png", crate_dir),
         false,
-    ).expect("Failed to save image");
+    )
+    .expect("Failed to save image");
 }
 
 #[test]
 fn try_export_sequence_helper_crossfilter() {
-    let mut crate_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).display().to_string();
-    let spec_path= format!("{}/tests/specs/flights_crossfilter_a.json", crate_dir);
+    let crate_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .display()
+        .to_string();
+    let spec_path = format!("{}/tests/specs/flights_crossfilter_a.json", crate_dir);
 
     let spec_str = fs::read_to_string(spec_path).unwrap();
     let chart_spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
@@ -174,31 +182,27 @@ fn try_export_sequence_helper_crossfilter() {
                 namespace: ExportUpdateNamespace::Signal,
                 name: "brush_x".to_string(),
                 scope: vec![0],
-                value: json!([70, 120])
+                value: json!([70, 120]),
             },
             ExportUpdate {
                 namespace: ExportUpdateNamespace::Signal,
                 name: "brush_x".to_string(),
                 scope: vec![1],
-                value: json!([40, 80])
+                value: json!([40, 80]),
             },
         ],
-        vec![
-            ExportUpdate {
-                namespace: ExportUpdateNamespace::Signal,
-                name: "brush_x".to_string(),
-                scope: vec![0],
-                value: json!([0, 0])
-            }
-        ],
-        vec![
-            ExportUpdate {
-                namespace: ExportUpdateNamespace::Signal,
-                name: "brush_x".to_string(),
-                scope: vec![1],
-                value: json!([0, 0])
-            }
-        ],
+        vec![ExportUpdate {
+            namespace: ExportUpdateNamespace::Signal,
+            name: "brush_x".to_string(),
+            scope: vec![0],
+            value: json!([0, 0]),
+        }],
+        vec![ExportUpdate {
+            namespace: ExportUpdateNamespace::Signal,
+            name: "brush_x".to_string(),
+            scope: vec![1],
+            value: json!([0, 0]),
+        }],
     ];
 
     let watches: Vec<Watch> = vec![
@@ -211,24 +215,20 @@ fn try_export_sequence_helper_crossfilter() {
             namespace: WatchNamespace::Signal,
             name: "brush".to_string(),
             scope: vec![],
-        }
+        },
     ];
 
     let vegajs_runtime = vegajs_runtime();
-    let res = vegajs_runtime.export_spec_sequence(
-        &chart_spec,
-        ExportImageFormat::Svg,
-        init,
-        updates,
-        watches,
-    ).unwrap();
+    let res = vegajs_runtime
+        .export_spec_sequence(&chart_spec, ExportImageFormat::Svg, init, updates, watches)
+        .unwrap();
 
     // Write out images
     for (i, (export_image, batch)) in res.iter().enumerate() {
         println!("watch: {}", serde_json::to_string(&batch).unwrap());
         match export_image {
             ExportImage::Svg(svg_str) => {
-                let spec_path= format!("{}/tests/output/seq_res{}.svg", crate_dir, i);
+                let spec_path = format!("{}/tests/output/seq_res{}.svg", crate_dir, i);
                 fs::write(spec_path, svg_str).expect("Failed to write temp file");
             }
             ExportImage::Png(_) => {}
