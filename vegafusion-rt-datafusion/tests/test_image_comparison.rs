@@ -11,11 +11,6 @@ mod test_image_comparison {
     use rstest::rstest;
     use std::collections::HashMap;
     use std::convert::TryFrom;
-
-    use crate::util::vegajs_runtime::{
-        vegajs_runtime, ExportImageFormat, ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace,
-        Watch, WatchNamespace,
-    };
     use datafusion::scalar::ScalarValue;
     use std::fs;
     use std::sync::Arc;
@@ -28,6 +23,10 @@ mod test_image_comparison {
     use vegafusion_core::task_graph::task_graph::ScopedVariable;
     use vegafusion_core::task_graph::task_value::TaskValue;
     use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
+    use crate::util::vegajs_runtime::{
+        vegajs_runtime, ExportImageFormat, ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace,
+        Watch, WatchNamespace,
+    };
 
     #[rstest(
         spec_name,
