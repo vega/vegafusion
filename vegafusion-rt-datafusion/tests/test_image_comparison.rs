@@ -5,6 +5,9 @@ mod util;
 
 #[cfg(test)]
 mod test_image_comparison {
+    #[test] fn test_marker() {} // Help IDE detect test module
+
+    use rstest::rstest;
     use std::collections::{HashMap, HashSet};
     use std::convert::TryFrom;
     use serde_json::json;
@@ -23,11 +26,19 @@ mod test_image_comparison {
     use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
     use crate::util::vegajs_runtime::{ExportImageFormat, ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace, vegajs_runtime, Watch, WatchNamespace};
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test() {
-        // let spec_name = "flights_crossfilter_a";
-        let spec_name = "bar_colors";
+    #[rstest(
+        spec_name,
+        case("stacked_bar"),
+        case("bar_colors"),
+        case("imdb_histogram"),
+        case("stacked_bar"),
+    )]
+    fn test_image_comparison(spec_name: &str) {
+        let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap();
+        rt.block_on(check_spec_sequence(spec_name));
+    }
 
+    async fn check_spec_sequence(spec_name: &str) {
         // Initialize runtime
         let vegajs_runtime = vegajs_runtime();
 
@@ -64,8 +75,11 @@ mod test_image_comparison {
 
         // Extract the initial values of all of the variables that should be sent from the
         // server to the client
-        println!("comm_plan: {:#?}", comm_plan);
-        println!("server_spec: {}", serde_json::to_string_pretty(&server_spec).unwrap());
+
+        // println!("comm_plan: {:#?}", comm_plan);
+        // println!("server_spec: {}", serde_json::to_string_pretty(&server_spec).unwrap());
+        // println!("client_spec: {}", serde_json::to_string_pretty(&client_spec).unwrap());
+
         let mut init = Vec::new();
         for var in &comm_plan.server_to_client {
             let node_index = task_graph_mapping.get(&var).unwrap();
@@ -82,6 +96,8 @@ mod test_image_comparison {
                 }
             );
         }
+
+        // println!("init: {:#?}", init);
 
         // Build watches for all of the variables that should be sent from the client to the
         // server
@@ -164,8 +180,6 @@ mod test_image_comparison {
             }
         ).collect();
 
-        println!("client_spec:\n{}", serde_json::to_string_pretty(&client_spec).unwrap());
-        println!("init:\n{:?}", init);
         // Export the planned client spec with updates from task graph
         let planned_export_images: Vec<_> = vegajs_runtime.export_spec_sequence(
             &client_spec,
@@ -181,10 +195,13 @@ mod test_image_comparison {
             let (full_img, _) = &export_sequence_results[i];
 
             let (difference, diff_img) = full_img.compare(&server_img).unwrap();
-            if let Some(diff_img) = diff_img {
-                let diff_path = format!("{}/tests/output/{}_diff{}.png", crate_dir, spec_name, i);
-                fs::write(&diff_path, diff_img).unwrap();
-                assert!(false, "Found difference in exported images.\nDiff written to {}", diff_path)
+            if difference > 1e-5 {
+                println!("difference: {}", difference);
+                if let Some(diff_img) = diff_img {
+                    let diff_path = format!("{}/tests/output/{}_diff{}.png", crate_dir, spec_name, i);
+                    fs::write(&diff_path, diff_img).unwrap();
+                    assert!(false, "Found difference in exported images.\nDiff written to {}", diff_path)
+                }
             }
         }
     }
