@@ -34,18 +34,19 @@ mod test_image_comparison {
 
     #[rstest(
         spec_name,
-        // case("stacked_bar"),
-        // case("bar_colors"),
-        // case("imdb_histogram"),
-        // case("flights_crossfilter_a"),
-        // case("log_scaled_histogram"),
-        // case("non_linear_histogram"),
-        // case("relative_frequency_histogram"),
-        // case("kde_movies"),
-        // case("2d_circles_histogram_imdb"),
-        // case("2d_histogram_imdb"),
-        // case("cumulative_window_imdb"),
-        case("density_and_cumulative_histograms")
+        case("stacked_bar"),
+        case("bar_colors"),
+        case("imdb_histogram"),
+        case("flights_crossfilter_a"),
+        case("log_scaled_histogram"),
+        case("non_linear_histogram"),
+        case("relative_frequency_histogram"),
+        case("kde_movies"),
+        case("2d_circles_histogram_imdb"),
+        case("2d_histogram_imdb"),
+        case("cumulative_window_imdb"),
+        case("density_and_cumulative_histograms"),
+        case("mean_strip_plot_movies")
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);
@@ -130,7 +131,7 @@ async fn check_spec_sequence(spec_name: &str) {
         });
     }
 
-    println!("init: {:#?}", init);
+    // println!("init: {:#?}", init);
 
     // Build watches for all of the variables that should be sent from the client to the
     // server

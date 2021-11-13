@@ -34,8 +34,9 @@ pub struct ScaleDataReferenceSpec {
     pub data: String,
     pub field: String,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sort: Option<bool>,
+    // Need to support sort objects as well as booleans
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    // pub sort: Option<bool>,
 
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
