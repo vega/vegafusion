@@ -39,7 +39,11 @@ mod test_image_comparison {
         case("imdb_histogram"),
         case("flights_crossfilter_a"),
         case("log_scaled_histogram"),
-        case("non_linear_histogram")
+        case("non_linear_histogram"),
+        case("relative_frequency_histogram"),
+        case("kde_movies"),
+        case("2d_circles_histogram_imdb"),
+        case("2d_histogram_imdb")
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);
@@ -81,12 +85,12 @@ async fn check_spec_sequence(spec_name: &str) {
     // Perform client/server planning
     let mut task_scope = full_spec.to_task_scope().unwrap();
     let mut client_spec = full_spec.clone();
-    // println!("client_spec: {}", serde_json::to_string_pretty(&client_spec).unwrap());
-
     let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope).unwrap();
-    // println!("server_spec: {}", serde_json::to_string_pretty(&server_spec).unwrap());
-
     let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec).unwrap();
+
+    println!("client_spec: {}", serde_json::to_string_pretty(&client_spec).unwrap());
+    println!("server_spec: {}", serde_json::to_string_pretty(&server_spec).unwrap());
+    println!("comm_plan: {:#?}", comm_plan);
 
     // Build task graph
     let tasks = server_spec.to_tasks().unwrap();
@@ -124,7 +128,7 @@ async fn check_spec_sequence(spec_name: &str) {
         });
     }
 
-    // println!("init: {:#?}", init);
+    println!("init: {:#?}", init);
 
     // Build watches for all of the variables that should be sent from the client to the
     // server
@@ -244,7 +248,7 @@ async fn check_spec_sequence(spec_name: &str) {
         let (full_img, _) = &export_sequence_results[i];
 
         let (difference, diff_img) = full_img.compare(&server_img).unwrap();
-        if difference > 1e-5 {
+        if difference > 1e-3 {
             println!("difference: {}", difference);
             if let Some(diff_img) = diff_img {
                 let diff_path =
