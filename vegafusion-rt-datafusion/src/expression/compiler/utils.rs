@@ -104,6 +104,14 @@ pub fn to_string(value: Expr, schema: &DFSchema) -> Result<Expr> {
     Ok(utf8_value)
 }
 
+pub fn is_null_literal(value: &Expr) -> bool {
+    if let Expr::Literal(literal) = &value {
+        literal.is_null()
+    } else {
+      false
+    }
+}
+
 pub fn cast_to(value: Expr, cast_dtype: &DataType, schema: &DFSchema) -> Result<Expr> {
     let dtype = data_type(&value, schema)?;
     if &dtype == cast_dtype {

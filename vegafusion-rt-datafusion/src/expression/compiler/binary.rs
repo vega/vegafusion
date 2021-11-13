@@ -1,6 +1,4 @@
-use crate::expression::compiler::utils::{
-    data_type, is_numeric_datatype, is_string_datatype, to_numeric, to_string,
-};
+use crate::expression::compiler::utils::{data_type, is_null_literal, is_numeric_datatype, is_string_datatype, to_numeric, to_string};
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::logical_plan::{concat, lit, DFSchema, Expr, Operator};
 use vegafusion_core::error::Result;
@@ -64,7 +62,11 @@ pub fn compile_binary(
         BinaryOperator::StrictEquals => {
             // Use original values, not those converted to numeric
             // Let DataFusion handle numeric casting
-            if is_numeric_datatype(&lhs_dtype) && is_numeric_datatype(&rhs_dtype)
+            if is_null_literal(&lhs) {
+                Expr::IsNull(Box::new(rhs))
+            } else if is_null_literal(&rhs) {
+                Expr::IsNull(Box::new(lhs))
+            } else if is_numeric_datatype(&lhs_dtype) && is_numeric_datatype(&rhs_dtype)
                 || lhs_dtype == rhs_dtype
             {
                 Expr::BinaryExpr {
@@ -78,7 +80,11 @@ pub fn compile_binary(
             }
         }
         BinaryOperator::NotStrictEquals => {
-            if is_numeric_datatype(&lhs_dtype) && is_numeric_datatype(&rhs_dtype)
+            if is_null_literal(&lhs) {
+                Expr::IsNotNull(Box::new(rhs))
+            } else if is_null_literal(&rhs) {
+                Expr::IsNotNull(Box::new(lhs))
+            } else if is_numeric_datatype(&lhs_dtype) && is_numeric_datatype(&rhs_dtype)
                 || lhs_dtype == rhs_dtype
             {
                 Expr::BinaryExpr {
