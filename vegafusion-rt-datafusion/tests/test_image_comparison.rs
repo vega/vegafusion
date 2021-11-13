@@ -34,16 +34,18 @@ mod test_image_comparison {
 
     #[rstest(
         spec_name,
-        case("stacked_bar"),
-        case("bar_colors"),
-        case("imdb_histogram"),
-        case("flights_crossfilter_a"),
-        case("log_scaled_histogram"),
-        case("non_linear_histogram"),
-        case("relative_frequency_histogram"),
-        case("kde_movies"),
-        case("2d_circles_histogram_imdb"),
-        case("2d_histogram_imdb")
+        // case("stacked_bar"),
+        // case("bar_colors"),
+        // case("imdb_histogram"),
+        // case("flights_crossfilter_a"),
+        // case("log_scaled_histogram"),
+        // case("non_linear_histogram"),
+        // case("relative_frequency_histogram"),
+        // case("kde_movies"),
+        // case("2d_circles_histogram_imdb"),
+        // case("2d_histogram_imdb"),
+        // case("cumulative_window_imdb"),
+        case("density_and_cumulative_histograms")
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);
@@ -118,7 +120,7 @@ async fn check_spec_sequence(spec_name: &str) {
         let value = runtime
             .get_node_value(Arc::new(task_graph.clone()), node_index)
             .await
-            .unwrap();
+            .expect("Failed to get node value");
 
         init.push(ExportUpdate {
             namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),
