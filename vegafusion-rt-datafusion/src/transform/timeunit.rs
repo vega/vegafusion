@@ -47,7 +47,18 @@ impl TransformTrait for TimeUnit {
                             .with_hour(0).unwrap()
                             .with_day0(0).unwrap()
                             .with_month0(0).unwrap();
-                        // dt_value.timestamp_nanos()
+                        dt_value.timestamp_millis()
+                    })
+                }
+                &[Month] => {
+                    unary(array, |value| {
+                        let dt_value = date64_to_datetime(value).with_nanosecond(0).unwrap();
+                        let dt_value = dt_value
+                            .with_second(0).unwrap()
+                            .with_minute(0).unwrap()
+                            .with_hour(0).unwrap()
+                            .with_day0(0).unwrap()
+                            .with_year(2012).unwrap();
                         dt_value.timestamp_millis()
                     })
                 }
