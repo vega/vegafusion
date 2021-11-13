@@ -80,7 +80,7 @@ impl TransformTrait for Bin {
                 DataType::Float64 => {
                     let field_values = args[0].as_any().downcast_ref::<Float64Array>().unwrap();
                     let binned_values: Float64Array = unary(field_values, |v| {
-                        let bin_ind = (0.0 + (v - start) / step).floor() as i32;
+                        let bin_ind = (1.0e-14 + (v - start) / step).floor() as i32;
                         if bin_ind < 0 {
                             f64::NEG_INFINITY
                         } else if bin_ind >= n {
@@ -96,7 +96,7 @@ impl TransformTrait for Bin {
                     let binned_values: Float64Array = unary(field_values, |v| {
                         let v = v as f64;
                         let bin_val = (v - start) / step;
-                        let bin_ind = bin_val.floor() as i32;
+                        let bin_ind = (1.0e-14 + bin_val).floor() as i32;
                         if approx_eq!(f64, bin_val, n as f64, ulps = 1) {
                             // Close the right-hand edge of the top bin
                             bin_starts[(n - 1) as usize]
