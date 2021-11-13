@@ -104,6 +104,28 @@ enum AggregateOp {
     Values = 22;
 }
 
+// TimeUnit
+message TimeUnit {
+  string field = 1;
+  repeated TimeUnitUnit units = 2;
+  optional string signal = 3;
+  optional string alias_0 = 4;
+  optional string alias_1 = 5;
+}
+
+enum TimeUnitUnit {
+  Year = 0;
+  Quarter = 1;
+  Month = 2;
+  Date = 3;
+  Week = 4;
+  Day = 5;
+  DayOfYear = 6;
+  Hours = 7;
+  Minutes = 8;
+  Seconds = 9;
+  Milliseconds = 10;
+}
 
 // Top-level transform
 message Transform {
@@ -114,6 +136,7 @@ message Transform {
     Bin bin = 4;
     Aggregate aggregate = 5;
     Collect collect = 6;
+    TimeUnit timeunit = 7;
   }
 }
 

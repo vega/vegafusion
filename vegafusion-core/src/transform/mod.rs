@@ -2,10 +2,11 @@ use crate::error::VegaFusionError;
 use crate::proto::gen::tasks::Variable;
 use crate::proto::gen::transforms::transform::TransformKind;
 use crate::proto::gen::transforms::Transform;
-use crate::proto::gen::transforms::{Aggregate, Bin, Collect, Extent, Filter, Formula};
+use crate::proto::gen::transforms::{Aggregate, Bin, Collect, Extent, Filter, Formula, TimeUnit};
 use crate::spec::transform::TransformSpec;
 use crate::task_graph::task::InputVariable;
 use std::convert::TryFrom;
+
 
 pub mod aggregate;
 pub mod bin;
@@ -13,6 +14,7 @@ pub mod collect;
 pub mod extent;
 pub mod filter;
 pub mod formula;
+pub mod timeunit;
 pub mod pipeline;
 
 impl TryFrom<&TransformSpec> for TransformKind {
@@ -26,6 +28,7 @@ impl TryFrom<&TransformSpec> for TransformKind {
             TransformSpec::Bin(tx_spec) => Self::Bin(Bin::try_new(tx_spec)?),
             TransformSpec::Aggregate(tx_spec) => Self::Aggregate(Aggregate::new(tx_spec)),
             TransformSpec::Collect(tx_spec) => Self::Collect(Collect::try_new(tx_spec)?),
+            TransformSpec::Timeunit(tx_spec) => Self::Timeunit(TimeUnit::try_new(tx_spec)?),
             _ => {
                 return Err(VegaFusionError::parse(&format!(
                     "Unsupported transform: {:?}",
@@ -55,6 +58,7 @@ impl TransformKind {
             TransformKind::Bin(tx) => tx,
             TransformKind::Aggregate(tx) => tx,
             TransformKind::Collect(tx) => tx,
+            TransformKind::Timeunit(tx) => tx,
         }
     }
 }

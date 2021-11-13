@@ -84,10 +84,24 @@ pub struct Aggregate {
     #[prost(enumeration="AggregateOp", repeated, tag="4")]
     pub ops: ::prost::alloc::vec::Vec<i32>,
 }
+/// TimeUnit
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TimeUnit {
+    #[prost(string, tag="1")]
+    pub field: ::prost::alloc::string::String,
+    #[prost(enumeration="TimeUnitUnit", repeated, tag="2")]
+    pub units: ::prost::alloc::vec::Vec<i32>,
+    #[prost(string, optional, tag="3")]
+    pub signal: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag="4")]
+    pub alias_0: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag="5")]
+    pub alias_1: ::core::option::Option<::prost::alloc::string::String>,
+}
 /// Top-level transform
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transform {
-    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6")]
+    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7")]
     pub transform_kind: ::core::option::Option<transform::TransformKind>,
 }
 /// Nested message and enum types in `Transform`.
@@ -106,6 +120,8 @@ pub mod transform {
         Aggregate(super::Aggregate),
         #[prost(message, tag="6")]
         Collect(super::Collect),
+        #[prost(message, tag="7")]
+        Timeunit(super::TimeUnit),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -145,4 +161,19 @@ pub enum AggregateOp {
     Argmin = 20,
     Argmax = 21,
     Values = 22,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum TimeUnitUnit {
+    Year = 0,
+    Quarter = 1,
+    Month = 2,
+    Date = 3,
+    Week = 4,
+    Day = 5,
+    DayOfYear = 6,
+    Hours = 7,
+    Minutes = 8,
+    Seconds = 9,
+    Milliseconds = 10,
 }

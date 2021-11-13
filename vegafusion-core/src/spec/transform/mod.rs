@@ -5,6 +5,7 @@ pub mod extent;
 pub mod filter;
 pub mod formula;
 pub mod unsupported;
+pub mod timeunit;
 
 use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransformSpec};
 
@@ -17,6 +18,7 @@ use crate::spec::transform::unsupported::*;
 use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
+use crate::spec::transform::timeunit::TimeUnitTransformSpec;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -27,6 +29,7 @@ pub enum TransformSpec {
     Bin(Box<BinTransformSpec>), // Box since transform is much larger than others
     Aggregate(AggregateTransformSpec),
     Collect(CollectTransformSpec),
+    Timeunit(TimeUnitTransformSpec),
 
     // Unsupported
     CountPattern(CountpatternTransformSpec),
@@ -67,7 +70,6 @@ pub enum TransformSpec {
     Sequence(SequenceTransformSpec),
     Stack(StackTransformSpec),
     Stratify(StratifyTransformSpec),
-    Timeunit(TimeunitTransformSpec),
     Tree(TreeTransformSpec),
     TreeLinks(TreelinksTransformSpec),
     Treemap(TreemapTransformSpec),
@@ -87,6 +89,7 @@ impl Deref for TransformSpec {
             TransformSpec::Bin(t) => t.as_ref(),
             TransformSpec::Aggregate(t) => t,
             TransformSpec::Collect(t) => t,
+            TransformSpec::Timeunit(t) => t,
 
             // Unsupported
             TransformSpec::CountPattern(t) => t,
@@ -127,7 +130,6 @@ impl Deref for TransformSpec {
             TransformSpec::Sequence(t) => t,
             TransformSpec::Stack(t) => t,
             TransformSpec::Stratify(t) => t,
-            TransformSpec::Timeunit(t) => t,
             TransformSpec::Tree(t) => t,
             TransformSpec::TreeLinks(t) => t,
             TransformSpec::Treemap(t) => t,

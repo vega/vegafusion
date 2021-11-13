@@ -1,0 +1,55 @@
+use crate::error::Result;
+use crate::proto::gen::tasks::Variable;
+use crate::proto::gen::transforms::{TimeUnit, TimeUnitUnit};
+use crate::spec::transform::timeunit::{TimeUnitTransformSpec, TimeUnitUnitSpec};
+use crate::transform::TransformDependencies;
+
+impl TimeUnit {
+    pub fn try_new(transform: &TimeUnitTransformSpec) -> Result<Self> {
+        let field = transform.field.clone();
+        let units: Vec<_> = transform.units.iter().flat_map(
+            |units| units.iter().map(|unit| {
+                TimeUnitUnit::from(unit) as i32
+            })
+        ).collect();
+        let signal = transform.signal.clone();
+
+        let alias_0 = transform.as_.as_ref().and_then(|v| v.get(0).cloned());
+        let alias_1 = transform.as_.as_ref().and_then(|v| v.get(1).cloned());
+
+        Ok(Self {
+            field,
+            units,
+            signal,
+            alias_0,
+            alias_1,
+        })
+    }
+}
+
+impl From<&TimeUnitUnitSpec> for TimeUnitUnit {
+    fn from(unit: &TimeUnitUnitSpec) -> Self {
+        match unit {
+            TimeUnitUnitSpec::Year => Self::Year,
+            TimeUnitUnitSpec::Quarter => Self::Quarter,
+            TimeUnitUnitSpec::Month => Self::Month,
+            TimeUnitUnitSpec::Date => Self::Date,
+            TimeUnitUnitSpec::Week => Self::Week,
+            TimeUnitUnitSpec::Day => Self::Day,
+            TimeUnitUnitSpec::DayOfYear => Self::DayOfYear,
+            TimeUnitUnitSpec::Hours => Self::Hours,
+            TimeUnitUnitSpec::Minutes => Self::Minutes,
+            TimeUnitUnitSpec::Seconds => Self::Seconds,
+            TimeUnitUnitSpec::Milliseconds => Self::Milliseconds,
+        }
+    }
+}
+
+impl TransformDependencies for TimeUnit {
+    fn output_vars(&self) -> Vec<Variable> {
+        self.signal
+            .iter()
+            .map(|s| Variable::new_signal(s))
+            .collect()
+    }
+}

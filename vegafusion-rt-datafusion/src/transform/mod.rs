@@ -6,6 +6,7 @@ pub mod filter;
 pub mod formula;
 pub mod pipeline;
 pub mod utils;
+pub mod timeunit;
 
 use crate::expression::compiler::config::CompilationConfig;
 use datafusion::dataframe::DataFrame;
@@ -36,6 +37,7 @@ pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
         TransformKind::Bin(tx) => tx,
         TransformKind::Aggregate(tx) => tx,
         TransformKind::Collect(tx) => tx,
+        TransformKind::Timeunit(tx) => tx,
     }
 }
 

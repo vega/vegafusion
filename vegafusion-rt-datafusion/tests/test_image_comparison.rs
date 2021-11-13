@@ -50,7 +50,8 @@ mod test_image_comparison {
         case("table_heatmap_cars"),
         case("difference_from_mean"),
         case("nested_concat_align"),
-        case("imdb_dashboard_cross_height")
+        case("imdb_dashboard_cross_height"),
+        case("stacked_bar_weather_year"),
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);

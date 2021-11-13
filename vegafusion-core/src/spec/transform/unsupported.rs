@@ -59,7 +59,6 @@ unsupported_transforms!(
     SequenceTransformSpec,
     StackTransformSpec,
     StratifyTransformSpec,
-    TimeunitTransformSpec,
     TreeTransformSpec,
     TreelinksTransformSpec,
     TreemapTransformSpec,
