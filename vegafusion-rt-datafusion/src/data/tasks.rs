@@ -9,6 +9,8 @@ use datafusion::dataframe::DataFrame;
 use datafusion::execution::context::ExecutionContext;
 use datafusion::execution::options::CsvReadOptions;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::Write;
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
@@ -165,7 +167,31 @@ async fn read_csv(url: String) -> Result<Arc<dyn DataFrame>> {
     };
 
     let mut ctx = ExecutionContext::new();
-    Ok(ctx.read_csv(url, csv_opts).await?)
+
+    if url.starts_with("http://") || url.starts_with("https://") {
+        // Perform get request to collect file contents as text
+        let body = reqwest::get(url.clone())
+            .await
+            .external(&format!("Failed to get URL data from {}", url))?
+            .text()
+            .await
+            .external("Failed to convert URL data to text")?;
+
+        // Write contents to temp csv file
+        let tempdir = tempfile::TempDir::new().unwrap();
+        let filename = format!("file.{}", csv_opts.file_extension);
+        let filepath = tempdir.path().join(filename).to_str().unwrap().to_string();
+        let mut file = File::create(filepath.clone()).unwrap();
+        writeln!(file, "{}", body).unwrap();
+
+        // Load through VegaFusionTable so that temp file can be deleted
+        let df = ctx.read_csv(tempdir.path().to_str().unwrap(), csv_opts).await.unwrap();
+        let table = VegaFusionTable::from_dataframe(df).await.unwrap();
+        let df = table.to_dataframe().unwrap();
+        Ok(df)
+    } else {
+        Ok(ctx.read_csv(url, csv_opts).await?)
+    }
 }
 
 async fn read_json(url: &str, batch_size: usize) -> Result<Arc<dyn DataFrame>> {
