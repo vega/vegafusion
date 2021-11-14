@@ -14,7 +14,7 @@
           "field": "date",
           "type": "timeunit",
           "units": ["month"],
-          "timezone": "utc",
+          "timezone": "local",
           "as": ["utcmonth_date", "utcmonth_date_end"]
         },
         {

@@ -97,6 +97,8 @@ pub struct TimeUnit {
     pub alias_0: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag="5")]
     pub alias_1: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(enumeration="TimeUnitTimeZone", optional, tag="6")]
+    pub timezone: ::core::option::Option<i32>,
 }
 /// Top-level transform
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -176,4 +178,10 @@ pub enum TimeUnitUnit {
     Minutes = 8,
     Seconds = 9,
     Milliseconds = 10,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum TimeUnitTimeZone {
+    Local = 0,
+    Utc = 1,
 }

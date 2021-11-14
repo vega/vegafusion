@@ -111,6 +111,7 @@ message TimeUnit {
   optional string signal = 3;
   optional string alias_0 = 4;
   optional string alias_1 = 5;
+  optional TimeUnitTimeZone timezone = 6;
 }
 
 enum TimeUnitUnit {
@@ -125,6 +126,11 @@ enum TimeUnitUnit {
   Minutes = 8;
   Seconds = 9;
   Milliseconds = 10;
+}
+
+enum TimeUnitTimeZone {
+  Local = 0;
+  Utc = 1;
 }
 
 // Top-level transform

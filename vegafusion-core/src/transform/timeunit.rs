@@ -1,7 +1,7 @@
 use crate::error::Result;
 use crate::proto::gen::tasks::Variable;
-use crate::proto::gen::transforms::{TimeUnit, TimeUnitUnit};
-use crate::spec::transform::timeunit::{TimeUnitTransformSpec, TimeUnitUnitSpec};
+use crate::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
+use crate::spec::transform::timeunit::{TimeUnitTransformSpec, TimeUnitUnitSpec, TimeZone};
 use crate::transform::TransformDependencies;
 
 impl TimeUnit {
@@ -17,12 +17,27 @@ impl TimeUnit {
         let alias_0 = transform.as_.as_ref().and_then(|v| v.get(0).cloned());
         let alias_1 = transform.as_.as_ref().and_then(|v| v.get(1).cloned());
 
+        let timezone = match &transform.timezone {
+            None => None,
+            Some(timezone) => {
+                match timezone {
+                    TimeZone::Local => {
+                        Some(TimeUnitTimeZone::Local as i32)
+                    }
+                    TimeZone::Utc => {
+                        Some(TimeUnitTimeZone::Utc as i32)
+                    }
+                }
+            }
+        };
+
         Ok(Self {
             field,
             units,
             signal,
             alias_0,
             alias_1,
+            timezone,
         })
     }
 }
