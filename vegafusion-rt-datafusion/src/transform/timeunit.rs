@@ -118,6 +118,9 @@ impl TransformTrait for TimeUnit {
                     } else if units_mask[6] {  // DayOfYear
                         // Keep the same day of the year
                         dt_value = dt_value.with_ordinal0(ordinal0).unwrap();
+                    } else {
+                        // Clear month and date
+                        dt_value = dt_value.with_ordinal0(0).unwrap();
                     }
 
                     dt_value.timestamp_millis()
@@ -180,6 +183,9 @@ impl TransformTrait for TimeUnit {
                     } else if units_mask[6] {  // DayOfYear
                         // Keep the same day of the year
                         dt_value = dt_value.with_ordinal0(ordinal0).unwrap();
+                    } else {
+                        // Clear month and date
+                        dt_value = dt_value.with_ordinal0(0).unwrap();
                     }
 
                     dt_value.timestamp_millis()
