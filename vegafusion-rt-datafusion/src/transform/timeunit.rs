@@ -15,7 +15,7 @@ use datafusion::error::DataFusionError;
 use datafusion::logical_plan::Expr;
 use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
-use chrono::{Datelike, Timelike, Local, TimeZone, LocalResult, Utc, NaiveDate, Weekday, NaiveDateTime};
+use chrono::{Datelike, Timelike, Local, TimeZone, LocalResult, Utc, NaiveDate, Weekday, NaiveDateTime, DateTime};
 use crate::expression::compiler::utils::{cast_to, UNIT_SCHEMA};
 
 
@@ -45,187 +45,251 @@ impl TransformTrait for TimeUnit {
             self.units.contains(&(TimeUnitUnit::Milliseconds as i32)),  // 10
         ];
 
-        let timeunit = move |args: &[ArrayRef]| {
-            let arg = &args[0];
-
-            let array = arg
-                .as_any()
-                .downcast_ref::<Date64Array>()
-                .unwrap();
-
-            let result_array: Int64Array = unary(array, |value| {
-                // Load and interpret date time as UTC
-                let dt_value = date64_to_datetime(value).with_nanosecond(0).unwrap();
-                let dt_value = Utc.from_local_datetime(&dt_value).single().unwrap();
-
-                if is_local {
-                    let local = Local {};
-                    let mut dt_value = dt_value.with_timezone(&local);
-
-                    // Handle time truncation
-                    if !units_mask[10] {  // Milliseconds
-                        let new_ns = (((dt_value.nanosecond() as f64) / 1e6).floor() * 1e6) as u32;
-                        dt_value = dt_value.with_nanosecond(new_ns).unwrap();
-                    }
-
-                    if !units_mask[9] {  // Seconds
-                        dt_value = dt_value.with_second(0).unwrap();
-                    }
-
-                    if !units_mask[8] {  // Minutes
-                        dt_value = dt_value.with_minute(0).unwrap();
-                    }
-
-                    if !units_mask[7] {  // Hours
-                        dt_value = dt_value.with_hour(0).unwrap();
-                    }
-
-                    // Save off day of the year and weekday here, becuase these will change if the
-                    // year is changed
-                    let ordinal0 = dt_value.ordinal0();
-                    let weekday = dt_value.weekday();
-
-                    // Handle year truncation
-                    if !units_mask[0] {  // Year
-                        dt_value = dt_value.with_year(2012).unwrap();
-                    }
-
-                    // Handle date (of the year) truncation.
-                    // For simplicity, only one of these is valid at the same time for now
-                    if units_mask[1] {  // Quarter
-                        // Truncate to Quarter
-                        let new_month = ((dt_value.month0() as f64 / 3.0).floor() * 3.0) as u32;
-                        println!("dt_value: {}, new_month0: {}", dt_value, new_month);
-                        dt_value = dt_value.with_day0(0).unwrap().with_month0(new_month).unwrap();
-                    } else if units_mask[2] {  // Month
-                        // Truncate to first day of the month
-                        dt_value = dt_value.with_day0(0).unwrap();
-                    } else if units_mask[3] {  // Date
-                        // Normalize to January, keeping existing day of the month.
-                        // (January has 31 days, so this is safe)
-                        dt_value = dt_value.with_month0(0).unwrap();
-                    } else if units_mask[4] {  // Week
-                        todo!("Week time unit not supported")
-                    } else if units_mask[5] {  // Day
-                        // Keep weekday, but make sure Sunday comes before Monday
-                        let new_date = if weekday == Weekday::Sun {
-                            NaiveDate::from_isoywd(dt_value.year(), 1, weekday)
-                        } else {
-                            NaiveDate::from_isoywd(dt_value.year(), 2, weekday)
-                        };
-                        let new_datetime = NaiveDateTime::new(new_date, dt_value.time());
-                        dt_value = local.from_local_datetime(&new_datetime).single().unwrap();
-                    } else if units_mask[6] {  // DayOfYear
-                        // Keep the same day of the year
-                        dt_value = dt_value.with_ordinal0(ordinal0).unwrap();
-                    } else {
-                        // Clear month and date
-                        dt_value = dt_value.with_ordinal0(0).unwrap();
-                    }
-
-                    dt_value.timestamp_millis()
-                } else {
-                    let mut dt_value = dt_value;
-
-                    // Handle time truncation
-                    if !units_mask[10] {  // Milliseconds
-                        let new_ns = (((dt_value.nanosecond() as f64) / 1e6).floor() * 1e6) as u32;
-                        dt_value = dt_value.with_nanosecond(new_ns).unwrap();
-                    }
-
-                    if !units_mask[9] {  // Seconds
-                        dt_value = dt_value.with_second(0).unwrap();
-                    }
-
-                    if !units_mask[8] {  // Minutes
-                        dt_value = dt_value.with_minute(0).unwrap();
-                    }
-
-                    if !units_mask[7] {  // Hours
-                        dt_value = dt_value.with_hour(0).unwrap();
-                    }
-
-                    // Save off day of the year and weekday here, becuase these will change if the
-                    // year is changed
-                    let ordinal0 = dt_value.ordinal0();
-                    let weekday = dt_value.weekday();
-
-                    // Handle year truncation
-                    if !units_mask[0] {  // Year
-                        dt_value = dt_value.with_year(2012).unwrap();
-                    }
-
-                    // Handle date (of the year) truncation.
-                    // For simplicity, only one of these is valid at the same time for now
-                    if units_mask[1] {  // Quarter
-                        // Truncate to Quarter
-                        let new_month = ((dt_value.month0() as f64 / 3.0).floor() * 3.0) as u32;
-                        println!("dt_value: {}, new_month0: {}", dt_value, new_month);
-                        dt_value = dt_value.with_day0(0).unwrap().with_month0(new_month).unwrap();
-                    } else if units_mask[2] {  // Month
-                        // Truncate to first day of the month
-                        dt_value = dt_value.with_day0(0).unwrap();
-                    } else if units_mask[3] {  // Date
-                        // Normalize to January, keeping existing day of the month.
-                        // (January has 31 days, so this is safe)
-                        dt_value = dt_value.with_month0(0).unwrap();
-                    } else if units_mask[4] {  // Week
-                        todo!("Week time unit not supported")
-                    } else if units_mask[5] {  // Day
-                        // Keep weekday, but make sure Sunday comes before Monday
-                        let new_date = if weekday == Weekday::Sun {
-                            NaiveDate::from_isoywd(dt_value.year(), 1, weekday)
-                        } else {
-                            NaiveDate::from_isoywd(dt_value.year(), 2, weekday)
-                        };
-                        let new_datetime = NaiveDateTime::new(new_date, dt_value.time());
-                        dt_value = Utc.from_local_datetime(&new_datetime).single().unwrap();
-                    } else if units_mask[6] {  // DayOfYear
-                        // Keep the same day of the year
-                        dt_value = dt_value.with_ordinal0(ordinal0).unwrap();
-                    } else {
-                        // Clear month and date
-                        dt_value = dt_value.with_ordinal0(0).unwrap();
-                    }
-
-                    dt_value.timestamp_millis()
-                }
-            });
-
-            Ok(Arc::new(result_array) as ArrayRef)
-        };
-
-        let timeunit = make_scalar_function(timeunit);
-        let return_type: ReturnTypeFunction = Arc::new(
-            // move |_| Ok(Arc::new(DataType::Date64))
-            move |_| Ok(Arc::new(DataType::Int64))
-        );
-
-        let timeunit_udf = ScalarUDF::new(
-            "timeunit",
-            &Signature::uniform(
-                1,
-                vec![DataType::Date64],
-                Volatility::Immutable,
-            ),
-            &return_type,
-            &timeunit,
-        );
-
-        let timeunit_value = timeunit_udf.call(vec![
+        // Handle timeunit start value (we always do this)
+        let timeunit_start_udf = make_timeunit_start_udf(units_mask.as_slice(), is_local);
+        let timeunit_start_value = timeunit_start_udf.call(vec![
             cast_to(col(&self.field), &DataType::Date64, dataframe.schema()).unwrap()
         ]);
 
         // Apply alias
-        let timeunit_value = if let Some(alias_0) = &self.alias_0 {
-            timeunit_value.alias(alias_0)
+        let timeunit_start_alias = if let Some(alias_0) = &self.alias_0 {
+            alias_0.clone()
         } else {
-            timeunit_value.alias("unit0")
+            "unit0".to_string()
         };
+        let timeunit_start_value = timeunit_start_value.alias(&timeunit_start_alias);
 
+        // Add timeunit start value to the dataframe
         let dataframe = dataframe
-            .select(vec![Expr::Wildcard, timeunit_value])?;
+            .select(vec![Expr::Wildcard, timeunit_start_value])?;
+
+        // Handle timeunit end value (In the future, disable this when interval=false)
+        let timeunit_end_udf = make_timeunit_end_udf(units_mask.as_slice(), is_local);
+        let timeunit_end_value = timeunit_end_udf.call(vec![col(&timeunit_start_alias)]);
+
+        // Apply alias
+        let timeunit_end_alias = if let Some(alias_1) = &self.alias_1 {
+            alias_1.clone()
+        } else {
+            "unit1".to_string()
+        };
+        let timeunit_end_value = timeunit_end_value.alias(&timeunit_end_alias);
+
+        // Add timeunit end value to the dataframe
+        let dataframe = dataframe
+            .select(vec![Expr::Wildcard, timeunit_end_value])?;
 
         Ok((dataframe.clone(), Vec::new()))
+    }
+}
+
+fn make_timeunit_start_udf(units_mask: &[bool], is_local: bool) -> ScalarUDF {
+    let units_mask = Vec::from(units_mask);
+    let timeunit = move |args: &[ArrayRef]| {
+        let arg = &args[0];
+
+        let array = arg
+            .as_any()
+            .downcast_ref::<Date64Array>()
+            .unwrap();
+
+        let result_array: Int64Array = unary(array, |value|
+            if is_local {
+                let tz = Local {};
+                perform_timeunit_start(value, units_mask.as_slice(), tz).timestamp_millis()
+            } else {
+                let tz = Utc;
+                perform_timeunit_start(value, units_mask.as_slice(), tz).timestamp_millis()
+            }
+        );
+
+        Ok(Arc::new(result_array) as ArrayRef)
+    };
+
+    let timeunit = make_scalar_function(timeunit);
+    let return_type: ReturnTypeFunction = Arc::new(
+        move |_| Ok(Arc::new(DataType::Int64))
+    );
+
+    ScalarUDF::new(
+        "timeunit",
+        &Signature::uniform(
+            1,
+            vec![DataType::Date64],
+            Volatility::Immutable,
+        ),
+        &return_type,
+        &timeunit,
+    )
+}
+
+fn make_timeunit_end_udf(units_mask: &[bool], is_local: bool) -> ScalarUDF {
+    let units_mask = Vec::from(units_mask);
+    let timeunit_end = move |args: &[ArrayRef]| {
+        let arg = &args[0];
+
+        let start_array = arg
+            .as_any()
+            .downcast_ref::<Int64Array>()
+            .unwrap();
+
+        let result_array: Int64Array = unary(start_array, |value|
+            if is_local {
+                let tz = Local {};
+                perform_timeunit_end(value, units_mask.as_slice(), tz).timestamp_millis()
+            } else {
+                let tz = Utc;
+                perform_timeunit_end(value, units_mask.as_slice(), tz).timestamp_millis()
+            }
+        );
+
+        Ok(Arc::new(result_array) as ArrayRef)
+    };
+
+    let timeunit = make_scalar_function(timeunit_end);
+    let return_type: ReturnTypeFunction = Arc::new(
+        move |_| Ok(Arc::new(DataType::Int64))
+    );
+
+    ScalarUDF::new(
+        "timeunit_end",
+        &Signature::uniform(
+            1,
+            vec![DataType::Int64],
+            Volatility::Immutable,
+        ),
+        &return_type,
+        &timeunit,
+    )
+}
+
+
+
+fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -> DateTime<T> {
+    // Load and interpret date time as UTC
+    let dt_value = date64_to_datetime(value).with_nanosecond(0).unwrap();
+    let dt_value = Utc.from_local_datetime(&dt_value).single().unwrap();
+
+    let mut dt_value = dt_value.with_timezone(&tz);
+
+    // Handle time truncation
+    if !units_mask[10] {  // Milliseconds
+        let new_ns = (((dt_value.nanosecond() as f64) / 1e6).floor() * 1e6) as u32;
+        dt_value = dt_value.with_nanosecond(new_ns).unwrap();
+    }
+
+    if !units_mask[9] {  // Seconds
+        dt_value = dt_value.with_second(0).unwrap();
+    }
+
+    if !units_mask[8] {  // Minutes
+        dt_value = dt_value.with_minute(0).unwrap();
+    }
+
+    if !units_mask[7] {  // Hours
+        dt_value = dt_value.with_hour(0).unwrap();
+    }
+
+    // Save off day of the year and weekday here, becuase these will change if the
+    // year is changed
+    let ordinal0 = dt_value.ordinal0();
+    let weekday = dt_value.weekday();
+
+    // Handle year truncation
+    if !units_mask[0] {  // Year
+        dt_value = dt_value.with_year(2012).unwrap();
+    }
+
+    // Handle date (of the year) truncation.
+    // For simplicity, only one of these is valid at the same time for now
+    if units_mask[1] {  // Quarter
+        // Truncate to Quarter
+        let new_month = ((dt_value.month0() as f64 / 3.0).floor() * 3.0) as u32;
+        dt_value = dt_value.with_day0(0).unwrap().with_month0(new_month).unwrap();
+    } else if units_mask[2] {  // Month
+        // Truncate to first day of the month
+        dt_value = dt_value.with_day0(0).unwrap();
+    } else if units_mask[3] {  // Date
+        // Normalize to January, keeping existing day of the month.
+        // (January has 31 days, so this is safe)
+        dt_value = dt_value.with_month0(0).unwrap();
+    } else if units_mask[4] {  // Week
+        todo!("Week time unit not supported")
+    } else if units_mask[5] {  // Day
+        // Keep weekday, but make sure Sunday comes before Monday
+        let new_date = if weekday == Weekday::Sun {
+            NaiveDate::from_isoywd(dt_value.year(), 1, weekday)
+        } else {
+            NaiveDate::from_isoywd(dt_value.year(), 2, weekday)
+        };
+        let new_datetime = NaiveDateTime::new(new_date, dt_value.time());
+        dt_value = tz.from_local_datetime(&new_datetime).single().unwrap();
+    } else if units_mask[6] {  // DayOfYear
+        // Keep the same day of the year
+        dt_value = dt_value.with_ordinal0(ordinal0).unwrap();
+    } else {
+        // Clear month and date
+        dt_value = dt_value.with_ordinal0(0).unwrap();
+    }
+
+    dt_value
+}
+
+
+fn perform_timeunit_end<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -> DateTime<T> {
+    let dt_start = date64_to_datetime(value).with_nanosecond(0).unwrap();
+    let dt_start = Utc.from_local_datetime(&dt_start).single().unwrap();
+    let dt_start = dt_start.with_timezone(&tz);
+
+    // create dt_end by advancing dt_start by the smallest unit present in units
+    if units_mask[10] {  // Milliseconds
+        let delta = chrono::Duration::milliseconds(1);
+        dt_start + delta
+    } else if units_mask[9] {  // Seconds
+        let delta = chrono::Duration::seconds(1);
+        dt_start + delta
+    } else if units_mask[8] {  // Minutes
+        let delta = chrono::Duration::minutes(1);
+        dt_start + delta
+    } else if units_mask[7] {  // Hours
+        let delta = chrono::Duration::hours(1);
+        dt_start + delta
+    } else if units_mask[6] // DayOfYear
+        || units_mask[5]    // Day
+        || units_mask[3]    // Date
+    {
+        let delta = chrono::Duration::days(1);
+        dt_start + delta
+    } else if units_mask[4] {  // Week
+        let delta = chrono::Duration::weeks(1);
+        dt_start + delta
+    } else if units_mask[2] {  // Month
+        let month0 = dt_start.month0();
+        if month0 == 11 {
+            // First day of the following year
+            let year = dt_start.year();
+            dt_start.with_ordinal0(0).unwrap().with_year(year + 1).unwrap()
+        } else {
+            // Increment month
+            dt_start.with_day0(0).unwrap().with_month0(month0 + 1).unwrap()
+        }
+    } else if units_mask[1] {  // Quarter
+        let month0 = dt_start.month0();
+        if month0 > 8 {
+            // October 1st (or later, but month0 should have already been truncated to October 1st)
+            // Wrap to start of the following year
+            let year = dt_start.year();
+            dt_start.with_ordinal0(0).unwrap().with_year(year + 1).unwrap()
+        } else {
+            // Increment by 3 months (within the same year)
+            dt_start.with_day0(0).unwrap().with_month0(month0 + 3).unwrap()
+        }
+    } else if units_mask[0] {  // Year
+        // First day of the following year
+        let year = dt_start.year();
+        dt_start.with_ordinal0(0).unwrap().with_year(year + 1).unwrap()
+    } else {
+        // Not unit specified, only thing to do is keep dt_start
+        dt_start
     }
 }

@@ -31,6 +31,7 @@ use vegafusion_core::proto::gen::expression::{
 
 use crate::expression::compiler::builtin_functions::data::data::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
+use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 
 #[derive(Clone)]
 pub enum VegaFusionCallable {
@@ -214,6 +215,11 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
             udf: make_is_valid_udf(),
             cast: None,
         },
+    );
+
+    callables.insert(
+        "isDate".to_string(),
+        VegaFusionCallable::Transform(Arc::new(is_date_fn)),
     );
 
     callables.insert(

@@ -29,7 +29,7 @@ lazy_static!{
 }
 
 #[cfg(test)]
-mod test_image_comparison {
+mod test_image_comparison_mocks {
     use super::*;
 
     #[rstest(
@@ -53,6 +53,9 @@ mod test_image_comparison {
         case("imdb_dashboard_cross_height"),
         case("stacked_bar_weather_year"),
         case("stacked_bar_weather_month"),
+        case("stacked_bar_normalize"),
+        case("layer_bar_labels_grey"),
+        case("bar_month_temporal_initial"),
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);
@@ -80,7 +83,6 @@ mod test_image_comparison_timeunit {
             vec![TimeUnitUnitSpec::Day],
             vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Quarter],
             vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Month],
-            vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Day],
         )]
         units: Vec<TimeUnitUnitSpec>,
 
@@ -89,9 +91,13 @@ mod test_image_comparison_timeunit {
             TimeUnitTimeZoneSpec::Local,
         )]
         timezone: TimeUnitTimeZoneSpec,
-    ) {
-        let spec_name = "stacked_bar_weather_timeunit_parameterize";
 
+        #[values(
+            "bar_month_temporal_initial_parameterize",
+            "stacked_bar_weather_timeunit_parameterize",
+        )]
+        spec_name: &str
+    ) {
         // Load spec
         let mut full_spec = load_spec(spec_name);
 
@@ -117,7 +123,7 @@ mod test_image_comparison_timeunit {
         }
         ).join("_");
         let timezone_str = serde_json::to_string(&timezone).unwrap().trim_matches('"').to_string();
-        let output_name = format!("timeunit_{}_{}", units_str, timezone_str);
+        let output_name = format!("{}_timeunit_{}_{}", spec_name, units_str, timezone_str);
 
         TOKIO_RUNTIME.block_on(
             check_spec_sequence(full_spec, full_updates, watch_plan, &output_name)
