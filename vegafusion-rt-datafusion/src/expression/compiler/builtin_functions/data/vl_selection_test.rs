@@ -1,5 +1,5 @@
-use crate::expression::compiler::utils::cast_to;
-use datafusion::logical_plan::DFSchema;
+use crate::expression::compiler::utils::{cast_to, is_float_datatype, is_integer_datatype, is_numeric_datatype};
+use datafusion::logical_plan::{ceil, DFSchema};
 use datafusion::logical_plan::{lit, Expr};
 use datafusion::prelude::col;
 use std::collections::HashMap;
@@ -147,7 +147,14 @@ impl FieldSpec {
                 // casting, DataFusion will convert the whole field column to Float64 before running
                 // the comparison.
                 // We may need to revisit potential numerical precision issues at the boundaries
-                let low = cast_to(low, &field_dtype, schema)?;
+                let low_dtype = low.get_type(&schema)?;
+                let low = if is_integer_datatype(&field_dtype) && is_float_datatype(&low_dtype) {
+                    cast_to(ceil(low), &field_dtype, schema)?
+                } else {
+                    cast_to(low, &field_dtype, schema)?
+                };
+                // If field is integer, and high is float, then casting will be equivalent to
+                // a floor operation, so we don't handle this separately
                 let high = cast_to(high, &field_dtype, schema)?;
 
                 match self.typ {

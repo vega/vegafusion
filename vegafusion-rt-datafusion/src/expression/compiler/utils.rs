@@ -43,6 +43,28 @@ pub fn is_numeric_datatype(dtype: &DataType) -> bool {
     )
 }
 
+pub fn is_integer_datatype(dtype: &DataType) -> bool {
+    matches!(
+        dtype,
+        DataType::Int8
+            | DataType::Int16
+            | DataType::Int32
+            | DataType::Int64
+            | DataType::UInt8
+            | DataType::UInt16
+            | DataType::UInt32
+            | DataType::UInt64
+    )
+}
+
+pub fn is_float_datatype(dtype: &DataType) -> bool {
+    matches!(
+        dtype, DataType::Float16
+            | DataType::Float32
+            | DataType::Float64
+    )
+}
+
 pub fn is_string_datatype(dtype: &DataType) -> bool {
     matches!(dtype, DataType::Utf8 | DataType::LargeUtf8)
 }
