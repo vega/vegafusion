@@ -1,7 +1,7 @@
 use crate::data::table::VegaFusionTableUtils;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::ExprHelpers;
+use crate::expression::compiler::utils::{ExprHelpers, is_string_datatype};
 use crate::task_graph::task::TaskCall;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
@@ -12,6 +12,9 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
+use datafusion::logical_plan::Expr;
+use datafusion::physical_plan::functions::BuiltinScalarFunction;
+use datafusion::prelude::col;
 use tokio::io::AsyncReadExt;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
@@ -20,6 +23,7 @@ use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask};
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
+use crate::expression::compiler::builtin_functions::datetime::date_parsing::DATETIME_TO_MILLIS_LOCAL;
 
 fn build_compilation_config(
     input_vars: &[InputVariable],
@@ -66,7 +70,7 @@ impl TaskCall for DataUrlTask {
         };
 
         // Load data from URL
-        let df = if url.ends_with(".csv") || url.ends_with(".tsv") {
+        let mut df = if url.ends_with(".csv") || url.ends_with(".tsv") {
             read_csv(url).await?
         } else if url.ends_with(".json") {
             read_json(&url, self.batch_size as usize).await?
@@ -76,6 +80,34 @@ impl TaskCall for DataUrlTask {
                 url
             )));
         };
+
+        // Perform specialized parsing (right now, parse string columns named "date" to utc timestamps)
+        let schema = df.schema();
+        if let Ok(date_field) = schema.field_with_unqualified_name("date") {
+            let dtype = date_field.data_type();
+            if is_string_datatype(&dtype) {
+                let date_expr = Expr::ScalarUDF {
+                    fun: Arc::new(DATETIME_TO_MILLIS_LOCAL.clone()),
+                    args: vec![col("date")],
+                };
+
+                let date_expr = Expr::ScalarFunction {
+                    fun: BuiltinScalarFunction::ToTimestampMillis,
+                    args: vec![date_expr],
+                };
+
+                let mut columns: Vec<_> = schema.fields().iter().filter_map(|field| {
+                    let name = field.name();
+                    if name == "date" {
+                        None
+                    } else {
+                        Some(col(name))
+                    }
+                }).collect();
+                columns.push(date_expr.alias("date"));
+                df = df.select(columns)?
+            }
+        }
 
         // Apply transforms (if any)
         let (transformed_df, output_values) = if self
