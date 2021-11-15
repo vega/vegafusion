@@ -1,0 +1,26 @@
+[
+  [
+    {
+      "namespace": "signal",
+      "name": "brush_x",
+      "scope": [],
+      "value": [41, 88]
+    }
+  ],
+  [
+    {
+      "namespace": "signal",
+      "name": "brush_x",
+      "scope": [],
+      "value": [148, 195]
+    }
+  ],
+  [
+    {
+      "namespace": "signal",
+      "name": "brush_x",
+      "scope": [],
+      "value": [0, 0]
+    }
+  ]
+]
