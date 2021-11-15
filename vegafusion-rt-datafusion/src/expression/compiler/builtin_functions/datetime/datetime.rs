@@ -1,4 +1,4 @@
-use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
+use crate::expression::compiler::utils::{cast_to, is_numeric_datatype, is_string_datatype};
 use chrono::{DateTime, Local, LocalResult, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array, TimestampMillisecondArray};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
@@ -14,6 +14,7 @@ use datafusion::scalar::ScalarValue;
 use std::ops::Deref;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
+use crate::expression::compiler::builtin_functions::datetime::date_parsing::DATETIME_TO_MILLIS_LOCAL;
 
 pub fn datetime_transform(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
     if args.len() == 1 {
@@ -35,6 +36,13 @@ pub fn datetime_transform(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
         // Cast single numeric arg to Int64 for compatibility with ToTimestampMillis
         if is_numeric_datatype(&dtype) && !matches!(&dtype, &DataType::Int64) {
             arg = cast_to(arg, &DataType::Int64, schema)?
+        }
+
+        if is_string_datatype(&dtype) {
+            arg = Expr::ScalarUDF {
+                fun: Arc::new(DATETIME_TO_MILLIS_LOCAL.deref().clone()),
+                args: vec![arg],
+            }
         }
 
         Ok(Expr::ScalarFunction {

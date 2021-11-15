@@ -72,6 +72,9 @@ mod test_atoms {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_binary_kinds {
@@ -90,6 +93,9 @@ mod test_binary_kinds {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_binary_precedence {
@@ -109,6 +115,9 @@ mod test_binary_precedence {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_unary {
@@ -129,6 +138,9 @@ mod test_unary {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_logical {
@@ -148,6 +160,9 @@ mod test_logical {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_ternary {
@@ -165,6 +180,9 @@ mod test_ternary {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_call {
@@ -179,6 +197,9 @@ mod test_call {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_member_access {
@@ -196,6 +217,9 @@ mod test_member_access {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_array_expression {
@@ -212,6 +236,9 @@ mod test_array_expression {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_object_expression {
@@ -229,6 +256,9 @@ mod test_object_expression {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_datetime {
@@ -241,6 +271,8 @@ mod test_datetime {
         case("datetime('2020-05-16 09:30:00-07:00')"),
         case("datetime('2020-05-16 09:30:00Z')"),
         case("datetime('2020-05-16 09:30:00')"),
+        case("datetime('2020/05/16 09:30')"),
+        case("datetime('05/16/2020 09:30')"),
         case("datetime(1589603400000)"),
         case("datetime(87, 3, 10, 7, 35, 10, 87)"),
         case("datetime(87, 3, 10, 7, 35, 10)"),
@@ -258,6 +290,9 @@ mod test_datetime {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_date_parts {
@@ -283,6 +318,9 @@ mod test_date_parts {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_length {
@@ -303,6 +341,9 @@ mod test_length {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_get_index {
@@ -318,6 +359,9 @@ mod test_get_index {
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_null_comparison {
