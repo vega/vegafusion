@@ -79,10 +79,12 @@ mod test_image_comparison_timeunit {
             vec![TimeUnitUnitSpec::Year],
             vec![TimeUnitUnitSpec::Quarter],
             vec![TimeUnitUnitSpec::Month],
+            vec![TimeUnitUnitSpec::Week],
             vec![TimeUnitUnitSpec::Date],
             vec![TimeUnitUnitSpec::Day],
             vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Quarter],
             vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Month],
+            vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Week],
         )]
         units: Vec<TimeUnitUnitSpec>,
 

@@ -196,7 +196,8 @@ fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -
     let weekday = dt_value.weekday();
 
     // Handle year truncation
-    if !units_mask[0] {  // Year
+    // (if we're not truncating to week number, this is handled separately below)
+    if !units_mask[0] && !units_mask[4]{  // Year
         dt_value = dt_value.with_year(2012).unwrap();
     }
 
@@ -214,7 +215,50 @@ fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -
         // (January has 31 days, so this is safe)
         dt_value = dt_value.with_month0(0).unwrap();
     } else if units_mask[4] {  // Week
-        todo!("Week time unit not supported")
+        // Step 1: Find the date of the first Sunday in the same calendar year as the date.
+        // This may occur in isoweek 0, or in the final isoweek of the previous year
+
+        let isoweek0_sunday = NaiveDate::from_isoywd(
+            dt_value.year(), 1, Weekday::Sun
+        );
+
+        let mut isoweek0_sunday = NaiveDateTime::new(isoweek0_sunday, dt_value.time());
+        let isoweek0_sunday = tz.from_local_datetime(&isoweek0_sunday).single().unwrap();
+
+        // Subtract one week from isoweek0_sunday and check if it's still in the same calendar
+        // year
+        let week_duration = chrono::Duration::weeks(1);
+        let candidate_sunday = isoweek0_sunday.clone() - week_duration;
+
+        let first_sunday_of_year = if candidate_sunday.year() == dt_value.year() {
+            candidate_sunday
+        } else {
+            isoweek0_sunday
+        };
+
+        // Step 2: Find the ordinal date of the first sunday of the year
+        let first_sunday_ordinal0 = first_sunday_of_year.ordinal0();
+
+        // Step 3: Compare ordinal value of first sunday with that of dt_value
+        let ordinal_delta = ordinal0 as i32 - first_sunday_ordinal0 as i32;
+
+        // Compute how many whole weeks have passed since the first sunday of the year.
+        // If date is prior to the first sunday in the calendar year, this will evaluate to -1.
+        let week_number = (ordinal_delta as f64 / 7.0).floor() as i64;
+
+        // Handle year truncation
+        if !units_mask[0] {
+            // Calendar year 2012. use weeks offset from the first Sunday of 2012
+            // (which is January 1st)
+            let first_sunday_of_2012 = tz.from_local_datetime(&NaiveDateTime::new(
+                NaiveDate::from_ymd(2012, 1, 1), dt_value.time()
+            )).single().unwrap();
+
+            dt_value = first_sunday_of_2012 + chrono::Duration::weeks(week_number);
+        } else {
+            // Don't change calendar year, use weeks offset from first sunday of the year
+            dt_value = first_sunday_of_year + chrono::Duration::weeks(week_number);
+        }
     } else if units_mask[5] {  // Day
         // Keep weekday, but make sure Sunday comes before Monday
         let new_date = if weekday == Weekday::Sun {
