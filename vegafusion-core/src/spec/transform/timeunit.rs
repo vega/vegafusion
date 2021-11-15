@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
-use serde_json::Value;
 use crate::spec::transform::TransformSpecTrait;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TimeUnitTransformSpec {
@@ -14,7 +14,7 @@ pub struct TimeUnitTransformSpec {
     pub step: Option<f64>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub timezone: Option<TimeZone>,
+    pub timezone: Option<TimeUnitTimeZoneSpec>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub interval: Option<bool>,
@@ -37,9 +37,9 @@ pub struct TimeUnitTransformSpec {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum TimeZone {
+pub enum TimeUnitTimeZoneSpec {
     Local,
-    Utc
+    Utc,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -55,12 +55,21 @@ pub enum TimeUnitUnitSpec {
     Hours,
     Minutes,
     Seconds,
-    Milliseconds
+    Milliseconds,
 }
 
 impl TransformSpecTrait for TimeUnitTransformSpec {
     fn supported(&self) -> bool {
-        true
+        if self.units.is_none()
+            || self.step.is_some()
+            || self.extent.is_some()
+            || self.maxbins.is_some()
+            || self.signal.is_some()
+        {
+            false
+        } else {
+            true
+        }
     }
 
     fn output_signals(&self) -> Vec<String> {

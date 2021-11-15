@@ -1,7 +1,7 @@
 use crate::error::Result;
 use crate::proto::gen::tasks::Variable;
 use crate::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
-use crate::spec::transform::timeunit::{TimeUnitTransformSpec, TimeUnitUnitSpec, TimeZone};
+use crate::spec::transform::timeunit::{TimeUnitTransformSpec, TimeUnitUnitSpec, TimeUnitTimeZoneSpec};
 use crate::transform::TransformDependencies;
 
 impl TimeUnit {
@@ -21,10 +21,10 @@ impl TimeUnit {
             None => None,
             Some(timezone) => {
                 match timezone {
-                    TimeZone::Local => {
+                    TimeUnitTimeZoneSpec::Local => {
                         Some(TimeUnitTimeZone::Local as i32)
                     }
-                    TimeZone::Utc => {
+                    TimeUnitTimeZoneSpec::Utc => {
                         Some(TimeUnitTimeZone::Utc as i32)
                     }
                 }
