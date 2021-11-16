@@ -207,13 +207,17 @@ fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -
         // Truncate to Quarter
         let new_month = ((dt_value.month0() as f64 / 3.0).floor() * 3.0) as u32;
         dt_value = dt_value.with_day0(0).unwrap().with_month0(new_month).unwrap();
-    } else if units_mask[2] {  // Month
+    } else if units_mask[2] {  // Month and not Date
         // Truncate to first day of the month
-        dt_value = dt_value.with_day0(0).unwrap();
-    } else if units_mask[3] {  // Date
+        if !units_mask[3] {
+            dt_value = dt_value.with_day0(0).unwrap();
+        }
+    } else if units_mask[3] {  // Date and not Month
         // Normalize to January, keeping existing day of the month.
         // (January has 31 days, so this is safe)
-        dt_value = dt_value.with_month0(0).unwrap();
+        if !units_mask[2] {
+            dt_value = dt_value.with_month0(0).unwrap();
+        }
     } else if units_mask[4] {  // Week
         // Step 1: Find the date of the first Sunday in the same calendar year as the date.
         // This may occur in isoweek 0, or in the final isoweek of the previous year
