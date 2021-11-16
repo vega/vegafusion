@@ -58,6 +58,7 @@ mod test_image_comparison_mocks {
         case("bar_month_temporal_initial"),
         case("selection_layer_bar_month"),
         case("interactive_layered_crossfilter"),
+        case("interactive_seattle_weather"),
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);

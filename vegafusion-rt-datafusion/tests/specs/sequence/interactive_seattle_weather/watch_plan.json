@@ -1,0 +1,24 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "data_0",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_1",
+      "scope": []
+    }
+  ],
+  "client_to_server": [
+    {
+      "namespace": "data",
+      "name": "brush_store",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "click_store",
+      "scope": []
+    }
+  ]
+}

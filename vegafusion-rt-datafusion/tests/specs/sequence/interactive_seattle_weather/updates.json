@@ -1,0 +1,42 @@
+[
+  [
+    {
+      "namespace": "signal",
+      "name": "brush_x",
+      "scope": [0],
+      "value": [90.5, 295.3]
+    }
+  ],
+  [
+    {
+      "namespace": "signal",
+      "name": "click_tuple",
+      "scope": [1],
+      "value": {
+        "unit":  "concat_1",
+        "fields":  [{"field": "weather", "channel": "color", "type": "E"}],
+        "values": ["rain"]
+      }
+    }
+  ],
+  [
+    {
+      "namespace": "signal",
+      "name": "click_tuple",
+      "scope": [1],
+      "value": {
+        "unit":  "concat_1",
+        "fields":  [{"field": "weather", "channel": "color", "type": "E"}],
+        "values": ["sun"]
+      }
+    }
+  ],
+  [
+    {
+      "namespace": "signal",
+      "name": "brush_x",
+      "scope": [0],
+      "value": [0, 0]
+    }
+  ]
+]
