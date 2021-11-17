@@ -60,6 +60,7 @@ mod test_image_comparison_mocks {
         case("interactive_layered_crossfilter"),
         case("interactive_seattle_weather"),
         case("concat_marginal_histograms"),
+        case("joinaggregate_movie_rating"),
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);

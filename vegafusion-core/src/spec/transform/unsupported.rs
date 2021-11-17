@@ -39,7 +39,6 @@ unsupported_transforms!(
     IdentifierTransformSpec,
     ImputeTransformSpec,
     IsocontourTransformSpec,
-    JoinaggregateTransformSpec,
     KdeTransformSpec,
     Kde2dTransformSpec,
     LabelTransformSpec,

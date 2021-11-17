@@ -84,6 +84,18 @@ pub struct Aggregate {
     #[prost(enumeration="AggregateOp", repeated, tag="4")]
     pub ops: ::prost::alloc::vec::Vec<i32>,
 }
+/// JoinAggregate
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct JoinAggregate {
+    #[prost(string, repeated, tag="1")]
+    pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag="2")]
+    pub fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(enumeration="AggregateOp", repeated, tag="3")]
+    pub ops: ::prost::alloc::vec::Vec<i32>,
+    #[prost(string, repeated, tag="4")]
+    pub aliases: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
 /// TimeUnit
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TimeUnit {
@@ -103,7 +115,7 @@ pub struct TimeUnit {
 /// Top-level transform
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transform {
-    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7")]
+    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8")]
     pub transform_kind: ::core::option::Option<transform::TransformKind>,
 }
 /// Nested message and enum types in `Transform`.
@@ -124,6 +136,8 @@ pub mod transform {
         Collect(super::Collect),
         #[prost(message, tag="7")]
         Timeunit(super::TimeUnit),
+        #[prost(message, tag="8")]
+        Joinaggregate(super::JoinAggregate),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]

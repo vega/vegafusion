@@ -104,6 +104,14 @@ enum AggregateOp {
     Values = 22;
 }
 
+// JoinAggregate
+message JoinAggregate {
+  repeated string groupby = 1;
+  repeated string fields = 2;
+  repeated AggregateOp ops = 3;
+  repeated string aliases = 4;
+}
+
 // TimeUnit
 message TimeUnit {
   string field = 1;
@@ -143,6 +151,7 @@ message Transform {
     Aggregate aggregate = 5;
     Collect collect = 6;
     TimeUnit timeunit = 7;
+    JoinAggregate joinaggregate = 8;
   }
 }
 

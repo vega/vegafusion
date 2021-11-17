@@ -1,6 +1,7 @@
-use crate::expression::compiler::utils::{data_type, is_null_literal, is_numeric_datatype, is_string_datatype, to_numeric, to_string};
+use crate::expression::compiler::utils::{cast_to, data_type, is_null_literal, is_numeric_datatype, is_string_datatype, to_numeric, to_string};
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::logical_plan::{concat, lit, DFSchema, Expr, Operator};
+use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::{BinaryExpression, BinaryOperator};
 
@@ -30,7 +31,7 @@ pub fn compile_binary(
             right: Box::new(rhs_numeric),
         },
         BinaryOperator::Div => Expr::BinaryExpr {
-            left: Box::new(lhs_numeric),
+            left: Box::new(cast_to(lhs_numeric, &DataType::Float64, schema)?),
             op: Operator::Divide,
             right: Box::new(rhs_numeric),
         },

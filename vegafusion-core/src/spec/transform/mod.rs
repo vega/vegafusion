@@ -6,11 +6,13 @@ pub mod filter;
 pub mod formula;
 pub mod unsupported;
 pub mod timeunit;
+pub mod joinaggregate;
 
 use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransformSpec};
 
 use crate::error::Result;
 use crate::spec::transform::aggregate::AggregateTransformSpec;
+use crate::spec::transform::joinaggregate::JoinAggregateTransformSpec;
 use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
 use crate::spec::transform::formula::FormulaTransformSpec;
@@ -30,6 +32,7 @@ pub enum TransformSpec {
     Aggregate(AggregateTransformSpec),
     Collect(CollectTransformSpec),
     Timeunit(TimeUnitTransformSpec),
+    JoinAggregate(JoinAggregateTransformSpec),
 
     // Unsupported
     CountPattern(CountpatternTransformSpec),
@@ -50,7 +53,6 @@ pub enum TransformSpec {
     Identifier(IdentifierTransformSpec),
     Impute(ImputeTransformSpec),
     IsoContour(IsocontourTransformSpec),
-    JoinAggregate(JoinaggregateTransformSpec),
     Kde(KdeTransformSpec),
     Kde2d(Kde2dTransformSpec),
     Label(LabelTransformSpec),
