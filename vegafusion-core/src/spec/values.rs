@@ -58,3 +58,36 @@ pub enum StringOrSignalSpec {
     String(String),
     Signal(SignalExpressionSpec),
 }
+
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CompareSpec {
+    pub field: StringOrStringList,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub order: Option<SortOrderOrList>,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[serde(rename_all = "lowercase")]
+pub enum SortOrderSpec {
+    Descending,
+    Ascending,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SortOrderOrList {
+    SortOrder(SortOrderSpec),
+    SortOrderList(Vec<SortOrderSpec>),
+}
+
+impl SortOrderOrList {
+    pub fn to_vec(&self) -> Vec<SortOrderSpec> {
+        match self {
+            SortOrderOrList::SortOrder(v) => vec![v.clone()],
+            SortOrderOrList::SortOrderList(v) => v.clone(),
+        }
+    }
+}

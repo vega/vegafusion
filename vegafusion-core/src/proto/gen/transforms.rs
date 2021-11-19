@@ -112,10 +112,51 @@ pub struct TimeUnit {
     #[prost(enumeration="TimeUnitTimeZone", optional, tag="6")]
     pub timezone: ::core::option::Option<i32>,
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct WindowTransformOp {
+    #[prost(oneof="window_transform_op::Op", tags="1, 2")]
+    pub op: ::core::option::Option<window_transform_op::Op>,
+}
+/// Nested message and enum types in `WindowTransformOp`.
+pub mod window_transform_op {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Op {
+        #[prost(enumeration="super::AggregateOp", tag="1")]
+        AggregateOp(i32),
+        #[prost(enumeration="super::WindowOp", tag="2")]
+        WindowOp(i32),
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Window {
+    #[prost(enumeration="SortOrder", repeated, tag="1")]
+    pub sort: ::prost::alloc::vec::Vec<i32>,
+    #[prost(string, repeated, tag="2")]
+    pub sort_fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag="3")]
+    pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(message, repeated, tag="4")]
+    pub ops: ::prost::alloc::vec::Vec<WindowTransformOp>,
+    #[prost(string, repeated, tag="5")]
+    pub fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(double, repeated, tag="6")]
+    pub params: ::prost::alloc::vec::Vec<f64>,
+    #[prost(string, repeated, tag="7")]
+    pub aliases: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(message, optional, tag="8")]
+    pub frame: ::core::option::Option<WindowFrame>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct WindowFrame {
+    #[prost(int64, optional, tag="1")]
+    pub start: ::core::option::Option<i64>,
+    #[prost(int64, optional, tag="2")]
+    pub end: ::core::option::Option<i64>,
+}
 /// Top-level transform
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transform {
-    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8")]
+    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8, 9")]
     pub transform_kind: ::core::option::Option<transform::TransformKind>,
 }
 /// Nested message and enum types in `Transform`.
@@ -138,6 +179,8 @@ pub mod transform {
         Timeunit(super::TimeUnit),
         #[prost(message, tag="8")]
         Joinaggregate(super::JoinAggregate),
+        #[prost(message, tag="9")]
+        Window(super::Window),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -163,7 +206,7 @@ pub enum AggregateOp {
     Mean = 6,
     Average = 7,
     Variance = 8,
-    Variancp = 9,
+    Variancep = 9,
     Stdev = 10,
     Stdevp = 11,
     Stderr = 12,
@@ -198,4 +241,22 @@ pub enum TimeUnitUnit {
 pub enum TimeUnitTimeZone {
     Local = 0,
     Utc = 1,
+}
+/// Window
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum WindowOp {
+    RowNumber = 0,
+    Rank = 1,
+    DenseRank = 2,
+    PercentileRank = 3,
+    CumeDist = 4,
+    NTile = 5,
+    Lag = 6,
+    Lead = 7,
+    FirstValue = 8,
+    LastValue = 9,
+    NthValue = 10,
+    PrevValue = 11,
+    NextValue = 12,
 }

@@ -6,11 +6,12 @@ mod util;
 use util::check::check_transform_evaluation;
 use util::datasets::vega_json_dataset;
 use util::equality::TablesEqualConfig;
+use vegafusion_core::proto::gen::transforms::SortOrder;
 use vegafusion_core::spec::transform::collect::{
-    CollectSort, CollectTransformSpec, SortOrder, SortOrderOrList,
+    CollectTransformSpec,
 };
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_core::spec::values::StringOrStringList;
+use vegafusion_core::spec::values::{CompareSpec, SortOrderOrList, SortOrderSpec, StringOrStringList};
 
 #[test]
 fn test_collect_multi() {
@@ -18,7 +19,7 @@ fn test_collect_multi() {
 
     // Apply collect transform
     let collect_spec = CollectTransformSpec {
-        sort: CollectSort {
+        sort: CompareSpec {
             field: StringOrStringList::StringList(vec![
                 "Sex".to_string(),
                 "Species".to_string(),
@@ -27,11 +28,11 @@ fn test_collect_multi() {
                 "Flipper Length (mm)".to_string(),
             ]),
             order: Some(SortOrderOrList::SortOrderList(vec![
-                SortOrder::Ascending,
-                SortOrder::Descending,
-                SortOrder::Descending,
-                SortOrder::Ascending,
-                SortOrder::Descending,
+                SortOrderSpec::Ascending,
+                SortOrderSpec::Descending,
+                SortOrderSpec::Descending,
+                SortOrderSpec::Ascending,
+                SortOrderSpec::Descending,
             ])),
         },
         extra: Default::default(),

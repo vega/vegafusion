@@ -8,7 +8,7 @@ use std::collections::HashMap;
 pub struct AggregateTransformSpec {
     pub groupby: Vec<Field>,
     pub fields: Vec<Option<Field>>,
-    pub ops: Vec<AggregateOp>,
+    pub ops: Vec<AggregateOpSpec>,
 
     #[serde(rename = "as", skip_serializing_if = "Option::is_none")]
     pub as_: Option<Vec<Option<String>>>,
@@ -28,7 +28,7 @@ pub struct AggregateTransformSpec {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
 #[serde(rename_all = "lowercase")]
-pub enum AggregateOp {
+pub enum AggregateOpSpec {
     Count,
     Valid,
     Missing,
@@ -38,7 +38,7 @@ pub enum AggregateOp {
     Mean,
     Average,
     Variance,
-    Variancp,
+    Variancep,
     Stdev,
     Stdevp,
     Stderr,
@@ -54,7 +54,7 @@ pub enum AggregateOp {
     Values,
 }
 
-impl AggregateOp {
+impl AggregateOpSpec {
     pub fn name(&self) -> String {
         serde_json::to_value(self)
             .unwrap()
@@ -67,7 +67,7 @@ impl AggregateOp {
 impl TransformSpecTrait for AggregateTransformSpec {
     fn supported(&self) -> bool {
         // Check for supported aggregation op
-        use AggregateOp::*;
+        use AggregateOpSpec::*;
         for op in &self.ops {
             if !matches!(
                 op,

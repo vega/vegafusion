@@ -88,7 +88,7 @@ enum AggregateOp {
     Mean = 6;
     Average = 7;
     Variance = 8;
-    Variancp = 9;
+    Variancep = 9;
     Stdev = 10;
     Stdevp = 11;
     Stderr = 12;
@@ -122,6 +122,7 @@ message TimeUnit {
   optional TimeUnitTimeZone timezone = 6;
 }
 
+
 enum TimeUnitUnit {
   Year = 0;
   Quarter = 1;
@@ -141,6 +142,49 @@ enum TimeUnitTimeZone {
   Utc = 1;
 }
 
+
+// Window
+enum WindowOp {
+  RowNumber = 0;
+  Rank = 1;
+  DenseRank = 2;
+  PercentileRank = 3;
+  CumeDist = 4;
+  NTile = 5;
+  Lag = 6;
+  Lead = 7;
+  FirstValue = 8;
+  LastValue = 9;
+  NthValue = 10;
+  PrevValue = 11;
+  NextValue = 12;
+}
+
+message WindowTransformOp {
+  oneof op {
+    AggregateOp aggregate_op = 1;
+    WindowOp window_op = 2;
+  }
+}
+
+
+message Window {
+  repeated SortOrder sort = 1;
+  repeated string sort_fields = 2;
+  repeated string groupby = 3;
+  repeated WindowTransformOp ops = 4;
+  repeated string fields = 5;
+  repeated double params = 6;
+  repeated string aliases = 7;
+  optional WindowFrame frame = 8;
+}
+
+message WindowFrame {
+  optional int64 start = 1;
+  optional int64 end = 2;
+}
+
+
 // Top-level transform
 message Transform {
   oneof transform_kind {
@@ -152,6 +196,7 @@ message Transform {
     Collect collect = 6;
     TimeUnit timeunit = 7;
     JoinAggregate joinaggregate = 8;
+    Window window = 9;
   }
 }
 

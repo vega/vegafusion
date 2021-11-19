@@ -8,6 +8,7 @@ pub mod pipeline;
 pub mod utils;
 pub mod timeunit;
 pub mod joinaggregate;
+pub mod window;
 
 use crate::expression::compiler::config::CompilationConfig;
 use datafusion::dataframe::DataFrame;
@@ -40,6 +41,7 @@ pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
         TransformKind::Collect(tx) => tx,
         TransformKind::Timeunit(tx) => tx,
         TransformKind::Joinaggregate(tx) => tx,
+        TransformKind::Window(tx) => tx,
     }
 }
 

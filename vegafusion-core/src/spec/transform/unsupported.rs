@@ -62,6 +62,5 @@ unsupported_transforms!(
     TreelinksTransformSpec,
     TreemapTransformSpec,
     VoronoiTransformSpec,
-    WindowTransformSpec,
     WordcloudTransformSpec
 );

@@ -3,7 +3,7 @@ use crate::spec::values::Field;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::spec::transform::aggregate::AggregateOp;
+use crate::spec::transform::aggregate::AggregateOpSpec;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct JoinAggregateTransformSpec {
@@ -11,7 +11,7 @@ pub struct JoinAggregateTransformSpec {
     pub groupby: Option<Vec<Field>>,
 
     pub fields: Vec<Option<Field>>,
-    pub ops: Vec<AggregateOp>,
+    pub ops: Vec<AggregateOpSpec>,
 
     #[serde(rename = "as", skip_serializing_if = "Option::is_none")]
     pub as_: Option<Vec<Option<String>>>,
@@ -24,7 +24,7 @@ pub struct JoinAggregateTransformSpec {
 impl TransformSpecTrait for JoinAggregateTransformSpec {
     fn supported(&self) -> bool {
         // Check for supported aggregation op
-        use AggregateOp::*;
+        use AggregateOpSpec::*;
         for op in &self.ops {
             if !matches!(
                 op,

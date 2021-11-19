@@ -1,5 +1,5 @@
 use crate::proto::gen::transforms::{Aggregate, AggregateOp};
-use crate::spec::transform::aggregate::{AggregateOp as AggregateOpSpec, AggregateTransformSpec};
+use crate::spec::transform::aggregate::{AggregateOpSpec as AggregateOpSpec, AggregateTransformSpec};
 use crate::transform::TransformDependencies;
 
 impl Aggregate {
@@ -40,7 +40,7 @@ impl Aggregate {
                 AggregateOpSpec::Mean => AggregateOp::Mean as i32,
                 AggregateOpSpec::Average => AggregateOp::Average as i32,
                 AggregateOpSpec::Variance => AggregateOp::Variance as i32,
-                AggregateOpSpec::Variancp => AggregateOp::Variancp as i32,
+                AggregateOpSpec::Variancep => AggregateOp::Variancep as i32,
                 AggregateOpSpec::Stdev => AggregateOp::Stdev as i32,
                 AggregateOpSpec::Stdevp => AggregateOp::Stdevp as i32,
                 AggregateOpSpec::Stderr => AggregateOp::Stderr as i32,
@@ -77,7 +77,7 @@ pub fn op_name(op: AggregateOp) -> String {
         AggregateOp::Mean => "mean",
         AggregateOp::Average => "average",
         AggregateOp::Variance => "variance",
-        AggregateOp::Variancp => "variancp",
+        AggregateOp::Variancep => "variancep",
         AggregateOp::Stdev => "stdev",
         AggregateOp::Stdevp => "stdevp",
         AggregateOp::Stderr => "stderr",

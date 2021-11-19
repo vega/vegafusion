@@ -1,7 +1,7 @@
 use crate::error::{Result, VegaFusionError};
 use crate::proto::gen::transforms::{Collect, SortOrder};
 use crate::spec::transform::collect::CollectTransformSpec;
-use crate::spec::transform::collect::SortOrder as SortOrderSpec;
+use crate::spec::values::SortOrderSpec;
 use crate::transform::TransformDependencies;
 
 impl Collect {

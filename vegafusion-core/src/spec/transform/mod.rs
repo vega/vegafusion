@@ -7,6 +7,7 @@ pub mod formula;
 pub mod unsupported;
 pub mod timeunit;
 pub mod joinaggregate;
+pub mod window;
 
 use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransformSpec};
 
@@ -21,6 +22,7 @@ use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 use crate::spec::transform::timeunit::TimeUnitTransformSpec;
+use crate::spec::transform::window::WindowTransformSpec;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -33,6 +35,7 @@ pub enum TransformSpec {
     Collect(CollectTransformSpec),
     Timeunit(TimeUnitTransformSpec),
     JoinAggregate(JoinAggregateTransformSpec),
+    Window(WindowTransformSpec),
 
     // Unsupported
     CountPattern(CountpatternTransformSpec),
@@ -76,7 +79,6 @@ pub enum TransformSpec {
     TreeLinks(TreelinksTransformSpec),
     Treemap(TreemapTransformSpec),
     Voronoi(VoronoiTransformSpec),
-    Window(WindowTransformSpec),
     WordCloud(WordcloudTransformSpec),
 }
 

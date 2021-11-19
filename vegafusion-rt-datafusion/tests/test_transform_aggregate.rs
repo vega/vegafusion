@@ -8,7 +8,7 @@ use util::datasets::vega_json_dataset;
 use util::equality::TablesEqualConfig;
 
 use rstest::rstest;
-use vegafusion_core::spec::transform::aggregate::{AggregateOp, AggregateTransformSpec};
+use vegafusion_core::spec::transform::aggregate::{AggregateOpSpec, AggregateTransformSpec};
 use vegafusion_core::spec::transform::bin::{BinExtent, BinTransformSpec};
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_core::spec::values::{Field, SignalExpressionSpec};
@@ -18,18 +18,18 @@ mod test_aggregate_single {
 
     #[rstest(
         op,
-        case(AggregateOp::Count),
-        case(AggregateOp::Valid),
-        case(AggregateOp::Missing),
+        case(AggregateOpSpec::Count),
+        case(AggregateOpSpec::Valid),
+        case(AggregateOpSpec::Missing),
         // Vega counts null as distinct category but DataFusion does not
-        // case(AggregateOp::Distinct),
-        case(AggregateOp::Sum),
-        case(AggregateOp::Mean),
-        case(AggregateOp::Average),
-        case(AggregateOp::Min),
-        case(AggregateOp::Max),
+        // case(AggregateOpSpec::Distinct),
+        case(AggregateOpSpec::Sum),
+        case(AggregateOpSpec::Mean),
+        case(AggregateOpSpec::Average),
+        case(AggregateOpSpec::Min),
+        case(AggregateOpSpec::Max),
     )]
-    fn test(op: AggregateOp) {
+    fn test(op: AggregateOpSpec) {
         let dataset = vega_json_dataset("penguins");
         let aggregate_spec = AggregateTransformSpec {
             groupby: vec![Field::String("Species".to_string())],
@@ -66,18 +66,18 @@ mod test_aggregate_multi {
     #[rstest(
         op1, op2,
         // DataFusion error when two copies of Count(lit(0)) are included
-        // case(AggregateOp::Count, AggregateOp::Count),
-        case(AggregateOp::Valid, AggregateOp::Missing),
-        case(AggregateOp::Missing, AggregateOp::Valid),
+        // case(AggregateOpSpec::Count, AggregateOpSpec::Count),
+        case(AggregateOpSpec::Valid, AggregateOpSpec::Missing),
+        case(AggregateOpSpec::Missing, AggregateOpSpec::Valid),
         // Vega counts null as distinct category but DataFusion does not
-        // case(AggregateOp::Distinct),
-        case(AggregateOp::Sum, AggregateOp::Max),
-        case(AggregateOp::Mean, AggregateOp::Sum),
-        case(AggregateOp::Average, AggregateOp::Mean),
-        case(AggregateOp::Min, AggregateOp::Average),
-        case(AggregateOp::Max, AggregateOp::Min),
+        // case(AggregateOpSpec::Distinct),
+        case(AggregateOpSpec::Sum, AggregateOpSpec::Max),
+        case(AggregateOpSpec::Mean, AggregateOpSpec::Sum),
+        case(AggregateOpSpec::Average, AggregateOpSpec::Mean),
+        case(AggregateOpSpec::Min, AggregateOpSpec::Average),
+        case(AggregateOpSpec::Max, AggregateOpSpec::Min),
     )]
-    fn test(op1: AggregateOp, op2: AggregateOp) {
+    fn test(op1: AggregateOpSpec, op2: AggregateOpSpec) {
         let dataset = vega_json_dataset("penguins");
         let aggregate_spec = AggregateTransformSpec {
             groupby: vec![
@@ -146,7 +146,7 @@ fn test_bin_aggregate() {
             Some(Field::String("Beak Depth (mm)".to_string())),
             Some(Field::String("Flipper Length (mm)".to_string())),
         ],
-        ops: vec![AggregateOp::Mean, AggregateOp::Max],
+        ops: vec![AggregateOpSpec::Mean, AggregateOpSpec::Max],
         as_: None,
         cross: None,
         drop: None,
