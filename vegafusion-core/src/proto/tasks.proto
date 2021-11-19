@@ -64,10 +64,10 @@ message ScanUrlFormat {
     ParseFieldSpecs object = 3;
   };
 
-  string property = 4;
+  optional string property = 4;
   repeated string header = 5;
-  string delimiter = 6;
-  string feature = 7;
+  optional string delimiter = 6;
+  optional string feature = 7;
 }
 
 message DataUrlTask {

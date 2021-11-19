@@ -46,14 +46,14 @@ pub struct ScanUrlFormat {
     /// and topojson.
     #[prost(string, tag="1")]
     pub r#type: ::prost::alloc::string::String,
-    #[prost(string, tag="4")]
-    pub property: ::prost::alloc::string::String,
+    #[prost(string, optional, tag="4")]
+    pub property: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, repeated, tag="5")]
     pub header: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, tag="6")]
-    pub delimiter: ::prost::alloc::string::String,
-    #[prost(string, tag="7")]
-    pub feature: ::prost::alloc::string::String,
+    #[prost(string, optional, tag="6")]
+    pub delimiter: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag="7")]
+    pub feature: ::core::option::Option<::prost::alloc::string::String>,
     ///
     /// JSON encoded string:
     /// If set to auto, perform automatic type inference to determine the desired data types.

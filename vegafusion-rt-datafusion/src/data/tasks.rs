@@ -20,6 +20,7 @@ use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
+use vegafusion_core::proto::gen::tasks::scan_url_format;
 use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask};
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -82,30 +83,41 @@ impl TaskCall for DataUrlTask {
         };
 
         // Perform specialized parsing (right now, parse string columns named "date" to utc timestamps)
-        let schema = df.schema();
-        if let Ok(date_field) = schema.field_with_unqualified_name("date") {
-            let dtype = date_field.data_type();
-            if is_string_datatype(&dtype) {
-                let date_expr = Expr::ScalarUDF {
-                    fun: Arc::new(DATETIME_TO_MILLIS_LOCAL.clone()),
-                    args: vec![col("date")],
-                };
+        if let Some(format_type) = &self.format_type {
+            if let Some(parse) = &format_type.parse {
+                if let scan_url_format::Parse::Object(formats) = &parse {
+                    for spec in &formats.specs {
+                        let datatype = &spec.datatype;
+                        if datatype.starts_with("date") {
+                            let schema = df.schema();
+                            if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
+                                let dtype = date_field.data_type();
+                                if is_string_datatype(&dtype) {
+                                    let date_expr = Expr::ScalarUDF {
+                                        fun: Arc::new(DATETIME_TO_MILLIS_LOCAL.clone()),
+                                        args: vec![col(&spec.name)],
+                                    };
 
-                let date_expr = Expr::ScalarFunction {
-                    fun: BuiltinScalarFunction::ToTimestampMillis,
-                    args: vec![date_expr],
-                };
+                                    let date_expr = Expr::ScalarFunction {
+                                        fun: BuiltinScalarFunction::ToTimestampMillis,
+                                        args: vec![date_expr],
+                                    };
 
-                let mut columns: Vec<_> = schema.fields().iter().filter_map(|field| {
-                    let name = field.name();
-                    if name == "date" {
-                        None
-                    } else {
-                        Some(col(name))
+                                    let mut columns: Vec<_> = schema.fields().iter().filter_map(|field| {
+                                        let name = field.name();
+                                        if name == &spec.name {
+                                            None
+                                        } else {
+                                            Some(col(name))
+                                        }
+                                    }).collect();
+                                    columns.push(date_expr.alias(&spec.name));
+                                    df = df.select(columns)?
+                                }
+                            }
+                        }
                     }
-                }).collect();
-                columns.push(date_expr.alias("date"));
-                df = df.select(columns)?
+                }
             }
         }
 

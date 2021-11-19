@@ -68,6 +68,16 @@ pub struct DataFormatSpec {
     #[serde(rename = "type")]
     pub type_: String,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parse: Option<DataFormatParseSpec>,
+
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum DataFormatParseSpec {
+    Auto(String),
+    Object(HashMap<String, String>),
 }

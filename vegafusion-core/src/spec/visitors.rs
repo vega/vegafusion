@@ -3,10 +3,10 @@ use crate::data::table::VegaFusionTable;
 use crate::error::{Result, VegaFusionError};
 use crate::expression::parser::parse;
 use crate::proto::gen::tasks::data_url_task::Url;
-use crate::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask, Task, Variable};
+use crate::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask, ParseFieldSpec, ParseFieldSpecs, scan_url_format, ScanUrlFormat, Task, Variable};
 use crate::proto::gen::transforms::TransformPipeline;
 use crate::spec::chart::ChartVisitor;
-use crate::spec::data::DataSpec;
+use crate::spec::data::{DataFormatParseSpec, DataFormatSpec, DataSpec};
 use crate::spec::mark::{MarkFacetSpec, MarkSpec};
 use crate::spec::scale::{
     ScaleArrayElementSpec, ScaleBinsSpec, ScaleDataReferenceSpec, ScaleDomainSpec, ScaleRangeSpec,
@@ -18,7 +18,7 @@ use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_graph::ScopedVariable;
 use crate::task_graph::task_value::TaskValue;
 use serde_json::Value;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::ops::Deref;
 
@@ -101,16 +101,57 @@ impl ChartVisitor for MakeTasksVisitor {
                 }
             };
 
+            let format_type = match &data.format {
+                Some(format) => {
+                    let parse = match &format.parse {
+                        None => {
+                            None
+                        }
+                        Some(parse) => {
+                           Some(match parse {
+                               DataFormatParseSpec::Object(parse_fields) => {
+                                   scan_url_format::Parse::Object(ParseFieldSpecs {
+                                       specs: parse_fields.iter().map(|(field, datatype)| {
+                                           ParseFieldSpec {
+                                               name: field.clone(),
+                                               datatype: datatype.clone(),
+                                           }
+                                       }).collect()
+                                   })
+                               }
+                               DataFormatParseSpec::Auto(parse_mode) => {
+                                   // Treat any string as auto
+                                   scan_url_format::Parse::String(parse_mode.clone())
+                               }
+                           })
+                        }
+                    };
+
+                    Some(ScanUrlFormat {
+                        r#type: format.type_.clone(),
+                        property: None,
+                        header: vec![],
+                        delimiter: None,
+                        feature: None,
+                        parse
+                    })
+                }
+                None => {
+                    None
+                }
+            };
+
             Task::new_data_url(
                 data_var,
                 scope,
                 DataUrlTask {
                     batch_size: 8096,
-                    format_type: None,
+                    format_type,
                     pipeline,
                     url: Some(proto_url),
                 },
             )
+
         } else if let Some(source) = &data.source {
             Task::new_data_source(
                 data_var,
