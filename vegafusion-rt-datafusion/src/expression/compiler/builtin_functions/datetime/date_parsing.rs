@@ -4,6 +4,7 @@ use datafusion::arrow::array::{ArrayRef, Int64Array, StringArray};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
+use regex::Regex;
 
 lazy_static! {
     pub static ref DATETIME_TO_MILLIS_LOCAL: ScalarUDF = make_datetime_to_millis_udf(false);
@@ -26,19 +27,23 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
     for c in date_str.trim().chars() {
         match stage {
             0 => {  // Parsing date
-                if c.is_digit(10) {
-                    date_tokens[date_ind].push(c)
-                } else if date_ind < 2 && (c == '-' || c == '/') {
+                if date_ind < 2 && (c == '-' || c == '/' || c == ' ') {
                     date_ind += 1;
-                } else if c == 'T' || c == ' ' {
+                } else if date_ind == 2 && (c == 'T' || c == ' ') {
                     // Move on to time portion
                     stage += 1;
+                } else if c.is_ascii_alphanumeric(){
+                    println!("{}", c);
+                    date_tokens[date_ind].push(c)
                 } else {
+                    println!("None: {}", c);
                     return None
                 }
             }
             1 => {  // Parsing time
-                if c.is_digit(10) {
+                if c.is_whitespace() {
+                  continue
+                } else if c.is_digit(10) {
                     time_tokens[time_ind].push(c)
                 } else if time_ind < 2 && c == ':' {
                     time_ind += 1;
@@ -74,18 +79,22 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
         }
     }
 
+    println!("{:?}", date_tokens);
+
     // determine which date token holds year, month, and date
-    let (year, month, day) = if date_tokens[0].len() == 4 {
-        // Assume YYYY-MM-DD (where '-' can also be '/')
+    let year_re = Regex::new(r"\d{4}").unwrap();
+
+    let (year, month, day) = if year_re.is_match(&date_tokens[0]) {
+        // Assume YYYY-MM-DD (where '-' can also be '/' or ' ')
         // Year parsing needs to succeed, or we fail. All other components are optional
         let year: i32 = date_tokens[0].parse().ok()?;
-        let month: u32 = date_tokens[1].parse().unwrap_or(1);
+        let month: u32 = parse_month_str(&date_tokens[1]).unwrap_or(1);
         let day: u32 = date_tokens[2].parse().unwrap_or(1);
         (year, month, day)
-    } else if date_tokens[2].len() == 4 {
-        // Assume MM/DD/YYYY (where '/' can also be '-')
+    } else if year_re.is_match(&date_tokens[2]) {
+        // Assume MM/DD/YYYY (where '/' can also be '-' or ' ')
         let year: i32 = date_tokens[2].parse().ok()?;
-        let month: u32 = date_tokens[0].parse().ok()?;
+        let month: u32 = parse_month_str(&date_tokens[0]).unwrap_or(1);
         let day: u32 = date_tokens[1].parse().ok()?;
         (year, month, day)
     } else {
@@ -138,6 +147,45 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
 
     let parsed = offset.ymd(year, month, day).and_hms_milli(hour, minute, second, milliseconds);
     Some(parsed)
+}
+
+fn parse_month_str(month_str: &str) -> Option<u32> {
+    // try parsing as integer
+    let month_str = month_str.to_lowercase();
+    if let Ok(month) = month_str.parse::<u32>() {
+        Some(month)
+    } else if month_str.len() > 2 {
+        // Try parsing as month name
+        if "january"[..month_str.len()] == month_str {
+            Some(1)
+        } else if "february"[..month_str.len()] == month_str {
+            Some(2)
+        } else if "march"[..month_str.len()] == month_str {
+            Some(3)
+        } else if "april"[..month_str.len()] == month_str {
+            Some(4)
+        } else if "may"[..month_str.len()] == month_str {
+            Some(5)
+        } else if "june"[..month_str.len()] == month_str {
+            Some(6)
+        } else if "july"[..month_str.len()] == month_str {
+            Some(7)
+        } else if "august"[..month_str.len()] == month_str {
+            Some(8)
+        } else if "september"[..month_str.len()] == month_str {
+            Some(9)
+        } else if "october"[..month_str.len()] == month_str {
+            Some(10)
+        } else if "november"[..month_str.len()] == month_str {
+            Some(11)
+        } else if "december"[..month_str.len()] == month_str {
+            Some(12)
+        } else {
+            None
+        }
+    } else {
+        None
+    }
 }
 
 pub fn parse_datetime_to_utc_millis(date_str: &str, utc: bool) -> Option<i64> {
