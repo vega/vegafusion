@@ -11,13 +11,19 @@
       "url": "https://raw.githubusercontent.com/vega/vega-datasets/master/data/movies.json",
       "format": {"type": "json", "parse": {"Release Date": "date"}},
       "transform": [
-        {"type": "filter", "expr": "datum['IMDB Rating'] != null && datum['MPAA Rating'] != null"},
+        {"type": "filter", "expr": "datum['IMDB Rating'] != null"},
+        {
+          "field": "Release Date",
+          "type": "timeunit",
+          "units": ["year"],
+          "as": ["year", "year_end"]
+        },
         {
           "type": "joinaggregate",
           "as": ["AverageYearRating"],
           "ops": ["mean"],
           "fields": ["IMDB Rating"],
-          "groupby": ["MPAA Rating"]
+          "groupby": ["year"]
         },
         {
           "type": "filter",
