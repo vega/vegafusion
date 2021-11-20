@@ -160,6 +160,75 @@ mod test_image_comparison_timeunit {
     fn test_marker() {} // Help IDE detect test module
 }
 
+#[cfg(test)]
+mod test_image_comparison_window {
+    use super::*;
+    use itertools::Itertools;
+    use vegafusion_core::spec::transform::timeunit::{TimeUnitTimeZoneSpec, TimeUnitUnitSpec};
+    use vegafusion_core::spec::transform::window::WindowTransformOpSpec;
+    use vegafusion_core::spec::transform::TransformSpec;
+
+    #[rstest]
+    fn test_image_comparison(
+        #[values(
+            "count",
+            "max",
+            "min",
+            "mean",
+            "average",
+            "row_number",
+            "rank",
+            "dense_rank",
+            "percent_rank",
+            "cume_dist",
+            "first_value",
+            "last_value"
+        )]
+        op_name: &str,
+
+        #[values("cumulative_running_window")] spec_name: &str,
+    ) {
+        // Load spec
+        let mut full_spec = load_spec(spec_name);
+
+        // Load updates
+        let full_updates = load_updates(spec_name);
+
+        // Load expected watch plan
+        let watch_plan = load_expected_watch_plan(spec_name);
+
+        // Window
+        let window_tx = full_spec
+            .data
+            .get_mut(0)
+            .unwrap()
+            .transform
+            .get_mut(2)
+            .unwrap();
+
+        if let TransformSpec::Window(window_tx) = window_tx {
+            let op: WindowTransformOpSpec =
+                serde_json::from_str(&format!("\"{}\"", op_name)).unwrap();
+            window_tx.ops = vec![op];
+        } else {
+            panic!("Unexpected transform")
+        }
+
+        // Build name for saved images
+        let output_name = format!("{}_{}", spec_name, op_name);
+
+        TOKIO_RUNTIME.block_on(check_spec_sequence(
+            full_spec,
+            full_updates,
+            watch_plan,
+            &output_name,
+        ));
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
 fn crate_dir() -> String {
     std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .display()
