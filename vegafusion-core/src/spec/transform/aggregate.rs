@@ -7,8 +7,12 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AggregateTransformSpec {
     pub groupby: Vec<Field>,
-    pub fields: Vec<Option<Field>>,
-    pub ops: Vec<AggregateOpSpec>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fields: Option<Vec<Option<Field>>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ops: Option<Vec<AggregateOpSpec>>,
 
     #[serde(rename = "as", skip_serializing_if = "Option::is_none")]
     pub as_: Option<Vec<Option<String>>>,
@@ -68,7 +72,8 @@ impl TransformSpecTrait for AggregateTransformSpec {
     fn supported(&self) -> bool {
         // Check for supported aggregation op
         use AggregateOpSpec::*;
-        for op in &self.ops {
+        let ops = self.ops.clone().unwrap_or(vec![Count]);
+        for op in &ops {
             if !matches!(
                 op,
                 Count | Valid | Missing | Distinct | Sum | Mean | Average | Min | Max

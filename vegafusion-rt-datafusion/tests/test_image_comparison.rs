@@ -81,6 +81,7 @@ mod test_image_comparison_mocks {
         case("layer_histogram_global_mean"),
         case("layer_precipitation_mean"),
         case("wheat_wages"),
+        case("trellis_stacked_bar"),
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);

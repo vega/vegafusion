@@ -1,11 +1,12 @@
+use arrow::compute::filter;
 use crate::proto::gen::transforms::{Aggregate, AggregateOp};
 use crate::spec::transform::aggregate::{AggregateOpSpec, AggregateTransformSpec};
 use crate::transform::TransformDependencies;
 
 impl Aggregate {
     pub fn new(transform: &AggregateTransformSpec) -> Self {
-        let fields: Vec<_> = transform
-            .fields
+        let tx_fields = transform.fields.clone().unwrap_or(vec![None]);
+        let fields: Vec<_> = tx_fields
             .iter()
             .map(|f| f.as_ref().map(|f| f.field()).unwrap_or_default())
             .collect();
@@ -14,8 +15,7 @@ impl Aggregate {
 
         // Initialize aliases with those potentially provided in field objects
         // (e.g. {"field": "foo", "as": "bar"}
-        let mut aliases: Vec<_> = transform
-            .fields
+        let mut aliases: Vec<_> = tx_fields
             .iter()
             .map(|f| f.as_ref().and_then(|f| f.as_()).unwrap_or_default())
             .collect();
@@ -27,8 +27,8 @@ impl Aggregate {
             }
         }
 
-        let ops: Vec<_> = transform
-            .ops
+        let ops = transform.ops.clone().unwrap_or(vec![AggregateOpSpec::Count]);
+        let ops: Vec<_> = ops
             .iter()
             .map(|op| match op {
                 AggregateOpSpec::Count => AggregateOp::Count as i32,
