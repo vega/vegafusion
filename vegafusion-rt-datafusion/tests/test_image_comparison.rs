@@ -78,6 +78,7 @@ mod test_image_comparison_mocks {
         case("rect_lasagna"),
         case("rect_heatmap_weather"),
         case("layer_line_rolling_mean_point_raw"),
+        case("layer_histogram_global_mean"),
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);
