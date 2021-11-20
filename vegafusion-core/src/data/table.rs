@@ -15,8 +15,8 @@ use std::io::Cursor;
 
 use super::scalar::ScalarValue;
 use crate::arrow::array::ArrayRef;
-use arrow::array::StructArray;
-use arrow::compute::cast;
+use arrow::array::{Date32Array, Int64Array, StructArray};
+use arrow::compute::{cast, unary};
 use arrow::datatypes::TimeUnit;
 
 #[derive(Clone, Debug)]
@@ -110,20 +110,16 @@ impl VegaFusionTable {
     pub fn to_json(&self) -> serde_json::Value {
         // Workaround to serialize millisecond timestamp columns as integer milliseconds
         // Find timestamp columns
-        let timestamp_cols: HashSet<_> = self.schema.fields().iter().filter_map(|field| {
-            if matches!(field.data_type(), DataType::Timestamp(TimeUnit::Millisecond, _)) {
-                Some(field.name().clone())
-            } else {
-                None
-            }
-        }).collect();
-
         // Build updated schema
-        let write_schema = Schema::new(self.schema.fields().iter().map(|f| {
-            if timestamp_cols.contains(f.name()) {
-                Field::new(f.name(), DataType::Int64, f.is_nullable())
+        let write_schema = Schema::new(self.schema.fields().iter().map(|field| {
+            if matches!(field.data_type(),
+                DataType::Timestamp(TimeUnit::Millisecond, _)
+                | DataType::Date32
+                | DataType::Date64
+            ) {
+                Field::new(field.name(), DataType::Int64, field.is_nullable())
             } else {
-                f.clone()
+                field.clone()
             }
         }).collect());
 
@@ -131,10 +127,26 @@ impl VegaFusionTable {
         let mut write_batches = Vec::new();
         for batch in &self.batches {
             let new_columns: Vec<_> = batch.columns().iter().map(|col| {
-                if matches!(col.data_type(), DataType::Timestamp(TimeUnit::Millisecond, _)) {
-                    cast(col, &DataType::Int64).unwrap()
-                } else {
-                    col.clone()
+                match col.data_type() {
+                    DataType::Timestamp(TimeUnit::Millisecond, _) => {
+                        cast(col, &DataType::Int64).unwrap()
+                    }
+                    DataType::Date32 => {
+                        let ms_per_day = 1000 * 60 * 60 * 24 as i64;
+                        let array = col
+                            .as_any()
+                            .downcast_ref::<Date32Array>()
+                            .unwrap();
+
+                        let array: Int64Array = unary(array, |v| (v as i64) *  ms_per_day);
+                        Arc::new(array) as ArrayRef
+                    }
+                    DataType::Date64 => {
+                        cast(col, &DataType::Int64).unwrap()
+                    }
+                    _ => {
+                        col.clone()
+                    }
                 }
             }).collect();
             let batch = RecordBatch::try_new(Arc::new(write_schema.clone()), new_columns).unwrap();
