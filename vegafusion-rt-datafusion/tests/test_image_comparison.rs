@@ -75,6 +75,7 @@ mod test_image_comparison_mocks {
         case("layer_line_co2_concentration"),
         case("window_rank_matches"),
         case("circle_github_punchcard"),
+        case("rect_lasagna"),
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);

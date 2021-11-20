@@ -17,6 +17,7 @@
           "field": "Year",
           "type": "timeunit",
           "units": ["year"],
+          "timezone": "utc",
           "as": ["year", "year_end"]
         },
         {
@@ -33,6 +34,7 @@
           "field": "Year",
           "type": "timeunit",
           "units": ["year"],
+          "timezone": "utc",
           "as": ["year_Year", "year_Year_end"]
         }
       ]
