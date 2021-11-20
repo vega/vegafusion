@@ -20,8 +20,23 @@ pub fn extract_month<T: TimeZone>(dt: &DateTime<T>) -> i64 {
 }
 
 #[inline(always)]
+pub fn extract_quarter<T: TimeZone>(dt: &DateTime<T>) -> i64 {
+    (dt.month0() as f64 / 3.0).floor() as i64 + 1
+}
+
+#[inline(always)]
 pub fn extract_date<T: TimeZone>(dt: &DateTime<T>) -> i64 {
     dt.day() as i64
+}
+
+#[inline(always)]
+pub fn extract_day<T: TimeZone>(dt: &DateTime<T>) -> i64 {
+    dt.weekday() as i64 + 1
+}
+
+#[inline(always)]
+pub fn extract_dayofyear<T: TimeZone>(dt: &DateTime<T>) -> i64 {
+    dt.ordinal() as i64
 }
 
 #[inline(always)]
@@ -134,9 +149,34 @@ pub fn make_datepart_udf_utc(extract_fn: fn(&DateTime<Utc>) -> i64, name: &str) 
     let part_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single argument
         let arg = &args[0];
+
+        let arg = match arg.data_type() {
+            DataType::Timestamp(TimeUnit::Millisecond, _) => {
+                cast(arg, &DataType::Date64)?
+            }
+            DataType::Date32 => {
+                let ms_per_day = 1000 * 60 * 60 * 24 as i64;
+                let array = arg
+                    .as_any()
+                    .downcast_ref::<Date32Array>()
+                    .unwrap();
+
+                let array: Int64Array = unary(array, |v| (v as i64) *  ms_per_day);
+                let array = Arc::new(array) as ArrayRef;
+                cast(&array, &DataType::Date64)?
+            }
+            DataType::Date64 => {
+                arg.clone()
+            }
+            DataType::Int64 => {
+                cast(arg, &DataType::Date64)?
+            }
+            _ => panic!("Unexpected data type for date part function:")
+        };
+
         let arg = arg
             .as_any()
-            .downcast_ref::<TimestampMillisecondArray>()
+            .downcast_ref::<Date64Array>()
             .unwrap();
 
         let mut result_builder = Int64Array::builder(arg.len());
@@ -173,8 +213,14 @@ pub fn make_datepart_udf_utc(extract_fn: fn(&DateTime<Utc>) -> i64, name: &str) 
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int32)));
     ScalarUDF::new(
         name,
-        &Signature::exact(
-            vec![DataType::Timestamp(TimeUnit::Millisecond, None)],
+        &Signature::uniform(
+            1,
+            vec![
+                DataType::Timestamp(TimeUnit::Millisecond, None),
+                DataType::Date32,
+                DataType::Date64,
+                DataType::Int64,
+            ],
             Volatility::Immutable,
         ),
         &return_type,
@@ -185,15 +231,22 @@ pub fn make_datepart_udf_utc(extract_fn: fn(&DateTime<Utc>) -> i64, name: &str) 
 lazy_static! {
     pub static ref YEAR_UDF: ScalarUDF = make_datepart_udf_local(extract_year, "year");
     pub static ref MONTH_UDF: ScalarUDF = make_datepart_udf_local(extract_month, "month");
+    pub static ref QUARTER_UDF: ScalarUDF = make_datepart_udf_local(extract_quarter, "quarter");
     pub static ref DATE_UDF: ScalarUDF = make_datepart_udf_local(extract_date, "date");
+    pub static ref DAYOFYEAR_UDF: ScalarUDF = make_datepart_udf_local(extract_dayofyear, "dayofyear");
+    pub static ref DAY_UDF: ScalarUDF = make_datepart_udf_local(extract_day, "day");
     pub static ref HOURS_UDF: ScalarUDF = make_datepart_udf_local(extract_hour, "hours");
     pub static ref MINUTES_UDF: ScalarUDF = make_datepart_udf_local(extract_minute, "minutes");
     pub static ref SECONDS_UDF: ScalarUDF = make_datepart_udf_local(extract_second, "seconds");
     pub static ref MILLISECONDS_UDF: ScalarUDF =
         make_datepart_udf_local(extract_millisecond, "milliseconds");
+
     pub static ref UTCYEAR_UDF: ScalarUDF = make_datepart_udf_utc(extract_year, "utcyear");
     pub static ref UTCMONTH_UDF: ScalarUDF = make_datepart_udf_utc(extract_month, "utcmonth");
+    pub static ref UTCQUARTER_UDF: ScalarUDF = make_datepart_udf_utc(extract_quarter, "utcquarter");
     pub static ref UTCDATE_UDF: ScalarUDF = make_datepart_udf_utc(extract_date, "utcdate");
+    pub static ref UTCDAYOFYEAR_UDF: ScalarUDF = make_datepart_udf_utc(extract_dayofyear, "utcdayofyear");
+    pub static ref UTCDAY_UDF: ScalarUDF = make_datepart_udf_utc(extract_day, "utcday");
     pub static ref UTCHOURS_UDF: ScalarUDF = make_datepart_udf_utc(extract_hour, "utchours");
     pub static ref UTCMINUTES_UDF: ScalarUDF = make_datepart_udf_utc(extract_minute, "utcminutes");
     pub static ref UTCSECONDS_UDF: ScalarUDF = make_datepart_udf_utc(extract_second, "utcseconds");

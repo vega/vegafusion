@@ -3,7 +3,7 @@ use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
 use crate::expression::compiler::builtin_functions::datetime::date_parts::{
     DATE_UDF, HOURS_UDF, MILLISECONDS_UDF, MINUTES_UDF, MONTH_UDF, SECONDS_UDF, UTCDATE_UDF,
     UTCHOURS_UDF, UTCMILLISECONDS_UDF, UTCMINUTES_UDF, UTCMONTH_UDF, UTCSECONDS_UDF, UTCYEAR_UDF,
-    YEAR_UDF,
+    YEAR_UDF, QUARTER_UDF, UTCQUARTER_UDF, DAYOFYEAR_UDF, UTCDAYOFYEAR_UDF, DAY_UDF, UTCDAY_UDF
 };
 use crate::expression::compiler::builtin_functions::datetime::datetime::{
     datetime_transform, UTC_COMPONENTS,
@@ -31,6 +31,7 @@ use vegafusion_core::proto::gen::expression::{
 
 use crate::expression::compiler::builtin_functions::data::data::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
+use crate::expression::compiler::builtin_functions::datetime::time::make_time_udf;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 
 #[derive(Clone)]
@@ -239,6 +240,13 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         },
     );
     callables.insert(
+        "quarter".to_string(),
+        VegaFusionCallable::ScalarUDF {
+            udf: QUARTER_UDF.deref().clone(),
+            cast: None,
+        },
+    );
+    callables.insert(
         "month".to_string(),
         VegaFusionCallable::ScalarUDF {
             udf: MONTH_UDF.deref().clone(),
@@ -246,9 +254,23 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         },
     );
     callables.insert(
+        "day".to_string(),
+        VegaFusionCallable::ScalarUDF {
+            udf: DAY_UDF.deref().clone(),
+            cast: None,
+        },
+    );
+    callables.insert(
         "date".to_string(),
         VegaFusionCallable::ScalarUDF {
             udf: DATE_UDF.deref().clone(),
+            cast: None,
+        },
+    );
+    callables.insert(
+        "dayofyear".to_string(),
+        VegaFusionCallable::ScalarUDF {
+            udf: DAYOFYEAR_UDF.deref().clone(),
             cast: None,
         },
     );
@@ -289,6 +311,13 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         },
     );
     callables.insert(
+        "utcquarter".to_string(),
+        VegaFusionCallable::ScalarUDF {
+            udf: UTCQUARTER_UDF.deref().clone(),
+            cast: None,
+        },
+    );
+    callables.insert(
         "utcmonth".to_string(),
         VegaFusionCallable::ScalarUDF {
             udf: UTCMONTH_UDF.deref().clone(),
@@ -296,9 +325,23 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         },
     );
     callables.insert(
+        "utcday".to_string(),
+        VegaFusionCallable::ScalarUDF {
+            udf: UTCDAY_UDF.deref().clone(),
+            cast: None,
+        },
+    );
+    callables.insert(
         "utcdate".to_string(),
         VegaFusionCallable::ScalarUDF {
             udf: UTCDATE_UDF.deref().clone(),
+            cast: None,
+        },
+    );
+    callables.insert(
+        "utcdayofyear".to_string(),
+        VegaFusionCallable::ScalarUDF {
+            udf: UTCDAYOFYEAR_UDF.deref().clone(),
             cast: None,
         },
     );
