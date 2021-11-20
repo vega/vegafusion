@@ -119,12 +119,6 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
         return None;
     };
 
-    if time_tokens[0].is_empty() {
-        // If time was not provided, 00:00:00+00:00 is used
-        timezone_tokens[0].push('0');
-        timezone_tokens[1].push('0');
-    }
-
     let offset = if timezone_tokens[0].is_empty() {
         if utc {
             // UTC as a fixed offset
