@@ -17,6 +17,7 @@ use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
 use std::convert::TryFrom;
 use std::sync::Arc;
+use datafusion::prelude::lit;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{Identifier, MemberExpression};
 
@@ -58,8 +59,13 @@ pub fn compile_member(
     // Handle datum property access. These represent DataFusion column expressions
     match node.object().as_identifier() {
         Ok(Identifier { name, .. }) if name == "datum" => {
-            let col_expr = col(&property_string);
-            return Ok(col_expr);
+            return if schema.field_with_unqualified_name(&property_string).is_ok() {
+                let col_expr = col(&property_string);
+                Ok(col_expr)
+            } else {
+                // Column not in schema, evaluate to scalar null
+                Ok(lit(ScalarValue::Boolean(None)))
+            }
         }
         _ => {}
     }

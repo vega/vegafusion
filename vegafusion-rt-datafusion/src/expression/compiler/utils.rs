@@ -2,7 +2,7 @@ use datafusion::arrow::array::{ArrayRef, BooleanArray};
 use datafusion::arrow::datatypes::{DataType, Schema};
 use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::execution::context::ExecutionContextState;
-use datafusion::logical_plan::{Column, DFSchema, Expr};
+use datafusion::logical_plan::{and, Column, DFSchema, Expr};
 use datafusion::optimizer::utils::expr_to_columns;
 use datafusion::physical_plan::planner::DefaultPhysicalPlanner;
 use datafusion::physical_plan::{ColumnarValue, PhysicalExpr};
@@ -79,7 +79,7 @@ pub fn data_type(value: &Expr, schema: &DFSchema) -> Result<DataType> {
 pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let dtype = data_type(&value, schema)?;
     let boolean_value = if matches!(dtype, DataType::Boolean) {
-        value
+        and(Expr::IsNotNull(Box::new(value.clone())), value)
     } else {
         // TODO: JavaScript falsey cast
         //  - empty string to false
