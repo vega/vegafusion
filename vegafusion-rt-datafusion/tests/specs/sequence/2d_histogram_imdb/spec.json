@@ -30,7 +30,7 @@
           ],
           "signal": "bin_maxbins_60_IMDB_Rating_bins",
           "extent": {"signal": "bin_maxbins_60_IMDB_Rating_extent"},
-          "maxbins": 40
+          "maxbins": 60
         },
         {
           "type": "extent",
@@ -46,7 +46,7 @@
           ],
           "signal": "bin_maxbins_40_Rotten_Tomatoes_Rating_bins",
           "extent": {"signal": "bin_maxbins_40_Rotten_Tomatoes_Rating_extent"},
-          "maxbins": 2
+          "maxbins": 40
         },
         {
           "type": "aggregate",

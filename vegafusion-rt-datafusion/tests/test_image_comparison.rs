@@ -65,7 +65,9 @@ mod test_image_comparison_mocks {
         case("concat_marginal_histograms"),
         case("joinaggregate_movie_rating"),
         case("joinaggregate_text_color_contrast"),
-        case("cumulative_running_window")
+        case("cumulative_running_window"),
+        case("point_bubble"),
+        case("circle_natural_disasters")
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);
@@ -76,6 +78,7 @@ mod test_image_comparison_mocks {
     fn test_marker() {} // Help IDE detect test module
 }
 
+#[rustfmt::skip]  // Rust format breaks the rstest macro use below
 #[cfg(test)]
 mod test_image_comparison_timeunit {
     use super::*;
