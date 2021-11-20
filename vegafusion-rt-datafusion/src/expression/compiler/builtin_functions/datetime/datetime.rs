@@ -75,6 +75,11 @@ pub fn make_datetime_components_udf(utc: bool) -> ScalarUDF {
             let num_args = args.len();
             let mut args = Vec::from(args);
 
+            if args.len() < 2 {
+                // default to 1st month of the year
+                args.push(ColumnarValue::Scalar(ScalarValue::Int64(Some(0))));
+            }
+
             if args.len() < 3 {
                 // default to 1st of the month
                 args.push(ColumnarValue::Scalar(ScalarValue::Int64(Some(1))));
@@ -196,6 +201,7 @@ pub fn make_datetime_components_udf(utc: bool) -> ScalarUDF {
     let sig = |n: usize| vec![DataType::Int64; n];
     let signature = Signature::one_of(
         vec![
+            TypeSignature::Exact(sig(1)),
             TypeSignature::Exact(sig(2)),
             TypeSignature::Exact(sig(3)),
             TypeSignature::Exact(sig(4)),
