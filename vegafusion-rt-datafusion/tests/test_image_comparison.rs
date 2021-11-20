@@ -67,7 +67,12 @@ mod test_image_comparison_mocks {
         case("joinaggregate_text_color_contrast"),
         case("cumulative_running_window"),
         case("point_bubble"),
-        case("circle_natural_disasters")
+        case("circle_natural_disasters"),
+        case("circle_bubble_health_income"),
+        case("line_color_stocks"),
+        case("line_slope_barley"),
+        case("connected_scatterplot"),
+        case("layer_line_co2_concentration")
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);

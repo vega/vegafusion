@@ -41,10 +41,8 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
                     // Move on to time portion
                     stage += 1;
                 } else if c.is_ascii_alphanumeric() {
-                    println!("{}", c);
                     date_tokens[date_ind].push(c)
                 } else {
-                    println!("None: {}", c);
                     return None;
                 }
             }
@@ -88,8 +86,6 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
             _ => return None,
         }
     }
-
-    println!("{:?}", date_tokens);
 
     // determine which date token holds year, month, and date
     let year_re = Regex::new(r"\d{4}").unwrap();
