@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use crate::arrow::{
     datatypes::{DataType, Field, Schema, SchemaRef},
     json,
@@ -15,6 +16,8 @@ use std::io::Cursor;
 use super::scalar::ScalarValue;
 use crate::arrow::array::ArrayRef;
 use arrow::array::StructArray;
+use arrow::compute::cast;
+use arrow::datatypes::TimeUnit;
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
@@ -105,8 +108,41 @@ impl VegaFusionTable {
     }
 
     pub fn to_json(&self) -> serde_json::Value {
+        // Workaround to serialize millisecond timestamp columns as integer milliseconds
+        // Find timestamp columns
+        let timestamp_cols: HashSet<_> = self.schema.fields().iter().filter_map(|field| {
+            if matches!(field.data_type(), DataType::Timestamp(TimeUnit::Millisecond, _)) {
+                Some(field.name().clone())
+            } else {
+                None
+            }
+        }).collect();
+
+        // Build updated schema
+        let write_schema = Schema::new(self.schema.fields().iter().map(|f| {
+            if timestamp_cols.contains(f.name()) {
+                Field::new(f.name(), DataType::Int64, f.is_nullable())
+            } else {
+                f.clone()
+            }
+        }).collect());
+
+        // Cast millisecond timestamp cols to int64
+        let mut write_batches = Vec::new();
+        for batch in &self.batches {
+            let new_columns: Vec<_> = batch.columns().iter().map(|col| {
+                if matches!(col.data_type(), DataType::Timestamp(TimeUnit::Millisecond, _)) {
+                    cast(col, &DataType::Int64).unwrap()
+                } else {
+                    col.clone()
+                }
+            }).collect();
+            let batch = RecordBatch::try_new(Arc::new(write_schema.clone()), new_columns).unwrap();
+            write_batches.push(batch)
+        }
+
         let mut rows: Vec<serde_json::Value> = Vec::with_capacity(self.num_rows());
-        for row in record_batches_to_json_rows(&self.batches) {
+        for row in record_batches_to_json_rows(&write_batches) {
             rows.push(serde_json::Value::Object(row));
         }
         serde_json::Value::Array(rows)
