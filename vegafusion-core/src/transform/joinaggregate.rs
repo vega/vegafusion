@@ -1,5 +1,5 @@
-use crate::proto::gen::transforms::{JoinAggregate, AggregateOp};
-use crate::spec::transform::aggregate::{AggregateOpSpec as AggregateOpSpec, AggregateTransformSpec};
+use crate::proto::gen::transforms::{AggregateOp, JoinAggregate};
+use crate::spec::transform::aggregate::AggregateOpSpec;
 use crate::spec::transform::joinaggregate::JoinAggregateTransformSpec;
 use crate::transform::TransformDependencies;
 
@@ -11,9 +11,11 @@ impl JoinAggregate {
             .map(|f| f.as_ref().map(|f| f.field()).unwrap_or_default())
             .collect();
 
-        let groupby: Vec<_> = transform.groupby.as_ref().map(
-            |groupby| groupby.iter().map(|f| f.field()).collect()
-        ).unwrap_or(Vec::new());
+        let groupby: Vec<_> = transform
+            .groupby
+            .as_ref()
+            .map(|groupby| groupby.iter().map(|f| f.field()).collect())
+            .unwrap_or_default();
 
         // Initialize aliases with those potentially provided in field objects
         // (e.g. {"field": "foo", "as": "bar"}
@@ -95,7 +97,7 @@ pub fn op_name(op: AggregateOp) -> String {
         AggregateOp::Argmax => "argmax",
         AggregateOp::Values => "values",
     }
-        .to_string()
+    .to_string()
 }
 
 impl TransformDependencies for JoinAggregate {}

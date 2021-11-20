@@ -3,7 +3,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::spec::transform::TransformSpecTrait;
-use crate::spec::values::{CompareSpec, SortOrderOrList, StringOrStringList};
+use crate::spec::values::CompareSpec;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CollectTransformSpec {

@@ -1,5 +1,5 @@
 use crate::proto::gen::transforms::{Aggregate, AggregateOp};
-use crate::spec::transform::aggregate::{AggregateOpSpec as AggregateOpSpec, AggregateTransformSpec};
+use crate::spec::transform::aggregate::{AggregateOpSpec, AggregateTransformSpec};
 use crate::transform::TransformDependencies;
 
 impl Aggregate {

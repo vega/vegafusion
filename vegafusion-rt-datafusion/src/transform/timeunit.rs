@@ -1,55 +1,65 @@
-use std::sync::Arc;
-use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
-use vegafusion_core::error::{Result, VegaFusionError};
-use crate::transform::TransformTrait;
-use datafusion::prelude::{DataFrame, col};
 use crate::expression::compiler::config::CompilationConfig;
-use vegafusion_core::task_graph::task_value::TaskValue;
+use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::arrow::array::{ArrayRef, Date64Array, Int64Array, TimestampNanosecondArray};
+use datafusion::arrow::array::{ArrayRef, Date64Array, Int64Array};
 use datafusion::arrow::datatypes::DataType;
-use datafusion::arrow::datatypes::TimeUnit as ArrowTimeUnit;
-use datafusion::arrow::compute::kernels::arity::unary;
-use datafusion::arrow::temporal_conversions::{date64_to_datetime, timestamp_ns_to_datetime};
-use datafusion::error::DataFusionError;
-use datafusion::logical_plan::Expr;
-use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
-use datafusion::physical_plan::udf::ScalarUDF;
-use chrono::{Datelike, Timelike, Local, TimeZone, LocalResult, Utc, NaiveDate, Weekday, NaiveDateTime, DateTime};
-use crate::expression::compiler::utils::{cast_to, UNIT_SCHEMA};
+use datafusion::prelude::{col, DataFrame};
+use std::sync::Arc;
+use vegafusion_core::error::Result;
+use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
+use vegafusion_core::task_graph::task_value::TaskValue;
 
+use datafusion::arrow::compute::kernels::arity::unary;
+use datafusion::arrow::temporal_conversions::date64_to_datetime;
+
+use crate::expression::compiler::utils::cast_to;
+use chrono::{
+    DateTime, Datelike, Local, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday,
+};
+use datafusion::logical_plan::Expr;
+use datafusion::physical_plan::functions::{
+    make_scalar_function, ReturnTypeFunction, Signature, Volatility,
+};
+use datafusion::physical_plan::udf::ScalarUDF;
 
 #[async_trait]
 impl TransformTrait for TimeUnit {
     async fn eval(
         &self,
         dataframe: Arc<dyn DataFrame>,
-        config: &CompilationConfig,
+        _config: &CompilationConfig,
     ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
-
-        let units: Vec<_> = self.units.clone().into_iter().map(|unit| TimeUnitUnit::from_i32(unit).unwrap()).collect();
+        let _units: Vec<_> = self
+            .units
+            .clone()
+            .into_iter()
+            .map(|unit| TimeUnitUnit::from_i32(unit).unwrap())
+            .collect();
 
         let is_local = self.timezone != Some(TimeUnitTimeZone::Utc as i32);
 
         let units_mask = vec![
-            self.units.contains(&(TimeUnitUnit::Year as i32)),          // 0
-            self.units.contains(&(TimeUnitUnit::Quarter as i32)),       // 1
-            self.units.contains(&(TimeUnitUnit::Month as i32)),         // 2
-            self.units.contains(&(TimeUnitUnit::Date as i32)),          // 3
-            self.units.contains(&(TimeUnitUnit::Week as i32)),          // 4
-            self.units.contains(&(TimeUnitUnit::Day as i32)),           // 5
-            self.units.contains(&(TimeUnitUnit::DayOfYear as i32)),     // 6
-            self.units.contains(&(TimeUnitUnit::Hours as i32)),         // 7
-            self.units.contains(&(TimeUnitUnit::Minutes as i32)),       // 8
-            self.units.contains(&(TimeUnitUnit::Seconds as i32)),       // 9
-            self.units.contains(&(TimeUnitUnit::Milliseconds as i32)),  // 10
+            self.units.contains(&(TimeUnitUnit::Year as i32)), // 0
+            self.units.contains(&(TimeUnitUnit::Quarter as i32)), // 1
+            self.units.contains(&(TimeUnitUnit::Month as i32)), // 2
+            self.units.contains(&(TimeUnitUnit::Date as i32)), // 3
+            self.units.contains(&(TimeUnitUnit::Week as i32)), // 4
+            self.units.contains(&(TimeUnitUnit::Day as i32)),  // 5
+            self.units.contains(&(TimeUnitUnit::DayOfYear as i32)), // 6
+            self.units.contains(&(TimeUnitUnit::Hours as i32)), // 7
+            self.units.contains(&(TimeUnitUnit::Minutes as i32)), // 8
+            self.units.contains(&(TimeUnitUnit::Seconds as i32)), // 9
+            self.units.contains(&(TimeUnitUnit::Milliseconds as i32)), // 10
         ];
 
         // Handle timeunit start value (we always do this)
         let timeunit_start_udf = make_timeunit_start_udf(units_mask.as_slice(), is_local);
-        let timeunit_start_value = timeunit_start_udf.call(vec![
-            cast_to(col(&self.field), &DataType::Date64, dataframe.schema()).unwrap()
-        ]);
+        let timeunit_start_value = timeunit_start_udf.call(vec![cast_to(
+            col(&self.field),
+            &DataType::Date64,
+            dataframe.schema(),
+        )
+        .unwrap()]);
 
         // Apply alias
         let timeunit_start_alias = if let Some(alias_0) = &self.alias_0 {
@@ -60,8 +70,7 @@ impl TransformTrait for TimeUnit {
         let timeunit_start_value = timeunit_start_value.alias(&timeunit_start_alias);
 
         // Add timeunit start value to the dataframe
-        let dataframe = dataframe
-            .select(vec![Expr::Wildcard, timeunit_start_value])?;
+        let dataframe = dataframe.select(vec![Expr::Wildcard, timeunit_start_value])?;
 
         // Handle timeunit end value (In the future, disable this when interval=false)
         let timeunit_end_udf = make_timeunit_end_udf(units_mask.as_slice(), is_local);
@@ -76,8 +85,7 @@ impl TransformTrait for TimeUnit {
         let timeunit_end_value = timeunit_end_value.alias(&timeunit_end_alias);
 
         // Add timeunit end value to the dataframe
-        let dataframe = dataframe
-            .select(vec![Expr::Wildcard, timeunit_end_value])?;
+        let dataframe = dataframe.select(vec![Expr::Wildcard, timeunit_end_value])?;
 
         Ok((dataframe.clone(), Vec::new()))
     }
@@ -88,12 +96,9 @@ fn make_timeunit_start_udf(units_mask: &[bool], is_local: bool) -> ScalarUDF {
     let timeunit = move |args: &[ArrayRef]| {
         let arg = &args[0];
 
-        let array = arg
-            .as_any()
-            .downcast_ref::<Date64Array>()
-            .unwrap();
+        let array = arg.as_any().downcast_ref::<Date64Array>().unwrap();
 
-        let result_array: Int64Array = unary(array, |value|
+        let result_array: Int64Array = unary(array, |value| {
             if is_local {
                 let tz = Local {};
                 perform_timeunit_start(value, units_mask.as_slice(), tz).timestamp_millis()
@@ -101,23 +106,17 @@ fn make_timeunit_start_udf(units_mask: &[bool], is_local: bool) -> ScalarUDF {
                 let tz = Utc;
                 perform_timeunit_start(value, units_mask.as_slice(), tz).timestamp_millis()
             }
-        );
+        });
 
         Ok(Arc::new(result_array) as ArrayRef)
     };
 
     let timeunit = make_scalar_function(timeunit);
-    let return_type: ReturnTypeFunction = Arc::new(
-        move |_| Ok(Arc::new(DataType::Int64))
-    );
+    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
 
     ScalarUDF::new(
         "timeunit",
-        &Signature::uniform(
-            1,
-            vec![DataType::Date64],
-            Volatility::Immutable,
-        ),
+        &Signature::uniform(1, vec![DataType::Date64], Volatility::Immutable),
         &return_type,
         &timeunit,
     )
@@ -128,12 +127,9 @@ fn make_timeunit_end_udf(units_mask: &[bool], is_local: bool) -> ScalarUDF {
     let timeunit_end = move |args: &[ArrayRef]| {
         let arg = &args[0];
 
-        let start_array = arg
-            .as_any()
-            .downcast_ref::<Int64Array>()
-            .unwrap();
+        let start_array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
 
-        let result_array: Int64Array = unary(start_array, |value|
+        let result_array: Int64Array = unary(start_array, |value| {
             if is_local {
                 let tz = Local {};
                 perform_timeunit_end(value, units_mask.as_slice(), tz).timestamp_millis()
@@ -141,29 +137,21 @@ fn make_timeunit_end_udf(units_mask: &[bool], is_local: bool) -> ScalarUDF {
                 let tz = Utc;
                 perform_timeunit_end(value, units_mask.as_slice(), tz).timestamp_millis()
             }
-        );
+        });
 
         Ok(Arc::new(result_array) as ArrayRef)
     };
 
     let timeunit = make_scalar_function(timeunit_end);
-    let return_type: ReturnTypeFunction = Arc::new(
-        move |_| Ok(Arc::new(DataType::Int64))
-    );
+    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
 
     ScalarUDF::new(
         "timeunit_end",
-        &Signature::uniform(
-            1,
-            vec![DataType::Int64],
-            Volatility::Immutable,
-        ),
+        &Signature::uniform(1, vec![DataType::Int64], Volatility::Immutable),
         &return_type,
         &timeunit,
     )
 }
-
-
 
 fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -> DateTime<T> {
     // Load and interpret date time as UTC
@@ -173,20 +161,24 @@ fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -
     let mut dt_value = dt_value.with_timezone(&tz);
 
     // Handle time truncation
-    if !units_mask[10] {  // Milliseconds
+    if !units_mask[10] {
+        // Milliseconds
         let new_ns = (((dt_value.nanosecond() as f64) / 1e6).floor() * 1e6) as u32;
         dt_value = dt_value.with_nanosecond(new_ns).unwrap();
     }
 
-    if !units_mask[9] {  // Seconds
+    if !units_mask[9] {
+        // Seconds
         dt_value = dt_value.with_second(0).unwrap();
     }
 
-    if !units_mask[8] {  // Minutes
+    if !units_mask[8] {
+        // Minutes
         dt_value = dt_value.with_minute(0).unwrap();
     }
 
-    if !units_mask[7] {  // Hours
+    if !units_mask[7] {
+        // Hours
         dt_value = dt_value.with_hour(0).unwrap();
     }
 
@@ -197,36 +189,43 @@ fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -
 
     // Handle year truncation
     // (if we're not truncating to week number, this is handled separately below)
-    if !units_mask[0] && !units_mask[4]{  // Year
+    if !units_mask[0] && !units_mask[4] {
+        // Year
         dt_value = dt_value.with_year(2012).unwrap();
     }
 
     // Handle date (of the year) truncation.
     // For simplicity, only one of these is valid at the same time for now
-    if units_mask[1] {  // Quarter
+    if units_mask[1] {
+        // Quarter
         // Truncate to Quarter
         let new_month = ((dt_value.month0() as f64 / 3.0).floor() * 3.0) as u32;
-        dt_value = dt_value.with_day0(0).unwrap().with_month0(new_month).unwrap();
-    } else if units_mask[2] {  // Month and not Date
+        dt_value = dt_value
+            .with_day0(0)
+            .unwrap()
+            .with_month0(new_month)
+            .unwrap();
+    } else if units_mask[2] {
+        // Month and not Date
         // Truncate to first day of the month
         if !units_mask[3] {
             dt_value = dt_value.with_day0(0).unwrap();
         }
-    } else if units_mask[3] {  // Date and not Month
+    } else if units_mask[3] {
+        // Date and not Month
         // Normalize to January, keeping existing day of the month.
         // (January has 31 days, so this is safe)
         if !units_mask[2] {
             dt_value = dt_value.with_month0(0).unwrap();
         }
-    } else if units_mask[4] {  // Week
+    } else if units_mask[4] {
+        // Week
         // Step 1: Find the date of the first Sunday in the same calendar year as the date.
         // This may occur in isoweek 0, or in the final isoweek of the previous year
 
-        let isoweek0_sunday = NaiveDate::from_isoywd(
-            dt_value.year(), 1, Weekday::Sun
-        );
+        let isoweek0_sunday = NaiveDate::from_isoywd(dt_value.year(), 1, Weekday::Sun);
 
-        let mut isoweek0_sunday = NaiveDateTime::new(isoweek0_sunday, dt_value.time());
+        let isoweek0_sunday = NaiveDateTime::new(isoweek0_sunday, dt_value.time());
         let isoweek0_sunday = tz.from_local_datetime(&isoweek0_sunday).single().unwrap();
 
         // Subtract one week from isoweek0_sunday and check if it's still in the same calendar
@@ -254,16 +253,21 @@ fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -
         if !units_mask[0] {
             // Calendar year 2012. use weeks offset from the first Sunday of 2012
             // (which is January 1st)
-            let first_sunday_of_2012 = tz.from_local_datetime(&NaiveDateTime::new(
-                NaiveDate::from_ymd(2012, 1, 1), dt_value.time()
-            )).single().unwrap();
+            let first_sunday_of_2012 = tz
+                .from_local_datetime(&NaiveDateTime::new(
+                    NaiveDate::from_ymd(2012, 1, 1),
+                    dt_value.time(),
+                ))
+                .single()
+                .unwrap();
 
             dt_value = first_sunday_of_2012 + chrono::Duration::weeks(week_number);
         } else {
             // Don't change calendar year, use weeks offset from first sunday of the year
             dt_value = first_sunday_of_year + chrono::Duration::weeks(week_number);
         }
-    } else if units_mask[5] {  // Day
+    } else if units_mask[5] {
+        // Day
         // Keep weekday, but make sure Sunday comes before Monday
         let new_date = if weekday == Weekday::Sun {
             NaiveDate::from_isoywd(dt_value.year(), 1, weekday)
@@ -272,7 +276,8 @@ fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -
         };
         let new_datetime = NaiveDateTime::new(new_date, dt_value.time());
         dt_value = tz.from_local_datetime(&new_datetime).single().unwrap();
-    } else if units_mask[6] {  // DayOfYear
+    } else if units_mask[6] {
+        // DayOfYear
         // Keep the same day of the year
         dt_value = dt_value.with_ordinal0(ordinal0).unwrap();
     } else {
@@ -283,59 +288,87 @@ fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -
     dt_value
 }
 
-
 fn perform_timeunit_end<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -> DateTime<T> {
     let dt_start = date64_to_datetime(value).with_nanosecond(0).unwrap();
     let dt_start = Utc.from_local_datetime(&dt_start).single().unwrap();
     let dt_start = dt_start.with_timezone(&tz);
 
     // create dt_end by advancing dt_start by the smallest unit present in units
-    if units_mask[10] {  // Milliseconds
+    if units_mask[10] {
+        // Milliseconds
         let delta = chrono::Duration::milliseconds(1);
         dt_start + delta
-    } else if units_mask[9] {  // Seconds
+    } else if units_mask[9] {
+        // Seconds
         let delta = chrono::Duration::seconds(1);
         dt_start + delta
-    } else if units_mask[8] {  // Minutes
+    } else if units_mask[8] {
+        // Minutes
         let delta = chrono::Duration::minutes(1);
         dt_start + delta
-    } else if units_mask[7] {  // Hours
+    } else if units_mask[7] {
+        // Hours
         let delta = chrono::Duration::hours(1);
         dt_start + delta
     } else if units_mask[6] // DayOfYear
         || units_mask[5]    // Day
-        || units_mask[3]    // Date
+        || units_mask[3]
+    // Date
     {
         let delta = chrono::Duration::days(1);
         dt_start + delta
-    } else if units_mask[4] {  // Week
+    } else if units_mask[4] {
+        // Week
         let delta = chrono::Duration::weeks(1);
         dt_start + delta
-    } else if units_mask[2] {  // Month
+    } else if units_mask[2] {
+        // Month
         let month0 = dt_start.month0();
         if month0 == 11 {
             // First day of the following year
             let year = dt_start.year();
-            dt_start.with_ordinal0(0).unwrap().with_year(year + 1).unwrap()
+            dt_start
+                .with_ordinal0(0)
+                .unwrap()
+                .with_year(year + 1)
+                .unwrap()
         } else {
             // Increment month
-            dt_start.with_day0(0).unwrap().with_month0(month0 + 1).unwrap()
+            dt_start
+                .with_day0(0)
+                .unwrap()
+                .with_month0(month0 + 1)
+                .unwrap()
         }
-    } else if units_mask[1] {  // Quarter
+    } else if units_mask[1] {
+        // Quarter
         let month0 = dt_start.month0();
         if month0 > 8 {
             // October 1st (or later, but month0 should have already been truncated to October 1st)
             // Wrap to start of the following year
             let year = dt_start.year();
-            dt_start.with_ordinal0(0).unwrap().with_year(year + 1).unwrap()
+            dt_start
+                .with_ordinal0(0)
+                .unwrap()
+                .with_year(year + 1)
+                .unwrap()
         } else {
             // Increment by 3 months (within the same year)
-            dt_start.with_day0(0).unwrap().with_month0(month0 + 3).unwrap()
+            dt_start
+                .with_day0(0)
+                .unwrap()
+                .with_month0(month0 + 3)
+                .unwrap()
         }
-    } else if units_mask[0] {  // Year
+    } else if units_mask[0] {
+        // Year
         // First day of the following year
         let year = dt_start.year();
-        dt_start.with_ordinal0(0).unwrap().with_year(year + 1).unwrap()
+        dt_start
+            .with_ordinal0(0)
+            .unwrap()
+            .with_year(year + 1)
+            .unwrap()
     } else {
         // Not unit specified, only thing to do is keep dt_start
         dt_start

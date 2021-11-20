@@ -3,12 +3,17 @@ extern crate lazy_static;
 
 mod util;
 
+use crate::util::vegajs_runtime::{
+    vegajs_runtime, ExportImageFormat, ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace,
+    Watch, WatchNamespace, WatchPlan,
+};
+use datafusion::scalar::ScalarValue;
 use rstest::rstest;
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use datafusion::scalar::ScalarValue;
 use std::fs;
 use std::sync::Arc;
+use tokio::runtime::Runtime;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::planning::extract::extract_server_data;
@@ -18,14 +23,12 @@ use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::task_graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
-use tokio::runtime::Runtime;
-use crate::util::vegajs_runtime::{vegajs_runtime, ExportImageFormat, ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace, Watch, WatchNamespace, WatchPlan};
 
-lazy_static!{
+lazy_static! {
     static ref TOKIO_RUNTIME: Runtime = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .unwrap();
+        .enable_all()
+        .build()
+        .unwrap();
 }
 
 #[cfg(test)]
@@ -62,7 +65,7 @@ mod test_image_comparison_mocks {
         case("concat_marginal_histograms"),
         case("joinaggregate_movie_rating"),
         case("joinaggregate_text_color_contrast"),
-        case("cumulative_running_window"),
+        case("cumulative_running_window")
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);
@@ -75,10 +78,10 @@ mod test_image_comparison_mocks {
 
 #[cfg(test)]
 mod test_image_comparison_timeunit {
-    use itertools::Itertools;
-    use vegafusion_core::spec::transform::timeunit::{TimeUnitUnitSpec, TimeUnitTimeZoneSpec};
-    use vegafusion_core::spec::transform::TransformSpec;
     use super::*;
+    use itertools::Itertools;
+    use vegafusion_core::spec::transform::timeunit::{TimeUnitTimeZoneSpec, TimeUnitUnitSpec};
+    use vegafusion_core::spec::transform::TransformSpec;
 
     #[rstest]
     fn test_image_comparison(
@@ -103,9 +106,9 @@ mod test_image_comparison_timeunit {
 
         #[values(
             "bar_month_temporal_initial_parameterize",
-            "stacked_bar_weather_timeunit_parameterize",
+            "stacked_bar_weather_timeunit_parameterize"
         )]
-        spec_name: &str
+        spec_name: &str,
     ) {
         // Load spec
         let mut full_spec = load_spec(spec_name);
@@ -117,7 +120,13 @@ mod test_image_comparison_timeunit {
         let watch_plan = load_expected_watch_plan(spec_name);
 
         // Modify transform spec
-        let timeunit_tx = full_spec.data.get_mut(0).unwrap().transform.get_mut(0).unwrap();
+        let timeunit_tx = full_spec
+            .data
+            .get_mut(0)
+            .unwrap()
+            .transform
+            .get_mut(0)
+            .unwrap();
         if let TransformSpec::Timeunit(timeunit_tx) = timeunit_tx {
             timeunit_tx.units = Some(units.clone());
             timeunit_tx.timezone = Some(timezone.clone());
@@ -126,17 +135,25 @@ mod test_image_comparison_timeunit {
         }
 
         // Build name for saved images
-        let units_str = units.iter().map(|unit| {
-            let s = serde_json::to_string(unit).unwrap();
-            s.trim_matches('"').to_string()
-        }
-        ).join("_");
-        let timezone_str = serde_json::to_string(&timezone).unwrap().trim_matches('"').to_string();
+        let units_str = units
+            .iter()
+            .map(|unit| {
+                let s = serde_json::to_string(unit).unwrap();
+                s.trim_matches('"').to_string()
+            })
+            .join("_");
+        let timezone_str = serde_json::to_string(&timezone)
+            .unwrap()
+            .trim_matches('"')
+            .to_string();
         let output_name = format!("{}_timeunit_{}_{}", spec_name, units_str, timezone_str);
 
-        TOKIO_RUNTIME.block_on(
-            check_spec_sequence(full_spec, full_updates, watch_plan, &output_name)
-        );
+        TOKIO_RUNTIME.block_on(check_spec_sequence(
+            full_spec,
+            full_updates,
+            watch_plan,
+            &output_name,
+        ));
     }
 
     #[test]
@@ -151,7 +168,11 @@ fn crate_dir() -> String {
 
 fn load_spec(spec_name: &str) -> ChartSpec {
     // Load spec
-    let spec_path = format!("{}/tests/specs/sequence/{}/spec.json", crate_dir(), spec_name);
+    let spec_path = format!(
+        "{}/tests/specs/sequence/{}/spec.json",
+        crate_dir(),
+        spec_name
+    );
     let spec_str = fs::read_to_string(spec_path).unwrap();
     serde_json::from_str(&spec_str).unwrap()
 }
@@ -159,7 +180,8 @@ fn load_spec(spec_name: &str) -> ChartSpec {
 fn load_updates(spec_name: &str) -> Vec<ExportUpdateBatch> {
     let updates_path = format!(
         "{}/tests/specs/sequence/{}/updates.json",
-        crate_dir(), spec_name
+        crate_dir(),
+        spec_name
     );
     let updates_str = fs::read_to_string(updates_path).unwrap();
     serde_json::from_str(&updates_str).unwrap()
@@ -168,7 +190,8 @@ fn load_updates(spec_name: &str) -> Vec<ExportUpdateBatch> {
 fn load_expected_watch_plan(spec_name: &str) -> WatchPlan {
     let watch_plan_path = format!(
         "{}/tests/specs/sequence/{}/watch_plan.json",
-        crate_dir(), spec_name
+        crate_dir(),
+        spec_name
     );
     let watch_plan_str = fs::read_to_string(watch_plan_path).unwrap();
     serde_json::from_str(&watch_plan_str).unwrap()
@@ -191,7 +214,7 @@ async fn check_spec_sequence(
     full_spec: ChartSpec,
     full_updates: Vec<ExportUpdateBatch>,
     watch_plan: WatchPlan,
-    spec_name: &str
+    spec_name: &str,
 ) {
     // Initialize runtime
     let vegajs_runtime = vegajs_runtime();
@@ -202,8 +225,14 @@ async fn check_spec_sequence(
     let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope).unwrap();
     let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec).unwrap();
 
-    println!("client_spec: {}", serde_json::to_string_pretty(&client_spec).unwrap());
-    println!("server_spec: {}", serde_json::to_string_pretty(&server_spec).unwrap());
+    println!(
+        "client_spec: {}",
+        serde_json::to_string_pretty(&client_spec).unwrap()
+    );
+    println!(
+        "server_spec: {}",
+        serde_json::to_string_pretty(&server_spec).unwrap()
+    );
     println!("comm_plan: {:#?}", comm_plan);
 
     // Build task graph
@@ -274,8 +303,7 @@ async fn check_spec_sequence(
     }
 
     // Update graph with client-to-server watches, and collect values to update the client with
-    let mut server_to_client_value_batches: Vec<HashMap<ScopedVariable, TaskValue>> =
-        Vec::new();
+    let mut server_to_client_value_batches: Vec<HashMap<ScopedVariable, TaskValue>> = Vec::new();
     for (_, watch_values) in export_sequence_results.iter().skip(1) {
         // Update graph
         for watch_value in watch_values {
@@ -284,9 +312,9 @@ async fn check_spec_sequence(
                 WatchNamespace::Signal => {
                     TaskValue::Scalar(ScalarValue::from_json(&watch_value.value).unwrap())
                 }
-                WatchNamespace::Data => TaskValue::Table(
-                    VegaFusionTable::from_json(&watch_value.value, 1024).unwrap(),
-                ),
+                WatchNamespace::Data => {
+                    TaskValue::Table(VegaFusionTable::from_json(&watch_value.value, 1024).unwrap())
+                }
             };
 
             let index = task_graph_mapping.get(&variable).unwrap().node_index as usize;
@@ -365,8 +393,7 @@ async fn check_spec_sequence(
         if difference > 1e-3 {
             println!("difference: {}", difference);
             if let Some(diff_img) = diff_img {
-                let diff_path =
-                    format!("{}/tests/output/{}_diff{}.png", crate_dir(), spec_name, i);
+                let diff_path = format!("{}/tests/output/{}_diff{}.png", crate_dir(), spec_name, i);
                 fs::write(&diff_path, diff_img).unwrap();
                 assert!(
                     false,

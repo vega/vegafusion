@@ -1,10 +1,12 @@
-use std::sync::Arc;
 use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use datafusion::arrow::array::{ArrayRef, Int64Array, StringArray};
 use datafusion::arrow::datatypes::DataType;
-use datafusion::physical_plan::functions::{make_scalar_function, ReturnTypeFunction, Signature, Volatility};
+use datafusion::physical_plan::functions::{
+    make_scalar_function, ReturnTypeFunction, Signature, Volatility,
+};
 use datafusion::physical_plan::udf::ScalarUDF;
 use regex::Regex;
+use std::sync::Arc;
 
 lazy_static! {
     pub static ref DATETIME_TO_MILLIS_LOCAL: ScalarUDF = make_datetime_to_millis_udf(false);
@@ -15,7 +17,12 @@ lazy_static! {
 /// Allow omission of time components
 pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>> {
     let mut date_tokens = vec![String::from(""), String::from(""), String::from("")];
-    let mut time_tokens = vec![String::from(""), String::from(""), String::from(""), String::from("")];
+    let mut time_tokens = vec![
+        String::from(""),
+        String::from(""),
+        String::from(""),
+        String::from(""),
+    ];
     let mut timezone_tokens = vec![String::from(""), String::from("")];
     let mut timezone_sign = ' ';
     let mut date_ind = 0;
@@ -26,23 +33,25 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
     // tokenize date string
     for c in date_str.trim().chars() {
         match stage {
-            0 => {  // Parsing date
+            0 => {
+                // Parsing date
                 if date_ind < 2 && (c == '-' || c == '/' || c == ' ') {
                     date_ind += 1;
                 } else if date_ind == 2 && (c == 'T' || c == ' ') {
                     // Move on to time portion
                     stage += 1;
-                } else if c.is_ascii_alphanumeric(){
+                } else if c.is_ascii_alphanumeric() {
                     println!("{}", c);
                     date_tokens[date_ind].push(c)
                 } else {
                     println!("None: {}", c);
-                    return None
+                    return None;
                 }
             }
-            1 => {  // Parsing time
+            1 => {
+                // Parsing time
                 if c.is_whitespace() {
-                  continue
+                    continue;
                 } else if c.is_digit(10) {
                     time_tokens[time_ind].push(c)
                 } else if time_ind < 2 && c == ':' {
@@ -60,22 +69,23 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
                     // Done, UTC 0
                     timezone_tokens[0].push('0');
                     timezone_tokens[1].push('0');
-                    break
+                    break;
                 } else {
-                    return None
+                    return None;
                 }
             }
-            2 => {  // Parsing timezone
+            2 => {
+                // Parsing timezone
                 if c.is_digit(10) {
                     timezone_tokens[timezone_ind].push(c)
                 } else if timezone_ind == 0 && c == ':' {
                     timezone_ind += 1;
                 } else {
                     // String should have ended
-                    return None
+                    return None;
                 }
             }
-            _ => { return None }
+            _ => return None,
         }
     }
 
@@ -99,7 +109,7 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
         (year, month, day)
     } else {
         // 4-digit year may be the first of third date component
-        return None
+        return None;
     };
 
     let hour: u32 = time_tokens[0].parse().unwrap_or(0);
@@ -110,7 +120,7 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
     } else if time_tokens[2].len() == 3 {
         time_tokens[2].parse().ok()?
     } else {
-        return None
+        return None;
     };
 
     if time_tokens[0].is_empty() {
@@ -145,7 +155,9 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
         }
     };
 
-    let parsed = offset.ymd(year, month, day).and_hms_milli(hour, minute, second, milliseconds);
+    let parsed = offset
+        .ymd(year, month, day)
+        .and_hms_milli(hour, minute, second, milliseconds);
     Some(parsed)
 }
 
@@ -206,11 +218,14 @@ pub fn make_datetime_to_millis_udf(utc: bool) -> ScalarUDF {
 
         let date_strs = arg.as_any().downcast_ref::<StringArray>().unwrap();
 
-        let millis_array = Int64Array::from(date_strs.iter().map(|date_str| -> Option<i64> {
-            date_str.and_then(|date_str| {
-                parse_datetime_to_utc_millis(date_str, utc)
-            })
-        }).collect::<Vec<Option<i64>>>());
+        let millis_array = Int64Array::from(
+            date_strs
+                .iter()
+                .map(|date_str| -> Option<i64> {
+                    date_str.and_then(|date_str| parse_datetime_to_utc_millis(date_str, utc))
+                })
+                .collect::<Vec<Option<i64>>>(),
+        );
 
         Ok(Arc::new(millis_array) as ArrayRef)
     };
@@ -221,31 +236,25 @@ pub fn make_datetime_to_millis_udf(utc: bool) -> ScalarUDF {
 
     ScalarUDF::new(
         "vf_datetime_to_millis",
-        &Signature::uniform(
-            1,
-            vec![
-                DataType::Utf8,
-            ],
-            Volatility::Immutable,
-        ),
+        &Signature::uniform(1, vec![DataType::Utf8], Volatility::Immutable),
         &return_type,
         &to_millis_fn,
     )
 }
 
 #[test]
-fn test_parse_extended_iso_8601() {
-    let res = parse_extended_iso_8601("2020-05-16T09:30:00+05:00", true).unwrap();
+fn test_parse_datetime() {
+    let res = parse_datetime("2020-05-16T09:30:00+05:00", true).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);
 
-    let res = parse_extended_iso_8601("2020-05-16T09:30:00", true).unwrap();
+    let res = parse_datetime("2020-05-16T09:30:00", true).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);
 
-    let res = parse_extended_iso_8601("2020-05-16T09:30:00", false).unwrap();
+    let res = parse_datetime("2020-05-16T09:30:00", false).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);

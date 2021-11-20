@@ -6,12 +6,12 @@ mod util;
 use util::check::check_transform_evaluation;
 use util::datasets::vega_json_dataset;
 use util::equality::TablesEqualConfig;
-use vegafusion_core::proto::gen::transforms::SortOrder;
-use vegafusion_core::spec::transform::collect::{
-    CollectTransformSpec,
-};
+
+use vegafusion_core::spec::transform::collect::CollectTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_core::spec::values::{CompareSpec, SortOrderOrList, SortOrderSpec, StringOrStringList};
+use vegafusion_core::spec::values::{
+    CompareSpec, SortOrderOrList, SortOrderSpec, StringOrStringList,
+};
 
 #[test]
 fn test_collect_multi() {

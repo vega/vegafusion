@@ -1,7 +1,9 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use datafusion::dataframe::DataFrame;
-use datafusion::logical_plan::{avg, col, count, count_distinct, lit, max, min, sum, Expr, JoinType};
+use datafusion::logical_plan::{
+    avg, col, count, count_distinct, lit, max, min, sum, Expr, JoinType,
+};
 
 use async_trait::async_trait;
 use std::sync::Arc;
@@ -70,7 +72,7 @@ impl TransformTrait for JoinAggregate {
             // Apply alias
             let expr = if let Some(alias) = self.aliases.get(i).filter(|a| !a.is_empty()) {
                 // Alias is a non-empty string
-                agg_cols.push(col(&alias));
+                agg_cols.push(col(alias));
                 expr.alias(alias)
             } else {
                 let alias = format!(
@@ -86,13 +88,13 @@ impl TransformTrait for JoinAggregate {
 
         let group_exprs: Vec<_> = self.groupby.iter().map(|c| col(c)).collect();
         let dataframe = if group_exprs.is_empty() {
-
             let grouped_dataframe = dataframe
                 .aggregate(vec![lit(true).alias("__unit_rhs")], agg_exprs)
                 .with_context(|| "Failed to perform aggregate transform".to_string())?;
 
             // Add unit column to join on
-            let dataframe = dataframe.select(vec![Expr::Wildcard, lit(true).alias("__unit_lhs")])?;
+            let dataframe =
+                dataframe.select(vec![Expr::Wildcard, lit(true).alias("__unit_lhs")])?;
 
             let dataframe = dataframe.join(
                 grouped_dataframe,
@@ -109,11 +111,19 @@ impl TransformTrait for JoinAggregate {
 
             let left_cols: Vec<_> = self.groupby.iter().map(|f| f.as_str()).collect();
 
-            let groupby_aliases: Vec<String> = self.groupby.iter().enumerate().map(|(i, a)| { format!("grp_field_{}", i) }).collect();
+            let groupby_aliases: Vec<String> = self
+                .groupby
+                .iter()
+                .enumerate()
+                .map(|(i, _a)| format!("grp_field_{}", i))
+                .collect();
 
             let mut select_exprs = agg_cols.clone();
             select_exprs.extend(
-                self.groupby.iter().zip(&groupby_aliases).map(|(n, alias)| col(n).alias(alias))
+                self.groupby
+                    .iter()
+                    .zip(&groupby_aliases)
+                    .map(|(n, alias)| col(n).alias(alias)),
             );
             let grouped_dataframe = grouped_dataframe.select(select_exprs)?;
 
@@ -123,7 +133,7 @@ impl TransformTrait for JoinAggregate {
                 grouped_dataframe,
                 JoinType::Inner,
                 left_cols.as_slice(),
-                right_cols.as_slice()
+                right_cols.as_slice(),
             )?;
 
             dataframe

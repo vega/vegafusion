@@ -59,9 +59,8 @@ pub fn is_integer_datatype(dtype: &DataType) -> bool {
 
 pub fn is_float_datatype(dtype: &DataType) -> bool {
     matches!(
-        dtype, DataType::Float16
-            | DataType::Float32
-            | DataType::Float64
+        dtype,
+        DataType::Float16 | DataType::Float32 | DataType::Float64
     )
 }
 
@@ -130,7 +129,7 @@ pub fn is_null_literal(value: &Expr) -> bool {
     if let Expr::Literal(literal) = &value {
         literal.is_null()
     } else {
-      false
+        false
     }
 }
 

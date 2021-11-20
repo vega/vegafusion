@@ -1,4 +1,7 @@
-use crate::expression::compiler::utils::{cast_to, data_type, is_null_literal, is_numeric_datatype, is_string_datatype, to_numeric, to_string};
+use crate::expression::compiler::utils::{
+    cast_to, data_type, is_null_literal, is_numeric_datatype, is_string_datatype, to_numeric,
+    to_string,
+};
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::logical_plan::{concat, lit, DFSchema, Expr, Operator};
 use vegafusion_core::arrow::datatypes::DataType;

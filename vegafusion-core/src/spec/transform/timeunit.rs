@@ -60,16 +60,11 @@ pub enum TimeUnitUnitSpec {
 
 impl TransformSpecTrait for TimeUnitTransformSpec {
     fn supported(&self) -> bool {
-        if self.units.is_none()
+        !(self.units.is_none()
             || self.step.is_some()
             || self.extent.is_some()
             || self.maxbins.is_some()
-            || self.signal.is_some()
-        {
-            false
-        } else {
-            true
-        }
+            || self.signal.is_some())
     }
 
     fn output_signals(&self) -> Vec<String> {

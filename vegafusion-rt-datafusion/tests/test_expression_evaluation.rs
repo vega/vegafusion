@@ -369,16 +369,11 @@ mod test_get_index {
 mod test_null_comparison {
     use crate::*;
 
-    #[rstest(
-        expr,
-        case("1 === null"),
-        case("1 !== null"),
-    )]
+    #[rstest(expr, case("1 === null"), case("1 !== null"))]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
 
     #[test]
     fn test_marker() {} // Help IDE detect test module
-
 }

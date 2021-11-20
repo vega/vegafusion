@@ -464,12 +464,18 @@ pub struct WatchPlan {
 impl From<CommPlan> for WatchPlan {
     fn from(value: CommPlan) -> Self {
         Self {
-            server_to_client: value.server_to_client.into_iter().map(|scoped_var| {
-                Watch::try_from(scoped_var).unwrap()
-            }).sorted().collect(),
-            client_to_server: value.client_to_server.into_iter().map(|scoped_var| {
-                Watch::try_from(scoped_var).unwrap()
-            }).sorted().collect(),
+            server_to_client: value
+                .server_to_client
+                .into_iter()
+                .map(|scoped_var| Watch::try_from(scoped_var).unwrap())
+                .sorted()
+                .collect(),
+            client_to_server: value
+                .client_to_server
+                .into_iter()
+                .map(|scoped_var| Watch::try_from(scoped_var).unwrap())
+                .sorted()
+                .collect(),
         }
     }
 }

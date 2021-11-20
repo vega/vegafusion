@@ -1,9 +1,9 @@
+use crate::spec::transform::aggregate::AggregateOpSpec;
 use crate::spec::transform::TransformSpecTrait;
 use crate::spec::values::Field;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::spec::transform::aggregate::AggregateOpSpec;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct JoinAggregateTransformSpec {
@@ -19,7 +19,6 @@ pub struct JoinAggregateTransformSpec {
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
-
 
 impl TransformSpecTrait for JoinAggregateTransformSpec {
     fn supported(&self) -> bool {

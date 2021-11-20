@@ -1,12 +1,11 @@
 use crate::error::VegaFusionError;
 use crate::proto::gen::tasks::Variable;
 use crate::proto::gen::transforms::transform::TransformKind;
-use crate::proto::gen::transforms::{JoinAggregate, Transform, Window};
 use crate::proto::gen::transforms::{Aggregate, Bin, Collect, Extent, Filter, Formula, TimeUnit};
+use crate::proto::gen::transforms::{JoinAggregate, Transform, Window};
 use crate::spec::transform::TransformSpec;
 use crate::task_graph::task::InputVariable;
 use std::convert::TryFrom;
-
 
 pub mod aggregate;
 pub mod bin;
@@ -14,9 +13,9 @@ pub mod collect;
 pub mod extent;
 pub mod filter;
 pub mod formula;
-pub mod timeunit;
-pub mod pipeline;
 pub mod joinaggregate;
+pub mod pipeline;
+pub mod timeunit;
 pub mod window;
 
 impl TryFrom<&TransformSpec> for TransformKind {
@@ -31,7 +30,9 @@ impl TryFrom<&TransformSpec> for TransformKind {
             TransformSpec::Aggregate(tx_spec) => Self::Aggregate(Aggregate::new(tx_spec)),
             TransformSpec::Collect(tx_spec) => Self::Collect(Collect::try_new(tx_spec)?),
             TransformSpec::Timeunit(tx_spec) => Self::Timeunit(TimeUnit::try_new(tx_spec)?),
-            TransformSpec::JoinAggregate(tx_spec) => Self::Joinaggregate(JoinAggregate::new(tx_spec)),
+            TransformSpec::JoinAggregate(tx_spec) => {
+                Self::Joinaggregate(JoinAggregate::new(tx_spec))
+            }
             TransformSpec::Window(tx_spec) => Self::Window(Window::try_new(tx_spec)?),
             _ => {
                 return Err(VegaFusionError::parse(&format!(

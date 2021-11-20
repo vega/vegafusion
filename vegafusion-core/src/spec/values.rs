@@ -59,7 +59,6 @@ pub enum StringOrSignalSpec {
     Signal(SignalExpressionSpec),
 }
 
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CompareSpec {
     pub field: StringOrStringList,
@@ -67,7 +66,6 @@ pub struct CompareSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub order: Option<SortOrderOrList>,
 }
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
 #[serde(rename_all = "lowercase")]

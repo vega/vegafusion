@@ -110,10 +110,8 @@ impl TransformSpecTrait for WindowTransformSpec {
         // https://github.com/apache/arrow-datafusion/issues/361
         // Until they are supported, the default frame is equivalent to [null, 0]. Fortunately,
         // this is the default in vega as well.
-        if self.frame.is_some() {
-            if self.frame.as_ref().unwrap() != &[Value::Null, Value::from(0)] {
-                return false;
-            }
+        if self.frame.is_some() && self.frame.as_ref().unwrap() != &[Value::Null, Value::from(0)] {
+            return false;
         }
 
         true

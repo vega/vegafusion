@@ -1,25 +1,24 @@
-use serde_json::Value;
-use crate::proto::gen::transforms::{AggregateOp, SortOrder, Window, window_transform_op, WindowFrame, WindowOp, WindowTransformOp};
-use crate::spec::transform::window::{WindowOpSpec, WindowTransformOpSpec, WindowTransformSpec};
-use crate::transform::TransformDependencies;
-use crate::error::{Result, VegaFusionError};
+use crate::error::Result;
+use crate::proto::gen::transforms::{
+    window_transform_op, AggregateOp, SortOrder, Window, WindowFrame, WindowOp, WindowTransformOp,
+};
 use crate::spec::transform::aggregate::AggregateOpSpec;
-use crate::spec::values::{CompareSpec, SortOrderOrList, SortOrderSpec};
-
+use crate::spec::transform::window::{WindowOpSpec, WindowTransformOpSpec, WindowTransformSpec};
+use crate::spec::values::SortOrderSpec;
+use crate::transform::TransformDependencies;
+use serde_json::Value;
 
 impl Window {
     pub fn try_new(transform: &WindowTransformSpec) -> Result<Self> {
-
         // Process frame
         let frame = transform.frame.as_ref().map(|f| {
-            let frame: Vec<_> = f.iter().map(|v| {
-                match f.get(0).unwrap() {
-                    Value::Number(n) => {
-                        n.as_i64()
-                    }
-                    _ => None
-                }
-            }).collect();
+            let frame: Vec<_> = f
+                .iter()
+                .map(|_v| match f.get(0).unwrap() {
+                    Value::Number(n) => n.as_i64(),
+                    _ => None,
+                })
+                .collect();
 
             WindowFrame {
                 start: frame[0],
@@ -27,42 +26,49 @@ impl Window {
             }
         });
 
-
         // Process sorting
         let (sort_fields, sort) = match &transform.sort {
             Some(sort) => {
                 let fields = sort.field.to_vec();
                 let order: Vec<_> = match &sort.order {
-                    Some(order) => {
-                        order.to_vec().iter().map(|ord| {
-                            match ord {
-                                SortOrderSpec::Descending => SortOrder::Descending as i32,
-                                SortOrderSpec::Ascending => SortOrder::Ascending as i32,
-                            }
-                        }).collect()
-                    }
+                    Some(order) => order
+                        .to_vec()
+                        .iter()
+                        .map(|ord| match ord {
+                            SortOrderSpec::Descending => SortOrder::Descending as i32,
+                            SortOrderSpec::Ascending => SortOrder::Ascending as i32,
+                        })
+                        .collect(),
                     None => {
                         vec![SortOrder::Ascending as i32; fields.len()]
                     }
                 };
                 (fields, order)
             }
-            None => (Vec::new(), Vec::new())
+            None => (Vec::new(), Vec::new()),
         };
 
         // Process fields (Convert null/None to empty string)
-        let fields: Vec<_> = transform.fields.iter().map(|f| {
-            f.as_ref().map(|f| f.field()).unwrap_or("".to_string())
-        }).collect();
+        let fields: Vec<_> = transform
+            .fields
+            .iter()
+            .map(|f| f.as_ref().map(|f| f.field()).unwrap_or("".to_string()))
+            .collect();
 
         // Process groupby
-        let groupby: Vec<_> = transform.groupby.clone().unwrap_or(Vec::new()).iter().map(|f| {
-            f.field()
-        }).collect();
+        let groupby: Vec<_> = transform
+            .groupby
+            .clone()
+            .unwrap_or_default()
+            .iter()
+            .map(|f| f.field())
+            .collect();
 
         // Process ops
-        let ops: Vec<_> = transform.ops.iter().map(|tx_op| {
-            match tx_op {
+        let ops: Vec<_> = transform
+            .ops
+            .iter()
+            .map(|tx_op| match tx_op {
                 WindowTransformOpSpec::Aggregate(op_spec) => {
                     let op = match op_spec {
                         AggregateOpSpec::Count => AggregateOp::Count,
@@ -90,7 +96,7 @@ impl Window {
                         AggregateOpSpec::Values => AggregateOp::Values,
                     };
                     WindowTransformOp {
-                        op: Some(window_transform_op::Op::AggregateOp(op as i32))
+                        op: Some(window_transform_op::Op::AggregateOp(op as i32)),
                     }
                 }
                 WindowTransformOpSpec::Window(op_spec) => {
@@ -111,21 +117,29 @@ impl Window {
                     };
 
                     WindowTransformOp {
-                        op: Some(window_transform_op::Op::WindowOp(op as i32))
+                        op: Some(window_transform_op::Op::WindowOp(op as i32)),
                     }
                 }
-            }
-        }).collect();
+            })
+            .collect();
 
         // Process aliases. Convert None to empty string
-        let aliases: Vec<_> = transform.as_.clone().unwrap_or(Vec::new()).iter().map(|alias| {
-            alias.clone().unwrap_or("".to_string())
-        }).collect();
+        let aliases: Vec<_> = transform
+            .as_
+            .clone()
+            .unwrap_or_default()
+            .iter()
+            .map(|alias| alias.clone().unwrap_or("".to_string()))
+            .collect();
 
         // Process params
-        let params: Vec<_> =  transform.params.clone().unwrap_or_default().iter().map(|param| {
-            param.as_f64().unwrap_or(f64::NAN)
-        }).collect();
+        let params: Vec<_> = transform
+            .params
+            .clone()
+            .unwrap_or_default()
+            .iter()
+            .map(|param| param.as_f64().unwrap_or(f64::NAN))
+            .collect();
 
         Ok(Self {
             sort,

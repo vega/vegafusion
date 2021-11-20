@@ -1,17 +1,19 @@
 use crate::error::Result;
 use crate::proto::gen::tasks::Variable;
 use crate::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
-use crate::spec::transform::timeunit::{TimeUnitTransformSpec, TimeUnitUnitSpec, TimeUnitTimeZoneSpec};
+use crate::spec::transform::timeunit::{
+    TimeUnitTimeZoneSpec, TimeUnitTransformSpec, TimeUnitUnitSpec,
+};
 use crate::transform::TransformDependencies;
 
 impl TimeUnit {
     pub fn try_new(transform: &TimeUnitTransformSpec) -> Result<Self> {
         let field = transform.field.clone();
-        let units: Vec<_> = transform.units.iter().flat_map(
-            |units| units.iter().map(|unit| {
-                TimeUnitUnit::from(unit) as i32
-            })
-        ).collect();
+        let units: Vec<_> = transform
+            .units
+            .iter()
+            .flat_map(|units| units.iter().map(|unit| TimeUnitUnit::from(unit) as i32))
+            .collect();
         let signal = transform.signal.clone();
 
         let alias_0 = transform.as_.as_ref().and_then(|v| v.get(0).cloned());
@@ -19,16 +21,10 @@ impl TimeUnit {
 
         let timezone = match &transform.timezone {
             None => None,
-            Some(timezone) => {
-                match timezone {
-                    TimeUnitTimeZoneSpec::Local => {
-                        Some(TimeUnitTimeZone::Local as i32)
-                    }
-                    TimeUnitTimeZoneSpec::Utc => {
-                        Some(TimeUnitTimeZone::Utc as i32)
-                    }
-                }
-            }
+            Some(timezone) => match timezone {
+                TimeUnitTimeZoneSpec::Local => Some(TimeUnitTimeZone::Local as i32),
+                TimeUnitTimeZoneSpec::Utc => Some(TimeUnitTimeZone::Utc as i32),
+            },
         };
 
         Ok(Self {

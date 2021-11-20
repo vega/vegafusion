@@ -4,10 +4,10 @@ pub mod collect;
 pub mod extent;
 pub mod filter;
 pub mod formula;
-pub mod pipeline;
-pub mod utils;
-pub mod timeunit;
 pub mod joinaggregate;
+pub mod pipeline;
+pub mod timeunit;
+pub mod utils;
 pub mod window;
 
 use crate::expression::compiler::config::CompilationConfig;
