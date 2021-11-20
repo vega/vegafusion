@@ -343,6 +343,13 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
             cast: Some(DataType::Int64),
         },
     );
+    callables.insert(
+        "time".to_string(),
+        VegaFusionCallable::ScalarUDF {
+            udf: make_time_udf(),
+            cast: None,
+        },
+    );
 
     // data
     callables.insert(
