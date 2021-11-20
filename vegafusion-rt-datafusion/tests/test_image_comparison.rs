@@ -72,7 +72,9 @@ mod test_image_comparison_mocks {
         case("line_color_stocks"),
         case("line_slope_barley"),
         case("connected_scatterplot"),
-        case("layer_line_co2_concentration")
+        case("layer_line_co2_concentration"),
+        case("window_rank_matches"),
+        case("circle_github_punchcard"),
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);
