@@ -26,6 +26,7 @@ use vegafusion_core::proto::gen::services::{
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::task_graph::ScopedVariable;
 use web_sys::Element;
+use vegafusion_core::proto::gen::expression::literal::Value;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -45,6 +46,7 @@ extern "C" {
 pub struct MsgReceiver {
     element_id: String,
     spec: ChartSpec,
+    server_spec: ChartSpec,
     comm_plan: CommPlan,
     send_msg_fn: Arc<js_sys::Function>,
     task_graph: Arc<Mutex<TaskGraph>>,
@@ -58,6 +60,7 @@ impl MsgReceiver {
     fn new(
         element_id: &str,
         spec: ChartSpec,
+        server_spec: ChartSpec,
         comm_plan: CommPlan,
         task_graph: TaskGraph,
         send_msg_fn: js_sys::Function,
@@ -87,6 +90,7 @@ impl MsgReceiver {
         let this = Self {
             element_id: element_id.to_string(),
             spec,
+            server_spec,
             comm_plan,
             task_graph: Arc::new(Mutex::new(task_graph)),
             task_graph_mapping,
@@ -222,6 +226,7 @@ impl MsgReceiver {
                     let closure = Closure::wrap(Box::new(move |_name: String, val: JsValue| {
                         let val: serde_json::Value = val.into_serde().unwrap();
                         let mut task_graph = task_graph.lock().expect("lock task graph");
+
                         let updated_nodes = &task_graph
                             .update_value(
                                 node_value_index.node_index as usize,
@@ -276,6 +281,18 @@ impl MsgReceiver {
             .map(|scoped_var| self.task_graph_mapping.get(scoped_var).unwrap().clone())
             .collect()
     }
+
+    pub fn client_spec_json(&self) -> String {
+        serde_json::to_string_pretty(&self.spec).unwrap()
+    }
+
+    pub fn server_spec_json(&self) -> String {
+        serde_json::to_string_pretty(&self.server_spec).unwrap()
+    }
+
+    pub fn comm_plan_str(&self) -> String {
+        format!("{:#?}", self.comm_plan)
+    }
 }
 
 #[wasm_bindgen]
@@ -296,7 +313,7 @@ pub fn render_vegafusion(
     let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
 
     // Create closure to update chart from received messages
-    let receiver = MsgReceiver::new(element_id, spec, comm_plan, task_graph.clone(), send_msg_fn);
+    let receiver = MsgReceiver::new(element_id, spec, server_spec, comm_plan, task_graph.clone(), send_msg_fn);
 
     // Request initial values
     let updated_node_indices: Vec<_> = receiver.initial_node_value_indices();

@@ -7,6 +7,9 @@ export function vega_version() {
     return version
 }
 
+// JSON Serialize Dates to milliseconds
+Object.defineProperty(Date.prototype, "toJSON", {value: function() {return this.getTime()}})
+
 function getNestedRuntime(view, scope) {
     // name is an array that may have leading integer group indices
     var runtime = view._runtime;
@@ -56,7 +59,7 @@ export function addSignalListener(view, name, scope, handler) {
         view,
         name,
         signal_op,
-        _.debounce(handler, 20, {'maxWait': 50}),
+        _.debounce(handler, 50, {'maxWait': 100}),
     );
 }
 
@@ -66,7 +69,7 @@ export function addDataListener(view, name, scope, handler) {
         view,
         name,
         dataset,
-        _.debounce(handler, 20, {'maxWait': 50}),
+        _.debounce(handler, 50, {'maxWait': 100}),
     );
 }
 
