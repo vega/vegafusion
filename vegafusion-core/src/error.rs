@@ -6,6 +6,12 @@ use thiserror::Error;
 #[cfg(feature = "datafusion")]
 use datafusion::error::DataFusionError;
 
+#[cfg(feature = "pyo3")]
+use pyo3::{
+    PyErr,
+    exceptions::PyValueError,
+};
+
 pub type Result<T> = result::Result<T, VegaFusionError>;
 
 #[derive(Clone, Debug, Default)]
@@ -258,5 +264,13 @@ where
             Ok(v) => Ok(v.clone()),
             Err(err) => Err(err.duplicate()),
         }
+    }
+}
+
+// Conversion to PyO3 error
+#[cfg(feature = "pyo3")]
+impl std::convert::From<VegaFusionError> for PyErr {
+    fn from(err: VegaFusionError) -> PyErr {
+        PyValueError::new_err(err.to_string())
     }
 }
