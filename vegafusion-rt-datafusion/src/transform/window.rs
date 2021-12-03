@@ -55,7 +55,8 @@ impl TransformTrait for Window {
                             Mean | Average => (aggregates::AggregateFunction::Avg, col(field)),
                             Min => (aggregates::AggregateFunction::Min, col(field)),
                             Max => (aggregates::AggregateFunction::Max, col(field)),
-                            Values => (aggregates::AggregateFunction::ArrayAgg, col(field)),
+                            // ArrayAgg only available on master right now
+                            // Values => (aggregates::AggregateFunction::ArrayAgg, col(field)),
                             _ => {
                                 panic!("Unsupported window aggregate: {:?}", op)
                             }
