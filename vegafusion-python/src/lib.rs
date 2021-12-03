@@ -1,28 +1,44 @@
 use pyo3::prelude::*;
+use tokio::runtime::Runtime;
+use vegafusion_core::error::ToExternalError;
+use vegafusion_core::proto::gen::tasks::TaskGraph;
+use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 
 #[pyclass]
-struct PySpecPlan {
-    #[pyo3(get)]
-    full_spec: String,
-
-    #[pyo3(get)]
-    server_spec: String,
-
-    #[pyo3(get)]
-    client_spec: String,
+struct PyTaskGraphRuntime {
+    runtime: TaskGraphRuntime,
+    tokio_runtime: Runtime,
 }
 
 #[pymethods]
-impl PySpecPlan {
+impl PyTaskGraphRuntime {
     #[new]
-    fn new(full_spec: String, server_spec: String, client_spec: String) -> Self {
-        Self {
-            full_spec, server_spec, client_spec
+    pub fn new(max_capacity: i32, worker_threads: Option<i32>) -> PyResult<Self> {
+        let mut tokio_runtime_builder = tokio::runtime::Builder::new_multi_thread();
+        tokio_runtime_builder.enable_all();
+
+        if let Some(worker_threads) = worker_threads {
+            tokio_runtime_builder.worker_threads(worker_threads.max(1) as usize);
         }
+
+        // Build tokio runtime
+        let tokio_runtime = tokio_runtime_builder.build()
+            .external("Failed to create Tokio thread pool")?;
+
+        Ok(Self {
+            runtime: TaskGraphRuntime::new(max_capacity as usize),
+            tokio_runtime,
+        })
+    }
+
+    pub fn process_request_bytes(&self, request_bytes: Vec<u8>) -> PyResult<Vec<u8>> {
+        let response_bytes = self.tokio_runtime.block_on(
+            self.runtime.process_request_bytes(request_bytes)
+        )?;
+        Ok(response_bytes)
     }
 }
-
 
 
 /// A Python module implemented in Rust. The name of this function must match
@@ -30,7 +46,7 @@ impl PySpecPlan {
 /// import the module.
 #[pymodule]
 fn vegafusion(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PySpecPlan>()?;
+    m.add_class::<PyTaskGraphRuntime>()?;
     Ok(())
 }
 

@@ -4,9 +4,14 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
-use vegafusion_core::proto::gen::tasks::{task::TaskKind, NodeValueIndex, TaskGraph};
+use futures_util::future;
+use vegafusion_core::proto::gen::services::{vega_fusion_runtime_request, vega_fusion_runtime_response, VegaFusionRuntimeRequest, VegaFusionRuntimeResponse};
+use vegafusion_core::proto::gen::tasks::{
+    task::TaskKind, NodeValueIndex, TaskGraph, ResponseTaskValue, TaskGraphValueResponse, TaskValue as ProtoTaskValue
+};
+use prost::Message as ProstMessage;
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -37,6 +42,74 @@ impl TaskGraphRuntime {
             None => node_value.0,
             Some(output_index) => node_value.1.remove(output_index as usize),
         })
+    }
+
+    pub async fn process_request(&self, request: VegaFusionRuntimeRequest) -> Result<VegaFusionRuntimeResponse> {
+        match request.request {
+            Some(vega_fusion_runtime_request::Request::TaskGraphValues(task_graph_values)) => {
+                let task_graph = Arc::new(task_graph_values.task_graph.unwrap());
+
+                // Clone task_graph and task_graph_runtime for use in closure
+                let task_graph_runtime = self.clone();
+                let task_graph = task_graph.clone();
+
+                let response_value_futures: Vec<_> = task_graph_values
+                    .indices
+                    .iter()
+                    .map(|node_value_index| {
+                        let node = &task_graph.nodes[node_value_index.node_index as usize];
+                        let task = node.task();
+                        let var = match node_value_index.output_index {
+                            None => task.variable().clone(),
+                            Some(output_index) => task.output_vars()[output_index as usize].clone(),
+                        };
+
+                        let scope = node.task().scope.clone();
+
+                        // Clone task_graph and task_graph_runtime for use in closure
+                        let task_graph_runtime = task_graph_runtime.clone();
+                        let task_graph = task_graph.clone();
+
+                        async move {
+                            let value = task_graph_runtime
+                                .clone()
+                                .get_node_value(task_graph, &node_value_index)
+                                .await
+                                .expect(&format!("var {:?}", var));
+
+                            ResponseTaskValue {
+                                variable: Some(var),
+                                scope,
+                                value: Some(ProtoTaskValue::try_from(&value).unwrap()),
+                            }
+                        }
+                    })
+                    .collect();
+
+                let response_values = future::join_all(response_value_futures).await;
+
+                let response_msg = VegaFusionRuntimeResponse {
+                    response: Some(vega_fusion_runtime_response::Response::TaskGraphValues(
+                        TaskGraphValueResponse { response_values },
+                    )),
+                };
+                Ok(response_msg)
+            }
+            _ => return Err(VegaFusionError::internal("Invalid VegaFusionRuntimeRequest request"))
+        }
+    }
+
+    /// request_bytes should be encoding of a VegaFusionRuntimeRequest
+    /// returned value is encoding of a VegaFusionRuntimeResponse
+    pub async fn process_request_bytes(&self, request_bytes: Vec<u8>) -> Result<Vec<u8>> {
+        // Decode request
+        let request = VegaFusionRuntimeRequest::decode(request_bytes.as_slice()).unwrap();
+        let response_msg = self.process_request(request).await?;
+
+        let mut buf: Vec<u8> = Vec::new();
+        buf.reserve(response_msg.encoded_len());
+        response_msg.encode(&mut buf);
+        Ok(buf)
     }
 }
 
