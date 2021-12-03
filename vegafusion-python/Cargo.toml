@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "vegafusion_python"
+name = "vegafusion"
 # "cdylib" is necessary to produce a shared library for Python to import from.
 #
 # Downstream Rust code (including code in `bin/`, `examples/`, and `tests/`) will not be able
@@ -12,10 +12,10 @@ name = "vegafusion_python"
 # crate-type = ["cdylib", "rlib"]
 crate-type = ["cdylib"]
 
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 vegafusion-core = {path = "../vegafusion-core", features=["datafusion"]}
 vegafusion-rt-datafusion = {path = "../vegafusion-rt-datafusion"}
 
+[dependencies.pyo3]
+version = "0.15.1"
+features = ["extension-module"]
