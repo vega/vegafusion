@@ -44,7 +44,6 @@ extern "C" {
 
 #[wasm_bindgen]
 pub struct MsgReceiver {
-    element_id: String,
     spec: ChartSpec,
     server_spec: ChartSpec,
     comm_plan: CommPlan,
@@ -58,7 +57,7 @@ pub struct MsgReceiver {
 #[wasm_bindgen]
 impl MsgReceiver {
     fn new(
-        element_id: &str,
+        element: Element,
         spec: ChartSpec,
         server_spec: ChartSpec,
         comm_plan: CommPlan,
@@ -78,17 +77,15 @@ impl MsgReceiver {
         // Mount vega chart
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
-        let mount_element = document.get_element_by_id(element_id).unwrap();
 
         // log(&format!("client spec\n:{}", serde_json::to_string_pretty(&spec).unwrap()));
         let dataflow = parse(JsValue::from_serde(&spec).unwrap());
 
         let view = View::new(dataflow);
-        view.initialize(mount_element);
+        view.initialize(element);
         view.hover();
 
         let this = Self {
-            element_id: element_id.to_string(),
             spec,
             server_spec,
             comm_plan,
@@ -297,7 +294,7 @@ impl MsgReceiver {
 
 #[wasm_bindgen]
 pub fn render_vegafusion(
-    element_id: &str,
+    element: Element,
     spec_str: &str,
     send_msg_fn: js_sys::Function,
 ) -> MsgReceiver {
@@ -313,7 +310,7 @@ pub fn render_vegafusion(
     let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
 
     // Create closure to update chart from received messages
-    let receiver = MsgReceiver::new(element_id, spec, server_spec, comm_plan, task_graph.clone(), send_msg_fn);
+    let receiver = MsgReceiver::new(element, spec, server_spec, comm_plan, task_graph.clone(), send_msg_fn);
 
     // Request initial values
     let updated_node_indices: Vec<_> = receiver.initial_node_value_indices();
