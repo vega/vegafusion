@@ -3,5 +3,6 @@
 members = [
     "vegafusion-core",
     "vegafusion-rt-datafusion",
+    "vegafusion-python",
     "wasm-driver",
 ]
