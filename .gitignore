@@ -13,5 +13,5 @@ vega-fusion/tests/scratch/*
 
 vega-fusion/tests/util/vegajs_runtime/node_modules
 vegafusion-rt-datafusion/tests/util/vegajs_runtime/node_modules/
-/wasm-driver/node_modules/
+/vegafusion-wasm/node_modules/
 /vegafusion-rt-datafusion/tests/output

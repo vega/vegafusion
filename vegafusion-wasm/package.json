@@ -1,4 +1,7 @@
 {
+  "name": "vegafusion-wasm",
+  "version": "0.1.0",
+  "description": "Wasm library for interfacing with VegaFusion",
   "dependencies": {
     "bootstrap": "^5.1.3",
     "lodash": "^4.17.21",
