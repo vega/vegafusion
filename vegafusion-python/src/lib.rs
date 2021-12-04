@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use pyo3::types::PyBytes;
 use tokio::runtime::Runtime;
 use vegafusion_core::error::ToExternalError;
 use vegafusion_core::proto::gen::tasks::TaskGraph;
@@ -32,11 +33,13 @@ impl PyTaskGraphRuntime {
         })
     }
 
-    pub fn process_request_bytes(&self, request_bytes: Vec<u8>) -> PyResult<Vec<u8>> {
+    pub fn process_request_bytes(&self, request_bytes: Vec<u8>) -> PyResult<PyObject> {
         let response_bytes = self.tokio_runtime.block_on(
             self.runtime.process_request_bytes(request_bytes)
         )?;
-        Ok(response_bytes)
+        Python::with_gil(|py| {
+            Ok(PyBytes::new(py, &response_bytes).into())
+        })
     }
 }
 

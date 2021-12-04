@@ -7,22 +7,45 @@ import {
   ISerializers,
 } from '@jupyter-widgets/base';
 
+import { compile } from 'vega-lite'
+
+// import * as vegafusion from "vegafusion-wasm";
+
+const { render_vegafusion } = await import("vegafusion-wasm")
+
 import { MODULE_NAME, MODULE_VERSION } from './version';
 
 // Import the CSS
 import '../css/widget.css';
+import {MsgReceiver} from "vegafusion-wasm";
 
-export class ExampleModel extends DOMWidgetModel {
+// interface ResponseMessage {
+//   type: "response";
+//   updates: ArrayBuffer[];
+// }
+
+// function checkRespose(ev: any): ResponseMessage | null {
+//   if (ev.type != "response") {
+//     return null
+//   }
+//
+//   return ev as ResponseMessage
+// }
+
+
+export class AltairFusionModel extends DOMWidgetModel {
   defaults() {
     return {
       ...super.defaults(),
-      _model_name: ExampleModel.model_name,
-      _model_module: ExampleModel.model_module,
-      _model_module_version: ExampleModel.model_module_version,
-      _view_name: ExampleModel.view_name,
-      _view_module: ExampleModel.view_module,
-      _view_module_version: ExampleModel.view_module_version,
-      value: 'Hello World',
+      _model_name: AltairFusionModel.model_name,
+      _model_module: AltairFusionModel.model_module,
+      _model_module_version: AltairFusionModel.model_module_version,
+      _view_name: AltairFusionModel.view_name,
+      _view_module: AltairFusionModel.view_module,
+      _view_module_version: AltairFusionModel.view_module_version,
+      vegalite_spec: null,
+      vega_spec_full: null,
+      vegafusion_handle: null,
     };
   }
 
@@ -31,23 +54,38 @@ export class ExampleModel extends DOMWidgetModel {
     // Add any extra serializers here
   };
 
-  static model_name = 'ExampleModel';
+  static model_name = 'AltairFusionModel';
   static model_module = MODULE_NAME;
   static model_module_version = MODULE_VERSION;
-  static view_name = 'ExampleView'; // Set to null if no view
+  static view_name = 'AltairFusionView'; // Set to null if no view
   static view_module = MODULE_NAME; // Set to null if no view
   static view_module_version = MODULE_VERSION;
 }
 
-export class ExampleView extends DOMWidgetView {
+export class AltairFusionView extends DOMWidgetView {
+  vegafusion_handle: MsgReceiver;
+  viewElement = document.createElement("div");
+
   render() {
-    this.el.classList.add('custom-widget');
+    this.el.appendChild(this.viewElement);
 
     this.value_changed();
-    this.model.on('change:value', this.value_changed, this);
+    this.model.on('change:vegalite_spec', this.value_changed, this);
+    this.model.on("msg:custom", (ev: any, buffers: [DataView]) => {
+      this.vegafusion_handle.receive(new Uint8Array(buffers[0].buffer))
+    })
   }
 
   value_changed() {
-    this.el.textContent = this.model.get('value');
+    let vegalite_json = this.model.get('vegalite_spec');
+    if (vegalite_json !== null) {
+      let vega_spec = compile(JSON.parse(vegalite_json));
+      let vega_spec_json = JSON.stringify(vega_spec.spec);
+      this.model.set('vega_spec_full', vega_spec_json);
+      this.touch();
+      this.vegafusion_handle = render_vegafusion(this.viewElement, vega_spec_json, (request: ArrayBuffer) => {
+        this.send({type: "request"}, [request])
+      });
+    }
   }
 }

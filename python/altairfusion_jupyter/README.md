@@ -1,3 +1,4 @@
+https://github.com/jtpio/jupyterlab-wasm-example
 
 # vegafusion
 
