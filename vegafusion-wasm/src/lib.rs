@@ -262,6 +262,7 @@ impl MsgReceiver {
     }
 
     fn send_request(send_msg_fn: &js_sys::Function, request_msg: VegaFusionRuntimeRequest) {
+        // log("send_request");
         let mut buf: Vec<u8> = Vec::new();
         buf.reserve(request_msg.encoded_len());
         request_msg.encode(&mut buf).unwrap();

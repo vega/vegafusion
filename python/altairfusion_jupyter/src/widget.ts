@@ -11,27 +11,15 @@ import { compile } from 'vega-lite'
 
 // import * as vegafusion from "vegafusion-wasm";
 
+// Not sure why imports need to work this way. When MsgReceiver is imported
+// in the await import, it is not seen as a type
 const { render_vegafusion } = await import("vegafusion-wasm")
+import { MsgReceiver } from "vegafusion-wasm";
 
 import { MODULE_NAME, MODULE_VERSION } from './version';
 
 // Import the CSS
 import '../css/widget.css';
-import {MsgReceiver} from "vegafusion-wasm";
-
-// interface ResponseMessage {
-//   type: "response";
-//   updates: ArrayBuffer[];
-// }
-
-// function checkRespose(ev: any): ResponseMessage | null {
-//   if (ev.type != "response") {
-//     return null
-//   }
-//
-//   return ev as ResponseMessage
-// }
-
 
 export class AltairFusionModel extends DOMWidgetModel {
   defaults() {
@@ -72,7 +60,10 @@ export class AltairFusionView extends DOMWidgetView {
     this.value_changed();
     this.model.on('change:vegalite_spec', this.value_changed, this);
     this.model.on("msg:custom", (ev: any, buffers: [DataView]) => {
-      this.vegafusion_handle.receive(new Uint8Array(buffers[0].buffer))
+      // console.log("js: receive");
+      let bytes = new Uint8Array(buffers[0].buffer)
+      // console.log(bytes);
+      this.vegafusion_handle.receive(bytes)
     })
   }
 
@@ -83,7 +74,9 @@ export class AltairFusionView extends DOMWidgetView {
       let vega_spec_json = JSON.stringify(vega_spec.spec);
       this.model.set('vega_spec_full', vega_spec_json);
       this.touch();
+      // console.log("js: value_changed");
       this.vegafusion_handle = render_vegafusion(this.viewElement, vega_spec_json, (request: ArrayBuffer) => {
+        // console.log("js: request");
         this.send({type: "request"}, [request])
       });
     }
