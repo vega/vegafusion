@@ -33,8 +33,8 @@ mod test_aggregate_single {
         let dataset = vega_json_dataset("penguins");
         let aggregate_spec = AggregateTransformSpec {
             groupby: vec![Field::String("Species".to_string())],
-            fields: vec![Some(Field::String("Beak Depth (mm)".to_string()))],
-            ops: vec![op],
+            fields: Some(vec![Some(Field::String("Beak Depth (mm)".to_string()))]),
+            ops: Some(vec![op]),
             as_: None,
             cross: None,
             drop: None,
@@ -85,11 +85,11 @@ mod test_aggregate_multi {
                 Field::String("Island".to_string()),
                 Field::String("Sex".to_string()),
             ],
-            fields: vec![
+            fields: Some(vec![
                 Some(Field::String("Beak Depth (mm)".to_string())),
                 Some(Field::String("Flipper Length (mm)".to_string())),
-            ],
-            ops: vec![op1, op2],
+            ]),
+            ops: Some(vec![op1, op2]),
             as_: None,
             cross: None,
             drop: None,
@@ -142,11 +142,11 @@ fn test_bin_aggregate() {
 
     let aggregate_spec = AggregateTransformSpec {
         groupby: vec![Field::String("bin0".to_string())],
-        fields: vec![
+        fields: Some(vec![
             Some(Field::String("Beak Depth (mm)".to_string())),
             Some(Field::String("Flipper Length (mm)".to_string())),
-        ],
-        ops: vec![AggregateOpSpec::Mean, AggregateOpSpec::Max],
+        ]),
+        ops: Some(vec![AggregateOpSpec::Mean, AggregateOpSpec::Max]),
         as_: None,
         cross: None,
         drop: None,

@@ -32,8 +32,13 @@ impl TransformTrait for Formula {
             .schema()
             .fields()
             .iter()
-            .map(|f| col(f.field().name()))
+            .filter_map(|f| match f.field().name() {
+                s if s != &self.r#as => Some(col(s)),
+                _ => None
+            })
             .collect();
+
+        selections.push(formula_expr);
 
         // dataframe
         let result = dataframe
