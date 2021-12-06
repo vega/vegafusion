@@ -6,14 +6,6 @@
 
 from ._version import __version__, version_info
 
-from .chart import Chart, RepeatChart, LayerChart, ConcatChart, HConcatChart, VConcatChart
-from ._builders import *
-
-# Re-export altair types
-from altair import (
-    UrlData, value, X, Y, Bin
-)
-
 
 def _jupyter_labextension_paths():
     """Called by Jupyter Lab Server to detect if it is a valid labextension and
