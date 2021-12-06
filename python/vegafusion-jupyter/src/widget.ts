@@ -9,8 +9,6 @@ import {
 
 import { compile } from 'vega-lite'
 
-// import * as vegafusion from "vegafusion-wasm";
-
 // Not sure why imports need to work this way. When MsgReceiver is imported
 // in the await import, it is not seen as a type
 const { render_vegafusion } = await import("vegafusion-wasm")
