@@ -83,6 +83,7 @@ mod test_image_comparison_mocks {
         case("wheat_wages"),
         case("trellis_stacked_bar"),
         case("trellis_bar_histogram"),
+        case("interactive_average"),
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);
