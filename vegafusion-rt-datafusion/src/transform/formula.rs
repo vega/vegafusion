@@ -3,6 +3,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::Expr;
+use datafusion::prelude::col;
 
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
@@ -27,8 +28,16 @@ impl TransformTrait for Formula {
         // Rename with alias
         let formula_expr = formula_expr.alias(&self.r#as);
 
+        let mut selections: Vec<_> = dataframe
+            .schema()
+            .fields()
+            .iter()
+            .map(|f| col(f.field().name()))
+            .collect();
+
+        // dataframe
         let result = dataframe
-            .select(vec![Expr::Wildcard, formula_expr])
+            .select(selections)
             .with_context(|| {
                 format!(
                     "Formula transform failed with expression: {}",

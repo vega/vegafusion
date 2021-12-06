@@ -380,6 +380,10 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         VegaFusionCallable::Transform(Arc::new(datetime_transform)),
     );
     callables.insert(
+        "toDate".to_string(),
+        VegaFusionCallable::Transform(Arc::new(datetime_transform)),
+    );
+    callables.insert(
         "utc".to_string(),
         VegaFusionCallable::ScalarUDF {
             udf: UTC_COMPONENTS.deref().clone(),
