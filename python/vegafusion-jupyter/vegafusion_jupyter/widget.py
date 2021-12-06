@@ -5,6 +5,8 @@ from vegafusion import PyTaskGraphRuntime
 from ._frontend import module_name, module_version
 import altair as alt
 
+from .runtime import runtime
+
 
 class VegaFusionWidget(DOMWidget):
     _model_name = Unicode('VegaFusionModel').tag(sync=True)
@@ -35,15 +37,12 @@ class VegaFusionWidget(DOMWidget):
         # Wire up widget message callback
         self.on_msg(self._handle_message)
 
-        # Create vega fusion runtime (this should be shared across charts)
-        self.runtime = PyTaskGraphRuntime(16, None)
-
     def _handle_message(self, widget, msg, buffers):
         # print(msg)
         if msg['type'] == "request":
             # print("py: handle request")
             # Build response
-            response_bytes = self.runtime.process_request_bytes(
+            response_bytes = runtime.process_request_bytes(
                 buffers[0]
             )
             # print("py: send response")
