@@ -1,14 +1,18 @@
 use crate::data::table::VegaFusionTableUtils;
 use crate::expression::compiler::builtin_functions::datetime::{
-    date_parsing::DATETIME_TO_MILLIS_LOCAL,
-    datetime::DATETIME_COMPONENTS,
+    date_parsing::DATETIME_TO_MILLIS_LOCAL, datetime::DATETIME_COMPONENTS,
 };
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{is_string_datatype, ExprHelpers, is_integer_datatype, cast_to};
+use crate::expression::compiler::utils::{
+    cast_to, is_integer_datatype, is_string_datatype, ExprHelpers,
+};
 use crate::task_graph::task::TaskCall;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
+use datafusion::arrow::datatypes::DataType;
+use datafusion::arrow::ipc::reader::{FileReader, StreamReader};
+use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::dataframe::DataFrame;
 use datafusion::execution::context::ExecutionContext;
 use datafusion::execution::options::CsvReadOptions;
@@ -17,11 +21,8 @@ use datafusion::physical_plan::functions::BuiltinScalarFunction;
 use datafusion::prelude::col;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufReader, Seek, SeekFrom, Write, Read};
+use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::sync::Arc;
-use datafusion::arrow::datatypes::DataType;
-use datafusion::arrow::ipc::reader::{FileReader, StreamReader};
-use datafusion::arrow::record_batch::RecordBatch;
 use tokio::io::AsyncReadExt;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
@@ -117,7 +118,7 @@ impl TaskCall for DataUrlTask {
                                         args: vec![col(&spec.name)],
                                     }
                                 } else {
-                                    continue
+                                    continue;
                                 };
 
                                 let mut columns: Vec<_> = schema
@@ -334,7 +335,10 @@ async fn read_arrow(url: &str) -> Result<Arc<dyn DataFrame>> {
     } else {
         let f = FileReader::try_new(reader).unwrap();
         println!("f: {:?}", f.schema());
-        return Err(VegaFusionError::parse(format!("Failed to read arrow file at {}", url)))
+        return Err(VegaFusionError::parse(format!(
+            "Failed to read arrow file at {}",
+            url
+        )));
     };
 
     VegaFusionTable::try_new(schema, batches)?.to_dataframe()

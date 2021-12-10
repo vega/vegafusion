@@ -29,7 +29,7 @@ export class VegaFusionModel extends DOMWidgetModel {
       _view_name: VegaFusionModel.view_name,
       _view_module: VegaFusionModel.view_module,
       _view_module_version: VegaFusionModel.view_module_version,
-      vegalite_spec: null,
+      spec: null,
       vega_spec_full: null,
       vegafusion_handle: null,
     };
@@ -55,7 +55,7 @@ export class VegaFusionView extends DOMWidgetView {
   render() {
     this.el.appendChild(this.viewElement);
     this.value_changed();
-    this.model.on('change:vegalite_spec', this.value_changed, this);
+    this.model.on('change:spec', this.value_changed, this);
     this.model.on("msg:custom", (ev: any, buffers: [DataView]) => {
       // console.log("js: receive");
       let bytes = new Uint8Array(buffers[0].buffer)
@@ -65,11 +65,20 @@ export class VegaFusionView extends DOMWidgetView {
   }
 
   value_changed() {
-    let vegalite_json = this.model.get('vegalite_spec');
-    if (vegalite_json !== null) {
-      let vega_spec = compile(JSON.parse(vegalite_json));
-      let vega_spec_json = JSON.stringify(vega_spec.spec);
+    let spec = this.model.get('spec');
+    if (spec !== null) {
+      let parsed = JSON.parse(spec);
+      let vega_spec_json;
+      if (parsed["$schema"].endsWith("schema/vega/v5.json")) {
+        vega_spec_json = spec
+      } else {
+        // Assume we have a Vega-Lite spec, compile to vega
+        let vega_spec = compile(parsed);
+        vega_spec_json = JSON.stringify(vega_spec.spec);
+      }
+
       this.model.set('vega_spec_full', vega_spec_json);
+
       this.touch();
       // console.log("js: value_changed");
       this.vegafusion_handle = render_vegafusion(this.viewElement, vega_spec_json, (request: ArrayBuffer) => {

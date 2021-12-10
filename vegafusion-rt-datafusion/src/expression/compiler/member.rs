@@ -14,10 +14,10 @@ use datafusion::physical_plan::functions::{
 };
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
+use datafusion::prelude::lit;
 use datafusion::scalar::ScalarValue;
 use std::convert::TryFrom;
 use std::sync::Arc;
-use datafusion::prelude::lit;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{Identifier, MemberExpression};
 
@@ -65,7 +65,7 @@ pub fn compile_member(
             } else {
                 // Column not in schema, evaluate to scalar null
                 Ok(lit(ScalarValue::Boolean(None)))
-            }
+            };
         }
         _ => {}
     }
