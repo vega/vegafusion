@@ -21,14 +21,12 @@ class VegaFusionWidget(DOMWidget):
     _view_name = Unicode('VegaFusionView').tag(sync=True)
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
-    spec = Unicode(None, allow_none=True).tag(sync=True)
-    vega_spec_full = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
 
-    # vegaspec_full
-    # vegaspec_client
-    # vegaspec_server
-    #
-    # server_to
+    spec = Unicode(None, allow_none=True).tag(sync=True)
+    full_vega_spec = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
+    client_vega_spec = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
+    server_vega_spec = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
+
     def __init__(self, *args, **kwargs):
 
         # Support altair object as single positional argument

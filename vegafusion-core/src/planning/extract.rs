@@ -7,6 +7,7 @@ use crate::spec::mark::MarkSpec;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_graph::ScopedVariable;
 use std::collections::HashMap;
+use regex::internal::Char;
 
 pub fn extract_server_data(
     client_spec: &mut ChartSpec,
@@ -32,8 +33,10 @@ impl<'a> ExtractServerDataVisitor<'a> {
         supported_vars: HashMap<ScopedVariable, DataSupported>,
         task_scope: &'a mut TaskScope,
     ) -> Self {
+        let mut server_spec: ChartSpec = Default::default();
+        server_spec.schema = "https://vega.github.io/schema/vega/v5.json".into();
         Self {
-            server_spec: Default::default(),
+            server_spec,
             supported_vars,
             task_scope,
         }
