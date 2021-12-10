@@ -1,10 +1,10 @@
-use std::collections::HashSet;
 use crate::arrow::{
     datatypes::{DataType, Field, Schema, SchemaRef},
     json,
     record_batch::RecordBatch,
 };
 use crate::error::{Result, ResultWithContext, VegaFusionError};
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use crate::arrow::ipc::reader::StreamReader;
@@ -111,44 +111,46 @@ impl VegaFusionTable {
         // Workaround to serialize millisecond timestamp columns as integer milliseconds
         // Find timestamp columns
         // Build updated schema
-        let write_schema = Schema::new(self.schema.fields().iter().map(|field| {
-            if matches!(field.data_type(),
-                DataType::Timestamp(TimeUnit::Millisecond, _)
-                | DataType::Date32
-                | DataType::Date64
-            ) {
-                Field::new(field.name(), DataType::Int64, field.is_nullable())
-            } else {
-                field.clone()
-            }
-        }).collect());
+        let write_schema = Schema::new(
+            self.schema
+                .fields()
+                .iter()
+                .map(|field| {
+                    if matches!(
+                        field.data_type(),
+                        DataType::Timestamp(TimeUnit::Millisecond, _)
+                            | DataType::Date32
+                            | DataType::Date64
+                    ) {
+                        Field::new(field.name(), DataType::Int64, field.is_nullable())
+                    } else {
+                        field.clone()
+                    }
+                })
+                .collect(),
+        );
 
         // Cast millisecond timestamp cols to int64
         let mut write_batches = Vec::new();
         for batch in &self.batches {
-            let new_columns: Vec<_> = batch.columns().iter().map(|col| {
-                match col.data_type() {
+            let new_columns: Vec<_> = batch
+                .columns()
+                .iter()
+                .map(|col| match col.data_type() {
                     DataType::Timestamp(TimeUnit::Millisecond, _) => {
                         cast(col, &DataType::Int64).unwrap()
                     }
                     DataType::Date32 => {
                         let ms_per_day = 1000 * 60 * 60 * 24 as i64;
-                        let array = col
-                            .as_any()
-                            .downcast_ref::<Date32Array>()
-                            .unwrap();
+                        let array = col.as_any().downcast_ref::<Date32Array>().unwrap();
 
-                        let array: Int64Array = unary(array, |v| (v as i64) *  ms_per_day);
+                        let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
                         Arc::new(array) as ArrayRef
                     }
-                    DataType::Date64 => {
-                        cast(col, &DataType::Int64).unwrap()
-                    }
-                    _ => {
-                        col.clone()
-                    }
-                }
-            }).collect();
+                    DataType::Date64 => cast(col, &DataType::Int64).unwrap(),
+                    _ => col.clone(),
+                })
+                .collect();
             let batch = RecordBatch::try_new(Arc::new(write_schema.clone()), new_columns).unwrap();
             write_batches.push(batch)
         }

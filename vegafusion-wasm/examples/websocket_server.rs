@@ -62,7 +62,9 @@ async fn accept_connection(stream: TcpStream, task_graph_runtime: TaskGraphRunti
 
         // println!("msg: {:?}", msg);
         if let Message::Binary(request_bytes) = msg {
-            let response_bytes = task_graph_runtime.process_request_bytes(request_bytes).await?;
+            let response_bytes = task_graph_runtime
+                .process_request_bytes(request_bytes)
+                .await?;
 
             //
             // // Decode request

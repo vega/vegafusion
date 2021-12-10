@@ -1,18 +1,15 @@
+use crate::proto::gen::errors::Error as ProtoError;
 use arrow::error::ArrowError;
 use std::num::ParseFloatError;
 use std::result;
 use thiserror::Error;
-use crate::proto::gen::errors::Error as ProtoError;
 
 #[cfg(feature = "datafusion")]
 use datafusion::error::DataFusionError;
 
-#[cfg(feature = "pyo3")]
-use pyo3::{
-    PyErr,
-    exceptions::PyValueError,
-};
 use crate::proto::gen::errors::error::Errorkind;
+#[cfg(feature = "pyo3")]
+use pyo3::{exceptions::PyValueError, PyErr};
 
 pub type Result<T> = result::Result<T, VegaFusionError>;
 
@@ -280,9 +277,7 @@ impl std::convert::From<VegaFusionError> for PyErr {
 impl ProtoError {
     pub fn msg(&self) -> String {
         match self.errorkind.as_ref().unwrap() {
-            Errorkind::Error(e) => {
-                e.msg.clone()
-            }
+            Errorkind::Error(e) => e.msg.clone(),
         }
     }
 }

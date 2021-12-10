@@ -1,9 +1,10 @@
 use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
 use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
 use crate::expression::compiler::builtin_functions::datetime::date_parts::{
-    DATE_UDF, HOURS_UDF, MILLISECONDS_UDF, MINUTES_UDF, MONTH_UDF, SECONDS_UDF, UTCDATE_UDF,
-    UTCHOURS_UDF, UTCMILLISECONDS_UDF, UTCMINUTES_UDF, UTCMONTH_UDF, UTCSECONDS_UDF, UTCYEAR_UDF,
-    YEAR_UDF, QUARTER_UDF, UTCQUARTER_UDF, DAYOFYEAR_UDF, UTCDAYOFYEAR_UDF, DAY_UDF, UTCDAY_UDF
+    DATE_UDF, DAYOFYEAR_UDF, DAY_UDF, HOURS_UDF, MILLISECONDS_UDF, MINUTES_UDF, MONTH_UDF,
+    QUARTER_UDF, SECONDS_UDF, UTCDATE_UDF, UTCDAYOFYEAR_UDF, UTCDAY_UDF, UTCHOURS_UDF,
+    UTCMILLISECONDS_UDF, UTCMINUTES_UDF, UTCMONTH_UDF, UTCQUARTER_UDF, UTCSECONDS_UDF, UTCYEAR_UDF,
+    YEAR_UDF,
 };
 use crate::expression::compiler::builtin_functions::datetime::datetime::{
     datetime_transform, UTC_COMPONENTS,

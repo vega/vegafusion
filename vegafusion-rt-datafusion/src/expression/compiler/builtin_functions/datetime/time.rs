@@ -1,15 +1,15 @@
 use chrono::{DateTime, Datelike, Local, LocalResult, TimeZone, Timelike, Utc};
-use datafusion::arrow::array::{Array, ArrayRef, Date32Array, Date64Array, Int32Array, Int64Array, TimestampMillisecondArray};
+use datafusion::arrow::array::{
+    Array, ArrayRef, Date32Array, Date64Array, Int32Array, Int64Array, TimestampMillisecondArray,
+};
+use datafusion::arrow::compute::cast;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::physical_plan::functions::{
     make_scalar_function, ReturnTypeFunction, Signature, Volatility,
 };
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
-use datafusion::arrow::compute::cast;
 use vegafusion_core::arrow::compute::unary;
-
-
 
 pub fn make_time_udf() -> ScalarUDF {
     let time_fn = move |args: &[ArrayRef]| {
@@ -17,27 +17,18 @@ pub fn make_time_udf() -> ScalarUDF {
         let arg = &args[0];
 
         let arg = match arg.data_type() {
-            DataType::Timestamp(TimeUnit::Millisecond, _) => {
-                cast(arg, &DataType::Int64)?
-            }
+            DataType::Timestamp(TimeUnit::Millisecond, _) => cast(arg, &DataType::Int64)?,
             DataType::Date32 => {
                 let ms_per_day = 1000 * 60 * 60 * 24 as i64;
-                let array = arg
-                    .as_any()
-                    .downcast_ref::<Date32Array>()
-                    .unwrap();
+                let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
 
-                let array: Int64Array = unary(array, |v| (v as i64) *  ms_per_day);
+                let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
                 let array = Arc::new(array) as ArrayRef;
                 cast(&array, &DataType::Int64)?
             }
-            DataType::Date64 => {
-                cast(arg, &DataType::Int64)?
-            }
-            DataType::Int64 => {
-                arg.clone()
-            }
-            _ => panic!("Unexpected data type for date part function:")
+            DataType::Date64 => cast(arg, &DataType::Int64)?,
+            DataType::Int64 => arg.clone(),
+            _ => panic!("Unexpected data type for date part function:"),
         };
 
         Ok(arg)

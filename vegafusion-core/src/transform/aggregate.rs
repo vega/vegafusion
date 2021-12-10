@@ -1,7 +1,7 @@
-use arrow::compute::filter;
 use crate::proto::gen::transforms::{Aggregate, AggregateOp};
 use crate::spec::transform::aggregate::{AggregateOpSpec, AggregateTransformSpec};
 use crate::transform::TransformDependencies;
+use arrow::compute::filter;
 
 impl Aggregate {
     pub fn new(transform: &AggregateTransformSpec) -> Self {
@@ -27,7 +27,10 @@ impl Aggregate {
             }
         }
 
-        let ops = transform.ops.clone().unwrap_or(vec![AggregateOpSpec::Count]);
+        let ops = transform
+            .ops
+            .clone()
+            .unwrap_or(vec![AggregateOpSpec::Count]);
         let ops: Vec<_> = ops
             .iter()
             .map(|op| match op {
