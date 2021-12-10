@@ -89,6 +89,7 @@ export class VegaFusionView extends DOMWidgetView {
       this.model.set('full_vega_spec', vega_spec_json);
       this.model.set('client_vega_spec', this.vegafusion_handle.client_spec_json());
       this.model.set('server_vega_spec', this.vegafusion_handle.server_spec_json());
+      this.model.set('comm_plan', this.vegafusion_handle.comm_plan_json());
 
       this.touch();
     }

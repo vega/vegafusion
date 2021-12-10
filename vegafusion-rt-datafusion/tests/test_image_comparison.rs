@@ -5,7 +5,6 @@ mod util;
 
 use crate::util::vegajs_runtime::{
     vegajs_runtime, ExportImageFormat, ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace,
-    Watch, WatchNamespace, WatchPlan,
 };
 use datafusion::scalar::ScalarValue;
 use rstest::rstest;
@@ -18,6 +17,7 @@ use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::planning::extract::extract_server_data;
 use vegafusion_core::planning::stitch::stitch_specs;
+use vegafusion_core::planning::watch::{Watch, WatchNamespace, WatchPlan};
 use vegafusion_core::proto::gen::tasks::TaskGraph;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::task_graph::ScopedVariable;
