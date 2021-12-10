@@ -30,7 +30,9 @@ export class VegaFusionModel extends DOMWidgetModel {
       _view_module: VegaFusionModel.view_module,
       _view_module_version: VegaFusionModel.view_module_version,
       spec: null,
-      vega_spec_full: null,
+      full_vega_spec: null,
+      client_vega_spec: null,
+      server_vega_spec: null,
       vegafusion_handle: null,
     };
   }
@@ -77,14 +79,18 @@ export class VegaFusionView extends DOMWidgetView {
         vega_spec_json = JSON.stringify(vega_spec.spec);
       }
 
-      this.model.set('vega_spec_full', vega_spec_json);
-
-      this.touch();
       // console.log("js: value_changed");
       this.vegafusion_handle = render_vegafusion(this.viewElement, vega_spec_json, (request: ArrayBuffer) => {
         // console.log("js: request");
         this.send({type: "request"}, [request])
       });
+
+      // Update vega spec properties
+      this.model.set('full_vega_spec', vega_spec_json);
+      this.model.set('client_vega_spec', this.vegafusion_handle.client_spec_json());
+      this.model.set('server_vega_spec', this.vegafusion_handle.server_spec_json());
+
+      this.touch();
     }
   }
 }
