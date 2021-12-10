@@ -34,21 +34,19 @@ impl TransformTrait for Formula {
             .iter()
             .filter_map(|f| match f.field().name() {
                 s if s != &self.r#as => Some(col(s)),
-                _ => None
+                _ => None,
             })
             .collect();
 
         selections.push(formula_expr);
 
         // dataframe
-        let result = dataframe
-            .select(selections)
-            .with_context(|| {
-                format!(
-                    "Formula transform failed with expression: {}",
-                    &self.expr.as_ref().unwrap()
-                )
-            })?;
+        let result = dataframe.select(selections).with_context(|| {
+            format!(
+                "Formula transform failed with expression: {}",
+                &self.expr.as_ref().unwrap()
+            )
+        })?;
 
         Ok((result, Default::default()))
     }

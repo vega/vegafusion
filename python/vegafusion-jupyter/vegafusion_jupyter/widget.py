@@ -21,10 +21,9 @@ class VegaFusionWidget(DOMWidget):
     _view_name = Unicode('VegaFusionView').tag(sync=True)
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
-    vegalite_spec = Unicode(None, allow_none=True).tag(sync=True)
+    spec = Unicode(None, allow_none=True).tag(sync=True)
     vega_spec_full = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
 
-    # vegalite_spec
     # vegaspec_full
     # vegaspec_client
     # vegaspec_server
@@ -35,8 +34,8 @@ class VegaFusionWidget(DOMWidget):
         # Support altair object as single positional argument
         if len(args) == 1:
             chart = args[0]
-            vegalite_spec = chart.to_json()
-            kwargs["vegalite_spec"] = vegalite_spec
+            spec = chart.to_json()
+            kwargs["spec"] = spec
 
         super().__init__(**kwargs)
 
@@ -61,7 +60,7 @@ def vegafusion_renderer(spec):
 
     # Display widget as a side effect, then return empty string text representation
     # so that Altair doesn't also display a string representation
-    widget = VegaFusionWidget(vegalite_spec=json.dumps(spec))
+    widget = VegaFusionWidget(spec=json.dumps(spec))
     display(widget)
     return {'text/plain': ""}
 
