@@ -26,6 +26,7 @@ class VegaFusionWidget(DOMWidget):
     full_vega_spec = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
     client_vega_spec = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
     server_vega_spec = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
+    comm_plan = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
 
     def __init__(self, *args, **kwargs):
 

@@ -27,6 +27,7 @@ use vegafusion_core::proto::gen::services::{
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::task_graph::ScopedVariable;
 use web_sys::Element;
+use vegafusion_core::planning::watch::WatchPlan;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -291,8 +292,8 @@ impl MsgReceiver {
         serde_json::to_string_pretty(&self.server_spec).unwrap()
     }
 
-    pub fn comm_plan_str(&self) -> String {
-        format!("{:#?}", self.comm_plan)
+    pub fn comm_plan_json(&self) -> String {
+        serde_json::to_string_pretty(&WatchPlan::from(self.comm_plan.clone())).unwrap()
     }
 }
 
