@@ -5,7 +5,6 @@ use vegafusion_core::error::ToExternalError;
 use vegafusion_core::proto::gen::tasks::TaskGraph;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
-
 #[pyclass]
 struct PyTaskGraphRuntime {
     runtime: TaskGraphRuntime,
@@ -24,7 +23,8 @@ impl PyTaskGraphRuntime {
         }
 
         // Build tokio runtime
-        let tokio_runtime = tokio_runtime_builder.build()
+        let tokio_runtime = tokio_runtime_builder
+            .build()
             .external("Failed to create Tokio thread pool")?;
 
         Ok(Self {
@@ -34,15 +34,12 @@ impl PyTaskGraphRuntime {
     }
 
     pub fn process_request_bytes(&self, request_bytes: Vec<u8>) -> PyResult<PyObject> {
-        let response_bytes = self.tokio_runtime.block_on(
-            self.runtime.process_request_bytes(request_bytes)
-        )?;
-        Python::with_gil(|py| {
-            Ok(PyBytes::new(py, &response_bytes).into())
-        })
+        let response_bytes = self
+            .tokio_runtime
+            .block_on(self.runtime.process_request_bytes(request_bytes))?;
+        Python::with_gil(|py| Ok(PyBytes::new(py, &response_bytes).into()))
     }
 }
-
 
 /// A Python module implemented in Rust. The name of this function must match
 /// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
@@ -52,7 +49,6 @@ fn vegafusion(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyTaskGraphRuntime>()?;
     Ok(())
 }
-
 
 #[cfg(test)]
 mod tests {

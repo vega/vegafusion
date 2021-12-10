@@ -5,6 +5,7 @@
 # Distributed under the terms of the Modified BSD License.
 
 from ._version import __version__, version_info
+from .widget import VegaFusionWidget
 
 
 def _jupyter_labextension_paths():

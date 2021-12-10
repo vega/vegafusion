@@ -17,13 +17,15 @@ use datafusion::physical_plan::functions::BuiltinScalarFunction;
 use datafusion::prelude::col;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::Write;
+use std::io::{BufReader, Seek, SeekFrom, Write, Read};
 use std::sync::Arc;
 use datafusion::arrow::datatypes::DataType;
+use datafusion::arrow::ipc::reader::{FileReader, StreamReader};
+use datafusion::arrow::record_batch::RecordBatch;
 use tokio::io::AsyncReadExt;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, ToExternalError, VegaFusionError};
+use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::proto::gen::tasks::scan_url_format;
 use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask};
@@ -79,6 +81,8 @@ impl TaskCall for DataUrlTask {
             read_csv(url).await?
         } else if url.ends_with(".json") {
             read_json(&url, self.batch_size as usize).await?
+        } else if url.ends_with(".arrow") {
+            read_arrow(&url).await?
         } else {
             return Err(VegaFusionError::internal(&format!(
                 "Invalid url file extension {}",
@@ -284,4 +288,54 @@ async fn read_json(url: &str, batch_size: usize) -> Result<Arc<dyn DataFrame>> {
     };
 
     VegaFusionTable::from_json(&value, batch_size)?.to_dataframe()
+}
+
+async fn read_arrow(url: &str) -> Result<Arc<dyn DataFrame>> {
+    // Read to json Value from local file or url.
+    let buffer = if url.starts_with("http://") || url.starts_with("https://") {
+        // Perform get request to collect file contents as text
+        reqwest::get(url)
+            .await
+            .external(&format!("Failed to get URL data from {}", url))?
+            .bytes()
+            .await
+            .external("Failed to convert URL data to text")?
+    } else {
+        // Assume local file
+        let mut file = tokio::fs::File::open(url)
+            .await
+            .external(&format!("Failed to open as local file: {}", url))?;
+
+        let mut buffer: Vec<u8> = Vec::new();
+        file.read_to_end(&mut buffer)
+            .await
+            .external("Failed to read file contents")?;
+
+        bytes::Bytes::from(buffer)
+    };
+
+    let reader = std::io::Cursor::new(buffer);
+
+    // Try parsing file as both File and IPC formats
+    let (schema, batches) = if let Ok(arrow_reader) = FileReader::try_new(reader.clone()) {
+        let schema = arrow_reader.schema();
+        let mut batches: Vec<RecordBatch> = Vec::new();
+        for v in arrow_reader {
+            batches.push(v.with_context(|| "Failed to read arrow batch".to_string())?);
+        }
+        (schema, batches)
+    } else if let Ok(arrow_reader) = StreamReader::try_new(reader.clone()) {
+        let schema = arrow_reader.schema();
+        let mut batches: Vec<RecordBatch> = Vec::new();
+        for v in arrow_reader {
+            batches.push(v.with_context(|| "Failed to read arrow batch".to_string())?);
+        }
+        (schema, batches)
+    } else {
+        let f = FileReader::try_new(reader).unwrap();
+        println!("f: {:?}", f.schema());
+        return Err(VegaFusionError::parse(format!("Failed to read arrow file at {}", url)))
+    };
+
+    VegaFusionTable::try_new(schema, batches)?.to_dataframe()
 }
