@@ -13,7 +13,7 @@ pub mod vega_fusion_runtime_request {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct VegaFusionRuntimeResponse {
-    #[prost(oneof="vega_fusion_runtime_response::Response", tags="1")]
+    #[prost(oneof="vega_fusion_runtime_response::Response", tags="1, 2")]
     pub response: ::core::option::Option<vega_fusion_runtime_response::Response>,
 }
 /// Nested message and enum types in `VegaFusionRuntimeResponse`.
@@ -21,6 +21,8 @@ pub mod vega_fusion_runtime_response {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Response {
         #[prost(message, tag="1")]
+        Error(super::super::errors::Error),
+        #[prost(message, tag="2")]
         TaskGraphValues(super::super::tasks::TaskGraphValueResponse),
     }
 }

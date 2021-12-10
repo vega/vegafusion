@@ -8,4 +8,7 @@ pub mod transforms;
 pub mod tasks;
 
 #[rustfmt::skip]
+pub mod errors;
+
+#[rustfmt::skip]
 pub mod services;

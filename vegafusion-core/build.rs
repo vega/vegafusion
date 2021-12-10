@@ -12,6 +12,7 @@ fn main() {
                 "src/proto/expression.proto",
                 "src/proto/transforms.proto",
                 "src/proto/tasks.proto",
+                "src/proto/errors.proto",
                 "src/proto/services.proto",
             ],
             &["src/proto"],

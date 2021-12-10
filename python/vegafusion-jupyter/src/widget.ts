@@ -54,7 +54,6 @@ export class VegaFusionView extends DOMWidgetView {
 
   render() {
     this.el.appendChild(this.viewElement);
-
     this.value_changed();
     this.model.on('change:vegalite_spec', this.value_changed, this);
     this.model.on("msg:custom", (ev: any, buffers: [DataView]) => {

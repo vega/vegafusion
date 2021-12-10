@@ -155,6 +155,9 @@ impl MsgReceiver {
                     }
                     view.run();
                 }
+                vega_fusion_runtime_response::Response::Error(error) => {
+                    log(&error.msg());
+                }
             }
         }
     }

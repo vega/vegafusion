@@ -12,6 +12,8 @@ use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, NodeValueIndex, TaskGraph, ResponseTaskValue, TaskGraphValueResponse, TaskValue as ProtoTaskValue
 };
 use prost::Message as ProstMessage;
+use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
+use vegafusion_core::proto::gen::errors::error::Errorkind;
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -74,26 +76,37 @@ impl TaskGraphRuntime {
                             let value = task_graph_runtime
                                 .clone()
                                 .get_node_value(task_graph, &node_value_index)
-                                .await
-                                .expect(&format!("var {:?}", var));
+                                .await?;
 
-                            ResponseTaskValue {
+                            Ok::<_, VegaFusionError>(ResponseTaskValue {
                                 variable: Some(var),
                                 scope,
                                 value: Some(ProtoTaskValue::try_from(&value).unwrap()),
-                            }
+                            })
                         }
                     })
                     .collect();
 
-                let response_values = future::join_all(response_value_futures).await;
-
-                let response_msg = VegaFusionRuntimeResponse {
-                    response: Some(vega_fusion_runtime_response::Response::TaskGraphValues(
-                        TaskGraphValueResponse { response_values },
-                    )),
-                };
-                Ok(response_msg)
+                match future::try_join_all(response_value_futures).await {
+                    Ok(response_values) => {
+                        let response_msg = VegaFusionRuntimeResponse {
+                            response: Some(vega_fusion_runtime_response::Response::TaskGraphValues(
+                                TaskGraphValueResponse { response_values },
+                            )),
+                        };
+                        Ok(response_msg)
+                    }
+                    Err(e) => {
+                        let response_msg = VegaFusionRuntimeResponse {
+                            response: Some(vega_fusion_runtime_response::Response::Error(
+                                Error { errorkind: Some(Errorkind::Error(
+                                    TaskGraphValueError { msg: e.to_string() }
+                                ))}
+                            )),
+                        };
+                        Ok(response_msg)
+                    }
+                }
             }
             _ => return Err(VegaFusionError::internal("Invalid VegaFusionRuntimeRequest request"))
         }
