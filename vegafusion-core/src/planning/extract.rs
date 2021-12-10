@@ -6,8 +6,8 @@ use crate::spec::data::{DataSpec, DataSupported};
 use crate::spec::mark::MarkSpec;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_graph::ScopedVariable;
-use std::collections::HashMap;
 use regex::internal::Char;
+use std::collections::HashMap;
 
 pub fn extract_server_data(
     client_spec: &mut ChartSpec,
