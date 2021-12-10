@@ -1,0 +1,12 @@
+syntax = "proto3";
+package errors;
+
+message TaskGraphValueError {
+  string msg = 1;
+}
+
+message Error {
+  oneof errorkind {
+      TaskGraphValueError error = 1;
+  }
+}
