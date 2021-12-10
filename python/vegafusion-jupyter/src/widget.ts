@@ -7,13 +7,6 @@ import {
   ISerializers,
 } from '@jupyter-widgets/base';
 
-import { compile } from 'vega-lite'
-
-// Not sure why imports need to work this way. When MsgReceiver is imported
-// in the await import, it is not seen as a type
-const { render_vegafusion } = await import("vegafusion-wasm")
-import { MsgReceiver } from "vegafusion-wasm";
-
 import { MODULE_NAME, MODULE_VERSION } from './version';
 
 // Import the CSS
@@ -51,10 +44,18 @@ export class VegaFusionModel extends DOMWidgetModel {
 }
 
 export class VegaFusionView extends DOMWidgetView {
-  vegafusion_handle: MsgReceiver;
+  vegafusion_handle: import("vegafusion-wasm").MsgReceiver;
   viewElement = document.createElement("div");
+  render_vegafusion: typeof import("vegafusion-wasm").render_vegafusion;
+  vegalite_compile: typeof import("vega-lite").compile;
 
-  render() {
+  async render() {
+    const { render_vegafusion } = await import("vegafusion-wasm");
+    this.render_vegafusion = render_vegafusion;
+
+    const { compile } = await import("vega-lite");
+    this.vegalite_compile = compile;
+
     this.el.appendChild(this.viewElement);
     this.value_changed();
     this.model.on('change:spec', this.value_changed, this);
@@ -75,12 +76,12 @@ export class VegaFusionView extends DOMWidgetView {
         vega_spec_json = spec
       } else {
         // Assume we have a Vega-Lite spec, compile to vega
-        let vega_spec = compile(parsed);
+        let vega_spec = this.vegalite_compile(parsed);
         vega_spec_json = JSON.stringify(vega_spec.spec);
       }
 
       // console.log("js: value_changed");
-      this.vegafusion_handle = render_vegafusion(this.viewElement, vega_spec_json, (request: ArrayBuffer) => {
+      this.vegafusion_handle = this.render_vegafusion(this.viewElement, vega_spec_json, (request: ArrayBuffer) => {
         // console.log("js: request");
         this.send({type: "request"}, [request])
       });
