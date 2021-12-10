@@ -4,16 +4,20 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
+use futures_util::future;
+use prost::Message as ProstMessage;
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
-use futures_util::future;
-use vegafusion_core::proto::gen::services::{vega_fusion_runtime_request, vega_fusion_runtime_response, VegaFusionRuntimeRequest, VegaFusionRuntimeResponse};
-use vegafusion_core::proto::gen::tasks::{
-    task::TaskKind, NodeValueIndex, TaskGraph, ResponseTaskValue, TaskGraphValueResponse, TaskValue as ProtoTaskValue
-};
-use prost::Message as ProstMessage;
-use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
+use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
+use vegafusion_core::proto::gen::services::{
+    vega_fusion_runtime_request, vega_fusion_runtime_response, VegaFusionRuntimeRequest,
+    VegaFusionRuntimeResponse,
+};
+use vegafusion_core::proto::gen::tasks::{
+    task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse,
+    TaskValue as ProtoTaskValue,
+};
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -46,7 +50,10 @@ impl TaskGraphRuntime {
         })
     }
 
-    pub async fn process_request(&self, request: VegaFusionRuntimeRequest) -> Result<VegaFusionRuntimeResponse> {
+    pub async fn process_request(
+        &self,
+        request: VegaFusionRuntimeRequest,
+    ) -> Result<VegaFusionRuntimeResponse> {
         match request.request {
             Some(vega_fusion_runtime_request::Request::TaskGraphValues(task_graph_values)) => {
                 let task_graph = Arc::new(task_graph_values.task_graph.unwrap());
@@ -90,25 +97,31 @@ impl TaskGraphRuntime {
                 match future::try_join_all(response_value_futures).await {
                     Ok(response_values) => {
                         let response_msg = VegaFusionRuntimeResponse {
-                            response: Some(vega_fusion_runtime_response::Response::TaskGraphValues(
-                                TaskGraphValueResponse { response_values },
-                            )),
+                            response: Some(
+                                vega_fusion_runtime_response::Response::TaskGraphValues(
+                                    TaskGraphValueResponse { response_values },
+                                ),
+                            ),
                         };
                         Ok(response_msg)
                     }
                     Err(e) => {
                         let response_msg = VegaFusionRuntimeResponse {
-                            response: Some(vega_fusion_runtime_response::Response::Error(
-                                Error { errorkind: Some(Errorkind::Error(
-                                    TaskGraphValueError { msg: e.to_string() }
-                                ))}
-                            )),
+                            response: Some(vega_fusion_runtime_response::Response::Error(Error {
+                                errorkind: Some(Errorkind::Error(TaskGraphValueError {
+                                    msg: e.to_string(),
+                                })),
+                            })),
                         };
                         Ok(response_msg)
                     }
                 }
             }
-            _ => return Err(VegaFusionError::internal("Invalid VegaFusionRuntimeRequest request"))
+            _ => {
+                return Err(VegaFusionError::internal(
+                    "Invalid VegaFusionRuntimeRequest request",
+                ))
+            }
         }
     }
 

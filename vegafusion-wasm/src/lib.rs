@@ -19,6 +19,7 @@ use std::sync::{Arc, Mutex};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::planning::extract::extract_server_data;
 use vegafusion_core::planning::stitch::{stitch_specs, CommPlan};
+use vegafusion_core::proto::gen::expression::literal::Value;
 use vegafusion_core::proto::gen::services::{
     vega_fusion_runtime_request, vega_fusion_runtime_response, VegaFusionRuntimeRequest,
     VegaFusionRuntimeResponse,
@@ -26,7 +27,6 @@ use vegafusion_core::proto::gen::services::{
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::task_graph::ScopedVariable;
 use web_sys::Element;
-use vegafusion_core::proto::gen::expression::literal::Value;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -314,7 +314,14 @@ pub fn render_vegafusion(
     let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
 
     // Create closure to update chart from received messages
-    let receiver = MsgReceiver::new(element, spec, server_spec, comm_plan, task_graph.clone(), send_msg_fn);
+    let receiver = MsgReceiver::new(
+        element,
+        spec,
+        server_spec,
+        comm_plan,
+        task_graph.clone(),
+        send_msg_fn,
+    );
 
     // Request initial values
     let updated_node_indices: Vec<_> = receiver.initial_node_value_indices();
