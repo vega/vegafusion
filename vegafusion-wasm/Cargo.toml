@@ -53,12 +53,24 @@ features = [
 [dev-dependencies]
 wasm-bindgen-test = "0.3.13"
 
-
 [profile.release]
 ## Tell `rustc` to optimize for small code size.
 opt-level = "s"
 lto = true
 
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ['-Os']
+
+[package.metadata.wasm-pack.profile.dev]
+# Should `wasm-opt` be used to further optimize the wasm binary generated after
+# the Rust compiler has finished? Using `wasm-opt` can often further decrease
+# binary size or do clever tricks that haven't made their way into LLVM yet.
+#
+# Configuration is set to `false` by default for the dev profile, but it can
+# be set to an array of strings which are explicit arguments to pass to
+# `wasm-opt`. For example `['-Os']` would optimize for size while `['-O4']`
+# would execute very expensive optimizations passes
+wasm-opt = false
 
 [[example]]
 name = "websocket_server"
