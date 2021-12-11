@@ -40,7 +40,7 @@ module.exports = [
             filename: 'index.js',
             path: path.resolve(__dirname, 'vegafusion_jupyter', 'nbextension'),
             libraryTarget: 'amd',
-            publicPath: '',
+            publicPath: '/nbextensions/vegafusion-jupyter/',
         },
         module: {
             rules: rules
