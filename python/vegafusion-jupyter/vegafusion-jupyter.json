@@ -1,0 +1,5 @@
+{
+  "load_extensions": {
+    "vegafusion-jupyter/extension": true
+  }
+}

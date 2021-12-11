@@ -47,7 +47,7 @@ data_files_spec = [
     ('share/jupyter/nbextensions/vegafusion-jupyter', 'vegafusion_jupyter/nbextension', '**'),
     ('share/jupyter/labextensions/vegafusion-jupyter', 'vegafusion_jupyter/labextension', '**'),
     ('share/jupyter/labextensions/vegafusion-jupyter', '.', 'install.json'),
-    ('etc/jupyter/nbconfig/notebook.d', '.', 'vegafusion_jupyter.json'),
+    ('etc/jupyter/nbconfig/notebook.d', '.', 'vegafusion-jupyter.json'),
 ]
 
 
