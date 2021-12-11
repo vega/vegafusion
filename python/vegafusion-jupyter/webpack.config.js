@@ -1,5 +1,6 @@
 const path = require('path');
 const version = require('./package.json').version;
+const WebpackRequireFrom = require("webpack-require-from");
 
 // Custom webpack rules
 const rules = [
@@ -40,7 +41,7 @@ module.exports = [
             filename: 'index.js',
             path: path.resolve(__dirname, 'vegafusion_jupyter', 'nbextension'),
             libraryTarget: 'amd',
-            publicPath: '/nbextensions/vegafusion-jupyter/',
+            publicPath: '',
         },
         module: {
             rules: rules
@@ -50,6 +51,20 @@ module.exports = [
         externals,
         resolve,
         experiments,
+        plugins: [
+            /**
+             * The __webpack_public_path__ is set in extension.ts, but for some reason
+             * delayed imports (await import("foo")) do not honor this path. But when
+             * the path is set using WebpackRequireFrom, the resource path is computed
+             * correctly.  The embeddable bundle below, used in JupyterLab, does not
+             * have this issue.
+             *
+             * More investigation needed here.
+             * */
+            new WebpackRequireFrom({
+                variableName: "__webpack_public_path__"
+            })
+        ]
     },
 
     /**
