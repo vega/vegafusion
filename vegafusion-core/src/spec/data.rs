@@ -47,6 +47,8 @@ impl DataSpec {
         let all_supported = self.transform.iter().all(|tx| tx.supported());
         if all_supported {
             DataSupported::Supported
+        } else if self.url.is_some() {
+            DataSupported::PartiallySupported
         } else {
             match self.transform.get(0) {
                 Some(tx) if tx.supported() => DataSupported::PartiallySupported,
