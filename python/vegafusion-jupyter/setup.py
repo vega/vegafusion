@@ -53,10 +53,12 @@ data_files_spec = [
 
 cmdclass = create_cmdclass('jsdeps', package_data_spec=package_data_spec,
     data_files_spec=data_files_spec)
+
 npm_install = combine_commands(
     install_npm(HERE, build_cmd='build:prod'),
     ensure_targets(jstargets),
 )
+
 cmdclass['jsdeps'] = skip_if_exists(jstargets, npm_install)
 
 
@@ -86,29 +88,23 @@ setup_args = dict(
         'Framework :: Jupyter',
     ],
     include_package_data = True,
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires = [
         'ipywidgets>=7.0.0',
-        'altair>=4.1',
+        'altair>=4.2.0rc1',
+        'vegafusion-python',
+        'pyarrow>=6',
     ],
     extras_require = {
         'test': [
             'pytest>=4.6',
-            'pytest-cov',
-            'nbval',
+            'vega-datasets'
         ],
         'examples': [
             # Any requirements for the examples to run
         ],
         'docs': [
-            'jupyter_sphinx',
-            'nbsphinx',
-            'nbsphinx-link',
-            'pytest_check_links',
-            'pypandoc',
-            'recommonmark',
-            'sphinx>=1.5',
-            'sphinx_rtd_theme',
+
         ],
     },
     entry_points = {
