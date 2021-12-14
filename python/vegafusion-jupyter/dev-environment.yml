@@ -1,0 +1,13 @@
+name: vegafusion_jupyter_dev
+channels:
+  - conda-forge
+dependencies:
+  - python >=3.8
+  - nodejs
+  - yarn
+  - maturin
+  - jupyterlab
+  - jupyter-packaging
+  - conda-lock
+  - pip
+  - python-chromedriver-binary =93

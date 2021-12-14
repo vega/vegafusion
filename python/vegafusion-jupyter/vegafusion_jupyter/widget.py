@@ -1,5 +1,6 @@
 import pandas as pd
 from ipywidgets import DOMWidget
+import time
 from traitlets import Unicode
 
 
@@ -75,6 +76,30 @@ def arrow_transformer(data, data_dir="_vegafusion_data"):
         # Use default transformer if the vegafusion renderer is not active
         return alt.default_data_transformer(data)
     else:
+
+        # Reset named index(ex) into a column
+        if data.index.name is not None:
+            data = data.reset_index()
+
+        # Localize naive datetimes to the local GMT offset
+        dt_cols = []
+        for col, dtype in data.dtypes.items():
+            if dtype.kind == 'M' and not isinstance(dtype, pd.DatetimeTZDtype):
+                dt_cols.append(col)
+
+        if dt_cols:
+            offset_seconds = abs(time.timezone)
+            offset_hours = offset_seconds // 3600
+            offset_minutes = (offset_seconds - offset_hours * 3600) // 60
+            sign = "-" if time.timezone > 0 else "+"
+            local_timezone = f"{sign}{offset_hours:02}:{offset_minutes:02}"
+
+            mapping = dict()
+            for col in dt_cols:
+                mapping[col] = data[col].dt.tz_localize(local_timezone)
+
+            data = data.assign(**mapping)
+
         # Serialize DataFrame to bytes in the arrow file format
         table = pa.Table.from_pandas(data)
         bytes_buffer = io.BytesIO()

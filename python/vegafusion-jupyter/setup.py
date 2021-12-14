@@ -98,7 +98,13 @@ setup_args = dict(
     extras_require = {
         'test': [
             'pytest>=4.6',
-            'vega-datasets'
+            'pytest-cov',
+            'vega-datasets',
+            'voila',
+            'nbval',
+            'jupytext',
+            'selenium',
+            'scikit-image'
         ],
         'examples': [
             # Any requirements for the examples to run
