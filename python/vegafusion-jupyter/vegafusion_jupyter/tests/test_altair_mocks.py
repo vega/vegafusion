@@ -76,7 +76,18 @@ assert(alt.data_transformers.active == 'default')
 """
 
 
-@pytest.mark.parametrize("mock_name", ["selection_layer_bar_month"])
+@pytest.mark.parametrize(
+    "mock_name", [
+        "simple_bar_chart",
+        "simple_heatmap",
+        "simple_line_chart",
+        "simple_scatter_tooltips",
+        "selection_layer_bar_month",
+        "histogram_with_a_global_mean_overlay",
+        "layered_histogram",
+        "trellis_histogram",
+        "density_facet",
+    ])
 def test_altair_mock(mock_name):
 
     # Build Jupytext markdown text containing the mock's code
@@ -110,6 +121,9 @@ def test_altair_mock(mock_name):
             altair_img = altair_imgs[i]
             vegafusion_arrow_img = vegafusion_arrow_imgs[i]
             vegafusion_default_img = vegafusion_default_imgs[i]
+
+            assert altair_img.shape == vegafusion_arrow_img.shape, "Size mismatch with Arrow data transformer"
+            assert altair_img.shape == vegafusion_default_img.shape, "Size mismatch with default data transformer"
 
             similarity_arrow_value = ssim(altair_img, vegafusion_arrow_img, channel_axis=2)
             similarity_default_value = ssim(altair_img, vegafusion_default_img, channel_axis=2)

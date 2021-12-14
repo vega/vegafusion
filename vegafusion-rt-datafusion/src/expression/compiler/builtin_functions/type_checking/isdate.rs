@@ -15,7 +15,6 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 /// See: https://vega.github.io/vega/docs/expressions/#isDate
 pub fn is_date_fn(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
     if args.len() == 1 {
-        // Datetime from string or integer in milliseconds
         let arg = args[0].clone();
         let dtype = arg
             .get_type(schema)
@@ -28,7 +27,6 @@ pub fn is_date_fn(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
             _ => lit(false),
         })
     } else {
-        // Numeric date components
         Err(VegaFusionError::parse(format!(
             "isDate requires a single argument. Received {} arguments",
             args.len()

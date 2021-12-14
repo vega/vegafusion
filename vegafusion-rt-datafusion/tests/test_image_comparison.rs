@@ -44,7 +44,7 @@ mod test_image_comparison_mocks {
         case("log_scaled_histogram"),
         case("non_linear_histogram"),
         case("relative_frequency_histogram"),
-        case("kde_movies"),
+        case("kde_iris"),
         case("2d_circles_histogram_imdb"),
         case("2d_histogram_imdb"),
         case("cumulative_window_imdb"),
@@ -83,7 +83,12 @@ mod test_image_comparison_mocks {
         case("wheat_wages"),
         case("trellis_stacked_bar"),
         case("trellis_bar_histogram"),
-        case("interactive_average")
+        case("interactive_average"),
+
+        // Not yet supported
+        // -----------------
+        // Need bin.span as signal, and the span expression function
+        // case("histogram_responsive")
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);

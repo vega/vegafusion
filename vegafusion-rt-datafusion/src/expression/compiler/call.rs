@@ -34,6 +34,9 @@ use crate::expression::compiler::builtin_functions::data::data::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
 use crate::expression::compiler::builtin_functions::datetime::time::make_time_udf;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
+use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
+use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
+use crate::expression::compiler::builtin_functions::type_coercion::to_string::to_string_transform;
 
 #[derive(Clone)]
 pub enum VegaFusionCallable {
@@ -381,10 +384,6 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         VegaFusionCallable::Transform(Arc::new(datetime_transform)),
     );
     callables.insert(
-        "toDate".to_string(),
-        VegaFusionCallable::Transform(Arc::new(datetime_transform)),
-    );
-    callables.insert(
         "utc".to_string(),
         VegaFusionCallable::ScalarUDF {
             udf: UTC_COMPONENTS.deref().clone(),
@@ -397,6 +396,24 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
             udf: make_time_udf(),
             cast: None,
         },
+    );
+
+    // coercion
+    callables.insert(
+        "toBooleans".to_string(),
+        VegaFusionCallable::Transform(Arc::new(to_boolean_transform)),
+    );
+    callables.insert(
+        "toDate".to_string(),
+        VegaFusionCallable::Transform(Arc::new(datetime_transform)),
+    );
+    callables.insert(
+        "toNumber".to_string(),
+        VegaFusionCallable::Transform(Arc::new(to_number_transform)),
+    );
+    callables.insert(
+        "toString".to_string(),
+        VegaFusionCallable::Transform(Arc::new(to_string_transform)),
     );
 
     // data
