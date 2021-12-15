@@ -1,0 +1,271 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "data": [
+    {
+      "name": "source_0",
+      "url": "https://cdn.jsdelivr.net/npm/vega-datasets@v1.29.0/data/barley.json",
+      "format": {"type": "json"}
+    },
+    {
+      "name": "column_domain",
+      "source": "source_0",
+      "transform": [{"type": "aggregate", "groupby": ["site"]}]
+    },
+    {
+      "name": "data_1",
+      "source": "source_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["year", "site"],
+          "ops": ["ci0", "ci1", "mean", "mean"],
+          "fields": ["yield", "yield", "yield", "yield"],
+          "as": ["lower_yield", "upper_yield", "center_yield", "mean_yield"]
+        }
+      ]
+    },
+    {
+      "name": "data_2",
+      "source": "data_1",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"lower_yield\"]) && isFinite(+datum[\"lower_yield\"])"
+        }
+      ]
+    },
+    {
+      "name": "data_3",
+      "source": "data_1",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"mean_yield\"]) && isFinite(+datum[\"mean_yield\"])"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {"name": "x_step", "value": 20},
+    {
+      "name": "child_width",
+      "update": "bandspace(domain('x').length, 0.1, 0.05) * x_step"
+    },
+    {"name": "child_height", "value": 300}
+  ],
+  "layout": {
+    "padding": 20,
+    "offset": {"columnTitle": 10},
+    "columns": {"signal": "length(data('column_domain'))"},
+    "bounds": "full",
+    "align": "all"
+  },
+  "marks": [
+    {
+      "name": "column-title",
+      "type": "group",
+      "role": "column-title",
+      "title": {"text": "site", "style": "guide-title", "offset": 10}
+    },
+    {
+      "name": "row_header",
+      "type": "group",
+      "role": "row-header",
+      "encode": {"update": {"height": {"signal": "child_height"}}},
+      "axes": [
+        {
+          "scale": "y",
+          "orient": "left",
+          "grid": false,
+          "title": "Mean Yield, yield",
+          "labelOverlap": true,
+          "tickCount": {"signal": "ceil(child_height/40)"},
+          "zindex": 0
+        }
+      ]
+    },
+    {
+      "name": "column_header",
+      "type": "group",
+      "role": "column-header",
+      "from": {"data": "column_domain"},
+      "sort": {"field": "datum[\"site\"]", "order": "ascending"},
+      "title": {
+        "text": {
+          "signal": "isValid(parent[\"site\"]) ? parent[\"site\"] : \"\"+parent[\"site\"]"
+        },
+        "style": "guide-label",
+        "frame": "group",
+        "offset": 10
+      },
+      "encode": {"update": {"width": {"signal": "child_width"}}}
+    },
+    {
+      "name": "column_footer",
+      "type": "group",
+      "role": "column-footer",
+      "from": {"data": "column_domain"},
+      "sort": {"field": "datum[\"site\"]", "order": "ascending"},
+      "encode": {"update": {"width": {"signal": "child_width"}}},
+      "axes": [
+        {
+          "scale": "x",
+          "orient": "bottom",
+          "grid": false,
+          "title": "year",
+          "labelAlign": "right",
+          "labelAngle": 270,
+          "labelBaseline": "middle",
+          "zindex": 0
+        }
+      ]
+    },
+    {
+      "name": "cell",
+      "type": "group",
+      "style": "cell",
+      "from": {
+        "facet": {"name": "facet", "data": "source_0", "groupby": ["site"]}
+      },
+      "sort": {"field": ["datum[\"site\"]"], "order": ["ascending"]},
+      "data": [
+        {
+          "source": "facet",
+          "name": "data_0",
+          "transform": [
+            {
+              "type": "aggregate",
+              "groupby": ["year"],
+              "ops": ["ci0", "ci1", "mean", "mean"],
+              "fields": ["yield", "yield", "yield", "yield"],
+              "as": ["lower_yield", "upper_yield", "center_yield", "mean_yield"]
+            }
+          ]
+        },
+        {
+          "name": "data_1",
+          "source": "data_0",
+          "transform": [
+            {
+              "type": "filter",
+              "expr": "isValid(datum[\"lower_yield\"]) && isFinite(+datum[\"lower_yield\"])"
+            }
+          ]
+        },
+        {
+          "name": "data_2",
+          "source": "data_0",
+          "transform": [
+            {
+              "type": "filter",
+              "expr": "isValid(datum[\"mean_yield\"]) && isFinite(+datum[\"mean_yield\"])"
+            }
+          ]
+        }
+      ],
+      "encode": {
+        "update": {
+          "width": {"signal": "child_width"},
+          "height": {"signal": "child_height"}
+        }
+      },
+      "marks": [
+        {
+          "name": "child_layer_0_marks",
+          "type": "rect",
+          "style": ["bar"],
+          "from": {"data": "data_2"},
+          "encode": {
+            "update": {
+              "fill": {"scale": "color", "field": "year"},
+              "ariaRoleDescription": {"value": "bar"},
+              "description": {
+                "signal": "\"year: \" + (isValid(datum[\"year\"]) ? datum[\"year\"] : \"\"+datum[\"year\"]) + \"; Mean Yield: \" + (format(datum[\"mean_yield\"], \"\"))"
+              },
+              "x": {"scale": "x", "field": "year"},
+              "width": {"scale": "x", "band": 1},
+              "y": {"scale": "y", "field": "mean_yield"},
+              "y2": {"scale": "y", "value": 0}
+            }
+          }
+        },
+        {
+          "name": "child_layer_1_marks",
+          "type": "rule",
+          "style": ["rule", "errorbar-rule"],
+          "from": {"data": "data_1"},
+          "encode": {
+            "update": {
+              "ariaRoleDescription": {"value": "errorbar"},
+              "stroke": {"value": "black"},
+              "tooltip": {
+                "signal": "{\"Ci1 of yield\": format(datum[\"upper_yield\"], \"\"), \"Ci0 of yield\": format(datum[\"lower_yield\"], \"\"), \"Mean of yield\": format(datum[\"center_yield\"], \"\"), \"year\": isValid(datum[\"year\"]) ? datum[\"year\"] : \"\"+datum[\"year\"]}"
+              },
+              "description": {
+                "signal": "\"year: \" + (isValid(datum[\"year\"]) ? datum[\"year\"] : \"\"+datum[\"year\"]) + \"; yield: \" + (format(datum[\"lower_yield\"], \"\")) + \"; upper_yield: \" + (format(datum[\"upper_yield\"], \"\")) + \"; Ci1 of yield: \" + (format(datum[\"upper_yield\"], \"\")) + \"; Ci0 of yield: \" + (format(datum[\"lower_yield\"], \"\")) + \"; Mean of yield: \" + (format(datum[\"center_yield\"], \"\"))"
+              },
+              "x": {"scale": "x", "field": "year", "band": 0.5},
+              "y": {"scale": "y", "field": "lower_yield"},
+              "y2": {"scale": "y", "field": "upper_yield"}
+            }
+          }
+        }
+      ],
+      "axes": [
+        {
+          "scale": "y",
+          "orient": "left",
+          "gridScale": "x",
+          "grid": true,
+          "tickCount": {"signal": "ceil(child_height/40)"},
+          "domain": false,
+          "labels": false,
+          "aria": false,
+          "maxExtent": 0,
+          "minExtent": 0,
+          "ticks": false,
+          "zindex": 0
+        }
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "band",
+      "domain": {
+        "fields": [
+          {"data": "data_3", "field": "year"},
+          {"data": "data_2", "field": "year"}
+        ],
+        "sort": true
+      },
+      "range": {"step": {"signal": "x_step"}},
+      "paddingInner": 0.1,
+      "paddingOuter": 0.05
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {
+        "fields": [
+          {"data": "data_3", "field": "mean_yield"},
+          {"data": "data_2", "field": "lower_yield"},
+          {"data": "data_2", "field": "upper_yield"}
+        ]
+      },
+      "range": [{"signal": "child_height"}, 0],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": {"data": "data_3", "field": "year", "sort": true},
+      "range": "category"
+    }
+  ],
+  "legends": [{"fill": "color", "symbolType": "square", "title": "year"}]
+}

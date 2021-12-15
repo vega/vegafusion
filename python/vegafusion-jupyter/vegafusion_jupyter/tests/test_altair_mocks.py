@@ -78,15 +78,41 @@ assert(alt.data_transformers.active == 'default')
 
 @pytest.mark.parametrize(
     "mock_name", [
-        "simple_bar_chart",
-        "simple_heatmap",
-        "simple_line_chart",
-        "simple_scatter_tooltips",
-        "selection_layer_bar_month",
-        "histogram_with_a_global_mean_overlay",
-        "layered_histogram",
-        "trellis_histogram",
-        "density_facet",
+        "area-density_facet",
+        "bar-with_highlighted_bar",
+        "bar-with_labels",
+        "bar-with_line_at_mean",
+        "bar-with_line_on_dual_axis",
+        "bar-with_negative_values",
+        "bar-with_rolling_mean",
+        "bar-with_rounded_edges",
+        "bar-and_tick_chart",
+        "bar-percentage_of_total",
+        "bar-trellis_compact",
+        "bar-diverging_stacked",
+        "bar-grouped",
+        "bar-horizontal",
+        "bar-horizontal_grouped",
+        "bar-horizontal_stacked",
+        "bar-normalized_stacked",
+        "histogram-with_a_global_mean_overlay",
+        "histogram-layered",
+        "histogram-trellis",
+        "interactive-selection_layer_bar_month",
+        "simple-stacked_bar_chart",
+        "simple-bar_chart",
+        "simple-heatmap",
+        "simple-line_chart",
+        "simple-scatter_tooltips",
+        "simple-strip_chart",
+
+        # Not yet supported
+        # -----------------
+        # # Need to support facet data as source
+        # "bar-with_error_bars",
+        #
+        # # arrow transformer case doesn't inclue the "T" in the formatted dates on x-axis
+        # "bar-layered",
     ])
 def test_altair_mock(mock_name):
 
