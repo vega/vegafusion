@@ -35,6 +35,17 @@ use vegafusion_core::planning::watch::WatchPlan;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+pub fn set_panic_hook() {
+    // When the `console_error_panic_hook` feature is enabled, we can call the
+    // `set_panic_hook` function at least once during initialization, and then
+    // we will get better error messages if our code ever panics.
+    //
+    // For more details see
+    // https://github.com/rustwasm/console_error_panic_hook#readme
+    #[cfg(feature = "console_error_panic_hook")]
+        console_error_panic_hook::set_once();
+}
+
 #[wasm_bindgen]
 extern "C" {
     fn alert(s: &str);
@@ -65,6 +76,8 @@ impl MsgReceiver {
         task_graph: TaskGraph,
         send_msg_fn: js_sys::Function,
     ) -> Self {
+        set_panic_hook();
+
         let task_graph_mapping = task_graph.build_mapping();
 
         let server_to_client_value_indices: Arc<HashSet<_>> = Arc::new(
@@ -135,12 +148,12 @@ impl MsgReceiver {
                 vega_fusion_runtime_response::Response::TaskGraphValues(task_graph_vals) => {
                     let view = self.view();
                     for response_val in task_graph_vals.response_values {
-                        let value = response_val.value.unwrap();
+                        let value = response_val.value.expect("Unwrap value");
                         let scope = response_val.scope.as_slice();
-                        let var = response_val.variable.unwrap();
+                        let var = response_val.variable.expect("Unwrap variable");
 
                         // Convert from proto task value to task value
-                        let value = TaskValue::try_from(&value).unwrap();
+                        let value = TaskValue::try_from(&value).expect("Deserialize value");
 
                         match &value {
                             TaskValue::Scalar(value) => {
