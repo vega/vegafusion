@@ -24,6 +24,7 @@ use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
+use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
@@ -115,6 +116,11 @@ impl TaskCall for DataUrlTask {
                                     // Assume Year was parsed numerically
                                     Expr::ScalarUDF {
                                         fun: Arc::new(DATETIME_COMPONENTS.clone()),
+                                        args: vec![col(&spec.name)],
+                                    }
+                                } else if let DataType::Timestamp(_, _) = dtype {
+                                    Expr::ScalarFunction {
+                                        fun: BuiltinScalarFunction::ToTimestampMillis,
                                         args: vec![col(&spec.name)],
                                     }
                                 } else {
