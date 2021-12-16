@@ -95,6 +95,19 @@ assert(alt.data_transformers.active == 'default')
         "bar-horizontal_grouped",
         "bar-horizontal_stacked",
         "bar-normalized_stacked",
+        "bar-sorted",
+        "bar-stacked",
+        "bar-stacked_with_sorted_segments",
+        "bar-stacked_with_text_overlay",
+        "bar-trellis_stacked",
+        "line-bump_chart",
+        "line-filled_step_chart",
+        "line-with_cumsum",
+        "line-layer_line_color_rule",
+        "line-with_logarithmic_scale",
+        "line-percent_axis",
+        "line-with_points",
+        "line-with_generator",
         "histogram-with_a_global_mean_overlay",
         "histogram-layered",
         "histogram-trellis",
@@ -113,6 +126,19 @@ assert(alt.data_transformers.active == 'default')
         #
         # # arrow transformer case doesn't inclue the "T" in the formatted dates on x-axis
         # "bar-layered",
+        #
+        # # Timezone axis ticks issue
+        # "line-with_ci",
+        #
+        # # One missing axis label (2000)
+        # "line-layer_line_color_rule"
+        #
+        # # arrow transform example adds x-axis grid lines and ticks
+        # "line-trail_marker",
+        #
+        # # Crashes
+        # "line-with_datum",
+        # "line-with_color_datum",
     ])
 def test_altair_mock(mock_name):
 
@@ -208,7 +234,6 @@ def export_image_sequence(
 
                 # Get png representation in binary (bytes) from driver
                 # convert this into a 3D numpy image
-                canvas.screenshot((temp_screenshots_dir / (temp_file_path.name + ".png")).as_posix())
                 img = imread(BytesIO(canvas.screenshot_as_png))
                 imgs.append(img)
 
