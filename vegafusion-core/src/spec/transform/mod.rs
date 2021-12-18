@@ -8,6 +8,7 @@ pub mod joinaggregate;
 pub mod timeunit;
 pub mod unsupported;
 pub mod window;
+pub mod lookup;
 
 use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransformSpec};
 
@@ -23,6 +24,8 @@ use crate::spec::transform::window::WindowTransformSpec;
 use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
+use crate::spec::transform::lookup::LookupTransformSpec;
+
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
