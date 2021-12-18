@@ -110,6 +110,8 @@ assert(alt.data_transformers.active == 'default')
         "casestudy/top_k_with_others",
         "casestudy/wheat_wages",
         "casestudy/window_rank",
+        "casestudy/airports",
+        "casestudy/us_state_capitals",
         "circular/donut",
         "circular/pie",
         "circular/pie_with_labels",
@@ -142,6 +144,12 @@ assert(alt.data_transformers.active == 'default')
         "line/layer_line_color_rule",
         "line/multi_series",
         "line/with_ci",
+        "maps/choropleth",
+        "maps/choropleth_repeat",
+        "maps/us_incomebrackets_by_state_facet",
+        "maps/world",
+        "maps/world_projections",
+        "maps/airports_count",
         "other/bar_chart_with_highlighted_segment",
         "other/beckers_barley_wrapped_facet",
         "other/boxplot",
@@ -207,7 +215,7 @@ assert(alt.data_transformers.active == 'default')
         # # Table is too long and has a bunch of undefined values in it
         # "interactive/scatter-with_linked_table",
         #
-        # # Need support for random() expression function
+        # # Need support for random() expression function, or support for not planning it on the server.
         # "scatter/stripplot",
         #
         # # ci interval uses random number generator and is not deterministic
@@ -218,17 +226,6 @@ assert(alt.data_transformers.active == 'default')
         # "interactive/histogram-responsive",
         #
         # # No display
-        # "maps/choropleth",
-        # "maps/airports_count",
-        # "maps/choropleth_repeat",
-        # "maps/us_incomebrackets_by_state_facet",
-        # "maps/world",
-        # "maps/world_projections",
-        # "interactive/casestudy-airport_connections",
-        # "casestudy/airports",
-        # "casestudy/london_tube",
-        # "casestudy/one_dot_per_zipcode",
-        # "casestudy/us_state_capitals",
         # "other/ranged_dot_plot",
         #
         # # Missing axis/tick labels
@@ -270,6 +267,12 @@ assert(alt.data_transformers.active == 'default')
         # "interactive/scatter-href",
         # "interactive/other-image_tooltip",
         # "interactive/casestudy-weather_heatmap",
+        # "interactive/casestudy-airport_connections",
+        #
+        # # Unsupported Expression functions
+        # "casestudy/london_tube",  # indexof and substring not supported
+        # "casestudy/one_dot_per_zipcode",  # substring
+
     ])
 def test_altair_mock(mock_name):
 
@@ -321,8 +324,8 @@ def test_altair_mock(mock_name):
             print(f"({i}) {similarity_arrow_value=}")
             print(f"({i}) {similarity_default_value=}")
 
-            assert similarity_arrow_value > 0.999, f"Similarity failed with Arrow data transformer on image {i}"
-            assert similarity_default_value > 0.999, f"Similarity failed with default data transformer on image {i}"
+            assert similarity_arrow_value > 0.998, f"Similarity failed with Arrow data transformer on image {i}"
+            assert similarity_default_value > 0.998, f"Similarity failed with default data transformer on image {i}"
 
     finally:
         voila_proc.kill()
