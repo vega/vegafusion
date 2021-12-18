@@ -288,7 +288,9 @@ mod test_datetime {
         case("datetime(utc(87, 3, 10, 7, 35))"),
         case("datetime(utc(87, 3, 10, 7))"),
         case("datetime(utc(87, 3, 10))"),
-        case("datetime(utc(87, 3))")
+        case("datetime(utc(87, 3))"),
+        case("datetime(\"2000-01-01T08:00:00.000Z\")"),
+        case("datetime(\"2000-01-01T13:14:15.123Z\")")
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
