@@ -1,0 +1,6 @@
+[
+  {"type": "snapshot"},
+  {"type": "move_to", "coords": [431, 65]},
+  {"type": "click"},
+  {"type": "snapshot"}
+]

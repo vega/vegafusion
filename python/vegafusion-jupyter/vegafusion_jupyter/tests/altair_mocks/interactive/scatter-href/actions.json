@@ -1,0 +1,5 @@
+[
+  {"type": "screenshot"},
+  {"type": "move_to", "coords": [195, 180]},
+  {"type": "screenshot"}
+]

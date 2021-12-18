@@ -12,6 +12,7 @@ from io import BytesIO
 from skimage.io import imread
 from skimage.metrics import structural_similarity as ssim
 import json
+import shutil
 
 here = Path(__file__).parent
 altair_mocks_dir = here / "altair_mocks"
@@ -19,8 +20,9 @@ temp_notebooks_dir = here / "temp_notebooks"
 temp_screenshots_dir = here / "temp_screenshot"
 
 altair_markdown_template = r"""
-```markdown
-# Altair default
+```python
+import altair as alt
+alt.renderers.enable('default', embed_options={'actions': False});
 ```
 
 ```python
@@ -34,10 +36,6 @@ assert(alt.data_transformers.active == 'default')
 """
 
 vegafusion_arrow_markdown_template = r"""
-```markdown
-# VegaFusion with Arrow data transformer
-```
-
 ```python
 import altair as alt
 import vegafusion_jupyter
@@ -54,11 +52,6 @@ assert(alt.data_transformers.active == 'vegafusion-arrow')
 """
 
 vegafusion_default_markdown_template = r"""
-
-```markdown
-# VegaFusion with default data transformer
-```
-
 ```python
 import altair as alt
 import vegafusion_jupyter
@@ -78,67 +71,214 @@ assert(alt.data_transformers.active == 'default')
 
 @pytest.mark.parametrize(
     "mock_name", [
-        "area-density_facet",
-        "bar-with_highlighted_bar",
-        "bar-with_labels",
-        "bar-with_line_at_mean",
-        "bar-with_line_on_dual_axis",
-        "bar-with_negative_values",
-        "bar-with_rolling_mean",
-        "bar-with_rounded_edges",
-        "bar-and_tick_chart",
-        "bar-percentage_of_total",
-        "bar-trellis_compact",
-        "bar-diverging_stacked",
-        "bar-grouped",
-        "bar-horizontal",
-        "bar-horizontal_grouped",
-        "bar-horizontal_stacked",
-        "bar-normalized_stacked",
-        "bar-sorted",
-        "bar-stacked",
-        "bar-stacked_with_sorted_segments",
-        "bar-stacked_with_text_overlay",
-        "bar-trellis_stacked",
-        "line-bump_chart",
-        "line-filled_step_chart",
-        "line-with_cumsum",
-        "line-layer_line_color_rule",
-        "line-with_logarithmic_scale",
-        "line-percent_axis",
-        "line-with_points",
-        "line-with_generator",
-        "histogram-with_a_global_mean_overlay",
-        "histogram-layered",
-        "histogram-trellis",
-        "interactive-selection_layer_bar_month",
-        "simple-stacked_bar_chart",
-        "simple-bar_chart",
-        "simple-heatmap",
-        "simple-line_chart",
-        "simple-scatter_tooltips",
-        "simple-strip_chart",
+        "area/cumulative_count",
+        "area/density_facet",
+        "area/gradient",
+        "area/cumulative_count",
+        "area/horizon_graph",
+        "area/layered",
+        "area/normalized_stacked",
+        "area/density_stack",
+        "area/trellis",
+        "bar/with_highlighted_bar",
+        "bar/with_labels",
+        "bar/with_line_at_mean",
+        "bar/with_line_on_dual_axis",
+        "bar/with_rolling_mean",
+        "bar/with_rounded_edges",
+        "bar/and_tick_chart",
+        "bar/percentage_of_total",
+        "bar/trellis_compact",
+        "bar/diverging_stacked",
+        "bar/grouped",
+        "bar/horizontal",
+        "bar/horizontal_grouped",
+        "bar/horizontal_stacked",
+        "bar/normalized_stacked",
+        "bar/sorted",
+        "bar/stacked",
+        "bar/stacked_with_sorted_segments",
+        "bar/stacked_with_text_overlay",
+        "bar/trellis_stacked",
+        "bar/trellis_stacked",
+        "casestudy/co2_concentration",
+        "casestudy/gapminder_bubble_plot",
+        "casestudy/iowa_electricity",
+        "casestudy/natural_disasters",
+        "casestudy/top_k_with_others",
+        "casestudy/wheat_wages",
+        "casestudy/window_rank",
+        "circular/donut",
+        "circular/pie",
+        "circular/pie_with_labels",
+        "circular/radial",
+        "histogram/with_a_global_mean_overlay",
+        "histogram/layered",
+        "histogram/trellis",
+        "interactive/selection_layer_bar_month",
+        "interactive/area-interval_selection",
+        "interactive/layered_crossfilter",
+        "interactive/scatter_with_histogram",
+        "interactive/select_detail",
+        "interactive/scatter_plot",
+        "interactive/brush",
+        "interactive/multiline_tooltip",
+        "interactive/scatter_linked_brush",
+        "interactive/casestudy-us_population_pyramid_over_time",
+        "line/bump_chart",
+        "line/filled_step_chart",
+        "line/with_cumsum",
+        "line/with_logarithmic_scale",
+        "line/percent_axis",
+        "line/with_points",
+        "line/with_generator",
+        "line/slope_graph",
+        "line/slope_graph2",
+        "line/step_chart",
+        "other/bar_chart_with_highlighted_segment",
+        "other/beckers_barley_wrapped_facet",
+        "other/boxplot",
+        "other/comet_chart",
+        "other/errorbars_with_std",
+        "other/scatter_marginal_hist",
+        "other/gantt_chart",
+        "other/isotype_grid",
+        "other/layered_chart_with_dual_axis",
+        "other/ridgeline_plot",
+        "other/stem_and_leaf",
+        "other/layered_heatmap_text",
+        "scatter/binned",
+        "scatter/bubble_plot",
+        "scatter/connected",
+        "scatter/dot_dash_plot",
+        "scatter/multifeature",
+        "scatter/poly_fit_regression",
+        "scatter/qq",
+        "scatter/matrix",
+        "scatter/with_lowess",
+        "scatter/with_errorbars",
+        "scatter/with_labels",
+        "scatter/table_bubble_plot_github",
+        "scatter/trellis",
+        "scatter/wind_vector_map",
+        "simple/stacked_bar_chart",
+        "simple/bar_chart",
+        "simple/heatmap",
+        "simple/line_chart",
+        "simple/scatter_tooltips",
+        "simple/strip_chart",
 
-        # Not yet supported
-        # -----------------
+        # # Not yet supported
+        # # -----------------
         # # Need to support facet data as source
-        # "bar-with_error_bars",
+        # "bar/with_error_bars",
         #
-        # # arrow transformer case doesn't inclue the "T" in the formatted dates on x-axis
-        # "bar-layered",
+        # # arrow transformer case doesn't include the "T" in the formatted dates on x-axis
+        # "bar/layered",
         #
         # # Timezone axis ticks issue
-        # "line-with_ci",
+        # "line/with_ci",
         #
-        # # One missing axis label (2000)
-        # "line-layer_line_color_rule"
+        # # One missing x-tick date label on far left
+        # "line/layer_line_color_rule"
+        # "other/multiple_marks",
+        # "interactive/multiline_highlight",
+        # "interactive/scatter-with_minimap",
+        # "area/trellis_sort_array",
+        # "line/layer_line_color_rule",
+        # "line/multi_series",
         #
         # # arrow transform example adds x-axis grid lines and ticks
-        # "line-trail_marker",
+        # "line/trail_marker",
         #
         # # Crashes
-        # "line-with_datum",
-        # "line-with_color_datum",
+        # "line/with_datum",
+        # "line/with_color_datum",
+        # "circular/pacman",
+        # "casestudy/beckers_barley_trellis_plot",
+        # "casestudy/falkensee",
+        # "casestudy/us_employment",
+        # "other/hexbins",
+        # "other/parallel_coordinates",
+        # "interactive/selection_histogram",
+        #
+        # # Area mark does not show up with either transformer
+        # "area/streamgraph",
+        # "interactive/legend",
+        # "interactive/select_mark_area",
+        #
+        # # Table is too long and has a bunch of undefined values in it
+        # "interactive/scatter-with_linked_table",
+        #
+        # # Date axis ticks don't match
+        # "scatter/with_rolling_mean",
+        #
+        # # Need support for random() expression function
+        # "scatter/stripplot",
+        #
+        # # ci interval uses random number generator and is not deterministic
+        # "other/errorbars_with_ci",
+        # "other/sorted_error_bars_with_ci",
+        #
+        # # Need support for bin `extent` as signal expression
+        # "interactive/histogram-responsive",
+        #
+        # # No display
+        # "maps/choropleth",
+        # "maps/airports_count",
+        # "maps/choropleth_repeat",
+        # "maps/us_incomebrackets_by_state_facet",
+        # "maps/world",
+        # "maps/world_projections",
+        # "interactive/casestudy-airport_connections",
+        # "casestudy/airports",
+        # "casestudy/london_tube",
+        # "casestudy/one_dot_per_zipcode",
+        # "casestudy/us_state_capitals",
+        # "other/ranged_dot_plot",
+        #
+        # # Missing axis/tick labels
+        # "casestudy/anscombe_plot"
+        # "casestudy/us_population_over_time_facet",
+        #
+        # # X-encoding not working
+        # "casestudy/isotype",
+        # "casestudy/isotype_emoji",
+        #
+        # # Different ordering of rank for with equal valued entries. Not wrong
+        # "casestudy/top_k_items",
+        # "casestudy/top_k_letters",
+        #
+        # # Missing cell value in top right bin
+        # "other/binned_heatmap",
+        #
+        # # Tiny shift in x-axis ticks. Probably timezone issue
+        # "other/candlestick_chart",
+        # "bar/with_negative_values",  # (the 2007 tick shifts by a pixel)
+        #
+        # # Lines messed up
+        # "other/normed_parallel_coordinates",
+        #
+        # # US and Europe Violins missing
+        # "other/violin_plot",
+        #
+        # # No y-axis scaling
+        # "other/wilkinson_dot_plot",
+        #
+        # # "undefined" instead of "null" in labels
+        # "interactive/cross_highlight"
+        #
+        # # z-order of marks is inconsistent
+        # "interactive/scatter_with_layered_histogram",
+        # "interactive/casestudy-seattle_weather_interactive",
+        #
+        # # Slider doesn't filter
+        # "interactive/casestudy-us_population_over_time",
+        #
+        # # Tooltips not supported
+        # "interactive/scatter-href",
+        # "interactive/other-image_tooltip",
+        # "interactive/casestudy-weather_heatmap",
     ])
 def test_altair_mock(mock_name):
 
@@ -155,6 +295,13 @@ def test_altair_mock(mock_name):
     altair_notebook = jupytext.read(io.StringIO(altair_markdown), fmt="markdown")
     vegafusion_arrow_notebook = jupytext.read(io.StringIO(vegafusion_arrow_markdown), fmt="markdown")
     vegafusion_default_notebook = jupytext.read(io.StringIO(vegafusion_default_markdown), fmt="markdown")
+
+    # Initialize notebooks and screenshots to empty directories
+    shutil.rmtree(temp_notebooks_dir, ignore_errors=True)
+    temp_notebooks_dir.mkdir(parents=True, exist_ok=True)
+
+    shutil.rmtree(temp_screenshots_dir, ignore_errors=True)
+    temp_screenshots_dir.mkdir(parents=True, exist_ok=True)
 
     # Create selenium Chrome instance
     chrome_driver = webdriver.Chrome()
@@ -183,8 +330,8 @@ def test_altair_mock(mock_name):
             print(f"({i}) {similarity_arrow_value=}")
             print(f"({i}) {similarity_default_value=}")
 
-            assert similarity_arrow_value > 0.99, f"Similarity failed with Arrow data transformer on image {i}"
-            assert similarity_default_value > 0.99, f"Similarity failed with default data transformer on image {i}"
+            assert similarity_arrow_value > 0.999, f"Similarity failed with Arrow data transformer on image {i}"
+            assert similarity_default_value > 0.999, f"Similarity failed with default data transformer on image {i}"
 
     finally:
         voila_proc.kill()
@@ -206,8 +353,7 @@ def export_image_sequence(
         voila_url_base: str = "http://localhost:8866/voila/render/",
 ):
     imgs = []
-    temp_notebooks_dir.mkdir(parents=True, exist_ok=True)
-    temp_screenshots_dir.mkdir(parents=True, exist_ok=True)
+
     with tempfile.NamedTemporaryFile(mode="wt", dir=temp_notebooks_dir, suffix=".ipynb") as f:
         jupytext.write(notebook, f, fmt="ipynb")
         f.file.flush()
@@ -219,26 +365,40 @@ def export_image_sequence(
 
         # Open url with selenium
         chrome_driver.get(url)
+        time.sleep(3)
+
+        # Remove padding, margins, and standardize line height.
+        css = ("body, .jp-Cell, .jp-Notebook, .jupyter-widgets, .jp-RenderedHTMLCommon "
+               "{margin: 0 !important; padding: 0 !important; line-height: 1.3 !important;}")
+        script = 'document.styleSheets[0].insertRule("' + css + '", 0 )'
+        chrome_driver.execute_script(script)
+
+        time.sleep(1)
 
         # Get canvas element (the canvas that Vega renders to)
-        time.sleep(2)
         canvas = chrome_driver.find_element_by_xpath("//canvas")
 
         # Process actions
         chain = ActionChains(chrome_driver)
         for i, action in enumerate(actions):
             action_type = action["type"]
-            if action_type == "snapshot":
+            if action_type in ("snapshot", "screenshot"):
                 chain.perform()
                 time.sleep(2)
 
+                img_path = (temp_screenshots_dir / (temp_file_path.name + f"_{i}.png")).as_posix();
+                if action_type == "snapshot":
+                    img_bytes = canvas.screenshot_as_png
+                    # Write to file for debugging
+                    canvas.screenshot(img_path)
+                else:
+                    img_bytes = chrome_driver.get_screenshot_as_png()
+                    chrome_driver.save_screenshot(img_path)
+
                 # Get png representation in binary (bytes) from driver
                 # convert this into a 3D numpy image
-                img = imread(BytesIO(canvas.screenshot_as_png))
+                img = imread(BytesIO(img_bytes))
                 imgs.append(img)
-
-                # Write to file for debugging
-                canvas.screenshot((temp_screenshots_dir / (temp_file_path.name + f"_{i}.png")).as_posix())
 
                 # Reset chain
                 chain = ActionChains(chrome_driver)
