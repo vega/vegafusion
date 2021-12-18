@@ -43,7 +43,13 @@ impl DataSpec {
     }
 
     pub fn supported(&self) -> DataSupported {
-        // TODO: also add checks for supported file formats, etc.
+        if let Some(format_type) = self.format.as_ref().map(|fmt| fmt.type_.clone()) {
+            if !matches!(format_type.as_str(), "csv" | "tsv" | "arrow" | "json") {
+                // We don't know how to read the data, so full node is unsupported
+                return DataSupported::Unsupported
+            }
+        }
+
         let all_supported = self.transform.iter().all(|tx| tx.supported());
         if all_supported {
             DataSupported::Supported
