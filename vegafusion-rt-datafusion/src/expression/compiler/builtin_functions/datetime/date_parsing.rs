@@ -131,8 +131,8 @@ pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<Fi
     let second: u32 = time_tokens[2].parse().unwrap_or(0);
     let milliseconds: u32 = if time_tokens[3].is_empty() {
         0
-    } else if time_tokens[2].len() == 3 {
-        time_tokens[2].parse().ok()?
+    } else if time_tokens[3].len() == 3 {
+        time_tokens[3].parse().ok()?
     } else {
         return None;
     };
@@ -274,6 +274,11 @@ fn test_parse_datetime() {
     println!("utc_res: {}", utc_res);
 
     let res = parse_datetime("2001/02/05 06:20", DateParseMode::Utc).unwrap();
+    let utc_res = res.with_timezone(&Utc);
+    println!("res: {}", res);
+    println!("utc_res: {}", utc_res);
+
+    let res = parse_datetime("2000-01-01T08:00:00.000Z", DateParseMode::Utc).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);
