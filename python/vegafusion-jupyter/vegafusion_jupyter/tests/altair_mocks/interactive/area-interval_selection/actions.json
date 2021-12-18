@@ -1,0 +1,8 @@
+[
+  {"type": "snapshot"},
+  {"type": "move_to", "coords":  [409, 296]},
+  {"type":  "click_and_hold"},
+  {"type": "move_to", "coords":  [350, 296]},
+  {"type":  "release"},
+  {"type": "snapshot"}
+]

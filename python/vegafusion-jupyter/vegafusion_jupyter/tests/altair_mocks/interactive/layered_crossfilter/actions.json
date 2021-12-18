@@ -1,0 +1,18 @@
+[
+  {"type": "snapshot"},
+  {"type": "move_to", "coords": [100, 70]},
+  {"type": "click_and_hold"},
+  {"type": "move_by", "coords": [50, 0]},
+  {"type": "release"},
+  {"type": "snapshot"},
+  {"type": "move_to", "coords": [270, 70]},
+  {"type": "click_and_hold"},
+  {"type": "move_by", "coords": [60, 0]},
+  {"type": "release"},
+  {"type": "snapshot"},
+  {"type": "move_to", "coords": [550, 70]},
+  {"type": "click_and_hold"},
+  {"type": "move_by", "coords": [-40, 0]},
+  {"type": "release"},
+  {"type": "snapshot"}
+]
