@@ -33,6 +33,7 @@ use vegafusion_core::proto::gen::tasks::scan_url_format;
 use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask};
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
+use crate::expression::compiler::builtin_functions::datetime::date_parsing::{DateParseMode, get_datetime_udf};
 
 fn build_compilation_config(
     input_vars: &[InputVariable],
@@ -79,11 +80,16 @@ impl TaskCall for DataUrlTask {
         };
 
         // Load data from URL
+        let mut date_mode = DateParseMode::Local;
         let mut df = if url.ends_with(".csv") || url.ends_with(".tsv") {
             read_csv(url).await?
         } else if url.ends_with(".json") {
+            // Vega uses the JavaScript Date.parse logic when parsing dates in json files.
+            // Other formats (like CSV) use local date parsing.
+            date_mode = DateParseMode::JavaScript;
             read_json(&url, self.batch_size as usize).await?
         } else if url.ends_with(".arrow") {
+            date_mode = DateParseMode::JavaScript;
             read_arrow(&url).await?
         } else {
             return Err(VegaFusionError::internal(&format!(
@@ -103,8 +109,9 @@ impl TaskCall for DataUrlTask {
                             if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
                                 let dtype = date_field.data_type();
                                 let date_expr = if is_string_datatype(dtype) {
+                                    let datetime_udf = get_datetime_udf(date_mode);
                                     let date_expr = Expr::ScalarUDF {
-                                        fun: Arc::new(DATETIME_TO_MILLIS_LOCAL.clone()),
+                                        fun: Arc::new(datetime_udf),
                                         args: vec![col(&spec.name)],
                                     };
 

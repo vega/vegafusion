@@ -80,6 +80,7 @@ assert(alt.data_transformers.active == 'default')
         "area/normalized_stacked",
         "area/density_stack",
         "area/trellis",
+        "area/trellis_sort_array",
         "bar/with_highlighted_bar",
         "bar/with_labels",
         "bar/with_line_at_mean",
@@ -101,6 +102,7 @@ assert(alt.data_transformers.active == 'default')
         "bar/stacked_with_text_overlay",
         "bar/trellis_stacked",
         "bar/trellis_stacked",
+        "bar/with_negative_values",
         "casestudy/co2_concentration",
         "casestudy/gapminder_bubble_plot",
         "casestudy/iowa_electricity",
@@ -125,6 +127,8 @@ assert(alt.data_transformers.active == 'default')
         "interactive/multiline_tooltip",
         "interactive/scatter_linked_brush",
         "interactive/casestudy-us_population_pyramid_over_time",
+        "interactive/multiline_highlight",
+        "interactive/scatter-with_minimap",
         "line/bump_chart",
         "line/filled_step_chart",
         "line/with_cumsum",
@@ -135,6 +139,9 @@ assert(alt.data_transformers.active == 'default')
         "line/slope_graph",
         "line/slope_graph2",
         "line/step_chart",
+        "line/layer_line_color_rule",
+        "line/multi_series",
+        "line/with_ci",
         "other/bar_chart_with_highlighted_segment",
         "other/beckers_barley_wrapped_facet",
         "other/boxplot",
@@ -147,6 +154,8 @@ assert(alt.data_transformers.active == 'default')
         "other/ridgeline_plot",
         "other/stem_and_leaf",
         "other/layered_heatmap_text",
+        "other/candlestick_chart",
+        "other/multiple_marks",
         "scatter/binned",
         "scatter/bubble_plot",
         "scatter/connected",
@@ -176,18 +185,6 @@ assert(alt.data_transformers.active == 'default')
         # # arrow transformer case doesn't include the "T" in the formatted dates on x-axis
         # "bar/layered",
         #
-        # # Timezone axis ticks issue
-        # "line/with_ci",
-        #
-        # # One missing x-tick date label on far left
-        # "line/layer_line_color_rule"
-        # "other/multiple_marks",
-        # "interactive/multiline_highlight",
-        # "interactive/scatter-with_minimap",
-        # "area/trellis_sort_array",
-        # "line/layer_line_color_rule",
-        # "line/multi_series",
-        #
         # # arrow transform example adds x-axis grid lines and ticks
         # "line/trail_marker",
         #
@@ -209,9 +206,6 @@ assert(alt.data_transformers.active == 'default')
         #
         # # Table is too long and has a bunch of undefined values in it
         # "interactive/scatter-with_linked_table",
-        #
-        # # Date axis ticks don't match
-        # "scatter/with_rolling_mean",
         #
         # # Need support for random() expression function
         # "scatter/stripplot",
@@ -252,10 +246,6 @@ assert(alt.data_transformers.active == 'default')
         # # Missing cell value in top right bin
         # "other/binned_heatmap",
         #
-        # # Tiny shift in x-axis ticks. Probably timezone issue
-        # "other/candlestick_chart",
-        # "bar/with_negative_values",  # (the 2007 tick shifts by a pixel)
-        #
         # # Lines messed up
         # "other/normed_parallel_coordinates",
         #
@@ -271,6 +261,7 @@ assert(alt.data_transformers.active == 'default')
         # # z-order of marks is inconsistent
         # "interactive/scatter_with_layered_histogram",
         # "interactive/casestudy-seattle_weather_interactive",
+        # "scatter/with_rolling_mean", # order of points for Window
         #
         # # Slider doesn't filter
         # "interactive/casestudy-us_population_over_time",
@@ -373,8 +364,6 @@ def export_image_sequence(
         script = 'document.styleSheets[0].insertRule("' + css + '", 0 )'
         chrome_driver.execute_script(script)
 
-        time.sleep(1)
-
         # Get canvas element (the canvas that Vega renders to)
         canvas = chrome_driver.find_element_by_xpath("//canvas")
 
@@ -384,7 +373,7 @@ def export_image_sequence(
             action_type = action["type"]
             if action_type in ("snapshot", "screenshot"):
                 chain.perform()
-                time.sleep(2)
+                time.sleep(0.5)
 
                 img_path = (temp_screenshots_dir / (temp_file_path.name + f"_{i}.png")).as_posix();
                 if action_type == "snapshot":

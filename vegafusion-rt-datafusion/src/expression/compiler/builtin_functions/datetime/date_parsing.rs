@@ -9,13 +9,29 @@ use regex::Regex;
 use std::sync::Arc;
 
 lazy_static! {
-    pub static ref DATETIME_TO_MILLIS_LOCAL: ScalarUDF = make_datetime_to_millis_udf(false);
-    pub static ref DATETIME_TO_MILLIS_UTC: ScalarUDF = make_datetime_to_millis_udf(true);
+    pub static ref DATETIME_TO_MILLIS_LOCAL: ScalarUDF = make_datetime_to_millis_udf(DateParseMode::Local);
+    pub static ref DATETIME_TO_MILLIS_UTC: ScalarUDF = make_datetime_to_millis_udf(DateParseMode::Utc);
+    pub static ref DATETIME_TO_MILLIS_JAVASCRIPT: ScalarUDF = make_datetime_to_millis_udf(DateParseMode::JavaScript);
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum DateParseMode {
+    Local,
+    Utc,
+    JavaScript,
+}
+
+pub fn get_datetime_udf(mode: DateParseMode) -> ScalarUDF {
+    match mode {
+        DateParseMode::Local => DATETIME_TO_MILLIS_LOCAL.clone(),
+        DateParseMode::Utc => DATETIME_TO_MILLIS_UTC.clone(),
+        DateParseMode::JavaScript => DATETIME_TO_MILLIS_JAVASCRIPT.clone(),
+    }
 }
 
 /// Parse a more generous specification of the iso 8601 date standard
 /// Allow omission of time components
-pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>> {
+pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<FixedOffset>> {
     let mut date_tokens = vec![String::from(""), String::from(""), String::from("")];
     let mut time_tokens = vec![
         String::from(""),
@@ -122,20 +138,19 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
     };
 
     let offset = if timezone_tokens[0].is_empty() {
-        if utc || !has_time {
-            // UTC as a fixed offset
-            // Note, utc==false follows the default logic of JavaScript's Date.parse, where a
-            // date string with no time component is treated as midnight in UTC
-            FixedOffset::east(0)
-        } else {
-            // Treat date as in local timezone
-            let local = Local {};
-            // No timezone specified, build NaiveDateTime
-            let naive_date = NaiveDate::from_ymd(year, month, day);
-            let naive_time = NaiveTime::from_hms_milli(hour, minute, second, milliseconds);
-            let naive_date = NaiveDateTime::new(naive_date, naive_time);
+        match mode {
+            DateParseMode::Utc => FixedOffset::east(0),
+            DateParseMode::JavaScript if !has_time => FixedOffset::east(0),
+            _ => {
+                // Treat date as in local timezone
+                let local = Local {};
+                // No timezone specified, build NaiveDateTime
+                let naive_date = NaiveDate::from_ymd(year, month, day);
+                let naive_time = NaiveTime::from_hms_milli(hour, minute, second, milliseconds);
+                let naive_date = NaiveDateTime::new(naive_date, naive_time);
 
-            local.offset_from_local_datetime(&naive_date).single()?
+                local.offset_from_local_datetime(&naive_date).single()?
+            }
         }
     } else {
         let timezone_hours: i32 = timezone_tokens[0].parse().unwrap_or(0);
@@ -194,9 +209,9 @@ fn parse_month_str(month_str: &str) -> Option<u32> {
     }
 }
 
-pub fn parse_datetime_to_utc_millis(date_str: &str, utc: bool) -> Option<i64> {
+pub fn parse_datetime_to_utc_millis(date_str: &str, mode: DateParseMode) -> Option<i64> {
     // Parse to datetime
-    let parsed = parse_datetime(date_str, utc)?;
+    let parsed = parse_datetime(date_str, mode)?;
 
     // Convert to UTC
     let parsed_utc = parsed.with_timezone(&Utc);
@@ -205,7 +220,7 @@ pub fn parse_datetime_to_utc_millis(date_str: &str, utc: bool) -> Option<i64> {
     Some(parsed_utc.timestamp_millis())
 }
 
-pub fn make_datetime_to_millis_udf(utc: bool) -> ScalarUDF {
+pub fn make_datetime_to_millis_udf(mode: DateParseMode) -> ScalarUDF {
     let to_millis_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single string argument
         let arg = &args[0];
@@ -216,7 +231,7 @@ pub fn make_datetime_to_millis_udf(utc: bool) -> ScalarUDF {
             date_strs
                 .iter()
                 .map(|date_str| -> Option<i64> {
-                    date_str.and_then(|date_str| parse_datetime_to_utc_millis(date_str, utc))
+                    date_str.and_then(|date_str| parse_datetime_to_utc_millis(date_str, mode))
                 })
                 .collect::<Vec<Option<i64>>>(),
         );
@@ -238,27 +253,27 @@ pub fn make_datetime_to_millis_udf(utc: bool) -> ScalarUDF {
 
 #[test]
 fn test_parse_datetime() {
-    let res = parse_datetime("2020-05-16T09:30:00+05:00", true).unwrap();
+    let res = parse_datetime("2020-05-16T09:30:00+05:00", DateParseMode::Utc).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);
 
-    let res = parse_datetime("2020-05-16T09:30:00", true).unwrap();
+    let res = parse_datetime("2020-05-16T09:30:00", DateParseMode::Utc).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);
 
-    let res = parse_datetime("2020-05-16T09:30:00", false).unwrap();
+    let res = parse_datetime("2020-05-16T09:30:00", DateParseMode::Local).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);
 
-    let res = parse_datetime("2001/02/05 06:20", false).unwrap();
+    let res = parse_datetime("2001/02/05 06:20", DateParseMode::Local).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);
 
-    let res = parse_datetime("2001/02/05 06:20", true).unwrap();
+    let res = parse_datetime("2001/02/05 06:20", DateParseMode::Utc).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);
