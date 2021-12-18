@@ -29,6 +29,7 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
     let mut time_ind = 0;
     let mut timezone_ind = 0;
     let mut stage = 0;
+    let mut has_time = false;
 
     // tokenize date string
     for c in date_str.trim().chars() {
@@ -51,6 +52,7 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
                 if c.is_whitespace() {
                     continue;
                 } else if c.is_digit(10) {
+                    has_time = true;
                     time_tokens[time_ind].push(c)
                 } else if time_ind < 2 && c == ':' {
                     time_ind += 1;
@@ -120,8 +122,10 @@ pub fn parse_datetime(date_str: &str, utc: bool) -> Option<DateTime<FixedOffset>
     };
 
     let offset = if timezone_tokens[0].is_empty() {
-        if utc {
+        if utc || !has_time {
             // UTC as a fixed offset
+            // Note, utc==false follows the default logic of JavaScript's Date.parse, where a
+            // date string with no time component is treated as midnight in UTC
             FixedOffset::east(0)
         } else {
             // Treat date as in local timezone
