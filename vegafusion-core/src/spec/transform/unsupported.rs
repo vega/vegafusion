@@ -44,7 +44,6 @@ unsupported_transforms!(
     LabelTransformSpec,
     LinkpathTransformSpec,
     LoessTransformSpec,
-    LookupTransformSpec,
     NestTransformSpec,
     PackTransformSpec,
     PartitionTransformSpec,
