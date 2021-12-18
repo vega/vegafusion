@@ -81,6 +81,7 @@ assert(alt.data_transformers.active == 'default')
         "area/density_stack",
         "area/trellis",
         "area/trellis_sort_array",
+        "area/streamgraph",
         "bar/with_highlighted_bar",
         "bar/with_labels",
         "bar/with_line_at_mean",
@@ -131,6 +132,8 @@ assert(alt.data_transformers.active == 'default')
         "interactive/casestudy-us_population_pyramid_over_time",
         "interactive/multiline_highlight",
         "interactive/scatter-with_minimap",
+        "interactive/select_mark_area",
+        "interactive/legend",
         "line/bump_chart",
         "line/filled_step_chart",
         "line/with_cumsum",
@@ -206,11 +209,6 @@ assert(alt.data_transformers.active == 'default')
         # "other/hexbins",
         # "other/parallel_coordinates",
         # "interactive/selection_histogram",
-        #
-        # # Area mark does not show up with either transformer
-        # "area/streamgraph",
-        # "interactive/legend",
-        # "interactive/select_mark_area",
         #
         # # Table is too long and has a bunch of undefined values in it
         # "interactive/scatter-with_linked_table",
@@ -359,7 +357,7 @@ def export_image_sequence(
 
         # Open url with selenium
         chrome_driver.get(url)
-        time.sleep(3)
+        time.sleep(4)
 
         # Remove padding, margins, and standardize line height.
         css = ("body, .jp-Cell, .jp-Notebook, .jupyter-widgets, .jp-RenderedHTMLCommon "
