@@ -10,6 +10,7 @@ line = alt.Chart(source).mark_line(
     size=3
 ).transform_window(
     rolling_mean='mean(temp_max)',
+    # sort=[{"field": "date"}],  # Shouldn't need this
     frame=[-15, 15]
 ).encode(
     x='date:T',

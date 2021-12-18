@@ -11,6 +11,7 @@ import os
 import pathlib
 from tempfile import NamedTemporaryFile
 from hashlib import sha1
+import datetime
 
 from .runtime import runtime
 
@@ -88,6 +89,9 @@ def arrow_transformer(data, data_dir="_vegafusion_data"):
                 dt_cols.append(col)
 
         if dt_cols:
+            # Apply a timezone following the convention of JavaScript's Date.parse. Here a date without time info
+            # is interpreted as UTC midnight. But a date with time into is treated as local time when it doesn't
+            # have an explicit timezone
             offset_seconds = abs(time.timezone)
             offset_hours = offset_seconds // 3600
             offset_minutes = (offset_seconds - offset_hours * 3600) // 60
@@ -96,7 +100,12 @@ def arrow_transformer(data, data_dir="_vegafusion_data"):
 
             mapping = dict()
             for col in dt_cols:
-                mapping[col] = data[col].dt.tz_localize(local_timezone)
+                if (data[col].dt.time == datetime.time(0, 0)).all():
+                    # Assume no time info was provided
+                    mapping[col] = data[col].dt.tz_localize("+00:00")
+                else:
+                    # Assume time info was provided
+                    mapping[col] = data[col].dt.tz_localize(local_timezone)
 
             data = data.assign(**mapping)
 
