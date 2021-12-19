@@ -138,7 +138,7 @@ assert(alt.data_transformers.active == 'default')
         "interactive/scatter-with_minimap",
         "interactive/select_mark_area",
         "interactive/legend",
-        "interactive/cross_highlight"
+        "interactive/cross_highlight",
         "line/bump_chart",
         "line/filled_step_chart",
         "line/with_cumsum",
@@ -203,7 +203,7 @@ assert(alt.data_transformers.active == 'default')
         # "bar/with_error_bars",
         # "casestudy/beckers_barley_trellis_plot",
         #
-        # Selection zeros out histogram
+        # # Selection zeros out histogram
         # "interactive/selection_histogram",
         #
         # # Table is too long and has a bunch of undefined values in it
@@ -262,7 +262,6 @@ assert(alt.data_transformers.active == 'default')
         # "casestudy/london_tube",  # indexof and substring not supported
         # "casestudy/one_dot_per_zipcode",  # substring
         # "other/ranged_dot_plot",  # indexof
-
     ])
 def test_altair_mock(mock_name):
 
