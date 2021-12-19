@@ -43,7 +43,7 @@ impl DataSpec {
     }
 
     pub fn supported(&self) -> DataSupported {
-        if let Some(format_type) = self.format.as_ref().map(|fmt| fmt.type_.clone()) {
+        if let Some(Some(format_type)) = self.format.as_ref().map(|fmt| fmt.type_.clone()) {
             if !matches!(format_type.as_str(), "csv" | "tsv" | "arrow" | "json") {
                 // We don't know how to read the data, so full node is unsupported
                 return DataSupported::Unsupported
@@ -74,7 +74,7 @@ pub enum DataSupported {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DataFormatSpec {
     #[serde(rename = "type")]
-    pub type_: String,
+    pub type_: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parse: Option<DataFormatParseSpec>,

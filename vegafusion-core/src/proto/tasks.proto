@@ -47,7 +47,7 @@ message ScanUrlFormat {
    * csv (comma-separated values), tsv (tab-separated values), dsv (delimited text files),
    * and topojson.
    */
-  string type = 1;
+  optional string type = 1;
 
   /*
    * JSON encoded string:
