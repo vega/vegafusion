@@ -104,6 +104,7 @@ assert(alt.data_transformers.active == 'default')
         "bar/trellis_stacked",
         "bar/trellis_stacked",
         "bar/with_negative_values",
+        "bar/layered",
         "casestudy/co2_concentration",
         "casestudy/gapminder_bubble_plot",
         "casestudy/iowa_electricity",
@@ -147,6 +148,7 @@ assert(alt.data_transformers.active == 'default')
         "line/layer_line_color_rule",
         "line/multi_series",
         "line/with_ci",
+        "line/trail_marker",
         "maps/choropleth",
         "maps/choropleth_repeat",
         "maps/us_incomebrackets_by_state_facet",
@@ -193,12 +195,6 @@ assert(alt.data_transformers.active == 'default')
         # # Need to support facet data as source
         # "bar/with_error_bars",
         #
-        # # arrow transformer case doesn't include the "T" in the formatted dates on x-axis
-        # "bar/layered",
-        #
-        # # arrow transform example adds x-axis grid lines and ticks
-        # "line/trail_marker",
-        #
         # # Crashes
         # "line/with_datum",
         # "line/with_color_datum",
@@ -222,9 +218,6 @@ assert(alt.data_transformers.active == 'default')
         #
         # # Need support for bin `extent` as signal expression
         # "interactive/histogram-responsive",
-        #
-        # # No display
-        # "other/ranged_dot_plot",
         #
         # # Missing axis/tick labels
         # "casestudy/anscombe_plot"
@@ -270,6 +263,7 @@ assert(alt.data_transformers.active == 'default')
         # # Unsupported Expression functions
         # "casestudy/london_tube",  # indexof and substring not supported
         # "casestudy/one_dot_per_zipcode",  # substring
+        # "other/ranged_dot_plot",  # indexof
 
     ])
 def test_altair_mock(mock_name):
