@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Local, LocalResult, TimeZone, Timelike, Utc};
+use chrono::{DateTime, Datelike, Local, LocalResult, TimeZone, Timelike, Utc, Weekday};
 use datafusion::arrow::array::{
     Array, ArrayRef, Date32Array, Date64Array, Int32Array, Int64Array, TimestampMillisecondArray,
 };
@@ -33,7 +33,12 @@ pub fn extract_date<T: TimeZone>(dt: &DateTime<T>) -> i64 {
 
 #[inline(always)]
 pub fn extract_day<T: TimeZone>(dt: &DateTime<T>) -> i64 {
-    dt.weekday() as i64 + 1
+    let weekday = dt.weekday();
+    if matches!(weekday, Weekday::Sun) {
+        0
+    } else {
+        weekday as i64 + 1
+    }
 }
 
 #[inline(always)]
