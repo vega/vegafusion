@@ -114,10 +114,13 @@ assert(alt.data_transformers.active == 'default')
         "casestudy/window_rank",
         "casestudy/airports",
         "casestudy/us_state_capitals",
+        "casestudy/falkensee",
+        "casestudy/us_employment",
         "circular/donut",
         "circular/pie",
         "circular/pie_with_labels",
         "circular/radial",
+        "circular/pacman",
         "histogram/with_a_global_mean_overlay",
         "histogram/layered",
         "histogram/trellis",
@@ -150,6 +153,8 @@ assert(alt.data_transformers.active == 'default')
         "line/multi_series",
         "line/with_ci",
         "line/trail_marker",
+        "line/with_datum",
+        "line/with_color_datum",
         "maps/choropleth",
         "maps/choropleth_repeat",
         "maps/us_incomebrackets_by_state_facet",
@@ -170,6 +175,7 @@ assert(alt.data_transformers.active == 'default')
         "other/layered_heatmap_text",
         "other/candlestick_chart",
         "other/multiple_marks",
+        "other/hexbins",
         "scatter/binned",
         "scatter/bubble_plot",
         "scatter/connected",
@@ -195,16 +201,9 @@ assert(alt.data_transformers.active == 'default')
         # # -----------------
         # # Need to support facet data as source
         # "bar/with_error_bars",
-        #
-        # # Crashes
-        # "line/with_datum",
-        # "line/with_color_datum",
-        # "circular/pacman",
         # "casestudy/beckers_barley_trellis_plot",
-        # "casestudy/falkensee",
-        # "casestudy/us_employment",
-        # "other/hexbins",
-        # "other/parallel_coordinates",
+        #
+        # Selection zeros out histogram
         # "interactive/selection_histogram",
         #
         # # Table is too long and has a bunch of undefined values in it
@@ -237,6 +236,7 @@ assert(alt.data_transformers.active == 'default')
         #
         # # Lines messed up
         # "other/normed_parallel_coordinates",
+        # "other/parallel_coordinates",
         #
         # # US and Europe Violins missing
         # "other/violin_plot",
@@ -314,8 +314,8 @@ def test_altair_mock(mock_name):
             print(f"({i}) {similarity_arrow_value=}")
             print(f"({i}) {similarity_default_value=}")
 
-            assert similarity_arrow_value > 0.998, f"Similarity failed with Arrow data transformer on image {i}"
-            assert similarity_default_value > 0.998, f"Similarity failed with default data transformer on image {i}"
+            assert similarity_arrow_value > 0.995, f"Similarity failed with Arrow data transformer on image {i}"
+            assert similarity_default_value > 0.995, f"Similarity failed with default data transformer on image {i}"
 
     finally:
         voila_proc.kill()
