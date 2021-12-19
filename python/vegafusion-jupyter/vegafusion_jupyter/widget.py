@@ -110,7 +110,19 @@ def arrow_transformer(data, data_dir="_vegafusion_data"):
             data = data.assign(**mapping)
 
         # Serialize DataFrame to bytes in the arrow file format
-        table = pa.Table.from_pandas(data)
+        try:
+            table = pa.Table.from_pandas(data)
+        except pa.ArrowTypeError as e:
+            # Try converting object columns to strings to handle cases where a
+            # column has a mix of numbers and strings
+            mapping = dict()
+            for col, dtype in data.dtypes.items():
+                if dtype.kind == "O":
+                    mapping[col] = data[col].astype(str)
+            data = data.assign(**mapping)
+            # Try again, allowing exception to propagate
+            table = pa.Table.from_pandas(data)
+
         bytes_buffer = io.BytesIO()
 
         with pa.ipc.new_file(bytes_buffer, table.schema) as f:
