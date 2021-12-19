@@ -135,6 +135,7 @@ assert(alt.data_transformers.active == 'default')
         "interactive/scatter-with_minimap",
         "interactive/select_mark_area",
         "interactive/legend",
+        "interactive/cross_highlight"
         "line/bump_chart",
         "line/filled_step_chart",
         "line/with_cumsum",
@@ -242,9 +243,6 @@ assert(alt.data_transformers.active == 'default')
         #
         # # No y-axis scaling
         # "other/wilkinson_dot_plot",
-        #
-        # # "undefined" instead of "null" in labels
-        # "interactive/cross_highlight"
         #
         # # z-order of marks is inconsistent
         # "interactive/scatter_with_layered_histogram",
