@@ -44,8 +44,8 @@ pub struct ScanUrlFormat {
     /// The data format type. The currently supported data formats are json (the default),
     /// csv (comma-separated values), tsv (tab-separated values), dsv (delimited text files),
     /// and topojson.
-    #[prost(string, tag="1")]
-    pub r#type: ::prost::alloc::string::String,
+    #[prost(string, optional, tag="1")]
+    pub r#type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag="4")]
     pub property: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, repeated, tag="5")]

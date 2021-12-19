@@ -50,6 +50,11 @@ impl DataSpec {
             }
         }
 
+        // Inline values array not supported (they should be kept on the server)
+        if self.values.is_some() {
+            return DataSupported::Unsupported
+        }
+
         let all_supported = self.transform.iter().all(|tx| tx.supported());
         if all_supported {
             DataSupported::Supported

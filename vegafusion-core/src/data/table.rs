@@ -5,6 +5,7 @@ use crate::arrow::{
 };
 use crate::error::{Result, ResultWithContext, VegaFusionError};
 use std::collections::HashSet;
+use std::convert::TryFrom;
 use std::sync::Arc;
 
 use crate::arrow::ipc::reader::StreamReader;
@@ -18,6 +19,7 @@ use crate::arrow::array::ArrayRef;
 use arrow::array::{Date32Array, Int64Array, StructArray};
 use arrow::compute::{cast, unary};
 use arrow::datatypes::TimeUnit;
+use crate::data::scalar::ScalarValueHelpers;
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
@@ -164,35 +166,38 @@ impl VegaFusionTable {
 
     pub fn from_json(value: &serde_json::Value, batch_size: usize) -> Result<Self> {
         if let serde_json::Value::Array(values) = value {
-            if values.is_empty() {
-                // Create empty record batch
-                let schema = Arc::new(Schema::new(vec![Field::new(
-                    "__dummy",
-                    DataType::Float64,
-                    true,
-                )]));
-                Self::try_new(schema.clone(), vec![RecordBatch::new_empty(schema)])
-            } else {
-                // Infer schema
-                let schema = json::reader::infer_json_schema_from_iterator(
-                    values.iter().take(1024).map(|v| Ok(v.clone())),
-                )
-                .with_context(|| "Failed to infer schema")?;
-                let schema_ref = Arc::new(schema);
+            let schema_result = json::reader::infer_json_schema_from_iterator(
+                values.iter().take(1024).map(|v| Ok(v.clone())),
+            );
 
-                // read record batches
-                let decoder = json::reader::Decoder::new(schema_ref.clone(), batch_size, None);
-                let mut batches: Vec<RecordBatch> = Vec::new();
-                let mut value_iter = values.iter().map(|v| Ok(v.clone()));
-
-                while let Some(batch) = decoder
-                    .next_batch(&mut value_iter)
-                    .with_context(|| "Failed to read json to arrow")?
-                {
-                    batches.push(batch);
+            match schema_result {
+                Err(_) => {
+                    // This happens when array elements are objects with no fields
+                    let empty_scalar = ScalarValue::from(
+                        vec![("__dummy", ScalarValue::try_from(&DataType::Float64).unwrap())]
+                    );
+                    let array = empty_scalar.to_array_of_size(values.len());
+                    let struct_array = array.as_any().downcast_ref::<StructArray>().unwrap();
+                    let record_batch = RecordBatch::from(struct_array);
+                    Self::try_new(record_batch.schema(), vec![record_batch])
                 }
+                Ok(schema) => {
+                    let schema_ref = Arc::new(schema);
 
-                Self::try_new(schema_ref, batches)
+                    // read record batches
+                    let decoder = json::reader::Decoder::new(schema_ref.clone(), batch_size, None);
+                    let mut batches: Vec<RecordBatch> = Vec::new();
+                    let mut value_iter = values.iter().map(|v| Ok(v.clone()));
+
+                    while let Some(batch) = decoder
+                        .next_batch(&mut value_iter)
+                        .with_context(|| "Failed to read json to arrow")?
+                    {
+                        batches.push(batch);
+                    }
+
+                    Self::try_new(schema_ref, batches)
+                }
             }
         } else {
             return Err(VegaFusionError::internal(&format!(
