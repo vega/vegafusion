@@ -46,6 +46,7 @@ impl TransformTrait for Bin {
             n,
         } = params;
         let bin_starts: Vec<f64> = (0..n).map(|i| start + step * i as f64).collect();
+        let last_stop = *bin_starts.last().unwrap() + step;
 
         // Compute output signal value
         let mut fname = self.field.clone();
@@ -80,14 +81,7 @@ impl TransformTrait for Bin {
                 DataType::Float64 => {
                     let field_values = args[0].as_any().downcast_ref::<Float64Array>().unwrap();
                     let binned_values: Float64Array = unary(field_values, |v| {
-                        let bin_ind = (1.0e-14 + (v - start) / step).floor() as i32;
-                        if bin_ind < 0 {
-                            f64::NEG_INFINITY
-                        } else if bin_ind >= n {
-                            f64::INFINITY
-                        } else {
-                            bin_starts[bin_ind as usize]
-                        }
+                        lookup_bin_edge(v, bin_starts.as_slice(), step, last_stop)
                     });
                     binned_values
                 }
@@ -95,18 +89,7 @@ impl TransformTrait for Bin {
                     let field_values = args[0].as_any().downcast_ref::<Int64Array>().unwrap();
                     let binned_values: Float64Array = unary(field_values, |v| {
                         let v = v as f64;
-                        let bin_val = (v - start) / step;
-                        let bin_ind = (1.0e-14 + bin_val).floor() as i32;
-                        if approx_eq!(f64, bin_val, n as f64, ulps = 1) {
-                            // Close the right-hand edge of the top bin
-                            bin_starts[(n - 1) as usize]
-                        } else if bin_ind < 0 {
-                            f64::NEG_INFINITY
-                        } else if bin_ind >= n {
-                            f64::INFINITY
-                        } else {
-                            bin_starts[bin_ind as usize]
-                        }
+                        lookup_bin_edge(v, bin_starts.as_slice(), step, last_stop)
                     });
                     binned_values
                 }
@@ -156,6 +139,21 @@ impl TransformTrait for Bin {
             .with_context(|| "Failed to evaluate binning transform".to_string())?;
 
         Ok((dataframe.clone(), output_value.into_iter().collect()))
+    }
+}
+
+#[inline(always)]
+fn lookup_bin_edge(v: f64, bin_starts: &[f64], step: f64, last_stop: f64) -> f64 {
+    let n = bin_starts.len() as i32;
+    let bin_ind = (1.0e-14 + (v - bin_starts[0]) / step).floor() as i32;
+    if bin_ind < 0 {
+        f64::NEG_INFINITY
+    } else if bin_ind == n && (v - last_stop).abs() <= 1.0e-14 {
+        *bin_starts.last().unwrap()
+    } else if bin_ind >= n {
+        f64::INFINITY
+    } else {
+        bin_starts[bin_ind as usize]
     }
 }
 
