@@ -116,6 +116,8 @@ assert(alt.data_transformers.active == 'default')
         "casestudy/us_state_capitals",
         "casestudy/falkensee",
         "casestudy/us_employment",
+        "casestudy/top_k_items",
+        "casestudy/top_k_letters",
         "circular/donut",
         "circular/pie",
         "circular/pie_with_labels",
@@ -140,6 +142,9 @@ assert(alt.data_transformers.active == 'default')
         "interactive/legend",
         "interactive/cross_highlight",
         "interactive/selection_histogram",
+        "interactive/scatter-with_linked_table",
+        "interactive/scatter_with_layered_histogram",
+        "interactive/casestudy-seattle_weather_interactive",
         "line/bump_chart",
         "line/filled_step_chart",
         "line/with_cumsum",
@@ -191,6 +196,7 @@ assert(alt.data_transformers.active == 'default')
         "scatter/table_bubble_plot_github",
         "scatter/trellis",
         "scatter/wind_vector_map",
+        "scatter/with_rolling_mean",
         "simple/stacked_bar_chart",
         "simple/bar_chart",
         "simple/heatmap",
@@ -203,9 +209,6 @@ assert(alt.data_transformers.active == 'default')
         # # Need to support facet data as source
         # "bar/with_error_bars",
         # "casestudy/beckers_barley_trellis_plot",
-        #
-        # # Table is too long and has a bunch of undefined values in it
-        # "interactive/scatter-with_linked_table",
         #
         # # Need support for random() expression function, or support for not planning it on the server.
         # "scatter/stripplot",
@@ -225,10 +228,6 @@ assert(alt.data_transformers.active == 'default')
         # "casestudy/isotype",
         # "casestudy/isotype_emoji",
         #
-        # # Different ordering of rank for with equal valued entries. Not wrong
-        # "casestudy/top_k_items",
-        # "casestudy/top_k_letters",
-        #
         # # Missing cell value in top right bin
         # "other/binned_heatmap",
         #
@@ -241,11 +240,6 @@ assert(alt.data_transformers.active == 'default')
         #
         # # No y-axis scaling
         # "other/wilkinson_dot_plot",
-        #
-        # # z-order of marks is inconsistent
-        # "interactive/scatter_with_layered_histogram",
-        # "interactive/casestudy-seattle_weather_interactive",
-        # "scatter/with_rolling_mean", # order of points for Window
         #
         # # Slider doesn't filter
         # "interactive/casestudy-us_population_over_time",
