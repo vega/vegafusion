@@ -15,7 +15,10 @@ alt.Chart(
 
 ).transform_window(
     rank='rank(IMDB_Rating)',
-    sort=[alt.SortField('IMDB_Rating', order='descending')]
+    sort=[
+        alt.SortField('IMDB_Rating', order='descending'),
+        alt.SortField('Title', order='ascending'),
+    ]
 ).transform_filter(
     (alt.datum.rank < 10)
 )
