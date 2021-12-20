@@ -1,4 +1,4 @@
-use crate::expression::compiler::utils::{cast_to, is_float_datatype, is_integer_datatype};
+use crate::expression::compiler::utils::{cast_to, ExprHelpers, is_float_datatype, is_integer_datatype};
 use datafusion::logical_plan::{ceil, DFSchema};
 use datafusion::logical_plan::{lit, Expr};
 use datafusion::prelude::col;
@@ -13,6 +13,7 @@ use vegafusion_core::proto::gen::{
 
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::expression::literal::Value;
+use crate::data::table::VegaFusionTableUtils;
 
 /// Op
 #[derive(Debug, Clone)]
@@ -132,7 +133,30 @@ impl FieldSpec {
 
                 let (low, high) = match &values {
                     ScalarValue::List(Some(elements), _) if elements.len() == 2 => {
-                        (lit(elements[0].clone()), lit(elements[1].clone()))
+                        // Don't assume elements are in ascending order
+                        let first = lit(elements[0].clone());
+                        let second = lit(elements[1].clone());
+
+                        // Compute min and max values with Case expression
+                        let low = Expr::Case {
+                            expr: None,
+                            when_then_expr: vec![(
+                                Box::new(first.clone().lt_eq(second.clone())),
+                                Box::new(first.clone())
+                            )],
+                            else_expr: Some(Box::new(second.clone()))
+                        }.eval_to_scalar()?;
+
+                        let high = Expr::Case {
+                            expr: None,
+                            when_then_expr: vec![(
+                                Box::new(first.clone().lt_eq(second.clone())),
+                                Box::new(second)
+                            )],
+                            else_expr: Some(Box::new(first.clone()))
+                        }.eval_to_scalar()?;
+
+                        (lit(low), lit(high))
                     }
                     v => {
                         return Err(VegaFusionError::internal(&format!(
