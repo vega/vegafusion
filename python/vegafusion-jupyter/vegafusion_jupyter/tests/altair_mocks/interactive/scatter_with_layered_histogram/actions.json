@@ -1,11 +1,9 @@
 [
   {"type": "snapshot"},
-  {"type": "move_to", "coords": [237, 72]},
-  {"type": "click"},
-  {"type": "snapshot"},
   {"type": "move_to", "coords": [222, 101]},
   {"type": "click"},
   {"type": "snapshot"},
-  {"type": "double_click"},
+  {"type": "move_to", "coords": [237, 72]},
+  {"type": "click"},
   {"type": "snapshot"}
 ]
