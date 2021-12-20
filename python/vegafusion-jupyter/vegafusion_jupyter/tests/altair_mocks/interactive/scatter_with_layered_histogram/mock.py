@@ -1,5 +1,5 @@
 # https://altair-viz.github.io/gallery/scatter_with_layered_histogram.html
-# With smaller subplots and random seed
+# With smaller subplots, random seed, and sorting of dataframe for tie-breaker consistency
 #
 
 import altair as alt
@@ -17,6 +17,8 @@ source = pd.DataFrame({'gender': ['M']*1000 + ['F']*1000,
                        'age': np.concatenate((np.random.normal(45, 8, 1000),
                                               np.random.normal(51, 6, 1000)))
                        })
+
+source = source.sort_values("gender", ascending=True)
 
 selector = alt.selection_single(empty='all', fields=['gender'])
 
