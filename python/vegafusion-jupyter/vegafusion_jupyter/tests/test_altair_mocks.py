@@ -144,6 +144,7 @@ assert(alt.data_transformers.active == 'default')
         "interactive/scatter-with_linked_table",
         "interactive/scatter_with_layered_histogram",
         "interactive/casestudy-seattle_weather_interactive",
+        "interactive/casestudy-us_population_over_time",
         "line/bump_chart",
         "line/filled_step_chart",
         "line/with_cumsum",
@@ -239,9 +240,6 @@ assert(alt.data_transformers.active == 'default')
         #
         # # No y-axis scaling
         # "other/wilkinson_dot_plot",
-        #
-        # # Slider doesn't filter
-        # "interactive/casestudy-us_population_over_time",
         #
         # # Tooltips not supported
         # "interactive/scatter-href",
