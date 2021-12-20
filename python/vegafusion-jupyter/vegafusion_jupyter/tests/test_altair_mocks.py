@@ -74,7 +74,6 @@ assert(alt.data_transformers.active == 'default')
         "area/cumulative_count",
         "area/density_facet",
         "area/gradient",
-        "area/cumulative_count",
         "area/horizon_graph",
         "area/layered",
         "area/normalized_stacked",
