@@ -1,4 +1,5 @@
 # https://altair-viz.github.io/gallery/top_k_letters.html
+# Added sort of initial data frame for consistent order of tie breakers
 
 import altair as alt
 import pandas as pd
@@ -19,13 +20,16 @@ or for evil, in the superlative degree of comparison only.
 source = pd.DataFrame(
     {'letters': np.array([c for c in text if c.isalpha()])}
 )
+source = source.sort_values("letters", ascending=False)
 
 alt.Chart(source).transform_aggregate(
     count='count()',
     groupby=['letters']
 ).transform_window(
     rank='rank(count)',
-    sort=[alt.SortField('count', order='descending')]
+    sort=[
+        alt.SortField('count', order='descending'),
+    ]
 ).transform_filter(
     alt.datum.rank < 10
 ).mark_bar().encode(
