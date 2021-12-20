@@ -124,13 +124,21 @@ mod test_vl_selection_test_r {
     #[rstest(
         brush_data, typ, op,
         case(vec![vec![("colA", "x", [2.0, 5.0])]], "R", "intersect"),
+        case(vec![vec![("colA", "x", [5.0, 2.0])]], "R", "intersect"),
         case(vec![vec![("colA", "x", [2.0, 5.0])]], "R-E", "intersect"),
+        case(vec![vec![("colA", "x", [5.0, 2.0])]], "R-E", "intersect"),
         case(vec![vec![("colA", "x", [2.0, 5.0])]], "R-LE", "intersect"),
+        case(vec![vec![("colA", "x", [5.0, 2.0])]], "R-LE", "intersect"),
         case(vec![vec![("colA", "x", [2.0, 5.0])]], "R-RE", "intersect"),
+        case(vec![vec![("colA", "x", [5.0, 2.0])]], "R-RE", "intersect"),
         case(vec![vec![("colA", "x", [2.0, 10.0]), ("colB", "y", [0.0, 6.0])]], "R", "intersect"),
+        case(vec![vec![("colA", "x", [10.0, 2.0]), ("colB", "y", [6.0, 0.0])]], "R", "intersect"),
         case(vec![vec![("colA", "x", [5.0, 10.0]), ("colB", "y", [8.0, 10.0])]], "R", "intersect"),
+        case(vec![vec![("colA", "x", [10.0, 5.0]), ("colB", "y", [10.0, 8.0])]], "R", "intersect"),
         case(vec![vec![("colA", "x", [5.0, 10.0])], vec![("colB", "y", [8.0, 10.0])]], "R", "intersect"),
-        case(vec![vec![("colA", "x", [5.0, 10.0])], vec![("colB", "y", [8.0, 10.0])]], "R", "union")
+        case(vec![vec![("colA", "x", [10.0, 5.0])], vec![("colB", "y", [10.0, 8.0])]], "R", "intersect"),
+        case(vec![vec![("colA", "x", [5.0, 10.0])], vec![("colB", "y", [8.0, 10.0])]], "R", "union"),
+        case(vec![vec![("colA", "x", [10.0, 5.0])], vec![("colB", "y", [10.0, 8.0])]], "R", "union")
     )]
     fn test(brush_data: Vec<Vec<(&str, &str, [f64; 2])>>, typ: &str, op: &str) {
         let brush = make_brush_r(&brush_data, typ);
@@ -138,6 +146,9 @@ mod test_vl_selection_test_r {
         println!("{}", expr);
         check_vl_selection_expr(&expr, brush, &datum());
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_vl_selection_test_e_single {
@@ -152,6 +163,9 @@ mod test_vl_selection_test_e_single {
         let expr = format!("vlSelectionTest('brush', datum, '{}')", op);
         check_vl_selection_expr(&expr, brush, &datum());
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 mod test_vl_selection_test_e_multi {
@@ -171,4 +185,7 @@ mod test_vl_selection_test_e_multi {
         let expr = format!("vlSelectionTest('brush', datum, '{}')", op);
         check_vl_selection_expr(&expr, brush, &datum());
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
