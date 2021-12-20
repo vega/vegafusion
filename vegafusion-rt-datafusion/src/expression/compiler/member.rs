@@ -18,7 +18,7 @@ use datafusion::prelude::lit;
 use datafusion::scalar::ScalarValue;
 use std::convert::TryFrom;
 use std::sync::Arc;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{Identifier, MemberExpression};
 
 pub fn compile_member(
@@ -33,7 +33,9 @@ pub fn compile_member(
     let property_string = if node.computed {
         // e.g. foo[val]
         let compiled_property = compile(node.property(), config, Some(schema))?;
-        let evaluated_property = compiled_property.eval_to_scalar()?;
+        let evaluated_property = compiled_property.eval_to_scalar().with_context(
+            || format!("VegaFusion does not support the use of datum expressions in object member access: {}", node)
+        )?;
         let prop_str = evaluated_property.to_string();
         if is_numeric_datatype(&evaluated_property.get_datatype()) {
             let int_array = cast(&evaluated_property.to_array(), &DataType::Int64).unwrap();
