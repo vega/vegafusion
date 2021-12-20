@@ -68,36 +68,56 @@ impl TransformTrait for Window {
 
                         let _param = self.params.get(i);
 
-                        let sort_field = Expr::Sort {
-                            expr: Box::new(col(field)),
-                            asc: true,
-                            nulls_first: false
+                        let sort_field = if field.trim().is_empty() {
+                            // None
+                            None
+                        } else {
+                            Some(Expr::Sort {
+                                expr: Box::new(col(field)),
+                                asc: true,
+                                nulls_first: false
+                            })
                         };
+
                         let (window_fn, args) = match op {
                             WindowOp::RowNumber => (BuiltInWindowFunction::RowNumber, Vec::new()),
                             WindowOp::Rank => {
-                                // For the Rank family of window functions, the field to rank
-                                // is specified as the order_by condition rather than field
                                 if order_by.is_empty() {
-                                    order_by.push(sort_field);
+                                    if let Some(sort_field) = sort_field {
+                                        order_by.push(sort_field);
+                                        (BuiltInWindowFunction::Rank, Vec::new())
+                                    } else {
+                                        // In Vega, rank devolves to row_number when no
+                                        // ordering info is provided. In DataFusion, it defaults
+                                        // to a constant value of 1. So we add a special case here
+                                        // to fall back to the DataFusion RowNumber function
+                                        (BuiltInWindowFunction::RowNumber, Vec::new())
+                                    }
+                                } else {
+                                    (BuiltInWindowFunction::Rank, Vec::new())
                                 }
-                                (BuiltInWindowFunction::Rank, vec![])
                             },
                             WindowOp::DenseRank => {
                                 if order_by.is_empty() {
-                                    order_by.push(sort_field);
+                                    if let Some(sort_field) = sort_field {
+                                        order_by.push(sort_field);
+                                        (BuiltInWindowFunction::DenseRank, Vec::new())
+                                    } else {
+                                        (BuiltInWindowFunction::RowNumber, Vec::new())
+                                    }
+                                } else {
+                                    (BuiltInWindowFunction::DenseRank, Vec::new())
                                 }
-                                (BuiltInWindowFunction::DenseRank, vec![])
                             },
                             WindowOp::PercentileRank => {
-                                if order_by.is_empty() {
-                                    order_by.push(sort_field);
+                                if order_by.is_empty() && sort_field.is_some() {
+                                    order_by.push(sort_field.unwrap());
                                 }
                                 (BuiltInWindowFunction::PercentRank, vec![])
                             }
                             WindowOp::CumeDist => {
-                                if order_by.is_empty() {
-                                    order_by.push(sort_field);
+                                if order_by.is_empty() && sort_field.is_some(){
+                                    order_by.push(sort_field.unwrap());
                                 }
                                 (BuiltInWindowFunction::CumeDist, vec![])
                             },
