@@ -21,7 +21,7 @@ impl TransformTrait for Window {
         dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
     ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
-        let order_by: Vec<_> = self
+        let mut order_by: Vec<_> = self
             .sort_fields
             .iter()
             .zip(&self.sort)
@@ -68,14 +68,39 @@ impl TransformTrait for Window {
 
                         let _param = self.params.get(i);
 
+                        let sort_field = Expr::Sort {
+                            expr: Box::new(col(field)),
+                            asc: true,
+                            nulls_first: false
+                        };
                         let (window_fn, args) = match op {
                             WindowOp::RowNumber => (BuiltInWindowFunction::RowNumber, Vec::new()),
-                            WindowOp::Rank => (BuiltInWindowFunction::Rank, vec![]),
-                            WindowOp::DenseRank => (BuiltInWindowFunction::DenseRank, vec![]),
+                            WindowOp::Rank => {
+                                // For the Rank family of window functions, the field to rank
+                                // is specified as the order_by condition rather than field
+                                if order_by.is_empty() {
+                                    order_by.push(sort_field);
+                                }
+                                (BuiltInWindowFunction::Rank, vec![])
+                            },
+                            WindowOp::DenseRank => {
+                                if order_by.is_empty() {
+                                    order_by.push(sort_field);
+                                }
+                                (BuiltInWindowFunction::DenseRank, vec![])
+                            },
                             WindowOp::PercentileRank => {
+                                if order_by.is_empty() {
+                                    order_by.push(sort_field);
+                                }
                                 (BuiltInWindowFunction::PercentRank, vec![])
                             }
-                            WindowOp::CumeDist => (BuiltInWindowFunction::CumeDist, vec![]),
+                            WindowOp::CumeDist => {
+                                if order_by.is_empty() {
+                                    order_by.push(sort_field);
+                                }
+                                (BuiltInWindowFunction::CumeDist, vec![])
+                            },
                             WindowOp::FirstValue => {
                                 (BuiltInWindowFunction::FirstValue, vec![col(field)])
                             }
