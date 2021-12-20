@@ -127,6 +127,11 @@ impl TaskCall for DataUrlTask {
                                         fun: Arc::new(DATETIME_COMPONENTS.clone()),
                                         args: vec![col(&spec.name)],
                                     }
+                                } else if let DataType::Timestamp(_, _) = dtype {
+                                    Expr::ScalarFunction {
+                                        fun: BuiltinScalarFunction::ToTimestampMillis,
+                                        args: vec![col(&spec.name)],
+                                    }
                                 } else {
                                     continue;
                                 };
