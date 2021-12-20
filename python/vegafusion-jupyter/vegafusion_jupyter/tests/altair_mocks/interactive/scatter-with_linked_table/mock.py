@@ -1,4 +1,5 @@
 # https://altair-viz.github.io/gallery/scatter_linked_table.html
+# With nulls filtered so there isn't a display difference between null and undefined
 
 import altair as alt
 from vega_datasets import data
@@ -18,6 +19,8 @@ points = alt.Chart(source).mark_point().encode(
 # Base chart for data tables
 ranked_text = alt.Chart(source).mark_text().encode(
     y=alt.Y('row_number:O',axis=None)
+).transform_filter(
+    "datum.Miles_per_Gallon !== null"
 ).transform_window(
     row_number='row_number()'
 ).transform_filter(
