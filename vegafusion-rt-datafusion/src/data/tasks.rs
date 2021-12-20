@@ -99,6 +99,7 @@ impl TaskCall for DataUrlTask {
         };
 
         // Perform specialized parsing (right now, parse string columns named "date" to utc timestamps)
+        let mut date_fields: Vec<String> = Vec::new();
         if let Some(format_type) = &self.format_type {
             if let Some(parse) = &format_type.parse {
                 if let scan_url_format::Parse::Object(formats) = &parse {
@@ -107,6 +108,7 @@ impl TaskCall for DataUrlTask {
                         if datatype.starts_with("date") {
                             let schema = df.schema();
                             if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
+                                date_fields.push(date_field.name().clone());
                                 let dtype = date_field.data_type();
                                 let date_expr = if is_string_datatype(dtype) {
                                     let datetime_udf = get_datetime_udf(date_mode);
@@ -150,9 +152,10 @@ impl TaskCall for DataUrlTask {
             }
         }
 
-        // Standardize Timestamp columns to integer milliseconds in UTC
+        // Standardize other Timestamp columns (those that weren't created above) to integer
+        // milliseconds
         let selection: Vec<_> = df.schema().fields().iter().map(|field| {
-            if matches!(field.data_type(), DataType::Timestamp(_, _)) {
+            if !date_fields.contains(field.name()) && matches!(field.data_type(), DataType::Timestamp(_, _)) {
                 Expr::ScalarFunction {
                     fun: BuiltinScalarFunction::ToTimestampMillis,
                     args: vec![col(&field.name())],
@@ -161,11 +164,8 @@ impl TaskCall for DataUrlTask {
                 col(field.name())
             }
         }).collect();
-        if !selection.is_empty() {
-            df = df.select(selection)?;
-        }
 
-        print!("loaded schema: {:?}", df.schema());
+        df = df.select(selection)?;
 
         // Apply transforms (if any)
         let (transformed_df, output_values) = if self
@@ -359,7 +359,6 @@ async fn read_arrow(url: &str) -> Result<Arc<dyn DataFrame>> {
         (schema, batches)
     } else {
         let f = FileReader::try_new(reader).unwrap();
-        println!("f: {:?}", f.schema());
         return Err(VegaFusionError::parse(format!(
             "Failed to read arrow file at {}",
             url
