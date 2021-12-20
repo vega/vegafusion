@@ -139,6 +139,7 @@ assert(alt.data_transformers.active == 'default')
         "interactive/select_mark_area",
         "interactive/legend",
         "interactive/cross_highlight",
+        "interactive/selection_histogram",
         "line/bump_chart",
         "line/filled_step_chart",
         "line/with_cumsum",
@@ -202,9 +203,6 @@ assert(alt.data_transformers.active == 'default')
         # # Need to support facet data as source
         # "bar/with_error_bars",
         # "casestudy/beckers_barley_trellis_plot",
-        #
-        # # Selection zeros out histogram
-        # "interactive/selection_histogram",
         #
         # # Table is too long and has a bunch of undefined values in it
         # "interactive/scatter-with_linked_table",
