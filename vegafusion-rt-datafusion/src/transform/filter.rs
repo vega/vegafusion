@@ -21,7 +21,15 @@ impl TransformTrait for Filter {
             config,
             Some(dataframe.schema()),
         )?;
-        let result = dataframe.filter(logical_expr)?;
+        // Save off initial columns and select them below to filter out any intermediary columns
+        // that the expression may produce
+        let col_names: Vec<_> = dataframe.schema().fields().iter().map(|field| field.name().as_str()).collect();
+        let result = dataframe.filter(
+            logical_expr
+        )?.select_columns(
+            &col_names
+        )?;
+
         Ok((result, Default::default()))
     }
 }
