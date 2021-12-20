@@ -183,6 +183,8 @@ assert(alt.data_transformers.active == 'default')
         "other/candlestick_chart",
         "other/multiple_marks",
         "other/hexbins",
+        "other/wilkinson_dot_plot",
+        "other/binned_heatmap",
         "scatter/binned",
         "scatter/bubble_plot",
         "scatter/connected",
@@ -215,18 +217,12 @@ assert(alt.data_transformers.active == 'default')
         # "casestudy/anscombe_plot"
         # "casestudy/us_population_over_time_facet",
         #
-        # # Need support for random() expression function, or support for not planning it on the server.
-        # "scatter/stripplot",
-        #
         # # ci interval uses random number generator and is not deterministic
         # "other/errorbars_with_ci",
         # "other/sorted_error_bars_with_ci",
         #
         # # Need support for bin `extent` as signal expression
         # "interactive/histogram-responsive",
-        #
-        # # Missing cell value in top right bin
-        # "other/binned_heatmap",
         #
         # # Lines messed up
         # "other/normed_parallel_coordinates",
@@ -235,8 +231,6 @@ assert(alt.data_transformers.active == 'default')
         # # US and Europe Violins missing
         # "other/violin_plot",
         #
-        # # No y-axis scaling
-        # "other/wilkinson_dot_plot",
         #
         # # Tooltips not supported
         # "interactive/scatter-href",
@@ -249,6 +243,7 @@ assert(alt.data_transformers.active == 'default')
         # "casestudy/one_dot_per_zipcode",  # substring
         # "other/ranged_dot_plot",  # indexof
         # "casestudy/isotype_emoji", # Unsupported use of datum expression in literal object member lookup
+        # "scatter/stripplot",  # random()
     ])
 def test_altair_mock(mock_name):
 
