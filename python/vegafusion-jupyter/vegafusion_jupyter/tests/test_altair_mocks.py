@@ -117,6 +117,7 @@ assert(alt.data_transformers.active == 'default')
         "casestudy/us_employment",
         "casestudy/top_k_items",
         "casestudy/top_k_letters",
+        "casestudy/isotype",
         "circular/donut",
         "circular/pie",
         "circular/pie_with_labels",
@@ -210,6 +211,10 @@ assert(alt.data_transformers.active == 'default')
         # "bar/with_error_bars",
         # "casestudy/beckers_barley_trellis_plot",
         #
+        # # Need to pick up data set use in a signal in a "sequence" transform
+        # "casestudy/anscombe_plot"
+        # "casestudy/us_population_over_time_facet",
+        #
         # # Need support for random() expression function, or support for not planning it on the server.
         # "scatter/stripplot",
         #
@@ -219,14 +224,6 @@ assert(alt.data_transformers.active == 'default')
         #
         # # Need support for bin `extent` as signal expression
         # "interactive/histogram-responsive",
-        #
-        # # Missing axis/tick labels
-        # "casestudy/anscombe_plot"
-        # "casestudy/us_population_over_time_facet",
-        #
-        # # X-encoding not working
-        # "casestudy/isotype",
-        # "casestudy/isotype_emoji",
         #
         # # Missing cell value in top right bin
         # "other/binned_heatmap",
@@ -251,6 +248,7 @@ assert(alt.data_transformers.active == 'default')
         # "casestudy/london_tube",  # indexof and substring not supported
         # "casestudy/one_dot_per_zipcode",  # substring
         # "other/ranged_dot_plot",  # indexof
+        # "casestudy/isotype_emoji", # Unsupported use of datum expression in literal object member lookup
     ])
 def test_altair_mock(mock_name):
 
