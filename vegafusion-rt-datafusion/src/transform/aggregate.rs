@@ -82,9 +82,21 @@ impl TransformTrait for Aggregate {
 
         let group_exprs: Vec<_> = self.groupby.iter().map(|c| col(c)).collect();
 
-        let grouped_dataframe = dataframe
+        let mut grouped_dataframe = dataframe
             .aggregate(group_exprs, agg_exprs)
             .with_context(|| "Failed to perform aggregate transform".to_string())?;
+
+        // For determinism, sort result by grouping keys
+        let sort_exprs: Vec<_> = self.groupby.iter().map(|c| {
+            Expr::Sort {
+                expr: Box::new(col(c)),
+                asc: true,
+                nulls_first: false
+            }
+        }).collect();
+        if !sort_exprs.is_empty() {
+            grouped_dataframe = grouped_dataframe.sort(sort_exprs)?;
+        }
 
         Ok((grouped_dataframe, Vec::new()))
     }
