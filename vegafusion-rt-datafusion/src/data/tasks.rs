@@ -125,11 +125,6 @@ impl TaskCall for DataUrlTask {
                                         fun: Arc::new(DATETIME_COMPONENTS.clone()),
                                         args: vec![col(&spec.name)],
                                     }
-                                } else if let DataType::Timestamp(_, _) = dtype {
-                                    Expr::ScalarFunction {
-                                        fun: BuiltinScalarFunction::ToTimestampMillis,
-                                        args: vec![col(&spec.name)],
-                                    }
                                 } else {
                                     continue;
                                 };
@@ -154,6 +149,23 @@ impl TaskCall for DataUrlTask {
                 }
             }
         }
+
+        // Standardize Timestamp columns to integer milliseconds in UTC
+        let selection: Vec<_> = df.schema().fields().iter().map(|field| {
+            if matches!(field.data_type(), DataType::Timestamp(_, _)) {
+                Expr::ScalarFunction {
+                    fun: BuiltinScalarFunction::ToTimestampMillis,
+                    args: vec![col(&field.name())],
+                }.alias(field.name())
+            } else {
+                col(field.name())
+            }
+        }).collect();
+        if !selection.is_empty() {
+            df = df.select(selection)?;
+        }
+
+        print!("loaded schema: {:?}", df.schema());
 
         // Apply transforms (if any)
         let (transformed_df, output_values) = if self
