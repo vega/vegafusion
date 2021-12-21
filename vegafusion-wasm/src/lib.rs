@@ -98,6 +98,7 @@ impl MsgReceiver {
         let view = View::new(dataflow);
         view.initialize(element);
         view.hover();
+        setup_tooltip(&view);
 
         let this = Self {
             spec,
@@ -375,6 +376,9 @@ extern "C" {
 
     #[wasm_bindgen(js_name = "addDataListener")]
     fn add_data_listener(view: &View, name: &str, scope: &[u32], handler: JsValue);
+
+    #[wasm_bindgen(js_name = "setupTooltip")]
+    fn setup_tooltip(view: &View);
 }
 
 #[wasm_bindgen(module = "vega")]

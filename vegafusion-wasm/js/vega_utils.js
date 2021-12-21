@@ -1,5 +1,6 @@
 import { version } from "vega"
 import { truthy } from "vega-util"
+import {Handler } from 'vega-tooltip';
 
 import _ from "lodash"
 
@@ -71,6 +72,12 @@ export function addDataListener(view, name, scope, handler) {
         dataset,
         _.debounce(handler, 50, {'maxWait': 100}),
     );
+}
+
+export function setupTooltip(view) {
+    let tooltip_opts = {};
+    let handler = new Handler(tooltip_opts).call;
+    view.tooltip(handler)
 }
 
 // Private helpers from Vega
