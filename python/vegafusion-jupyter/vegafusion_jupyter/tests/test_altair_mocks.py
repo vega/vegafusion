@@ -146,6 +146,10 @@ assert(alt.data_transformers.active == 'default')
         "interactive/scatter_with_layered_histogram",
         "interactive/casestudy-seattle_weather_interactive",
         "interactive/casestudy-us_population_over_time",
+        "interactive/scatter-href",
+        "interactive/other-image_tooltip",
+        "interactive/casestudy-weather_heatmap",
+        "interactive/casestudy-airport_connections",
         "line/bump_chart",
         "line/filled_step_chart",
         "line/with_cumsum",
@@ -230,13 +234,6 @@ assert(alt.data_transformers.active == 'default')
         #
         # # US and Europe Violins missing
         # "other/violin_plot",
-        #
-        #
-        # # Tooltips not supported
-        # "interactive/scatter-href",
-        # "interactive/other-image_tooltip",
-        # "interactive/casestudy-weather_heatmap",
-        # "interactive/casestudy-airport_connections",
         #
         # # Unsupported Expression functions
         # "casestudy/london_tube",  # indexof and substring not supported
