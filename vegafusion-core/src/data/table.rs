@@ -10,7 +10,6 @@ use std::sync::Arc;
 
 use crate::arrow::ipc::reader::StreamReader;
 use crate::arrow::ipc::writer::StreamWriter;
-use crate::arrow::json::writer::record_batches_to_json_rows;
 use std::hash::{Hash, Hasher};
 use std::io::Cursor;
 
@@ -19,6 +18,7 @@ use crate::arrow::array::ArrayRef;
 use arrow::array::{Date32Array, Int64Array, StructArray};
 use arrow::compute::{cast, unary};
 use arrow::datatypes::TimeUnit;
+use crate::data::json_writer::record_batches_to_json_rows;
 use crate::data::scalar::ScalarValueHelpers;
 
 #[derive(Clone, Debug)]
