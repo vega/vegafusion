@@ -32,11 +32,33 @@ impl TransformTrait for Window {
             })
             .collect();
 
-        let partition_by: Vec<_> = self.groupby.iter().map(|group| col(group)).collect();
+        let mut selections: Vec<_> = dataframe
+            .schema()
+            .fields()
+            .iter()
+            .map(|f| col(f.field().name()))
+            .collect();
 
-        // Make window function
-        // let builtin_window_fn = BuiltInWindowFunction::RowNumber;
-        // let window_fn = WindowFunction::BuiltInWindowFunction(builtin_window_fn);
+        let dataframe = if order_by.is_empty() {
+            //  If not order by fields provided, use the row number
+            let row_number_expr = Expr::WindowFunction {
+                fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
+                args: Vec::new(),
+                partition_by: Vec::new(),
+                order_by: Vec::new(),
+                window_frame: None,
+            }.alias("__row_number");
+            order_by.push(Expr::Sort {
+                expr: Box::new(col("__row_number")),
+                asc: true,
+                nulls_first: false
+            });
+            dataframe.select(vec![Expr::Wildcard, row_number_expr])?
+        } else {
+            dataframe
+        };
+
+        let partition_by: Vec<_> = self.groupby.iter().map(|group| col(group)).collect();
 
         let window_exprs: Vec<_> = self
             .ops
@@ -65,60 +87,20 @@ impl TransformTrait for Window {
                     }
                     window_transform_op::Op::WindowOp(op) => {
                         let op = WindowOp::from_i32(*op).unwrap();
-
                         let _param = self.params.get(i);
-
-                        let sort_field = if field.trim().is_empty() {
-                            // None
-                            None
-                        } else {
-                            Some(Expr::Sort {
-                                expr: Box::new(col(field)),
-                                asc: true,
-                                nulls_first: false
-                            })
-                        };
 
                         let (window_fn, args) = match op {
                             WindowOp::RowNumber => (BuiltInWindowFunction::RowNumber, Vec::new()),
                             WindowOp::Rank => {
-                                if order_by.is_empty() {
-                                    if let Some(sort_field) = sort_field {
-                                        order_by.push(sort_field);
-                                        (BuiltInWindowFunction::Rank, Vec::new())
-                                    } else {
-                                        // In Vega, rank devolves to row_number when no
-                                        // ordering info is provided. In DataFusion, it defaults
-                                        // to a constant value of 1. So we add a special case here
-                                        // to fall back to the DataFusion RowNumber function
-                                        (BuiltInWindowFunction::RowNumber, Vec::new())
-                                    }
-                                } else {
-                                    (BuiltInWindowFunction::Rank, Vec::new())
-                                }
+                                (BuiltInWindowFunction::Rank, Vec::new())
                             },
                             WindowOp::DenseRank => {
-                                if order_by.is_empty() {
-                                    if let Some(sort_field) = sort_field {
-                                        order_by.push(sort_field);
-                                        (BuiltInWindowFunction::DenseRank, Vec::new())
-                                    } else {
-                                        (BuiltInWindowFunction::RowNumber, Vec::new())
-                                    }
-                                } else {
-                                    (BuiltInWindowFunction::DenseRank, Vec::new())
-                                }
+                                (BuiltInWindowFunction::DenseRank, Vec::new())
                             },
                             WindowOp::PercentileRank => {
-                                if order_by.is_empty() && sort_field.is_some() {
-                                    order_by.push(sort_field.unwrap());
-                                }
                                 (BuiltInWindowFunction::PercentRank, vec![])
                             }
                             WindowOp::CumeDist => {
-                                if order_by.is_empty() && sort_field.is_some(){
-                                    order_by.push(sort_field.unwrap());
-                                }
                                 (BuiltInWindowFunction::CumeDist, vec![])
                             },
                             WindowOp::FirstValue => {
@@ -151,44 +133,8 @@ impl TransformTrait for Window {
             })
             .collect();
 
-        // let window_fn = WindowFunction::AggregateFunction(
-        //     aggregates::AggregateFunction::Count
-        // );
-
-        // Make frame
-        // let window_frame = WindowFrame {
-        //     units: WindowFrameUnits::Rows,
-        //     start_bound: WindowFrameBound::Preceding(None),
-        //     end_bound: WindowFrameBound::CurrentRow,
-        // };
-
-        //
-        //
-        // let window_expr = Expr::WindowFunction {
-        //     fun: window_fn,
-        //     args: vec![lit(true)],
-        //     partition_by,
-        //     order_by,
-        //     window_frame: None,
-        // };
-
-        // // Apply alias
-        // let window_expr = if let Some(alias) = self.aliases.get(0) {
-        //     println!("self.aliases.get(0): {:?}", alias);
-        //     window_expr.alias(alias)
-        // } else {
-        //     window_expr
-        // };
-
-        // println!("{:#?}", window_expr);
-
-        // Apply window in select expression
-        let mut selections: Vec<_> = dataframe
-            .schema()
-            .fields()
-            .iter()
-            .map(|f| col(f.field().name()))
-            .collect();
+        // Add window expressions to original selections
+        // This will exclude the __row_number column if it was added above.
         selections.extend(window_exprs);
 
         // let dataframe = dataframe.select(vec![window_expr])?;
