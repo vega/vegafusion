@@ -5,3 +5,4 @@ pub mod table;
 mod _scalar;
 
 pub mod tasks;
+pub mod json_writer;
