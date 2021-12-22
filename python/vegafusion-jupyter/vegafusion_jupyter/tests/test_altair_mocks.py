@@ -191,6 +191,7 @@ assert(alt.data_transformers.active == 'default')
         "other/binned_heatmap",
         "other/normed_parallel_coordinates",
         "other/parallel_coordinates",
+        "other/violin_plot",
         "scatter/binned",
         "scatter/bubble_plot",
         "scatter/connected",
@@ -229,9 +230,6 @@ assert(alt.data_transformers.active == 'default')
         #
         # # Need support for bin `extent` as signal expression
         # "interactive/histogram-responsive",
-        #
-        # # US and Europe Violins missing
-        # "other/violin_plot",
         #
         # # Unsupported Expression functions
         # "casestudy/london_tube",  # indexof and substring not supported
