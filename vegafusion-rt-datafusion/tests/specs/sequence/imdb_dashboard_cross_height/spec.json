@@ -104,7 +104,6 @@
       "name": "data_3",
       "source": "source_0",
       "transform": [
-        {"type": "filter", "expr": "datum['Major Genre'] !== null"},
         {
           "type": "aggregate",
           "groupby": ["Major Genre"],

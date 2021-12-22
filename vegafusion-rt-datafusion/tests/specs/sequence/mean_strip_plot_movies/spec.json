@@ -9,8 +9,7 @@
     {
       "name": "source_0",
       "url": "https://raw.githubusercontent.com/vega/vega-datasets/master/data/movies.json",
-      "format": {"type": "json"},
-      "transform": [{"type": "filter", "expr": "datum['Major Genre'] !== null"}]
+      "format": {"type": "json"}
     },
     {
       "name": "data_0",

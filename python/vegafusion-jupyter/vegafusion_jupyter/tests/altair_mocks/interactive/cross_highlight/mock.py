@@ -1,6 +1,5 @@
 # https://altair-viz.github.io/gallery/interactive_cross_highlight.html
 # - Selection count legend removed to keep from shifting bar chart
-#
 
 import altair as alt
 from vega_datasets import data
@@ -9,7 +8,7 @@ source = data.movies.url
 
 pts = alt.selection(type="single", encodings=['x'])
 
-rect = alt.Chart(data.movies.url).transform_filter("datum['Major_Genre'] !== null").mark_rect().encode(
+rect = alt.Chart(data.movies.url).mark_rect().encode(
     alt.X('IMDB_Rating:Q', bin=True),
     alt.Y('Rotten_Tomatoes_Rating:Q', bin=True),
     alt.Color('count()',
@@ -31,7 +30,7 @@ circ = rect.mark_point().encode(
     height=250
 )
 
-bar = alt.Chart(source).transform_filter("datum['Major_Genre'] !== null").mark_bar().encode(
+bar = alt.Chart(source).mark_bar().encode(
     x='Major_Genre:N',
     y='count()',
     color=alt.condition(pts, alt.ColorValue("steelblue"), alt.ColorValue("grey"))
