@@ -189,6 +189,8 @@ assert(alt.data_transformers.active == 'default')
         "other/hexbins",
         "other/wilkinson_dot_plot",
         "other/binned_heatmap",
+        "other/normed_parallel_coordinates",
+        "other/parallel_coordinates",
         "scatter/binned",
         "scatter/bubble_plot",
         "scatter/connected",
@@ -227,10 +229,6 @@ assert(alt.data_transformers.active == 'default')
         #
         # # Need support for bin `extent` as signal expression
         # "interactive/histogram-responsive",
-        #
-        # # Lines messed up
-        # "other/normed_parallel_coordinates",
-        # "other/parallel_coordinates",
         #
         # # US and Europe Violins missing
         # "other/violin_plot",
