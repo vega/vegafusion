@@ -116,29 +116,6 @@ impl MsgReceiver {
         this
     }
 
-    fn init_spec(&mut self, task_graph_vals: &TaskGraphValueResponse) -> Result<()> {
-        for response_val in &task_graph_vals.response_values {
-            let value = TaskValue::try_from(response_val.value.as_ref().unwrap()).unwrap();
-            let scope = &response_val.scope;
-            let var = response_val.variable.as_ref().unwrap();
-
-            match &value {
-                TaskValue::Scalar(value) => {
-                    let sig = self
-                        .spec
-                        .get_nested_signal_mut(scope.as_slice(), &var.name)?;
-                    sig.value = Some(value.to_json()?);
-                }
-                TaskValue::Table(value) => {
-                    let data = self.spec.get_nested_data_mut(scope.as_slice(), &var.name)?;
-                    data.values = Some(value.to_json());
-                }
-            }
-        }
-
-        Ok(())
-    }
-
     pub fn receive(&mut self, bytes: Vec<u8>) {
         // Decode message
         let response = VegaFusionRuntimeResponse::decode(bytes.as_slice()).unwrap();
