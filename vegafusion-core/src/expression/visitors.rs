@@ -8,6 +8,7 @@ use crate::proto::gen::expression::literal::Value;
 use crate::proto::gen::tasks::Variable;
 use crate::task_graph::task::InputVariable;
 use std::collections::HashSet;
+use crate::expression::supported::{ALL_DATA_FNS, ALL_SCALE_FNS, IMPLICIT_VARS, SUPPORTED_DATA_FNS, SUPPORTED_EXPRESSION_FNS, SUPPORTED_SCALE_FNS};
 
 pub trait ExpressionVisitor {
     fn visit_expression(&mut self, _expression: &Expression) {}
@@ -65,41 +66,18 @@ impl MutExpressionVisitor for ClearSpansVisitor {
 #[derive(Clone, Default)]
 pub struct GetInputVariablesVisitor {
     pub input_variables: HashSet<InputVariable>,
-    pub data_callables: HashSet<String>,
-    pub scale_callables: HashSet<String>,
-    pub implicit_vars: HashSet<String>,
+    pub expression_fns: HashSet<String>,
+    pub data_fns: HashSet<String>,
+    pub scale_fns: HashSet<String>,
 }
 
 impl GetInputVariablesVisitor {
     pub fn new() -> Self {
-        let data_callables: HashSet<_> =
-            vec!["data", "indata", "vlSelectionTest", "vlSelectionResolve"]
-                .into_iter()
-                .map(|s| s.to_string())
-                .collect();
-
-        let scale_callables: HashSet<_> = vec![
-            "scale",
-            "invert",
-            "domain",
-            "range",
-            "bandwidth",
-            "gradient",
-        ]
-        .into_iter()
-        .map(|s| s.to_string())
-        .collect();
-
-        let implicit_vars: HashSet<_> = vec!["datum", "event"]
-            .into_iter()
-            .map(|s| s.to_string())
-            .collect();
-
         Self {
             input_variables: Default::default(),
-            data_callables,
-            scale_callables,
-            implicit_vars,
+            expression_fns: Default::default(),
+            data_fns: Default::default(),
+            scale_fns: Default::default()
         }
     }
 }
@@ -107,7 +85,7 @@ impl GetInputVariablesVisitor {
 impl ExpressionVisitor for GetInputVariablesVisitor {
     fn visit_identifier(&mut self, node: &Identifier) {
         // implicit vars like datum and event do not count as a variables
-        if !self.implicit_vars.contains(&node.name) {
+        if !IMPLICIT_VARS.contains(node.name.as_str()) {
             self.input_variables.insert(InputVariable {
                 var: Variable::new_signal(&node.name),
                 propagate: true,
@@ -122,30 +100,33 @@ impl ExpressionVisitor for GetInputVariablesVisitor {
             if let Ok(arg0) = arg0.as_literal() {
                 if let Value::String(arg0) = arg0.value() {
                     // Check data callable
-                    if self.data_callables.contains(&node.name) {
+                    if ALL_DATA_FNS.contains(node.name.as_str()) {
+                        // Propagate on changes to data unless this is a modify function
+                        let propagate = node.name != "modify";
                         self.input_variables.insert(InputVariable {
                             var: Variable::new_data(arg0),
-                            propagate: true,
+                            propagate,
                         });
                     }
 
                     // Check scale callable
-                    if self.scale_callables.contains(&node.name) {
+                    if ALL_SCALE_FNS.contains(node.name.as_str()) {
                         self.input_variables.insert(InputVariable {
                             var: Variable::new_scale(arg0),
                             propagate: true,
                         });
                     }
-
-                    // Check for modify (where propagate is false)
-                    if node.name == "modify" {
-                        self.input_variables.insert(InputVariable {
-                            var: Variable::new_data(arg0),
-                            propagate: false,
-                        });
-                    }
                 }
             }
+        }
+
+        // Record function type
+        if ALL_DATA_FNS.contains(node.name.as_str()) {
+            self.data_fns.insert(node.name.clone());
+        } else if ALL_SCALE_FNS.contains(node.name.as_str()) {
+            self.scale_fns.insert(node.name.clone());
+        } else {
+            self.expression_fns.insert(node.name.clone());
         }
     }
 }
@@ -175,6 +156,73 @@ impl ExpressionVisitor for UpdateVariablesExprVisitor {
                     }
                 }
             }
+        }
+    }
+}
+
+
+/// Visitor to collect all unbound input variables in the expression
+#[derive(Clone, Default)]
+pub struct CheckSupportedExprVisitor {
+    pub supported: bool
+}
+
+impl CheckSupportedExprVisitor {
+    pub fn new() -> Self {
+        Self { supported: true }
+    }
+}
+
+impl ExpressionVisitor for CheckSupportedExprVisitor {
+    fn visit_called_identifier(&mut self, node: &Identifier, args: &[Expression]) {
+        // Check for unsupported functions
+        if ALL_DATA_FNS.contains(node.name.as_str()) {
+            if !SUPPORTED_DATA_FNS.contains(node.name.as_str()) {
+                self.supported = false;
+            }
+        } else if ALL_SCALE_FNS.contains(node.name.as_str()) {
+            if !SUPPORTED_SCALE_FNS.contains(node.name.as_str()) {
+                self.supported = false;
+            }
+        } else {
+            if !SUPPORTED_EXPRESSION_FNS.contains(node.name.as_str()) {
+                self.supported = false;
+            }
+        }
+    }
+
+    fn visit_member(&mut self, node: &MemberExpression) {
+        // Check for unsupported use of member property.
+        // Property cannot use implicit datum variable
+        if node.computed {
+            let property = node.property.as_ref().unwrap();
+            if property.implicit_vars().contains(&"datum".to_string()) {
+                self.supported = false;
+            }
+        }
+    }
+}
+
+
+/// Visitor to collect all output variables in the expression
+#[derive(Clone, Default)]
+pub struct ImplicitVariablesExprVisitor {
+    pub implicit_vars: HashSet<String>,
+}
+
+impl ImplicitVariablesExprVisitor {
+    pub fn new() -> Self {
+        Self {
+            implicit_vars: Default::default()
+        }
+    }
+}
+
+impl ExpressionVisitor for ImplicitVariablesExprVisitor {
+    fn visit_identifier(&mut self, node: &Identifier) {
+        // implicit vars like datum and event do not count as a variables
+        if IMPLICIT_VARS.contains(node.name.as_str()) {
+           self.implicit_vars.insert(node.name.clone());
         }
     }
 }

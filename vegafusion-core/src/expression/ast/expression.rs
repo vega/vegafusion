@@ -1,8 +1,5 @@
 use crate::error::{Result, VegaFusionError};
-use crate::expression::visitors::{
-    ClearSpansVisitor, ExpressionVisitor, GetInputVariablesVisitor, MutExpressionVisitor,
-    UpdateVariablesExprVisitor,
-};
+use crate::expression::visitors::{CheckSupportedExprVisitor, ClearSpansVisitor, ExpressionVisitor, GetInputVariablesVisitor, ImplicitVariablesExprVisitor, MutExpressionVisitor, UpdateVariablesExprVisitor};
 use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::{
     ArrayExpression, BinaryExpression, CallExpression, ConditionalExpression, Expression,
@@ -76,6 +73,18 @@ impl Expression {
         self.walk(&mut visitor);
 
         sorted(visitor.update_variables).collect()
+    }
+
+    pub fn implicit_vars(&self) -> Vec<String> {
+        let mut visitor = ImplicitVariablesExprVisitor::new();
+        self.walk(&mut visitor);
+        sorted(visitor.implicit_vars).collect()
+    }
+
+    pub fn is_supported(&self) -> bool {
+        let mut visitor = CheckSupportedExprVisitor::new();
+        self.walk(&mut visitor);
+        visitor.supported
     }
 
     /// Walk visitor through the expression tree in a DFS traversal
