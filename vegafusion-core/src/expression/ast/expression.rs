@@ -7,7 +7,7 @@ use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::{
     ArrayExpression, BinaryExpression, CallExpression, ConditionalExpression, Expression,
     Identifier, Literal, LogicalExpression, MemberExpression, ObjectExpression, Span,
-    UnaryExpression,
+    UnaryExpression, literal
 };
 use crate::proto::gen::tasks::Variable;
 use crate::task_graph::task::InputVariable;
@@ -228,6 +228,17 @@ impl Expression {
     }
 }
 
+// Expression from literal
+impl <V: Into<literal::Value>> From<V> for Expression {
+    fn from(v: V) -> Self {
+        Self {
+            expr: Some(Expr::from(v)),
+            span: None,
+        }
+    }
+}
+
+
 // Expr conversions
 impl From<Literal> for Expr {
     fn from(v: Literal) -> Self {
@@ -286,5 +297,13 @@ impl From<ArrayExpression> for Expr {
 impl From<ObjectExpression> for Expr {
     fn from(v: ObjectExpression) -> Self {
         Self::Object(v)
+    }
+}
+
+impl <V: Into<literal::Value>> From<V> for Expr {
+    fn from(v: V) -> Self {
+        let v = v.into();
+        let repr = v.to_string();
+        Self::Literal(Literal::new(v, &repr))
     }
 }
