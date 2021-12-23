@@ -1,6 +1,7 @@
 use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use std::collections::{HashMap, HashSet};
+use crate::expression::supported::BUILT_IN_SIGNALS;
 
 #[derive(Clone, Debug, Default)]
 pub struct TaskScope {
@@ -12,13 +13,6 @@ pub struct TaskScope {
     pub children: Vec<TaskScope>,
 }
 
-lazy_static! {
-    pub static ref BUILT_IN_SIGNALS: HashSet<String> =
-        vec!["width", "height", "padding", "autosize", "background"]
-            .iter()
-            .map(|sig| sig.to_string())
-            .collect();
-}
 
 impl TaskScope {
     pub fn new() -> Self {
@@ -118,7 +112,7 @@ impl TaskScope {
 
             // Check for built-in signal
             if matches!(variable.ns(), VariableNamespace::Signal)
-                && BUILT_IN_SIGNALS.contains(&variable.name)
+                && BUILT_IN_SIGNALS.contains(variable.name.as_str())
             {
                 return Ok(Resolved {
                     var: variable.clone(),
