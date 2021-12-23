@@ -3,6 +3,7 @@ extern crate lazy_static;
 
 mod util;
 use rstest::rstest;
+use crate::util::check::check_expr_supported;
 
 use util::check::check_parsing;
 
@@ -21,6 +22,7 @@ mod test_parse_atoms {
     )]
     fn test(expr: &str) {
         check_parsing(expr);
+        check_expr_supported(expr);
     }
 
     #[test]
@@ -41,6 +43,7 @@ mod test_parse_binary {
 
     fn test(expr: &str) {
         check_parsing(expr);
+        check_expr_supported(expr);
     }
 
     #[test]
@@ -64,6 +67,7 @@ mod test_parse_binary_precedence {
 
     fn test(expr: &str) {
         check_parsing(expr);
+        check_expr_supported(expr);
     }
 
     #[test]
@@ -85,6 +89,7 @@ mod test_parse_unary {
     )]
     fn test(expr: &str) {
         check_parsing(expr);
+        check_expr_supported(expr);
     }
 
     #[test]
@@ -106,6 +111,7 @@ mod test_parse_logical {
     )]
     fn test(expr: &str) {
         check_parsing(expr);
+        check_expr_supported(expr);
     }
 
     #[test]
@@ -126,6 +132,7 @@ mod test_parse_ternary {
     )]
     fn test(expr: &str) {
         check_parsing(expr);
+        check_expr_supported(expr);
     }
 
     #[test]
@@ -164,6 +171,7 @@ mod test_parse_computed_member_access {
     )]
     fn test(expr: &str) {
         check_parsing(expr);
+        check_expr_supported(expr);
     }
 
     #[test]
@@ -181,6 +189,7 @@ mod test_parse_static_member_access {
     )]
     fn test(expr: &str) {
         check_parsing(expr);
+        check_expr_supported(expr);
     }
 
     #[test]
@@ -199,6 +208,7 @@ mod test_parse_array_literal {
     )]
     fn test(expr: &str) {
         check_parsing(expr);
+        check_expr_supported(expr);
     }
 
     #[test]
@@ -218,6 +228,7 @@ mod test_parse_object_literal {
     )]
     fn test(expr: &str) {
         check_parsing(expr);
+        check_expr_supported(expr);
     }
 
     #[test]
@@ -256,6 +267,29 @@ mod test_parse_examples {
     )]
     fn test(expr: &str) {
         check_parsing(expr);
+        check_expr_supported(expr);
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
+
+mod test_check_supported {
+    use vegafusion_core::expression::parser::parse;
+    use crate::*;
+
+    #[rstest(
+    expr, supported,
+    case("isValid(datum[\"average_b\"]) && isFinite(+datum[\"average_b\"])", true),
+    case("no_such_fn(23)", false),
+    case("my_signal[0 + 23]", true),
+    case("my_signal[0 + other_signal]", true),
+    case("my_signal[datum.col + 'abc']", false),
+    )]
+    fn test(expr: &str, supported: bool) {
+        let mut expr = parse(expr).unwrap();
+        assert_eq!(expr.is_supported(), supported);
     }
 
     #[test]
