@@ -1,7 +1,5 @@
 use chrono::{DateTime, Datelike, Local, LocalResult, TimeZone, Timelike, Utc, Weekday};
-use datafusion::arrow::array::{
-    Array, ArrayRef, Date32Array, Date64Array, Int32Array, Int64Array, TimestampMillisecondArray,
-};
+use datafusion::arrow::array::{Array, ArrayRef, Date32Array, Date64Array, Int32Array, Int64Array, StringArray, TimestampMillisecondArray};
 use datafusion::arrow::compute::cast;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::physical_plan::functions::{
@@ -10,6 +8,7 @@ use datafusion::physical_plan::functions::{
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
 use vegafusion_core::arrow::compute::unary;
+use crate::expression::compiler::builtin_functions::datetime::date_parsing::{DateParseMode, datetime_strs_to_millis};
 
 #[inline(always)]
 pub fn extract_year<T: TimeZone>(dt: &DateTime<T>) -> i64 {
@@ -72,6 +71,11 @@ pub fn make_datepart_udf_local(extract_fn: fn(&DateTime<Local>) -> i64, name: &s
         let arg = &args[0];
 
         let arg = match arg.data_type() {
+            DataType::Utf8 => {
+                let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
+                let millis_array = datetime_strs_to_millis(array, DateParseMode::JavaScript);
+                cast(&millis_array, &DataType::Date64)?
+            }
             DataType::Timestamp(TimeUnit::Millisecond, _) => cast(arg, &DataType::Date64)?,
             DataType::Date32 => {
                 let ms_per_day = 1000 * 60 * 60 * 24 as i64;
@@ -128,6 +132,7 @@ pub fn make_datepart_udf_local(extract_fn: fn(&DateTime<Local>) -> i64, name: &s
         &Signature::uniform(
             1,
             vec![
+                DataType::Utf8,
                 DataType::Timestamp(TimeUnit::Millisecond, None),
                 DataType::Date32,
                 DataType::Date64,
@@ -146,6 +151,11 @@ pub fn make_datepart_udf_utc(extract_fn: fn(&DateTime<Utc>) -> i64, name: &str) 
         let arg = &args[0];
 
         let arg = match arg.data_type() {
+            DataType::Utf8 => {
+                let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
+                let millis_array = datetime_strs_to_millis(array, DateParseMode::JavaScript);
+                cast(&millis_array, &DataType::Date64)?
+            }
             DataType::Timestamp(TimeUnit::Millisecond, _) => cast(arg, &DataType::Date64)?,
             DataType::Date32 => {
                 let ms_per_day = 1000 * 60 * 60 * 24 as i64;
@@ -199,6 +209,7 @@ pub fn make_datepart_udf_utc(extract_fn: fn(&DateTime<Utc>) -> i64, name: &str) 
         &Signature::uniform(
             1,
             vec![
+                DataType::Utf8,
                 DataType::Timestamp(TimeUnit::Millisecond, None),
                 DataType::Date32,
                 DataType::Date64,

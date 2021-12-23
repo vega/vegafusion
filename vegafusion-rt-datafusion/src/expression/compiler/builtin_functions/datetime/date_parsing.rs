@@ -224,19 +224,8 @@ pub fn make_datetime_to_millis_udf(mode: DateParseMode) -> ScalarUDF {
     let to_millis_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single string argument
         let arg = &args[0];
-
         let date_strs = arg.as_any().downcast_ref::<StringArray>().unwrap();
-
-        let millis_array = Int64Array::from(
-            date_strs
-                .iter()
-                .map(|date_str| -> Option<i64> {
-                    date_str.and_then(|date_str| parse_datetime_to_utc_millis(date_str, mode))
-                })
-                .collect::<Vec<Option<i64>>>(),
-        );
-
-        Ok(Arc::new(millis_array) as ArrayRef)
+        Ok(datetime_strs_to_millis(date_strs, mode))
     };
 
     let to_millis_fn = make_scalar_function(to_millis_fn);
@@ -249,6 +238,19 @@ pub fn make_datetime_to_millis_udf(mode: DateParseMode) -> ScalarUDF {
         &return_type,
         &to_millis_fn,
     )
+}
+
+pub fn datetime_strs_to_millis(date_strs: &StringArray, mode: DateParseMode) -> ArrayRef {
+    let millis_array = Int64Array::from(
+        date_strs
+            .iter()
+            .map(|date_str| -> Option<i64> {
+                date_str.and_then(|date_str| parse_datetime_to_utc_millis(date_str, mode))
+            })
+            .collect::<Vec<Option<i64>>>(),
+    );
+
+    Arc::new(millis_array) as ArrayRef
 }
 
 #[test]
