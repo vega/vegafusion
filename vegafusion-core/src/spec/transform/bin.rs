@@ -2,7 +2,11 @@ use crate::spec::transform::TransformSpecTrait;
 use crate::spec::values::{Field, SignalExpressionSpec};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use crate::task_graph::task::InputVariable;
+use crate::error::Result;
+use crate::expression::parser::parse;
+use crate::proto::gen::tasks::Variable;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BinTransformSpec {
@@ -30,7 +34,7 @@ pub struct BinTransformSpec {
     pub steps: Option<Vec<f64>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub span: Option<f64>,
+    pub span: Option<BinSpan>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub minstep: Option<f64>,
@@ -52,7 +56,30 @@ pub enum BinExtent {
     Signal(SignalExpressionSpec),
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum BinSpan {
+    Value(f64),
+    Signal(SignalExpressionSpec),
+}
+
+
 impl TransformSpecTrait for BinTransformSpec {
+    fn input_vars(&self) -> Result<Vec<InputVariable>> {
+        let mut input_vars: HashSet<InputVariable> = HashSet::new();
+        if let BinExtent::Signal(extent) = &self.extent {
+            let expression = parse(&extent.signal)?;
+            input_vars.extend(expression.input_vars())
+        }
+
+        if let Some(BinSpan::Signal(span)) = &self.span {
+            let expression = parse(&span.signal)?;
+            input_vars.extend(expression.input_vars())
+        }
+
+        Ok(input_vars.into_iter().collect())
+    }
+
     fn output_signals(&self) -> Vec<String> {
         self.signal.clone().into_iter().collect()
     }

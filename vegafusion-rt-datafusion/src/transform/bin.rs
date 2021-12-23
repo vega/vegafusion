@@ -4,7 +4,7 @@ use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
-use datafusion::logical_plan::{col, lit, Expr};
+use datafusion::logical_plan::{col, lit, Expr, DFSchema};
 use datafusion::physical_plan::functions::{
     make_scalar_function, ReturnTypeFunction, Signature, Volatility,
 };
@@ -17,6 +17,7 @@ use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::proto::gen::expression::Expression;
 use vegafusion_core::proto::gen::transforms::Bin;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -27,17 +28,8 @@ impl TransformTrait for Bin {
         dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
     ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
-        // Compute extent
-        let expr = compile(
-            self.extent.as_ref().unwrap(),
-            config,
-            Some(dataframe.schema()),
-        )?;
-        let extent_scalar = expr.eval_to_scalar()?;
-        let extent = extent_scalar.to_f64x2()?;
-
         // Compute binning solution
-        let params = calculate_bin_params(&extent, self)?;
+        let params = calculate_bin_params(self, dataframe.schema(), config)?;
 
         let BinParams {
             start,
@@ -165,8 +157,19 @@ pub struct BinParams {
     pub n: i32,
 }
 
-pub fn calculate_bin_params(extent: &[f64; 2], tx: &Bin) -> Result<BinParams> {
-    let [min_, max_] = *extent;
+pub fn calculate_bin_params(tx: &Bin, schema: &DFSchema, config: &CompilationConfig) -> Result<BinParams> {
+
+    // Evaluate extent
+    let extent_expr = compile(
+        tx.extent.as_ref().unwrap(),
+        config,
+        Some(schema),
+    )?;
+    let extent_scalar = extent_expr.eval_to_scalar()?;
+
+    let extent = extent_scalar.to_f64x2()?;
+
+    let [min_, max_] = extent;
     if min_ > max_ {
         return Err(VegaFusionError::specification(&format!(
             "extent[1] must be greater than extent[0]: Received {:?}",
@@ -174,18 +177,29 @@ pub fn calculate_bin_params(extent: &[f64; 2], tx: &Bin) -> Result<BinParams> {
         )));
     }
 
-    let logb = tx.base.ln();
+    // Initialize span to default value
+    let mut span = if !approx_eq!(f64, min_, max_) {
+        max_ - min_
+    } else if !approx_eq!(f64, min_, 0.0) {
+        min_.abs()
+    } else {
+        1.0
+    };
 
-    // Compute span
-    let span = tx.span.unwrap_or_else(|| {
-        if !approx_eq!(f64, min_, max_) {
-            max_ - min_
-        } else if !approx_eq!(f64, min_, 0.0) {
-            min_.abs()
-        } else {
-            1.0
+    // Override span with specified value if available
+    if let Some(span_expression) = &tx.span {
+        let span_expr = compile(
+            span_expression,
+            config,
+            Some(schema),
+        )?;
+        let span_scalar = span_expr.eval_to_scalar()?;
+        if let Ok(span_f64) = span_scalar.to_f64() {
+            span = span_f64;
         }
-    });
+    }
+
+    let logb = tx.base.ln();
 
     let step = if let Some(step) = tx.step {
         // Use provided step as-is

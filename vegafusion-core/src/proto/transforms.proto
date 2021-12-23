@@ -56,7 +56,7 @@ message Bin {
   repeated double steps = 10;
 
   // The value span over which to generate bin boundaries. Defaults to the exact extent of the data
-  optional double span = 11;
+  expression.Expression span = 11;
 
   // A minimum distance between adjacent bins
   double minstep = 12;
