@@ -50,7 +50,13 @@ impl ScalarValueHelpers for ScalarValue {
                 // Sort keys for stability
                 values.sort_by_key(|el| el.0);
 
-                ScalarValue::from(values)
+                if values.is_empty() {
+                    ScalarValue::from(
+                        vec![("__dummy", ScalarValue::try_from(&DataType::Float64).unwrap())]
+                    )
+                } else {
+                    ScalarValue::from(values)
+                }
             }
             Value::Array(elements) => {
                 let (elements, dtype) = if elements.is_empty() {
