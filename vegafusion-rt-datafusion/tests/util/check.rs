@@ -26,6 +26,11 @@ use vegafusion_rt_datafusion::expression::compiler::utils::ExprHelpers;
 use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
 use vegafusion_rt_datafusion::transform::TransformTrait;
 
+pub fn check_expr_supported(expr_str: &str) {
+    let mut expr = parse(expr_str).unwrap();
+    assert!(expr.is_supported())
+}
+
 pub fn check_parsing(expr_str: &str) {
     let vegajs_runtime = vegajs_runtime();
     let expected = vegajs_runtime.parse_expression(expr_str).unwrap();

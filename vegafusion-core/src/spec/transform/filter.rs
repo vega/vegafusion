@@ -17,6 +17,14 @@ pub struct FilterTransformSpec {
 }
 
 impl TransformSpecTrait for FilterTransformSpec {
+    fn supported(&self) -> bool {
+        if let Ok(expr) = parse(&self.expr) {
+            expr.is_supported()
+        } else {
+            false
+        }
+    }
+
     fn input_vars(&self) -> Result<Vec<InputVariable>> {
         let expr = parse(&self.expr)?;
         Ok(expr.input_vars())
