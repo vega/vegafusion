@@ -65,6 +65,32 @@ pub enum BinSpan {
 
 
 impl TransformSpecTrait for BinTransformSpec {
+    fn supported(&self) -> bool {
+        // Check extent expression
+        if let BinExtent::Signal(extent) = &self.extent {
+            if let Ok(expression) = parse(&extent.signal) {
+                if !expression.is_supported() {
+                    return false
+                }
+            } else {
+                return false
+            }
+        }
+
+        // Check span expression
+        if let Some(BinSpan::Signal(span)) = &self.span {
+            if let Ok(expression) = parse(&span.signal) {
+                if !expression.is_supported() {
+                    return false
+                }
+            } else {
+                return false
+            }
+        }
+
+        true
+    }
+
     fn input_vars(&self) -> Result<Vec<InputVariable>> {
         let mut input_vars: HashSet<InputVariable> = HashSet::new();
         if let BinExtent::Signal(extent) = &self.extent {
