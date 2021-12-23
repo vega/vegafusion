@@ -29,6 +29,7 @@ use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
 };
+use crate::expression::compiler::builtin_functions::array::span::make_span_udf;
 
 use crate::expression::compiler::builtin_functions::data::data::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
@@ -231,6 +232,14 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         "length".to_string(),
         VegaFusionCallable::ScalarUDF {
             udf: make_length_udf(),
+            cast: None,
+        },
+    );
+
+    callables.insert(
+        "span".to_string(),
+        VegaFusionCallable::ScalarUDF {
+            udf: make_span_udf(),
             cast: None,
         },
     );
