@@ -409,7 +409,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
 
     // coercion
     callables.insert(
-        "toBooleans".to_string(),
+        "toBoolean".to_string(),
         VegaFusionCallable::Transform(Arc::new(to_boolean_transform)),
     );
     callables.insert(
