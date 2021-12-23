@@ -58,8 +58,8 @@ pub struct Bin {
     #[prost(double, repeated, tag="10")]
     pub steps: ::prost::alloc::vec::Vec<f64>,
     /// The value span over which to generate bin boundaries. Defaults to the exact extent of the data
-    #[prost(double, optional, tag="11")]
-    pub span: ::core::option::Option<f64>,
+    #[prost(message, optional, tag="11")]
+    pub span: ::core::option::Option<super::expression::Expression>,
     /// A minimum distance between adjacent bins
     #[prost(double, tag="12")]
     pub minstep: f64,

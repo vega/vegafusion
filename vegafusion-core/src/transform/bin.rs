@@ -4,7 +4,7 @@ use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::{ArrayExpression, Expression, Literal};
 use crate::proto::gen::tasks::Variable;
 use crate::proto::gen::transforms::Bin;
-use crate::spec::transform::bin::{BinExtent, BinTransformSpec};
+use crate::spec::transform::bin::{BinExtent, BinSpan, BinTransformSpec};
 use crate::spec::values::SignalExpressionSpec;
 use crate::task_graph::task::InputVariable;
 use crate::transform::TransformDependencies;
@@ -33,7 +33,7 @@ impl Bin {
             BinExtent::Signal(SignalExpressionSpec { signal }) => parse(signal)?,
         };
 
-        let config = BinConfig::from_spec(transform.clone());
+        let config = BinConfig::from_spec(transform.clone())?;
         let as_ = transform.as_.clone().unwrap_or_default();
 
         Ok(Self {
@@ -90,7 +90,7 @@ pub struct BinConfig {
 
     /// The value span over which to generate bin boundaries. Defaults to the exact extent of the
     /// data
-    span: Option<f64>,
+    span: Option<Expression>,
 }
 
 impl Default for BinConfig {
@@ -110,9 +110,24 @@ impl Default for BinConfig {
 }
 
 impl BinConfig {
-    pub fn from_spec(spec: BinTransformSpec) -> Self {
+    pub fn from_spec(spec: BinTransformSpec) -> Result<Self> {
         let dflt = Self::default();
-        Self {
+
+        let span = match &spec.span {
+            None => None,
+            Some(span) => {
+                match span {
+                    BinSpan::Value(span) => {
+                        Some(Expression::from(*span))
+                    }
+                    BinSpan::Signal(signal) => {
+                        Some(parse(&signal.signal)?)
+                    }
+                }
+            }
+        };
+
+        Ok(Self {
             anchor: spec.anchor,
             base: spec.base.unwrap_or(dflt.base),
             divide: spec.divide.unwrap_or(dflt.divide),
@@ -121,14 +136,18 @@ impl BinConfig {
             nice: spec.nice.unwrap_or(dflt.nice),
             step: spec.step,
             steps: spec.steps,
-            span: spec.span,
-        }
+            span,
+        })
     }
 }
 
 impl TransformDependencies for Bin {
     fn input_vars(&self) -> Vec<InputVariable> {
-        self.extent.as_ref().unwrap().input_vars()
+        let mut input_vars = self.extent.as_ref().unwrap().input_vars();
+        if let Some(span) = self.span.as_ref() {
+            input_vars.extend(span.input_vars());
+        }
+        input_vars
     }
 
     fn output_vars(&self) -> Vec<Variable> {
