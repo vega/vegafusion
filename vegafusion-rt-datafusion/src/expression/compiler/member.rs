@@ -76,7 +76,14 @@ pub fn compile_member(
     let dtype = data_type(&compiled_object, schema)?;
 
     let udf = match dtype {
-        DataType::Struct(_) => make_get_object_member_udf(&dtype, &property_string)?,
+        DataType::Struct(ref fields) => {
+            if fields.iter().any(|f| f.name() == &property_string) {
+                make_get_object_member_udf(&dtype, &property_string)?
+            } else {
+                // Property does not exist, return null
+                return Ok(lit(ScalarValue::try_from(&DataType::Float64).unwrap()))
+            }
+        },
         _ => {
             if property_string == "length" {
                 // Special case to treat foo.length as length(foo) when foo is not an object
