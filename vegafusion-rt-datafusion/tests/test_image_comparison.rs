@@ -88,8 +88,8 @@ mod test_image_comparison_mocks {
         // Not yet supported
         // -----------------
         // Need bin.span as signal, and the span expression function
-        // case("histogram_responsive")
-        //
+        case("histogram_responsive")
+
         // Need to support facet data as source
         // case("grouped_bar_chart_with_error_bars"),
     )]
