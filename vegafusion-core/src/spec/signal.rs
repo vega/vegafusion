@@ -2,6 +2,8 @@ use crate::spec::values::StringOrStringList;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use crate::expression::parser::parse;
+use crate::spec::data::DependencyNodeSupported;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SignalSpec {
@@ -22,6 +24,23 @@ pub struct SignalSpec {
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
+
+impl SignalSpec {
+    pub fn supported(&self) -> DependencyNodeSupported {
+        if self.value.is_some() {
+            return DependencyNodeSupported::Supported
+        } else if let Some(expr) = &self.update {
+            if let Ok(expression) = parse(expr) {
+                if expression.is_supported() {
+                    return DependencyNodeSupported::Supported
+                }
+            }
+        }
+        // TODO: add init once we decide how to differentiate it from update in task graph
+        return DependencyNodeSupported::Unsupported
+    }
+}
+
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SignalOnSpec {

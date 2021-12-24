@@ -42,35 +42,35 @@ impl DataSpec {
         sorted(signals).into_iter().collect()
     }
 
-    pub fn supported(&self) -> DataSupported {
+    pub fn supported(&self) -> DependencyNodeSupported {
         if let Some(Some(format_type)) = self.format.as_ref().map(|fmt| fmt.type_.clone()) {
             if !matches!(format_type.as_str(), "csv" | "tsv" | "arrow" | "json") {
                 // We don't know how to read the data, so full node is unsupported
-                return DataSupported::Unsupported
+                return DependencyNodeSupported::Unsupported
             }
         }
 
         // Inline values array not supported (they should be kept on the server)
         if self.values.is_some() {
-            return DataSupported::Unsupported
+            return DependencyNodeSupported::Unsupported
         }
 
         let all_supported = self.transform.iter().all(|tx| tx.supported());
         if all_supported {
-            DataSupported::Supported
+            DependencyNodeSupported::Supported
         } else if self.url.is_some() {
-            DataSupported::PartiallySupported
+            DependencyNodeSupported::PartiallySupported
         } else {
             match self.transform.get(0) {
-                Some(tx) if tx.supported() => DataSupported::PartiallySupported,
-                _ => DataSupported::Unsupported,
+                Some(tx) if tx.supported() => DependencyNodeSupported::PartiallySupported,
+                _ => DependencyNodeSupported::Unsupported,
             }
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq)]
-pub enum DataSupported {
+pub enum DependencyNodeSupported {
     Supported,
     PartiallySupported,
     Unsupported,
