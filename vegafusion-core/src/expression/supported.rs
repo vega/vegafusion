@@ -61,6 +61,12 @@ lazy_static! {
     ]
     .into_iter()
     .collect();
+
+    pub static ref ALL_EXPRESSION_CONSTANTS: HashSet<&'static str> = vec![
+        "NaN", "E", "LN2", "LOG2E", "LOG10E", "MAX_VALUE", "MIN_VALUE", "PI", "SQRT1_2",  "SQRT2"
+    ]
+    .into_iter()
+    .collect();
 }
 
 fn a() {

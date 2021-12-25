@@ -8,7 +8,7 @@ use crate::proto::gen::expression::literal::Value;
 use crate::proto::gen::tasks::Variable;
 use crate::task_graph::task::InputVariable;
 use std::collections::HashSet;
-use crate::expression::supported::{ALL_DATA_FNS, ALL_SCALE_FNS, IMPLICIT_VARS, SUPPORTED_DATA_FNS, SUPPORTED_EXPRESSION_FNS, SUPPORTED_SCALE_FNS};
+use crate::expression::supported::{ALL_DATA_FNS, ALL_EXPRESSION_CONSTANTS, ALL_SCALE_FNS, IMPLICIT_VARS, SUPPORTED_DATA_FNS, SUPPORTED_EXPRESSION_FNS, SUPPORTED_SCALE_FNS};
 
 pub trait ExpressionVisitor {
     fn visit_expression(&mut self, _expression: &Expression) {}
@@ -85,7 +85,7 @@ impl GetInputVariablesVisitor {
 impl ExpressionVisitor for GetInputVariablesVisitor {
     fn visit_identifier(&mut self, node: &Identifier) {
         // implicit vars like datum and event do not count as a variables
-        if !IMPLICIT_VARS.contains(node.name.as_str()) {
+        if !IMPLICIT_VARS.contains(node.name.as_str()) && !ALL_EXPRESSION_CONSTANTS.contains(node.name.as_str()){
             self.input_variables.insert(InputVariable {
                 var: Variable::new_signal(&node.name),
                 propagate: true,
