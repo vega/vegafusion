@@ -104,6 +104,7 @@ assert(alt.data_transformers.active == 'default')
         "bar/trellis_stacked",
         "bar/with_negative_values",
         "bar/layered",
+        "bar/with_error_bars",
         "casestudy/co2_concentration",
         "casestudy/gapminder_bubble_plot",
         "casestudy/iowa_electricity",
@@ -120,6 +121,9 @@ assert(alt.data_transformers.active == 'default')
         "casestudy/isotype",
         "casestudy/london_tube",
         "casestudy/isotype_emoji",
+        "casestudy/beckers_barley_trellis_plot",
+        "casestudy/anscombe_plot",
+        "casestudy/us_population_over_time_facet",
         "circular/donut",
         "circular/pie",
         "circular/pie_with_labels",
@@ -220,14 +224,6 @@ assert(alt.data_transformers.active == 'default')
 
         # # Not yet supported
         # # -----------------
-        # # Need to support facet data as source
-        # "bar/with_error_bars",
-        # "casestudy/beckers_barley_trellis_plot",
-        #
-        # # Need to pick up data set use in a signal in a "sequence" transform
-        # "casestudy/anscombe_plot"
-        # "casestudy/us_population_over_time_facet",
-        #
         # # ci and random are not deterministic
         # "other/errorbars_with_ci",
         # "other/sorted_error_bars_with_ci",
