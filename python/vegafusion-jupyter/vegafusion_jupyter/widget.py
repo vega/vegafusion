@@ -105,7 +105,7 @@ def arrow_transformer(data, data_dir="_vegafusion_data"):
                     mapping[col] = data[col].dt.tz_localize("+00:00")
                 else:
                     # Assume time info was provided
-                    mapping[col] = data[col].dt.tz_localize(local_timezone)
+                    mapping[col] = data[col].dt.tz_localize(local_timezone).dt.tz_convert(None)
 
             data = data.assign(**mapping)
 
