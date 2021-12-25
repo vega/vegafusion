@@ -13,6 +13,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 use datafusion::physical_plan::aggregates;
 use datafusion::physical_plan::window_functions::{BuiltInWindowFunction, WindowFunction};
+use crate::expression::compiler::utils::to_numeric;
 
 #[async_trait]
 impl TransformTrait for Window {
@@ -70,13 +71,17 @@ impl TransformTrait for Window {
                     window_transform_op::Op::AggregateOp(op) => {
                         let op = AggregateOp::from_i32(*op).unwrap();
 
+                        let numeric_field= || to_numeric(col(field), &dataframe.schema()).expect(
+                            &format!("Failed to convert field {} to numeric data type", field)
+                        );
+
                         use AggregateOp::*;
                         let (agg_fn, arg) = match op {
                             Count => (aggregates::AggregateFunction::Count, lit(true)),
-                            Sum => (aggregates::AggregateFunction::Sum, col(field)),
-                            Mean | Average => (aggregates::AggregateFunction::Avg, col(field)),
-                            Min => (aggregates::AggregateFunction::Min, col(field)),
-                            Max => (aggregates::AggregateFunction::Max, col(field)),
+                            Sum => (aggregates::AggregateFunction::Sum, numeric_field()),
+                            Mean | Average => (aggregates::AggregateFunction::Avg, numeric_field()),
+                            Min => (aggregates::AggregateFunction::Min, numeric_field()),
+                            Max => (aggregates::AggregateFunction::Max, numeric_field()),
                             // ArrayAgg only available on master right now
                             // Values => (aggregates::AggregateFunction::ArrayAgg, col(field)),
                             _ => {
