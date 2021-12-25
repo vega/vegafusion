@@ -10,7 +10,7 @@ use crate::expression::compiler::utils::{
 use crate::task_graph::task::TaskCall;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::arrow::datatypes::DataType;
+use datafusion::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use datafusion::arrow::ipc::reader::{FileReader, StreamReader};
 use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::dataframe::DataFrame;
@@ -31,6 +31,7 @@ use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFus
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::proto::gen::tasks::scan_url_format;
 use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask};
+use vegafusion_core::proto::gen::tasks::scan_url_format::Parse;
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use crate::expression::compiler::builtin_functions::datetime::date_parsing::{DateParseMode, get_datetime_udf};
@@ -80,16 +81,14 @@ impl TaskCall for DataUrlTask {
         };
 
         // Load data from URL
-        let mut date_mode = DateParseMode::Local;
-        let mut df = if url.ends_with(".csv") || url.ends_with(".tsv") {
-            read_csv(url).await?
+        let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
+
+        let mut date_mode = DateParseMode::JavaScript;
+        let df = if url.ends_with(".csv") || url.ends_with(".tsv") {
+            read_csv(url, &parse).await?
         } else if url.ends_with(".json") {
-            // Vega uses the JavaScript Date.parse logic when parsing dates in json files.
-            // Other formats (like CSV) use local date parsing.
-            date_mode = DateParseMode::JavaScript;
             read_json(&url, self.batch_size as usize).await?
         } else if url.ends_with(".arrow") {
-            date_mode = DateParseMode::JavaScript;
             read_arrow(&url).await?
         } else {
             return Err(VegaFusionError::internal(&format!(
@@ -98,79 +97,7 @@ impl TaskCall for DataUrlTask {
             )));
         };
 
-        // Perform specialized parsing (right now, parse string columns named "date" to utc timestamps)
-        let mut date_fields: Vec<String> = Vec::new();
-        if let Some(format_type) = &self.format_type {
-            if let Some(parse) = &format_type.parse {
-                if let scan_url_format::Parse::Object(formats) = &parse {
-                    for spec in &formats.specs {
-                        let datatype = &spec.datatype;
-                        if datatype.starts_with("date") {
-                            let schema = df.schema();
-                            if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
-                                date_fields.push(date_field.name().clone());
-                                let dtype = date_field.data_type();
-                                let date_expr = if is_string_datatype(dtype) {
-                                    let datetime_udf = get_datetime_udf(date_mode);
-                                    let date_expr = Expr::ScalarUDF {
-                                        fun: Arc::new(datetime_udf),
-                                        args: vec![col(&spec.name)],
-                                    };
-
-                                    Expr::ScalarFunction {
-                                        fun: BuiltinScalarFunction::ToTimestampMillis,
-                                        args: vec![date_expr],
-                                    }
-                                } else if is_integer_datatype(dtype) {
-                                    // Assume Year was parsed numerically
-                                    Expr::ScalarUDF {
-                                        fun: Arc::new(DATETIME_COMPONENTS.clone()),
-                                        args: vec![col(&spec.name)],
-                                    }
-                                } else if let DataType::Timestamp(_, _) = dtype {
-                                    Expr::ScalarFunction {
-                                        fun: BuiltinScalarFunction::ToTimestampMillis,
-                                        args: vec![col(&spec.name)],
-                                    }
-                                } else {
-                                    continue;
-                                };
-
-                                let mut columns: Vec<_> = schema
-                                    .fields()
-                                    .iter()
-                                    .filter_map(|field| {
-                                        let name = field.name();
-                                        if name == &spec.name {
-                                            None
-                                        } else {
-                                            Some(col(name))
-                                        }
-                                    })
-                                    .collect();
-                                columns.push(date_expr.alias(&spec.name));
-                                df = df.select(columns)?
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Standardize other Timestamp columns (those that weren't created above) to integer
-        // milliseconds
-        let selection: Vec<_> = df.schema().fields().iter().map(|field| {
-            if !date_fields.contains(field.name()) && matches!(field.data_type(), DataType::Timestamp(_, _)) {
-                Expr::ScalarFunction {
-                    fun: BuiltinScalarFunction::ToTimestampMillis,
-                    args: vec![col(&field.name())],
-                }.alias(field.name())
-            } else {
-                col(field.name())
-            }
-        }).collect();
-
-        df = df.select(selection)?;
+        let df = process_datetimes(&parse, date_mode, df)?;
 
         // Apply transforms (if any)
         let (transformed_df, output_values) = if self
@@ -191,6 +118,89 @@ impl TaskCall for DataUrlTask {
         Ok((table_value, output_values))
     }
 }
+
+
+fn process_datetimes(parse: &Option<Parse>, date_mode: DateParseMode, df: Arc<dyn DataFrame>) -> Result<Arc<dyn DataFrame>> {
+    // Perform specialized date parsing
+    let mut date_fields: Vec<String> = Vec::new();
+    let mut df = df;
+    if let Some(parse) = parse {
+        if let scan_url_format::Parse::Object(formats) = &parse {
+            for spec in &formats.specs {
+                let datatype = &spec.datatype;
+                if datatype.starts_with("date") || datatype.starts_with("utc") {
+                    let date_mode = if datatype.starts_with("utc") {
+                        DateParseMode::Utc
+                    } else {
+                        date_mode
+                    };
+
+                    let schema = df.schema();
+                    if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
+                        date_fields.push(date_field.name().clone());
+                        let dtype = date_field.data_type();
+                        let date_expr = if is_string_datatype(dtype) {
+                            let datetime_udf = get_datetime_udf(date_mode);
+                            let date_expr = Expr::ScalarUDF {
+                                fun: Arc::new(datetime_udf),
+                                args: vec![col(&spec.name)],
+                            };
+
+                            Expr::ScalarFunction {
+                                fun: BuiltinScalarFunction::ToTimestampMillis,
+                                args: vec![date_expr],
+                            }
+                        } else if is_integer_datatype(dtype) {
+                            // Assume Year was parsed numerically
+                            Expr::ScalarUDF {
+                                fun: Arc::new(DATETIME_COMPONENTS.clone()),
+                                args: vec![col(&spec.name)],
+                            }
+                        } else if let DataType::Timestamp(_, _) = dtype {
+                            Expr::ScalarFunction {
+                                fun: BuiltinScalarFunction::ToTimestampMillis,
+                                args: vec![col(&spec.name)],
+                            }
+                        } else {
+                            continue;
+                        };
+
+                        let mut columns: Vec<_> = schema
+                            .fields()
+                            .iter()
+                            .filter_map(|field| {
+                                let name = field.name();
+                                if name == &spec.name {
+                                    None
+                                } else {
+                                    Some(col(name))
+                                }
+                            })
+                            .collect();
+                        columns.push(date_expr.alias(&spec.name));
+                        df = df.select(columns)?
+                    }
+                }
+            }
+        }
+    }
+
+    // Standardize other Timestamp columns (those that weren't created above) to integer
+    // milliseconds
+    let selection: Vec<_> = df.schema().fields().iter().map(|field| {
+        if !date_fields.contains(field.name()) && matches!(field.data_type(), DataType::Timestamp(_, _)) {
+            Expr::ScalarFunction {
+                fun: BuiltinScalarFunction::ToTimestampMillis,
+                args: vec![col(&field.name())],
+            }.alias(field.name())
+        } else {
+            col(field.name())
+        }
+    }).collect();
+
+    Ok(df.select(selection)?)
+}
+
 
 #[async_trait]
 impl TaskCall for DataValuesTask {
@@ -251,8 +261,8 @@ impl TaskCall for DataSourceTask {
     }
 }
 
-async fn read_csv(url: String) -> Result<Arc<dyn DataFrame>> {
-    // Build options
+async fn read_csv(url: String, parse: &Option<Parse>) -> Result<Arc<dyn DataFrame>> {
+    // Build base CSV options
     let csv_opts = if url.ends_with(".tsv") {
         CsvReadOptions::new()
             .delimiter(b'\t')
@@ -279,18 +289,73 @@ async fn read_csv(url: String) -> Result<Arc<dyn DataFrame>> {
         let mut file = File::create(filepath.clone()).unwrap();
         writeln!(file, "{}", body).unwrap();
 
+        let path = tempdir.path().to_str().unwrap();
+        let schema = build_csv_schema(&csv_opts, path, parse).await?;
+        let csv_opts = csv_opts.schema(&schema);
+
         // Load through VegaFusionTable so that temp file can be deleted
         let df = ctx
-            .read_csv(tempdir.path().to_str().unwrap(), csv_opts)
+            .read_csv(path, csv_opts)
             .await
             .unwrap();
         let table = VegaFusionTable::from_dataframe(df).await.unwrap();
         let df = table.to_dataframe().unwrap();
         Ok(df)
     } else {
+        let schema = build_csv_schema(&csv_opts, &url, parse).await?;
+        let csv_opts = csv_opts.schema(&schema);
         Ok(ctx.read_csv(url, csv_opts).await?)
     }
 }
+
+async fn build_csv_schema(csv_opts: &CsvReadOptions<'_>, uri: impl Into<String>, parse: &Option<Parse>) -> Result<SchemaRef> {
+    let mut ctx = ExecutionContext::new();
+
+    let uri: String = uri.into();
+    let (object_store, path) = ctx.object_store(&uri)?;
+    let listing_opts = csv_opts.to_listing_options(1);
+    let inferred_schema = listing_opts
+        .infer_schema(Arc::clone(&object_store), &path)
+        .await?;
+
+    println!("inferred_schema: {:?}", inferred_schema);
+
+    // Get HashMap of provided columns formats
+    let format_specs = if let Some(parse) = parse {
+        match parse {
+            Parse::String(_) => {
+                // auto, return inferred schema as-is
+                return Ok(inferred_schema)
+            }
+            Parse::Object(field_specs) => {
+                field_specs.specs.iter().map(|spec| {
+                    (spec.name.clone(), spec.datatype.clone())
+                }).collect()
+            }
+        }
+    } else {
+        HashMap::new()
+    };
+
+    // Override inferred schema based on parse options
+    let new_fields: Vec<_> = inferred_schema.fields().iter().map(|field| {
+        let dtype = if let Some(f) = format_specs.get(field.name()) {
+            match f.as_str() {
+                "number" => DataType::Float64,
+                "boolean" => DataType::Boolean,
+                "date" => DataType::Utf8, // Parse as string, convert to date later
+                "string" => DataType::Utf8,
+                _ => DataType::Utf8
+            }
+        } else {
+            // Unspecified, use String
+            DataType::Utf8
+        };
+        Field::new(&field.name(), dtype, true)
+    }).collect();
+    Ok(SchemaRef::new(Schema::new(new_fields)))
+}
+
 
 async fn read_json(url: &str, batch_size: usize) -> Result<Arc<dyn DataFrame>> {
     // Read to json Value from local file or url.
