@@ -46,6 +46,7 @@ pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<Fi
     let mut timezone_ind = 0;
     let mut stage = 0;
     let mut has_time = false;
+    let mut date_split = '-';
 
     // tokenize date string
     for c in date_str.trim().chars() {
@@ -53,6 +54,7 @@ pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<Fi
             0 => {
                 // Parsing date
                 if date_ind < 2 && (c == '-' || c == '/' || c == ' ') {
+                    date_split = c;
                     date_ind += 1;
                 } else if date_ind == 2 && (c == 'T' || c == ' ') {
                     // Move on to time portion
@@ -108,19 +110,19 @@ pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<Fi
     // determine which date token holds year, month, and date
     let year_re = Regex::new(r"\d{4}").unwrap();
 
-    let (year, month, day) = if year_re.is_match(&date_tokens[0]) {
+    let (year, month, day, iso8601_date) = if year_re.is_match(&date_tokens[0]) {
         // Assume YYYY-MM-DD (where '-' can also be '/' or ' ')
         // Year parsing needs to succeed, or we fail. All other components are optional
         let year: i32 = date_tokens[0].parse().ok()?;
         let month: u32 = parse_month_str(&date_tokens[1]).unwrap_or(1);
         let day: u32 = date_tokens[2].parse().unwrap_or(1);
-        (year, month, day)
+        (year, month, day, date_split == '-')
     } else if year_re.is_match(&date_tokens[2]) {
         // Assume MM/DD/YYYY (where '/' can also be '-' or ' ')
         let year: i32 = date_tokens[2].parse().ok()?;
         let month: u32 = parse_month_str(&date_tokens[0]).unwrap_or(1);
         let day: u32 = date_tokens[1].parse().ok()?;
-        (year, month, day)
+        (year, month, day, false)
     } else {
         // 4-digit year may be the first of third date component
         return None;
@@ -140,7 +142,7 @@ pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<Fi
     let offset = if timezone_tokens[0].is_empty() {
         match mode {
             DateParseMode::Utc => FixedOffset::east(0),
-            DateParseMode::JavaScript if !has_time => FixedOffset::east(0),
+            DateParseMode::JavaScript if iso8601_date && !has_time => FixedOffset::east(0),
             _ => {
                 // Treat date as in local timezone
                 let local = Local {};
