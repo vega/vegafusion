@@ -1,4 +1,7 @@
 use serde::{Deserialize, Serialize};
+use crate::error::Result;
+use crate::expression::parser::parse;
+use crate::task_graph::task::InputVariable;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -57,6 +60,35 @@ pub struct SignalExpressionSpec {
 pub enum StringOrSignalSpec {
     String(String),
     Signal(SignalExpressionSpec),
+}
+
+impl StringOrSignalSpec {
+    pub fn input_vars(&self) -> Result<Vec<InputVariable>> {
+        match self {
+            Self::Signal(signal) => {
+                Ok(parse(&signal.signal)?.input_vars())
+            }
+            _ => Ok(Default::default()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum NumberOrSignalSpec {
+    Number(f64),
+    Signal(SignalExpressionSpec),
+}
+
+impl NumberOrSignalSpec {
+    pub fn input_vars(&self) -> Result<Vec<InputVariable>> {
+        match self {
+            Self::Signal(signal) => {
+                Ok(parse(&signal.signal)?.input_vars())
+            }
+            _ => Ok(Default::default()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

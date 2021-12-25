@@ -9,6 +9,7 @@ pub mod timeunit;
 pub mod unsupported;
 pub mod window;
 pub mod lookup;
+pub mod sequence;
 
 use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransformSpec};
 
@@ -25,6 +26,7 @@ use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 use crate::spec::transform::lookup::LookupTransformSpec;
+use crate::spec::transform::sequence::SequenceTransformSpec;
 
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -98,6 +100,10 @@ impl Deref for TransformSpec {
             TransformSpec::Collect(t) => t,
             TransformSpec::Timeunit(t) => t,
 
+            // Supported for dependency determination, not implementation
+            TransformSpec::Lookup(t) => t,
+            TransformSpec::Sequence(t) => t,
+
             // Unsupported
             TransformSpec::CountPattern(t) => t,
             TransformSpec::Contour(t) => t,
@@ -123,7 +129,6 @@ impl Deref for TransformSpec {
             TransformSpec::Label(t) => t,
             TransformSpec::LinkPath(t) => t,
             TransformSpec::Loess(t) => t,
-            TransformSpec::Lookup(t) => t,
             TransformSpec::Nest(t) => t,
             TransformSpec::Pack(t) => t,
             TransformSpec::Partition(t) => t,
@@ -134,7 +139,6 @@ impl Deref for TransformSpec {
             TransformSpec::Regression(t) => t,
             TransformSpec::ResolveFilter(t) => t,
             TransformSpec::Sample(t) => t,
-            TransformSpec::Sequence(t) => t,
             TransformSpec::Stack(t) => t,
             TransformSpec::Stratify(t) => t,
             TransformSpec::Tree(t) => t,
