@@ -87,6 +87,7 @@ mod test_image_comparison_mocks {
         case("histogram_responsive"),
         case("grouped_bar_chart_with_error_bars"),
         case("one_dot_per_zipcode"),
+        case("ridgeline"),
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);

@@ -1,0 +1,213 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "title": {"anchor": "end", "text": "Seattle Weather"},
+  "data": [
+    {
+      "name": "source_0",
+      "url": "https://cdn.jsdelivr.net/npm/vega-datasets@v1.29.0/data/seattle-weather.csv",
+      "format": {"type": "csv", "parse": {"Month": "date", "date": "date"}},
+      "transform": [
+        {
+          "type": "extent",
+          "field": "temp_max",
+          "signal": "child_bin_maxbins_10_temp_max_extent"
+        },
+        {
+          "type": "bin",
+          "field": "temp_max",
+          "as": ["bin_max", "bin_min"],
+          "signal": "child_bin_maxbins_10_temp_max_bins",
+          "extent": {"signal": "child_bin_maxbins_10_temp_max_extent"},
+          "maxbins": 10
+        },
+        {
+          "field": "date",
+          "type": "timeunit",
+          "units": ["month"],
+          "as": ["Month", "Month_end"]
+        },
+        {
+          "type": "joinaggregate",
+          "as": ["mean_temp"],
+          "ops": ["mean"],
+          "fields": ["temp_max"],
+          "groupby": ["Month"]
+        },
+        {
+          "type": "aggregate",
+          "groupby": ["Month", "mean_temp", "bin_min", "bin_max"],
+          "ops": ["count"],
+          "fields": [null],
+          "as": ["value"]
+        },
+        {
+          "type": "impute",
+          "field": "value",
+          "key": "bin_min",
+          "method": "value",
+          "groupby": ["Month", "mean_temp"],
+          "value": 0
+        },
+        {
+          "type": "formula",
+          "expr": "0.5*datum[\"bin_min\"]+0.5*datum[\"bin_min\"]",
+          "as": "bin_min"
+        },
+        {
+          "type": "impute",
+          "field": "value",
+          "groupby": ["mean_temp", "Month"],
+          "key": "bin_min",
+          "method": "value",
+          "value": 0
+        },
+        {
+          "type": "stack",
+          "groupby": ["bin_min", "Month"],
+          "field": "value",
+          "sort": {"field": ["mean_temp"], "order": ["descending"]},
+          "as": ["value_start", "value_end"],
+          "offset": "zero"
+        }
+      ]
+    },
+    {
+      "name": "row_domain",
+      "source": "source_0",
+      "transform": [{"type": "aggregate", "groupby": ["Month"]}]
+    }
+  ],
+  "signals": [
+    {"name": "child_width", "value": 400},
+    {"name": "child_height", "value": 20}
+  ],
+  "layout": {"padding": 0, "columns": 1, "bounds": "flush", "align": "all"},
+  "marks": [
+    {
+      "name": "row_header",
+      "type": "group",
+      "role": "row-header",
+      "from": {"data": "row_domain"},
+      "sort": {"field": "datum[\"Month\"]", "order": "ascending"},
+      "title": {
+        "text": {"signal": "timeFormat(parent[\"Month\"], '%B')"},
+        "orient": "left",
+        "style": "guide-label",
+        "frame": "group",
+        "baseline": "middle",
+        "align": "right",
+        "angle": 0,
+        "offset": 10
+      },
+      "encode": {"update": {"height": {"signal": "child_height"}}}
+    },
+    {
+      "name": "column_footer",
+      "type": "group",
+      "role": "column-footer",
+      "encode": {"update": {"width": {"signal": "child_width"}}},
+      "axes": [
+        {
+          "scale": "x",
+          "orient": "bottom",
+          "grid": false,
+          "title": "Maximum Daily Temperature (C)",
+          "labelFlush": true,
+          "labelOverlap": true,
+          "tickCount": {"signal": "ceil(child_width/40)"},
+          "zindex": 0
+        }
+      ]
+    },
+    {
+      "name": "cell",
+      "type": "group",
+      "style": "cell",
+      "from": {
+        "facet": {"name": "facet", "data": "source_0", "groupby": ["Month"]}
+      },
+      "sort": {"field": ["datum[\"Month\"]"], "order": ["ascending"]},
+      "encode": {
+        "update": {
+          "width": {"signal": "child_width"},
+          "height": {"signal": "child_height"}
+        }
+      },
+      "marks": [
+        {
+          "name": "child_pathgroup",
+          "type": "group",
+          "from": {
+            "facet": {
+              "name": "faceted_path_child_main",
+              "data": "facet",
+              "groupby": ["mean_temp"]
+            }
+          },
+          "encode": {
+            "update": {
+              "width": {"field": {"group": "width"}},
+              "height": {"field": {"group": "height"}}
+            }
+          },
+          "marks": [
+            {
+              "name": "child_marks",
+              "type": "area",
+              "style": ["area"],
+              "sort": {"field": "datum[\"bin_min\"]"},
+              "from": {"data": "faceted_path_child_main"},
+              "encode": {
+                "update": {
+                  "fillOpacity": {"value": 0.8},
+                  "stroke": {"value": "lightgray"},
+                  "strokeWidth": {"value": 0.5},
+                  "interpolate": {"value": "monotone"},
+                  "orient": {"value": "vertical"},
+                  "fill": {"scale": "fill", "field": "mean_temp"},
+                  "description": {
+                    "signal": "\"Maximum Daily Temperature (C): \" + (format(datum[\"bin_min\"], \"\")) + \"; value: \" + (format(datum[\"value\"], \"\")) + \"; mean_temp: \" + (format(datum[\"mean_temp\"], \"\"))"
+                  },
+                  "x": {"scale": "x", "field": "bin_min"},
+                  "y": {"scale": "y", "field": "value_end"},
+                  "y2": {"scale": "y", "field": "value_start"},
+                  "defined": {
+                    "signal": "isValid(datum[\"bin_min\"]) && isFinite(+datum[\"bin_min\"]) && isValid(datum[\"value\"]) && isFinite(+datum[\"value\"])"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "linear",
+      "domain": {"data": "source_0", "field": "bin_min"},
+      "range": [0, {"signal": "child_width"}],
+      "zero": false
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {"data": "source_0", "fields": ["value_start", "value_end"]},
+      "range": [20, -20],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "fill",
+      "type": "linear",
+      "domain": [30, 5],
+      "range": {"scheme": "redyellowblue"},
+      "interpolate": "hcl",
+      "zero": false
+    }
+  ],
+  "config": {"style": {"cell": {"stroke": null}}}
+}
