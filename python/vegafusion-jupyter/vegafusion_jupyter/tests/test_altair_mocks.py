@@ -118,6 +118,8 @@ assert(alt.data_transformers.active == 'default')
         "casestudy/top_k_items",
         "casestudy/top_k_letters",
         "casestudy/isotype",
+        "casestudy/london_tube",
+        "casestudy/isotype_emoji",
         "circular/donut",
         "circular/pie",
         "circular/pie_with_labels",
@@ -150,6 +152,7 @@ assert(alt.data_transformers.active == 'default')
         "interactive/other-image_tooltip",
         "interactive/casestudy-weather_heatmap",
         "interactive/casestudy-airport_connections",
+        "interactive/histogram-responsive",
         "line/bump_chart",
         "line/filled_step_chart",
         "line/with_cumsum",
@@ -192,6 +195,7 @@ assert(alt.data_transformers.active == 'default')
         "other/normed_parallel_coordinates",
         "other/parallel_coordinates",
         "other/violin_plot",
+        "other/ranged_dot_plot",
         "scatter/binned",
         "scatter/bubble_plot",
         "scatter/connected",
@@ -224,19 +228,13 @@ assert(alt.data_transformers.active == 'default')
         # "casestudy/anscombe_plot"
         # "casestudy/us_population_over_time_facet",
         #
-        # # ci interval uses random number generator and is not deterministic
+        # # ci and random are not deterministic
         # "other/errorbars_with_ci",
         # "other/sorted_error_bars_with_ci",
-        #
-        # # Need support for bin `extent` as signal expression
-        # "interactive/histogram-responsive",
-        #
-        # # Unsupported Expression functions
-        # "casestudy/london_tube",  # indexof and substring not supported
-        # "casestudy/one_dot_per_zipcode",  # substring
-        # "other/ranged_dot_plot",  # indexof
-        # "casestudy/isotype_emoji", # Unsupported use of datum expression in literal object member lookup
         # "scatter/stripplot",  # random()
+        #
+        # # Arrow read csv inference interprets zip codes column as numeric instead of string
+        # "casestudy/one_dot_per_zipcode",  # substring
     ])
 def test_altair_mock(mock_name):
 
@@ -323,7 +321,7 @@ def export_image_sequence(
 
         # Open url with selenium
         chrome_driver.get(url)
-        time.sleep(4)
+        time.sleep(5)
 
         # Remove padding, margins, and standardize line height.
         css = ("body, .jp-Cell, .jp-Notebook, .jupyter-widgets, .jp-RenderedHTMLCommon "
@@ -340,7 +338,7 @@ def export_image_sequence(
             action_type = action["type"]
             if action_type in ("snapshot", "screenshot"):
                 chain.perform()
-                time.sleep(0.5)
+                time.sleep(1)
 
                 img_path = (temp_screenshots_dir / (temp_file_path.name + f"_{i}.png")).as_posix();
                 if action_type == "snapshot":
