@@ -318,8 +318,6 @@ async fn build_csv_schema(csv_opts: &CsvReadOptions<'_>, uri: impl Into<String>,
         .infer_schema(Arc::clone(&object_store), &path)
         .await?;
 
-    println!("inferred_schema: {:?}", inferred_schema);
-
     // Get HashMap of provided columns formats
     let format_specs = if let Some(parse) = parse {
         match parse {

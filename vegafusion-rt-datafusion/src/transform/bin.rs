@@ -1,6 +1,6 @@
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::ExprHelpers;
+use crate::expression::compiler::utils::{ExprHelpers, to_numeric};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
@@ -104,7 +104,9 @@ impl TransformTrait for Bin {
             &bin,
         );
 
-        let bin_start = bin.call(vec![col(&self.field)]);
+        let bin_start = bin.call(vec![
+            to_numeric(col(&self.field), &dataframe.schema())?,
+        ]);
 
         // Name binned columns
         let (bin_start, name) = if let Some(as0) = &self.alias_0 {

@@ -12,6 +12,7 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{AggregateOp, JoinAggregate};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::aggregate::op_name;
+use crate::expression::compiler::utils::to_numeric;
 
 #[async_trait]
 impl TransformTrait for JoinAggregate {
@@ -37,15 +38,18 @@ impl TransformTrait for JoinAggregate {
                     column => col(column),
                 }
             };
+            let numeric_column = || to_numeric(column.clone(), &dataframe.schema()).expect(
+                &format!("Failed to convert column {:?} to numeric data type", column)
+            );
 
             let op = AggregateOp::from_i32(*op).unwrap();
 
             let expr = match op {
                 AggregateOp::Count => count(column),
-                AggregateOp::Mean | AggregateOp::Average => avg(column),
-                AggregateOp::Min => min(column),
-                AggregateOp::Max => max(column),
-                AggregateOp::Sum => sum(column),
+                AggregateOp::Mean | AggregateOp::Average => avg(numeric_column()),
+                AggregateOp::Min => min(numeric_column()),
+                AggregateOp::Max => max(numeric_column()),
+                AggregateOp::Sum => sum(numeric_column()),
                 AggregateOp::Valid => {
                     let valid = Expr::Cast {
                         expr: Box::new(Expr::IsNotNull(Box::new(column))),
@@ -90,7 +94,7 @@ impl TransformTrait for JoinAggregate {
         let dataframe = if group_exprs.is_empty() {
             let grouped_dataframe = dataframe
                 .aggregate(vec![lit(true).alias("__unit_rhs")], agg_exprs)
-                .with_context(|| "Failed to perform aggregate transform".to_string())?;
+                .with_context(|| "Failed to perform joinaggregate transform".to_string())?;
 
             // Add unit column to join on
             let dataframe =
@@ -107,7 +111,7 @@ impl TransformTrait for JoinAggregate {
         } else {
             let grouped_dataframe = dataframe
                 .aggregate(group_exprs, agg_exprs)
-                .with_context(|| "Failed to perform aggregate transform".to_string())?;
+                .with_context(|| "Failed to perform joinaggregate transform".to_string())?;
 
             let left_cols: Vec<_> = self.groupby.iter().map(|f| f.as_str()).collect();
 
