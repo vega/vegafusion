@@ -1,0 +1,81 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 650,
+  "height": 400,
+  "data": [
+    {
+      "name": "source_0",
+      "url": "https://cdn.jsdelivr.net/npm/vega-datasets@v1.29.0/data/zipcodes.csv",
+      "format": {"type": "csv"},
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "substring(datum.zip_code,0,1)",
+          "as": "leading digit"
+        },
+        {
+          "type": "geojson",
+          "fields": ["longitude", "latitude"],
+          "signal": "geojson_0"
+        },
+        {
+          "type": "geopoint",
+          "projection": "projection",
+          "fields": ["longitude", "latitude"],
+          "as": ["x", "y"]
+        }
+      ]
+    }
+  ],
+  "projections": [
+    {
+      "name": "projection",
+      "size": {"signal": "[width, height]"},
+      "fit": {"signal": "geojson_0"},
+      "type": "albersUsa"
+    }
+  ],
+  "marks": [
+    {
+      "name": "marks",
+      "type": "symbol",
+      "style": ["circle"],
+      "from": {"data": "source_0"},
+      "encode": {
+        "update": {
+          "opacity": {"value": 0.7},
+          "size": {"value": 3},
+          "fill": {"scale": "color", "field": "leading digit"},
+          "tooltip": {
+            "signal": "isValid(datum[\"zip_code\"]) ? datum[\"zip_code\"] : \"\"+datum[\"zip_code\"]"
+          },
+          "ariaRoleDescription": {"value": "circle"},
+          "description": {
+            "signal": "\"longitude: \" + (format(datum[\"longitude\"], \"\")) + \"; latitude: \" + (format(datum[\"latitude\"], \"\")) + \"; leading digit: \" + (isValid(datum[\"leading digit\"]) ? datum[\"leading digit\"] : \"\"+datum[\"leading digit\"]) + \"; zip_code: \" + (isValid(datum[\"zip_code\"]) ? datum[\"zip_code\"] : \"\"+datum[\"zip_code\"])"
+          },
+          "x": {"field": "x"},
+          "y": {"field": "y"},
+          "shape": {"value": "circle"}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": {"data": "source_0", "field": "leading digit", "sort": true},
+      "range": "category"
+    }
+  ],
+  "legends": [
+    {
+      "fill": "color",
+      "symbolType": "circle",
+      "title": "leading digit",
+      "encode": {"symbols": {"update": {"opacity": {"value": 0.7}}}}
+    }
+  ]
+}
