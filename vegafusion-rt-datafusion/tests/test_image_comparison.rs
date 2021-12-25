@@ -84,14 +84,8 @@ mod test_image_comparison_mocks {
         case("trellis_stacked_bar"),
         case("trellis_bar_histogram"),
         case("interactive_average"),
-
-        // Not yet supported
-        // -----------------
-        // Need bin.span as signal, and the span expression function
-        case("histogram_responsive")
-
-        // Need to support facet data as source
-        // case("grouped_bar_chart_with_error_bars"),
+        case("histogram_responsive"),
+        case("grouped_bar_chart_with_error_bars"),
     )]
     fn test_image_comparison(spec_name: &str) {
         println!("spec_name: {}", spec_name);

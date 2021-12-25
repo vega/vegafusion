@@ -62,10 +62,21 @@ impl ChartVisitor for MakeTaskScopeVisitor {
         Ok(())
     }
 
-    fn visit_group_mark(&mut self, _mark: &MarkSpec, scope: &[u32]) -> Result<()> {
+    fn visit_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
         // Initialize scope for this group level
         let parent_scope = self.task_scope.get_child_mut(&scope[0..scope.len() - 1])?;
-        parent_scope.children.push(Default::default());
+        let mut group_scope: TaskScope = Default::default();
+
+
+        // Check for facet dataset
+        if let Some(from) = &mark.from {
+            if let Some(facet) = &from.facet {
+                group_scope.data.insert(facet.name.clone());
+            }
+        }
+
+        parent_scope.children.push(group_scope);
+
         Ok(())
     }
 }
