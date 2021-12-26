@@ -1,11 +1,12 @@
 # https://altair-viz.github.io/gallery/stripplot.html
+# Padding and bounds updates to make size deterministic even when data is not
 
 import altair as alt
 from vega_datasets import data
 
 source = data.movies.url
 
-stripplot =  alt.Chart(source, width=40).mark_circle(size=8).encode(
+stripplot =  alt.Chart(source, width=40, padding=60, bounds="flush").mark_circle(size=8).encode(
     x=alt.X(
         'jitter:Q',
         title=None,
