@@ -104,7 +104,8 @@ setup_args = dict(
             'nbval',
             'jupytext',
             'selenium',
-            'scikit-image'
+            'scikit-image',
+            'tenacity'
         ],
         'examples': [
             # Any requirements for the examples to run

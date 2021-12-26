@@ -1,4 +1,5 @@
 # https://altair-viz.github.io/gallery/sorted_error_bars_with_ci.html
+# Padding updates to make size deterministic even when data is not
 
 import altair as alt
 from vega_datasets import data
@@ -28,4 +29,6 @@ error_bars = points.mark_rule().encode(
     x2='ci1(yield)',
 )
 
-points + error_bars
+(points + error_bars).properties(
+    padding={"left": 50, "top": 5, "right": 50, "bottom": 5}
+)

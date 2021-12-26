@@ -13,6 +13,7 @@ from skimage.io import imread
 from skimage.metrics import structural_similarity as ssim
 import json
 import shutil
+from tenacity import retry, wait, stop
 
 here = Path(__file__).parent
 altair_mocks_dir = here / "altair_mocks"
@@ -70,169 +71,165 @@ assert(alt.data_transformers.active == 'default')
 
 
 @pytest.mark.parametrize(
-    "mock_name", [
-        "area/cumulative_count",
-        "area/density_facet",
-        "area/gradient",
-        "area/horizon_graph",
-        "area/layered",
-        "area/normalized_stacked",
-        "area/density_stack",
-        "area/trellis",
-        "area/trellis_sort_array",
-        "area/streamgraph",
-        "bar/with_highlighted_bar",
-        "bar/with_labels",
-        "bar/with_line_at_mean",
-        "bar/with_line_on_dual_axis",
-        "bar/with_rolling_mean",
-        "bar/with_rounded_edges",
-        "bar/and_tick_chart",
-        "bar/percentage_of_total",
-        "bar/trellis_compact",
-        "bar/diverging_stacked",
-        "bar/grouped",
-        "bar/horizontal",
-        "bar/horizontal_grouped",
-        "bar/horizontal_stacked",
-        "bar/normalized_stacked",
-        "bar/sorted",
-        "bar/stacked",
-        "bar/stacked_with_sorted_segments",
-        "bar/stacked_with_text_overlay",
-        "bar/trellis_stacked",
-        "bar/trellis_stacked",
-        "bar/with_negative_values",
-        "bar/layered",
-        "bar/with_error_bars",
-        "casestudy/co2_concentration",
-        "casestudy/gapminder_bubble_plot",
-        "casestudy/iowa_electricity",
-        "casestudy/natural_disasters",
-        "casestudy/top_k_with_others",
-        "casestudy/wheat_wages",
-        "casestudy/window_rank",
-        "casestudy/airports",
-        "casestudy/us_state_capitals",
-        "casestudy/falkensee",
-        "casestudy/us_employment",
-        "casestudy/top_k_items",
-        "casestudy/top_k_letters",
-        "casestudy/isotype",
-        "casestudy/london_tube",
-        "casestudy/isotype_emoji",
-        "casestudy/beckers_barley_trellis_plot",
-        "casestudy/anscombe_plot",
-        "casestudy/us_population_over_time_facet",
-        "circular/donut",
-        "circular/pie",
-        "circular/pie_with_labels",
-        "circular/radial",
-        "circular/pacman",
-        "histogram/with_a_global_mean_overlay",
-        "histogram/layered",
-        "histogram/trellis",
-        "interactive/selection_layer_bar_month",
-        "interactive/area-interval_selection",
-        "interactive/layered_crossfilter",
-        "interactive/scatter_with_histogram",
-        "interactive/select_detail",
-        "interactive/scatter_plot",
-        "interactive/brush",
-        "interactive/multiline_tooltip",
-        "interactive/scatter_linked_brush",
-        "interactive/casestudy-us_population_pyramid_over_time",
-        "interactive/multiline_highlight",
-        "interactive/scatter-with_minimap",
-        "interactive/select_mark_area",
-        "interactive/legend",
-        "interactive/cross_highlight",
-        "interactive/selection_histogram",
-        "interactive/scatter-with_linked_table",
-        "interactive/scatter_with_layered_histogram",
-        "interactive/casestudy-seattle_weather_interactive",
-        "interactive/casestudy-us_population_over_time",
-        "interactive/scatter-href",
-        "interactive/other-image_tooltip",
-        "interactive/casestudy-weather_heatmap",
-        "interactive/casestudy-airport_connections",
-        "interactive/histogram-responsive",
-        "line/bump_chart",
-        "line/filled_step_chart",
-        "line/with_cumsum",
-        "line/with_logarithmic_scale",
-        "line/percent_axis",
-        "line/with_points",
-        "line/with_generator",
-        "line/slope_graph",
-        "line/slope_graph2",
-        "line/step_chart",
-        "line/layer_line_color_rule",
-        "line/multi_series",
-        "line/with_ci",
-        "line/trail_marker",
-        "line/with_datum",
-        "line/with_color_datum",
-        "maps/choropleth",
-        "maps/choropleth_repeat",
-        "maps/us_incomebrackets_by_state_facet",
-        "maps/world",
-        "maps/world_projections",
-        "maps/airports_count",
-        "other/bar_chart_with_highlighted_segment",
-        "other/beckers_barley_wrapped_facet",
-        "other/boxplot",
-        "other/comet_chart",
-        "other/errorbars_with_std",
-        "other/scatter_marginal_hist",
-        "other/gantt_chart",
-        "other/isotype_grid",
-        "other/layered_chart_with_dual_axis",
-        "other/ridgeline_plot",
-        "other/stem_and_leaf",
-        "other/layered_heatmap_text",
-        "other/candlestick_chart",
-        "other/multiple_marks",
-        "other/hexbins",
-        "other/wilkinson_dot_plot",
-        "other/binned_heatmap",
-        "other/normed_parallel_coordinates",
-        "other/parallel_coordinates",
-        "other/violin_plot",
-        "other/ranged_dot_plot",
-        "scatter/binned",
-        "scatter/bubble_plot",
-        "scatter/connected",
-        "scatter/dot_dash_plot",
-        "scatter/multifeature",
-        "scatter/poly_fit_regression",
-        "scatter/qq",
-        "scatter/matrix",
-        "scatter/with_lowess",
-        "scatter/with_errorbars",
-        "scatter/with_labels",
-        "scatter/table_bubble_plot_github",
-        "scatter/trellis",
-        "scatter/wind_vector_map",
-        "scatter/with_rolling_mean",
-        "simple/stacked_bar_chart",
-        "simple/bar_chart",
-        "simple/heatmap",
-        "simple/line_chart",
-        "simple/scatter_tooltips",
-        "simple/strip_chart",
+    "mock_name,img_tolerance,delay", [
+        ("area/cumulative_count", 1.0, 0.5),
+        ("area/density_facet", 1.0, 0.5),
+        ("area/gradient", 1.0, 0.5),
+        ("area/horizon_graph", 1.0, 0.5),
+        ("area/layered", 1.0, 0.5),
+        ("area/normalized_stacked", 1.0, 0.5),
+        ("area/density_stack", 1.0, 0.5),
+        ("area/trellis", 1.0, 0.5),
+        ("area/trellis_sort_array", 1.0, 0.5),
+        ("area/streamgraph", 0.998, 0.5),
+        ("bar/with_highlighted_bar", 1.0, 0.5),
+        ("bar/with_labels", 1.0, 0.5),
+        ("bar/with_line_at_mean", 1.0, 0.5),
+        ("bar/with_line_on_dual_axis", 1.0, 0.5),
+        ("bar/with_rolling_mean", 1.0, 0.5),
+        ("bar/with_rounded_edges", 0.999, 0.5),
+        ("bar/and_tick_chart", 1.0, 0.5),
+        ("bar/percentage_of_total", 1.0, 0.5),
+        ("bar/trellis_compact", 1.0, 0.5),
+        ("bar/diverging_stacked", 1.0, 0.5),
+        ("bar/grouped", 1.0, 0.5),
+        ("bar/horizontal", 1.0, 0.5),
+        ("bar/horizontal_grouped", 1.0, 0.5),
+        ("bar/horizontal_stacked", 0.999, 0.5),
+        ("bar/normalized_stacked", 0.999, 0.5),
+        ("bar/sorted", 1.0, 0.5),
+        ("bar/stacked", 0.999, 0.5),
+        ("bar/stacked_with_sorted_segments", 0.999, 0.5),
+        ("bar/stacked_with_text_overlay", 0.999, 0.5),
+        ("bar/trellis_stacked", 1.0, 0.5),
+        ("bar/trellis_stacked", 1.0, 0.5),
+        ("bar/with_negative_values", 1.0, 0.5),
+        ("bar/layered", 1.0, 0.5),
+        ("bar/with_error_bars", 0.998, 0.5),
+        ("casestudy/co2_concentration", 1.0, 0.5),
+        ("casestudy/gapminder_bubble_plot", 1.0, 0.5),
+        ("casestudy/iowa_electricity", 1.0, 0.5),
+        ("casestudy/natural_disasters", 1.0, 0.5),
+        ("casestudy/top_k_with_others", 1.0, 0.5),
+        ("casestudy/wheat_wages", 1.0, 0.5),
+        ("casestudy/window_rank", 0.999, 0.5),
+        ("casestudy/airports", 1.0, 0.5),
+        ("casestudy/us_state_capitals", 1.0, 0.5),
+        ("casestudy/falkensee", 1.0, 0.5),
+        ("casestudy/us_employment", 1.0, 0.5),
+        ("casestudy/top_k_items", 1.0, 0.5),
+        ("casestudy/top_k_letters", 1.0, 0.5),
+        ("casestudy/isotype", 1.0, 0.5),
+        ("casestudy/london_tube", 1.0, 0.5),
+        ("casestudy/isotype_emoji", 1.0, 0.5),
+        ("casestudy/beckers_barley_trellis_plot", 1.0, 0.5),
+        ("casestudy/anscombe_plot", 1.0, 0.5),
+        ("casestudy/us_population_over_time_facet", 1.0, 0.5),
+        ("casestudy/one_dot_per_zipcode", 0.999, 0.5),
+        ("circular/donut", 1.0, 0.5),
+        ("circular/pie", 1.0, 0.5),
+        ("circular/pie_with_labels", 1.0, 0.5),
+        ("circular/radial", 1.0, 0.5),
+        ("circular/pacman", 1.0, 0.5),
+        ("histogram/with_a_global_mean_overlay", 1.0, 0.5),
+        ("histogram/layered", 1.0, 0.5),
+        ("histogram/trellis", 1.0, 0.5),
+        ("interactive/selection_layer_bar_month", 1.0, 0.5),
+        ("interactive/area-interval_selection", 1.0, 0.5),
+        ("interactive/layered_crossfilter", 1.0, 0.5),
+        ("interactive/scatter_with_histogram", 1.0, 0.5),
+        ("interactive/select_detail", 1.0, 0.5),
+        ("interactive/scatter_plot", 1.0, 0.5),
+        ("interactive/brush", 1.0, 0.5),
+        ("interactive/multiline_tooltip", 1.0, 0.5),
+        ("interactive/scatter_linked_brush", 1.0, 0.5),
+        ("interactive/casestudy-us_population_pyramid_over_time", 1.0, 0.5),
+        ("interactive/multiline_highlight", 1.0, 0.5),
+        ("interactive/scatter-with_minimap", 1.0, 0.5),
+        ("interactive/select_mark_area", 1.0, 0.5),
+        ("interactive/legend", 0.998, 0.5),
+        ("interactive/cross_highlight", 0.999, 0.5),
+        ("interactive/selection_histogram", 1.0, 0.5),
+        ("interactive/scatter-with_linked_table", 1.0, 0.5),
+        ("interactive/scatter_with_layered_histogram", 1.0, 0.5),
+        ("interactive/casestudy-seattle_weather_interactive", 1.0, 0.5),
+        ("interactive/casestudy-us_population_over_time", 1.0, 0.5),
+        ("interactive/scatter-href", 1.0, 0.5),
+        ("interactive/other-image_tooltip", 1.0, 0.5),
+        ("interactive/casestudy-weather_heatmap", 1.0, 0.5),
+        ("interactive/casestudy-airport_connections", 1.0, 0.5),
+        ("interactive/histogram-responsive", 1.0, 4),
+        ("line/bump_chart", 0.999, 0.5),
+        ("line/filled_step_chart", 1.0, 0.5),
+        ("line/with_cumsum", 1.0, 0.5),
+        ("line/with_logarithmic_scale", 1.0, 0.5),
+        ("line/percent_axis", 1.0, 0.5),
+        ("line/with_points", 1.0, 0.5),
+        ("line/with_generator", 1.0, 0.5),
+        ("line/slope_graph", 1.0, 0.5),
+        ("line/slope_graph2", 0.999, 0.5),
+        ("line/step_chart", 1.0, 0.5),
+        ("line/layer_line_color_rule", 1.0, 0.5),
+        ("line/multi_series", 1.0, 0.5),
+        ("line/with_ci", 1.0, 0.5),
+        ("line/trail_marker", 1.0, 0.5),
+        ("line/with_datum", 1.0, 0.5),
+        ("line/with_color_datum", 1.0, 0.5),
+        ("maps/choropleth", 1.0, 0.5),
+        ("maps/choropleth_repeat", 1.0, 0.5),
+        ("maps/us_incomebrackets_by_state_facet", 1.0, 0.5),
+        ("maps/world", 1.0, 0.5),
+        ("maps/world_projections", 1.0, 0.5),
+        ("maps/airports_count", 0.999, 0.5),
+        ("other/bar_chart_with_highlighted_segment", 1.0, 0.5),
+        ("other/beckers_barley_wrapped_facet", 1.0, 0.5),
+        ("other/boxplot", 1.0, 0.5),
+        ("other/comet_chart", 1.0, 0.5),
+        ("other/errorbars_with_std", 1.0, 0.5),
+        ("other/scatter_marginal_hist", 0.999, 0.5),
+        ("other/gantt_chart", 1.0, 0.5),
+        ("other/isotype_grid", 1.0, 0.5),
+        ("other/layered_chart_with_dual_axis", 1.0, 0.5),
+        ("other/ridgeline_plot", 1.0, 0.5),
+        ("other/stem_and_leaf", 1.0, 0.5),
+        ("other/layered_heatmap_text", 1.0, 0.5),
+        ("other/candlestick_chart", 1.0, 0.5),
+        ("other/multiple_marks", 1.0, 0.5),
+        ("other/hexbins", 0.999, 0.5),
+        ("other/wilkinson_dot_plot", 1.0, 0.5),
+        ("other/binned_heatmap", 0.998, 0.5),
+        ("other/normed_parallel_coordinates", 1.0, 0.5),
+        ("other/parallel_coordinates", 1.0, 0.5),
+        ("other/violin_plot", 1.0, 0.5),
+        ("other/ranged_dot_plot", 1.0, 0.5),
+        ("scatter/binned", 0.999, 0.5),
+        ("scatter/bubble_plot", 1.0, 0.5),
+        ("scatter/connected", 1.0, 0.5),
+        ("scatter/dot_dash_plot", 1.0, 0.5),
+        ("scatter/multifeature", 1.0, 0.5),
+        ("scatter/poly_fit_regression", 1.0, 0.5),
+        ("scatter/qq", 1.0, 0.5),
+        ("scatter/matrix", 1.0, 0.5),
+        ("scatter/with_lowess", 1.0, 0.5),
+        ("scatter/with_errorbars", 1.0, 0.5),
+        ("scatter/with_labels", 1.0, 0.5),
+        ("scatter/table_bubble_plot_github", 0.999, 0.5),
+        ("scatter/trellis", 1.0, 0.5),
+        ("scatter/wind_vector_map", 1.0, 0.5),
+        ("scatter/with_rolling_mean", 1.0, 0.5),
+        ("simple/stacked_bar_chart", 1.0, 0.5),
+        ("simple/bar_chart", 1.0, 0.5),
+        ("simple/heatmap", 1.0, 0.5),
+        ("simple/line_chart", 1.0, 0.5),
+        ("simple/scatter_tooltips", 1.0, 0.5),
+        ("simple/strip_chart", 1.0, 0.5),
 
-        # # Not yet supported
-        # # -----------------
-        # # ci and random are not deterministic
-        # "other/errorbars_with_ci",
-        # "other/sorted_error_bars_with_ci",
-        # "scatter/stripplot",  # random()
-        #
-        # # Arrow read csv inference interprets zip codes column as numeric instead of string
-        # "casestudy/one_dot_per_zipcode",  # substring
+        # # Non-deterministic mocks have lower image tolerance
+        ("other/errorbars_with_ci", 0.8, 0.5),
+        ("other/sorted_error_bars_with_ci", 0.8, 0.5),
+        ("scatter/stripplot", 0.8, 0.5)  # random()
     ])
-def test_altair_mock(mock_name):
+def test_altair_mock(mock_name, img_tolerance, delay):
 
     # Build Jupytext markdown text containing the mock's code
     mock_path = altair_mocks_dir / mock_name / "mock.py"
@@ -261,12 +258,14 @@ def test_altair_mock(mock_name):
 
     # Launch Voila server
     voila_proc = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
+
+    # Sleep to allow Voila itself to start (this does not include loading a particular dashboard).
     time.sleep(2)
 
     try:
-        altair_imgs = export_image_sequence(chrome_driver, altair_notebook, actions)
-        vegafusion_arrow_imgs = export_image_sequence(chrome_driver, vegafusion_arrow_notebook, actions)
-        vegafusion_default_imgs = export_image_sequence(chrome_driver, vegafusion_default_notebook, actions)
+        altair_imgs = export_image_sequence(chrome_driver, altair_notebook, actions, delay)
+        vegafusion_arrow_imgs = export_image_sequence(chrome_driver, vegafusion_arrow_notebook, actions, delay)
+        vegafusion_default_imgs = export_image_sequence(chrome_driver, vegafusion_default_notebook, actions, delay)
 
         for i in range(len(altair_imgs)):
             altair_img = altair_imgs[i]
@@ -282,8 +281,8 @@ def test_altair_mock(mock_name):
             print(f"({i}) {similarity_arrow_value=}")
             print(f"({i}) {similarity_default_value=}")
 
-            assert similarity_arrow_value > 0.995, f"Similarity failed with Arrow data transformer on image {i}"
-            assert similarity_default_value > 0.995, f"Similarity failed with default data transformer on image {i}"
+            assert similarity_arrow_value >= img_tolerance, f"Similarity failed with Arrow data transformer on image {i}"
+            assert similarity_default_value >= img_tolerance, f"Similarity failed with default data transformer on image {i}"
 
     finally:
         voila_proc.kill()
@@ -302,6 +301,7 @@ def export_image_sequence(
         chrome_driver: webdriver.Chrome,
         notebook: jupytext.jupytext.NotebookNode,
         actions,
+        delay,
         voila_url_base: str = "http://localhost:8866/voila/render/",
 ):
     imgs = []
@@ -317,7 +317,6 @@ def export_image_sequence(
 
         # Open url with selenium
         chrome_driver.get(url)
-        time.sleep(5)
 
         # Remove padding, margins, and standardize line height.
         css = ("body, .jp-Cell, .jp-Notebook, .jupyter-widgets, .jp-RenderedHTMLCommon "
@@ -326,7 +325,12 @@ def export_image_sequence(
         chrome_driver.execute_script(script)
 
         # Get canvas element (the canvas that Vega renders to)
-        canvas = chrome_driver.find_element_by_xpath("//canvas")
+        @retry(wait=wait.wait_fixed(0.5), stop=stop.stop_after_delay(10))
+        def get_canvas():
+            return chrome_driver.find_element_by_xpath("//canvas")
+
+        canvas = get_canvas()
+        time.sleep(delay)
 
         # Process actions
         chain = ActionChains(chrome_driver)
