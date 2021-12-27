@@ -86,11 +86,13 @@ pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
         // TODO: JavaScript falsey cast
         //  - empty string to false
         //  - NaN to false
-        //  - NULL to false
-        Expr::Cast {
-            expr: Box::new(value),
-            data_type: DataType::Boolean,
-        }
+        and(
+            Expr::Cast {
+                expr: Box::new(value.clone()),
+                data_type: DataType::Boolean,
+            },
+            Expr::IsNotNull(Box::new(value.clone()))
+        )
     };
 
     Ok(boolean_value)

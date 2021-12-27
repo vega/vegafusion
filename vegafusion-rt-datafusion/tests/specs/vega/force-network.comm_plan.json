@@ -1,0 +1,15 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "link-data",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "node-data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

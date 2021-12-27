@@ -1,0 +1,20 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "monarchs",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "wheat",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "wheat-filtered",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

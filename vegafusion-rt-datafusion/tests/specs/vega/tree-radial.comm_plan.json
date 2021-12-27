@@ -1,0 +1,30 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "signal",
+      "name": "extent",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "originX",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "originY",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "rotate",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "_server_tree",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

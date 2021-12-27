@@ -1,0 +1,10 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "temperature",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

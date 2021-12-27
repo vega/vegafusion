@@ -1,0 +1,25 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "_server_nodes",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "edges",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "sourceDegree",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "targetDegree",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}
