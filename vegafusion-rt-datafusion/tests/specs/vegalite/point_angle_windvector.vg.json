@@ -1,0 +1,105 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "Vector array map showing wind speed and direction.",
+  "background": "white",
+  "padding": 5,
+  "width": 615,
+  "height": 560,
+  "data": [
+    {
+      "name": "source_0",
+      "url": "data/windvectors.csv",
+      "format": {
+        "type": "csv",
+        "parse": {"longitude": "number", "latitude": "number"}
+      },
+      "transform": [
+        {
+          "type": "geojson",
+          "fields": ["longitude", "latitude"],
+          "signal": "geojson_0"
+        },
+        {
+          "type": "geopoint",
+          "projection": "projection",
+          "fields": ["longitude", "latitude"],
+          "as": ["x", "y"]
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"dir\"]) && isFinite(+datum[\"dir\"]) && isValid(datum[\"speed\"]) && isFinite(+datum[\"speed\"])"
+        }
+      ]
+    }
+  ],
+  "projections": [
+    {
+      "name": "projection",
+      "size": {"signal": "[width, height]"},
+      "fit": {"signal": "geojson_0"},
+      "type": "equalEarth"
+    }
+  ],
+  "marks": [
+    {
+      "name": "marks",
+      "type": "symbol",
+      "style": ["point"],
+      "from": {"data": "source_0"},
+      "encode": {
+        "update": {
+          "opacity": {"value": 0.7},
+          "shape": {"value": "wedge"},
+          "fill": {"scale": "color", "field": "dir"},
+          "x": {"field": "x"},
+          "y": {"field": "y"},
+          "size": {"scale": "size", "field": "speed"},
+          "angle": {"scale": "angle", "field": "dir"}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "color",
+      "type": "linear",
+      "domain": [0, 360],
+      "range": {"scheme": "rainbow"},
+      "interpolate": "hcl",
+      "zero": true
+    },
+    {
+      "name": "size",
+      "type": "linear",
+      "domain": {"data": "source_0", "field": "speed"},
+      "range": [0, 500],
+      "zero": true
+    },
+    {
+      "name": "angle",
+      "type": "linear",
+      "domain": [0, 360],
+      "range": [180, 540],
+      "zero": true
+    }
+  ],
+  "legends": [
+    {
+      "size": "size",
+      "symbolType": "wedge",
+      "title": "speed",
+      "encode": {
+        "symbols": {
+          "update": {
+            "fill": {"value": "black"},
+            "fillOpacity": {"value": 0.7},
+            "opacity": {"value": 0.7},
+            "stroke": {"value": "transparent"}
+          }
+        }
+      },
+      "aria": false
+    }
+  ],
+  "config": {"aria": false, "style": {"cell": {"fill": "black"}}}
+}

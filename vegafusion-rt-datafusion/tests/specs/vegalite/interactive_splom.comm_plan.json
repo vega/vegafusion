@@ -1,0 +1,50 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "data_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_4",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_5",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_6",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_7",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_8",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

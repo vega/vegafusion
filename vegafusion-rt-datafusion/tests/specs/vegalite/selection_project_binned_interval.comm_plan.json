@@ -1,0 +1,26 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "signal",
+      "name": "layer_1_bin_maxbins_10_Acceleration_bins",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1",
+      "scope": []
+    }
+  ],
+  "client_to_server": [
+    {
+      "namespace": "data",
+      "name": "brush_store",
+      "scope": []
+    }
+  ]
+}
