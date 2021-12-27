@@ -168,6 +168,15 @@ impl ChartVisitor for AddDependencyNodesVisitor {
         Ok(())
     }
 
+    fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
+        let scoped_var = (Variable::new_scale(&scale.name), Vec::from(scope));
+        let node_index = self
+            .dependency_graph
+            .add_node((scoped_var.clone(), DependencyNodeSupported::Unsupported));
+        self.node_indexes.insert(scoped_var, node_index);
+        Ok(())
+    }
+
     fn visit_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
         if let Some(from) = &mark.from {
             if let Some(facet) = &from.facet {
