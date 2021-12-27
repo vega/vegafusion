@@ -1,0 +1,35 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "signal",
+      "name": "child__column_delay_bin_maxbins_20_delay_bins",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "child__column_distance_bin_maxbins_20_distance_bins",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "child__column_time_bin_maxbins_20_time_bins",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_2",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

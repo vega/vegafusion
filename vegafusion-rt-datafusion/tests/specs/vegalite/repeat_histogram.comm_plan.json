@@ -1,0 +1,45 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "signal",
+      "name": "child__Acceleration_bin_maxbins_10_Acceleration_bins",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "child__Displacement_bin_maxbins_10_Displacement_bins",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "child__Horsepower_bin_maxbins_10_Horsepower_bins",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "child__Miles_per_Gallon_bin_maxbins_10_Miles_per_Gallon_bins",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "_server_data_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "_server_data_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "_server_data_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "_server_data_3",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

@@ -1,0 +1,31 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "data_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0",
+      "scope": []
+    }
+  ],
+  "client_to_server": [
+    {
+      "namespace": "data",
+      "name": "label_store",
+      "scope": []
+    }
+  ]
+}
