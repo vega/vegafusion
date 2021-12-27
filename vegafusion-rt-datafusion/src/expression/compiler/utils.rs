@@ -12,7 +12,9 @@ use std::collections::HashSet;
 use std::convert::TryFrom;
 
 use std::sync::Arc;
+use datafusion::physical_plan::functions::BuiltinScalarFunction;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use crate::expression::compiler::call::VegaFusionCallable::{Data};
 
 lazy_static! {
     pub static ref UNIT_RECORD_BATCH: RecordBatch = RecordBatch::try_from_iter(vec![(
@@ -99,6 +101,12 @@ pub fn to_numeric(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let dtype = data_type(&value, schema)?;
     let numeric_value = if is_numeric_datatype(&dtype) {
         value
+    } else if matches!(dtype, DataType::Timestamp(_, _)) {
+        // Convert to milliseconds
+        Expr::ScalarFunction {
+            fun: BuiltinScalarFunction::ToTimestampMillis,
+            args: vec![value],
+        }
     } else {
         // Cast non-numeric types (like UTF-8) to Float64
         Expr::Cast {
