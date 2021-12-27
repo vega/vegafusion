@@ -5,9 +5,11 @@ use datafusion::dataframe::DataFrame;
 
 use async_trait::async_trait;
 use std::sync::Arc;
+use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Filter;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use crate::expression::compiler::utils::cast_to;
 
 #[async_trait]
 impl TransformTrait for Filter {
@@ -25,7 +27,7 @@ impl TransformTrait for Filter {
         // that the expression may produce
         let col_names: Vec<_> = dataframe.schema().fields().iter().map(|field| field.name().as_str()).collect();
         let result = dataframe.filter(
-            logical_expr
+            cast_to(logical_expr, &DataType::Boolean, &dataframe.schema())?
         )?.select_columns(
             &col_names
         )?;
