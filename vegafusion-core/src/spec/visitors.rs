@@ -470,8 +470,11 @@ impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
         // domain
         if let Some(domain) = &scale.domain {
             match domain {
-                ScaleDomainSpec::Reference(reference) => {
+                ScaleDomainSpec::FieldReference(reference) => {
                     references.push(reference.clone());
+                }
+                ScaleDomainSpec::FieldsReference(field_references) => {
+                    references.extend(field_references.fields.clone());
                 }
                 ScaleDomainSpec::Signal(signal_expr) => {
                     signals.push(signal_expr.clone());

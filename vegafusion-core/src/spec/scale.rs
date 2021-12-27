@@ -23,10 +23,19 @@ pub struct ScaleSpec {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ScaleDomainSpec {
-    Reference(ScaleDataReferenceSpec),
+    FieldReference(ScaleDataReferenceSpec),
+    FieldsReference(ScaleDataReferencesSpec),
     Signal(SignalExpressionSpec),
     Array(Vec<ScaleArrayElementSpec>),
     Value(Value),
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ScaleDataReferencesSpec {
+    pub fields: Vec<ScaleDataReferenceSpec>,
+
+    #[serde(flatten)]
+    pub extra: HashMap<String, Value>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
