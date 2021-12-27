@@ -19,7 +19,7 @@ use datafusion::execution::options::CsvReadOptions;
 use datafusion::logical_plan::Expr;
 use datafusion::physical_plan::functions::BuiltinScalarFunction;
 use datafusion::prelude::col;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::sync::Arc;
@@ -80,6 +80,9 @@ impl TaskCall for DataUrlTask {
             }
         };
 
+        // Handle references to vega default datasets (e.g. "data/us-10m.json")
+        let url = check_builtin_dataset(url);
+
         // Load data from URL
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
 
@@ -116,6 +119,100 @@ impl TaskCall for DataUrlTask {
         let table_value = TaskValue::Table(VegaFusionTable::from_dataframe(transformed_df).await?);
 
         Ok((table_value, output_values))
+    }
+}
+
+
+lazy_static! {
+    static ref BUILT_IN_DATASETS: HashSet<&'static str> = vec![
+        "7zip.png",
+        "airports.csv",
+        "annual-precip.json",
+        "anscombe.json",
+        "barley.json",
+        "birdstrikes.csv",
+        "budget.json",
+        "budgets.json",
+        "burtin.json",
+        "cars.json",
+        "co2-concentration.csv",
+        "countries.json",
+        "crimea.json",
+        "disasters.csv",
+        "driving.json",
+        "earthquakes.json",
+        "ffox.png",
+        "flare-dependencies.json",
+        "flare.json",
+        "flights-10k.json",
+        "flights-200k.arrow",
+        "flights-200k.json",
+        "flights-20k.json",
+        "flights-2k.json",
+        "flights-3m.csv",
+        "flights-5k.json",
+        "flights-airport.csv",
+        "football.json",
+        "gapminder-health-income.csv",
+        "gapminder.json",
+        "gimp.png",
+        "github.csv",
+        "income.json",
+        "iowa-electricity.csv",
+        "jobs.json",
+        "la-riots.csv",
+        "londonBoroughs.json",
+        "londonCentroids.json",
+        "londonTubeLines.json",
+        "lookup_groups.csv",
+        "lookup_people.csv",
+        "miserables.json",
+        "monarchs.json",
+        "movies.json",
+        "normal-2d.json",
+        "obesity.json",
+        "ohlc.json",
+        "penguins.json",
+        "platformer-terrain.json",
+        "points.json",
+        "political-contributions.json",
+        "population_engineers_hurricanes.csv",
+        "population.json",
+        "seattle-weather.csv",
+        "seattle-weather-hourly-normals.csv",
+        "sp500-2000.csv",
+        "sp500.csv",
+        "stocks.csv",
+        "udistrict.json",
+        "unemployment-across-industries.json",
+        "unemployment.tsv",
+        "uniform-2d.json",
+        "us-10m.json",
+        "us-employment.csv",
+        "us-state-capitals.json",
+        "volcano.json",
+        "weather.csv",
+        "weather.json",
+        "wheat.json",
+        "windvectors.csv",
+        "world-110m.json",
+        "zipcodes.csv",
+    ].into_iter().collect();
+}
+
+const DATASET_CDN_BASE: &str = "https://cdn.jsdelivr.net/npm/vega-datasets";
+const DATASET_TAG: &str = "v2.2.0";
+
+fn check_builtin_dataset(url: String) -> String {
+    if let Some(dataset) = url.strip_prefix("data/") {
+        let path = std::path::Path::new(&url);
+        if !path.exists() && BUILT_IN_DATASETS.contains(dataset) {
+            format!("{}@{}/data/{}", DATASET_CDN_BASE, DATASET_TAG, dataset)
+        } else {
+            url
+        }
+    } else {
+        url
     }
 }
 
