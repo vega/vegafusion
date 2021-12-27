@@ -1,0 +1,15 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "signal",
+      "name": "concat_1_bin_maxbins_30_time_extent",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "_server_source_0",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

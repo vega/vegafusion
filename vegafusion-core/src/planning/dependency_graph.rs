@@ -9,6 +9,7 @@ use petgraph::prelude::{DiGraph, EdgeRef, NodeIndex};
 use petgraph::Incoming;
 use std::collections::{HashMap, HashSet};
 use crate::expression::parser::parse;
+use crate::expression::supported::BUILT_IN_SIGNALS;
 use crate::spec::mark::MarkSpec;
 use crate::spec::scale::ScaleSpec;
 use crate::spec::signal::SignalSpec;
@@ -140,9 +141,20 @@ pub struct AddDependencyNodesVisitor {
 
 impl AddDependencyNodesVisitor {
     pub fn new() -> Self {
+        let mut dependency_graph = DiGraph::new();
+        let mut node_indexes = HashMap::new();
+
+        // Initialize with nodes for all built-in signals (e.g. width, height, etc.)
+        for sig in BUILT_IN_SIGNALS.iter() {
+            let scoped_var = (Variable::new_signal(sig), Vec::new());
+            let node_index = dependency_graph.add_node(
+                (scoped_var.clone(), DependencyNodeSupported::Unsupported)
+            );
+            node_indexes.insert(scoped_var, node_index);
+        }
+
         Self {
-            dependency_graph: DiGraph::new(),
-            node_indexes: HashMap::new(),
+            dependency_graph, node_indexes
         }
     }
 }
@@ -151,10 +163,23 @@ impl ChartVisitor for AddDependencyNodesVisitor {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         // Add scoped variable for dataset as node
         let scoped_var = (Variable::new_data(&data.name), Vec::from(scope));
+        let data_suported = data.supported();
         let node_index = self
             .dependency_graph
-            .add_node((scoped_var.clone(), data.supported()));
+            .add_node((scoped_var.clone(), data_suported.clone()));
         self.node_indexes.insert(scoped_var, node_index);
+
+        // Add signals defined by transforms
+        for tx in data.transform.iter() {
+            for sig in tx.output_signals() {
+                let scoped_var = (Variable::new_signal(&sig), Vec::from(scope));
+                let node_index = self
+                    .dependency_graph
+                    .add_node((scoped_var.clone(), data_suported.clone()));
+                self.node_indexes.insert(scoped_var, node_index);
+            }
+        }
+
         Ok(())
     }
 

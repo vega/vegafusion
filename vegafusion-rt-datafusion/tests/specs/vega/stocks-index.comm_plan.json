@@ -1,0 +1,15 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "_server_index",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "stocks",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

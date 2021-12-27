@@ -1,0 +1,31 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "ageGroups",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "females",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "males",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "population",
+      "scope": []
+    }
+  ],
+  "client_to_server": [
+    {
+      "namespace": "signal",
+      "name": "year",
+      "scope": []
+    }
+  ]
+}

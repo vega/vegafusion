@@ -30,9 +30,11 @@ impl SignalSpec {
         if self.value.is_some() {
             return DependencyNodeSupported::Supported
         } else if let Some(expr) = &self.update {
-            if let Ok(expression) = parse(expr) {
-                if expression.is_supported() {
-                    return DependencyNodeSupported::Supported
+            if self.on.is_empty() {
+                if let Ok(expression) = parse(expr) {
+                    if expression.is_supported() {
+                        return DependencyNodeSupported::Supported
+                    }
                 }
             }
         }

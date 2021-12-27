@@ -1,0 +1,15 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "_server_airports",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "traffic",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

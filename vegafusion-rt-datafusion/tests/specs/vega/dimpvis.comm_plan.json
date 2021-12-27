@@ -1,0 +1,111 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "signal",
+      "name": "currentYear",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "timeline",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "countries",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "country_timeline",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "gapminder",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "nextYear",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "prevYear",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "thisYear",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "trackCountries",
+      "scope": []
+    }
+  ],
+  "client_to_server": [
+    {
+      "namespace": "signal",
+      "name": "active",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "currentYear",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "isActive",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "maxYear",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "minYear",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "nextDist",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "nextScore",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "prevDist",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "prevScore",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "stepYear",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "thisDist",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "timeline",
+      "scope": []
+    }
+  ]
+}
