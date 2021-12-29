@@ -30,7 +30,7 @@ lazy_static! {
 
 
     pub static ref SUPPORTED_DATA_FNS: HashSet<&'static str> = vec![
-        "data", "vlSelectionTest", // "vlSelectionResolve"
+        "data", "vlSelectionTest", "vlSelectionResolve"
     ]
     .into_iter()
     .collect();

@@ -32,6 +32,7 @@ use vegafusion_core::proto::gen::expression::{
 use crate::expression::compiler::builtin_functions::array::span::make_span_udf;
 
 use crate::expression::compiler::builtin_functions::data::data::data_fn;
+use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
 use crate::expression::compiler::builtin_functions::datetime::time::make_time_udf;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
@@ -434,6 +435,11 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "vlSelectionTest".to_string(),
         VegaFusionCallable::Data(Arc::new(vl_selection_test_fn)),
+    );
+
+    callables.insert(
+        "vlSelectionResolve".to_string(),
+        VegaFusionCallable::Data(Arc::new(vl_selection_resolve_fn)),
     );
 
     callables
