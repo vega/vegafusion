@@ -16,6 +16,7 @@ use tokio::runtime::Runtime;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::planning::extract::extract_server_data;
+use vegafusion_core::planning::optimize_server::split_data_url_nodes;
 use vegafusion_core::planning::stitch::stitch_specs;
 use vegafusion_core::planning::watch::{Watch, WatchNamespace, WatchPlan};
 use vegafusion_core::proto::gen::tasks::TaskGraph;
@@ -1083,6 +1084,11 @@ async fn check_spec_sequence(
     let mut client_spec = full_spec.clone();
     let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope).unwrap();
     let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec).unwrap();
+
+    split_data_url_nodes(&mut server_spec).unwrap();
+    let task_scope = server_spec.to_task_scope().unwrap();
+
+    // println!("task_scope: {:#?}", task_scope);
 
     println!(
         "client_spec: {}",
