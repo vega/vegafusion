@@ -71,7 +71,6 @@ pub fn vl_selection_resolve_fn(
 
     for row in rows {
         let row_spec = SelectionRow::try_from(row)?;
-        println!("row_spec: {:?}", row_spec);
         for (field, value) in row_spec.fields.iter().zip(&row_spec.values) {
             let value = match field.typ {
                 SelectionType::Enum => {
@@ -122,8 +121,6 @@ pub fn vl_selection_resolve_fn(
         let dtype = values.get(0)
             .map(|s| s.get_datatype())
             .unwrap_or(DataType::Float64);
-        println!("values: {:?}", values);
-        println!("dtype: {:?}", dtype);
         let values = ScalarValue::List(Some(Box::new(values)), Box::new(dtype));
         (name.clone(), values)
     }).sorted_by_key(|(n, _)| n.clone()).collect();
