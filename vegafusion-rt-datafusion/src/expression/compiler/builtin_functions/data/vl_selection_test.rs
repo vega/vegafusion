@@ -17,7 +17,7 @@ use crate::data::table::VegaFusionTableUtils;
 
 /// Op
 #[derive(Debug, Clone)]
-enum Op {
+pub enum Op {
     Union,
     Intersect,
 }
@@ -60,7 +60,7 @@ impl TryFrom<ScalarValue> for Op {
 
 /// Selection Type
 #[derive(Debug, Clone)]
-enum SelectionType {
+pub enum SelectionType {
     Enum,
     RangeInc,
     RangeExc,
@@ -103,13 +103,13 @@ impl TryFrom<ScalarValue> for SelectionType {
 
 /// Field specification
 #[derive(Debug, Clone)]
-struct FieldSpec {
-    field: String,
-    typ: SelectionType,
+pub struct FieldSpec {
+    pub field: String,
+    pub typ: SelectionType,
 }
 
 impl FieldSpec {
-    pub fn to_expr(&self, values: &ScalarValue, schema: &DFSchema) -> Result<Expr> {
+    pub fn to_test_expr(&self, values: &ScalarValue, schema: &DFSchema) -> Result<Expr> {
         let field_col = col(&self.field);
         let expr = match self.typ {
             SelectionType::Enum => {
@@ -244,16 +244,17 @@ impl TryFrom<ScalarValue> for FieldSpec {
 }
 
 /// Selection row
+#[derive(Debug, Clone)]
 pub struct SelectionRow {
-    fields: Vec<FieldSpec>,
-    values: Vec<ScalarValue>,
+    pub fields: Vec<FieldSpec>,
+    pub values: Vec<ScalarValue>,
 }
 
 impl SelectionRow {
     pub fn to_expr(&self, schema: &DFSchema) -> Result<Expr> {
         let mut exprs: Vec<Expr> = Vec::new();
         for (field, value) in self.fields.iter().zip(self.values.iter()) {
-            exprs.push(field.to_expr(value, schema)?);
+            exprs.push(field.to_test_expr(value, schema)?);
         }
 
         // Take conjunction of expressions

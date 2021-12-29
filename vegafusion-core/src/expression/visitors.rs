@@ -180,6 +180,10 @@ impl ExpressionVisitor for CheckSupportedExprVisitor {
             if !SUPPORTED_DATA_FNS.contains(node.name.as_str()) {
                 self.supported = false;
             }
+            if node.name == "vlSelectionResolve" && args.len() > 2 {
+                // The third (multi) and forth (vl5) arguments are not supported
+                self.supported = false;
+            }
         } else if ALL_SCALE_FNS.contains(node.name.as_str()) {
             if !SUPPORTED_SCALE_FNS.contains(node.name.as_str()) {
                 self.supported = false;
