@@ -1,5 +1,5 @@
 use crate::proto::gen::tasks::data_url_task::Url;
-use crate::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask, Variable};
+use crate::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask, SignalTask, Variable};
 use crate::task_graph::task::{InputVariable, TaskDependencies};
 use crate::transform::TransformDependencies;
 use itertools::sorted;
@@ -79,5 +79,12 @@ impl TaskDependencies for DataSourceTask {
             .iter()
             .flat_map(|p| p.output_vars())
             .collect()
+    }
+}
+
+impl TaskDependencies for SignalTask {
+    fn input_vars(&self) -> Vec<InputVariable> {
+        let expr = self.expr.as_ref().unwrap();
+        expr.input_vars()
     }
 }

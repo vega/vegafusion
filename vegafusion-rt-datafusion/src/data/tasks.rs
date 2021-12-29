@@ -36,7 +36,7 @@ use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use crate::expression::compiler::builtin_functions::datetime::date_parsing::{DateParseMode, get_datetime_udf};
 
-fn build_compilation_config(
+pub fn build_compilation_config(
     input_vars: &[InputVariable],
     values: &[TaskValue],
 ) -> CompilationConfig {

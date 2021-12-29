@@ -1,5 +1,5 @@
 use crate::error::{Result, VegaFusionError};
-use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
+use crate::proto::gen::tasks::{SignalTask, TaskValue as ProtoTaskValue};
 use crate::proto::gen::tasks::{
     task::TaskKind, DataSourceTask, DataUrlTask, DataValuesTask, NodeValueIndex, Task, Variable,
 };
@@ -9,6 +9,7 @@ use std::convert::TryFrom;
 use crate::transform::TransformDependencies;
 use prost::Message;
 use std::hash::{Hash, Hasher};
+use crate::proto::gen::expression::Expression;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct InputVariable {
@@ -68,12 +69,25 @@ impl Task {
         }
     }
 
+    pub fn new_signal(variable: Variable, scope: &[u32], expr: Expression) -> Self {
+        let task_kind = TaskKind::Signal(SignalTask { expr: Some(expr) });
+        Self {
+            variable: Some(variable),
+            scope: Vec::from(scope),
+            task_kind: Some(task_kind),
+        }
+    }
+
     pub fn input_vars(&self) -> Vec<InputVariable> {
         match self.task_kind() {
             TaskKind::Value(_) => Vec::new(),
             TaskKind::DataUrl(task) => task.input_vars(),
             TaskKind::DataSource(task) => task.input_vars(),
             TaskKind::DataValues(task) => task.input_vars(),
+            TaskKind::Signal(task) => {
+                let expr = task.expr.as_ref().unwrap();
+                expr.input_vars()
+            }
         }
     }
 
@@ -83,6 +97,7 @@ impl Task {
             TaskKind::DataUrl(task) => task.output_vars(),
             TaskKind::DataSource(task) => task.output_vars(),
             TaskKind::DataValues(task) => task.output_vars(),
+            TaskKind::Signal(_) => Vec::new(),
         }
     }
 }

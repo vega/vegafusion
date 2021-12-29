@@ -18,6 +18,7 @@ impl TaskCall for Task {
             TaskKind::DataUrl(task) => task.eval(values).await,
             TaskKind::DataValues(task) => task.eval(values).await,
             TaskKind::DataSource(task) => task.eval(values).await,
+            TaskKind::Signal(task) => task.eval(values).await,
         }
     }
 }

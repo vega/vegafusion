@@ -1092,7 +1092,7 @@ async fn check_spec_sequence(
         "server_spec: {}",
         serde_json::to_string_pretty(&server_spec).unwrap()
     );
-    println!("comm_plan\n{:#?}", comm_plan.clone());
+
     println!("comm_plan:\n---\n{}\n---", serde_json::to_string_pretty(
         &WatchPlan::from(comm_plan.clone())
     ).unwrap());
