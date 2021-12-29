@@ -21,11 +21,5 @@
       "scope": []
     }
   ],
-  "client_to_server": [
-    {
-      "namespace": "signal",
-      "name": "year",
-      "scope": []
-    }
-  ]
+  "client_to_server": []
 }
