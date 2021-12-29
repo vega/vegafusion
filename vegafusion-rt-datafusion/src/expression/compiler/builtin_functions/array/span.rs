@@ -23,7 +23,6 @@ pub fn make_span_udf() -> ScalarUDF {
         let arg = &args[0];
         Ok(match arg {
             ColumnarValue::Scalar(value) => {
-                println!("Span: {:?}", value);
                 match value {
                     ScalarValue::Float64(_) => {
                         ColumnarValue::Scalar(ScalarValue::try_from(&DataType::Float64).unwrap())
@@ -51,35 +50,7 @@ pub fn make_span_udf() -> ScalarUDF {
                 }
             }
             ColumnarValue::Array(array) => {
-                println!("Span: {:?}", array);
                 todo!("Span on column not yet implemented")
-                // match array.data_type() {
-                //     DataType::Utf8 | DataType::LargeUtf8 => {
-                //         // String length
-                //         ColumnarValue::Array(kernels::length::length(array.as_ref()).unwrap())
-                //     }
-                //     DataType::FixedSizeList(_, n) => {
-                //         // Use scalar length
-                //         ColumnarValue::Scalar(ScalarValue::from(*n))
-                //     }
-                //     DataType::List(_) => {
-                //         let array = array.as_any().downcast_ref::<ListArray>().unwrap();
-                //         let offsets = array.value_offsets();
-                //         let mut length_builder = Int32Array::builder(array.len());
-                //
-                //         for i in 0..array.len() {
-                //             length_builder
-                //                 .append_value((offsets[i + 1] - offsets[i]) as i32)
-                //                 .unwrap();
-                //         }
-                //
-                //         ColumnarValue::Array(Arc::new(length_builder.finish()))
-                //     }
-                //     _ => {
-                //         // Array of i32 nulls
-                //         ColumnarValue::Array(new_null_array(&DataType::Int32, array.len()))
-                //     }
-                // }
             }
         })
     });
