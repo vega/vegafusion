@@ -196,11 +196,21 @@ impl ChartVisitor for MakeTasksVisitor {
 
     fn visit_signal(&mut self, signal: &SignalSpec, scope: &[u32]) -> Result<()> {
         let signal_var = Variable::new_signal(&signal.name);
-        let value = match &signal.value {
-            Some(value) => TaskValue::Scalar(ScalarValue::from_json(value)?),
-            None => return Err(VegaFusionError::internal("Signal must have initial value")),
+
+        let task = if let Some(value) = &signal.value {
+            let value = TaskValue::Scalar(ScalarValue::from_json(value)?);
+            Task::new_value(
+                signal_var, scope, value
+            )
+        } else if let Some(update) = &signal.update {
+            let expression = parse(update)?;
+            Task::new_signal(signal_var, scope, expression)
+        } else {
+            return Err(VegaFusionError::internal(
+                format!("Signal must have an initial value or an update expression: {:#?}", signal)
+            ))
         };
-        let task = Task::new_value(signal_var, scope, value);
+
         self.tasks.push(task);
         Ok(())
     }

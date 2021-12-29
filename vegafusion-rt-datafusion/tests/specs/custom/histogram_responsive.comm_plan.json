@@ -2,7 +2,7 @@
   "server_to_client": [
     {
       "namespace": "signal",
-      "name": "concat_0_bin_extent_param_selector001_maxbins_30_time_extent",
+      "name": "concat_0_bin_extent_param_selector001_maxbins_30_time_bins",
       "scope": []
     }, {
       "namespace": "signal",
@@ -10,9 +10,17 @@
       "scope": []
     }, {
       "namespace": "data",
-      "name": "_server_source_0",
+      "name": "data_0",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_1",
       "scope": []
     }
   ],
-  "client_to_server": []
+  "client_to_server": [{
+    "namespace": "data",
+    "name": "selector001_store",
+    "scope": []
+  }]
 }

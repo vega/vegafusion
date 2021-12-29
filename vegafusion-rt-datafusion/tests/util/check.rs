@@ -61,7 +61,7 @@ pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
     let compiled = compile(&parsed, config, None).unwrap();
     let result = compiled.eval_to_scalar().unwrap();
 
-    println!("{}", result);
+    println!("{:?}", result);
     assert_eq!(
         result,
         expected,

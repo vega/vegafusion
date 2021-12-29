@@ -92,6 +92,10 @@ message DataSourceTask {
   transforms.TransformPipeline pipeline = 2;
 }
 
+// ## Signal Task
+message SignalTask {
+  expression.Expression expr = 2;
+}
 
 // ## Top-level Task
 message Task {
@@ -102,6 +106,7 @@ message Task {
     DataValuesTask data_values = 4;
     DataUrlTask data_url = 5;
     DataSourceTask data_source = 6;
+    SignalTask signal = 7;
   }
 }
 

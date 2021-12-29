@@ -122,6 +122,12 @@ pub struct DataSourceTask {
     #[prost(message, optional, tag="2")]
     pub pipeline: ::core::option::Option<super::transforms::TransformPipeline>,
 }
+/// ## Signal Task
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SignalTask {
+    #[prost(message, optional, tag="2")]
+    pub expr: ::core::option::Option<super::expression::Expression>,
+}
 /// ## Top-level Task
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Task {
@@ -129,7 +135,7 @@ pub struct Task {
     pub variable: ::core::option::Option<Variable>,
     #[prost(uint32, repeated, tag="2")]
     pub scope: ::prost::alloc::vec::Vec<u32>,
-    #[prost(oneof="task::TaskKind", tags="3, 4, 5, 6")]
+    #[prost(oneof="task::TaskKind", tags="3, 4, 5, 6, 7")]
     pub task_kind: ::core::option::Option<task::TaskKind>,
 }
 /// Nested message and enum types in `Task`.
@@ -144,6 +150,8 @@ pub mod task {
         DataUrl(super::DataUrlTask),
         #[prost(message, tag="6")]
         DataSource(super::DataSourceTask),
+        #[prost(message, tag="7")]
+        Signal(super::SignalTask),
     }
 }
 /// ## Task Graph

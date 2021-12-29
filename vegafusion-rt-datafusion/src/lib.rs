@@ -6,6 +6,7 @@ pub mod expression;
 pub mod task_graph;
 pub mod tokio_runtime;
 pub mod transform;
+pub mod signal;
 
 #[cfg(test)]
 mod tests {
