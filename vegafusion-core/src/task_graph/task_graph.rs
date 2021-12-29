@@ -42,7 +42,8 @@ impl TaskGraph {
         // Resolve and add edges
         for (node_index, task) in tasks_map.values() {
             let usage_scope = task.scope();
-            for input_var in task.input_vars() {
+            let input_vars = task.input_vars();
+            for input_var in input_vars {
                 let resolved = task_scope.resolve_scope(&input_var.var, usage_scope)?;
                 let input_scoped_var = (resolved.var.clone(), resolved.scope.clone());
                 let (input_node_index, _) =
@@ -121,7 +122,7 @@ impl TaskGraph {
                     .iter()
                     .map(|(node_index, output_var)| {
                         let var = graph.node_weight(*node_index).unwrap().0.clone();
-                        (var, (node_index, output_var.clone()))
+                        ((var, (*output_var).clone()), node_index)
                     })
                     .collect();
 
@@ -129,7 +130,11 @@ impl TaskGraph {
                     .input_vars()
                     .iter()
                     .filter_map(|var| {
-                        let (node_index, output_var) = *incoming_vars.get(&var.var)?;
+                        let resolved = task_scope.resolve_scope(&var.var, scoped_var.1.as_slice()).unwrap();
+                        let output_var = resolved.output_var.clone();
+                        let resolved = (resolved.var, resolved.output_var);
+
+                        let node_index = *incoming_vars.get(&resolved)?;
                         let sorted_index = *toposorted_node_indexes.get(node_index).unwrap() as u32;
 
                         if let Some(output_var) = output_var {
@@ -139,7 +144,7 @@ impl TaskGraph {
                             let output_index = match input_task
                                 .output_vars()
                                 .iter()
-                                .position(|v| v == output_var)
+                                .position(|v| v == &output_var)
                             {
                                 Some(output_index) => output_index,
                                 None => {

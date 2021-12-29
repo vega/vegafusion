@@ -332,10 +332,12 @@ impl TaskCall for DataValuesTask {
 #[async_trait]
 impl TaskCall for DataSourceTask {
     async fn eval(&self, values: &[TaskValue]) -> Result<(TaskValue, Vec<TaskValue>)> {
-        let mut config = build_compilation_config(&self.input_vars(), values);
+        let input_vars = self.input_vars();
+        let mut config = build_compilation_config(&input_vars, values);
 
         // Remove source table from config
-        let source_table = config.data_scope.remove(&self.source).unwrap();
+        let source_table = config.data_scope.remove(&self.source)
+            .expect(&format!("Missing source {} for task with input variables\n{:#?}", self.source, input_vars));
 
         // Apply transforms (if any)
         let (transformed_table, output_values) = if self
