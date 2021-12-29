@@ -2,14 +2,28 @@
   "server_to_client": [
     {
       "namespace": "signal",
-      "name": "concat_1_bin_maxbins_30_extent_param_brush_time_extent",
+      "name": "concat_0_bin_maxbins_30_time_bins",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "concat_1_bin_maxbins_30_extent_param_brush_time_bins",
       "scope": []
     },
     {
       "namespace": "data",
-      "name": "_server_source_0",
+      "name": "data_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1",
       "scope": []
     }
   ],
-  "client_to_server": []
+  "client_to_server": [{
+    "namespace": "data",
+    "name": "brush_store",
+    "scope": []
+  }]
 }
