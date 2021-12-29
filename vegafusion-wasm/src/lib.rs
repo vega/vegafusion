@@ -27,6 +27,7 @@ use vegafusion_core::proto::gen::services::{
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::task_graph::ScopedVariable;
 use web_sys::Element;
+use vegafusion_core::planning::optimize_server::split_data_url_nodes;
 use vegafusion_core::planning::watch::WatchPlan;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -299,8 +300,11 @@ pub fn render_vegafusion(
     // Get full spec's scope
     let mut task_scope = spec.to_task_scope().unwrap();
 
-    let mut server_spec = extract_server_data(&mut spec, &mut task_scope).unwrap();
-    let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
+    let mut server_spec = extract_server_data(&mut spec, &mut task_scope).expect("Failed to extract_server_data");
+    let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).expect("Failed to stitch_specs");
+
+    split_data_url_nodes(&mut server_spec).expect("Failed to split_data_url_nodes");
+    let task_scope = server_spec.to_task_scope().expect("Failed to create task scope for server spec");
 
     let tasks = server_spec.to_tasks().unwrap();
     let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
