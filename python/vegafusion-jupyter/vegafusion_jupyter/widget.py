@@ -4,6 +4,7 @@ from traitlets import Unicode
 
 from ._frontend import module_name, module_version
 import altair as alt
+import json
 
 from .runtime import runtime
 
@@ -27,7 +28,11 @@ class VegaFusionWidget(DOMWidget):
         # Support altair object as single positional argument
         if len(args) == 1:
             chart = args[0]
-            spec = chart.to_json()
+            with alt.renderers.enable("vegafusion"):
+                with alt.data_transformers.enable("vegafusion-feather"):
+                    # Temporarily enable the vegafusion renderer and transformer so
+                    # that we use them even if they are not enabled globally
+                    spec = json.dumps(chart.to_dict(), indent=2)
             kwargs["spec"] = spec
 
         super().__init__(**kwargs)
@@ -45,18 +50,3 @@ class VegaFusionWidget(DOMWidget):
             )
             # print("py: send response")
             self.send(dict(type="response"), [response_bytes])
-
-
-def vegafusion_renderer(spec):
-    import json
-    from IPython.display import display
-
-    # Display widget as a side effect, then return empty string text representation
-    # so that Altair doesn't also display a string representation
-    widget = VegaFusionWidget(spec=json.dumps(spec))
-    display(widget)
-    return {'text/plain': ""}
-
-
-alt.renderers.register('vegafusion', vegafusion_renderer)
-alt.renderers.enable('vegafusion')
