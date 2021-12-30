@@ -128,7 +128,7 @@ def feather_transformer(data, data_dir="_vegafusion_data"):
         bytes_buffer = io.BytesIO()
 
         with pa.ipc.new_file(bytes_buffer, table.schema) as f:
-            f.write_table(table)
+            f.write_table(table, max_chunksize=8096)
 
         file_bytes = bytes_buffer.getvalue()
 
