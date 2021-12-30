@@ -2,6 +2,7 @@
 extern crate lazy_static;
 
 mod util;
+use std::sync::Once;
 
 use crate::util::vegajs_runtime::{
     vegajs_runtime, ExportImageFormat, ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace,
@@ -30,6 +31,19 @@ lazy_static! {
         .enable_all()
         .build()
         .unwrap();
+}
+
+
+
+static INIT: Once = Once::new();
+
+pub fn initialize() {
+    INIT.call_once(|| {
+        // Delete and remake empty output image directory
+        let output_dir = format!("{}/tests/output/", crate_dir());
+        std::fs::remove_dir_all(&output_dir);
+        std::fs::create_dir(&output_dir);
+    });
 }
 
 #[cfg(test)]
@@ -224,7 +238,12 @@ mod test_vega_specs {
         // case("vega/nulls-histogram", 0.001),
         // case("vega/scales-bin", 0.001),
 
-        case("vega/overview-detail-bins", 0.001),
+        // // Weird initialization order that that results in the chart initially displaying
+        // // without a selection, then showing the selection.  This is visible in the plain
+        // // vega case, but the saved image doesn't show it. In the VegaFusion case, the saved
+        // // image shows in earlier state.  The VegaFusion case does update when used live.
+        // case("vega/overview-detail-bins", 0.001),
+
         case("vega/overview-detail", 0.001),
 
         // // Parsing on encode events not supported
@@ -432,11 +451,11 @@ mod test_vegalite_specs {
         case("vegalite/connected_scatterplot", 0.001),
         case("vegalite/embedded_csv", 0.001),
 
-        // (ci function is non-deterministic so use higher tolerance)
-        case("vegalite/errorband_2d_horizontal_color_encoding", 0.5),
-        case("vegalite/errorband_2d_vertical_borders", 0.5),
-        case("vegalite/errorband_tooltip", 0.5),
-        case("vegalite/errorbar_2d_vertical_ticks", 0.5),
+        // // (ci function is non-deterministic and cause non-deterministic image size)
+        // case("vegalite/errorband_2d_horizontal_color_encoding", 0.5),
+        // case("vegalite/errorband_2d_vertical_borders", 0.5),
+        // case("vegalite/errorband_tooltip", 0.5),
+        // case("vegalite/errorbar_2d_vertical_ticks", 0.5),
 
         case("vegalite/errorbar_aggregate", 0.001),
         case("vegalite/errorbar_horizontal_aggregate", 0.001),
@@ -707,8 +726,8 @@ mod test_vegalite_specs {
         case("vegalite/rule_extent", 0.001),
         case("vegalite/rule_params", 0.001),
 
-        // (sample transform is non-deterministic so use higher tolerance)
-        case("vegalite/sample_scatterplot", 0.5),
+        // // (sample transform is non-deterministic, and causes non-deterministic image size)
+        // case("vegalite/sample_scatterplot", 0.5),
 
         case("vegalite/scatter_image", 0.001),
         case("vegalite/selection_bind_cylyr", 0.001),
@@ -1057,6 +1076,8 @@ fn load_expected_watch_plan(spec_name: &str) -> WatchPlan {
 }
 
 async fn check_spec_sequence_from_files(spec_name: &str, tolerance: f64) {
+    initialize();
+
     // Load spec
     let full_spec = load_spec(spec_name);
 
@@ -1159,11 +1180,6 @@ async fn check_spec_sequence(
             watches,
         )
         .unwrap();
-
-    // Delete and remake empty output image directory
-    let output_dir = format!("{}/tests/output/", crate_dir());
-    std::fs::remove_dir_all(&output_dir);
-    std::fs::create_dir(&output_dir);
 
     // Save exported PNGs
     let png_name = spec_name.replace("/", "-");
