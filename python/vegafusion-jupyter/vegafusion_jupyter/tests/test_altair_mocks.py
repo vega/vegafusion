@@ -36,7 +36,7 @@ assert(alt.data_transformers.active == 'default')
 ```
 """
 
-vegafusion_arrow_markdown_template = r"""
+vegafusion_feather_markdown_template = r"""
 ```python
 import altair as alt
 import vegafusion_jupyter
@@ -237,7 +237,7 @@ def test_altair_mock(mock_name, img_tolerance, delay):
 
     mock_code = mock_path.read_text()
     altair_markdown = altair_markdown_template.replace("{code}", mock_code)
-    vegafusion_arrow_markdown = vegafusion_arrow_markdown_template.replace("{code}", mock_code)
+    vegafusion_arrow_markdown = vegafusion_feather_markdown_template.replace("{code}", mock_code)
     vegafusion_default_markdown = vegafusion_default_markdown_template.replace("{code}", mock_code)
 
     # Use jupytext to convert markdown to an ipynb file
