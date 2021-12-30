@@ -1,5 +1,5 @@
 from ipywidgets import DOMWidget
-from traitlets import Unicode, Bool
+from traitlets import Unicode, Bool, Float
 import time
 
 import logging
@@ -26,6 +26,8 @@ class VegaFusionWidget(DOMWidget):
     server_vega_spec = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
     comm_plan = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
     verbose = Bool(False).tag(sync=True)
+    debounce_wait = Float(30, allow_none=False).tag(sync=True)
+    debounce_max_wait = Float(60, allow_none=True).tag(sync=True)
 
     def __init__(self, *args, **kwargs):
 

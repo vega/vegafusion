@@ -54,23 +54,32 @@ export function setDataValue(view, name, scope, value) {
     view.pulse(dataset.input, changeset);
 }
 
-export function addSignalListener(view, name, scope, handler) {
+export function addSignalListener(view, name, scope, handler, wait, maxWait) {
     let signal_op = lookupSignalOp(view, name, scope);
+    let options = {};
+    if (maxWait) {
+        options["maxWait"] = maxWait;
+    }
+
     return addOperatorListener(
         view,
         name,
         signal_op,
-        _.debounce(handler, 50, {'maxWait': 100}),
+        _.debounce(handler, wait, options),
     );
 }
 
-export function addDataListener(view, name, scope, handler) {
+export function addDataListener(view, name, scope, handler, wait, maxWait) {
     let dataset = dataref(view, name, scope).values;
+    let options = {};
+    if (maxWait) {
+        options["maxWait"] = maxWait;
+    }
     return addOperatorListener(
         view,
         name,
         dataset,
-        _.debounce(handler, 50, {'maxWait': 100}),
+        _.debounce(handler, wait, options),
     );
 }
 

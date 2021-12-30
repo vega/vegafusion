@@ -28,6 +28,8 @@ export class VegaFusionModel extends DOMWidgetModel {
       server_vega_spec: null,
       vegafusion_handle: null,
       verbose: null,
+      debounce_wait: 30,
+      debounce_max_wait: 60,
     };
   }
 
@@ -61,6 +63,9 @@ export class VegaFusionView extends DOMWidgetView {
     this.value_changed();
     this.model.on('change:spec', this.value_changed, this);
     this.model.on('change:verbose', this.value_changed, this);
+    this.model.on('change:debounce_wait', this.value_changed, this);
+    this.model.on('change:debounce_max_wait', this.value_changed, this);
+
     this.model.on("msg:custom", (ev: any, buffers: [DataView]) => {
       if (this.model.get("verbose")) {
         console.log("VegaFusion(js): Received response");
@@ -85,7 +90,11 @@ export class VegaFusionView extends DOMWidgetView {
       }
 
       this.vegafusion_handle = this.render_vegafusion(
-          this.viewElement, vega_spec_json, this.model.get("verbose") || false,
+          this.viewElement,
+          vega_spec_json,
+          this.model.get("verbose") || false,
+          this.model.get("debounce_wait") || 30,
+          this.model.get("debounce_max_wait"),
           (request: ArrayBuffer) => {
             if (this.model.get("verbose")) {
               console.log("VegaFusion(js): Send request");
