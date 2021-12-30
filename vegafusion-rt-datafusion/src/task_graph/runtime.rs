@@ -137,6 +137,11 @@ impl TaskGraphRuntime {
         response_msg.encode(&mut buf);
         Ok(buf)
     }
+
+    pub async fn clear_cache(&self) {
+        self.cache.clear().await;
+    }
+
 }
 
 #[async_recursion]
