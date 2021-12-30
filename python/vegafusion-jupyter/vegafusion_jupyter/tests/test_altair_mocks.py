@@ -48,7 +48,7 @@ import vegafusion_jupyter
 
 ```python
 assert(alt.renderers.active == "vegafusion")
-assert(alt.data_transformers.active == 'vegafusion-arrow')
+assert(alt.data_transformers.active == 'vegafusion-feather')
 ```
 """
 
