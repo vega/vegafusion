@@ -70,7 +70,7 @@ alt.renderers.register('vegafusion', vegafusion_renderer)
 alt.renderers.enable('vegafusion')
 
 
-def arrow_transformer(data, data_dir="_vegafusion_data"):
+def feather_transformer(data, data_dir="_vegafusion_data"):
     import pyarrow as pa
 
     if alt.renderers.active != "vegafusion" or not isinstance(data, pd.DataFrame):
@@ -123,6 +123,8 @@ def arrow_transformer(data, data_dir="_vegafusion_data"):
             # Try again, allowing exception to propagate
             table = pa.Table.from_pandas(data)
 
+        # Next we write the Arrow table as a feather file (The Arrow IPC format on disk).
+        # Write it in memory first so we can hash the contents before touching disk.
         bytes_buffer = io.BytesIO()
 
         with pa.ipc.new_file(bytes_buffer, table.schema) as f:
@@ -134,7 +136,7 @@ def arrow_transformer(data, data_dir="_vegafusion_data"):
         hasher = sha1()
         hasher.update(file_bytes)
         hashstr = hasher.hexdigest()
-        fname = f"vegafusion-{hashstr}.arrow"
+        fname = f"vegafusion-{hashstr}.feather"
 
         # Check if file already exists
         tmp_dir = pathlib.Path(data_dir) / "tmp"
@@ -152,5 +154,5 @@ def arrow_transformer(data, data_dir="_vegafusion_data"):
         return {"url": path.as_posix()}
 
 
-alt.data_transformers.register('vegafusion-arrow', arrow_transformer)
-alt.data_transformers.enable('vegafusion-arrow')
+alt.data_transformers.register('vegafusion-feather', feather_transformer)
+alt.data_transformers.enable('vegafusion-feather')

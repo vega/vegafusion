@@ -91,7 +91,7 @@ impl TaskCall for DataUrlTask {
             read_csv(url, &parse).await?
         } else if url.ends_with(".json") {
             read_json(&url, self.batch_size as usize).await?
-        } else if url.ends_with(".arrow") {
+        } else if url.ends_with(".arrow") || url.ends_with(".feather") {
             read_arrow(&url).await?
         } else {
             return Err(VegaFusionError::internal(&format!(
