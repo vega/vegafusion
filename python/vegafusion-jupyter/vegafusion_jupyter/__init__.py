@@ -4,9 +4,49 @@
 # Copyright (c) Jon Mease.
 # Distributed under the terms of the Modified BSD License.
 
+import altair as alt
 from ._version import __version__, version_info
 from .widget import VegaFusionWidget
 from .transformer import to_feather
+import vegafusion_jupyter.renderer
+
+
+def enable():
+    """
+    Enable the VegaFusion data transformer and renderer so that all Charts
+    are displayed using VegaFusion.
+
+    Equivalent to
+
+    ```python
+    import altair as alt
+    alt.renderers.enable('vegafusion')
+    alt.data_transformers.enable('vegafusion-feather')
+    ```
+
+    This isn't necessary in order to use the VegaFusionWidget directly
+    """
+    alt.renderers.enable('vegafusion')
+    alt.data_transformers.enable('vegafusion-feather')
+
+
+def disable():
+    """
+    Disable the VegaFusion data transformer and renderer so that Charts
+    are not displayed using VegaFusion
+
+    Equivalent to
+
+    ```python
+    import altair as alt
+    alt.renderers.enable('default')
+    alt.data_transformers.enable('default')
+    ```
+
+    This does not affect the behavior of VegaFusionWidget
+    """
+    alt.renderers.enable('default')
+    alt.data_transformers.enable('default')
 
 
 def _jupyter_labextension_paths():
