@@ -6,6 +6,7 @@
 
 from ._version import __version__, version_info
 from .widget import VegaFusionWidget
+from .transformer import to_feather
 
 
 def _jupyter_labextension_paths():
