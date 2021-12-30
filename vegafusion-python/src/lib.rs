@@ -39,6 +39,12 @@ impl PyTaskGraphRuntime {
             .block_on(self.runtime.process_request_bytes(request_bytes))?;
         Python::with_gil(|py| Ok(PyBytes::new(py, &response_bytes).into()))
     }
+
+    pub fn clear_cache(&self) {
+        self.tokio_runtime.block_on(
+            self.runtime.clear_cache()
+        );
+    }
 }
 
 /// A Python module implemented in Rust. The name of this function must match

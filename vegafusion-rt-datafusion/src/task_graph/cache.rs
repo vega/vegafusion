@@ -34,6 +34,12 @@ impl VegaFusionCache {
         }
     }
 
+    pub async fn clear(&self) {
+        // Clear the values cache. There may still be initializers representing in progress
+        // futures which will not be cleared.
+        self.values.lock().await.clear();
+    }
+
     async fn num_values(&self) -> usize {
         self.values.lock().await.len()
     }

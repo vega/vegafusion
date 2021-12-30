@@ -9,6 +9,7 @@ from ._version import __version__, version_info
 from .widget import VegaFusionWidget
 from .transformer import to_feather
 import vegafusion_jupyter.renderer
+from .runtime import runtime
 
 
 def enable():
