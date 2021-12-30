@@ -1,6 +1,9 @@
 from ipywidgets import DOMWidget
-from traitlets import Unicode
+from traitlets import Unicode, Bool
+import time
 
+import logging
+logger = logging.getLogger("vegafusion")
 
 from ._frontend import module_name, module_version
 import altair as alt
@@ -22,6 +25,7 @@ class VegaFusionWidget(DOMWidget):
     client_vega_spec = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
     server_vega_spec = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
     comm_plan = Unicode(None, allow_none=True, read_only=True).tag(sync=True)
+    verbose = Bool(False).tag(sync=True)
 
     def __init__(self, *args, **kwargs):
 
@@ -40,13 +44,22 @@ class VegaFusionWidget(DOMWidget):
         # Wire up widget message callback
         self.on_msg(self._handle_message)
 
+    def _log(self, msg):
+        if self.verbose:
+            # Use print to show up in JupyterLab Log pane
+            print(f"VegaFusionWidget(py): {msg}")
+
     def _handle_message(self, widget, msg, buffers):
-        # print(msg)
         if msg['type'] == "request":
-            # print("py: handle request")
+            start = time.time()
+            self._log("Received request")
+
             # Build response
             response_bytes = runtime.process_request_bytes(
                 buffers[0]
             )
-            # print("py: send response")
+
             self.send(dict(type="response"), [response_bytes])
+
+            duration = (time.time() - start) * 1000
+            self._log(f"Sent response in {duration:.1f}ms")

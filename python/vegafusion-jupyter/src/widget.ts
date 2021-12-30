@@ -27,6 +27,7 @@ export class VegaFusionModel extends DOMWidgetModel {
       client_vega_spec: null,
       server_vega_spec: null,
       vegafusion_handle: null,
+      verbose: null,
     };
   }
 
@@ -59,10 +60,13 @@ export class VegaFusionView extends DOMWidgetView {
     this.el.appendChild(this.viewElement);
     this.value_changed();
     this.model.on('change:spec', this.value_changed, this);
+    this.model.on('change:verbose', this.value_changed, this);
     this.model.on("msg:custom", (ev: any, buffers: [DataView]) => {
-      // console.log("js: receive");
+      if (this.model.get("verbose")) {
+        console.log("VegaFusion(js): Received response");
+      }
+
       let bytes = new Uint8Array(buffers[0].buffer)
-      // console.log(bytes);
       this.vegafusion_handle.receive(bytes)
     })
   }
@@ -80,11 +84,15 @@ export class VegaFusionView extends DOMWidgetView {
         vega_spec_json = JSON.stringify(vega_spec.spec);
       }
 
-      // console.log("js: value_changed");
-      this.vegafusion_handle = this.render_vegafusion(this.viewElement, vega_spec_json, (request: ArrayBuffer) => {
-        // console.log("js: request");
-        this.send({type: "request"}, [request])
-      });
+      this.vegafusion_handle = this.render_vegafusion(
+          this.viewElement, vega_spec_json, this.model.get("verbose") || false,
+          (request: ArrayBuffer) => {
+            if (this.model.get("verbose")) {
+              console.log("VegaFusion(js): Send request");
+            }
+
+            this.send({type: "request"}, [request])
+          });
 
       // Update vega spec properties
       this.model.set('full_vega_spec', vega_spec_json);

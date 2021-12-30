@@ -65,6 +65,7 @@ pub struct MsgReceiver {
     task_graph_mapping: HashMap<ScopedVariable, NodeValueIndex>,
     server_to_client_value_indices: Arc<HashSet<NodeValueIndex>>,
     view: View,
+    verbose: bool,
 }
 
 #[wasm_bindgen]
@@ -76,6 +77,7 @@ impl MsgReceiver {
         comm_plan: CommPlan,
         task_graph: TaskGraph,
         send_msg_fn: js_sys::Function,
+        verbose: bool,
     ) -> Self {
         set_panic_hook();
 
@@ -92,8 +94,6 @@ impl MsgReceiver {
         // Mount vega chart
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
-
-        // log(&format!("client spec\n:{}", serde_json::to_string_pretty(&spec).unwrap()));
         let dataflow = parse(JsValue::from_serde(&spec).unwrap());
 
         let view = View::new(dataflow);
@@ -110,6 +110,7 @@ impl MsgReceiver {
             send_msg_fn: Arc::new(send_msg_fn),
             server_to_client_value_indices,
             view,
+            verbose
         };
 
         this.register_callbacks();
@@ -120,7 +121,6 @@ impl MsgReceiver {
     pub fn receive(&mut self, bytes: Vec<u8>) {
         // Decode message
         let response = VegaFusionRuntimeResponse::decode(bytes.as_slice()).unwrap();
-        // log(&format!("Received msg: {:?}", response));
 
         if let Some(response) = response.response {
             match response {
@@ -136,11 +136,23 @@ impl MsgReceiver {
 
                         match &value {
                             TaskValue::Scalar(value) => {
+                                let json = value.to_json().unwrap();
+                                if self.verbose {
+                                    log(&format!("VegaFusion(wasm): Received {}", var.name));
+                                    log(&serde_json::to_string_pretty(&json).unwrap());
+                                }
+
                                 let js_value =
-                                    JsValue::from_serde(&value.to_json().unwrap()).unwrap();
+                                    JsValue::from_serde(&json).unwrap();
                                 set_signal_value(view, &var.name, scope, js_value);
                             }
                             TaskValue::Table(value) => {
+                                let json = value.to_json();
+                                if self.verbose {
+                                    log(&format!("VegaFusion(wasm): Received {}", var.name));
+                                    log(&serde_json::to_string_pretty(&json).unwrap());
+                                }
+
                                 let js_value = JsValue::from_serde(&value.to_json()).unwrap();
                                 set_data_value(view, &var.name, scope, js_value);
                             }
@@ -176,12 +188,18 @@ impl MsgReceiver {
 
             let task_graph = self.task_graph.clone();
             let send_msg_fn = self.send_msg_fn.clone();
+            let verbose = self.verbose;
 
             // Register callbacks
             match scoped_var.0.namespace() {
                 VariableNamespace::Signal => {
-                    let closure = Closure::wrap(Box::new(move |_name: String, val: JsValue| {
+                    let closure = Closure::wrap(Box::new(move |name: String, val: JsValue| {
                         let val: serde_json::Value = val.into_serde().unwrap();
+                        if verbose {
+                            log(&format!("VegaFusion(wasm): Sending signal {}", name));
+                            log(&serde_json::to_string_pretty(&val).unwrap());
+                        }
+
                         let mut task_graph = task_graph.lock().unwrap();
                         let updated_nodes = &task_graph
                             .update_value(
@@ -216,8 +234,13 @@ impl MsgReceiver {
                     self.add_signal_listener(&var_name, scope, ret_cb);
                 }
                 VariableNamespace::Data => {
-                    let closure = Closure::wrap(Box::new(move |_name: String, val: JsValue| {
+                    let closure = Closure::wrap(Box::new(move |name: String, val: JsValue| {
                         let val: serde_json::Value = val.into_serde().unwrap();
+                        if verbose {
+                            log(&format!("VegaFusion(wasm): Sending data {}", name));
+                            log(&serde_json::to_string_pretty(&val).unwrap());
+                        }
+
                         let mut task_graph = task_graph.lock().expect("lock task graph");
 
                         let updated_nodes = &task_graph
@@ -258,7 +281,6 @@ impl MsgReceiver {
     }
 
     fn send_request(send_msg_fn: &js_sys::Function, request_msg: VegaFusionRuntimeRequest) {
-        // log("send_request");
         let mut buf: Vec<u8> = Vec::new();
         buf.reserve(request_msg.encoded_len());
         request_msg.encode(&mut buf).unwrap();
@@ -293,6 +315,7 @@ impl MsgReceiver {
 pub fn render_vegafusion(
     element: Element,
     spec_str: &str,
+    verbose: bool,
     send_msg_fn: js_sys::Function,
 ) -> MsgReceiver {
     let mut spec: ChartSpec = serde_json::from_str(spec_str).unwrap();
@@ -317,6 +340,7 @@ pub fn render_vegafusion(
         comm_plan,
         task_graph.clone(),
         send_msg_fn,
+        verbose,
     );
 
     // Request initial values
