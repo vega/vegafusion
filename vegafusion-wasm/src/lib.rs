@@ -66,6 +66,8 @@ pub struct MsgReceiver {
     server_to_client_value_indices: Arc<HashSet<NodeValueIndex>>,
     view: View,
     verbose: bool,
+    debounce_wait: f64,
+    debounce_max_wait: Option<f64>,
 }
 
 #[wasm_bindgen]
@@ -78,6 +80,8 @@ impl MsgReceiver {
         task_graph: TaskGraph,
         send_msg_fn: js_sys::Function,
         verbose: bool,
+        debounce_wait: f64,
+        debounce_max_wait: Option<f64>,
     ) -> Self {
         set_panic_hook();
 
@@ -110,7 +114,9 @@ impl MsgReceiver {
             send_msg_fn: Arc::new(send_msg_fn),
             server_to_client_value_indices,
             view,
-            verbose
+            verbose,
+            debounce_wait,
+            debounce_max_wait,
         };
 
         this.register_callbacks();
@@ -172,11 +178,11 @@ impl MsgReceiver {
     }
 
     fn add_signal_listener(&self, name: &str, scope: &[u32], handler: JsValue) {
-        add_signal_listener(self.view(), name, scope, handler);
+        add_signal_listener(self.view(), name, scope, handler, self.debounce_wait, self.debounce_max_wait);
     }
 
     fn add_data_listener(&self, name: &str, scope: &[u32], handler: JsValue) {
-        add_data_listener(self.view(), name, scope, handler);
+        add_data_listener(self.view(), name, scope, handler, self.debounce_wait, self.debounce_max_wait);
     }
 
     fn register_callbacks(&self) {
@@ -316,6 +322,8 @@ pub fn render_vegafusion(
     element: Element,
     spec_str: &str,
     verbose: bool,
+    debounce_wait: f64,
+    debounce_max_wait: Option<f64>,
     send_msg_fn: js_sys::Function,
 ) -> MsgReceiver {
     let mut spec: ChartSpec = serde_json::from_str(spec_str).unwrap();
@@ -341,6 +349,8 @@ pub fn render_vegafusion(
         task_graph.clone(),
         send_msg_fn,
         verbose,
+        debounce_wait,
+        debounce_max_wait,
     );
 
     // Request initial values
@@ -377,10 +387,10 @@ extern "C" {
     pub fn set_data_value(view: &View, name: &str, scope: &[u32], value: JsValue);
 
     #[wasm_bindgen(js_name = "addSignalListener")]
-    fn add_signal_listener(view: &View, name: &str, scope: &[u32], handler: JsValue);
+    fn add_signal_listener(view: &View, name: &str, scope: &[u32], handler: JsValue, wait: f64, maxWait: Option<f64>);
 
     #[wasm_bindgen(js_name = "addDataListener")]
-    fn add_data_listener(view: &View, name: &str, scope: &[u32], handler: JsValue);
+    fn add_data_listener(view: &View, name: &str, scope: &[u32], handler: JsValue, wait: f64, maxWait: Option<f64>);
 
     #[wasm_bindgen(js_name = "setupTooltip")]
     fn setup_tooltip(view: &View);
