@@ -12,7 +12,7 @@ import vegafusion_jupyter.renderer
 from .runtime import runtime
 
 
-def enable(debounce_wait=30, debounce_max_wait=60):
+def enable(debounce_wait=30, debounce_max_wait=60, data_dir="_vegafusion_data"):
     """
     Enable the VegaFusion data transformer and renderer so that all Charts
     are displayed using VegaFusion.
@@ -32,7 +32,9 @@ def enable(debounce_wait=30, debounce_max_wait=60):
         debounce_wait=debounce_wait,
         debounce_max_wait=debounce_max_wait
     )
-    alt.data_transformers.enable('vegafusion-feather')
+    alt.data_transformers.enable(
+        'vegafusion-feather', data_dir=data_dir
+    )
 
 
 def disable():
