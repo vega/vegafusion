@@ -4,7 +4,7 @@ extern crate lazy_static;
 mod util;
 use crate::util::vegajs_runtime::{
     vegajs_runtime, ExportImage, ExportImageFormat, ExportUpdate, ExportUpdateBatch,
-    ExportUpdateNamespace, Watch, WatchNamespace,
+    ExportUpdateNamespace,
 };
 
 use datafusion::scalar::ScalarValue;
@@ -14,6 +14,7 @@ use std::fs;
 
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::planning::watch::{Watch, WatchNamespace};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::spec::transform::extent::ExtentTransformSpec;
 use vegafusion_core::spec::transform::filter::FilterTransformSpec;
@@ -146,7 +147,7 @@ fn test_export_single_image() {
         .display()
         .to_string();
 
-    let spec_path = format!("{}/tests/specs/lets_make_a_bar_chart.json", crate_dir);
+    let spec_path = format!("{}/tests/specs/custom/lets_make_a_bar_chart.json", crate_dir);
     let spec_str = fs::read_to_string(spec_path).expect("Failed to read spec");
     let chart_spec: ChartSpec =
         serde_json::from_str(&spec_str).expect("Failed to parse JSON as chart");
@@ -168,7 +169,7 @@ fn try_export_sequence_helper_crossfilter() {
     let crate_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .display()
         .to_string();
-    let spec_path = format!("{}/tests/specs/flights_crossfilter_a.json", crate_dir);
+    let spec_path = format!("{}/tests/specs/custom/flights_crossfilter_a.json", crate_dir);
 
     let spec_str = fs::read_to_string(spec_path).unwrap();
     let chart_spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
