@@ -154,3 +154,4 @@ vegafusion_jupyter/labextension/*.tgz
 
 # Packed lab extensions
 vegafusion_jupyter/labextension
+/css/*.css
