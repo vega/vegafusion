@@ -11,7 +11,8 @@
   "files": [
     "lib/**/*.js",
     "dist/*.js",
-    "css/*.css"
+    "css/*.css",
+    "css/*.scss"
   ],
   "homepage": "https://github.com/jonmmease/vegafusion",
   "bugs": {
@@ -33,7 +34,7 @@
     "build:prod": "yarn run build:lib && yarn run build:nbextension && yarn run build:labextension",
     "build:labextension": "jupyter labextension build .",
     "build:labextension:dev": "jupyter labextension build --development True .",
-    "build:lib": "tsc",
+    "build:lib": "tsc && sass scss:css",
     "build:nbextension": "webpack",
     "clean": "yarn run clean:lib && yarn run clean:nbextension && yarn run clean:labextension",
     "clean:lib": "rimraf lib",
@@ -67,6 +68,7 @@
     "@typescript-eslint/parser": "^3.6.0",
     "acorn": "^7.2.0",
     "css-loader": "6.5.1",
+    "sass": "^1.45.2",
     "eslint": "^7.4.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.4",
