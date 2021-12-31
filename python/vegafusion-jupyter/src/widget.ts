@@ -1,16 +1,37 @@
 // Copyright (c) Jon Mease
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  DOMWidgetModel,
-  DOMWidgetView,
-  ISerializers,
-} from '@jupyter-widgets/base';
+import {DOMWidgetModel, DOMWidgetView, ISerializers,} from '@jupyter-widgets/base';
 
-import { MODULE_NAME, MODULE_VERSION } from './version';
+import {MODULE_NAME, MODULE_VERSION} from './version';
 
 // Import the CSS
 import '../css/widget.css';
+import '../css/vegafusion-embed.css';
+// @ts-ignore
+import logo_svg from '../images/VegaFusionLogo-SmallGrey.svg';
+
+const I18N = {
+  CLICK_TO_VIEW_ACTIONS: 'Click to view actions',
+  COMPILED_ACTION: 'View Compiled Vega',
+  EDITOR_ACTION: 'Open in Vega Editor',
+  PNG_ACTION: 'Save as PNG',
+  SOURCE_ACTION: 'View Source',
+  SVG_ACTION: 'Save as SVG',
+};
+
+// const SVG_CIRCLES = `
+// <svg viewBox="0 0 16 16" fill="currentColor" stroke="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+//   <circle r="2" cy="8" cx="2"></circle>
+//   <circle r="2" cy="8" cx="8"></circle>
+//   <circle r="2" cy="8" cx="14"></circle>
+// </svg>`;
+
+
+
+const CHART_WRAPPER_CLASS = 'chart-wrapper';
+
+let downloadFileName = "visualization";
 
 export class VegaFusionModel extends DOMWidgetModel {
   defaults() {
@@ -49,8 +70,78 @@ export class VegaFusionModel extends DOMWidgetModel {
 export class VegaFusionView extends DOMWidgetView {
   vegafusion_handle: import("vegafusion-wasm").MsgReceiver;
   viewElement = document.createElement("div");
+  containerElement = document.createElement("div");
   render_vegafusion: typeof import("vegafusion-wasm").render_vegafusion;
   vegalite_compile: typeof import("vega-lite").compile;
+
+  generate_menu() {
+    const details = document.createElement('details');
+    details.title = I18N.CLICK_TO_VIEW_ACTIONS;
+
+    const summary = document.createElement('summary');
+    summary.innerHTML = logo_svg;
+
+    details.append(summary);
+
+    let documentClickHandler = (ev: MouseEvent) => {
+      if (!details.contains(ev.target as any)) {
+        details.removeAttribute('open');
+      }
+    };
+    document.addEventListener('click', documentClickHandler);
+
+    // popup
+    const ctrl = document.createElement('div');
+    details.append(ctrl);
+    ctrl.classList.add('vegafusion-actions');
+
+    // image export
+    for (const ext of ['svg', 'png'] as const) {
+      let scale_factor = 1.0;
+
+        const i18nExportAction = (I18N as {[key: string]: string})[`${ext.toUpperCase()}_ACTION`];
+        const exportLink = document.createElement('a');
+
+        exportLink.text = i18nExportAction;
+        exportLink.href = '#';
+        exportLink.target = '_blank';
+        exportLink.download = `${downloadFileName}.${ext}`;
+
+        // Disable browser tooltip
+        exportLink.title = '';
+
+        // add link on mousedown so that it's correct when the click happens
+        let that = this;
+        exportLink.addEventListener('mousedown', async function (this, e) {
+          e.preventDefault();
+          if (that.vegafusion_handle) {
+            this.href = await that.vegafusion_handle.to_image_url(ext, scale_factor);
+          }
+        });
+        ctrl.append(exportLink);
+    }
+
+    // Add hr
+    ctrl.append(document.createElement("hr"));
+
+    // Add About
+    const aboutLink = document.createElement('a');
+    aboutLink.text = "About VegaFusion";
+    aboutLink.href = '';
+    aboutLink.target = '_blank';
+    aboutLink.title = '';
+    ctrl.append(aboutLink);
+
+    // Add License
+    const licenseLink = document.createElement('a');
+    licenseLink.text = "AGPL License";
+    licenseLink.href = 'https://www.gnu.org/licenses/agpl-3.0.en.html';
+    licenseLink.target = '_blank';
+    licenseLink.title = '';
+    ctrl.append(licenseLink);
+
+    return details
+  }
 
   async render() {
     const { render_vegafusion } = await import("vegafusion-wasm");
@@ -59,7 +150,15 @@ export class VegaFusionView extends DOMWidgetView {
     const { compile } = await import("vega-lite");
     this.vegalite_compile = compile;
 
-    this.el.appendChild(this.viewElement);
+    let menu = this.generate_menu();
+    this.containerElement.appendChild(this.viewElement);
+    this.containerElement.classList.add(CHART_WRAPPER_CLASS);
+
+    this.el.appendChild(this.containerElement);
+    this.el.appendChild(menu);
+    this.el.classList.add("vegafusion-embed");
+    this.el.classList.add("has-actions");
+
     this.value_changed();
     this.model.on('change:spec', this.value_changed, this);
     this.model.on('change:verbose', this.value_changed, this);

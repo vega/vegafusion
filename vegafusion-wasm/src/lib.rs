@@ -29,6 +29,8 @@ use vegafusion_core::task_graph::task_graph::ScopedVariable;
 use web_sys::Element;
 use vegafusion_core::planning::optimize_server::split_data_url_nodes;
 use vegafusion_core::planning::watch::WatchPlan;
+use wasm_bindgen_futures::JsFuture;
+use js_sys::Promise;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -315,6 +317,10 @@ impl MsgReceiver {
     pub fn comm_plan_json(&self) -> String {
         serde_json::to_string_pretty(&WatchPlan::from(self.comm_plan.clone())).unwrap()
     }
+
+    pub fn to_image_url(&self, img_type: &str, scale_factor: Option<f64>) -> Promise {
+        self.view.to_image_url(img_type, scale_factor.unwrap_or(1.0))
+    }
 }
 
 #[wasm_bindgen]
@@ -413,6 +419,9 @@ extern "C" {
 
     #[wasm_bindgen(method, js_name = "hover")]
     pub fn hover(this: &View);
+
+    #[wasm_bindgen(method, js_name = "toImageURL")]
+    pub fn to_image_url(this: &View, img_type: &str, scale_factor: f64) -> Promise;
 }
 
 #[cfg(test)]

@@ -6,6 +6,7 @@ const WebpackRequireFrom = require("webpack-require-from");
 const rules = [
     { test: /\.ts$/, loader: 'ts-loader' },
     { test: /\.js$/, loader: 'source-map-loader' },
+    { test: /\.svg$/, loader: 'svg-inline-loader' },
     { test: /\.css$/, use: [
             // Not sure why it's necessary to not include these loaders.
             // It looks like JupyterLab is automatically including these somewhere, so it's an error to duplicate
