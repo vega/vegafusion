@@ -1,7 +1,7 @@
 import altair as alt
 
 
-def vegafusion_renderer(spec):
+def vegafusion_renderer(spec, **widget_options):
     """
     Altair renderer that displays charts using a VegaFusionWidget
     """
@@ -11,7 +11,9 @@ def vegafusion_renderer(spec):
 
     # Display widget as a side effect, then return empty string text representation
     # so that Altair doesn't also display a string representation
-    widget = VegaFusionWidget(spec=json.dumps(spec))
+    widget = VegaFusionWidget(
+        spec=json.dumps(spec), **widget_options
+    )
     display(widget)
     return {'text/plain': ""}
 
