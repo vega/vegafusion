@@ -1,5 +1,9 @@
 // Copyright (c) Jon Mease
 // Distributed under the terms of the Modified BSD License.
+//
+// Dropdown menu implementation is based heavily on vega-embed
+// (https://github.com/vega/vega-embed) which is released
+// under the BSD-3-Clause License: https://github.com/vega/vega-embed/blob/next/LICENSE
 
 import {DOMWidgetModel, DOMWidgetView, ISerializers,} from '@jupyter-widgets/base';
 
@@ -13,21 +17,9 @@ import logo_svg from '../images/VegaFusionLogo-SmallGrey.svg';
 
 const I18N = {
   CLICK_TO_VIEW_ACTIONS: 'Click to view actions',
-  COMPILED_ACTION: 'View Compiled Vega',
-  EDITOR_ACTION: 'Open in Vega Editor',
   PNG_ACTION: 'Save as PNG',
-  SOURCE_ACTION: 'View Source',
   SVG_ACTION: 'Save as SVG',
 };
-
-// const SVG_CIRCLES = `
-// <svg viewBox="0 0 16 16" fill="currentColor" stroke="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-//   <circle r="2" cy="8" cx="2"></circle>
-//   <circle r="2" cy="8" cx="8"></circle>
-//   <circle r="2" cy="8" cx="14"></circle>
-// </svg>`;
-
-
 
 const CHART_WRAPPER_CLASS = 'chart-wrapper';
 
