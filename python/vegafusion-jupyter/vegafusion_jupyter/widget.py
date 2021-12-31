@@ -33,13 +33,29 @@ class VegaFusionWidget(DOMWidget):
 
         # Support altair object as single positional argument
         if len(args) == 1:
+            # If vegafusion-feather renderer is already enabled, use the same options
+            if alt.data_transformers.active == "vegafusion-feather":
+                data_transformer_opts = alt.data_transformers.options
+            else:
+                data_transformer_opts = dict()
+
             chart = args[0]
             with alt.renderers.enable("vegafusion"):
-                with alt.data_transformers.enable("vegafusion-feather"):
+                with alt.data_transformers.enable("vegafusion-feather", **data_transformer_opts):
                     # Temporarily enable the vegafusion renderer and transformer so
                     # that we use them even if they are not enabled globally
                     spec = json.dumps(chart.to_dict(), indent=2)
             kwargs["spec"] = spec
+
+        # If vegafusion renderer is already enabled, use the configured debounce options as the default
+        if alt.renderers.active == "vegafusion":
+            # Use configured debounce options, if any
+            renderer_opts = alt.renderers.options
+            if "debounce_wait" in renderer_opts:
+                kwargs.setdefault("debounce_wait", renderer_opts["debounce_wait"])
+
+            if "debounce_max_wait" in renderer_opts:
+                kwargs.setdefault("debounce_max_wait", renderer_opts["debounce_max_wait"])
 
         super().__init__(**kwargs)
 
