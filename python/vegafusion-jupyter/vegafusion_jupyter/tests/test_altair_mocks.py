@@ -39,7 +39,8 @@ assert(alt.data_transformers.active == 'default')
 vegafusion_feather_markdown_template = r"""
 ```python
 import altair as alt
-import vegafusion_jupyter
+import vegafusion_jupyter as vf
+vf.enable()
 ```
 
 ```python
@@ -55,7 +56,8 @@ assert(alt.data_transformers.active == 'vegafusion-feather')
 vegafusion_default_markdown_template = r"""
 ```python
 import altair as alt
-import vegafusion_jupyter
+import vegafusion_jupyter as vf
+vf.enable()
 alt.data_transformers.enable("default");
 ```
 
@@ -321,6 +323,11 @@ def export_image_sequence(
         # Remove padding, margins, and standardize line height.
         css = ("body, .jp-Cell, .jp-Notebook, .jupyter-widgets, .jp-RenderedHTMLCommon "
                "{margin: 0 !important; padding: 0 !important; line-height: 1.3 !important;}")
+        script = 'document.styleSheets[0].insertRule("' + css + '", 0 )'
+        chrome_driver.execute_script(script)
+
+        # Hide vegafusion logo for comparison with Altair
+        css = ".vegafusion-embed summary { visibility: hidden }"
         script = 'document.styleSheets[0].insertRule("' + css + '", 0 )'
         chrome_driver.execute_script(script)
 
