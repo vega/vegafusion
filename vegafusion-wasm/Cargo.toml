@@ -15,6 +15,7 @@ default = ["console_error_panic_hook"]
 serde_json = "1.0.68"
 serde = { version = "1.0", features = ["derive"] }
 wasm-bindgen = {version="0.2.63", features=["serde-serialize"]}
+wasm-bindgen-futures = "0.4.28"
 js-sys = "0.3.55"
 vegafusion-core = {path="../vegafusion-core"}
 getrandom = { version = "0.2", features = ["js"] }
