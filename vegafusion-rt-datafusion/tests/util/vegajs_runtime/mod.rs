@@ -46,6 +46,7 @@ impl NodeJsRuntime {
         working_dir.push("vegajs_runtime");
 
         let mut proc = Command::new("node")
+            .args(&["-i", "--experimental-repl-await"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -63,9 +64,13 @@ impl NodeJsRuntime {
             proc: Mutex::new(proc),
             out,
         };
+
+        let welcome_message = this.read_output();
+        println!("Initialized node: {}\n", welcome_message);
+
         let str_result = this.execute_statement("VegaUtils = require('./vegajsRuntime.js')")
             .unwrap();
-        println!("VegaUtils require result: '{}'", str_result);
+        println!("VegaUtils require output: {}", str_result);
 
         Ok(this)
     }
@@ -124,6 +129,10 @@ impl NodeJsRuntime {
             .expect("Couldn't write");
         process_stdin.flush().unwrap();
 
+        Ok(self.read_output())
+    }
+
+    fn read_output(&self) -> String {
         let boundary = "\n> ".as_bytes();
         let bytes_read = loop {
             let mut vec = self.out.deref().lock().unwrap();
@@ -145,8 +154,7 @@ impl NodeJsRuntime {
         let end_index = bytes_read.len() - 3;
 
         let s = String::from_utf8(Vec::from(&bytes_read[start_index..end_index])).unwrap();
-
-        Ok(s.trim().to_string())
+        s.trim().to_string()
     }
 }
 
