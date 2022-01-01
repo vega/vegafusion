@@ -1,10 +1,5 @@
 name: build_test
 on: [push]
-
-defaults:
-  run:
-    shell: bash
-
 jobs:
   rust-fmt-clippy:
     runs-on: ubuntu-latest
@@ -59,6 +54,9 @@ jobs:
 
   build-vegafusion-python:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
