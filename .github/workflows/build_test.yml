@@ -1,5 +1,10 @@
 name: build_test
 on: [push]
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   rust-fmt-clippy:
     runs-on: ubuntu-latest
