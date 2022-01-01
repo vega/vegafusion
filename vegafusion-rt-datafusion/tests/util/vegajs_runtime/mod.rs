@@ -46,7 +46,6 @@ impl NodeJsRuntime {
         working_dir.push("vegajs_runtime");
 
         let mut proc = Command::new("node")
-            .args(&["-i", "--experimental-repl-await"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -64,7 +63,7 @@ impl NodeJsRuntime {
             proc: Mutex::new(proc),
             out,
         };
-        this.execute_statement("VegaUtils = require('./vegajsRuntime.js')")
+        this.execute_statement("let VegaUtils = require('./vegajsRuntime.js')")
             .unwrap();
 
         Ok(this)

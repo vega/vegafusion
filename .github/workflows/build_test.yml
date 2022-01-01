@@ -23,9 +23,9 @@ jobs:
         run: |
           cd vegafusion-rt-datafusion/tests/util/vegajs_runtime
           npm install
-      - name: Check node support for top-level awai
+      - name: Check node support for top-level await
         run: |
-          node --input-type=module --eval="const asyncMsg = await Promise.resolve('WORKS!'); console.log(asyncMsg);"
+          node --input-type=module --eval="const asyncMsg = await Promise.resolve('WORKS'); console.log(asyncMsg);"
       - name: Cache rust dependencies
         uses: Swatinem/rust-cache@v1
       - name: Check cargo fmt compliance
