@@ -39,8 +39,8 @@ pub fn initialize() {
     INIT.call_once(|| {
         // Delete and remake empty output image directory
         let output_dir = format!("{}/tests/output/", crate_dir());
-        std::fs::remove_dir_all(&output_dir);
-        std::fs::create_dir(&output_dir);
+        std::fs::remove_dir_all(&output_dir).unwrap();
+        std::fs::create_dir(&output_dir).unwrap();
     });
 }
 
@@ -1260,7 +1260,7 @@ async fn check_spec_sequence(
         server_img.save(
             &format!("{}/tests/output/{}_planned{}", crate_dir(), png_name, i),
             true,
-        );
+        ).unwrap();
         let (full_img, _) = &export_sequence_results[i];
 
         let (difference, diff_img) = full_img.compare(&server_img).unwrap();
@@ -1269,8 +1269,7 @@ async fn check_spec_sequence(
             if let Some(diff_img) = diff_img {
                 let diff_path = format!("{}/tests/output/{}_diff{}.png", crate_dir(), png_name, i);
                 fs::write(&diff_path, diff_img).unwrap();
-                assert!(
-                    false,
+                panic!(
                     "Found difference in exported images.\nDiff written to {}",
                     diff_path
                 )
