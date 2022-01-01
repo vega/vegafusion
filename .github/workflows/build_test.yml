@@ -32,6 +32,9 @@ jobs:
           cache-on-failure: True
 #      - name: Check cargo fmt compliance
 #        run: cargo fmt --all -- --check
+      - name: Try stuff
+        run: |
+          node --eval="VegaUtils = require('./vegajsRuntime.js'); console.log(VegaUtils)"
       - name: Run Rust Tests
         uses: actions-rs/cargo@v1
         with:
