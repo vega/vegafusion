@@ -1257,10 +1257,12 @@ async fn check_spec_sequence(
         .map(|(img, _)| img)
         .enumerate()
     {
-        server_img.save(
-            &format!("{}/tests/output/{}_planned{}", crate_dir(), png_name, i),
-            true,
-        ).unwrap();
+        server_img
+            .save(
+                &format!("{}/tests/output/{}_planned{}", crate_dir(), png_name, i),
+                true,
+            )
+            .unwrap();
         let (full_img, _) = &export_sequence_results[i];
 
         let (difference, diff_img) = full_img.compare(&server_img).unwrap();

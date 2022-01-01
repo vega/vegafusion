@@ -497,7 +497,7 @@ mod test_compile {
                 &["a".to_string(), "two".to_string()],
                 &[
                     DataType::Float64,
-                    DataType::Struct(vec![Field::new("three", DataType::Float64, false)])
+                    DataType::Struct(vec![Field::new("three", DataType::Float64, false)]),
                 ],
             )),
             args: vec![

@@ -76,7 +76,10 @@ impl ChartVisitor for MakeTaskScopeVisitor {
 
         // Make group itself a dataset
         if let Some(name) = &mark.name {
-            println!("Adding group mark {:?} as dataset with scope {:?}", name, scope);
+            println!(
+                "Adding group mark {:?} as dataset with scope {:?}",
+                name, scope
+            );
             parent_scope.data.insert(name.clone());
         }
 
