@@ -2,14 +2,10 @@ use crate::data::table::VegaFusionTableUtils;
 use crate::expression::compiler::builtin_functions::datetime::date_parsing::{
     get_datetime_udf, DateParseMode,
 };
-use crate::expression::compiler::builtin_functions::datetime::{
-    date_parsing::DATETIME_TO_MILLIS_LOCAL, datetime::DATETIME_COMPONENTS,
-};
+use crate::expression::compiler::builtin_functions::datetime::datetime::DATETIME_COMPONENTS;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{
-    cast_to, is_integer_datatype, is_string_datatype, ExprHelpers,
-};
+use crate::expression::compiler::utils::{is_integer_datatype, is_string_datatype, ExprHelpers};
 use crate::task_graph::task::TaskCall;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
@@ -24,10 +20,10 @@ use datafusion::physical_plan::functions::BuiltinScalarFunction;
 use datafusion::prelude::col;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
-use std::io::{BufReader, Read, Seek, SeekFrom, Write};
+use std::io::{Read, Write};
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
-use vegafusion_core::arrow::datatypes::TimeUnit;
+
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
@@ -88,7 +84,7 @@ impl TaskCall for DataUrlTask {
         // Load data from URL
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
 
-        let mut date_mode = DateParseMode::JavaScript;
+        let date_mode = DateParseMode::JavaScript;
         let df = if url.ends_with(".csv") || url.ends_with(".tsv") {
             read_csv(url, &parse).await?
         } else if url.ends_with(".json") {
@@ -300,7 +296,7 @@ fn process_datetimes(
             {
                 Expr::ScalarFunction {
                     fun: BuiltinScalarFunction::ToTimestampMillis,
-                    args: vec![col(&field.name())],
+                    args: vec![col(field.name())],
                 }
                 .alias(field.name())
             } else {
@@ -349,10 +345,12 @@ impl TaskCall for DataSourceTask {
         let mut config = build_compilation_config(&input_vars, values);
 
         // Remove source table from config
-        let source_table = config.data_scope.remove(&self.source).expect(&format!(
-            "Missing source {} for task with input variables\n{:#?}",
-            self.source, input_vars
-        ));
+        let source_table = config.data_scope.remove(&self.source).unwrap_or_else(|| {
+            panic!(
+                "Missing source {} for task with input variables\n{:#?}",
+                self.source, input_vars
+            )
+        });
 
         // Apply transforms (if any)
         let (transformed_table, output_values) = if self
@@ -424,13 +422,13 @@ async fn build_csv_schema(
     uri: impl Into<String>,
     parse: &Option<Parse>,
 ) -> Result<SchemaRef> {
-    let mut ctx = ExecutionContext::new();
+    let ctx = ExecutionContext::new();
 
     let uri: String = uri.into();
     let (object_store, path) = ctx.object_store(&uri)?;
     let listing_opts = csv_opts.to_listing_options(1);
     let inferred_schema = listing_opts
-        .infer_schema(Arc::clone(&object_store), &path)
+        .infer_schema(Arc::clone(&object_store), path)
         .await?;
 
     // Get HashMap of provided columns formats
@@ -467,7 +465,7 @@ async fn build_csv_schema(
                 // Unspecified, use String
                 DataType::Utf8
             };
-            Field::new(&field.name(), dtype, true)
+            Field::new(field.name(), dtype, true)
         })
         .collect();
     Ok(SchemaRef::new(Schema::new(new_fields)))
@@ -544,7 +542,7 @@ async fn read_arrow(url: &str) -> Result<Arc<dyn DataFrame>> {
         }
         (schema, batches)
     } else {
-        let f = FileReader::try_new(reader).unwrap();
+        let _f = FileReader::try_new(reader).unwrap();
         return Err(VegaFusionError::parse(format!(
             "Failed to read arrow file at {}",
             url

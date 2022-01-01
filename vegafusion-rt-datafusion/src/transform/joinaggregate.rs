@@ -39,10 +39,9 @@ impl TransformTrait for JoinAggregate {
                 }
             };
             let numeric_column = || {
-                to_numeric(column.clone(), &dataframe.schema()).expect(&format!(
-                    "Failed to convert column {:?} to numeric data type",
-                    column
-                ))
+                to_numeric(column.clone(), dataframe.schema()).unwrap_or_else(|_| {
+                    panic!("Failed to convert column {:?} to numeric data type", column)
+                })
             };
 
             let op = AggregateOp::from_i32(*op).unwrap();

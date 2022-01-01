@@ -1,6 +1,6 @@
 use crate::error::Result;
 use crate::expression::parser::parse;
-use crate::proto::gen::tasks::Variable;
+
 use crate::spec::transform::TransformSpecTrait;
 use crate::spec::values::{Field, SignalExpressionSpec};
 use crate::task_graph::task::InputVariable;

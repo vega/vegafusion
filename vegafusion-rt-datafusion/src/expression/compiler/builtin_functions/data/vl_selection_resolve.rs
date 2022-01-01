@@ -13,7 +13,7 @@ use vegafusion_core::proto::gen::expression::literal::Value;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::{
     SelectionRow, SelectionType,
 };
-use crate::expression::compiler::utils::ExprHelpers;
+
 use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
@@ -53,10 +53,10 @@ pub fn parse_args(args: &[Expression]) -> Result<Op> {
 pub fn vl_selection_resolve_fn(
     table: &VegaFusionTable,
     args: &[Expression],
-    schema: &DFSchema,
+    _schema: &DFSchema,
 ) -> Result<Expr> {
     // Validate args and get operation
-    let op = parse_args(args)?;
+    let _op = parse_args(args)?;
 
     // Extract vector of rows for selection dataset
     let rows = if let ScalarValue::List(Some(elements), _) = table.to_scalar_value()? {
@@ -126,7 +126,7 @@ pub fn vl_selection_resolve_fn(
                 .map(|s| s.get_datatype())
                 .unwrap_or(DataType::Float64);
             let values = ScalarValue::List(Some(Box::new(values)), Box::new(dtype));
-            (name.clone(), values)
+            (name, values)
         })
         .sorted_by_key(|(n, _)| n.clone())
         .collect();

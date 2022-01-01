@@ -21,8 +21,8 @@ impl TransformTrait for Extent {
         let output_values = if self.signal.is_some() {
             let field_col = col(self.field.as_str());
             let min_val =
-                min(to_numeric(field_col.clone(), &dataframe.schema())?).alias("__min_val");
-            let max_val = max(to_numeric(field_col, &dataframe.schema())?).alias("__max_val");
+                min(to_numeric(field_col.clone(), dataframe.schema())?).alias("__min_val");
+            let max_val = max(to_numeric(field_col, dataframe.schema())?).alias("__max_val");
 
             let extent_df = dataframe
                 .aggregate(Vec::new(), vec![min_val, max_val])

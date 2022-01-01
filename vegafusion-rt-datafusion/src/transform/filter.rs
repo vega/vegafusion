@@ -35,7 +35,7 @@ impl TransformTrait for Filter {
             .filter(cast_to(
                 logical_expr,
                 &DataType::Boolean,
-                &dataframe.schema(),
+                dataframe.schema(),
             )?)?
             .select_columns(&col_names)?;
 

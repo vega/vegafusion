@@ -959,8 +959,7 @@ mod test_image_comparison_timeunit {
 #[cfg(test)]
 mod test_image_comparison_window {
     use super::*;
-    use itertools::Itertools;
-    use vegafusion_core::spec::transform::timeunit::{TimeUnitTimeZoneSpec, TimeUnitUnitSpec};
+
     use vegafusion_core::spec::transform::window::WindowTransformOpSpec;
     use vegafusion_core::spec::transform::TransformSpec;
 

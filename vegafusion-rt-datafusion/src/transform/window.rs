@@ -73,10 +73,9 @@ impl TransformTrait for Window {
                         let op = AggregateOp::from_i32(*op).unwrap();
 
                         let numeric_field = || {
-                            to_numeric(col(field), &dataframe.schema()).expect(&format!(
-                                "Failed to convert field {} to numeric data type",
-                                field
-                            ))
+                            to_numeric(col(field), dataframe.schema()).unwrap_or_else(|_| {
+                                panic!("Failed to convert field {} to numeric data type", field)
+                            })
                         };
 
                         use AggregateOp::*;

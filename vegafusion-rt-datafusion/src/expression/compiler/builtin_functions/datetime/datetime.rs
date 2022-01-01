@@ -1,6 +1,4 @@
-use crate::expression::compiler::builtin_functions::datetime::date_parsing::{
-    DATETIME_TO_MILLIS_JAVASCRIPT, DATETIME_TO_MILLIS_LOCAL,
-};
+use crate::expression::compiler::builtin_functions::datetime::date_parsing::DATETIME_TO_MILLIS_JAVASCRIPT;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype, is_string_datatype};
 use chrono::{DateTime, Local, LocalResult, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array, TimestampMillisecondArray};

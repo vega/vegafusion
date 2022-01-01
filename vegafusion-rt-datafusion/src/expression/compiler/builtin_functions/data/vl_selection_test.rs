@@ -13,7 +13,6 @@ use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
 
-use crate::data::table::VegaFusionTableUtils;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::expression::literal::Value;
 
@@ -156,7 +155,7 @@ impl FieldSpec {
                                 Box::new(first.clone().lt_eq(second.clone())),
                                 Box::new(second),
                             )],
-                            else_expr: Some(Box::new(first.clone())),
+                            else_expr: Some(Box::new(first)),
                         }
                         .eval_to_scalar()?;
 

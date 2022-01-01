@@ -5,7 +5,7 @@ use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use std::collections::HashSet;
 use std::sync::Arc;
-use vegafusion_core::planning::optimize_server::split_data_url_nodes;
+
 use vegafusion_core::planning::stitch::stitch_specs;
 
 #[tokio::test(flavor = "multi_thread")]

@@ -1,7 +1,4 @@
-use chrono::{DateTime, Datelike, Local, LocalResult, TimeZone, Timelike, Utc};
-use datafusion::arrow::array::{
-    Array, ArrayRef, Date32Array, Date64Array, Int32Array, Int64Array, TimestampMillisecondArray,
-};
+use datafusion::arrow::array::{Array, ArrayRef, Date32Array, Int64Array};
 use datafusion::arrow::compute::cast;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::physical_plan::functions::{
@@ -19,7 +16,7 @@ pub fn make_time_udf() -> ScalarUDF {
         let arg = match arg.data_type() {
             DataType::Timestamp(TimeUnit::Millisecond, _) => cast(arg, &DataType::Int64)?,
             DataType::Date32 => {
-                let ms_per_day = 1000 * 60 * 60 * 24 as i64;
+                let ms_per_day = 1000 * 60 * 60 * 24_i64;
                 let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
 
                 let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);

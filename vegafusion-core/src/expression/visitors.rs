@@ -192,10 +192,8 @@ impl ExpressionVisitor for CheckSupportedExprVisitor {
             if !SUPPORTED_SCALE_FNS.contains(node.name.as_str()) {
                 self.supported = false;
             }
-        } else {
-            if !SUPPORTED_EXPRESSION_FNS.contains(node.name.as_str()) {
-                self.supported = false;
-            }
+        } else if !SUPPORTED_EXPRESSION_FNS.contains(node.name.as_str()) {
+            self.supported = false;
         }
     }
 

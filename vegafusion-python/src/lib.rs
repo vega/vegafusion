@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 use tokio::runtime::Runtime;
 use vegafusion_core::error::ToExternalError;
-use vegafusion_core::proto::gen::tasks::TaskGraph;
+
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 #[pyclass]

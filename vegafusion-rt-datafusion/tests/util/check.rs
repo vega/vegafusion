@@ -27,7 +27,7 @@ use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
 use vegafusion_rt_datafusion::transform::TransformTrait;
 
 pub fn check_expr_supported(expr_str: &str) {
-    let mut expr = parse(expr_str).unwrap();
+    let expr = parse(expr_str).unwrap();
     assert!(expr.is_supported())
 }
 

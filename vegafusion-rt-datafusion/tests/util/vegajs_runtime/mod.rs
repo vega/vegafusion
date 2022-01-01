@@ -19,13 +19,13 @@ use self::super::estree_expression::ESTreeExpression;
 use itertools::Itertools;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::planning::stitch::CommPlan;
+
 use vegafusion_core::planning::watch::{Watch, WatchNamespace, WatchValue};
 use vegafusion_core::proto::gen::expression::Expression;
-use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
+use vegafusion_core::proto::gen::tasks::VariableNamespace;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_core::task_graph::task_graph::ScopedVariable;
+
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 
 lazy_static! {

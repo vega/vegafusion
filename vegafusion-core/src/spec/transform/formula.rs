@@ -21,7 +21,7 @@ impl TransformSpecTrait for FormulaTransformSpec {
     fn supported(&self) -> bool {
         if let Ok(expr) = parse(&self.expr) {
             // Create nested field by using a dot in the field name is not supported yet
-            expr.is_supported() && !self.as_.contains(".")
+            expr.is_supported() && !self.as_.contains('.')
         } else {
             false
         }

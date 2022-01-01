@@ -2,10 +2,7 @@ use crate::error::Result;
 use crate::proto::gen::tasks::Variable;
 use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::DataSpec;
-use crate::spec::mark::MarkSpec;
-use crate::spec::scale::ScaleSpec;
-use crate::spec::signal::SignalSpec;
-use crate::task_graph::scope::TaskScope;
+
 use std::collections::HashSet;
 
 /// This optimization pass examines data nodes that have been planned to execute on the server.

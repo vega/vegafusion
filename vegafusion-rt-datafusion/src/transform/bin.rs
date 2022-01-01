@@ -17,7 +17,7 @@ use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-use vegafusion_core::proto::gen::expression::Expression;
+
 use vegafusion_core::proto::gen::transforms::Bin;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -104,7 +104,7 @@ impl TransformTrait for Bin {
             &bin,
         );
 
-        let bin_start = bin.call(vec![to_numeric(col(&self.field), &dataframe.schema())?]);
+        let bin_start = bin.call(vec![to_numeric(col(&self.field), dataframe.schema())?]);
 
         // Name binned columns
         let (bin_start, name) = if let Some(as0) = &self.alias_0 {

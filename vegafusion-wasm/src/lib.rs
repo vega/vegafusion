@@ -7,12 +7,10 @@ use prost::Message;
 use std::convert::TryFrom;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::proto::gen::tasks::{
-    NodeValueIndex, TaskGraph, TaskGraphValueRequest, TaskGraphValueResponse, VariableNamespace,
+    NodeValueIndex, TaskGraph, TaskGraphValueRequest, VariableNamespace,
 };
 use vegafusion_core::task_graph::task_value::TaskValue;
 use wasm_bindgen::prelude::*;
-
-use vegafusion_core::error::Result;
 
 use js_sys::Promise;
 use std::collections::{HashMap, HashSet};
@@ -22,14 +20,14 @@ use vegafusion_core::planning::extract::extract_server_data;
 use vegafusion_core::planning::optimize_server::split_data_url_nodes;
 use vegafusion_core::planning::stitch::{stitch_specs, CommPlan};
 use vegafusion_core::planning::watch::WatchPlan;
-use vegafusion_core::proto::gen::expression::literal::Value;
+
 use vegafusion_core::proto::gen::services::{
     vega_fusion_runtime_request, vega_fusion_runtime_response, VegaFusionRuntimeRequest,
     VegaFusionRuntimeResponse,
 };
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::task_graph::ScopedVariable;
-use wasm_bindgen_futures::JsFuture;
+
 use web_sys::Element;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -99,7 +97,7 @@ impl MsgReceiver {
 
         // Mount vega chart
         let window = web_sys::window().expect("no global `window` exists");
-        let document = window.document().expect("should have a document on window");
+        let _document = window.document().expect("should have a document on window");
         let dataflow = parse(JsValue::from_serde(&spec).unwrap());
 
         let view = View::new(dataflow);

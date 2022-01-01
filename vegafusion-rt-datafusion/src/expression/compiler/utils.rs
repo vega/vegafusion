@@ -11,7 +11,6 @@ use datafusion::scalar::ScalarValue;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
-use crate::expression::compiler::call::VegaFusionCallable::Data;
 use datafusion::physical_plan::functions::BuiltinScalarFunction;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -91,7 +90,7 @@ pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
                 expr: Box::new(value.clone()),
                 data_type: DataType::Boolean,
             },
-            Expr::IsNotNull(Box::new(value.clone())),
+            Expr::IsNotNull(Box::new(value)),
         )
     };
 

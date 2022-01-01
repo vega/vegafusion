@@ -1,7 +1,7 @@
-use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
+use crate::expression::compiler::utils::cast_to;
 use datafusion::arrow::datatypes::DataType;
 use datafusion::logical_plan::{DFSchema, Expr};
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::error::{Result, VegaFusionError};
 
 pub fn to_boolean_transform(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
     if args.len() == 1 {

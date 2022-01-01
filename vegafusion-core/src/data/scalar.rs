@@ -65,7 +65,7 @@ impl ScalarValueHelpers for ScalarValue {
                 } else {
                     let elements: Vec<_> = elements
                         .iter()
-                        .map(|e| ScalarValue::from_json(e))
+                        .map(ScalarValue::from_json)
                         .collect::<Result<Vec<ScalarValue>>>()?;
                     let dtype = elements[0].get_datatype();
                     (elements, dtype)

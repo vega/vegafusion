@@ -99,13 +99,13 @@ pub fn get_supported_data_variables(
                     'dfs: while let Some(dfs_node_index) = dfs.next(&data_graph) {
                         let (dfs_scoped_var, _) = data_graph.node_weight(dfs_node_index).unwrap();
                         if matches!(dfs_scoped_var.0.namespace(), VariableNamespace::Data)
-                            && all_supported_vars.contains_key(&dfs_scoped_var)
+                            && all_supported_vars.contains_key(dfs_scoped_var)
                         {
                             // Found supported child data node. Add signal as supported and bail
                             // out of DFS
                             supported_vars.insert(
                                 scoped_var.clone(),
-                                all_supported_vars.get(&dfs_scoped_var).unwrap().clone(),
+                                all_supported_vars.get(dfs_scoped_var).unwrap().clone(),
                             );
                             break 'dfs;
                         }
@@ -278,7 +278,7 @@ impl<'a> ChartVisitor for AddDependencyEdgesVisitor<'a> {
 
             for input_var in tx.input_vars()? {
                 let scoped_source_var =
-                    scoped_var_for_input_var(&input_var, scope, &self.task_scope)?;
+                    scoped_var_for_input_var(&input_var, scope, self.task_scope)?;
                 // Add edge if dependency is not a signal produced by an earlier transform in the same
                 // pipeline
                 if !output_signals.contains(&scoped_source_var) {
@@ -331,7 +331,7 @@ impl<'a> ChartVisitor for AddDependencyEdgesVisitor<'a> {
         }
 
         for input_var in input_vars {
-            let scoped_source_var = scoped_var_for_input_var(&input_var, scope, &self.task_scope)?;
+            let scoped_source_var = scoped_var_for_input_var(&input_var, scope, self.task_scope)?;
             let source_node_index = self
                 .node_indexes
                 .get(&scoped_source_var)

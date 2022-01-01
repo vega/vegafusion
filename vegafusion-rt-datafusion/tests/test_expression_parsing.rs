@@ -291,7 +291,7 @@ mod test_check_supported {
         case("my_signal[datum.col + 'abc']", false)
     )]
     fn test(expr: &str, supported: bool) {
-        let mut expr = parse(expr).unwrap();
+        let expr = parse(expr).unwrap();
         assert_eq!(expr.is_supported(), supported);
     }
 

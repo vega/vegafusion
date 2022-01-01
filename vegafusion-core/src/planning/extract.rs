@@ -4,12 +4,12 @@ use crate::proto::gen::tasks::Variable;
 use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::{DataSpec, DependencyNodeSupported};
 use crate::spec::mark::MarkSpec;
-use crate::spec::scale::ScaleSpec;
+
 use crate::spec::signal::SignalSpec;
 use crate::task_graph::scope::TaskScope;
-use crate::task_graph::task::InputVariable;
+
 use crate::task_graph::task_graph::ScopedVariable;
-use regex::internal::Char;
+
 use std::collections::{HashMap, HashSet};
 
 pub fn extract_server_data(
@@ -66,7 +66,7 @@ impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
                         if let Ok(input_vars) = tx.input_vars() {
                             for input_var in input_vars {
                                 if let Ok(scoped_source_var) =
-                                    scoped_var_for_input_var(&input_var, scope, &self.task_scope)
+                                    scoped_var_for_input_var(&input_var, scope, self.task_scope)
                                 {
                                     if !pipeline_vars.contains(&scoped_source_var)
                                         && !self.supported_vars.contains_key(&scoped_source_var)

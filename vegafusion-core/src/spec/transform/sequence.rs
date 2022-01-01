@@ -4,8 +4,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::error::Result;
-use crate::expression::parser::parse;
-use crate::proto::gen::tasks::Variable;
+
 use crate::spec::values::NumberOrSignalSpec;
 use crate::task_graph::task::InputVariable;
 

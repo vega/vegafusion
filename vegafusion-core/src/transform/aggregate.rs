@@ -1,7 +1,6 @@
 use crate::proto::gen::transforms::{Aggregate, AggregateOp};
 use crate::spec::transform::aggregate::{AggregateOpSpec, AggregateTransformSpec};
 use crate::transform::TransformDependencies;
-use arrow::compute::filter;
 
 impl Aggregate {
     pub fn new(transform: &AggregateTransformSpec) -> Self {

@@ -1,5 +1,5 @@
-use datafusion::arrow::array::{new_null_array, Array, Int32Array, ListArray};
-use datafusion::arrow::compute::kernels;
+use datafusion::arrow::array::Array;
+
 use datafusion::arrow::datatypes::{DataType, Field};
 use datafusion::physical_plan::functions::{
     ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
@@ -54,7 +54,7 @@ pub fn make_span_udf() -> ScalarUDF {
                     }
                 }
             }
-            ColumnarValue::Array(array) => {
+            ColumnarValue::Array(_array) => {
                 todo!("Span on column not yet implemented")
             }
         })

@@ -50,10 +50,12 @@ impl VegaFusionTableUtils for VegaFusionTable {
             Some(self.batches.get(0).unwrap().schema())
         };
 
-        MemTable::try_new(self.schema.clone(), vec![self.batches.clone()]).expect(&format!(
-            "to_memtable failure with schema {:#?} and batch schema {:?}",
-            self.schema, batch_schema
-        ))
+        MemTable::try_new(self.schema.clone(), vec![self.batches.clone()]).unwrap_or_else(|_| {
+            panic!(
+                "to_memtable failure with schema {:#?} and batch schema {:?}",
+                self.schema, batch_schema
+            )
+        })
     }
 
     fn to_dataframe(&self) -> Result<Arc<dyn DataFrame>> {

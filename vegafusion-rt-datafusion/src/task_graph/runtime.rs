@@ -82,7 +82,7 @@ impl TaskGraphRuntime {
                         async move {
                             let value = task_graph_runtime
                                 .clone()
-                                .get_node_value(task_graph, &node_value_index)
+                                .get_node_value(task_graph, node_value_index)
                                 .await?;
 
                             Ok::<_, VegaFusionError>(ResponseTaskValue {
@@ -117,11 +117,9 @@ impl TaskGraphRuntime {
                     }
                 }
             }
-            _ => {
-                return Err(VegaFusionError::internal(
-                    "Invalid VegaFusionRuntimeRequest request",
-                ))
-            }
+            _ => Err(VegaFusionError::internal(
+                "Invalid VegaFusionRuntimeRequest request",
+            )),
         }
     }
 

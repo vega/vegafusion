@@ -39,7 +39,7 @@ impl SignalSpec {
             }
         }
         // TODO: add init once we decide how to differentiate it from update in task graph
-        return DependencyNodeSupported::Unsupported;
+        DependencyNodeSupported::Unsupported
     }
 }
 

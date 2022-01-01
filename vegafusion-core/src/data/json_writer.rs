@@ -680,7 +680,7 @@ mod tests {
     use arrow::json::reader::*;
     use serde_json::json;
     use std::convert::TryFrom;
-    use std::fs::{read_to_string, File};
+
     use std::sync::Arc;
 
     use super::*;

@@ -3,8 +3,7 @@ use crate::expression::compiler::builtin_functions::datetime::date_parsing::{
 };
 use chrono::{DateTime, Datelike, Local, LocalResult, TimeZone, Timelike, Utc, Weekday};
 use datafusion::arrow::array::{
-    Array, ArrayRef, Date32Array, Date64Array, Int32Array, Int64Array, StringArray,
-    TimestampMillisecondArray,
+    Array, ArrayRef, Date32Array, Date64Array, Int64Array, StringArray,
 };
 use datafusion::arrow::compute::cast;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
@@ -83,7 +82,7 @@ pub fn make_datepart_udf_local(extract_fn: fn(&DateTime<Local>) -> i64, name: &s
             }
             DataType::Timestamp(TimeUnit::Millisecond, _) => cast(arg, &DataType::Date64)?,
             DataType::Date32 => {
-                let ms_per_day = 1000 * 60 * 60 * 24 as i64;
+                let ms_per_day = 1000 * 60 * 60 * 24_i64;
                 let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
 
                 let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
@@ -163,7 +162,7 @@ pub fn make_datepart_udf_utc(extract_fn: fn(&DateTime<Utc>) -> i64, name: &str) 
             }
             DataType::Timestamp(TimeUnit::Millisecond, _) => cast(arg, &DataType::Date64)?,
             DataType::Date32 => {
-                let ms_per_day = 1000 * 60 * 60 * 24 as i64;
+                let ms_per_day = 1000 * 60 * 60 * 24_i64;
                 let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
 
                 let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);

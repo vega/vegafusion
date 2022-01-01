@@ -178,7 +178,7 @@ mod test_vl_selection_test_e_single {
         check_vl_selection_test(&expr, brush.clone(), &datum());
 
         let resolve_expr = format!("vlSelectionResolve('brush', '{}')", op);
-        check_vl_selection_resolve(&resolve_expr, brush.clone());
+        check_vl_selection_resolve(&resolve_expr, brush);
     }
 
     #[test]
