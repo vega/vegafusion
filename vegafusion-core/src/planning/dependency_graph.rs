@@ -223,6 +223,19 @@ impl ChartVisitor for AddDependencyNodesVisitor {
 
         Ok(())
     }
+
+    fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
+        // Named non-group marks can serve as datasets
+        if let Some(name) = &mark.name {
+            let scoped_var = (Variable::new_data(name), Vec::from(scope));
+            println!("Add non-group mark {} with scope {:?}", name, scope);
+            let node_index = self
+                .dependency_graph
+                .add_node((scoped_var.clone(), DependencyNodeSupported::Unsupported));
+            self.node_indexes.insert(scoped_var, node_index);
+        }
+        Ok(())
+    }
 }
 
 /// Visitor to add directed edges to graph with data nodes

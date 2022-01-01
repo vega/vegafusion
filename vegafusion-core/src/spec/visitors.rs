@@ -78,6 +78,16 @@ impl ChartVisitor for MakeTaskScopeVisitor {
 
         Ok(())
     }
+
+    fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
+        // Named non-group marks can serve as datasets
+        if let Some(name) = &mark.name {
+            let scoped_var = (Variable::new_data(name), Vec::from(scope));
+            let task_scope = self.task_scope.get_child_mut(scope)?;
+            task_scope.data.insert(name.clone());
+        }
+        Ok(())
+    }
 }
 
 /// For a spec that is fully supported on the server, collect tasks
