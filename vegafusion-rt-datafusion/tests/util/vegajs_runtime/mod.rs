@@ -65,6 +65,11 @@ impl NodeJsRuntime {
             out,
         };
 
+        // Wait for node repl to start up
+        std::thread::sleep(std::time::Duration::from_millis(1000));
+
+        // Set abort_on_empty to true because some versions of the node repl display a welcome
+        // message, and some do not.
         let welcome_message = this.read_output();
         println!("Initialized node: {}\n", welcome_message);
 
@@ -134,14 +139,24 @@ impl NodeJsRuntime {
 
     fn read_output(&self) -> String {
         let boundary = "\n> ".as_bytes();
+        let mut first_read = true;
         let bytes_read = loop {
             let mut vec = self.out.deref().lock().unwrap();
             let n = vec.len() as i32;
             if n >= 3 && &vec[(n - 3) as usize..] == boundary {
+                // The output ends with newline then prompt
                 let cloned = vec.clone();
                 vec.clear();
                 break cloned;
+            } else if n == 2 && vec[..] == boundary[1..] {
+                // The output is only a prompt
+                let mut cloned = vec.clone();
+                // Add leading newly so logic that follows doesn't need a special case
+                cloned.insert(0, b'\n');
+                vec.clear();
+                break cloned;
             }
+            first_read = false;
         };
 
         // Maybe a leading prompt
