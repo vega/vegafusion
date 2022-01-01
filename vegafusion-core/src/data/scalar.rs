@@ -51,9 +51,10 @@ impl ScalarValueHelpers for ScalarValue {
                 values.sort_by_key(|el| el.0);
 
                 if values.is_empty() {
-                    ScalarValue::from(
-                        vec![("__dummy", ScalarValue::try_from(&DataType::Float64).unwrap())]
-                    )
+                    ScalarValue::from(vec![(
+                        "__dummy",
+                        ScalarValue::try_from(&DataType::Float64).unwrap(),
+                    )])
                 } else {
                     ScalarValue::from(values)
                 }

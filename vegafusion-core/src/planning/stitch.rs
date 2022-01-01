@@ -58,7 +58,10 @@ pub fn stitch_specs(
 
     // If a variable is updated on both client and server, don't send it.
     // This can happen when a signal with an update expression resides on both client and server
-    let client_to_server: HashSet<_> = client_to_server.difference(&server_updates).cloned().collect();
+    let client_to_server: HashSet<_> = client_to_server
+        .difference(&server_updates)
+        .cloned()
+        .collect();
 
     // determine stub definitions that needs to be added to server and client specs
     let server_stubs: HashSet<_> = client_to_server.difference(&server_defs).cloned().collect();

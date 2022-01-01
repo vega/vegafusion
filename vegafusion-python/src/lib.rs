@@ -41,9 +41,7 @@ impl PyTaskGraphRuntime {
     }
 
     pub fn clear_cache(&self) {
-        self.tokio_runtime.block_on(
-            self.runtime.clear_cache()
-        );
+        self.tokio_runtime.block_on(self.runtime.clear_cache());
     }
 }
 

@@ -46,13 +46,13 @@ impl DataSpec {
         if let Some(Some(format_type)) = self.format.as_ref().map(|fmt| fmt.type_.clone()) {
             if !matches!(format_type.as_str(), "csv" | "tsv" | "arrow" | "json") {
                 // We don't know how to read the data, so full node is unsupported
-                return DependencyNodeSupported::Unsupported
+                return DependencyNodeSupported::Unsupported;
             }
         }
 
         // Inline values array not supported (they should be kept on the server)
         if self.values.is_some() {
-            return DependencyNodeSupported::Unsupported
+            return DependencyNodeSupported::Unsupported;
         }
 
         let all_supported = self.transform.iter().all(|tx| tx.supported());

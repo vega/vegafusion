@@ -147,7 +147,10 @@ fn test_export_single_image() {
         .display()
         .to_string();
 
-    let spec_path = format!("{}/tests/specs/custom/lets_make_a_bar_chart.json", crate_dir);
+    let spec_path = format!(
+        "{}/tests/specs/custom/lets_make_a_bar_chart.json",
+        crate_dir
+    );
     let spec_str = fs::read_to_string(spec_path).expect("Failed to read spec");
     let chart_spec: ChartSpec =
         serde_json::from_str(&spec_str).expect("Failed to parse JSON as chart");
@@ -169,7 +172,10 @@ fn try_export_sequence_helper_crossfilter() {
     let crate_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .display()
         .to_string();
-    let spec_path = format!("{}/tests/specs/custom/flights_crossfilter_a.json", crate_dir);
+    let spec_path = format!(
+        "{}/tests/specs/custom/flights_crossfilter_a.json",
+        crate_dir
+    );
 
     let spec_str = fs::read_to_string(spec_path).unwrap();
     let chart_spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();

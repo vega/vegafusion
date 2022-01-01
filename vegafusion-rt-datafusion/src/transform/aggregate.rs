@@ -3,6 +3,7 @@ use crate::transform::TransformTrait;
 use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::{avg, col, count, count_distinct, lit, max, min, sum, Expr};
 
+use crate::expression::compiler::utils::to_numeric;
 use async_trait::async_trait;
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
@@ -10,7 +11,6 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::aggregate::op_name;
-use crate::expression::compiler::utils::to_numeric;
 
 #[async_trait]
 impl TransformTrait for Aggregate {
@@ -35,9 +35,12 @@ impl TransformTrait for Aggregate {
                     column => col(column),
                 }
             };
-            let numeric_column = || to_numeric(column.clone(), &dataframe.schema()).expect(
-                &format!("Failed to convert column {:?} to numeric data type", column)
-            );
+            let numeric_column = || {
+                to_numeric(column.clone(), &dataframe.schema()).expect(&format!(
+                    "Failed to convert column {:?} to numeric data type",
+                    column
+                ))
+            };
             let op = AggregateOp::from_i32(*op).unwrap();
 
             let expr = match op {
@@ -90,13 +93,15 @@ impl TransformTrait for Aggregate {
             .with_context(|| "Failed to perform aggregate transform".to_string())?;
 
         // For determinism, sort result by grouping keys
-        let sort_exprs: Vec<_> = self.groupby.iter().map(|c| {
-            Expr::Sort {
+        let sort_exprs: Vec<_> = self
+            .groupby
+            .iter()
+            .map(|c| Expr::Sort {
                 expr: Box::new(col(c)),
                 asc: true,
-                nulls_first: false
-            }
-        }).collect();
+                nulls_first: false,
+            })
+            .collect();
         if !sort_exprs.is_empty() {
             grouped_dataframe = grouped_dataframe.sort(sort_exprs)?;
         }

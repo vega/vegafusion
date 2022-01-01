@@ -1,10 +1,10 @@
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{ExprHelpers, to_numeric};
+use crate::expression::compiler::utils::{to_numeric, ExprHelpers};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
-use datafusion::logical_plan::{col, lit, Expr, DFSchema};
+use datafusion::logical_plan::{col, lit, DFSchema, Expr};
 use datafusion::physical_plan::functions::{
     make_scalar_function, ReturnTypeFunction, Signature, Volatility,
 };
@@ -104,9 +104,7 @@ impl TransformTrait for Bin {
             &bin,
         );
 
-        let bin_start = bin.call(vec![
-            to_numeric(col(&self.field), &dataframe.schema())?,
-        ]);
+        let bin_start = bin.call(vec![to_numeric(col(&self.field), &dataframe.schema())?]);
 
         // Name binned columns
         let (bin_start, name) = if let Some(as0) = &self.alias_0 {
@@ -159,14 +157,13 @@ pub struct BinParams {
     pub n: i32,
 }
 
-pub fn calculate_bin_params(tx: &Bin, schema: &DFSchema, config: &CompilationConfig) -> Result<BinParams> {
-
+pub fn calculate_bin_params(
+    tx: &Bin,
+    schema: &DFSchema,
+    config: &CompilationConfig,
+) -> Result<BinParams> {
     // Evaluate extent
-    let extent_expr = compile(
-        tx.extent.as_ref().unwrap(),
-        config,
-        Some(schema),
-    )?;
+    let extent_expr = compile(tx.extent.as_ref().unwrap(), config, Some(schema))?;
     let extent_scalar = extent_expr.eval_to_scalar()?;
 
     let extent = extent_scalar.to_f64x2()?;
@@ -190,11 +187,7 @@ pub fn calculate_bin_params(tx: &Bin, schema: &DFSchema, config: &CompilationCon
 
     // Override span with specified value if available
     if let Some(span_expression) = &tx.span {
-        let span_expr = compile(
-            span_expression,
-            config,
-            Some(schema),
-        )?;
+        let span_expr = compile(span_expression, config, Some(schema))?;
         let span_scalar = span_expr.eval_to_scalar()?;
         if let Ok(span_f64) = span_scalar.to_f64() {
             span = span_f64;

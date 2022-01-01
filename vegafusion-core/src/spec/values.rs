@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
 use crate::error::Result;
 use crate::expression::parser::parse;
 use crate::task_graph::task::InputVariable;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -65,9 +65,7 @@ pub enum StringOrSignalSpec {
 impl StringOrSignalSpec {
     pub fn input_vars(&self) -> Result<Vec<InputVariable>> {
         match self {
-            Self::Signal(signal) => {
-                Ok(parse(&signal.signal)?.input_vars())
-            }
+            Self::Signal(signal) => Ok(parse(&signal.signal)?.input_vars()),
             _ => Ok(Default::default()),
         }
     }
@@ -83,9 +81,7 @@ pub enum NumberOrSignalSpec {
 impl NumberOrSignalSpec {
     pub fn input_vars(&self) -> Result<Vec<InputVariable>> {
         match self {
-            Self::Signal(signal) => {
-                Ok(parse(&signal.signal)?.input_vars())
-            }
+            Self::Signal(signal) => Ok(parse(&signal.signal)?.input_vars()),
             _ => Ok(Default::default()),
         }
     }

@@ -18,12 +18,11 @@ pub struct LookupTransformSpec {
     pub extra: HashMap<String, Value>,
 }
 
-
 impl TransformSpecTrait for LookupTransformSpec {
     fn input_vars(&self) -> Result<Vec<InputVariable>> {
         Ok(vec![InputVariable {
             var: Variable::new_data(&self.from),
-            propagate: true
+            propagate: true,
         }])
     }
 

@@ -1,4 +1,5 @@
 use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
+use crate::expression::compiler::builtin_functions::array::span::make_span_udf;
 use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
 use crate::expression::compiler::builtin_functions::datetime::date_parts::{
     DATE_UDF, DAYOFYEAR_UDF, DAY_UDF, HOURS_UDF, MILLISECONDS_UDF, MINUTES_UDF, MONTH_UDF,
@@ -29,7 +30,6 @@ use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
 };
-use crate::expression::compiler::builtin_functions::array::span::make_span_udf;
 
 use crate::expression::compiler::builtin_functions::data::data::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;

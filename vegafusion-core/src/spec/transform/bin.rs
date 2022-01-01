@@ -1,12 +1,12 @@
-use crate::spec::transform::TransformSpecTrait;
-use crate::spec::values::{Field, SignalExpressionSpec};
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::collections::{HashMap, HashSet};
-use crate::task_graph::task::InputVariable;
 use crate::error::Result;
 use crate::expression::parser::parse;
 use crate::proto::gen::tasks::Variable;
+use crate::spec::transform::TransformSpecTrait;
+use crate::spec::values::{Field, SignalExpressionSpec};
+use crate::task_graph::task::InputVariable;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BinTransformSpec {
@@ -63,17 +63,16 @@ pub enum BinSpan {
     Signal(SignalExpressionSpec),
 }
 
-
 impl TransformSpecTrait for BinTransformSpec {
     fn supported(&self) -> bool {
         // Check extent expression
         if let BinExtent::Signal(extent) = &self.extent {
             if let Ok(expression) = parse(&extent.signal) {
                 if !expression.is_supported() {
-                    return false
+                    return false;
                 }
             } else {
-                return false
+                return false;
             }
         }
 
@@ -81,10 +80,10 @@ impl TransformSpecTrait for BinTransformSpec {
         if let Some(BinSpan::Signal(span)) = &self.span {
             if let Ok(expression) = parse(&span.signal) {
                 if !expression.is_supported() {
-                    return false
+                    return false;
                 }
             } else {
-                return false
+                return false;
             }
         }
 

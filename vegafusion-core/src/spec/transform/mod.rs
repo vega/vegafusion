@@ -5,11 +5,11 @@ pub mod extent;
 pub mod filter;
 pub mod formula;
 pub mod joinaggregate;
+pub mod lookup;
+pub mod sequence;
 pub mod timeunit;
 pub mod unsupported;
 pub mod window;
-pub mod lookup;
-pub mod sequence;
 
 use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransformSpec};
 
@@ -19,15 +19,14 @@ use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
 use crate::spec::transform::formula::FormulaTransformSpec;
 use crate::spec::transform::joinaggregate::JoinAggregateTransformSpec;
+use crate::spec::transform::lookup::LookupTransformSpec;
+use crate::spec::transform::sequence::SequenceTransformSpec;
 use crate::spec::transform::timeunit::TimeUnitTransformSpec;
 use crate::spec::transform::unsupported::*;
 use crate::spec::transform::window::WindowTransformSpec;
 use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use crate::spec::transform::lookup::LookupTransformSpec;
-use crate::spec::transform::sequence::SequenceTransformSpec;
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]

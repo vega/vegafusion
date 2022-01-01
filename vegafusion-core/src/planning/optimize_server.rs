@@ -1,12 +1,12 @@
-use std::collections::HashSet;
+use crate::error::Result;
 use crate::proto::gen::tasks::Variable;
 use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::mark::MarkSpec;
 use crate::spec::scale::ScaleSpec;
 use crate::spec::signal::SignalSpec;
-use crate::error::Result;
 use crate::task_graph::scope::TaskScope;
+use std::collections::HashSet;
 
 /// This optimization pass examines data nodes that have been planned to execute on the server.
 /// For URL data nodes, if the node has external input vars in it's transforms, it is split
@@ -33,13 +33,13 @@ pub fn split_data_url_nodes(spec: &mut ChartSpec) -> Result<()> {
 
 #[derive(Debug)]
 pub struct SplitUrlDataNodeVisitor {
-    pub parent_url_data_nodes: Vec<(DataSpec, Vec<u32>)>
+    pub parent_url_data_nodes: Vec<(DataSpec, Vec<u32>)>,
 }
 
 impl SplitUrlDataNodeVisitor {
     pub fn new() -> Self {
         Self {
-            parent_url_data_nodes: Default::default()
+            parent_url_data_nodes: Default::default(),
         }
     }
 }
@@ -50,7 +50,8 @@ impl MutChartVisitor for SplitUrlDataNodeVisitor {
             let mut pipeline_vars: HashSet<Variable> = HashSet::new();
             let mut num_supported = 0;
             for (i, tx) in data.transform.iter().enumerate() {
-                let has_external_input = !tx.input_vars()
+                let has_external_input = !tx
+                    .input_vars()
                     .unwrap_or_default()
                     .iter()
                     .all(|input_var| pipeline_vars.contains(&input_var.var));
@@ -61,7 +62,7 @@ impl MutChartVisitor for SplitUrlDataNodeVisitor {
                 }
 
                 if has_external_input {
-                    break
+                    break;
                 } else {
                     num_supported = i + 1
                 }
@@ -70,7 +71,7 @@ impl MutChartVisitor for SplitUrlDataNodeVisitor {
             if num_supported < data.transform.len() {
                 // Perform split
                 let parents_transforms = Vec::from(&data.transform[..num_supported]);
-                let child_transforms= Vec::from(&data.transform[num_supported..]);
+                let child_transforms = Vec::from(&data.transform[num_supported..]);
 
                 // Compute new name for parent data
                 let mut parent_name = data.name.clone();
@@ -82,9 +83,8 @@ impl MutChartVisitor for SplitUrlDataNodeVisitor {
                 parent_data.transform = parents_transforms;
 
                 // Save parent data node
-                self.parent_url_data_nodes.push(
-                    (parent_data, Vec::from(scope))
-                );
+                self.parent_url_data_nodes
+                    .push((parent_data, Vec::from(scope)));
 
                 // Update child data spec:
                 //   - Same name

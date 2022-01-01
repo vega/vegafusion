@@ -67,7 +67,6 @@ impl ChartVisitor for MakeTaskScopeVisitor {
         let parent_scope = self.task_scope.get_child_mut(&scope[0..scope.len() - 1])?;
         let mut group_scope: TaskScope = Default::default();
 
-
         // Check for facet dataset
         if let Some(from) = &mark.from {
             if let Some(facet) = &from.facet {
@@ -199,16 +198,15 @@ impl ChartVisitor for MakeTasksVisitor {
 
         let task = if let Some(value) = &signal.value {
             let value = TaskValue::Scalar(ScalarValue::from_json(value)?);
-            Task::new_value(
-                signal_var, scope, value
-            )
+            Task::new_value(signal_var, scope, value)
         } else if let Some(update) = &signal.update {
             let expression = parse(update)?;
             Task::new_signal(signal_var, scope, expression)
         } else {
-            return Err(VegaFusionError::internal(
-                format!("Signal must have an initial value or an update expression: {:#?}", signal)
-            ))
+            return Err(VegaFusionError::internal(format!(
+                "Signal must have an initial value or an update expression: {:#?}",
+                signal
+            )));
         };
 
         self.tasks.push(task);

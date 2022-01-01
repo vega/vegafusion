@@ -11,10 +11,10 @@ use datafusion::scalar::ScalarValue;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
-use std::sync::Arc;
+use crate::expression::compiler::call::VegaFusionCallable::Data;
 use datafusion::physical_plan::functions::BuiltinScalarFunction;
+use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-use crate::expression::compiler::call::VegaFusionCallable::{Data};
 
 lazy_static! {
     pub static ref UNIT_RECORD_BATCH: RecordBatch = RecordBatch::try_from_iter(vec![(
@@ -91,7 +91,7 @@ pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
                 expr: Box::new(value.clone()),
                 data_type: DataType::Boolean,
             },
-            Expr::IsNotNull(Box::new(value.clone()))
+            Expr::IsNotNull(Box::new(value.clone())),
         )
     };
 

@@ -9,9 +9,12 @@ use regex::Regex;
 use std::sync::Arc;
 
 lazy_static! {
-    pub static ref DATETIME_TO_MILLIS_LOCAL: ScalarUDF = make_datetime_to_millis_udf(DateParseMode::Local);
-    pub static ref DATETIME_TO_MILLIS_UTC: ScalarUDF = make_datetime_to_millis_udf(DateParseMode::Utc);
-    pub static ref DATETIME_TO_MILLIS_JAVASCRIPT: ScalarUDF = make_datetime_to_millis_udf(DateParseMode::JavaScript);
+    pub static ref DATETIME_TO_MILLIS_LOCAL: ScalarUDF =
+        make_datetime_to_millis_udf(DateParseMode::Local);
+    pub static ref DATETIME_TO_MILLIS_UTC: ScalarUDF =
+        make_datetime_to_millis_udf(DateParseMode::Utc);
+    pub static ref DATETIME_TO_MILLIS_JAVASCRIPT: ScalarUDF =
+        make_datetime_to_millis_udf(DateParseMode::JavaScript);
 }
 
 #[derive(Debug, Copy, Clone)]

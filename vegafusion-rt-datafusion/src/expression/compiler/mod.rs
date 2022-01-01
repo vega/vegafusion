@@ -179,8 +179,9 @@ mod test_compile {
                 expr: Box::new(lit(32.0)),
                 data_type: DataType::Boolean,
             },
-            Expr::is_not_null(lit(32.0))
-        ).not();
+            Expr::is_not_null(lit(32.0)),
+        )
+        .not();
         assert_eq!(result_expr, expected_expr);
 
         // Check evaluated value
@@ -205,7 +206,7 @@ mod test_compile {
                         expr: Box::new(lit(32.0)),
                         data_type: DataType::Boolean,
                     },
-                    Expr::is_not_null(lit(32.0))
+                    Expr::is_not_null(lit(32.0)),
                 )),
                 Box::new(lit(7.0)),
             )],
@@ -251,10 +252,13 @@ mod test_compile {
         let expected_expr = Expr::Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(and(Expr::Cast {
-                    expr: Box::new(lit(5.0)),
-                    data_type: DataType::Boolean,
-                },Expr::is_not_null(lit(5.0)))),
+                Box::new(and(
+                    Expr::Cast {
+                        expr: Box::new(lit(5.0)),
+                        data_type: DataType::Boolean,
+                    },
+                    Expr::is_not_null(lit(5.0)),
+                )),
                 Box::new(lit(55.0)),
             )],
             else_expr: Some(Box::new(lit(5.0))),
@@ -632,9 +636,10 @@ mod test_compile {
             when_then_expr: vec![(
                 Box::new(and(
                     Expr::Cast {
-                    expr: Box::new(lit(32.0)),
-                    data_type: DataType::Boolean },
-                    Expr::is_not_null(lit(32.0))
+                        expr: Box::new(lit(32.0)),
+                        data_type: DataType::Boolean,
+                    },
+                    Expr::is_not_null(lit(32.0)),
                 )),
                 Box::new(lit(7.0)),
             )],

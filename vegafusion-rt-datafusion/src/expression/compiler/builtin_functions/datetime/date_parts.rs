@@ -1,5 +1,11 @@
+use crate::expression::compiler::builtin_functions::datetime::date_parsing::{
+    datetime_strs_to_millis, DateParseMode,
+};
 use chrono::{DateTime, Datelike, Local, LocalResult, TimeZone, Timelike, Utc, Weekday};
-use datafusion::arrow::array::{Array, ArrayRef, Date32Array, Date64Array, Int32Array, Int64Array, StringArray, TimestampMillisecondArray};
+use datafusion::arrow::array::{
+    Array, ArrayRef, Date32Array, Date64Array, Int32Array, Int64Array, StringArray,
+    TimestampMillisecondArray,
+};
 use datafusion::arrow::compute::cast;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::physical_plan::functions::{
@@ -8,7 +14,6 @@ use datafusion::physical_plan::functions::{
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
 use vegafusion_core::arrow::compute::unary;
-use crate::expression::compiler::builtin_functions::datetime::date_parsing::{DateParseMode, datetime_strs_to_millis};
 
 #[inline(always)]
 pub fn extract_year<T: TimeZone>(dt: &DateTime<T>) -> i64 {

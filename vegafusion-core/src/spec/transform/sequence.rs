@@ -23,7 +23,6 @@ pub struct SequenceTransformSpec {
     pub extra: HashMap<String, Value>,
 }
 
-
 impl TransformSpecTrait for SequenceTransformSpec {
     fn supported(&self) -> bool {
         false

@@ -2,8 +2,8 @@
 extern crate lazy_static;
 
 mod util;
-use rstest::rstest;
 use crate::util::check::check_expr_supported;
+use rstest::rstest;
 
 use util::check::check_parsing;
 
@@ -274,18 +274,21 @@ mod test_parse_examples {
     fn test_marker() {} // Help IDE detect test module
 }
 
-
 mod test_check_supported {
-    use vegafusion_core::expression::parser::parse;
     use crate::*;
+    use vegafusion_core::expression::parser::parse;
 
     #[rstest(
-    expr, supported,
-    case("isValid(datum[\"average_b\"]) && isFinite(+datum[\"average_b\"])", true),
-    case("no_such_fn(23)", false),
-    case("my_signal[0 + 23]", true),
-    case("my_signal[0 + other_signal]", true),
-    case("my_signal[datum.col + 'abc']", false),
+        expr,
+        supported,
+        case(
+            "isValid(datum[\"average_b\"]) && isFinite(+datum[\"average_b\"])",
+            true
+        ),
+        case("no_such_fn(23)", false),
+        case("my_signal[0 + 23]", true),
+        case("my_signal[0 + other_signal]", true),
+        case("my_signal[datum.col + 'abc']", false)
     )]
     fn test(expr: &str, supported: bool) {
         let mut expr = parse(expr).unwrap();

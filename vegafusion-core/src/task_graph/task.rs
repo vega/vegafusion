@@ -1,15 +1,15 @@
 use crate::error::{Result, VegaFusionError};
-use crate::proto::gen::tasks::{SignalTask, TaskValue as ProtoTaskValue};
 use crate::proto::gen::tasks::{
     task::TaskKind, DataSourceTask, DataUrlTask, DataValuesTask, NodeValueIndex, Task, Variable,
 };
+use crate::proto::gen::tasks::{SignalTask, TaskValue as ProtoTaskValue};
 use crate::task_graph::task_value::TaskValue;
 use std::convert::TryFrom;
 
+use crate::proto::gen::expression::Expression;
 use crate::transform::TransformDependencies;
 use prost::Message;
 use std::hash::{Hash, Hasher};
-use crate::proto::gen::expression::Expression;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct InputVariable {

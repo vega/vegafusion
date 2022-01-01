@@ -4,11 +4,14 @@ use crate::proto::gen::expression::{
     Identifier, Literal, LogicalExpression, MemberExpression, ObjectExpression, UnaryExpression,
 };
 
+use crate::expression::supported::{
+    ALL_DATA_FNS, ALL_EXPRESSION_CONSTANTS, ALL_SCALE_FNS, IMPLICIT_VARS, SUPPORTED_DATA_FNS,
+    SUPPORTED_EXPRESSION_FNS, SUPPORTED_SCALE_FNS,
+};
 use crate::proto::gen::expression::literal::Value;
 use crate::proto::gen::tasks::Variable;
 use crate::task_graph::task::InputVariable;
 use std::collections::HashSet;
-use crate::expression::supported::{ALL_DATA_FNS, ALL_EXPRESSION_CONSTANTS, ALL_SCALE_FNS, IMPLICIT_VARS, SUPPORTED_DATA_FNS, SUPPORTED_EXPRESSION_FNS, SUPPORTED_SCALE_FNS};
 
 pub trait ExpressionVisitor {
     fn visit_expression(&mut self, _expression: &Expression) {}
@@ -77,7 +80,7 @@ impl GetInputVariablesVisitor {
             input_variables: Default::default(),
             expression_fns: Default::default(),
             data_fns: Default::default(),
-            scale_fns: Default::default()
+            scale_fns: Default::default(),
         }
     }
 }
@@ -85,7 +88,9 @@ impl GetInputVariablesVisitor {
 impl ExpressionVisitor for GetInputVariablesVisitor {
     fn visit_identifier(&mut self, node: &Identifier) {
         // implicit vars like datum and event do not count as a variables
-        if !IMPLICIT_VARS.contains(node.name.as_str()) && !ALL_EXPRESSION_CONSTANTS.contains(node.name.as_str()){
+        if !IMPLICIT_VARS.contains(node.name.as_str())
+            && !ALL_EXPRESSION_CONSTANTS.contains(node.name.as_str())
+        {
             self.input_variables.insert(InputVariable {
                 var: Variable::new_signal(&node.name),
                 propagate: true,
@@ -160,11 +165,10 @@ impl ExpressionVisitor for UpdateVariablesExprVisitor {
     }
 }
 
-
 /// Visitor to collect all unbound input variables in the expression
 #[derive(Clone, Default)]
 pub struct CheckSupportedExprVisitor {
-    pub supported: bool
+    pub supported: bool,
 }
 
 impl CheckSupportedExprVisitor {
@@ -207,7 +211,6 @@ impl ExpressionVisitor for CheckSupportedExprVisitor {
     }
 }
 
-
 /// Visitor to collect all output variables in the expression
 #[derive(Clone, Default)]
 pub struct ImplicitVariablesExprVisitor {
@@ -217,7 +220,7 @@ pub struct ImplicitVariablesExprVisitor {
 impl ImplicitVariablesExprVisitor {
     pub fn new() -> Self {
         Self {
-            implicit_vars: Default::default()
+            implicit_vars: Default::default(),
         }
     }
 }
@@ -226,7 +229,7 @@ impl ExpressionVisitor for ImplicitVariablesExprVisitor {
     fn visit_identifier(&mut self, node: &Identifier) {
         // implicit vars like datum and event do not count as a variables
         if IMPLICIT_VARS.contains(node.name.as_str()) {
-           self.implicit_vars.insert(node.name.clone());
+            self.implicit_vars.insert(node.name.clone());
         }
     }
 }

@@ -141,7 +141,6 @@ impl TaskGraphRuntime {
     pub async fn clear_cache(&self) {
         self.cache.clear().await;
     }
-
 }
 
 #[async_recursion]
