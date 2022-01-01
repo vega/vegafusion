@@ -92,7 +92,9 @@ jobs:
         with:
           node-version: '17'
       - name: Build package
-        run: wasm-pack build --release
+        run: |
+          cd vegafusion-wasm/
+          wasm-pack build --release
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v2
         with:
