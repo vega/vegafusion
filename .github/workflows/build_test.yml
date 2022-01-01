@@ -21,36 +21,51 @@ jobs:
       - name: Check for clippy warnings
         run: cargo clippy
 
-  test-rust:
+#  test-rust:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@v2
+#      - name: Install apt system dependencies needed to build nodecanvas
+#        run: |
+#          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#          override: true
+#      - name: Install node
+#        uses: actions/setup-node@v2
+#        with:
+#          node-version: '17'
+#      - name: Install test node dependencies
+#        run: |
+#          cd vegafusion-rt-datafusion/tests/util/vegajs_runtime
+#          npm install
+#      - name: Cache rust dependencies
+#        uses: Swatinem/rust-cache@v1
+#        with:
+#          cache-on-failure: True
+#      - name: Run Rust Tests
+#        uses: actions-rs/cargo@v1
+#        with:
+#          command: test
+#          args: --all-features
+
+  build-vegafusion-python:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
-      - name: Install apt system dependencies
-        run: |
-          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
+      - uses: conda-incubator/setup-miniconda@v2
         with:
-          toolchain: stable
-          override: true
-      - name: Install node
-        uses: actions/setup-node@v2
-        with:
-          node-version: '17'
-      - name: Install test node dependencies
-        run: |
-          cd vegafusion-rt-datafusion/tests/util/vegajs_runtime
-          npm install
-      - name: Check node support for top-level await
-        run: |
-          node --input-type=module --eval="const asyncMsg = await Promise.resolve('WORKS'); console.log(asyncMsg);"
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
-        with:
-          cache-on-failure: True
-      - name: Run Rust Tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
+          auto-update-conda: false
+          activate-environment: explicit-env
+          miniforge-version: latest
+          environment-file: python/vegafusion-jupyter/conda-linux-64.lock.yml
+      - run: |
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
+          printenv | sort
