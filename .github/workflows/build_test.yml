@@ -69,7 +69,7 @@ jobs:
           toolchain: stable
           override: true
       - name: maturin build
-      - run: |
+        run: |
           cd vegafusion-python/
           maturin build --release
       - name: Upload wheel artifacts
