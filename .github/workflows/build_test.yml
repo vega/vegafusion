@@ -30,8 +30,8 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: True
-      - name: Check cargo fmt compliance
-        run: cargo fmt --all -- --check
+#      - name: Check cargo fmt compliance
+#        run: cargo fmt --all -- --check
       - name: Run Rust Tests
         uses: actions-rs/cargo@v1
         with:
