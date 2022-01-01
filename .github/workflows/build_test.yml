@@ -28,6 +28,8 @@ jobs:
           node --input-type=module --eval="const asyncMsg = await Promise.resolve('WORKS'); console.log(asyncMsg);"
       - name: Cache rust dependencies
         uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
       - name: Check cargo fmt compliance
         run: cargo fmt --all -- --check
       - name: Run Rust Tests
