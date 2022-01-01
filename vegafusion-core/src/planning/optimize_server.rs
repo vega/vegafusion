@@ -11,7 +11,7 @@ use std::collections::HashSet;
 /// url repeatedly when the values of the input variables changes
 pub fn split_data_url_nodes(spec: &mut ChartSpec) -> Result<()> {
     let mut visitor = SplitUrlDataNodeVisitor::new();
-    spec.walk_mut(&mut visitor);
+    spec.walk_mut(&mut visitor)?;
 
     for (parent_data, scope) in visitor.parent_url_data_nodes {
         // Add parent data at appropriate scope

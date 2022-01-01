@@ -387,7 +387,7 @@ impl<'a> InputVarsChartVisitor<'a> {
 impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
     fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
         // Handle from data/facet of group mark
-        self.process_mark_from(mark, scope);
+        self.process_mark_from(mark, scope)?;
 
         // Handle signals in encodings
         if let Some(v) = &mark.encode {
@@ -412,7 +412,7 @@ impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
 
     fn visit_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
         // Handle from data/facet of group mark
-        self.process_mark_from(mark, scope);
+        self.process_mark_from(mark, scope)?;
         Ok(())
     }
 
