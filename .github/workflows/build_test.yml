@@ -54,9 +54,6 @@ jobs:
 
   build-vegafusion-python:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -72,8 +69,8 @@ jobs:
           toolchain: stable
           override: true
       - name: maturin build
+        shell: bash -l {0}
         run: |
-          conda activate vegafusion_dev
           cd vegafusion-python/
           maturin build --release
       - name: Upload wheel artifacts
