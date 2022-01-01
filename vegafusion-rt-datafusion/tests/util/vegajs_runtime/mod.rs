@@ -145,7 +145,6 @@ impl NodeJsRuntime {
 
     fn read_output(&self) -> String {
         let boundary = "\n> ".as_bytes();
-        let mut first_read = true;
         let bytes_read = loop {
             let mut vec = self.out.deref().lock().unwrap();
             let n = vec.len() as i32;
@@ -162,7 +161,6 @@ impl NodeJsRuntime {
                 vec.clear();
                 break cloned;
             }
-            first_read = false;
         };
 
         // Maybe a leading prompt

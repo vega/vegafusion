@@ -1,13 +1,3 @@
-// use crate::util::equality::{assert_tables_equal, TablesEqualConfig, assert_signals_almost_equal};
-// use datafusion::scalar::ScalarValue;
-// use std::collections::HashMap;
-// use vega_fusion::data::table::VegaFusionTable;
-// use vega_fusion::expression::compiler::compile;
-// use vega_fusion::expression::compiler::config::CompilationConfig;
-// use vega_fusion::expression::compiler::utils::ExprHelpers;
-// use vega_fusion::spec::transform::TransformSpec;
-// use vega_fusion::transform::pipeline::TransformPipeline;
-
 use crate::util::equality::{assert_signals_almost_equal, assert_tables_equal, TablesEqualConfig};
 use crate::util::vegajs_runtime::vegajs_runtime;
 use datafusion::scalar::ScalarValue;
@@ -46,6 +36,7 @@ pub fn check_parsing(expr_str: &str) {
     );
 }
 
+#[allow(dead_code)]
 pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
     // Use block here to drop vegajs_runtime lock before the potential assert_eq error
     // This avoids poisoning the Mutex if the assertion fails

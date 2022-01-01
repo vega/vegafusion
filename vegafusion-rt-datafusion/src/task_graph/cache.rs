@@ -140,7 +140,7 @@ mod test_cache {
     use vegafusion_core::task_graph::task_value::TaskValue;
 
     async fn make_value(value: ScalarValue) -> Result<NodeValue> {
-        tokio::time::sleep(Duration::from_millis(1000));
+        tokio::time::sleep(Duration::from_millis(1000)).await;
         Ok((TaskValue::Scalar(value), Vec::new()))
     }
 
@@ -152,7 +152,7 @@ mod test_cache {
         let value_future2 = cache.get_or_try_insert_with(1, make_value(ScalarValue::from(23.5)));
         let value_future3 = cache.get_or_try_insert_with(1, make_value(ScalarValue::from(23.5)));
 
-        tokio::time::sleep(Duration::from_millis(100));
+        tokio::time::sleep(Duration::from_millis(100)).await;
         println!("{:?}", cache.initializers);
 
         // assert_eq!(cache.num_values().await, 0);

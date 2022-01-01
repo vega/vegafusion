@@ -495,9 +495,9 @@ mod test_compile {
         let expected_expr = Expr::ScalarUDF {
             fun: Arc::new(make_object_constructor_udf(
                 &["a".to_string(), "two".to_string()],
-                &vec![
+                &[
                     DataType::Float64,
-                    DataType::Struct(vec![Field::new("three", DataType::Float64, false)]),
+                    DataType::Struct(vec![Field::new("three", DataType::Float64, false)])
                 ],
             )),
             args: vec![
@@ -528,36 +528,6 @@ mod test_compile {
         println!("value: {:?}", result_value);
         assert_eq!(result_value, expected_value);
     }
-
-    // #[test]
-    // fn test_eval_object_list_nested() {
-    //     let expr = parse("{foo: [1, 100], 'bar': [{baz: 3}, {baz: 4}]}").unwrap();
-    //     let result_expr = compile(&expr, &Default::default(), None).unwrap();
-    //     println!("expr: {:?}", result_expr);
-    //
-    //     // Check evaluated value
-    //     let result_value = result_expr.eval_to_scalar().unwrap();
-    //
-    //     let expected_foo = ScalarValue::List(
-    //         Some(Box::new(vec![
-    //             ScalarValue::from(1.0),
-    //             ScalarValue::from(100.0),
-    //         ])),
-    //         Box::new(DataType::Float64),
-    //     );
-    //
-    //     let bar0 = ScalarValue::from(vec![("baz", ScalarValue::from(3.0))]);
-    //     let bar1 = ScalarValue::from(vec![("baz", ScalarValue::from(4.0))]);
-    //     let expected_bar = ScalarValue::List(
-    //         Some(Box::new(vec![bar0.clone(), bar1])),
-    //         Box::new(bar0.get_datatype()),
-    //     );
-    //
-    //     let expected = ScalarValue::from(vec![("foo", expected_foo), ("bar", expected_bar)]);
-    //
-    //     println!("value: {:?}", result_value);
-    //     assert_eq!(result_value, expected);
-    // }
 
     #[test]
     fn test_eval_object_member() {
