@@ -73,6 +73,11 @@ impl NodeJsRuntime {
         let welcome_message = this.read_output();
         println!("Initialized node: {}\n", welcome_message);
 
+        this.execute_statement(
+            "util = require('util'); util.inspect.replDefaults.maxStringLength = Infinity;"
+        )
+            .unwrap();
+
         let str_result = this.execute_statement("VegaUtils = require('./vegajsRuntime.js')")
             .unwrap();
         println!("VegaUtils require output: {}", str_result);
@@ -325,7 +330,7 @@ impl VegaJsRuntime {
             "data": data,
         });
 
-        println!("{}", serde_json::to_string_pretty(&spec).unwrap());
+        // println!("{}", serde_json::to_string_pretty(&spec).unwrap());
 
         let watches = self.eval_spec(&spec, &watches)?;
         let dataset = VegaFusionTable::from_json(&watches[0].value, 1024)?;
