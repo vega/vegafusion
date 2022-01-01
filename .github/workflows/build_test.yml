@@ -7,7 +7,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v2
       - name: Install apt system dependencies
-      - run: |
+        run: |
           sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
