@@ -52,33 +52,33 @@ jobs:
 #          command: test
 #          args: --all-features
 
-#  build-vegafusion-python:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@v2
-#      - uses: conda-incubator/setup-miniconda@v2
-#        with:
-#          auto-update-conda: true
-#          activate-environment: vegafusion_dev
-#          miniforge-version: latest
-#          environment-file: python/vegafusion-jupyter/conda-linux-64.lock.yml
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: maturin build
-#        shell: bash -l {0}
-#        run: |
-#          cd vegafusion-python/
-#          maturin build --release
-#      - name: Upload wheel artifacts
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: vegafusion-python-wheels
-#          path: |
-#            target/wheels/*.whl
+  build-vegafusion-python:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          activate-environment: vegafusion_dev
+          miniforge-version: latest
+          environment-file: python/vegafusion-jupyter/conda-linux-64.lock.yml
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: maturin build
+        shell: bash -l {0}
+        run: |
+          cd vegafusion-python/
+          maturin build --release
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-python-wheels
+          path: |
+            target/wheels/*.whl
 
   build-vegafusion-wasm:
     runs-on: ubuntu-latest
@@ -95,8 +95,44 @@ jobs:
         run: |
           cd vegafusion-wasm/
           wasm-pack build --release
-      - name: Upload wheel artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: vegafusion-wasm-packages
           path: vegafusion-wasm/pkg
+
+
+  build-vegafusion-jupyter:
+    needs: [build-vegafusion-python, build-vegafusion-wasm]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          activate-environment: vegafusion_dev
+          miniforge-version: latest
+          environment-file: python/vegafusion-jupyter/conda-linux-64.lock.yml
+      - name: Download vegafusion-wasm packages
+        uses: actions/download-artifact@v2
+        with:
+          name: vegafusion-wasm-packages
+          path: vegafusion-wasm/pkg
+      - name: Download vegafusion-python wheel
+        uses: actions/download-artifact@v2
+        with:
+          name: vegafusion-python-wheels
+          path: target/wheels/
+      - name: Install vegafusion-python
+        run: |
+          pip install target/wheels/vegafusion_python-*39*.whl
+      - name: Build vegafusion-jupyter
+        run: |
+          cd python/vegafusion-jupyter
+          python setup.py bdist_wheel
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-jupyter-packages
+          path: python/vegafusion-jupyter/dist/*.whl
