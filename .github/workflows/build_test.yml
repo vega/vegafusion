@@ -7,12 +7,12 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v2
       - name: Install latest stable Rust toolchain
-          uses: actions-rs/toolchain@v1
-          with:
-            toolchain: stable
-            override: true
-            components: rustfmt, clippy
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
       - uses: actions-rs/cargo@v1
-          with:
-            command: test
-            args: --all-features
+        with:
+          command: test
+          args: --all-features
