@@ -32,10 +32,6 @@ jobs:
           cache-on-failure: True
 #      - name: Check cargo fmt compliance
 #        run: cargo fmt --all -- --check
-      - name: Try stuff
-        run: |
-          cd vegafusion-rt-datafusion/tests/util/vegajs_runtime
-          node --eval="VegaUtils = require('./vegajsRuntime.js'); console.log(VegaUtils)"
       - name: Run Rust Tests
         uses: actions-rs/cargo@v1
         with:
