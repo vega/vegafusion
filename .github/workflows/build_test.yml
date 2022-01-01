@@ -18,11 +18,10 @@ jobs:
           node-version: '16'
       - name: Cache rust dependencies
         uses: Swatinem/rust-cache@v1
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --check
-      - uses: actions-rs/cargo@v1
+      - name: Check cargo fmt compliance
+        run: cargo fmt --all -- --check
+      - name: Run Rust Tests
+        uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all-features
