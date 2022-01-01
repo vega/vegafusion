@@ -47,7 +47,7 @@ impl NodeJsRuntime {
 
         println!("crate_dir: {}", working_dir.to_str().unwrap());
 
-        let mut proc = Command::new("nodejs")
+        let mut proc = Command::new("node")
             .args(&["-i", "--experimental-repl-await"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
