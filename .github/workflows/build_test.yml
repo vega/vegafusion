@@ -1,6 +1,26 @@
 name: build_test
 on: [push]
 jobs:
+  rust-fmt-clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Check cargo fmt compliance
+        run: cargo fmt --all -- --check
+      - name: Check for clippy warnings
+        run: cargo clippy
+
   test-rust:
     runs-on: ubuntu-latest
     steps:
@@ -14,7 +34,6 @@ jobs:
         with:
           toolchain: stable
           override: true
-          components: rustfmt, clippy
       - name: Install node
         uses: actions/setup-node@v2
         with:
@@ -30,10 +49,6 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: True
-#      - name: Check cargo fmt compliance
-#        run: cargo fmt --all -- --check
-      - name: Check for clippy warnings
-        run: cargo clippy
       - name: Run Rust Tests
         uses: actions-rs/cargo@v1
         with:
