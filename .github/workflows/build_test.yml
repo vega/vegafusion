@@ -16,6 +16,10 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '16'
+      - name: Install test node dependencies
+        run: |
+          cd vegafusion-rt-datafusion/tests/util/vegajs_runtime
+          npm install
       - name: Cache rust dependencies
         uses: Swatinem/rust-cache@v1
       - name: Check cargo fmt compliance
