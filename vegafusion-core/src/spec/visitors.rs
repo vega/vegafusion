@@ -74,6 +74,12 @@ impl ChartVisitor for MakeTaskScopeVisitor {
             }
         }
 
+        // Make group itself a dataset
+        if let Some(name) = &mark.name {
+            println!("Adding group mark {:?} as dataset with scope {:?}", name, scope);
+            parent_scope.data.insert(name.clone());
+        }
+
         parent_scope.children.push(group_scope);
 
         Ok(())
@@ -82,7 +88,6 @@ impl ChartVisitor for MakeTaskScopeVisitor {
     fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
         // Named non-group marks can serve as datasets
         if let Some(name) = &mark.name {
-            let scoped_var = (Variable::new_data(name), Vec::from(scope));
             let task_scope = self.task_scope.get_child_mut(scope)?;
             task_scope.data.insert(name.clone());
         }

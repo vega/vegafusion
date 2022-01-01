@@ -221,6 +221,16 @@ impl ChartVisitor for AddDependencyNodesVisitor {
             }
         }
 
+        // Named group marks can serve as datasets
+        if let Some(name) = &mark.name {
+            let parent_scope = Vec::from(&scope[..scope.len()]);
+            let scoped_var = (Variable::new_data(name), Vec::from(parent_scope));
+            let node_index = self
+                .dependency_graph
+                .add_node((scoped_var.clone(), DependencyNodeSupported::Unsupported));
+            self.node_indexes.insert(scoped_var, node_index);
+        }
+
         Ok(())
     }
 
@@ -228,7 +238,6 @@ impl ChartVisitor for AddDependencyNodesVisitor {
         // Named non-group marks can serve as datasets
         if let Some(name) = &mark.name {
             let scoped_var = (Variable::new_data(name), Vec::from(scope));
-            println!("Add non-group mark {} with scope {:?}", name, scope);
             let node_index = self
                 .dependency_graph
                 .add_node((scoped_var.clone(), DependencyNodeSupported::Unsupported));
