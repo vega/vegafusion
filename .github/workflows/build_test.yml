@@ -73,6 +73,7 @@ jobs:
           override: true
       - name: maturin build
         run: |
+          conda activate vegafusion_dev
           cd vegafusion-python/
           maturin build --release
       - name: Upload wheel artifacts
