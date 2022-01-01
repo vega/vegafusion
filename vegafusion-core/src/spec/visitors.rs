@@ -17,8 +17,8 @@ use crate::spec::scale::{
 };
 use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
 use crate::spec::values::{SignalExpressionSpec, StringOrSignalSpec};
+use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
-use crate::task_graph::task_graph::ScopedVariable;
 use crate::task_graph::task_value::TaskValue;
 use serde_json::Value;
 use std::collections::HashSet;
@@ -81,7 +81,7 @@ impl ChartVisitor for MakeTaskScopeVisitor {
 }
 
 /// For a spec that is fully supported on the server, collect tasks
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct MakeTasksVisitor {
     pub tasks: Vec<Task>,
 }
@@ -319,11 +319,8 @@ impl<'a> ChartVisitor for UpdateVarsChartVisitor<'a> {
         for on_el in &signal.on {
             expr_strs.push(on_el.update.clone());
             for event_spec in on_el.events.to_vec() {
-                match event_spec {
-                    SignalOnEventSpec::Signal(signal) => {
-                        expr_strs.push(signal.signal.clone());
-                    }
-                    _ => {}
+                if let SignalOnEventSpec::Signal(signal) = event_spec {
+                    expr_strs.push(signal.signal.clone());
                 }
             }
         }
@@ -450,11 +447,8 @@ impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
         for on_el in &signal.on {
             expr_strs.push(on_el.update.clone());
             for event_spec in on_el.events.to_vec() {
-                match event_spec {
-                    SignalOnEventSpec::Signal(signal) => {
-                        expr_strs.push(signal.signal.clone());
-                    }
-                    _ => {}
+                if let SignalOnEventSpec::Signal(signal) = event_spec {
+                    expr_strs.push(signal.signal.clone());
                 }
             }
         }

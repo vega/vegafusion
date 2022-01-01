@@ -146,14 +146,14 @@ pub struct MarkEncodingsSpec {
 #[serde(untagged)]
 pub enum MarkEncodingOrList {
     List(Vec<MarkEncodingSpec>),
-    Scalar(MarkEncodingSpec),
+    Scalar(Box<MarkEncodingSpec>),
 }
 
 impl MarkEncodingOrList {
     pub fn to_vec(&self) -> Vec<MarkEncodingSpec> {
         match self {
             MarkEncodingOrList::List(m) => m.clone(),
-            MarkEncodingOrList::Scalar(m) => vec![m.clone()],
+            MarkEncodingOrList::Scalar(m) => vec![m.as_ref().clone()],
         }
     }
 }

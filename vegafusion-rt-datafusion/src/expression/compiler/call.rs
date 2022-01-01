@@ -1,13 +1,13 @@
 use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
 use crate::expression::compiler::builtin_functions::array::span::make_span_udf;
 use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
-use crate::expression::compiler::builtin_functions::datetime::date_parts::{
+use crate::expression::compiler::builtin_functions::date_time::date_parts::{
     DATE_UDF, DAYOFYEAR_UDF, DAY_UDF, HOURS_UDF, MILLISECONDS_UDF, MINUTES_UDF, MONTH_UDF,
     QUARTER_UDF, SECONDS_UDF, UTCDATE_UDF, UTCDAYOFYEAR_UDF, UTCDAY_UDF, UTCHOURS_UDF,
     UTCMILLISECONDS_UDF, UTCMINUTES_UDF, UTCMONTH_UDF, UTCQUARTER_UDF, UTCSECONDS_UDF, UTCYEAR_UDF,
     YEAR_UDF,
 };
-use crate::expression::compiler::builtin_functions::datetime::datetime::{
+use crate::expression::compiler::builtin_functions::date_time::datetime::{
     datetime_transform, UTC_COMPONENTS,
 };
 use crate::expression::compiler::builtin_functions::math::isfinite::make_is_finite_udf;
@@ -31,10 +31,10 @@ use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
 };
 
-use crate::expression::compiler::builtin_functions::data::data::data_fn;
+use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
-use crate::expression::compiler::builtin_functions::datetime::time::make_time_udf;
+use crate::expression::compiler::builtin_functions::date_time::time::make_time_udf;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
@@ -65,6 +65,7 @@ pub enum VegaFusionCallable {
     /// A custom macro that inputs a dataset, and uses that to generate the DataFusion Expr tree
     ///
     /// e.g. `data('brush')` or  `vlSelectionTest('brush', datum, true)`
+    #[allow(clippy::type_complexity)]
     Data(Arc<dyn Fn(&VegaFusionTable, &[Expression], &DFSchema) -> Result<Expr> + Send + Sync>),
 
     /// A custom runtime function that operates on a scale dataset

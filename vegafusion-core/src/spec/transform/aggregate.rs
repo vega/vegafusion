@@ -72,7 +72,7 @@ impl TransformSpecTrait for AggregateTransformSpec {
     fn supported(&self) -> bool {
         // Check for supported aggregation op
         use AggregateOpSpec::*;
-        let ops = self.ops.clone().unwrap_or(vec![Count]);
+        let ops = self.ops.clone().unwrap_or_else(|| vec![Count]);
         for op in &ops {
             if !matches!(
                 op,

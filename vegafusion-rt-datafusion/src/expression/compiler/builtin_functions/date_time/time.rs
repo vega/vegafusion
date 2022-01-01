@@ -1,4 +1,4 @@
-use datafusion::arrow::array::{Array, ArrayRef, Date32Array, Int64Array};
+use datafusion::arrow::array::{ArrayRef, Date32Array, Int64Array};
 use datafusion::arrow::compute::cast;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::physical_plan::functions::{

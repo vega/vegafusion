@@ -20,7 +20,6 @@ use std::hash::{Hash, Hasher};
 
 struct PetgraphEdge {
     output_var: Option<Variable>,
-    propagate: bool,
 }
 
 pub type ScopedVariable = (Variable, Vec<u32>);
@@ -63,7 +62,6 @@ impl TaskGraph {
                         *node_index,
                         PetgraphEdge {
                             output_var: resolved.output_var.clone(),
-                            propagate: input_var.propagate,
                         },
                     );
                 }

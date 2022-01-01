@@ -3,8 +3,8 @@ use crate::proto::gen::tasks::VariableNamespace;
 use crate::spec::chart::ChartSpec;
 use crate::spec::data::DataSpec;
 use crate::spec::signal::SignalSpec;
+use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
-use crate::task_graph::task_graph::ScopedVariable;
 use serde_json::Value;
 use std::collections::HashSet;
 

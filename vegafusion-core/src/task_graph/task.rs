@@ -7,7 +7,6 @@ use crate::task_graph::task_value::TaskValue;
 use std::convert::TryFrom;
 
 use crate::proto::gen::expression::Expression;
-use crate::transform::TransformDependencies;
 use prost::Message;
 use std::hash::{Hash, Hasher};
 
@@ -102,6 +101,7 @@ impl Task {
     }
 }
 
+#[allow(clippy::derive_hash_xor_eq)]
 impl Hash for Task {
     fn hash<H: Hasher>(&self, state: &mut H) {
         let mut proto_bytes: Vec<u8> = Vec::with_capacity(self.encoded_len());
@@ -121,6 +121,7 @@ pub trait TaskDependencies {
     }
 }
 
+#[allow(clippy::derive_hash_xor_eq)]
 impl Hash for NodeValueIndex {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.node_index.hash(state);

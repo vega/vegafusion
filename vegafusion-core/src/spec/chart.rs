@@ -8,8 +8,8 @@ use crate::spec::visitors::{
     DefinitionVarsChartVisitor, InputVarsChartVisitor, MakeTaskScopeVisitor, MakeTasksVisitor,
     UpdateVarsChartVisitor,
 };
+use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
-use crate::task_graph::task_graph::ScopedVariable;
 use itertools::sorted;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

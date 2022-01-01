@@ -65,10 +65,10 @@ pub fn make_array_constructor_udf() -> ScalarUDF {
         offsets_builder.append_value(0).unwrap();
 
         for r in 0..num_rows {
-            for a in 0..num_args {
+            for (a, arg) in args.iter().enumerate() {
                 let col_major_idx = (a * num_rows + r) as i32;
                 indices_builder.append_value(col_major_idx).unwrap();
-                flat_valid_builder.append(args[a].is_valid(r));
+                flat_valid_builder.append(arg.is_valid(r));
             }
             offsets_builder
                 .append_value((num_args * (r + 1)) as i32)

@@ -1,5 +1,5 @@
 use async_recursion::async_recursion;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::error::{Result, ToExternalError, VegaFusionError};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::task_graph::cache::VegaFusionCache;
@@ -132,7 +132,9 @@ impl TaskGraphRuntime {
 
         let mut buf: Vec<u8> = Vec::new();
         buf.reserve(response_msg.encoded_len());
-        response_msg.encode(&mut buf);
+        response_msg
+            .encode(&mut buf)
+            .external("Failed to encode response")?;
         Ok(buf)
     }
 

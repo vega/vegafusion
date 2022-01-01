@@ -4,7 +4,7 @@ use crate::transform::TransformDependencies;
 
 impl Aggregate {
     pub fn new(transform: &AggregateTransformSpec) -> Self {
-        let tx_fields = transform.fields.clone().unwrap_or(vec![None]);
+        let tx_fields = transform.fields.clone().unwrap_or_else(|| vec![None]);
         let fields: Vec<_> = tx_fields
             .iter()
             .map(|f| f.as_ref().map(|f| f.field()).unwrap_or_default())
@@ -29,7 +29,7 @@ impl Aggregate {
         let ops = transform
             .ops
             .clone()
-            .unwrap_or(vec![AggregateOpSpec::Count]);
+            .unwrap_or_else(|| vec![AggregateOpSpec::Count]);
         let ops: Vec<_> = ops
             .iter()
             .map(|op| match op {

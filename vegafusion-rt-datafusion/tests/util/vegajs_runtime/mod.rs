@@ -74,11 +74,12 @@ impl NodeJsRuntime {
         println!("Initialized node: {}\n", welcome_message);
 
         this.execute_statement(
-            "util = require('util'); util.inspect.replDefaults.maxStringLength = Infinity;"
+            "util = require('util'); util.inspect.replDefaults.maxStringLength = Infinity;",
         )
-            .unwrap();
+        .unwrap();
 
-        let str_result = this.execute_statement("VegaUtils = require('./vegajsRuntime.js')")
+        let str_result = this
+            .execute_statement("VegaUtils = require('./vegajsRuntime.js')")
             .unwrap();
         println!("VegaUtils require output: {}", str_result);
 

@@ -75,10 +75,8 @@ pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<Fi
                 } else if c.is_digit(10) {
                     has_time = true;
                     time_tokens[time_ind].push(c)
-                } else if time_ind < 2 && c == ':' {
-                    time_ind += 1;
-                } else if time_ind == 2 && c == '.' {
-                    // Move on to time portion
+                } else if (time_ind < 2 && c == ':') || (time_ind == 2 && c == '.') {
+                    // Move on to next portion
                     time_ind += 1;
                 } else if c == '+' || c == '-' {
                     // Move on to time zone

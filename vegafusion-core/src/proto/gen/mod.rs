@@ -1,4 +1,5 @@
 #[rustfmt::skip]
+#[allow(clippy::module_inception)]
 pub mod expression;
 
 #[rustfmt::skip]

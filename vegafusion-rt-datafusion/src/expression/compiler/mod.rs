@@ -494,7 +494,7 @@ mod test_compile {
 
         let expected_expr = Expr::ScalarUDF {
             fun: Arc::new(make_object_constructor_udf(
-                &vec!["a".to_string(), "two".to_string()],
+                &["a".to_string(), "two".to_string()],
                 &vec![
                     DataType::Float64,
                     DataType::Struct(vec![Field::new("three", DataType::Float64, false)]),
@@ -504,8 +504,8 @@ mod test_compile {
                 lit(1.0),
                 Expr::ScalarUDF {
                     fun: Arc::new(make_object_constructor_udf(
-                        &vec!["three".to_string()],
-                        &vec![DataType::Float64],
+                        &["three".to_string()],
+                        &[DataType::Float64],
                     )),
                     args: vec![lit(3.0)],
                 },

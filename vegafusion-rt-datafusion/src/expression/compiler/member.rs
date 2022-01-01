@@ -127,7 +127,7 @@ pub fn make_get_object_member_udf(
         match fields
             .iter()
             .enumerate()
-            .find(|(_i, f)| f.name() == &property_name)
+            .find(|(_i, f)| f.name() == property_name)
         {
             Some((field_index, field)) => (field_index, field.data_type().clone()),
             None => {

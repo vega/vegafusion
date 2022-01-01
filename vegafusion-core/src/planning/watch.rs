@@ -2,7 +2,7 @@ use crate::error::Result;
 use crate::error::VegaFusionError;
 use crate::planning::stitch::CommPlan;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
-use crate::task_graph::task_graph::ScopedVariable;
+use crate::task_graph::graph::ScopedVariable;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

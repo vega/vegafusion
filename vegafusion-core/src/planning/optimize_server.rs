@@ -28,7 +28,7 @@ pub fn split_data_url_nodes(spec: &mut ChartSpec) -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Default)]
 pub struct SplitUrlDataNodeVisitor {
     pub parent_url_data_nodes: Vec<(DataSpec, Vec<u32>)>,
 }

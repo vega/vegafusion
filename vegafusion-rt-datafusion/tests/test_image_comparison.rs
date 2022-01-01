@@ -22,7 +22,7 @@ use vegafusion_core::planning::stitch::stitch_specs;
 use vegafusion_core::planning::watch::{Watch, WatchNamespace, WatchPlan};
 use vegafusion_core::proto::gen::tasks::TaskGraph;
 use vegafusion_core::spec::chart::ChartSpec;
-use vegafusion_core::task_graph::task_graph::ScopedVariable;
+use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 

@@ -1,5 +1,3 @@
-use datafusion::arrow::array::Array;
-
 use datafusion::arrow::datatypes::{DataType, Field};
 use datafusion::physical_plan::functions::{
     ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,

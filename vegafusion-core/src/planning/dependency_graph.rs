@@ -7,9 +7,9 @@ use crate::spec::data::{DataSpec, DependencyNodeSupported};
 use crate::spec::mark::MarkSpec;
 use crate::spec::scale::ScaleSpec;
 use crate::spec::signal::SignalSpec;
+use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task::InputVariable;
-use crate::task_graph::task_graph::ScopedVariable;
 use petgraph::algo::toposort;
 use petgraph::prelude::{DiGraph, EdgeRef, NodeIndex};
 use petgraph::Incoming;
@@ -46,9 +46,11 @@ pub fn get_supported_data_variables(
                 .edges_directed(*node_index, Incoming)
                 .into_iter()
                 .map(|edge| data_graph.node_weight(edge.source()).unwrap().0.clone())
-                .all(|parent_var| match all_supported_vars.get(&parent_var) {
-                    Some(DependencyNodeSupported::Supported) => true,
-                    _ => false,
+                .all(|parent_var| {
+                    matches!(
+                        all_supported_vars.get(&parent_var),
+                        Some(DependencyNodeSupported::Supported)
+                    )
                 });
 
             if all_parents_supported {

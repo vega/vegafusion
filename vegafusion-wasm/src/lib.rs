@@ -1,5 +1,3 @@
-mod utils;
-
 use prost::Message;
 
 // use vegafusion_core::expression::parser::parse;
@@ -26,7 +24,7 @@ use vegafusion_core::proto::gen::services::{
     VegaFusionRuntimeResponse,
 };
 use vegafusion_core::spec::chart::ChartSpec;
-use vegafusion_core::task_graph::task_graph::ScopedVariable;
+use vegafusion_core::task_graph::graph::ScopedVariable;
 
 use web_sys::Element;
 
@@ -72,6 +70,7 @@ pub struct MsgReceiver {
 
 #[wasm_bindgen]
 impl MsgReceiver {
+    #[allow(clippy::too_many_arguments)]
     fn new(
         element: Element,
         spec: ChartSpec,
@@ -306,7 +305,9 @@ impl MsgReceiver {
 
         let context: JsValue = JsValue::from_serde(&serde_json::Value::Null).unwrap();
         let js_buffer = js_sys::Uint8Array::from(buf.as_slice());
-        send_msg_fn.call1(&context, &js_buffer);
+        send_msg_fn
+            .call1(&context, &js_buffer)
+            .expect("send_request function call failed");
     }
 
     fn initial_node_value_indices(&self) -> Vec<NodeValueIndex> {

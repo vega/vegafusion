@@ -8,7 +8,7 @@ use crate::spec::mark::MarkSpec;
 use crate::spec::signal::SignalSpec;
 use crate::task_graph::scope::TaskScope;
 
-use crate::task_graph::task_graph::ScopedVariable;
+use crate::task_graph::graph::ScopedVariable;
 
 use std::collections::{HashMap, HashSet};
 
@@ -37,8 +37,10 @@ impl<'a> ExtractServerDependenciesVisitor<'a> {
         supported_vars: HashMap<ScopedVariable, DependencyNodeSupported>,
         task_scope: &'a mut TaskScope,
     ) -> Self {
-        let mut server_spec: ChartSpec = Default::default();
-        server_spec.schema = "https://vega.github.io/schema/vega/v5.json".into();
+        let server_spec: ChartSpec = ChartSpec {
+            schema: "https://vega.github.io/schema/vega/v5.json".into(),
+            ..Default::default()
+        };
         Self {
             server_spec,
             supported_vars,

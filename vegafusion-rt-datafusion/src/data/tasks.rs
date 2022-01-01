@@ -1,8 +1,8 @@
 use crate::data::table::VegaFusionTableUtils;
-use crate::expression::compiler::builtin_functions::datetime::date_parsing::{
+use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
     get_datetime_udf, DateParseMode,
 };
-use crate::expression::compiler::builtin_functions::datetime::datetime::DATETIME_COMPONENTS;
+use crate::expression::compiler::builtin_functions::date_time::datetime::DATETIME_COMPONENTS;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{is_integer_datatype, is_string_datatype, ExprHelpers};
@@ -20,7 +20,7 @@ use datafusion::physical_plan::functions::BuiltinScalarFunction;
 use datafusion::prelude::col;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 
@@ -223,62 +223,60 @@ fn process_datetimes(
     // Perform specialized date parsing
     let mut date_fields: Vec<String> = Vec::new();
     let mut df = df;
-    if let Some(parse) = parse {
-        if let scan_url_format::Parse::Object(formats) = &parse {
-            for spec in &formats.specs {
-                let datatype = &spec.datatype;
-                if datatype.starts_with("date") || datatype.starts_with("utc") {
-                    let date_mode = if datatype.starts_with("utc") {
-                        DateParseMode::Utc
-                    } else {
-                        date_mode
-                    };
+    if let Some(scan_url_format::Parse::Object(formats)) = parse {
+        for spec in &formats.specs {
+            let datatype = &spec.datatype;
+            if datatype.starts_with("date") || datatype.starts_with("utc") {
+                let date_mode = if datatype.starts_with("utc") {
+                    DateParseMode::Utc
+                } else {
+                    date_mode
+                };
 
-                    let schema = df.schema();
-                    if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
-                        date_fields.push(date_field.name().clone());
-                        let dtype = date_field.data_type();
-                        let date_expr = if is_string_datatype(dtype) {
-                            let datetime_udf = get_datetime_udf(date_mode);
-                            let date_expr = Expr::ScalarUDF {
-                                fun: Arc::new(datetime_udf),
-                                args: vec![col(&spec.name)],
-                            };
-
-                            Expr::ScalarFunction {
-                                fun: BuiltinScalarFunction::ToTimestampMillis,
-                                args: vec![date_expr],
-                            }
-                        } else if is_integer_datatype(dtype) {
-                            // Assume Year was parsed numerically
-                            Expr::ScalarUDF {
-                                fun: Arc::new(DATETIME_COMPONENTS.clone()),
-                                args: vec![col(&spec.name)],
-                            }
-                        } else if let DataType::Timestamp(_, _) = dtype {
-                            Expr::ScalarFunction {
-                                fun: BuiltinScalarFunction::ToTimestampMillis,
-                                args: vec![col(&spec.name)],
-                            }
-                        } else {
-                            continue;
+                let schema = df.schema();
+                if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
+                    date_fields.push(date_field.name().clone());
+                    let dtype = date_field.data_type();
+                    let date_expr = if is_string_datatype(dtype) {
+                        let datetime_udf = get_datetime_udf(date_mode);
+                        let date_expr = Expr::ScalarUDF {
+                            fun: Arc::new(datetime_udf),
+                            args: vec![col(&spec.name)],
                         };
 
-                        let mut columns: Vec<_> = schema
-                            .fields()
-                            .iter()
-                            .filter_map(|field| {
-                                let name = field.name();
-                                if name == &spec.name {
-                                    None
-                                } else {
-                                    Some(col(name))
-                                }
-                            })
-                            .collect();
-                        columns.push(date_expr.alias(&spec.name));
-                        df = df.select(columns)?
-                    }
+                        Expr::ScalarFunction {
+                            fun: BuiltinScalarFunction::ToTimestampMillis,
+                            args: vec![date_expr],
+                        }
+                    } else if is_integer_datatype(dtype) {
+                        // Assume Year was parsed numerically
+                        Expr::ScalarUDF {
+                            fun: Arc::new(DATETIME_COMPONENTS.clone()),
+                            args: vec![col(&spec.name)],
+                        }
+                    } else if let DataType::Timestamp(_, _) = dtype {
+                        Expr::ScalarFunction {
+                            fun: BuiltinScalarFunction::ToTimestampMillis,
+                            args: vec![col(&spec.name)],
+                        }
+                    } else {
+                        continue;
+                    };
+
+                    let mut columns: Vec<_> = schema
+                        .fields()
+                        .iter()
+                        .filter_map(|field| {
+                            let name = field.name();
+                            if name == &spec.name {
+                                None
+                            } else {
+                                Some(col(name))
+                            }
+                        })
+                        .collect();
+                    columns.push(date_expr.alias(&spec.name));
+                    df = df.select(columns)?
                 }
             }
         }

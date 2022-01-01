@@ -82,11 +82,11 @@ pub fn check_transform_evaluation(
         .eval_transform(data, transform_specs, compilation_config)
         .unwrap();
 
-    println!(
-        "expected data\n{}",
-        expected_data.pretty_format(Some(500)).unwrap()
-    );
-    println!("expected signals: {:?}", expected_signals);
+    // println!(
+    //     "expected data\n{}",
+    //     expected_data.pretty_format(Some(500)).unwrap()
+    // );
+    // println!("expected signals: {:?}", expected_signals);
 
     let df = data.to_dataframe().unwrap();
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
@@ -101,11 +101,11 @@ pub fn check_transform_evaluation(
         .unwrap();
     let result_data = VegaFusionTable::from_dataframe_blocking(result_df).unwrap();
 
-    println!(
-        "result data\n{}",
-        result_data.pretty_format(Some(500)).unwrap()
-    );
-    println!("result signals: {:?}", result_signals);
+    // println!(
+    //     "result data\n{}",
+    //     result_data.pretty_format(Some(500)).unwrap()
+    // );
+    // println!("result signals: {:?}", result_signals);
 
     assert_tables_equal(&result_data, &expected_data, equality_config);
     assert_signals_almost_equal(result_signals, expected_signals, equality_config.tolerance);

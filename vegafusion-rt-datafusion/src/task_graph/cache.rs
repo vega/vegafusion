@@ -1,7 +1,6 @@
 use async_lock::{Mutex, RwLock};
 use futures::FutureExt;
 use lru::LruCache;
-use regex::internal::Input;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::future::Future;
@@ -20,7 +19,6 @@ type Initializer = Arc<RwLock<Option<Result<NodeValue>>>>;
 
 #[derive(Debug, Clone)]
 pub struct VegaFusionCache {
-    capacity: usize,
     values: Arc<Mutex<LruCache<u64, CachedValue>>>,
     initializers: Arc<RwLock<HashMap<u64, Initializer>>>,
 }
@@ -28,7 +26,6 @@ pub struct VegaFusionCache {
 impl VegaFusionCache {
     pub fn new(capacity: usize) -> Self {
         Self {
-            capacity,
             values: Arc::new(Mutex::new(LruCache::new(capacity))),
             initializers: Default::default(),
         }
@@ -38,14 +35,6 @@ impl VegaFusionCache {
         // Clear the values cache. There may still be initializers representing in progress
         // futures which will not be cleared.
         self.values.lock().await.clear();
-    }
-
-    async fn num_values(&self) -> usize {
-        self.values.lock().await.len()
-    }
-
-    async fn num_initializers(&self) -> usize {
-        self.initializers.read().await.len()
     }
 
     async fn get_from_values(&self, state_fingerprint: u64) -> Option<CachedValue> {
