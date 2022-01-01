@@ -14,6 +14,7 @@ from skimage.metrics import structural_similarity as ssim
 import json
 import shutil
 from tenacity import retry, wait, stop
+import os
 
 here = Path(__file__).parent
 altair_mocks_dir = here / "altair_mocks"
@@ -255,7 +256,10 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     temp_screenshots_dir.mkdir(parents=True, exist_ok=True)
 
     # Create selenium Chrome instance
-    chrome_driver = webdriver.Chrome()
+    chrome_opts = webdriver.ChromeOptions()
+    if os.environ.get("VEGAFUSION_TEST_HEADLESS"):
+        chrome_opts.add_argument("--headless")
+    chrome_driver = webdriver.Chrome(options=chrome_opts)
     chrome_driver.set_window_size(800, 800)
 
     # Launch Voila server
