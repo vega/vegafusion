@@ -60,12 +60,21 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: false
-          activate-environment: explicit-env
+          activate-environment: vegafusion_dev
           miniforge-version: latest
           environment-file: python/vegafusion-jupyter/conda-linux-64.lock.yml
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: maturin build
       - run: |
-          conda info
-          conda list
-          conda config --show-sources
-          conda config --show
-          printenv | sort
+          cd vegafusion-python/
+          maturin build --release
+      - name: Upload wheel artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-wheels
+          path: |
+            target/wheels/*.whl
