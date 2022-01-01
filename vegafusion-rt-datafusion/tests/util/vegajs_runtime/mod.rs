@@ -63,8 +63,9 @@ impl NodeJsRuntime {
             proc: Mutex::new(proc),
             out,
         };
-        this.execute_statement("let VegaUtils = require('./vegajsRuntime.js')")
+        let str_result = this.execute_statement("VegaUtils = require('./vegajsRuntime.js')")
             .unwrap();
+        println!("VegaUtils require result: '{}'", str_result);
 
         Ok(this)
     }
