@@ -39,8 +39,8 @@ pub fn initialize() {
     INIT.call_once(|| {
         // Delete and remake empty output image directory
         let output_dir = format!("{}/tests/output/", crate_dir());
-        std::fs::remove_dir_all(&output_dir).unwrap();
-        std::fs::create_dir(&output_dir).unwrap();
+        std::fs::remove_dir_all(&output_dir).ok();
+        std::fs::create_dir(&output_dir).expect("Failed to create output directory");
     });
 }
 
