@@ -100,6 +100,9 @@ jobs:
   build-vegafusion-jupyter:
     needs: [build-vegafusion-python, build-vegafusion-wasm]
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
