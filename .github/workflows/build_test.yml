@@ -57,34 +57,34 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          auto-update-conda: true
-          activate-environment: vegafusion_dev
-          miniforge-version: latest
-          environment-file: python/vegafusion-jupyter/conda-linux-64.lock.yml
+#      - uses: conda-incubator/setup-miniconda@v2
+#        with:
+#          auto-update-conda: true
+#          activate-environment: vegafusion_dev
+#          miniforge-version: latest
+#          environment-file: python/vegafusion-jupyter/conda-linux-64.lock.yml
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
-#      - uses: messense/maturin-action@v1
-#        with:
-#          maturin-version: latest
-#          command: build
-#          manylinux: auto
-#          args: --release -m vegafusion-python/Cargo.toml
-      - name: maturin build --release --manylinux=2014 --skip-auditwheel
-        shell: bash -l {0}
-        run: |
-          cd vegafusion-python/
-          maturin build --release
+      - uses: messense/maturin-action@v1
+        with:
+          maturin-version: latest
+          command: build
+          manylinux: auto
+          args: --release -m vegafusion-python/Cargo.toml
+#      - name: maturin build --release --manylinux=2014 --skip-auditwheel
+#        shell: bash -l {0}
+#        run: |
+#          cd vegafusion-python/
+#          maturin build --release
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: vegafusion-python-wheels
           path: |
-            target/wheels/*.whl
+            wheels/*.whl
 
   build-vegafusion-wasm:
     runs-on: ubuntu-latest
