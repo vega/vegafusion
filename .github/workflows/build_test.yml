@@ -124,7 +124,11 @@ jobs:
           path: target/wheels/
       - name: Install vegafusion-python
         run: |
-          pip install target/wheels/vegafusion_python-*39*.whl
+          echo which python
+          python --version
+          echo which pip
+          echo pip --version
+          python -m pip install target/wheels/vegafusion_python-*39*.whl
       - name: Build vegafusion-jupyter
         run: |
           cd python/vegafusion-jupyter
