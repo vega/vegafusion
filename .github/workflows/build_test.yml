@@ -123,7 +123,7 @@ jobs:
           auto-update-conda: true
           activate-environment: vegafusion_dev
           miniforge-version: latest
-          environment-file: python/vegafusion-jupyter/conda-linux-64.lock.yml
+          environment-file: python/vegafusion-jupyter/conda-linux-64-3.10.lock.yml
       - name: Download vegafusion-wasm packages
         uses: actions/download-artifact@v2
         with:
