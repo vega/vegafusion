@@ -134,3 +134,38 @@ jobs:
         with:
           name: vegafusion-jupyter-packages
           path: python/vegafusion-jupyter/dist/*.whl
+
+  test-vegafusion-jupyter:
+    needs: [ build-vegafusion-jupyter ]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Create conda test environment
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          activate-environment: vegafusion_dev
+          miniforge-version: latest
+          environment-file: python/vegafusion-jupyter/conda-linux-64.lock.yml
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@latest
+        with:
+          # Use tag for chrome stable version 96.0.4664.110.
+          # This version should match the version of the python-chromedriver-binary conda-forge package
+          # specified in python/vegafusion-jupyter/dev-environment.yml
+          chrome-version: da1918b52890268754b96fdbca4ae9a79bd2fe11
+      - name: Test vegafusion-jupter
+        env:
+          VEGAFUSION_TEST_HEADLESS: 1
+        run: |
+          cd tests
+          pytest
+      - name: Upload screenshot artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-jupyter-test-screenshots
+          path: python/vegafusion-jupyter/test/temp_screenshot
