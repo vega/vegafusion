@@ -26,7 +26,7 @@ pub fn compile_object(
         values.push(expr)
     }
 
-    let udf = make_object_constructor_udf(&keys, &value_types);
+    let udf = make_object_constructor_udf(keys.as_slice(), value_types.as_slice());
 
     Ok(Expr::ScalarUDF {
         fun: Arc::new(udf),
@@ -34,7 +34,7 @@ pub fn compile_object(
     })
 }
 
-pub fn make_object_constructor_udf(keys: &Vec<String>, value_types: &Vec<DataType>) -> ScalarUDF {
+pub fn make_object_constructor_udf(keys: &[String], value_types: &[DataType]) -> ScalarUDF {
     // Build fields vector
     let fields: Vec<_> = keys
         .iter()

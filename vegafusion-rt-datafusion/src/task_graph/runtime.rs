@@ -1,5 +1,5 @@
 use async_recursion::async_recursion;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::error::{Result, ToExternalError, VegaFusionError};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::task_graph::cache::VegaFusionCache;
@@ -82,7 +82,7 @@ impl TaskGraphRuntime {
                         async move {
                             let value = task_graph_runtime
                                 .clone()
-                                .get_node_value(task_graph, &node_value_index)
+                                .get_node_value(task_graph, node_value_index)
                                 .await?;
 
                             Ok::<_, VegaFusionError>(ResponseTaskValue {
@@ -117,11 +117,9 @@ impl TaskGraphRuntime {
                     }
                 }
             }
-            _ => {
-                return Err(VegaFusionError::internal(
-                    "Invalid VegaFusionRuntimeRequest request",
-                ))
-            }
+            _ => Err(VegaFusionError::internal(
+                "Invalid VegaFusionRuntimeRequest request",
+            )),
         }
     }
 
@@ -134,14 +132,15 @@ impl TaskGraphRuntime {
 
         let mut buf: Vec<u8> = Vec::new();
         buf.reserve(response_msg.encoded_len());
-        response_msg.encode(&mut buf);
+        response_msg
+            .encode(&mut buf)
+            .external("Failed to encode response")?;
         Ok(buf)
     }
 
     pub async fn clear_cache(&self) {
         self.cache.clear().await;
     }
-
 }
 
 #[async_recursion]

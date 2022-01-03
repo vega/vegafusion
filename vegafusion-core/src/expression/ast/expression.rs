@@ -1,10 +1,13 @@
 use crate::error::{Result, VegaFusionError};
-use crate::expression::visitors::{CheckSupportedExprVisitor, ClearSpansVisitor, ExpressionVisitor, GetInputVariablesVisitor, ImplicitVariablesExprVisitor, MutExpressionVisitor, UpdateVariablesExprVisitor};
+use crate::expression::visitors::{
+    CheckSupportedExprVisitor, ClearSpansVisitor, ExpressionVisitor, GetInputVariablesVisitor,
+    ImplicitVariablesExprVisitor, MutExpressionVisitor, UpdateVariablesExprVisitor,
+};
 use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::{
-    ArrayExpression, BinaryExpression, CallExpression, ConditionalExpression, Expression,
+    literal, ArrayExpression, BinaryExpression, CallExpression, ConditionalExpression, Expression,
     Identifier, Literal, LogicalExpression, MemberExpression, ObjectExpression, Span,
-    UnaryExpression, literal
+    UnaryExpression,
 };
 use crate::proto::gen::tasks::Variable;
 use crate::task_graph::task::InputVariable;
@@ -238,7 +241,7 @@ impl Expression {
 }
 
 // Expression from literal
-impl <V: Into<literal::Value>> From<V> for Expression {
+impl<V: Into<literal::Value>> From<V> for Expression {
     fn from(v: V) -> Self {
         Self {
             expr: Some(Expr::from(v)),
@@ -246,7 +249,6 @@ impl <V: Into<literal::Value>> From<V> for Expression {
         }
     }
 }
-
 
 // Expr conversions
 impl From<Literal> for Expr {
@@ -309,7 +311,7 @@ impl From<ObjectExpression> for Expr {
     }
 }
 
-impl <V: Into<literal::Value>> From<V> for Expr {
+impl<V: Into<literal::Value>> From<V> for Expr {
     fn from(v: V) -> Self {
         let v = v.into();
         let repr = v.to_string();

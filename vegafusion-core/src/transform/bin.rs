@@ -115,16 +115,10 @@ impl BinConfig {
 
         let span = match &spec.span {
             None => None,
-            Some(span) => {
-                match span {
-                    BinSpan::Value(span) => {
-                        Some(Expression::from(*span))
-                    }
-                    BinSpan::Signal(signal) => {
-                        Some(parse(&signal.signal)?)
-                    }
-                }
-            }
+            Some(span) => match span {
+                BinSpan::Value(span) => Some(Expression::from(*span)),
+                BinSpan::Signal(signal) => Some(parse(&signal.signal)?),
+            },
         };
 
         Ok(Self {

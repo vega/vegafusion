@@ -51,9 +51,10 @@ impl ScalarValueHelpers for ScalarValue {
                 values.sort_by_key(|el| el.0);
 
                 if values.is_empty() {
-                    ScalarValue::from(
-                        vec![("__dummy", ScalarValue::try_from(&DataType::Float64).unwrap())]
-                    )
+                    ScalarValue::from(vec![(
+                        "__dummy",
+                        ScalarValue::try_from(&DataType::Float64).unwrap(),
+                    )])
                 } else {
                     ScalarValue::from(values)
                 }
@@ -64,7 +65,7 @@ impl ScalarValueHelpers for ScalarValue {
                 } else {
                     let elements: Vec<_> = elements
                         .iter()
-                        .map(|e| ScalarValue::from_json(e))
+                        .map(ScalarValue::from_json)
                         .collect::<Result<Vec<ScalarValue>>>()?;
                     let dtype = elements[0].get_datatype();
                     (elements, dtype)

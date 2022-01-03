@@ -9,9 +9,12 @@ use regex::Regex;
 use std::sync::Arc;
 
 lazy_static! {
-    pub static ref DATETIME_TO_MILLIS_LOCAL: ScalarUDF = make_datetime_to_millis_udf(DateParseMode::Local);
-    pub static ref DATETIME_TO_MILLIS_UTC: ScalarUDF = make_datetime_to_millis_udf(DateParseMode::Utc);
-    pub static ref DATETIME_TO_MILLIS_JAVASCRIPT: ScalarUDF = make_datetime_to_millis_udf(DateParseMode::JavaScript);
+    pub static ref DATETIME_TO_MILLIS_LOCAL: ScalarUDF =
+        make_datetime_to_millis_udf(DateParseMode::Local);
+    pub static ref DATETIME_TO_MILLIS_UTC: ScalarUDF =
+        make_datetime_to_millis_udf(DateParseMode::Utc);
+    pub static ref DATETIME_TO_MILLIS_JAVASCRIPT: ScalarUDF =
+        make_datetime_to_millis_udf(DateParseMode::JavaScript);
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -72,10 +75,8 @@ pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<Fi
                 } else if c.is_digit(10) {
                     has_time = true;
                     time_tokens[time_ind].push(c)
-                } else if time_ind < 2 && c == ':' {
-                    time_ind += 1;
-                } else if time_ind == 2 && c == '.' {
-                    // Move on to time portion
+                } else if (time_ind < 2 && c == ':') || (time_ind == 2 && c == '.') {
+                    // Move on to next portion
                     time_ind += 1;
                 } else if c == '+' || c == '-' {
                     // Move on to time zone

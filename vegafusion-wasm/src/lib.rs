@@ -1,5 +1,3 @@
-mod utils;
-
 use prost::Message;
 
 // use vegafusion_core::expression::parser::parse;
@@ -7,30 +5,28 @@ use prost::Message;
 use std::convert::TryFrom;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::proto::gen::tasks::{
-    NodeValueIndex, TaskGraph, TaskGraphValueRequest, TaskGraphValueResponse, VariableNamespace,
+    NodeValueIndex, TaskGraph, TaskGraphValueRequest, VariableNamespace,
 };
 use vegafusion_core::task_graph::task_value::TaskValue;
 use wasm_bindgen::prelude::*;
 
-use vegafusion_core::error::Result;
-
+use js_sys::Promise;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::planning::extract::extract_server_data;
+use vegafusion_core::planning::optimize_server::split_data_url_nodes;
 use vegafusion_core::planning::stitch::{stitch_specs, CommPlan};
-use vegafusion_core::proto::gen::expression::literal::Value;
+use vegafusion_core::planning::watch::WatchPlan;
+
 use vegafusion_core::proto::gen::services::{
     vega_fusion_runtime_request, vega_fusion_runtime_response, VegaFusionRuntimeRequest,
     VegaFusionRuntimeResponse,
 };
 use vegafusion_core::spec::chart::ChartSpec;
-use vegafusion_core::task_graph::task_graph::ScopedVariable;
+use vegafusion_core::task_graph::graph::ScopedVariable;
+
 use web_sys::Element;
-use vegafusion_core::planning::optimize_server::split_data_url_nodes;
-use vegafusion_core::planning::watch::WatchPlan;
-use wasm_bindgen_futures::JsFuture;
-use js_sys::Promise;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -46,7 +42,7 @@ pub fn set_panic_hook() {
     // For more details see
     // https://github.com/rustwasm/console_error_panic_hook#readme
     #[cfg(feature = "console_error_panic_hook")]
-        console_error_panic_hook::set_once();
+    console_error_panic_hook::set_once();
 }
 
 #[wasm_bindgen]
@@ -74,6 +70,7 @@ pub struct MsgReceiver {
 
 #[wasm_bindgen]
 impl MsgReceiver {
+    #[allow(clippy::too_many_arguments)]
     fn new(
         element: Element,
         spec: ChartSpec,
@@ -99,7 +96,7 @@ impl MsgReceiver {
 
         // Mount vega chart
         let window = web_sys::window().expect("no global `window` exists");
-        let document = window.document().expect("should have a document on window");
+        let _document = window.document().expect("should have a document on window");
         let dataflow = parse(JsValue::from_serde(&spec).unwrap());
 
         let view = View::new(dataflow);
@@ -150,8 +147,7 @@ impl MsgReceiver {
                                     log(&serde_json::to_string_pretty(&json).unwrap());
                                 }
 
-                                let js_value =
-                                    JsValue::from_serde(&json).unwrap();
+                                let js_value = JsValue::from_serde(&json).unwrap();
                                 set_signal_value(view, &var.name, scope, js_value);
                             }
                             TaskValue::Table(value) => {
@@ -180,11 +176,25 @@ impl MsgReceiver {
     }
 
     fn add_signal_listener(&self, name: &str, scope: &[u32], handler: JsValue) {
-        add_signal_listener(self.view(), name, scope, handler, self.debounce_wait, self.debounce_max_wait);
+        add_signal_listener(
+            self.view(),
+            name,
+            scope,
+            handler,
+            self.debounce_wait,
+            self.debounce_max_wait,
+        );
     }
 
     fn add_data_listener(&self, name: &str, scope: &[u32], handler: JsValue) {
-        add_data_listener(self.view(), name, scope, handler, self.debounce_wait, self.debounce_max_wait);
+        add_data_listener(
+            self.view(),
+            name,
+            scope,
+            handler,
+            self.debounce_wait,
+            self.debounce_max_wait,
+        );
     }
 
     fn register_callbacks(&self) {
@@ -295,7 +305,9 @@ impl MsgReceiver {
 
         let context: JsValue = JsValue::from_serde(&serde_json::Value::Null).unwrap();
         let js_buffer = js_sys::Uint8Array::from(buf.as_slice());
-        send_msg_fn.call1(&context, &js_buffer);
+        send_msg_fn
+            .call1(&context, &js_buffer)
+            .expect("send_request function call failed");
     }
 
     fn initial_node_value_indices(&self) -> Vec<NodeValueIndex> {
@@ -319,7 +331,8 @@ impl MsgReceiver {
     }
 
     pub fn to_image_url(&self, img_type: &str, scale_factor: Option<f64>) -> Promise {
-        self.view.to_image_url(img_type, scale_factor.unwrap_or(1.0))
+        self.view
+            .to_image_url(img_type, scale_factor.unwrap_or(1.0))
     }
 }
 
@@ -337,11 +350,15 @@ pub fn render_vegafusion(
     // Get full spec's scope
     let mut task_scope = spec.to_task_scope().unwrap();
 
-    let mut server_spec = extract_server_data(&mut spec, &mut task_scope).expect("Failed to extract_server_data");
-    let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).expect("Failed to stitch_specs");
+    let mut server_spec =
+        extract_server_data(&mut spec, &mut task_scope).expect("Failed to extract_server_data");
+    let comm_plan =
+        stitch_specs(&task_scope, &mut server_spec, &mut spec).expect("Failed to stitch_specs");
 
     split_data_url_nodes(&mut server_spec).expect("Failed to split_data_url_nodes");
-    let task_scope = server_spec.to_task_scope().expect("Failed to create task scope for server spec");
+    let task_scope = server_spec
+        .to_task_scope()
+        .expect("Failed to create task scope for server spec");
 
     let tasks = server_spec.to_tasks().unwrap();
     let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
@@ -393,10 +410,24 @@ extern "C" {
     pub fn set_data_value(view: &View, name: &str, scope: &[u32], value: JsValue);
 
     #[wasm_bindgen(js_name = "addSignalListener")]
-    fn add_signal_listener(view: &View, name: &str, scope: &[u32], handler: JsValue, wait: f64, maxWait: Option<f64>);
+    fn add_signal_listener(
+        view: &View,
+        name: &str,
+        scope: &[u32],
+        handler: JsValue,
+        wait: f64,
+        maxWait: Option<f64>,
+    );
 
     #[wasm_bindgen(js_name = "addDataListener")]
-    fn add_data_listener(view: &View, name: &str, scope: &[u32], handler: JsValue, wait: f64, maxWait: Option<f64>);
+    fn add_data_listener(
+        view: &View,
+        name: &str,
+        scope: &[u32],
+        handler: JsValue,
+        wait: f64,
+        maxWait: Option<f64>,
+    );
 
     #[wasm_bindgen(js_name = "setupTooltip")]
     fn setup_tooltip(view: &View);
@@ -428,6 +459,6 @@ extern "C" {
 mod tests {
     #[test]
     fn it_works() {
-        assert_eq!(2 + 2, 4);
+        println!("it works");
     }
 }

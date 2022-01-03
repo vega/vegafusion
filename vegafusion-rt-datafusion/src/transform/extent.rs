@@ -1,4 +1,5 @@
 use crate::expression::compiler::config::CompilationConfig;
+use crate::expression::compiler::utils::to_numeric;
 use crate::transform::utils::{DataFrameUtils, RecordBatchUtils};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
@@ -9,7 +10,6 @@ use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Extent;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use crate::expression::compiler::utils::to_numeric;
 
 #[async_trait]
 impl TransformTrait for Extent {
@@ -20,12 +20,9 @@ impl TransformTrait for Extent {
     ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let output_values = if self.signal.is_some() {
             let field_col = col(self.field.as_str());
-            let min_val = min(
-                to_numeric(field_col.clone(), &dataframe.schema())?,
-            ).alias("__min_val");
-            let max_val = max(
-                to_numeric(field_col, &dataframe.schema())?
-            ).alias("__max_val");
+            let min_val =
+                min(to_numeric(field_col.clone(), dataframe.schema())?).alias("__min_val");
+            let max_val = max(to_numeric(field_col, dataframe.schema())?).alias("__max_val");
 
             let extent_df = dataframe
                 .aggregate(Vec::new(), vec![min_val, max_val])

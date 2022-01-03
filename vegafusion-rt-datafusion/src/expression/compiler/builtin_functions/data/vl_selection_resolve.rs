@@ -1,20 +1,22 @@
+use datafusion::arrow::datatypes::DataType;
+use datafusion::logical_plan::{lit, DFSchema, Expr};
+use datafusion::scalar::ScalarValue;
+use itertools::Itertools;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::str::FromStr;
-use datafusion::arrow::datatypes::DataType;
-use datafusion::logical_plan::{DFSchema, Expr, lit};
-use datafusion::scalar::ScalarValue;
-use itertools::Itertools;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::expression::literal::Value;
 
+use crate::expression::compiler::builtin_functions::data::vl_selection_test::{
+    SelectionRow, SelectionType,
+};
+
 use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
-use crate::expression::compiler::builtin_functions::data::vl_selection_test::{SelectionRow, SelectionType};
-use crate::expression::compiler::utils::ExprHelpers;
 
 use super::vl_selection_test::Op;
 
@@ -48,14 +50,13 @@ pub fn parse_args(args: &[Expression]) -> Result<Op> {
     Ok(op)
 }
 
-
 pub fn vl_selection_resolve_fn(
     table: &VegaFusionTable,
     args: &[Expression],
-    schema: &DFSchema,
+    _schema: &DFSchema,
 ) -> Result<Expr> {
     // Validate args and get operation
-    let op = parse_args(args)?;
+    let _op = parse_args(args)?;
 
     // Extract vector of rows for selection dataset
     let rows = if let ScalarValue::List(Some(elements), _) = table.to_scalar_value()? {
@@ -111,21 +112,29 @@ pub fn vl_selection_resolve_fn(
                 }
             };
 
-            let values = props.entry(field.field.clone()).or_insert(Vec::new());
+            let values = props.entry(field.field.clone()).or_insert_with(Vec::new);
             values.extend(value.clone());
         }
     }
 
-    let props: Vec<_> = props.into_iter().map(|(name, values)| {
-        // Turn values into a scalar list
-        let dtype = values.get(0)
-            .map(|s| s.get_datatype())
-            .unwrap_or(DataType::Float64);
-        let values = ScalarValue::List(Some(Box::new(values)), Box::new(dtype));
-        (name.clone(), values)
-    }).sorted_by_key(|(n, _)| n.clone()).collect();
+    let props: Vec<_> = props
+        .into_iter()
+        .map(|(name, values)| {
+            // Turn values into a scalar list
+            let dtype = values
+                .get(0)
+                .map(|s| s.get_datatype())
+                .unwrap_or(DataType::Float64);
+            let values = ScalarValue::List(Some(Box::new(values)), Box::new(dtype));
+            (name, values)
+        })
+        .sorted_by_key(|(n, _)| n.clone())
+        .collect();
 
-    let props: Vec<_> = props.iter().map(|(name, value)| (name.as_str(), value.clone())).collect();
+    let props: Vec<_> = props
+        .iter()
+        .map(|(name, value)| (name.as_str(), value.clone()))
+        .collect();
 
     let object_result = ScalarValue::from(props);
     Ok(lit(object_result))

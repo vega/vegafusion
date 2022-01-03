@@ -68,7 +68,7 @@ mod test_compile {
         array::{ArrayRef, Float64Array, StructArray},
         datatypes::{DataType, Field, Schema},
     };
-    use datafusion::logical_plan::{DFSchema, Expr, Operator};
+    use datafusion::logical_plan::{and, DFSchema, Expr, Operator};
 
     use datafusion::physical_plan::ColumnarValue;
     use datafusion::prelude::{col, concat, lit};
@@ -174,10 +174,14 @@ mod test_compile {
         println!("expr: {:?}", result_expr);
 
         // unary not should cast numeric value to boolean
-        let expected_expr = Expr::Not(Box::new(Expr::Cast {
-            expr: Box::new(lit(32.0)),
-            data_type: DataType::Boolean,
-        }));
+        let expected_expr = and(
+            Expr::Cast {
+                expr: Box::new(lit(32.0)),
+                data_type: DataType::Boolean,
+            },
+            Expr::is_not_null(lit(32.0)),
+        )
+        .not();
         assert_eq!(result_expr, expected_expr);
 
         // Check evaluated value
@@ -197,10 +201,13 @@ mod test_compile {
         let expected_expr = Expr::Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(Expr::Cast {
-                    expr: Box::new(lit(32.0)),
-                    data_type: DataType::Boolean,
-                }),
+                Box::new(and(
+                    Expr::Cast {
+                        expr: Box::new(lit(32.0)),
+                        data_type: DataType::Boolean,
+                    },
+                    Expr::is_not_null(lit(32.0)),
+                )),
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),
@@ -245,10 +252,13 @@ mod test_compile {
         let expected_expr = Expr::Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(Expr::Cast {
-                    expr: Box::new(lit(5.0)),
-                    data_type: DataType::Boolean,
-                }),
+                Box::new(and(
+                    Expr::Cast {
+                        expr: Box::new(lit(5.0)),
+                        data_type: DataType::Boolean,
+                    },
+                    Expr::is_not_null(lit(5.0)),
+                )),
                 Box::new(lit(55.0)),
             )],
             else_expr: Some(Box::new(lit(5.0))),
@@ -484,8 +494,8 @@ mod test_compile {
 
         let expected_expr = Expr::ScalarUDF {
             fun: Arc::new(make_object_constructor_udf(
-                &vec!["a".to_string(), "two".to_string()],
-                &vec![
+                &["a".to_string(), "two".to_string()],
+                &[
                     DataType::Float64,
                     DataType::Struct(vec![Field::new("three", DataType::Float64, false)]),
                 ],
@@ -494,8 +504,8 @@ mod test_compile {
                 lit(1.0),
                 Expr::ScalarUDF {
                     fun: Arc::new(make_object_constructor_udf(
-                        &vec!["three".to_string()],
-                        &vec![DataType::Float64],
+                        &["three".to_string()],
+                        &[DataType::Float64],
                     )),
                     args: vec![lit(3.0)],
                 },
@@ -518,36 +528,6 @@ mod test_compile {
         println!("value: {:?}", result_value);
         assert_eq!(result_value, expected_value);
     }
-
-    // #[test]
-    // fn test_eval_object_list_nested() {
-    //     let expr = parse("{foo: [1, 100], 'bar': [{baz: 3}, {baz: 4}]}").unwrap();
-    //     let result_expr = compile(&expr, &Default::default(), None).unwrap();
-    //     println!("expr: {:?}", result_expr);
-    //
-    //     // Check evaluated value
-    //     let result_value = result_expr.eval_to_scalar().unwrap();
-    //
-    //     let expected_foo = ScalarValue::List(
-    //         Some(Box::new(vec![
-    //             ScalarValue::from(1.0),
-    //             ScalarValue::from(100.0),
-    //         ])),
-    //         Box::new(DataType::Float64),
-    //     );
-    //
-    //     let bar0 = ScalarValue::from(vec![("baz", ScalarValue::from(3.0))]);
-    //     let bar1 = ScalarValue::from(vec![("baz", ScalarValue::from(4.0))]);
-    //     let expected_bar = ScalarValue::List(
-    //         Some(Box::new(vec![bar0.clone(), bar1])),
-    //         Box::new(bar0.get_datatype()),
-    //     );
-    //
-    //     let expected = ScalarValue::from(vec![("foo", expected_foo), ("bar", expected_bar)]);
-    //
-    //     println!("value: {:?}", result_value);
-    //     assert_eq!(result_value, expected);
-    // }
 
     #[test]
     fn test_eval_object_member() {
@@ -624,10 +604,13 @@ mod test_compile {
         let expected_expr = Expr::Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(Expr::Cast {
-                    expr: Box::new(lit(32.0)),
-                    data_type: DataType::Boolean,
-                }),
+                Box::new(and(
+                    Expr::Cast {
+                        expr: Box::new(lit(32.0)),
+                        data_type: DataType::Boolean,
+                    },
+                    Expr::is_not_null(lit(32.0)),
+                )),
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),

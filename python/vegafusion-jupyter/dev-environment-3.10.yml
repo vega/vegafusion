@@ -2,7 +2,7 @@ name: vegafusion_jupyter_dev
 channels:
   - conda-forge
 dependencies:
-  - python >=3.8
+  - python =3.10
   - nodejs
   - yarn
   - maturin
@@ -10,4 +10,5 @@ dependencies:
   - jupyter-packaging
   - conda-lock
   - pip
-  - python-chromedriver-binary =93
+  - jupytext
+  - python-chromedriver-binary =96

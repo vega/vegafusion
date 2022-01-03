@@ -17,8 +17,8 @@ use crate::spec::scale::{
 };
 use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
 use crate::spec::values::{SignalExpressionSpec, StringOrSignalSpec};
+use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
-use crate::task_graph::task_graph::ScopedVariable;
 use crate::task_graph::task_value::TaskValue;
 use serde_json::Value;
 use std::collections::HashSet;
@@ -67,7 +67,6 @@ impl ChartVisitor for MakeTaskScopeVisitor {
         let parent_scope = self.task_scope.get_child_mut(&scope[0..scope.len() - 1])?;
         let mut group_scope: TaskScope = Default::default();
 
-
         // Check for facet dataset
         if let Some(from) = &mark.from {
             if let Some(facet) = &from.facet {
@@ -75,14 +74,32 @@ impl ChartVisitor for MakeTaskScopeVisitor {
             }
         }
 
+        // Make group itself a dataset
+        if let Some(name) = &mark.name {
+            println!(
+                "Adding group mark {:?} as dataset with scope {:?}",
+                name, scope
+            );
+            parent_scope.data.insert(name.clone());
+        }
+
         parent_scope.children.push(group_scope);
 
+        Ok(())
+    }
+
+    fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
+        // Named non-group marks can serve as datasets
+        if let Some(name) = &mark.name {
+            let task_scope = self.task_scope.get_child_mut(scope)?;
+            task_scope.data.insert(name.clone());
+        }
         Ok(())
     }
 }
 
 /// For a spec that is fully supported on the server, collect tasks
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct MakeTasksVisitor {
     pub tasks: Vec<Task>,
 }
@@ -199,16 +216,15 @@ impl ChartVisitor for MakeTasksVisitor {
 
         let task = if let Some(value) = &signal.value {
             let value = TaskValue::Scalar(ScalarValue::from_json(value)?);
-            Task::new_value(
-                signal_var, scope, value
-            )
+            Task::new_value(signal_var, scope, value)
         } else if let Some(update) = &signal.update {
             let expression = parse(update)?;
             Task::new_signal(signal_var, scope, expression)
         } else {
-            return Err(VegaFusionError::internal(
-                format!("Signal must have an initial value or an update expression: {:#?}", signal)
-            ))
+            return Err(VegaFusionError::internal(format!(
+                "Signal must have an initial value or an update expression: {:#?}",
+                signal
+            )));
         };
 
         self.tasks.push(task);
@@ -321,11 +337,8 @@ impl<'a> ChartVisitor for UpdateVarsChartVisitor<'a> {
         for on_el in &signal.on {
             expr_strs.push(on_el.update.clone());
             for event_spec in on_el.events.to_vec() {
-                match event_spec {
-                    SignalOnEventSpec::Signal(signal) => {
-                        expr_strs.push(signal.signal.clone());
-                    }
-                    _ => {}
+                if let SignalOnEventSpec::Signal(signal) = event_spec {
+                    expr_strs.push(signal.signal.clone());
                 }
             }
         }
@@ -389,7 +402,7 @@ impl<'a> InputVarsChartVisitor<'a> {
 impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
     fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
         // Handle from data/facet of group mark
-        self.process_mark_from(mark, scope);
+        self.process_mark_from(mark, scope)?;
 
         // Handle signals in encodings
         if let Some(v) = &mark.encode {
@@ -414,7 +427,7 @@ impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
 
     fn visit_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
         // Handle from data/facet of group mark
-        self.process_mark_from(mark, scope);
+        self.process_mark_from(mark, scope)?;
         Ok(())
     }
 
@@ -452,11 +465,8 @@ impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
         for on_el in &signal.on {
             expr_strs.push(on_el.update.clone());
             for event_spec in on_el.events.to_vec() {
-                match event_spec {
-                    SignalOnEventSpec::Signal(signal) => {
-                        expr_strs.push(signal.signal.clone());
-                    }
-                    _ => {}
+                if let SignalOnEventSpec::Signal(signal) = event_spec {
+                    expr_strs.push(signal.signal.clone());
                 }
             }
         }

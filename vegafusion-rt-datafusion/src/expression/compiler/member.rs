@@ -81,9 +81,9 @@ pub fn compile_member(
                 make_get_object_member_udf(&dtype, &property_string)?
             } else {
                 // Property does not exist, return null
-                return Ok(lit(ScalarValue::try_from(&DataType::Float64).unwrap()))
+                return Ok(lit(ScalarValue::try_from(&DataType::Float64).unwrap()));
             }
-        },
+        }
         _ => {
             if property_string == "length" {
                 // Special case to treat foo.length as length(foo) when foo is not an object
@@ -127,7 +127,7 @@ pub fn make_get_object_member_udf(
         match fields
             .iter()
             .enumerate()
-            .find(|(_i, f)| f.name() == &property_name)
+            .find(|(_i, f)| f.name() == property_name)
         {
             Some((field_index, field)) => (field_index, field.data_type().clone()),
             None => {

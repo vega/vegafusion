@@ -1,12 +1,12 @@
-use std::convert::TryFrom;
-use itertools::Itertools;
-use serde::{Serialize, Deserialize};
-use serde_json::Value;
+use crate::error::Result;
 use crate::error::VegaFusionError;
 use crate::planning::stitch::CommPlan;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
-use crate::error::Result;
-use crate::task_graph::task_graph::ScopedVariable;
+use crate::task_graph::graph::ScopedVariable;
+use itertools::Itertools;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -18,7 +18,7 @@ pub enum WatchNamespace {
 impl TryFrom<VariableNamespace> for WatchNamespace {
     type Error = VegaFusionError;
 
-    fn try_from<>(value: VariableNamespace<>) -> Result<Self> {
+    fn try_from(value: VariableNamespace) -> Result<Self> {
         match value {
             VariableNamespace::Signal => Ok(Self::Signal),
             VariableNamespace::Data => Ok(Self::Data),
@@ -59,7 +59,6 @@ impl TryFrom<ScopedVariable> for Watch {
         })
     }
 }
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct WatchPlan {

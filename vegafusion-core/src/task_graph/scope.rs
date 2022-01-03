@@ -1,7 +1,7 @@
 use crate::error::{Result, ResultWithContext, VegaFusionError};
+use crate::expression::supported::BUILT_IN_SIGNALS;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use std::collections::{HashMap, HashSet};
-use crate::expression::supported::BUILT_IN_SIGNALS;
 
 #[derive(Clone, Debug, Default)]
 pub struct TaskScope {
@@ -12,7 +12,6 @@ pub struct TaskScope {
     pub output_var_defs: HashMap<Variable, Variable>,
     pub children: Vec<TaskScope>,
 }
-
 
 impl TaskScope {
     pub fn new() -> Self {

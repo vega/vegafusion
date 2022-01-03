@@ -19,13 +19,13 @@ use self::super::estree_expression::ESTreeExpression;
 use itertools::Itertools;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::planning::stitch::CommPlan;
+
 use vegafusion_core::planning::watch::{Watch, WatchNamespace, WatchValue};
 use vegafusion_core::proto::gen::expression::Expression;
-use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
+use vegafusion_core::proto::gen::tasks::VariableNamespace;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_core::task_graph::task_graph::ScopedVariable;
+
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 
 lazy_static! {
@@ -45,9 +45,7 @@ impl NodeJsRuntime {
         working_dir.push("util");
         working_dir.push("vegajs_runtime");
 
-        println!("crate_dir: {}", working_dir.to_str().unwrap());
-
-        let mut proc = Command::new("nodejs")
+        let mut proc = Command::new("node")
             .args(&["-i", "--experimental-repl-await"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -66,8 +64,24 @@ impl NodeJsRuntime {
             proc: Mutex::new(proc),
             out,
         };
-        this.execute_statement("VegaUtils = require('./vegajsRuntime.js')")
+
+        // Wait for node repl to start up
+        std::thread::sleep(std::time::Duration::from_millis(1000));
+
+        // Set abort_on_empty to true because some versions of the node repl display a welcome
+        // message, and some do not.
+        let welcome_message = this.read_output();
+        println!("Initialized node: {}\n", welcome_message);
+
+        this.execute_statement(
+            "util = require('util'); util.inspect.replDefaults.maxStringLength = Infinity;",
+        )
+        .unwrap();
+
+        let str_result = this
+            .execute_statement("VegaUtils = require('./vegajsRuntime.js')")
             .unwrap();
+        println!("VegaUtils require output: {}", str_result);
 
         Ok(this)
     }
@@ -126,12 +140,24 @@ impl NodeJsRuntime {
             .expect("Couldn't write");
         process_stdin.flush().unwrap();
 
+        Ok(self.read_output())
+    }
+
+    fn read_output(&self) -> String {
         let boundary = "\n> ".as_bytes();
         let bytes_read = loop {
             let mut vec = self.out.deref().lock().unwrap();
             let n = vec.len() as i32;
             if n >= 3 && &vec[(n - 3) as usize..] == boundary {
+                // The output ends with newline then prompt
                 let cloned = vec.clone();
+                vec.clear();
+                break cloned;
+            } else if n == 2 && vec[..] == boundary[1..] {
+                // The output is only a prompt
+                let mut cloned = vec.clone();
+                // Add leading newly so logic that follows doesn't need a special case
+                cloned.insert(0, b'\n');
                 vec.clear();
                 break cloned;
             }
@@ -147,8 +173,7 @@ impl NodeJsRuntime {
         let end_index = bytes_read.len() - 3;
 
         let s = String::from_utf8(Vec::from(&bytes_read[start_index..end_index])).unwrap();
-
-        Ok(s.trim().to_string())
+        s.trim().to_string()
     }
 }
 
@@ -304,7 +329,7 @@ impl VegaJsRuntime {
             "data": data,
         });
 
-        println!("{}", serde_json::to_string_pretty(&spec).unwrap());
+        // println!("{}", serde_json::to_string_pretty(&spec).unwrap());
 
         let watches = self.eval_spec(&spec, &watches)?;
         let dataset = VegaFusionTable::from_json(&watches[0].value, 1024)?;
@@ -345,8 +370,8 @@ impl VegaJsRuntime {
     spec = fs.readFileSync('{spec_tmppath}', {{encoding: 'utf8'}});\
     await VegaUtils.exportSingle(JSON.parse(spec), '{result_tmppath}', {format})\
     ",
-                spec_tmppath = spec_tmppath,
-                result_tmppath = result_tmppath,
+                spec_tmppath = unquote_path(spec_tmppath),
+                result_tmppath = unquote_path(result_tmppath),
                 format = serde_json::to_string(&format).unwrap(),
             ))
             .expect("export single failed");
@@ -383,8 +408,8 @@ impl VegaJsRuntime {
         let _res_out = self.nodejs_runtime.execute_statement(&format!("\
     spec = fs.readFileSync('{spec_tmppath}', {{encoding: 'utf8'}});\
     await VegaUtils.exportSequence(JSON.parse(spec), '{result_tmppath}', {format}, {init}, {updates}, {watches})",
-                                                         spec_tmppath=spec_tmppath,
-                                                         result_tmppath=result_tmppath,
+                                                         spec_tmppath=unquote_path(spec_tmppath),
+                                                         result_tmppath=unquote_path(result_tmppath),
                                                          init=init_json_str,
                                                          updates=updates_json_str,
                                                          watches=watches_json_str,
@@ -537,4 +562,8 @@ lazy_static! {
 }
 pub fn vegajs_runtime() -> VegaJsRuntime {
     VegaJsRuntime::new((*NODE_JS_RUNTIME).clone())
+}
+
+fn unquote_path(path: &str) -> String {
+    path.replace(r#"\"#, r#"\\"#)
 }

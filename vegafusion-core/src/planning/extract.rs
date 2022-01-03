@@ -4,13 +4,13 @@ use crate::proto::gen::tasks::Variable;
 use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::{DataSpec, DependencyNodeSupported};
 use crate::spec::mark::MarkSpec;
-use crate::task_graph::scope::TaskScope;
-use crate::task_graph::task_graph::ScopedVariable;
-use regex::internal::Char;
-use std::collections::{HashMap, HashSet};
-use crate::spec::scale::ScaleSpec;
+
 use crate::spec::signal::SignalSpec;
-use crate::task_graph::task::InputVariable;
+use crate::task_graph::scope::TaskScope;
+
+use crate::task_graph::graph::ScopedVariable;
+
+use std::collections::{HashMap, HashSet};
 
 pub fn extract_server_data(
     client_spec: &mut ChartSpec,
@@ -18,7 +18,8 @@ pub fn extract_server_data(
 ) -> Result<ChartSpec> {
     let supported_vars = get_supported_data_variables(client_spec)?;
 
-    let mut extract_server_visitor = ExtractServerDependenciesVisitor::new(supported_vars, task_scope);
+    let mut extract_server_visitor =
+        ExtractServerDependenciesVisitor::new(supported_vars, task_scope);
     client_spec.walk_mut(&mut extract_server_visitor)?;
 
     Ok(extract_server_visitor.server_spec)
@@ -36,8 +37,10 @@ impl<'a> ExtractServerDependenciesVisitor<'a> {
         supported_vars: HashMap<ScopedVariable, DependencyNodeSupported>,
         task_scope: &'a mut TaskScope,
     ) -> Self {
-        let mut server_spec: ChartSpec = Default::default();
-        server_spec.schema = "https://vega.github.io/schema/vega/v5.json".into();
+        let server_spec: ChartSpec = ChartSpec {
+            schema: "https://vega.github.io/schema/vega/v5.json".into(),
+            ..Default::default()
+        };
         Self {
             server_spec,
             supported_vars,
@@ -64,16 +67,18 @@ impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
                     if tx.supported() {
                         if let Ok(input_vars) = tx.input_vars() {
                             for input_var in input_vars {
-                                if let Ok(scoped_source_var) = scoped_var_for_input_var(
-                                    &input_var, scope, &self.task_scope
-                                ) {
-                                    if !pipeline_vars.contains(&scoped_source_var) && !self.supported_vars.contains_key(&scoped_source_var) {
+                                if let Ok(scoped_source_var) =
+                                    scoped_var_for_input_var(&input_var, scope, self.task_scope)
+                                {
+                                    if !pipeline_vars.contains(&scoped_source_var)
+                                        && !self.supported_vars.contains_key(&scoped_source_var)
+                                    {
                                         // Dependency is not supported and it was not produced earlier in the transform pipeline
-                                        break 'outer
+                                        break 'outer;
                                     }
                                 } else {
                                     // Failed to get input vars for transform (e.g. expression parse failure)
-                                    break 'outer
+                                    break 'outer;
                                 }
                             }
                         }
@@ -83,7 +88,7 @@ impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
                         }
                     } else {
                         // Full transform not supported
-                        break 'outer
+                        break 'outer;
                     }
                     num_supported = i + 1;
                 }
@@ -132,7 +137,6 @@ impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
                 }
             }
             Some(DependencyNodeSupported::Supported) => {
-
                 // Add clone of full server data
                 let server_data = data.clone();
                 if scope.is_empty() {

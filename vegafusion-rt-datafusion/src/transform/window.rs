@@ -11,9 +11,9 @@ use vegafusion_core::proto::gen::transforms::{
 };
 use vegafusion_core::task_graph::task_value::TaskValue;
 
+use crate::expression::compiler::utils::to_numeric;
 use datafusion::physical_plan::aggregates;
 use datafusion::physical_plan::window_functions::{BuiltInWindowFunction, WindowFunction};
-use crate::expression::compiler::utils::to_numeric;
 
 #[async_trait]
 impl TransformTrait for Window {
@@ -48,11 +48,12 @@ impl TransformTrait for Window {
                 partition_by: Vec::new(),
                 order_by: Vec::new(),
                 window_frame: None,
-            }.alias("__row_number");
+            }
+            .alias("__row_number");
             order_by.push(Expr::Sort {
                 expr: Box::new(col("__row_number")),
                 asc: true,
-                nulls_first: false
+                nulls_first: false,
             });
             dataframe.select(vec![Expr::Wildcard, row_number_expr])?
         } else {
@@ -71,9 +72,11 @@ impl TransformTrait for Window {
                     window_transform_op::Op::AggregateOp(op) => {
                         let op = AggregateOp::from_i32(*op).unwrap();
 
-                        let numeric_field= || to_numeric(col(field), &dataframe.schema()).expect(
-                            &format!("Failed to convert field {} to numeric data type", field)
-                        );
+                        let numeric_field = || {
+                            to_numeric(col(field), dataframe.schema()).unwrap_or_else(|_| {
+                                panic!("Failed to convert field {} to numeric data type", field)
+                            })
+                        };
 
                         use AggregateOp::*;
                         let (agg_fn, arg) = match op {
@@ -96,18 +99,12 @@ impl TransformTrait for Window {
 
                         let (window_fn, args) = match op {
                             WindowOp::RowNumber => (BuiltInWindowFunction::RowNumber, Vec::new()),
-                            WindowOp::Rank => {
-                                (BuiltInWindowFunction::Rank, Vec::new())
-                            },
-                            WindowOp::DenseRank => {
-                                (BuiltInWindowFunction::DenseRank, Vec::new())
-                            },
+                            WindowOp::Rank => (BuiltInWindowFunction::Rank, Vec::new()),
+                            WindowOp::DenseRank => (BuiltInWindowFunction::DenseRank, Vec::new()),
                             WindowOp::PercentileRank => {
                                 (BuiltInWindowFunction::PercentRank, vec![])
                             }
-                            WindowOp::CumeDist => {
-                                (BuiltInWindowFunction::CumeDist, vec![])
-                            },
+                            WindowOp::CumeDist => (BuiltInWindowFunction::CumeDist, vec![]),
                             WindowOp::FirstValue => {
                                 (BuiltInWindowFunction::FirstValue, vec![col(field)])
                             }

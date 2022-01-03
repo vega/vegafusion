@@ -1,4 +1,6 @@
-use crate::expression::compiler::utils::{cast_to, ExprHelpers, is_float_datatype, is_integer_datatype};
+use crate::expression::compiler::utils::{
+    cast_to, is_float_datatype, is_integer_datatype, ExprHelpers,
+};
 use datafusion::logical_plan::{ceil, DFSchema};
 use datafusion::logical_plan::{lit, Expr};
 use datafusion::prelude::col;
@@ -13,7 +15,6 @@ use vegafusion_core::proto::gen::{
 
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::expression::literal::Value;
-use crate::data::table::VegaFusionTableUtils;
 
 /// Op
 #[derive(Debug, Clone)]
@@ -142,19 +143,21 @@ impl FieldSpec {
                             expr: None,
                             when_then_expr: vec![(
                                 Box::new(first.clone().lt_eq(second.clone())),
-                                Box::new(first.clone())
+                                Box::new(first.clone()),
                             )],
-                            else_expr: Some(Box::new(second.clone()))
-                        }.eval_to_scalar()?;
+                            else_expr: Some(Box::new(second.clone())),
+                        }
+                        .eval_to_scalar()?;
 
                         let high = Expr::Case {
                             expr: None,
                             when_then_expr: vec![(
                                 Box::new(first.clone().lt_eq(second.clone())),
-                                Box::new(second)
+                                Box::new(second),
                             )],
-                            else_expr: Some(Box::new(first.clone()))
-                        }.eval_to_scalar()?;
+                            else_expr: Some(Box::new(first)),
+                        }
+                        .eval_to_scalar()?;
 
                         (lit(low), lit(high))
                     }

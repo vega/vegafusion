@@ -2,6 +2,7 @@
 extern crate lazy_static;
 
 mod util;
+use crate::util::check::check_scalar_evaluation;
 use rstest::*;
 use serde_json::{json, Value};
 use util::check::check_transform_evaluation;
@@ -9,7 +10,6 @@ use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
-use crate::util::check::check_scalar_evaluation;
 
 fn make_brush_r(ranges: &Vec<Vec<(&str, &str, [f64; 2])>>, typ: &str) -> VegaFusionTable {
     let mut rows: Vec<Value> = Vec::new();
@@ -119,10 +119,7 @@ pub fn check_vl_selection_test(
     check_transform_evaluation(dataset, transform_specs.as_slice(), &config, &eq_config);
 }
 
-pub fn check_vl_selection_resolve(
-    selection_expr: &str,
-    brush_dataset: VegaFusionTable,
-) {
+pub fn check_vl_selection_resolve(selection_expr: &str, brush_dataset: VegaFusionTable) {
     let config = CompilationConfig {
         data_scope: vec![("brush".to_string(), brush_dataset)]
             .into_iter()
@@ -181,7 +178,7 @@ mod test_vl_selection_test_e_single {
         check_vl_selection_test(&expr, brush.clone(), &datum());
 
         let resolve_expr = format!("vlSelectionResolve('brush', '{}')", op);
-        check_vl_selection_resolve(&resolve_expr, brush.clone());
+        check_vl_selection_resolve(&resolve_expr, brush);
     }
 
     #[test]

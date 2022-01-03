@@ -5,6 +5,7 @@ use datafusion::logical_plan::{
     avg, col, count, count_distinct, lit, max, min, sum, Expr, JoinType,
 };
 
+use crate::expression::compiler::utils::to_numeric;
 use async_trait::async_trait;
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
@@ -12,7 +13,6 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{AggregateOp, JoinAggregate};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::aggregate::op_name;
-use crate::expression::compiler::utils::to_numeric;
 
 #[async_trait]
 impl TransformTrait for JoinAggregate {
@@ -38,9 +38,11 @@ impl TransformTrait for JoinAggregate {
                     column => col(column),
                 }
             };
-            let numeric_column = || to_numeric(column.clone(), &dataframe.schema()).expect(
-                &format!("Failed to convert column {:?} to numeric data type", column)
-            );
+            let numeric_column = || {
+                to_numeric(column.clone(), dataframe.schema()).unwrap_or_else(|_| {
+                    panic!("Failed to convert column {:?} to numeric data type", column)
+                })
+            };
 
             let op = AggregateOp::from_i32(*op).unwrap();
 

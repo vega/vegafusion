@@ -4,7 +4,7 @@ use crate::arrow::{
     record_batch::RecordBatch,
 };
 use crate::error::{Result, ResultWithContext, VegaFusionError};
-use std::collections::HashSet;
+
 use std::convert::TryFrom;
 use std::sync::Arc;
 
@@ -15,11 +15,11 @@ use std::io::Cursor;
 
 use super::scalar::ScalarValue;
 use crate::arrow::array::ArrayRef;
+use crate::data::json_writer::record_batches_to_json_rows;
+
 use arrow::array::{Date32Array, Int64Array, StructArray};
 use arrow::compute::{cast, unary};
 use arrow::datatypes::TimeUnit;
-use crate::data::json_writer::record_batches_to_json_rows;
-use crate::data::scalar::ScalarValueHelpers;
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
@@ -143,7 +143,7 @@ impl VegaFusionTable {
                         cast(col, &DataType::Int64).unwrap()
                     }
                     DataType::Date32 => {
-                        let ms_per_day = 1000 * 60 * 60 * 24 as i64;
+                        let ms_per_day = 1000 * 60 * 60 * 24_i64;
                         let array = col.as_any().downcast_ref::<Date32Array>().unwrap();
 
                         let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
@@ -173,9 +173,10 @@ impl VegaFusionTable {
             match schema_result {
                 Err(_) => {
                     // This happens when array elements are objects with no fields
-                    let empty_scalar = ScalarValue::from(
-                        vec![("__dummy", ScalarValue::try_from(&DataType::Float64).unwrap())]
-                    );
+                    let empty_scalar = ScalarValue::from(vec![(
+                        "__dummy",
+                        ScalarValue::try_from(&DataType::Float64).unwrap(),
+                    )]);
                     let array = empty_scalar.to_array_of_size(values.len());
                     let struct_array = array.as_any().downcast_ref::<StructArray>().unwrap();
                     let record_batch = RecordBatch::from(struct_array);

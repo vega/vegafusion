@@ -2,7 +2,7 @@ use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use datafusion::dataframe::DataFrame;
-use datafusion::logical_plan::Expr;
+
 use datafusion::prelude::col;
 
 use std::sync::Arc;

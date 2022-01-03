@@ -4,7 +4,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::error::Result;
-use crate::expression::parser::parse;
+
 use crate::proto::gen::tasks::Variable;
 use crate::task_graph::task::InputVariable;
 
@@ -18,12 +18,11 @@ pub struct LookupTransformSpec {
     pub extra: HashMap<String, Value>,
 }
 
-
 impl TransformSpecTrait for LookupTransformSpec {
     fn input_vars(&self) -> Result<Vec<InputVariable>> {
         Ok(vec![InputVariable {
             var: Variable::new_data(&self.from),
-            propagate: true
+            propagate: true,
         }])
     }
 

@@ -1,5 +1,3 @@
-use datafusion::arrow::array::{new_null_array, Array, Int32Array, ListArray};
-use datafusion::arrow::compute::kernels;
 use datafusion::arrow::datatypes::{DataType, Field};
 use datafusion::physical_plan::functions::{
     ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
@@ -32,7 +30,9 @@ pub fn make_span_udf() -> ScalarUDF {
                             DataType::Float64 => {
                                 if arr.is_empty() {
                                     // Span of empty array is null
-                                    ColumnarValue::Scalar(ScalarValue::try_from(&DataType::Float64).unwrap())
+                                    ColumnarValue::Scalar(
+                                        ScalarValue::try_from(&DataType::Float64).unwrap(),
+                                    )
                                 } else {
                                     let first = arr.first().unwrap().to_f64().unwrap();
                                     let last = arr.last().unwrap().to_f64().unwrap();
@@ -40,7 +40,10 @@ pub fn make_span_udf() -> ScalarUDF {
                                 }
                             }
                             _ => {
-                                panic!("Unexpected element type for span function: {}", element_type)
+                                panic!(
+                                    "Unexpected element type for span function: {}",
+                                    element_type
+                                )
                             }
                         }
                     }
@@ -49,7 +52,7 @@ pub fn make_span_udf() -> ScalarUDF {
                     }
                 }
             }
-            ColumnarValue::Array(array) => {
+            ColumnarValue::Array(_array) => {
                 todo!("Span on column not yet implemented")
             }
         })
@@ -61,10 +64,10 @@ pub fn make_span_udf() -> ScalarUDF {
         &Signature::uniform(
             1,
             vec![
-                DataType::Float64,  // For null
-                DataType::List(Box::new(Field::new("item", DataType::Float64, true)))
+                DataType::Float64, // For null
+                DataType::List(Box::new(Field::new("item", DataType::Float64, true))),
             ],
-            Volatility::Immutable
+            Volatility::Immutable,
         ),
         &return_type,
         &span_fn,

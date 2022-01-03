@@ -68,11 +68,11 @@ setup_args = dict(
     version         = version,
     scripts         = glob(pjoin('scripts', '*')),
     cmdclass        = cmdclass,
-    packages        = find_packages(),
+    packages        = find_packages(".", exclude=["tests"]),
     author          = 'Jon Mease',
     author_email    = 'jonmmease@gmail.com',
     url             = 'https://github.com/jonmmease/vegafusion',
-    license         = 'BSD',
+    license         = 'AGPL',
     platforms       = "Linux, Mac OS X, Windows",
     keywords        = ['Jupyter', 'Widgets', 'IPython'],
     classifiers     = [

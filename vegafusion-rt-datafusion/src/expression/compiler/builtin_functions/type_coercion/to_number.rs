@@ -1,7 +1,7 @@
+use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::logical_plan::{DFSchema, Expr};
-use vegafusion_core::error::{VegaFusionError, Result, ResultWithContext};
-use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 pub fn to_number_transform(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
     if args.len() == 1 {

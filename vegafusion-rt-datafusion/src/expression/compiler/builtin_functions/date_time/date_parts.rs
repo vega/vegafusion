@@ -1,5 +1,10 @@
+use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
+    datetime_strs_to_millis, DateParseMode,
+};
 use chrono::{DateTime, Datelike, Local, LocalResult, TimeZone, Timelike, Utc, Weekday};
-use datafusion::arrow::array::{Array, ArrayRef, Date32Array, Date64Array, Int32Array, Int64Array, StringArray, TimestampMillisecondArray};
+use datafusion::arrow::array::{
+    Array, ArrayRef, Date32Array, Date64Array, Int64Array, StringArray,
+};
 use datafusion::arrow::compute::cast;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::physical_plan::functions::{
@@ -8,7 +13,6 @@ use datafusion::physical_plan::functions::{
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
 use vegafusion_core::arrow::compute::unary;
-use crate::expression::compiler::builtin_functions::datetime::date_parsing::{DateParseMode, datetime_strs_to_millis};
 
 #[inline(always)]
 pub fn extract_year<T: TimeZone>(dt: &DateTime<T>) -> i64 {
@@ -78,7 +82,7 @@ pub fn make_datepart_udf_local(extract_fn: fn(&DateTime<Local>) -> i64, name: &s
             }
             DataType::Timestamp(TimeUnit::Millisecond, _) => cast(arg, &DataType::Date64)?,
             DataType::Date32 => {
-                let ms_per_day = 1000 * 60 * 60 * 24 as i64;
+                let ms_per_day = 1000 * 60 * 60 * 24_i64;
                 let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
 
                 let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
@@ -158,7 +162,7 @@ pub fn make_datepart_udf_utc(extract_fn: fn(&DateTime<Utc>) -> i64, name: &str) 
             }
             DataType::Timestamp(TimeUnit::Millisecond, _) => cast(arg, &DataType::Date64)?,
             DataType::Date32 => {
-                let ms_per_day = 1000 * 60 * 60 * 24 as i64;
+                let ms_per_day = 1000 * 60 * 60 * 24_i64;
                 let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
 
                 let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);

@@ -73,6 +73,16 @@ assert(alt.data_transformers.active == 'default')
 """
 
 
+def setup_module(module):
+    """ setup any state specific to the execution of the given module."""
+    # Initialize notebooks and screenshots to empty directories
+    shutil.rmtree(temp_notebooks_dir, ignore_errors=True)
+    temp_notebooks_dir.mkdir(parents=True, exist_ok=True)
+
+    shutil.rmtree(temp_screenshots_dir, ignore_errors=True)
+    temp_screenshots_dir.mkdir(parents=True, exist_ok=True)
+
+
 @pytest.mark.parametrize(
     "mock_name,img_tolerance,delay", [
         ("area/cumulative_count", 1.0, 0.5),
@@ -247,13 +257,6 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     altair_notebook = jupytext.read(io.StringIO(altair_markdown), fmt="markdown")
     vegafusion_arrow_notebook = jupytext.read(io.StringIO(vegafusion_arrow_markdown), fmt="markdown")
     vegafusion_default_notebook = jupytext.read(io.StringIO(vegafusion_default_markdown), fmt="markdown")
-
-    # Initialize notebooks and screenshots to empty directories
-    shutil.rmtree(temp_notebooks_dir, ignore_errors=True)
-    temp_notebooks_dir.mkdir(parents=True, exist_ok=True)
-
-    shutil.rmtree(temp_screenshots_dir, ignore_errors=True)
-    temp_screenshots_dir.mkdir(parents=True, exist_ok=True)
 
     # Create selenium Chrome instance
     chrome_opts = webdriver.ChromeOptions()

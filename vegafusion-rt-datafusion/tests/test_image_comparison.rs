@@ -22,7 +22,7 @@ use vegafusion_core::planning::stitch::stitch_specs;
 use vegafusion_core::planning::watch::{Watch, WatchNamespace, WatchPlan};
 use vegafusion_core::proto::gen::tasks::TaskGraph;
 use vegafusion_core::spec::chart::ChartSpec;
-use vegafusion_core::task_graph::task_graph::ScopedVariable;
+use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
@@ -33,16 +33,14 @@ lazy_static! {
         .unwrap();
 }
 
-
-
 static INIT: Once = Once::new();
 
 pub fn initialize() {
     INIT.call_once(|| {
         // Delete and remake empty output image directory
         let output_dir = format!("{}/tests/output/", crate_dir());
-        std::fs::remove_dir_all(&output_dir);
-        std::fs::create_dir(&output_dir);
+        std::fs::remove_dir_all(&output_dir).ok();
+        std::fs::create_dir(&output_dir).expect("Failed to create output directory");
     });
 }
 
@@ -51,7 +49,8 @@ mod test_custom_specs {
     use super::*;
 
     #[rstest(
-    spec_name, tolerance,
+        spec_name,
+        tolerance,
         case("custom/stacked_bar", 0.001),
         case("custom/bar_colors", 0.001),
         case("custom/imdb_histogram", 0.001),
@@ -102,7 +101,7 @@ mod test_custom_specs {
         case("custom/histogram_responsive", 0.001),
         case("custom/grouped_bar_chart_with_error_bars", 0.001),
         case("custom/one_dot_per_zipcode", 0.001),
-        case("custom/ridgeline", 0.001),
+        case("custom/ridgeline", 0.001)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
         println!("spec_name: {}", spec_name);
@@ -112,7 +111,6 @@ mod test_custom_specs {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
-
 
 #[cfg(test)]
 mod test_vega_specs {
@@ -296,8 +294,6 @@ mod test_vega_specs {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
-
-
 
 #[cfg(test)]
 mod test_vegalite_specs {
@@ -963,8 +959,7 @@ mod test_image_comparison_timeunit {
 #[cfg(test)]
 mod test_image_comparison_window {
     use super::*;
-    use itertools::Itertools;
-    use vegafusion_core::spec::transform::timeunit::{TimeUnitTimeZoneSpec, TimeUnitUnitSpec};
+
     use vegafusion_core::spec::transform::window::WindowTransformOpSpec;
     use vegafusion_core::spec::transform::TransformSpec;
 
@@ -1038,21 +1033,13 @@ fn crate_dir() -> String {
 
 fn load_spec(spec_name: &str) -> ChartSpec {
     // Load spec
-    let spec_path = format!(
-        "{}/tests/specs/{}.vg.json",
-        crate_dir(),
-        spec_name
-    );
+    let spec_path = format!("{}/tests/specs/{}.vg.json", crate_dir(), spec_name);
     let spec_str = fs::read_to_string(spec_path).unwrap();
     serde_json::from_str(&spec_str).unwrap()
 }
 
 fn load_updates(spec_name: &str) -> Vec<ExportUpdateBatch> {
-    let updates_path = format!(
-        "{}/tests/specs/{}.updates.json",
-        crate_dir(),
-        spec_name
-    );
+    let updates_path = format!("{}/tests/specs/{}.updates.json", crate_dir(), spec_name);
     let updates_path = std::path::Path::new(&updates_path);
 
     if updates_path.exists() {
@@ -1064,11 +1051,7 @@ fn load_updates(spec_name: &str) -> Vec<ExportUpdateBatch> {
 }
 
 fn load_expected_watch_plan(spec_name: &str) -> WatchPlan {
-    let watch_plan_path = format!(
-        "{}/tests/specs/{}.comm_plan.json",
-        crate_dir(),
-        spec_name
-    );
+    let watch_plan_path = format!("{}/tests/specs/{}.comm_plan.json", crate_dir(), spec_name);
     let watch_plan_path = std::path::Path::new(&watch_plan_path);
 
     let comm_plan_str = fs::read_to_string(watch_plan_path).unwrap();
@@ -1120,9 +1103,10 @@ async fn check_spec_sequence(
         serde_json::to_string_pretty(&server_spec).unwrap()
     );
 
-    println!("comm_plan:\n---\n{}\n---", serde_json::to_string_pretty(
-        &WatchPlan::from(comm_plan.clone())
-    ).unwrap());
+    println!(
+        "comm_plan:\n---\n{}\n---",
+        serde_json::to_string_pretty(&WatchPlan::from(comm_plan.clone())).unwrap()
+    );
 
     // Build task graph
     let tasks = server_spec.to_tasks().unwrap();
@@ -1273,10 +1257,12 @@ async fn check_spec_sequence(
         .map(|(img, _)| img)
         .enumerate()
     {
-        server_img.save(
-            &format!("{}/tests/output/{}_planned{}", crate_dir(), png_name, i),
-            true,
-        );
+        server_img
+            .save(
+                &format!("{}/tests/output/{}_planned{}", crate_dir(), png_name, i),
+                true,
+            )
+            .unwrap();
         let (full_img, _) = &export_sequence_results[i];
 
         let (difference, diff_img) = full_img.compare(&server_img).unwrap();
@@ -1285,8 +1271,7 @@ async fn check_spec_sequence(
             if let Some(diff_img) = diff_img {
                 let diff_path = format!("{}/tests/output/{}_diff{}.png", crate_dir(), png_name, i);
                 fs::write(&diff_path, diff_img).unwrap();
-                assert!(
-                    false,
+                panic!(
                     "Found difference in exported images.\nDiff written to {}",
                     diff_path
                 )

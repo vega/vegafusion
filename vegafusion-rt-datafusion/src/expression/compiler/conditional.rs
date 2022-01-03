@@ -19,16 +19,23 @@ pub fn compile_conditional(
 
     // DataFusion will mostly handle unifying consequent and alternate expression types. But it
     // won't cast non string types to strings. Do that manually here
-    let consequent_dtype  = consequent_expr.get_type(schema)?;
-    let alternate_dtype  = alternate_expr.get_type(schema)?;
+    let consequent_dtype = consequent_expr.get_type(schema)?;
+    let alternate_dtype = alternate_expr.get_type(schema)?;
 
-    let (consequent_expr, alternate_expr) = if is_string_datatype(&consequent_dtype) && !is_string_datatype(&alternate_dtype) {
-        (consequent_expr, cast_to(alternate_expr, &DataType::Utf8, schema)?)
-    } else if !is_string_datatype(&consequent_dtype) && is_string_datatype(&alternate_dtype) {
-        (cast_to(consequent_expr, &DataType::Utf8, schema)?, alternate_expr)
-    } else {
-        (consequent_expr, alternate_expr)
-    };
+    let (consequent_expr, alternate_expr) =
+        if is_string_datatype(&consequent_dtype) && !is_string_datatype(&alternate_dtype) {
+            (
+                consequent_expr,
+                cast_to(alternate_expr, &DataType::Utf8, schema)?,
+            )
+        } else if !is_string_datatype(&consequent_dtype) && is_string_datatype(&alternate_dtype) {
+            (
+                cast_to(consequent_expr, &DataType::Utf8, schema)?,
+                alternate_expr,
+            )
+        } else {
+            (consequent_expr, alternate_expr)
+        };
 
     Ok(Expr::Case {
         expr: None,

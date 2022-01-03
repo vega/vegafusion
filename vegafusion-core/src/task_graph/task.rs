@@ -1,15 +1,14 @@
 use crate::error::{Result, VegaFusionError};
-use crate::proto::gen::tasks::{SignalTask, TaskValue as ProtoTaskValue};
 use crate::proto::gen::tasks::{
     task::TaskKind, DataSourceTask, DataUrlTask, DataValuesTask, NodeValueIndex, Task, Variable,
 };
+use crate::proto::gen::tasks::{SignalTask, TaskValue as ProtoTaskValue};
 use crate::task_graph::task_value::TaskValue;
 use std::convert::TryFrom;
 
-use crate::transform::TransformDependencies;
+use crate::proto::gen::expression::Expression;
 use prost::Message;
 use std::hash::{Hash, Hasher};
-use crate::proto::gen::expression::Expression;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct InputVariable {
@@ -102,6 +101,7 @@ impl Task {
     }
 }
 
+#[allow(clippy::derive_hash_xor_eq)]
 impl Hash for Task {
     fn hash<H: Hasher>(&self, state: &mut H) {
         let mut proto_bytes: Vec<u8> = Vec::with_capacity(self.encoded_len());
@@ -121,6 +121,7 @@ pub trait TaskDependencies {
     }
 }
 
+#[allow(clippy::derive_hash_xor_eq)]
 impl Hash for NodeValueIndex {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.node_index.hash(state);

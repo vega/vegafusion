@@ -1,0 +1,195 @@
+name: build_test
+on: [push]
+jobs:
+  rust-fmt-clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Check cargo fmt compliance
+        run: cargo fmt --all -- --check
+      - name: Check for clippy warnings
+        run: cargo clippy
+
+  test-rust:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04, windows-2019, macos-10.15 ]
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install apt system dependencies needed to build nodecanvas
+        run: |
+          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
+        if: ${{ runner.os == 'Linux' }}
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Install node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '17'
+      - name: Install test node dependencies
+        run: |
+          cd vegafusion-rt-datafusion/tests/util/vegajs_runtime
+          npm install
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Run Rust Tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features
+
+  build-vegafusion-python:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04, windows-2019, macos-10.15 ]
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - uses: messense/maturin-action@v1
+        with:
+          maturin-version: latest
+          command: build
+          manylinux: 2010
+          args: --release -m vegafusion-python/Cargo.toml --universal2 --strip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-python-wheels
+          path: |
+            target/wheels/*.whl
+            
+
+  build-vegafusion-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Install node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '17'
+      - name: Build package
+        run: |
+          cd vegafusion-wasm/
+          wasm-pack build --release
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-wasm-packages
+          path: vegafusion-wasm/pkg
+
+
+  build-vegafusion-jupyter:
+    needs: [build-vegafusion-python, build-vegafusion-wasm]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          activate-environment: vegafusion_dev
+          miniforge-version: latest
+          environment-file: python/vegafusion-jupyter/conda-linux-64-3.10.lock.yml
+      - name: Download vegafusion-wasm packages
+        uses: actions/download-artifact@v2
+        with:
+          name: vegafusion-wasm-packages
+          path: vegafusion-wasm/pkg
+      - name: Download vegafusion-python wheel
+        uses: actions/download-artifact@v2
+        with:
+          name: vegafusion-python-wheels
+          path: target/wheels/
+      - name: Install vegafusion-python
+        run: |
+          which python
+          python --version
+          which pip
+          pip --version
+          python -m pip install target/wheels/vegafusion_python-*-cp310-*.manylinux2010_x86_64.whl
+      - name: Build vegafusion-jupyter
+        run: |
+          cd python/vegafusion-jupyter
+          python setup.py bdist_wheel
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-jupyter-packages
+          path: python/vegafusion-jupyter/dist/*.whl
+
+  test-vegafusion-jupyter:
+    needs: [ build-vegafusion-jupyter ]
+    strategy:
+      matrix:
+        os-shell: [
+            [ubuntu-20.04, linux-64, "bash -l {0}"],
+            [windows-2019, win-64, "pwsh"],
+            [macos-10.15, osx-64, "bash -l {0}"]
+        ]
+        python: [3.7, 3.10]
+    runs-on: ${{ matrix.os-shell[0] }}
+    defaults:
+      run:
+        shell: ${{ matrix.os-shell[2] }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Create conda test environment
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          activate-environment: vegafusion_dev
+          miniforge-version: latest
+          environment-file: python/vegafusion-jupyter/conda-${{ matrix.os-shell[1] }}-${{ matrix.python }}.lock.yml
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@latest
+        with:
+          # Use tag for chrome stable version 96.0.4664.110.
+          # This version should match the version of the python-chromedriver-binary conda-forge package
+          # specified in python/vegafusion-jupyter/dev-environment.yml
+          chrome-version: da1918b52890268754b96fdbca4ae9a79bd2fe11
+      - name: Test vegafusion-jupter
+        env:
+          VEGAFUSION_TEST_HEADLESS: 1
+        run: |
+          cd tests
+          pytest
+      - name: Upload screenshot artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-jupyter-test-screenshots
+          path: python/vegafusion-jupyter/test/temp_screenshot

@@ -67,6 +67,11 @@ impl Ord for Variable {
     }
 }
 
+// The Prost structs derive PartialEq but not Hash, so we need to implement Hash here.
+// This is a bad idea in general since PartialEq and Hash must be consistent, but there's
+// not a prost option to disable deriving PartialEq, or to derive Hash. This Hash implementation
+// is simple enough that the risk of inconsistency is low.
+#[allow(clippy::derive_hash_xor_eq)]
 impl Hash for Variable {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.namespace.hash(state);
