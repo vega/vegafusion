@@ -8,7 +8,7 @@ All you need is conda (or mamba) to start, `conda-lock` will be installed with t
 
 Feel free to change `vegafusion_jupyter_dev` to an environment name of your choosing, but make sure to change it in both commands
 ```bash
-conda create --name vegafusion_jupyter_dev --file conda-linux-64.lock
+conda create --name vegafusion_jupyter_dev --file conda-linux-64-3.10.lock
 conda activate vegafusion_jupyter_dev
 ```
 
@@ -41,8 +41,12 @@ pip install -e ".[test]"
 
 ## Making a change to development environment requirements
 
- 1. Edit the dev-environment.yml file
- 2. Update lock files with `conda-lock -f dev-environment.yml -p osx-64 -p linux-64 -p win-64 -k env`
+ 1. Edit the dev-environment-3.X.yml file
+ 2. Update lock files with
+```
+$ conda-lock -f dev-environment-3.7.yml -p osx-64 -p linux-64 -p win-64 -k env --filename-template "conda-{platform}-3.7.conda.lock"
+$ conda-lock -f dev-environment-3.10.yml -p osx-64 -p linux-64 -p win-64 -k env --filename-template "conda-{platform}-3.10.conda.lock"
+```
  3. Update existing conda environment with `conda env update --file conda-linux-64.lock.yml --prune`, 
 
 Note: `--prune` only handles removing transitive dependencies that are no longer needed. If a package is dropped from

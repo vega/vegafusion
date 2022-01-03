@@ -52,53 +52,11 @@ jobs:
 #          command: test
 #          args: --all-features
 
-  build-vegafusion-python-mac:
-    runs-on: macos-10.15
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - uses: messense/maturin-action@v1
-        with:
-          maturin-version: latest
-          command: build
-          args: --release -m vegafusion-python/Cargo.toml
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: vegafusion-python-wheels-mac
-          path: |
-            target/wheels/*.whl
-
-  build-vegafusion-python-win:
-    runs-on: windows-2016
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - uses: messense/maturin-action@v1
-        with:
-          maturin-version: latest
-          command: build
-          args: --release -m vegafusion-python/Cargo.toml
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: vegafusion-python-wheels-win
-          path: |
-            target/wheels/*.whl
-            
-
   build-vegafusion-python:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04, windows-2016, macos-10.15 ]
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -107,18 +65,23 @@ jobs:
         with:
           toolchain: stable
           override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
       - uses: messense/maturin-action@v1
         with:
           maturin-version: latest
           command: build
           manylinux: 2010
-          args: --release -m vegafusion-python/Cargo.toml -i /opt/python/cp310-cp310/bin/python
+          args: --release -m vegafusion-python/Cargo.toml
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: vegafusion-python-wheels
           path: |
             target/wheels/*.whl
+            
 
   build-vegafusion-wasm:
     runs-on: ubuntu-latest
@@ -186,10 +149,18 @@ jobs:
 
   test-vegafusion-jupyter:
     needs: [ build-vegafusion-jupyter ]
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os-shell: [
+            [ubuntu-20.04, linux-64, "bash -l {0}"],
+            [windows-2016, win-64, "pwsh"],
+            [macos-10.15, osx-64, "bash -l {0}"]
+        ]
+        python: [3.7, 3.10]
+    runs-on: ${{ matrix.os-shell[0] }}
     defaults:
       run:
-        shell: bash -l {0}
+        shell: ${{ matrix.os-shell[2] }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -199,7 +170,7 @@ jobs:
           auto-update-conda: true
           activate-environment: vegafusion_dev
           miniforge-version: latest
-          environment-file: python/vegafusion-jupyter/conda-linux-64.lock.yml
+          environment-file: python/vegafusion-jupyter/conda-${{ matrix.os-shell[1] }}-${{ matrix.python }}.lock.yml
       - name: Install Chrome
         uses: browser-actions/setup-chrome@latest
         with:
