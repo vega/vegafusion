@@ -78,7 +78,7 @@ jobs:
           maturin-version: latest
           command: build
           manylinux: 2010
-          args: --release -m vegafusion-python/Cargo.toml
+          args: --release -m vegafusion-python/Cargo.toml --universal2 --strip
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
