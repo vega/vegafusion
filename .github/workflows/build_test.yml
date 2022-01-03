@@ -153,7 +153,7 @@ jobs:
       matrix:
         os-shell: [
             [ubuntu-20.04, linux-64, "bash -l {0}"],
-            [windows-2016, win-64, "pwsh"],
+            [windows-2019, win-64, "pwsh"],
             [macos-10.15, osx-64, "bash -l {0}"]
         ]
         python: [3.7, 3.10]
