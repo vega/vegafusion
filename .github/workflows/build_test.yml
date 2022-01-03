@@ -140,7 +140,7 @@ jobs:
           python --version
           which pip
           pip --version
-          python -m pip install target/wheels/vegafusion_python-*310*.whl
+          python -m pip install target/wheels/vegafusion_python-*-cp310-*.manylinux2010_x86_64.whl
       - name: Build vegafusion-jupyter
         run: |
           cd python/vegafusion-jupyter
