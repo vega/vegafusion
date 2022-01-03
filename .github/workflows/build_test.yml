@@ -112,7 +112,7 @@ jobs:
           maturin-version: latest
           command: build
           manylinux: 2010
-          args: --release -m vegafusion-python/Cargo.toml -i /opt/python/cp39-cp39/bin/python
+          args: --release -m vegafusion-python/Cargo.toml -i /opt/python/cp310-cp310/bin/python
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -169,11 +169,11 @@ jobs:
           path: target/wheels/
       - name: Install vegafusion-python
         run: |
-          echo which python
+          which python
           python --version
-          echo which pip
-          echo pip --version
-          python -m pip install target/wheels/vegafusion_python-*39*.whl
+          which pip
+          pip --version
+          python -m pip install target/wheels/vegafusion_python-*310*.whl
       - name: Build vegafusion-jupyter
         run: |
           cd python/vegafusion-jupyter
