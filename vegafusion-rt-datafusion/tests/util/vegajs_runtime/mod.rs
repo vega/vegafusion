@@ -370,8 +370,8 @@ impl VegaJsRuntime {
     spec = fs.readFileSync('{spec_tmppath}', {{encoding: 'utf8'}});\
     await VegaUtils.exportSingle(JSON.parse(spec), '{result_tmppath}', {format})\
     ",
-                spec_tmppath = spec_tmppath,
-                result_tmppath = result_tmppath,
+                spec_tmppath = unquote_path(spec_tmppath),
+                result_tmppath = unquote_path(result_tmppath),
                 format = serde_json::to_string(&format).unwrap(),
             ))
             .expect("export single failed");
@@ -408,8 +408,8 @@ impl VegaJsRuntime {
         let _res_out = self.nodejs_runtime.execute_statement(&format!("\
     spec = fs.readFileSync('{spec_tmppath}', {{encoding: 'utf8'}});\
     await VegaUtils.exportSequence(JSON.parse(spec), '{result_tmppath}', {format}, {init}, {updates}, {watches})",
-                                                         spec_tmppath=spec_tmppath,
-                                                         result_tmppath=result_tmppath,
+                                                         spec_tmppath=unquote_path(spec_tmppath),
+                                                         result_tmppath=unquote_path(result_tmppath),
                                                          init=init_json_str,
                                                          updates=updates_json_str,
                                                          watches=watches_json_str,
@@ -562,4 +562,8 @@ lazy_static! {
 }
 pub fn vegajs_runtime() -> VegaJsRuntime {
     VegaJsRuntime::new((*NODE_JS_RUNTIME).clone())
+}
+
+fn unquote_path(path: &str) -> String {
+    path.replace(r#"\"#, r#"\\"#)
 }
