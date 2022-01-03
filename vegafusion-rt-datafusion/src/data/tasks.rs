@@ -396,8 +396,11 @@ async fn read_csv(url: String, parse: &Option<Parse>) -> Result<Arc<dyn DataFram
         let tempdir = tempfile::TempDir::new().unwrap();
         let filename = format!("file.{}", csv_opts.file_extension);
         let filepath = tempdir.path().join(filename).to_str().unwrap().to_string();
-        let mut file = File::create(filepath.clone()).unwrap();
-        writeln!(file, "{}", body).unwrap();
+
+        {
+            let mut file = File::create(filepath.clone()).unwrap();
+            writeln!(file, "{}", body).unwrap();
+        }
 
         let path = tempdir.path().to_str().unwrap();
         let schema = build_csv_schema(&csv_opts, path, parse).await?;
