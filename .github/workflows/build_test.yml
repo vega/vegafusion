@@ -52,6 +52,28 @@ jobs:
 #          command: test
 #          args: --all-features
 
+  build-vegafusion-python-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: messense/maturin-action@v1
+        with:
+          maturin-version: latest
+          command: build
+          args: --release -m vegafusion-python/Cargo.toml
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-python-wheels
+          path: |
+            target/wheels/*.whl
+
   build-vegafusion-python:
     runs-on: ubuntu-latest
     steps:
