@@ -136,7 +136,7 @@ maturin build --release --strip --target aarch64-apple-darwin
 2. Update lock files with
 ```bash
 cd python/vegafusion-jupyter/
-conda-lock -f dev-environment-3.7.yml -p osx-64 -p linux-64 -p win-64 -k env --filename-template "conda-{platform}-3.7.lock"
+conda-lock -f dev-environment-3.8.yml -p osx-64 -p linux-64 -p win-64 -k env --filename-template "conda-{platform}-3.8.lock"
 conda-lock -f dev-environment-3.10.yml -p osx-64 -p linux-64 -p win-64 -k env --filename-template "conda-{platform}-3.10.lock"
 ```
 3. Update existing conda environment with (replacing `{os}` and `{version}` as appropriate)
