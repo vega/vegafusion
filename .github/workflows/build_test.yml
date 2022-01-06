@@ -98,7 +98,9 @@ jobs:
         with:
           name: vegafusion-python-wheels
           path: |
-            target/wheels/*.whl
+            target/wheels/*cp38*.whl
+            target/wheels/*cp39*.whl
+            target/wheels/*cp310*.whl
             
 
   build-vegafusion-wasm:
