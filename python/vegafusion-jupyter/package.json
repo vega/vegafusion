@@ -15,11 +15,11 @@
     "css/*.scss",
     "images/*.svg"
   ],
-  "homepage": "https://github.com/jonmmease/vegafusion",
+  "homepage": "https://github.com/vegafusion/vegafusion",
   "bugs": {
-    "url": "https://github.com/jonmmease/vegafusion/issues"
+    "url": "https://github.com/vegafusion/vegafusion/issues"
   },
-  "license": "BSD-3-Clause",
+  "license": "AGPL-3.0-or-later",
   "author": {
     "name": "Jon Mease",
     "email": "jonmmease@gmail.com"
