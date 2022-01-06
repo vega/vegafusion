@@ -1,7 +1,7 @@
 name: build_test
 on:
   pull_request:
-    types: [synchronize]
+    types: [opened, synchronize]
 jobs:
   rust-fmt-clippy:
     runs-on: ubuntu-latest
