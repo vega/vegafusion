@@ -390,7 +390,7 @@ mod test_vegalite_specs {
         case("vegalite/bar_grouped", 0.001),
 
         // (Different facet layer order)
-        case("vegalite/bar_layered_transparent", 0.03),
+        case("vegalite/bar_layered_transparent", 0.1),
         case("vegalite/bar_layered_weather", 0.001),
         case("vegalite/bar_month_band_config", 0.001),
         case("vegalite/bar_month_band", 0.001),
