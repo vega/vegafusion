@@ -11,4 +11,4 @@ dependencies:
   - conda-lock
   - pip
   - jupytext
-  - python-chromedriver-binary =96
+  - python-chromedriver-binary =97
