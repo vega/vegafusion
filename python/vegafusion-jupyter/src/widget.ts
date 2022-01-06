@@ -60,6 +60,7 @@ export class VegaFusionModel extends DOMWidgetModel {
       verbose: null,
       debounce_wait: 30,
       debounce_max_wait: 60,
+      download_source_link: null,
     };
   }
 
@@ -80,6 +81,7 @@ export class VegaFusionView extends DOMWidgetView {
   vegafusion_handle: import("vegafusion-wasm").MsgReceiver;
   viewElement = document.createElement("div");
   containerElement = document.createElement("div");
+  menuElement = document.createElement("div");
   render_vegafusion: typeof import("vegafusion-wasm").render_vegafusion;
   vegalite_compile: typeof import("vega-lite").compile;
 
@@ -135,21 +137,45 @@ export class VegaFusionView extends DOMWidgetView {
 
     // Add About
     const aboutLink = document.createElement('a');
+    const about_href = '';
     aboutLink.text = "About VegaFusion";
-    aboutLink.href = '';
+    aboutLink.href = about_href;
     aboutLink.target = '_blank';
-    aboutLink.title = '';
+    aboutLink.title = about_href;
     ctrl.append(aboutLink);
 
     // Add License
     const licenseLink = document.createElement('a');
-    licenseLink.text = "AGPL License";
-    licenseLink.href = 'https://www.gnu.org/licenses/agpl-3.0.en.html';
+    const licence_href = 'https://www.gnu.org/licenses/agpl-3.0.en.html';
+    licenseLink.text = "AGPLv3 License";
+    licenseLink.href = licence_href;
     licenseLink.target = '_blank';
-    licenseLink.title = '';
+    licenseLink.title = licence_href;
     ctrl.append(licenseLink);
 
-    return details
+    // Add source message
+    const download_source_link: string = this.model.get(
+      'download_source_link'
+    );
+    if (download_source_link) {
+      const sourceItem = document.createElement('a');
+      sourceItem.text = 'Download Source';
+      sourceItem.href = download_source_link;
+      sourceItem.target = '_blank';
+      sourceItem.title = download_source_link;
+      ctrl.append(sourceItem);
+    } else {
+      const sourceItem = document.createElement('p');
+      sourceItem.classList.add('source-msg');
+      sourceItem.textContent =
+        "VegaFusion's AGPLv3 license requires " +
+        "the author to provide this application's " +
+        'source code upon request';
+      sourceItem.title = '';
+      ctrl.append(sourceItem);
+    }
+
+    return details;
   }
 
   async render() {
@@ -158,13 +184,11 @@ export class VegaFusionView extends DOMWidgetView {
 
     const { compile } = await import("vega-lite");
     this.vegalite_compile = compile;
-
-    let menu = this.generate_menu();
     this.containerElement.appendChild(this.viewElement);
     this.containerElement.classList.add(CHART_WRAPPER_CLASS);
 
     this.el.appendChild(this.containerElement);
-    this.el.appendChild(menu);
+    this.el.appendChild(this.menuElement);
     this.el.classList.add("vegafusion-embed");
     this.el.classList.add("has-actions");
 
@@ -173,6 +197,7 @@ export class VegaFusionView extends DOMWidgetView {
     this.model.on('change:verbose', this.value_changed, this);
     this.model.on('change:debounce_wait', this.value_changed, this);
     this.model.on('change:debounce_max_wait', this.value_changed, this);
+    this.model.on('change:download_source_link', this.value_changed, this);
 
     this.model.on("msg:custom", (ev: any, buffers: [DataView]) => {
       if (this.model.get("verbose")) {
@@ -185,6 +210,12 @@ export class VegaFusionView extends DOMWidgetView {
   }
 
   value_changed() {
+    // Update menu
+    while (this.menuElement.lastChild) {
+      this.menuElement.removeChild(this.menuElement.lastChild);
+    }
+    this.menuElement.appendChild(this.generate_menu());
+
     let spec = this.model.get('spec');
     if (spec !== null) {
       let parsed = JSON.parse(spec);

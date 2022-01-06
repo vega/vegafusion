@@ -45,6 +45,7 @@ class VegaFusionWidget(DOMWidget):
     verbose = Bool(False).tag(sync=True)
     debounce_wait = Float(30, allow_none=False).tag(sync=True)
     debounce_max_wait = Float(60, allow_none=True).tag(sync=True)
+    download_source_link = Unicode(None, allow_none=True).tag(sync=True)
 
     def __init__(self, *args, **kwargs):
 
