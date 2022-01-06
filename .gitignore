@@ -17,3 +17,7 @@ vegafusion-rt-datafusion/tests/util/vegajs_runtime/node_modules/
 /vegafusion-rt-datafusion/tests/output
 /python/vegafusion-jupyter/docs/source/_static/
 /python/vegafusion-jupyter/vegafusion_jupyter/nbextension/
+/.idea/
+/python/vegafusion-jupyter/css/
+/python/vegafusion-jupyter/tests/temp_screenshot/
+_vegafusion_data
