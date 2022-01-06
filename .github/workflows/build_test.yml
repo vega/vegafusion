@@ -71,16 +71,28 @@ jobs:
         with:
           toolchain: stable
           override: true
+      - name: Download Apple Silicon toolchain
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          rustup target add aarch64-apple-darwin
       - name: Cache rust dependencies
         uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: True
-      - uses: messense/maturin-action@v1
+      - name: Build wheels
+        uses: messense/maturin-action@v1
         with:
           maturin-version: latest
           command: build
           manylinux: 2010
-          args: --release -m vegafusion-python/Cargo.toml --universal2 --strip
+          args: --release -m vegafusion-python/Cargo.toml --strip
+      - name: Build Apple Silicon wheels
+        uses: messense/maturin-action@v1
+        if: ${{ runner.os == 'macOS' }}
+        with:
+          maturin-version: latest
+          command: build
+          args: --release -m vegafusion-python/Cargo.toml --strip --target aarch64-apple-darwin
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
