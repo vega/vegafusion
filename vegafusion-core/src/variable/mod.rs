@@ -1,22 +1,21 @@
-// //! A variable is named value in a Vega specification. These values can be signals, scales, or
-// //! datasets.
-//
-// /// The namespace for a variable. It's valid for the same name to be used for a signal, scale,
-// /// and dataset at the same time
-// #[derive(Debug, Clone, PartialOrd, PartialEq, Eq, Hash, Ord)]
-// pub enum VariableNamespace {
-//     Signal,
-//     Scale,
-//     Data,
-// }
-//
-// /// An (unscoped) variable
-// #[derive(Debug, Clone, PartialOrd, PartialEq, Eq, Hash, Ord)]
-// pub struct Variable {
-//     pub namespace: VariableNamespace,
-//     pub name: String,
-// }
-
+/*
+ * VegaFusion
+ * Copyright (C) 2022 Jon Mease
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public
+ * License along with this program.
+ * If not, see http://www.gnu.org/licenses/.
+ */
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
