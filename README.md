@@ -157,7 +157,7 @@ There are two reasons I chose the name VegaFusion
  - Vega and Altair are named after stars, and stars are powered by nuclear fusion.
 
 # Building VegaFusion
-If you're interested in building VegaFusion from source, see [BUILD.md]("./BUILD.md")
+If you're interested in building VegaFusion from source, see [BUILD.md](BUILD.md)
 
 # Roadmap
 Supporting serverside acceleration for Altair in Jupyter was chosen as the first MVP, but there are a lot of exciting ways that VegaFusion can be extended in the future.  Stay tuned for a full roadmap.
