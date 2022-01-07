@@ -146,7 +146,7 @@ jobs:
           auto-update-conda: true
           activate-environment: vegafusion_dev
           miniforge-version: latest
-          environment-file: python/vegafusion-jupyter/conda-linux-64-3.10.lock.yml
+          environment-file: python/vegafusion-jupyter/conda-linux-64-cp310.lock.yml
       - name: Download vegafusion-wasm packages
         uses: actions/download-artifact@v2
         with:
@@ -184,8 +184,8 @@ jobs:
 #            [macos-10.15, osx-64, "bash -l {0}", macosx_10_7_x86_64],
         ]
         python:
-#         - ["3.7", "cp37"]
-         - ["3.10", "cp310"]
+#         - cp37
+         - cp310
     runs-on: ${{ matrix.os-shell[0] }}
     defaults:
       run:
@@ -199,7 +199,7 @@ jobs:
           auto-update-conda: true
           activate-environment: vegafusion_dev
           miniforge-version: latest
-          environment-file: python/vegafusion-jupyter/conda-${{ matrix.os-shell[1] }}-${{ matrix.python[0] }}.lock.yml
+          environment-file: python/vegafusion-jupyter/conda-${{ matrix.os-shell[1] }}-${{ matrix.python }}.lock.yml
       - name: Install Chrome
         uses: browser-actions/setup-chrome@latest
         with:
@@ -216,10 +216,7 @@ jobs:
           path: target/wheels/
       - name: install wheels
         run: |
-          pip install target/wheels/vegafusion_python*${{ matrix.python[1] }}*${{ matrix.os-shell[3] }}*.whl
-          pushd python/vegafusion-jupyter/
-          pip install ".[test]"
-          popd
+          pip install target/wheels/vegafusion_python*${{ matrix.python }}*${{ matrix.os-shell[3] }}*.whl
           pip install target/wheels/vegafusion_jupyter*.whl
       - name: Test vegafusion-jupter
         env:

@@ -96,23 +96,9 @@ setup_args = dict(
         'pyarrow>=6',
     ],
     extras_require = {
-        'test': [
-            'pytest>=4.6',
-            'pytest-cov',
-            'vega-datasets',
-            'voila',
-            'nbval',
-            'jupytext',
-            'selenium',
-            'scikit-image',
-            'tenacity'
-        ],
-        'examples': [
-            # Any requirements for the examples to run
-        ],
-        'docs': [
-
-        ],
+        'test': [],
+        'examples': [],
+        'docs': [],
     },
     entry_points = {
     },
