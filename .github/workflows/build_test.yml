@@ -204,10 +204,10 @@ jobs:
         env:
           VEGAFUSION_TEST_HEADLESS: 1
         run: |
-          cd tests
+          cd python/vegafusion-jupyter/tests/
           pytest
       - name: Upload screenshot artifacts
         uses: actions/upload-artifact@v2
         with:
           name: vegafusion-jupyter-test-screenshots
-          path: python/vegafusion-jupyter/test/temp_screenshot
+          path: python/vegafusion-jupyter/tests/temp_screenshot
