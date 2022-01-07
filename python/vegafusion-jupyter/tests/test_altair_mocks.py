@@ -287,8 +287,8 @@ def test_altair_mock(mock_name, img_tolerance, delay):
             similarity_arrow_value = ssim(altair_img, vegafusion_arrow_img, channel_axis=2)
             similarity_default_value = ssim(altair_img, vegafusion_default_img, channel_axis=2)
 
-            print(f"({i}) {similarity_arrow_value=}")
-            print(f"({i}) {similarity_default_value=}")
+            print(f"({i}) similarity_arrow_value={similarity_arrow_value}")
+            print(f"({i}) similarity_default_value={similarity_default_value}")
 
             assert similarity_arrow_value >= img_tolerance, f"Similarity failed with Arrow data transformer on image {i}"
             assert similarity_default_value >= img_tolerance, f"Similarity failed with default data transformer on image {i}"
