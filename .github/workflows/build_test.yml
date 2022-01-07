@@ -217,7 +217,7 @@ jobs:
       - name: install wheels
         run: |
           pip install target/wheels/vegafusion_python*${{ matrix.python[1] }}*${{ matrix.os-shell[3] }}*.whl
-          pushd python/vegafusion-jupyter/tests/
+          pushd python/vegafusion-jupyter/
           pip install ".[test]"
           popd
           pip install target/wheels/vegafusion_jupyter*.whl
