@@ -5,7 +5,7 @@ websocket_server.rs example server over a websocket.
 
 Launch websocket server with:
 ```
-$ cargo run --release --example websocket_server --features="tokio-tungstenite tokio futures-util vegafusion-rt-datafusion"
+$ cargo run --release --example websocket_server --all-features
 ```
 
 Build and launch editor with
