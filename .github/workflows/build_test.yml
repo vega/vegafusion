@@ -105,6 +105,7 @@ jobs:
         with:
           name: vegafusion-python-wheels
           path: |
+            target/wheels/*cp37*.whl
             target/wheels/*cp38*.whl
             target/wheels/*cp39*.whl
             target/wheels/*cp310*.whl
@@ -183,7 +184,7 @@ jobs:
 #            [macos-10.15, osx-64, "bash -l {0}"]
         ]
         python:
-#         - ["3.8", "cp38"]
+#         - ["3.7", "cp37"]
          - ["3.10", "cp310"]
     runs-on: ${{ matrix.os-shell[0] }}
     defaults:
