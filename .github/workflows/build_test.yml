@@ -96,15 +96,18 @@ jobs:
           maturin-version: latest
           command: build
           args: --release -m vegafusion-python/Cargo.toml --strip --target aarch64-apple-darwin
+      - name: Remove unwanted wheels
+        run: |
+          rm -rf target/wheels/*universal2*.whl
+          rm -rf target/wheels/*36*.whl
+          rm -rf target/wheels/*37*.whl
+          rm -rf target/wheels/*pp*.whl
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: vegafusion-python-wheels
           path: |
-            target/wheels/*cp38*.whl
-            target/wheels/*cp39*.whl
-            target/wheels/*cp310*.whl
-            
+            target/wheels/*.whl
 
   build-vegafusion-wasm:
     runs-on: ubuntu-latest
