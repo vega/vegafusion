@@ -179,9 +179,9 @@ jobs:
     strategy:
       matrix:
         os-shell: [
-            [ubuntu-20.04, linux-64, "bash -l {0}"],
-#            [windows-2019, win-64, "pwsh"],
-#            [macos-10.15, osx-64, "bash -l {0}"]
+            [ubuntu-20.04, linux-64, "bash -l {0}", manylinux2010_x86_64],
+#            [windows-2019, win-64, "pwsh", win_amd64],
+#            [macos-10.15, osx-64, "bash -l {0}", macosx_10_7_x86_64],
         ]
         python:
 #         - ["3.7", "cp37"]
@@ -216,10 +216,11 @@ jobs:
           path: target/wheels/
       - name: install wheels
         run: |
-          cd python/vegafusion-jupyter/tests/
-          pip install target/wheels/vegafusion_python*${{ matrix.python[1] }}*.whl
+          pip install target/wheels/vegafusion_python*${{ matrix.python[1] }}*${{ matrix.os-shell[3] }}*.whl
+          pushd python/vegafusion-jupyter/tests/
           pip install ".[test]"
-          pip install "target/wheels/vegafusion_jupyter*.whl"
+          popd
+          pip install target/wheels/vegafusion_jupyter*.whl
       - name: Test vegafusion-jupter
         env:
           VEGAFUSION_TEST_HEADLESS: 1
