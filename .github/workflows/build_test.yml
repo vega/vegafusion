@@ -65,7 +65,7 @@ jobs:
         os:
          - ubuntu-20.04
 #         - windows-2019
-         - macos-10.15
+#         - macos-10.15
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -183,8 +183,8 @@ jobs:
 #            [macos-10.15, osx-64, "bash -l {0}"]
         ]
         python:
-#         - "3.8"
-         - "3.10"
+#         - ["3.8", "cp38"]
+         - ["3.10", "cp310"]
     runs-on: ${{ matrix.os-shell[0] }}
     defaults:
       run:
@@ -198,11 +198,25 @@ jobs:
           auto-update-conda: true
           activate-environment: vegafusion_dev
           miniforge-version: latest
-          environment-file: python/vegafusion-jupyter/conda-${{ matrix.os-shell[1] }}-${{ matrix.python }}.lock.yml
+          environment-file: python/vegafusion-jupyter/conda-${{ matrix.os-shell[1] }}-${{ matrix.python[0] }}.lock.yml
       - name: Install Chrome
         uses: browser-actions/setup-chrome@latest
         with:
           chrome-version: stable
+      - name: Download vegafusion-python wheel
+        uses: actions/download-artifact@v2
+        with:
+          name: vegafusion-jupyter-packages
+          path: target/wheels/
+      - name: Download vegafusion-jupyter wheel
+        uses: actions/download-artifact@v2
+        with:
+          name: vegafusion-python-wheels
+          path: target/wheels/
+      - name: install wheels
+        run: |
+          pip install target/wheels/vegafusion_python*${{ matrix.python[1] }}*.whl
+          pip install "target/wheels/vegafusion_jupyter*.whl[test]"
       - name: Test vegafusion-jupter
         env:
           VEGAFUSION_TEST_HEADLESS: 1
