@@ -216,8 +216,10 @@ jobs:
           path: target/wheels/
       - name: install wheels
         run: |
+          cd python/vegafusion-jupyter/tests/
           pip install target/wheels/vegafusion_python*${{ matrix.python[1] }}*.whl
-          pip install "target/wheels/vegafusion_jupyter*.whl[test]"
+          pip install ".[test]"
+          pip install "target/wheels/vegafusion_jupyter*.whl"
       - name: Test vegafusion-jupter
         env:
           VEGAFUSION_TEST_HEADLESS: 1
