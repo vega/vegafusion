@@ -21,3 +21,4 @@ dependencies:
   - selenium
   - scikit-image
   - tenacity
+  - flaky

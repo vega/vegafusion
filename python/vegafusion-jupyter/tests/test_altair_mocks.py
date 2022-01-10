@@ -15,6 +15,7 @@ import json
 import shutil
 from tenacity import retry, wait, stop
 import os
+from flaky import flaky
 
 here = Path(__file__).parent
 altair_mocks_dir = here / "altair_mocks"
@@ -83,6 +84,7 @@ def setup_module(module):
     temp_screenshots_dir.mkdir(parents=True, exist_ok=True)
 
 
+@flaky(max_runs=3)
 @pytest.mark.parametrize(
     "mock_name,img_tolerance,delay", [
         ("area/cumulative_count", 1.0, 0.5),
@@ -296,6 +298,7 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     finally:
         voila_proc.kill()
         chrome_driver.close()
+        time.sleep(1)
 
 
 def load_actions(mock_name):
