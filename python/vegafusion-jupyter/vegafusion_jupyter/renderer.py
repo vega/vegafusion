@@ -26,9 +26,7 @@ def vegafusion_renderer(spec, **widget_options):
 
     # Display widget as a side effect, then return empty string text representation
     # so that Altair doesn't also display a string representation
-    widget = VegaFusionWidget(
-        spec=json.dumps(spec), **widget_options
-    )
+    widget = VegaFusionWidget(spec, **widget_options)
     display(widget)
     return {'text/plain': ""}
 
