@@ -15,6 +15,7 @@ import json
 import shutil
 from tenacity import retry, wait, stop
 import os
+from flaky import flaky
 
 here = Path(__file__).parent
 altair_mocks_dir = here / "altair_mocks"
@@ -83,6 +84,7 @@ def setup_module(module):
     temp_screenshots_dir.mkdir(parents=True, exist_ok=True)
 
 
+@flaky(max_runs=3)
 @pytest.mark.parametrize(
     "mock_name,img_tolerance,delay", [
         ("area/cumulative_count", 1.0, 0.5),
@@ -147,31 +149,31 @@ def setup_module(module):
         ("histogram/with_a_global_mean_overlay", 1.0, 0.5),
         ("histogram/layered", 1.0, 0.5),
         ("histogram/trellis", 1.0, 0.5),
-        ("interactive/selection_layer_bar_month", 1.0, 0.5),
-        ("interactive/area-interval_selection", 1.0, 0.5),
-        ("interactive/layered_crossfilter", 1.0, 0.5),
-        ("interactive/scatter_with_histogram", 1.0, 0.5),
-        ("interactive/select_detail", 1.0, 0.5),
-        ("interactive/scatter_plot", 1.0, 0.5),
-        ("interactive/brush", 1.0, 0.5),
-        ("interactive/multiline_tooltip", 1.0, 0.5),
-        ("interactive/scatter_linked_brush", 1.0, 0.5),
-        ("interactive/casestudy-us_population_pyramid_over_time", 1.0, 0.5),
-        ("interactive/multiline_highlight", 1.0, 0.5),
-        ("interactive/scatter-with_minimap", 1.0, 0.5),
-        ("interactive/select_mark_area", 1.0, 0.5),
-        ("interactive/legend", 0.998, 0.5),
-        ("interactive/cross_highlight", 0.999, 0.5),
-        ("interactive/selection_histogram", 1.0, 0.5),
-        ("interactive/scatter-with_linked_table", 1.0, 0.5),
-        ("interactive/scatter_with_layered_histogram", 1.0, 0.5),
-        ("interactive/casestudy-seattle_weather_interactive", 1.0, 0.5),
-        ("interactive/casestudy-us_population_over_time", 1.0, 0.5),
-        ("interactive/scatter-href", 1.0, 0.5),
-        ("interactive/other-image_tooltip", 1.0, 0.5),
-        ("interactive/casestudy-weather_heatmap", 1.0, 0.5),
-        ("interactive/casestudy-airport_connections", 1.0, 0.5),
-        ("interactive/histogram-responsive", 1.0, 4),
+        ("interactive/selection_layer_bar_month", 1.0, 1),
+        ("interactive/area-interval_selection", 1.0, 1),
+        ("interactive/layered_crossfilter", 1.0, 1),
+        ("interactive/scatter_with_histogram", 1.0, 1),
+        ("interactive/select_detail", 1.0, 1),
+        ("interactive/scatter_plot", 1.0, 1),
+        ("interactive/brush", 1.0, 1),
+        ("interactive/multiline_tooltip", 1.0, 1),
+        ("interactive/scatter_linked_brush", 1.0, 1),
+        ("interactive/casestudy-us_population_pyramid_over_time", 1.0, 1),
+        ("interactive/multiline_highlight", 1.0, 1),
+        ("interactive/scatter-with_minimap", 1.0, 1),
+        ("interactive/select_mark_area", 1.0, 1),
+        ("interactive/legend", 0.998, 1),
+        ("interactive/cross_highlight", 0.999, 1),
+        ("interactive/selection_histogram", 1.0, 1),
+        ("interactive/scatter-with_linked_table", 1.0, 1),
+        ("interactive/scatter_with_layered_histogram", 1.0, 1),
+        ("interactive/casestudy-seattle_weather_interactive", 1.0, 1),
+        ("interactive/casestudy-us_population_over_time", 1.0, 1),
+        ("interactive/scatter-href", 1.0, 1),
+        ("interactive/other-image_tooltip", 1.0, 1),
+        ("interactive/casestudy-weather_heatmap", 1.0, 2),
+        ("interactive/casestudy-airport_connections", 1.0, 1),
+        ("interactive/histogram-responsive", 1.0, 5),
         ("line/bump_chart", 0.999, 0.5),
         ("line/filled_step_chart", 1.0, 0.5),
         ("line/with_cumsum", 1.0, 0.5),
@@ -287,8 +289,8 @@ def test_altair_mock(mock_name, img_tolerance, delay):
             similarity_arrow_value = ssim(altair_img, vegafusion_arrow_img, channel_axis=2)
             similarity_default_value = ssim(altair_img, vegafusion_default_img, channel_axis=2)
 
-            print(f"({i}) {similarity_arrow_value=}")
-            print(f"({i}) {similarity_default_value=}")
+            print(f"({i}) similarity_arrow_value={similarity_arrow_value}")
+            print(f"({i}) similarity_default_value={similarity_default_value}")
 
             assert similarity_arrow_value >= img_tolerance, f"Similarity failed with Arrow data transformer on image {i}"
             assert similarity_default_value >= img_tolerance, f"Similarity failed with default data transformer on image {i}"
@@ -296,6 +298,7 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     finally:
         voila_proc.kill()
         chrome_driver.close()
+        time.sleep(1)
 
 
 def load_actions(mock_name):
@@ -325,7 +328,11 @@ def export_image_sequence(
         url = voila_url_base.rstrip("/") + "/" + temp_file_path.name
 
         # Open url with selenium
-        chrome_driver.get(url)
+        # Get canvas element (the canvas that Vega renders to)
+        @retry(wait=wait.wait_fixed(0.5), stop=stop.stop_after_delay(10))
+        def get_url():
+            return chrome_driver.get(url)
+        get_url()
 
         # Remove padding, margins, and standardize line height.
         css = ("body, .jp-Cell, .jp-Notebook, .jupyter-widgets, .jp-RenderedHTMLCommon "
@@ -351,6 +358,7 @@ def export_image_sequence(
         for i, action in enumerate(actions):
             action_type = action["type"]
             if action_type in ("snapshot", "screenshot"):
+                time.sleep(1)
                 chain.perform()
                 time.sleep(1)
 

@@ -81,10 +81,10 @@ setup_args = dict(
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Framework :: Jupyter',
     ],
     include_package_data = True,
@@ -96,23 +96,9 @@ setup_args = dict(
         'pyarrow>=6',
     ],
     extras_require = {
-        'test': [
-            'pytest>=4.6',
-            'pytest-cov',
-            'vega-datasets',
-            'voila',
-            'nbval',
-            'jupytext',
-            'selenium',
-            'scikit-image',
-            'tenacity'
-        ],
-        'examples': [
-            # Any requirements for the examples to run
-        ],
-        'docs': [
-
-        ],
+        'test': [],
+        'examples': [],
+        'docs': [],
     },
     entry_points = {
     },

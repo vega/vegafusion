@@ -119,7 +119,8 @@ mod test_custom_specs {
         case("custom/histogram_responsive", 0.001),
         case("custom/grouped_bar_chart_with_error_bars", 0.001),
         case("custom/one_dot_per_zipcode", 0.001),
-        case("custom/ridgeline", 0.001)
+        case("custom/ridgeline", 0.001),
+        case("custom/binned_scatter", 0.001)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
         println!("spec_name: {}", spec_name);
@@ -390,7 +391,7 @@ mod test_vegalite_specs {
         case("vegalite/bar_grouped", 0.001),
 
         // (Different facet layer order)
-        case("vegalite/bar_layered_transparent", 0.03),
+        case("vegalite/bar_layered_transparent", 0.1),
         case("vegalite/bar_layered_weather", 0.001),
         case("vegalite/bar_month_band_config", 0.001),
         case("vegalite/bar_month_band", 0.001),

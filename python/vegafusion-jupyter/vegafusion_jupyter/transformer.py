@@ -60,10 +60,10 @@ def to_feather(data, file):
         mapping = dict()
         for col in dt_cols:
             if (data[col].dt.time == datetime.time(0, 0)).all():
-                # Assume no time info was provided
+                # Assume no time info was provided, interpret as UTC
                 mapping[col] = data[col].dt.tz_localize("+00:00")
             else:
-                # Assume time info was provided
+                # Assume time info was provided, interpret as local
                 mapping[col] = data[col].dt.tz_localize(local_timezone).dt.tz_convert(None)
 
         data = data.assign(**mapping)

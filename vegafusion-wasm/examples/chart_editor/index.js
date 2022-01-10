@@ -58,7 +58,7 @@ function init() {
 
     let comm_plan_monaco = Monaco.editor.create(document.getElementById('comm-plan-monaco'), {
         value: "",
-        language: 'plain',
+        language: 'json',
         theme: 'vs-dark',
         automaticLayout: true,
         readOnly: true,
@@ -76,19 +76,21 @@ function init() {
         let msg_receiver;
         try {
             let element = document.getElementById("vega-chart");
-            msg_receiver = vegafusion.render_vegafusion(element, editor.getValue(), (send_msg_bytes) => {
+            msg_receiver = vegafusion.render_vegafusion(
+                element, editor.getValue(), false, 50, 100,
+                (send_msg_bytes) => {
                 // console.log("Sending msg");
                 socket.send(send_msg_bytes);
             });
             server_spec_monaco.setValue(msg_receiver.server_spec_json());
             client_spec_monaco.setValue(msg_receiver.client_spec_json());
-            comm_plan_monaco.setValue(msg_receiver.comm_plan_str());
+            comm_plan_monaco.setValue(msg_receiver.comm_plan_json());
         } catch (e) {
             console.error("Failed to render spec");
             server_spec_monaco.setValue("");
             client_spec_monaco.setValue("");
             comm_plan_monaco.setValue("");
-            // console.log(e);
+            console.log(e);
             return
         }
 
@@ -150,8 +152,8 @@ let flights_spec = {
         {"name": "brush_store"},
         {
             "name": "source_0",
-            // "url": "https://raw.githubusercontent.com/vega/vega-datasets/master/data/flights-2k.json",
-            "url": "/media/jmmease/SSD2/rustDev/diorite/datasets/vega-datasets-master/data/flights-7m.csv",
+            "url": "https://raw.githubusercontent.com/vega/vega-datasets/master/data/flights-2k.json",
+            // "url": "/media/jmmease/SSD2/rustDev/diorite/datasets/vega-datasets-master/data/flights-7m.csv",
             // "url": "/media/jmmease/SSD2/rustDev/diorite/datasets/vega-datasets-master/data/flights-27m.csv",
             "format": {"type": "json", "parse": {"date": "date"}},
             "transform": [

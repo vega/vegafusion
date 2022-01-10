@@ -94,11 +94,11 @@ impl TransformTrait for Aggregate {
                 // Alias is a non-empty string
                 expr.alias(alias)
             } else {
-                expr.alias(&format!(
-                    "{}_{}",
-                    op_name(op),
-                    (if field.is_empty() { "null" } else { field }).to_string(),
-                ))
+                if field.is_empty() {
+                    expr.alias(&op_name(op).to_string())
+                } else {
+                    expr.alias(&format!("{}_{}", op_name(op), field.to_string(),))
+                }
             };
             agg_exprs.push(expr)
         }

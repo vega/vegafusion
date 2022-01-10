@@ -11,4 +11,14 @@ dependencies:
   - conda-lock
   - pip
   - jupytext
-  - python-chromedriver-binary =97
+  - python-chromedriver-binary =96
+  - pytest >=4.6
+  - pytest-cov
+  - vega_datasets
+  - voila
+  - nbval
+  - jupytext
+  - selenium
+  - scikit-image
+  - tenacity
+  - flaky

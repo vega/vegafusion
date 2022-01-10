@@ -225,7 +225,7 @@ pub fn make_datepart_udf_utc(extract_fn: fn(&DateTime<Utc>) -> i64, name: &str) 
     };
     let part_fn = make_scalar_function(part_fn);
 
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int32)));
+    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
     ScalarUDF::new(
         name,
         &Signature::uniform(
