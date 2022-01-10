@@ -72,7 +72,7 @@ assert(alt.data_transformers.active == 'default')
 ```
 """
 
-
+procs = dict()
 def setup_module(module):
     """ setup any state specific to the execution of the given module."""
     # Initialize notebooks and screenshots to empty directories
@@ -81,6 +81,16 @@ def setup_module(module):
 
     shutil.rmtree(temp_screenshots_dir, ignore_errors=True)
     temp_screenshots_dir.mkdir(parents=True, exist_ok=True)
+
+    # Launch Voila server
+    procs['voila_proc'] = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
+
+    # Sleep to allow Voila itself to start (this does not include loading a particular dashboard).
+    time.sleep(2)
+
+
+def teardown_module(module):
+    procs['voila_proc'].kill()
 
 
 @pytest.mark.parametrize(
@@ -265,12 +275,6 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     chrome_driver = webdriver.Chrome(options=chrome_opts)
     chrome_driver.set_window_size(800, 800)
 
-    # Launch Voila server
-    voila_proc = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
-
-    # Sleep to allow Voila itself to start (this does not include loading a particular dashboard).
-    time.sleep(2)
-
     try:
         altair_imgs = export_image_sequence(chrome_driver, altair_notebook, actions, delay)
         vegafusion_arrow_imgs = export_image_sequence(chrome_driver, vegafusion_arrow_notebook, actions, delay)
@@ -294,7 +298,6 @@ def test_altair_mock(mock_name, img_tolerance, delay):
             assert similarity_default_value >= img_tolerance, f"Similarity failed with default data transformer on image {i}"
 
     finally:
-        voila_proc.kill()
         chrome_driver.close()
 
 
