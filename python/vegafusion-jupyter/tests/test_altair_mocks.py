@@ -325,7 +325,11 @@ def export_image_sequence(
         url = voila_url_base.rstrip("/") + "/" + temp_file_path.name
 
         # Open url with selenium
-        chrome_driver.get(url)
+        # Get canvas element (the canvas that Vega renders to)
+        @retry(wait=wait.wait_fixed(0.5), stop=stop.stop_after_delay(10))
+        def get_url():
+            return chrome_driver.get(url)
+        get_url()
 
         # Remove padding, margins, and standardize line height.
         css = ("body, .jp-Cell, .jp-Notebook, .jupyter-widgets, .jp-RenderedHTMLCommon "
