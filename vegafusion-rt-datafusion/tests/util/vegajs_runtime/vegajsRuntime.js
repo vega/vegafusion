@@ -34,6 +34,9 @@ function lookupSignalOp(view, name, scope) {
     // name is an array that may have leading integer group indices
     var parent_runtime = view._runtime;
     for (const index of scope) {
+        if (!parent_runtime.subcontext) {
+            throw `Missing subcontext for ${name} with scope ${scope}`
+        }
         parent_runtime = parent_runtime.subcontext[index];
     }
     return parent_runtime.signals[name];
@@ -43,6 +46,10 @@ function lookupDataOp(view, name, scope) {
     // name is an array that may have leading integer group indices
     var parent_runtime = view._runtime;
     for (const index of scope) {
+        if (!parent_runtime.subcontext) {
+            throw `Missing subcontext for ${name} with scope ${scope}`
+        }
+
         parent_runtime = parent_runtime.subcontext[index];
     }
 
