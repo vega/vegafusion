@@ -14,18 +14,22 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+use itertools::Itertools;
 use crate::error::Result;
+use crate::proto::gen::tasks::Variable;
 use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::DataSpec;
-use crate::spec::scale::{ScaleDataReferenceSort, ScaleDataReferenceSortParameters, ScaleDataReferenceSpec, ScaleDomainSpec, ScaleSpec};
+use crate::spec::scale::{ScaleDataReferenceSort, ScaleDataReferenceSortParameters, ScaleDataReferenceSpec, ScaleDomainSpec, ScaleSpec, ScaleTypeSpec};
 use crate::spec::transform::aggregate::AggregateOpSpec;
+use crate::task_graph::scope::TaskScope;
 
 /// This optimization extracts the intensive data processing from scale.domain.data specifications
 /// into dedicated datasets. Domain calculations can't be entirely evaluated on the server, but
 /// this approach still allows the heavy data processing to happen on the server, and to avoid
 /// serializing the full dataset to send to the client.
 pub fn split_domain_data(spec: &mut ChartSpec) -> Result<()> {
-    let mut visitor = SplitUrlDataNodeVisitor::new();
+    let task_scope = spec.to_task_scope()?;
+    let mut visitor = SplitUrlDataNodeVisitor::new(&task_scope);
     spec.walk_mut(&mut visitor)?;
     for (scope, data) in visitor.new_datasets {
         if scope.is_empty() {
@@ -40,34 +44,45 @@ pub fn split_domain_data(spec: &mut ChartSpec) -> Result<()> {
 }
 
 
-#[derive(Debug, Clone, Default)]
-pub struct SplitUrlDataNodeVisitor {
+#[derive(Debug, Clone)]
+pub struct SplitUrlDataNodeVisitor<'a>  {
+    pub task_scope: &'a TaskScope,
     pub new_datasets: Vec<(Vec<u32>, DataSpec)>
 }
 
 
-impl SplitUrlDataNodeVisitor {
-    pub fn new() -> Self {
-        Self { new_datasets: Vec::new() }
+impl <'a> SplitUrlDataNodeVisitor<'a> {
+    pub fn new(task_scope: &'a TaskScope) -> Self {
+        Self {
+            new_datasets: Vec::new(),
+            task_scope
+        }
     }
 }
 
 
-impl MutChartVisitor for SplitUrlDataNodeVisitor {
+impl <'a> MutChartVisitor for SplitUrlDataNodeVisitor<'a> {
     fn visit_scale(&mut self, scale: &mut ScaleSpec, scope: &[u32]) -> Result<()> {
         let discrete_scale = scale.type_.clone().unwrap_or_default().is_discrete();
         if let Some(domain) = &scale.domain {
             match domain {
                 ScaleDomainSpec::FieldReference(field_ref) => {
-                    let data_name = &field_ref.data;
+                    let data_name = field_ref.data.clone();
                     let field_name = &field_ref.field;
 
                     // Validate whether we can do anything
                     if field_name.contains('.') {
+                        // Nested fields not supported
                         return Ok(())
                     }
 
-                    let new_data_name = format!("{}_{}_domain_{}", data_name, scale.name, field_name);
+                    // Build suffix using scope
+                    let mut scope_suffix = scope.iter().map(|s| s.to_string()).join("_");
+                    if !scope_suffix.is_empty() {
+                        scope_suffix.insert(0, '_');
+                    }
+
+                    let new_data_name = format!("{}_{}_domain_{}{}", data_name, scale.name, field_name, scope_suffix);
                     let (new_data, new_domain) = if discrete_scale {
 
                         // Extract sort field and op
@@ -76,25 +91,47 @@ impl MutChartVisitor for SplitUrlDataNodeVisitor {
                         } else {
                             (None, None)
                         };
-                        let sort_field = sort_field.unwrap_or_else(|| field_name.clone());
-                        let sort_op = sort_op.unwrap_or(AggregateOpSpec::Count);
 
-                        // Create derived dataset that performs the aggregation
-                        let new_data: DataSpec = serde_json::from_value(serde_json::json!(
-                            {
-                                "name": new_data_name,
-                                "source": data_name,
-                                "transform": [
-                                    {
-                                        "type": "aggregate",
-                                        "as": ["sort_field"],
-                                        "groupby": [field_name],
-                                        "ops": [sort_op],
-                                        "fields": [sort_field]
-                                    }
-                                ]
-                           }
-                        )).unwrap();
+                        let new_data = if let Some(sort_op) = sort_op {
+                            // Will sort by the result of an aggregation operation
+                            let sort_field = sort_field.clone().unwrap_or_else(|| field_name.clone());
+                            serde_json::from_value(serde_json::json!(
+                                {
+                                    "name": new_data_name,
+                                    "source": data_name,
+                                    "transform": [
+                                        {
+                                            "type": "aggregate",
+                                            "as": ["sort_field"],
+                                            "groupby": [field_name],
+                                            "ops": [sort_op],
+                                            "fields": [sort_field]
+                                        }
+                                    ]
+                               }
+                            )).unwrap()
+                        } else {
+                            // Will sort by the grouped field values
+                            serde_json::from_value(serde_json::json!(
+                                {
+                                    "name": new_data_name,
+                                    "source": data_name,
+                                    "transform": [
+                                        {
+                                            "type": "aggregate",
+                                            "as": [],
+                                            "groupby": [field_name],
+                                            "ops": [],
+                                            "fields": []
+                                        }, {
+                                            "type": "formula",
+                                            "as": "sort_field",
+                                            "expr": format!("datum['{}']", field_name)
+                                        }
+                                    ]
+                               }
+                            )).unwrap()
+                        };
 
                         // Create new domain specification that uses the new dataset
                         let sort = match &field_ref.sort {
@@ -116,20 +153,27 @@ impl MutChartVisitor for SplitUrlDataNodeVisitor {
                         });
 
                         (new_data, new_domain)
-                    } else {
+                    } else if matches!(
+                        scale.type_.clone().unwrap_or_default(),
+                        ScaleTypeSpec::Linear
+                    ) {
                         // Create derived dataset that performs the min/max calculations
                         let new_data: DataSpec = serde_json::from_value(serde_json::json!(
                             {
                                 "name": new_data_name,
                                 "source": data_name,
                                 "transform": [
-                                   {
-                                       "type": "aggregate",
-                                       "fields": [field_name, field_name],
-                                       "ops": ["min", "max"],
-                                       "as": ["min", "max"],
-                                       "groupby": []
-                                   }
+                                    {
+                                        "type": "formula",
+                                        "as": field_name,
+                                        "expr": format!("+datum['{}']", field_name)
+                                    }, {
+                                        "type": "aggregate",
+                                        "fields": [field_name, field_name],
+                                        "ops": ["min", "max"],
+                                        "as": ["min", "max"],
+                                         "groupby": []
+                                    }
                                 ]
                             }
                         )).unwrap();
@@ -143,13 +187,22 @@ impl MutChartVisitor for SplitUrlDataNodeVisitor {
                         )).unwrap();
 
                         (new_data, new_domain)
+                    } else {
+                        // Unsupported scale type
+                        return Ok(())
                     };
 
                     // Overwrite scale domain with new domain
                     scale.domain = Some(new_domain);
 
+                    // Add new dataset at same scope as source dataset
+                    let resolved = self.task_scope.resolve_scope(
+                        &Variable::new_data(data_name.as_str()),
+                            scope
+                    )?;
+
                     // Add new dataset at current scope
-                    self.new_datasets.push((Vec::from(scope), new_data))
+                    self.new_datasets.push((resolved.scope, new_data))
                 }
                 // TODO: handle FieldsReference
                 // ScaleDomainSpec::FieldsReference(_) => {}
