@@ -19,6 +19,11 @@
       "namespace": "data",
       "name": "data_3",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3_size_domain___count",
+      "scope": []
     }
   ],
   "client_to_server": []

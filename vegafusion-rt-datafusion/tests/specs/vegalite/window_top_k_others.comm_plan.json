@@ -7,7 +7,12 @@
     },
     {
       "namespace": "data",
-      "name": "source_0",
+      "name": "data_0_x_domain_mean_aggregate_gross",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_y_domain_ranked_director",
       "scope": []
     }
   ],

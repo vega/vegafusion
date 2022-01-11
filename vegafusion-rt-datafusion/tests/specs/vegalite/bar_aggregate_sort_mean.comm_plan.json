@@ -7,7 +7,12 @@
     },
     {
       "namespace": "data",
-      "name": "source_0",
+      "name": "data_0_x_domain_sum_people",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_y_domain_age",
       "scope": []
     }
   ],

@@ -7,6 +7,16 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_concat_0_x_domain_Horsepower",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_concat_0_y_domain_Miles_per_Gallon",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_1",
       "scope": []
     }

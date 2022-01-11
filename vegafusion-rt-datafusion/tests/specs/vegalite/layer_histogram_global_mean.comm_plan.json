@@ -12,6 +12,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_y_domain___count",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_1",
       "scope": []
     }

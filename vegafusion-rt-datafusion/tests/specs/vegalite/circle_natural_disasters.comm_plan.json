@@ -1,8 +1,30 @@
 {
-  "server_to_client": [{
-    "namespace": "data",
-    "name": "source_0",
-    "scope": []
-  }],
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "source_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_color_domain_Entity",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_size_domain_Deaths",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_x_domain_Year",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_y_domain_Entity",
+      "scope": []
+    }
+  ],
   "client_to_server": []
 }

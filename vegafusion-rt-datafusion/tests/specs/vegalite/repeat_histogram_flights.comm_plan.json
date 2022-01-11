@@ -22,12 +22,27 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_child__column_time_y_domain___count",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_1",
       "scope": []
     },
     {
       "namespace": "data",
+      "name": "data_1_child__column_delay_y_domain___count",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_2_child__column_distance_y_domain___count",
       "scope": []
     }
   ],

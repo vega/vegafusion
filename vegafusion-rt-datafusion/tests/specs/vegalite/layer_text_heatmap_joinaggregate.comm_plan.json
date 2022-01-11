@@ -7,6 +7,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_layer_0_color_domain_num_cars",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "source_0",
       "scope": []
     }

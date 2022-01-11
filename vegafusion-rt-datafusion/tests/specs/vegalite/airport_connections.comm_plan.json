@@ -1,20 +1,26 @@
 {
-  "server_to_client": [{
-    "namespace": "data",
-    "name": "_server_data_0",
-    "scope": []
-  }, {
-    "namespace": "data",
-    "name": "_server_data_1",
-    "scope": []
-  }, {
-    "namespace": "data",
-    "name": "source_2",
-    "scope": []
-  }],
-  "client_to_server": [{
-    "namespace": "data",
-    "name": "org_store",
-    "scope": []
-  }]
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "_server_data_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "_server_data_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_2",
+      "scope": []
+    }
+  ],
+  "client_to_server": [
+    {
+      "namespace": "data",
+      "name": "org_store",
+      "scope": []
+    }
+  ]
 }

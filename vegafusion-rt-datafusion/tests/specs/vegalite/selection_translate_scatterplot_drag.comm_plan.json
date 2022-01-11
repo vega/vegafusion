@@ -4,6 +4,11 @@
       "namespace": "data",
       "name": "source_0",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_size_domain_Cylinders",
+      "scope": []
     }
   ],
   "client_to_server": []
