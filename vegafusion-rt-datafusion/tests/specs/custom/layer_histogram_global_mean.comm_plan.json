@@ -4,15 +4,18 @@
       "namespace": "signal",
       "name": "layer_0_bin_maxbins_10_IMDB_Rating_bins",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "data",
       "name": "data_0",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "data",
       "name": "data_0_y_domain___count",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "data",
       "name": "data_1",
       "scope": []

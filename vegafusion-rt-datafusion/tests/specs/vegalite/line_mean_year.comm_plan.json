@@ -7,11 +7,6 @@
     },
     {
       "namespace": "data",
-      "name": "source_0_x_domain_year_date",
-      "scope": []
-    },
-    {
-      "namespace": "data",
       "name": "source_0_y_domain_mean_temp_max",
       "scope": []
     }

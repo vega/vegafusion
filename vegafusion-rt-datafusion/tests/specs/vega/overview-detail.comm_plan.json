@@ -4,6 +4,16 @@
       "namespace": "data",
       "name": "sp500",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "sp500_yDetail_domain_price_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "sp500_yOverview_domain_price_1",
+      "scope": []
     }
   ],
   "client_to_server": []

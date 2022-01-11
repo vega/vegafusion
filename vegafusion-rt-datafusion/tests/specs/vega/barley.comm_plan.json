@@ -4,6 +4,16 @@
       "namespace": "data",
       "name": "barley",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "barley_cscale_domain_year",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "barley_xscale_domain_yield",
+      "scope": []
     }
   ],
   "client_to_server": []

@@ -4,15 +4,18 @@
       "namespace": "data",
       "name": "source_x_domain_Horsepower",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "data",
       "name": "source_y_domain_Miles_per_Gallon",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "data",
       "name": "summary",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "data",
       "name": "summary_size_domain_count",
       "scope": []

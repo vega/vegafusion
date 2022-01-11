@@ -70,58 +70,58 @@ mod test_custom_specs {
     #[rstest(
         spec_name,
         tolerance,
-        // case("custom/stacked_bar", 0.001),
-        // case("custom/bar_colors", 0.001),
-        // case("custom/imdb_histogram", 0.001),
-        // case("custom/flights_crossfilter_a", 0.001),
-        // case("custom/log_scaled_histogram", 0.001),
-        // case("custom/non_linear_histogram", 0.001),
-        // case("custom/relative_frequency_histogram", 0.001),
-        // case("custom/kde_iris", 0.001),
-        // case("custom/2d_circles_histogram_imdb", 0.001),
-        // case("custom/2d_histogram_imdb", 0.001),
-        // case("custom/cumulative_window_imdb", 0.001),
-        // case("custom/density_and_cumulative_histograms", 0.001),
-        // case("custom/mean_strip_plot_movies", 0.001),
-        // case("custom/table_heatmap_cars", 0.001),
-        // case("custom/difference_from_mean", 0.001),
-        // case("custom/nested_concat_align", 0.001),
-        // case("custom/imdb_dashboard_cross_height", 0.001),
-        // case("custom/stacked_bar_weather_year", 0.001),
-        // case("custom/stacked_bar_weather_month", 0.001),
-        // case("custom/stacked_bar_normalize", 0.001),
-        // case("custom/layer_bar_labels_grey", 0.001),
-        // case("custom/bar_month_temporal_initial", 0.001),
-        // case("custom/selection_layer_bar_month", 0.001),
-        // case("custom/interactive_layered_crossfilter", 0.001),
-        // case("custom/interactive_seattle_weather", 0.001),
-        // case("custom/concat_marginal_histograms", 0.001),
-        // case("custom/joinaggregate_movie_rating", 0.001),
-        // case("custom/joinaggregate_text_color_contrast", 0.001),
-        // case("custom/cumulative_running_window", 0.001),
-        // case("custom/point_bubble", 0.001),
-        // case("custom/circle_natural_disasters", 0.001),
-        // case("custom/circle_bubble_health_income", 0.001),
+        case("custom/stacked_bar", 0.001),
+        case("custom/bar_colors", 0.001),
+        case("custom/imdb_histogram", 0.001),
+        case("custom/flights_crossfilter_a", 0.001),
+        case("custom/log_scaled_histogram", 0.001),
+        case("custom/non_linear_histogram", 0.001),
+        case("custom/relative_frequency_histogram", 0.001),
+        case("custom/kde_iris", 0.001),
+        case("custom/2d_circles_histogram_imdb", 0.001),
+        case("custom/2d_histogram_imdb", 0.001),
+        case("custom/cumulative_window_imdb", 0.001),
+        case("custom/density_and_cumulative_histograms", 0.001),
+        case("custom/mean_strip_plot_movies", 0.001),
+        case("custom/table_heatmap_cars", 0.001),
+        case("custom/difference_from_mean", 0.001),
+        case("custom/nested_concat_align", 0.001),
+        case("custom/imdb_dashboard_cross_height", 0.001),
+        case("custom/stacked_bar_weather_year", 0.001),
+        case("custom/stacked_bar_weather_month", 0.001),
+        case("custom/stacked_bar_normalize", 0.001),
+        case("custom/layer_bar_labels_grey", 0.001),
+        case("custom/bar_month_temporal_initial", 0.001),
+        case("custom/selection_layer_bar_month", 0.001),
+        case("custom/interactive_layered_crossfilter", 0.001),
+        case("custom/interactive_seattle_weather", 0.001),
+        case("custom/concat_marginal_histograms", 0.001),
+        case("custom/joinaggregate_movie_rating", 0.001),
+        case("custom/joinaggregate_text_color_contrast", 0.001),
+        case("custom/cumulative_running_window", 0.001),
+        case("custom/point_bubble", 0.001),
+        case("custom/circle_natural_disasters", 0.001),
+        case("custom/circle_bubble_health_income", 0.001),
         case("custom/line_color_stocks", 0.001),
-        // case("custom/line_slope_barley", 0.001),
-        // case("custom/connected_scatterplot", 0.001),
-        // case("custom/layer_line_co2_concentration", 0.001),
-        // case("custom/window_rank_matches", 0.001),
-        // case("custom/circle_github_punchcard", 0.001),
-        // case("custom/rect_lasagna", 0.001),
-        // case("custom/rect_heatmap_weather", 0.001),
-        // case("custom/layer_line_rolling_mean_point_raw", 0.001),
-        // case("custom/layer_histogram_global_mean", 0.001),
-        // case("custom/layer_precipitation_mean", 0.001),
-        // case("custom/wheat_wages", 0.001),
-        // case("custom/trellis_stacked_bar", 0.001),
-        // case("custom/trellis_bar_histogram", 0.001),
-        // case("custom/interactive_average", 0.001),
-        // case("custom/histogram_responsive", 0.001),
-        // case("custom/grouped_bar_chart_with_error_bars", 0.001),
-        // case("custom/one_dot_per_zipcode", 0.001),
-        // case("custom/ridgeline", 0.001),
-        // case("custom/binned_scatter", 0.001)
+        case("custom/line_slope_barley", 0.001),
+        case("custom/connected_scatterplot", 0.001),
+        case("custom/layer_line_co2_concentration", 0.001),
+        case("custom/window_rank_matches", 0.001),
+        case("custom/circle_github_punchcard", 0.001),
+        case("custom/rect_lasagna", 0.001),
+        case("custom/rect_heatmap_weather", 0.001),
+        case("custom/layer_line_rolling_mean_point_raw", 0.001),
+        case("custom/layer_histogram_global_mean", 0.001),
+        case("custom/layer_precipitation_mean", 0.001),
+        case("custom/wheat_wages", 0.001),
+        case("custom/trellis_stacked_bar", 0.001),
+        case("custom/trellis_bar_histogram", 0.001),
+        case("custom/interactive_average", 0.001),
+        case("custom/histogram_responsive", 0.001),
+        case("custom/grouped_bar_chart_with_error_bars", 0.001),
+        case("custom/one_dot_per_zipcode", 0.001),
+        case("custom/ridgeline", 0.001),
+        case("custom/binned_scatter", 0.001)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
         println!("spec_name: {}", spec_name);
@@ -321,7 +321,6 @@ mod test_vegalite_specs {
 
     #[rstest(
         spec_name, tolerance,
-        // ## Vega-Lite examples
         case("vegalite/airport_connections", 0.001),
         case("vegalite/arc_donut", 0.001),
         case("vegalite/arc_facet", 0.001),
@@ -366,7 +365,10 @@ mod test_vegalite_specs {
         case("vegalite/bar_column_fold", 0.001),
         case("vegalite/bar_column_pivot", 0.001),
         case("vegalite/bar_corner_radius_end", 0.001),
-        case("vegalite/bar_count_minimap", 0.001),
+
+        // Different ordering of bars with the same length
+        case("vegalite/bar_count_minimap", 0.1),
+
         case("vegalite/bar_custom_sort_full", 0.001),
         case("vegalite/bar_custom_sort_partial", 0.001),
         case("vegalite/bar_custom_time_domain", 0.001),
@@ -1078,6 +1080,12 @@ fn load_expected_watch_plan(spec_name: &str) -> WatchPlan {
     serde_json::from_str(&comm_plan_str).unwrap()
 }
 
+fn write_updated_watch_plan(spec_name: &str, plan: &WatchPlan) {
+    let watch_plan_path = format!("{}/tests/specs/{}.comm_plan.json", crate_dir(), spec_name);
+    let watch_plan_path = std::path::Path::new(&watch_plan_path);
+    fs::write(watch_plan_path, serde_json::to_string_pretty(plan).unwrap()).unwrap()
+}
+
 async fn check_spec_sequence_from_files(spec_name: &str, tolerance: f64) {
     initialize();
 
@@ -1159,7 +1167,7 @@ async fn check_spec_sequence(
         });
     }
 
-    println!("init: {:#?}", init);
+    // println!("init: {:#?}", init);
 
     // Build watches for all of the variables that should be sent from the client to the
     // server

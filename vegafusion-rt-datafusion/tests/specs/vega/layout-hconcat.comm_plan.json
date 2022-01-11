@@ -4,6 +4,51 @@
       "namespace": "data",
       "name": "source",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_size_domain_Acceleration_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_size_domain_Acceleration_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_size_domain_Acceleration_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_x_domain_Acceleration_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_x_domain_Displacement_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_x_domain_Horsepower_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_y_domain_Miles_per_Gallon_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_y_domain_Miles_per_Gallon_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_y_domain_Miles_per_Gallon_2",
+      "scope": []
     }
   ],
   "client_to_server": []

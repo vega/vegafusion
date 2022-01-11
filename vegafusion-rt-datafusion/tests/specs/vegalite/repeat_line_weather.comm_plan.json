@@ -7,27 +7,12 @@
     },
     {
       "namespace": "data",
-      "name": "source_0_child__precipitation_x_domain_month_date",
-      "scope": []
-    },
-    {
-      "namespace": "data",
       "name": "source_0_child__precipitation_y_domain_mean_precipitation",
       "scope": []
     },
     {
       "namespace": "data",
-      "name": "source_0_child__temp_max_x_domain_month_date",
-      "scope": []
-    },
-    {
-      "namespace": "data",
       "name": "source_0_child__temp_max_y_domain_mean_temp_max",
-      "scope": []
-    },
-    {
-      "namespace": "data",
-      "name": "source_0_child__wind_x_domain_month_date",
       "scope": []
     },
     {

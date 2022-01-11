@@ -7,11 +7,6 @@
     },
     {
       "namespace": "data",
-      "name": "source_0_x_domain_yearmonth_date",
-      "scope": []
-    },
-    {
-      "namespace": "data",
       "name": "source_0_y_domain_sum_count",
       "scope": []
     }

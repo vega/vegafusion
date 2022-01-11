@@ -9,6 +9,11 @@
       "namespace": "data",
       "name": "stocks",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "stocks_color_domain_symbol",
+      "scope": []
     }
   ],
   "client_to_server": []

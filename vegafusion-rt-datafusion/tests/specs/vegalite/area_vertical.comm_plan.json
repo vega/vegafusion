@@ -9,11 +9,6 @@
       "namespace": "data",
       "name": "source_0_x_domain_sum_Weight_in_lbs",
       "scope": []
-    },
-    {
-      "namespace": "data",
-      "name": "source_0_y_domain_year_Year",
-      "scope": []
     }
   ],
   "client_to_server": []

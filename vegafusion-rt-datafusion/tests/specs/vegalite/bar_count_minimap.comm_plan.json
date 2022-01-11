@@ -2,7 +2,7 @@
   "server_to_client": [
     {
       "namespace": "data",
-      "name": "data_0",
+      "name": "data_0_concat_0_y_domain_Name",
       "scope": []
     },
     {
@@ -17,7 +17,12 @@
     },
     {
       "namespace": "data",
-      "name": "source_0",
+      "name": "data_2_concat_1_x_domain___count",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_concat_1_y_domain_Name",
       "scope": []
     }
   ],
