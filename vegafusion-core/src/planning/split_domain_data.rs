@@ -61,7 +61,8 @@ impl MutChartVisitor for SplitUrlDataNodeVisitor {
                 ScaleDomainSpec::FieldReference(field_ref) => {
                     let data_name = &field_ref.data;
                     let field_name = &field_ref.field;
-                    let new_data_name = format!("{}_{}_domain", data_name, field_name);
+
+                    let new_data_name = format!("{}_{}_domain_{}", data_name, scale.name, field_name);
                     let (new_data, new_domain) = if discrete_scale {
 
                         // Extract sort field and op

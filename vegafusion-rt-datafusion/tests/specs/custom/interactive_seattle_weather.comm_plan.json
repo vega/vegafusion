@@ -6,7 +6,19 @@
       "scope": []
     }, {
       "namespace": "data",
+      "name": "data_0_concat_1_x_domain___count",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_0_concat_1_y_domain_weather",
+      "scope": []
+    }, {
+      "namespace": "data",
       "name": "data_1",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_1_concat_0_x_domain_monthdate_date",
       "scope": []
     }
   ],

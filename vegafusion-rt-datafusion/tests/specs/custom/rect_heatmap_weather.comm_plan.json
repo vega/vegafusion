@@ -4,6 +4,18 @@
       "namespace": "data",
       "name": "source_0",
       "scope": []
+    }, {
+      "namespace": "data",
+      "name": "source_0_color_domain_max_temp_max",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "source_0_x_domain_date_date",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "source_0_y_domain_month_date",
+      "scope": []
     }
   ],
   "client_to_server": []

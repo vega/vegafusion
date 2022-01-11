@@ -8,6 +8,10 @@
       "namespace": "data",
       "name": "data_2",
       "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_2_x_domain_month_date",
+      "scope": []
     }
   ],
   "client_to_server": [

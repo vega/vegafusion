@@ -36,6 +36,7 @@ use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::planning::extract::extract_server_data;
 use vegafusion_core::planning::optimize_server::split_data_url_nodes;
+use vegafusion_core::planning::plan::SpecPlan;
 use vegafusion_core::planning::stitch::stitch_specs;
 use vegafusion_core::planning::watch::{Watch, WatchNamespace, WatchPlan};
 use vegafusion_core::proto::gen::tasks::TaskGraph;
@@ -69,58 +70,58 @@ mod test_custom_specs {
     #[rstest(
         spec_name,
         tolerance,
-        case("custom/stacked_bar", 0.001),
-        case("custom/bar_colors", 0.001),
-        case("custom/imdb_histogram", 0.001),
-        case("custom/flights_crossfilter_a", 0.001),
-        case("custom/log_scaled_histogram", 0.001),
-        case("custom/non_linear_histogram", 0.001),
-        case("custom/relative_frequency_histogram", 0.001),
-        case("custom/kde_iris", 0.001),
-        case("custom/2d_circles_histogram_imdb", 0.001),
-        case("custom/2d_histogram_imdb", 0.001),
-        case("custom/cumulative_window_imdb", 0.001),
-        case("custom/density_and_cumulative_histograms", 0.001),
-        case("custom/mean_strip_plot_movies", 0.001),
-        case("custom/table_heatmap_cars", 0.001),
-        case("custom/difference_from_mean", 0.001),
-        case("custom/nested_concat_align", 0.001),
-        case("custom/imdb_dashboard_cross_height", 0.001),
-        case("custom/stacked_bar_weather_year", 0.001),
-        case("custom/stacked_bar_weather_month", 0.001),
-        case("custom/stacked_bar_normalize", 0.001),
-        case("custom/layer_bar_labels_grey", 0.001),
-        case("custom/bar_month_temporal_initial", 0.001),
-        case("custom/selection_layer_bar_month", 0.001),
-        case("custom/interactive_layered_crossfilter", 0.001),
-        case("custom/interactive_seattle_weather", 0.001),
-        case("custom/concat_marginal_histograms", 0.001),
-        case("custom/joinaggregate_movie_rating", 0.001),
-        case("custom/joinaggregate_text_color_contrast", 0.001),
-        case("custom/cumulative_running_window", 0.001),
-        case("custom/point_bubble", 0.001),
-        case("custom/circle_natural_disasters", 0.001),
-        case("custom/circle_bubble_health_income", 0.001),
+        // case("custom/stacked_bar", 0.001),
+        // case("custom/bar_colors", 0.001),
+        // case("custom/imdb_histogram", 0.001),
+        // case("custom/flights_crossfilter_a", 0.001),
+        // case("custom/log_scaled_histogram", 0.001),
+        // case("custom/non_linear_histogram", 0.001),
+        // case("custom/relative_frequency_histogram", 0.001),
+        // case("custom/kde_iris", 0.001),
+        // case("custom/2d_circles_histogram_imdb", 0.001),
+        // case("custom/2d_histogram_imdb", 0.001),
+        // case("custom/cumulative_window_imdb", 0.001),
+        // case("custom/density_and_cumulative_histograms", 0.001),
+        // case("custom/mean_strip_plot_movies", 0.001),
+        // case("custom/table_heatmap_cars", 0.001),
+        // case("custom/difference_from_mean", 0.001),
+        // case("custom/nested_concat_align", 0.001),
+        // case("custom/imdb_dashboard_cross_height", 0.001),
+        // case("custom/stacked_bar_weather_year", 0.001),
+        // case("custom/stacked_bar_weather_month", 0.001),
+        // case("custom/stacked_bar_normalize", 0.001),
+        // case("custom/layer_bar_labels_grey", 0.001),
+        // case("custom/bar_month_temporal_initial", 0.001),
+        // case("custom/selection_layer_bar_month", 0.001),
+        // case("custom/interactive_layered_crossfilter", 0.001),
+        // case("custom/interactive_seattle_weather", 0.001),
+        // case("custom/concat_marginal_histograms", 0.001),
+        // case("custom/joinaggregate_movie_rating", 0.001),
+        // case("custom/joinaggregate_text_color_contrast", 0.001),
+        // case("custom/cumulative_running_window", 0.001),
+        // case("custom/point_bubble", 0.001),
+        // case("custom/circle_natural_disasters", 0.001),
+        // case("custom/circle_bubble_health_income", 0.001),
         case("custom/line_color_stocks", 0.001),
-        case("custom/line_slope_barley", 0.001),
-        case("custom/connected_scatterplot", 0.001),
-        case("custom/layer_line_co2_concentration", 0.001),
-        case("custom/window_rank_matches", 0.001),
-        case("custom/circle_github_punchcard", 0.001),
-        case("custom/rect_lasagna", 0.001),
-        case("custom/rect_heatmap_weather", 0.001),
-        case("custom/layer_line_rolling_mean_point_raw", 0.001),
-        case("custom/layer_histogram_global_mean", 0.001),
-        case("custom/layer_precipitation_mean", 0.001),
-        case("custom/wheat_wages", 0.001),
-        case("custom/trellis_stacked_bar", 0.001),
-        case("custom/trellis_bar_histogram", 0.001),
-        case("custom/interactive_average", 0.001),
-        case("custom/histogram_responsive", 0.001),
-        case("custom/grouped_bar_chart_with_error_bars", 0.001),
-        case("custom/one_dot_per_zipcode", 0.001),
-        case("custom/ridgeline", 0.001),
-        case("custom/binned_scatter", 0.001)
+        // case("custom/line_slope_barley", 0.001),
+        // case("custom/connected_scatterplot", 0.001),
+        // case("custom/layer_line_co2_concentration", 0.001),
+        // case("custom/window_rank_matches", 0.001),
+        // case("custom/circle_github_punchcard", 0.001),
+        // case("custom/rect_lasagna", 0.001),
+        // case("custom/rect_heatmap_weather", 0.001),
+        // case("custom/layer_line_rolling_mean_point_raw", 0.001),
+        // case("custom/layer_histogram_global_mean", 0.001),
+        // case("custom/layer_precipitation_mean", 0.001),
+        // case("custom/wheat_wages", 0.001),
+        // case("custom/trellis_stacked_bar", 0.001),
+        // case("custom/trellis_bar_histogram", 0.001),
+        // case("custom/interactive_average", 0.001),
+        // case("custom/histogram_responsive", 0.001),
+        // case("custom/grouped_bar_chart_with_error_bars", 0.001),
+        // case("custom/one_dot_per_zipcode", 0.001),
+        // case("custom/ridgeline", 0.001),
+        // case("custom/binned_scatter", 0.001)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
         println!("spec_name: {}", spec_name);
@@ -1102,38 +1103,33 @@ async fn check_spec_sequence(
     // Initialize runtime
     let vegajs_runtime = vegajs_runtime();
 
-    // Perform client/server planning
-    let mut task_scope = full_spec.to_task_scope().unwrap();
-    let mut client_spec = full_spec.clone();
-    let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope).unwrap();
-    let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec).unwrap();
+    let spec_plan = SpecPlan::try_new(&full_spec).unwrap();
 
-    split_data_url_nodes(&mut server_spec).unwrap();
-    let task_scope = server_spec.to_task_scope().unwrap();
+    let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
 
     // println!("task_scope: {:#?}", task_scope);
 
     println!(
         "client_spec: {}",
-        serde_json::to_string_pretty(&client_spec).unwrap()
+        serde_json::to_string_pretty(&spec_plan.client_spec).unwrap()
     );
     println!(
         "server_spec: {}",
-        serde_json::to_string_pretty(&server_spec).unwrap()
+        serde_json::to_string_pretty(&spec_plan.server_spec).unwrap()
     );
 
     println!(
         "comm_plan:\n---\n{}\n---",
-        serde_json::to_string_pretty(&WatchPlan::from(comm_plan.clone())).unwrap()
+        serde_json::to_string_pretty(&WatchPlan::from(spec_plan.comm_plan.clone())).unwrap()
     );
 
     // Build task graph
-    let tasks = server_spec.to_tasks().unwrap();
+    let tasks = spec_plan.server_spec.to_tasks().unwrap();
     let mut task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let task_graph_mapping = task_graph.build_mapping();
 
     // Collect watch variables and node indices
-    let watch_vars = comm_plan.server_to_client.clone();
+    let watch_vars = spec_plan.comm_plan.server_to_client.clone();
     let watch_indices: Vec<_> = watch_vars
         .iter()
         .map(|var| task_graph_mapping.get(var).unwrap())
@@ -1148,7 +1144,7 @@ async fn check_spec_sequence(
     // println!("comm_plan: {:#?}", comm_plan);
 
     let mut init = Vec::new();
-    for var in &comm_plan.server_to_client {
+    for var in &spec_plan.comm_plan.server_to_client {
         let node_index = task_graph_mapping.get(var).unwrap();
         let value = runtime
             .get_node_value(Arc::new(task_graph.clone()), node_index)
@@ -1163,11 +1159,11 @@ async fn check_spec_sequence(
         });
     }
 
-    // println!("init: {:#?}", init);
+    println!("init: {:#?}", init);
 
     // Build watches for all of the variables that should be sent from the client to the
     // server
-    let watches: Vec<_> = comm_plan
+    let watches: Vec<_> = spec_plan.comm_plan
         .client_to_server
         .iter()
         .map(|t| Watch::try_from(t.clone()).unwrap())
@@ -1265,7 +1261,7 @@ async fn check_spec_sequence(
     // Compare exported images
     for (i, server_img) in vegajs_runtime
         .export_spec_sequence(
-            &client_spec,
+            &spec_plan.client_spec,
             ExportImageFormat::Png,
             init,
             planned_spec_updates,
@@ -1299,5 +1295,5 @@ async fn check_spec_sequence(
     }
 
     // Check for expected comm plan
-    assert_eq!(watch_plan, WatchPlan::from(comm_plan))
+    assert_eq!(watch_plan, WatchPlan::from(spec_plan.comm_plan))
 }

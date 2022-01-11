@@ -22,3 +22,4 @@ pub mod optimize_server;
 pub mod stitch;
 pub mod watch;
 pub mod split_domain_data;
+pub mod plan;

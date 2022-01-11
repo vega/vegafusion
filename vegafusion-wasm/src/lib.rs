@@ -45,6 +45,7 @@ use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 
 use web_sys::Element;
+use vegafusion_core::planning::plan::SpecPlan;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -364,29 +365,21 @@ pub fn render_vegafusion(
     send_msg_fn: js_sys::Function,
 ) -> MsgReceiver {
     let mut spec: ChartSpec = serde_json::from_str(spec_str).unwrap();
+    let spec_plan = SpecPlan::try_new(&spec).unwrap();
 
-    // Get full spec's scope
-    let mut task_scope = spec.to_task_scope().unwrap();
-
-    let mut server_spec =
-        extract_server_data(&mut spec, &mut task_scope).expect("Failed to extract_server_data");
-    let comm_plan =
-        stitch_specs(&task_scope, &mut server_spec, &mut spec).expect("Failed to stitch_specs");
-
-    split_data_url_nodes(&mut server_spec).expect("Failed to split_data_url_nodes");
-    let task_scope = server_spec
+    let task_scope = spec_plan.server_spec
         .to_task_scope()
         .expect("Failed to create task scope for server spec");
 
-    let tasks = server_spec.to_tasks().unwrap();
+    let tasks = spec_plan.server_spec.to_tasks().unwrap();
     let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
 
     // Create closure to update chart from received messages
     let receiver = MsgReceiver::new(
         element,
-        spec,
-        server_spec,
-        comm_plan,
+        spec_plan.client_spec,
+        spec_plan.server_spec,
+        spec_plan.comm_plan,
         task_graph.clone(),
         send_msg_fn,
         verbose,

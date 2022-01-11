@@ -6,7 +6,15 @@
       "scope": []
     }, {
       "namespace": "data",
-      "name": "source_0",
+      "name": "data_0_size_domain_sum_count",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_0_x_domain_hours_time",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "source_0_y_domain_day_time",
       "scope": []
     }
   ],
