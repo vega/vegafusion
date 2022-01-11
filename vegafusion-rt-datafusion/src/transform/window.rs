@@ -59,7 +59,7 @@ impl TransformTrait for Window {
             .collect();
 
         let dataframe = if order_by.is_empty() {
-            //  If not order by fields provided, use the row number
+            //  If no order by fields provided, use the row number
             let row_number_expr = Expr::WindowFunction {
                 fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
                 args: Vec::new(),
