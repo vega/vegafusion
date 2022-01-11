@@ -62,6 +62,11 @@ impl MutChartVisitor for SplitUrlDataNodeVisitor {
                     let data_name = &field_ref.data;
                     let field_name = &field_ref.field;
 
+                    // Validate whether we can do anything
+                    if field_name.contains('.') {
+                        return Ok(())
+                    }
+
                     let new_data_name = format!("{}_{}_domain_{}", data_name, scale.name, field_name);
                     let (new_data, new_domain) = if discrete_scale {
 
