@@ -181,8 +181,8 @@ impl <'a> MutChartVisitor for SplitUrlDataNodeVisitor<'a> {
                         // Create new domain specification that uses the new dataset
                         let new_domain: ScaleDomainSpec = serde_json::from_value(serde_json::json!(
                             [
-                                {"signal": format!("data('{}')[0].min", new_data_name)},
-                                {"signal": format!("data('{}')[0].max", new_data_name)}
+                                {"signal": format!("(data('{}')[0] || {{}}).min", new_data_name)},
+                                {"signal": format!("(data('{}')[0] || {{}}).max", new_data_name)}
                             ]
                         )).unwrap();
 
