@@ -67,7 +67,7 @@ impl TransformTrait for Window {
                 order_by: Vec::new(),
                 window_frame: None,
             }
-                .alias("__row_number");
+            .alias("__row_number");
 
             order_by.push(Expr::Sort {
                 expr: Box::new(col("__row_number")),
