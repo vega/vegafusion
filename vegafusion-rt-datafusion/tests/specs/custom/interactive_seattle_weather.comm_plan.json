@@ -4,7 +4,18 @@
       "namespace": "data",
       "name": "data_0",
       "scope": []
-    }, {
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_concat_1_x_domain___count",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_concat_1_y_domain_weather",
+      "scope": []
+    },
+    {
       "namespace": "data",
       "name": "data_1",
       "scope": []
@@ -15,7 +26,8 @@
       "namespace": "data",
       "name": "brush_store",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "data",
       "name": "click_store",
       "scope": []

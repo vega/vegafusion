@@ -4,33 +4,60 @@
       "namespace": "signal",
       "name": "child__column_IMDB_Rating_bin_maxbins_20_IMDB_Rating_bins",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "signal",
       "name": "child__column_Rotten_Tomatoes_Rating_bin_maxbins_20_Rotten_Tomatoes_Rating_bins",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "signal",
       "name": "child__column_US_Gross_bin_maxbins_20_US_Gross_bins",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "signal",
       "name": "child__column_Worldwide_Gross_bin_maxbins_20_Worldwide_Gross_bins",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "data",
       "name": "data_0",
       "scope": []
-    }, {
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_child__column_Worldwide_Gross_y_domain___count",
+      "scope": []
+    },
+    {
       "namespace": "data",
       "name": "data_1",
       "scope": []
-    }, {
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_child__column_Rotten_Tomatoes_Rating_y_domain___count",
+      "scope": []
+    },
+    {
       "namespace": "data",
       "name": "data_2",
       "scope": []
-    }, {
+    },
+    {
+      "namespace": "data",
+      "name": "data_2_child__column_IMDB_Rating_y_domain___count",
+      "scope": []
+    },
+    {
       "namespace": "data",
       "name": "data_3",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3_child__column_US_Gross_y_domain___count",
       "scope": []
     }
   ],

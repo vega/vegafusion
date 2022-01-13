@@ -4,6 +4,11 @@
       "namespace": "data",
       "name": "temperature",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "temperature_color_domain_temperature",
+      "scope": []
     }
   ],
   "client_to_server": []

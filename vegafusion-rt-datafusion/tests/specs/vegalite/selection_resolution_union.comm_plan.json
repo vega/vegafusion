@@ -7,7 +7,47 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_child__row_Horsepowercolumn_Miles_per_Gallon_x_domain_Miles_per_Gallon",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_child__row_Horsepowercolumn_Miles_per_Gallon_y_domain_Horsepower",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_child__row_Miles_per_Galloncolumn_Horsepower_x_domain_Horsepower",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_child__row_Miles_per_Galloncolumn_Horsepower_y_domain_Miles_per_Gallon",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_child__row_Accelerationcolumn_Horsepower_x_domain_Horsepower",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_child__row_Accelerationcolumn_Horsepower_y_domain_Acceleration",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_child__row_Horsepowercolumn_Acceleration_x_domain_Acceleration",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_child__row_Horsepowercolumn_Acceleration_y_domain_Horsepower",
       "scope": []
     },
     {
@@ -17,7 +57,37 @@
     },
     {
       "namespace": "data",
+      "name": "data_2_child__row_Horsepowercolumn_Horsepower_x_domain_Horsepower",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_2_child__row_Horsepowercolumn_Horsepower_y_domain_Horsepower",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_3",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3_child__row_Accelerationcolumn_Miles_per_Gallon_x_domain_Miles_per_Gallon",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3_child__row_Accelerationcolumn_Miles_per_Gallon_y_domain_Acceleration",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3_child__row_Miles_per_Galloncolumn_Acceleration_x_domain_Acceleration",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3_child__row_Miles_per_Galloncolumn_Acceleration_y_domain_Miles_per_Gallon",
       "scope": []
     },
     {
@@ -27,7 +97,27 @@
     },
     {
       "namespace": "data",
+      "name": "data_4_child__row_Accelerationcolumn_Acceleration_x_domain_Acceleration",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_4_child__row_Accelerationcolumn_Acceleration_y_domain_Acceleration",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_5",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_5_child__row_Miles_per_Galloncolumn_Miles_per_Gallon_x_domain_Miles_per_Gallon",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_5_child__row_Miles_per_Galloncolumn_Miles_per_Gallon_y_domain_Miles_per_Gallon",
       "scope": []
     }
   ],

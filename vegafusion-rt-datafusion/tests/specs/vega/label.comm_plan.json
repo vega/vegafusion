@@ -4,6 +4,16 @@
       "namespace": "data",
       "name": "movies",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "movies_x_domain_Rotten Tomatoes Rating",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "movies_y_domain_IMDB Rating",
+      "scope": []
     }
   ],
   "client_to_server": []

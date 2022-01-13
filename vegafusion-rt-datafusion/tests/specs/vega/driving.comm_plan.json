@@ -4,6 +4,16 @@
       "namespace": "data",
       "name": "drive",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "drive_x_domain_miles",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "drive_y_domain_gas",
+      "scope": []
     }
   ],
   "client_to_server": []

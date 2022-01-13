@@ -1,8 +1,30 @@
 {
-  "server_to_client": [{
-    "namespace": "data",
-    "name": "source_0",
-    "scope": []
-  }],
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "source_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_color_domain_Species",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_shape_domain_Species",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_x_domain_Flipper Length (mm)",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_y_domain_Body Mass (g)",
+      "scope": []
+    }
+  ],
   "client_to_server": []
 }

@@ -1,8 +1,20 @@
 {
-  "server_to_client": [{
-    "namespace": "data",
-    "name": "source_0",
-    "scope": []
-  }],
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "source_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_color_domain_symbol",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_y_domain_price",
+      "scope": []
+    }
+  ],
   "client_to_server": []
 }

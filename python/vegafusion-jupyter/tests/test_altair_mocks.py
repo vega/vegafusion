@@ -84,7 +84,7 @@ def setup_module(module):
     temp_screenshots_dir.mkdir(parents=True, exist_ok=True)
 
 
-@flaky(max_runs=3)
+@flaky(max_runs=2)
 @pytest.mark.parametrize(
     "mock_name,img_tolerance,delay", [
         ("area/cumulative_count", 1.0, 0.5),
@@ -133,7 +133,9 @@ def setup_module(module):
         ("casestudy/falkensee", 1.0, 0.5),
         ("casestudy/us_employment", 1.0, 0.5),
         ("casestudy/top_k_items", 1.0, 0.5),
-        ("casestudy/top_k_letters", 1.0, 0.5),
+
+        # Different order of ticks for equal bar lengths
+        ("casestudy/top_k_letters", 0.995, 0.5),
         ("casestudy/isotype", 1.0, 0.5),
         ("casestudy/london_tube", 1.0, 0.5),
         ("casestudy/isotype_emoji", 1.0, 0.5),
@@ -171,9 +173,9 @@ def setup_module(module):
         ("interactive/casestudy-us_population_over_time", 1.0, 1),
         ("interactive/scatter-href", 1.0, 1),
         ("interactive/other-image_tooltip", 1.0, 1),
-        ("interactive/casestudy-weather_heatmap", 1.0, 2),
+        ("interactive/casestudy-weather_heatmap", 0.999, 2),
         ("interactive/casestudy-airport_connections", 1.0, 1),
-        ("interactive/histogram-responsive", 1.0, 5),
+        ("interactive/histogram-responsive", 1.0, 8),
         ("line/bump_chart", 0.999, 0.5),
         ("line/filled_step_chart", 1.0, 0.5),
         ("line/with_cumsum", 1.0, 0.5),
@@ -271,12 +273,19 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     voila_proc = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
 
     # Sleep to allow Voila itself to start (this does not include loading a particular dashboard).
-    time.sleep(2)
+    time.sleep(1.5)
 
     try:
-        altair_imgs = export_image_sequence(chrome_driver, altair_notebook, actions, delay)
-        vegafusion_arrow_imgs = export_image_sequence(chrome_driver, vegafusion_arrow_notebook, actions, delay)
-        vegafusion_default_imgs = export_image_sequence(chrome_driver, vegafusion_default_notebook, actions, delay)
+        name = mock_name.replace("/", "-")
+        altair_imgs = export_image_sequence(
+            chrome_driver, altair_notebook, name + "_altair", actions, delay
+        )
+        vegafusion_arrow_imgs = export_image_sequence(
+            chrome_driver, vegafusion_arrow_notebook, name + "_vegafusion_feather", actions, delay
+        )
+        vegafusion_default_imgs = export_image_sequence(
+            chrome_driver, vegafusion_default_notebook, name + "_vegafusion", actions, delay
+        )
 
         for i in range(len(altair_imgs)):
             altair_img = altair_imgs[i]
@@ -298,7 +307,7 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     finally:
         voila_proc.kill()
         chrome_driver.close()
-        time.sleep(1)
+        time.sleep(0.25)
 
 
 def load_actions(mock_name):
@@ -312,13 +321,16 @@ def load_actions(mock_name):
 def export_image_sequence(
         chrome_driver: webdriver.Chrome,
         notebook: jupytext.jupytext.NotebookNode,
+        name,
         actions,
         delay,
         voila_url_base: str = "http://localhost:8866/voila/render/",
 ):
     imgs = []
 
-    with tempfile.NamedTemporaryFile(mode="wt", dir=temp_notebooks_dir, suffix=".ipynb") as f:
+    with tempfile.NamedTemporaryFile(
+            mode="wt", dir=temp_notebooks_dir, suffix=".ipynb",
+    ) as f:
         jupytext.write(notebook, f, fmt="ipynb")
         f.file.flush()
 
@@ -358,11 +370,12 @@ def export_image_sequence(
         for i, action in enumerate(actions):
             action_type = action["type"]
             if action_type in ("snapshot", "screenshot"):
-                time.sleep(1)
+                time.sleep(0.5)
                 chain.perform()
-                time.sleep(1)
+                time.sleep(1.0)
 
-                img_path = (temp_screenshots_dir / (temp_file_path.name + f"_{i}.png")).as_posix();
+                img_path = (temp_screenshots_dir / f"{name}_{i}.png").as_posix();
+                print(f"img_path: {img_path}")
                 if action_type == "snapshot":
                     img_bytes = canvas.screenshot_as_png
                     # Write to file for debugging

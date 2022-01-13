@@ -1,8 +1,15 @@
 {
-  "server_to_client": [{
-    "namespace": "data",
-    "name": "source_0",
-    "scope": []
-  }],
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "source_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_layer_1_y_domain_average_precipitation",
+      "scope": []
+    }
+  ],
   "client_to_server": []
 }

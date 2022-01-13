@@ -1,8 +1,40 @@
 {
-  "server_to_client": [{
-    "namespace": "data",
-    "name": "source_0",
-    "scope": []
-  }],
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "source_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_child__column_Cylinders_color_domain_Cylinders",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_child__column_Cylinders_x_domain_Horsepower",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_child__column_Cylinders_y_domain_Miles_per_Gallon",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_child__column_Origin_color_domain_Origin",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_child__column_Origin_x_domain_Horsepower",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_child__column_Origin_y_domain_Miles_per_Gallon",
+      "scope": []
+    }
+  ],
   "client_to_server": []
 }

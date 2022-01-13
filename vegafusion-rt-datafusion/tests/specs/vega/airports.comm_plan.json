@@ -9,6 +9,11 @@
       "namespace": "data",
       "name": "traffic",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "traffic_size_domain_flights",
+      "scope": []
     }
   ],
   "client_to_server": []

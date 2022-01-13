@@ -24,6 +24,11 @@
       "namespace": "data",
       "name": "data_2",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_2_color_domain___count",
+      "scope": []
     }
   ],
   "client_to_server": []

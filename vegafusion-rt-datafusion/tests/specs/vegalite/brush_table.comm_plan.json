@@ -7,7 +7,37 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_color_domain_Cylinders",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_concat_0_x_domain_Horsepower",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_concat_0_y_domain_Miles_per_Gallon",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_concat_1_concat_0_y_domain_row_number",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_concat_1_concat_1_y_domain_row_number",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_concat_1_concat_2_y_domain_row_number",
       "scope": []
     }
   ],
