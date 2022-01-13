@@ -7,7 +7,12 @@
     },
     {
       "namespace": "data",
-      "name": "source_0",
+      "name": "data_0_y_domain___count",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_x_domain_Cylinders",
       "scope": []
     }
   ],

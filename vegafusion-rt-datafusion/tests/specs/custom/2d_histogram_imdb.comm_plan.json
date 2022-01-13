@@ -4,13 +4,20 @@
       "namespace": "signal",
       "name": "bin_maxbins_40_Rotten_Tomatoes_Rating_bins",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "signal",
       "name": "bin_maxbins_60_IMDB_Rating_bins",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "data",
       "name": "source_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_color_domain___count",
       "scope": []
     }
   ],

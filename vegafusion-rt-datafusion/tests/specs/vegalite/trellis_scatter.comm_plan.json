@@ -9,6 +9,16 @@
       "namespace": "data",
       "name": "source_0",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_x_domain_Worldwide Gross",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_y_domain_US DVD Sales",
+      "scope": []
     }
   ],
   "client_to_server": []

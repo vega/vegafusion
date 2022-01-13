@@ -23,6 +23,7 @@ use datafusion::logical_plan::{avg, col, count, count_distinct, lit, max, min, s
 
 use crate::expression::compiler::utils::to_numeric;
 use async_trait::async_trait;
+use datafusion::physical_plan::window_functions::{BuiltInWindowFunction, WindowFunction};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -103,24 +104,48 @@ impl TransformTrait for Aggregate {
             agg_exprs.push(expr)
         }
 
-        let group_exprs: Vec<_> = self.groupby.iter().map(|c| col(c)).collect();
+        //  Add row_number column
+        let row_number_expr = Expr::WindowFunction {
+            fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
+            args: Vec::new(),
+            partition_by: Vec::new(),
+            order_by: Vec::new(),
+            window_frame: None,
+        }
+        .alias("__row_number");
+        let dataframe = dataframe.select(vec![Expr::Wildcard, row_number_expr])?;
 
+        // Add min(__row_number) aggregation that we can sort by later
+        agg_exprs.push(min(col("__row_number")).alias("__min_row_number"));
+
+        let group_exprs: Vec<_> = self.groupby.iter().map(|c| col(c)).collect();
         let mut grouped_dataframe = dataframe
             .aggregate(group_exprs, agg_exprs)
             .with_context(|| "Failed to perform aggregate transform".to_string())?;
 
-        // For determinism, sort result by grouping keys
-        let sort_exprs: Vec<_> = self
-            .groupby
-            .iter()
-            .map(|c| Expr::Sort {
-                expr: Box::new(col(c)),
+        if !self.groupby.is_empty() {
+            // Sort groups according to the lowest row number of a value in that group
+            let sort_exprs = vec![Expr::Sort {
+                expr: Box::new(col("__min_row_number")),
                 asc: true,
                 nulls_first: false,
-            })
-            .collect();
-        if !sort_exprs.is_empty() {
+            }];
             grouped_dataframe = grouped_dataframe.sort(sort_exprs)?;
+
+            // Drop __min_row_number column
+            let columns: Vec<_> = grouped_dataframe
+                .schema()
+                .fields()
+                .iter()
+                .filter_map(|f| {
+                    if f.name() != "__min_row_number" {
+                        Some(f.name().as_str())
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            grouped_dataframe = grouped_dataframe.select_columns(columns.as_slice())?
         }
 
         Ok((grouped_dataframe, Vec::new()))

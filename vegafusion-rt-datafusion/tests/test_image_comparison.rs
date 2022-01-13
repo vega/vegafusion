@@ -36,6 +36,7 @@ use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::planning::extract::extract_server_data;
 use vegafusion_core::planning::optimize_server::split_data_url_nodes;
+use vegafusion_core::planning::plan::SpecPlan;
 use vegafusion_core::planning::stitch::stitch_specs;
 use vegafusion_core::planning::watch::{Watch, WatchNamespace, WatchPlan};
 use vegafusion_core::proto::gen::tasks::TaskGraph;
@@ -320,7 +321,6 @@ mod test_vegalite_specs {
 
     #[rstest(
         spec_name, tolerance,
-        // ## Vega-Lite examples
         case("vegalite/airport_connections", 0.001),
         case("vegalite/arc_donut", 0.001),
         case("vegalite/arc_facet", 0.001),
@@ -365,7 +365,10 @@ mod test_vegalite_specs {
         case("vegalite/bar_column_fold", 0.001),
         case("vegalite/bar_column_pivot", 0.001),
         case("vegalite/bar_corner_radius_end", 0.001),
-        case("vegalite/bar_count_minimap", 0.001),
+
+        // Different ordering of bars with the same length
+        case("vegalite/bar_count_minimap", 0.1),
+
         case("vegalite/bar_custom_sort_full", 0.001),
         case("vegalite/bar_custom_sort_partial", 0.001),
         case("vegalite/bar_custom_time_domain", 0.001),
@@ -1002,6 +1005,7 @@ mod test_image_comparison_window {
 
         #[values("custom/cumulative_running_window")] spec_name: &str,
     ) {
+        println!("op: {}", op_name);
         // Load spec
         let mut full_spec = load_spec(spec_name);
 
@@ -1077,6 +1081,12 @@ fn load_expected_watch_plan(spec_name: &str) -> WatchPlan {
     serde_json::from_str(&comm_plan_str).unwrap()
 }
 
+fn write_updated_watch_plan(spec_name: &str, plan: &WatchPlan) {
+    let watch_plan_path = format!("{}/tests/specs/{}.comm_plan.json", crate_dir(), spec_name);
+    let watch_plan_path = std::path::Path::new(&watch_plan_path);
+    fs::write(watch_plan_path, serde_json::to_string_pretty(plan).unwrap()).unwrap()
+}
+
 async fn check_spec_sequence_from_files(spec_name: &str, tolerance: f64) {
     initialize();
 
@@ -1102,38 +1112,33 @@ async fn check_spec_sequence(
     // Initialize runtime
     let vegajs_runtime = vegajs_runtime();
 
-    // Perform client/server planning
-    let mut task_scope = full_spec.to_task_scope().unwrap();
-    let mut client_spec = full_spec.clone();
-    let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope).unwrap();
-    let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec).unwrap();
+    let spec_plan = SpecPlan::try_new(&full_spec).unwrap();
 
-    split_data_url_nodes(&mut server_spec).unwrap();
-    let task_scope = server_spec.to_task_scope().unwrap();
+    let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
 
     // println!("task_scope: {:#?}", task_scope);
 
     println!(
         "client_spec: {}",
-        serde_json::to_string_pretty(&client_spec).unwrap()
+        serde_json::to_string_pretty(&spec_plan.client_spec).unwrap()
     );
     println!(
         "server_spec: {}",
-        serde_json::to_string_pretty(&server_spec).unwrap()
+        serde_json::to_string_pretty(&spec_plan.server_spec).unwrap()
     );
 
     println!(
         "comm_plan:\n---\n{}\n---",
-        serde_json::to_string_pretty(&WatchPlan::from(comm_plan.clone())).unwrap()
+        serde_json::to_string_pretty(&WatchPlan::from(spec_plan.comm_plan.clone())).unwrap()
     );
 
     // Build task graph
-    let tasks = server_spec.to_tasks().unwrap();
+    let tasks = spec_plan.server_spec.to_tasks().unwrap();
     let mut task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let task_graph_mapping = task_graph.build_mapping();
 
     // Collect watch variables and node indices
-    let watch_vars = comm_plan.server_to_client.clone();
+    let watch_vars = spec_plan.comm_plan.server_to_client.clone();
     let watch_indices: Vec<_> = watch_vars
         .iter()
         .map(|var| task_graph_mapping.get(var).unwrap())
@@ -1148,7 +1153,7 @@ async fn check_spec_sequence(
     // println!("comm_plan: {:#?}", comm_plan);
 
     let mut init = Vec::new();
-    for var in &comm_plan.server_to_client {
+    for var in &spec_plan.comm_plan.server_to_client {
         let node_index = task_graph_mapping.get(var).unwrap();
         let value = runtime
             .get_node_value(Arc::new(task_graph.clone()), node_index)
@@ -1167,7 +1172,8 @@ async fn check_spec_sequence(
 
     // Build watches for all of the variables that should be sent from the client to the
     // server
-    let watches: Vec<_> = comm_plan
+    let watches: Vec<_> = spec_plan
+        .comm_plan
         .client_to_server
         .iter()
         .map(|t| Watch::try_from(t.clone()).unwrap())
@@ -1265,7 +1271,7 @@ async fn check_spec_sequence(
     // Compare exported images
     for (i, server_img) in vegajs_runtime
         .export_spec_sequence(
-            &client_spec,
+            &spec_plan.client_spec,
             ExportImageFormat::Png,
             init,
             planned_spec_updates,
@@ -1299,5 +1305,5 @@ async fn check_spec_sequence(
     }
 
     // Check for expected comm plan
-    assert_eq!(watch_plan, WatchPlan::from(comm_plan))
+    assert_eq!(watch_plan, WatchPlan::from(spec_plan.comm_plan))
 }

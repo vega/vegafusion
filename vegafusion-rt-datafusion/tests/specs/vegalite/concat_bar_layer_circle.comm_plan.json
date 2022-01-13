@@ -24,6 +24,16 @@
       "namespace": "data",
       "name": "data_3",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3_concat_1_x_domain_Major Genre",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3_concat_1_y_domain___count",
+      "scope": []
     }
   ],
   "client_to_server": [

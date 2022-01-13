@@ -9,6 +9,11 @@
       "namespace": "data",
       "name": "source_0",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_y_domain___count",
+      "scope": []
     }
   ],
   "client_to_server": []

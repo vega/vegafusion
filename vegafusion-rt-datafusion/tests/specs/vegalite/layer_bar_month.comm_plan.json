@@ -7,6 +7,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_x_domain_month_date",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_1",
       "scope": []
     }

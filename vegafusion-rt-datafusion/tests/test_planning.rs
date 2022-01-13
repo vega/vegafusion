@@ -23,6 +23,7 @@ use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use std::collections::HashSet;
 use std::sync::Arc;
+use vegafusion_core::planning::split_domain_data::split_domain_data;
 
 use vegafusion_core::planning::stitch::stitch_specs;
 
@@ -137,6 +138,14 @@ async fn try_extract_split_server_data() {
         "client spec:\n{}\n\n",
         serde_json::to_string_pretty(&spec).unwrap()
     );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn try_split_domain() {
+    // let mut spec = sorted_bar_spec();
+    let mut spec = cars_scatter_spec();
+    split_domain_data(&mut spec).unwrap();
+    println!("{}", serde_json::to_string_pretty(&spec).unwrap())
 }
 
 fn spec1() -> ChartSpec {
@@ -2497,6 +2506,238 @@ fn histogram_responsive() -> ChartSpec {
       "range": [{"signal": "childHeight"}, 0],
       "nice": true,
       "zero": true
+    }
+  ]
+}
+    "##).unwrap()
+}
+
+// Data and scale nested into first group
+fn sorted_bar_spec() -> ChartSpec {
+    serde_json::from_str(r##"
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "A bar chart that sorts the y-values by the x-values.",
+  "background": "white",
+  "padding": 5,
+  "width": 200,
+  "style": "cell",
+  "data": [
+    {
+      "name": "source_0",
+      "url": "data/population.json",
+      "format": {"type": "json"},
+      "transform": [{"type": "filter", "expr": "datum.year == 2000"}]
+    },
+    {
+      "name": "data_0",
+      "source": "source_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["age"],
+          "ops": ["sum"],
+          "fields": ["people"],
+          "as": ["sum_people"]
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"sum_people\"]) && isFinite(+datum[\"sum_people\"])"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {"name": "y_step", "value": 17},
+    {
+      "name": "height",
+      "update": "bandspace(domain('y').length, 0.1, 0.05) * y_step"
+    }
+  ],
+  "marks": [
+    {
+      "name": "marks",
+      "type": "rect",
+      "style": ["bar"],
+      "from": {"data": "data_0"},
+      "encode": {
+        "update": {
+          "fill": {"value": "#4c78a8"},
+          "ariaRoleDescription": {"value": "bar"},
+          "description": {
+            "signal": "\"population: \" + (format(datum[\"sum_people\"], \"\")) + \"; age: \" + (isValid(datum[\"age\"]) ? datum[\"age\"] : \"\"+datum[\"age\"])"
+          },
+          "x": {"scale": "x", "field": "sum_people"},
+          "x2": {"scale": "x", "value": 0},
+          "y": {"scale": "y", "field": "age"},
+          "height": {"scale": "y", "band": 1}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "linear",
+      "domain": {"data": "data_0", "field": "sum_people"},
+      "range": [0, {"signal": "width"}],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "y",
+      "type": "band",
+      "domain": {
+        "data": "source_0",
+        "field": "age",
+        "sort": {"op": "sum", "field": "people", "order": "descending"}
+      },
+      "range": {"step": {"signal": "y_step"}},
+      "paddingInner": 0.1,
+      "paddingOuter": 0.05
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "gridScale": "y",
+      "grid": true,
+      "tickCount": {"signal": "ceil(width/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "population",
+      "labelFlush": true,
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(width/40)"},
+      "zindex": 0
+    },
+    {"scale": "y", "orient": "left", "grid": false, "title": "age", "zindex": 0}
+  ]
+}
+    "##).unwrap()
+}
+
+// Data and scale nested into first group
+fn cars_scatter_spec() -> ChartSpec {
+    serde_json::from_str(r##"
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "A scatterplot showing horsepower and miles per gallons for various cars.",
+  "background": "white",
+  "padding": 5,
+  "width": 200,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {
+      "name": "source_0",
+      "url": "data/cars.json",
+      "format": {"type": "json"},
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"Horsepower\"]) && isFinite(+datum[\"Horsepower\"]) && isValid(datum[\"Miles_per_Gallon\"]) && isFinite(+datum[\"Miles_per_Gallon\"])"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "marks",
+      "type": "symbol",
+      "style": ["point"],
+      "from": {"data": "source_0"},
+      "encode": {
+        "update": {
+          "opacity": {"value": 0.7},
+          "fill": {"value": "transparent"},
+          "stroke": {"value": "#4c78a8"},
+          "ariaRoleDescription": {"value": "point"},
+          "description": {
+            "signal": "\"Horsepower: \" + (format(datum[\"Horsepower\"], \"\")) + \"; Miles_per_Gallon: \" + (format(datum[\"Miles_per_Gallon\"], \"\"))"
+          },
+          "x": {"scale": "x", "field": "Horsepower"},
+          "y": {"scale": "y", "field": "Miles_per_Gallon"}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "linear",
+      "domain": {"data": "source_0", "field": "Horsepower"},
+      "range": [0, {"signal": "width"}],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {"data": "source_0", "field": "Miles_per_Gallon"},
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "gridScale": "y",
+      "grid": true,
+      "tickCount": {"signal": "ceil(width/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "gridScale": "x",
+      "grid": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "Horsepower",
+      "labelFlush": true,
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(width/40)"},
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "Miles_per_Gallon",
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
     }
   ]
 }

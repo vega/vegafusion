@@ -4,9 +4,15 @@
       "namespace": "data",
       "name": "data_0",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "data",
       "name": "data_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_x_domain_month_date",
       "scope": []
     }
   ],

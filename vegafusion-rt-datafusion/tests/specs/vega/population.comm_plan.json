@@ -7,6 +7,11 @@
     },
     {
       "namespace": "data",
+      "name": "ageGroups_y_domain_age",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "females",
       "scope": []
     },
@@ -17,7 +22,12 @@
     },
     {
       "namespace": "data",
-      "name": "population",
+      "name": "population_x_domain_people_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "population_x_domain_people_1",
       "scope": []
     }
   ],

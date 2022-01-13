@@ -17,7 +17,22 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_concat_0_x_domain_month_date",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_concat_0_y_domain_mean_precipitation",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_size_domain___count",
       "scope": []
     }
   ],

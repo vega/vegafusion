@@ -330,9 +330,11 @@ impl TryFrom<ScalarValue> for SelectionRow {
                 // Validate lengths
                 if values.len() != fields.len() {
                     return Err(VegaFusionError::internal(&format!(
-                        "Length of selection fields ({}) must match that of selection values ({})",
+                        "Length of selection fields ({}) must match that of selection values ({})\nfield: {:?}\nvalues: {:?}",
                         fields.len(),
-                        values.len()
+                        values.len(),
+                        fields,
+                        values,
                     )));
                 }
 
