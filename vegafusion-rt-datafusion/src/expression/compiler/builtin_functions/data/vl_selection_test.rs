@@ -22,8 +22,9 @@ use crate::expression::compiler::utils::{
 use datafusion::logical_plan::{ceil, DFSchema};
 use datafusion::logical_plan::{lit, Expr};
 use datafusion::prelude::col;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
+use std::iter::FromIterator;
 use std::str::FromStr;
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -264,6 +265,24 @@ impl TryFrom<ScalarValue> for FieldSpec {
     }
 }
 
+// Take disjunction of two expressions, potentially with optimizations
+pub fn or_merge(lhs: Expr, rhs: Expr) -> Expr {
+    match (lhs, rhs) {
+        (
+            Expr::InList { expr: lhs_expr, list: lhs_list, negated: false },
+            Expr::InList { expr: rhs_expr, list: rhs_list, negated: false }
+        ) if lhs_expr == rhs_expr => {
+            let mut combined = lhs_list;
+            combined.extend(rhs_list);
+            Expr::InList { expr: lhs_expr, list: combined, negated: false }
+        }
+        (lhs, rhs) => {
+            // Use regular disjunction
+            lhs.or(rhs)
+        }
+    }
+}
+
 /// Selection row
 #[derive(Debug, Clone)]
 pub struct SelectionRow {
@@ -422,7 +441,7 @@ pub fn vl_selection_test_fn(
         lit(false)
     } else {
         match op {
-            Op::Union => exprs.into_iter().reduce(|a, b| a.or(b)).unwrap(),
+            Op::Union => exprs.into_iter().reduce(|a, b| or_merge(a, b)).unwrap(),
             Op::Intersect => exprs.into_iter().reduce(|a, b| a.and(b)).unwrap(),
         }
     };
