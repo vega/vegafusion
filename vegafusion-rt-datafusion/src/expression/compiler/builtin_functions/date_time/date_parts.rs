@@ -19,7 +19,10 @@
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
     datetime_strs_to_millis, DateParseMode,
 };
-use chrono::{DateTime, Datelike, Local, LocalResult, TimeZone, Timelike, Utc, Weekday, FixedOffset, NaiveDateTime, Offset};
+use chrono::{
+    DateTime, Datelike, FixedOffset, Local, LocalResult, NaiveDateTime, Offset, TimeZone, Timelike,
+    Utc, Weekday,
+};
 use datafusion::arrow::array::{
     Array, ArrayRef, Date32Array, Date64Array, Int64Array, StringArray,
 };
@@ -87,7 +90,11 @@ pub fn extract_millisecond<T: TimeZone>(dt: &DateTime<T>) -> i64 {
     dt.nanosecond() as i64 / 1000000
 }
 
-pub fn make_datepart_udf<T: 'static + TimeZone + Sync + Send>(extract_fn: fn(&DateTime<T>) -> i64, timezone: T, name: &str) -> ScalarUDF {
+pub fn make_datepart_udf<T: 'static + TimeZone + Sync + Send>(
+    extract_fn: fn(&DateTime<T>) -> i64,
+    timezone: T,
+    name: &str,
+) -> ScalarUDF {
     let part_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single argument
         let arg = &args[0];
