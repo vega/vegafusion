@@ -84,7 +84,7 @@ def setup_module(module):
     temp_screenshots_dir.mkdir(parents=True, exist_ok=True)
 
 
-@flaky(max_runs=3)
+@flaky(max_runs=2)
 @pytest.mark.parametrize(
     "mock_name,img_tolerance,delay", [
         ("area/cumulative_count", 1.0, 0.5),
@@ -133,7 +133,9 @@ def setup_module(module):
         ("casestudy/falkensee", 1.0, 0.5),
         ("casestudy/us_employment", 1.0, 0.5),
         ("casestudy/top_k_items", 1.0, 0.5),
-        ("casestudy/top_k_letters", 1.0, 0.5),
+
+        # Different order of ticks for equal bar lengths
+        ("casestudy/top_k_letters", 0.995, 0.5),
         ("casestudy/isotype", 1.0, 0.5),
         ("casestudy/london_tube", 1.0, 0.5),
         ("casestudy/isotype_emoji", 1.0, 0.5),
@@ -274,9 +276,16 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     time.sleep(2)
 
     try:
-        altair_imgs = export_image_sequence(chrome_driver, altair_notebook, actions, delay)
-        vegafusion_arrow_imgs = export_image_sequence(chrome_driver, vegafusion_arrow_notebook, actions, delay)
-        vegafusion_default_imgs = export_image_sequence(chrome_driver, vegafusion_default_notebook, actions, delay)
+        name = mock_name.replace("/", "-")
+        altair_imgs = export_image_sequence(
+            chrome_driver, altair_notebook, name + "_altair", actions, delay
+        )
+        vegafusion_arrow_imgs = export_image_sequence(
+            chrome_driver, vegafusion_arrow_notebook, name + "_vegafusion_feather", actions, delay
+        )
+        vegafusion_default_imgs = export_image_sequence(
+            chrome_driver, vegafusion_default_notebook, name + "_vegafusion", actions, delay
+        )
 
         for i in range(len(altair_imgs)):
             altair_img = altair_imgs[i]
@@ -312,13 +321,16 @@ def load_actions(mock_name):
 def export_image_sequence(
         chrome_driver: webdriver.Chrome,
         notebook: jupytext.jupytext.NotebookNode,
+        name,
         actions,
         delay,
         voila_url_base: str = "http://localhost:8866/voila/render/",
 ):
     imgs = []
 
-    with tempfile.NamedTemporaryFile(mode="wt", dir=temp_notebooks_dir, suffix=".ipynb") as f:
+    with tempfile.NamedTemporaryFile(
+            mode="wt", dir=temp_notebooks_dir, suffix=".ipynb",
+    ) as f:
         jupytext.write(notebook, f, fmt="ipynb")
         f.file.flush()
 
@@ -362,7 +374,8 @@ def export_image_sequence(
                 chain.perform()
                 time.sleep(1)
 
-                img_path = (temp_screenshots_dir / (temp_file_path.name + f"_{i}.png")).as_posix();
+                img_path = (temp_screenshots_dir / f"{name}_{i}.png").as_posix();
+                print(f"img_path: {img_path}")
                 if action_type == "snapshot":
                     img_bytes = canvas.screenshot_as_png
                     # Write to file for debugging

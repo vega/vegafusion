@@ -1005,6 +1005,7 @@ mod test_image_comparison_window {
 
         #[values("custom/cumulative_running_window")] spec_name: &str,
     ) {
+        println!("op: {}", op_name);
         // Load spec
         let mut full_spec = load_spec(spec_name);
 
