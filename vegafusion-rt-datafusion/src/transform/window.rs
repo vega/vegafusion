@@ -73,7 +73,7 @@ impl TransformTrait for Window {
             asc: true,
             nulls_first: false,
         });
-        dataframe.select(vec![Expr::Wildcard, row_number_expr])?
+        let dataframe = dataframe.select(vec![Expr::Wildcard, row_number_expr])?;
 
         let partition_by: Vec<_> = self.groupby.iter().map(|group| col(group)).collect();
 

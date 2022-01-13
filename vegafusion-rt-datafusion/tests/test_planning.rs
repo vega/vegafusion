@@ -2512,7 +2512,6 @@ fn histogram_responsive() -> ChartSpec {
     "##).unwrap()
 }
 
-
 // Data and scale nested into first group
 fn sorted_bar_spec() -> ChartSpec {
     serde_json::from_str(r##"
@@ -2628,8 +2627,6 @@ fn sorted_bar_spec() -> ChartSpec {
 }
     "##).unwrap()
 }
-
-
 
 // Data and scale nested into first group
 fn cars_scatter_spec() -> ChartSpec {

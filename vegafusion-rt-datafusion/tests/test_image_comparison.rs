@@ -1171,7 +1171,8 @@ async fn check_spec_sequence(
 
     // Build watches for all of the variables that should be sent from the client to the
     // server
-    let watches: Vec<_> = spec_plan.comm_plan
+    let watches: Vec<_> = spec_plan
+        .comm_plan
         .client_to_server
         .iter()
         .map(|t| Watch::try_from(t.clone()).unwrap())

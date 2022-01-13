@@ -16,11 +16,11 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
+use crate::spec::transform::aggregate::AggregateOpSpec;
 use crate::spec::values::{SignalExpressionSpec, SortOrderSpec};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::spec::transform::aggregate::AggregateOpSpec;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ScaleSpec {
@@ -118,7 +118,7 @@ pub struct ScaleDataReferenceSpec {
 #[serde(untagged)]
 pub enum ScaleDataReferenceSort {
     Bool(bool),
-    Parameters(ScaleDataReferenceSortParameters)
+    Parameters(ScaleDataReferenceSortParameters),
 }
 
 impl Default for ScaleDataReferenceSort {
@@ -136,7 +136,7 @@ pub struct ScaleDataReferenceSortParameters {
     pub field: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub order: Option<SortOrderSpec>
+    pub order: Option<SortOrderSpec>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
