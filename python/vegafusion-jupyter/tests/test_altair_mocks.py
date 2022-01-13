@@ -173,9 +173,9 @@ def setup_module(module):
         ("interactive/casestudy-us_population_over_time", 1.0, 1),
         ("interactive/scatter-href", 1.0, 1),
         ("interactive/other-image_tooltip", 1.0, 1),
-        ("interactive/casestudy-weather_heatmap", 1.0, 2),
+        ("interactive/casestudy-weather_heatmap", 0.999, 2),
         ("interactive/casestudy-airport_connections", 1.0, 1),
-        ("interactive/histogram-responsive", 1.0, 5),
+        ("interactive/histogram-responsive", 1.0, 8),
         ("line/bump_chart", 0.999, 0.5),
         ("line/filled_step_chart", 1.0, 0.5),
         ("line/with_cumsum", 1.0, 0.5),
@@ -372,7 +372,7 @@ def export_image_sequence(
             if action_type in ("snapshot", "screenshot"):
                 time.sleep(0.5)
                 chain.perform()
-                time.sleep(0.5)
+                time.sleep(1.0)
 
                 img_path = (temp_screenshots_dir / f"{name}_{i}.png").as_posix();
                 print(f"img_path: {img_path}")
