@@ -27,7 +27,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-20.04, windows-2019, macos-10.15 ]
+        os:
+         - ubuntu-20.04
+#         - windows-2019
+#         - macos-10.15
+
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -64,8 +68,8 @@ jobs:
       matrix:
         os:
          - ubuntu-20.04
-         - windows-2019
-         - macos-10.15
+#         - windows-2019
+#         - macos-10.15
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
