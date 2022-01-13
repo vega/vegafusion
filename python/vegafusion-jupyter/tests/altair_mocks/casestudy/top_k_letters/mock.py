@@ -20,7 +20,6 @@ or for evil, in the superlative degree of comparison only.
 source = pd.DataFrame(
     {'letters': np.array([c for c in text if c.isalpha()])}
 )
-source = source.sort_values("letters", ascending=False)
 
 alt.Chart(source).transform_aggregate(
     count='count()',

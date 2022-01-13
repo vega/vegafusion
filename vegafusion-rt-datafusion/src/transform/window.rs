@@ -58,25 +58,22 @@ impl TransformTrait for Window {
             .map(|f| col(f.field().name()))
             .collect();
 
-        let dataframe = if order_by.is_empty() {
-            //  If no order by fields provided, use the row number
-            let row_number_expr = Expr::WindowFunction {
-                fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
-                args: Vec::new(),
-                partition_by: Vec::new(),
-                order_by: Vec::new(),
-                window_frame: None,
-            }
-            .alias("__row_number");
-            order_by.push(Expr::Sort {
-                expr: Box::new(col("__row_number")),
-                asc: true,
-                nulls_first: false,
-            });
-            dataframe.select(vec![Expr::Wildcard, row_number_expr])?
-        } else {
-            dataframe
-        };
+        //  If no order by fields provided, use the row number
+        let row_number_expr = Expr::WindowFunction {
+            fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
+            args: Vec::new(),
+            partition_by: Vec::new(),
+            order_by: Vec::new(),
+            window_frame: None,
+        }
+        .alias("__row_number");
+
+        order_by.push(Expr::Sort {
+            expr: Box::new(col("__row_number")),
+            asc: true,
+            nulls_first: false,
+        });
+        dataframe.select(vec![Expr::Wildcard, row_number_expr])?
 
         let partition_by: Vec<_> = self.groupby.iter().map(|group| col(group)).collect();
 
