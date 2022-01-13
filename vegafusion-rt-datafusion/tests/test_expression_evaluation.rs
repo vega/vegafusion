@@ -341,8 +341,6 @@ mod test_date_parts {
         case("utcminutes(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
         case("seconds(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
         case("utcseconds(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("milliseconds(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("utcmilliseconds(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0")
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
