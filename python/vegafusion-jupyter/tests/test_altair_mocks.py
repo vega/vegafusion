@@ -269,23 +269,38 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     chrome_driver = webdriver.Chrome(options=chrome_opts)
     chrome_driver.set_window_size(800, 800)
 
-    # Launch Voila server
-    voila_proc = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
-
-    # Sleep to allow Voila itself to start (this does not include loading a particular dashboard).
-    time.sleep(2)
+    # # Launch Voila server
+    # voila_proc = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
+    #
+    # # Sleep to allow Voila itself to start (this does not include loading a particular dashboard).
+    # time.sleep(2)
 
     try:
         name = mock_name.replace("/", "-")
+
+        voila_proc = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
+        time.sleep(1)
         altair_imgs = export_image_sequence(
             chrome_driver, altair_notebook, name + "_altair", actions, delay
         )
+        voila_proc.kill()
+        time.sleep(1)
+
+        voila_proc = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
+        time.sleep(1)
         vegafusion_arrow_imgs = export_image_sequence(
             chrome_driver, vegafusion_arrow_notebook, name + "_vegafusion_feather", actions, delay
         )
+        voila_proc.kill()
+        time.sleep(1)
+
+        voila_proc = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
+        time.sleep(1)
         vegafusion_default_imgs = export_image_sequence(
             chrome_driver, vegafusion_default_notebook, name + "_vegafusion", actions, delay
         )
+        voila_proc.kill()
+        time.sleep(1)
 
         for i in range(len(altair_imgs)):
             altair_img = altair_imgs[i]
@@ -305,7 +320,6 @@ def test_altair_mock(mock_name, img_tolerance, delay):
             assert similarity_default_value >= img_tolerance, f"Similarity failed with default data transformer on image {i}"
 
     finally:
-        voila_proc.kill()
         chrome_driver.close()
         time.sleep(1)
 
