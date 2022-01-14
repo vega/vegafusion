@@ -269,12 +269,24 @@ impl TryFrom<ScalarValue> for FieldSpec {
 pub fn or_merge(lhs: Expr, rhs: Expr) -> Expr {
     match (lhs, rhs) {
         (
-            Expr::InList { expr: lhs_expr, list: lhs_list, negated: false },
-            Expr::InList { expr: rhs_expr, list: rhs_list, negated: false }
+            Expr::InList {
+                expr: lhs_expr,
+                list: lhs_list,
+                negated: false,
+            },
+            Expr::InList {
+                expr: rhs_expr,
+                list: rhs_list,
+                negated: false,
+            },
         ) if lhs_expr == rhs_expr => {
             let mut combined = lhs_list;
             combined.extend(rhs_list);
-            Expr::InList { expr: lhs_expr, list: combined, negated: false }
+            Expr::InList {
+                expr: lhs_expr,
+                list: combined,
+                negated: false,
+            }
         }
         (lhs, rhs) => {
             // Use regular disjunction

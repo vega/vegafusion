@@ -2,6 +2,8 @@ name: build_test
 on:
   pull_request:
     types: [opened, synchronize]
+env:
+  RUSTFLAGS: "--cfg unsound_local_offset"
 jobs:
   rust-fmt-clippy:
     runs-on: ubuntu-latest
