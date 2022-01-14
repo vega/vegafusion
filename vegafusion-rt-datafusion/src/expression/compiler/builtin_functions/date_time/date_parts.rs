@@ -125,13 +125,11 @@ pub fn make_datepart_udf(
                 } else {
                     // Still interpret timestamp as UTC
                     let utc_seconds = arg.value(i) / 1000;
-                    let utc_datetime = OffsetDateTime::from_unix_timestamp(
-                        utc_seconds
-                    ).expect("Failed to convert timestamp to OffsetDateTime");
+                    let utc_datetime = OffsetDateTime::from_unix_timestamp(utc_seconds)
+                        .expect("Failed to convert timestamp to OffsetDateTime");
 
-                    let offset = time::UtcOffset::local_offset_at(
-                        utc_datetime
-                    ).expect("Failed to determine local timezone");
+                    let offset = time::UtcOffset::local_offset_at(utc_datetime)
+                        .expect("Failed to determine local timezone");
                     let local_datetime = utc_datetime.to_offset(offset);
                     let value = extract_fn(&local_datetime);
                     result_builder.append_value(value).unwrap();
@@ -144,9 +142,8 @@ pub fn make_datepart_udf(
                     result_builder.append_null().unwrap();
                 } else {
                     let utc_seconds = arg.value(i) / 1000;
-                    let utc_datetime = OffsetDateTime::from_unix_timestamp(
-                        utc_seconds
-                    ).expect("Failed to convert timestamp to OffsetDateTime");
+                    let utc_datetime = OffsetDateTime::from_unix_timestamp(utc_seconds)
+                        .expect("Failed to convert timestamp to OffsetDateTime");
                     let value = extract_fn(&utc_datetime);
                     result_builder.append_value(value).unwrap();
                 }
