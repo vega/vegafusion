@@ -68,6 +68,12 @@ def to_feather(data, file):
 
         data = data.assign(**mapping)
 
+    # Expand categoricals (not yet supported in VegaFusion)
+    for col, dtype in data.dtypes.items():
+        if isinstance(dtype, pd.CategoricalDtype):
+            cat = data[col].cat
+            data[col] = cat.categories[cat.codes]
+
     # Serialize DataFrame to bytes in the arrow file format
     try:
         table = pa.Table.from_pandas(data)
