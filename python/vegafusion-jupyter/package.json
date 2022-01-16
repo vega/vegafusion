@@ -1,6 +1,6 @@
 {
   "name": "vegafusion-jupyter",
-  "version": "0.1.0",
+  "version": "0.0.1-alpha.1",
   "description": "Altair Jupyter Widget library that relies on VegaFusion for serverside calculations",
   "keywords": [
     "jupyter",
@@ -56,7 +56,7 @@
     "vega": "5.21.0",
     "vega-lite": "^4.17.0",
     "vega-tooltip": "^0.27.0",
-    "vegafusion-wasm": "../../vegafusion-wasm/pkg",
+    "vegafusion-wasm": "^0.0.1-alpha.1",
     "marked": "4.0.10"
   },
   "devDependencies": {
