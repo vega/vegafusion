@@ -130,7 +130,9 @@ jobs:
       - name: Build package
         working-directory: vegafusion-wasm/
         run: |
-          wasm-pack build --release
+          npm run build
+          wasm-pack pack
+          cd pkg
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -170,9 +172,14 @@ jobs:
           which pip
           pip --version
           python -m pip install target/wheels/vegafusion_python-*-cp310-*.manylinux2010_x86_64.whl
+      - name: Link vegafusion-wasm
+        working-directory: vegafusion-wasm/pkg
+        run: |
+          npm link
       - name: Build vegafusion-jupyter
         working-directory: python/vegafusion-jupyter
         run: |
+          npm link vegafusion-wasm
           python setup.py bdist_wheel
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
