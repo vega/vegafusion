@@ -71,7 +71,7 @@ jobs:
         os:
          - ubuntu-20.04
          - windows-2019
-         - macos-10.15
+         - macos-latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -101,7 +101,7 @@ jobs:
         with:
           maturin-version: latest
           command: build
-          args: --release -m vegafusion-python/Cargo.toml --strip --target aarch64-apple-darwin
+          args: --release -m vegafusion-python/Cargo.toml --strip --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
       - name: Remove unwanted universal
         if: ${{ runner.os == 'macOS' }}
         run: |
