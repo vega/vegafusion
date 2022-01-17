@@ -31,8 +31,8 @@ jobs:
       matrix:
         os:
          - ubuntu-20.04
-#         - windows-2019
-#         - macos-10.15
+         - windows-2019
+         - macos-10.15
 
     steps:
       - name: Check out repository code
@@ -70,8 +70,8 @@ jobs:
       matrix:
         os:
          - ubuntu-20.04
-#         - windows-2019
-#         - macos-10.15
+         - windows-2019
+         - macos-10.15
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
