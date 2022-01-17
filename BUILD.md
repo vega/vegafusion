@@ -16,17 +16,17 @@ Install `wasm-pack`, following instructions at https://rustwasm.github.io/wasm-p
 
 For Linux:
 ```bash
-conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-linux-64-3.10.lock.yml
+conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-linux-64-3.10.lock
 ```
 
 For MacOS:
 ```bash
-conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-osx-64-3.10.lock.yml
+conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-osx-64-3.10.lock
 ```
 
 For Windows:
 ```bash
-conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-win-64-3.10.lock.yml
+conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-win-64-3.10.lock
 ```
 
 ### Activate conda development environment
@@ -143,18 +143,9 @@ maturin build --release --strip --target aarch64-apple-darwin
 2. Update lock files with
 ```bash
 cd python/vegafusion-jupyter/
-conda-lock -f dev-environment-3.7.yml -p osx-64 -p linux-64 -p win-64 -k env --filename-template "conda-{platform}-cp37.lock"
-conda-lock -f dev-environment-3.10.yml -p osx-64 -p linux-64 -p win-64 -k env --filename-template "conda-{platform}-cp310.lock"
+conda-lock -f dev-environment-3.7.yml -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp37.lock"
+conda-lock -f dev-environment-3.10.yml -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp310.lock"
 ```
-3. Update existing conda environment with (replacing `{os}` and `{version}` as appropriate)
-
-```bash
-conda env update --file conda-{os}-{version}.lock.yml  --prune
-```
-
-Note: `--prune` only handles removing transitive dependencies that are no longer needed. If a package is dropped from
-`dev-environment.yml`, it will need to be manually removed with `conda`. 
-
 
 ## Publishing packages
 ### vegafusion-wasm
