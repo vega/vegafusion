@@ -15,10 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import altair as alt
-from ._version import __version__, version_info
+from ._version import __version__
 from .widget import VegaFusionWidget
 from .transformer import to_feather
-import vegafusion_jupyter.renderer
+from .renderer import vegafusion_renderer
 from .runtime import runtime
 
 
