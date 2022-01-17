@@ -94,12 +94,10 @@ impl TransformTrait for Aggregate {
             let expr = if let Some(alias) = self.aliases.get(i).filter(|a| !a.is_empty()) {
                 // Alias is a non-empty string
                 expr.alias(alias)
+            } else if field.is_empty() {
+                expr.alias(&op_name(op).to_string())
             } else {
-                if field.is_empty() {
-                    expr.alias(&op_name(op).to_string())
-                } else {
-                    expr.alias(&format!("{}_{}", op_name(op), field.to_string(),))
-                }
+                expr.alias(&format!("{}_{}", op_name(op), field.to_string(),))
             };
             agg_exprs.push(expr)
         }
