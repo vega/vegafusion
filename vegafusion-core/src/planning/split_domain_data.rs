@@ -99,8 +99,7 @@ impl<'a> MutChartVisitor for SplitUrlDataNodeVisitor<'a> {
 
                         let new_data = if let Some(sort_op) = sort_op {
                             // Will sort by the result of an aggregation operation
-                            let sort_field =
-                                sort_field.unwrap_or_else(|| field_name.clone());
+                            let sort_field = sort_field.unwrap_or_else(|| field_name.clone());
                             serde_json::from_value(serde_json::json!(
                                 {
                                     "name": new_data_name,

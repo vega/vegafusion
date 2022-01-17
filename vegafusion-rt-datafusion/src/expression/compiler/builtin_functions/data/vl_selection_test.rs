@@ -22,7 +22,7 @@ use crate::expression::compiler::utils::{
 use datafusion::logical_plan::{ceil, DFSchema};
 use datafusion::logical_plan::{lit, Expr};
 use datafusion::prelude::col;
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use std::str::FromStr;

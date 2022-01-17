@@ -33,8 +33,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use vegafusion_core::data::table::VegaFusionTable;
 
-
-use vegafusion_core::planning::stitch::{CommPlan};
+use vegafusion_core::planning::stitch::CommPlan;
 use vegafusion_core::planning::watch::WatchPlan;
 
 use vegafusion_core::proto::gen::services::{
