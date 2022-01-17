@@ -1,6 +1,6 @@
 {
   "name": "vegafusion-jupyter",
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.1-alpha.2",
   "description": "Altair Jupyter Widget library that relies on VegaFusion for serverside calculations",
   "keywords": [
     "jupyter",
@@ -11,6 +11,7 @@
   "files": [
     "lib/**/*.js",
     "dist/*.js",
+    "dist/*.wasm",
     "css/*.css",
     "css/*.scss",
     "images/*.svg"
@@ -32,7 +33,7 @@
   },
   "scripts": {
     "build": "yarn run build:lib && yarn run build:nbextension && yarn run build:labextension:dev",
-    "build:prod": "yarn run build:lib && yarn run build:nbextension && yarn run build:labextension",
+    "build:prod": "yarn run clean && yarn run build:lib && yarn run build:nbextension && yarn run build:labextension",
     "build:labextension": "jupyter labextension build .",
     "build:labextension:dev": "jupyter labextension build --development True .",
     "build:lib": "tsc && sass scss:css",
@@ -40,7 +41,7 @@
     "clean": "yarn run clean:lib && yarn run clean:nbextension && yarn run clean:labextension",
     "clean:lib": "rimraf lib",
     "clean:labextension": "rimraf vegafusion_jupyter/labextension",
-    "clean:nbextension": "rimraf vegafusion_jupyter/nbextension/static/index.js",
+    "clean:nbextension": "rimraf vegafusion_jupyter/nbextension/* && cp src/nbextension/extension.js vegafusion_jupyter/nbextension/",
     "lint": "eslint . --ext .ts,.tsx --fix",
     "lint:check": "eslint . --ext .ts,.tsx",
     "prepack": "yarn run build:lib",
@@ -53,11 +54,11 @@
   "dependencies": {
     "@jupyter-widgets/base": "^1.1.10 || ^2.0.0 || ^3.0.0 || ^4.0.0",
     "@jupyterlab/notebook": "^3.0.0 || ^4.0.0",
+    "marked": "4.0.10",
     "vega": "5.21.0",
     "vega-lite": "^4.17.0",
     "vega-tooltip": "^0.27.0",
-    "vegafusion-wasm": "^0.0.1-alpha.1",
-    "marked": "4.0.10"
+    "vegafusion-wasm": "0.0.1-alpha.4"
   },
   "devDependencies": {
     "@babel/core": "^7.5.0",
