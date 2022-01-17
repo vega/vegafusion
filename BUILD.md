@@ -56,6 +56,12 @@ cd vegafusion-wasm
 wasm-pack build --release
 ```
 
+### Link `vegafusion-wasm`
+```bash
+cd vegafusion-wasm/pkg
+npm link
+```
+
 ### Build the `vegafusion-python` PyO3 Python package in development mode
 Note: The PyO3 maturin build tool was included in the `maturin` conda-forge package installed in the development conda environment.
 
@@ -70,6 +76,7 @@ maturin develop --release
 From the repository root:
 ```bash
 cd python/vegafusion-jupyter/
+cd npm link vegafusion-wasm
 pip install -e ".[test]"
 ```
 
@@ -147,3 +154,13 @@ conda env update --file conda-{os}-{version}.lock.yml  --prune
 
 Note: `--prune` only handles removing transitive dependencies that are no longer needed. If a package is dropped from
 `dev-environment.yml`, it will need to be manually removed with `conda`. 
+
+
+## Publishing packages
+### vegafusion-wasm
+```bash
+cd vegafusion-wasm
+wasm-pack build --release
+wasm-pack publish --tag next
+
+```
