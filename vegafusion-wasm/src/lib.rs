@@ -32,9 +32,8 @@ use js_sys::Promise;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::planning::extract::extract_server_data;
-use vegafusion_core::planning::optimize_server::split_data_url_nodes;
-use vegafusion_core::planning::stitch::{stitch_specs, CommPlan};
+
+use vegafusion_core::planning::stitch::CommPlan;
 use vegafusion_core::planning::watch::WatchPlan;
 
 use vegafusion_core::proto::gen::services::{
@@ -364,7 +363,7 @@ pub fn render_vegafusion(
     debounce_max_wait: Option<f64>,
     send_msg_fn: js_sys::Function,
 ) -> MsgReceiver {
-    let mut spec: ChartSpec = serde_json::from_str(spec_str).unwrap();
+    let spec: ChartSpec = serde_json::from_str(spec_str).unwrap();
     let spec_plan = SpecPlan::try_new(&spec).unwrap();
 
     let task_scope = spec_plan

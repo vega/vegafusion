@@ -34,10 +34,9 @@ use std::sync::Arc;
 use tokio::runtime::Runtime;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::planning::extract::extract_server_data;
-use vegafusion_core::planning::optimize_server::split_data_url_nodes;
+
 use vegafusion_core::planning::plan::SpecPlan;
-use vegafusion_core::planning::stitch::stitch_specs;
+
 use vegafusion_core::planning::watch::{Watch, WatchNamespace, WatchPlan};
 use vegafusion_core::proto::gen::tasks::TaskGraph;
 use vegafusion_core::spec::chart::ChartSpec;

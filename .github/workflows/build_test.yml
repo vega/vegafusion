@@ -5,64 +5,64 @@ on:
 env:
   RUSTFLAGS: "--cfg unsound_local_offset"
 jobs:
-  rust-fmt-clippy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
-        with:
-          cache-on-failure: True
-      - name: Check cargo fmt compliance
-        run: cargo fmt --all -- --check
-      - name: Check for clippy warnings
-        run: cargo clippy
+#  rust-fmt-clippy:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@v2
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#          override: true
+#          components: rustfmt, clippy
+#      - name: Cache rust dependencies
+#        uses: Swatinem/rust-cache@v1
+#        with:
+#          cache-on-failure: True
+#      - name: Check cargo fmt compliance
+#        run: cargo fmt --all -- --check
+#      - name: Check for clippy warnings
+#        run: cargo clippy
 
-  test-rust:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os:
-         - ubuntu-20.04
+#  test-rust:
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os:
+#         - ubuntu-20.04
 #         - windows-2019
 #         - macos-10.15
-
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: Install apt system dependencies needed to build nodecanvas
-        run: |
-          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
-        if: ${{ runner.os == 'Linux' }}
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Install node
-        uses: actions/setup-node@v2
-        with:
-          node-version: '17'
-      - name: Install test node dependencies
-        working-directory: vegafusion-rt-datafusion/tests/util/vegajs_runtime
-        run: |
-          npm install
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
-        with:
-          cache-on-failure: True
-      - name: Run Rust Tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
+#
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@v2
+#      - name: Install apt system dependencies needed to build nodecanvas
+#        run: |
+#          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
+#        if: ${{ runner.os == 'Linux' }}
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#          override: true
+#      - name: Install node
+#        uses: actions/setup-node@v2
+#        with:
+#          node-version: '17'
+#      - name: Install test node dependencies
+#        working-directory: vegafusion-rt-datafusion/tests/util/vegajs_runtime
+#        run: |
+#          npm install
+#      - name: Cache rust dependencies
+#        uses: Swatinem/rust-cache@v1
+#        with:
+#          cache-on-failure: True
+#      - name: Run Rust Tests
+#        uses: actions-rs/cargo@v1
+#        with:
+#          command: test
+#          args: --all-features
 
   build-vegafusion-python:
     runs-on: ${{ matrix.os }}
@@ -71,7 +71,7 @@ jobs:
         os:
          - ubuntu-20.04
 #         - windows-2019
-#         - macos-10.15
+#         - macos-11
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -101,7 +101,7 @@ jobs:
         with:
           maturin-version: latest
           command: build
-          args: --release -m vegafusion-python/Cargo.toml --strip --target aarch64-apple-darwin
+          args: --release -m vegafusion-python/Cargo.toml --strip --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
       - name: Remove unwanted universal
         if: ${{ runner.os == 'macOS' }}
         run: |
@@ -130,7 +130,9 @@ jobs:
       - name: Build package
         working-directory: vegafusion-wasm/
         run: |
-          wasm-pack build --release
+          npm run build
+          wasm-pack pack
+          cd pkg
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -152,7 +154,7 @@ jobs:
           auto-update-conda: true
           activate-environment: vegafusion_dev
           miniforge-version: latest
-          environment-file: python/vegafusion-jupyter/conda-linux-64-cp310.lock.yml
+          environment-file: python/vegafusion-jupyter/conda-linux-64-cp310.lock
       - name: Download vegafusion-wasm packages
         uses: actions/download-artifact@v2
         with:
@@ -170,9 +172,14 @@ jobs:
           which pip
           pip --version
           python -m pip install target/wheels/vegafusion_python-*-cp310-*.manylinux2010_x86_64.whl
+      - name: Link vegafusion-wasm
+        working-directory: vegafusion-wasm/pkg
+        run: |
+          npm link
       - name: Build vegafusion-jupyter
         working-directory: python/vegafusion-jupyter
         run: |
+          npm link vegafusion-wasm
           python setup.py bdist_wheel
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
@@ -203,7 +210,7 @@ jobs:
           auto-update-conda: true
           activate-environment: vegafusion_dev
           miniforge-version: latest
-          environment-file: python/vegafusion-jupyter/conda-${{ matrix.options[1] }}-${{ matrix.options[4] }}.lock.yml
+          environment-file: python/vegafusion-jupyter/conda-${{ matrix.options[1] }}-${{ matrix.options[4] }}.lock
       - name: Install Chrome
         uses: browser-actions/setup-chrome@latest
         with:

@@ -191,7 +191,6 @@ fn test_bin_aggregate() {
     );
 }
 
-
 // /// Test that the "as" column in a aggregate transform can have the same name as a Field,
 // /// then use the overwritten column in a filter expression.
 // /// Blocked on https://github.com/apache/arrow-datafusion/issues/1411
@@ -232,4 +231,3 @@ fn test_bin_aggregate() {
 //         &eq_config,
 //     );
 // }
-

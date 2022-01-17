@@ -22,9 +22,9 @@ use crate::expression::compiler::utils::{
 use datafusion::logical_plan::{ceil, DFSchema};
 use datafusion::logical_plan::{lit, Expr};
 use datafusion::prelude::col;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::convert::TryFrom;
-use std::iter::FromIterator;
+
 use std::str::FromStr;
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -453,7 +453,7 @@ pub fn vl_selection_test_fn(
         lit(false)
     } else {
         match op {
-            Op::Union => exprs.into_iter().reduce(|a, b| or_merge(a, b)).unwrap(),
+            Op::Union => exprs.into_iter().reduce(or_merge).unwrap(),
             Op::Intersect => exprs.into_iter().reduce(|a, b| a.and(b)).unwrap(),
         }
     };

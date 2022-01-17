@@ -30,7 +30,7 @@ use datafusion::physical_plan::functions::{
 };
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
-use time::{OffsetDateTime, UtcOffset};
+use time::OffsetDateTime;
 use vegafusion_core::arrow::compute::unary;
 
 #[inline(always)]

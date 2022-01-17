@@ -1,23 +1,42 @@
 {
   "name": "vegafusion-wasm",
-  "version": "0.1.0",
+  "version": "0.0.1-alpha.5",
   "author": {
-    "name" : "Jon Mease",
-    "email" : "jonmmease@gmail.com",
-    "url" : "https://jonmmease.dev"
+    "name": "Jon Mease",
+    "email": "jonmmease@gmail.com",
+    "url": "https://jonmmease.dev"
   },
   "license": "AGPL-3.0-or-later",
   "description": "Wasm library for interfacing with VegaFusion",
-  "keywords": ["Vega", "Vega-Lite", "visualization"],
+  "keywords": [
+    "Vega",
+    "Vega-Lite",
+    "visualization"
+  ],
   "homepage": "https://github.com/vegafusion/vegafusion",
   "bugs": {
     "url": "https://github.com/vegafusion/vegafusion/issues"
+  },
+  "files": [
+    "vegafusion_wasm_bg.wasm",
+    "vegafusion_wasm.js",
+    "vegafusion_wasm_bg.js",
+    "vegafusion_wasm.d.ts",
+    "snippets/**/*.js"
+  ],
+  "module": "vegafusion_wasm.js",
+  "types": "vegafusion_wasm.d.ts",
+  "sideEffects": false,
+  "scripts": {
+    "build": "wasm-pack build --release && cp package.json pkg/",
+    "publish": "wasm-pack publish",
+    "prerelease-publish": "wasm-pack publish --tag next"
   },
   "dependencies": {
     "bootstrap": "^5.1.3",
     "lodash": "^4.17.21",
     "vega": "5.21.0",
-    "vega-util": "^1.17.0",
-    "vega-tooltip": "^0.27.0"
+    "vega-tooltip": "^0.27.0",
+    "vega-util": "^1.17.0"
   }
 }

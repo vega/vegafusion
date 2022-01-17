@@ -14,6 +14,4 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-version_info = (0, 1, 0, 'dev')
-__version__ = ".".join(map(str, version_info))
-
+__version__ = "0.0.1-alpha.1"

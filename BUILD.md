@@ -16,17 +16,17 @@ Install `wasm-pack`, following instructions at https://rustwasm.github.io/wasm-p
 
 For Linux:
 ```bash
-conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-linux-64-3.10.lock.yml
+conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-linux-64-3.10.lock
 ```
 
 For MacOS:
 ```bash
-conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-osx-64-3.10.lock.yml
+conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-osx-64-3.10.lock
 ```
 
 For Windows:
 ```bash
-conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-win-64-3.10.lock.yml
+conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-win-64-3.10.lock
 ```
 
 ### Activate conda development environment
@@ -56,6 +56,12 @@ cd vegafusion-wasm
 wasm-pack build --release
 ```
 
+### Link `vegafusion-wasm`
+```bash
+cd vegafusion-wasm/pkg
+npm link
+```
+
 ### Build the `vegafusion-python` PyO3 Python package in development mode
 Note: The PyO3 maturin build tool was included in the `maturin` conda-forge package installed in the development conda environment.
 
@@ -70,6 +76,7 @@ maturin develop --release
 From the repository root:
 ```bash
 cd python/vegafusion-jupyter/
+cd npm link vegafusion-wasm
 pip install -e ".[test]"
 ```
 
@@ -136,14 +143,15 @@ maturin build --release --strip --target aarch64-apple-darwin
 2. Update lock files with
 ```bash
 cd python/vegafusion-jupyter/
-conda-lock -f dev-environment-3.7.yml -p osx-64 -p linux-64 -p win-64 -k env --filename-template "conda-{platform}-cp37.lock"
-conda-lock -f dev-environment-3.10.yml -p osx-64 -p linux-64 -p win-64 -k env --filename-template "conda-{platform}-cp310.lock"
+conda-lock -f dev-environment-3.7.yml -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp37.lock"
+conda-lock -f dev-environment-3.10.yml -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp310.lock"
 ```
-3. Update existing conda environment with (replacing `{os}` and `{version}` as appropriate)
 
+## Publishing packages
+### vegafusion-wasm
 ```bash
-conda env update --file conda-{os}-{version}.lock.yml  --prune
-```
+cd vegafusion-wasm
+wasm-pack build --release
+wasm-pack publish --tag next
 
-Note: `--prune` only handles removing transitive dependencies that are no longer needed. If a package is dropped from
-`dev-environment.yml`, it will need to be manually removed with `conda`. 
+```

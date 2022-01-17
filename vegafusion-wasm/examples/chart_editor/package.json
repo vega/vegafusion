@@ -33,7 +33,9 @@
     "vegafusion-wasm": "../../pkg",
     "vega": "5.21.0",
     "vega-lite": "^4.17.0",
-    "vega-tooltip": "^0.27.0"
+    "vega-tooltip": "^0.27.0",
+    "follow-redirects": ">=1.14.7",
+    "node-forge": ">=1.0.0"
   },
   "devDependencies": {
     "css-loader": "^6.5.1",

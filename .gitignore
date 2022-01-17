@@ -21,3 +21,5 @@ vegafusion-rt-datafusion/tests/util/vegajs_runtime/node_modules/
 /python/vegafusion-jupyter/css/
 /python/vegafusion-jupyter/tests/temp_screenshot/
 _vegafusion_data
+/python/vegafusion-jupyter/examples/data/
+/python/vegafusion-jupyter/examples/omnisci_downloads/
