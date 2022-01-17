@@ -89,13 +89,13 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: 12.5
-      - name: Build wheels
-        uses: messense/maturin-action@v1
-        with:
-          maturin-version: latest
-          command: build
-          manylinux: 2010
-          args: --release -m vegafusion-python/Cargo.toml --strip
+#      - name: Build wheels
+#        uses: messense/maturin-action@v1
+#        with:
+#          maturin-version: latest
+#          command: build
+#          manylinux: 2010
+#          args: --release -m vegafusion-python/Cargo.toml --strip
       - name: Download Apple Silicon toolchain
         if: ${{ runner.os == 'macOS' }}
         run: |
