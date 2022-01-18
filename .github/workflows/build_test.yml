@@ -181,6 +181,8 @@ jobs:
         run: |
           npm link vegafusion-wasm
           python setup.py bdist_wheel
+          npm pack
+          mv *.tgz dist/
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
