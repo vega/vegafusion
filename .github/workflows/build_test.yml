@@ -185,7 +185,6 @@ jobs:
         working-directory: python/vegafusion-jupyter
         run: |
           python setup.py bdist_wheel
-          mv *.tgz dist/
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
