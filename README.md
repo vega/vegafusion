@@ -8,6 +8,9 @@ The core VegaFusion algorithms are implemented in Rust. Python integration is pr
 ## Documentation
 See the documentation at https://vegafusion.io
 
+## Project Status
+VegaFusion is a young project, but it is already fairly well tested. The integration test suite includes image comparisons with over 600 specifications from the Vega, Vega-Lite, and Altair galleries.  Even so, VegaFusion should not be considered production ready quite yet.
+
 ## Quick Start: Serverside acceleration for Altair in Jupyter
 VegaFusion can be used to provide serverside acceleration for Altair visualizations when displayed in Jupyter contexts (Classic notebook, JupyterLab, and Voila). First, install the `vegafusion-jupyter` package, along with `vega-datasets` for the example below.
 
