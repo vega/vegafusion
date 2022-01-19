@@ -171,16 +171,10 @@ jobs:
           which pip
           pip --version
           python -m pip install target/wheels/vegafusion_python-*-cp310-*.manylinux2010_x86_64.whl
-      - name: Link vegafusion-wasm
-        working-directory: vegafusion-wasm/pkg
-        run: |
-          npm link
       - name: Build vegafusion-jupyter
         working-directory: python/vegafusion-jupyter
         run: |
-          npm link vegafusion-wasm
           python setup.py bdist_wheel
-          npm pack
           mv *.tgz dist/
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
