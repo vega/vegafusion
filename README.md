@@ -149,7 +149,7 @@ Apache Arrow DataFusion is an SQL compatible query engine that integrates with t
 # License
 At least until a sustainable funding model is established, VegaFusion will be developed under the [AGPL license](https://www.gnu.org/licenses/agpl-3.0.en.html).  This is a copy-left license in the GPL family of licenses. As with all [OSI approved licenses](https://opensource.org/licenses/alphabetical), there are no restrictions on what code licensed under the AGPL can be used for. However, the requirements for what must be shared publicly are greater than for licenses that are more commonly used in the Python ecosystem like [Apache-2](https://opensource.org/licenses/Apache-2.0), [MIT](https://opensource.org/licenses/MIT), and [BSD-3](https://opensource.org/licenses/BSD-3-Clause).
 
-Contributors are asked to sign a Contributor License Agreement that allows their contribution to be re-licensed in the future. For example, the project could be re-licensed to one of the more permissive licenses above, or it could be dual licensed with a commercial license as a means to raise funds. 
+Contributors are asked to sign a Contributor License Agreement (based on the Orace CLA) that allows their contribution to be re-licensed in the future. For example, the project could be re-licensed to one of the more permissive licenses above, or it could be dual licensed with a commercial license as a means to raise funds. 
 
 # About the name
 There are two reasons I chose the name VegaFusion
