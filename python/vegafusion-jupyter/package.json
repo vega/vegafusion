@@ -58,7 +58,7 @@
     "vega": "^5.21.0",
     "vega-lite": "^4.17.0",
     "vega-tooltip": "^0.27.0",
-    "vegafusion-wasm": "^0.0.1"
+    "vegafusion-wasm": "../../vegafusion-wasm/pkg"
   },
   "devDependencies": {
     "@babel/core": "^7.5.0",
