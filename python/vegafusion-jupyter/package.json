@@ -55,9 +55,7 @@
     "@jupyter-widgets/base": "^1.1.10 || ^2.0.0 || ^3.0.0 || ^4.0.0",
     "@jupyterlab/notebook": "^3.0.0 || ^4.0.0",
     "marked": "^4.0.10",
-    "vega": "^5.21.0",
     "vega-lite": "^4.17.0",
-    "vega-tooltip": "^0.27.0",
     "vegafusion-wasm": "../../vegafusion-wasm/pkg"
   },
   "devDependencies": {
