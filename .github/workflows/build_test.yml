@@ -132,7 +132,6 @@ jobs:
         run: |
           npm run build
           wasm-pack pack
-          cd pkg
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -174,6 +173,7 @@ jobs:
       - name: Build vegafusion-jupyter
         working-directory: python/vegafusion-jupyter
         run: |
+          npm install
           python setup.py bdist_wheel
           mv *.tgz dist/
       - name: Upload artifacts
