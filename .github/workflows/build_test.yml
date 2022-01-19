@@ -84,13 +84,20 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: True
-      - name: Build wheels
+#      - name: Build wheels
+#        uses: messense/maturin-action@v1
+#        with:
+#          maturin-version: latest
+#          command: build
+#          manylinux: 2010
+#          args: --release -m vegafusion-python/Cargo.toml --strip
+      - name: Temp Build wheels
         uses: messense/maturin-action@v1
         with:
           maturin-version: latest
           command: build
           manylinux: 2010
-          args: --release -m vegafusion-python/Cargo.toml --strip
+          args: --release -m vegafusion-python/Cargo.toml --strip -i python3.10
       - name: Download Apple Silicon toolchain
         if: ${{ runner.os == 'macOS' }}
         run: |
