@@ -10,4 +10,4 @@ members = [
 [profile.release]
 ## Tell `rustc` to use highest performance optimization and perform Link Time Optimization
 opt-level = 3
-lto = true
+# lto = true

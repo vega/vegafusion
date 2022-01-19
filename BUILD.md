@@ -146,12 +146,3 @@ cd python/vegafusion-jupyter/
 conda-lock -f dev-environment-3.7.yml -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp37.lock"
 conda-lock -f dev-environment-3.10.yml -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp310.lock"
 ```
-
-## Publishing packages
-### vegafusion-wasm
-```bash
-cd vegafusion-wasm
-wasm-pack build --release
-wasm-pack publish --tag next
-
-```

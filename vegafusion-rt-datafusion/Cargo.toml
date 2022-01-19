@@ -1,6 +1,6 @@
 [package]
 name = "vegafusion-rt-datafusion"
-version = "0.0.1-alpha.1"
+version = "0.0.1"
 edition = "2018"
 license = "AGPL-3.0-or-later"
 
