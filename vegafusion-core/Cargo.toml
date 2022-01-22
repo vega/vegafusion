@@ -22,8 +22,6 @@ serde_json = "1.0.68"
 ordered-float = "^2.8.0"
 petgraph = "0.6.0"
 deterministic-hash = "1.0.1"
-
-[dev-dependencies]
 chrono = "0.4.19"
 
 [build-dependencies]

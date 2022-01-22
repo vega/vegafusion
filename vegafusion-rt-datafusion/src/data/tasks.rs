@@ -23,7 +23,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
 use crate::expression::compiler::builtin_functions::date_time::datetime::DATETIME_COMPONENTS;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{is_integer_datatype, is_string_datatype, ExprHelpers};
+use crate::expression::compiler::utils::{is_integer_datatype, is_string_datatype, ExprHelpers, cast_to};
 use crate::task_graph::task::TaskCall;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
@@ -241,6 +241,7 @@ fn process_datetimes(
     // Perform specialized date parsing
     let mut date_fields: Vec<String> = Vec::new();
     let mut df = df;
+    let schema = df.schema();
     if let Some(scan_url_format::Parse::Object(formats)) = parse {
         for spec in &formats.specs {
             let datatype = &spec.datatype;
@@ -262,20 +263,24 @@ fn process_datetimes(
                             args: vec![col(&spec.name)],
                         };
 
-                        Expr::ScalarFunction {
-                            fun: BuiltinScalarFunction::ToTimestampMillis,
-                            args: vec![date_expr],
-                        }
+                        date_expr
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically
                         Expr::ScalarUDF {
                             fun: Arc::new(DATETIME_COMPONENTS.clone()),
                             args: vec![col(&spec.name)],
                         }
-                    } else if let DataType::Timestamp(_, _) = dtype {
-                        Expr::ScalarFunction {
-                            fun: BuiltinScalarFunction::ToTimestampMillis,
-                            args: vec![col(&spec.name)],
+                    } else if let DataType::Timestamp(_, tz) = dtype {
+                        match tz {
+                            Some(tz) if tz.to_lowercase() == "utc" => {
+                                cast_to(col(&spec.name), &DataType::Date64, schema)?
+                            }
+                            _ => {
+                                Expr::ScalarFunction {
+                                    fun: BuiltinScalarFunction::ToTimestampMillis,
+                                    args: vec![col(&spec.name)],
+                                }
+                            }
                         }
                     } else {
                         continue;
@@ -302,19 +307,26 @@ fn process_datetimes(
 
     // Standardize other Timestamp columns (those that weren't created above) to integer
     // milliseconds
-    let selection: Vec<_> = df
-        .schema()
+    let schema = df.schema();
+    let selection: Vec<_> = schema
         .fields()
         .iter()
         .map(|field| {
             if !date_fields.contains(field.name())
                 && matches!(field.data_type(), DataType::Timestamp(_, _))
             {
-                Expr::ScalarFunction {
-                    fun: BuiltinScalarFunction::ToTimestampMillis,
-                    args: vec![col(field.name())],
-                }
-                .alias(field.name())
+                let expr = match field.data_type() {
+                    DataType::Timestamp(_, tz) => {
+                        cast_to(col(field.name()), &DataType::Date64, schema).unwrap()
+                    }
+                    _ => {
+                        Expr::ScalarFunction {
+                            fun: BuiltinScalarFunction::ToTimestampMillis,
+                            args: vec![col(field.name())],
+                        }
+                    }
+                };
+                expr.alias(field.name())
             } else {
                 col(field.name())
             }

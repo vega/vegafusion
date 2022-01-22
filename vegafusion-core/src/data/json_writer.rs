@@ -15,10 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// ## VegaFusion note
-// This file is copied from Arrow (with license above) `json/writer.rs` with the following
-// modification.  Rather than skip writing null values, this version is updated to write the JSON
-// NULL value instead. This is needed for interoperability with Vega.
+// ## VegaFusion notes
+// -------------------
+// This file was originally copied from Arrow (with license above) `json/writer.rs` with the
+// following modifications.
+//   1. Rather than skip writing null values, this version is updated to write the JSON
+//      NULL value instead. This is needed for interoperability with Vega.
+//   2. Date32, Date64, and Timestamp types are serialized as UTC milliseconds. Date32 and Date64
+//      are treated as already in UTC time. Timestamp is treated as local time, and is converted
+//      to UTC.
 
 //! # JSON Writer
 //!
@@ -117,6 +122,7 @@ use arrow::array::*;
 use arrow::datatypes::*;
 use arrow::error::Result;
 use arrow::record_batch::RecordBatch;
+use chrono::TimeZone;
 
 fn primitive_array_to_json<T: ArrowPrimitiveType>(array: &ArrayRef) -> Vec<Value> {
     as_primitive_array::<T>(array)
@@ -222,6 +228,32 @@ macro_rules! set_column_by_array_type {
     };
 }
 
+macro_rules! set_local_temporal_column_by_array_type {
+    ($array_type:ident, $col_name:ident, $rows:ident, $array:ident, $row_count:ident, $cast_fn:ident) => {
+        let arr = $array.as_any().downcast_ref::<$array_type>().unwrap();
+
+        $rows
+            .iter_mut()
+            .enumerate()
+            .take($row_count)
+            .for_each(|(i, row)| {
+                if !arr.is_null(i) {
+                    if let Some(v) = arr.$cast_fn(i) {
+                        // Get UTC offset when the naive datetime is considered to be in local time
+                        let local = chrono::Local {};
+                        let local_datetime = local.from_local_datetime(&v).earliest().unwrap();
+                        let millis = local_datetime.timestamp_millis();
+                        row.insert($col_name.to_string(), millis.into());
+                    } else {
+                        row.insert($col_name.to_string(), Value::Null);
+                    }
+                }
+            });
+    };
+}
+
+
+
 macro_rules! set_temporal_column_by_array_type {
     ($array_type:ident, $col_name:ident, $rows:ident, $array:ident, $row_count:ident, $cast_fn:ident) => {
         let arr = $array.as_any().downcast_ref::<$array_type>().unwrap();
@@ -313,27 +345,44 @@ fn set_column_for_json_rows(
             set_column_by_array_type!(as_string_array, col_name, rows, array, row_count);
         }
         DataType::Date32 => {
-            set_temporal_column_by_array_type!(
-                Date32Array,
-                col_name,
-                rows,
-                array,
-                row_count,
-                value_as_date
-            );
+            // Write as integer UTC milliseconds
+            let arr = array.as_any().downcast_ref::<Date64Array>().unwrap();
+            rows.iter_mut()
+                .enumerate()
+                .take(row_count)
+                .for_each(|(i, row)| {
+                    if !arr.is_null(i) {
+                        if arr.is_valid(i) {
+                            let days = arr.value(i);
+                            let ms_per_day = 1000 * 60 * 60 * 24_i64;
+                            let millis = days * ms_per_day;
+                            row.insert(col_name.to_string(), millis.into());
+                        } else {
+                            row.insert(col_name.to_string(), Value::Null);
+                        }
+                    }
+                });
         }
         DataType::Date64 => {
-            set_temporal_column_by_array_type!(
-                Date64Array,
-                col_name,
-                rows,
-                array,
-                row_count,
-                value_as_date
-            );
+            // Write as integer UTC milliseconds
+            let arr = array.as_any().downcast_ref::<Date64Array>().unwrap();
+            rows
+                .iter_mut()
+                .enumerate()
+                .take(row_count)
+                .for_each(|(i, row)| {
+                    if !arr.is_null(i) {
+                        if arr.is_valid(i) {
+                            let millis = arr.value(i);
+                            row.insert(col_name.to_string(), millis.into());
+                        } else {
+                            row.insert(col_name.to_string(), Value::Null);
+                        }
+                    }
+                });
         }
         DataType::Timestamp(TimeUnit::Second, _) => {
-            set_temporal_column_by_array_type!(
+            set_local_temporal_column_by_array_type!(
                 TimestampSecondArray,
                 col_name,
                 rows,
@@ -343,7 +392,7 @@ fn set_column_for_json_rows(
             );
         }
         DataType::Timestamp(TimeUnit::Millisecond, _) => {
-            set_temporal_column_by_array_type!(
+            set_local_temporal_column_by_array_type!(
                 TimestampMillisecondArray,
                 col_name,
                 rows,
@@ -353,7 +402,7 @@ fn set_column_for_json_rows(
             );
         }
         DataType::Timestamp(TimeUnit::Microsecond, _) => {
-            set_temporal_column_by_array_type!(
+            set_local_temporal_column_by_array_type!(
                 TimestampMicrosecondArray,
                 col_name,
                 rows,
@@ -363,7 +412,7 @@ fn set_column_for_json_rows(
             );
         }
         DataType::Timestamp(TimeUnit::Nanosecond, _) => {
-            set_temporal_column_by_array_type!(
+            set_local_temporal_column_by_array_type!(
                 TimestampNanosecondArray,
                 col_name,
                 rows,

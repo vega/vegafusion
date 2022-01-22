@@ -17,12 +17,10 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
-    datetime_strs_to_millis, DateParseMode,
+    datetime_strs_to_date64, DateParseMode,
 };
 
-use datafusion::arrow::array::{
-    Array, ArrayRef, Date32Array, Date64Array, Int64Array, StringArray,
-};
+use datafusion::arrow::array::{Array, ArrayRef, Date32Array, Date64Array, Int64Array, StringArray, TimestampMillisecondArray};
 use datafusion::arrow::compute::cast;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::physical_plan::functions::{
@@ -30,8 +28,10 @@ use datafusion::physical_plan::functions::{
 };
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
+use chrono::{Local, NaiveDateTime, TimeZone};
 use time::OffsetDateTime;
 use vegafusion_core::arrow::compute::unary;
+use vegafusion_core::error::Result;
 
 #[inline(always)]
 pub fn extract_year(dt: &OffsetDateTime) -> i64 {
@@ -84,47 +84,78 @@ pub fn extract_millisecond(dt: &OffsetDateTime) -> i64 {
     dt.millisecond() as i64
 }
 
-pub fn make_datepart_udf(
+
+fn process_input_datetime(arg: &ArrayRef) -> (ArrayRef, bool) {
+    let (array, input_local) = match arg.data_type() {
+        DataType::Utf8 => {
+            let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
+            let date64_array = datetime_strs_to_date64(array, DateParseMode::JavaScript);
+            (date64_array, false)
+        }
+        DataType::Timestamp(TimeUnit::Millisecond, _) => {
+            // Local time, convert to Date64 for
+            (arg.clone(), true)
+            // cast(arg, &DataType::Date64)?
+        },
+        DataType::Date32 => {
+            let ms_per_day = 1000 * 60 * 60 * 24_i64;
+            let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
+
+            let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
+            let array = Arc::new(array) as ArrayRef;
+            let date64_array = cast(&array, &DataType::Date64).unwrap();
+            (date64_array, false)
+        }
+        DataType::Date64 => {
+            (arg.clone(), false)
+        },
+        DataType::Int64 => {
+            let date64_array = cast(arg, &DataType::Date64).unwrap();
+            (date64_array, false)
+        },
+        _ => panic!("Unexpected data type for date part function:"),
+    };
+    (array, input_local)
+}
+
+
+
+pub fn make_local_datepart_udf(
     extract_fn: fn(&OffsetDateTime) -> i64,
-    local: bool,
     name: &str,
 ) -> ScalarUDF {
     let part_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single argument
         let arg = &args[0];
-
-        let arg = match arg.data_type() {
-            DataType::Utf8 => {
-                let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
-                let millis_array = datetime_strs_to_millis(array, DateParseMode::JavaScript);
-                cast(&millis_array, &DataType::Date64)?
-            }
-            DataType::Timestamp(TimeUnit::Millisecond, _) => cast(arg, &DataType::Date64)?,
-            DataType::Date32 => {
-                let ms_per_day = 1000 * 60 * 60 * 24_i64;
-                let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
-
-                let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
-                let array = Arc::new(array) as ArrayRef;
-                cast(&array, &DataType::Date64)?
-            }
-            DataType::Date64 => arg.clone(),
-            DataType::Int64 => cast(arg, &DataType::Date64)?,
-            _ => panic!("Unexpected data type for date part function:"),
-        };
-
-        let arg = arg.as_any().downcast_ref::<Date64Array>().unwrap();
+        let (arg, input_local) = process_input_datetime(arg);
 
         let mut result_builder = Int64Array::builder(arg.len());
 
-        if local {
-            // Work in Local
-            for i in 0..arg.len() {
-                if arg.is_null(i) {
+        if input_local {
+            // Input was in local, no conversion needed
+            let timestamp_array = arg.as_any().downcast_ref::<TimestampMillisecondArray>().unwrap();
+            for i in 0..timestamp_array.len() {
+                if timestamp_array.is_null(i) {
+                    result_builder.append_null().unwrap();
+                } else {
+                    // Still interpret timestamp as Local
+                    let local_seconds = timestamp_array.value(i) / 1000;
+                    let local_datetime = OffsetDateTime::from_unix_timestamp(local_seconds)
+                        .expect("Failed to convert timestamp to OffsetDateTime");
+
+                    let value = extract_fn(&local_datetime);
+                    result_builder.append_value(value).unwrap();
+                }
+            }
+        } else {
+            // Input was in UTC, conversion needed
+            let date64_array = arg.as_any().downcast_ref::<Date64Array>().unwrap();
+            for i in 0..date64_array.len() {
+                if date64_array.is_null(i) {
                     result_builder.append_null().unwrap();
                 } else {
                     // Still interpret timestamp as UTC
-                    let utc_seconds = arg.value(i) / 1000;
+                    let utc_seconds = date64_array.value(i) / 1000;
                     let utc_datetime = OffsetDateTime::from_unix_timestamp(utc_seconds)
                         .expect("Failed to convert timestamp to OffsetDateTime");
 
@@ -135,8 +166,69 @@ pub fn make_datepart_udf(
                     result_builder.append_value(value).unwrap();
                 }
             }
+        }
+
+        Ok(Arc::new(result_builder.finish()) as ArrayRef)
+    };
+
+    let part_fn = make_scalar_function(part_fn);
+    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
+
+    ScalarUDF::new(
+        name,
+        &Signature::uniform(
+            1,
+            vec![
+                DataType::Utf8,
+                DataType::Timestamp(TimeUnit::Millisecond, None),
+                DataType::Date32,
+                DataType::Date64,
+                DataType::Int64,
+            ],
+            Volatility::Immutable,
+        ),
+        &return_type,
+        &part_fn,
+    )
+}
+
+
+pub fn make_utc_datepart_udf(
+    extract_fn: fn(&OffsetDateTime) -> i64,
+    name: &str,
+) -> ScalarUDF {
+    let part_fn = move |args: &[ArrayRef]| {
+        // Signature ensures there is a single argument
+        let arg = &args[0];
+        let (arg, input_local) = process_input_datetime(arg);
+
+        let mut result_builder = Int64Array::builder(arg.len());
+
+        if input_local {
+            // Input was in local, conversion needed
+            let arg = arg.as_any().downcast_ref::<TimestampMillisecondArray>().unwrap();
+            for i in 0..arg.len() {
+                if arg.is_null(i) {
+                    result_builder.append_null().unwrap();
+                } else {
+                    let local_millis = arg.value(i);
+                    let seconds = local_millis / 1000;
+                    let nanoseconds = ((local_millis % 1000) * 1_000_000) as u32;
+                    let naive_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
+
+                    let local = Local {};
+                    let local_datetime = local.from_local_datetime(&naive_datetime).earliest().unwrap();
+                    let utc_millis = local_datetime.timestamp_millis();
+
+                    let local_datetime = OffsetDateTime::from_unix_timestamp(
+                        utc_millis / 1000
+                    ).expect("Failed to convert timestamp to OffsetDateTime");
+                    let value = extract_fn(&local_datetime);
+                    result_builder.append_value(value).unwrap();
+                }
+            }
         } else {
-            // Work in UTC
+            let arg = arg.as_any().downcast_ref::<Date64Array>().unwrap();
             for i in 0..arg.len() {
                 if arg.is_null(i) {
                     result_builder.append_null().unwrap();
@@ -173,48 +265,138 @@ pub fn make_datepart_udf(
     )
 }
 
+
+//
+// pub fn make_datepart_udf(
+//     extract_fn: fn(&OffsetDateTime) -> i64,
+//     local: bool,
+//     name: &str,
+// ) -> ScalarUDF {
+//     let part_fn = move |args: &[ArrayRef]| {
+//         // Signature ensures there is a single argument
+//         let arg = &args[0];
+//
+//         let date64_array = match arg.data_type() {
+//             DataType::Utf8 => {
+//                 let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
+//                 datetime_strs_to_date64(array, DateParseMode::JavaScript)
+//             }
+//             DataType::Timestamp(TimeUnit::Millisecond, _) => cast(arg, &DataType::Date64)?,
+//             DataType::Date32 => {
+//                 let ms_per_day = 1000 * 60 * 60 * 24_i64;
+//                 let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
+//
+//                 let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
+//                 let array = Arc::new(array) as ArrayRef;
+//                 cast(&array, &DataType::Date64)?
+//             }
+//             DataType::Date64 => arg.clone(),
+//             DataType::Int64 => cast(arg, &DataType::Date64)?,
+//             _ => panic!("Unexpected data type for date part function:"),
+//         };
+//
+//         let date64_array = date64_array.as_any().downcast_ref::<Date64Array>().unwrap();
+//
+//         let mut result_builder = Int64Array::builder(date64_array.len());
+//
+//         if local {
+//             // Work in Local
+//             for i in 0..date64_array.len() {
+//                 if date64_array.is_null(i) {
+//                     result_builder.append_null().unwrap();
+//                 } else {
+//                     // Still interpret timestamp as UTC
+//                     let utc_seconds = date64_array.value(i) / 1000;
+//                     let utc_datetime = OffsetDateTime::from_unix_timestamp(utc_seconds)
+//                         .expect("Failed to convert timestamp to OffsetDateTime");
+//
+//                     let offset = time::UtcOffset::local_offset_at(utc_datetime)
+//                         .expect("Failed to determine local timezone");
+//                     let local_datetime = utc_datetime.to_offset(offset);
+//                     let value = extract_fn(&local_datetime);
+//                     result_builder.append_value(value).unwrap();
+//                 }
+//             }
+//         } else {
+//             // Work in UTC
+//             for i in 0..date64_array.len() {
+//                 if date64_array.is_null(i) {
+//                     result_builder.append_null().unwrap();
+//                 } else {
+//                     let utc_seconds = date64_array.value(i) / 1000;
+//                     let utc_datetime = OffsetDateTime::from_unix_timestamp(utc_seconds)
+//                         .expect("Failed to convert timestamp to OffsetDateTime");
+//                     let value = extract_fn(&utc_datetime);
+//                     result_builder.append_value(value).unwrap();
+//                 }
+//             }
+//         }
+//
+//         Ok(Arc::new(result_builder.finish()) as ArrayRef)
+//     };
+//     let part_fn = make_scalar_function(part_fn);
+//
+//     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
+//     ScalarUDF::new(
+//         name,
+//         &Signature::uniform(
+//             1,
+//             vec![
+//                 DataType::Utf8,
+//                 DataType::Timestamp(TimeUnit::Millisecond, None),
+//                 DataType::Date32,
+//                 DataType::Date64,
+//                 DataType::Int64,
+//             ],
+//             Volatility::Immutable,
+//         ),
+//         &return_type,
+//         &part_fn,
+//     )
+// }
+
 lazy_static! {
     // Local
     pub static ref YEAR_UDF: ScalarUDF =
-        make_datepart_udf(extract_year, true, "year");
+        make_local_datepart_udf(extract_year, "year");
     pub static ref MONTH_UDF: ScalarUDF =
-        make_datepart_udf(extract_month, true, "month");
+        make_local_datepart_udf(extract_month, "month");
     pub static ref QUARTER_UDF: ScalarUDF =
-        make_datepart_udf(extract_quarter, true, "quarter");
+        make_local_datepart_udf(extract_quarter, "quarter");
     pub static ref DATE_UDF: ScalarUDF =
-        make_datepart_udf(extract_date, true, "date");
+        make_local_datepart_udf(extract_date, "date");
     pub static ref DAYOFYEAR_UDF: ScalarUDF =
-        make_datepart_udf(extract_dayofyear, true, "dayofyear");
+        make_local_datepart_udf(extract_dayofyear, "dayofyear");
     pub static ref DAY_UDF: ScalarUDF =
-        make_datepart_udf(extract_day, true, "day");
+        make_local_datepart_udf(extract_day, "day");
     pub static ref HOURS_UDF: ScalarUDF =
-        make_datepart_udf(extract_hour, true, "hours");
+        make_local_datepart_udf(extract_hour, "hours");
     pub static ref MINUTES_UDF: ScalarUDF =
-        make_datepart_udf(extract_minute, true, "minutes");
+        make_local_datepart_udf(extract_minute, "minutes");
     pub static ref SECONDS_UDF: ScalarUDF =
-        make_datepart_udf(extract_second, true, "seconds");
+        make_local_datepart_udf(extract_second, "seconds");
     pub static ref MILLISECONDS_UDF: ScalarUDF =
-        make_datepart_udf(extract_millisecond, true, "milliseconds");
+        make_local_datepart_udf(extract_millisecond, "milliseconds");
 
     // UTC
     pub static ref UTCYEAR_UDF: ScalarUDF =
-        make_datepart_udf(extract_year, false, "utcyear");
+        make_utc_datepart_udf(extract_year, "utcyear");
     pub static ref UTCMONTH_UDF: ScalarUDF =
-        make_datepart_udf(extract_month, false, "utcmonth");
+        make_utc_datepart_udf(extract_month, "utcmonth");
     pub static ref UTCQUARTER_UDF: ScalarUDF =
-        make_datepart_udf(extract_quarter, false, "utcquarter");
+        make_utc_datepart_udf(extract_quarter, "utcquarter");
     pub static ref UTCDATE_UDF: ScalarUDF =
-        make_datepart_udf(extract_date, false, "utcdate");
+        make_utc_datepart_udf(extract_date, "utcdate");
     pub static ref UTCDAYOFYEAR_UDF: ScalarUDF =
-        make_datepart_udf(extract_dayofyear, false, "utcdayofyear");
+        make_utc_datepart_udf(extract_dayofyear, "utcdayofyear");
     pub static ref UTCDAY_UDF: ScalarUDF =
-        make_datepart_udf(extract_day, false, "utcday");
+        make_utc_datepart_udf(extract_day, "utcday");
     pub static ref UTCHOURS_UDF: ScalarUDF =
-        make_datepart_udf(extract_hour, false, "utchours");
+        make_utc_datepart_udf(extract_hour, "utchours");
     pub static ref UTCMINUTES_UDF: ScalarUDF =
-        make_datepart_udf(extract_minute, false, "utcminutes");
+        make_utc_datepart_udf(extract_minute, "utcminutes");
     pub static ref UTCSECONDS_UDF: ScalarUDF =
-        make_datepart_udf(extract_second, false, "utcseconds");
+        make_utc_datepart_udf(extract_second, "utcseconds");
     pub static ref UTCMILLISECONDS_UDF: ScalarUDF =
-        make_datepart_udf(extract_millisecond, false, "utcmilliseconds");
+        make_utc_datepart_udf(extract_millisecond, "utcmilliseconds");
 }

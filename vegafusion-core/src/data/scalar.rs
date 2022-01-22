@@ -29,6 +29,7 @@ use crate::error::{Result, VegaFusionError};
 use serde_json::{Map, Value};
 use std::convert::TryFrom;
 use std::ops::Deref;
+use chrono::{FixedOffset, Local, NaiveDateTime, TimeZone, Utc};
 
 // Prefix for special values JSON encoded as strings
 pub const DATETIME_PREFIX: &str = "__$datetime:";
@@ -54,7 +55,7 @@ impl ScalarValueHelpers for ScalarValue {
             Value::String(v) => {
                 if v.starts_with(DATETIME_PREFIX) {
                     let ms: i64 = v.strip_prefix(DATETIME_PREFIX).unwrap().parse().unwrap();
-                    ScalarValue::TimestampMillisecond(Some(ms))
+                    ScalarValue::Float64(Some(ms as f64))
                 } else {
                     ScalarValue::from(v.as_str())
                 }
@@ -116,17 +117,30 @@ impl ScalarValueHelpers for ScalarValue {
             ScalarValue::LargeBinary(Some(_v)) => {
                 unimplemented!()
             }
-            ScalarValue::Date32(Some(_v)) => {
-                unimplemented!()
+            ScalarValue::Date32(Some(v)) => {
+                let ms_per_day: i32 = 1000 * 60 * 60 * 24;
+                let utc_millis = *v * ms_per_day;
+                Value::from(utc_millis)
             }
-            ScalarValue::Date64(Some(_v)) => {
-                unimplemented!()
+            ScalarValue::Date64(Some(v)) => {
+                // To UTC integer milliseconds (alread in UTC)
+                Value::from(*v)
             }
             ScalarValue::TimestampSecond(Some(_v)) => {
                 unimplemented!()
             }
-            ScalarValue::TimestampMillisecond(Some(_v)) => {
-                unimplemented!()
+            ScalarValue::TimestampMillisecond(Some(v)) => {
+                // Build naive datetime for time
+                let seconds = v / 1000;
+                let milliseconds = v % 1000;
+                let nanoseconds = (milliseconds * 1_000_000) as u32;
+                let naive_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
+
+                // Get UTC offset when the naive datetime is considered to be in local time
+                let local = Local {};
+                let local_datetime = local.from_local_datetime(&naive_datetime).earliest().unwrap();
+                let utc_millis = local_datetime.timestamp_millis();
+                Value::from(utc_millis)
             }
             ScalarValue::TimestampMicrosecond(Some(_v)) => {
                 unimplemented!()

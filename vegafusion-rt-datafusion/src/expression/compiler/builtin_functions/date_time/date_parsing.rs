@@ -17,7 +17,7 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
-use datafusion::arrow::array::{ArrayRef, Int64Array, StringArray};
+use datafusion::arrow::array::{ArrayRef, StringArray};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::physical_plan::functions::{
     make_scalar_function, ReturnTypeFunction, Signature, Volatility,
@@ -25,14 +25,15 @@ use datafusion::physical_plan::functions::{
 use datafusion::physical_plan::udf::ScalarUDF;
 use regex::Regex;
 use std::sync::Arc;
+use vegafusion_core::arrow::array::Date64Array;
 
 lazy_static! {
-    pub static ref DATETIME_TO_MILLIS_LOCAL: ScalarUDF =
-        make_datetime_to_millis_udf(DateParseMode::Local);
-    pub static ref DATETIME_TO_MILLIS_UTC: ScalarUDF =
-        make_datetime_to_millis_udf(DateParseMode::Utc);
-    pub static ref DATETIME_TO_MILLIS_JAVASCRIPT: ScalarUDF =
-        make_datetime_to_millis_udf(DateParseMode::JavaScript);
+    pub static ref DATETIME_TO_DATE64_LOCAL: ScalarUDF =
+        make_date_str_to_date64_udf(DateParseMode::Local);
+    pub static ref DATETIME_TO_DATE64_UTC: ScalarUDF =
+        make_date_str_to_date64_udf(DateParseMode::Utc);
+    pub static ref DATETIME_TO_DATE64_JAVASCRIPT: ScalarUDF =
+        make_date_str_to_date64_udf(DateParseMode::JavaScript);
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -44,9 +45,9 @@ pub enum DateParseMode {
 
 pub fn get_datetime_udf(mode: DateParseMode) -> ScalarUDF {
     match mode {
-        DateParseMode::Local => DATETIME_TO_MILLIS_LOCAL.clone(),
-        DateParseMode::Utc => DATETIME_TO_MILLIS_UTC.clone(),
-        DateParseMode::JavaScript => DATETIME_TO_MILLIS_JAVASCRIPT.clone(),
+        DateParseMode::Local => DATETIME_TO_DATE64_LOCAL.clone(),
+        DateParseMode::Utc => DATETIME_TO_DATE64_UTC.clone(),
+        DateParseMode::JavaScript => DATETIME_TO_DATE64_JAVASCRIPT.clone(),
     }
 }
 
@@ -241,28 +242,28 @@ pub fn parse_datetime_to_utc_millis(date_str: &str, mode: DateParseMode) -> Opti
     Some(parsed_utc.timestamp_millis())
 }
 
-pub fn make_datetime_to_millis_udf(mode: DateParseMode) -> ScalarUDF {
-    let to_millis_fn = move |args: &[ArrayRef]| {
+pub fn make_date_str_to_date64_udf(mode: DateParseMode) -> ScalarUDF {
+    let to_date64_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single string argument
         let arg = &args[0];
         let date_strs = arg.as_any().downcast_ref::<StringArray>().unwrap();
-        Ok(datetime_strs_to_millis(date_strs, mode))
+        Ok(datetime_strs_to_date64(date_strs, mode))
     };
 
-    let to_millis_fn = make_scalar_function(to_millis_fn);
+    let to_millis_fn = make_scalar_function(to_date64_fn);
 
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
+    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Date64)));
 
     ScalarUDF::new(
-        "vf_datetime_to_millis",
+        "vf_datetime_to_date64",
         &Signature::uniform(1, vec![DataType::Utf8], Volatility::Immutable),
         &return_type,
         &to_millis_fn,
     )
 }
 
-pub fn datetime_strs_to_millis(date_strs: &StringArray, mode: DateParseMode) -> ArrayRef {
-    let millis_array = Int64Array::from(
+pub fn datetime_strs_to_date64(date_strs: &StringArray, mode: DateParseMode) -> ArrayRef {
+    let millis_array = Date64Array::from(
         date_strs
             .iter()
             .map(|date_str| -> Option<i64> {
