@@ -271,15 +271,16 @@ fn process_datetimes(
                             args: vec![col(&spec.name)],
                         }
                     } else if let DataType::Timestamp(_, tz) = dtype {
+                        let timestamp_millis = Expr::ScalarFunction {
+                            fun: BuiltinScalarFunction::ToTimestampMillis,
+                            args: vec![col(&spec.name)],
+                        };
                         match tz {
                             Some(tz) if tz.to_lowercase() == "utc" => {
-                                cast_to(col(&spec.name), &DataType::Date64, schema)?
+                                cast_to(timestamp_millis, &DataType::Int64, schema)?
                             }
                             _ => {
-                                Expr::ScalarFunction {
-                                    fun: BuiltinScalarFunction::ToTimestampMillis,
-                                    args: vec![col(&spec.name)],
-                                }
+                                timestamp_millis
                             }
                         }
                     } else {
@@ -317,7 +318,19 @@ fn process_datetimes(
             {
                 let expr = match field.data_type() {
                     DataType::Timestamp(_, tz) => {
-                        cast_to(col(field.name()), &DataType::Date64, schema).unwrap()
+                        let timestamp_millis = Expr::ScalarFunction {
+                            fun: BuiltinScalarFunction::ToTimestampMillis,
+                            args: vec![col(field.name())],
+                        };
+
+                        match tz {
+                            Some(tz) if tz.to_lowercase() == "utc" => {
+                                cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
+                            }
+                            _ => {
+                                timestamp_millis
+                            }
+                        }
                     }
                     _ => {
                         Expr::ScalarFunction {

@@ -16,10 +16,10 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
-use crate::expression::compiler::builtin_functions::date_time::date_parsing::DATETIME_TO_DATE64_JAVASCRIPT;
+use crate::expression::compiler::builtin_functions::date_time::date_parsing::DATETIME_TO_MILLIS_JAVASCRIPT;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype, is_string_datatype};
 use chrono::{DateTime, Local, LocalResult, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
-use datafusion::arrow::array::{Array, ArrayRef, Date64Array, Int64Array, TimestampMillisecondArray};
+use datafusion::arrow::array::{Array, ArrayRef, Int64Array, TimestampMillisecondArray};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::error::DataFusionError;
 use datafusion::logical_plan::{DFSchema, Expr};
@@ -51,21 +51,16 @@ pub fn datetime_transform(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
             );
         }
 
-        // Cast single numeric arg to Int64 for compatibility with Date64 cast below
-        if is_numeric_datatype(&dtype) && !matches!(&dtype, &DataType::Int64) {
-            arg = cast_to(arg, &DataType::Int64, schema)?
-        }
-
         if is_string_datatype(&dtype) {
             arg = Expr::ScalarUDF {
-                fun: Arc::new(DATETIME_TO_DATE64_JAVASCRIPT.deref().clone()),
+                fun: Arc::new(DATETIME_TO_MILLIS_JAVASCRIPT.deref().clone()),
                 args: vec![arg],
             }
         }
 
         cast_to(
             arg,
-            &DataType::Date64,
+            &DataType::Int64,
             schema
         )
     } else {
@@ -269,7 +264,7 @@ pub fn make_utc_datetime_components_udf() -> ScalarUDF {
             let milliseconds = args[6].as_any().downcast_ref::<Int64Array>().unwrap();
 
             let num_rows = years.len();
-            let mut datetime_builder = Date64Array::builder(num_rows);
+            let mut datetime_builder = Int64Array::builder(num_rows);
 
             for i in 0..num_rows {
                 if years.is_null(i)
@@ -328,7 +323,7 @@ pub fn make_utc_datetime_components_udf() -> ScalarUDF {
             }
         });
 
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Date64)));
+    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
 
     // vega signature: datetime(year, month[, day, hour, min, sec, millisec])
     let sig = |n: usize| vec![DataType::Int64; n];
