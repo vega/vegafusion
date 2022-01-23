@@ -21,9 +21,7 @@
 // following modifications.
 //   1. Rather than skip writing null values, this version is updated to write the JSON
 //      NULL value instead. This is needed for interoperability with Vega.
-//   2. Date32, Date64, and Timestamp types are serialized as UTC milliseconds. Date32 and Date64
-//      are treated as already in UTC time. Timestamp is treated as local time, and is converted
-//      to UTC.
+//   2. Date32, Date64, and Timestamp types are serialized as UTC milliseconds.
 
 //! # JSON Writer
 //!
@@ -228,7 +226,7 @@ macro_rules! set_column_by_array_type {
     };
 }
 
-macro_rules! set_local_temporal_column_by_array_type {
+macro_rules! set_temporal_column_as_millis_by_array_type {
     ($array_type:ident, $col_name:ident, $rows:ident, $array:ident, $row_count:ident, $cast_fn:ident) => {
         let arr = $array.as_any().downcast_ref::<$array_type>().unwrap();
 
@@ -239,11 +237,7 @@ macro_rules! set_local_temporal_column_by_array_type {
             .for_each(|(i, row)| {
                 if !arr.is_null(i) {
                     if let Some(v) = arr.$cast_fn(i) {
-                        // Get UTC offset when the naive datetime is considered to be in local time
-                        let local = chrono::Local {};
-                        let local_datetime = local.from_local_datetime(&v).earliest().unwrap();
-                        let millis = local_datetime.timestamp_millis();
-                        row.insert($col_name.to_string(), millis.into());
+                        row.insert($col_name.to_string(), v.timestamp_millis().into());
                     } else {
                         row.insert($col_name.to_string(), Value::Null);
                     }
@@ -379,7 +373,7 @@ fn set_column_for_json_rows(
                 });
         }
         DataType::Timestamp(TimeUnit::Second, _) => {
-            set_local_temporal_column_by_array_type!(
+            set_temporal_column_as_millis_by_array_type!(
                 TimestampSecondArray,
                 col_name,
                 rows,
@@ -389,7 +383,7 @@ fn set_column_for_json_rows(
             );
         }
         DataType::Timestamp(TimeUnit::Millisecond, _) => {
-            set_local_temporal_column_by_array_type!(
+            set_temporal_column_as_millis_by_array_type!(
                 TimestampMillisecondArray,
                 col_name,
                 rows,
@@ -399,7 +393,7 @@ fn set_column_for_json_rows(
             );
         }
         DataType::Timestamp(TimeUnit::Microsecond, _) => {
-            set_local_temporal_column_by_array_type!(
+            set_temporal_column_as_millis_by_array_type!(
                 TimestampMicrosecondArray,
                 col_name,
                 rows,
@@ -409,7 +403,7 @@ fn set_column_for_json_rows(
             );
         }
         DataType::Timestamp(TimeUnit::Nanosecond, _) => {
-            set_local_temporal_column_by_array_type!(
+            set_temporal_column_as_millis_by_array_type!(
                 TimestampNanosecondArray,
                 col_name,
                 rows,
@@ -808,58 +802,57 @@ mod tests {
         );
     }
 
-    // This test doesn't work on CI because the resulting JSON is (intentionally) timezone-dependent
-    //     #[test]
-    //     fn write_timestamps() {
-    //         let ts_string = "2018-11-13T17:11:10.011375885995";
-    //         let ts_nanos = ts_string
-    //             .parse::<chrono::NaiveDateTime>()
-    //             .unwrap()
-    //             .timestamp_nanos();
-    //         let ts_micros = ts_nanos / 1000;
-    //         let ts_millis = ts_micros / 1000;
-    //         let ts_secs = ts_millis / 1000;
-    //
-    //         let arr_nanos = TimestampNanosecondArray::from_opt_vec(vec![Some(ts_nanos), None], None);
-    //         let arr_micros = TimestampMicrosecondArray::from_opt_vec(vec![Some(ts_micros), None], None);
-    //         let arr_millis = TimestampMillisecondArray::from_opt_vec(vec![Some(ts_millis), None], None);
-    //         let arr_secs = TimestampSecondArray::from_opt_vec(vec![Some(ts_secs), None], None);
-    //         let arr_names = StringArray::from(vec![Some("a"), Some("b")]);
-    //
-    //         let schema = Schema::new(vec![
-    //             Field::new("nanos", arr_nanos.data_type().clone(), false),
-    //             Field::new("micros", arr_micros.data_type().clone(), false),
-    //             Field::new("millis", arr_millis.data_type().clone(), false),
-    //             Field::new("secs", arr_secs.data_type().clone(), false),
-    //             Field::new("name", arr_names.data_type().clone(), false),
-    //         ]);
-    //         let schema = Arc::new(schema);
-    //
-    //         let batch = RecordBatch::try_new(
-    //             schema,
-    //             vec![
-    //                 Arc::new(arr_nanos),
-    //                 Arc::new(arr_micros),
-    //                 Arc::new(arr_millis),
-    //                 Arc::new(arr_secs),
-    //                 Arc::new(arr_names),
-    //             ],
-    //         )
-    //         .unwrap();
-    //
-    //         let mut buf = Vec::new();
-    //         {
-    //             let mut writer = LineDelimitedWriter::new(&mut buf);
-    //             writer.write_batches(&[batch]).unwrap();
-    //         }
-    //
-    //         assert_eq!(
-    //             String::from_utf8(buf).unwrap(),
-    //             r#"{"nanos":1542147070011,"micros":1542147070011,"millis":1542147070011,"secs":1542147070000,"name":"a"}
-    // {"nanos":null,"micros":null,"millis":null,"secs":null,"name":"b"}
-    // "#
-    //         );
-    //     }
+    #[test]
+    fn write_timestamps() {
+        let ts_string = "2018-11-13T17:11:10.011375885995";
+        let ts_nanos = ts_string
+            .parse::<chrono::NaiveDateTime>()
+            .unwrap()
+            .timestamp_nanos();
+        let ts_micros = ts_nanos / 1000;
+        let ts_millis = ts_micros / 1000;
+        let ts_secs = ts_millis / 1000;
+
+        let arr_nanos = TimestampNanosecondArray::from_opt_vec(vec![Some(ts_nanos), None], None);
+        let arr_micros = TimestampMicrosecondArray::from_opt_vec(vec![Some(ts_micros), None], None);
+        let arr_millis = TimestampMillisecondArray::from_opt_vec(vec![Some(ts_millis), None], None);
+        let arr_secs = TimestampSecondArray::from_opt_vec(vec![Some(ts_secs), None], None);
+        let arr_names = StringArray::from(vec![Some("a"), Some("b")]);
+
+        let schema = Schema::new(vec![
+            Field::new("nanos", arr_nanos.data_type().clone(), false),
+            Field::new("micros", arr_micros.data_type().clone(), false),
+            Field::new("millis", arr_millis.data_type().clone(), false),
+            Field::new("secs", arr_secs.data_type().clone(), false),
+            Field::new("name", arr_names.data_type().clone(), false),
+        ]);
+        let schema = Arc::new(schema);
+
+        let batch = RecordBatch::try_new(
+            schema,
+            vec![
+                Arc::new(arr_nanos),
+                Arc::new(arr_micros),
+                Arc::new(arr_millis),
+                Arc::new(arr_secs),
+                Arc::new(arr_names),
+            ],
+        )
+        .unwrap();
+
+        let mut buf = Vec::new();
+        {
+            let mut writer = LineDelimitedWriter::new(&mut buf);
+            writer.write_batches(&[batch]).unwrap();
+        }
+
+        assert_eq!(
+            String::from_utf8(buf).unwrap(),
+            r#"{"nanos":1542129070011,"micros":1542129070011,"millis":1542129070011,"secs":1542129070000,"name":"a"}
+{"nanos":null,"micros":null,"millis":null,"secs":null,"name":"b"}
+"#
+        );
+    }
 
     #[test]
     fn write_dates() {

@@ -41,15 +41,6 @@ pub fn datetime_transform(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
             .get_type(schema)
             .with_context(|| format!("Failed to infer type of expression: {:?}", arg))?;
 
-        if let DataType::Timestamp(_unit, _) = dtype {
-            // Single input is already a timestamp. Just convert to Milliseconds and return
-            return cast_to(
-                arg,
-                &DataType::Timestamp(TimeUnit::Millisecond, None),
-                schema,
-            );
-        }
-
         if is_string_datatype(&dtype) {
             arg = Expr::ScalarUDF {
                 fun: Arc::new(DATETIME_TO_MILLIS_JAVASCRIPT.deref().clone()),
@@ -129,7 +120,7 @@ pub fn make_local_datetime_components_udf() -> ScalarUDF {
             let milliseconds = args[6].as_any().downcast_ref::<Int64Array>().unwrap();
 
             let num_rows = years.len();
-            let mut datetime_builder = TimestampMillisecondArray::builder(num_rows);
+            let mut datetime_builder = Int64Array::builder(num_rows);
 
             for i in 0..num_rows {
                 if years.is_null(i)
@@ -165,8 +156,16 @@ pub fn make_local_datetime_components_udf() -> ScalarUDF {
                         millisecond as u32,
                     );
                     let naive_datetime = NaiveDateTime::new(naive_date, naive_time);
-                    let timestamp = naive_datetime.timestamp_millis();
-                    datetime_builder.append_value(timestamp).unwrap();
+
+                    let local = Local {};
+                    let local_datetime = local
+                        .from_local_datetime(&naive_datetime)
+                        .earliest()
+                        .unwrap();
+
+                    datetime_builder
+                        .append_value(local_datetime.timestamp_millis())
+                        .unwrap();
                 }
             }
 
@@ -180,8 +179,7 @@ pub fn make_local_datetime_components_udf() -> ScalarUDF {
             }
         });
 
-    let return_type: ReturnTypeFunction =
-        Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
+    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
 
     // vega signature: datetime(year, month[, day, hour, min, sec, millisec])
     let sig = |n: usize| vec![DataType::Int64; n];

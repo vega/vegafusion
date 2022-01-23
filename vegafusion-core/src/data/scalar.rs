@@ -130,20 +130,7 @@ impl ScalarValueHelpers for ScalarValue {
                 unimplemented!()
             }
             ScalarValue::TimestampMillisecond(Some(v)) => {
-                // Build naive datetime for time
-                let seconds = v / 1000;
-                let milliseconds = v % 1000;
-                let nanoseconds = (milliseconds * 1_000_000) as u32;
-                let naive_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
-
-                // Get UTC offset when the naive datetime is considered to be in local time
-                let local = Local {};
-                let local_datetime = local
-                    .from_local_datetime(&naive_datetime)
-                    .earliest()
-                    .unwrap();
-                let utc_millis = local_datetime.timestamp_millis();
-                Value::from(utc_millis)
+                unimplemented!()
             }
             ScalarValue::TimestampMicrosecond(Some(_v)) => {
                 unimplemented!()

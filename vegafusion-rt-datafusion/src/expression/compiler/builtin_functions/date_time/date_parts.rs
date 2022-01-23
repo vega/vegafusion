@@ -85,77 +85,53 @@ pub fn extract_millisecond(dt: &OffsetDateTime) -> i64 {
     dt.millisecond() as i64
 }
 
-fn process_input_datetime(arg: &ArrayRef) -> (ArrayRef, bool) {
-    let (array, input_local) = match arg.data_type() {
+fn process_input_datetime(arg: &ArrayRef) -> ArrayRef {
+    match arg.data_type() {
         DataType::Utf8 => {
             let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
             let millis_array = datetime_strs_to_millis(array, DateParseMode::JavaScript);
-            (millis_array, false)
+            millis_array
         }
-        DataType::Timestamp(TimeUnit::Millisecond, _) => (arg.clone(), true),
         DataType::Date32 => {
             let ms_per_day = 1000 * 60 * 60 * 24_i64;
             let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
 
             let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
             let array = Arc::new(array) as ArrayRef;
-            (array, false)
+            array
         }
         DataType::Date64 => {
             let int_array = cast(arg, &DataType::Int64).unwrap();
-            (int_array, false)
+            int_array
         }
-        DataType::Int64 => (arg.clone(), false),
+        DataType::Int64 => arg.clone(),
         _ => panic!("Unexpected data type for date part function:"),
-    };
-    (array, input_local)
+    }
 }
 
 pub fn make_local_datepart_udf(extract_fn: fn(&OffsetDateTime) -> i64, name: &str) -> ScalarUDF {
     let part_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single argument
         let arg = &args[0];
-        let (arg, input_local) = process_input_datetime(arg);
+        let arg = process_input_datetime(arg);
 
         let mut result_builder = Int64Array::builder(arg.len());
 
-        if input_local {
-            // Input was in local, no conversion needed
-            let timestamp_array = arg
-                .as_any()
-                .downcast_ref::<TimestampMillisecondArray>()
-                .unwrap();
-            for i in 0..timestamp_array.len() {
-                if timestamp_array.is_null(i) {
-                    result_builder.append_null().unwrap();
-                } else {
-                    // Still interpret timestamp as Local
-                    let local_seconds = timestamp_array.value(i) / 1000;
-                    let local_datetime = OffsetDateTime::from_unix_timestamp(local_seconds)
-                        .expect("Failed to convert timestamp to OffsetDateTime");
+        let int64_array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
+        for i in 0..int64_array.len() {
+            if int64_array.is_null(i) {
+                result_builder.append_null().unwrap();
+            } else {
+                // Still interpret timestamp as UTC
+                let utc_seconds = int64_array.value(i) / 1000;
+                let utc_datetime = OffsetDateTime::from_unix_timestamp(utc_seconds)
+                    .expect("Failed to convert timestamp to OffsetDateTime");
 
-                    let value = extract_fn(&local_datetime);
-                    result_builder.append_value(value).unwrap();
-                }
-            }
-        } else {
-            // Input was in UTC, conversion needed
-            let int64_array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
-            for i in 0..int64_array.len() {
-                if int64_array.is_null(i) {
-                    result_builder.append_null().unwrap();
-                } else {
-                    // Still interpret timestamp as UTC
-                    let utc_seconds = int64_array.value(i) / 1000;
-                    let utc_datetime = OffsetDateTime::from_unix_timestamp(utc_seconds)
-                        .expect("Failed to convert timestamp to OffsetDateTime");
-
-                    let offset = time::UtcOffset::local_offset_at(utc_datetime)
-                        .expect("Failed to determine local timezone");
-                    let local_datetime = utc_datetime.to_offset(offset);
-                    let value = extract_fn(&local_datetime);
-                    result_builder.append_value(value).unwrap();
-                }
+                let offset = time::UtcOffset::local_offset_at(utc_datetime)
+                    .expect("Failed to determine local timezone");
+                let local_datetime = utc_datetime.to_offset(offset);
+                let value = extract_fn(&local_datetime);
+                result_builder.append_value(value).unwrap();
             }
         }
 
@@ -187,50 +163,20 @@ pub fn make_utc_datepart_udf(extract_fn: fn(&OffsetDateTime) -> i64, name: &str)
     let part_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single argument
         let arg = &args[0];
-        let (arg, input_local) = process_input_datetime(arg);
+        let arg = process_input_datetime(arg);
 
         let mut result_builder = Int64Array::builder(arg.len());
 
-        if input_local {
-            // Input was in local, conversion needed
-            let arg = arg
-                .as_any()
-                .downcast_ref::<TimestampMillisecondArray>()
-                .unwrap();
-            for i in 0..arg.len() {
-                if arg.is_null(i) {
-                    result_builder.append_null().unwrap();
-                } else {
-                    let local_millis = arg.value(i);
-                    let seconds = local_millis / 1000;
-                    let nanoseconds = ((local_millis % 1000) * 1_000_000) as u32;
-                    let naive_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
-
-                    let local = Local {};
-                    let local_datetime = local
-                        .from_local_datetime(&naive_datetime)
-                        .earliest()
-                        .unwrap();
-                    let utc_millis = local_datetime.timestamp_millis();
-
-                    let local_datetime = OffsetDateTime::from_unix_timestamp(utc_millis / 1000)
-                        .expect("Failed to convert timestamp to OffsetDateTime");
-                    let value = extract_fn(&local_datetime);
-                    result_builder.append_value(value).unwrap();
-                }
-            }
-        } else {
-            let arg = arg.as_any().downcast_ref::<Int64Array>().unwrap();
-            for i in 0..arg.len() {
-                if arg.is_null(i) {
-                    result_builder.append_null().unwrap();
-                } else {
-                    let utc_seconds = arg.value(i) / 1000;
-                    let utc_datetime = OffsetDateTime::from_unix_timestamp(utc_seconds)
-                        .expect("Failed to convert timestamp to OffsetDateTime");
-                    let value = extract_fn(&utc_datetime);
-                    result_builder.append_value(value).unwrap();
-                }
+        let arg = arg.as_any().downcast_ref::<Int64Array>().unwrap();
+        for i in 0..arg.len() {
+            if arg.is_null(i) {
+                result_builder.append_null().unwrap();
+            } else {
+                let utc_seconds = arg.value(i) / 1000;
+                let utc_datetime = OffsetDateTime::from_unix_timestamp(utc_seconds)
+                    .expect("Failed to convert timestamp to OffsetDateTime");
+                let value = extract_fn(&utc_datetime);
+                result_builder.append_value(value).unwrap();
             }
         }
 

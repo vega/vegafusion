@@ -32,10 +32,10 @@ use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
 
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::proto::gen::expression::literal::Value;
 use chrono::prelude::*;
 use vegafusion_core::arrow::datatypes::DataType;
+use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::proto::gen::expression::literal::Value;
 
 /// Op
 #[derive(Debug, Clone)]
@@ -140,30 +140,36 @@ impl FieldSpec {
                     // Convert comparison values to milliseconds in local time
                     let utc_millis = if let ScalarValue::List(Some(elements), _) = &values {
                         // values already a list
-                        elements.iter().map(|el|
-                            el.to_f64().expect("Expected number") as i64
-                        ).collect()
+                        elements
+                            .iter()
+                            .map(|el| el.to_f64().expect("Expected number") as i64)
+                            .collect()
                     } else {
                         // convert values to single element list
                         let millis = values.to_f64().expect("Expected number") as i64;
                         vec![millis]
                     };
-                    let local_millis: Vec<_> = utc_millis.iter().map(|millis| {
-                        // Convert from UTC to local time
-                        let seconds = millis / 1000;
-                        let nanoseconds = ((millis % 1000) * 1_000_000) as u32;
-                        let naive_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
-                        let utc_datetime = Utc.from_local_datetime(&naive_datetime).single().unwrap();
-                        let converted: DateTime<Local> = DateTime::from(utc_datetime);
-                        let local_millis = converted.naive_local().timestamp_millis();
-                        println!("{} to {}", millis, local_millis);
-                        lit(local_millis)
-                    }).collect();
+                    let local_millis: Vec<_> = utc_millis
+                        .iter()
+                        .map(|millis| {
+                            // Convert from UTC to local time
+                            let seconds = millis / 1000;
+                            let nanoseconds = ((millis % 1000) * 1_000_000) as u32;
+                            let naive_datetime =
+                                NaiveDateTime::from_timestamp(seconds, nanoseconds);
+                            let utc_datetime =
+                                Utc.from_local_datetime(&naive_datetime).single().unwrap();
+                            let converted: DateTime<Local> = DateTime::from(utc_datetime);
+                            let local_millis = converted.naive_local().timestamp_millis();
+                            println!("{} to {}", millis, local_millis);
+                            lit(local_millis)
+                        })
+                        .collect();
 
                     // Cast column to Int64
                     let field_col = Expr::Cast {
                         expr: Box::new(field_col),
-                        data_type: DataType::Int64
+                        data_type: DataType::Int64,
                     };
                     Expr::InList {
                         expr: Box::new(field_col),
@@ -171,7 +177,8 @@ impl FieldSpec {
                         negated: false,
                     }
                 } else {
-                    let list_values: Vec<_> = if let ScalarValue::List(Some(elements), _) = &values {
+                    let list_values: Vec<_> = if let ScalarValue::List(Some(elements), _) = &values
+                    {
                         // values already a list
                         elements.iter().map(|el| lit(el.clone())).collect()
                     } else {
