@@ -41,33 +41,6 @@ def to_feather(data, file):
     if data.index.name is not None:
         data = data.reset_index()
 
-    # Localize naive datetimes to the local GMT offset
-    dt_cols = []
-    for col, dtype in data.dtypes.items():
-        if dtype.kind == 'M' and not isinstance(dtype, pd.DatetimeTZDtype):
-            dt_cols.append(col)
-
-    if dt_cols:
-        # Apply a timezone following the convention of JavaScript's Date.parse. Here a date without time info
-        # is interpreted as UTC midnight. But a date with time into is treated as local time when it doesn't
-        # have an explicit timezone
-        offset_seconds = abs(time.timezone)
-        offset_hours = offset_seconds // 3600
-        offset_minutes = (offset_seconds - offset_hours * 3600) // 60
-        sign = "-" if time.timezone > 0 else "+"
-        local_timezone = f"{sign}{offset_hours:02}:{offset_minutes:02}"
-
-        mapping = dict()
-        for col in dt_cols:
-            if (data[col].dt.time == datetime.time(0, 0)).all():
-                # Assume no time info was provided, interpret as UTC
-                mapping[col] = data[col].dt.tz_localize("+00:00")
-            else:
-                # Assume time info was provided, interpret as local
-                mapping[col] = data[col].dt.tz_localize(local_timezone).dt.tz_convert(None)
-
-        data = data.assign(**mapping)
-
     # Expand categoricals (not yet supported in VegaFusion)
     for col, dtype in data.dtypes.items():
         if isinstance(dtype, pd.CategoricalDtype):
