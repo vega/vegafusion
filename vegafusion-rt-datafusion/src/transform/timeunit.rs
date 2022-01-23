@@ -19,8 +19,8 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::arrow::array::{ArrayRef, Int64Array, TimestampMillisecondArray};
-use datafusion::arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
+use datafusion::arrow::array::{ArrayRef, Int64Array};
+use datafusion::arrow::datatypes::{DataType};
 use datafusion::prelude::{col, DataFrame};
 use std::sync::Arc;
 use vegafusion_core::error::Result;
@@ -128,7 +128,7 @@ fn make_timeunit_start_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
     };
 
     let timeunit = make_scalar_function(timeunit);
-    let return_type: ReturnTypeFunction = Arc::new(move |datatypes| Ok(Arc::new(DataType::Int64)));
+    let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
 
     ScalarUDF::new(
         "timeunit",
@@ -160,7 +160,7 @@ fn make_timeunit_end_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
     };
 
     let timeunit = make_scalar_function(timeunit_end);
-    let return_type: ReturnTypeFunction = Arc::new(move |datatypes| Ok(Arc::new(DataType::Int64)));
+    let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
 
     ScalarUDF::new(
         "timeunit_end",

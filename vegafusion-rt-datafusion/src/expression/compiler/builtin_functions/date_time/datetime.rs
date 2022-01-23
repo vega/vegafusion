@@ -19,8 +19,8 @@
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::DATETIME_TO_MILLIS_JAVASCRIPT;
 use crate::expression::compiler::utils::{cast_to, is_string_datatype};
 use chrono::{DateTime, Local, LocalResult, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
-use datafusion::arrow::array::{Array, ArrayRef, Int64Array, TimestampMillisecondArray};
-use datafusion::arrow::datatypes::{DataType, TimeUnit};
+use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
+use datafusion::arrow::datatypes::{DataType};
 use datafusion::error::DataFusionError;
 use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::functions::{

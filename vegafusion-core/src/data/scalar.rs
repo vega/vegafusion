@@ -26,7 +26,7 @@ pub use datafusion::scalar::ScalarValue;
 
 use crate::arrow::datatypes::DataType;
 use crate::error::{Result, VegaFusionError};
-use chrono::{Local, NaiveDateTime, TimeZone};
+
 use serde_json::{Map, Value};
 use std::convert::TryFrom;
 use std::ops::Deref;
@@ -129,7 +129,7 @@ impl ScalarValueHelpers for ScalarValue {
             ScalarValue::TimestampSecond(Some(_v)) => {
                 unimplemented!()
             }
-            ScalarValue::TimestampMillisecond(Some(v)) => {
+            ScalarValue::TimestampMillisecond(Some(_v)) => {
                 unimplemented!()
             }
             ScalarValue::TimestampMicrosecond(Some(_v)) => {

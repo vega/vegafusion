@@ -20,9 +20,9 @@ use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
     datetime_strs_to_millis, DateParseMode,
 };
 
-use chrono::{Local, NaiveDateTime, TimeZone};
+
 use datafusion::arrow::array::{
-    Array, ArrayRef, Date32Array, Int64Array, StringArray, TimestampMillisecondArray,
+    Array, ArrayRef, Date32Array, Int64Array, StringArray,
 };
 use datafusion::arrow::compute::cast;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
@@ -89,16 +89,16 @@ fn process_input_datetime(arg: &ArrayRef) -> ArrayRef {
     match arg.data_type() {
         DataType::Utf8 => {
             let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
-            let millis_array = datetime_strs_to_millis(array, DateParseMode::JavaScript);
-            millis_array
+            
+            datetime_strs_to_millis(array, DateParseMode::JavaScript) as _
         }
         DataType::Date32 => {
             let ms_per_day = 1000 * 60 * 60 * 24_i64;
             let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
 
             let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
-            let array = Arc::new(array) as ArrayRef;
-            array
+            
+            Arc::new(array) as ArrayRef as _
         }
         DataType::Date64 => {
             let int_array = cast(arg, &DataType::Int64).unwrap();
