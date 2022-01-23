@@ -808,58 +808,58 @@ mod tests {
         );
     }
 
-// This test doesn't work on CI because the resulting JSON is (intentionally) timezone-dependent
-//     #[test]
-//     fn write_timestamps() {
-//         let ts_string = "2018-11-13T17:11:10.011375885995";
-//         let ts_nanos = ts_string
-//             .parse::<chrono::NaiveDateTime>()
-//             .unwrap()
-//             .timestamp_nanos();
-//         let ts_micros = ts_nanos / 1000;
-//         let ts_millis = ts_micros / 1000;
-//         let ts_secs = ts_millis / 1000;
-//
-//         let arr_nanos = TimestampNanosecondArray::from_opt_vec(vec![Some(ts_nanos), None], None);
-//         let arr_micros = TimestampMicrosecondArray::from_opt_vec(vec![Some(ts_micros), None], None);
-//         let arr_millis = TimestampMillisecondArray::from_opt_vec(vec![Some(ts_millis), None], None);
-//         let arr_secs = TimestampSecondArray::from_opt_vec(vec![Some(ts_secs), None], None);
-//         let arr_names = StringArray::from(vec![Some("a"), Some("b")]);
-//
-//         let schema = Schema::new(vec![
-//             Field::new("nanos", arr_nanos.data_type().clone(), false),
-//             Field::new("micros", arr_micros.data_type().clone(), false),
-//             Field::new("millis", arr_millis.data_type().clone(), false),
-//             Field::new("secs", arr_secs.data_type().clone(), false),
-//             Field::new("name", arr_names.data_type().clone(), false),
-//         ]);
-//         let schema = Arc::new(schema);
-//
-//         let batch = RecordBatch::try_new(
-//             schema,
-//             vec![
-//                 Arc::new(arr_nanos),
-//                 Arc::new(arr_micros),
-//                 Arc::new(arr_millis),
-//                 Arc::new(arr_secs),
-//                 Arc::new(arr_names),
-//             ],
-//         )
-//         .unwrap();
-//
-//         let mut buf = Vec::new();
-//         {
-//             let mut writer = LineDelimitedWriter::new(&mut buf);
-//             writer.write_batches(&[batch]).unwrap();
-//         }
-//
-//         assert_eq!(
-//             String::from_utf8(buf).unwrap(),
-//             r#"{"nanos":1542147070011,"micros":1542147070011,"millis":1542147070011,"secs":1542147070000,"name":"a"}
-// {"nanos":null,"micros":null,"millis":null,"secs":null,"name":"b"}
-// "#
-//         );
-//     }
+    // This test doesn't work on CI because the resulting JSON is (intentionally) timezone-dependent
+    //     #[test]
+    //     fn write_timestamps() {
+    //         let ts_string = "2018-11-13T17:11:10.011375885995";
+    //         let ts_nanos = ts_string
+    //             .parse::<chrono::NaiveDateTime>()
+    //             .unwrap()
+    //             .timestamp_nanos();
+    //         let ts_micros = ts_nanos / 1000;
+    //         let ts_millis = ts_micros / 1000;
+    //         let ts_secs = ts_millis / 1000;
+    //
+    //         let arr_nanos = TimestampNanosecondArray::from_opt_vec(vec![Some(ts_nanos), None], None);
+    //         let arr_micros = TimestampMicrosecondArray::from_opt_vec(vec![Some(ts_micros), None], None);
+    //         let arr_millis = TimestampMillisecondArray::from_opt_vec(vec![Some(ts_millis), None], None);
+    //         let arr_secs = TimestampSecondArray::from_opt_vec(vec![Some(ts_secs), None], None);
+    //         let arr_names = StringArray::from(vec![Some("a"), Some("b")]);
+    //
+    //         let schema = Schema::new(vec![
+    //             Field::new("nanos", arr_nanos.data_type().clone(), false),
+    //             Field::new("micros", arr_micros.data_type().clone(), false),
+    //             Field::new("millis", arr_millis.data_type().clone(), false),
+    //             Field::new("secs", arr_secs.data_type().clone(), false),
+    //             Field::new("name", arr_names.data_type().clone(), false),
+    //         ]);
+    //         let schema = Arc::new(schema);
+    //
+    //         let batch = RecordBatch::try_new(
+    //             schema,
+    //             vec![
+    //                 Arc::new(arr_nanos),
+    //                 Arc::new(arr_micros),
+    //                 Arc::new(arr_millis),
+    //                 Arc::new(arr_secs),
+    //                 Arc::new(arr_names),
+    //             ],
+    //         )
+    //         .unwrap();
+    //
+    //         let mut buf = Vec::new();
+    //         {
+    //             let mut writer = LineDelimitedWriter::new(&mut buf);
+    //             writer.write_batches(&[batch]).unwrap();
+    //         }
+    //
+    //         assert_eq!(
+    //             String::from_utf8(buf).unwrap(),
+    //             r#"{"nanos":1542147070011,"micros":1542147070011,"millis":1542147070011,"secs":1542147070000,"name":"a"}
+    // {"nanos":null,"micros":null,"millis":null,"secs":null,"name":"b"}
+    // "#
+    //         );
+    //     }
 
     #[test]
     fn write_dates() {
