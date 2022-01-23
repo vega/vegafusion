@@ -259,7 +259,6 @@ fn process_datetimes(
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
                         let datetime_udf = get_datetime_udf(date_mode);
-                        
 
                         Expr::ScalarUDF {
                             fun: Arc::new(datetime_udf),

@@ -35,9 +35,7 @@ use super::scalar::ScalarValue;
 use crate::arrow::array::ArrayRef;
 use crate::data::json_writer::record_batches_to_json_rows;
 
-use arrow::array::{StructArray};
-
-
+use arrow::array::StructArray;
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {

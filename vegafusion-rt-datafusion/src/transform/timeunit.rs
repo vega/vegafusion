@@ -19,9 +19,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::arrow::array::{
-    ArrayRef, Int64Array, TimestampMillisecondArray,
-};
+use datafusion::arrow::array::{ArrayRef, Int64Array, TimestampMillisecondArray};
 use datafusion::arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
 use datafusion::prelude::{col, DataFrame};
 use std::sync::Arc;
@@ -31,7 +29,6 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 use datafusion::arrow::compute::kernels::arity::unary;
 use datafusion::arrow::temporal_conversions::date64_to_datetime;
-
 
 use chrono::{
     DateTime, Datelike, Local, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday,
