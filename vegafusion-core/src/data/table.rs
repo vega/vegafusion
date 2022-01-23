@@ -17,7 +17,7 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 use crate::arrow::{
-    datatypes::{DataType, Field, Schema, SchemaRef},
+    datatypes::{DataType, SchemaRef},
     json,
     record_batch::RecordBatch,
 };
@@ -35,9 +35,9 @@ use super::scalar::ScalarValue;
 use crate::arrow::array::ArrayRef;
 use crate::data::json_writer::record_batches_to_json_rows;
 
-use arrow::array::{Date32Array, Int64Array, StructArray};
-use arrow::compute::{cast, unary};
-use arrow::datatypes::TimeUnit;
+use arrow::array::{StructArray};
+
+
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {

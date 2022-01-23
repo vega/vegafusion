@@ -243,7 +243,6 @@ fn process_datetimes(
     // Perform specialized date parsing
     let mut date_fields: Vec<String> = Vec::new();
     let mut df = df;
-    let schema = df.schema();
     if let Some(scan_url_format::Parse::Object(formats)) = parse {
         for spec in &formats.specs {
             let datatype = &spec.datatype;
@@ -260,12 +259,12 @@ fn process_datetimes(
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
                         let datetime_udf = get_datetime_udf(date_mode);
-                        let date_expr = Expr::ScalarUDF {
+                        
+
+                        Expr::ScalarUDF {
                             fun: Arc::new(datetime_udf),
                             args: vec![col(&spec.name)],
-                        };
-
-                        date_expr
+                        }
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically
                         Expr::ScalarUDF {

@@ -26,7 +26,7 @@ pub use datafusion::scalar::ScalarValue;
 
 use crate::arrow::datatypes::DataType;
 use crate::error::{Result, VegaFusionError};
-use chrono::{FixedOffset, Local, NaiveDateTime, TimeZone, Utc};
+use chrono::{Local, NaiveDateTime, TimeZone};
 use serde_json::{Map, Value};
 use std::convert::TryFrom;
 use std::ops::Deref;

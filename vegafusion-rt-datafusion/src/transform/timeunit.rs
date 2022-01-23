@@ -20,7 +20,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::arrow::array::{
-    ArrayRef, Int64Array, TimestampMillisecondArray, TimestampMillisecondBuilder,
+    ArrayRef, Int64Array, TimestampMillisecondArray,
 };
 use datafusion::arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
 use datafusion::prelude::{col, DataFrame};
@@ -32,7 +32,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 use datafusion::arrow::compute::kernels::arity::unary;
 use datafusion::arrow::temporal_conversions::date64_to_datetime;
 
-use crate::expression::compiler::utils::cast_to;
+
 use chrono::{
     DateTime, Datelike, Local, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday,
 };
@@ -337,7 +337,7 @@ fn perform_timeunit_start_from_in_local(value: i64, units_mask: &[bool]) -> i64 
         // Subtract one week from isoweek0_sunday and check if it's still in the same calendar
         // year
         let week_duration = chrono::Duration::weeks(1);
-        let candidate_sunday = isoweek0_sunday.clone() - week_duration;
+        let candidate_sunday = isoweek0_sunday - week_duration;
 
         let first_sunday_of_year = if candidate_sunday.year() == dt_value.year() {
             candidate_sunday
@@ -533,7 +533,7 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
 
 /// For timestamp specified in Local and timeunit end to be calculated in Local
 fn perform_timeunit_end_from_in_local(value: i64, units_mask: &[bool]) -> i64 {
-    let mut dt_start = date64_to_datetime(value).with_nanosecond(0).unwrap();
+    let dt_start = date64_to_datetime(value).with_nanosecond(0).unwrap();
 
     // create dt_end by advancing dt_start by the smallest unit present in units
     let end = if units_mask[10] {

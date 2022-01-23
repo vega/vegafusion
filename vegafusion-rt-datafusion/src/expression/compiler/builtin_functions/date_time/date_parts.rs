@@ -20,7 +20,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
     datetime_strs_to_millis, DateParseMode,
 };
 
-use crate::expression::compiler::utils::cast_to;
+
 use chrono::{Local, NaiveDateTime, TimeZone};
 use datafusion::arrow::array::{
     Array, ArrayRef, Date32Array, Int64Array, StringArray, TimestampMillisecondArray,
@@ -34,7 +34,7 @@ use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
 use time::OffsetDateTime;
 use vegafusion_core::arrow::compute::unary;
-use vegafusion_core::error::Result;
+
 
 #[inline(always)]
 pub fn extract_year(dt: &OffsetDateTime) -> i64 {
