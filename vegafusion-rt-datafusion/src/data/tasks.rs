@@ -53,6 +53,7 @@ use vegafusion_core::proto::gen::tasks::scan_url_format::Parse;
 use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask};
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
+use crate::expression::compiler::builtin_functions::date_time::local_to_utc::LOCAL_TO_UTC_MILLIS;
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
@@ -279,7 +280,13 @@ fn process_datetimes(
                             Some(tz) if tz.to_lowercase() == "utc" => {
                                 cast_to(timestamp_millis, &DataType::Int64, schema)?
                             }
-                            _ => timestamp_millis,
+                            _ => {
+                                // Treat as local
+                                Expr::ScalarUDF {
+                                    fun: Arc::new(LOCAL_TO_UTC_MILLIS.clone()),
+                                    args: vec![timestamp_millis],
+                                }
+                            },
                         }
                     } else {
                         continue;
@@ -325,13 +332,15 @@ fn process_datetimes(
                             Some(tz) if tz.to_lowercase() == "utc" => {
                                 cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
                             }
-                            _ => timestamp_millis,
+                            _ => {
+                                Expr::ScalarUDF {
+                                    fun: Arc::new(LOCAL_TO_UTC_MILLIS.clone()),
+                                    args: vec![timestamp_millis],
+                                }
+                            },
                         }
                     }
-                    _ => Expr::ScalarFunction {
-                        fun: BuiltinScalarFunction::ToTimestampMillis,
-                        args: vec![col(field.name())],
-                    },
+                    _ => unreachable!()
                 };
                 expr.alias(field.name())
             } else {
