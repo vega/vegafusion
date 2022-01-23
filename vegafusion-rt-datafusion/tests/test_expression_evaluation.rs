@@ -327,62 +327,54 @@ mod test_date_parts {
         case("utcyear(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("utcyear(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("utcyear(datetime(87, 3, 10, 7, 35, 10, 87))"),
-
         case("quarter(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("quarter(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("quarter(datetime(87, 3, 10, 7, 35, 10, 87))"),
         case("utcquarter(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("utcquarter(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("utcquarter(datetime(87, 3, 10, 7, 35, 10, 87))"),
-
         case("month(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("month(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("month(datetime(87, 3, 10, 7, 35, 10, 87))"),
         case("utcmonth(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("utcmonth(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("utcmonth(datetime(87, 3, 10, 7, 35, 10, 87))"),
-
         case("day(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("day(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("day(datetime(87, 3, 10, 7, 35, 10, 87))"),
         case("utcday(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("utcday(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("utcday(datetime(87, 3, 10, 7, 35, 10, 87))"),
-
         case("date(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("date(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("date(datetime(87, 3, 10, 7, 35, 10, 87))"),
         case("utcdate(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("utcdate(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("utcdate(datetime(87, 3, 10, 7, 35, 10, 87))"),
-
         case("dayofyear(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("dayofyear(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("dayofyear(datetime(87, 3, 10, 7, 35, 10, 87))"),
         case("utcdayofyear(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("utcdayofyear(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("utcdayofyear(datetime(87, 3, 10, 7, 35, 10, 87))"),
-
         case("hours(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("hours(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("hours(datetime(87, 3, 10, 7, 35, 10, 87))"),
         case("utchours(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("utchours(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("utchours(datetime(87, 3, 10, 7, 35, 10, 87))"),
-
         case("minutes(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("minutes(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("minutes(datetime(87, 3, 10, 7, 35, 10, 87))"),
         case("utcminutes(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("utcminutes(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("utcminutes(datetime(87, 3, 10, 7, 35, 10, 87))"),
-
         case("seconds(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("seconds(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("seconds(datetime(87, 3, 10, 7, 35, 10, 87))"),
         case("utcseconds(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("utcseconds(utc(87, 3, 10, 7, 35, 10, 87))"),
-        case("utcseconds(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcseconds(datetime(87, 3, 10, 7, 35, 10, 87))")
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())

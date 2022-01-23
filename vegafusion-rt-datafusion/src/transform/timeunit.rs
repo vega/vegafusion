@@ -19,7 +19,9 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::arrow::array::{ArrayRef, Int64Array, TimestampMillisecondArray, TimestampMillisecondBuilder};
+use datafusion::arrow::array::{
+    ArrayRef, Int64Array, TimestampMillisecondArray, TimestampMillisecondBuilder,
+};
 use datafusion::arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
 use datafusion::prelude::{col, DataFrame};
 use std::sync::Arc;
@@ -104,7 +106,6 @@ impl TransformTrait for TimeUnit {
     }
 }
 
-
 fn make_timeunit_start_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
     let units_mask = Vec::from(units_mask);
     let timeunit = move |args: &[ArrayRef]| {
@@ -117,20 +118,24 @@ fn make_timeunit_start_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
                 // Input is in UTC, compute timeunit values in local, return results in UTC
                 let tz = Local {};
                 unary(array, |value| {
-                    perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+                    perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz)
+                        .timestamp_millis()
                 })
             } else {
                 // Input is in UTC, compute timeunit values in UTC, return results in UTC
                 let tz = Utc;
                 unary(array, |value| {
-                    perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+                    perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz)
+                        .timestamp_millis()
                 })
             };
 
             Arc::new(result_array) as ArrayRef
-
         } else {
-            let array = arg.as_any().downcast_ref::<TimestampMillisecondArray>().unwrap();
+            let array = arg
+                .as_any()
+                .downcast_ref::<TimestampMillisecondArray>()
+                .unwrap();
 
             if in_local {
                 // Input Local, no conversion needed. Return results in Local as Timestamp
@@ -147,9 +152,13 @@ fn make_timeunit_start_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
                     let naive_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
 
                     let local = Local {};
-                    let local_datetime = local.from_local_datetime(&naive_datetime).earliest().unwrap();
+                    let local_datetime = local
+                        .from_local_datetime(&naive_datetime)
+                        .earliest()
+                        .unwrap();
                     let utc_millis = local_datetime.timestamp_millis();
-                    perform_timeunit_start_from_utc(utc_millis, units_mask.as_slice(), tz).timestamp_millis()
+                    perform_timeunit_start_from_utc(utc_millis, units_mask.as_slice(), tz)
+                        .timestamp_millis()
                 });
                 Arc::new(result_array) as ArrayRef
             }
@@ -175,15 +184,14 @@ fn make_timeunit_start_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
             1,
             vec![
                 DataType::Int64,
-                DataType::Timestamp(ArrowTimeUnit::Millisecond, None)
+                DataType::Timestamp(ArrowTimeUnit::Millisecond, None),
             ],
-            Volatility::Immutable
+            Volatility::Immutable,
         ),
         &return_type,
         &timeunit,
     )
 }
-
 
 fn make_timeunit_end_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
     let units_mask = Vec::from(units_mask);
@@ -196,21 +204,28 @@ fn make_timeunit_end_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
             let result_array: Int64Array = if in_local {
                 let tz = Local {};
                 unary(start_array, |value| {
-                    perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+                    perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz)
+                        .timestamp_millis()
                 })
             } else {
                 let tz = Utc;
                 unary(start_array, |value| {
-                    perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+                    perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz)
+                        .timestamp_millis()
                 })
             };
 
             Arc::new(result_array) as ArrayRef
         } else {
             if !in_local {
-                panic!("make_timeunit_end_udf should not receive is_local=False and Timestamp array")
+                panic!(
+                    "make_timeunit_end_udf should not receive is_local=False and Timestamp array"
+                )
             }
-            let start_array = arg.as_any().downcast_ref::<TimestampMillisecondArray>().unwrap();
+            let start_array = arg
+                .as_any()
+                .downcast_ref::<TimestampMillisecondArray>()
+                .unwrap();
             let result_array: TimestampMillisecondArray = unary(start_array, |value| {
                 perform_timeunit_end_from_in_local(value, units_mask.as_slice())
             });
@@ -237,7 +252,7 @@ fn make_timeunit_end_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
             1,
             vec![
                 DataType::Int64,
-                DataType::Timestamp(ArrowTimeUnit::Millisecond, None)
+                DataType::Timestamp(ArrowTimeUnit::Millisecond, None),
             ],
             Volatility::Immutable,
         ),
@@ -245,7 +260,6 @@ fn make_timeunit_end_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
         &timeunit,
     )
 }
-
 
 /// For timestamp specified in Local and to be calculated in Local
 fn perform_timeunit_start_from_in_local(value: i64, units_mask: &[bool]) -> i64 {
@@ -345,10 +359,8 @@ fn perform_timeunit_start_from_in_local(value: i64, units_mask: &[bool]) -> i64 
         if !units_mask[0] {
             // Calendar year 2012. use weeks offset from the first Sunday of 2012
             // (which is January 1st)
-            let first_sunday_of_2012 = NaiveDateTime::new(
-                NaiveDate::from_ymd(2012, 1, 1),
-                dt_value.time(),
-            );
+            let first_sunday_of_2012 =
+                NaiveDateTime::new(NaiveDate::from_ymd(2012, 1, 1), dt_value.time());
 
             dt_value = first_sunday_of_2012 + chrono::Duration::weeks(week_number);
         } else {
@@ -376,9 +388,12 @@ fn perform_timeunit_start_from_in_local(value: i64, units_mask: &[bool]) -> i64 
     dt_value.timestamp_millis()
 }
 
-
 /// For timestamp specified in UTC, perform time unit in the provided timezone (either UTC or Local)
-fn perform_timeunit_start_from_utc<T: TimeZone>(value: i64, units_mask: &[bool], in_tz: T) -> DateTime<T> {
+fn perform_timeunit_start_from_utc<T: TimeZone>(
+    value: i64,
+    units_mask: &[bool],
+    in_tz: T,
+) -> DateTime<T> {
     // Load and interpret date time as UTC
     let dt_value = date64_to_datetime(value).with_nanosecond(0).unwrap();
     let dt_value = Utc.from_local_datetime(&dt_value).single().unwrap();
@@ -451,7 +466,10 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(value: i64, units_mask: &[bool],
         let isoweek0_sunday = NaiveDate::from_isoywd(dt_value.year(), 1, Weekday::Sun);
 
         let isoweek0_sunday = NaiveDateTime::new(isoweek0_sunday, dt_value.time());
-        let isoweek0_sunday = in_tz.from_local_datetime(&isoweek0_sunday).single().unwrap();
+        let isoweek0_sunday = in_tz
+            .from_local_datetime(&isoweek0_sunday)
+            .single()
+            .unwrap();
 
         // Subtract one week from isoweek0_sunday and check if it's still in the same calendar
         // year
@@ -601,7 +619,11 @@ fn perform_timeunit_end_from_in_local(value: i64, units_mask: &[bool]) -> i64 {
 }
 
 /// For timestamp specified in UTC, perform time unit end in the provided timezone (either UTC or Local)
-fn perform_timeunit_end_from_utc<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -> DateTime<T> {
+fn perform_timeunit_end_from_utc<T: TimeZone>(
+    value: i64,
+    units_mask: &[bool],
+    tz: T,
+) -> DateTime<T> {
     let dt_start = date64_to_datetime(value).with_nanosecond(0).unwrap();
     let dt_start = Utc.from_local_datetime(&dt_start).single().unwrap();
     let dt_start = dt_start.with_timezone(&tz);

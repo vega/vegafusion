@@ -252,8 +252,6 @@ macro_rules! set_local_temporal_column_by_array_type {
     };
 }
 
-
-
 macro_rules! set_temporal_column_by_array_type {
     ($array_type:ident, $col_name:ident, $rows:ident, $array:ident, $row_count:ident, $cast_fn:ident) => {
         let arr = $array.as_any().downcast_ref::<$array_type>().unwrap();
@@ -366,8 +364,7 @@ fn set_column_for_json_rows(
         DataType::Date64 => {
             // Write as integer UTC milliseconds
             let arr = array.as_any().downcast_ref::<Date64Array>().unwrap();
-            rows
-                .iter_mut()
+            rows.iter_mut()
                 .enumerate()
                 .take(row_count)
                 .for_each(|(i, row)| {

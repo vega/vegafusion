@@ -26,10 +26,10 @@ pub use datafusion::scalar::ScalarValue;
 
 use crate::arrow::datatypes::DataType;
 use crate::error::{Result, VegaFusionError};
+use chrono::{FixedOffset, Local, NaiveDateTime, TimeZone, Utc};
 use serde_json::{Map, Value};
 use std::convert::TryFrom;
 use std::ops::Deref;
-use chrono::{FixedOffset, Local, NaiveDateTime, TimeZone, Utc};
 
 // Prefix for special values JSON encoded as strings
 pub const DATETIME_PREFIX: &str = "__$datetime:";
@@ -138,7 +138,10 @@ impl ScalarValueHelpers for ScalarValue {
 
                 // Get UTC offset when the naive datetime is considered to be in local time
                 let local = Local {};
-                let local_datetime = local.from_local_datetime(&naive_datetime).earliest().unwrap();
+                let local_datetime = local
+                    .from_local_datetime(&naive_datetime)
+                    .earliest()
+                    .unwrap();
                 let utc_millis = local_datetime.timestamp_millis();
                 Value::from(utc_millis)
             }

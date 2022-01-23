@@ -23,7 +23,9 @@ use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
 use crate::expression::compiler::builtin_functions::date_time::datetime::DATETIME_COMPONENTS;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{is_integer_datatype, is_string_datatype, ExprHelpers, cast_to};
+use crate::expression::compiler::utils::{
+    cast_to, is_integer_datatype, is_string_datatype, ExprHelpers,
+};
 use crate::task_graph::task::TaskCall;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
@@ -279,9 +281,7 @@ fn process_datetimes(
                             Some(tz) if tz.to_lowercase() == "utc" => {
                                 cast_to(timestamp_millis, &DataType::Int64, schema)?
                             }
-                            _ => {
-                                timestamp_millis
-                            }
+                            _ => timestamp_millis,
                         }
                     } else {
                         continue;
@@ -327,17 +327,13 @@ fn process_datetimes(
                             Some(tz) if tz.to_lowercase() == "utc" => {
                                 cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
                             }
-                            _ => {
-                                timestamp_millis
-                            }
+                            _ => timestamp_millis,
                         }
                     }
-                    _ => {
-                        Expr::ScalarFunction {
-                            fun: BuiltinScalarFunction::ToTimestampMillis,
-                            args: vec![col(field.name())],
-                        }
-                    }
+                    _ => Expr::ScalarFunction {
+                        fun: BuiltinScalarFunction::ToTimestampMillis,
+                        args: vec![col(field.name())],
+                    },
                 };
                 expr.alias(field.name())
             } else {

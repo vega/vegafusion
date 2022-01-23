@@ -24,8 +24,7 @@ use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::error::DataFusionError;
 use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::functions::{
-    ReturnTypeFunction, ScalarFunctionImplementation, Signature,
-    TypeSignature, Volatility,
+    ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature, Volatility,
 };
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
@@ -58,11 +57,7 @@ pub fn datetime_transform(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
             }
         }
 
-        cast_to(
-            arg,
-            &DataType::Int64,
-            schema
-        )
+        cast_to(arg, &DataType::Int64, schema)
     } else {
         // Numeric date components
         let int_args: Vec<_> = args
@@ -162,8 +157,7 @@ pub fn make_local_datetime_components_udf() -> ScalarUDF {
                         year += 1900
                     }
 
-                    let naive_date =
-                        NaiveDate::from_ymd(year as i32, month as u32 + 1, day as u32);
+                    let naive_date = NaiveDate::from_ymd(year as i32, month as u32 + 1, day as u32);
                     let naive_time = NaiveTime::from_hms_milli(
                         hour as u32,
                         minute as u32,
@@ -186,9 +180,8 @@ pub fn make_local_datetime_components_udf() -> ScalarUDF {
             }
         });
 
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(
-        DataType::Timestamp(TimeUnit::Millisecond, None)
-    )));
+    let return_type: ReturnTypeFunction =
+        Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
 
     // vega signature: datetime(year, month[, day, hour, min, sec, millisec])
     let sig = |n: usize| vec![DataType::Int64; n];
@@ -305,7 +298,9 @@ pub fn make_utc_datetime_components_udf() -> ScalarUDF {
                         });
 
                     if let Some(datetime) = datetime {
-                        datetime_builder.append_value(datetime.timestamp_millis()).unwrap();
+                        datetime_builder
+                            .append_value(datetime.timestamp_millis())
+                            .unwrap();
                     } else {
                         // Invalid date
                         datetime_builder.append_null().unwrap();
@@ -346,7 +341,6 @@ pub fn make_utc_datetime_components_udf() -> ScalarUDF {
         &datetime_components,
     )
 }
-
 
 /// Helper from DataFusion:
 /// Converts the naive datetime (which has no specific timezone) to a
