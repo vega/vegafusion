@@ -20,10 +20,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
     datetime_strs_to_millis, DateParseMode,
 };
 
-
-use datafusion::arrow::array::{
-    Array, ArrayRef, Date32Array, Int64Array, StringArray,
-};
+use datafusion::arrow::array::{Array, ArrayRef, Date32Array, Int64Array, StringArray};
 use datafusion::arrow::compute::cast;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::physical_plan::functions::{
@@ -89,7 +86,7 @@ fn process_input_datetime(arg: &ArrayRef) -> ArrayRef {
     match arg.data_type() {
         DataType::Utf8 => {
             let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
-            
+
             datetime_strs_to_millis(array, DateParseMode::JavaScript) as _
         }
         DataType::Date32 => {
@@ -97,7 +94,7 @@ fn process_input_datetime(arg: &ArrayRef) -> ArrayRef {
             let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
 
             let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
-            
+
             Arc::new(array) as ArrayRef as _
         }
         DataType::Date64 => {

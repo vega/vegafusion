@@ -20,7 +20,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::arrow::array::{ArrayRef, Int64Array};
-use datafusion::arrow::datatypes::{DataType};
+use datafusion::arrow::datatypes::DataType;
 use datafusion::prelude::{col, DataFrame};
 use std::sync::Arc;
 use vegafusion_core::error::Result;

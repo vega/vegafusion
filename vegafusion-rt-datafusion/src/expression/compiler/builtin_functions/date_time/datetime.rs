@@ -20,7 +20,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_parsing::DAT
 use crate::expression::compiler::utils::{cast_to, is_string_datatype};
 use chrono::{DateTime, Local, LocalResult, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
-use datafusion::arrow::datatypes::{DataType};
+use datafusion::arrow::datatypes::DataType;
 use datafusion::error::DataFusionError;
 use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::functions::{
