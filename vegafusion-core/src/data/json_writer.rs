@@ -344,20 +344,18 @@ fn set_column_for_json_rows(
         }
         DataType::Date32 => {
             // Write as integer UTC milliseconds
-            let arr = array.as_any().downcast_ref::<Date64Array>().unwrap();
+            let arr = array.as_any().downcast_ref::<Date32Array>().unwrap();
             rows.iter_mut()
                 .enumerate()
                 .take(row_count)
                 .for_each(|(i, row)| {
-                    if !arr.is_null(i) {
-                        if arr.is_valid(i) {
-                            let days = arr.value(i);
-                            let ms_per_day = 1000 * 60 * 60 * 24_i64;
-                            let millis = days * ms_per_day;
-                            row.insert(col_name.to_string(), millis.into());
-                        } else {
-                            row.insert(col_name.to_string(), Value::Null);
-                        }
+                    if arr.is_valid(i) {
+                        let days = arr.value(i) as i64;
+                        let ms_per_day = 1000 * 60 * 60 * 24_i64;
+                        let millis = days * ms_per_day;
+                        row.insert(col_name.to_string(), millis.into());
+                    } else {
+                        row.insert(col_name.to_string(), Value::Null);
                     }
                 });
         }
@@ -368,13 +366,11 @@ fn set_column_for_json_rows(
                 .enumerate()
                 .take(row_count)
                 .for_each(|(i, row)| {
-                    if !arr.is_null(i) {
-                        if arr.is_valid(i) {
-                            let millis = arr.value(i);
-                            row.insert(col_name.to_string(), millis.into());
-                        } else {
-                            row.insert(col_name.to_string(), Value::Null);
-                        }
+                    if arr.is_valid(i) {
+                        let millis = arr.value(i);
+                        row.insert(col_name.to_string(), millis.into());
+                    } else {
+                        row.insert(col_name.to_string(), Value::Null);
                     }
                 });
         }
@@ -854,7 +850,7 @@ mod tests {
 
         assert_eq!(
             String::from_utf8(buf).unwrap(),
-            r#"{"nanos":"2018-11-13 17:11:10.011375885","micros":"2018-11-13 17:11:10.011375","millis":"2018-11-13 17:11:10.011","secs":"2018-11-13 17:11:10","name":"a"}
+            r#"{"nanos":1542147070011,"micros":1542147070011,"millis":1542147070011,"secs":1542147070000,"name":"a"}
 {"name":"b"}
 "#
         );
@@ -900,8 +896,8 @@ mod tests {
 
         assert_eq!(
             String::from_utf8(buf).unwrap(),
-            r#"{"date32":"2018-11-13","date64":"2018-11-13","name":"a"}
-{"name":"b"}
+            r#"{"date32":1542067200000,"date64":1542129070011,"name":"a"}
+{"date32":null,"date64":null,"name":"b"}
 "#
         );
     }
