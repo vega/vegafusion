@@ -26,12 +26,14 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use std::str::FromStr;
-use vegafusion_core::data::scalar::ScalarValue;
+use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
 
+use chrono::prelude::*;
+use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::expression::literal::Value;
 
@@ -133,17 +135,61 @@ impl FieldSpec {
         let field_col = col(&self.field);
         let expr = match self.typ {
             SelectionType::Enum => {
-                let list_values: Vec<_> = if let ScalarValue::List(Some(elements), _) = &values {
-                    // values already a list
-                    elements.iter().map(|el| lit(el.clone())).collect()
+                let dtype = field_col.get_type(schema)?;
+                if matches!(dtype, DataType::Timestamp(_, _)) {
+                    // Convert comparison values to milliseconds in local time
+                    let utc_millis = if let ScalarValue::List(Some(elements), _) = &values {
+                        // values already a list
+                        elements
+                            .iter()
+                            .map(|el| el.to_f64().expect("Expected number") as i64)
+                            .collect()
+                    } else {
+                        // convert values to single element list
+                        let millis = values.to_f64().expect("Expected number") as i64;
+                        vec![millis]
+                    };
+                    let local_millis: Vec<_> = utc_millis
+                        .iter()
+                        .map(|millis| {
+                            // Convert from UTC to local time
+                            let seconds = millis / 1000;
+                            let nanoseconds = ((millis % 1000) * 1_000_000) as u32;
+                            let naive_datetime =
+                                NaiveDateTime::from_timestamp(seconds, nanoseconds);
+                            let utc_datetime =
+                                Utc.from_local_datetime(&naive_datetime).single().unwrap();
+                            let converted: DateTime<Local> = DateTime::from(utc_datetime);
+                            let local_millis = converted.naive_local().timestamp_millis();
+                            println!("{} to {}", millis, local_millis);
+                            lit(local_millis)
+                        })
+                        .collect();
+
+                    // Cast column to Int64
+                    let field_col = Expr::Cast {
+                        expr: Box::new(field_col),
+                        data_type: DataType::Int64,
+                    };
+                    Expr::InList {
+                        expr: Box::new(field_col),
+                        list: local_millis,
+                        negated: false,
+                    }
                 } else {
-                    // convert values to single element list
-                    vec![lit(values.clone())]
-                };
-                Expr::InList {
-                    expr: Box::new(field_col),
-                    list: list_values,
-                    negated: false,
+                    let list_values: Vec<_> = if let ScalarValue::List(Some(elements), _) = &values
+                    {
+                        // values already a list
+                        elements.iter().map(|el| lit(el.clone())).collect()
+                    } else {
+                        // convert values to single element list
+                        vec![lit(values.clone())]
+                    };
+                    Expr::InList {
+                        expr: Box::new(field_col),
+                        list: list_values,
+                        negated: false,
+                    }
                 }
             }
             _ => {

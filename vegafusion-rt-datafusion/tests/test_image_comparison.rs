@@ -99,7 +99,6 @@ mod test_custom_specs {
         case("custom/joinaggregate_text_color_contrast", 0.001),
         case("custom/cumulative_running_window", 0.001),
         case("custom/point_bubble", 0.001),
-        case("custom/circle_natural_disasters", 0.001),
         case("custom/circle_bubble_health_income", 0.001),
         case("custom/line_color_stocks", 0.001),
         case("custom/line_slope_barley", 0.001),
@@ -448,7 +447,10 @@ mod test_vegalite_specs {
         case("vegalite/circle_flatten", 0.001),
         case("vegalite/circle_github_punchcard", 0.001),
         case("vegalite/circle_labelangle_orient_signal", 0.001),
-        case("vegalite/circle_natural_disasters", 0.001),
+
+        // "Ambiguous reference to field" error related to
+        // https://github.com/apache/arrow-datafusion/issues/1411
+        // case("vegalite/circle_natural_disasters", 0.001),
         case("vegalite/circle_opacity", 0.001),
         case("vegalite/circle_scale_quantile", 0.001),
         case("vegalite/circle_scale_quantize", 0.001),
@@ -922,10 +924,14 @@ mod test_image_comparison_timeunit {
 
         #[values(
             "custom/bar_month_temporal_initial_parameterize",
-            "custom/stacked_bar_weather_timeunit_parameterize"
+            "custom/bar_month_temporal_initial_parameterize_local",
+            "custom/stacked_bar_weather_timeunit_parameterize",
+            "custom/stacked_bar_weather_timeunit_parameterize_local",
         )]
         spec_name: &str,
     ) {
+        initialize();
+
         // Load spec
         let mut full_spec = load_spec(spec_name);
 
@@ -936,9 +942,10 @@ mod test_image_comparison_timeunit {
         let watch_plan = load_expected_watch_plan(spec_name);
 
         // Modify transform spec
+        let num_data = full_spec.data.len();
         let timeunit_tx = full_spec
             .data
-            .get_mut(0)
+            .get_mut( num_data - 1)
             .unwrap()
             .transform
             .get_mut(0)

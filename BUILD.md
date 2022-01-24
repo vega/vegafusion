@@ -16,17 +16,17 @@ Install `wasm-pack`, following instructions at https://rustwasm.github.io/wasm-p
 
 For Linux:
 ```bash
-conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-linux-64-3.10.lock
+conda create --name vegafusion_dev --file python/vegafusion-jupyter/conda-linux-64-310.lock
 ```
 
 For MacOS:
 ```bash
-conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-osx-64-3.10.lock
+conda create --name vegafusion_dev --file python/vegafusion-jupyter/conda-osx-64-310.lock
 ```
 
 For Windows:
 ```bash
-conda env create --name vegafusion_dev --file python/vegafusion-jupyter/conda-win-64-3.10.lock
+conda create --name vegafusion_dev --file python/vegafusion-jupyter/conda-win-64-310.lock
 ```
 
 ### Activate conda development environment

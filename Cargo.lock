@@ -252,10 +252,12 @@ version = "0.4.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "670ad68c9088c2a963aaa298cb369688cf3f9465ce5e2d4ca10e6e0098a1ce73"
 dependencies = [
+ "js-sys",
  "libc",
  "num-integer",
  "num-traits",
  "time 0.1.44",
+ "wasm-bindgen",
  "winapi",
 ]
 
@@ -2358,7 +2360,7 @@ checksum = "09cc8ee72d2a9becf2f2febe0205bbed8fc6615b7cb429ad062dc7b7ddd036a9"
 
 [[package]]
 name = "vegafusion-core"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "arrow",
  "bytes",
@@ -2381,7 +2383,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-python"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "pyo3",
  "tokio",
@@ -2426,8 +2428,9 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-wasm"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
+ "chrono",
  "console_error_panic_hook",
  "futures-util",
  "getrandom",

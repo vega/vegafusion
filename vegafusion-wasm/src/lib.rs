@@ -163,6 +163,7 @@ impl MsgReceiver {
                                 if self.verbose {
                                     log(&format!("VegaFusion(wasm): Received {}", var.name));
                                     log(&serde_json::to_string_pretty(&json).unwrap());
+                                    log(&format!("DataType: {:#?}", &value.get_datatype()));
                                 }
 
                                 let js_value = JsValue::from_serde(&json).unwrap();
@@ -173,6 +174,7 @@ impl MsgReceiver {
                                 if self.verbose {
                                     log(&format!("VegaFusion(wasm): Received {}", var.name));
                                     log(&serde_json::to_string_pretty(&json).unwrap());
+                                    log(&format!("Schema: {:#?}", &value.schema));
                                 }
 
                                 let js_value = JsValue::from_serde(&value.to_json()).unwrap();

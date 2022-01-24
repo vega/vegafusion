@@ -23,7 +23,9 @@ use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
 use crate::expression::compiler::builtin_functions::date_time::datetime::DATETIME_COMPONENTS;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{is_integer_datatype, is_string_datatype, ExprHelpers};
+use crate::expression::compiler::utils::{
+    cast_to, is_integer_datatype, is_string_datatype, ExprHelpers,
+};
 use crate::task_graph::task::TaskCall;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
@@ -42,6 +44,7 @@ use std::io::Write;
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 
+use crate::expression::compiler::builtin_functions::date_time::local_to_utc::LOCAL_TO_UTC_MILLIS;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
@@ -257,14 +260,10 @@ fn process_datetimes(
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
                         let datetime_udf = get_datetime_udf(date_mode);
-                        let date_expr = Expr::ScalarUDF {
+
+                        Expr::ScalarUDF {
                             fun: Arc::new(datetime_udf),
                             args: vec![col(&spec.name)],
-                        };
-
-                        Expr::ScalarFunction {
-                            fun: BuiltinScalarFunction::ToTimestampMillis,
-                            args: vec![date_expr],
                         }
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically
@@ -272,10 +271,22 @@ fn process_datetimes(
                             fun: Arc::new(DATETIME_COMPONENTS.clone()),
                             args: vec![col(&spec.name)],
                         }
-                    } else if let DataType::Timestamp(_, _) = dtype {
-                        Expr::ScalarFunction {
+                    } else if let DataType::Timestamp(_, tz) = dtype {
+                        let timestamp_millis = Expr::ScalarFunction {
                             fun: BuiltinScalarFunction::ToTimestampMillis,
                             args: vec![col(&spec.name)],
+                        };
+                        match tz {
+                            Some(tz) if tz.to_lowercase() == "utc" => {
+                                cast_to(timestamp_millis, &DataType::Int64, schema)?
+                            }
+                            _ => {
+                                // Treat as local
+                                Expr::ScalarUDF {
+                                    fun: Arc::new(LOCAL_TO_UTC_MILLIS.clone()),
+                                    args: vec![timestamp_millis],
+                                }
+                            }
                         }
                     } else {
                         continue;
@@ -302,19 +313,34 @@ fn process_datetimes(
 
     // Standardize other Timestamp columns (those that weren't created above) to integer
     // milliseconds
-    let selection: Vec<_> = df
-        .schema()
+    let schema = df.schema();
+    let selection: Vec<_> = schema
         .fields()
         .iter()
         .map(|field| {
             if !date_fields.contains(field.name())
                 && matches!(field.data_type(), DataType::Timestamp(_, _))
             {
-                Expr::ScalarFunction {
-                    fun: BuiltinScalarFunction::ToTimestampMillis,
-                    args: vec![col(field.name())],
-                }
-                .alias(field.name())
+                let expr = match field.data_type() {
+                    DataType::Timestamp(_, tz) => {
+                        let timestamp_millis = Expr::ScalarFunction {
+                            fun: BuiltinScalarFunction::ToTimestampMillis,
+                            args: vec![col(field.name())],
+                        };
+
+                        match tz {
+                            Some(tz) if tz.to_lowercase() == "utc" => {
+                                cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
+                            }
+                            _ => Expr::ScalarUDF {
+                                fun: Arc::new(LOCAL_TO_UTC_MILLIS.clone()),
+                                args: vec![timestamp_millis],
+                            },
+                        }
+                    }
+                    _ => unreachable!(),
+                };
+                expr.alias(field.name())
             } else {
                 col(field.name())
             }

@@ -26,6 +26,7 @@ pub use datafusion::scalar::ScalarValue;
 
 use crate::arrow::datatypes::DataType;
 use crate::error::{Result, VegaFusionError};
+
 use serde_json::{Map, Value};
 use std::convert::TryFrom;
 use std::ops::Deref;
@@ -54,7 +55,7 @@ impl ScalarValueHelpers for ScalarValue {
             Value::String(v) => {
                 if v.starts_with(DATETIME_PREFIX) {
                     let ms: i64 = v.strip_prefix(DATETIME_PREFIX).unwrap().parse().unwrap();
-                    ScalarValue::TimestampMillisecond(Some(ms))
+                    ScalarValue::Float64(Some(ms as f64))
                 } else {
                     ScalarValue::from(v.as_str())
                 }
@@ -116,11 +117,14 @@ impl ScalarValueHelpers for ScalarValue {
             ScalarValue::LargeBinary(Some(_v)) => {
                 unimplemented!()
             }
-            ScalarValue::Date32(Some(_v)) => {
-                unimplemented!()
+            ScalarValue::Date32(Some(v)) => {
+                let ms_per_day: i32 = 1000 * 60 * 60 * 24;
+                let utc_millis = *v * ms_per_day;
+                Value::from(utc_millis)
             }
-            ScalarValue::Date64(Some(_v)) => {
-                unimplemented!()
+            ScalarValue::Date64(Some(v)) => {
+                // To UTC integer milliseconds (alread in UTC)
+                Value::from(*v)
             }
             ScalarValue::TimestampSecond(Some(_v)) => {
                 unimplemented!()

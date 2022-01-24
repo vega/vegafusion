@@ -1,6 +1,6 @@
 [package]
 name = "vegafusion-wasm"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -22,6 +22,7 @@ getrandom = { version = "0.2.3", features = ["js"] }
 prost = "0.8.0"
 prost-types = "0.8.0"
 indexmap = "=1.6.2"
+chrono = {version="0.4.19", features=["wasmbind"]}
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires

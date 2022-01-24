@@ -17,7 +17,7 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 use crate::arrow::{
-    datatypes::{DataType, Field, Schema, SchemaRef},
+    datatypes::{DataType, SchemaRef},
     json,
     record_batch::RecordBatch,
 };
@@ -35,9 +35,7 @@ use super::scalar::ScalarValue;
 use crate::arrow::array::ArrayRef;
 use crate::data::json_writer::record_batches_to_json_rows;
 
-use arrow::array::{Date32Array, Int64Array, StructArray};
-use arrow::compute::{cast, unary};
-use arrow::datatypes::TimeUnit;
+use arrow::array::StructArray;
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
@@ -128,55 +126,8 @@ impl VegaFusionTable {
     }
 
     pub fn to_json(&self) -> serde_json::Value {
-        // Workaround to serialize millisecond timestamp columns as integer milliseconds
-        // Find timestamp columns
-        // Build updated schema
-        let write_schema = Schema::new(
-            self.schema
-                .fields()
-                .iter()
-                .map(|field| {
-                    if matches!(
-                        field.data_type(),
-                        DataType::Timestamp(TimeUnit::Millisecond, _)
-                            | DataType::Date32
-                            | DataType::Date64
-                    ) {
-                        Field::new(field.name(), DataType::Int64, field.is_nullable())
-                    } else {
-                        field.clone()
-                    }
-                })
-                .collect(),
-        );
-
-        // Cast millisecond timestamp cols to int64
-        let mut write_batches = Vec::new();
-        for batch in &self.batches {
-            let new_columns: Vec<_> = batch
-                .columns()
-                .iter()
-                .map(|col| match col.data_type() {
-                    DataType::Timestamp(TimeUnit::Millisecond, _) => {
-                        cast(col, &DataType::Int64).unwrap()
-                    }
-                    DataType::Date32 => {
-                        let ms_per_day = 1000 * 60 * 60 * 24_i64;
-                        let array = col.as_any().downcast_ref::<Date32Array>().unwrap();
-
-                        let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
-                        Arc::new(array) as ArrayRef
-                    }
-                    DataType::Date64 => cast(col, &DataType::Int64).unwrap(),
-                    _ => col.clone(),
-                })
-                .collect();
-            let batch = RecordBatch::try_new(Arc::new(write_schema.clone()), new_columns).unwrap();
-            write_batches.push(batch)
-        }
-
         let mut rows: Vec<serde_json::Value> = Vec::with_capacity(self.num_rows());
-        for row in record_batches_to_json_rows(&write_batches) {
+        for row in record_batches_to_json_rows(&self.batches) {
             rows.push(serde_json::Value::Object(row));
         }
         serde_json::Value::Array(rows)

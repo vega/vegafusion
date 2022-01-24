@@ -1,0 +1,14 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "source_0",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "source_0_y_domain_mean_precipitation",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

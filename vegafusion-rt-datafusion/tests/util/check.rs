@@ -21,6 +21,7 @@ use crate::util::vegajs_runtime::vegajs_runtime;
 use datafusion::scalar::ScalarValue;
 
 use std::convert::TryFrom;
+use vegafusion_core::data::scalar::ScalarValueHelpers;
 
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::Result;
@@ -69,6 +70,10 @@ pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
     // Build compilation config
     let compiled = compile(&parsed, config, None).unwrap();
     let result = compiled.eval_to_scalar().unwrap();
+
+    // Serialize and deserialize to normalize types to those supported by JavaScript
+    // (e.g. Int to Float)
+    let result = ScalarValue::from_json(&result.to_json().unwrap()).unwrap();
 
     println!("{:?}", result);
     assert_eq!(

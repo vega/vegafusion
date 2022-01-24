@@ -19,7 +19,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::arrow::array::{ArrayRef, Date64Array, Int64Array};
+use datafusion::arrow::array::{ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::prelude::{col, DataFrame};
 use std::sync::Arc;
@@ -30,7 +30,6 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 use datafusion::arrow::compute::kernels::arity::unary;
 use datafusion::arrow::temporal_conversions::date64_to_datetime;
 
-use crate::expression::compiler::utils::cast_to;
 use chrono::{
     DateTime, Datelike, Local, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday,
 };
@@ -72,12 +71,7 @@ impl TransformTrait for TimeUnit {
 
         // Handle timeunit start value (we always do this)
         let timeunit_start_udf = make_timeunit_start_udf(units_mask.as_slice(), is_local);
-        let timeunit_start_value = timeunit_start_udf.call(vec![cast_to(
-            col(&self.field),
-            &DataType::Date64,
-            dataframe.schema(),
-        )
-        .unwrap()]);
+        let timeunit_start_value = timeunit_start_udf.call(vec![col(&self.field)]);
 
         // Apply alias
         let timeunit_start_alias = if let Some(alias_0) = &self.alias_0 {
@@ -109,59 +103,64 @@ impl TransformTrait for TimeUnit {
     }
 }
 
-fn make_timeunit_start_udf(units_mask: &[bool], is_local: bool) -> ScalarUDF {
+fn make_timeunit_start_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
     let units_mask = Vec::from(units_mask);
     let timeunit = move |args: &[ArrayRef]| {
         let arg = &args[0];
 
-        let array = arg.as_any().downcast_ref::<Date64Array>().unwrap();
-
-        let result_array: Int64Array = unary(array, |value| {
-            if is_local {
-                let tz = Local {};
-                perform_timeunit_start(value, units_mask.as_slice(), tz).timestamp_millis()
-            } else {
-                let tz = Utc;
-                perform_timeunit_start(value, units_mask.as_slice(), tz).timestamp_millis()
-            }
-        });
+        // Input UTC
+        let array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
+        let result_array: Int64Array = if in_local {
+            // Input is in UTC, compute timeunit values in local, return results in UTC
+            let tz = Local {};
+            unary(array, |value| {
+                perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+            })
+        } else {
+            // Input is in UTC, compute timeunit values in UTC, return results in UTC
+            let tz = Utc;
+            unary(array, |value| {
+                perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+            })
+        };
 
         Ok(Arc::new(result_array) as ArrayRef)
     };
 
     let timeunit = make_scalar_function(timeunit);
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
+    let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
 
     ScalarUDF::new(
         "timeunit",
-        &Signature::uniform(1, vec![DataType::Date64], Volatility::Immutable),
+        &Signature::uniform(1, vec![DataType::Int64], Volatility::Immutable),
         &return_type,
         &timeunit,
     )
 }
 
-fn make_timeunit_end_udf(units_mask: &[bool], is_local: bool) -> ScalarUDF {
+fn make_timeunit_end_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
     let units_mask = Vec::from(units_mask);
     let timeunit_end = move |args: &[ArrayRef]| {
         let arg = &args[0];
 
         let start_array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
-
-        let result_array: Int64Array = unary(start_array, |value| {
-            if is_local {
-                let tz = Local {};
-                perform_timeunit_end(value, units_mask.as_slice(), tz).timestamp_millis()
-            } else {
-                let tz = Utc;
-                perform_timeunit_end(value, units_mask.as_slice(), tz).timestamp_millis()
-            }
-        });
+        let result_array: Int64Array = if in_local {
+            let tz = Local {};
+            unary(start_array, |value| {
+                perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+            })
+        } else {
+            let tz = Utc;
+            unary(start_array, |value| {
+                perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+            })
+        };
 
         Ok(Arc::new(result_array) as ArrayRef)
     };
 
     let timeunit = make_scalar_function(timeunit_end);
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
+    let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
 
     ScalarUDF::new(
         "timeunit_end",
@@ -171,12 +170,17 @@ fn make_timeunit_end_udf(units_mask: &[bool], is_local: bool) -> ScalarUDF {
     )
 }
 
-fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -> DateTime<T> {
+/// For timestamp specified in UTC, perform time unit in the provided timezone (either UTC or Local)
+fn perform_timeunit_start_from_utc<T: TimeZone>(
+    value: i64,
+    units_mask: &[bool],
+    in_tz: T,
+) -> DateTime<T> {
     // Load and interpret date time as UTC
     let dt_value = date64_to_datetime(value).with_nanosecond(0).unwrap();
     let dt_value = Utc.from_local_datetime(&dt_value).single().unwrap();
 
-    let mut dt_value = dt_value.with_timezone(&tz);
+    let mut dt_value = dt_value.with_timezone(&in_tz);
 
     // Handle time truncation
     if !units_mask[10] {
@@ -244,7 +248,10 @@ fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -
         let isoweek0_sunday = NaiveDate::from_isoywd(dt_value.year(), 1, Weekday::Sun);
 
         let isoweek0_sunday = NaiveDateTime::new(isoweek0_sunday, dt_value.time());
-        let isoweek0_sunday = tz.from_local_datetime(&isoweek0_sunday).single().unwrap();
+        let isoweek0_sunday = in_tz
+            .from_local_datetime(&isoweek0_sunday)
+            .single()
+            .unwrap();
 
         // Subtract one week from isoweek0_sunday and check if it's still in the same calendar
         // year
@@ -271,7 +278,7 @@ fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -
         if !units_mask[0] {
             // Calendar year 2012. use weeks offset from the first Sunday of 2012
             // (which is January 1st)
-            let first_sunday_of_2012 = tz
+            let first_sunday_of_2012 = in_tz
                 .from_local_datetime(&NaiveDateTime::new(
                     NaiveDate::from_ymd(2012, 1, 1),
                     dt_value.time(),
@@ -293,7 +300,7 @@ fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -
             NaiveDate::from_isoywd(dt_value.year(), 2, weekday)
         };
         let new_datetime = NaiveDateTime::new(new_date, dt_value.time());
-        dt_value = tz.from_local_datetime(&new_datetime).single().unwrap();
+        dt_value = in_tz.from_local_datetime(&new_datetime).single().unwrap();
     } else if units_mask[6] {
         // DayOfYear
         // Keep the same day of the year
@@ -306,7 +313,12 @@ fn perform_timeunit_start<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -
     dt_value
 }
 
-fn perform_timeunit_end<T: TimeZone>(value: i64, units_mask: &[bool], tz: T) -> DateTime<T> {
+/// For timestamp specified in UTC, perform time unit end in the provided timezone (either UTC or Local)
+fn perform_timeunit_end_from_utc<T: TimeZone>(
+    value: i64,
+    units_mask: &[bool],
+    tz: T,
+) -> DateTime<T> {
     let dt_start = date64_to_datetime(value).with_nanosecond(0).unwrap();
     let dt_start = Utc.from_local_datetime(&dt_start).single().unwrap();
     let dt_start = dt_start.with_timezone(&tz);

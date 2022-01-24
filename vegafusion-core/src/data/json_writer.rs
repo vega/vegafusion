@@ -15,10 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// ## VegaFusion note
-// This file is copied from Arrow (with license above) `json/writer.rs` with the following
-// modification.  Rather than skip writing null values, this version is updated to write the JSON
-// NULL value instead. This is needed for interoperability with Vega.
+// ## VegaFusion notes
+// -------------------
+// This file was originally copied from Arrow (with license above) `json/writer.rs` with the
+// following modifications.
+//   1. Rather than skip writing null values, this version is updated to write the JSON
+//      NULL value instead. This is needed for interoperability with Vega.
+//   2. Date32, Date64, and Timestamp types are serialized as UTC milliseconds.
 
 //! # JSON Writer
 //!
@@ -117,6 +120,7 @@ use arrow::array::*;
 use arrow::datatypes::*;
 use arrow::error::Result;
 use arrow::record_batch::RecordBatch;
+use chrono::TimeZone;
 
 fn primitive_array_to_json<T: ArrowPrimitiveType>(array: &ArrayRef) -> Vec<Value> {
     as_primitive_array::<T>(array)
@@ -222,6 +226,28 @@ macro_rules! set_column_by_array_type {
     };
 }
 
+macro_rules! set_temporal_column_as_millis_by_array_type {
+    ($array_type:ident, $col_name:ident, $rows:ident, $array:ident, $row_count:ident, $cast_fn:ident) => {
+        let arr = $array.as_any().downcast_ref::<$array_type>().unwrap();
+
+        $rows
+            .iter_mut()
+            .enumerate()
+            .take($row_count)
+            .for_each(|(i, row)| {
+                if !arr.is_null(i) {
+                    if let Some(v) = arr.$cast_fn(i) {
+                        row.insert($col_name.to_string(), v.timestamp_millis().into());
+                    } else {
+                        row.insert($col_name.to_string(), Value::Null);
+                    }
+                } else {
+                    row.insert($col_name.to_string(), Value::Null);
+                }
+            });
+    };
+}
+
 macro_rules! set_temporal_column_by_array_type {
     ($array_type:ident, $col_name:ident, $rows:ident, $array:ident, $row_count:ident, $cast_fn:ident) => {
         let arr = $array.as_any().downcast_ref::<$array_type>().unwrap();
@@ -237,6 +263,8 @@ macro_rules! set_temporal_column_by_array_type {
                     } else {
                         row.insert($col_name.to_string(), Value::Null);
                     }
+                } else {
+                    row.insert($col_name.to_string(), Value::Null);
                 }
             });
     };
@@ -313,27 +341,39 @@ fn set_column_for_json_rows(
             set_column_by_array_type!(as_string_array, col_name, rows, array, row_count);
         }
         DataType::Date32 => {
-            set_temporal_column_by_array_type!(
-                Date32Array,
-                col_name,
-                rows,
-                array,
-                row_count,
-                value_as_date
-            );
+            // Write as integer UTC milliseconds
+            let arr = array.as_any().downcast_ref::<Date32Array>().unwrap();
+            rows.iter_mut()
+                .enumerate()
+                .take(row_count)
+                .for_each(|(i, row)| {
+                    if arr.is_valid(i) {
+                        let days = arr.value(i) as i64;
+                        let ms_per_day = 1000 * 60 * 60 * 24_i64;
+                        let millis = days * ms_per_day;
+                        row.insert(col_name.to_string(), millis.into());
+                    } else {
+                        row.insert(col_name.to_string(), Value::Null);
+                    }
+                });
         }
         DataType::Date64 => {
-            set_temporal_column_by_array_type!(
-                Date64Array,
-                col_name,
-                rows,
-                array,
-                row_count,
-                value_as_date
-            );
+            // Write as integer UTC milliseconds
+            let arr = array.as_any().downcast_ref::<Date64Array>().unwrap();
+            rows.iter_mut()
+                .enumerate()
+                .take(row_count)
+                .for_each(|(i, row)| {
+                    if arr.is_valid(i) {
+                        let millis = arr.value(i);
+                        row.insert(col_name.to_string(), millis.into());
+                    } else {
+                        row.insert(col_name.to_string(), Value::Null);
+                    }
+                });
         }
         DataType::Timestamp(TimeUnit::Second, _) => {
-            set_temporal_column_by_array_type!(
+            set_temporal_column_as_millis_by_array_type!(
                 TimestampSecondArray,
                 col_name,
                 rows,
@@ -343,7 +383,7 @@ fn set_column_for_json_rows(
             );
         }
         DataType::Timestamp(TimeUnit::Millisecond, _) => {
-            set_temporal_column_by_array_type!(
+            set_temporal_column_as_millis_by_array_type!(
                 TimestampMillisecondArray,
                 col_name,
                 rows,
@@ -353,7 +393,7 @@ fn set_column_for_json_rows(
             );
         }
         DataType::Timestamp(TimeUnit::Microsecond, _) => {
-            set_temporal_column_by_array_type!(
+            set_temporal_column_as_millis_by_array_type!(
                 TimestampMicrosecondArray,
                 col_name,
                 rows,
@@ -363,7 +403,7 @@ fn set_column_for_json_rows(
             );
         }
         DataType::Timestamp(TimeUnit::Nanosecond, _) => {
-            set_temporal_column_by_array_type!(
+            set_temporal_column_as_millis_by_array_type!(
                 TimestampNanosecondArray,
                 col_name,
                 rows,
@@ -808,8 +848,8 @@ mod tests {
 
         assert_eq!(
             String::from_utf8(buf).unwrap(),
-            r#"{"nanos":"2018-11-13 17:11:10.011375885","micros":"2018-11-13 17:11:10.011375","millis":"2018-11-13 17:11:10.011","secs":"2018-11-13 17:11:10","name":"a"}
-{"name":"b"}
+            r#"{"nanos":1542129070011,"micros":1542129070011,"millis":1542129070011,"secs":1542129070000,"name":"a"}
+{"nanos":null,"micros":null,"millis":null,"secs":null,"name":"b"}
 "#
         );
     }
@@ -854,8 +894,8 @@ mod tests {
 
         assert_eq!(
             String::from_utf8(buf).unwrap(),
-            r#"{"date32":"2018-11-13","date64":"2018-11-13","name":"a"}
-{"name":"b"}
+            r#"{"date32":1542067200000,"date64":1542129070011,"name":"a"}
+{"date32":null,"date64":null,"name":"b"}
 "#
         );
     }
@@ -898,7 +938,7 @@ mod tests {
         assert_eq!(
             String::from_utf8(buf).unwrap(),
             r#"{"time32sec":"00:02:00","time32msec":"00:00:00.120","time64usec":"00:00:00.000120","time64nsec":"00:00:00.000000120","name":"a"}
-{"name":"b"}
+{"time32sec":null,"time32msec":null,"time64usec":null,"time64nsec":null,"name":"b"}
 "#
         );
     }
@@ -941,7 +981,7 @@ mod tests {
         assert_eq!(
             String::from_utf8(buf).unwrap(),
             r#"{"duration_sec":"PT120S","duration_msec":"PT0.120S","duration_usec":"PT0.000120S","duration_nsec":"PT0.000000120S","name":"a"}
-{"name":"b"}
+{"duration_sec":null,"duration_msec":null,"duration_usec":null,"duration_nsec":null,"name":"b"}
 "#
         );
     }

@@ -319,32 +319,68 @@ mod test_datetime {
 }
 
 mod test_date_parts {
-    use crate::*;
-
     #[rstest(
         expr,
-        case("year(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("utcyear(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("quarter(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("utcquarter(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("month(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("utcmonth(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("day(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("utcday(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("date(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("utcdate(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("dayofyear(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("utcdayofyear(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("hours(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("utchours(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("minutes(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("utcminutes(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("seconds(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0"),
-        case("utcseconds(datetime(utc(87, 3, 10, 7, 35, 10, 87))) + 0")
+        case("year(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("year(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("year(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcyear(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("utcyear(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcyear(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("quarter(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("quarter(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("quarter(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcquarter(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("utcquarter(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcquarter(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("month(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("month(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("month(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcmonth(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("utcmonth(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcmonth(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("day(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("day(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("day(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcday(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("utcday(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcday(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("date(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("date(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("date(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcdate(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("utcdate(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcdate(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("dayofyear(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("dayofyear(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("dayofyear(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcdayofyear(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("utcdayofyear(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcdayofyear(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("hours(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("hours(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("hours(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("utchours(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("utchours(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("utchours(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("minutes(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("minutes(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("minutes(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcminutes(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("utcminutes(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcminutes(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("seconds(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("seconds(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("seconds(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcseconds(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("utcseconds(utc(87, 3, 10, 7, 35, 10, 87))"),
+        case("utcseconds(datetime(87, 3, 10, 7, 35, 10, 87))")
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
     }
+
+    use crate::*;
 
     #[test]
     fn test_marker() {} // Help IDE detect test module
@@ -356,14 +392,14 @@ mod test_length {
     #[rstest(
         expr,
         // Below: Add 0 to force result type to f64 even though length returns i32
-        case("length([1, 2, 3]) + 0"),
-        case("[1, 2, 3].length + 0"),
-        case("length('abc') + 0"),
-        case("'abc'.length + 0"),
-        case("hello.length + 0"),
-        case("length(hello) + 0"),
-        case("length(data('dataB')) + 0"),
-        case("data('dataB').length + 0"),
+        case("length([1, 2, 3])"),
+        case("[1, 2, 3].length"),
+        case("length('abc')"),
+        case("'abc'.length"),
+        case("hello.length"),
+        case("length(hello)"),
+        case("length(data('dataB'))"),
+        case("data('dataB').length"),
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())

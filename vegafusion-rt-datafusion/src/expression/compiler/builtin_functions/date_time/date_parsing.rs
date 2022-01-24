@@ -28,11 +28,11 @@ use std::sync::Arc;
 
 lazy_static! {
     pub static ref DATETIME_TO_MILLIS_LOCAL: ScalarUDF =
-        make_datetime_to_millis_udf(DateParseMode::Local);
+        make_date_str_to_millis_udf(DateParseMode::Local);
     pub static ref DATETIME_TO_MILLIS_UTC: ScalarUDF =
-        make_datetime_to_millis_udf(DateParseMode::Utc);
+        make_date_str_to_millis_udf(DateParseMode::Utc);
     pub static ref DATETIME_TO_MILLIS_JAVASCRIPT: ScalarUDF =
-        make_datetime_to_millis_udf(DateParseMode::JavaScript);
+        make_date_str_to_millis_udf(DateParseMode::JavaScript);
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -241,7 +241,7 @@ pub fn parse_datetime_to_utc_millis(date_str: &str, mode: DateParseMode) -> Opti
     Some(parsed_utc.timestamp_millis())
 }
 
-pub fn make_datetime_to_millis_udf(mode: DateParseMode) -> ScalarUDF {
+pub fn make_date_str_to_millis_udf(mode: DateParseMode) -> ScalarUDF {
     let to_millis_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single string argument
         let arg = &args[0];
