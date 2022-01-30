@@ -26,8 +26,6 @@ from ._frontend import module_name, module_version
 import altair as alt
 import json
 
-from .runtime import runtime
-
 
 class VegaFusionWidget(DOMWidget):
     _model_name = Unicode('VegaFusionModel').tag(sync=True)
@@ -64,7 +62,7 @@ class VegaFusionWidget(DOMWidget):
             else:
                 data_transformer_opts = dict()
 
-            with alt.renderers.enable("vegafusion"):
+            with alt.renderers.enable("vegafusion-jupyter"):
                 with alt.data_transformers.enable("vegafusion-feather", **data_transformer_opts):
                     # Temporarily enable the vegafusion renderer and transformer so
                     # that we use them even if they are not enabled globally
@@ -77,7 +75,7 @@ class VegaFusionWidget(DOMWidget):
             kwargs["spec"] = json.dumps(kwargs["spec"], indent=2)
 
         # If vegafusion renderer is already enabled, use the configured debounce options as the default
-        if alt.renderers.active == "vegafusion":
+        if alt.renderers.active == "vegafusion-jupyter":
             # Use configured debounce options, if any
             renderer_opts = alt.renderers.options
             if "debounce_wait" in renderer_opts:
@@ -97,6 +95,8 @@ class VegaFusionWidget(DOMWidget):
             print(f"VegaFusionWidget(py): {msg}")
 
     def _handle_message(self, widget, msg, buffers):
+        from vegafusion import runtime
+
         if msg['type'] == "request":
             start = time.time()
             self._log("Received request")

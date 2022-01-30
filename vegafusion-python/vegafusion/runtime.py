@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from vegafusion import PyTaskGraphRuntime
 import multiprocessing
 
 class VegaFusionRuntime:
@@ -25,6 +24,7 @@ class VegaFusionRuntime:
 
     @property
     def runtime(self):
+        from vegafusion.vegafusion import PyTaskGraphRuntime
         if self._runtime is None:
             self._runtime = PyTaskGraphRuntime(self.cache_capacity, self.worker_threads)
         return self._runtime

@@ -18,7 +18,6 @@ import datetime
 import io
 import os
 import pathlib
-import time
 from hashlib import sha1
 from tempfile import NamedTemporaryFile
 

@@ -17,9 +17,7 @@
 import altair as alt
 from ._version import __version__
 from .widget import VegaFusionWidget
-from .transformer import to_feather
 from .renderer import vegafusion_renderer
-from .runtime import runtime
 
 
 def enable(
@@ -35,7 +33,7 @@ def enable(
     This isn't necessary in order to use the VegaFusionWidget directly
     """
     alt.renderers.enable(
-        'vegafusion',
+        'vegafusion-jupyter',
         debounce_wait=debounce_wait,
         debounce_max_wait=debounce_max_wait,
         download_source_link=download_source_link,
