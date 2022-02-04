@@ -16,7 +16,7 @@
 
 
 from ipywidgets import DOMWidget
-from traitlets import Unicode, Bool, Float
+from traitlets import Unicode, Bool, Float, CBytes, observe
 import time
 
 import logging
@@ -44,6 +44,10 @@ class VegaFusionWidget(DOMWidget):
     debounce_wait = Float(30, allow_none=False).tag(sync=True)
     debounce_max_wait = Float(60, allow_none=True).tag(sync=True)
     download_source_link = Unicode(None, allow_none=True).tag(sync=True)
+
+    # Message transport properties
+    _request_msg = CBytes(allow_none=True, read_only=True).tag(sync=True)
+    _response_msg = CBytes(allow_none=True).tag(sync=True)
 
     def __init__(self, *args, **kwargs):
 
@@ -92,19 +96,22 @@ class VegaFusionWidget(DOMWidget):
             # Use print to show up in JupyterLab Log pane
             print(f"VegaFusionWidget(py): {msg}")
 
-    def _handle_message(self, widget, msg, buffers):
+    @observe("_request_msg")
+    def _handle_message(self, change):
         from vegafusion.runtime import runtime
-
-        if msg['type'] == "request":
+        change_new = change["new"]
+        if change_new is not None:
+            msg_bytes = change["new"]
             start = time.time()
             self._log("Received request")
 
             # Build response
             response_bytes = runtime.process_request_bytes(
-                buffers[0]
+                msg_bytes
             )
 
-            self.send(dict(type="response"), [response_bytes])
+            self._response_msg = response_bytes
+            self._response_msg = None
 
             duration = (time.time() - start) * 1000
             self._log(f"Sent response in {duration:.1f}ms")

@@ -143,9 +143,9 @@ impl TaskGraphRuntime {
 
     /// request_bytes should be encoding of a VegaFusionRuntimeRequest
     /// returned value is encoding of a VegaFusionRuntimeResponse
-    pub async fn process_request_bytes(&self, request_bytes: Vec<u8>) -> Result<Vec<u8>> {
+    pub async fn process_request_bytes(&self, request_bytes: &[u8]) -> Result<Vec<u8>> {
         // Decode request
-        let request = VegaFusionRuntimeRequest::decode(request_bytes.as_slice()).unwrap();
+        let request = VegaFusionRuntimeRequest::decode(request_bytes).unwrap();
         let response_msg = self.process_request(request).await?;
 
         let mut buf: Vec<u8> = Vec::new();
