@@ -20,7 +20,6 @@ def vegafusion_renderer(spec, **widget_options):
     """
     Altair renderer that displays charts using a VegaFusionWidget
     """
-    import json
     from IPython.display import display
     from vegafusion_jupyter import VegaFusionWidget
 
