@@ -32,6 +32,9 @@ def enable(
 
     This isn't necessary in order to use the VegaFusionWidget directly
     """
+    # Import vegafusion.transformer so that vegafusion-feather transform
+    # will be registered
+    import vegafusion.transformer
     alt.renderers.enable(
         'vegafusion-jupyter',
         debounce_wait=debounce_wait,
