@@ -78,11 +78,9 @@ class VegaFusionWidget(DOMWidget):
         if alt.renderers.active == "vegafusion-jupyter":
             # Use configured debounce options, if any
             renderer_opts = alt.renderers.options
-            if "debounce_wait" in renderer_opts:
-                kwargs.setdefault("debounce_wait", renderer_opts["debounce_wait"])
-
-            if "debounce_max_wait" in renderer_opts:
-                kwargs.setdefault("debounce_max_wait", renderer_opts["debounce_max_wait"])
+            for opt in ["debounce_wait", "debounce_max_wait", "download_source_link"]:
+                if opt in renderer_opts:
+                    kwargs.setdefault(opt, renderer_opts[opt])
 
         super().__init__(**kwargs)
 
