@@ -92,8 +92,7 @@ setup_args = dict(
     install_requires = [
         'ipywidgets>=7.0.0',
         'altair>=4.2.0',
-        'vegafusion-python',
-        'pyarrow>=6',
+        'vegafusion',
     ],
     extras_require = {
         'test': [],

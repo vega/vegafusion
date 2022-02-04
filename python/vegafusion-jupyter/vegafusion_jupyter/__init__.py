@@ -15,10 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import altair as alt
-from ._version import __version__
+from . import renderer
+from . import widget
 from .widget import VegaFusionWidget
-from .renderer import vegafusion_renderer
-
 
 def enable(
         download_source_link=None,

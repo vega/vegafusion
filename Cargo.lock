@@ -2382,7 +2382,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "vegafusion-python"
+name = "vegafusion-python-embed"
 version = "0.0.2"
 dependencies = [
  "pyo3",

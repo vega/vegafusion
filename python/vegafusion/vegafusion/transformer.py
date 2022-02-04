@@ -108,5 +108,4 @@ def feather_transformer(data, data_dir="_vegafusion_data"):
         return {"url": path.as_posix()}
 
 
-alt.data_transformers.register('vegafusion-feather', feather_transformer)
-
+alt.data_transformers.register("vegafusion-feather", feather_transformer)

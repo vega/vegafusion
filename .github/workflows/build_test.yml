@@ -90,7 +90,7 @@ jobs:
           maturin-version: latest
           command: build
           manylinux: 2010
-          args: --release -m vegafusion-python/Cargo.toml --strip
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip
       - name: Download Apple Silicon toolchain
         if: ${{ runner.os == 'macOS' }}
         run: |
@@ -101,7 +101,7 @@ jobs:
         with:
           maturin-version: latest
           command: build
-          args: --release -m vegafusion-python/Cargo.toml --strip --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
       - name: Remove unwanted universal
         if: ${{ runner.os == 'macOS' }}
         run: |
@@ -109,7 +109,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: vegafusion-python-wheels
+          name: vegafusion-python-embed-wheels
           path: |
             target/wheels/*cp37*.whl
             target/wheels/*cp38*.whl
@@ -139,7 +139,7 @@ jobs:
           path: vegafusion-wasm/pkg
 
   build-vegafusion-jupyter:
-    needs: [build-vegafusion-python, build-vegafusion-wasm]
+    needs: [build-vegafusion-python-embed, build-vegafusion-wasm]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -158,12 +158,12 @@ jobs:
         with:
           name: vegafusion-wasm-packages
           path: vegafusion-wasm/pkg
-      - name: Download vegafusion-python wheel
+      - name: Download vegafusion-python-embed wheel
         uses: actions/download-artifact@v2
         with:
-          name: vegafusion-python-wheels
+          name: vegafusion-python-embed-wheels
           path: target/wheels/
-      - name: Install vegafusion-python
+      - name: Install vegafusion-python-embed
         run: |
           which python
           python --version
@@ -212,7 +212,7 @@ jobs:
         uses: browser-actions/setup-chrome@latest
         with:
           chrome-version: stable
-      - name: Download vegafusion-python wheel
+      - name: Download vegafusion-python-embed wheel
         uses: actions/download-artifact@v2
         with:
           name: vegafusion-jupyter-packages
@@ -220,7 +220,7 @@ jobs:
       - name: Download vegafusion-jupyter wheel
         uses: actions/download-artifact@v2
         with:
-          name: vegafusion-python-wheels
+          name: vegafusion-python-embed-wheels
           path: target/wheels/
       - name: install wheels
         working-directory: target/wheels/

@@ -67,7 +67,7 @@ Note: The PyO3 maturin build tool was included in the `maturin` conda-forge pack
 
 From the repository root:
 ```bash
-cd vegafusion-python
+cd vegafusion-python-embed
 maturin develop --release
 ```
 
@@ -113,7 +113,7 @@ The instructions above build the python packages for development. To build stand
 
 From repository root:
 ```bash
-cd vegafusion-python
+cd vegafusion-python-embed
 maturin build --release --strip --manylinux 2010
 ```
 

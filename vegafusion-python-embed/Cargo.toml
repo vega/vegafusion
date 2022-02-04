@@ -1,11 +1,11 @@
 [package]
-name = "vegafusion-python"
+name = "vegafusion-python-embed"
 version = "0.0.2"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
 [lib]
-name = "vegafusion"
+name = "vegafusion_embed"
 crate-type = ["cdylib"]
 
 [dependencies]

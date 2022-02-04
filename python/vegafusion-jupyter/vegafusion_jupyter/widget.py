@@ -93,7 +93,7 @@ class VegaFusionWidget(DOMWidget):
             print(f"VegaFusionWidget(py): {msg}")
 
     def _handle_message(self, widget, msg, buffers):
-        from vegafusion import runtime
+        from vegafusion.runtime import runtime
 
         if msg['type'] == "request":
             start = time.time()

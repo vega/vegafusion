@@ -3,7 +3,7 @@
 members = [
     "vegafusion-core",
     "vegafusion-rt-datafusion",
-    "vegafusion-python",
+    "vegafusion-python-embed",
     "vegafusion-wasm",
 ]
 

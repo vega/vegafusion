@@ -16,6 +16,7 @@
 
 import multiprocessing
 
+
 class VegaFusionRuntime:
     def __init__(self, cache_capacity, worker_threads):
         self._runtime = None
@@ -24,8 +25,10 @@ class VegaFusionRuntime:
 
     @property
     def runtime(self):
-        from vegafusion.vegafusion import PyTaskGraphRuntime
         if self._runtime is None:
+            # Try to initialize an embedded runtime
+            from vegafusion_embed import PyTaskGraphRuntime
+
             self._runtime = PyTaskGraphRuntime(self.cache_capacity, self.worker_threads)
         return self._runtime
 
@@ -68,9 +71,11 @@ class VegaFusionRuntime:
             self._runtime = None
 
     def __repr__(self):
-        return f"VegaFusionRuntime(" \
-               f"cache_capacity={self.cache_capacity}, worker_threads={self.worker_threads}" \
-               f")"
+        return (
+            f"VegaFusionRuntime("
+            f"cache_capacity={self.cache_capacity}, worker_threads={self.worker_threads}"
+            f")"
+        )
 
 
 runtime = VegaFusionRuntime(16, multiprocessing.cpu_count())

@@ -67,7 +67,7 @@ impl PyTaskGraphRuntime {
 /// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
 /// import the module.
 #[pymodule]
-fn vegafusion(_py: Python, m: &PyModule) -> PyResult<()> {
+fn vegafusion_embed(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyTaskGraphRuntime>()?;
     Ok(())
 }
