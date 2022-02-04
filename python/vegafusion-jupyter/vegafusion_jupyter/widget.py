@@ -50,6 +50,9 @@ class VegaFusionWidget(DOMWidget):
     _response_msg = CBytes(allow_none=True).tag(sync=True)
 
     def __init__(self, *args, **kwargs):
+        # Make sure transformer and renderer and registered
+        import vegafusion.transformer
+        import vegafusion_jupyter.renderer
 
         # Support altair object or spec as the single positional argument
         if len(args) == 1:
