@@ -13,21 +13,16 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from .runtime import runtime
+from .transformer import to_feather
 
-import altair as alt
+# Import subpackages
+try:
+    import vegafusion.jupyter
+except ImportError:
+    pass
 
-def vegafusion_renderer(spec, **widget_options):
-    """
-    Altair renderer that displays charts using a VegaFusionWidget
-    """
-    from IPython.display import display
-    from vegafusion_jupyter import VegaFusionWidget
-
-    # Display widget as a side effect, then return empty string text representation
-    # so that Altair doesn't also display a string representation
-    widget = VegaFusionWidget(spec, **widget_options)
-    display(widget)
-    return {'text/plain': ""}
-
-
-alt.renderers.register('vegafusion-jupyter', vegafusion_renderer)
+try:
+    import vegafusion.embed
+except ImportError:
+    pass

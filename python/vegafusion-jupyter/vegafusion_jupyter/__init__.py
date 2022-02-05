@@ -15,12 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import altair as alt
-from ._version import __version__
+from . import renderer
+from . import widget
 from .widget import VegaFusionWidget
-from .transformer import to_feather
-from .renderer import vegafusion_renderer
-from .runtime import runtime
-
 
 def enable(
         download_source_link=None,
@@ -34,8 +31,11 @@ def enable(
 
     This isn't necessary in order to use the VegaFusionWidget directly
     """
+    # Import vegafusion.transformer so that vegafusion-feather transform
+    # will be registered
+    import vegafusion.transformer
     alt.renderers.enable(
-        'vegafusion',
+        'vegafusion-jupyter',
         debounce_wait=debounce_wait,
         debounce_max_wait=debounce_max_wait,
         download_source_link=download_source_link,

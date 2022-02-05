@@ -61,12 +61,23 @@ export class VegaFusionModel extends DOMWidgetModel {
       debounce_wait: 30,
       debounce_max_wait: 60,
       download_source_link: null,
+      _request_msg: null,
+      _response_msg: null,
     };
   }
 
   static serializers: ISerializers = {
     ...DOMWidgetModel.serializers,
     // Add any extra serializers here
+    _request_msg: {
+      serialize: (value: any): DataView | null => {
+        if (value.buffer) {
+          return new DataView(value.buffer.slice(0));
+        } else {
+          return null;
+        }
+      },
+    },
   };
 
   static model_name = 'VegaFusionModel';
@@ -137,7 +148,7 @@ export class VegaFusionView extends DOMWidgetView {
 
     // Add About
     const aboutLink = document.createElement('a');
-    const about_href = '';
+    const about_href = 'https://vegafusion.io/';
     aboutLink.text = "About VegaFusion";
     aboutLink.href = about_href;
     aboutLink.target = '_blank';
@@ -198,15 +209,17 @@ export class VegaFusionView extends DOMWidgetView {
     this.model.on('change:debounce_wait', this.value_changed, this);
     this.model.on('change:debounce_max_wait', this.value_changed, this);
     this.model.on('change:download_source_link', this.value_changed, this);
-
-    this.model.on("msg:custom", (ev: any, buffers: [DataView]) => {
-      if (this.model.get("verbose")) {
-        console.log("VegaFusion(js): Received response");
+    this.model.on('change:_response_msg', () => {
+      const msgBytes: DataView = this.model.get("_response_msg");
+      if (msgBytes !== null) {
+        if (this.model.get("verbose")) {
+          console.log("VegaFusion(js): Received response");
+          console.log(msgBytes.buffer);
+        }
+        const bytes = new Uint8Array(msgBytes.buffer);
+        this.vegafusion_handle.receive(bytes);
       }
-
-      let bytes = new Uint8Array(buffers[0].buffer)
-      this.vegafusion_handle.receive(bytes)
-    })
+    });
   }
 
   value_changed() {
@@ -234,12 +247,14 @@ export class VegaFusionView extends DOMWidgetView {
           this.model.get("verbose") || false,
           this.model.get("debounce_wait") || 30,
           this.model.get("debounce_max_wait"),
-          (request: ArrayBuffer) => {
+          (request: Uint8Array) => {
             if (this.model.get("verbose")) {
               console.log("VegaFusion(js): Send request");
             }
 
-            this.send({type: "request"}, [request])
+            this.model.set("_request_msg", new DataView(request.buffer));
+            this.touch();
+            this.model.set("_request_msg", {});
           });
 
       // Update vega spec properties

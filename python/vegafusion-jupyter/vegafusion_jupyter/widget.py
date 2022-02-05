@@ -16,7 +16,7 @@
 
 
 from ipywidgets import DOMWidget
-from traitlets import Unicode, Bool, Float
+from traitlets import Unicode, Bool, Float, CBytes, observe
 import time
 
 import logging
@@ -25,8 +25,6 @@ logger = logging.getLogger("vegafusion")
 from ._frontend import module_name, module_version
 import altair as alt
 import json
-
-from .runtime import runtime
 
 
 class VegaFusionWidget(DOMWidget):
@@ -47,7 +45,14 @@ class VegaFusionWidget(DOMWidget):
     debounce_max_wait = Float(60, allow_none=True).tag(sync=True)
     download_source_link = Unicode(None, allow_none=True).tag(sync=True)
 
+    # Message transport properties
+    _request_msg = CBytes(allow_none=True, read_only=True).tag(sync=True)
+    _response_msg = CBytes(allow_none=True).tag(sync=True)
+
     def __init__(self, *args, **kwargs):
+        # Make sure transformer and renderer and registered
+        import vegafusion.transformer
+        import vegafusion_jupyter.renderer
 
         # Support altair object or spec as the single positional argument
         if len(args) == 1:
@@ -64,7 +69,7 @@ class VegaFusionWidget(DOMWidget):
             else:
                 data_transformer_opts = dict()
 
-            with alt.renderers.enable("vegafusion"):
+            with alt.renderers.enable("vegafusion-jupyter"):
                 with alt.data_transformers.enable("vegafusion-feather", **data_transformer_opts):
                     # Temporarily enable the vegafusion renderer and transformer so
                     # that we use them even if they are not enabled globally
@@ -77,14 +82,12 @@ class VegaFusionWidget(DOMWidget):
             kwargs["spec"] = json.dumps(kwargs["spec"], indent=2)
 
         # If vegafusion renderer is already enabled, use the configured debounce options as the default
-        if alt.renderers.active == "vegafusion":
+        if alt.renderers.active == "vegafusion-jupyter":
             # Use configured debounce options, if any
             renderer_opts = alt.renderers.options
-            if "debounce_wait" in renderer_opts:
-                kwargs.setdefault("debounce_wait", renderer_opts["debounce_wait"])
-
-            if "debounce_max_wait" in renderer_opts:
-                kwargs.setdefault("debounce_max_wait", renderer_opts["debounce_max_wait"])
+            for opt in ["debounce_wait", "debounce_max_wait", "download_source_link"]:
+                if opt in renderer_opts:
+                    kwargs.setdefault(opt, renderer_opts[opt])
 
         super().__init__(**kwargs)
 
@@ -96,17 +99,22 @@ class VegaFusionWidget(DOMWidget):
             # Use print to show up in JupyterLab Log pane
             print(f"VegaFusionWidget(py): {msg}")
 
-    def _handle_message(self, widget, msg, buffers):
-        if msg['type'] == "request":
+    @observe("_request_msg")
+    def _handle_message(self, change):
+        from vegafusion.runtime import runtime
+        change_new = change["new"]
+        if change_new is not None:
+            msg_bytes = change["new"]
             start = time.time()
             self._log("Received request")
 
             # Build response
             response_bytes = runtime.process_request_bytes(
-                buffers[0]
+                msg_bytes
             )
 
-            self.send(dict(type="response"), [response_bytes])
+            self._response_msg = response_bytes
+            self._response_msg = None
 
             duration = (time.time() - start) * 1000
             self._log(f"Sent response in {duration:.1f}ms")

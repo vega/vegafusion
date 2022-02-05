@@ -2360,7 +2360,7 @@ checksum = "09cc8ee72d2a9becf2f2febe0205bbed8fc6615b7cb429ad062dc7b7ddd036a9"
 
 [[package]]
 name = "vegafusion-core"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "arrow",
  "bytes",
@@ -2382,8 +2382,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "vegafusion-python"
-version = "0.0.2"
+name = "vegafusion-python-embed"
+version = "0.0.3"
 dependencies = [
  "pyo3",
  "tokio",
@@ -2393,7 +2393,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-rt-datafusion"
-version = "0.0.1"
+version = "0.0.3"
 dependencies = [
  "async-lock",
  "async-recursion",
@@ -2428,7 +2428,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-wasm"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "chrono",
  "console_error_panic_hook",

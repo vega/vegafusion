@@ -64,7 +64,7 @@ jobs:
           command: test
           args: --all-features
 
-  build-vegafusion-python:
+  build-vegafusion-python-embed:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -90,7 +90,7 @@ jobs:
           maturin-version: latest
           command: build
           manylinux: 2010
-          args: --release -m vegafusion-python/Cargo.toml --strip
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip
       - name: Download Apple Silicon toolchain
         if: ${{ runner.os == 'macOS' }}
         run: |
@@ -101,7 +101,7 @@ jobs:
         with:
           maturin-version: latest
           command: build
-          args: --release -m vegafusion-python/Cargo.toml --strip --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
       - name: Remove unwanted universal
         if: ${{ runner.os == 'macOS' }}
         run: |
@@ -109,7 +109,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: vegafusion-python-wheels
+          name: vegafusion-python-embed-wheels
           path: |
             target/wheels/*cp37*.whl
             target/wheels/*cp38*.whl
@@ -138,8 +138,33 @@ jobs:
           name: vegafusion-wasm-packages
           path: vegafusion-wasm/pkg
 
-  build-vegafusion-jupyter:
-    needs: [build-vegafusion-python, build-vegafusion-wasm]
+  build-vegafusion-wheel:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          activate-environment: vegafusion_dev
+          miniforge-version: latest
+          environment-file: python/vegafusion-jupyter/conda-linux-64-cp310.lock
+      - name: Build vegafusion
+        working-directory: python/vegafusion
+        run: |
+          python setup.py bdist_wheel
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-wheel
+          path: python/vegafusion/dist/*.whl
+
+
+  build-vegafusion-jupyter-package:
+    needs: [build-vegafusion-wheel, build-vegafusion-wasm]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -158,18 +183,14 @@ jobs:
         with:
           name: vegafusion-wasm-packages
           path: vegafusion-wasm/pkg
-      - name: Download vegafusion-python wheel
+      - name: Download vegafusion wheel
         uses: actions/download-artifact@v2
         with:
-          name: vegafusion-python-wheels
+          name: vegafusion-wheel
           path: target/wheels/
-      - name: Install vegafusion-python
+      - name: Install vegafusion wheel
         run: |
-          which python
-          python --version
-          which pip
-          pip --version
-          python -m pip install target/wheels/vegafusion_python-*-cp310-*.manylinux2010_x86_64.whl
+          python -m pip install target/wheels/vegafusion-*.whl
       - name: Install vegafusion-wasm npm dependencies
         working-directory: vegafusion-wasm/
         run: |
@@ -185,7 +206,7 @@ jobs:
           path: python/vegafusion-jupyter/dist/*.whl
 
   test-vegafusion-jupyter:
-    needs: [ build-vegafusion-jupyter ]
+    needs: [ build-vegafusion-python-embed, build-vegafusion-jupyter-package ]
     strategy:
       matrix:
         options: [
@@ -212,7 +233,12 @@ jobs:
         uses: browser-actions/setup-chrome@latest
         with:
           chrome-version: stable
-      - name: Download vegafusion-python wheel
+      - name: Download vegafusion wheel
+        uses: actions/download-artifact@v2
+        with:
+          name: vegafusion-wheel
+          path: target/wheels/
+      - name: Download vegafusion-python-embed wheel
         uses: actions/download-artifact@v2
         with:
           name: vegafusion-jupyter-packages
@@ -220,13 +246,14 @@ jobs:
       - name: Download vegafusion-jupyter wheel
         uses: actions/download-artifact@v2
         with:
-          name: vegafusion-python-wheels
+          name: vegafusion-python-embed-wheels
           path: target/wheels/
       - name: install wheels
         working-directory: target/wheels/
         run: |
-          pip install vegafusion_python*${{ matrix.options[4] }}*${{ matrix.options[3] }}*.whl
-          pip install vegafusion_jupyter*.whl
+          python -m pip install vegafusion_python*${{ matrix.options[4] }}*${{ matrix.options[3] }}*.whl
+          python -m pip install vegafusion-*.whl
+          python -m pip install vegafusion_jupyter*.whl
       - name: Test vegafusion-jupter
         env:
           VEGAFUSION_TEST_HEADLESS: 1

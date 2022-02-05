@@ -18,7 +18,6 @@ import datetime
 import io
 import os
 import pathlib
-import time
 from hashlib import sha1
 from tempfile import NamedTemporaryFile
 
@@ -79,8 +78,8 @@ def to_feather(data, file):
 
 
 def feather_transformer(data, data_dir="_vegafusion_data"):
-    if alt.renderers.active != "vegafusion" or not isinstance(data, pd.DataFrame):
-        # Use default transformer if the vegafusion renderer is not active
+    if "vegafusion" not in alt.renderers.active or not isinstance(data, pd.DataFrame):
+        # Use default transformer if a vegafusion renderer is not active
         return alt.default_data_transformer(data)
     else:
         bytes_buffer = io.BytesIO()
@@ -109,5 +108,4 @@ def feather_transformer(data, data_dir="_vegafusion_data"):
         return {"url": path.as_posix()}
 
 
-alt.data_transformers.register('vegafusion-feather', feather_transformer)
-
+alt.data_transformers.register("vegafusion-feather", feather_transformer)
