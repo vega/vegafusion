@@ -148,7 +148,7 @@ export class VegaFusionView extends DOMWidgetView {
 
     // Add About
     const aboutLink = document.createElement('a');
-    const about_href = '';
+    const about_href = 'https://vegafusion.io/';
     aboutLink.text = "About VegaFusion";
     aboutLink.href = about_href;
     aboutLink.target = '_blank';
