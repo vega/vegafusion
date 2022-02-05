@@ -81,18 +81,8 @@ async fn accept_connection(stream: TcpStream, task_graph_runtime: TaskGraphRunti
         // println!("msg: {:?}", msg);
         if let Message::Binary(request_bytes) = msg {
             let response_bytes = task_graph_runtime
-                .process_request_bytes(request_bytes)
+                .process_request_bytes(request_bytes.as_slice())
                 .await?;
-
-            //
-            // // Decode request
-            // let request = VegaFusionRuntimeRequest::decode(bytes.as_slice()).unwrap();
-            //
-            // let response_msg = task_graph_runtime.process_request(request).await?;
-            //
-            // let mut buf: Vec<u8> = Vec::new();
-            // buf.reserve(response_msg.encoded_len());
-            // response_msg.encode(&mut buf).unwrap();
 
             let response = Message::binary(response_bytes);
             ws_stream
