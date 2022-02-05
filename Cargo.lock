@@ -2393,7 +2393,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-rt-datafusion"
-version = "0.0.1"
+version = "0.0.3"
 dependencies = [
  "async-lock",
  "async-recursion",
