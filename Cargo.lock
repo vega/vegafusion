@@ -2383,7 +2383,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-python-embed"
-version = "0.0.3"
+version = "0.0.4-rc.1"
 dependencies = [
  "pyo3",
  "tokio",

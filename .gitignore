@@ -23,3 +23,5 @@ vegafusion-rt-datafusion/tests/util/vegajs_runtime/node_modules/
 _vegafusion_data
 /python/vegafusion-jupyter/examples/data/
 /python/vegafusion-jupyter/examples/omnisci_downloads/
+/python/vegafusion/dist/
+/python/vegafusion/vegafusion.egg-info/
