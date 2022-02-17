@@ -8,29 +8,23 @@ include .coverage.rc
 include tsconfig.json
 include package.json
 include webpack.config.js
+include webpack.config.experimental.js
 include vegafusion_jupyter/labextension/*.tgz
-
-# Documentation
-graft docs
-exclude docs/\#*
-prune docs/build
-prune docs/gh-pages
-prune docs/dist
-
-# Examples
-graft examples
-
-# Tests
-graft tests
-prune tests/build
 
 # Javascript files
 graft vegafusion_jupyter/nbextension
 graft src
 graft css
+prune node_modules
 prune **/node_modules
 prune coverage
 prune lib
+
+# Prune Others
+prune tests
+prune examples
+prune dist
+prune docs
 
 # Patterns to exclude from any directory
 global-exclude *~
