@@ -111,6 +111,7 @@ jobs:
         with:
           name: vegafusion-python-embed-wheels
           path: |
+            target/wheels/*.tar.gz
             target/wheels/*cp37*.whl
             target/wheels/*cp38*.whl
             target/wheels/*cp39*.whl
