@@ -156,13 +156,14 @@ jobs:
       - name: Build vegafusion
         working-directory: python/vegafusion
         run: |
-          python setup.py bdist_wheel
+          python setup.py sdist bdist_wheel
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: vegafusion-wheel
-          path: python/vegafusion/dist/*.whl
-
+          path: |
+            python/vegafusion/dist/*.whl
+            python/vegafusion/dist/*.tar.gz
 
   build-vegafusion-jupyter-package:
     needs: [build-vegafusion-wheel, build-vegafusion-wasm]
@@ -199,12 +200,14 @@ jobs:
       - name: Build vegafusion-jupyter
         working-directory: python/vegafusion-jupyter
         run: |
-          python setup.py bdist_wheel
+          python setup.py sdist bdist_wheel
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: vegafusion-jupyter-packages
-          path: python/vegafusion-jupyter/dist/*.whl
+          path: |
+            python/vegafusion-jupyter/dist/*.whl
+            python/vegafusion-jupyter/dist/*.tar.gz
 
   test-vegafusion-jupyter:
     needs: [ build-vegafusion-python-embed, build-vegafusion-jupyter-package ]
