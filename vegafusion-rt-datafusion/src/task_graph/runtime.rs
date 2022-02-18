@@ -45,9 +45,9 @@ pub struct TaskGraphRuntime {
 }
 
 impl TaskGraphRuntime {
-    pub fn new(max_capacity: usize) -> Self {
+    pub fn new(capacity: Option<usize>, memory_limit: Option<usize>) -> Self {
         Self {
-            cache: VegaFusionCache::new(max_capacity),
+            cache: VegaFusionCache::new(capacity, memory_limit),
         }
     }
 

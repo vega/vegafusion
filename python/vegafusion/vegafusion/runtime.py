@@ -15,12 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import multiprocessing
+import psutil
 
 
 class VegaFusionRuntime:
-    def __init__(self, cache_capacity, worker_threads):
+    def __init__(self, cache_capacity, memory_limit, worker_threads):
         self._runtime = None
         self._cache_capacity = cache_capacity
+        self._memory_limit = memory_limit
         self._worker_threads = worker_threads
 
     @property
@@ -29,7 +31,7 @@ class VegaFusionRuntime:
             # Try to initialize an embedded runtime
             from vegafusion_embed import PyTaskGraphRuntime
 
-            self._runtime = PyTaskGraphRuntime(self.cache_capacity, self.worker_threads)
+            self._runtime = PyTaskGraphRuntime(self.cache_capacity, self.memory_limit, self.worker_threads)
         return self._runtime
 
     def process_request_bytes(self, request):
@@ -48,6 +50,35 @@ class VegaFusionRuntime:
         """
         if value != self._worker_threads:
             self._worker_threads = value
+            self.reset()
+
+    @property
+    def total_memory(self):
+        if self._runtime:
+            return self._runtime.total_memory()
+        else:
+            return None
+
+    @property
+    def size(self):
+        if self._runtime:
+            return self._runtime.size()
+        else:
+            return None
+
+    @property
+    def memory_limit(self):
+        return self._memory_limit
+
+    @memory_limit.setter
+    def memory_limit(self, value):
+        """
+        Restart the runtime with the specified memory limit
+
+        :param threads: Max approximate memory usage of cache
+        """
+        if value != self._memory_limit:
+            self._memory_limit = value
             self.reset()
 
     @property
@@ -78,4 +109,4 @@ class VegaFusionRuntime:
         )
 
 
-runtime = VegaFusionRuntime(16, multiprocessing.cpu_count())
+runtime = VegaFusionRuntime(32, psutil.virtual_memory().total // 2, psutil.cpu_count())

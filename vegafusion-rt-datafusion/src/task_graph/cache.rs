@@ -23,6 +23,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::future::Future;
 use std::panic::{resume_unwind, AssertUnwindSafe};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use vegafusion_core::error::{DuplicateResult, Result, ToExternalError};
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -32,6 +33,12 @@ struct CachedValue {
     value: NodeValue, // Maybe add metrics like compute time, or a cache weight
 }
 
+impl CachedValue {
+    pub fn size_of(&self) -> usize {
+        self.value.0.size_of() + self.value.1.iter().map(|v| v.size_of()).sum::<usize>()
+    }
+}
+
 type NodeValue = (TaskValue, Vec<TaskValue>);
 type Initializer = Arc<RwLock<Option<Result<NodeValue>>>>;
 
@@ -39,20 +46,46 @@ type Initializer = Arc<RwLock<Option<Result<NodeValue>>>>;
 pub struct VegaFusionCache {
     values: Arc<Mutex<LruCache<u64, CachedValue>>>,
     initializers: Arc<RwLock<HashMap<u64, Initializer>>>,
+    size: Arc<AtomicUsize>,
+    total_memory: Arc<AtomicUsize>,
+    capacity: Option<usize>,
+    memory_limit: Option<usize>,
 }
 
 impl VegaFusionCache {
-    pub fn new(capacity: usize) -> Self {
+    pub fn new(capacity: Option<usize>, size_limit: Option<usize>) -> Self {
         Self {
-            values: Arc::new(Mutex::new(LruCache::new(capacity))),
+            values: Arc::new(Mutex::new(LruCache::unbounded())),
             initializers: Default::default(),
+            capacity,
+            memory_limit: size_limit,
+            size: Arc::new(AtomicUsize::new(0)),
+            total_memory: Arc::new(AtomicUsize::new(0)),
         }
+    }
+
+    pub fn capacity(&self) -> Option<usize> {
+        self.capacity
+    }
+
+    pub fn memory_limit(&self) -> Option<usize> {
+        self.memory_limit
+    }
+
+    pub fn size(&self) -> usize {
+        self.size.load(Ordering::Relaxed)
+    }
+
+    pub fn total_memory(&self) -> usize {
+        self.total_memory.load(Ordering::Relaxed)
     }
 
     pub async fn clear(&self) {
         // Clear the values cache. There may still be initializers representing in progress
         // futures which will not be cleared.
         self.values.lock().await.clear();
+        self.total_memory.store(0, Ordering::Relaxed);
+        self.size.store(0, Ordering::Relaxed);
     }
 
     async fn get_from_values(&self, state_fingerprint: u64) -> Option<CachedValue> {
@@ -62,10 +95,39 @@ impl VegaFusionCache {
     }
 
     async fn set_value(&self, state_fingerprint: u64, value: NodeValue) -> Option<CachedValue> {
-        self.values
-            .lock()
-            .await
-            .put(state_fingerprint, CachedValue { value })
+        let cache_value = CachedValue { value };
+        let value_size = cache_value.size_of();
+
+        let mut cache = self.values.lock().await;
+        let old_value = cache.put(state_fingerprint, cache_value);
+        self.total_memory.fetch_add(value_size, Ordering::Relaxed);
+
+        // Pop to capacity limit
+        if let Some(capacity) = self.capacity {
+            while cache.len() > 1 && cache.len() > capacity {
+                let (_, popped_value) = cache.pop_lru().unwrap();
+
+                // Decrement total memory
+                self.total_memory
+                    .fetch_sub(popped_value.size_of(), Ordering::Relaxed);
+            }
+        }
+
+        // Pop LRU to memory limit
+        if let Some(memory_limit) = self.memory_limit {
+            while cache.len() > 1 && self.total_memory.load(Ordering::Relaxed) > memory_limit {
+                // Remove LRU entry
+                let (_, popped_value) = cache.pop_lru().unwrap();
+
+                // Decrement total memory
+                self.total_memory
+                    .fetch_sub(popped_value.size_of(), Ordering::Relaxed);
+            }
+        }
+
+        self.size.store(cache.len(), Ordering::Relaxed);
+
+        old_value
     }
 
     async fn remove_initializer(&self, state_fingerprint: u64) -> Option<Initializer> {
@@ -164,7 +226,7 @@ mod test_cache {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn try_cache() {
-        let cache = VegaFusionCache::new(4);
+        let mut cache = VegaFusionCache::new(Some(4), None);
 
         let value_future1 = cache.get_or_try_insert_with(1, make_value(ScalarValue::from(23.5)));
         let value_future2 = cache.get_or_try_insert_with(1, make_value(ScalarValue::from(23.5)));
