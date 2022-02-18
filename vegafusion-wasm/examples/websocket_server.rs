@@ -54,7 +54,7 @@ async fn main() -> std::result::Result<(), Error> {
     let listener = try_socket.expect("Failed to bind");
     println!("Listening on: {}", addr);
 
-    let runtime = TaskGraphRuntime::new(10);
+    let runtime = TaskGraphRuntime::new(Some(64), Some(1024_i32.pow(3) as usize));
 
     while let Ok((stream, _)) = listener.accept().await {
         tokio::spawn(accept_connection(stream, runtime.clone()));
