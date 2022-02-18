@@ -60,6 +60,20 @@ class VegaFusionRuntime:
             return None
 
     @property
+    def _protected_memory(self):
+        if self._runtime:
+            return self._runtime.protected_memory()
+        else:
+            return None
+
+    @property
+    def _probationary_memory(self):
+        if self._runtime:
+            return self._runtime.probationary_memory()
+        else:
+            return None
+
+    @property
     def size(self):
         if self._runtime:
             return self._runtime.size()
@@ -109,4 +123,4 @@ class VegaFusionRuntime:
         )
 
 
-runtime = VegaFusionRuntime(32, psutil.virtual_memory().total // 2, psutil.cpu_count())
+runtime = VegaFusionRuntime(64, psutil.virtual_memory().total // 2, psutil.cpu_count())

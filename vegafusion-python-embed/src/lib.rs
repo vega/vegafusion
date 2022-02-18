@@ -73,6 +73,14 @@ impl PyTaskGraphRuntime {
     pub fn total_memory(&self) -> usize {
         self.runtime.cache.total_memory()
     }
+
+    pub fn protected_memory(&self) -> usize {
+        self.runtime.cache.protected_memory()
+    }
+
+    pub fn probationary_memory(&self) -> usize {
+        self.runtime.cache.probationary_memory()
+    }
 }
 
 /// A Python module implemented in Rust. The name of this function must match
