@@ -21,6 +21,7 @@ use crate::data::table::VegaFusionTable;
 use crate::error::{Result, VegaFusionError};
 use crate::proto::gen::tasks::task_value::Data;
 use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
+use crate::task_graph::memory::{inner_size_of_scalar, inner_size_of_table};
 use arrow::record_batch::RecordBatch;
 use serde_json::Value;
 use std::convert::TryFrom;
@@ -51,6 +52,15 @@ impl TaskValue {
             TaskValue::Scalar(value) => value.to_json(),
             TaskValue::Table(value) => Ok(value.to_json()),
         }
+    }
+
+    pub fn size_of(&self) -> usize {
+        let inner_size = match self {
+            TaskValue::Scalar(scalar) => inner_size_of_scalar(scalar),
+            TaskValue::Table(table) => inner_size_of_table(table),
+        };
+
+        std::mem::size_of::<Self>() + inner_size
     }
 }
 

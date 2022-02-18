@@ -32,7 +32,11 @@ struct PyTaskGraphRuntime {
 #[pymethods]
 impl PyTaskGraphRuntime {
     #[new]
-    pub fn new(max_capacity: i32, worker_threads: Option<i32>) -> PyResult<Self> {
+    pub fn new(
+        max_capacity: Option<usize>,
+        memory_limit: Option<usize>,
+        worker_threads: Option<i32>,
+    ) -> PyResult<Self> {
         let mut tokio_runtime_builder = tokio::runtime::Builder::new_multi_thread();
         tokio_runtime_builder.enable_all();
 
@@ -46,7 +50,7 @@ impl PyTaskGraphRuntime {
             .external("Failed to create Tokio thread pool")?;
 
         Ok(Self {
-            runtime: TaskGraphRuntime::new(max_capacity as usize),
+            runtime: TaskGraphRuntime::new(max_capacity, memory_limit),
             tokio_runtime,
         })
     }
@@ -60,6 +64,22 @@ impl PyTaskGraphRuntime {
 
     pub fn clear_cache(&self) {
         self.tokio_runtime.block_on(self.runtime.clear_cache());
+    }
+
+    pub fn size(&self) -> usize {
+        self.runtime.cache.size()
+    }
+
+    pub fn total_memory(&self) -> usize {
+        self.runtime.cache.total_memory()
+    }
+
+    pub fn protected_memory(&self) -> usize {
+        self.runtime.cache.protected_memory()
+    }
+
+    pub fn probationary_memory(&self) -> usize {
+        self.runtime.cache.probationary_memory()
     }
 }
 

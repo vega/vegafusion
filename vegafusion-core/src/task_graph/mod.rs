@@ -17,6 +17,7 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 pub mod graph;
+pub mod memory;
 pub mod scope;
 pub mod task;
 pub mod task_value;
