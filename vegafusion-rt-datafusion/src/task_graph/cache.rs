@@ -370,7 +370,7 @@ mod test_cache {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn try_cache() {
-        let mut cache = VegaFusionCache::new(Some(4), None);
+        let cache = VegaFusionCache::new(Some(4), None);
 
         let value_future1 = cache.get_or_try_insert_with(1, make_value(ScalarValue::from(23.5)));
         let value_future2 = cache.get_or_try_insert_with(1, make_value(ScalarValue::from(23.5)));

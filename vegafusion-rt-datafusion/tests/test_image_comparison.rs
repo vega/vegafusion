@@ -1151,7 +1151,7 @@ async fn check_spec_sequence(
         .collect();
 
     // Initialize task graph runtime
-    let runtime = TaskGraphRuntime::new(10);
+    let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
 
     // Extract the initial values of all of the variables that should be sent from the
     // server to the client

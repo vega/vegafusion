@@ -19,10 +19,10 @@ fn inner_size_of_dtype(value: &DataType) -> usize {
         DataType::LargeList(field) => size_of_field(field),
         DataType::FixedSizeList(field, _) => size_of_field(field),
         DataType::Struct(fields) => {
-            size_of::<Vec<Field>>() + fields.iter().map(|f| size_of_field(f)).sum::<usize>()
+            size_of::<Vec<Field>>() + fields.iter().map(size_of_field).sum::<usize>()
         }
         DataType::Union(fields) => {
-            size_of::<Vec<Field>>() + fields.iter().map(|f| size_of_field(f)).sum::<usize>()
+            size_of::<Vec<Field>>() + fields.iter().map(size_of_field).sum::<usize>()
         }
         DataType::Dictionary(key_dtype, value_dtype) => {
             2 * size_of::<DataType>()
@@ -64,7 +64,7 @@ pub fn inner_size_of_scalar(value: &ScalarValue) -> usize {
             let fields_bytes: usize = size_of::<Vec<DataType>>()
                 + fields
                     .iter()
-                    .map(|field| size_of_field(field))
+                    .map(size_of_field)
                     .sum::<usize>();
 
             values_bytes + fields_bytes
@@ -85,7 +85,7 @@ pub fn size_of_schema(schema: &Schema) -> usize {
         + schema
             .fields()
             .iter()
-            .map(|field| size_of_field(field))
+            .map(size_of_field)
             .sum::<usize>()
 }
 
@@ -95,7 +95,7 @@ pub fn size_of_record_batch(batch: &RecordBatch) -> usize {
     let arrays_size: usize = batch
         .columns()
         .iter()
-        .map(|array| size_of_array_ref(array))
+        .map(size_of_array_ref)
         .sum();
     size_of::<RecordBatch>() + schema_size + arrays_size
 }
@@ -105,7 +105,7 @@ pub fn inner_size_of_table(value: &VegaFusionTable) -> usize {
     let size_of_batches: usize = value
         .batches
         .iter()
-        .map(|batch| size_of_record_batch(batch))
+        .map(size_of_record_batch)
         .sum();
     schema_size + size_of_batches
 }
