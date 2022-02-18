@@ -61,11 +61,8 @@ pub fn inner_size_of_scalar(value: &ScalarValue) -> usize {
                     .map(|v| size_of::<ScalarValue>() + inner_size_of_scalar(v))
                     .sum::<usize>();
 
-            let fields_bytes: usize = size_of::<Vec<DataType>>()
-                + fields
-                    .iter()
-                    .map(size_of_field)
-                    .sum::<usize>();
+            let fields_bytes: usize =
+                size_of::<Vec<DataType>>() + fields.iter().map(size_of_field).sum::<usize>();
 
             values_bytes + fields_bytes
         }
@@ -81,31 +78,18 @@ pub fn size_of_array_ref(array: &ArrayRef) -> usize {
 }
 
 pub fn size_of_schema(schema: &Schema) -> usize {
-    size_of::<Schema>()
-        + schema
-            .fields()
-            .iter()
-            .map(size_of_field)
-            .sum::<usize>()
+    size_of::<Schema>() + schema.fields().iter().map(size_of_field).sum::<usize>()
 }
 
 pub fn size_of_record_batch(batch: &RecordBatch) -> usize {
     let schema = batch.schema();
     let schema_size: usize = size_of_schema(schema.as_ref());
-    let arrays_size: usize = batch
-        .columns()
-        .iter()
-        .map(size_of_array_ref)
-        .sum();
+    let arrays_size: usize = batch.columns().iter().map(size_of_array_ref).sum();
     size_of::<RecordBatch>() + schema_size + arrays_size
 }
 
 pub fn inner_size_of_table(value: &VegaFusionTable) -> usize {
     let schema_size: usize = size_of_schema(&value.schema);
-    let size_of_batches: usize = value
-        .batches
-        .iter()
-        .map(size_of_record_batch)
-        .sum();
+    let size_of_batches: usize = value.batches.iter().map(size_of_record_batch).sum();
     schema_size + size_of_batches
 }

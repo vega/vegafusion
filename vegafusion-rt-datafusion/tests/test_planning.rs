@@ -71,9 +71,7 @@ async fn test_extract_server_data() {
     let mapping = graph.build_mapping();
     // println!("{:#?}", mapping);
 
-    let graph_runtime = TaskGraphRuntime::new(
-        Some(20), Some(1024_i32.pow(3) as usize)
-    );
+    let graph_runtime = TaskGraphRuntime::new(Some(20), Some(1024_i32.pow(3) as usize));
     let _data_3 = graph_runtime
         .get_node_value(
             graph.clone(),
