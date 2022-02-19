@@ -17,7 +17,7 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 use async_recursion::async_recursion;
-use vegafusion_core::error::{Result, ToExternalError, VegaFusionError};
+use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::task_graph::cache::VegaFusionCache;
@@ -83,7 +83,9 @@ impl TaskGraphRuntime {
                     .indices
                     .iter()
                     .map(|node_value_index| {
-                        let node = &task_graph.nodes[node_value_index.node_index as usize];
+                        let node = task_graph.nodes.get(node_value_index.node_index as usize).with_context(
+                            || format!("Node index {} out of bounds for graph with size {}", node_value_index.node_index, task_graph.nodes.len())
+                        )?;
                         let task = node.task();
                         let var = match node_value_index.output_index {
                             None => task.variable().clone(),
@@ -96,7 +98,7 @@ impl TaskGraphRuntime {
                         let task_graph_runtime = task_graph_runtime.clone();
                         let task_graph = task_graph.clone();
 
-                        async move {
+                        Ok(async move {
                             let value = task_graph_runtime
                                 .clone()
                                 .get_node_value(task_graph, node_value_index)
@@ -107,9 +109,9 @@ impl TaskGraphRuntime {
                                 scope,
                                 value: Some(ProtoTaskValue::try_from(&value).unwrap()),
                             })
-                        }
+                        })
                     })
-                    .collect();
+                    .collect::<Result<Vec<_>>>()?;
 
                 match future::try_join_all(response_value_futures).await {
                     Ok(response_values) => {
