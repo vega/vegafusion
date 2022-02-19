@@ -23,10 +23,11 @@ impl VegaFusionRuntimeGrpc {
 #[tonic::async_trait]
 impl TonicVegaFusionRuntime for VegaFusionRuntimeGrpc  {
     async fn task_graph_query(&self, request: Request<QueryRequest>) -> Result<Response<QueryResult>, Status> {
-        println!("Request: {:#?}", request);
+        // println!("Request...");
         let result = self.runtime.query_request(request.into_inner()).await;
         match result {
             Ok(result) => {
+                // println!("  Response");
                 Ok(Response::new(result))
             }
             Err(err) => {
