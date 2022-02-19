@@ -26,7 +26,7 @@ use std::panic::{resume_unwind, AssertUnwindSafe};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
-use vegafusion_core::error::{DuplicateResult, Result, ToExternalError};
+use vegafusion_core::error::{DuplicateResult, Result, ResultWithContext, ToExternalError};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[derive(Debug, Clone)]
@@ -293,7 +293,9 @@ impl VegaFusionCache {
                 // Drop lock on initializers collection
                 drop(initializers_lock);
                 let result = initializer.read().await;
-                let result = result.as_ref().unwrap();
+                let result = result.as_ref().with_context(
+                    || format!("Failed to read initializer for id: {}", state_fingerprint)
+                )?;
                 result.duplicate()
             }
             Entry::Vacant(entry) => {
