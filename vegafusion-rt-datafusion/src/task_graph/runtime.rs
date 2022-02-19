@@ -29,8 +29,7 @@ use std::sync::Arc;
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
 use vegafusion_core::proto::gen::services::{
-    vega_fusion_runtime_request, vega_fusion_runtime_response, VegaFusionRuntimeRequest,
-    VegaFusionRuntimeResponse,
+    query_request, QueryRequest, query_result, QueryResult
 };
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse,
@@ -68,12 +67,12 @@ impl TaskGraphRuntime {
         })
     }
 
-    pub async fn process_request(
+    pub async fn query_request(
         &self,
-        request: VegaFusionRuntimeRequest,
-    ) -> Result<VegaFusionRuntimeResponse> {
+        request: QueryRequest,
+    ) -> Result<QueryResult> {
         match request.request {
-            Some(vega_fusion_runtime_request::Request::TaskGraphValues(task_graph_values)) => {
+            Some(query_request::Request::TaskGraphValues(task_graph_values)) => {
                 let task_graph = Arc::new(task_graph_values.task_graph.unwrap());
 
                 // Clone task_graph and task_graph_runtime for use in closure
@@ -114,9 +113,9 @@ impl TaskGraphRuntime {
 
                 match future::try_join_all(response_value_futures).await {
                     Ok(response_values) => {
-                        let response_msg = VegaFusionRuntimeResponse {
+                        let response_msg = QueryResult {
                             response: Some(
-                                vega_fusion_runtime_response::Response::TaskGraphValues(
+                                query_result::Response::TaskGraphValues(
                                     TaskGraphValueResponse { response_values },
                                 ),
                             ),
@@ -124,8 +123,8 @@ impl TaskGraphRuntime {
                         Ok(response_msg)
                     }
                     Err(e) => {
-                        let response_msg = VegaFusionRuntimeResponse {
-                            response: Some(vega_fusion_runtime_response::Response::Error(Error {
+                        let response_msg = QueryResult {
+                            response: Some(query_result::Response::Error(Error {
                                 errorkind: Some(Errorkind::Error(TaskGraphValueError {
                                     msg: e.to_string(),
                                 })),
@@ -143,10 +142,10 @@ impl TaskGraphRuntime {
 
     /// request_bytes should be encoding of a VegaFusionRuntimeRequest
     /// returned value is encoding of a VegaFusionRuntimeResponse
-    pub async fn process_request_bytes(&self, request_bytes: &[u8]) -> Result<Vec<u8>> {
+    pub async fn query_request_bytes(&self, request_bytes: &[u8]) -> Result<Vec<u8>> {
         // Decode request
-        let request = VegaFusionRuntimeRequest::decode(request_bytes).unwrap();
-        let response_msg = self.process_request(request).await?;
+        let request = QueryRequest::decode(request_bytes).unwrap();
+        let response_msg = self.query_request(request).await?;
 
         let mut buf: Vec<u8> = Vec::new();
         buf.reserve(response_msg.encoded_len());

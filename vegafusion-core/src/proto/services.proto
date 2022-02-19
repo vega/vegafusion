@@ -5,16 +5,16 @@ import "tasks.proto";
 import "errors.proto";
 
 service VegaFusionRuntime {
-  rpc GetNodeValues(tasks.TaskGraphValueRequest) returns (tasks.TaskGraphValueResponse) {}
+  rpc TaskGraphQuery(QueryRequest) returns (QueryResult) {}
 }
 
-message VegaFusionRuntimeRequest {
+message QueryRequest {
   oneof request {
     tasks.TaskGraphValueRequest task_graph_values = 1;
   }
 }
 
-message VegaFusionRuntimeResponse {
+message QueryResult {
   oneof response {
     errors.Error error = 1;
     tasks.TaskGraphValueResponse task_graph_values = 2;

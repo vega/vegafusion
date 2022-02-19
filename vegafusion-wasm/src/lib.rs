@@ -37,8 +37,7 @@ use vegafusion_core::planning::stitch::CommPlan;
 use vegafusion_core::planning::watch::WatchPlan;
 
 use vegafusion_core::proto::gen::services::{
-    vega_fusion_runtime_request, vega_fusion_runtime_response, VegaFusionRuntimeRequest,
-    VegaFusionRuntimeResponse,
+    query_request, QueryRequest, query_result, QueryResult
 };
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
@@ -143,11 +142,11 @@ impl MsgReceiver {
 
     pub fn receive(&mut self, bytes: Vec<u8>) {
         // Decode message
-        let response = VegaFusionRuntimeResponse::decode(bytes.as_slice()).unwrap();
+        let response = QueryResult::decode(bytes.as_slice()).unwrap();
 
         if let Some(response) = response.response {
             match response {
-                vega_fusion_runtime_response::Response::TaskGraphValues(task_graph_vals) => {
+                query_result::Response::TaskGraphValues(task_graph_vals) => {
                     let view = self.view();
                     for response_val in task_graph_vals.response_values {
                         let value = response_val.value.expect("Unwrap value");
@@ -184,7 +183,7 @@ impl MsgReceiver {
                     }
                     view.run();
                 }
-                vega_fusion_runtime_response::Response::Error(error) => {
+                query_result::Response::Error(error) => {
                     log(&error.msg());
                 }
             }
@@ -253,8 +252,8 @@ impl MsgReceiver {
                             .filter(|node| server_to_client.contains(node))
                             .collect();
 
-                        let request_msg = VegaFusionRuntimeRequest {
-                            request: Some(vega_fusion_runtime_request::Request::TaskGraphValues(
+                        let request_msg = QueryRequest {
+                            request: Some(query_request::Request::TaskGraphValues(
                                 TaskGraphValueRequest {
                                     task_graph: Some(task_graph.clone()),
                                     indices: updated_nodes,
@@ -295,8 +294,8 @@ impl MsgReceiver {
                             .filter(|node| server_to_client.contains(node))
                             .collect();
 
-                        let request_msg = VegaFusionRuntimeRequest {
-                            request: Some(vega_fusion_runtime_request::Request::TaskGraphValues(
+                        let request_msg = QueryRequest {
+                            request: Some(query_request::Request::TaskGraphValues(
                                 TaskGraphValueRequest {
                                     task_graph: Some(task_graph.clone()),
                                     indices: updated_nodes,
@@ -318,7 +317,7 @@ impl MsgReceiver {
         }
     }
 
-    fn send_request(send_msg_fn: &js_sys::Function, request_msg: VegaFusionRuntimeRequest) {
+    fn send_request(send_msg_fn: &js_sys::Function, request_msg: QueryRequest) {
         let mut buf: Vec<u8> = Vec::new();
         buf.reserve(request_msg.encoded_len());
         request_msg.encode(&mut buf).unwrap();
@@ -392,8 +391,8 @@ pub fn render_vegafusion(
     // Request initial values
     let updated_node_indices: Vec<_> = receiver.initial_node_value_indices();
 
-    let request_msg = VegaFusionRuntimeRequest {
-        request: Some(vega_fusion_runtime_request::Request::TaskGraphValues(
+    let request_msg = QueryRequest {
+        request: Some(query_request::Request::TaskGraphValues(
             TaskGraphValueRequest {
                 task_graph: Some(task_graph),
                 indices: updated_node_indices,
