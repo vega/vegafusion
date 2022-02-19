@@ -148,14 +148,9 @@ impl MsgReceiver {
             match response {
                 query_result::Response::TaskGraphValues(task_graph_vals) => {
                     let view = self.view();
-                    for response_val in task_graph_vals.response_values {
-                        let value = response_val.value.expect("Unwrap value");
-                        let scope = response_val.scope.as_slice();
-                        let var = response_val.variable.expect("Unwrap variable");
-
-                        // Convert from proto task value to task value
-                        let value = TaskValue::try_from(&value).expect("Deserialize value");
-
+                    for (var, scope, value) in task_graph_vals.deserialize().expect(
+                        "Failed to deserialize response"
+                    ) {
                         match &value {
                             TaskValue::Scalar(value) => {
                                 let json = value.to_json().unwrap();
@@ -166,7 +161,7 @@ impl MsgReceiver {
                                 }
 
                                 let js_value = JsValue::from_serde(&json).unwrap();
-                                set_signal_value(view, &var.name, scope, js_value);
+                                set_signal_value(view, &var.name, scope.as_slice(), js_value);
                             }
                             TaskValue::Table(value) => {
                                 let json = value.to_json();
@@ -177,7 +172,7 @@ impl MsgReceiver {
                                 }
 
                                 let js_value = JsValue::from_serde(&value.to_json()).unwrap();
-                                set_data_value(view, &var.name, scope, js_value);
+                                set_data_value(view, &var.name, scope.as_slice(), js_value);
                             }
                         }
                     }
