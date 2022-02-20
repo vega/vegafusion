@@ -93,7 +93,7 @@ async fn try_it_from_spec() {
         }
     )) };
 
-    let mut client = VegaFusionRuntimeClient::connect("http://[::1]:50051").await.expect(
+    let mut client = VegaFusionRuntimeClient::connect("http://127.0.0.1:50051").await.expect(
         "Failed to connect to gRPC server"
     );
     let response = client.task_graph_query(request).await.unwrap();

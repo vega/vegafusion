@@ -31,10 +31,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "[::1]:50051".parse()?;
     let greeter = MyGreeter::default();
     let greeter = GreeterServer::new(greeter);
-    let greeter = tonic_web::config()
-        // .allow_origins(vec!["127.0.0.1"])
-        .allow_all_origins()
-        .enable(greeter);
 
     Server::builder()
         .accept_http1(true)
