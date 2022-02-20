@@ -20,10 +20,12 @@ path = "src/vegafusion-server.rs"
 vegafusion-core = {path = "../vegafusion-core", features=["datafusion", "tonic_support"]}
 vegafusion-rt-datafusion = {path = "../vegafusion-rt-datafusion"}
 prost = "0.9.0"
-tokio = {version = "1.0", features=["rt-multi-thread", "macros"]}
-tonic = {version="0.6.1", features=["tls"]}
+tokio = {version = "1.17.0", features=["rt-multi-thread", "macros"]}
+tonic = {version="0.6.2", features=["tls"]}
 tonic-web = "0.2.0"
 tower = {version = "0.4"}
+tokio-tungstenite = { version="0.17.0" }
+futures-util="0.3.21"
 
 [dev-dependencies]
 serde_json = "1.0.68"
