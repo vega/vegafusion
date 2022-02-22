@@ -19,6 +19,7 @@
 import { version } from "vega"
 import { truthy } from "vega-util"
 import {Handler } from 'vega-tooltip';
+import * as grpcWeb from 'grpc-web';
 
 import _ from "lodash"
 
@@ -134,4 +135,30 @@ function trap(view, fn) {
     };
 }
 
+// Other utility functions
+export function make_grpc_send_message_fn(client, hostname) {
+    let send_message_grpc = (send_msg_bytes, receiver) => {
+        let grpc_route = '/services.VegaFusionRuntime/TaskGraphQuery'
 
+        // Make custom MethodDescriptor that does not perform serialization
+        const methodDescriptor = new grpcWeb.MethodDescriptor(
+            grpc_route,
+            grpcWeb.MethodType.UNARY,
+            Uint8Array,
+            Uint8Array,
+            (v) => v,
+            (v) => v,
+        );
+
+        let promise = client.unaryCall(
+            hostname + grpc_route,
+            send_msg_bytes,
+            {},
+            methodDescriptor,
+        );
+        promise.then((response) => {
+            receiver.receive(response)
+        })
+    }
+    return send_message_grpc
+}

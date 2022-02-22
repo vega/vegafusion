@@ -402,9 +402,23 @@ pub fn render_vegafusion(
     receiver
 }
 
+#[wasm_bindgen]
+pub fn vega_version() -> String {
+    inner_vega_version()
+}
+
+#[wasm_bindgen]
+pub fn make_grpc_send_message_fn(client: JsValue, hostname: String) -> js_sys::Function {
+    inner_make_grpc_send_message_fn(client, hostname)
+}
+
 #[wasm_bindgen(module = "/js/vega_utils.js")]
 extern "C" {
-    fn vega_version() -> String;
+    #[wasm_bindgen(js_name = "vega_version")]
+    fn inner_vega_version() -> String;
+
+    #[wasm_bindgen(js_name = "make_grpc_send_message_fn")]
+    fn inner_make_grpc_send_message_fn(client: JsValue, hostname: String) -> js_sys::Function;
 
     #[wasm_bindgen(js_name = "getSignalValue")]
     fn get_signal_value(view: &View, name: &str, scope: &[u32]) -> JsValue;

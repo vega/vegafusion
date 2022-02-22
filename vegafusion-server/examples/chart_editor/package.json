@@ -20,8 +20,8 @@
     "rust",
     "webpack"
   ],
-  "author": "Ashley Williams <ashley666ashley@gmail.com>",
-  "license": "(MIT OR Apache-2.0)",
+  "author": "Jon Mease <jonmmease@gmail.com>",
+  "license": "AGPL3",
   "bugs": {
     "url": "https://github.com/rustwasm/create-wasm-app/issues"
   },

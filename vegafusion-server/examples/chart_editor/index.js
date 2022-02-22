@@ -25,6 +25,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './style.css';
 
 function init() {
+    console.log(vegafusion.vega_version());
     monaco_init()
 
     let initial_spec = JSON.stringify(flights_spec, null, 2);
@@ -45,7 +46,6 @@ function init() {
         automaticLayout: true,
         readOnly: true,
     });
-    let server_spec_model = server_spec_monaco.getModel();
 
     let client_spec_monaco = Monaco.editor.create(document.getElementById('client-spec-monaco'), {
         value: "",
@@ -54,7 +54,6 @@ function init() {
         automaticLayout: true,
         readOnly: true,
     });
-    let client_spec_model = client_spec_monaco.getModel();
 
     let comm_plan_monaco = Monaco.editor.create(document.getElementById('comm-plan-monaco'), {
         value: "",
@@ -63,42 +62,23 @@ function init() {
         automaticLayout: true,
         readOnly: true,
     });
-    let comm_plan_model = comm_plan_monaco.getModel();
 
     const hostname = 'http://' + window.location.hostname + ':50051';
-    const options = {format: "binary"};
-    let client = new grpcWeb.GrpcWebClientBase(options);
-    let grpc_route = '/services.VegaFusionRuntime/TaskGraphQuery'
-
-    // Make custom MethodDescriptor that does not perform serialization
-    const methodDescriptor = new grpcWeb.MethodDescriptor(
-        grpc_route,
-        grpcWeb.MethodType.UNARY,
-        Uint8Array,
-        Uint8Array,
-        (v) => v,
-        (v) => v,
-    );
+    let client = new grpcWeb.GrpcWebClientBase({format: "binary"});
+    let send_message_grpc = vegafusion.make_grpc_send_message_fn(client, hostname);
 
     function update_chart() {
         let msg_receiver;
         try {
             let element = document.getElementById("vega-chart");
             msg_receiver = vegafusion.render_vegafusion(
-                element, editor.getValue(), false, 50, 100,
-                (send_msg_bytes, receiver) => {
-                    console.log("Sending unaryCall");
-                    let promise = client.unaryCall(
-                        hostname + grpc_route,
-                        send_msg_bytes,
-                        {},
-                        methodDescriptor,
-                    );
-                    promise.then((response) => {
-                        console.log("Received unaryCall response");
-                        receiver.receive(response)
-                    })
-            });
+                element,
+                editor.getValue(),
+                false,
+                50,
+                100,
+                send_message_grpc
+            );
             server_spec_monaco.setValue(msg_receiver.server_spec_json());
             client_spec_monaco.setValue(msg_receiver.client_spec_json());
             comm_plan_monaco.setValue(msg_receiver.comm_plan_json());
@@ -112,6 +92,7 @@ function init() {
         }
     }
 
+    // Update chart (with debounce) when editor value changes
     update_chart()
     let content_change_listener = _.debounce((content) => {
         // console.log(content);
@@ -122,8 +103,6 @@ function init() {
 }
 
 function monaco_init() {
-    // console.log(Monaco.languages.json.jsonDefaults);
-
     // Monaco.languages.json.jsonDefaults.setModeConfiguration({
     //     documentFormattingEdits: true,
     //     documentRangeFormattingEdits: true,
