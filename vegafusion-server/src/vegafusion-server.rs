@@ -12,7 +12,6 @@ use vegafusion_core::proto::gen::services::{QueryRequest, QueryResult};
 
 use futures_util::stream::StreamExt;
 use futures_util::SinkExt;
-use tokio_tungstenite::tungstenite::Message;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use clap::Parser;
@@ -56,35 +55,28 @@ struct Args {
     pub host: String,
 
     /// Port for gRPC server
-    #[clap(long)]
-    pub grpc_port: Option<u32>,
-
-    /// Port for Websocket server
-    #[clap(long)]
-    pub websocket_port: Option<u32>,
+    #[clap(long, default_value = "50051")]
+    pub port: u32,
 
     /// Cache capacity
-    #[clap(long, default_value="64")]
+    #[clap(long, default_value = "64")]
     pub capacity: usize,
 
     /// Cache memory limit
     #[clap(long)]
     pub memory_limit: Option<String>,
+
+    /// Include compatibility with gRPC-Web
+    #[clap(long, takes_value = false)]
+    pub web: bool,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), VegaFusionError> {
     let args = Args::parse();
-    if args.grpc_port.is_none() && args.websocket_port.is_none() {
-        println!(
-            "Error: At least one of --grpc-port or --websocket-port must be provided"
-        );
-        exit(1);
-    }
 
-    // Create gRPC and Websocket addresses
-    let grpc_address = args.grpc_port.map(|p| format!("{}:{}", args.host, p));
-    let websocket_address = args.websocket_port.map(|p| format!("{}:{}", args.host, p));
+    // Create addresse
+    let grpc_address = format!("{}:{}", args.host, args.port);
 
     // Log Capacity limit
     println!("Cache capacity limit: {} entries", args.capacity);
@@ -99,22 +91,17 @@ async fn main() -> Result<(), VegaFusionError> {
         None
     };
 
-    let tg_runtime = TaskGraphRuntime::new(
-        Some(args.capacity), memory_limit
-    );
+    let tg_runtime = TaskGraphRuntime::new(Some(args.capacity), memory_limit);
 
-    tokio::try_join!(
-        grpc_server(grpc_address, tg_runtime.clone()),
-        websocket_server(websocket_address, tg_runtime.clone()),
-    ).expect("Server error");
+    grpc_server(grpc_address, tg_runtime.clone(), args.web)
+        .await
+        .expect("Failed to start grpc service");
 
     Ok(())
 }
 
 fn parse_memory_string(memory_limit: &str) -> Result<usize, VegaFusionError> {
-    let pattern = Regex::new(
-        r"(^\d+(\.\d+)?)(g|gb|gib|m|mb|mib|k|kb|kib|b)?$"
-    ).unwrap();
+    let pattern = Regex::new(r"(^\d+(\.\d+)?)(g|gb|gib|m|mb|mib|k|kb|kib|b)?$").unwrap();
     match pattern.captures(&memory_limit.to_lowercase()) {
         Some(captures) => {
             let amount: f64 = captures.get(1).unwrap().as_str().parse().unwrap();
@@ -124,91 +111,43 @@ fn parse_memory_string(memory_limit: &str) -> Result<usize, VegaFusionError> {
                 "k" | "kb" => 1000,
                 "kib" => 1024,
                 "m" | "mb" => 1_000_000,
-                "mib" => 1024*1024,
+                "mib" => 1024 * 1024,
                 "g" | "gb" => 1_000_000_000,
-                "gib" => 1024*1024*1024,
-                _ => panic!("Unreachable")
+                "gib" => 1024 * 1024 * 1024,
+                _ => panic!("Unreachable"),
             };
             let total = (amount * factor as f64) as usize;
             Ok(total)
         }
-        None => {
-            Err(VegaFusionError::parse(
-                format!("Unable to parse memory limit: {}", memory_limit))
-            )
-        }
+        None => Err(VegaFusionError::parse(format!(
+            "Unable to parse memory limit: {}",
+            memory_limit
+        ))),
     }
 }
 
 async fn grpc_server(
-    address: Option<String>,
+    address: String,
     runtime: TaskGraphRuntime,
+    web: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    if let Some(address) = address {
-        let addr = address.parse().ok().with_context(
-            || format!("Failed to parse address: {}", address)
-        )?;
+    let addr = address
+        .parse()
+        .ok()
+        .with_context(|| format!("Failed to parse address: {}", address))?;
+    let server = TonicVegaFusionRuntimeServer::new(VegaFusionRuntimeGrpc::new(runtime));
+
+    if web {
+        println!("Starting gRPC + gRPC-Web server on {}", address);
+        let server = tonic_web::config().enable(server);
+        Server::builder()
+            .accept_http1(true)
+            .add_service(server)
+            .serve(addr)
+            .await?;
+    } else {
         println!("Starting gRPC server on {}", address);
-        let server = TonicVegaFusionRuntimeServer::new(VegaFusionRuntimeGrpc::new(runtime));
         Server::builder().add_service(server).serve(addr).await?;
-    } else {
-        // Nothing to do
-    }
-    Ok(())
-}
-
-async fn websocket_server(
-    address: Option<String>,
-    runtime: TaskGraphRuntime,
-) -> Result<(), Box<dyn std::error::Error>> {
-    if let Some(address) = address {
-        // Create the event loop and TCP listener we'll accept connections on.
-        let try_socket = TcpListener::bind(&address).await;
-        let listener = try_socket.expect("Failed to bind");
-        println!("Starting WebSocket server on: {}", address);
-
-        while let Ok((stream, _)) = listener.accept().await {
-            tokio::spawn(accept_websocket_connection(stream, runtime.clone()));
-        }
-    } else {
-        // Nothing to do
-    }
-
-    Ok(())
-}
-
-async fn accept_websocket_connection(
-    stream: TcpStream,
-    runtime: TaskGraphRuntime,
-) -> Result<(), VegaFusionError> {
-    let addr = stream
-        .peer_addr()
-        .expect("connected streams should have a peer address");
-    println!("Peer address: {}", addr);
-
-    let mut ws_stream = tokio_tungstenite::accept_async(stream)
-        .await
-        .expect("Error during the websocket handshake occurred");
-
-    println!("New WebSocket connection: {}", addr);
-
-    while let Some(msg) = ws_stream.next().await {
-        let msg = msg.or_else(|_| Err(VegaFusionError::internal("websocket connection failed")))?;
-
-        // println!("msg: {:?}", msg);
-        if let Message::Binary(request_bytes) = msg {
-            let response_bytes = runtime
-                .query_request_bytes(request_bytes.as_slice())
-                .await?;
-
-            let response = Message::binary(response_bytes);
-            ws_stream
-                .send(response)
-                .await
-                .or_else(|_| Err(VegaFusionError::internal("websocket response failed")))?;
-        } else {
-            return Err(VegaFusionError::internal("expected binary message"));
-        }
     }
 
     Ok(())
