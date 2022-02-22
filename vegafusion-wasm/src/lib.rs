@@ -71,15 +71,16 @@ extern "C" {
 }
 
 #[wasm_bindgen]
+#[derive(Clone)]
 pub struct MsgReceiver {
-    spec: ChartSpec,
-    server_spec: ChartSpec,
+    spec: Arc<ChartSpec>,
+    server_spec: Arc<ChartSpec>,
     comm_plan: CommPlan,
     send_msg_fn: Arc<js_sys::Function>,
     task_graph: Arc<Mutex<TaskGraph>>,
-    task_graph_mapping: HashMap<ScopedVariable, NodeValueIndex>,
+    task_graph_mapping: Arc<HashMap<ScopedVariable, NodeValueIndex>>,
     server_to_client_value_indices: Arc<HashSet<NodeValueIndex>>,
-    view: View,
+    view: Arc<View>,
     verbose: bool,
     debounce_wait: f64,
     debounce_max_wait: Option<f64>,
@@ -122,14 +123,14 @@ impl MsgReceiver {
         setup_tooltip(&view);
 
         let this = Self {
-            spec,
-            server_spec,
+            spec: Arc::new(spec),
+            server_spec: Arc::new(server_spec),
             comm_plan,
             task_graph: Arc::new(Mutex::new(task_graph)),
-            task_graph_mapping,
+            task_graph_mapping: Arc::new(task_graph_mapping),
             send_msg_fn: Arc::new(send_msg_fn),
             server_to_client_value_indices,
-            view,
+            view: Arc::new(view),
             verbose,
             debounce_wait,
             debounce_max_wait,
@@ -223,6 +224,7 @@ impl MsgReceiver {
             let verbose = self.verbose;
 
             // Register callbacks
+            let this = self.clone();
             match scoped_var.0.namespace() {
                 VariableNamespace::Signal => {
                     let closure = Closure::wrap(Box::new(move |name: String, val: JsValue| {
@@ -256,7 +258,7 @@ impl MsgReceiver {
                             )),
                         };
 
-                        Self::send_request(send_msg_fn.as_ref(), request_msg);
+                        this.send_request(send_msg_fn.as_ref(), request_msg);
                     })
                         as Box<dyn FnMut(String, JsValue)>);
 
@@ -298,7 +300,7 @@ impl MsgReceiver {
                             )),
                         };
 
-                        Self::send_request(send_msg_fn.as_ref(), request_msg);
+                        this.send_request(send_msg_fn.as_ref(), request_msg);
                     })
                         as Box<dyn FnMut(String, JsValue)>);
 
@@ -312,7 +314,7 @@ impl MsgReceiver {
         }
     }
 
-    fn send_request(send_msg_fn: &js_sys::Function, request_msg: QueryRequest) {
+    fn send_request(&self, send_msg_fn: &js_sys::Function, request_msg: QueryRequest) {
         let mut buf: Vec<u8> = Vec::new();
         buf.reserve(request_msg.encoded_len());
         request_msg.encode(&mut buf).unwrap();
@@ -320,7 +322,7 @@ impl MsgReceiver {
         let context: JsValue = JsValue::from_serde(&serde_json::Value::Null).unwrap();
         let js_buffer = js_sys::Uint8Array::from(buf.as_slice());
         send_msg_fn
-            .call1(&context, &js_buffer)
+            .call2(&context, &js_buffer, &self.clone().into())
             .expect("send_request function call failed");
     }
 
@@ -333,11 +335,11 @@ impl MsgReceiver {
     }
 
     pub fn client_spec_json(&self) -> String {
-        serde_json::to_string_pretty(&self.spec).unwrap()
+        serde_json::to_string_pretty(self.spec.as_ref()).unwrap()
     }
 
     pub fn server_spec_json(&self) -> String {
-        serde_json::to_string_pretty(&self.server_spec).unwrap()
+        serde_json::to_string_pretty(self.server_spec.as_ref()).unwrap()
     }
 
     pub fn comm_plan_json(&self) -> String {
@@ -395,7 +397,7 @@ pub fn render_vegafusion(
         )),
     };
 
-    MsgReceiver::send_request(receiver.send_msg_fn.as_ref(), request_msg);
+    receiver.send_request(receiver.send_msg_fn.as_ref(), request_msg);
 
     receiver
 }
