@@ -25,3 +25,4 @@ _vegafusion_data
 /python/vegafusion-jupyter/examples/omnisci_downloads/
 /python/vegafusion/dist/
 /python/vegafusion/vegafusion.egg-info/
+/python/vegafusion/build/
