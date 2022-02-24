@@ -33,16 +33,23 @@
 // use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 //
 
-use std::sync::Arc;
 use serde_json::json;
+use std::sync::Arc;
+use std::time::Duration;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
-use vegafusion_core::proto::gen::services::{query_request, QueryRequest, QueryResult};
 use vegafusion_core::proto::gen::services::query_result::Response;
-use vegafusion_core::proto::gen::tasks::{NodeValueIndex, TaskGraph, TaskGraphValueRequest, VariableNamespace};
+use vegafusion_core::proto::gen::services::{query_request, QueryRequest, QueryResult};
+use vegafusion_core::proto::gen::tasks::{
+    NodeValueIndex, TaskGraph, TaskGraphValueRequest, VariableNamespace,
+};
 use vegafusion_core::spec::chart::ChartSpec;
 
 use vegafusion_core::proto::gen::services::vega_fusion_runtime_client::VegaFusionRuntimeClient;
 use vegafusion_core::task_graph::task_value::TaskValue;
+
+use assert_cmd::prelude::*; // Add methods on commands
+use predicates::prelude::*; // Used for writing assertions
+
 
 #[tokio::test(flavor = "multi_thread")]
 async fn try_it_from_spec() {
@@ -84,18 +91,25 @@ async fn try_it_from_spec() {
     let tasks = chart.to_tasks().unwrap();
 
     let graph = TaskGraph::new(tasks, &task_scope).unwrap();
-    let request = QueryRequest { request: Some(query_request::Request::TaskGraphValues(
-        TaskGraphValueRequest {
-            task_graph: Some(graph),
-            indices: vec![
-                NodeValueIndex::new(2, Some(0)),
-            ]
-        }
-    )) };
+    let request = QueryRequest {
+        request: Some(query_request::Request::TaskGraphValues(
+            TaskGraphValueRequest {
+                task_graph: Some(graph),
+                indices: vec![NodeValueIndex::new(2, Some(0))],
+            },
+        )),
+    };
 
-    let mut client = VegaFusionRuntimeClient::connect("http://127.0.0.1:50051").await.expect(
-        "Failed to connect to gRPC server"
-    );
+    let mut bin = std::process::Command::cargo_bin("vegafusion-server")
+        .expect("Failed to build vegafusion-server");
+    let mut cmd = bin.args(&["--port", "50059"]);
+
+    let mut proc = cmd.spawn().expect("Failed to spawn vegafusion-server");
+    std::thread::sleep(Duration::from_millis(2000));
+
+    let mut client = VegaFusionRuntimeClient::connect("http://127.0.0.1:50059")
+        .await
+        .expect("Failed to connect to gRPC server");
     let response = client.task_graph_query(request).await.unwrap();
 
     let query_result = response.into_inner();
@@ -118,4 +132,5 @@ async fn try_it_from_spec() {
             )
         }
     }
+    proc.kill().ok();
 }
