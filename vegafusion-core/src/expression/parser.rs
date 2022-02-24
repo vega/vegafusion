@@ -34,9 +34,7 @@ pub fn parse(expr: &str) -> Result<Expression> {
         let (token, start, _) = &tokens[0];
         return Err(VegaFusionError::parse(&format!(
             "Unexpected token {} at position {} in expression: {}",
-            token,
-            start,
-            expr
+            token, start, expr
         )));
     }
 

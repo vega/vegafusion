@@ -26,9 +26,7 @@ use std::panic::{resume_unwind, AssertUnwindSafe};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
-use vegafusion_core::error::{
-    DuplicateResult, Result, ToExternalError, VegaFusionError,
-};
+use vegafusion_core::error::{DuplicateResult, Result, ToExternalError, VegaFusionError};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[derive(Debug, Clone)]

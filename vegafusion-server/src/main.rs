@@ -1,7 +1,3 @@
-
-
-
-
 use tonic::{transport::Server, Request, Response, Status};
 use vegafusion_core::error::{ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{
@@ -15,7 +11,7 @@ use futures_util::stream::StreamExt;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use clap::Parser;
-use regex::{Regex};
+use regex::Regex;
 
 #[derive(Clone)]
 pub struct VegaFusionRuntimeGrpc {
