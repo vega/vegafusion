@@ -102,7 +102,7 @@ impl TransformTrait for JoinAggregate {
                 let alias = if field.is_empty() {
                     op_name(op).to_string()
                 } else {
-                    format!("{}_{}", op_name(op), field.to_string())
+                    format!("{}_{}", op_name(op), field)
                 };
                 agg_cols.push(col(&alias));
                 expr.alias(&alias)

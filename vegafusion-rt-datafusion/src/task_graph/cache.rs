@@ -16,10 +16,10 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
-use async_lock::{Mutex, MutexGuard, RwLock, RwLockWriteGuard};
+use async_lock::{Mutex, MutexGuard, RwLock};
 use futures::FutureExt;
 use lru::LruCache;
-use std::collections::hash_map::Entry;
+
 use std::collections::HashMap;
 use std::future::Future;
 use std::panic::{resume_unwind, AssertUnwindSafe};
@@ -27,7 +27,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 use vegafusion_core::error::{
-    DuplicateResult, Result, ResultWithContext, ToExternalError, VegaFusionError,
+    DuplicateResult, Result, ToExternalError, VegaFusionError,
 };
 use vegafusion_core::task_graph::task_value::TaskValue;
 

@@ -20,7 +20,7 @@ use prost::Message;
 
 // use vegafusion_core::expression::parser::parse;
 
-use std::convert::TryFrom;
+
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::proto::gen::tasks::{
     NodeValueIndex, TaskGraph, TaskGraphValueRequest, VariableNamespace,

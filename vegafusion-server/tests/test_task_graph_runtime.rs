@@ -33,19 +33,19 @@
 // use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 //
 
-use serde_json::json;
-use std::sync::Arc;
+
+
 use std::time::Duration;
-use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
+use vegafusion_core::data::scalar::{ScalarValueHelpers};
 use vegafusion_core::proto::gen::services::query_result::Response;
-use vegafusion_core::proto::gen::services::{query_request, QueryRequest, QueryResult};
+use vegafusion_core::proto::gen::services::{query_request, QueryRequest};
 use vegafusion_core::proto::gen::tasks::{
     NodeValueIndex, TaskGraph, TaskGraphValueRequest, VariableNamespace,
 };
 use vegafusion_core::spec::chart::ChartSpec;
 
 use vegafusion_core::proto::gen::services::vega_fusion_runtime_client::VegaFusionRuntimeClient;
-use vegafusion_core::task_graph::task_value::TaskValue;
+
 
 use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*; // Used for writing assertions
@@ -101,7 +101,7 @@ async fn try_it_from_spec() {
 
     let mut bin = std::process::Command::cargo_bin("vegafusion-server")
         .expect("Failed to build vegafusion-server");
-    let mut cmd = bin.args(&["--port", "50059"]);
+    let cmd = bin.args(&["--port", "50059"]);
 
     let mut proc = cmd.spawn().expect("Failed to spawn vegafusion-server");
     std::thread::sleep(Duration::from_millis(2000));

@@ -50,8 +50,8 @@ pub fn check_parsing(expr_str: &str) {
         result,
         expected,
         " left: {}\nright: {}\n",
-        result.to_string(),
-        expected.to_string()
+        result,
+        expected
     );
 }
 
@@ -80,8 +80,8 @@ pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
         result,
         expected,
         " left: {}\nright: {}\n",
-        result.to_string(),
-        expected.to_string()
+        result,
+        expected
     );
 }
 

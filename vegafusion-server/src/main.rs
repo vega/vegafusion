@@ -1,9 +1,9 @@
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::process::exit;
-use std::str::FromStr;
-use tokio::net::{TcpListener, TcpStream};
-use tonic::{transport::Server, Code, Request, Response, Status};
-use vegafusion_core::error::{ResultWithContext, ToExternalError, VegaFusionError};
+
+
+
+
+use tonic::{transport::Server, Request, Response, Status};
+use vegafusion_core::error::{ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{
     VegaFusionRuntime as TonicVegaFusionRuntime,
     VegaFusionRuntimeServer as TonicVegaFusionRuntimeServer,
@@ -11,11 +11,11 @@ use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{
 use vegafusion_core::proto::gen::services::{QueryRequest, QueryResult};
 
 use futures_util::stream::StreamExt;
-use futures_util::SinkExt;
+
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use clap::Parser;
-use regex::{Captures, Regex};
+use regex::{Regex};
 
 #[derive(Clone)]
 pub struct VegaFusionRuntimeGrpc {
