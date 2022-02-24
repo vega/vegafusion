@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]] # Bin to run the VegaFusion Runtime as gRPC service
 name = "vegafusion-server"
-path = "src/vegafusion-server.rs"
+path = "src/main.rs"
 
 [dependencies]
 vegafusion-core = {path = "../vegafusion-core", features=["datafusion", "tonic_support"]}
