@@ -26,7 +26,9 @@ use std::panic::{resume_unwind, AssertUnwindSafe};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
-use vegafusion_core::error::{DuplicateResult, Result, ResultWithContext, ToExternalError, VegaFusionError};
+use vegafusion_core::error::{
+    DuplicateResult, Result, ResultWithContext, ToExternalError, VegaFusionError,
+};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[derive(Debug, Clone)]
@@ -286,7 +288,11 @@ impl VegaFusionCache {
         // Check if present in initializers
         // let mut initializers_lock = self.initializers.write().await;
         let initializer = {
-            self.initializers.write().await.get(&state_fingerprint).cloned()
+            self.initializers
+                .write()
+                .await
+                .get(&state_fingerprint)
+                .cloned()
         };
 
         if let Some(initializer) = initializer {
@@ -294,12 +300,8 @@ impl VegaFusionCache {
             // Drop lock on initializers collection
             let result = initializer.read().await;
             let result = match result.as_ref() {
-                None => {
-                    self.spawn_initializer(state_fingerprint, init).await
-                }
-                Some(result) => {
-                    result.duplicate()
-                }
+                None => self.spawn_initializer(state_fingerprint, init).await,
+                Some(result) => result.duplicate(),
             };
             result
         } else {
@@ -308,7 +310,8 @@ impl VegaFusionCache {
     }
 
     async fn spawn_initializer<F>(&self, state_fingerprint: u64, init: F) -> Result<NodeValue>
-        where F: Future<Output=Result<NodeValue>> + Send + 'static
+    where
+        F: Future<Output = Result<NodeValue>> + Send + 'static,
     {
         // Create new initializer
         let initializer: Initializer = Arc::new(RwLock::new(None));
@@ -317,7 +320,10 @@ impl VegaFusionCache {
         let mut initializer_lock = initializer.write().await;
 
         // Store Arc clone of initializer in initializers map
-        self.initializers.write().await.insert(state_fingerprint, initializer.clone());
+        self.initializers
+            .write()
+            .await
+            .insert(state_fingerprint, initializer.clone());
 
         // Record start time
         let start = Instant::now();
@@ -352,17 +358,13 @@ impl VegaFusionCache {
                 }
             }
             Ok(Err(err)) => {
-                *initializer_lock = Some(Err(VegaFusionError::internal(
-                    err.to_string()
-                )));
+                *initializer_lock = Some(Err(VegaFusionError::internal(err.to_string())));
                 self.remove_initializer(state_fingerprint).await;
                 Err(err).external("tokio error")
-            },
+            }
             // Panicked.
             Err(payload) => {
-                *initializer_lock = Some(Err(VegaFusionError::internal(
-                    "Panic error"
-                )));
+                *initializer_lock = Some(Err(VegaFusionError::internal("Panic error")));
 
                 // Remove the waiter so that others can retry.
                 self.remove_initializer(state_fingerprint).await;

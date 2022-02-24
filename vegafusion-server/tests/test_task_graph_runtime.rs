@@ -50,7 +50,6 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*; // Used for writing assertions
 
-
 #[tokio::test(flavor = "multi_thread")]
 async fn try_it_from_spec() {
     let chart: ChartSpec = serde_json::from_str(

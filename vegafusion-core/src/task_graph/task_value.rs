@@ -101,24 +101,26 @@ impl TryFrom<&TaskValue> for ProtoTaskValue {
     }
 }
 
-
 impl TaskGraphValueResponse {
     pub fn deserialize(self) -> Result<Vec<(Variable, Vec<u32>, TaskValue)>> {
-        self.response_values.into_iter().map(|response_value| {
-            let variable = response_value.variable.with_context(
-                || "Unwrap failed for variable of response value".to_string()
-            )?;
+        self.response_values
+            .into_iter()
+            .map(|response_value| {
+                let variable = response_value
+                    .variable
+                    .with_context(|| "Unwrap failed for variable of response value".to_string())?;
 
-            let scope = response_value.scope;
-            let proto_value = response_value.value.with_context(
-                || "Unwrap failed for value of response value: {:?}".to_string()
-            )?;
+                let scope = response_value.scope;
+                let proto_value = response_value.value.with_context(|| {
+                    "Unwrap failed for value of response value: {:?}".to_string()
+                })?;
 
-            let value = TaskValue::try_from(&proto_value).with_context(
-                || "Deserialization failed for value of response value: {:?}".to_string()
-            )?;
+                let value = TaskValue::try_from(&proto_value).with_context(|| {
+                    "Deserialization failed for value of response value: {:?}".to_string()
+                })?;
 
-            Ok((variable, scope, value))
-        }).collect::<Result<Vec<_>>>()
+                Ok((variable, scope, value))
+            })
+            .collect::<Result<Vec<_>>>()
     }
 }

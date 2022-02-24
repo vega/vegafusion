@@ -41,7 +41,6 @@ fn main() {
     gen_tonic()
 }
 
-
 #[cfg(feature = "tonic_support")]
 fn gen_tonic() {
     let builder = tonic_build::configure();

@@ -30,7 +30,7 @@ use std::sync::Arc;
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
 use vegafusion_core::proto::gen::services::{
-    query_request, QueryRequest, query_result, QueryResult
+    query_request, query_result, QueryRequest, QueryResult,
 };
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse,
@@ -58,16 +58,17 @@ impl TaskGraphRuntime {
     ) -> Result<TaskValue> {
         // We shouldn't panic inside get_or_compute_node_value, but since this may be used
         // in a server context, wrap in catch_unwind just in case.
-        let node_value = AssertUnwindSafe(
-            get_or_compute_node_value(
-                task_graph,
-                node_value_index.node_index as usize,
-                self.cache.clone(),
-            )).catch_unwind().await;
+        let node_value = AssertUnwindSafe(get_or_compute_node_value(
+            task_graph,
+            node_value_index.node_index as usize,
+            self.cache.clone(),
+        ))
+        .catch_unwind()
+        .await;
 
-        let mut node_value = node_value.ok().with_context(
-            || "Unknown panic".to_string()
-        )??;
+        let mut node_value = node_value
+            .ok()
+            .with_context(|| "Unknown panic".to_string())??;
 
         Ok(match node_value_index.output_index {
             None => node_value.0,
@@ -75,10 +76,7 @@ impl TaskGraphRuntime {
         })
     }
 
-    pub async fn query_request(
-        &self,
-        request: QueryRequest,
-    ) -> Result<QueryResult> {
+    pub async fn query_request(&self, request: QueryRequest) -> Result<QueryResult> {
         match request.request {
             Some(query_request::Request::TaskGraphValues(task_graph_values)) => {
                 let task_graph = Arc::new(task_graph_values.task_graph.unwrap());
@@ -91,9 +89,16 @@ impl TaskGraphRuntime {
                     .indices
                     .iter()
                     .map(|node_value_index| {
-                        let node = task_graph.nodes.get(node_value_index.node_index as usize).with_context(
-                            || format!("Node index {} out of bounds for graph with size {}", node_value_index.node_index, task_graph.nodes.len())
-                        )?;
+                        let node = task_graph
+                            .nodes
+                            .get(node_value_index.node_index as usize)
+                            .with_context(|| {
+                                format!(
+                                    "Node index {} out of bounds for graph with size {}",
+                                    node_value_index.node_index,
+                                    task_graph.nodes.len()
+                                )
+                            })?;
                         let task = node.task();
                         let var = match node_value_index.output_index {
                             None => task.variable().clone(),
@@ -124,11 +129,9 @@ impl TaskGraphRuntime {
                 match future::try_join_all(response_value_futures).await {
                     Ok(response_values) => {
                         let response_msg = QueryResult {
-                            response: Some(
-                                query_result::Response::TaskGraphValues(
-                                    TaskGraphValueResponse { response_values },
-                                ),
-                            ),
+                            response: Some(query_result::Response::TaskGraphValues(
+                                TaskGraphValueResponse { response_values },
+                            )),
                         };
                         Ok(response_msg)
                     }

@@ -37,7 +37,7 @@ use vegafusion_core::planning::stitch::CommPlan;
 use vegafusion_core::planning::watch::WatchPlan;
 
 use vegafusion_core::proto::gen::services::{
-    query_request, QueryRequest, query_result, QueryResult
+    query_request, query_result, QueryRequest, QueryResult,
 };
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
@@ -149,9 +149,10 @@ impl MsgReceiver {
             match response {
                 query_result::Response::TaskGraphValues(task_graph_vals) => {
                     let view = self.view();
-                    for (var, scope, value) in task_graph_vals.deserialize().expect(
-                        "Failed to deserialize response"
-                    ) {
+                    for (var, scope, value) in task_graph_vals
+                        .deserialize()
+                        .expect("Failed to deserialize response")
+                    {
                         match &value {
                             TaskValue::Scalar(value) => {
                                 let json = value.to_json().unwrap();
