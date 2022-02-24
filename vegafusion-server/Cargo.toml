@@ -10,8 +10,8 @@ name = "vegafusion-server"
 path = "src/main.rs"
 
 [dependencies]
-vegafusion-core = {path = "../vegafusion-core", features=["datafusion", "tonic_support"]}
-vegafusion-rt-datafusion = {path = "../vegafusion-rt-datafusion"}
+vegafusion-core = {path = "../vegafusion-core", version="0.0.4", features=["datafusion", "tonic_support"]}
+vegafusion-rt-datafusion = {path = "../vegafusion-rt-datafusion", version="0.0.4"}
 prost = "0.9.0"
 tokio = {version = "1.17.0", features=["rt-multi-thread", "macros"]}
 tonic = {version="0.6.2", features=["tls"]}

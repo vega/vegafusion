@@ -7,7 +7,7 @@ license = "AGPL-3.0-or-later"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-vegafusion-core = {path = "../vegafusion-core", features=["datafusion"]}
+vegafusion-core = {path = "../vegafusion-core", version="0.0.4", features=["datafusion"]}
 
 regex = "^1.5.4"
 lazy_static = "^1.4.0"
