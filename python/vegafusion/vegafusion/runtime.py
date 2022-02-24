@@ -35,6 +35,11 @@ class VegaFusionRuntime:
         return self._embedded_runtime
 
     def grpc_connect(self, channel):
+        """
+        Connect to a VegaFusion server over gRPC using the provided gRPC channel
+
+        :param channel: grpc.Channel instance configured with the address of a running VegaFusion server
+        """
         # TODO: check channel type
         self._grpc_channel = channel
 
