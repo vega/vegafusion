@@ -22,9 +22,7 @@ extern crate lazy_static;
 mod util;
 use std::sync::Once;
 
-use crate::util::vegajs_runtime::{
-    vegajs_runtime, ExportImageFormat, ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace,
-};
+use crate::util::vegajs_runtime::{vegajs_runtime, ExportImageFormat};
 use datafusion::scalar::ScalarValue;
 use rstest::rstest;
 use std::collections::HashMap;
@@ -37,7 +35,9 @@ use vegafusion_core::data::table::VegaFusionTable;
 
 use vegafusion_core::planning::plan::SpecPlan;
 
-use vegafusion_core::planning::watch::{Watch, WatchNamespace, WatchPlan};
+use vegafusion_core::planning::watch::{
+    ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace, Watch, WatchNamespace, WatchPlan,
+};
 use vegafusion_core::proto::gen::tasks::TaskGraph;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;

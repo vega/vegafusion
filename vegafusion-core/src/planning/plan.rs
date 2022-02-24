@@ -31,7 +31,6 @@ impl SpecPlan {
         let mut client_spec = full_spec.clone();
         split_domain_data(&mut client_spec)?;
 
-        println!("{}", serde_json::to_string_pretty(&client_spec).unwrap());
         let mut task_scope = client_spec.to_task_scope()?;
 
         let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope)?;

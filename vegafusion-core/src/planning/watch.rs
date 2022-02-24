@@ -16,11 +16,15 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
+use crate::data::scalar::ScalarValueHelpers;
+use crate::data::table::VegaFusionTable;
 use crate::error::Result;
 use crate::error::VegaFusionError;
 use crate::planning::stitch::CommPlan;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::task_value::TaskValue;
+use datafusion::scalar::ScalarValue;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -113,3 +117,60 @@ pub struct WatchValue {
 pub struct WatchValues {
     pub values: Vec<WatchValue>,
 }
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ExportUpdateNamespace {
+    Signal,
+    Data,
+}
+
+impl TryFrom<VariableNamespace> for ExportUpdateNamespace {
+    type Error = VegaFusionError;
+
+    fn try_from(value: VariableNamespace) -> Result<Self> {
+        match value {
+            VariableNamespace::Signal => Ok(Self::Signal),
+            VariableNamespace::Data => Ok(Self::Data),
+            _ => Err(VegaFusionError::internal("Scale namespace not supported")),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExportUpdate {
+    pub namespace: ExportUpdateNamespace,
+    pub name: String,
+    pub scope: Vec<u32>,
+    pub value: Value,
+}
+
+impl ExportUpdate {
+    pub fn to_scoped_var(&self) -> ScopedVariable {
+        let namespace = match self.namespace {
+            ExportUpdateNamespace::Signal => VariableNamespace::Signal as i32,
+            ExportUpdateNamespace::Data => VariableNamespace::Data as i32,
+        };
+
+        (
+            Variable {
+                name: self.name.clone(),
+                namespace: namespace,
+            },
+            self.scope.clone(),
+        )
+    }
+
+    pub fn to_task_value(&self) -> TaskValue {
+        match self.namespace {
+            ExportUpdateNamespace::Signal => {
+                TaskValue::Scalar(ScalarValue::from_json(&self.value).unwrap())
+            }
+            ExportUpdateNamespace::Data => {
+                TaskValue::Table(VegaFusionTable::from_json(&self.value, 1024).unwrap())
+            }
+        }
+    }
+}
+
+pub type ExportUpdateBatch = Vec<ExportUpdate>;

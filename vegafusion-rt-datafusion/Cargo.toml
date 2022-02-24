@@ -42,4 +42,9 @@ base64 = "0.13.0"
 dssim = "3.1.0"
 rgb = "0.8.27"
 lodepng = "3.4.6"
+criterion = {version="0.3", features=["async_tokio"]}
 
+
+[[bench]]
+name = "spec_benchmarks"
+harness = false

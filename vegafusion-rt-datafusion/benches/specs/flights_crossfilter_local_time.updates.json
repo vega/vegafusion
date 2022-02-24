@@ -1,0 +1,45 @@
+[
+  [
+    {
+      "namespace": "data",
+      "name": "brush_store",
+      "scope": [],
+      "value": [{
+        "unit": "",
+        "fields": [{"field": "distance", "channel":  "x", "type": "R"}],
+        "values": [[0, 600]]
+      }]
+    }
+  ], [
+    {
+      "namespace": "data",
+      "name": "brush_store",
+      "scope": [],
+      "value": [{
+        "unit": "",
+        "fields": [{"field": "distance", "channel":  "x", "type": "R"}],
+        "values": [[900, 600]]
+      }]
+    }, {
+      "namespace": "data",
+      "name": "brush_store",
+      "scope": [],
+      "value": [{
+        "unit": "",
+        "fields": [{"field": "delay", "channel":  "x", "type": "R"}],
+        "values": [[40, 120]]
+      }]
+    }
+  ], [
+    {
+      "namespace": "data",
+      "name": "brush_store",
+      "scope": [],
+      "value": [{
+        "unit": "",
+        "fields": [{"field": "time", "channel":  "x", "type": "R"}],
+        "values": [[10, 18]]
+      }]
+    }
+  ]
+]
