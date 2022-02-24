@@ -19,12 +19,13 @@
 import * as vegafusion from "vegafusion-wasm";
 import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import _ from "lodash"
+import * as grpcWeb from 'grpc-web';
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './style.css';
 
-// Create WebSocket connection.
 function init() {
+    console.log(vegafusion.vega_version());
     monaco_init()
 
     let initial_spec = JSON.stringify(flights_spec, null, 2);
@@ -45,7 +46,6 @@ function init() {
         automaticLayout: true,
         readOnly: true,
     });
-    let server_spec_model = server_spec_monaco.getModel();
 
     let client_spec_monaco = Monaco.editor.create(document.getElementById('client-spec-monaco'), {
         value: "",
@@ -54,7 +54,6 @@ function init() {
         automaticLayout: true,
         readOnly: true,
     });
-    let client_spec_model = client_spec_monaco.getModel();
 
     let comm_plan_monaco = Monaco.editor.create(document.getElementById('comm-plan-monaco'), {
         value: "",
@@ -63,25 +62,23 @@ function init() {
         automaticLayout: true,
         readOnly: true,
     });
-    let comm_plan_model = comm_plan_monaco.getModel();
 
-    const socket = new WebSocket('ws://localhost:8087');
-    var listener = null;
+    const hostname = 'http://' + window.location.hostname + ':50051';
+    let client = new grpcWeb.GrpcWebClientBase({format: "binary"});
+    let send_message_grpc = vegafusion.make_grpc_send_message_fn(client, hostname);
 
     function update_chart() {
-        if (listener) {
-            socket.removeEventListener('message', listener);
-        }
-
         let msg_receiver;
         try {
             let element = document.getElementById("vega-chart");
             msg_receiver = vegafusion.render_vegafusion(
-                element, editor.getValue(), false, 50, 100,
-                (send_msg_bytes) => {
-                // console.log("Sending msg");
-                socket.send(send_msg_bytes);
-            });
+                element,
+                editor.getValue(),
+                false,
+                50,
+                100,
+                send_message_grpc
+            );
             server_spec_monaco.setValue(msg_receiver.server_spec_json());
             client_spec_monaco.setValue(msg_receiver.client_spec_json());
             comm_plan_monaco.setValue(msg_receiver.comm_plan_json());
@@ -93,33 +90,19 @@ function init() {
             console.log(e);
             return
         }
-
-        listener = (msg) => {
-            msg.data.arrayBuffer().then((data) => {
-                let array = new Uint8Array(data);
-                // console.log(["Received msg (JS)", array]);
-                msg_receiver.receive(array)
-            });
-        }
-
-        socket.addEventListener('message', listener);
     }
 
-    // Connection opened
-    socket.addEventListener('open', function (event) {
+    // Update chart (with debounce) when editor value changes
+    update_chart()
+    let content_change_listener = _.debounce((content) => {
+        // console.log(content);
         update_chart()
-        let content_change_listener = _.debounce((content) => {
-            // console.log(content);
-            update_chart()
-        }, 750);
+    }, 750);
 
-        spec_model.onDidChangeContent(content_change_listener)
-    });
+    spec_model.onDidChangeContent(content_change_listener)
 }
 
 function monaco_init() {
-    // console.log(Monaco.languages.json.jsonDefaults);
-
     // Monaco.languages.json.jsonDefaults.setModeConfiguration({
     //     documentFormattingEdits: true,
     //     documentRangeFormattingEdits: true,

@@ -20,7 +20,6 @@ use prost::Message;
 
 // use vegafusion_core::expression::parser::parse;
 
-use std::convert::TryFrom;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::proto::gen::tasks::{
     NodeValueIndex, TaskGraph, TaskGraphValueRequest, VariableNamespace,
@@ -37,8 +36,7 @@ use vegafusion_core::planning::stitch::CommPlan;
 use vegafusion_core::planning::watch::WatchPlan;
 
 use vegafusion_core::proto::gen::services::{
-    vega_fusion_runtime_request, vega_fusion_runtime_response, VegaFusionRuntimeRequest,
-    VegaFusionRuntimeResponse,
+    query_request, query_result, QueryRequest, QueryResult,
 };
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
@@ -72,15 +70,16 @@ extern "C" {
 }
 
 #[wasm_bindgen]
+#[derive(Clone)]
 pub struct MsgReceiver {
-    spec: ChartSpec,
-    server_spec: ChartSpec,
+    spec: Arc<ChartSpec>,
+    server_spec: Arc<ChartSpec>,
     comm_plan: CommPlan,
     send_msg_fn: Arc<js_sys::Function>,
     task_graph: Arc<Mutex<TaskGraph>>,
-    task_graph_mapping: HashMap<ScopedVariable, NodeValueIndex>,
+    task_graph_mapping: Arc<HashMap<ScopedVariable, NodeValueIndex>>,
     server_to_client_value_indices: Arc<HashSet<NodeValueIndex>>,
-    view: View,
+    view: Arc<View>,
     verbose: bool,
     debounce_wait: f64,
     debounce_max_wait: Option<f64>,
@@ -123,14 +122,14 @@ impl MsgReceiver {
         setup_tooltip(&view);
 
         let this = Self {
-            spec,
-            server_spec,
+            spec: Arc::new(spec),
+            server_spec: Arc::new(server_spec),
             comm_plan,
             task_graph: Arc::new(Mutex::new(task_graph)),
-            task_graph_mapping,
+            task_graph_mapping: Arc::new(task_graph_mapping),
             send_msg_fn: Arc::new(send_msg_fn),
             server_to_client_value_indices,
-            view,
+            view: Arc::new(view),
             verbose,
             debounce_wait,
             debounce_max_wait,
@@ -143,20 +142,16 @@ impl MsgReceiver {
 
     pub fn receive(&mut self, bytes: Vec<u8>) {
         // Decode message
-        let response = VegaFusionRuntimeResponse::decode(bytes.as_slice()).unwrap();
+        let response = QueryResult::decode(bytes.as_slice()).unwrap();
 
         if let Some(response) = response.response {
             match response {
-                vega_fusion_runtime_response::Response::TaskGraphValues(task_graph_vals) => {
+                query_result::Response::TaskGraphValues(task_graph_vals) => {
                     let view = self.view();
-                    for response_val in task_graph_vals.response_values {
-                        let value = response_val.value.expect("Unwrap value");
-                        let scope = response_val.scope.as_slice();
-                        let var = response_val.variable.expect("Unwrap variable");
-
-                        // Convert from proto task value to task value
-                        let value = TaskValue::try_from(&value).expect("Deserialize value");
-
+                    for (var, scope, value) in task_graph_vals
+                        .deserialize()
+                        .expect("Failed to deserialize response")
+                    {
                         match &value {
                             TaskValue::Scalar(value) => {
                                 let json = value.to_json().unwrap();
@@ -167,7 +162,7 @@ impl MsgReceiver {
                                 }
 
                                 let js_value = JsValue::from_serde(&json).unwrap();
-                                set_signal_value(view, &var.name, scope, js_value);
+                                set_signal_value(view, &var.name, scope.as_slice(), js_value);
                             }
                             TaskValue::Table(value) => {
                                 let json = value.to_json();
@@ -178,13 +173,13 @@ impl MsgReceiver {
                                 }
 
                                 let js_value = JsValue::from_serde(&value.to_json()).unwrap();
-                                set_data_value(view, &var.name, scope, js_value);
+                                set_data_value(view, &var.name, scope.as_slice(), js_value);
                             }
                         }
                     }
                     view.run();
                 }
-                vega_fusion_runtime_response::Response::Error(error) => {
+                query_result::Response::Error(error) => {
                     log(&error.msg());
                 }
             }
@@ -229,6 +224,7 @@ impl MsgReceiver {
             let verbose = self.verbose;
 
             // Register callbacks
+            let this = self.clone();
             match scoped_var.0.namespace() {
                 VariableNamespace::Signal => {
                     let closure = Closure::wrap(Box::new(move |name: String, val: JsValue| {
@@ -253,8 +249,8 @@ impl MsgReceiver {
                             .filter(|node| server_to_client.contains(node))
                             .collect();
 
-                        let request_msg = VegaFusionRuntimeRequest {
-                            request: Some(vega_fusion_runtime_request::Request::TaskGraphValues(
+                        let request_msg = QueryRequest {
+                            request: Some(query_request::Request::TaskGraphValues(
                                 TaskGraphValueRequest {
                                     task_graph: Some(task_graph.clone()),
                                     indices: updated_nodes,
@@ -262,7 +258,7 @@ impl MsgReceiver {
                             )),
                         };
 
-                        Self::send_request(send_msg_fn.as_ref(), request_msg);
+                        this.send_request(send_msg_fn.as_ref(), request_msg);
                     })
                         as Box<dyn FnMut(String, JsValue)>);
 
@@ -295,8 +291,8 @@ impl MsgReceiver {
                             .filter(|node| server_to_client.contains(node))
                             .collect();
 
-                        let request_msg = VegaFusionRuntimeRequest {
-                            request: Some(vega_fusion_runtime_request::Request::TaskGraphValues(
+                        let request_msg = QueryRequest {
+                            request: Some(query_request::Request::TaskGraphValues(
                                 TaskGraphValueRequest {
                                     task_graph: Some(task_graph.clone()),
                                     indices: updated_nodes,
@@ -304,7 +300,7 @@ impl MsgReceiver {
                             )),
                         };
 
-                        Self::send_request(send_msg_fn.as_ref(), request_msg);
+                        this.send_request(send_msg_fn.as_ref(), request_msg);
                     })
                         as Box<dyn FnMut(String, JsValue)>);
 
@@ -318,7 +314,7 @@ impl MsgReceiver {
         }
     }
 
-    fn send_request(send_msg_fn: &js_sys::Function, request_msg: VegaFusionRuntimeRequest) {
+    fn send_request(&self, send_msg_fn: &js_sys::Function, request_msg: QueryRequest) {
         let mut buf: Vec<u8> = Vec::new();
         buf.reserve(request_msg.encoded_len());
         request_msg.encode(&mut buf).unwrap();
@@ -326,7 +322,7 @@ impl MsgReceiver {
         let context: JsValue = JsValue::from_serde(&serde_json::Value::Null).unwrap();
         let js_buffer = js_sys::Uint8Array::from(buf.as_slice());
         send_msg_fn
-            .call1(&context, &js_buffer)
+            .call2(&context, &js_buffer, &self.clone().into())
             .expect("send_request function call failed");
     }
 
@@ -339,11 +335,11 @@ impl MsgReceiver {
     }
 
     pub fn client_spec_json(&self) -> String {
-        serde_json::to_string_pretty(&self.spec).unwrap()
+        serde_json::to_string_pretty(self.spec.as_ref()).unwrap()
     }
 
     pub fn server_spec_json(&self) -> String {
-        serde_json::to_string_pretty(&self.server_spec).unwrap()
+        serde_json::to_string_pretty(self.server_spec.as_ref()).unwrap()
     }
 
     pub fn comm_plan_json(&self) -> String {
@@ -392,8 +388,8 @@ pub fn render_vegafusion(
     // Request initial values
     let updated_node_indices: Vec<_> = receiver.initial_node_value_indices();
 
-    let request_msg = VegaFusionRuntimeRequest {
-        request: Some(vega_fusion_runtime_request::Request::TaskGraphValues(
+    let request_msg = QueryRequest {
+        request: Some(query_request::Request::TaskGraphValues(
             TaskGraphValueRequest {
                 task_graph: Some(task_graph),
                 indices: updated_node_indices,
@@ -401,14 +397,28 @@ pub fn render_vegafusion(
         )),
     };
 
-    MsgReceiver::send_request(receiver.send_msg_fn.as_ref(), request_msg);
+    receiver.send_request(receiver.send_msg_fn.as_ref(), request_msg);
 
     receiver
 }
 
+#[wasm_bindgen]
+pub fn vega_version() -> String {
+    inner_vega_version()
+}
+
+#[wasm_bindgen]
+pub fn make_grpc_send_message_fn(client: JsValue, hostname: String) -> js_sys::Function {
+    inner_make_grpc_send_message_fn(client, hostname)
+}
+
 #[wasm_bindgen(module = "/js/vega_utils.js")]
 extern "C" {
-    fn vega_version() -> String;
+    #[wasm_bindgen(js_name = "vega_version")]
+    fn inner_vega_version() -> String;
+
+    #[wasm_bindgen(js_name = "make_grpc_send_message_fn")]
+    fn inner_make_grpc_send_message_fn(client: JsValue, hostname: String) -> js_sys::Function;
 
     #[wasm_bindgen(js_name = "getSignalValue")]
     fn get_signal_value(view: &View, name: &str, scope: &[u32]) -> JsValue;

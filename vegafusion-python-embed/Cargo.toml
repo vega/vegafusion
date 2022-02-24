@@ -1,6 +1,6 @@
 [package]
 name = "vegafusion-python-embed"
-version = "0.0.4-rc.1"
+version = "0.0.4"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
@@ -9,8 +9,8 @@ name = "vegafusion_embed"
 crate-type = ["cdylib"]
 
 [dependencies]
-vegafusion-core = {path = "../vegafusion-core", features=["datafusion", "pyo3"]}
-vegafusion-rt-datafusion = {path = "../vegafusion-rt-datafusion"}
+vegafusion-core = {path = "../vegafusion-core", version="0.0.4", features=["datafusion", "pyo3"]}
+vegafusion-rt-datafusion = {path = "../vegafusion-rt-datafusion", version="0.0.4"}
 tokio = { version = "1.10.1", features = ["macros", "rt-multi-thread"] }
 
 [dependencies.pyo3]

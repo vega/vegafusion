@@ -25,3 +25,6 @@ _vegafusion_data
 /python/vegafusion-jupyter/examples/omnisci_downloads/
 /python/vegafusion/dist/
 /python/vegafusion/vegafusion.egg-info/
+/python/vegafusion/build/
+/vegafusion-wasm/examples/chart_editor/dist/
+/vegafusion-wasm/examples/chart_editor/node_modules/

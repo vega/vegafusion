@@ -18,9 +18,9 @@
  */
 use crate::data::scalar::{ScalarValue, ScalarValueHelpers};
 use crate::data::table::VegaFusionTable;
-use crate::error::{Result, VegaFusionError};
+use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::proto::gen::tasks::task_value::Data;
-use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
+use crate::proto::gen::tasks::{TaskGraphValueResponse, TaskValue as ProtoTaskValue, Variable};
 use crate::task_graph::memory::{inner_size_of_scalar, inner_size_of_table};
 use arrow::record_batch::RecordBatch;
 use serde_json::Value;
@@ -98,5 +98,29 @@ impl TryFrom<&TaskValue> for ProtoTaskValue {
                 data: Some(Data::Table(table.to_ipc_bytes()?)),
             }),
         }
+    }
+}
+
+impl TaskGraphValueResponse {
+    pub fn deserialize(self) -> Result<Vec<(Variable, Vec<u32>, TaskValue)>> {
+        self.response_values
+            .into_iter()
+            .map(|response_value| {
+                let variable = response_value
+                    .variable
+                    .with_context(|| "Unwrap failed for variable of response value".to_string())?;
+
+                let scope = response_value.scope;
+                let proto_value = response_value.value.with_context(|| {
+                    "Unwrap failed for value of response value: {:?}".to_string()
+                })?;
+
+                let value = TaskValue::try_from(&proto_value).with_context(|| {
+                    "Deserialization failed for value of response value: {:?}".to_string()
+                })?;
+
+                Ok((variable, scope, value))
+            })
+            .collect::<Result<Vec<_>>>()
     }
 }

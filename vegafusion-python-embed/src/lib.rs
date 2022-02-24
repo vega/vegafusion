@@ -58,7 +58,7 @@ impl PyTaskGraphRuntime {
     pub fn process_request_bytes(&self, request_bytes: &PyBytes) -> PyResult<PyObject> {
         let response_bytes = self
             .tokio_runtime
-            .block_on(self.runtime.process_request_bytes(request_bytes.as_bytes()))?;
+            .block_on(self.runtime.query_request_bytes(request_bytes.as_bytes()))?;
         Python::with_gil(|py| Ok(PyBytes::new(py, &response_bytes).into()))
     }
 

@@ -78,10 +78,16 @@ def to_feather(data, file):
 
 
 def feather_transformer(data, data_dir="_vegafusion_data"):
+    from vegafusion import runtime
     if "vegafusion" not in alt.renderers.active or not isinstance(data, pd.DataFrame):
         # Use default transformer if a vegafusion renderer is not active
         return alt.default_data_transformer(data)
     else:
+        if runtime.using_grpc:
+            raise ValueError(
+                "DataFrame data sources are not yet supported by the gRPC runtime"
+            )
+
         bytes_buffer = io.BytesIO()
         to_feather(data, bytes_buffer)
         file_bytes = bytes_buffer.getvalue()

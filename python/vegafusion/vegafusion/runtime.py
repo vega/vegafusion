@@ -13,29 +13,59 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-import multiprocessing
 import psutil
 
 
 class VegaFusionRuntime:
     def __init__(self, cache_capacity, memory_limit, worker_threads):
-        self._runtime = None
+        self._embedded_runtime = None
+        self._grpc_channel = None
+        self._grpc_query = None
         self._cache_capacity = cache_capacity
         self._memory_limit = memory_limit
         self._worker_threads = worker_threads
 
     @property
-    def runtime(self):
-        if self._runtime is None:
+    def embedded_runtime(self):
+        if self._embedded_runtime is None:
             # Try to initialize an embedded runtime
             from vegafusion_embed import PyTaskGraphRuntime
 
-            self._runtime = PyTaskGraphRuntime(self.cache_capacity, self.memory_limit, self.worker_threads)
-        return self._runtime
+            self._embedded_runtime = PyTaskGraphRuntime(self.cache_capacity, self.memory_limit, self.worker_threads)
+        return self._embedded_runtime
+
+    def grpc_connect(self, channel):
+        """
+        Connect to a VegaFusion server over gRPC using the provided gRPC channel
+
+        :param channel: grpc.Channel instance configured with the address of a running VegaFusion server
+        """
+        # TODO: check channel type
+        self._grpc_channel = channel
+
+    @property
+    def using_grpc(self):
+        return self._grpc_channel is not None
+
+    @property
+    def grpc_query(self):
+        if self._grpc_channel is None:
+            raise ValueError(
+                "No grpc channel registered. Use runtime.grpc_connect to provide a grpc channel"
+            )
+
+        if self._grpc_query is None:
+            self._grpc_query = self._grpc_channel.unary_unary(
+                '/services.VegaFusionRuntime/TaskGraphQuery',
+            )
+        return self._grpc_query
 
     def process_request_bytes(self, request):
-        return self.runtime.process_request_bytes(request)
+        if self._grpc_channel:
+            return self.grpc_query(request)
+        else:
+            # No grpc channel, get or initialize an embedded runtime
+            return self.embedded_runtime.process_request_bytes(request)
 
     @property
     def worker_threads(self):
@@ -54,29 +84,29 @@ class VegaFusionRuntime:
 
     @property
     def total_memory(self):
-        if self._runtime:
-            return self._runtime.total_memory()
+        if self._embedded_runtime:
+            return self._embedded_runtime.total_memory()
         else:
             return None
 
     @property
     def _protected_memory(self):
-        if self._runtime:
-            return self._runtime.protected_memory()
+        if self._embedded_runtime:
+            return self._embedded_runtime.protected_memory()
         else:
             return None
 
     @property
     def _probationary_memory(self):
-        if self._runtime:
-            return self._runtime.probationary_memory()
+        if self._embedded_runtime:
+            return self._embedded_runtime.probationary_memory()
         else:
             return None
 
     @property
     def size(self):
-        if self._runtime:
-            return self._runtime.size()
+        if self._embedded_runtime:
+            return self._embedded_runtime.size()
         else:
             return None
 
@@ -111,16 +141,19 @@ class VegaFusionRuntime:
             self.reset()
 
     def reset(self):
-        if self._runtime is not None:
-            self._runtime.clear_cache()
-            self._runtime = None
+        if self._embedded_runtime is not None:
+            self._embedded_runtime.clear_cache()
+            self._embedded_runtime = None
 
     def __repr__(self):
-        return (
-            f"VegaFusionRuntime("
-            f"cache_capacity={self.cache_capacity}, worker_threads={self.worker_threads}"
-            f")"
-        )
+        if self._grpc_channel:
+            return f"VegaFusionRuntime(channel={self._grpc_channel})"
+        else:
+            return (
+                f"VegaFusionRuntime("
+                f"cache_capacity={self.cache_capacity}, worker_threads={self.worker_threads}"
+                f")"
+            )
 
 
 runtime = VegaFusionRuntime(64, psutil.virtual_memory().total // 2, psutil.cpu_count())

@@ -17,20 +17,20 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 use async_recursion::async_recursion;
-use vegafusion_core::error::{Result, ToExternalError, VegaFusionError};
+use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
-use futures_util::future;
+use futures_util::{future, FutureExt};
 use prost::Message as ProstMessage;
 use std::convert::{TryFrom, TryInto};
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
 use vegafusion_core::proto::gen::services::{
-    vega_fusion_runtime_request, vega_fusion_runtime_response, VegaFusionRuntimeRequest,
-    VegaFusionRuntimeResponse,
+    query_request, query_result, QueryRequest, QueryResult,
 };
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse,
@@ -56,24 +56,29 @@ impl TaskGraphRuntime {
         task_graph: Arc<TaskGraph>,
         node_value_index: &NodeValueIndex,
     ) -> Result<TaskValue> {
-        let mut node_value = get_or_compute_node_value(
+        // We shouldn't panic inside get_or_compute_node_value, but since this may be used
+        // in a server context, wrap in catch_unwind just in case.
+        let node_value = AssertUnwindSafe(get_or_compute_node_value(
             task_graph,
             node_value_index.node_index as usize,
             self.cache.clone(),
-        )
-        .await?;
+        ))
+        .catch_unwind()
+        .await;
+
+        let mut node_value = node_value
+            .ok()
+            .with_context(|| "Unknown panic".to_string())??;
+
         Ok(match node_value_index.output_index {
             None => node_value.0,
             Some(output_index) => node_value.1.remove(output_index as usize),
         })
     }
 
-    pub async fn process_request(
-        &self,
-        request: VegaFusionRuntimeRequest,
-    ) -> Result<VegaFusionRuntimeResponse> {
+    pub async fn query_request(&self, request: QueryRequest) -> Result<QueryResult> {
         match request.request {
-            Some(vega_fusion_runtime_request::Request::TaskGraphValues(task_graph_values)) => {
+            Some(query_request::Request::TaskGraphValues(task_graph_values)) => {
                 let task_graph = Arc::new(task_graph_values.task_graph.unwrap());
 
                 // Clone task_graph and task_graph_runtime for use in closure
@@ -84,7 +89,16 @@ impl TaskGraphRuntime {
                     .indices
                     .iter()
                     .map(|node_value_index| {
-                        let node = &task_graph.nodes[node_value_index.node_index as usize];
+                        let node = task_graph
+                            .nodes
+                            .get(node_value_index.node_index as usize)
+                            .with_context(|| {
+                                format!(
+                                    "Node index {} out of bounds for graph with size {}",
+                                    node_value_index.node_index,
+                                    task_graph.nodes.len()
+                                )
+                            })?;
                         let task = node.task();
                         let var = match node_value_index.output_index {
                             None => task.variable().clone(),
@@ -97,7 +111,7 @@ impl TaskGraphRuntime {
                         let task_graph_runtime = task_graph_runtime.clone();
                         let task_graph = task_graph.clone();
 
-                        async move {
+                        Ok(async move {
                             let value = task_graph_runtime
                                 .clone()
                                 .get_node_value(task_graph, node_value_index)
@@ -108,24 +122,22 @@ impl TaskGraphRuntime {
                                 scope,
                                 value: Some(ProtoTaskValue::try_from(&value).unwrap()),
                             })
-                        }
+                        })
                     })
-                    .collect();
+                    .collect::<Result<Vec<_>>>()?;
 
                 match future::try_join_all(response_value_futures).await {
                     Ok(response_values) => {
-                        let response_msg = VegaFusionRuntimeResponse {
-                            response: Some(
-                                vega_fusion_runtime_response::Response::TaskGraphValues(
-                                    TaskGraphValueResponse { response_values },
-                                ),
-                            ),
+                        let response_msg = QueryResult {
+                            response: Some(query_result::Response::TaskGraphValues(
+                                TaskGraphValueResponse { response_values },
+                            )),
                         };
                         Ok(response_msg)
                     }
                     Err(e) => {
-                        let response_msg = VegaFusionRuntimeResponse {
-                            response: Some(vega_fusion_runtime_response::Response::Error(Error {
+                        let response_msg = QueryResult {
+                            response: Some(query_result::Response::Error(Error {
                                 errorkind: Some(Errorkind::Error(TaskGraphValueError {
                                     msg: e.to_string(),
                                 })),
@@ -143,10 +155,10 @@ impl TaskGraphRuntime {
 
     /// request_bytes should be encoding of a VegaFusionRuntimeRequest
     /// returned value is encoding of a VegaFusionRuntimeResponse
-    pub async fn process_request_bytes(&self, request_bytes: &[u8]) -> Result<Vec<u8>> {
+    pub async fn query_request_bytes(&self, request_bytes: &[u8]) -> Result<Vec<u8>> {
         // Decode request
-        let request = VegaFusionRuntimeRequest::decode(request_bytes).unwrap();
-        let response_msg = self.process_request(request).await?;
+        let request = QueryRequest::decode(request_bytes).unwrap();
+        let response_msg = self.query_request(request).await?;
 
         let mut buf: Vec<u8> = Vec::new();
         buf.reserve(response_msg.encoded_len());
