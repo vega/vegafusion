@@ -95,13 +95,13 @@ jobs:
         if: runner.os == 'Windows'
         with:
           files: target/release/vegafusion-server.exe
-          dest: vegafusion-server-${{ matrix.options[1] }}
+          dest: vegafusion-server-${{ matrix.options[1] }}.zip
       - name: zip executable (Mac or Linux)
         uses: papeloto/action-zip@v1
         if: runner.os != 'Windows'
         with:
           files: target/release/vegafusion-server
-          dest: vegafusion-server-${{ matrix.options[1] }}
+          dest: vegafusion-server-${{ matrix.options[1] }}.zip
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
