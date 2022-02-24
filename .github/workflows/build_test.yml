@@ -25,53 +25,54 @@ jobs:
       - name: Check for clippy warnings
         run: cargo clippy
 
-  test-rust:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os:
-         - ubuntu-20.04
-         - windows-2019
-         - macos-10.15
-
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: Install apt system dependencies needed to build nodecanvas
-        run: |
-          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
-        if: ${{ runner.os == 'Linux' }}
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Install node
-        uses: actions/setup-node@v2
-        with:
-          node-version: '17'
-      - name: Install test node dependencies
-        working-directory: vegafusion-rt-datafusion/tests/util/vegajs_runtime
-        run: |
-          npm install
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
-        with:
-          cache-on-failure: True
-      - name: Run Rust Tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
+#  test-rust:
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os:
+#         - ubuntu-20.04
+#         - windows-2019
+#         - macos-10.15
+#
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@v2
+#      - name: Install apt system dependencies needed to build nodecanvas
+#        run: |
+#          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
+#        if: ${{ runner.os == 'Linux' }}
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#          override: true
+#      - name: Install node
+#        uses: actions/setup-node@v2
+#        with:
+#          node-version: '17'
+#      - name: Install test node dependencies
+#        working-directory: vegafusion-rt-datafusion/tests/util/vegajs_runtime
+#        run: |
+#          npm install
+#      - name: Cache rust dependencies
+#        uses: Swatinem/rust-cache@v1
+#        with:
+#          cache-on-failure: True
+#      - name: Run Rust Tests
+#        uses: actions-rs/cargo@v1
+#        with:
+#          command: test
+#          args: --all-features
 
   build-vegafusion-server:
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os:
-          - ubuntu-20.04
-          - windows-2019
-          - macos-11
+        options: [
+            [ubuntu-20.04,  linux-64],
+            [windows-2019,  win-64],
+            [macos-10.15,   osx-64],
+        ]
+    runs-on: ${{ matrix.options[0] }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -89,13 +90,24 @@ jobs:
         with:
           command: build
           args: -p vegafusion-server --release
+      - name: zip executable (Windows)
+        uses: papeloto/action-zip@v1
+        if: runner.os == 'Windows'
+        with:
+          files: target/release/vegafusion-server.exe
+          dest: vegafusion-server-${{ matrix.options[1] }}
+      - name: zip executable (Mac or Linux)
+        uses: papeloto/action-zip@v1
+        if: runner.os != 'Windows'
+        with:
+          files: target/release/vegafusion-server
+          dest: vegafusion-server-${{ matrix.options[1] }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: vegafusion-server
           path: |
-            target/release/vegafusion-server
-            target/release/vegafusion-server*.exe
+            vegafusion-server-*
 
 #  build-vegafusion-python-embed:
 #    runs-on: ${{ matrix.os }}
