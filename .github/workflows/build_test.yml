@@ -64,6 +64,39 @@ jobs:
           command: test
           args: --all-features
 
+  build-vegafusion-server:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-20.04
+          - windows-2019
+          - macos-11
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Build vegafusion-server
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: -p vegafusion-server --release
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-server
+          path: |
+            target/release/vegafusion-server
+            target/release/vegafusion-server*.exe
+
   build-vegafusion-python-embed:
     runs-on: ${{ matrix.os }}
     strategy:
