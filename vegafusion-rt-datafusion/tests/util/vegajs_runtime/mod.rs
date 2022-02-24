@@ -38,7 +38,7 @@ use itertools::Itertools;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
 
-use vegafusion_core::planning::watch::{Watch, WatchNamespace, WatchValue};
+use vegafusion_core::planning::watch::{ExportUpdateBatch, Watch, WatchNamespace, WatchValue};
 use vegafusion_core::proto::gen::expression::Expression;
 use vegafusion_core::proto::gen::tasks::VariableNamespace;
 use vegafusion_core::spec::chart::ChartSpec;
@@ -545,35 +545,6 @@ fn to_byte(i: f32) -> u8 {
         (i * 256.0) as u8
     }
 }
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ExportUpdateNamespace {
-    Signal,
-    Data,
-}
-
-impl TryFrom<VariableNamespace> for ExportUpdateNamespace {
-    type Error = VegaFusionError;
-
-    fn try_from(value: VariableNamespace) -> Result<Self> {
-        match value {
-            VariableNamespace::Signal => Ok(Self::Signal),
-            VariableNamespace::Data => Ok(Self::Data),
-            _ => Err(VegaFusionError::internal("Scale namespace not supported")),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct ExportUpdate {
-    pub namespace: ExportUpdateNamespace,
-    pub name: String,
-    pub scope: Vec<u32>,
-    pub value: Value,
-}
-
-pub type ExportUpdateBatch = Vec<ExportUpdate>;
 
 lazy_static! {
     static ref NODE_JS_RUNTIME: Arc<NodeJsRuntime> = Arc::new(NodeJsRuntime::try_new().unwrap());
