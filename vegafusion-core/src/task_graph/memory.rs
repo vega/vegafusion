@@ -21,7 +21,7 @@ fn inner_size_of_dtype(value: &DataType) -> usize {
         DataType::Struct(fields) => {
             size_of::<Vec<Field>>() + fields.iter().map(size_of_field).sum::<usize>()
         }
-        DataType::Union(fields) => {
+        DataType::Union(fields, _) => {
             size_of::<Vec<Field>>() + fields.iter().map(size_of_field).sum::<usize>()
         }
         DataType::Dictionary(key_dtype, value_dtype) => {

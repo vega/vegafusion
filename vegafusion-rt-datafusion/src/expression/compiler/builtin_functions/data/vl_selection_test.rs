@@ -19,7 +19,7 @@
 use crate::expression::compiler::utils::{
     cast_to, is_float_datatype, is_integer_datatype, ExprHelpers,
 };
-use datafusion::logical_plan::{ceil, DFSchema};
+use datafusion::logical_plan::{ceil, DFSchema, ExprSchemable};
 use datafusion::logical_plan::{lit, Expr};
 use datafusion::prelude::col;
 use std::collections::HashMap;

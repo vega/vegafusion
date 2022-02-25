@@ -54,9 +54,11 @@ impl VegaFusionTableUtils for VegaFusionTable {
         if let Some(max_rows) = max_rows {
             pretty_format_batches(&self.head(max_rows).batches)
                 .with_context(|| String::from("Failed to pretty print"))
+                .map(|s| s.to_string())
         } else {
             pretty_format_batches(&self.batches)
                 .with_context(|| String::from("Failed to pretty print"))
+                .map(|s| s.to_string())
         }
     }
 

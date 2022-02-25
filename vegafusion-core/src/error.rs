@@ -18,12 +18,10 @@
  */
 use crate::proto::gen::errors::Error as ProtoError;
 use arrow::error::ArrowError;
+use datafusion_common::DataFusionError;
 use std::num::ParseFloatError;
 use std::result;
 use thiserror::Error;
-
-#[cfg(feature = "datafusion")]
-use datafusion::error::DataFusionError;
 
 use crate::proto::gen::errors::error::Errorkind;
 #[cfg(feature = "pyo3")]
@@ -65,7 +63,6 @@ pub enum VegaFusionError {
     #[error("Arrow error: {0}\n{1}")]
     ArrowError(ArrowError, ErrorContext),
 
-    #[cfg(feature = "datafusion")]
     #[error("DataFusion error: {0}\n{1}")]
     DataFusionError(DataFusionError, ErrorContext),
 
@@ -109,7 +106,6 @@ impl VegaFusionError {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::ArrowError(msg, context)
             }
-            #[cfg(feature = "datafusion")]
             DataFusionError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::DataFusionError(err, context)
@@ -166,7 +162,6 @@ impl VegaFusionError {
             ArrowError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
-            #[cfg(feature = "datafusion")]
             DataFusionError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
@@ -225,7 +220,6 @@ impl From<ParseFloatError> for VegaFusionError {
     }
 }
 
-#[cfg(feature = "datafusion")]
 impl From<DataFusionError> for VegaFusionError {
     fn from(err: DataFusionError) -> Self {
         Self::DataFusionError(err, Default::default())
