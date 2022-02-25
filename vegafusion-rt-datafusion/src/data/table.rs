@@ -70,9 +70,13 @@ impl VegaFusionTableUtils for VegaFusionTable {
             Some(self.batches.get(0).unwrap().schema())
         };
 
-        MemTable::try_new(self.schema.clone(), vec![self.batches.clone()]).unwrap_or_else(|_| {
+        MemTable::try_new(
+            batch_schema.clone().unwrap_or_else(|| self.schema.clone()),
+            vec![self.batches.clone()],
+        )
+        .unwrap_or_else(|_| {
             panic!(
-                "to_memtable failure with schema {:#?} and batch schema {:?}",
+                "to_memtable failure with schema {:#?} and batch schema {:#?}",
                 self.schema, batch_schema
             )
         })
