@@ -150,10 +150,20 @@ pub fn flights_crossfilter_local_time(c: &mut Criterion) {
     });
 }
 
-pub fn load_flights_crossfilter_data(c: &mut Criterion) {
+pub fn load_flights_crossfilter_data_local(c: &mut Criterion) {
     let tokio_runtime = make_tokio_runtime();
+    let spec_name = "load_flights_crossfilter_data_local";
+    let full_spec = load_spec(spec_name);
+    let var: ScopedVariable = (Variable::new_data("source_0"), Vec::new());
+    c.bench_function(spec_name, |b| {
+        b.to_async(&tokio_runtime)
+            .iter(|| eval_spec_get_variable(full_spec.clone(), &var))
+    });
+}
 
-    let spec_name = "load_flights_crossfilter_data";
+pub fn load_flights_crossfilter_data_utc(c: &mut Criterion) {
+    let tokio_runtime = make_tokio_runtime();
+    let spec_name = "load_flights_crossfilter_data_utc";
     let full_spec = load_spec(spec_name);
     let var: ScopedVariable = (Variable::new_data("source_0"), Vec::new());
     c.bench_function(spec_name, |b| {
@@ -166,6 +176,7 @@ criterion_group!(
     benches,
     flights_crossfilter,
     flights_crossfilter_local_time,
-    load_flights_crossfilter_data,
+    load_flights_crossfilter_data_local,
+    load_flights_crossfilter_data_utc,
 );
 criterion_main!(benches);
