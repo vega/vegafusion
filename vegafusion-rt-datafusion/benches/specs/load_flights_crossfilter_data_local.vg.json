@@ -1,0 +1,12 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "data": [
+    {
+      "name": "source_0",
+      "url": "https://raw.githubusercontent.com/vega/vega-datasets/master/data/flights-2k.json",
+      "format": {"type": "json", "parse": {"date": "date"}}
+    }
+  ]
+}

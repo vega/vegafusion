@@ -54,7 +54,7 @@ pub fn compile(
     config: &CompilationConfig,
     schema: Option<&DFSchema>,
 ) -> Result<Expr> {
-    let schema = schema.unwrap_or_else(|| &(*UNIT_SCHEMA));
+    let schema = schema.unwrap_or(&(*UNIT_SCHEMA));
     let expr = expr.expr.as_ref().unwrap();
     use vfExpr::*;
     match expr {

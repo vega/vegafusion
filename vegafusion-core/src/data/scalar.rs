@@ -16,16 +16,9 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
-// When DataFusion is not enabled, use inline copy of ScalarValue that was extracted from
-// DataFusion
-#[cfg(not(feature = "datafusion"))]
-pub use super::_scalar::ScalarValue;
-
-#[cfg(feature = "datafusion")]
-pub use datafusion::scalar::ScalarValue;
-
 use crate::arrow::datatypes::DataType;
 use crate::error::{Result, VegaFusionError};
+pub use datafusion_common::ScalarValue;
 
 use serde_json::{Map, Value};
 use std::convert::TryFrom;
@@ -126,16 +119,16 @@ impl ScalarValueHelpers for ScalarValue {
                 // To UTC integer milliseconds (alread in UTC)
                 Value::from(*v)
             }
-            ScalarValue::TimestampSecond(Some(_v)) => {
+            ScalarValue::TimestampSecond(Some(_v), _) => {
                 unimplemented!()
             }
-            ScalarValue::TimestampMillisecond(Some(_v)) => {
+            ScalarValue::TimestampMillisecond(Some(_v), _) => {
                 unimplemented!()
             }
-            ScalarValue::TimestampMicrosecond(Some(_v)) => {
+            ScalarValue::TimestampMicrosecond(Some(_v), _) => {
                 unimplemented!()
             }
-            ScalarValue::TimestampNanosecond(Some(_v)) => {
+            ScalarValue::TimestampNanosecond(Some(_v), _) => {
                 unimplemented!()
             }
             ScalarValue::IntervalYearMonth(Some(_v)) => {

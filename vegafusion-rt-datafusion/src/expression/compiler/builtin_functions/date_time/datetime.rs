@@ -22,7 +22,7 @@ use chrono::{DateTime, Local, LocalResult, NaiveDate, NaiveDateTime, NaiveTime, 
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::error::DataFusionError;
-use datafusion::logical_plan::{DFSchema, Expr};
+use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
 use datafusion::physical_plan::functions::{
     ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature, Volatility,
 };

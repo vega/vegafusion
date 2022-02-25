@@ -1197,7 +1197,7 @@ async fn check_spec_sequence(
         .unwrap();
 
     // Save exported PNGs
-    let png_name = spec_name.replace("/", "-");
+    let png_name = spec_name.replace('/', "-");
     for (i, (export_image, _)) in export_sequence_results.iter().enumerate() {
         export_image
             .save(

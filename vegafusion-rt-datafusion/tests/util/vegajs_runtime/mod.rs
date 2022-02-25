@@ -22,7 +22,7 @@ use regex::Regex;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use std::convert::TryFrom;
+
 use std::io::{Read, Write};
 use std::ops::Deref;
 use std::process::{Child, Command, Stdio};
@@ -40,7 +40,7 @@ use vegafusion_core::data::table::VegaFusionTable;
 
 use vegafusion_core::planning::watch::{ExportUpdateBatch, Watch, WatchNamespace, WatchValue};
 use vegafusion_core::proto::gen::expression::Expression;
-use vegafusion_core::proto::gen::tasks::VariableNamespace;
+
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 
@@ -554,5 +554,5 @@ pub fn vegajs_runtime() -> VegaJsRuntime {
 }
 
 fn unquote_path(path: &str) -> String {
-    path.replace(r#"\"#, r#"\\"#)
+    path.replace('\\', r#"\\"#)
 }

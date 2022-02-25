@@ -1,12 +1,11 @@
-use criterion::async_executor::AsyncExecutor;
 use std::fs;
 use vegafusion_core::planning::plan::SpecPlan;
-use vegafusion_core::planning::watch::{ExportUpdateBatch, WatchPlan};
+use vegafusion_core::planning::watch::ExportUpdateBatch;
 use vegafusion_core::proto::gen::services::query_request::Request;
-use vegafusion_core::proto::gen::services::QueryRequest;
-use vegafusion_core::proto::gen::tasks::{TaskGraph, TaskGraphValueRequest};
+use vegafusion_core::proto::gen::services::{QueryRequest, QueryResult};
+use vegafusion_core::proto::gen::tasks::{TaskGraph, TaskGraphValueRequest, Variable};
 use vegafusion_core::spec::chart::ChartSpec;
-use vegafusion_core::task_graph::task_value::TaskValue;
+
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 fn crate_dir() -> String {
@@ -41,6 +40,29 @@ async fn eval_spec_sequence_from_files(spec_name: &str) {
     // Load updates
     let full_updates = load_updates(spec_name);
     eval_spec_sequence(full_spec, full_updates).await
+}
+
+async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> QueryResult {
+    let spec_plan = SpecPlan::try_new(&full_spec).unwrap();
+    let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
+    let tasks = spec_plan.server_spec.to_tasks().unwrap();
+    let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
+    let task_graph_mapping = task_graph.build_mapping();
+
+    // Initialize task graph runtime
+    let runtime = TaskGraphRuntime::new(Some(64), None);
+
+    let node_index = task_graph_mapping.get(var).unwrap();
+
+    // Make Query request
+    let request = QueryRequest {
+        request: Some(Request::TaskGraphValues(TaskGraphValueRequest {
+            task_graph: Some(task_graph.clone()),
+            indices: vec![node_index.clone()],
+        })),
+    };
+    let result = runtime.query_request(request).await.unwrap();
+    result
 }
 
 async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdateBatch>) {
@@ -78,27 +100,25 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
             query_indices.extend(task_graph.update_value(node_index as usize, value).unwrap());
         }
 
-        // Make Query reques
+        // Make Query request
         let request = QueryRequest {
             request: Some(Request::TaskGraphValues(TaskGraphValueRequest {
                 task_graph: Some(task_graph.clone()),
                 indices: query_indices,
             })),
         };
-        let response = runtime.query_request(request).await.unwrap();
+        let _response = runtime.query_request(request).await.unwrap();
     }
 }
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use tokio::runtime::Runtime;
+use criterion::{criterion_group, criterion_main, Criterion};
+use vegafusion_core::task_graph::graph::ScopedVariable;
 
-#[inline]
-fn fibonacci(n: u64) -> u64 {
-    match n {
-        0 => 1,
-        1 => 1,
-        n => fibonacci(n - 1) + fibonacci(n - 2),
-    }
+fn make_tokio_runtime() -> tokio::runtime::Runtime {
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
 }
 
 pub fn flights_crossfilter(c: &mut Criterion) {
@@ -107,10 +127,7 @@ pub fn flights_crossfilter(c: &mut Criterion) {
     let full_spec = load_spec(spec_name);
     let full_updates = load_updates(spec_name);
 
-    let tokio_runtime = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap();
+    let tokio_runtime = make_tokio_runtime();
 
     c.bench_function(spec_name, |b| {
         b.to_async(&tokio_runtime)
@@ -120,10 +137,7 @@ pub fn flights_crossfilter(c: &mut Criterion) {
 
 pub fn flights_crossfilter_local_time(c: &mut Criterion) {
     // Initialize runtime
-    let tokio_runtime = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-        .unwrap();
+    let tokio_runtime = make_tokio_runtime();
 
     // Load spec
     let spec_name = "flights_crossfilter_local_time";
@@ -136,5 +150,33 @@ pub fn flights_crossfilter_local_time(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, flights_crossfilter, flights_crossfilter_local_time);
+pub fn load_flights_crossfilter_data_local(c: &mut Criterion) {
+    let tokio_runtime = make_tokio_runtime();
+    let spec_name = "load_flights_crossfilter_data_local";
+    let full_spec = load_spec(spec_name);
+    let var: ScopedVariable = (Variable::new_data("source_0"), Vec::new());
+    c.bench_function(spec_name, |b| {
+        b.to_async(&tokio_runtime)
+            .iter(|| eval_spec_get_variable(full_spec.clone(), &var))
+    });
+}
+
+pub fn load_flights_crossfilter_data_utc(c: &mut Criterion) {
+    let tokio_runtime = make_tokio_runtime();
+    let spec_name = "load_flights_crossfilter_data_utc";
+    let full_spec = load_spec(spec_name);
+    let var: ScopedVariable = (Variable::new_data("source_0"), Vec::new());
+    c.bench_function(spec_name, |b| {
+        b.to_async(&tokio_runtime)
+            .iter(|| eval_spec_get_variable(full_spec.clone(), &var))
+    });
+}
+
+criterion_group!(
+    benches,
+    flights_crossfilter,
+    flights_crossfilter_local_time,
+    load_flights_crossfilter_data_local,
+    load_flights_crossfilter_data_utc,
+);
 criterion_main!(benches);

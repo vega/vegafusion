@@ -19,7 +19,7 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::arrow::array::{ArrayRef, StructArray};
 use datafusion::arrow::datatypes::{DataType, Field};
-use datafusion::logical_plan::{DFSchema, Expr};
+use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
 use datafusion::physical_plan::functions::{
     make_scalar_function, ReturnTypeFunction, Signature, Volatility,
 };

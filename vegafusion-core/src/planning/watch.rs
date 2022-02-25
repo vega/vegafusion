@@ -16,7 +16,7 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
-use crate::data::scalar::ScalarValueHelpers;
+use crate::data::scalar::{ScalarValue, ScalarValueHelpers};
 use crate::data::table::VegaFusionTable;
 use crate::error::Result;
 use crate::error::VegaFusionError;
@@ -24,7 +24,6 @@ use crate::planning::stitch::CommPlan;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::task_value::TaskValue;
-use datafusion::scalar::ScalarValue;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

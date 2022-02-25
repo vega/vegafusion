@@ -20,10 +20,10 @@ use datafusion::arrow::array::{ArrayRef, BooleanArray};
 use datafusion::arrow::datatypes::{DataType, Schema};
 use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::execution::context::ExecutionContextState;
-use datafusion::logical_plan::{and, Column, DFSchema, Expr};
+use datafusion::logical_plan::{and, Column, DFSchema, Expr, ExprSchemable};
 use datafusion::optimizer::utils::expr_to_columns;
 use datafusion::physical_plan::planner::DefaultPhysicalPlanner;
-use datafusion::physical_plan::{ColumnarValue, PhysicalExpr};
+use datafusion::physical_plan::{ColumnarValue, PhysicalExpr, PhysicalPlanner};
 use datafusion::scalar::ScalarValue;
 
 use std::collections::HashSet;

@@ -9,7 +9,7 @@ name = "vegafusion_embed"
 crate-type = ["cdylib"]
 
 [dependencies]
-vegafusion-core = {path = "../vegafusion-core", version="0.0.4", features=["datafusion", "pyo3"]}
+vegafusion-core = {path = "../vegafusion-core", version="0.0.4", features=["pyo3"]}
 vegafusion-rt-datafusion = {path = "../vegafusion-rt-datafusion", version="0.0.4"}
 tokio = { version = "1.10.1", features = ["macros", "rt-multi-thread"] }
 

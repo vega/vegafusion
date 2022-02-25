@@ -16,7 +16,7 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
-use datafusion::logical_plan::{DFSchema, Expr};
+use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
 
 use datafusion::prelude::lit;
 use vegafusion_core::arrow::datatypes::DataType;
