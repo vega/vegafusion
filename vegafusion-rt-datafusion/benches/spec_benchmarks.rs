@@ -1,12 +1,11 @@
-use criterion::async_executor::AsyncExecutor;
 use std::fs;
 use vegafusion_core::planning::plan::SpecPlan;
-use vegafusion_core::planning::watch::{ExportUpdateBatch, WatchPlan};
+use vegafusion_core::planning::watch::ExportUpdateBatch;
 use vegafusion_core::proto::gen::services::query_request::Request;
 use vegafusion_core::proto::gen::services::QueryRequest;
 use vegafusion_core::proto::gen::tasks::{TaskGraph, TaskGraphValueRequest};
 use vegafusion_core::spec::chart::ChartSpec;
-use vegafusion_core::task_graph::task_value::TaskValue;
+
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 fn crate_dir() -> String {
@@ -85,12 +84,11 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
                 indices: query_indices,
             })),
         };
-        let response = runtime.query_request(request).await.unwrap();
+        let _response = runtime.query_request(request).await.unwrap();
     }
 }
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use tokio::runtime::Runtime;
+use criterion::{criterion_group, criterion_main, Criterion};
 
 #[inline]
 fn fibonacci(n: u64) -> u64 {

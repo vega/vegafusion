@@ -20,10 +20,7 @@
 extern crate lazy_static;
 
 mod util;
-use crate::util::vegajs_runtime::{
-    vegajs_runtime, ExportImage, ExportImageFormat, ExportUpdate, ExportUpdateBatch,
-    ExportUpdateNamespace,
-};
+use crate::util::vegajs_runtime::{vegajs_runtime, ExportImage, ExportImageFormat};
 
 use datafusion::scalar::ScalarValue;
 use serde_json::json;
@@ -32,7 +29,9 @@ use std::fs;
 
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::planning::watch::{Watch, WatchNamespace};
+use vegafusion_core::planning::watch::{
+    ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace, Watch, WatchNamespace,
+};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::spec::transform::extent::ExtentTransformSpec;
 use vegafusion_core::spec::transform::filter::FilterTransformSpec;
