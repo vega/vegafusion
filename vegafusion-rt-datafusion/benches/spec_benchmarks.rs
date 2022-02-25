@@ -46,7 +46,7 @@ async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> Q
     let spec_plan = SpecPlan::try_new(&full_spec).unwrap();
     let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
     let tasks = spec_plan.server_spec.to_tasks().unwrap();
-    let mut task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
+    let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let task_graph_mapping = task_graph.build_mapping();
 
     // Initialize task graph runtime
