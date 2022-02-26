@@ -16,9 +16,7 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
-use chrono::{
-    DateTime, Datelike, FixedOffset, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc,
-};
+use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use datafusion::arrow::array::{ArrayRef, Int64Array, StringArray};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::physical_plan::functions::{
@@ -28,7 +26,7 @@ use datafusion::physical_plan::udf::ScalarUDF;
 use regex::Regex;
 use std::sync::Arc;
 // use chrono::format::{parse, Parsed, StrftimeItems};
-use chrono::format::{parse, ParseError, ParseResult, Parsed, StrftimeItems};
+use chrono::format::{parse, Parsed, StrftimeItems};
 
 lazy_static! {
     pub static ref DATETIME_TO_MILLIS_LOCAL: ScalarUDF =
@@ -117,7 +115,10 @@ pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<Fi
 
 /// Parse a more generous specification of the iso 8601 date standard
 /// Allow omission of time components
-pub fn parse_datetime_fallback(date_str: &str, mode: DateParseMode) -> Option<DateTime<FixedOffset>> {
+pub fn parse_datetime_fallback(
+    date_str: &str,
+    mode: DateParseMode,
+) -> Option<DateTime<FixedOffset>> {
     let mut date_tokens = vec![String::from(""), String::from(""), String::from("")];
     let mut time_tokens = vec![
         String::from(""),
