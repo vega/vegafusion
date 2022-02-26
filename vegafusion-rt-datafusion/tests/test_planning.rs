@@ -148,6 +148,7 @@ async fn try_split_domain() {
     println!("{}", serde_json::to_string_pretty(&spec).unwrap())
 }
 
+#[allow(dead_code)]
 fn spec1() -> ChartSpec {
     serde_json::from_str(r##"
 {
@@ -1001,6 +1002,7 @@ fn spec1() -> ChartSpec {
 }
 
 // Data and scale nested into first group
+#[allow(dead_code)]
 fn spec2() -> ChartSpec {
     serde_json::from_str(r##"{
   "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -1855,6 +1857,7 @@ fn spec2() -> ChartSpec {
 }"##).unwrap()
 }
 
+#[allow(dead_code)]
 fn weather_spec() -> ChartSpec {
     serde_json::from_str(r##"
 {
@@ -1954,11 +1957,13 @@ fn weather_spec() -> ChartSpec {
   ],
   "legends": [
     {"title": "Weather type", "fill": "color", "symbolType": "square"}
+
   ]
 }
     "##).unwrap()
 }
 
+#[allow(dead_code)]
 fn histogram_responsive() -> ChartSpec {
     serde_json::from_str(r##"
 {
@@ -2513,6 +2518,7 @@ fn histogram_responsive() -> ChartSpec {
 }
 
 // Data and scale nested into first group
+#[allow(dead_code)]
 fn sorted_bar_spec() -> ChartSpec {
     serde_json::from_str(r##"
 {
@@ -2629,6 +2635,7 @@ fn sorted_bar_spec() -> ChartSpec {
 }
 
 // Data and scale nested into first group
+#[allow(dead_code)]
 fn cars_scatter_spec() -> ChartSpec {
     serde_json::from_str(r##"
 {

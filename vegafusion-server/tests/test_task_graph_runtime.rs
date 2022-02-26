@@ -41,11 +41,9 @@ use vegafusion_core::proto::gen::tasks::{
     NodeValueIndex, TaskGraph, TaskGraphValueRequest, VariableNamespace,
 };
 use vegafusion_core::spec::chart::ChartSpec;
-
 use vegafusion_core::proto::gen::services::vega_fusion_runtime_client::VegaFusionRuntimeClient;
-
 use assert_cmd::prelude::*; // Add methods on commands
-use predicates::prelude::*; // Used for writing assertions
+
 
 #[tokio::test(flavor = "multi_thread")]
 async fn try_it_from_spec() {

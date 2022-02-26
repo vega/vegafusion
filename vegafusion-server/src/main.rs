@@ -5,9 +5,6 @@ use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{
     VegaFusionRuntimeServer as TonicVegaFusionRuntimeServer,
 };
 use vegafusion_core::proto::gen::services::{QueryRequest, QueryResult};
-
-use futures_util::stream::StreamExt;
-
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use clap::Parser;

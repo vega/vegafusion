@@ -35,10 +35,10 @@ use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 #[tokio::test(flavor = "multi_thread")]
 async fn try_it() {
     let mut task_scope = TaskScope::new();
-    task_scope.add_variable(&Variable::new_signal("url"), Default::default());
-    task_scope.add_variable(&Variable::new_data("url_datasetA"), Default::default());
-    task_scope.add_variable(&Variable::new_data("datasetA"), Default::default());
-    task_scope.add_data_signal("datasetA", "my_extent", Default::default());
+    task_scope.add_variable(&Variable::new_signal("url"), Default::default()).unwrap();
+    task_scope.add_variable(&Variable::new_data("url_datasetA"), Default::default()).unwrap();
+    task_scope.add_variable(&Variable::new_data("datasetA"), Default::default()).unwrap();
+    task_scope.add_data_signal("datasetA", "my_extent", Default::default()).unwrap();
 
     let tasks = vec![
         Task::new_value(
