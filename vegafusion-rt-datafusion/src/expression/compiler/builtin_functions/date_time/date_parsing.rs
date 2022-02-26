@@ -78,7 +78,7 @@ pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<Fi
     for strf_item in &*ALL_STRF_ITEMS {
         let mut parsed = Parsed::new();
         if parse(&mut parsed, date_str, strf_item.clone()).is_err() {
-            continue
+            continue;
         };
         if let Ok(datetime) = parsed.to_datetime() {
             return Some(datetime);
