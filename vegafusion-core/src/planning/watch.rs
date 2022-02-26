@@ -154,7 +154,7 @@ impl ExportUpdate {
         (
             Variable {
                 name: self.name.clone(),
-                namespace: namespace,
+                namespace,
             },
             self.scope.clone(),
         )

@@ -16,6 +16,8 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
+#![allow(dead_code)]
+
 pub mod check;
 pub mod datasets;
 pub mod equality;

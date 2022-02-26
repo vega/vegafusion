@@ -32,7 +32,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 #[derive(Debug, Clone)]
 struct CachedValue {
     value: NodeValue,
-    calculation_millis: u128,
+    _calculation_millis: u128,
 }
 
 impl CachedValue {
@@ -237,7 +237,7 @@ impl VegaFusionCache {
     async fn set_value(&self, state_fingerprint: u64, value: NodeValue, calculation_millis: u128) {
         let cache_value = CachedValue {
             value,
-            calculation_millis,
+            _calculation_millis: calculation_millis,
         };
         let value_memory = cache_value.size_of();
 

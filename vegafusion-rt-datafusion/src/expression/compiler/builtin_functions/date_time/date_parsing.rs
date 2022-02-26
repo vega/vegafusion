@@ -25,6 +25,8 @@ use datafusion::physical_plan::functions::{
 use datafusion::physical_plan::udf::ScalarUDF;
 use regex::Regex;
 use std::sync::Arc;
+// use chrono::format::{parse, Parsed, StrftimeItems};
+use chrono::format::{parse, Parsed, StrftimeItems};
 
 lazy_static! {
     pub static ref DATETIME_TO_MILLIS_LOCAL: ScalarUDF =
@@ -33,6 +35,28 @@ lazy_static! {
         make_date_str_to_millis_udf(DateParseMode::Utc);
     pub static ref DATETIME_TO_MILLIS_JAVASCRIPT: ScalarUDF =
         make_date_str_to_millis_udf(DateParseMode::JavaScript);
+
+    pub static ref ALL_STRF_ITEMS: Vec<StrftimeItems<'static>> = vec![
+        // ISO 8601 / RFC 3339
+        // e.g. 2001-07-08T00:34:60.026490+09:30
+        StrftimeItems::new("%Y-%m-%dT%H:%M:%S%.f%:z"),
+
+        // Like ISO 8601 with space instead of T
+        // e.g. 2001-07-08 00:34:60.026490+09:30
+        StrftimeItems::new("%Y-%m-%d %H:%M:%S%.f%:z"),
+
+        // Like ISO 8601 with space, but forward slashes in date
+        // e.g. 2001/07/08 00:34:60.026490+09:30
+        StrftimeItems::new("%Y/%m/%d %H:%M:%S%.f%:z"),
+
+        // month, day, year with slashes
+        // e.g. 2001/07/08 00:34:60.026490+09:30
+        StrftimeItems::new("%m/%d/%Y %H:%M:%S%.f%:z"),
+
+        // ctime format
+        // e.g. Sun Jul 8 00:34:60 2001
+        StrftimeItems::new("%a %b %e %T %Y"),
+    ];
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -50,9 +74,52 @@ pub fn get_datetime_udf(mode: DateParseMode) -> ScalarUDF {
     }
 }
 
+pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<FixedOffset>> {
+    for strf_item in &*ALL_STRF_ITEMS {
+        let mut parsed = Parsed::new();
+        parse(&mut parsed, date_str, strf_item.clone()).ok();
+
+        if let Ok(datetime) = parsed.to_datetime() {
+            return Some(datetime);
+        } else if let (Ok(date), Ok(time)) = (parsed.to_naive_date(), parsed.to_naive_time()) {
+            let datetime = NaiveDateTime::new(date, time);
+            if date_str.ends_with('Z') {
+                // UTC
+                if let Some(datetime) = FixedOffset::east(0)
+                    .from_local_datetime(&datetime)
+                    .earliest()
+                {
+                    return Some(datetime);
+                }
+            } else {
+                // Local
+                let local = Local {};
+                if let Some(offset) = local.offset_from_local_datetime(&datetime).earliest() {
+                    return Some(offset.from_local_datetime(&datetime).earliest().unwrap());
+                }
+            }
+        }
+    }
+
+    // Try plain dates
+    if let Ok(date) = NaiveDate::parse_from_str(date_str, r#"%Y-%m-%d"#) {
+        // UTC midnight to follow JavaScript convention
+        return Some(
+            FixedOffset::east(0)
+                .from_utc_date(&date)
+                .and_hms_milli(0, 0, 0, 0),
+        );
+    }
+
+    parse_datetime_fallback(date_str, mode)
+}
+
 /// Parse a more generous specification of the iso 8601 date standard
 /// Allow omission of time components
-pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<FixedOffset>> {
+pub fn parse_datetime_fallback(
+    date_str: &str,
+    mode: DateParseMode,
+) -> Option<DateTime<FixedOffset>> {
     let mut date_tokens = vec![String::from(""), String::from(""), String::from("")];
     let mut time_tokens = vec![
         String::from(""),

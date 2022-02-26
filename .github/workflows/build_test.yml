@@ -7,6 +7,8 @@ env:
 jobs:
   rust-fmt-clippy:
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "--cfg unsound_local_offset -D warnings"
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -22,6 +24,8 @@ jobs:
           cache-on-failure: True
       - name: Check cargo fmt compliance
         run: cargo fmt --all -- --check
+      - name: Check no rustc warnings
+        run: cargo check --tests
       - name: Check for clippy warnings
         run: cargo clippy
 

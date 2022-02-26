@@ -33,19 +33,16 @@
 // use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 //
 
+use assert_cmd::prelude::*;
 use std::time::Duration;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::proto::gen::services::query_result::Response;
+use vegafusion_core::proto::gen::services::vega_fusion_runtime_client::VegaFusionRuntimeClient;
 use vegafusion_core::proto::gen::services::{query_request, QueryRequest};
 use vegafusion_core::proto::gen::tasks::{
     NodeValueIndex, TaskGraph, TaskGraphValueRequest, VariableNamespace,
 };
-use vegafusion_core::spec::chart::ChartSpec;
-
-use vegafusion_core::proto::gen::services::vega_fusion_runtime_client::VegaFusionRuntimeClient;
-
-use assert_cmd::prelude::*; // Add methods on commands
-use predicates::prelude::*; // Used for writing assertions
+use vegafusion_core::spec::chart::ChartSpec; // Add methods on commands
 
 #[tokio::test(flavor = "multi_thread")]
 async fn try_it_from_spec() {

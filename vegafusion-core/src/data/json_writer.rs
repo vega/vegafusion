@@ -45,7 +45,6 @@ use arrow::array::*;
 use arrow::datatypes::*;
 use arrow::error::Result;
 use arrow::record_batch::RecordBatch;
-use chrono::TimeZone;
 
 fn primitive_array_to_json<T: ArrowPrimitiveType>(array: &ArrayRef) -> Vec<Value> {
     as_primitive_array::<T>(array)

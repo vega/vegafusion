@@ -1087,6 +1087,7 @@ fn load_expected_watch_plan(spec_name: &str) -> WatchPlan {
     serde_json::from_str(&comm_plan_str).unwrap()
 }
 
+#[allow(dead_code)]
 fn write_updated_watch_plan(spec_name: &str, plan: &WatchPlan) {
     let watch_plan_path = format!("{}/tests/specs/{}.comm_plan.json", crate_dir(), spec_name);
     let watch_plan_path = std::path::Path::new(&watch_plan_path);
