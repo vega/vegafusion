@@ -172,11 +172,26 @@ pub fn load_flights_crossfilter_data_utc(c: &mut Criterion) {
     });
 }
 
+pub fn load_flights_crossfilter_data_200k_utc(c: &mut Criterion) {
+    let mut group = c.benchmark_group("small-sample");
+    group.sample_size(10);
+
+    let tokio_runtime = make_tokio_runtime();
+    let spec_name = "load_flights_crossfilter_data_200k_utc";
+    let full_spec = load_spec(spec_name);
+    let var: ScopedVariable = (Variable::new_data("source_0"), Vec::new());
+    group.bench_function(spec_name, |b| {
+        b.to_async(&tokio_runtime)
+            .iter(|| eval_spec_get_variable(full_spec.clone(), &var))
+    });
+}
+
 criterion_group!(
     benches,
     flights_crossfilter,
     flights_crossfilter_local_time,
     load_flights_crossfilter_data_local,
     load_flights_crossfilter_data_utc,
+    load_flights_crossfilter_data_200k_utc,
 );
 criterion_main!(benches);
