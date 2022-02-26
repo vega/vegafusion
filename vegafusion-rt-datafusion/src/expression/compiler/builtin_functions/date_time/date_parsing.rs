@@ -77,7 +77,9 @@ pub fn get_datetime_udf(mode: DateParseMode) -> ScalarUDF {
 pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<FixedOffset>> {
     for strf_item in &*ALL_STRF_ITEMS {
         let mut parsed = Parsed::new();
-        parse(&mut parsed, date_str, strf_item.clone());
+        if parse(&mut parsed, date_str, strf_item.clone()).is_err() {
+            continue
+        };
         if let Ok(datetime) = parsed.to_datetime() {
             return Some(datetime);
         } else if let (Ok(date), Ok(time)) = (parsed.to_naive_date(), parsed.to_naive_time()) {

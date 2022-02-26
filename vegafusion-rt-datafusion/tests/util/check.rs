@@ -49,7 +49,6 @@ pub fn check_parsing(expr_str: &str) {
     assert_eq!(result, expected, " left: {}\nright: {}\n", result, expected);
 }
 
-#[allow(dead_code)]
 pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
     // Use block here to drop vegajs_runtime lock before the potential assert_eq error
     // This avoids poisoning the Mutex if the assertion fails

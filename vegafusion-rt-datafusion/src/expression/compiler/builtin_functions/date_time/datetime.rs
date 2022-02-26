@@ -18,10 +18,9 @@
  */
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::DATETIME_TO_MILLIS_JAVASCRIPT;
 use crate::expression::compiler::utils::{cast_to, is_string_datatype};
-use chrono::{DateTime, Local, LocalResult, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
-use datafusion::error::DataFusionError;
 use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
 use datafusion::physical_plan::functions::{
     ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature, Volatility,
@@ -338,31 +337,4 @@ pub fn make_utc_datetime_components_udf() -> ScalarUDF {
         &return_type,
         &datetime_components,
     )
-}
-
-/// Helper from DataFusion:
-/// Converts the naive datetime (which has no specific timezone) to a
-/// millisecond epoch timestamp relative to UTC.
-fn naive_datetime_to_timestamp(
-    datetime: NaiveDateTime,
-) -> std::result::Result<i64, DataFusionError> {
-    let l = Local {};
-
-    match l.from_local_datetime(&datetime) {
-        LocalResult::None => Err(DataFusionError::Internal(format!(
-            "Failed to convert datetime to local timezone: {}",
-            datetime
-        ))),
-        LocalResult::Single(local_datetime) => {
-            Ok(local_datetime.with_timezone(&Utc).timestamp_millis())
-        }
-        // Ambiguous times can happen if the timestamp is exactly when
-        // a daylight savings time transition occurs, for example, and
-        // so the datetime could validly be said to be in two
-        // potential offsets. However, since we are about to convert
-        // to UTC anyways, we can pick one arbitrarily
-        LocalResult::Ambiguous(local_datetime, _) => {
-            Ok(local_datetime.with_timezone(&Utc).timestamp_millis())
-        }
-    }
 }
