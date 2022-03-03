@@ -26,14 +26,12 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use std::str::FromStr;
-use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
+use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
 
-use chrono::prelude::*;
-use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::expression::literal::Value;
 

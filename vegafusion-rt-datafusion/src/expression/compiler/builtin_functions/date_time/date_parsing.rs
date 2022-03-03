@@ -27,7 +27,6 @@ use regex::Regex;
 use std::sync::Arc;
 // use chrono::format::{parse, Parsed, StrftimeItems};
 use chrono::format::{parse, Parsed, StrftimeItems};
-use vegafusion_core::error::ResultWithContext;
 
 lazy_static! {
     pub static ref ALL_STRF_ITEMS: Vec<StrftimeItems<'static>> = vec![

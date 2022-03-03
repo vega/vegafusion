@@ -20,7 +20,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
     make_date_str_to_millis_udf, DateParseMode,
 };
 use crate::expression::compiler::utils::{cast_to, is_string_datatype};
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use chrono::{DateTime, TimeZone};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
@@ -30,7 +30,6 @@ use datafusion::physical_plan::functions::{
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
-use std::ops::Deref;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 

@@ -24,7 +24,6 @@ use datafusion::scalar::ScalarValue;
 use rstest::rstest;
 use serde_json::json;
 use std::collections::HashMap;
-use std::str::FromStr;
 
 use util::check::check_scalar_evaluation;
 use vegafusion_core::data::table::VegaFusionTable;
