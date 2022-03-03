@@ -724,7 +724,7 @@ mod test_compile {
     #[test]
     fn try_datetime() {
         let expr = parse("datetime('2007-04-05T14:30:00')").unwrap();
-        let mut config = CompilationConfig {
+        let config = CompilationConfig {
             local_tz: Some(chrono_tz::Tz::America__New_York),
             ..Default::default()
         };
