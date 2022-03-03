@@ -228,11 +228,13 @@ pub fn parse_datetime_fallback(
                 // No timezone specified, build NaiveDateTime
                 let naive_date = NaiveDate::from_ymd(year, month, day);
                 let naive_time = NaiveTime::from_hms_milli(hour, minute, second, milliseconds);
-                let naive_date = NaiveDateTime::new(naive_date, naive_time);
-                local_tz
-                    .offset_from_local_datetime(&naive_date)
+                let naive_datetime = NaiveDateTime::new(naive_date, naive_time);
+
+                let offset = local_tz
+                    .offset_from_local_datetime(&naive_datetime)
                     .single()?
-                    .fix()
+                    .fix();
+                offset
             }
         }
     } else {

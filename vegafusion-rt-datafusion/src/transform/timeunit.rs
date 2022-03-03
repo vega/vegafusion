@@ -51,7 +51,7 @@ impl TransformTrait for TimeUnit {
             .map(|unit| TimeUnitUnit::from_i32(unit).unwrap())
             .collect();
 
-        let local_tz = if self.timezone == Some(TimeUnitTimeZone::Local as i32) {
+        let local_tz = if self.timezone != Some(TimeUnitTimeZone::Utc as i32) {
             Some(
                 config
                     .local_tz
@@ -182,13 +182,19 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
     units_mask: &[bool],
     in_tz: T,
 ) -> DateTime<T> {
+
     // Load and interpret date time as UTC
     let dt_value = date64_to_datetime(value).with_nanosecond(0).unwrap();
-    let dt_value = Utc.from_local_datetime(&dt_value).single().unwrap();
-
+    let dt_value = Utc.from_local_datetime(&dt_value).earliest().unwrap();
     let mut dt_value = dt_value.with_timezone(&in_tz);
 
     // Handle time truncation
+    if !units_mask[7] {
+        // Clear hours first to avoid any of the other time truncations from landing on a daylight
+        // savings boundary
+        dt_value = dt_value.with_hour(0).unwrap();
+    }
+
     if !units_mask[10] {
         // Milliseconds
         let new_ns = (((dt_value.nanosecond() as f64) / 1e6).floor() * 1e6) as u32;
@@ -205,11 +211,6 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
         dt_value = dt_value.with_minute(0).unwrap();
     }
 
-    if !units_mask[7] {
-        // Hours
-        dt_value = dt_value.with_hour(0).unwrap();
-    }
-
     // Save off day of the year and weekday here, becuase these will change if the
     // year is changed
     let ordinal0 = dt_value.ordinal0();
@@ -219,7 +220,14 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
     // (if we're not truncating to week number, this is handled separately below)
     if !units_mask[0] && !units_mask[4] {
         // Year
-        dt_value = dt_value.with_year(2012).unwrap();
+        dt_value = if let Some(v) = dt_value.with_year(2012) {
+            v
+        } else {
+            // The above can fail if changing to 2012 lands on daylight savings
+            // e.g. March 11th at 2am in 2015
+            let hour = dt_value.hour();
+            dt_value.with_hour(0).unwrap().with_year(2012).unwrap().with_hour(hour+1).unwrap()
+        }
     }
 
     // Handle date (of the year) truncation.
@@ -256,7 +264,7 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
         let isoweek0_sunday = NaiveDateTime::new(isoweek0_sunday, dt_value.time());
         let isoweek0_sunday = in_tz
             .from_local_datetime(&isoweek0_sunday)
-            .single()
+            .earliest()
             .unwrap();
 
         // Subtract one week from isoweek0_sunday and check if it's still in the same calendar
@@ -289,7 +297,7 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
                     NaiveDate::from_ymd(2012, 1, 1),
                     dt_value.time(),
                 ))
-                .single()
+                .earliest()
                 .unwrap();
 
             dt_value = first_sunday_of_2012 + chrono::Duration::weeks(week_number);
@@ -306,7 +314,7 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
             NaiveDate::from_isoywd(dt_value.year(), 2, weekday)
         };
         let new_datetime = NaiveDateTime::new(new_date, dt_value.time());
-        dt_value = in_tz.from_local_datetime(&new_datetime).single().unwrap();
+        dt_value = in_tz.from_local_datetime(&new_datetime).earliest().unwrap();
     } else if units_mask[6] {
         // DayOfYear
         // Keep the same day of the year
