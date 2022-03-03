@@ -58,6 +58,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
     values: &[TaskValue],
+    local_tz: &Option<chrono_tz::Tz>,
 ) -> CompilationConfig {
     // Build compilation config from input_vals
     let mut signal_scope: HashMap<String, ScalarValue> = HashMap::new();
@@ -79,15 +80,20 @@ pub fn build_compilation_config(
     CompilationConfig {
         signal_scope,
         data_scope,
+        local_tz: local_tz.clone(),
         ..Default::default()
     }
 }
 
 #[async_trait]
 impl TaskCall for DataUrlTask {
-    async fn eval(&self, values: &[TaskValue]) -> Result<(TaskValue, Vec<TaskValue>)> {
+    async fn eval(
+        &self,
+        values: &[TaskValue],
+        local_tz: &Option<chrono_tz::Tz>,
+    ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Build compilation config for url signal (if any) and transforms (if any)
-        let config = build_compilation_config(&self.input_vars(), values);
+        let config = build_compilation_config(&self.input_vars(), values, local_tz);
 
         // Build url string
         let url = match self.url.as_ref().unwrap() {
@@ -352,7 +358,11 @@ fn process_datetimes(
 
 #[async_trait]
 impl TaskCall for DataValuesTask {
-    async fn eval(&self, values: &[TaskValue]) -> Result<(TaskValue, Vec<TaskValue>)> {
+    async fn eval(
+        &self,
+        values: &[TaskValue],
+        local_tz: &Option<chrono_tz::Tz>,
+    ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Deserialize data into table
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
 
@@ -365,7 +375,7 @@ impl TaskCall for DataValuesTask {
         {
             let pipeline = self.pipeline.as_ref().unwrap();
             let values_df = values_table.to_dataframe()?;
-            let config = build_compilation_config(&self.input_vars(), values);
+            let config = build_compilation_config(&self.input_vars(), values, local_tz);
             let (df, output_values) = pipeline.eval(values_df, &config).await?;
 
             (VegaFusionTable::from_dataframe(df).await?, output_values)
@@ -382,9 +392,13 @@ impl TaskCall for DataValuesTask {
 
 #[async_trait]
 impl TaskCall for DataSourceTask {
-    async fn eval(&self, values: &[TaskValue]) -> Result<(TaskValue, Vec<TaskValue>)> {
+    async fn eval(
+        &self,
+        values: &[TaskValue],
+        local_tz: &Option<chrono_tz::Tz>,
+    ) -> Result<(TaskValue, Vec<TaskValue>)> {
         let input_vars = self.input_vars();
-        let mut config = build_compilation_config(&input_vars, values);
+        let mut config = build_compilation_config(&input_vars, values, local_tz);
 
         // Remove source table from config
         let source_table = config.data_scope.remove(&self.source).unwrap_or_else(|| {

@@ -116,12 +116,14 @@ impl ChartVisitor for MakeTaskScopeVisitor {
 #[derive(Clone, Debug, Default)]
 pub struct MakeTasksVisitor {
     pub tasks: Vec<Task>,
+    pub local_tz: String,
 }
 
 impl MakeTasksVisitor {
-    pub fn new() -> Self {
+    pub fn new(tz: &str) -> Self {
         Self {
             tasks: Default::default(),
+            local_tz: tz.to_string(),
         }
     }
 }
@@ -187,6 +189,7 @@ impl ChartVisitor for MakeTasksVisitor {
                     pipeline,
                     url: Some(proto_url),
                 },
+                &self.local_tz,
             )
         } else if let Some(source) = &data.source {
             Task::new_data_source(
@@ -196,6 +199,7 @@ impl ChartVisitor for MakeTasksVisitor {
                     source: source.clone(),
                     pipeline,
                 },
+                &self.local_tz,
             )
         } else {
             let values_table = match data.values.as_ref() {
@@ -218,6 +222,7 @@ impl ChartVisitor for MakeTasksVisitor {
                         values: values_table.to_ipc_bytes()?,
                         pipeline,
                     },
+                    &self.local_tz,
                 )
             }
         };
@@ -233,7 +238,7 @@ impl ChartVisitor for MakeTasksVisitor {
             Task::new_value(signal_var, scope, value)
         } else if let Some(update) = &signal.update {
             let expression = parse(update)?;
-            Task::new_signal(signal_var, scope, expression)
+            Task::new_signal(signal_var, scope, expression, &self.local_tz)
         } else {
             return Err(VegaFusionError::internal(format!(
                 "Signal must have an initial value or an update expression: {:#?}",

@@ -29,8 +29,12 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 impl TaskCall for SignalTask {
-    async fn eval(&self, values: &[TaskValue]) -> Result<(TaskValue, Vec<TaskValue>)> {
-        let config = build_compilation_config(&self.input_vars(), values);
+    async fn eval(
+        &self,
+        values: &[TaskValue],
+        local_tz: &Option<chrono_tz::Tz>,
+    ) -> Result<(TaskValue, Vec<TaskValue>)> {
+        let config = build_compilation_config(&self.input_vars(), values, local_tz);
         let expression = self.expr.as_ref().unwrap();
         let expr = compile(expression, &config, None)?;
         let value = expr.eval_to_scalar()?;

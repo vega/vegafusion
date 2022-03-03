@@ -26,6 +26,7 @@ use futures_util::{future, FutureExt};
 use prost::Message as ProstMessage;
 use std::convert::{TryFrom, TryInto};
 use std::panic::AssertUnwindSafe;
+use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
@@ -193,6 +194,10 @@ async fn get_or_compute_node_value(
 
         // Clone task so we can move it to async block
         let task = task.clone();
+        let local_tz = task
+            .local_tz
+            .as_ref()
+            .and_then(|tz| chrono_tz::Tz::from_str(&tz).ok());
         let cache_key = node.state_fingerprint;
         let cloned_cache = cache.clone();
 
@@ -230,7 +235,7 @@ async fn get_or_compute_node_value(
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            task.eval(&input_values).await
+            task.eval(&input_values, &local_tz).await
         };
 
         // get or construct from cache
