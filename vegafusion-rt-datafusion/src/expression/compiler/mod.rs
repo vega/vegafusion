@@ -724,7 +724,11 @@ mod test_compile {
     #[test]
     fn try_datetime() {
         let expr = parse("datetime('2007-04-05T14:30:00')").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let mut config = CompilationConfig {
+            local_tz: Some(chrono_tz::Tz::America__New_York),
+            ..Default::default()
+        };
+        let result_expr = compile(&expr, &config, None).unwrap();
         println!("expr: {:?}", result_expr);
 
         let result_value = result_expr.eval_to_scalar().unwrap();
