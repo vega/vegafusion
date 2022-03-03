@@ -23,7 +23,7 @@ use datafusion::arrow::array::{ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::prelude::{col, DataFrame};
 use std::sync::Arc;
-use vegafusion_core::error::Result;
+use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -44,7 +44,7 @@ impl TransformTrait for TimeUnit {
     async fn eval(
         &self,
         dataframe: Arc<dyn DataFrame>,
-        _config: &CompilationConfig,
+        config: &CompilationConfig,
     ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let _units: Vec<_> = self
             .units
@@ -53,7 +53,11 @@ impl TransformTrait for TimeUnit {
             .map(|unit| TimeUnitUnit::from_i32(unit).unwrap())
             .collect();
 
-        let is_local = self.timezone != Some(TimeUnitTimeZone::Utc as i32);
+        let local_tz = if self.timezone == Some(TimeUnitTimeZone::Local as i32) {
+            Some(config.local_tz.with_context(|| "No local timezone info provided".to_string())?)
+        } else {
+            None
+        };
 
         let units_mask = vec![
             self.units.contains(&(TimeUnitUnit::Year as i32)), // 0
@@ -70,7 +74,7 @@ impl TransformTrait for TimeUnit {
         ];
 
         // Handle timeunit start value (we always do this)
-        let timeunit_start_udf = make_timeunit_start_udf(units_mask.as_slice(), is_local);
+        let timeunit_start_udf = make_timeunit_start_udf(units_mask.as_slice(), local_tz.clone());
         let timeunit_start_value = timeunit_start_udf.call(vec![col(&self.field)]);
 
         // Apply alias
@@ -85,7 +89,7 @@ impl TransformTrait for TimeUnit {
         let dataframe = dataframe.select(vec![Expr::Wildcard, timeunit_start_value])?;
 
         // Handle timeunit end value (In the future, disable this when interval=false)
-        let timeunit_end_udf = make_timeunit_end_udf(units_mask.as_slice(), is_local);
+        let timeunit_end_udf = make_timeunit_end_udf(units_mask.as_slice(), local_tz);
         let timeunit_end_value = timeunit_end_udf.call(vec![col(&timeunit_start_alias)]);
 
         // Apply alias
@@ -103,22 +107,22 @@ impl TransformTrait for TimeUnit {
     }
 }
 
-fn make_timeunit_start_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
+fn make_timeunit_start_udf(units_mask: &[bool], local_tz: Option<chrono_tz::Tz>) -> ScalarUDF {
     let units_mask = Vec::from(units_mask);
     let timeunit = move |args: &[ArrayRef]| {
         let arg = &args[0];
 
         // Input UTC
         let array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
-        let result_array: Int64Array = if in_local {
+        let result_array: Int64Array = if let Some(local_tz) = local_tz {
             // Input is in UTC, compute timeunit values in local, return results in UTC
-            let tz = Local {};
+            let tz = local_tz.clone();
             unary(array, |value| {
                 perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
             })
         } else {
             // Input is in UTC, compute timeunit values in UTC, return results in UTC
-            let tz = Utc;
+            let tz = chrono_tz::UTC;
             unary(array, |value| {
                 perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
             })
@@ -138,19 +142,19 @@ fn make_timeunit_start_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
     )
 }
 
-fn make_timeunit_end_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
+fn make_timeunit_end_udf(units_mask: &[bool], local_tz: Option<chrono_tz::Tz>) -> ScalarUDF {
     let units_mask = Vec::from(units_mask);
     let timeunit_end = move |args: &[ArrayRef]| {
         let arg = &args[0];
 
         let start_array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
-        let result_array: Int64Array = if in_local {
-            let tz = Local {};
+        let result_array: Int64Array = if let Some(local_tz) = local_tz {
+            let tz = local_tz.clone();
             unary(start_array, |value| {
                 perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
             })
         } else {
-            let tz = Utc;
+            let tz = chrono_tz::UTC;
             unary(start_array, |value| {
                 perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
             })

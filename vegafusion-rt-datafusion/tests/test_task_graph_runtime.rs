@@ -34,6 +34,7 @@ use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn try_it() {
+    let tz = "America/New_York";
     let mut task_scope = TaskScope::new();
     task_scope
         .add_variable(&Variable::new_signal("url"), Default::default())
@@ -65,6 +66,7 @@ async fn try_it() {
                 format_type: None,
                 pipeline: None,
             },
+            tz
         ),
         Task::new_data_source(
             Variable::new_data("datasetA"),
@@ -88,6 +90,7 @@ async fn try_it() {
                     ],
                 }),
             },
+            tz,
         ),
     ];
 
