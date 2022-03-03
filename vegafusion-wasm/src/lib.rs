@@ -369,7 +369,8 @@ pub fn render_vegafusion(
         .to_task_scope()
         .expect("Failed to create task scope for server spec");
 
-    let tasks = spec_plan.server_spec.to_tasks().unwrap();
+    let local_tz = local_timezone();
+    let tasks = spec_plan.server_spec.to_tasks(&local_tz).unwrap();
     let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
 
     // Create closure to update chart from received messages
@@ -416,6 +417,9 @@ pub fn make_grpc_send_message_fn(client: JsValue, hostname: String) -> js_sys::F
 extern "C" {
     #[wasm_bindgen(js_name = "vega_version")]
     fn inner_vega_version() -> String;
+
+    #[wasm_bindgen(js_name = "localTimezone")]
+    fn local_timezone() -> String;
 
     #[wasm_bindgen(js_name = "make_grpc_send_message_fn")]
     fn inner_make_grpc_send_message_fn(client: JsValue, hostname: String) -> js_sys::Function;

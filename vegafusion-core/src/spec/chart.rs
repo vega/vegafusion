@@ -131,9 +131,8 @@ impl ChartSpec {
         Ok(visitor.task_scope)
     }
 
-    pub fn to_tasks(&self) -> Result<Vec<Task>> {
-        let tz = "America/New_York";
-        let mut visitor = MakeTasksVisitor::new(tz);
+    pub fn to_tasks(&self, local_tz: &str) -> Result<Vec<Task>> {
+        let mut visitor = MakeTasksVisitor::new(local_tz);
         self.walk(&mut visitor)?;
         Ok(visitor.tasks)
     }

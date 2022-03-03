@@ -193,11 +193,16 @@ impl NodeJsRuntime {
         let s = String::from_utf8(Vec::from(&bytes_read[start_index..end_index])).unwrap();
         s.trim().to_string()
     }
+
+    pub fn local_timezone(&self) -> Result<String> {
+        self.execute_statement("Intl.DateTimeFormat().resolvedOptions().timeZone")
+            .map(|tz| tz.trim_matches('\'').to_string())
+    }
 }
 
 #[derive(Clone)]
 pub struct VegaJsRuntime {
-    nodejs_runtime: Arc<NodeJsRuntime>,
+    pub nodejs_runtime: Arc<NodeJsRuntime>,
 }
 
 impl VegaJsRuntime {

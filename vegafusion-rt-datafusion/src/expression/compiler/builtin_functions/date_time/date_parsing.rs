@@ -27,6 +27,7 @@ use regex::Regex;
 use std::sync::Arc;
 // use chrono::format::{parse, Parsed, StrftimeItems};
 use chrono::format::{parse, Parsed, StrftimeItems};
+use vegafusion_core::error::ResultWithContext;
 
 lazy_static! {
     pub static ref ALL_STRF_ITEMS: Vec<StrftimeItems<'static>> = vec![
@@ -100,6 +101,14 @@ pub fn parse_datetime(
     if let Ok(date) = NaiveDate::parse_from_str(date_str, r#"%Y-%m-%d"#) {
         // UTC midnight to follow JavaScript convention
         return Some(chrono::Utc.from_utc_date(&date).and_hms_milli(0, 0, 0, 0));
+    } else if let Ok(date) = NaiveDate::parse_from_str(date_str, r#"%Y/%m/%d"#) {
+        // Local midnight to follow JavaScript convention
+        let local_tz = local_tz.clone()?;
+        let datetime = local_tz
+            .from_local_date(&date)
+            .and_hms_milli_opt(0, 0, 0, 0)
+            .earliest()?;
+        return Some(datetime.with_timezone(&chrono::Utc));
     }
 
     parse_datetime_fallback(date_str, mode, local_tz)

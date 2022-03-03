@@ -92,6 +92,13 @@ fn test_vegajs_evaluate_scalar_scope() {
 }
 
 #[test]
+fn try_local_timezone() {
+    let vegajs_runtime = vegajs_runtime();
+    let tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
+    println!("tz: {}", tz)
+}
+
+#[test]
 fn test_evaluate_filter_transform() {
     let vegajs_runtime = vegajs_runtime();
     let dataset = VegaFusionTable::from_json(

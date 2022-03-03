@@ -30,6 +30,7 @@ use vegafusion_core::planning::stitch::stitch_specs;
 #[tokio::test(flavor = "multi_thread")]
 async fn test_extract_server_data() {
     let mut spec = spec1();
+    let local_tz = "America/New_York";
 
     // Get full spec's scope
     let mut task_scope = spec.to_task_scope().unwrap();
@@ -66,7 +67,7 @@ async fn test_extract_server_data() {
     let client_stubs: Vec<_> = client_inputs.difference(&client_defs).collect();
     println!("client_stubs: {:?}", client_stubs);
 
-    let tasks = server_spec.to_tasks().unwrap();
+    let tasks = server_spec.to_tasks(local_tz).unwrap();
     let graph = Arc::new(TaskGraph::new(tasks, &task_scope).unwrap());
     let mapping = graph.build_mapping();
     // println!("{:#?}", mapping);

@@ -142,8 +142,9 @@ async fn try_it_from_spec() {
     )
     .unwrap();
 
+    let local_tz = "America/New_York";
     let task_scope = chart.to_task_scope().unwrap();
-    let tasks = chart.to_tasks().unwrap();
+    let tasks = chart.to_tasks(local_tz).unwrap();
 
     println!("task_scope: {:?}", task_scope);
     println!("tasks: {:?}", tasks);

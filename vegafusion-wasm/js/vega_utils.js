@@ -27,6 +27,10 @@ export function vega_version() {
     return version
 }
 
+export function localTimezone() {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone
+}
+
 // JSON Serialize Dates to milliseconds
 Object.defineProperty(Date.prototype, "toJSON", {value: function() {return this.getTime()}})
 

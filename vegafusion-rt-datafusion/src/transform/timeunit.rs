@@ -182,7 +182,6 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
     units_mask: &[bool],
     in_tz: T,
 ) -> DateTime<T> {
-
     // Load and interpret date time as UTC
     let dt_value = date64_to_datetime(value).with_nanosecond(0).unwrap();
     let dt_value = Utc.from_local_datetime(&dt_value).earliest().unwrap();
@@ -226,7 +225,13 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
             // The above can fail if changing to 2012 lands on daylight savings
             // e.g. March 11th at 2am in 2015
             let hour = dt_value.hour();
-            dt_value.with_hour(0).unwrap().with_year(2012).unwrap().with_hour(hour+1).unwrap()
+            dt_value
+                .with_hour(0)
+                .unwrap()
+                .with_year(2012)
+                .unwrap()
+                .with_hour(hour + 1)
+                .unwrap()
         }
     }
 

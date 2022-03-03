@@ -1118,6 +1118,7 @@ async fn check_spec_sequence(
 ) {
     // Initialize runtime
     let vegajs_runtime = vegajs_runtime();
+    let local_tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
 
     let spec_plan = SpecPlan::try_new(&full_spec).unwrap();
 
@@ -1140,7 +1141,7 @@ async fn check_spec_sequence(
     );
 
     // Build task graph
-    let tasks = spec_plan.server_spec.to_tasks().unwrap();
+    let tasks = spec_plan.server_spec.to_tasks(&local_tz).unwrap();
     let mut task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let task_graph_mapping = task_graph.build_mapping();
 

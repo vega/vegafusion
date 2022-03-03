@@ -72,7 +72,6 @@ fn config_a() -> CompilationConfig {
     CompilationConfig {
         signal_scope: scope_a(),
         data_scope: datasets(),
-        local_tz: Some(chrono_tz::Tz::from_str("America/New_York").unwrap()),
         ..Default::default()
     }
 }
