@@ -24,6 +24,7 @@ use datafusion::scalar::ScalarValue;
 use rstest::rstest;
 use serde_json::json;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use util::check::check_scalar_evaluation;
 use vegafusion_core::data::table::VegaFusionTable;
@@ -71,6 +72,7 @@ fn config_a() -> CompilationConfig {
     CompilationConfig {
         signal_scope: scope_a(),
         data_scope: datasets(),
+        local_tz: Some(chrono_tz::Tz::from_str("America/New_York").unwrap()),
         ..Default::default()
     }
 }

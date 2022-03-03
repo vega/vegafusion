@@ -66,7 +66,7 @@ async fn try_it() {
                 format_type: None,
                 pipeline: None,
             },
-            tz
+            tz,
         ),
         Task::new_data_source(
             Variable::new_data("datasetA"),

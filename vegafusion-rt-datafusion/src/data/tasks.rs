@@ -20,7 +20,7 @@ use crate::data::table::VegaFusionTableUtils;
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
     get_datetime_udf, DateParseMode,
 };
-use crate::expression::compiler::builtin_functions::date_time::datetime::DATETIME_COMPONENTS;
+use crate::expression::compiler::builtin_functions::date_time::datetime::make_datetime_components_udf;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{
@@ -44,7 +44,7 @@ use std::io::Write;
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 
-use crate::expression::compiler::builtin_functions::date_time::local_to_utc::LOCAL_TO_UTC_MILLIS;
+use crate::expression::compiler::builtin_functions::date_time::local_to_utc::make_to_utc_millis_fn;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
@@ -125,7 +125,7 @@ impl TaskCall for DataUrlTask {
             )));
         };
 
-        let df = process_datetimes(&parse, date_mode, df)?;
+        let df = process_datetimes(&parse, date_mode, df, local_tz)?;
 
         // Apply transforms (if any)
         let (transformed_df, output_values) = if self
@@ -246,6 +246,7 @@ fn process_datetimes(
     parse: &Option<Parse>,
     date_mode: DateParseMode,
     df: Arc<dyn DataFrame>,
+    local_tz: &Option<chrono_tz::Tz>,
 ) -> Result<Arc<dyn DataFrame>> {
     // Perform specialized date parsing
     let mut date_fields: Vec<String> = Vec::new();
@@ -265,16 +266,19 @@ fn process_datetimes(
                     date_fields.push(date_field.name().clone());
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
-                        let datetime_udf = get_datetime_udf(date_mode);
+                        let datetime_udf = get_datetime_udf(date_mode, local_tz);
 
                         Expr::ScalarUDF {
                             fun: Arc::new(datetime_udf),
                             args: vec![col(&spec.name)],
                         }
                     } else if is_integer_datatype(dtype) {
-                        // Assume Year was parsed numerically
+                        // Assume Year was parsed numerically, use local time
+                        let local_tz = local_tz
+                            .clone()
+                            .with_context(|| "No local timezone info provided")?;
                         Expr::ScalarUDF {
-                            fun: Arc::new(DATETIME_COMPONENTS.clone()),
+                            fun: Arc::new(make_datetime_components_udf(local_tz)),
                             args: vec![col(&spec.name)],
                         }
                     } else if let DataType::Timestamp(_, tz) = dtype {
@@ -288,8 +292,11 @@ fn process_datetimes(
                             }
                             _ => {
                                 // Treat as local
+                                let local_tz = local_tz
+                                    .clone()
+                                    .with_context(|| "No local timezone info provided")?;
                                 Expr::ScalarUDF {
-                                    fun: Arc::new(LOCAL_TO_UTC_MILLIS.clone()),
+                                    fun: Arc::new(make_to_utc_millis_fn(local_tz)),
                                     args: vec![timestamp_millis],
                                 }
                             }
@@ -338,20 +345,25 @@ fn process_datetimes(
                             Some(tz) if tz.to_lowercase() == "utc" => {
                                 cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
                             }
-                            _ => Expr::ScalarUDF {
-                                fun: Arc::new(LOCAL_TO_UTC_MILLIS.clone()),
-                                args: vec![timestamp_millis],
-                            },
+                            _ => {
+                                let local_tz = local_tz
+                                    .clone()
+                                    .with_context(|| "No local timezone info provided")?;
+                                Expr::ScalarUDF {
+                                    fun: Arc::new(make_to_utc_millis_fn(local_tz)),
+                                    args: vec![timestamp_millis],
+                                }
+                            }
                         }
                     }
                     _ => unreachable!(),
                 };
-                expr.alias(field.name())
+                Ok(expr.alias(field.name()))
             } else {
-                col(field.name())
+                Ok(col(field.name()))
             }
         })
-        .collect();
+        .collect::<Result<Vec<_>>>()?;
 
     Ok(df.select(selection)?)
 }

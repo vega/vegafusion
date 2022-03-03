@@ -16,7 +16,7 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
-use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Offset, TimeZone, Utc};
 use datafusion::arrow::array::{ArrayRef, Int64Array, StringArray};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::physical_plan::functions::{
@@ -29,13 +29,6 @@ use std::sync::Arc;
 use chrono::format::{parse, Parsed, StrftimeItems};
 
 lazy_static! {
-    pub static ref DATETIME_TO_MILLIS_LOCAL: ScalarUDF =
-        make_date_str_to_millis_udf(DateParseMode::Local);
-    pub static ref DATETIME_TO_MILLIS_UTC: ScalarUDF =
-        make_date_str_to_millis_udf(DateParseMode::Utc);
-    pub static ref DATETIME_TO_MILLIS_JAVASCRIPT: ScalarUDF =
-        make_date_str_to_millis_udf(DateParseMode::JavaScript);
-
     pub static ref ALL_STRF_ITEMS: Vec<StrftimeItems<'static>> = vec![
         // ISO 8601 / RFC 3339
         // e.g. 2001-07-08T00:34:60.026490+09:30
@@ -66,37 +59,39 @@ pub enum DateParseMode {
     JavaScript,
 }
 
-pub fn get_datetime_udf(mode: DateParseMode) -> ScalarUDF {
+pub fn get_datetime_udf(mode: DateParseMode, local_tz: &Option<chrono_tz::Tz>) -> ScalarUDF {
     match mode {
-        DateParseMode::Local => DATETIME_TO_MILLIS_LOCAL.clone(),
-        DateParseMode::Utc => DATETIME_TO_MILLIS_UTC.clone(),
-        DateParseMode::JavaScript => DATETIME_TO_MILLIS_JAVASCRIPT.clone(),
+        DateParseMode::Local => make_date_str_to_millis_udf(DateParseMode::Local, local_tz),
+        DateParseMode::Utc => make_date_str_to_millis_udf(DateParseMode::Utc, local_tz),
+        DateParseMode::JavaScript => {
+            make_date_str_to_millis_udf(DateParseMode::JavaScript, local_tz)
+        }
     }
 }
 
-pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<FixedOffset>> {
+pub fn parse_datetime(
+    date_str: &str,
+    mode: DateParseMode,
+    local_tz: &Option<chrono_tz::Tz>,
+) -> Option<DateTime<Utc>> {
     for strf_item in &*ALL_STRF_ITEMS {
         let mut parsed = Parsed::new();
         parse(&mut parsed, date_str, strf_item.clone()).ok();
 
         if let Ok(datetime) = parsed.to_datetime() {
-            return Some(datetime);
+            return Some(datetime.with_timezone(&chrono::Utc));
         } else if let (Ok(date), Ok(time)) = (parsed.to_naive_date(), parsed.to_naive_time()) {
             let datetime = NaiveDateTime::new(date, time);
-            if date_str.ends_with('Z') {
+            if date_str.ends_with('Z') || matches!(mode, DateParseMode::Utc) {
                 // UTC
-                if let Some(datetime) = FixedOffset::east(0)
-                    .from_local_datetime(&datetime)
-                    .earliest()
-                {
+                if let Some(datetime) = chrono::Utc.from_local_datetime(&datetime).earliest() {
                     return Some(datetime);
                 }
             } else {
                 // Local
-                let local = Local {};
-                if let Some(offset) = local.offset_from_local_datetime(&datetime).earliest() {
-                    return Some(offset.from_local_datetime(&datetime).earliest().unwrap());
-                }
+                let local_tz = local_tz.clone()?;
+                let dt = local_tz.from_local_datetime(&datetime).earliest()?;
+                return Some(dt.with_timezone(&chrono::Utc));
             }
         }
     }
@@ -104,14 +99,10 @@ pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<Fi
     // Try plain dates
     if let Ok(date) = NaiveDate::parse_from_str(date_str, r#"%Y-%m-%d"#) {
         // UTC midnight to follow JavaScript convention
-        return Some(
-            FixedOffset::east(0)
-                .from_utc_date(&date)
-                .and_hms_milli(0, 0, 0, 0),
-        );
+        return Some(chrono::Utc.from_utc_date(&date).and_hms_milli(0, 0, 0, 0));
     }
 
-    parse_datetime_fallback(date_str, mode)
+    parse_datetime_fallback(date_str, mode, local_tz)
 }
 
 /// Parse a more generous specification of the iso 8601 date standard
@@ -119,7 +110,8 @@ pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<Fi
 pub fn parse_datetime_fallback(
     date_str: &str,
     mode: DateParseMode,
-) -> Option<DateTime<FixedOffset>> {
+    local_tz: &Option<chrono_tz::Tz>,
+) -> Option<DateTime<Utc>> {
     let mut date_tokens = vec![String::from(""), String::from(""), String::from("")];
     let mut time_tokens = vec![
         String::from(""),
@@ -231,13 +223,16 @@ pub fn parse_datetime_fallback(
             DateParseMode::JavaScript if iso8601_date && !has_time => FixedOffset::east(0),
             _ => {
                 // Treat date as in local timezone
-                let local = Local {};
+                let local_tz = local_tz.clone()?;
+
                 // No timezone specified, build NaiveDateTime
                 let naive_date = NaiveDate::from_ymd(year, month, day);
                 let naive_time = NaiveTime::from_hms_milli(hour, minute, second, milliseconds);
                 let naive_date = NaiveDateTime::new(naive_date, naive_time);
-
-                local.offset_from_local_datetime(&naive_date).single()?
+                local_tz
+                    .offset_from_local_datetime(&naive_date)
+                    .single()?
+                    .fix()
             }
         }
     } else {
@@ -254,7 +249,8 @@ pub fn parse_datetime_fallback(
 
     let parsed = offset
         .ymd(year, month, day)
-        .and_hms_milli(hour, minute, second, milliseconds);
+        .and_hms_milli(hour, minute, second, milliseconds)
+        .with_timezone(&chrono::Utc);
     Some(parsed)
 }
 
@@ -297,23 +293,28 @@ fn parse_month_str(month_str: &str) -> Option<u32> {
     }
 }
 
-pub fn parse_datetime_to_utc_millis(date_str: &str, mode: DateParseMode) -> Option<i64> {
+pub fn parse_datetime_to_utc_millis(
+    date_str: &str,
+    mode: DateParseMode,
+    local_tz: &Option<chrono_tz::Tz>,
+) -> Option<i64> {
     // Parse to datetime
-    let parsed = parse_datetime(date_str, mode)?;
-
-    // Convert to UTC
-    let parsed_utc = parsed.with_timezone(&Utc);
+    let parsed_utc = parse_datetime(date_str, mode, local_tz)?;
 
     // Extract milliseconds
     Some(parsed_utc.timestamp_millis())
 }
 
-pub fn make_date_str_to_millis_udf(mode: DateParseMode) -> ScalarUDF {
+pub fn make_date_str_to_millis_udf(
+    mode: DateParseMode,
+    local_tz: &Option<chrono_tz::Tz>,
+) -> ScalarUDF {
+    let local_tz = local_tz.clone();
     let to_millis_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single string argument
         let arg = &args[0];
         let date_strs = arg.as_any().downcast_ref::<StringArray>().unwrap();
-        Ok(datetime_strs_to_millis(date_strs, mode))
+        Ok(datetime_strs_to_millis(date_strs, mode, &local_tz))
     };
 
     let to_millis_fn = make_scalar_function(to_millis_fn);
@@ -328,12 +329,16 @@ pub fn make_date_str_to_millis_udf(mode: DateParseMode) -> ScalarUDF {
     )
 }
 
-pub fn datetime_strs_to_millis(date_strs: &StringArray, mode: DateParseMode) -> ArrayRef {
+pub fn datetime_strs_to_millis(
+    date_strs: &StringArray,
+    mode: DateParseMode,
+    local_tz: &Option<chrono_tz::Tz>,
+) -> ArrayRef {
     let millis_array = Int64Array::from(
         date_strs
             .iter()
             .map(|date_str| -> Option<i64> {
-                date_str.and_then(|date_str| parse_datetime_to_utc_millis(date_str, mode))
+                date_str.and_then(|date_str| parse_datetime_to_utc_millis(date_str, mode, local_tz))
             })
             .collect::<Vec<Option<i64>>>(),
     );
@@ -343,32 +348,33 @@ pub fn datetime_strs_to_millis(date_strs: &StringArray, mode: DateParseMode) -> 
 
 #[test]
 fn test_parse_datetime() {
-    let res = parse_datetime("2020-05-16T09:30:00+05:00", DateParseMode::Utc).unwrap();
+    let local_tz = Some(chrono_tz::Tz::America__New_York);
+    let res = parse_datetime("2020-05-16T09:30:00+05:00", DateParseMode::Utc, &local_tz).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);
 
-    let res = parse_datetime("2020-05-16T09:30:00", DateParseMode::Utc).unwrap();
+    let res = parse_datetime("2020-05-16T09:30:00", DateParseMode::Utc, &local_tz).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);
 
-    let res = parse_datetime("2020-05-16T09:30:00", DateParseMode::Local).unwrap();
+    let res = parse_datetime("2020-05-16T09:30:00", DateParseMode::Local, &local_tz).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);
 
-    let res = parse_datetime("2001/02/05 06:20", DateParseMode::Local).unwrap();
+    let res = parse_datetime("2001/02/05 06:20", DateParseMode::Local, &local_tz).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);
 
-    let res = parse_datetime("2001/02/05 06:20", DateParseMode::Utc).unwrap();
+    let res = parse_datetime("2001/02/05 06:20", DateParseMode::Utc, &local_tz).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);
 
-    let res = parse_datetime("2000-01-01T08:00:00.000Z", DateParseMode::Utc).unwrap();
+    let res = parse_datetime("2000-01-01T08:00:00.000Z", DateParseMode::Utc, &local_tz).unwrap();
     let utc_res = res.with_timezone(&Utc);
     println!("res: {}", res);
     println!("utc_res: {}", utc_res);

@@ -30,9 +30,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 use datafusion::arrow::compute::kernels::arity::unary;
 use datafusion::arrow::temporal_conversions::date64_to_datetime;
 
-use chrono::{
-    DateTime, Datelike, Local, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday,
-};
+use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
 use datafusion::logical_plan::Expr;
 use datafusion::physical_plan::functions::{
     make_scalar_function, ReturnTypeFunction, Signature, Volatility,
@@ -54,7 +52,11 @@ impl TransformTrait for TimeUnit {
             .collect();
 
         let local_tz = if self.timezone == Some(TimeUnitTimeZone::Local as i32) {
-            Some(config.local_tz.with_context(|| "No local timezone info provided".to_string())?)
+            Some(
+                config
+                    .local_tz
+                    .with_context(|| "No local timezone info provided".to_string())?,
+            )
         } else {
             None
         };

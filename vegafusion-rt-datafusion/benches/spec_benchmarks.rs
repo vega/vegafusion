@@ -212,7 +212,6 @@ pub fn stacked_bar_weather_year_local(c: &mut Criterion) {
     let full_spec = load_spec(spec_name);
     let full_updates = Vec::new();
 
-
     c.bench_function(spec_name, |b| {
         b.to_async(&tokio_runtime)
             .iter(|| eval_spec_sequence(full_spec.clone(), full_updates.clone()))
