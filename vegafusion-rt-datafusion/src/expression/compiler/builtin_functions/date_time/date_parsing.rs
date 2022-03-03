@@ -114,46 +114,6 @@ pub fn parse_datetime(
     parse_datetime_fallback(date_str, mode, local_tz)
 }
 
-pub fn parse_datetime(date_str: &str, mode: DateParseMode) -> Option<DateTime<FixedOffset>> {
-    for strf_item in &*ALL_STRF_ITEMS {
-        let mut parsed = Parsed::new();
-        parse(&mut parsed, date_str, strf_item.clone()).ok();
-
-        if let Ok(datetime) = parsed.to_datetime() {
-            return Some(datetime);
-        } else if let (Ok(date), Ok(time)) = (parsed.to_naive_date(), parsed.to_naive_time()) {
-            let datetime = NaiveDateTime::new(date, time);
-            if date_str.ends_with('Z') {
-                // UTC
-                if let Some(datetime) = FixedOffset::east(0)
-                    .from_local_datetime(&datetime)
-                    .earliest()
-                {
-                    return Some(datetime);
-                }
-            } else {
-                // Local
-                let local = Local {};
-                if let Some(offset) = local.offset_from_local_datetime(&datetime).earliest() {
-                    return Some(offset.from_local_datetime(&datetime).earliest().unwrap());
-                }
-            }
-        }
-    }
-
-    // Try plain dates
-    if let Ok(date) = NaiveDate::parse_from_str(date_str, r#"%Y-%m-%d"#) {
-        // UTC midnight to follow JavaScript convention
-        return Some(
-            FixedOffset::east(0)
-                .from_utc_date(&date)
-                .and_hms_milli(0, 0, 0, 0),
-        );
-    }
-
-    parse_datetime_fallback(date_str, mode)
-}
-
 /// Parse a more generous specification of the iso 8601 date standard
 /// Allow omission of time components
 pub fn parse_datetime_fallback(
