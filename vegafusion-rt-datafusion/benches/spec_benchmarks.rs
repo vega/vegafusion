@@ -68,6 +68,7 @@ async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> Q
 async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdateBatch>) {
     let spec_plan = SpecPlan::try_new(&full_spec).unwrap();
     let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
+    let comm_plan = spec_plan.comm_plan.clone();
 
     // println!(
     //     "client_spec: {}",
@@ -91,6 +92,22 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
     // Initialize task graph runtime
     let runtime = TaskGraphRuntime::new(Some(64), None);
 
+    // Get initial values
+    let mut query_indices = Vec::new();
+    for var in comm_plan.server_to_client {
+        let node_index = task_graph_mapping.get(&var).unwrap();
+        query_indices.push(node_index.clone());
+    }
+    // Make Query request
+    let request = QueryRequest {
+        request: Some(Request::TaskGraphValues(TaskGraphValueRequest {
+            task_graph: Some(task_graph.clone()),
+            indices: query_indices,
+        })),
+    };
+    let _response = runtime.query_request(request).await.unwrap();
+
+    // Get update values
     for update_batch in full_updates {
         let mut query_indices = Vec::new();
         for update in update_batch {
@@ -186,6 +203,37 @@ pub fn load_flights_crossfilter_data_200k_utc(c: &mut Criterion) {
     });
 }
 
+pub fn stacked_bar_weather_year_local(c: &mut Criterion) {
+    // Initialize runtime
+    let tokio_runtime = make_tokio_runtime();
+
+    // Load spec
+    let spec_name = "stacked_bar_weather_year_local";
+    let full_spec = load_spec(spec_name);
+    let full_updates = Vec::new();
+
+
+    c.bench_function(spec_name, |b| {
+        b.to_async(&tokio_runtime)
+            .iter(|| eval_spec_sequence(full_spec.clone(), full_updates.clone()))
+    });
+}
+
+pub fn stacked_bar_weather_year_utc(c: &mut Criterion) {
+    // Initialize runtime
+    let tokio_runtime = make_tokio_runtime();
+
+    // Load spec
+    let spec_name = "stacked_bar_weather_year_utc";
+    let full_spec = load_spec(spec_name);
+    let full_updates = Vec::new();
+
+    c.bench_function(spec_name, |b| {
+        b.to_async(&tokio_runtime)
+            .iter(|| eval_spec_sequence(full_spec.clone(), full_updates.clone()))
+    });
+}
+
 criterion_group!(
     benches,
     flights_crossfilter,
@@ -193,5 +241,7 @@ criterion_group!(
     load_flights_crossfilter_data_local,
     load_flights_crossfilter_data_utc,
     load_flights_crossfilter_data_200k_utc,
+    stacked_bar_weather_year_local,
+    stacked_bar_weather_year_utc,
 );
 criterion_main!(benches);
