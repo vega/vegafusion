@@ -16,7 +16,10 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
-use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Offset, TimeZone, Utc};
+use chrono::{
+    DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Offset, TimeZone,
+    Timelike, Utc,
+};
 use datafusion::arrow::array::{ArrayRef, Int64Array, StringArray};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::physical_plan::functions::{
@@ -27,6 +30,7 @@ use regex::Regex;
 use std::sync::Arc;
 // use chrono::format::{parse, Parsed, StrftimeItems};
 use chrono::format::{parse, Parsed, StrftimeItems};
+use vegafusion_core::arrow::array::Array;
 
 lazy_static! {
     pub static ref ALL_STRF_ITEMS: Vec<StrftimeItems<'static>> = vec![
@@ -90,8 +94,15 @@ pub fn parse_datetime(
             } else {
                 // Local
                 let local_tz = local_tz.clone()?;
-                let dt = local_tz.from_local_datetime(&datetime).earliest()?;
-                return Some(dt.with_timezone(&chrono::Utc));
+                let dt = if let Some(dt) = local_tz.from_local_datetime(&datetime).earliest() {
+                    dt
+                } else {
+                    // Handle positive timezone transition by adding 1 hour
+                    let datetime = datetime.with_hour(datetime.hour() + 1).unwrap();
+                    local_tz.from_local_datetime(&datetime).earliest()?
+                };
+                let dt_utc = dt.with_timezone(&chrono::Utc);
+                return Some(dt_utc);
             }
         }
     }
@@ -309,7 +320,12 @@ pub fn parse_datetime_to_utc_millis(
     local_tz: &Option<chrono_tz::Tz>,
 ) -> Option<i64> {
     // Parse to datetime
-    let parsed_utc = parse_datetime(date_str, mode, local_tz)?;
+    let parsed_utc = if let Some(parsed_utc) = parse_datetime(date_str, mode, local_tz) {
+        parsed_utc
+    } else {
+        // println!("Failed to parse date string {:?}", date_str);
+        return None;
+    };
 
     // Extract milliseconds
     Some(parsed_utc.timestamp_millis())

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use chrono::{NaiveDateTime, TimeZone};
+use chrono::{NaiveDateTime, TimeZone, Timelike};
 use datafusion::arrow::array::{Int64Array, TimestampMillisecondArray};
 use datafusion::physical_plan::functions::{
     make_scalar_function, ReturnTypeFunction, Signature, Volatility,
@@ -41,10 +41,21 @@ pub fn make_to_utc_millis_fn(local_tz: chrono_tz::Tz) -> ScalarUDF {
             let naive_local_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
 
             // Get UTC offset when the naive datetime is considered to be in local time
-            let local_datetime = local_tz
+            let local_datetime = if let Some(local_datetime) = local_tz
                 .from_local_datetime(&naive_local_datetime)
                 .earliest()
-                .unwrap();
+            {
+                local_datetime
+            } else {
+                // Try adding 1 hour to handle daylight savings boundaries
+                let hour = naive_local_datetime.hour();
+                let new_naive_local_datetime = naive_local_datetime.with_hour(hour + 1).unwrap();
+                local_tz
+                    .from_local_datetime(&new_naive_local_datetime)
+                    .earliest()
+                    .expect(&format!("Failed to convert {:?}", naive_local_datetime))
+            };
+
             local_datetime.timestamp_millis()
         });
         Ok(Arc::new(array) as ArrayRef)
