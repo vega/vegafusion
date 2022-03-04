@@ -21,6 +21,7 @@ use crate::util::vegajs_runtime::vegajs_runtime;
 use datafusion::scalar::ScalarValue;
 
 use std::convert::TryFrom;
+use std::str::FromStr;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 
 use vegafusion_core::data::table::VegaFusionTable;
@@ -57,11 +58,19 @@ pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
         .eval_scalar_expression(expr_str, config)
         .unwrap();
 
+    // Add local timezone info to config
+    let local_tz_str = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
+    let local_tz = chrono_tz::Tz::from_str(&local_tz_str).unwrap();
+    let config = CompilationConfig {
+        local_tz: Some(local_tz),
+        ..config.clone()
+    };
+
     // Vega-Fusion parse
     let parsed = parse(expr_str).unwrap();
 
     // Build compilation config
-    let compiled = compile(&parsed, config, None).unwrap();
+    let compiled = compile(&parsed, &config, None).unwrap();
     let result = compiled.eval_to_scalar().unwrap();
 
     // Serialize and deserialize to normalize types to those supported by JavaScript

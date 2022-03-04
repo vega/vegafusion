@@ -8,13 +8,13 @@
     {
       "name": "source_0",
       "url": "https://raw.githubusercontent.com/vega/vega-datasets/master/data/seattle-weather.csv",
-      "format": {"type": "csv", "parse": {"date": "utc:'%Y-%m-%d'"}, "delimiter": ","},
+      "format": {"type": "csv", "parse": {"date": "date"}, "delimiter": ","},
       "transform": [
         {
           "field": "date",
           "type": "timeunit",
           "units": ["year"],
-          "timezone": "utc",
+          "timezone": "local",
           "as": ["year_date", "year_date_end"]
         },
         {

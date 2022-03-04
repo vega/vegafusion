@@ -51,6 +51,7 @@ impl Task {
             variable: Some(variable),
             scope: Vec::from(scope),
             task_kind: Some(TaskKind::Value(ProtoTaskValue::try_from(&value).unwrap())),
+            local_tz: None,
         }
     }
 
@@ -62,36 +63,55 @@ impl Task {
         }
     }
 
-    pub fn new_data_url(variable: Variable, scope: &[u32], task: DataUrlTask) -> Self {
+    pub fn new_data_url(
+        variable: Variable,
+        scope: &[u32],
+        task: DataUrlTask,
+        local_tz: &str,
+    ) -> Self {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
             task_kind: Some(TaskKind::DataUrl(task)),
+            local_tz: Some(local_tz.to_string()),
         }
     }
 
-    pub fn new_data_values(variable: Variable, scope: &[u32], task: DataValuesTask) -> Self {
+    pub fn new_data_values(
+        variable: Variable,
+        scope: &[u32],
+        task: DataValuesTask,
+        local_tz: &str,
+    ) -> Self {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
             task_kind: Some(TaskKind::DataValues(task)),
+            local_tz: Some(local_tz.to_string()),
         }
     }
 
-    pub fn new_data_source(variable: Variable, scope: &[u32], task: DataSourceTask) -> Self {
+    pub fn new_data_source(
+        variable: Variable,
+        scope: &[u32],
+        task: DataSourceTask,
+        local_tz: &str,
+    ) -> Self {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
             task_kind: Some(TaskKind::DataSource(task)),
+            local_tz: Some(local_tz.to_string()),
         }
     }
 
-    pub fn new_signal(variable: Variable, scope: &[u32], expr: Expression) -> Self {
+    pub fn new_signal(variable: Variable, scope: &[u32], expr: Expression, local_tz: &str) -> Self {
         let task_kind = TaskKind::Signal(SignalTask { expr: Some(expr) });
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
             task_kind: Some(task_kind),
+            local_tz: Some(local_tz.to_string()),
         }
     }
 

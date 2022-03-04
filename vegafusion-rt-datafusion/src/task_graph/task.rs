@@ -25,18 +25,26 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 pub trait TaskCall {
-    async fn eval(&self, values: &[TaskValue]) -> Result<(TaskValue, Vec<TaskValue>)>;
+    async fn eval(
+        &self,
+        values: &[TaskValue],
+        local_tz: &Option<chrono_tz::Tz>,
+    ) -> Result<(TaskValue, Vec<TaskValue>)>;
 }
 
 #[async_trait]
 impl TaskCall for Task {
-    async fn eval(&self, values: &[TaskValue]) -> Result<(TaskValue, Vec<TaskValue>)> {
+    async fn eval(
+        &self,
+        values: &[TaskValue],
+        local_tz: &Option<chrono_tz::Tz>,
+    ) -> Result<(TaskValue, Vec<TaskValue>)> {
         match self.task_kind() {
             TaskKind::Value(value) => Ok((value.try_into()?, Default::default())),
-            TaskKind::DataUrl(task) => task.eval(values).await,
-            TaskKind::DataValues(task) => task.eval(values).await,
-            TaskKind::DataSource(task) => task.eval(values).await,
-            TaskKind::Signal(task) => task.eval(values).await,
+            TaskKind::DataUrl(task) => task.eval(values, local_tz).await,
+            TaskKind::DataValues(task) => task.eval(values, local_tz).await,
+            TaskKind::DataSource(task) => task.eval(values, local_tz).await,
+            TaskKind::Signal(task) => task.eval(values, local_tz).await,
         }
     }
 }

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use chrono::{Local, NaiveDateTime, TimeZone};
+use chrono::{NaiveDateTime, TimeZone, Timelike};
 use datafusion::arrow::array::{Int64Array, TimestampMillisecondArray};
 use datafusion::physical_plan::functions::{
     make_scalar_function, ReturnTypeFunction, Signature, Volatility,
@@ -25,11 +25,7 @@ use vegafusion_core::arrow::array::ArrayRef;
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 
-lazy_static! {
-    pub static ref LOCAL_TO_UTC_MILLIS: ScalarUDF = make_to_utc_millis_fn();
-}
-
-pub fn make_to_utc_millis_fn() -> ScalarUDF {
+pub fn make_to_utc_millis_fn(local_tz: chrono_tz::Tz) -> ScalarUDF {
     let to_utc_millis_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single string argument
         let arg = &args[0];
@@ -42,14 +38,24 @@ pub fn make_to_utc_millis_fn() -> ScalarUDF {
             let seconds = v / 1000;
             let milliseconds = v % 1000;
             let nanoseconds = (milliseconds * 1_000_000) as u32;
-            let naive_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
+            let naive_local_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
 
             // Get UTC offset when the naive datetime is considered to be in local time
-            let local = Local {};
-            let local_datetime = local
-                .from_local_datetime(&naive_datetime)
+            let local_datetime = if let Some(local_datetime) = local_tz
+                .from_local_datetime(&naive_local_datetime)
                 .earliest()
-                .unwrap();
+            {
+                local_datetime
+            } else {
+                // Try adding 1 hour to handle daylight savings boundaries
+                let hour = naive_local_datetime.hour();
+                let new_naive_local_datetime = naive_local_datetime.with_hour(hour + 1).unwrap();
+                local_tz
+                    .from_local_datetime(&new_naive_local_datetime)
+                    .earliest()
+                    .unwrap_or_else(|| panic!("Failed to convert {:?}", naive_local_datetime))
+            };
+
             local_datetime.timestamp_millis()
         });
         Ok(Arc::new(array) as ArrayRef)

@@ -1,0 +1,144 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 550,
+  "title": {
+    "text": "2010 Daily High Temperature (F) in Seattle, WA",
+    "frame": "group"
+  },
+  "style": "cell",
+  "data": [
+    {
+      "name": "source_0",
+      "url": "https://cdn.jsdelivr.net/npm/vega-datasets@v1.29.0/data/seattle-temps.csv",
+      "format": {
+        "type": "csv",
+        "parse": {"date": "date", "temp": "number"},
+        "delimiter": ","
+      },
+      "transform": [
+        {
+          "field": "date",
+          "type": "timeunit",
+          "units": ["date"],
+          "as": ["date_date", "date_date_end"]
+        },
+        {
+          "field": "date",
+          "type": "timeunit",
+          "units": ["month"],
+          "as": ["month_date", "month_date_end"]
+        },
+        {
+          "field": "date",
+          "type": "timeunit",
+          "units": ["month", "date"],
+          "as": ["monthdate_date", "monthdate_date_end"]
+        },
+        {
+          "type": "aggregate",
+          "groupby": [
+            "date_date",
+            "month_date",
+            "monthdate_date",
+            "monthdate_date_end"
+          ],
+          "ops": ["max"],
+          "fields": ["temp"],
+          "as": ["max_temp"]
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"max_temp\"]) && isFinite(+datum[\"max_temp\"])"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {"name": "y_step", "value": 20},
+    {"name": "height", "update": "bandspace(domain('y').length, 0, 0) * y_step"}
+  ],
+  "marks": [
+    {
+      "name": "marks",
+      "type": "rect",
+      "style": ["rect"],
+      "from": {"data": "source_0"},
+      "encode": {
+        "update": {
+          "fill": {"scale": "color", "field": "max_temp"},
+          "tooltip": {
+            "signal": "{\"Date\": timeFormat(datum[\"monthdate_date\"], timeUnitSpecifier([\"month\",\"date\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})), \"Max Temp\": format(datum[\"max_temp\"], \"\")}"
+          },
+          "description": {
+            "signal": "\"date (date): \" + (timeFormat(datum[\"date_date\"], timeUnitSpecifier([\"date\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; date (month): \" + (timeFormat(datum[\"month_date\"], timeUnitSpecifier([\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Max of temp: \" + (format(datum[\"max_temp\"], \"\")) + \"; Date: \" + (timeFormat(datum[\"monthdate_date\"], timeUnitSpecifier([\"month\",\"date\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Max Temp: \" + (format(datum[\"max_temp\"], \"\"))"
+          },
+          "x": {"scale": "x", "field": "date_date"},
+          "width": {"scale": "x", "band": 1},
+          "y": {"scale": "y", "field": "month_date"},
+          "height": {"scale": "y", "band": 1}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "band",
+      "domain": {"data": "source_0", "field": "date_date", "sort": true},
+      "range": [0, {"signal": "width"}],
+      "paddingInner": 0,
+      "paddingOuter": 0
+    },
+    {
+      "name": "y",
+      "type": "band",
+      "domain": {"data": "source_0", "field": "month_date", "sort": true},
+      "range": {"step": {"signal": "y_step"}},
+      "paddingInner": 0,
+      "paddingOuter": 0
+    },
+    {
+      "name": "color",
+      "type": "linear",
+      "domain": {"data": "source_0", "field": "max_temp"},
+      "range": {"scheme": "inferno"},
+      "interpolate": "hcl",
+      "zero": false
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "date (date)",
+      "format": {
+        "signal": "timeUnitSpecifier([\"date\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})"
+      },
+      "formatType": "time",
+      "labelOverlap": true,
+      "zindex": 1
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "date (month)",
+      "format": {
+        "signal": "timeUnitSpecifier([\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})"
+      },
+      "formatType": "time",
+      "labelOverlap": true,
+      "zindex": 1
+    }
+  ],
+  "legends": [
+    {
+      "fill": "color",
+      "gradientLength": {"signal": "clamp(height, 64, 200)"},
+      "title": "Max of temp"
+    }
+  ]
+}

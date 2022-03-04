@@ -108,6 +108,7 @@ message Task {
     DataSourceTask data_source = 6;
     SignalTask signal = 7;
   }
+  optional string local_tz = 8;
 }
 
 

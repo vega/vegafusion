@@ -324,6 +324,7 @@ impl TaskGraph {
             variable: node.task().variable.clone(),
             scope: node.task().scope.clone(),
             task_kind: Some(TaskKind::Value(ProtoTaskValue::try_from(&value)?)),
+            local_tz: None,
         });
 
         let mut node_value_indexes = Vec::new();

@@ -119,7 +119,8 @@ mod test_custom_specs {
         case("custom/grouped_bar_chart_with_error_bars", 0.001),
         case("custom/one_dot_per_zipcode", 0.001),
         case("custom/ridgeline", 0.001),
-        case("custom/binned_scatter", 0.001)
+        case("custom/binned_scatter", 0.001),
+        case("custom/seattle_temps_heatmap", 0.001)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
         println!("spec_name: {}", spec_name);
@@ -592,8 +593,8 @@ mod test_vegalite_specs {
         case("vegalite/layer_line_datum_rule_datetime", 0.001),
         case("vegalite/layer_line_datum_rule", 0.001),
 
-        // (Offset in start position of outline dash)
-        case("vegalite/layer_line_errorband_2d_horizontal_borders_strokedash", 0.5),
+        // // (Offset in start position of outline dash)
+        // case("vegalite/layer_line_errorband_2d_horizontal_borders_strokedash", 0.5),
 
         case("vegalite/layer_line_errorband_pre_aggregated", 0.001),
         case("vegalite/layer_line_mean_point_raw", 0.001),
@@ -1118,6 +1119,7 @@ async fn check_spec_sequence(
 ) {
     // Initialize runtime
     let vegajs_runtime = vegajs_runtime();
+    let local_tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
 
     let spec_plan = SpecPlan::try_new(&full_spec).unwrap();
 
@@ -1140,7 +1142,7 @@ async fn check_spec_sequence(
     );
 
     // Build task graph
-    let tasks = spec_plan.server_spec.to_tasks().unwrap();
+    let tasks = spec_plan.server_spec.to_tasks(&local_tz).unwrap();
     let mut task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let task_graph_mapping = task_graph.build_mapping();
 

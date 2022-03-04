@@ -28,6 +28,7 @@ pub struct CompilationConfig {
     pub data_scope: HashMap<String, VegaFusionTable>,
     pub callable_scope: HashMap<String, VegaFusionCallable>,
     pub constants: HashMap<String, ScalarValue>,
+    pub local_tz: Option<chrono_tz::Tz>,
 }
 
 impl Default for CompilationConfig {
@@ -37,6 +38,7 @@ impl Default for CompilationConfig {
             data_scope: Default::default(),
             callable_scope: default_callables(),
             constants: default_constants(),
+            local_tz: None,
         }
     }
 }

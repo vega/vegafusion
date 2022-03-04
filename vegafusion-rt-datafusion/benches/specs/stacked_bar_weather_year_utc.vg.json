@@ -67,7 +67,7 @@
     {
       "name": "x",
       "type": "band",
-      "domain": {"data": "source_0", "field": "year_date", "sort": true},
+      "domain": {"data": "source_0", "field": "utcyear_date", "sort": true},
       "range": {"step": {"signal": "x_step"}},
       "paddingInner": 0.1,
       "paddingOuter": 0.05

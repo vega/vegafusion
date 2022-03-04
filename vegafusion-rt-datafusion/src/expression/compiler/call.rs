@@ -20,10 +20,10 @@ use crate::expression::compiler::builtin_functions::array::length::make_length_u
 use crate::expression::compiler::builtin_functions::array::span::make_span_udf;
 use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
 use crate::expression::compiler::builtin_functions::date_time::date_parts::{
-    DATE_UDF, DAYOFYEAR_UDF, DAY_UDF, HOURS_UDF, MILLISECONDS_UDF, MINUTES_UDF, MONTH_UDF,
-    QUARTER_UDF, SECONDS_UDF, UTCDATE_UDF, UTCDAYOFYEAR_UDF, UTCDAY_UDF, UTCHOURS_UDF,
-    UTCMILLISECONDS_UDF, UTCMINUTES_UDF, UTCMONTH_UDF, UTCQUARTER_UDF, UTCSECONDS_UDF, UTCYEAR_UDF,
-    YEAR_UDF,
+    DATE_TRANSFORM, DAYOFYEAR_TRANSFORM, DAY_TRANSFORM, HOURS_TRANSFORM, MILLISECONDS_TRANSFORM,
+    MINUTES_TRANSFORM, MONTH_TRANSFORM, QUARTER_TRANSFORM, SECONDS_TRANSFORM, UTCDATE_UDF,
+    UTCDAYOFYEAR_UDF, UTCDAY_UDF, UTCHOURS_UDF, UTCMILLISECONDS_UDF, UTCMINUTES_UDF, UTCMONTH_UDF,
+    UTCQUARTER_UDF, UTCSECONDS_UDF, UTCYEAR_UDF, YEAR_TRANSFORM,
 };
 use crate::expression::compiler::builtin_functions::date_time::datetime::{
     datetime_transform, UTC_COMPONENTS,
@@ -44,7 +44,7 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
 };
@@ -58,13 +58,24 @@ use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::t
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_string::to_string_transform;
 
+pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>;
+pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
+pub type LocalTransformFn =
+    Arc<dyn Fn(chrono_tz::Tz, &[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
+pub type DataFn =
+    Arc<dyn Fn(&VegaFusionTable, &[Expression], &DFSchema) -> Result<Expr> + Send + Sync>;
+
 #[derive(Clone)]
 pub enum VegaFusionCallable {
     /// A function that operates on the ESTree expression tree before compilation
-    Macro(Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>),
+    Macro(MacroFn),
 
     /// A function that operates on the compiled arguments and produces a new expression.
-    Transform(Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>),
+    Transform(TransformFn),
+
+    /// A function that uses the local timezone to operate on the compiled arguments and
+    /// produces a new expression.
+    LocalTransform(LocalTransformFn),
 
     /// Runtime function that is build in to DataFusion
     BuiltinScalarFunction {
@@ -83,8 +94,7 @@ pub enum VegaFusionCallable {
     /// A custom macro that inputs a dataset, and uses that to generate the DataFusion Expr tree
     ///
     /// e.g. `data('brush')` or  `vlSelectionTest('brush', datum, true)`
-    #[allow(clippy::type_complexity)]
-    Data(Arc<dyn Fn(&VegaFusionTable, &[Expression], &DFSchema) -> Result<Expr> + Send + Sync>),
+    Data(DataFn),
 
     /// A custom runtime function that operates on a scale dataset
     ///
@@ -175,6 +185,13 @@ pub fn compile_call(
         VegaFusionCallable::Transform(callable) => {
             let args = compile_scalar_arguments(node, config, schema, &None)?;
             callable(&args, schema)
+        }
+        VegaFusionCallable::LocalTransform(callable) => {
+            let args = compile_scalar_arguments(node, config, schema, &None)?;
+            let local_tz = config
+                .local_tz
+                .with_context(|| "No local timezone info provided".to_string())?;
+            callable(local_tz, &args, schema)
         }
         _ => {
             todo!()
@@ -267,73 +284,43 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     // Date parts
     callables.insert(
         "year".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: YEAR_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::LocalTransform(YEAR_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "quarter".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: QUARTER_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::LocalTransform(QUARTER_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "month".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: MONTH_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::LocalTransform(MONTH_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "day".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: DAY_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::LocalTransform(DAY_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "date".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: DATE_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::LocalTransform(DATE_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "dayofyear".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: DAYOFYEAR_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::LocalTransform(DAYOFYEAR_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "hours".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: HOURS_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::LocalTransform(HOURS_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "minutes".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: MINUTES_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::LocalTransform(MINUTES_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "seconds".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: SECONDS_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::LocalTransform(SECONDS_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "milliseconds".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: MILLISECONDS_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::LocalTransform(MILLISECONDS_TRANSFORM.deref().clone()),
     );
 
     callables.insert(
@@ -410,7 +397,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     // date time
     callables.insert(
         "datetime".to_string(),
-        VegaFusionCallable::Transform(Arc::new(datetime_transform)),
+        VegaFusionCallable::LocalTransform(Arc::new(datetime_transform)),
     );
     callables.insert(
         "utc".to_string(),
@@ -434,7 +421,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     );
     callables.insert(
         "toDate".to_string(),
-        VegaFusionCallable::Transform(Arc::new(datetime_transform)),
+        VegaFusionCallable::LocalTransform(Arc::new(datetime_transform)),
     );
     callables.insert(
         "toNumber".to_string(),

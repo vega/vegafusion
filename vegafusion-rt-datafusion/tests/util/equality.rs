@@ -161,10 +161,8 @@ fn assert_scalars_almost_equals(lhs: &ScalarValue, rhs: &ScalarValue, tol: f64) 
             }
         }
         (_, _) => {
-            if lhs == rhs {
+            if lhs == rhs || lhs.is_null() && rhs.is_null() {
                 // Equal
-            } else if lhs.is_null() && rhs.is_null() {
-                // Equal regardless of type
             } else if is_numeric_datatype(&lhs.get_datatype())
                 && is_numeric_datatype(&rhs.get_datatype())
             {

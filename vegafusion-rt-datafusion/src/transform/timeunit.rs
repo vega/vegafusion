@@ -23,16 +23,14 @@ use datafusion::arrow::array::{ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::prelude::{col, DataFrame};
 use std::sync::Arc;
-use vegafusion_core::error::Result;
+use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use datafusion::arrow::compute::kernels::arity::unary;
 use datafusion::arrow::temporal_conversions::date64_to_datetime;
 
-use chrono::{
-    DateTime, Datelike, Local, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday,
-};
+use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
 use datafusion::logical_plan::Expr;
 use datafusion::physical_plan::functions::{
     make_scalar_function, ReturnTypeFunction, Signature, Volatility,
@@ -44,7 +42,7 @@ impl TransformTrait for TimeUnit {
     async fn eval(
         &self,
         dataframe: Arc<dyn DataFrame>,
-        _config: &CompilationConfig,
+        config: &CompilationConfig,
     ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let _units: Vec<_> = self
             .units
@@ -53,7 +51,15 @@ impl TransformTrait for TimeUnit {
             .map(|unit| TimeUnitUnit::from_i32(unit).unwrap())
             .collect();
 
-        let is_local = self.timezone != Some(TimeUnitTimeZone::Utc as i32);
+        let local_tz = if self.timezone != Some(TimeUnitTimeZone::Utc as i32) {
+            Some(
+                config
+                    .local_tz
+                    .with_context(|| "No local timezone info provided".to_string())?,
+            )
+        } else {
+            None
+        };
 
         let units_mask = vec![
             self.units.contains(&(TimeUnitUnit::Year as i32)), // 0
@@ -70,7 +76,7 @@ impl TransformTrait for TimeUnit {
         ];
 
         // Handle timeunit start value (we always do this)
-        let timeunit_start_udf = make_timeunit_start_udf(units_mask.as_slice(), is_local);
+        let timeunit_start_udf = make_timeunit_start_udf(units_mask.as_slice(), local_tz);
         let timeunit_start_value = timeunit_start_udf.call(vec![col(&self.field)]);
 
         // Apply alias
@@ -85,7 +91,7 @@ impl TransformTrait for TimeUnit {
         let dataframe = dataframe.select(vec![Expr::Wildcard, timeunit_start_value])?;
 
         // Handle timeunit end value (In the future, disable this when interval=false)
-        let timeunit_end_udf = make_timeunit_end_udf(units_mask.as_slice(), is_local);
+        let timeunit_end_udf = make_timeunit_end_udf(units_mask.as_slice(), local_tz);
         let timeunit_end_value = timeunit_end_udf.call(vec![col(&timeunit_start_alias)]);
 
         // Apply alias
@@ -103,22 +109,22 @@ impl TransformTrait for TimeUnit {
     }
 }
 
-fn make_timeunit_start_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
+fn make_timeunit_start_udf(units_mask: &[bool], local_tz: Option<chrono_tz::Tz>) -> ScalarUDF {
     let units_mask = Vec::from(units_mask);
     let timeunit = move |args: &[ArrayRef]| {
         let arg = &args[0];
 
         // Input UTC
         let array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
-        let result_array: Int64Array = if in_local {
+        let result_array: Int64Array = if let Some(local_tz) = local_tz {
             // Input is in UTC, compute timeunit values in local, return results in UTC
-            let tz = Local {};
+            let tz = local_tz;
             unary(array, |value| {
                 perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
             })
         } else {
             // Input is in UTC, compute timeunit values in UTC, return results in UTC
-            let tz = Utc;
+            let tz = chrono_tz::UTC;
             unary(array, |value| {
                 perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
             })
@@ -138,19 +144,19 @@ fn make_timeunit_start_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
     )
 }
 
-fn make_timeunit_end_udf(units_mask: &[bool], in_local: bool) -> ScalarUDF {
+fn make_timeunit_end_udf(units_mask: &[bool], local_tz: Option<chrono_tz::Tz>) -> ScalarUDF {
     let units_mask = Vec::from(units_mask);
     let timeunit_end = move |args: &[ArrayRef]| {
         let arg = &args[0];
 
         let start_array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
-        let result_array: Int64Array = if in_local {
-            let tz = Local {};
+        let result_array: Int64Array = if let Some(local_tz) = local_tz {
+            let tz = local_tz;
             unary(start_array, |value| {
                 perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
             })
         } else {
-            let tz = Utc;
+            let tz = chrono_tz::UTC;
             unary(start_array, |value| {
                 perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
             })
@@ -178,11 +184,16 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
 ) -> DateTime<T> {
     // Load and interpret date time as UTC
     let dt_value = date64_to_datetime(value).with_nanosecond(0).unwrap();
-    let dt_value = Utc.from_local_datetime(&dt_value).single().unwrap();
-
+    let dt_value = Utc.from_local_datetime(&dt_value).earliest().unwrap();
     let mut dt_value = dt_value.with_timezone(&in_tz);
 
     // Handle time truncation
+    if !units_mask[7] {
+        // Clear hours first to avoid any of the other time truncations from landing on a daylight
+        // savings boundary
+        dt_value = dt_value.with_hour(0).unwrap();
+    }
+
     if !units_mask[10] {
         // Milliseconds
         let new_ns = (((dt_value.nanosecond() as f64) / 1e6).floor() * 1e6) as u32;
@@ -199,11 +210,6 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
         dt_value = dt_value.with_minute(0).unwrap();
     }
 
-    if !units_mask[7] {
-        // Hours
-        dt_value = dt_value.with_hour(0).unwrap();
-    }
-
     // Save off day of the year and weekday here, becuase these will change if the
     // year is changed
     let ordinal0 = dt_value.ordinal0();
@@ -213,7 +219,20 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
     // (if we're not truncating to week number, this is handled separately below)
     if !units_mask[0] && !units_mask[4] {
         // Year
-        dt_value = dt_value.with_year(2012).unwrap();
+        dt_value = if let Some(v) = dt_value.with_year(2012) {
+            v
+        } else {
+            // The above can fail if changing to 2012 lands on daylight savings
+            // e.g. March 11th at 2am in 2015
+            let hour = dt_value.hour();
+            dt_value
+                .with_hour(0)
+                .unwrap()
+                .with_year(2012)
+                .unwrap()
+                .with_hour(hour + 1)
+                .unwrap()
+        }
     }
 
     // Handle date (of the year) truncation.
@@ -250,7 +269,7 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
         let isoweek0_sunday = NaiveDateTime::new(isoweek0_sunday, dt_value.time());
         let isoweek0_sunday = in_tz
             .from_local_datetime(&isoweek0_sunday)
-            .single()
+            .earliest()
             .unwrap();
 
         // Subtract one week from isoweek0_sunday and check if it's still in the same calendar
@@ -283,7 +302,7 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
                     NaiveDate::from_ymd(2012, 1, 1),
                     dt_value.time(),
                 ))
-                .single()
+                .earliest()
                 .unwrap();
 
             dt_value = first_sunday_of_2012 + chrono::Duration::weeks(week_number);
@@ -300,7 +319,7 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
             NaiveDate::from_isoywd(dt_value.year(), 2, weekday)
         };
         let new_datetime = NaiveDateTime::new(new_date, dt_value.time());
-        dt_value = in_tz.from_local_datetime(&new_datetime).single().unwrap();
+        dt_value = in_tz.from_local_datetime(&new_datetime).earliest().unwrap();
     } else if units_mask[6] {
         // DayOfYear
         // Keep the same day of the year

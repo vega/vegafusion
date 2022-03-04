@@ -135,6 +135,8 @@ pub struct Task {
     pub variable: ::core::option::Option<Variable>,
     #[prost(uint32, repeated, tag = "2")]
     pub scope: ::prost::alloc::vec::Vec<u32>,
+    #[prost(string, optional, tag = "8")]
+    pub local_tz: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(oneof = "task::TaskKind", tags = "3, 4, 5, 6, 7")]
     pub task_kind: ::core::option::Option<task::TaskKind>,
 }
