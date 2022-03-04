@@ -32,6 +32,7 @@ use datafusion::physical_plan::udf::ScalarUDF;
 use std::sync::Arc;
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::error::Result;
+use crate::expression::compiler::call::LocalTransformFn;
 
 #[inline(always)]
 pub fn extract_year(dt: &DateTime<chrono_tz::Tz>) -> i64 {
@@ -92,7 +93,7 @@ fn process_input_datetime(arg: &ArrayRef, tz: &chrono_tz::Tz) -> ArrayRef {
     match arg.data_type() {
         DataType::Utf8 => {
             let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
-            datetime_strs_to_millis(array, DateParseMode::JavaScript, &Some(tz.clone())) as _
+            datetime_strs_to_millis(array, DateParseMode::JavaScript, &Some(*tz)) as _
         }
         DataType::Date32 => {
             let ms_per_day = 1000 * 60 * 60 * 24_i64;
@@ -109,9 +110,6 @@ fn process_input_datetime(arg: &ArrayRef, tz: &chrono_tz::Tz) -> ArrayRef {
         _ => panic!("Unexpected data type for date part function:"),
     }
 }
-
-pub type LocalTransformFn =
-    Arc<dyn Fn(chrono_tz::Tz, &[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
 
 pub fn make_local_datepart_transform(
     extract_fn: fn(&DateTime<chrono_tz::Tz>) -> i64,

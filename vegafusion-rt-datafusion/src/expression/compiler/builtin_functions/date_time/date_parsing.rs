@@ -92,7 +92,7 @@ pub fn parse_datetime(
                 }
             } else {
                 // Local
-                let local_tz = local_tz.clone()?;
+                let local_tz = (*local_tz)?;
                 let dt = if let Some(dt) = local_tz.from_local_datetime(&datetime).earliest() {
                     dt
                 } else {
@@ -112,7 +112,7 @@ pub fn parse_datetime(
         return Some(chrono::Utc.from_utc_date(&date).and_hms_milli(0, 0, 0, 0));
     } else if let Ok(date) = NaiveDate::parse_from_str(date_str, r#"%Y/%m/%d"#) {
         // Local midnight to follow JavaScript convention
-        let local_tz = local_tz.clone()?;
+        let local_tz = (*local_tz)?;
         let datetime = local_tz
             .from_local_date(&date)
             .and_hms_milli_opt(0, 0, 0, 0)
@@ -241,18 +241,17 @@ pub fn parse_datetime_fallback(
             DateParseMode::JavaScript if iso8601_date && !has_time => FixedOffset::east(0),
             _ => {
                 // Treat date as in local timezone
-                let local_tz = local_tz.clone()?;
+                let local_tz = (*local_tz)?;
 
                 // No timezone specified, build NaiveDateTime
                 let naive_date = NaiveDate::from_ymd(year, month, day);
                 let naive_time = NaiveTime::from_hms_milli(hour, minute, second, milliseconds);
                 let naive_datetime = NaiveDateTime::new(naive_date, naive_time);
 
-                let offset = local_tz
+                local_tz
                     .offset_from_local_datetime(&naive_datetime)
                     .single()?
-                    .fix();
-                offset
+                    .fix()
             }
         }
     } else {
@@ -319,12 +318,7 @@ pub fn parse_datetime_to_utc_millis(
     local_tz: &Option<chrono_tz::Tz>,
 ) -> Option<i64> {
     // Parse to datetime
-    let parsed_utc = if let Some(parsed_utc) = parse_datetime(date_str, mode, local_tz) {
-        parsed_utc
-    } else {
-        // println!("Failed to parse date string {:?}", date_str);
-        return None;
-    };
+    let parsed_utc = parse_datetime(date_str, mode, local_tz)?;
 
     // Extract milliseconds
     Some(parsed_utc.timestamp_millis())
@@ -334,7 +328,7 @@ pub fn make_date_str_to_millis_udf(
     mode: DateParseMode,
     local_tz: &Option<chrono_tz::Tz>,
 ) -> ScalarUDF {
-    let local_tz = local_tz.clone();
+    let local_tz = *local_tz;
     let to_millis_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single string argument
         let arg = &args[0];

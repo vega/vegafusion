@@ -58,17 +58,22 @@ use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::t
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_string::to_string_transform;
 
+pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>;
+pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
+pub type LocalTransformFn = Arc<dyn Fn(chrono_tz::Tz, &[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
+pub type DataFn = Arc<dyn Fn(&VegaFusionTable, &[Expression], &DFSchema) -> Result<Expr> + Send + Sync>;
+
 #[derive(Clone)]
 pub enum VegaFusionCallable {
     /// A function that operates on the ESTree expression tree before compilation
-    Macro(Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>),
+    Macro(MacroFn),
 
     /// A function that operates on the compiled arguments and produces a new expression.
-    Transform(Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>),
+    Transform(TransformFn),
 
     /// A function that uses the local timezone to operate on the compiled arguments and
     /// produces a new expression.
-    LocalTransform(Arc<dyn Fn(chrono_tz::Tz, &[Expr], &DFSchema) -> Result<Expr> + Send + Sync>),
+    LocalTransform(LocalTransformFn),
 
     /// Runtime function that is build in to DataFusion
     BuiltinScalarFunction {
@@ -87,8 +92,7 @@ pub enum VegaFusionCallable {
     /// A custom macro that inputs a dataset, and uses that to generate the DataFusion Expr tree
     ///
     /// e.g. `data('brush')` or  `vlSelectionTest('brush', datum, true)`
-    #[allow(clippy::type_complexity)]
-    Data(Arc<dyn Fn(&VegaFusionTable, &[Expression], &DFSchema) -> Result<Expr> + Send + Sync>),
+    Data(DataFn),
 
     /// A custom runtime function that operates on a scale dataset
     ///

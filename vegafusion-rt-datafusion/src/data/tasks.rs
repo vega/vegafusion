@@ -80,7 +80,7 @@ pub fn build_compilation_config(
     CompilationConfig {
         signal_scope,
         data_scope,
-        local_tz: local_tz.clone(),
+        local_tz: *local_tz,
         ..Default::default()
     }
 }
@@ -274,9 +274,7 @@ fn process_datetimes(
                         }
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically, use local time
-                        let local_tz = local_tz
-                            .clone()
-                            .with_context(|| "No local timezone info provided")?;
+                        let local_tz = local_tz.with_context(|| "No local timezone info provided")?;
                         Expr::ScalarUDF {
                             fun: Arc::new(make_datetime_components_udf(local_tz)),
                             args: vec![col(&spec.name)],
@@ -293,7 +291,6 @@ fn process_datetimes(
                             _ => {
                                 // Treat as local
                                 let local_tz = local_tz
-                                    .clone()
                                     .with_context(|| "No local timezone info provided")?;
                                 Expr::ScalarUDF {
                                     fun: Arc::new(make_to_utc_millis_fn(local_tz)),
@@ -347,7 +344,6 @@ fn process_datetimes(
                             }
                             _ => {
                                 let local_tz = local_tz
-                                    .clone()
                                     .with_context(|| "No local timezone info provided")?;
                                 Expr::ScalarUDF {
                                     fun: Arc::new(make_to_utc_millis_fn(local_tz)),

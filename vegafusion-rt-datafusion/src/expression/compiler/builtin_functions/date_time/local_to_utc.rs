@@ -53,7 +53,7 @@ pub fn make_to_utc_millis_fn(local_tz: chrono_tz::Tz) -> ScalarUDF {
                 local_tz
                     .from_local_datetime(&new_naive_local_datetime)
                     .earliest()
-                    .expect(&format!("Failed to convert {:?}", naive_local_datetime))
+                    .unwrap_or_else(|| panic!("Failed to convert {:?}", naive_local_datetime))
             };
 
             local_datetime.timestamp_millis()
