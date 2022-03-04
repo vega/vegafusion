@@ -197,7 +197,7 @@ async fn get_or_compute_node_value(
         let local_tz = task
             .local_tz
             .as_ref()
-            .and_then(|tz| chrono_tz::Tz::from_str(&tz).ok());
+            .and_then(|tz| chrono_tz::Tz::from_str(tz).ok());
         let cache_key = node.state_fingerprint;
         let cloned_cache = cache.clone();
 

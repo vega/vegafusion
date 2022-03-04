@@ -76,7 +76,7 @@ impl TransformTrait for TimeUnit {
         ];
 
         // Handle timeunit start value (we always do this)
-        let timeunit_start_udf = make_timeunit_start_udf(units_mask.as_slice(), local_tz.clone());
+        let timeunit_start_udf = make_timeunit_start_udf(units_mask.as_slice(), local_tz);
         let timeunit_start_value = timeunit_start_udf.call(vec![col(&self.field)]);
 
         // Apply alias
@@ -118,7 +118,7 @@ fn make_timeunit_start_udf(units_mask: &[bool], local_tz: Option<chrono_tz::Tz>)
         let array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
         let result_array: Int64Array = if let Some(local_tz) = local_tz {
             // Input is in UTC, compute timeunit values in local, return results in UTC
-            let tz = local_tz.clone();
+            let tz = local_tz;
             unary(array, |value| {
                 perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
             })
@@ -151,7 +151,7 @@ fn make_timeunit_end_udf(units_mask: &[bool], local_tz: Option<chrono_tz::Tz>) -
 
         let start_array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
         let result_array: Int64Array = if let Some(local_tz) = local_tz {
-            let tz = local_tz.clone();
+            let tz = local_tz;
             unary(start_array, |value| {
                 perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
             })

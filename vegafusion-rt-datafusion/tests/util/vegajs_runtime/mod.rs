@@ -255,7 +255,7 @@ impl VegaJsRuntime {
     }
 
     /// Function to evaluate a full Vega spec and return requested data and signal values
-    pub fn eval_spec(&self, spec: &Value, watches: &Vec<Watch>) -> Result<Vec<WatchValue>> {
+    pub fn eval_spec(&self, spec: &Value, watches: &[Watch]) -> Result<Vec<WatchValue>> {
         let script = format!(
             r#"await VegaUtils.evalSpec({}, {})"#,
             serde_json::to_string(spec)?,
@@ -298,7 +298,7 @@ impl VegaJsRuntime {
         }];
 
         // Evaluate spec and extract signal value
-        let watches = self.eval_spec(&spec, &watches)?;
+        let watches = self.eval_spec(&spec, watches.as_slice())?;
         let scalar_value = ScalarValue::from_json(&watches[0].value)?;
         Ok(scalar_value)
     }

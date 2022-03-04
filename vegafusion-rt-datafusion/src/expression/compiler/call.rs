@@ -60,8 +60,10 @@ use crate::expression::compiler::builtin_functions::type_coercion::to_string::to
 
 pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>;
 pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
-pub type LocalTransformFn = Arc<dyn Fn(chrono_tz::Tz, &[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
-pub type DataFn = Arc<dyn Fn(&VegaFusionTable, &[Expression], &DFSchema) -> Result<Expr> + Send + Sync>;
+pub type LocalTransformFn =
+    Arc<dyn Fn(chrono_tz::Tz, &[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
+pub type DataFn =
+    Arc<dyn Fn(&VegaFusionTable, &[Expression], &DFSchema) -> Result<Expr> + Send + Sync>;
 
 #[derive(Clone)]
 pub enum VegaFusionCallable {
