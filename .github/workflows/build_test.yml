@@ -188,6 +188,7 @@ jobs:
       - name: Build and pack vegafusion-embed package
         working-directory: javascript/vegafusion-embed/
         run: |
+          npm install
           npm run prepack
           npm pack
           mkdir packed

@@ -15,7 +15,6 @@
     "strict": true,
     "strictPropertyInitialization": false,
     "target": "es2017",
-    "types": ["jest"]
   },
   "include": [
     "src/**/*.ts",
