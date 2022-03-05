@@ -245,6 +245,11 @@ jobs:
         with:
           name: vegafusion-wasm-packages
           path: vegafusion-wasm/pkg
+      - name: Build vegafusion-embed
+        working-directory: javascript/vegafusion-embed/
+        run: |
+          npm install
+          npm run build
       - name: Download vegafusion wheel
         uses: actions/download-artifact@v2
         with:
