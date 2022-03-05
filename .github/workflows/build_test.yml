@@ -185,6 +185,19 @@ jobs:
         with:
           name: vegafusion-wasm-packages
           path: vegafusion-wasm/pkg
+      - name: Build and pack vegafusion-embed package
+        working-directory: javascript/vegafusion-embed/
+        run: |
+          npm install
+          npm run prepack
+          npm pack
+          mkdir packed
+          mv vegafusion-embed-*.tgz packed;
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-embed-packages
+          path: javascript/vegafusion-embed/packed
 
   build-vegafusion-wheel:
     runs-on: ubuntu-latest
@@ -232,6 +245,11 @@ jobs:
         with:
           name: vegafusion-wasm-packages
           path: vegafusion-wasm/pkg
+      - name: Build vegafusion-embed
+        working-directory: javascript/vegafusion-embed/
+        run: |
+          npm install
+          npm run build
       - name: Download vegafusion wheel
         uses: actions/download-artifact@v2
         with:

@@ -32,11 +32,10 @@ module.exports = {
       {
         test: /\.css$/,
         use: ['style-loader', 'css-loader']
+      }, {
+        test: /\.svg$/,
+        loader: 'svg-inline-loader'
       },
-      {
-        test: /\.ttf$/,
-        use: ['file-loader']
-      }
     ]
   },
   plugins: [
@@ -46,7 +45,7 @@ module.exports = {
     })
   ],
   experiments: {
+    topLevelAwait: true,
     asyncWebAssembly: true,
-    syncWebAssembly: true,
   }
 };
