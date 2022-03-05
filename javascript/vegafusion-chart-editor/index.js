@@ -16,7 +16,7 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
-import * as vegafusion from "vegafusion-wasm";
+import * as vfEmbed from "vegafusion-embed";
 import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import _ from "lodash"
 import * as grpcWeb from 'grpc-web';
@@ -25,7 +25,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './style.css';
 
 function init() {
-    console.log(vegafusion.vega_version());
     monaco_init()
 
     let initial_spec = JSON.stringify(flights_spec, null, 2);
@@ -63,21 +62,25 @@ function init() {
         readOnly: true,
     });
 
-    const hostname = 'http://' + window.location.hostname + ':50051';
+    const hostname = 'http://127.0.0.1:50051';
     let client = new grpcWeb.GrpcWebClientBase({format: "binary"});
-    let send_message_grpc = vegafusion.make_grpc_send_message_fn(client, hostname);
+    let send_message_grpc = vfEmbed.makeGrpcSendMessageFn(client, hostname);
 
     function update_chart() {
         let msg_receiver;
         try {
             let element = document.getElementById("vega-chart");
-            msg_receiver = vegafusion.render_vegafusion(
+            let config = {
+                verbose: false,
+                debounce_wait: 30,
+                debounce_max_wait: 60,
+                download_source_link: "https://github.com/vegafusion/vegafusion/",
+            };
+            msg_receiver = vfEmbed.embedVegaFusion(
                 element,
                 editor.getValue(),
-                false,
-                50,
-                100,
-                send_message_grpc
+                send_message_grpc,
+                config
             );
             server_spec_monaco.setValue(msg_receiver.server_spec_json());
             client_spec_monaco.setValue(msg_receiver.client_spec_json());
@@ -95,7 +98,6 @@ function init() {
     // Update chart (with debounce) when editor value changes
     update_chart()
     let content_change_listener = _.debounce((content) => {
-        // console.log(content);
         update_chart()
     }, 750);
 
@@ -103,18 +105,6 @@ function init() {
 }
 
 function monaco_init() {
-    // Monaco.languages.json.jsonDefaults.setModeConfiguration({
-    //     documentFormattingEdits: true,
-    //     documentRangeFormattingEdits: true,
-    //     completionItems: true,
-    //     hovers: true,
-    //     documentSymbols: true,
-    //     tokens: true,
-    //     colors: true,
-    //     foldingRanges: true,
-    //     diagnostics: true,
-    // });
-
     Monaco.languages.json.jsonDefaults.setDiagnosticsOptions(
         {
             validate: true,
@@ -130,14 +120,12 @@ let flights_spec = {
     "$schema": "https://vega.github.io/schema/vega/v5.json",
     "background": "white",
     "padding": 5,
-    "width": 600,
+    "width": 400,
     "data": [
         {"name": "brush_store"},
         {
             "name": "source_0",
             "url": "https://raw.githubusercontent.com/vega/vega-datasets/master/data/flights-2k.json",
-            // "url": "/media/jmmease/SSD2/rustDev/diorite/datasets/vega-datasets-master/data/flights-7m.csv",
-            // "url": "/media/jmmease/SSD2/rustDev/diorite/datasets/vega-datasets-master/data/flights-27m.csv",
             "format": {"type": "json", "parse": {"date": "date"}},
             "transform": [
                 {
