@@ -32,7 +32,7 @@
     "url": "https://github.com/jonmmease/vegafusion"
   },
   "scripts": {
-    "build": "npm run build:lib && npm run build:nbextension && npm run build:labextension:dev",
+    "build:dev": "npm run build:lib && npm run build:nbextension && npm run build:labextension:dev && pip install --force-reinstall --no-deps -e .",
     "build:prod": "npm run clean && npm run build:lib && npm run build:nbextension && npm run build:labextension",
     "build:labextension": "jupyter labextension build .",
     "build:labextension:dev": "jupyter labextension build --development True .",
@@ -56,7 +56,7 @@
     "@jupyterlab/notebook": "^3.0.0 || ^4.0.0",
     "marked": "^4.0.10",
     "vega-lite": "^4.17.0",
-    "vegafusion-wasm": "../../vegafusion-wasm/pkg"
+    "vegafusion-embed": "../../javascript/vegafusion-embed"
   },
   "devDependencies": {
     "@babel/core": "^7.5.0",

@@ -28,3 +28,10 @@ _vegafusion_data
 /python/vegafusion/build/
 /vegafusion-wasm/examples/chart_editor/dist/
 /vegafusion-wasm/examples/chart_editor/node_modules/
+/javascript/vegafusion-embed/css/
+/javascript/vegafusion-embed/lib/
+/javascript/vegafusion-embed/node_modules/
+/javascript/vegafusion-chart-editor/dist/
+/javascript/vegafusion-chart-editor/node_modules/
+/javascript/vegafusion-embed/package/css/
+/javascript/vegafusion-embed/package/lib/

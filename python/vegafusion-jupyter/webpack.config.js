@@ -48,7 +48,6 @@ module.exports = [
             rules: rules
         },
         mode: "production",
-        devtool: 'source-map',
         externals,
         resolve,
         experiments,
@@ -87,7 +86,6 @@ module.exports = [
             library: "vegafusion-jupyter",
             publicPath: 'https://unpkg.com/vegafusion-jupyter@' + version + '/dist/'
         },
-        devtool: 'source-map',
         module: {
             rules: rules
         },
@@ -96,27 +94,4 @@ module.exports = [
         resolve,
         experiments,
     },
-
-    /**
-     * Documentation widget bundle
-     *
-     * This bundle is used to embed widgets in the package documentation.
-     */
-    {
-        entry: './src/index.ts',
-        output: {
-            filename: 'embed-bundle.js',
-            path: path.resolve(__dirname, 'docs', 'source', '_static'),
-            library: "vegafusion-jupyter",
-            libraryTarget: 'amd'
-        },
-        module: {
-            rules: rules
-        },
-        mode: "production",
-        devtool: 'source-map',
-        externals,
-        resolve,
-        experiments,
-    }
 ];
