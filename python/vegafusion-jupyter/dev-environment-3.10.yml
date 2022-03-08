@@ -22,3 +22,5 @@ dependencies:
   - scikit-image
   - tenacity
   - flaky
+  - click
+  - toml
