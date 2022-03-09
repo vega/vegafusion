@@ -448,10 +448,7 @@ mod test_vegalite_specs {
         case("vegalite/circle_flatten", 0.001),
         case("vegalite/circle_github_punchcard", 0.001),
         case("vegalite/circle_labelangle_orient_signal", 0.001),
-
-        // "Ambiguous reference to field" error related to
-        // https://github.com/apache/arrow-datafusion/issues/1411
-        // case("vegalite/circle_natural_disasters", 0.001),
+        case("vegalite/circle_natural_disasters", 0.001),
         case("vegalite/circle_opacity", 0.001),
         case("vegalite/circle_scale_quantile", 0.001),
         case("vegalite/circle_scale_quantize", 0.001),
@@ -562,10 +559,7 @@ mod test_vegalite_specs {
         case("vegalite/joinaggregate_mean_difference_by_year", 0.001),
         case("vegalite/joinaggregate_mean_difference", 0.001),
         case("vegalite/joinaggregate_percent_of_total", 0.001),
-
-        // // (DataFusion bug https://github.com/apache/arrow-datafusion/issues/1411)
-        // case("joinaggregate_residual_graph", 0.001),
-
+        case("vegalite/joinaggregate_residual_graph", 0.001),
         case("vegalite/layer_arc_label", 0.001),
         case("vegalite/layer_bar_annotations", 0.001),
         case("vegalite/layer_bar_circle_grouped", 0.001),

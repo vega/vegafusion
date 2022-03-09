@@ -3,6 +3,14 @@
     "namespace": "data",
     "name": "source_0",
     "scope": []
+  }, {
+    "namespace": "data",
+    "name": "source_0_color_domain_RatingDelta",
+    "scope": []
+  }, {
+    "namespace": "data",
+    "name": "source_0_y_domain_RatingDelta",
+    "scope": []
   }],
   "client_to_server": []
 }
