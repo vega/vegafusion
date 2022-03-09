@@ -20,12 +20,10 @@ use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::arrow::array::{ArrayRef, StructArray};
 use datafusion::arrow::datatypes::{DataType, Field};
 use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
-use datafusion::physical_plan::functions::{
-    make_scalar_function, Signature, Volatility,
-};
+use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
-use std::sync::Arc;
 use datafusion_expr::ReturnTypeFunction;
+use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ObjectExpression;
 

@@ -17,15 +17,13 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 use datafusion::arrow::datatypes::{DataType, Field};
-use datafusion::physical_plan::functions::{
-    Signature, Volatility,
-};
+use datafusion::physical_plan::functions::{Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
+use datafusion_expr::{ReturnTypeFunction, ScalarFunctionImplementation};
 use std::convert::TryFrom;
 use std::sync::Arc;
-use datafusion_expr::{ReturnTypeFunction, ScalarFunctionImplementation};
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 
 /// `span(array)`

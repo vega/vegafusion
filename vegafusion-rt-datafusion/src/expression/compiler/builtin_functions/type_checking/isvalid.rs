@@ -19,12 +19,10 @@
 use datafusion::arrow::array::ArrayRef;
 use datafusion::arrow::compute::is_not_null;
 use datafusion::arrow::datatypes::DataType;
-use datafusion::physical_plan::functions::{
-    make_scalar_function, Signature, Volatility,
-};
+use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
-use std::sync::Arc;
 use datafusion_expr::ReturnTypeFunction;
+use std::sync::Arc;
 
 /// `isValid(value)`
 ///

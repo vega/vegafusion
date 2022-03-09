@@ -21,9 +21,7 @@ use chrono::{
 };
 use datafusion::arrow::array::{ArrayRef, Int64Array, StringArray};
 use datafusion::arrow::datatypes::DataType;
-use datafusion::physical_plan::functions::{
-    make_scalar_function, Signature, Volatility,
-};
+use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use regex::Regex;
 use std::sync::Arc;

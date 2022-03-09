@@ -16,12 +16,10 @@
 
 use chrono::{NaiveDateTime, TimeZone, Timelike};
 use datafusion::arrow::array::{Int64Array, TimestampMillisecondArray};
-use datafusion::physical_plan::functions::{
-    make_scalar_function, Signature, Volatility,
-};
+use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
-use std::sync::Arc;
 use datafusion_expr::ReturnTypeFunction;
+use std::sync::Arc;
 use vegafusion_core::arrow::array::ArrayRef;
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};

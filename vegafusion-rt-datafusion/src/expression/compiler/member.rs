@@ -27,16 +27,14 @@ use datafusion::arrow::compute::{cast, kernels};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::error::DataFusionError;
 use datafusion::logical_plan::{col, DFSchema, Expr};
-use datafusion::physical_plan::functions::{
-    make_scalar_function, Signature, Volatility,
-};
+use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::prelude::lit;
 use datafusion::scalar::ScalarValue;
+use datafusion_expr::{ReturnTypeFunction, ScalarFunctionImplementation};
 use std::convert::TryFrom;
 use std::sync::Arc;
-use datafusion_expr::{ReturnTypeFunction, ScalarFunctionImplementation};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{Identifier, MemberExpression};
 
