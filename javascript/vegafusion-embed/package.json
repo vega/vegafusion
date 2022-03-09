@@ -1,6 +1,6 @@
 {
   "name": "vegafusion-embed",
-  "version": "0.0.5",
+  "version": "0.0.4",
   "description": "Library to embed vegafusion visualizations",
   "keywords": [
     "vega",

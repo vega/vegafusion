@@ -18,6 +18,7 @@ import altair as alt
 from . import renderer
 from . import widget
 from .widget import VegaFusionWidget
+from ._version import __version__
 
 def enable(
         download_source_link=None,

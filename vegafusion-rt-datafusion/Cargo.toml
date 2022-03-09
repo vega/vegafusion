@@ -1,39 +1,34 @@
+[[bench]]
+name = "spec_benchmarks"
+harness = false
+
 [package]
 name = "vegafusion-rt-datafusion"
 version = "0.0.4"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-vegafusion-core = {path = "../vegafusion-core", version="0.0.4"}
-
 regex = "^1.5.4"
 lazy_static = "^1.4.0"
-serde = {version="1.0.126", features=["derive"]}
 serde_json = "1.0.68"
 chrono = "0.4.19"
 chrono-tz = "0.6.1"
-datafusion = { git="https://github.com/apache/arrow-datafusion.git", rev="36279ed2d3d08661d3de481e9c333c6708193079" }
 prost = "0.9.0"
 prost-types = "0.9.0"
 num-traits = "0.2.14"
 itertools = "0.10.1"
-tokio = { version = "1.10.1", features = ["macros", "rt-multi-thread"] }
 float-cmp = "0.9.0"
 lru = "0.7.0"
 futures = "0.3.17"
 async-trait = "0.1.51"
 async-recursion = "0.3.2"
-reqwest = {version="0.11.4", default_features=false, features=["rustls-tls"]}
 async-lock = "2.4.0"
 tempfile = "3.2.0"
 futures-util = "0.3.17"
 bytes = "1.1.0"
 
 [dev-dependencies]
-reqwest = {version="0.11.4", default_features=false, features=["blocking", "rustls-tls"]}
 futures = "0.3.17"
 futures-util = "0.3.17"
 rstest = "0.11.0"
@@ -42,9 +37,32 @@ base64 = "0.13.0"
 dssim = "3.1.0"
 rgb = "0.8.27"
 lodepng = "3.4.6"
-criterion = {version="0.3", features=["async_tokio"]}
 
+[dependencies.vegafusion-core]
+path = "../vegafusion-core"
 
-[[bench]]
-name = "spec_benchmarks"
-harness = false
+[dependencies.serde]
+version = "1.0.126"
+features = [ "derive",]
+
+[dependencies.datafusion]
+git = "https://github.com/apache/arrow-datafusion.git"
+rev = "36279ed2d3d08661d3de481e9c333c6708193079"
+
+[dependencies.tokio]
+version = "1.10.1"
+features = [ "macros", "rt-multi-thread",]
+
+[dependencies.reqwest]
+version = "0.11.4"
+default_features = false
+features = [ "rustls-tls",]
+
+[dev-dependencies.reqwest]
+version = "0.11.4"
+default_features = false
+features = [ "blocking", "rustls-tls",]
+
+[dev-dependencies.criterion]
+version = "0.3"
+features = [ "async_tokio",]
