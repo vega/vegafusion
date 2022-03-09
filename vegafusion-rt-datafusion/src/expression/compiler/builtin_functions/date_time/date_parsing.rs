@@ -22,13 +22,14 @@ use chrono::{
 use datafusion::arrow::array::{ArrayRef, Int64Array, StringArray};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::physical_plan::functions::{
-    make_scalar_function, ReturnTypeFunction, Signature, Volatility,
+    make_scalar_function, Signature, Volatility,
 };
 use datafusion::physical_plan::udf::ScalarUDF;
 use regex::Regex;
 use std::sync::Arc;
 // use chrono::format::{parse, Parsed, StrftimeItems};
 use chrono::format::{parse, Parsed, StrftimeItems};
+use datafusion_expr::ReturnTypeFunction;
 use vegafusion_core::arrow::array::Array;
 
 lazy_static! {

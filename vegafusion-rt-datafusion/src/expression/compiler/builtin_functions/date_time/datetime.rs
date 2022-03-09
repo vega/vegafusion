@@ -25,12 +25,13 @@ use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
 use datafusion::physical_plan::functions::{
-    ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature, Volatility,
+    Signature, TypeSignature, Volatility,
 };
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
 use std::sync::Arc;
+use datafusion_expr::{ReturnTypeFunction, ScalarFunctionImplementation};
 use vegafusion_core::error::{Result, ResultWithContext};
 
 pub fn datetime_transform(

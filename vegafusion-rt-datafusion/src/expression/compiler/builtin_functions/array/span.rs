@@ -18,13 +18,14 @@
  */
 use datafusion::arrow::datatypes::{DataType, Field};
 use datafusion::physical_plan::functions::{
-    ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
+    Signature, Volatility,
 };
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
 use std::convert::TryFrom;
 use std::sync::Arc;
+use datafusion_expr::{ReturnTypeFunction, ScalarFunctionImplementation};
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 
 /// `span(array)`

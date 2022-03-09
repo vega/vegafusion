@@ -20,13 +20,14 @@ use datafusion::arrow::array::{new_null_array, Array, Int32Array, ListArray};
 use datafusion::arrow::compute::kernels;
 use datafusion::arrow::datatypes::DataType;
 use datafusion::physical_plan::functions::{
-    ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
+    Signature, Volatility,
 };
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
 use std::convert::TryFrom;
 use std::sync::Arc;
+use datafusion_expr::{ReturnTypeFunction, ScalarFunctionImplementation};
 
 /// `length(array)`
 ///

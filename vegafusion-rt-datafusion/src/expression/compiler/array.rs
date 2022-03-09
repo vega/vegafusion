@@ -23,11 +23,12 @@ use datafusion::arrow::array::{
 use datafusion::arrow::datatypes::{DataType, Field, Float64Type};
 use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::functions::{
-    make_scalar_function, ReturnTypeFunction, Signature, Volatility,
+    make_scalar_function, Signature, Volatility,
 };
 use datafusion::physical_plan::udf::ScalarUDF;
 use std::ops::Deref;
 use std::sync::Arc;
+use datafusion_expr::ReturnTypeFunction;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ArrayExpression;
 
