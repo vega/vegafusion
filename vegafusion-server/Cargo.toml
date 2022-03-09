@@ -24,12 +24,10 @@ tonic-build = "0.6"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
-version = "0.0.4"
 features = [ "tonic_support",]
 
 [dependencies.vegafusion-rt-datafusion]
 path = "../vegafusion-rt-datafusion"
-version = "0.0.4"
 
 [dependencies.tokio]
 version = "1.17.0"
