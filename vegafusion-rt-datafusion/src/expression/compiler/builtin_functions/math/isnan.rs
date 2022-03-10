@@ -19,10 +19,9 @@
 use datafusion::arrow::array::{ArrayRef, BooleanArray, Float32Array, Float64Array};
 use datafusion::arrow::compute::no_simd_compare_op_scalar;
 use datafusion::arrow::datatypes::DataType;
-use datafusion::physical_plan::functions::{
-    make_scalar_function, ReturnTypeFunction, Signature, Volatility,
-};
+use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
+use datafusion_expr::ReturnTypeFunction;
 use std::sync::Arc;
 
 /// isNaN(value)

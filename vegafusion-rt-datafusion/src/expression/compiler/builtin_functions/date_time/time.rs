@@ -19,10 +19,9 @@
 use datafusion::arrow::array::{ArrayRef, Date32Array, Int64Array};
 use datafusion::arrow::compute::cast;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
-use datafusion::physical_plan::functions::{
-    make_scalar_function, ReturnTypeFunction, Signature, Volatility,
-};
+use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
+use datafusion_expr::ReturnTypeFunction;
 use std::sync::Arc;
 use vegafusion_core::arrow::compute::unary;
 

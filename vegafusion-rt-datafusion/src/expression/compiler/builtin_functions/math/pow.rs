@@ -19,10 +19,9 @@
 use datafusion::arrow::array::{ArrayRef, Float32Array, Float64Array};
 use datafusion::arrow::compute::math_op;
 use datafusion::arrow::datatypes::DataType;
-use datafusion::physical_plan::functions::{
-    make_scalar_function, ReturnTypeFunction, Signature, Volatility,
-};
+use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
+use datafusion_expr::ReturnTypeFunction;
 use std::sync::Arc;
 
 /// `pow(value, exponent)`

@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from .runtime import runtime
 from .transformer import to_feather
+from ._version import __version__
 
 # Import subpackages
 try:

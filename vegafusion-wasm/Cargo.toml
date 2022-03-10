@@ -1,66 +1,57 @@
 [package]
 name = "vegafusion-wasm"
-version = "0.0.4"
+version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = [ "cdylib", "rlib",]
 
 [features]
-default = ["console_error_panic_hook"]
+default = [ "console_error_panic_hook",]
 
 [dependencies]
-vegafusion-core = {path="../vegafusion-core", version="0.0.4"}
 serde_json = "1.0.68"
-serde = { version = "1.0", features = ["derive"] }
-wasm-bindgen = {version="0.2.78", features=["serde-serialize"]}
 wasm-bindgen-futures = "0.4.28"
 js-sys = "0.3.55"
-getrandom = { version = "0.2.3", features = ["js"] }
 prost = "0.9.0"
 prost-types = "0.9.0"
 indexmap = "=1.6.2"
-chrono = {version="0.4.19", features=["wasmbind"]}
-
-# The `console_error_panic_hook` crate provides better debugging of panics by
-# logging them with `console.error`. This is great for development, but requires
-# all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
-# code size when deploying.
-console_error_panic_hook = { version = "0.1.6", optional = true }
-
-# `wee_alloc` is a tiny allocator for wasm that is only ~1K in code size
-# compared to the default allocator's ~10K. It is slower than the default
-# allocator, however.
-#
-## Unfortunately, `wee_alloc` requires nightly Rust when targeting wasm for now.
-#wee_alloc = { version = "0.4.5", optional = true }
-wee_alloc = { version = "0.4.5" }
-
-[dependencies.web-sys]
-version = "0.3.55"
-features = [
-    'Document',
-    'Element',
-    'HtmlElement',
-    'Node',
-    'Window',
-]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.13"
 
+[dependencies.vegafusion-core]
+path = "../vegafusion-core"
+
+[dependencies.serde]
+version = "1.0"
+features = [ "derive",]
+
+[dependencies.wasm-bindgen]
+version = "0.2.78"
+features = [ "serde-serialize",]
+
+[dependencies.getrandom]
+version = "0.2.3"
+features = [ "js",]
+
+[dependencies.chrono]
+version = "0.4.19"
+features = [ "wasmbind",]
+
+[dependencies.console_error_panic_hook]
+version = "0.1.6"
+optional = true
+
+[dependencies.wee_alloc]
+version = "0.4.5"
+
+[dependencies.web-sys]
+version = "0.3.55"
+features = [ "Document", "Element", "HtmlElement", "Node", "Window",]
+
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = ['-Os']
+wasm-opt = [ "-Os",]
 
 [package.metadata.wasm-pack.profile.dev]
-# Should `wasm-opt` be used to further optimize the wasm binary generated after
-# the Rust compiler has finished? Using `wasm-opt` can often further decrease
-# binary size or do clever tricks that haven't made their way into LLVM yet.
-#
-# Configuration is set to `false` by default for the dev profile, but it can
-# be set to an array of strings which are explicit arguments to pass to
-# `wasm-opt`. For example `['-Os']` would optimize for size while `['-O4']`
-# would execute very expensive optimizations passes
 wasm-opt = false

@@ -24,12 +24,11 @@ use chrono::{DateTime, TimeZone};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
-use datafusion::physical_plan::functions::{
-    ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature, Volatility,
-};
+use datafusion::physical_plan::functions::{Signature, TypeSignature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
+use datafusion_expr::{ReturnTypeFunction, ScalarFunctionImplementation};
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 

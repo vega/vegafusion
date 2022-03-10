@@ -23,11 +23,10 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::{col, lit, DFSchema, Expr};
-use datafusion::physical_plan::functions::{
-    make_scalar_function, ReturnTypeFunction, Signature, Volatility,
-};
+use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::scalar::ScalarValue;
+use datafusion_expr::ReturnTypeFunction;
 use float_cmp::approx_eq;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::{ArrayRef, Float64Array, Int64Array};
