@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# Copyright (c) Jon Mease.
-# Distributed under the terms of the Modified BSD License.
-
+# Copyright (c) VegaFusion Technologies LLC.
 
 def test_nbextension_path():
     # Check that magic function can be imported from package root:
