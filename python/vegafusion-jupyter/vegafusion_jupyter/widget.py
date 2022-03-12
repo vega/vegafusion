@@ -1,5 +1,5 @@
 # VegaFusion
-# Copyright (C) 2022, Jon Mease
+# Copyright (C) 2022, VegaFusion Technologies LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
