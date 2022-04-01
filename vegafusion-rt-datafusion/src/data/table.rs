@@ -21,7 +21,6 @@ use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
 use datafusion::datasource::MemTable;
 use datafusion::prelude::SessionContext;
-use futures_util::StreamExt;
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::SchemaRef;
 use vegafusion_core::arrow::util::pretty::pretty_format_batches;
