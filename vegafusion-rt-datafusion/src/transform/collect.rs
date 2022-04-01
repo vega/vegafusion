@@ -32,9 +32,9 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Collect {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: Arc<DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
         let sort_exprs: Vec<_> = self
             .fields
             .clone()

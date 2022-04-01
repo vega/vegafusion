@@ -44,9 +44,9 @@ use vegafusion_core::transform::TransformDependencies;
 pub trait TransformTrait: TransformDependencies {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: Arc<DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)>;
+    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)>;
 }
 
 pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
@@ -67,9 +67,9 @@ pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
 impl TransformTrait for Transform {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: Arc<DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
         to_transform_trait(self.transform_kind())
             .eval(dataframe, config)
             .await

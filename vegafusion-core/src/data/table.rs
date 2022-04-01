@@ -192,7 +192,7 @@ impl VegaFusionTable {
 
     pub fn from_ipc_bytes(data: &[u8]) -> Result<Self> {
         let cursor = Cursor::new(data);
-        let reader = StreamReader::try_new(cursor)?;
+        let reader = StreamReader::try_new(cursor, None)?;
         let schema = reader.schema();
         let mut batches: Vec<RecordBatch> = Vec::new();
 

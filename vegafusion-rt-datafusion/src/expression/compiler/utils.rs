@@ -19,7 +19,6 @@
 use datafusion::arrow::array::{ArrayRef, BooleanArray};
 use datafusion::arrow::datatypes::{DataType, Schema};
 use datafusion::arrow::record_batch::RecordBatch;
-use datafusion::execution::context::ExecutionContextState;
 use datafusion::logical_plan::{and, Column, DFSchema, Expr, ExprSchemable};
 use datafusion::optimizer::utils::expr_to_columns;
 use datafusion::physical_plan::planner::DefaultPhysicalPlanner;
@@ -29,6 +28,7 @@ use datafusion::scalar::ScalarValue;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
+use datafusion::execution::context::{default_session_builder, SessionState};
 use datafusion::physical_plan::functions::BuiltinScalarFunction;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -41,7 +41,7 @@ lazy_static! {
     .unwrap();
     pub static ref UNIT_SCHEMA: DFSchema =
         DFSchema::try_from(UNIT_RECORD_BATCH.schema().as_ref().clone()).unwrap();
-    pub static ref CTX_STATE: ExecutionContextState = ExecutionContextState::new();
+    pub static ref SESSION_STATE: SessionState = default_session_builder(Default::default());
     pub static ref PLANNER: DefaultPhysicalPlanner = Default::default();
 }
 
@@ -193,7 +193,7 @@ impl ExprHelpers for Expr {
             Schema::new(schema.fields().iter().map(|f| f.field().clone()).collect());
 
         PLANNER
-            .create_physical_expr(self, schema, &physical_schema, &CTX_STATE)
+            .create_physical_expr(self, schema, &physical_schema, &SESSION_STATE)
             .with_context(|| format!("Failed to create PhysicalExpr from {:?}", self))
     }
 

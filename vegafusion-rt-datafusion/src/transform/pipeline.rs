@@ -36,9 +36,9 @@ use vegafusion_core::transform::TransformDependencies;
 impl TransformTrait for TransformPipeline {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: Arc<DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
         let mut result_df = dataframe;
         let mut result_outputs: HashMap<Variable, TaskValue> = Default::default();
         let mut config = config.clone();

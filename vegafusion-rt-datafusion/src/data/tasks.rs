@@ -33,11 +33,10 @@ use datafusion::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use datafusion::arrow::ipc::reader::{FileReader, StreamReader};
 use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::dataframe::DataFrame;
-use datafusion::execution::context::ExecutionContext;
 use datafusion::execution::options::CsvReadOptions;
 use datafusion::logical_plan::Expr;
 use datafusion::physical_plan::functions::BuiltinScalarFunction;
-use datafusion::prelude::col;
+use datafusion::prelude::{col, SessionContext};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
@@ -245,9 +244,9 @@ fn check_builtin_dataset(url: String) -> String {
 fn process_datetimes(
     parse: &Option<Parse>,
     date_mode: DateParseMode,
-    df: Arc<dyn DataFrame>,
+    df: Arc<DataFrame>,
     local_tz: &Option<chrono_tz::Tz>,
-) -> Result<Arc<dyn DataFrame>> {
+) -> Result<Arc<DataFrame>> {
     // Perform specialized date parsing
     let mut date_fields: Vec<String> = Vec::new();
     let mut df = df;
@@ -438,7 +437,7 @@ impl TaskCall for DataSourceTask {
     }
 }
 
-async fn read_csv(url: String, parse: &Option<Parse>) -> Result<Arc<dyn DataFrame>> {
+async fn read_csv(url: String, parse: &Option<Parse>) -> Result<Arc<DataFrame>> {
     // Build base CSV options
     let csv_opts = if url.ends_with(".tsv") {
         CsvReadOptions::new()
@@ -448,7 +447,7 @@ async fn read_csv(url: String, parse: &Option<Parse>) -> Result<Arc<dyn DataFram
         CsvReadOptions::new()
     };
 
-    let mut ctx = ExecutionContext::new();
+    let mut ctx = SessionContext::new();
 
     if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
@@ -490,10 +489,10 @@ async fn build_csv_schema(
     uri: impl Into<String>,
     parse: &Option<Parse>,
 ) -> Result<SchemaRef> {
-    let ctx = ExecutionContext::new();
+    let ctx = SessionContext::new();
 
     let uri: String = uri.into();
-    let (object_store, path) = ctx.object_store(&uri)?;
+    let (object_store, path) = ctx.runtime_env().object_store(&uri)?;
     let listing_opts = csv_opts.to_listing_options(1);
     let inferred_schema = listing_opts
         .infer_schema(Arc::clone(&object_store), path)
@@ -539,7 +538,7 @@ async fn build_csv_schema(
     Ok(SchemaRef::new(Schema::new(new_fields)))
 }
 
-async fn read_json(url: &str, batch_size: usize) -> Result<Arc<dyn DataFrame>> {
+async fn read_json(url: &str, batch_size: usize) -> Result<Arc<DataFrame>> {
     // Read to json Value from local file or url.
     let value: serde_json::Value = if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
@@ -568,7 +567,7 @@ async fn read_json(url: &str, batch_size: usize) -> Result<Arc<dyn DataFrame>> {
     VegaFusionTable::from_json(&value, batch_size)?.to_dataframe()
 }
 
-async fn read_arrow(url: &str) -> Result<Arc<dyn DataFrame>> {
+async fn read_arrow(url: &str) -> Result<Arc<DataFrame>> {
     // Read to json Value from local file or url.
     let buffer = if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
@@ -595,14 +594,14 @@ async fn read_arrow(url: &str) -> Result<Arc<dyn DataFrame>> {
     let reader = std::io::Cursor::new(buffer);
 
     // Try parsing file as both File and IPC formats
-    let (schema, batches) = if let Ok(arrow_reader) = FileReader::try_new(reader.clone()) {
+    let (schema, batches) = if let Ok(arrow_reader) = FileReader::try_new(reader.clone(), None) {
         let schema = arrow_reader.schema();
         let mut batches: Vec<RecordBatch> = Vec::new();
         for v in arrow_reader {
             batches.push(v.with_context(|| "Failed to read arrow batch".to_string())?);
         }
         (schema, batches)
-    } else if let Ok(arrow_reader) = StreamReader::try_new(reader.clone()) {
+    } else if let Ok(arrow_reader) = StreamReader::try_new(reader.clone(), None) {
         let schema = arrow_reader.schema();
         let mut batches: Vec<RecordBatch> = Vec::new();
         for v in arrow_reader {
@@ -610,7 +609,7 @@ async fn read_arrow(url: &str) -> Result<Arc<dyn DataFrame>> {
         }
         (schema, batches)
     } else {
-        let _f = FileReader::try_new(reader).unwrap();
+        let _f = FileReader::try_new(reader, None).unwrap();
         return Err(VegaFusionError::parse(format!(
             "Failed to read arrow file at {}",
             url

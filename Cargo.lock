@@ -63,9 +63,9 @@ checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
 
 [[package]]
 name = "arrow"
-version = "10.0.0"
+version = "11.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1328dbc6d5d76a08b13df3ac630f61a6a31276d9e9d08eb813e98efa624c2382"
+checksum = "db922bcac0aa9f3b6e191d73b0b5df925c2c10ab4893f7416359f289e5d23489"
 dependencies = [
  "bitflags",
  "chrono",
@@ -540,13 +540,14 @@ dependencies = [
 [[package]]
 name = "datafusion"
 version = "7.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=3860cd3b1fbddad0f6f8e342643389a5c4f70a60#3860cd3b1fbddad0f6f8e342643389a5c4f70a60"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=4c2320e783ddf54086d345b8d4e3d8a70611aab4#4c2320e783ddf54086d345b8d4e3d8a70611aab4"
 dependencies = [
  "ahash",
  "arrow",
  "async-trait",
  "chrono",
  "datafusion-common",
+ "datafusion-data-access",
  "datafusion-expr",
  "datafusion-physical-expr",
  "futures",
@@ -565,12 +566,13 @@ dependencies = [
  "tempfile",
  "tokio",
  "tokio-stream",
+ "uuid",
 ]
 
 [[package]]
 name = "datafusion-common"
 version = "7.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=3860cd3b1fbddad0f6f8e342643389a5c4f70a60#3860cd3b1fbddad0f6f8e342643389a5c4f70a60"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=4c2320e783ddf54086d345b8d4e3d8a70611aab4#4c2320e783ddf54086d345b8d4e3d8a70611aab4"
 dependencies = [
  "arrow",
  "ordered-float 2.10.0",
@@ -579,9 +581,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "datafusion-data-access"
+version = "1.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=4c2320e783ddf54086d345b8d4e3d8a70611aab4#4c2320e783ddf54086d345b8d4e3d8a70611aab4"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "futures",
+ "parking_lot 0.12.0",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "datafusion-expr"
 version = "7.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=3860cd3b1fbddad0f6f8e342643389a5c4f70a60#3860cd3b1fbddad0f6f8e342643389a5c4f70a60"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=4c2320e783ddf54086d345b8d4e3d8a70611aab4#4c2320e783ddf54086d345b8d4e3d8a70611aab4"
 dependencies = [
  "ahash",
  "arrow",
@@ -592,7 +607,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-expr"
 version = "7.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=3860cd3b1fbddad0f6f8e342643389a5c4f70a60#3860cd3b1fbddad0f6f8e342643389a5c4f70a60"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=4c2320e783ddf54086d345b8d4e3d8a70611aab4#4c2320e783ddf54086d345b8d4e3d8a70611aab4"
 dependencies = [
  "ahash",
  "arrow",
@@ -1666,9 +1681,9 @@ dependencies = [
 
 [[package]]
 name = "parquet"
-version = "10.0.0"
+version = "11.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53e9c8fc20af9b92d85d42ec86e5217b2eaf1340fbba75c4b4296de764ea7921"
+checksum = "1460c04ede29e7a2d825357cd764c403b5d28ebdabc129876552c8a86a4ee9a8"
 dependencies = [
  "arrow",
  "base64",
@@ -2413,9 +2428,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "sqlparser"
-version = "0.14.0"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8f192f29f4aa49e57bebd0aa05858e0a1f32dd270af36efe49edb82cbfffab6"
+checksum = "adbbea2526ad0d02ad9414a07c396078a5b944bbf9ca4fbab8f01bb4cb579081"
 dependencies = [
  "log",
 ]
@@ -2918,6 +2933,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "uuid"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
+dependencies = [
+ "getrandom",
+]
+
+[[package]]
 name = "vegafusion-core"
 version = "0.1.0"
 dependencies = [
@@ -3310,18 +3334,18 @@ dependencies = [
 
 [[package]]
 name = "zstd"
-version = "0.10.0+zstd.1.5.2"
+version = "0.11.1+zstd.1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b1365becbe415f3f0fcd024e2f7b45bacfb5bdd055f0dc113571394114e7bdd"
+checksum = "77a16b8414fde0414e90c612eba70985577451c4c504b99885ebed24762cb81a"
 dependencies = [
  "zstd-safe",
 ]
 
 [[package]]
 name = "zstd-safe"
-version = "4.1.4+zstd.1.5.2"
+version = "5.0.1+zstd.1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f7cd17c9af1a4d6c24beb1cc54b17e2ef7b593dc92f19e9d9acad8b182bbaee"
+checksum = "7c12659121420dd6365c5c3de4901f97145b79651fb1d25814020ed2ed0585ae"
 dependencies = [
  "libc",
  "zstd-sys",
@@ -3329,9 +3353,9 @@ dependencies = [
 
 [[package]]
 name = "zstd-sys"
-version = "1.6.3+zstd.1.5.2"
+version = "2.0.1+zstd.1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc49afa5c8d634e75761feda8c592051e7eeb4683ba827211eb0d731d3402ea8"
+checksum = "9fd07cbbc53846d9145dbffdf6dd09a7a0aa52be46741825f5c97bdd4f73f12b"
 dependencies = [
  "cc",
  "libc",

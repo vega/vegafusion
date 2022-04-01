@@ -37,9 +37,9 @@ use datafusion::physical_plan::window_functions::{BuiltInWindowFunction, WindowF
 impl TransformTrait for Window {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: Arc<DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
         let mut order_by: Vec<_> = self
             .sort_fields
             .iter()

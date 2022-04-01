@@ -42,9 +42,9 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Bin {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: Arc<DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
         // Compute binning solution
         let params = calculate_bin_params(self, dataframe.schema(), config)?;
 

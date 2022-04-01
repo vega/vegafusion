@@ -20,7 +20,8 @@ use crate::transform::utils::DataFrameUtils;
 use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
 use datafusion::datasource::MemTable;
-use datafusion::execution::context::ExecutionContext;
+use datafusion::prelude::SessionContext;
+use futures_util::StreamExt;
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::SchemaRef;
 use vegafusion_core::arrow::util::pretty::pretty_format_batches;
@@ -29,22 +30,22 @@ use vegafusion_core::error::{Result, ResultWithContext};
 
 #[async_trait]
 pub trait VegaFusionTableUtils {
-    fn from_dataframe_blocking(value: Arc<dyn DataFrame>) -> Result<VegaFusionTable>;
-    async fn from_dataframe(value: Arc<dyn DataFrame>) -> Result<VegaFusionTable>;
+    fn from_dataframe_blocking(value: Arc<DataFrame>) -> Result<VegaFusionTable>;
+    async fn from_dataframe(value: Arc<DataFrame>) -> Result<VegaFusionTable>;
     fn pretty_format(&self, max_rows: Option<usize>) -> Result<String>;
     fn to_memtable(&self) -> MemTable;
-    fn to_dataframe(&self) -> Result<Arc<dyn DataFrame>>;
+    fn to_dataframe(&self) -> Result<Arc<DataFrame>>;
 }
 
 #[async_trait]
 impl VegaFusionTableUtils for VegaFusionTable {
-    fn from_dataframe_blocking(value: Arc<dyn DataFrame>) -> Result<Self> {
+    fn from_dataframe_blocking(value: Arc<DataFrame>) -> Result<Self> {
         let schema: SchemaRef = Arc::new(value.schema().into()) as SchemaRef;
         let batches = value.block_eval()?;
         Ok(Self { schema, batches })
     }
 
-    async fn from_dataframe(value: Arc<dyn DataFrame>) -> Result<VegaFusionTable> {
+    async fn from_dataframe(value: Arc<DataFrame>) -> Result<VegaFusionTable> {
         let schema: SchemaRef = Arc::new(value.schema().into()) as SchemaRef;
         let batches = value.collect().await?;
         Ok(Self { schema, batches })
@@ -82,8 +83,8 @@ impl VegaFusionTableUtils for VegaFusionTable {
         })
     }
 
-    fn to_dataframe(&self) -> Result<Arc<dyn DataFrame>> {
-        let mut ctx = ExecutionContext::new();
+    fn to_dataframe(&self) -> Result<Arc<DataFrame>> {
+        let mut ctx = SessionContext::new();
         let provider = self.to_memtable();
         ctx.register_table("df", Arc::new(provider)).unwrap();
         ctx.table("df")

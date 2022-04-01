@@ -35,9 +35,9 @@ use vegafusion_core::transform::aggregate::op_name;
 impl TransformTrait for Aggregate {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: Arc<DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
         let mut agg_exprs = Vec::new();
         for (i, (field, op)) in self.fields.iter().zip(self.ops.iter()).enumerate() {
             let column = if *op == AggregateOp::Count as i32 {

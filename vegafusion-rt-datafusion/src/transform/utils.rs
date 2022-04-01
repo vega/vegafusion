@@ -33,7 +33,7 @@ pub trait DataFrameUtils {
 }
 
 #[async_trait]
-impl DataFrameUtils for Arc<dyn DataFrame> {
+impl DataFrameUtils for Arc<DataFrame> {
     fn block_eval(&self) -> Result<Vec<RecordBatch>> {
         // Not partitioned (this is faster sometimes?)
         let res = TOKIO_RUNTIME
