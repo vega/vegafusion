@@ -120,14 +120,12 @@ impl TransformTrait for JoinAggregate {
             let dataframe =
                 dataframe.select(vec![Expr::Wildcard, lit(true).alias("__unit_lhs")])?;
 
-            let dataframe = dataframe.join(
+            dataframe.join(
                 grouped_dataframe,
                 JoinType::Inner,
                 &["__unit_rhs"],
                 &["__unit_lhs"],
-            )?;
-
-            dataframe
+            )?
         } else {
             let grouped_dataframe = dataframe
                 .aggregate(group_exprs, agg_exprs)

@@ -447,7 +447,7 @@ async fn read_csv(url: String, parse: &Option<Parse>) -> Result<Arc<DataFrame>> 
         CsvReadOptions::new()
     };
 
-    let mut ctx = SessionContext::new();
+    let ctx = SessionContext::new();
 
     if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text

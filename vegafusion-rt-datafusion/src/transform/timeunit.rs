@@ -104,7 +104,7 @@ impl TransformTrait for TimeUnit {
         // Add timeunit end value to the dataframe
         let dataframe = dataframe.select(vec![Expr::Wildcard, timeunit_end_value])?;
 
-        Ok((dataframe.clone(), Vec::new()))
+        Ok((dataframe, Vec::new()))
     }
 }
 

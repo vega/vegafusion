@@ -147,7 +147,7 @@ impl TransformTrait for Bin {
             .select(vec![Expr::Wildcard, bin_end])
             .with_context(|| "Failed to evaluate binning transform".to_string())?;
 
-        Ok((dataframe.clone(), output_value.into_iter().collect()))
+        Ok((dataframe, output_value.into_iter().collect()))
     }
 }
 

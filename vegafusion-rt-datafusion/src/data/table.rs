@@ -84,7 +84,7 @@ impl VegaFusionTableUtils for VegaFusionTable {
     }
 
     fn to_dataframe(&self) -> Result<Arc<DataFrame>> {
-        let mut ctx = SessionContext::new();
+        let ctx = SessionContext::new();
         let provider = self.to_memtable();
         ctx.register_table("df", Arc::new(provider)).unwrap();
         ctx.table("df")
