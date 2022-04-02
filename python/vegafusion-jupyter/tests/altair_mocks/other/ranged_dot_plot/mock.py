@@ -30,7 +30,7 @@ chart += alt.Chart().mark_point(
     y='country:N',
     color=alt.Color('year:O',
                     scale=alt.Scale(
-                        domain=['1955', '2000'],
+                        domain=[1955, 2000],
                         range=['#e6959c', '#911a24']
                     )
                     )

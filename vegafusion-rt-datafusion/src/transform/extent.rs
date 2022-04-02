@@ -33,9 +33,9 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Extent {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: Arc<DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
         let output_values = if self.signal.is_some() {
             let field_col = col(self.field.as_str());
             let min_val =

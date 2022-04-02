@@ -34,9 +34,9 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Formula {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: Arc<DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
         let formula_expr = compile(
             self.expr.as_ref().unwrap(),
             config,

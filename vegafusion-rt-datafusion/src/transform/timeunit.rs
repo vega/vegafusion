@@ -40,9 +40,9 @@ use datafusion_expr::ReturnTypeFunction;
 impl TransformTrait for TimeUnit {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: Arc<DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
         let _units: Vec<_> = self
             .units
             .clone()
@@ -104,7 +104,7 @@ impl TransformTrait for TimeUnit {
         // Add timeunit end value to the dataframe
         let dataframe = dataframe.select(vec![Expr::Wildcard, timeunit_end_value])?;
 
-        Ok((dataframe.clone(), Vec::new()))
+        Ok((dataframe, Vec::new()))
     }
 }
 

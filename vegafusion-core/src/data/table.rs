@@ -95,7 +95,11 @@ impl VegaFusionTable {
     }
 
     pub fn to_record_batch(&self) -> Result<RecordBatch> {
-        RecordBatch::concat(&self.schema, &self.batches)
+        let mut schema = self.schema.clone();
+        if let Some(batch) = self.batches.get(0) {
+            schema = batch.schema()
+        }
+        RecordBatch::concat(&schema, &self.batches)
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
 
@@ -192,7 +196,7 @@ impl VegaFusionTable {
 
     pub fn from_ipc_bytes(data: &[u8]) -> Result<Self> {
         let cursor = Cursor::new(data);
-        let reader = StreamReader::try_new(cursor)?;
+        let reader = StreamReader::try_new(cursor, None)?;
         let schema = reader.schema();
         let mut batches: Vec<RecordBatch> = Vec::new();
 

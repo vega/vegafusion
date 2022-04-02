@@ -33,7 +33,7 @@ pub trait DataFrameUtils {
 }
 
 #[async_trait]
-impl DataFrameUtils for Arc<dyn DataFrame> {
+impl DataFrameUtils for Arc<DataFrame> {
     fn block_eval(&self) -> Result<Vec<RecordBatch>> {
         // Not partitioned (this is faster sometimes?)
         let res = TOKIO_RUNTIME
@@ -43,15 +43,21 @@ impl DataFrameUtils for Arc<dyn DataFrame> {
     }
 
     fn block_flat_eval(&self) -> Result<RecordBatch> {
-        let arrow_schema = Arc::new(self.schema().into()) as SchemaRef;
+        let mut arrow_schema = Arc::new(self.schema().into()) as SchemaRef;
         let batches = self.block_eval()?;
+        if let Some(batch) = batches.get(0) {
+            arrow_schema = batch.schema()
+        }
         RecordBatch::concat(&arrow_schema, &batches)
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
 
     async fn collect_flat(&self) -> Result<RecordBatch> {
-        let arrow_schema = Arc::new(self.schema().into()) as SchemaRef;
+        let mut arrow_schema = Arc::new(self.schema().into()) as SchemaRef;
         let batches = self.collect().await?;
+        if let Some(batch) = batches.get(0) {
+            arrow_schema = batch.schema()
+        }
         RecordBatch::concat(&arrow_schema, &batches)
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
