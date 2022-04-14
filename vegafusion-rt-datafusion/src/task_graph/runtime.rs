@@ -24,18 +24,30 @@ use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use futures_util::{future, FutureExt};
 use prost::Message as ProstMessage;
+use serde_json::Value;
 use std::convert::{TryFrom, TryInto};
 use std::panic::AssertUnwindSafe;
 use std::str::FromStr;
 use std::sync::Arc;
+use vegafusion_core::planning::plan::SpecPlan;
+use vegafusion_core::planning::watch::{ExportUpdate, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
-use vegafusion_core::proto::gen::pretransform::{PreTransformRequest, PreTransformResponse};
-use vegafusion_core::proto::gen::services::{PreTransformResult, query_request, query_result, QueryRequest, QueryResult};
+use vegafusion_core::proto::gen::pretransform::{
+    PreTransformBrokenInteractivityWarning, PreTransformRequest, PreTransformResponse,
+    PreTransformRowLimitWarning,
+};
+use vegafusion_core::proto::gen::services::{
+    pre_transform_result, query_request, query_result, PreTransformResult, QueryRequest,
+    QueryResult,
+};
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse,
-    TaskValue as ProtoTaskValue,
+    TaskValue as ProtoTaskValue, Variable,
 };
+use vegafusion_core::proto::tonic_gen::pretransform::pre_transform_warning::WarningType;
+use vegafusion_core::proto::tonic_gen::pretransform::PreTransformWarning;
+use vegafusion_core::spec::chart::ChartSpec;
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -168,12 +180,121 @@ impl TaskGraphRuntime {
         Ok(buf)
     }
 
-    pub async fn pre_transform_spec(&self, request: PreTransformRequest) -> Result<PreTransformResult> {
-        let spec_string = request.spec;
+    pub async fn pre_transform_spec(
+        &self,
+        request: PreTransformRequest,
+    ) -> Result<PreTransformResult> {
         let row_limit = request.opts.and_then(|opts| opts.row_limit);
 
-        
-        todo!()
+        // Parse spec
+        let spec_string = request.spec;
+        let spec: ChartSpec = serde_json::from_str(&spec_string)
+            .with_context(|| "Failed to parse spec".to_string())?;
+
+        // Create spec plan
+        let plan = SpecPlan::try_new(&spec)?;
+
+        // Create task graph for server spec
+        let task_scope = plan.server_spec.to_task_scope().unwrap();
+        let tasks = plan.server_spec.to_tasks(&request.local_tz).unwrap();
+        let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
+        let task_graph_mapping = task_graph.build_mapping();
+
+        // Gather values of server-to-client values
+        let mut init = Vec::new();
+        for var in &plan.comm_plan.server_to_client {
+            let node_index = task_graph_mapping.get(var).unwrap();
+            let value = self
+                .get_node_value(Arc::new(task_graph.clone()), node_index)
+                .await
+                .expect("Failed to get node value");
+
+            init.push(ExportUpdate {
+                namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),
+                name: var.0.name.clone(),
+                scope: var.1.clone(),
+                value: value.to_json().unwrap(),
+            });
+        }
+
+        // Update client spec with server values
+        let mut spec = plan.client_spec.clone();
+        let mut limited_datasets: Vec<Variable> = Vec::new();
+        for export_update in init {
+            let scope = export_update.scope.clone();
+            let name = export_update.name.as_str();
+            match export_update.namespace {
+                ExportUpdateNamespace::Signal => {
+                    let signal = spec.get_nested_signal_mut(&scope, name)?;
+                    signal.value = Some(export_update.value);
+                }
+                ExportUpdateNamespace::Data => {
+                    let data = spec.get_nested_data_mut(&scope, name)?;
+                    // Handle row_limit
+                    let value = if let Value::Array(values) = &export_update.value {
+                        if let Some(row_limit) = row_limit {
+                            let row_limit = row_limit as usize;
+                            if values.len() > row_limit {
+                                limited_datasets.push(export_update.to_scoped_var().0);
+                                Value::Array(Vec::from(&values[..row_limit]))
+                            } else {
+                                Value::Array(values.clone())
+                            }
+                        } else {
+                            Value::Array(values.clone())
+                        }
+                    } else {
+                        return Err(VegaFusionError::internal(
+                            "Expected Data value to be an Array",
+                        ));
+                    };
+
+                    // Set inline value
+                    // Other properties are cleared by planning process so we don't alter them here
+                    data.values = Some(value);
+                }
+            }
+        }
+
+        // Build warnings
+        let mut warnings: Vec<PreTransformWarning> = Vec::new();
+
+        // Add Row Limit warning
+        if !limited_datasets.is_empty() {
+            warnings.push(PreTransformWarning {
+                warning_type: Some(WarningType::RowLimit(PreTransformRowLimitWarning {
+                    datasets: limited_datasets,
+                })),
+            });
+        }
+
+        // Add Broken Interactivity warning
+        if !plan.comm_plan.client_to_server.is_empty() {
+            let vars: Vec<_> = plan
+                .comm_plan
+                .client_to_server
+                .iter()
+                .map(|var| var.0.clone())
+                .collect();
+            warnings.push(PreTransformWarning {
+                warning_type: Some(WarningType::BrokenInteractivity(
+                    PreTransformBrokenInteractivityWarning { vars },
+                )),
+            });
+        }
+
+        // Build result
+        let response = PreTransformResult {
+            result: Some(pre_transform_result::Result::Response(
+                PreTransformResponse {
+                    spec: serde_json::to_string(&spec)
+                        .expect("Failed to convert chart spec to string"),
+                    warnings,
+                },
+            )),
+        };
+
+        Ok(response)
     }
 
     pub async fn clear_cache(&self) {

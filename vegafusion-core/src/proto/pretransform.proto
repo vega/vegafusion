@@ -9,12 +9,13 @@ message PreTransformOpts {
 
 message PreTransformRequest {
   string spec = 1;
-  PreTransformOpts opts = 2;
+  string local_tz = 2;
+  PreTransformOpts opts = 3;
 }
 
 message PreTransformResponse {
   string spec = 1;
-  repeated PreTransformRowLimitWarning warnings = 2;
+  repeated PreTransformWarning warnings = 2;
 }
 
 message PreTransformRowLimitWarning {

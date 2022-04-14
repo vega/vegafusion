@@ -7,7 +7,9 @@ pub struct PreTransformOpts {
 pub struct PreTransformRequest {
     #[prost(string, tag = "1")]
     pub spec: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "2")]
+    #[prost(string, tag = "2")]
+    pub local_tz: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
     pub opts: ::core::option::Option<PreTransformOpts>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -15,7 +17,7 @@ pub struct PreTransformResponse {
     #[prost(string, tag = "1")]
     pub spec: ::prost::alloc::string::String,
     #[prost(message, repeated, tag = "2")]
-    pub warnings: ::prost::alloc::vec::Vec<PreTransformRowLimitWarning>,
+    pub warnings: ::prost::alloc::vec::Vec<PreTransformWarning>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformRowLimitWarning {
