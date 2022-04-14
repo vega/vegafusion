@@ -197,7 +197,7 @@ fn try_export_sequence_helper_crossfilter() {
         .display()
         .to_string();
     let spec_path = format!(
-        "{}/tests/specs/custom/flights_crossfilter_a.json",
+        "{}/tests/specs/custom/flights_crossfilter_a.vg.json",
         crate_dir
     );
 
