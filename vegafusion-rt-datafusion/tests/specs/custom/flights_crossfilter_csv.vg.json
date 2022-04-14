@@ -6,8 +6,8 @@
     {"name": "brush_store"},
     {
       "name": "source_0",
-      "url": "https://raw.githubusercontent.com/vega/vega-datasets/master/data/flights-2k.json",
-      "format": {"type": "json", "parse": {"date": "date"}},
+      "url": "https://raw.githubusercontent.com/vega/vega-datasets/next/data/flights-3m.csv",
+      "format": {"type": "csv"},
       "transform": [
         {
           "type": "extent",

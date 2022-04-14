@@ -102,13 +102,13 @@ fn make_brush_e_str(ranges: &Vec<Vec<(&str, &str, Vec<&str>)>>) -> VegaFusionTab
 
 fn datum() -> VegaFusionTable {
     let json_value = json!([
-        {"colA": 1.0, "colB": 10.0, "colC": 100.0, "__vgsid__": 1, "cat1": "AA", "cat2": "aa"},
-        {"colA": 2.0, "colB": 9.0, "colC": 200.0, "__vgsid__": 2, "cat1": "AA", "cat2": "bb"},
-        {"colA": 3.0, "colB": 8.0, "colC": 300.0, "__vgsid__": 3, "cat1": "AA", "cat2": "aa"},
-        {"colA": 4.0, "colB": 7.0, "colC": 400.0, "__vgsid__": 4, "cat1": "AA", "cat2": "bb"},
-        {"colA": 5.0, "colB": 6.0, "colC": 500.0, "__vgsid__": 5, "cat1": "BB", "cat2": "aa"},
-        {"colA": 6.0, "colB": 5.0, "colC": 600.0, "__vgsid__": 6, "cat1": "BB", "cat2": "bb"},
-        {"colA": 7.0, "colB": 4.0, "colC": 700.0, "__vgsid__": 7, "cat1": "BB", "cat2": "aa"},
+        {"colA": 1.0, "colB": 10.0, "colC": 100.0, "colB_str": "10", "__vgsid__": 1, "cat1": "AA", "cat2": "aa"},
+        {"colA": 2.0, "colB": 9.0, "colC": 200.0, "colB_str": "9", "__vgsid__": 2, "cat1": "AA", "cat2": "bb"},
+        {"colA": 3.0, "colB": 8.0, "colC": 300.0, "colB_str": "8", "__vgsid__": 3, "cat1": "AA", "cat2": "aa"},
+        {"colA": 4.0, "colB": 7.0, "colC": 400.0, "colB_str": "7", "__vgsid__": 4, "cat1": "AA", "cat2": "bb"},
+        {"colA": 5.0, "colB": 6.0, "colC": 500.0, "colB_str": "6", "__vgsid__": 5, "cat1": "BB", "cat2": "aa"},
+        {"colA": 6.0, "colB": 5.0, "colC": 600.0, "colB_str": "5", "__vgsid__": 6, "cat1": "BB", "cat2": "bb"},
+        {"colA": 7.0, "colB": 4.0, "colC": 700.0, "colB_str": "4", "__vgsid__": 7, "cat1": "BB", "cat2": "aa"},
     ]);
     VegaFusionTable::from_json(&json_value, 1024).unwrap()
 }
@@ -164,10 +164,12 @@ mod test_vl_selection_test_r {
         case(vec![vec![("colA", "x", [10.0, 2.0]), ("colB", "y", [6.0, 0.0])]], "R", "intersect"),
         case(vec![vec![("colA", "x", [5.0, 10.0]), ("colB", "y", [8.0, 10.0])]], "R", "intersect"),
         case(vec![vec![("colA", "x", [10.0, 5.0]), ("colB", "y", [10.0, 8.0])]], "R", "intersect"),
+        case(vec![vec![("colA", "x", [10.0, 2.0]), ("colB_str", "y", [8.0, 10.0])]], "R", "intersect"),
         case(vec![vec![("colA", "x", [5.0, 10.0])], vec![("colB", "y", [8.0, 10.0])]], "R", "intersect"),
         case(vec![vec![("colA", "x", [10.0, 5.0])], vec![("colB", "y", [10.0, 8.0])]], "R", "intersect"),
         case(vec![vec![("colA", "x", [5.0, 10.0])], vec![("colB", "y", [8.0, 10.0])]], "R", "union"),
-        case(vec![vec![("colA", "x", [10.0, 5.0])], vec![("colB", "y", [10.0, 8.0])]], "R", "union")
+        case(vec![vec![("colA", "x", [10.0, 5.0])], vec![("colB", "y", [10.0, 8.0])]], "R", "union"),
+        case(vec![vec![("colA", "x", [10.0, 5.0])], vec![("colB_str", "y", [10.0, 8.0])]], "R", "union")
     )]
     fn test(brush_data: Vec<Vec<(&str, &str, [f64; 2])>>, typ: &str, op: &str) {
         let brush = make_brush_r(&brush_data, typ);

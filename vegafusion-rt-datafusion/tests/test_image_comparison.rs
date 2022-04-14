@@ -73,6 +73,7 @@ mod test_custom_specs {
         case("custom/bar_colors", 0.001),
         case("custom/imdb_histogram", 0.001),
         case("custom/flights_crossfilter_a", 0.001),
+        case("custom/flights_crossfilter_csv", 0.001),
         case("custom/log_scaled_histogram", 0.001),
         case("custom/non_linear_histogram", 0.001),
         case("custom/relative_frequency_histogram", 0.001),

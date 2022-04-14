@@ -1,0 +1,48 @@
+[
+  [
+    {
+      "namespace": "signal",
+      "name": "brush_x",
+      "scope": [0],
+      "value": [0, 50]
+    }
+  ],
+  [
+    {
+      "namespace": "signal",
+      "name": "brush_x",
+      "scope": [0],
+      "value": [50, 150]
+    }
+  ],
+  [
+    {
+      "namespace": "signal",
+      "name": "brush_x",
+      "scope": [0],
+      "value": [70, 120]
+    },
+    {
+      "namespace": "signal",
+      "name": "brush_x",
+      "scope": [1],
+      "value": [40, 80]
+    }
+  ],
+  [
+    {
+      "namespace": "signal",
+      "name": "brush_x",
+      "scope": [0],
+      "value": [0, 0]
+    }
+  ],
+  [
+    {
+      "namespace": "signal",
+      "name": "brush_x",
+      "scope": [1],
+      "value": [0, 0]
+    }
+  ]
+]
