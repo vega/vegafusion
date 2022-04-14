@@ -26,3 +26,18 @@ pub mod query_result {
         TaskGraphValues(super::super::tasks::TaskGraphValueResponse),
     }
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PreTransformResult {
+    #[prost(oneof="pre_transform_result::Result", tags="1, 2")]
+    pub result: ::core::option::Option<pre_transform_result::Result>,
+}
+/// Nested message and enum types in `PreTransformResult`.
+pub mod pre_transform_result {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Result {
+        #[prost(message, tag="1")]
+        Error(super::super::errors::Error),
+        #[prost(message, tag="2")]
+        Response(super::super::pretransform::PreTransformResponse),
+    }
+}

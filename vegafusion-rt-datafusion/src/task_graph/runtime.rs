@@ -30,9 +30,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
-use vegafusion_core::proto::gen::services::{
-    query_request, query_result, QueryRequest, QueryResult,
-};
+use vegafusion_core::proto::gen::pretransform::{PreTransformRequest, PreTransformResponse};
+use vegafusion_core::proto::gen::services::{PreTransformResult, query_request, query_result, QueryRequest, QueryResult};
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse,
     TaskValue as ProtoTaskValue,
@@ -167,6 +166,14 @@ impl TaskGraphRuntime {
             .encode(&mut buf)
             .external("Failed to encode response")?;
         Ok(buf)
+    }
+
+    pub async fn pre_transform_spec(&self, request: PreTransformRequest) -> Result<PreTransformResult> {
+        let spec_string = request.spec;
+        let row_limit = request.opts.and_then(|opts| opts.row_limit);
+
+        
+        todo!()
     }
 
     pub async fn clear_cache(&self) {

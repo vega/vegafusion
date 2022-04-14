@@ -26,6 +26,21 @@ pub mod query_result {
         TaskGraphValues(super::super::tasks::TaskGraphValueResponse),
     }
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PreTransformResult {
+    #[prost(oneof = "pre_transform_result::Result", tags = "1, 2")]
+    pub result: ::core::option::Option<pre_transform_result::Result>,
+}
+/// Nested message and enum types in `PreTransformResult`.
+pub mod pre_transform_result {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Result {
+        #[prost(message, tag = "1")]
+        Error(super::super::errors::Error),
+        #[prost(message, tag = "2")]
+        Response(super::super::pretransform::PreTransformResponse),
+    }
+}
 #[doc = r" Generated client implementations."]
 pub mod vega_fusion_runtime_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
@@ -101,6 +116,22 @@ pub mod vega_fusion_runtime_client {
                 http::uri::PathAndQuery::from_static("/services.VegaFusionRuntime/TaskGraphQuery");
             self.inner.unary(request.into_request(), path, codec).await
         }
+        pub async fn pre_transform_spec(
+            &mut self,
+            request: impl tonic::IntoRequest<super::super::pretransform::PreTransformRequest>,
+        ) -> Result<tonic::Response<super::PreTransformResult>, tonic::Status> {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/services.VegaFusionRuntime/PreTransformSpec",
+            );
+            self.inner.unary(request.into_request(), path, codec).await
+        }
     }
 }
 #[doc = r" Generated server implementations."]
@@ -114,6 +145,10 @@ pub mod vega_fusion_runtime_server {
             &self,
             request: tonic::Request<super::QueryRequest>,
         ) -> Result<tonic::Response<super::QueryResult>, tonic::Status>;
+        async fn pre_transform_spec(
+            &self,
+            request: tonic::Request<super::super::pretransform::PreTransformRequest>,
+        ) -> Result<tonic::Response<super::PreTransformResult>, tonic::Status>;
     }
     #[derive(Debug)]
     pub struct VegaFusionRuntimeServer<T: VegaFusionRuntime> {
@@ -177,6 +212,42 @@ pub mod vega_fusion_runtime_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = TaskGraphQuerySvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/services.VegaFusionRuntime/PreTransformSpec" => {
+                    #[allow(non_camel_case_types)]
+                    struct PreTransformSpecSvc<T: VegaFusionRuntime>(pub Arc<T>);
+                    impl<T: VegaFusionRuntime>
+                        tonic::server::UnaryService<super::super::pretransform::PreTransformRequest>
+                        for PreTransformSpecSvc<T>
+                    {
+                        type Response = super::PreTransformResult;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::super::pretransform::PreTransformRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = self.0.clone();
+                            let fut = async move { (*inner).pre_transform_spec(request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = PreTransformSpecSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
                             accept_compression_encodings,
