@@ -17,7 +17,7 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 use crate::expression::compiler::utils::{
-    cast_to, is_float_datatype, is_integer_datatype, ExprHelpers,
+    cast_to, is_float_datatype, is_integer_datatype, is_string_datatype, ExprHelpers,
 };
 use datafusion::logical_plan::{ceil, DFSchema, ExprSchemable};
 use datafusion::logical_plan::{lit, Expr};
@@ -26,6 +26,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use std::str::FromStr;
+use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::{
@@ -150,6 +151,16 @@ impl FieldSpec {
                 let field_dtype = field_col
                     .get_type(schema)
                     .with_context(|| format!("Failed to infer type of column {}", self.field))?;
+
+                // Cast string columns to float
+                let (field_dtype, field_col) = if is_string_datatype(&field_dtype) {
+                    (
+                        DataType::Float64,
+                        cast_to(field_col, &DataType::Float64, schema)?,
+                    )
+                } else {
+                    (field_dtype, field_col)
+                };
 
                 let (low, high) = match &values {
                     ScalarValue::List(Some(elements), _) if elements.len() == 2 => {
