@@ -17,8 +17,7 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 use crate::expression::compiler::utils::{
-    cast_to, is_float_datatype, is_integer_datatype, is_string_datatype,
-    ExprHelpers,
+    cast_to, is_float_datatype, is_integer_datatype, is_string_datatype, ExprHelpers,
 };
 use datafusion::logical_plan::{ceil, DFSchema, ExprSchemable};
 use datafusion::logical_plan::{lit, Expr};
