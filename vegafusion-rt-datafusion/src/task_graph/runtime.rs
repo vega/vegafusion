@@ -33,9 +33,11 @@ use vegafusion_core::planning::plan::SpecPlan;
 use vegafusion_core::planning::watch::{ExportUpdate, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
+use vegafusion_core::proto::gen::pretransform::pre_transform_warning::WarningType;
+use vegafusion_core::proto::gen::pretransform::PreTransformWarning;
 use vegafusion_core::proto::gen::pretransform::{
     PreTransformBrokenInteractivityWarning, PreTransformRequest, PreTransformResponse,
-    PreTransformRowLimitWarning,
+    PreTransformRowLimitWarning, PreTransformUnsupportedWarning,
 };
 use vegafusion_core::proto::gen::services::{
     pre_transform_result, query_request, query_result, PreTransformResult, QueryRequest,
@@ -45,8 +47,6 @@ use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse,
     TaskValue as ProtoTaskValue, Variable,
 };
-use vegafusion_core::proto::tonic_gen::pretransform::pre_transform_warning::WarningType;
-use vegafusion_core::proto::tonic_gen::pretransform::PreTransformWarning;
 use vegafusion_core::spec::chart::ChartSpec;
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
@@ -258,6 +258,13 @@ impl TaskGraphRuntime {
 
         // Build warnings
         let mut warnings: Vec<PreTransformWarning> = Vec::new();
+
+        // Add unsupported warning (
+        if plan.comm_plan.server_to_client.is_empty() {
+            warnings.push(PreTransformWarning {
+                warning_type: Some(WarningType::Unsupported(PreTransformUnsupportedWarning {})),
+            });
+        }
 
         // Add Row Limit warning
         if !limited_datasets.is_empty() {
