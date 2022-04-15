@@ -82,7 +82,7 @@ async fn try_it_from_spec() {
 
     let local_tz = "America/New_York";
     let task_scope = chart.to_task_scope().unwrap();
-    let tasks = chart.to_tasks(local_tz).unwrap();
+    let tasks = chart.to_tasks(local_tz, None).unwrap();
 
     let graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let request = QueryRequest {

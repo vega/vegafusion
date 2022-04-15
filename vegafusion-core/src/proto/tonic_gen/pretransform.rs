@@ -2,6 +2,8 @@
 pub struct PreTransformOpts {
     #[prost(uint32, optional, tag = "1")]
     pub row_limit: ::core::option::Option<u32>,
+    #[prost(message, repeated, tag = "2")]
+    pub inline_datasets: ::prost::alloc::vec::Vec<PreTransformInlineDataset>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformRequest {
@@ -47,4 +49,13 @@ pub mod pre_transform_warning {
         #[prost(message, tag = "3")]
         Unsupported(super::PreTransformUnsupportedWarning),
     }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PreTransformInlineDataset {
+    /// Inline dataset name
+    #[prost(string, tag = "1")]
+    pub name: ::prost::alloc::string::String,
+    /// Serialized Arrow record batch in Arrow IPC format
+    #[prost(bytes = "vec", tag = "2")]
+    pub table: ::prost::alloc::vec::Vec<u8>,
 }

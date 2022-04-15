@@ -17,6 +17,7 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 use async_recursion::async_recursion;
+use std::collections::HashMap;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -29,6 +30,7 @@ use std::convert::{TryFrom, TryInto};
 use std::panic::AssertUnwindSafe;
 use std::str::FromStr;
 use std::sync::Arc;
+use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::planning::plan::SpecPlan;
 use vegafusion_core::planning::watch::{ExportUpdate, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
@@ -184,7 +186,22 @@ impl TaskGraphRuntime {
         &self,
         request: PreTransformRequest,
     ) -> Result<PreTransformResult> {
-        let row_limit = request.opts.and_then(|opts| opts.row_limit);
+        // Get row limit
+        let row_limit = request.opts.as_ref().and_then(|opts| opts.row_limit);
+
+        // Extract and deserialize inline datasets
+        let inline_pretransform_datasets = request
+            .opts
+            .map(|opts| opts.inline_datasets)
+            .unwrap_or_default();
+
+        let inline_datasets = inline_pretransform_datasets
+            .iter()
+            .map(|inline_dataset| {
+                let table = VegaFusionTable::from_ipc_bytes(&inline_dataset.table)?;
+                Ok((inline_dataset.name.clone(), table))
+            })
+            .collect::<Result<HashMap<_, _>>>()?;
 
         // Parse spec
         let spec_string = request.spec;
@@ -196,7 +213,10 @@ impl TaskGraphRuntime {
 
         // Create task graph for server spec
         let task_scope = plan.server_spec.to_task_scope().unwrap();
-        let tasks = plan.server_spec.to_tasks(&request.local_tz).unwrap();
+        let tasks = plan
+            .server_spec
+            .to_tasks(&request.local_tz, Some(inline_datasets))
+            .unwrap();
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
 

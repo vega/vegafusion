@@ -39,7 +39,7 @@ use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_value::TaskValue;
 use serde_json::Value;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::ops::Deref;
 
@@ -117,13 +117,15 @@ impl ChartVisitor for MakeTaskScopeVisitor {
 pub struct MakeTasksVisitor {
     pub tasks: Vec<Task>,
     pub local_tz: String,
+    pub inline_datasets: HashMap<String, VegaFusionTable>,
 }
 
 impl MakeTasksVisitor {
-    pub fn new(tz: &str) -> Self {
+    pub fn new(tz: &str, inline_datasets: Option<HashMap<String, VegaFusionTable>>) -> Self {
         Self {
             tasks: Default::default(),
             local_tz: tz.to_string(),
+            inline_datasets: inline_datasets.unwrap_or_default(),
         }
     }
 }
@@ -147,6 +149,23 @@ impl ChartVisitor for MakeTasksVisitor {
                     Url::Expr(url_expr)
                 }
             };
+
+            // Handle inline data
+            if let Url::String(url) = &proto_url {
+                if let Some(inline_name) = url.strip_prefix("vegafusion+inline:") {
+                    let inline_name = inline_name.trim().to_string();
+                    return if let Some(inline_dataset) = self.inline_datasets.get(&inline_name) {
+                        let value = TaskValue::Table(inline_dataset.clone());
+                        self.tasks.push(Task::new_value(data_var, scope, value));
+                        Ok(())
+                    } else {
+                        Err(VegaFusionError::internal(format!(
+                            "No inline dataset named {}",
+                            inline_name
+                        )))
+                    };
+                }
+            }
 
             let format_type = match &data.format {
                 Some(format) => {

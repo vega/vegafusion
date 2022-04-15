@@ -5,6 +5,7 @@ import "tasks.proto";
 
 message PreTransformOpts {
   optional uint32 row_limit = 1;
+  repeated PreTransformInlineDataset inline_datasets = 2;
 }
 
 message PreTransformRequest {
@@ -34,4 +35,11 @@ message PreTransformWarning {
       PreTransformBrokenInteractivityWarning broken_interactivity = 2;
       PreTransformUnsupportedWarning unsupported = 3;
   }
+}
+
+message PreTransformInlineDataset {
+  // Inline dataset name
+  string name = 1;
+  // Serialized Arrow record batch in Arrow IPC format
+  bytes table = 2;
 }
