@@ -152,11 +152,27 @@ impl ChartVisitor for MakeTasksVisitor {
 
             // Handle inline data
             if let Url::String(url) = &proto_url {
-                if let Some(inline_name) = url.strip_prefix("vegafusion+inline:") {
+                if let Some(inline_name) = url.strip_prefix("vegafusion+inline://") {
                     let inline_name = inline_name.trim().to_string();
                     return if let Some(inline_dataset) = self.inline_datasets.get(&inline_name) {
-                        let value = TaskValue::Table(inline_dataset.clone());
-                        self.tasks.push(Task::new_value(data_var, scope, value));
+                        let task = if pipeline.is_none() {
+                            // If no transforms, treat as regular TaskValue task
+                            let value = TaskValue::Table(inline_dataset.clone());
+                            Task::new_value(data_var, scope, value)
+                        } else {
+                            // Otherwise, create data values task (which supports transforms)
+                            Task::new_data_values(
+                                data_var,
+                                scope,
+                                DataValuesTask {
+                                    values: inline_dataset.to_ipc_bytes()?,
+                                    pipeline,
+                                },
+                                &self.local_tz,
+                            )
+                        };
+
+                        self.tasks.push(task);
                         Ok(())
                     } else {
                         Err(VegaFusionError::internal(format!(

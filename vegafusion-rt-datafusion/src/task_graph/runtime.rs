@@ -223,7 +223,9 @@ impl TaskGraphRuntime {
         // Gather values of server-to-client values
         let mut init = Vec::new();
         for var in &plan.comm_plan.server_to_client {
-            let node_index = task_graph_mapping.get(var).unwrap();
+            let node_index = task_graph_mapping
+                .get(var)
+                .expect(&format!("Failed to lookup variable '{:?}'", var));
             let value = self
                 .get_node_value(Arc::new(task_graph.clone()), node_index)
                 .await

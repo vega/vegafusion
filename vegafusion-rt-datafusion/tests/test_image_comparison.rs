@@ -1055,6 +1055,104 @@ mod test_image_comparison_window {
     fn test_marker() {} // Help IDE detect test module
 }
 
+#[cfg(test)]
+mod test_pre_transform_inline {
+    use super::*;
+    use crate::util::datasets::{vega_json_dataset, vega_json_dataset_async};
+    use datafusion::prelude::SessionContext;
+    use vegafusion_core::proto::gen::pretransform::PreTransformInlineDataset;
+
+    #[tokio::test]
+    async fn test() {
+        initialize();
+
+        let vegajs_runtime = vegajs_runtime();
+
+        // Initialize task graph runtime
+        let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
+
+        // Get timezone
+        let local_tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
+
+        // Load specs
+        let full_spec = load_spec("pre_transform/imdb_histogram");
+        let inline_spec = load_spec("pre_transform/imdb_histogram_inline");
+
+        // Load csv file as inline dataset
+        let movies_table = vega_json_dataset_async("movies").await;
+        let inline_datasets = vec![PreTransformInlineDataset {
+            name: "movies".to_string(),
+            table: movies_table.to_ipc_bytes().unwrap(),
+        }];
+
+        // Pre-transform specs
+        let opts = PreTransformOpts {
+            row_limit: None,
+            inline_datasets,
+        };
+        let request = PreTransformRequest {
+            spec: serde_json::to_string(&inline_spec).unwrap(),
+            local_tz,
+            opts: Some(opts),
+        };
+        let response = runtime.pre_transform_spec(request).await.unwrap();
+
+        let pre_transform_spec: ChartSpec = match response.result.unwrap() {
+            pre_transform_result::Result::Error(_) => {
+                panic!("Pre-transform error")
+            }
+            pre_transform_result::Result::Response(response) => {
+                // println!("Warnings: {:#?}", response.warnings);
+                serde_json::from_str(&response.spec).unwrap()
+            }
+        };
+
+        // println!(
+        //     "pre-transformed: {}",
+        //     serde_json::to_string_pretty(&pre_transform_spec).unwrap()
+        // );
+
+        let full_image = vegajs_runtime
+            .export_spec_single(&full_spec, ExportImageFormat::Png)
+            .unwrap();
+        let pre_transformed_image = vegajs_runtime
+            .export_spec_single(&pre_transform_spec, ExportImageFormat::Png)
+            .unwrap();
+
+        let png_name = "pre_transform-imbd_histogram";
+        full_image
+            .save(
+                &format!("{}/tests/output/{}_full.png", crate_dir(), png_name),
+                true,
+            )
+            .unwrap();
+
+        pre_transformed_image
+            .save(
+                &format!("{}/tests/output/{}_pretransform.png", crate_dir(), png_name),
+                true,
+            )
+            .unwrap();
+
+        let (difference, diff_img) = full_image.compare(&pre_transformed_image).unwrap();
+        if difference > 0.001 {
+            println!("difference: {}", difference);
+            if let Some(diff_img) = diff_img {
+                let diff_path = format!(
+                    "{}/tests/output/{}_pretransform_diff.png",
+                    crate_dir(),
+                    png_name
+                );
+                fs::write(&diff_path, diff_img).unwrap();
+                panic!(
+                    "Found difference in exported images.\nDiff written to {}",
+                    diff_path
+                )
+            }
+        }
+    }
+}
+
 fn crate_dir() -> String {
     std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .display()
@@ -1125,7 +1223,10 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
     let local_tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
 
     // Pre-transform specs
-    let opts = PreTransformOpts { row_limit: None };
+    let opts = PreTransformOpts {
+        row_limit: None,
+        inline_datasets: vec![],
+    };
     let request = PreTransformRequest {
         spec: serde_json::to_string(&full_spec).unwrap(),
         local_tz,

@@ -16,6 +16,7 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
+use crate::data::table::VegaFusionTable;
 use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::proto::gen::tasks::Task;
 use crate::spec::data::DataSpec;
@@ -32,7 +33,6 @@ use itertools::sorted;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::data::table::VegaFusionTable;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ChartSpec {
@@ -132,7 +132,11 @@ impl ChartSpec {
         Ok(visitor.task_scope)
     }
 
-    pub fn to_tasks(&self, local_tz: &str, inline_datasets: Option<HashMap<String, VegaFusionTable>>) -> Result<Vec<Task>> {
+    pub fn to_tasks(
+        &self,
+        local_tz: &str,
+        inline_datasets: Option<HashMap<String, VegaFusionTable>>,
+    ) -> Result<Vec<Task>> {
         let mut visitor = MakeTasksVisitor::new(local_tz, inline_datasets);
         self.walk(&mut visitor)?;
         Ok(visitor.tasks)
