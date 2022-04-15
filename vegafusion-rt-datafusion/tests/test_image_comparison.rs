@@ -38,6 +38,8 @@ use vegafusion_core::planning::plan::SpecPlan;
 use vegafusion_core::planning::watch::{
     ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace, Watch, WatchNamespace, WatchPlan,
 };
+use vegafusion_core::proto::gen::pretransform::{PreTransformOpts, PreTransformRequest};
+use vegafusion_core::proto::gen::services::pre_transform_result;
 use vegafusion_core::proto::gen::tasks::TaskGraph;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
@@ -126,6 +128,7 @@ mod test_custom_specs {
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
         println!("spec_name: {}", spec_name);
         TOKIO_RUNTIME.block_on(check_spec_sequence_from_files(spec_name, tolerance));
+        TOKIO_RUNTIME.block_on(check_pre_transform_spec_from_files(spec_name, tolerance));
     }
 
     #[test]
@@ -309,6 +312,7 @@ mod test_vega_specs {
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
         println!("spec_name: {}", spec_name);
         TOKIO_RUNTIME.block_on(check_spec_sequence_from_files(spec_name, tolerance));
+        TOKIO_RUNTIME.block_on(check_pre_transform_spec_from_files(spec_name, tolerance));
     }
 
     #[test]
@@ -883,6 +887,7 @@ mod test_vegalite_specs {
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
         println!("spec_name: {}", spec_name);
         TOKIO_RUNTIME.block_on(check_spec_sequence_from_files(spec_name, tolerance));
+        TOKIO_RUNTIME.block_on(check_pre_transform_spec_from_files(spec_name, tolerance));
     }
 
     #[test]
@@ -1103,6 +1108,84 @@ async fn check_spec_sequence_from_files(spec_name: &str, tolerance: f64) {
     let watch_plan = load_expected_watch_plan(spec_name);
 
     check_spec_sequence(full_spec, full_updates, watch_plan, spec_name, tolerance).await
+}
+
+async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
+    initialize();
+
+    // Load spec
+    let full_spec = load_spec(spec_name);
+
+    let vegajs_runtime = vegajs_runtime();
+
+    // Initialize task graph runtime
+    let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
+
+    // Get timezone
+    let local_tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
+
+    // Pre-transform specs
+    let opts = PreTransformOpts { row_limit: None };
+    let request = PreTransformRequest {
+        spec: serde_json::to_string(&full_spec).unwrap(),
+        local_tz,
+        opts: Some(opts),
+    };
+    let response = runtime.pre_transform_spec(request).await.unwrap();
+
+    let pre_transform_spec: ChartSpec = match response.result.unwrap() {
+        pre_transform_result::Result::Error(_) => {
+            panic!("Pre-transform error")
+        }
+        pre_transform_result::Result::Response(response) => {
+            // println!("Warnings: {:#?}", response.warnings);
+            serde_json::from_str(&response.spec).unwrap()
+        }
+    };
+
+    // println!(
+    //     "pre-transformed: {}",
+    //     serde_json::to_string_pretty(&pre_transform_spec).unwrap()
+    // );
+
+    let full_image = vegajs_runtime
+        .export_spec_single(&full_spec, ExportImageFormat::Png)
+        .unwrap();
+    let pre_transformed_image = vegajs_runtime
+        .export_spec_single(&pre_transform_spec, ExportImageFormat::Png)
+        .unwrap();
+
+    let png_name = spec_name.replace('/', "-");
+    full_image
+        .save(
+            &format!("{}/tests/output/{}_full.png", crate_dir(), png_name),
+            true,
+        )
+        .unwrap();
+
+    pre_transformed_image
+        .save(
+            &format!("{}/tests/output/{}_pretransform.png", crate_dir(), png_name),
+            true,
+        )
+        .unwrap();
+
+    let (difference, diff_img) = full_image.compare(&pre_transformed_image).unwrap();
+    if difference > tolerance {
+        println!("difference: {}", difference);
+        if let Some(diff_img) = diff_img {
+            let diff_path = format!(
+                "{}/tests/output/{}_pretransform_diff.png",
+                crate_dir(),
+                png_name
+            );
+            fs::write(&diff_path, diff_img).unwrap();
+            panic!(
+                "Found difference in exported images.\nDiff written to {}",
+                diff_path
+            )
+        }
+    }
 }
 
 async fn check_spec_sequence(
