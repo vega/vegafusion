@@ -240,17 +240,22 @@ impl ChartVisitor for MakeTasksVisitor {
                 }
             };
 
-            // Otherwise, create data values task (which supports transforms)
-            Task::new_data_values(
-                data_var,
-                scope,
-                DataValuesTask {
-                    values: values_table.to_ipc_bytes()?,
-                    format_type,
-                    pipeline,
-                },
-                &self.local_tz,
-            )
+            if pipeline.is_none() && format_type.is_none() {
+                // If no transforms, treat as regular TaskValue task
+                Task::new_value(data_var, scope, TaskValue::Table(values_table))
+            } else {
+                // Otherwise, create data values task (which supports transforms)
+                Task::new_data_values(
+                    data_var,
+                    scope,
+                    DataValuesTask {
+                        values: values_table.to_ipc_bytes()?,
+                        format_type,
+                        pipeline,
+                    },
+                    &self.local_tz,
+                )
+            }
         };
         self.tasks.push(task);
         Ok(())
