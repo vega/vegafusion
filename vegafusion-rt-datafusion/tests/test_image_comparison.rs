@@ -1059,7 +1059,6 @@ mod test_image_comparison_window {
 mod test_pre_transform_inline {
     use super::*;
     use crate::util::datasets::vega_json_dataset_async;
-    use datafusion::prelude::SessionContext;
     use vegafusion_core::proto::gen::pretransform::PreTransformInlineDataset;
 
     #[tokio::test]
