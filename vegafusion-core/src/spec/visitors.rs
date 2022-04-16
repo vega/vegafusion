@@ -185,7 +185,7 @@ impl ChartVisitor for MakeTasksVisitor {
 
             // Handle inline data
             if let Url::String(url) = &proto_url {
-                if let Some(inline_name) = url.strip_prefix("vegafusion+inline://") {
+                if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
                     let inline_name = inline_name.trim().to_string();
                     return if let Some(inline_dataset) = self.inline_datasets.get(&inline_name) {
                         let task = Task::new_data_values(

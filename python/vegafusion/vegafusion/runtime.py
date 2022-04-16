@@ -82,7 +82,7 @@ class VegaFusionRuntime:
             and a RowLimitExceeded warning will be included in the resulting warnings list
         :param inline_datasets: A dict from dataset names to pandas DataFrames. Inline
             datasets may be referenced by the input specification using the following
-            url syntax 'vegafusion+inline://{dataset_name}'.
+            url syntax 'vegafusion+dataset://{dataset_name}'.
         :return:
             Two-element tuple:
                 0. A string containing the JSON representation of a Vega specification

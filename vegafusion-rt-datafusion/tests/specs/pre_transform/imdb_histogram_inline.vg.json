@@ -9,7 +9,7 @@
   "data": [
     {
       "name": "source_0",
-      "url": "vegafusion+inline://movies",
+      "url": "vegafusion+dataset://movies",
       "transform": [
         {
           "type": "extent",
