@@ -219,7 +219,7 @@ impl TaskGraphRuntime {
         inline_datasets: HashMap<String, VegaFusionTable>,
     ) -> Result<PreTransformResult> {
         let spec: ChartSpec =
-            serde_json::from_str(&spec).with_context(|| "Failed to parse spec".to_string())?;
+            serde_json::from_str(spec).with_context(|| "Failed to parse spec".to_string())?;
 
         // Create spec plan
         let plan = SpecPlan::try_new(&spec)?;
@@ -228,7 +228,7 @@ impl TaskGraphRuntime {
         let task_scope = plan.server_spec.to_task_scope().unwrap();
         let tasks = plan
             .server_spec
-            .to_tasks(&local_tz, Some(inline_datasets))
+            .to_tasks(local_tz, Some(inline_datasets))
             .unwrap();
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
@@ -238,7 +238,7 @@ impl TaskGraphRuntime {
         for var in &plan.comm_plan.server_to_client {
             let node_index = task_graph_mapping
                 .get(var)
-                .expect(&format!("Failed to lookup variable '{:?}'", var));
+                .unwrap_or_else(|| panic!("Failed to lookup variable '{:?}'", var));
             let value = self
                 .get_node_value(Arc::new(task_graph.clone()), node_index)
                 .await
