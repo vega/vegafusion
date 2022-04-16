@@ -8,6 +8,13 @@ license = "AGPL-3.0-or-later"
 name = "vegafusion_embed"
 crate-type = [ "cdylib",]
 
+[dependencies.serde]
+version = "1.0.136"
+features = ["derive",]
+
+[dependencies.serde_json]
+version = "1.0.79"
+
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = [ "pyo3",]
