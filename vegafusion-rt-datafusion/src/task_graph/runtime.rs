@@ -213,8 +213,8 @@ impl TaskGraphRuntime {
 
     pub async fn pre_transform_spec(
         &self,
-        spec: &String,
-        local_tz: &String,
+        spec: &str,
+        local_tz: &str,
         row_limit: Option<u32>,
         inline_datasets: HashMap<String, VegaFusionTable>,
     ) -> Result<PreTransformResult> {
