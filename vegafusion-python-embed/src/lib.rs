@@ -23,9 +23,6 @@ use std::collections::HashMap;
 use tokio::runtime::Runtime;
 use vegafusion_core::error::ToExternalError;
 use vegafusion_core::proto::gen::pretransform::pre_transform_warning::WarningType;
-use vegafusion_core::proto::gen::pretransform::{
-    PreTransformInlineDataset, PreTransformOpts, PreTransformRequest,
-};
 use vegafusion_core::proto::gen::services::pre_transform_result;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
