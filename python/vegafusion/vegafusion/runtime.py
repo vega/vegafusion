@@ -101,6 +101,7 @@ class VegaFusionRuntime:
             raise ValueError("pre_transform_spec not yet supported over gRPC")
         else:
             # Preprocess inline_dataset
+            inline_datasets = inline_datasets or dict()
             inline_datasets = {name: to_arrow_ipc_bytes(value, stream=True) for name, value in inline_datasets.items()}
             new_spec, warnings = self.embedded_runtime.pre_transform_spec(
                 spec, local_tz=local_tz, row_limit=row_limit, inline_datasets=inline_datasets
