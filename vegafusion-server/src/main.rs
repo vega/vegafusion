@@ -62,7 +62,7 @@ impl TonicVegaFusionRuntime for VegaFusionRuntimeGrpc {
         &self,
         request: Request<PreTransformRequest>,
     ) -> Result<Response<PreTransformResult>, Status> {
-        let result = self.runtime.pre_transform_spec(request.into_inner()).await;
+        let result = self.runtime.pre_transform_spec_request(request.into_inner()).await;
         match result {
             Ok(result) => Ok(Response::new(result)),
             Err(err) => Err(Status::unknown(err.to_string())),

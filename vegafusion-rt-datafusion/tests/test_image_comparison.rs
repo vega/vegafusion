@@ -1095,7 +1095,7 @@ mod test_pre_transform_inline {
             local_tz,
             opts: Some(opts),
         };
-        let response = runtime.pre_transform_spec(request).await.unwrap();
+        let response = runtime.pre_transform_spec_request(request).await.unwrap();
 
         let pre_transform_spec: ChartSpec = match response.result.unwrap() {
             pre_transform_result::Result::Error(_) => {
@@ -1232,7 +1232,7 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
         local_tz,
         opts: Some(opts),
     };
-    let response = runtime.pre_transform_spec(request).await.unwrap();
+    let response = runtime.pre_transform_spec_request(request).await.unwrap();
 
     let pre_transform_spec: ChartSpec = match response.result.unwrap() {
         pre_transform_result::Result::Error(_) => {

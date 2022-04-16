@@ -182,7 +182,7 @@ impl TaskGraphRuntime {
         Ok(buf)
     }
 
-    pub async fn pre_transform_spec(
+    pub async fn pre_transform_spec_request(
         &self,
         request: PreTransformRequest,
     ) -> Result<PreTransformResult> {
@@ -205,8 +205,21 @@ impl TaskGraphRuntime {
 
         // Parse spec
         let spec_string = request.spec;
-        let spec: ChartSpec = serde_json::from_str(&spec_string)
-            .with_context(|| "Failed to parse spec".to_string())?;
+        let local_tz = request.local_tz;
+
+        self.pre_transform_spec(&spec_string, &local_tz, row_limit, inline_datasets)
+            .await
+    }
+
+    pub async fn pre_transform_spec(
+        &self,
+        spec: &String,
+        local_tz: &String,
+        row_limit: Option<u32>,
+        inline_datasets: HashMap<String, VegaFusionTable>,
+    ) -> Result<PreTransformResult> {
+        let spec: ChartSpec =
+            serde_json::from_str(&spec).with_context(|| "Failed to parse spec".to_string())?;
 
         // Create spec plan
         let plan = SpecPlan::try_new(&spec)?;
@@ -215,7 +228,7 @@ impl TaskGraphRuntime {
         let task_scope = plan.server_spec.to_task_scope().unwrap();
         let tasks = plan
             .server_spec
-            .to_tasks(&request.local_tz, Some(inline_datasets))
+            .to_tasks(&local_tz, Some(inline_datasets))
             .unwrap();
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
