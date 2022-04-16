@@ -39,7 +39,7 @@ use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_value::TaskValue;
 use serde_json::Value;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::ops::Deref;
 
@@ -117,13 +117,15 @@ impl ChartVisitor for MakeTaskScopeVisitor {
 pub struct MakeTasksVisitor {
     pub tasks: Vec<Task>,
     pub local_tz: String,
+    pub inline_datasets: HashMap<String, VegaFusionTable>,
 }
 
 impl MakeTasksVisitor {
-    pub fn new(tz: &str) -> Self {
+    pub fn new(tz: &str, inline_datasets: Option<HashMap<String, VegaFusionTable>>) -> Self {
         Self {
             tasks: Default::default(),
             local_tz: tz.to_string(),
+            inline_datasets: inline_datasets.unwrap_or_default(),
         }
     }
 }
@@ -139,6 +141,39 @@ impl ChartVisitor for MakeTasksVisitor {
             Some(TransformPipeline::try_from(data.transform.as_slice())?)
         };
 
+        // Extract format
+        let format_type = match &data.format {
+            Some(format) => {
+                let parse = format.parse.as_ref().map(|parse| match parse {
+                    DataFormatParseSpec::Object(parse_fields) => {
+                        scan_url_format::Parse::Object(ParseFieldSpecs {
+                            specs: parse_fields
+                                .iter()
+                                .map(|(field, datatype)| ParseFieldSpec {
+                                    name: field.clone(),
+                                    datatype: datatype.clone(),
+                                })
+                                .collect(),
+                        })
+                    }
+                    DataFormatParseSpec::Auto(parse_mode) => {
+                        // Treat any string as auto
+                        scan_url_format::Parse::String(parse_mode.clone())
+                    }
+                });
+
+                Some(ScanUrlFormat {
+                    r#type: format.type_.clone(),
+                    property: None,
+                    header: vec![],
+                    delimiter: None,
+                    feature: None,
+                    parse,
+                })
+            }
+            None => None,
+        };
+
         let task = if let Some(url) = &data.url {
             let proto_url = match url {
                 StringOrSignalSpec::String(url) => Url::String(url.clone()),
@@ -148,37 +183,32 @@ impl ChartVisitor for MakeTasksVisitor {
                 }
             };
 
-            let format_type = match &data.format {
-                Some(format) => {
-                    let parse = format.parse.as_ref().map(|parse| match parse {
-                        DataFormatParseSpec::Object(parse_fields) => {
-                            scan_url_format::Parse::Object(ParseFieldSpecs {
-                                specs: parse_fields
-                                    .iter()
-                                    .map(|(field, datatype)| ParseFieldSpec {
-                                        name: field.clone(),
-                                        datatype: datatype.clone(),
-                                    })
-                                    .collect(),
-                            })
-                        }
-                        DataFormatParseSpec::Auto(parse_mode) => {
-                            // Treat any string as auto
-                            scan_url_format::Parse::String(parse_mode.clone())
-                        }
-                    });
+            // Handle inline data
+            if let Url::String(url) = &proto_url {
+                if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
+                    let inline_name = inline_name.trim().to_string();
+                    return if let Some(inline_dataset) = self.inline_datasets.get(&inline_name) {
+                        let task = Task::new_data_values(
+                            data_var,
+                            scope,
+                            DataValuesTask {
+                                values: inline_dataset.to_ipc_bytes()?,
+                                format_type,
+                                pipeline,
+                            },
+                            &self.local_tz,
+                        );
 
-                    Some(ScanUrlFormat {
-                        r#type: format.type_.clone(),
-                        property: None,
-                        header: vec![],
-                        delimiter: None,
-                        feature: None,
-                        parse,
-                    })
+                        self.tasks.push(task);
+                        Ok(())
+                    } else {
+                        Err(VegaFusionError::internal(format!(
+                            "No inline dataset named {}",
+                            inline_name
+                        )))
+                    };
                 }
-                None => None,
-            };
+            }
 
             Task::new_data_url(
                 data_var,
@@ -210,7 +240,7 @@ impl ChartVisitor for MakeTasksVisitor {
                 }
             };
 
-            if pipeline.is_none() {
+            if pipeline.is_none() && format_type.is_none() {
                 // If no transforms, treat as regular TaskValue task
                 Task::new_value(data_var, scope, TaskValue::Table(values_table))
             } else {
@@ -220,6 +250,7 @@ impl ChartVisitor for MakeTasksVisitor {
                     scope,
                     DataValuesTask {
                         values: values_table.to_ipc_bytes()?,
+                        format_type,
                         pipeline,
                     },
                     &self.local_tz,

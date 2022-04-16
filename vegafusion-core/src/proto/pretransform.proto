@@ -1,0 +1,45 @@
+syntax = "proto3";
+package pretransform;
+
+import "tasks.proto";
+
+message PreTransformOpts {
+  optional uint32 row_limit = 1;
+  repeated PreTransformInlineDataset inline_datasets = 2;
+}
+
+message PreTransformRequest {
+  string spec = 1;
+  string local_tz = 2;
+  PreTransformOpts opts = 3;
+}
+
+message PreTransformResponse {
+  string spec = 1;
+  repeated PreTransformWarning warnings = 2;
+}
+
+message PreTransformRowLimitWarning {
+  repeated tasks.Variable datasets = 1;
+}
+
+message PreTransformBrokenInteractivityWarning {
+  repeated tasks.Variable vars = 1;
+}
+
+message PreTransformUnsupportedWarning {}
+
+message PreTransformWarning {
+  oneof warning_type {
+    PreTransformRowLimitWarning row_limit = 1;
+      PreTransformBrokenInteractivityWarning broken_interactivity = 2;
+      PreTransformUnsupportedWarning unsupported = 3;
+  }
+}
+
+message PreTransformInlineDataset {
+  // Inline dataset name
+  string name = 1;
+  // Serialized Arrow record batch in Arrow IPC format
+  bytes table = 2;
+}

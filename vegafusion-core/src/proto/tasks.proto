@@ -83,7 +83,8 @@ message DataUrlTask {
 // ## Inline values task
 message DataValuesTask {
   bytes values = 1;
-  transforms.TransformPipeline pipeline = 2;
+  ScanUrlFormat format_type = 2;
+  transforms.TransformPipeline pipeline = 3;
 }
 
 // ## Transform Task

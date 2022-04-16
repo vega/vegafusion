@@ -2,10 +2,12 @@ syntax = "proto3";
 package services;
 
 import "tasks.proto";
+import "pretransform.proto";
 import "errors.proto";
 
 service VegaFusionRuntime {
   rpc TaskGraphQuery(QueryRequest) returns (QueryResult) {}
+  rpc PreTransformSpec(pretransform.PreTransformRequest) returns (PreTransformResult) {}
 }
 
 message QueryRequest {
@@ -18,5 +20,12 @@ message QueryResult {
   oneof response {
     errors.Error error = 1;
     tasks.TaskGraphValueResponse task_graph_values = 2;
+  }
+}
+
+message PreTransformResult {
+  oneof result {
+    errors.Error error = 1;
+    pretransform.PreTransformResponse response = 2;
   }
 }

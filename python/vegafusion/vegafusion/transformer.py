@@ -25,14 +25,13 @@ import altair as alt
 import pandas as pd
 
 
-def to_feather(data, file):
+def to_arrow_ipc_bytes(data, stream=False):
     """
-    Helper to convert a Pandas DataFrame to a feather file that is optimized for
-    use as a VegaFusion data source
+    Helper to convert a Pandas DataFrame to the Arrow IPC binary format
 
     :param data: Pandas DataFrame
-    :param file: File path string or writable file-like object
-    :return: None
+    :param stream: If True, write IPC Stream format. If Flase (defualt), write ipc file format.
+    :return: bytes
     """
     import pyarrow as pa
 
@@ -64,10 +63,28 @@ def to_feather(data, file):
     # Write it in memory first so we can hash the contents before touching disk.
     bytes_buffer = io.BytesIO()
 
-    with pa.ipc.new_file(bytes_buffer, table.schema) as f:
-        f.write_table(table, max_chunksize=8096)
+    max_chunksize=8096
 
-    file_bytes = bytes_buffer.getvalue()
+    if stream:
+        with pa.ipc.new_stream(bytes_buffer, table.schema) as f:
+            f.write_table(table, max_chunksize=max_chunksize)
+    else:
+        with pa.ipc.new_file(bytes_buffer, table.schema) as f:
+            f.write_table(table, max_chunksize=max_chunksize)
+
+    return bytes_buffer.getvalue()
+
+
+def to_feather(data, file):
+    """
+    Helper to convert a Pandas DataFrame to a feather file that is optimized for
+    use as a VegaFusion data source
+
+    :param data: Pandas DataFrame
+    :param file: File path string or writable file-like object
+    :return: None
+    """
+    file_bytes = to_arrow_ipc_bytes(data, stream=False)
 
     # Either write to new file at path, or to writable file-like object
     if hasattr(file, "write"):
