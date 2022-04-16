@@ -13,8 +13,9 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import json
 import psutil
-
+from .transformer import to_arrow_ipc_bytes
 
 class VegaFusionRuntime:
     def __init__(self, cache_capacity, memory_limit, worker_threads):
@@ -66,6 +67,46 @@ class VegaFusionRuntime:
         else:
             # No grpc channel, get or initialize an embedded runtime
             return self.embedded_runtime.process_request_bytes(request)
+
+    def pre_transform_spec(self, spec, local_tz, row_limit=None, inline_datasets=None):
+        """
+        Evaluate supported transforms in an input Vega specification and produce a new
+        specification with pre-transformed datasets included inline.
+
+        :param spec: A Vega specification
+        :param local_tz: Name of timezone to be considered local. E.g. 'America/New_York'.
+            This can be computed for the local system using the tzlocal package and the
+            tzlocal.get_localzone_name() function.
+        :param row_limit: Maximum number of dataset rows to include in the returned
+            specification. If exceeded, datasets will be truncated to this number of rows
+            and a RowLimitExceeded warning will be included in the resulting warnings list
+        :param inline_datasets: A dict from dataset names to pandas DataFrames. Inline
+            datasets may be referenced by the input specification using the following
+            url syntax 'vegafusion+inline://{dataset_name}'.
+        :return:
+            Two-element tuple:
+                0. A string containing the JSON representation of a Vega specification
+                   with pre-transformed datasets included inline
+                1. A list of warnings as dictionaries. Each warning dict has a 'type'
+                   key indicating the warning type, and a 'message' key containing
+                   a description of the warning. Potential warning types include:
+                    'RowLimitExceeded': Some datasets in resulting Vega specification
+                        have been truncated to the provided row limit
+                    'BrokenInteractivity': Some interactive features may have been
+                        broken in the resulting Vega specification
+                    'Unsupported': No transforms in the provided Vega specification were
+                        eligible for pre-transforming
+        """
+        if self._grpc_channel:
+            raise ValueError("pre_transform_spec not yet supported over gRPC")
+        else:
+            # Preprocess inline_dataset
+            inline_datasets = {name: to_arrow_ipc_bytes(value, stream=True) for name, value in inline_datasets.items()}
+            new_spec, warnings = self.embedded_runtime.pre_transform_spec(
+                spec, local_tz=local_tz, row_limit=row_limit, inline_datasets=inline_datasets
+            )
+            warnings = json.loads(warnings)
+            return new_spec, warnings
 
     @property
     def worker_threads(self):

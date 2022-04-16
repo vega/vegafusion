@@ -16,12 +16,28 @@
  * License along with this program.
  * If not, see http://www.gnu.org/licenses/.
  */
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::PyBytes;
+use pyo3::types::{PyBytes, PyDict, PyString};
+use std::collections::HashMap;
 use tokio::runtime::Runtime;
 use vegafusion_core::error::ToExternalError;
-
+use vegafusion_core::proto::gen::pretransform::pre_transform_warning::WarningType;
+use vegafusion_core::proto::gen::pretransform::{
+    PreTransformInlineDataset, PreTransformOpts, PreTransformRequest,
+};
+use vegafusion_core::proto::gen::services::pre_transform_result;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
+
+use serde::{Deserialize, Serialize};
+use vegafusion_core::data::table::VegaFusionTable;
+
+#[derive(Clone, Serialize, Deserialize)]
+struct PreTransformWarning {
+    #[serde(rename = "type")]
+    pub typ: String,
+    pub message: String,
+}
 
 #[pyclass]
 struct PyTaskGraphRuntime {
@@ -60,6 +76,67 @@ impl PyTaskGraphRuntime {
             .tokio_runtime
             .block_on(self.runtime.query_request_bytes(request_bytes.as_bytes()))?;
         Python::with_gil(|py| Ok(PyBytes::new(py, &response_bytes).into()))
+    }
+
+    pub fn pre_transform_spec(
+        &self,
+        spec: String,
+        local_tz: String,
+        row_limit: Option<u32>,
+        inline_datasets: &PyDict,
+    ) -> PyResult<(String, String)> {
+        let inline_datasets: HashMap<_, _> = inline_datasets
+            .iter()
+            .map(|(name, table_bytes)| {
+                let name = name.cast_as::<PyString>()?;
+                let table_bytes = table_bytes.cast_as::<PyBytes>()?;
+                Ok((
+                    name.to_string(),
+                    VegaFusionTable::from_ipc_bytes(table_bytes.as_bytes())?,
+                ))
+            })
+            .collect::<PyResult<HashMap<_, _>>>()?;
+
+        let response = self
+            .tokio_runtime
+            .block_on(self.runtime.pre_transform_spec(
+                &spec,
+                &local_tz,
+                row_limit,
+                inline_datasets,
+            ))?;
+
+        match response.result.unwrap() {
+            pre_transform_result::Result::Error(err) => {
+                Err(PyValueError::new_err(format!("{:?}", err)))
+            }
+            pre_transform_result::Result::Response(response) => {
+                let warnings: Vec<_> = response.warnings.iter().map(|warning| {
+                    match warning.warning_type.as_ref().unwrap() {
+                        WarningType::RowLimit(_) => {
+                            PreTransformWarning {
+                                typ: "RowLimitExceeded".to_string(),
+                                message: "Some datasets in resulting Vega specification have been truncated to the provided row limit".to_string()
+                            }
+                        }
+                        WarningType::BrokenInteractivity(_) => {
+                            PreTransformWarning {
+                                typ: "BrokenInteractivity".to_string(),
+                                message: "Some interactive features may have been broken in the resulting Vega specification".to_string()
+                            }
+                        }
+                        WarningType::Unsupported(_) => {
+                            PreTransformWarning {
+                                typ: "Unsupported".to_string(),
+                                message: "Unable to pre-transform any datasets in the Vega specification".to_string()
+                            }
+                        }
+                    }
+                }).collect();
+
+                Ok((response.spec, serde_json::to_string(&warnings).unwrap()))
+            }
+        }
     }
 
     pub fn clear_cache(&self) {
