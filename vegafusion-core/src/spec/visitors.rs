@@ -141,6 +141,39 @@ impl ChartVisitor for MakeTasksVisitor {
             Some(TransformPipeline::try_from(data.transform.as_slice())?)
         };
 
+        // Extract format
+        let format_type = match &data.format {
+            Some(format) => {
+                let parse = format.parse.as_ref().map(|parse| match parse {
+                    DataFormatParseSpec::Object(parse_fields) => {
+                        scan_url_format::Parse::Object(ParseFieldSpecs {
+                            specs: parse_fields
+                                .iter()
+                                .map(|(field, datatype)| ParseFieldSpec {
+                                    name: field.clone(),
+                                    datatype: datatype.clone(),
+                                })
+                                .collect(),
+                        })
+                    }
+                    DataFormatParseSpec::Auto(parse_mode) => {
+                        // Treat any string as auto
+                        scan_url_format::Parse::String(parse_mode.clone())
+                    }
+                });
+
+                Some(ScanUrlFormat {
+                    r#type: format.type_.clone(),
+                    property: None,
+                    header: vec![],
+                    delimiter: None,
+                    feature: None,
+                    parse,
+                })
+            }
+            None => None,
+        };
+
         let task = if let Some(url) = &data.url {
             let proto_url = match url {
                 StringOrSignalSpec::String(url) => Url::String(url.clone()),
@@ -155,22 +188,16 @@ impl ChartVisitor for MakeTasksVisitor {
                 if let Some(inline_name) = url.strip_prefix("vegafusion+inline://") {
                     let inline_name = inline_name.trim().to_string();
                     return if let Some(inline_dataset) = self.inline_datasets.get(&inline_name) {
-                        let task = if pipeline.is_none() {
-                            // If no transforms, treat as regular TaskValue task
-                            let value = TaskValue::Table(inline_dataset.clone());
-                            Task::new_value(data_var, scope, value)
-                        } else {
-                            // Otherwise, create data values task (which supports transforms)
-                            Task::new_data_values(
-                                data_var,
-                                scope,
-                                DataValuesTask {
-                                    values: inline_dataset.to_ipc_bytes()?,
-                                    pipeline,
-                                },
-                                &self.local_tz,
-                            )
-                        };
+                        let task = Task::new_data_values(
+                            data_var,
+                            scope,
+                            DataValuesTask {
+                                values: inline_dataset.to_ipc_bytes()?,
+                                format_type,
+                                pipeline,
+                            },
+                            &self.local_tz,
+                        );
 
                         self.tasks.push(task);
                         Ok(())
@@ -182,38 +209,6 @@ impl ChartVisitor for MakeTasksVisitor {
                     };
                 }
             }
-
-            let format_type = match &data.format {
-                Some(format) => {
-                    let parse = format.parse.as_ref().map(|parse| match parse {
-                        DataFormatParseSpec::Object(parse_fields) => {
-                            scan_url_format::Parse::Object(ParseFieldSpecs {
-                                specs: parse_fields
-                                    .iter()
-                                    .map(|(field, datatype)| ParseFieldSpec {
-                                        name: field.clone(),
-                                        datatype: datatype.clone(),
-                                    })
-                                    .collect(),
-                            })
-                        }
-                        DataFormatParseSpec::Auto(parse_mode) => {
-                            // Treat any string as auto
-                            scan_url_format::Parse::String(parse_mode.clone())
-                        }
-                    });
-
-                    Some(ScanUrlFormat {
-                        r#type: format.type_.clone(),
-                        property: None,
-                        header: vec![],
-                        delimiter: None,
-                        feature: None,
-                        parse,
-                    })
-                }
-                None => None,
-            };
 
             Task::new_data_url(
                 data_var,
@@ -245,21 +240,17 @@ impl ChartVisitor for MakeTasksVisitor {
                 }
             };
 
-            if pipeline.is_none() {
-                // If no transforms, treat as regular TaskValue task
-                Task::new_value(data_var, scope, TaskValue::Table(values_table))
-            } else {
-                // Otherwise, create data values task (which supports transforms)
-                Task::new_data_values(
-                    data_var,
-                    scope,
-                    DataValuesTask {
-                        values: values_table.to_ipc_bytes()?,
-                        pipeline,
-                    },
-                    &self.local_tz,
-                )
-            }
+            // Otherwise, create data values task (which supports transforms)
+            Task::new_data_values(
+                data_var,
+                scope,
+                DataValuesTask {
+                    values: values_table.to_ipc_bytes()?,
+                    format_type,
+                    pipeline,
+                },
+                &self.local_tz,
+            )
         };
         self.tasks.push(task);
         Ok(())

@@ -112,6 +112,8 @@ pub struct DataValuesTask {
     #[prost(bytes = "vec", tag = "1")]
     pub values: ::prost::alloc::vec::Vec<u8>,
     #[prost(message, optional, tag = "2")]
+    pub format_type: ::core::option::Option<ScanUrlFormat>,
+    #[prost(message, optional, tag = "3")]
     pub pipeline: ::core::option::Option<super::transforms::TransformPipeline>,
 }
 /// ## Transform Task

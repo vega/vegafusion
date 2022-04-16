@@ -374,6 +374,10 @@ impl TaskCall for DataValuesTask {
         // Deserialize data into table
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
 
+        // Get parse format for date processing
+        let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
+        let date_mode = DateParseMode::JavaScript;
+
         // Apply transforms (if any)
         let (transformed_table, output_values) = if self
             .pipeline
@@ -383,13 +387,20 @@ impl TaskCall for DataValuesTask {
         {
             let pipeline = self.pipeline.as_ref().unwrap();
             let values_df = values_table.to_dataframe()?;
+            let values_df = process_datetimes(&parse, date_mode, values_df, local_tz)?;
+
             let config = build_compilation_config(&self.input_vars(), values, local_tz);
             let (df, output_values) = pipeline.eval(values_df, &config).await?;
 
             (VegaFusionTable::from_dataframe(df).await?, output_values)
         } else {
             // No transforms
-            (values_table, Vec::new())
+            let values_df = values_table.to_dataframe()?;
+            let values_df = process_datetimes(&parse, date_mode, values_df, local_tz)?;
+            (
+                VegaFusionTable::from_dataframe(values_df).await?,
+                Vec::new(),
+            )
         };
 
         let table_value = TaskValue::Table(transformed_table);
