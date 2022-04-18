@@ -114,7 +114,6 @@ class VegaFusionWidget(DOMWidget):
             )
 
             self._response_msg = response_bytes
-            self._response_msg = None
 
             duration = (time.time() - start) * 1000
             self._log(f"Sent response in {duration:.1f}ms")
