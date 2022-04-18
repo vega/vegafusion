@@ -291,16 +291,18 @@ impl MsgReceiver {
                             .filter(|node| server_to_client.contains(node))
                             .collect();
 
-                        let request_msg = QueryRequest {
-                            request: Some(query_request::Request::TaskGraphValues(
-                                TaskGraphValueRequest {
-                                    task_graph: Some(task_graph.clone()),
-                                    indices: updated_nodes,
-                                },
-                            )),
-                        };
+                        if !updated_nodes.is_empty() {
+                            let request_msg = QueryRequest {
+                                request: Some(query_request::Request::TaskGraphValues(
+                                    TaskGraphValueRequest {
+                                        task_graph: Some(task_graph.clone()),
+                                        indices: updated_nodes,
+                                    },
+                                )),
+                            };
 
-                        this.send_request(send_msg_fn.as_ref(), request_msg);
+                            this.send_request(send_msg_fn.as_ref(), request_msg);
+                        }
                     })
                         as Box<dyn FnMut(String, JsValue)>);
 
