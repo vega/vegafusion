@@ -143,6 +143,6 @@ maturin build --release --strip --target aarch64-apple-darwin
 2. Update lock files with
 ```bash
 cd python/vegafusion-jupyter/
-conda-lock -f dev-environment-3.7.yml -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp37.lock"
-conda-lock -f dev-environment-3.10.yml -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp310.lock"
+conda-lock -f dev-environment-3.7.yml --kind explicit -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp37.lock"
+conda-lock -f dev-environment-3.10.yml --kind explicit -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp310.lock"
 ```
