@@ -24,3 +24,4 @@ dependencies:
   - flaky
   - click
   - toml
+  - pyarrow=5  # Pin pyarrow to 5 to make sure we test this in 3.7 environment
