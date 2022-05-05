@@ -6,21 +6,17 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
-    datetime_strs_to_millis, DateParseMode,
-};
 
+use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
 use crate::expression::compiler::call::LocalTransformFn;
 use chrono::{DateTime, Datelike, NaiveDateTime, TimeZone, Timelike, Weekday};
-use datafusion::arrow::array::{Array, ArrayRef, Date32Array, Int64Array, StringArray};
-use datafusion::arrow::compute::cast;
+use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::ReturnTypeFunction;
 use std::sync::Arc;
-use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::error::Result;
 
 #[inline(always)]
@@ -78,28 +74,6 @@ pub fn extract_millisecond(dt: &DateTime<chrono_tz::Tz>) -> i64 {
     dt.nanosecond() as i64 / 1000000
 }
 
-fn process_input_datetime(arg: &ArrayRef, tz: &chrono_tz::Tz) -> ArrayRef {
-    match arg.data_type() {
-        DataType::Utf8 => {
-            let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
-            datetime_strs_to_millis(array, DateParseMode::JavaScript, &Some(*tz)) as _
-        }
-        DataType::Date32 => {
-            let ms_per_day = 1000 * 60 * 60 * 24_i64;
-            let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
-
-            let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
-            Arc::new(array) as ArrayRef as _
-        }
-        DataType::Date64 => {
-            let int_array = cast(arg, &DataType::Int64).unwrap();
-            int_array
-        }
-        DataType::Int64 => arg.clone(),
-        _ => panic!("Unexpected data type for date part function:"),
-    }
-}
-
 pub fn make_local_datepart_transform(
     extract_fn: fn(&DateTime<chrono_tz::Tz>) -> i64,
     name: &str,
@@ -137,7 +111,7 @@ pub fn make_datepart_udf(
                 let utc_seconds = utc_millis / 1_000;
                 let utc_nanos = (utc_millis % 1_000 * 1_000_000) as u32;
                 let naive_utc_datetime = NaiveDateTime::from_timestamp(utc_seconds, utc_nanos);
-                let datetime = tz.from_utc_datetime(&naive_utc_datetime);
+                let datetime: DateTime<chrono_tz::Tz> = tz.from_utc_datetime(&naive_utc_datetime);
                 let value = extract_fn(&datetime);
                 result_builder.append_value(value).unwrap();
             }
