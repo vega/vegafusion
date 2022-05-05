@@ -311,6 +311,48 @@ mod test_datetime {
     fn test_marker() {} // Help IDE detect test module
 }
 
+mod test_time {
+    use crate::*;
+
+    #[rstest(
+        expr,
+        case("time('2020-05-16T09:30:00+05:00')"),
+        case("time('2020-05-16 09:30:00+05:00')"),
+        case("time('2020-05-16 09:30:00-07:00')"),
+        case("time('2020-05-16 09:30:00Z')"),
+        case("time('2020-05-16 09:30:00')"),
+        case("time('2020/05/16 09:30')"),
+        case("time('05/16/2020 09:30')"),
+        case("time('May 16 2020 09:30')"),
+        case("time('2020 May 16  09:30')"),
+        case("time('2020-01-01 00:00')"),
+        case("time('2020-01-01')"),
+        case("time('2020/01/01')"),
+        case("time('01/01/2020')"),
+        case("time(1589603400000)"),
+        case("time(datetime(87, 3, 10, 7, 35, 10, 87))"),
+        case("time(datetime(87, 3, 10, 7, 35, 10))"),
+        case("time(datetime(87, 3, 10, 7, 35))"),
+        case("time(datetime(87, 3, 10, 7))"),
+        case("time(datetime(87, 3, 10))"),
+        case("time(datetime(87, 3))"),
+        case("time(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
+        case("time(datetime(utc(87, 3, 10, 7, 35, 10)))"),
+        case("time(datetime(utc(87, 3, 10, 7, 35)))"),
+        case("time(datetime(utc(87, 3, 10, 7)))"),
+        case("time(datetime(utc(87, 3, 10)))"),
+        case("time(datetime(utc(87, 3)))"),
+        case("time(\"2000-01-01T08:00:00.000Z\")"),
+        case("time(\"2000-01-01T13:14:15.123Z\")")
+    )]
+    fn test(expr: &str) {
+        check_scalar_evaluation(expr, &config_a())
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
 mod test_date_parts {
     #[rstest(
         expr,

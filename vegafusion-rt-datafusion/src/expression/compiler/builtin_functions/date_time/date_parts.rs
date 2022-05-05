@@ -10,6 +10,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
     datetime_strs_to_millis, DateParseMode,
 };
 
+use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
 use crate::expression::compiler::call::LocalTransformFn;
 use chrono::{DateTime, Datelike, NaiveDateTime, TimeZone, Timelike, Weekday};
 use datafusion::arrow::array::{Array, ArrayRef, Date32Array, Int64Array, StringArray};
@@ -76,28 +77,6 @@ pub fn extract_second(dt: &DateTime<chrono_tz::Tz>) -> i64 {
 #[inline(always)]
 pub fn extract_millisecond(dt: &DateTime<chrono_tz::Tz>) -> i64 {
     dt.nanosecond() as i64 / 1000000
-}
-
-fn process_input_datetime(arg: &ArrayRef, tz: &chrono_tz::Tz) -> ArrayRef {
-    match arg.data_type() {
-        DataType::Utf8 => {
-            let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
-            datetime_strs_to_millis(array, DateParseMode::JavaScript, &Some(*tz)) as _
-        }
-        DataType::Date32 => {
-            let ms_per_day = 1000 * 60 * 60 * 24_i64;
-            let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
-
-            let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
-            Arc::new(array) as ArrayRef as _
-        }
-        DataType::Date64 => {
-            let int_array = cast(arg, &DataType::Int64).unwrap();
-            int_array
-        }
-        DataType::Int64 => arg.clone(),
-        _ => panic!("Unexpected data type for date part function:"),
-    }
 }
 
 pub fn make_local_datepart_transform(

@@ -6,35 +6,30 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
 use datafusion::arrow::array::{ArrayRef, Date32Array, Int64Array};
 use datafusion::arrow::compute::cast;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
+use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::ReturnTypeFunction;
 use std::sync::Arc;
 use vegafusion_core::arrow::compute::unary;
+use vegafusion_core::error::{Result, ResultWithContext};
 
-pub fn make_time_udf() -> ScalarUDF {
+pub fn time_fn(local_tz: chrono_tz::Tz, args: &[Expr], schema: &DFSchema) -> Result<Expr> {
+    Ok(Expr::ScalarUDF {
+        fun: Arc::new(make_time_udf(local_tz)),
+        args: Vec::from(args),
+    })
+}
+
+pub fn make_time_udf(local_tz: chrono_tz::Tz) -> ScalarUDF {
     let time_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single argument
         let arg = &args[0];
-
-        let arg = match arg.data_type() {
-            DataType::Timestamp(TimeUnit::Millisecond, _) => cast(arg, &DataType::Int64)?,
-            DataType::Date32 => {
-                let ms_per_day = 1000 * 60 * 60 * 24_i64;
-                let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
-
-                let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
-                let array = Arc::new(array) as ArrayRef;
-                cast(&array, &DataType::Int64)?
-            }
-            DataType::Date64 => cast(arg, &DataType::Int64)?,
-            DataType::Int64 => arg.clone(),
-            _ => panic!("Unexpected data type for date part function:"),
-        };
-
+        let arg = process_input_datetime(arg, &local_tz);
         Ok(arg)
     };
     let time_fn = make_scalar_function(time_fn);
@@ -45,10 +40,12 @@ pub fn make_time_udf() -> ScalarUDF {
         &Signature::uniform(
             1,
             vec![
+                DataType::Utf8,
                 DataType::Timestamp(TimeUnit::Millisecond, None),
                 DataType::Date32,
                 DataType::Date64,
                 DataType::Int64,
+                DataType::Float64,
             ],
             Volatility::Immutable,
         ),
