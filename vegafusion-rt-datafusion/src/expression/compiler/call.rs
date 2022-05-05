@@ -45,7 +45,7 @@ use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_
 use crate::expression::compiler::builtin_functions::date_time::date_format::{
     time_format_fn, utc_format_fn,
 };
-use crate::expression::compiler::builtin_functions::date_time::time::{make_time_udf, time_fn};
+use crate::expression::compiler::builtin_functions::date_time::time::time_fn;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;

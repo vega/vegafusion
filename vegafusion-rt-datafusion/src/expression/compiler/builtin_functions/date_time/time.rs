@@ -7,18 +7,16 @@
  * this program the details of the active license.
  */
 use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
-use datafusion::arrow::array::{ArrayRef, Date32Array, Int64Array};
-use datafusion::arrow::compute::cast;
+use datafusion::arrow::array::ArrayRef;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::ReturnTypeFunction;
 use std::sync::Arc;
-use vegafusion_core::arrow::compute::unary;
-use vegafusion_core::error::{Result, ResultWithContext};
+use vegafusion_core::error::Result;
 
-pub fn time_fn(local_tz: chrono_tz::Tz, args: &[Expr], schema: &DFSchema) -> Result<Expr> {
+pub fn time_fn(local_tz: chrono_tz::Tz, args: &[Expr], _schema: &DFSchema) -> Result<Expr> {
     Ok(Expr::ScalarUDF {
         fun: Arc::new(make_time_udf(local_tz)),
         args: Vec::from(args),

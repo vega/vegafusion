@@ -9,8 +9,7 @@
 use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
 use chrono::TimeZone;
 use chrono::{DateTime, NaiveDateTime};
-use datafusion::arrow::array::{ArrayRef, Date32Array, Int64Array, StringArray};
-use datafusion::arrow::compute::cast;
+use datafusion::arrow::array::{ArrayRef, Int64Array, StringArray};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
@@ -18,19 +17,18 @@ use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::scalar::ScalarValue;
 use datafusion_expr::ReturnTypeFunction;
 use std::sync::Arc;
-use vegafusion_core::arrow::compute::unary;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::error::{Result, VegaFusionError};
 
-pub fn time_format_fn(local_tz: chrono_tz::Tz, args: &[Expr], schema: &DFSchema) -> Result<Expr> {
-    let format_str = extract_format_str(&args)?;
+pub fn time_format_fn(local_tz: chrono_tz::Tz, args: &[Expr], _schema: &DFSchema) -> Result<Expr> {
+    let format_str = extract_format_str(args)?;
     Ok(Expr::ScalarUDF {
         fun: Arc::new(make_time_format_udf(&local_tz, &local_tz, &format_str)),
         args: Vec::from(&args[..1]),
     })
 }
 
-pub fn utc_format_fn(local_tz: chrono_tz::Tz, args: &[Expr], schema: &DFSchema) -> Result<Expr> {
-    let format_str = extract_format_str(&args)?;
+pub fn utc_format_fn(local_tz: chrono_tz::Tz, args: &[Expr], _schema: &DFSchema) -> Result<Expr> {
+    let format_str = extract_format_str(args)?;
     Ok(Expr::ScalarUDF {
         fun: Arc::new(make_time_format_udf(
             &local_tz,
@@ -75,8 +73,8 @@ pub fn make_time_format_udf(
     format_tz: &chrono_tz::Tz,
     format_str: &str,
 ) -> ScalarUDF {
-    let local_tz = local_tz.clone();
-    let format_tz = format_tz.clone();
+    let local_tz = *local_tz;
+    let format_tz = *format_tz;
     let format_str = format_str.to_string();
     let time_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single argument
