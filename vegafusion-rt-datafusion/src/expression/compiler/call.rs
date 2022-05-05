@@ -42,6 +42,9 @@ use vegafusion_core::proto::gen::expression::{
 use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
+use crate::expression::compiler::builtin_functions::date_time::date_format::{
+    time_format_fn, utc_format_fn,
+};
 use crate::expression::compiler::builtin_functions::date_time::time::{make_time_udf, time_fn};
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
@@ -399,6 +402,14 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "time".to_string(),
         VegaFusionCallable::LocalTransform(Arc::new(time_fn)),
+    );
+    callables.insert(
+        "timeFormat".to_string(),
+        VegaFusionCallable::LocalTransform(Arc::new(time_format_fn)),
+    );
+    callables.insert(
+        "utcFormat".to_string(),
+        VegaFusionCallable::LocalTransform(Arc::new(utc_format_fn)),
     );
 
     // coercion

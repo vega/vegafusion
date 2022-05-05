@@ -353,6 +353,30 @@ mod test_time {
     fn test_marker() {} // Help IDE detect test module
 }
 
+mod test_time_and_utc_format {
+    use crate::*;
+
+    #[rstest(
+        expr,
+        case("timeFormat(toDate('2020-05-16T09:30:00+05:00'), '%Y-%m-%d %H:%M:%S')"),
+        case("utcFormat(toDate('2020-05-16T09:30:00+05:00'), '%Y-%m-%d %H:%M:%S')"),
+        case("timeFormat(toDate('2020-05-16 09:30:00+05:00'))"),
+        case("utcFormat(toDate('2020-05-16 09:30:00+05:00'))"),
+        case("timeFormat(1589603400000, '%Y-%m-%d %p %s')"),
+        case("utcFormat(1589603400000, '%Y-%m-%d %G %g')"),
+        case("timeFormat(datetime(87, 3, 10, 7, 35, 10, 87), '%a %A %b %B %d %e %g')"),
+        case("utcFormat(datetime(87, 3, 10, 7, 35, 10, 87), '%a %A %b %B %d %e %g')"),
+        case("timeFormat(datetime(87, 3, 10, 7, 35, 10, 87), '%Y-%m-%d %H:%M:%S.%L')"),
+        case("utcFormat(datetime(87, 3, 10, 7, 35, 10, 87), '%Y-%m-%d %H:%M:%S.%f')")
+    )]
+    fn test(expr: &str) {
+        check_scalar_evaluation(expr, &config_a())
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
 mod test_date_parts {
     #[rstest(
         expr,

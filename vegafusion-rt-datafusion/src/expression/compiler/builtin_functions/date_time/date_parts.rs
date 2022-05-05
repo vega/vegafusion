@@ -116,7 +116,7 @@ pub fn make_datepart_udf(
                 let utc_seconds = utc_millis / 1_000;
                 let utc_nanos = (utc_millis % 1_000 * 1_000_000) as u32;
                 let naive_utc_datetime = NaiveDateTime::from_timestamp(utc_seconds, utc_nanos);
-                let datetime = tz.from_utc_datetime(&naive_utc_datetime);
+                let datetime: DateTime<chrono_tz::Tz> = tz.from_utc_datetime(&naive_utc_datetime);
                 let value = extract_fn(&datetime);
                 result_builder.append_value(value).unwrap();
             }
