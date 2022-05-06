@@ -23,7 +23,6 @@ chrono = "0.4.19"
 
 [build-dependencies.prost-build]
 version = "0.10.3"
-features = ["vendored"]
 
 [dependencies.arrow]
 version = "13.0.0"
