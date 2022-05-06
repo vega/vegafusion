@@ -65,7 +65,7 @@ pub fn stringify_local_datetimes(
 
     // Add format spec to client spec (to parse strings as local dates)
     let mut visitor = FormatLocalDatetimeFieldsVisitor::new(local_datetime_fields);
-    client_spec.walk_mut(&mut visitor);
+    client_spec.walk_mut(&mut visitor)?;
 
     Ok(())
 }
