@@ -1,0 +1,20 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "signal",
+      "name": "bin_maxbins_10_IMDB_Rating_bins",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_y_domain___agg_value",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}
