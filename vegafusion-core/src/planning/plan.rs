@@ -14,6 +14,23 @@ use crate::planning::stitch::{stitch_specs, CommPlan};
 use crate::planning::stringify_local_datetimes::stringify_local_datetimes;
 use crate::spec::chart::ChartSpec;
 
+#[derive(Debug, Clone)]
+pub struct PlannerConfig {
+    pub split_domain_data: bool,
+    pub split_url_data_nodes: bool,
+    pub stringify_local_datetimes: bool,
+}
+
+impl Default for PlannerConfig {
+    fn default() -> Self {
+        Self {
+            split_domain_data: true,
+            split_url_data_nodes: true,
+            stringify_local_datetimes: false,
+        }
+    }
+}
+
 pub struct SpecPlan {
     pub server_spec: ChartSpec,
     pub client_spec: ChartSpec,
@@ -21,20 +38,26 @@ pub struct SpecPlan {
 }
 
 impl SpecPlan {
-    pub fn try_new(full_spec: &ChartSpec) -> Result<Self> {
+    pub fn try_new(full_spec: &ChartSpec, config: &PlannerConfig) -> Result<Self> {
         let mut client_spec = full_spec.clone();
-        split_domain_data(&mut client_spec)?;
+        if config.split_domain_data {
+            split_domain_data(&mut client_spec)?;
+        }
 
         let mut task_scope = client_spec.to_task_scope()?;
 
         let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope)?;
         let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec)?;
 
-        split_data_url_nodes(&mut server_spec)?;
+        if config.split_url_data_nodes {
+            split_data_url_nodes(&mut server_spec)?;
+        }
 
-        stringify_local_datetimes(
-            &mut server_spec, &mut client_spec, &comm_plan
-        )?;
+        if config.stringify_local_datetimes {
+            stringify_local_datetimes(
+                &mut server_spec, &mut client_spec, &comm_plan
+            )?;
+        }
 
         Ok(Self {
             server_spec,

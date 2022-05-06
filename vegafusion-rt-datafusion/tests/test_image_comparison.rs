@@ -1289,7 +1289,7 @@ async fn check_spec_sequence(
     let vegajs_runtime = vegajs_runtime();
     let local_tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
 
-    let spec_plan = SpecPlan::try_new(&full_spec).unwrap();
+    let spec_plan = SpecPlan::try_new(&full_spec, &Default::default()).unwrap();
 
     let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
 

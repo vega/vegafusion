@@ -21,7 +21,7 @@ use std::panic::AssertUnwindSafe;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::planning::plan::SpecPlan;
+use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 use vegafusion_core::planning::watch::{ExportUpdate, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
@@ -212,7 +212,13 @@ impl TaskGraphRuntime {
             serde_json::from_str(spec).with_context(|| "Failed to parse spec".to_string())?;
 
         // Create spec plan
-        let plan = SpecPlan::try_new(&spec)?;
+        let plan = SpecPlan::try_new(
+            &spec,
+            &PlannerConfig {
+                stringify_local_datetimes: true,
+                ..Default::default()
+            }
+        )?;
 
         // Create task graph for server spec
         let task_scope = plan.server_spec.to_task_scope().unwrap();
