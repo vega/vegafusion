@@ -9,18 +9,19 @@ edition = "2021"
 license = "AGPL-3.0-or-later"
 
 [dependencies]
-prost = "0.9.0"
+prost = "0.10.3"
 futures-util = "0.3.21"
-regex = "1.5.4"
-tonic-web = "0.2.0"
+regex = "^1.5.5"
+tonic-web = "0.3.0"
 
 [dev-dependencies]
-serde_json = "1.0.79"
+serde_json = "1.0.81"
 assert_cmd = "2.0"
 predicates = "2.1"
 
 [build-dependencies]
-tonic-build = "0.6"
+tonic-build = "0.7.2"
+prost-build = "0.10.3"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
@@ -30,11 +31,11 @@ features = [ "tonic_support",]
 path = "../vegafusion-rt-datafusion"
 
 [dependencies.tokio]
-version = "1.17.0"
+version = "1.18.1"
 features = [ "rt-multi-thread", "macros",]
 
 [dependencies.tonic]
-version = "0.6.2"
+version = "0.7.2"
 features = [ "tls",]
 
 [dependencies.clap]

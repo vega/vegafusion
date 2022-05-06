@@ -21,7 +21,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::expression::compiler::utils::to_numeric;
 use datafusion::physical_plan::aggregates;
-use datafusion::physical_plan::window_functions::{BuiltInWindowFunction, WindowFunction};
+use datafusion_expr::{BuiltInWindowFunction, WindowFunction};
 
 #[async_trait]
 impl TransformTrait for Window {
