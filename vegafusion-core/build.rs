@@ -15,6 +15,7 @@ fn main() {
     let prost_config = prost_config.out_dir(outdir);
 
     prost_config
+        .protoc_arg("--experimental_allow_proto3_optional")
         .compile_protos(
             &[
                 "src/proto/expression.proto",

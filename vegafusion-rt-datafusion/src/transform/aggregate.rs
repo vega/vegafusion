@@ -13,7 +13,7 @@ use datafusion::logical_plan::{avg, col, count, count_distinct, lit, max, min, s
 
 use crate::expression::compiler::utils::to_numeric;
 use async_trait::async_trait;
-use datafusion::physical_plan::window_functions::{BuiltInWindowFunction, WindowFunction};
+use datafusion_expr::{BuiltInWindowFunction, WindowFunction};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -32,7 +32,7 @@ impl TransformTrait for Aggregate {
         for (i, (field, op)) in self.fields.iter().zip(self.ops.iter()).enumerate() {
             let column = if *op == AggregateOp::Count as i32 {
                 // In Vega, the provided column is always ignored if op is 'count'.
-                lit(0)
+                lit(0i32)
             } else {
                 match field.as_str() {
                     "" => {

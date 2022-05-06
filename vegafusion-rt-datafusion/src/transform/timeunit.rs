@@ -22,9 +22,9 @@ use datafusion::arrow::temporal_conversions::date64_to_datetime;
 
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
 use datafusion::logical_plan::Expr;
-use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
+use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion_expr::ReturnTypeFunction;
+use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
 
 #[async_trait]
 impl TransformTrait for TimeUnit {

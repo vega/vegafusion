@@ -9,11 +9,10 @@
 use datafusion::arrow::array::{new_null_array, Array, Int32Array, ListArray};
 use datafusion::arrow::compute::kernels;
 use datafusion::arrow::datatypes::DataType;
-use datafusion::physical_plan::functions::{Signature, Volatility};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
-use datafusion_expr::{ReturnTypeFunction, ScalarFunctionImplementation};
+use datafusion_expr::{ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility};
 use std::convert::TryFrom;
 use std::sync::Arc;
 

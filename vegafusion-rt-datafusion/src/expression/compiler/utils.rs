@@ -19,7 +19,7 @@ use std::collections::HashSet;
 use std::convert::TryFrom;
 
 use datafusion::execution::context::{default_session_builder, SessionState};
-use datafusion::physical_plan::functions::BuiltinScalarFunction;
+use datafusion_expr::BuiltinScalarFunction;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 

@@ -12,10 +12,10 @@ use chrono::{DateTime, NaiveDateTime};
 use datafusion::arrow::array::{ArrayRef, Int64Array, StringArray};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::logical_plan::{DFSchema, Expr};
-use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
+use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::scalar::ScalarValue;
-use datafusion_expr::ReturnTypeFunction;
+use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
 use std::sync::Arc;
 use vegafusion_core::error::{Result, VegaFusionError};
 
