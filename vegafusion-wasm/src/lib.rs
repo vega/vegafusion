@@ -354,7 +354,7 @@ pub fn render_vegafusion(
     send_msg_fn: js_sys::Function,
 ) -> MsgReceiver {
     let spec: ChartSpec = serde_json::from_str(spec_str).unwrap();
-    let spec_plan = SpecPlan::try_new(&spec).unwrap();
+    let spec_plan = SpecPlan::try_new(&spec, &Default::default()).unwrap();
 
     let task_scope = spec_plan
         .server_spec

@@ -104,7 +104,7 @@ pub fn make_time_format_udf(
     };
     let time_fn = make_scalar_function(time_fn);
 
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
+    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Utf8)));
 
     ScalarUDF::new(
         "timeFormat",
