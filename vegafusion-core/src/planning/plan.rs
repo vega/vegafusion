@@ -11,6 +11,7 @@ use crate::planning::extract::extract_server_data;
 use crate::planning::optimize_server::split_data_url_nodes;
 use crate::planning::split_domain_data::split_domain_data;
 use crate::planning::stitch::{stitch_specs, CommPlan};
+use crate::planning::stringify_local_datetimes::stringify_local_datetimes;
 use crate::spec::chart::ChartSpec;
 
 pub struct SpecPlan {
@@ -30,6 +31,10 @@ impl SpecPlan {
         let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec)?;
 
         split_data_url_nodes(&mut server_spec)?;
+
+        stringify_local_datetimes(
+            &mut server_spec, &mut client_spec, &comm_plan
+        )?;
 
         Ok(Self {
             server_spec,
