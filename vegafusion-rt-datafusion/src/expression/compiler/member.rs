@@ -17,12 +17,12 @@ use datafusion::arrow::compute::{cast, kernels};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::error::DataFusionError;
 use datafusion::logical_plan::{col, DFSchema, Expr};
-use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
+use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::prelude::lit;
 use datafusion::scalar::ScalarValue;
-use datafusion_expr::{ReturnTypeFunction, ScalarFunctionImplementation};
+use datafusion_expr::{ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility};
 use std::convert::TryFrom;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -213,7 +213,7 @@ pub fn make_get_element_udf(index: i32) -> ScalarUDF {
                     DataType::Utf8 | DataType::LargeUtf8 => {
                         // String length
                         ColumnarValue::Array(
-                            kernels::substring::substring(array.as_ref(), index as i64, &Some(1))
+                            kernels::substring::substring(array.as_ref(), index as i64, Some(1))
                                 .unwrap(),
                         )
                     }

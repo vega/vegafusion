@@ -26,6 +26,7 @@ use crate::arrow::array::ArrayRef;
 use crate::data::json_writer::record_batches_to_json_rows;
 
 use arrow::array::StructArray;
+use arrow::json::reader::DecoderOptions;
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
@@ -149,7 +150,10 @@ impl VegaFusionTable {
                     let schema_ref = Arc::new(schema);
 
                     // read record batches
-                    let decoder = json::reader::Decoder::new(schema_ref.clone(), batch_size, None);
+                    let decoder = json::reader::Decoder::new(
+                        schema_ref.clone(),
+                        DecoderOptions::default().with_batch_size(batch_size),
+                    );
                     let mut batches: Vec<RecordBatch> = Vec::new();
                     let mut value_iter = values.iter().map(|v| Ok(v.clone()));
 

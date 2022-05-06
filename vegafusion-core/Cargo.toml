@@ -25,13 +25,13 @@ chrono = "0.4.19"
 prost-build = "0.9.0"
 
 [dependencies.arrow]
-version = "11.0.0"
+version = "13.0.0"
 default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "4c2320e783ddf54086d345b8d4e3d8a70611aab4"
+rev = "5927bfceeba3a4eab7988289c674d925cc82ac05"
 
 [dependencies.pyo3]
 version = "0.16.1"

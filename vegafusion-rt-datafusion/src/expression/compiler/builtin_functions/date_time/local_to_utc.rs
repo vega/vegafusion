@@ -9,9 +9,9 @@
 
 use chrono::{NaiveDateTime, TimeZone, Timelike};
 use datafusion::arrow::array::{Int64Array, TimestampMillisecondArray};
-use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
+use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion_expr::ReturnTypeFunction;
+use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
 use std::sync::Arc;
 use vegafusion_core::arrow::array::ArrayRef;
 use vegafusion_core::arrow::compute::unary;

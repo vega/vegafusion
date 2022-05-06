@@ -10,9 +10,9 @@ use crate::expression::compiler::builtin_functions::date_time::process_input_dat
 use datafusion::arrow::array::ArrayRef;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::logical_plan::{DFSchema, Expr};
-use datafusion::physical_plan::functions::{make_scalar_function, Signature, Volatility};
+use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion_expr::ReturnTypeFunction;
+use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 

@@ -47,11 +47,11 @@ features = [ "derive",]
 
 [dependencies.datafusion]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "4c2320e783ddf54086d345b8d4e3d8a70611aab4"
+rev = "5927bfceeba3a4eab7988289c674d925cc82ac05"
 
 [dependencies.datafusion-expr]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "4c2320e783ddf54086d345b8d4e3d8a70611aab4"
+rev = "5927bfceeba3a4eab7988289c674d925cc82ac05"
 
 [dependencies.tokio]
 version = "1.10.1"
