@@ -12,7 +12,7 @@ use crate::error::Result;
 use crate::planning::stitch::CommPlan;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use crate::spec::chart::{ChartSpec, ChartVisitor, MutChartVisitor};
-use crate::spec::data::DataSpec;
+use crate::spec::data::{DataFormatParseSpec, DataFormatSpec, DataSpec};
 use crate::spec::mark::{MarkEncodingField, MarkSpec};
 use crate::spec::scale::{ScaleSpec, ScaleTypeSpec};
 use crate::spec::transform::formula::FormulaTransformSpec;
@@ -36,9 +36,9 @@ pub fn stringify_local_datetimes(
     let client_scope = client_spec.to_task_scope()?;
 
     // Collect the name/scope of all time scales
-    let mut collect_time_scales_visitor = CollectTimeScalesVisitor::new();
-    client_spec.walk(&mut collect_time_scales_visitor)?;
-    let local_time_scales = collect_time_scales_visitor.local_time_scales;
+    let mut visitor = CollectTimeScalesVisitor::new();
+    client_spec.walk(&mut visitor)?;
+    let local_time_scales = visitor.local_time_scales;
 
     // Gather candidate datasets
     let candidate_datasets: HashSet<_> = comm_plan.server_to_client.iter().cloned().filter(|var| {
@@ -46,15 +46,19 @@ pub fn stringify_local_datetimes(
     }).collect();
 
     // Collect data fields to convert to datetime strings
-    let mut collect_local_time_scaled_fields_visitor = CollectLocalTimeScaledFieldsVisitor::new(
+    let mut visitor = CollectLocalTimeScaledFieldsVisitor::new(
         client_scope, local_time_scales, candidate_datasets
     );
-    client_spec.walk(&mut collect_local_time_scaled_fields_visitor)?;
-    let local_datetime_fields = collect_local_time_scaled_fields_visitor.local_datetime_fields;
+    client_spec.walk(&mut visitor)?;
+    let local_datetime_fields = visitor.local_datetime_fields;
 
-    // Add formula transforms
-    let mut stringify_local_datetime_fields_visitor = StringifyLocalDatetimeFieldsVisitor::new(local_datetime_fields);
-    server_spec.walk_mut(&mut stringify_local_datetime_fields_visitor)?;
+    // Add formula transforms to server spec
+    let mut visitor = StringifyLocalDatetimeFieldsVisitor::new(local_datetime_fields.clone());
+    server_spec.walk_mut(&mut visitor)?;
+
+    // Add format spec to client spec (to parse strings as local dates)
+    let mut visitor = FormatLocalDatetimeFieldsVisitor::new(local_datetime_fields);
+    client_spec.walk_mut(&mut visitor);
 
     Ok(())
 }
@@ -168,6 +172,38 @@ impl MutChartVisitor for StringifyLocalDatetimeFieldsVisitor {
                 };
                 transforms.push(TransformSpec::Formula(transform))
             }
+        }
+
+        Ok(())
+    }
+}
+
+
+/// Visitor to add format parse specification for local dates
+struct FormatLocalDatetimeFieldsVisitor {
+    pub local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>
+}
+
+impl FormatLocalDatetimeFieldsVisitor {
+    pub fn new(local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>) -> Self {
+        Self { local_datetime_fields }
+    }
+}
+
+impl MutChartVisitor for FormatLocalDatetimeFieldsVisitor {
+    fn visit_data(&mut self, data: &mut DataSpec, scope: &[u32]) -> Result<()> {
+        let data_var = (Variable::new_data(&data.name), Vec::from(scope));
+        if let Some(fields) = self.local_datetime_fields.get(&data_var) {
+            let parse_map: HashMap<_, _> = sorted(fields).map(
+                |field| (field.clone(), "date".to_string())
+            ).collect();
+
+            let format_spec = DataFormatSpec {
+                parse: Some(DataFormatParseSpec::Object(parse_map)),
+                type_: None,
+                extra: Default::default()
+            };
+            data.format = Some(format_spec)
         }
 
         Ok(())

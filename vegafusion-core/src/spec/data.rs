@@ -86,7 +86,7 @@ pub enum DependencyNodeSupported {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DataFormatSpec {
-    #[serde(rename = "type")]
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
