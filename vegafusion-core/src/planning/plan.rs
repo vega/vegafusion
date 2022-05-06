@@ -54,9 +54,7 @@ impl SpecPlan {
         }
 
         if config.stringify_local_datetimes {
-            stringify_local_datetimes(
-                &mut server_spec, &mut client_spec, &comm_plan
-            )?;
+            stringify_local_datetimes(&mut server_spec, &mut client_spec, &comm_plan)?;
         }
 
         Ok(Self {

@@ -217,7 +217,7 @@ impl TaskGraphRuntime {
             &PlannerConfig {
                 stringify_local_datetimes: true,
                 ..Default::default()
-            }
+            },
         )?;
 
         // Create task graph for server spec
