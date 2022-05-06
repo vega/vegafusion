@@ -53,7 +53,8 @@ pub fn stringify_local_datetimes(
     let local_datetime_fields = visitor.local_datetime_fields;
 
     // Add formula transforms to server spec
-    let mut visitor = StringifyLocalDatetimeFieldsVisitor::new(local_datetime_fields.clone());
+    let mut server_scope = server_spec.to_task_scope()?;
+    let mut visitor = StringifyLocalDatetimeFieldsVisitor::new(local_datetime_fields.clone(), server_scope);
     server_spec.walk_mut(&mut visitor)?;
 
     // Add format spec to client spec (to parse strings as local dates)
@@ -148,12 +149,13 @@ impl ChartVisitor for CollectLocalTimeScaledFieldsVisitor {
 
 /// Visitor to stringify select datetime fields
 struct StringifyLocalDatetimeFieldsVisitor {
-    pub local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>
+    pub local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
+    pub scope: TaskScope,
 }
 
 impl StringifyLocalDatetimeFieldsVisitor {
-    pub fn new(local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>) -> Self {
-        Self { local_datetime_fields }
+    pub fn new(local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>, scope: TaskScope) -> Self {
+        Self { local_datetime_fields, scope }
     }
 }
 
@@ -164,13 +166,31 @@ impl MutChartVisitor for StringifyLocalDatetimeFieldsVisitor {
         if let Some(fields) = self.local_datetime_fields.get(&data_var) {
             for field in sorted(fields) {
                 let transforms = &mut data.transform;
-                let mut as_ = field.to_string();
                 let transform = FormulaTransformSpec {
                     expr: format!("timeFormat(datum['{}'], '%Y-%m-%d %H:%M:%S.%L')", field),
-                    as_,
+                    as_: field.to_string(),
                     extra: Default::default()
                 };
                 transforms.push(TransformSpec::Formula(transform))
+            }
+        }
+
+        // Check if dataset is a child a stringified dataset. If so, we need to convert
+        // datetime strings back to the utc millisecond representation
+        if let Some(source) = &data.source {
+            let source_var = Variable::new_data(&source);
+            let source_resolved = self.scope.resolve_scope(&source_var, &scope)?;
+            let source_resolved_var = (source_resolved.var, source_resolved.scope);
+            if let Some(fields) = self.local_datetime_fields.get(&source_resolved_var) {
+                for field in sorted(fields) {
+                    let transforms = &mut data.transform;
+                    let transform = FormulaTransformSpec {
+                        expr: format!("toDate(datum['{}'])", field),
+                        as_: field.to_string(),
+                        extra: Default::default()
+                    };
+                    transforms.insert(0, TransformSpec::Formula(transform))
+                }
             }
         }
 
@@ -194,16 +214,15 @@ impl MutChartVisitor for FormatLocalDatetimeFieldsVisitor {
     fn visit_data(&mut self, data: &mut DataSpec, scope: &[u32]) -> Result<()> {
         let data_var = (Variable::new_data(&data.name), Vec::from(scope));
         if let Some(fields) = self.local_datetime_fields.get(&data_var) {
-            let parse_map: HashMap<_, _> = sorted(fields).map(
-                |field| (field.clone(), "date".to_string())
-            ).collect();
-
-            let format_spec = DataFormatSpec {
-                parse: Some(DataFormatParseSpec::Object(parse_map)),
-                type_: None,
-                extra: Default::default()
-            };
-            data.format = Some(format_spec)
+            for field in sorted(fields) {
+                let transforms = &mut data.transform;
+                let transform = FormulaTransformSpec {
+                    expr: format!("toDate(datum['{}'])", field),
+                    as_: field.to_string(),
+                    extra: Default::default()
+                };
+                transforms.insert(0, TransformSpec::Formula(transform))
+            }
         }
 
         Ok(())
