@@ -10,7 +10,7 @@ use crate::error::Result;
 use crate::planning::stitch::CommPlan;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use crate::spec::chart::{ChartSpec, ChartVisitor, MutChartVisitor};
-use crate::spec::data::{DataSpec};
+use crate::spec::data::DataSpec;
 use crate::spec::mark::{MarkEncodingField, MarkSpec};
 use crate::spec::scale::{ScaleSpec, ScaleTypeSpec};
 use crate::spec::transform::formula::FormulaTransformSpec;
