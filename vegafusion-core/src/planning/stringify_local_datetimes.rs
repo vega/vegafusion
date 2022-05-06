@@ -10,7 +10,7 @@ use crate::error::Result;
 use crate::planning::stitch::CommPlan;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use crate::spec::chart::{ChartSpec, ChartVisitor, MutChartVisitor};
-use crate::spec::data::{DataFormatParseSpec, DataFormatSpec, DataSpec};
+use crate::spec::data::{DataSpec};
 use crate::spec::mark::{MarkEncodingField, MarkSpec};
 use crate::spec::scale::{ScaleSpec, ScaleTypeSpec};
 use crate::spec::transform::formula::FormulaTransformSpec;
@@ -58,7 +58,7 @@ pub fn stringify_local_datetimes(
     let local_datetime_fields = visitor.local_datetime_fields;
 
     // Add formula transforms to server spec
-    let mut server_scope = server_spec.to_task_scope()?;
+    let server_scope = server_spec.to_task_scope()?;
     let mut visitor =
         StringifyLocalDatetimeFieldsVisitor::new(local_datetime_fields.clone(), server_scope);
     server_spec.walk_mut(&mut visitor)?;
@@ -121,9 +121,9 @@ impl ChartVisitor for CollectLocalTimeScaledFieldsVisitor {
     fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
         if let Some(mark_from) = &mark.from {
             if let Some(mark_data) = &mark_from.data {
-                let data_var = Variable::new_data(&mark_data);
-                let resolved_data = self.scope.resolve_scope(&data_var, &scope)?;
-                let resolved_data_scoped = (resolved_data.var.clone(), resolved_data.scope.clone());
+                let data_var = Variable::new_data(mark_data);
+                let resolved_data = self.scope.resolve_scope(&data_var, scope)?;
+                let resolved_data_scoped = (resolved_data.var.clone(), resolved_data.scope);
                 if self.candidate_datasets.contains(&resolved_data_scoped) {
                     // We've found a mark with a dataset that is eligible for date string
                     // conversion
@@ -136,7 +136,7 @@ impl ChartVisitor for CollectLocalTimeScaledFieldsVisitor {
                                     {
                                         let scale_var = Variable::new_scale(scale);
                                         let resolved_scale =
-                                            self.scope.resolve_scope(&scale_var, &scope)?;
+                                            self.scope.resolve_scope(&scale_var, scope)?;
                                         let resolved_scoped_scale = (
                                             resolved_scale.var.clone(),
                                             resolved_scale.scope.clone(),
@@ -198,8 +198,8 @@ impl MutChartVisitor for StringifyLocalDatetimeFieldsVisitor {
         // Check if dataset is a child a stringified dataset. If so, we need to convert
         // datetime strings back to the utc millisecond representation
         if let Some(source) = &data.source {
-            let source_var = Variable::new_data(&source);
-            let source_resolved = self.scope.resolve_scope(&source_var, &scope)?;
+            let source_var = Variable::new_data(source);
+            let source_resolved = self.scope.resolve_scope(&source_var, scope)?;
             let source_resolved_var = (source_resolved.var, source_resolved.scope);
             if let Some(fields) = self.local_datetime_fields.get(&source_resolved_var) {
                 for field in sorted(fields) {
