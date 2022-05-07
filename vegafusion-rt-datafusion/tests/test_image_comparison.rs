@@ -602,15 +602,11 @@ mod test_vegalite_specs {
         case("vegalite/layer_point_errorbar_2d_horizontal_color_encoding", 0.001),
         case("vegalite/layer_point_errorbar_2d_horizontal_custom_ticks", 0.001),
         case("vegalite/layer_point_errorbar_2d_horizontal_iqr", 0.001),
-
-        // // (DataFusion bug with repeated mean aggregation)
-        // case("vegalite/layer_point_errorbar_2d_horizontal_stdev", 0.001),
-        // case("vegalite/layer_scatter_errorband_1D_stdev_global_mean", 0.001),
-        // case("vegalite/layer_point_errorbar_stdev", 0.001),
-
+        case("vegalite/layer_point_errorbar_2d_horizontal_stdev", 0.001),
+        case("vegalite/layer_scatter_errorband_1D_stdev_global_mean", 0.001),
+        case("vegalite/layer_point_errorbar_stdev", 0.001),
         case("vegalite/layer_point_errorbar_2d_horizontal", 0.001),
         case("vegalite/layer_point_errorbar_2d_vertical", 0.001),
-
         case("vegalite/layer_point_errorbar_pre_aggregated_asymmetric_error", 0.001),
         case("vegalite/layer_point_errorbar_pre_aggregated_symmetric_error", 0.001),
         case("vegalite/layer_point_errorbar_pre_aggregated_upper_lower", 0.001),
