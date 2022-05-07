@@ -113,7 +113,8 @@ mod test_custom_specs {
         case("custom/one_dot_per_zipcode", 0.001),
         case("custom/ridgeline", 0.001),
         case("custom/binned_scatter", 0.001),
-        case("custom/seattle_temps_heatmap", 0.001)
+        case("custom/seattle_temps_heatmap", 0.001),
+        case("custom/movies_agg_parameterize", 0.001)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
         println!("spec_name: {}", spec_name);
@@ -602,19 +603,18 @@ mod test_vegalite_specs {
         case("vegalite/layer_point_errorbar_2d_horizontal_custom_ticks", 0.001),
         case("vegalite/layer_point_errorbar_2d_horizontal_iqr", 0.001),
         case("vegalite/layer_point_errorbar_2d_horizontal_stdev", 0.001),
+        case("vegalite/layer_scatter_errorband_1D_stdev_global_mean", 0.001),
+        case("vegalite/layer_point_errorbar_stdev", 0.001),
         case("vegalite/layer_point_errorbar_2d_horizontal", 0.001),
         case("vegalite/layer_point_errorbar_2d_vertical", 0.001),
-
         case("vegalite/layer_point_errorbar_pre_aggregated_asymmetric_error", 0.001),
         case("vegalite/layer_point_errorbar_pre_aggregated_symmetric_error", 0.001),
         case("vegalite/layer_point_errorbar_pre_aggregated_upper_lower", 0.001),
-        case("vegalite/layer_point_errorbar_stdev", 0.001),
         case("vegalite/layer_point_line_loess", 0.001),
         case("vegalite/layer_point_line_regression", 0.001),
         case("vegalite/layer_precipitation_mean", 0.001),
         case("vegalite/layer_ranged_dot", 0.001),
         case("vegalite/layer_rect_extent", 0.001),
-        case("vegalite/layer_scatter_errorband_1D_stdev_global_mean", 0.001),
         case("vegalite/layer_scatter_errorband_1d_stdev", 0.001),
         case("vegalite/layer_single_color", 0.001),
         case("vegalite/layer_text_heatmap_joinaggregate", 0.001),
@@ -961,6 +961,76 @@ mod test_image_comparison_timeunit {
             .trim_matches('"')
             .to_string();
         let output_name = format!("{}_timeunit_{}_{}", spec_name, units_str, timezone_str);
+
+        TOKIO_RUNTIME.block_on(check_spec_sequence(
+            full_spec,
+            full_updates,
+            watch_plan,
+            &output_name,
+            0.001,
+        ));
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
+#[rustfmt::skip]  // Rust format breaks the rstest macro use below
+#[cfg(test)]
+mod test_image_comparison_agg {
+    use super::*;
+    use vegafusion_core::spec::transform::aggregate::AggregateOpSpec;
+    use vegafusion_core::spec::transform::TransformSpec;
+
+    #[rstest]
+    fn test_image_comparison(
+        #[values(
+            AggregateOpSpec::Count,
+            AggregateOpSpec::Valid,
+            AggregateOpSpec::Missing,
+            AggregateOpSpec::Distinct,
+            AggregateOpSpec::Sum,
+            AggregateOpSpec::Mean,
+            AggregateOpSpec::Average,
+            AggregateOpSpec::Variance,
+            AggregateOpSpec::Variancep,
+            AggregateOpSpec::Stdev,
+            AggregateOpSpec::Stdevp,
+        )]
+        agg: AggregateOpSpec,
+
+        #[values(
+            "custom/movies_agg_parameterize",
+        )]
+        spec_name: &str,
+    ) {
+        initialize();
+
+        // Load spec
+        let mut full_spec = load_spec(spec_name);
+
+        // Load updates
+        let full_updates = load_updates(spec_name);
+
+        // Load expected watch plan
+        let watch_plan = load_expected_watch_plan(spec_name);
+
+        // Modify transform spec
+        let aggregate_tx = full_spec
+            .data
+            .get_mut( 0)
+            .unwrap()
+            .transform
+            .get_mut(2)
+            .unwrap();
+        if let TransformSpec::Aggregate(aggregate_tx) = aggregate_tx {
+            aggregate_tx.ops = Some(vec![agg.clone()]);
+        } else {
+            panic!("Unexpected transform")
+        }
+
+        // Build name for saved images
+        let output_name = format!("{}_agg_{:?}", spec_name, agg);
 
         TOKIO_RUNTIME.block_on(check_spec_sequence(
             full_spec,

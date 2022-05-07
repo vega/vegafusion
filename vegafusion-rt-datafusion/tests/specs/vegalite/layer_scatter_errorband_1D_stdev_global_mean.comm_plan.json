@@ -12,7 +12,12 @@
     },
     {
       "namespace": "data",
-      "name": "source_0",
+      "name": "data_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3",
       "scope": []
     }
   ],

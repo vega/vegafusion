@@ -35,7 +35,19 @@ impl TransformSpecTrait for JoinAggregateTransformSpec {
         for op in &self.ops {
             if !matches!(
                 op,
-                Count | Valid | Missing | Distinct | Sum | Mean | Average | Min | Max
+                Count
+                    | Valid
+                    | Missing
+                    | Distinct
+                    | Sum
+                    | Mean
+                    | Average
+                    | Min
+                    | Max
+                    | Variance
+                    | Variancep
+                    | Stdev
+                    | Stdevp
             ) {
                 // Unsupported aggregation op
                 return false;

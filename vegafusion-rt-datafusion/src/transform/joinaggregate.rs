@@ -15,6 +15,7 @@ use datafusion::logical_plan::{
 
 use crate::expression::compiler::utils::to_numeric;
 use async_trait::async_trait;
+use datafusion_expr::aggregate_function;
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -60,6 +61,26 @@ impl TransformTrait for JoinAggregate {
                 AggregateOp::Min => min(numeric_column()),
                 AggregateOp::Max => max(numeric_column()),
                 AggregateOp::Sum => sum(numeric_column()),
+                AggregateOp::Variance => Expr::AggregateFunction {
+                    fun: aggregate_function::AggregateFunction::Variance,
+                    distinct: false,
+                    args: vec![numeric_column()],
+                },
+                AggregateOp::Variancep => Expr::AggregateFunction {
+                    fun: aggregate_function::AggregateFunction::VariancePop,
+                    distinct: false,
+                    args: vec![numeric_column()],
+                },
+                AggregateOp::Stdev => Expr::AggregateFunction {
+                    fun: aggregate_function::AggregateFunction::Stddev,
+                    distinct: false,
+                    args: vec![numeric_column()],
+                },
+                AggregateOp::Stdevp => Expr::AggregateFunction {
+                    fun: aggregate_function::AggregateFunction::StddevPop,
+                    distinct: false,
+                    args: vec![numeric_column()],
+                },
                 AggregateOp::Valid => {
                     let valid = Expr::Cast {
                         expr: Box::new(Expr::IsNotNull(Box::new(column))),

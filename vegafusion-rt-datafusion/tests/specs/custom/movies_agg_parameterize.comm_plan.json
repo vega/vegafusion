@@ -1,18 +1,18 @@
 {
   "server_to_client": [
     {
-      "namespace": "data",
-      "name": "data_0",
+      "namespace": "signal",
+      "name": "bin_maxbins_10_IMDB_Rating_bins",
       "scope": []
     },
     {
       "namespace": "data",
-      "name": "data_0_x_domain_Horsepower",
+      "name": "source_0",
       "scope": []
     },
     {
       "namespace": "data",
-      "name": "data_1",
+      "name": "source_0_y_domain___agg_value",
       "scope": []
     }
   ],
