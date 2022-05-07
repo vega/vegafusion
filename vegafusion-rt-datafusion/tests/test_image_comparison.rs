@@ -979,9 +979,7 @@ mod test_image_comparison_timeunit {
 #[cfg(test)]
 mod test_image_comparison_agg {
     use super::*;
-    use itertools::Itertools;
     use vegafusion_core::spec::transform::aggregate::AggregateOpSpec;
-    use vegafusion_core::spec::transform::timeunit::{TimeUnitTimeZoneSpec, TimeUnitUnitSpec};
     use vegafusion_core::spec::transform::TransformSpec;
 
     #[rstest]
@@ -1018,7 +1016,6 @@ mod test_image_comparison_agg {
         let watch_plan = load_expected_watch_plan(spec_name);
 
         // Modify transform spec
-        let num_data = full_spec.data.len();
         let aggregate_tx = full_spec
             .data
             .get_mut( 0)
