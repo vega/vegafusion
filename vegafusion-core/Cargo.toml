@@ -1,6 +1,6 @@
 [package]
 name = "vegafusion-core"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
@@ -20,9 +20,6 @@ ordered-float = "^2.10.0"
 petgraph = "0.6.0"
 deterministic-hash = "1.0.1"
 chrono = "0.4.19"
-
-[build-dependencies.prost-build]
-version = "0.10.3"
 
 [dependencies.arrow]
 version = "13.0.0"
@@ -44,6 +41,9 @@ features = [ "derive",]
 [dependencies.tonic]
 version = "0.7.2"
 optional = true
+
+[build-dependencies.prost-build]
+version = "0.10.3"
 
 [build-dependencies.tonic-build]
 version = "0.7.2"
