@@ -12,7 +12,7 @@ use crate::proto::gen::expression::{
     Identifier, Literal, LogicalExpression, MemberExpression, ObjectExpression, UnaryExpression,
 };
 
-use crate::expression::column_usage::ColumnUsage;
+use crate::expression::column_usage::{ColumnUsage, VlSelectionFields};
 use crate::expression::supported::{
     ALL_DATA_FNS, ALL_EXPRESSION_CONSTANTS, ALL_SCALE_FNS, IMPLICIT_VARS, SUPPORTED_DATA_FNS,
     SUPPORTED_EXPRESSION_FNS, SUPPORTED_SCALE_FNS,
@@ -241,8 +241,6 @@ impl ExpressionVisitor for ImplicitVariablesExprVisitor {
         }
     }
 }
-
-pub type VlSelectionFields = HashMap<String, Vec<String>>;
 
 /// Visitor to collect the columns
 #[derive(Clone)]

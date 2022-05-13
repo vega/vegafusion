@@ -7,11 +7,11 @@
  * this program the details of the active license.
  */
 use crate::error::{Result, VegaFusionError};
-use crate::expression::column_usage::ColumnUsage;
+use crate::expression::column_usage::{ColumnUsage, GetColumnUsage, VlSelectionFields};
 use crate::expression::visitors::{
     CheckSupportedExprVisitor, ClearSpansVisitor, DatumColumnUsageVisitor, ExpressionVisitor,
     GetInputVariablesVisitor, ImplicitVariablesExprVisitor, MutExpressionVisitor,
-    UpdateVariablesExprVisitor, VlSelectionFields,
+    UpdateVariablesExprVisitor,
 };
 use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::{
@@ -98,12 +98,6 @@ impl Expression {
         let mut visitor = CheckSupportedExprVisitor::new();
         self.walk(&mut visitor);
         visitor.supported
-    }
-
-    pub fn column_usage(&self, vl_selection_fields: &VlSelectionFields) -> ColumnUsage {
-        let mut visitor = DatumColumnUsageVisitor::new(&vl_selection_fields);
-        self.walk(&mut visitor);
-        visitor.column_usage
     }
 
     /// Walk visitor through the expression tree in a DFS traversal
@@ -332,5 +326,13 @@ impl<V: Into<literal::Value>> From<V> for Expr {
         let v = v.into();
         let repr = v.to_string();
         Self::Literal(Literal::new(v, &repr))
+    }
+}
+
+impl GetColumnUsage for Expression {
+    fn column_usage(&self, vl_selection_fields: &VlSelectionFields) -> ColumnUsage {
+        let mut visitor = DatumColumnUsageVisitor::new(&vl_selection_fields);
+        self.walk(&mut visitor);
+        visitor.column_usage
     }
 }

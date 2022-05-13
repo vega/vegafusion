@@ -6,7 +6,9 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+
+pub type VlSelectionFields = HashMap<String, Vec<String>>;
 
 /// Enum storing info on which dataset columns are used in a given context.
 /// Due to the dynamic nature of Vega specifications, it's not always possible to statically
@@ -59,6 +61,10 @@ impl From<&[String]> for ColumnUsage {
         let columns: HashSet<_> = columns.iter().cloned().collect();
         Self::Known(columns)
     }
+}
+
+pub trait GetColumnUsage {
+    fn column_usage(&self, vl_selection_fields: &VlSelectionFields) -> ColumnUsage;
 }
 
 #[cfg(test)]
