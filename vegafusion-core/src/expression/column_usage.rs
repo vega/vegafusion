@@ -21,6 +21,14 @@ pub enum ColumnUsage {
 }
 
 impl ColumnUsage {
+    pub fn empty() -> ColumnUsage {
+        ColumnUsage::Known(Default::default())
+    }
+
+    pub fn with_column(&self, column: &str) -> ColumnUsage {
+        self.union(&ColumnUsage::from(vec![column].as_slice()))
+    }
+
     /// Take the union of two ColumnUsage instances. If both are ColumnUsage::Known, then take
     /// the union of their known columns. If either is ColumnUsage::Unknown, then the union is
     /// also Unknown.
@@ -56,6 +64,14 @@ impl From<&[String]> for ColumnUsage {
 #[cfg(test)]
 mod tests {
     use crate::expression::column_usage::ColumnUsage;
+
+    #[test]
+    fn test_with_column() {
+        let left = ColumnUsage::from(vec!["one", "two"].as_slice());
+        let result = left.with_column("three").with_column("four");
+        let expected = ColumnUsage::from(vec!["one", "two", "three", "four"].as_slice());
+        assert_eq!(result, expected)
+    }
 
     #[test]
     fn test_union_known_known() {

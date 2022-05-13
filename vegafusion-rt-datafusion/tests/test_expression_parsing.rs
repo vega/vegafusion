@@ -306,3 +306,56 @@ mod test_check_supported {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
+mod test_column_usage {
+    use crate::*;
+    use vegafusion_core::expression::column_usage::ColumnUsage;
+    use vegafusion_core::expression::parser::parse;
+    use vegafusion_core::expression::visitors::VlSelectionFields;
+
+    #[rstest(
+        expr,
+        usage,
+        case("no_such_fn(23)", ColumnUsage::empty()),
+        case(
+            "isValid(datum[\"average_b\"]) && isFinite(+datum[\"average_b\"])",
+            ColumnUsage::from(vec!["average_b"].as_slice())
+        ),
+        case(
+            "datum['one'] + datum.two",
+            ColumnUsage::from(vec!["one", "two"].as_slice())
+        ),
+        case(
+            "datum.one + datum['two'] + datum['th' + 'ree']",
+            ColumnUsage::Unknown
+        ),
+        case(
+            "vlSelectionTest(\"brush1_store\", datum)",
+            ColumnUsage::Unknown
+        ),
+        case(
+            "vlSelectionTest(\"brush2_store\", datum)",
+            ColumnUsage::from(vec!["AA", "BB", "CC"].as_slice())
+        ),
+        case(
+            "!length(data(\"brush2_store\")) || vlSelectionTest(\"brush2_store\", datum)",
+            ColumnUsage::from(vec!["AA", "BB", "CC"].as_slice())
+        ),
+    )]
+    fn test(expr: &str, usage: ColumnUsage) {
+        let expr = parse(expr).unwrap();
+
+        // Define selection dataset fields
+        let selection_fields: VlSelectionFields = vec![(
+            "brush2_store".to_string(),
+            vec!["AA".to_string(), "BB".to_string(), "CC".to_string()],
+        )]
+        .into_iter()
+        .collect();
+        let result = expr.column_usage(&selection_fields);
+        assert_eq!(result, usage);
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}

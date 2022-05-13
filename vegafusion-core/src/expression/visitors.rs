@@ -12,14 +12,16 @@ use crate::proto::gen::expression::{
     Identifier, Literal, LogicalExpression, MemberExpression, ObjectExpression, UnaryExpression,
 };
 
+use crate::expression::column_usage::ColumnUsage;
 use crate::expression::supported::{
     ALL_DATA_FNS, ALL_EXPRESSION_CONSTANTS, ALL_SCALE_FNS, IMPLICIT_VARS, SUPPORTED_DATA_FNS,
     SUPPORTED_EXPRESSION_FNS, SUPPORTED_SCALE_FNS,
 };
+use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::literal::Value;
 use crate::proto::gen::tasks::Variable;
 use crate::task_graph::task::InputVariable;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 pub trait ExpressionVisitor {
     fn visit_expression(&mut self, _expression: &Expression) {}
@@ -173,7 +175,7 @@ impl ExpressionVisitor for UpdateVariablesExprVisitor {
     }
 }
 
-/// Visitor to collect all unbound input variables in the expression
+/// Visitor to check whether an expression is supported by the VegaFusion Runtime
 #[derive(Clone, Default)]
 pub struct CheckSupportedExprVisitor {
     pub supported: bool,
@@ -217,7 +219,7 @@ impl ExpressionVisitor for CheckSupportedExprVisitor {
     }
 }
 
-/// Visitor to collect all output variables in the expression
+/// Visitor to collect all implicit variables used in an expression
 #[derive(Clone, Default)]
 pub struct ImplicitVariablesExprVisitor {
     pub implicit_vars: HashSet<String>,
@@ -236,6 +238,91 @@ impl ExpressionVisitor for ImplicitVariablesExprVisitor {
         // implicit vars like datum and event do not count as a variables
         if IMPLICIT_VARS.contains(node.name.as_str()) {
             self.implicit_vars.insert(node.name.clone());
+        }
+    }
+}
+
+pub type VlSelectionFields = HashMap<String, Vec<String>>;
+
+/// Visitor to collect the columns
+#[derive(Clone)]
+pub struct DatumColumnUsageVisitor<'a> {
+    pub vl_selection_fields: &'a VlSelectionFields,
+    pub column_usage: ColumnUsage,
+}
+
+impl<'a> DatumColumnUsageVisitor<'a> {
+    pub fn new(vl_selection_fields: &'a HashMap<String, Vec<String>>) -> Self {
+        Self {
+            vl_selection_fields,
+            column_usage: ColumnUsage::Known(Default::default()),
+        }
+    }
+}
+
+impl<'a> ExpressionVisitor for DatumColumnUsageVisitor<'a> {
+    fn visit_member(&mut self, node: &MemberExpression) {
+        if let (Some(object), Some(property)) = (&node.object, &node.property) {
+            if let (Some(Expr::Identifier(object_id)), Some(property_expr)) =
+                (&object.expr, &property.expr)
+            {
+                if object_id.name == "datum" {
+                    // This expression is a member expression on the datum free variable
+                    if node.computed {
+                        match property_expr {
+                            Expr::Literal(Literal {
+                                value: Some(Value::String(name)),
+                                ..
+                            }) => {
+                                // Found `datum['col_name']` usage
+                                self.column_usage = self.column_usage.with_column(&name);
+                            }
+                            _ => {
+                                // Unknown usage
+                                self.column_usage = ColumnUsage::Unknown;
+                            }
+                        }
+                    } else {
+                        match property_expr {
+                            Expr::Identifier(id) => {
+                                // Found `datum.col_name` usage
+                                self.column_usage = self.column_usage.with_column(&id.name);
+                            }
+                            _ => {
+                                // Unknown usage
+                                self.column_usage = ColumnUsage::Unknown;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn visit_call(&mut self, node: &CallExpression) {
+        if node.callee == "vlSelectionTest" {
+            // First argument should be a string
+            if let Some(Expression {
+                expr:
+                    Some(Expr::Literal(Literal {
+                        value: Some(Value::String(dataset_name)),
+                        ..
+                    })),
+                ..
+            }) = node.arguments.get(0)
+            {
+                if let Some(fields) = self.vl_selection_fields.get(dataset_name) {
+                    // Add selection fields to usage
+                    let usage = ColumnUsage::from(fields.as_slice());
+                    self.column_usage = self.column_usage.union(&usage);
+                } else {
+                    // Unknown fields dataset
+                    self.column_usage = ColumnUsage::Unknown;
+                }
+            } else {
+                // Unknown usage
+                self.column_usage = ColumnUsage::Unknown;
+            }
         }
     }
 }
