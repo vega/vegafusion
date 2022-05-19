@@ -8,6 +8,9 @@ version = "0.4.0"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
+[features]
+pyarrow = ["vegafusion-core/pyarrow"]
+
 [dependencies]
 regex = "^1.5.5"
 lazy_static = "^1.4.0"

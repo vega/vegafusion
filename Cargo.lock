@@ -79,6 +79,7 @@ dependencies = [
  "lexical-core",
  "multiversion",
  "num",
+ "pyo3",
  "rand",
  "regex",
  "serde",
@@ -629,6 +630,7 @@ dependencies = [
  "arrow",
  "ordered-float 3.0.0",
  "parquet",
+ "pyo3",
  "sqlparser",
 ]
 
