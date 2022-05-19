@@ -7,8 +7,12 @@
  * this program the details of the active license.
  */
 use std::collections::{HashMap, HashSet};
+use crate::proto::gen::tasks::Variable;
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 
 pub type VlSelectionFields = HashMap<String, Vec<String>>;
+pub type VlSelectionFields2 = HashMap<ScopedVariable, Vec<String>>;
 
 /// Enum storing info on which dataset columns are used in a given context.
 /// Due to the dynamic nature of Vega specifications, it's not always possible to statically
@@ -63,9 +67,54 @@ impl From<&[String]> for ColumnUsage {
     }
 }
 
+
 pub trait GetColumnUsage {
     fn column_usage(&self, vl_selection_fields: &VlSelectionFields) -> ColumnUsage;
 }
+
+
+/// Struct that tracks the usage of all columns across a collection of datasets
+pub struct DatasetsColumnUsage {
+    usages: HashMap<ScopedVariable, ColumnUsage>
+}
+
+impl DatasetsColumnUsage {
+    pub fn empty() -> Self {
+        Self {
+            usages: Default::default()
+        }
+    }
+
+    /// Take the union of two DatasetColumnUsage instances.
+    pub fn union(&self, other: &DatasetsColumnUsage) -> DatasetsColumnUsage {
+        let self_vars: HashSet<_> = self.usages.keys().cloned().collect();
+        let other_vars: HashSet<_> = other.usages.keys().cloned().collect();
+        let union_vars: HashSet<_> = self_vars.union(&other_vars).cloned().collect();
+
+        let mut usages: HashMap<ScopedVariable, ColumnUsage> = HashMap::new();
+        for var in union_vars {
+            let self_usage = self.usages.get(&var).cloned().unwrap_or_else(|| ColumnUsage::empty());
+            let other_usage = other.usages.get(&var).cloned().unwrap_or_else(|| ColumnUsage::empty());
+            let combined_usage = self_usage.union(&other_usage);
+            usages[var] = combined_usage;
+        }
+
+        Self {
+            usages
+        }
+    }
+}
+
+pub trait GetDatasetColumnUsage {
+    fn dataset_column_usage(
+        &self,
+        datum_name: &str,
+        usage_scope: &[u32],
+        task_scope: &TaskScope,
+        vl_selection_fields: &VlSelectionFields2
+    ) -> DatasetColumnUsage;
+}
+
 
 #[cfg(test)]
 mod tests {
