@@ -8,6 +8,9 @@ version = "0.4.0"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
+[features]
+pyarrow = ["vegafusion-core/pyarrow"]
+
 [dependencies]
 regex = "^1.5.5"
 lazy_static = "^1.4.0"
@@ -46,12 +49,10 @@ version = "1.0.137"
 features = [ "derive",]
 
 [dependencies.datafusion]
-git = "https://github.com/jonmmease/arrow-datafusion.git"
-rev = "f3e87d8dde2ffb1d622fc30d53a1330b335dbc9b"
+version = "8.0.0"
 
 [dependencies.datafusion-expr]
-git = "https://github.com/jonmmease/arrow-datafusion.git"
-rev = "f3e87d8dde2ffb1d622fc30d53a1330b335dbc9b"
+version = "8.0.0"
 
 [dependencies.tokio]
 version = "1.18.1"

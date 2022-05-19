@@ -79,6 +79,7 @@ dependencies = [
  "lexical-core",
  "multiversion",
  "num",
+ "pyo3",
  "rand",
  "regex",
  "serde",
@@ -591,8 +592,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion"
-version = "7.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=f3e87d8dde2ffb1d622fc30d53a1330b335dbc9b#f3e87d8dde2ffb1d622fc30d53a1330b335dbc9b"
+version = "8.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8174c458d0266ba442038160fad2c98f02924e6179d6d46175f600b69abb5bb7"
 dependencies = [
  "ahash",
  "arrow",
@@ -602,6 +604,7 @@ dependencies = [
  "datafusion-data-access",
  "datafusion-expr",
  "datafusion-physical-expr",
+ "datafusion-row",
  "futures",
  "hashbrown 0.12.0",
  "lazy_static",
@@ -623,19 +626,22 @@ dependencies = [
 
 [[package]]
 name = "datafusion-common"
-version = "7.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=f3e87d8dde2ffb1d622fc30d53a1330b335dbc9b#f3e87d8dde2ffb1d622fc30d53a1330b335dbc9b"
+version = "8.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c687e12a58d1499b19ee899fa467d122c8cc9223570af6f3eb3c4d9d9be929b"
 dependencies = [
  "arrow",
  "ordered-float 3.0.0",
  "parquet",
+ "pyo3",
  "sqlparser",
 ]
 
 [[package]]
 name = "datafusion-data-access"
-version = "1.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=f3e87d8dde2ffb1d622fc30d53a1330b335dbc9b#f3e87d8dde2ffb1d622fc30d53a1330b335dbc9b"
+version = "8.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6cca9e1200ddd362d97f22d185e98995ebd3737d2b3d69a200a06a5099fa699a"
 dependencies = [
  "async-trait",
  "chrono",
@@ -648,8 +654,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-expr"
-version = "7.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=f3e87d8dde2ffb1d622fc30d53a1330b335dbc9b#f3e87d8dde2ffb1d622fc30d53a1330b335dbc9b"
+version = "8.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d20909d70931b88605b6f121c0ed820cec1d5b802cb51b7b5759f0421be3add8"
 dependencies = [
  "ahash",
  "arrow",
@@ -659,8 +666,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-physical-expr"
-version = "7.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=f3e87d8dde2ffb1d622fc30d53a1330b335dbc9b#f3e87d8dde2ffb1d622fc30d53a1330b335dbc9b"
+version = "8.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad9083cb20b57216430d5b8e52341782d9520ce77e65c60803e330fd09bdfa6e"
 dependencies = [
  "ahash",
  "arrow",
@@ -669,6 +677,7 @@ dependencies = [
  "chrono",
  "datafusion-common",
  "datafusion-expr",
+ "datafusion-row",
  "hashbrown 0.12.0",
  "lazy_static",
  "md-5",
@@ -678,6 +687,18 @@ dependencies = [
  "regex",
  "sha2",
  "unicode-segmentation",
+]
+
+[[package]]
+name = "datafusion-row"
+version = "8.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f649a2021eefef44e0bef6782d053148b2fef74db7592fecfe87e042d52947a"
+dependencies = [
+ "arrow",
+ "datafusion-common",
+ "paste",
+ "rand",
 ]
 
 [[package]]
@@ -1361,6 +1382,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1bf2e165bb3457c8e098ea76f3e3bc9db55f87aa90d52d0e6be741470916aaa4"
 
 [[package]]
+name = "libmimalloc-sys"
+version = "0.1.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11ca136052550448f55df7898c6dbe651c6b574fe38a0d9ea687a9f8088a2e2c"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "load_image"
 version = "2.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1476,6 +1506,15 @@ name = "memory_units"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
+
+[[package]]
+name = "mimalloc"
+version = "0.1.29"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f64ad83c969af2e732e907564deb0d0ed393cec4af80776f77dd77a1a427698"
+dependencies = [
+ "libmimalloc-sys",
+]
 
 [[package]]
 name = "mime"
@@ -2493,9 +2532,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "sqlparser"
-version = "0.16.0"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e9a527b68048eb95495a1508f6c8395c8defcff5ecdbe8ad4106d08a2ef2a3c"
+checksum = "ddc2739f3a9bfc68e2f7b7695589f6cb0181c88af73ceaee0c84215cd2a2ae28"
 dependencies = [
  "log",
 ]
@@ -3059,6 +3098,7 @@ dependencies = [
 name = "vegafusion-python-embed"
 version = "0.4.0"
 dependencies = [
+ "mimalloc",
  "pyo3",
  "serde",
  "serde_json",

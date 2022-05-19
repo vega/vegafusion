@@ -6,6 +6,7 @@ license = "AGPL-3.0-or-later"
 
 [features]
 tonic_support = [ "tonic", "tonic-build",]
+pyarrow = ["pyo3", "arrow/pyarrow", "datafusion-common/pyarrow"]
 
 [dependencies]
 thiserror = "^1.0.29"
@@ -27,8 +28,7 @@ default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
-git = "https://github.com/jonmmease/arrow-datafusion.git"
-rev = "f3e87d8dde2ffb1d622fc30d53a1330b335dbc9b"
+version = "8.0.0"
 
 [dependencies.pyo3]
 version = "0.16.4"

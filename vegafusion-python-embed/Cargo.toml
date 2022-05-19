@@ -21,6 +21,7 @@ features = [ "pyo3",]
 
 [dependencies.vegafusion-rt-datafusion]
 path = "../vegafusion-rt-datafusion"
+features = ["pyarrow"]
 
 [dependencies.tokio]
 version = "1.18.1"
@@ -29,3 +30,7 @@ features = [ "macros", "rt-multi-thread",]
 [dependencies.pyo3]
 version = "0.16.4"
 features = [ "extension-module",]
+
+[dependencies.mimalloc]
+version = "*"
+default-features = false
