@@ -1,6 +1,6 @@
 [package]
 name = "vegafusion-python-embed"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
@@ -21,7 +21,7 @@ features = [ "pyo3",]
 
 [dependencies.vegafusion-rt-datafusion]
 path = "../vegafusion-rt-datafusion"
-features = ["pyarrow"]
+features = [ "pyarrow",]
 
 [dependencies.tokio]
 version = "1.18.1"
