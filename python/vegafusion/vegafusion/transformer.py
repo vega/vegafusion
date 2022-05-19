@@ -16,13 +16,12 @@ import altair as alt
 import pandas as pd
 
 
-def to_arrow_ipc_bytes(data, stream=False):
+def to_arrow_table(data):
     """
-    Helper to convert a Pandas DataFrame to the Arrow IPC binary format
+    Helper to convert a Pandas DataFrame to a PyArrow Table
 
     :param data: Pandas DataFrame
-    :param stream: If True, write IPC Stream format. If Flase (defualt), write ipc file format.
-    :return: bytes
+    :return: pyarrow.Table
     """
     import pyarrow as pa
 
@@ -36,7 +35,7 @@ def to_arrow_ipc_bytes(data, stream=False):
             cat = data[col].cat
             data[col] = cat.categories[cat.codes]
 
-    # Serialize DataFrame to bytes in the arrow file format
+    # Convert DataFrame to table
     try:
         table = pa.Table.from_pandas(data)
     except pa.ArrowTypeError as e:
@@ -47,8 +46,22 @@ def to_arrow_ipc_bytes(data, stream=False):
             if dtype.kind == "O":
                 mapping[col] = data[col].astype(str)
         data = data.assign(**mapping)
-        # Try again, allowing exception to propagate
+        # Try again, allowing exception to propagate this time
         table = pa.Table.from_pandas(data)
+    return table
+
+
+def to_arrow_ipc_bytes(data, stream=False):
+    """
+    Helper to convert a Pandas DataFrame to the Arrow IPC binary format
+
+    :param data: Pandas DataFrame
+    :param stream: If True, write IPC Stream format. If False (default), write ipc file format.
+    :return: bytes
+    """
+    import pyarrow as pa
+
+    table = to_arrow_table(data)
 
     # Next we write the Arrow table as a feather file (The Arrow IPC format on disk).
     # Write it in memory first so we can hash the contents before touching disk.

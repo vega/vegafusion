@@ -6,7 +6,8 @@
 # this program the details of the active license.
 import json
 import psutil
-from .transformer import to_arrow_ipc_bytes
+import pyarrow as pa
+
 
 class VegaFusionRuntime:
     def __init__(self, cache_capacity, memory_limit, worker_threads):
@@ -71,9 +72,9 @@ class VegaFusionRuntime:
         :param row_limit: Maximum number of dataset rows to include in the returned
             specification. If exceeded, datasets will be truncated to this number of rows
             and a RowLimitExceeded warning will be included in the resulting warnings list
-        :param inline_datasets: A dict from dataset names to pandas DataFrames. Inline
-            datasets may be referenced by the input specification using the following
-            url syntax 'vegafusion+dataset://{dataset_name}'.
+        :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
+            Tables. Inline datasets may be referenced by the input specification using
+            the following url syntax 'vegafusion+dataset://{dataset_name}'.
         :return:
             Two-element tuple:
                 0. A string containing the JSON representation of a Vega specification
@@ -88,14 +89,25 @@ class VegaFusionRuntime:
                     'Unsupported': No transforms in the provided Vega specification were
                         eligible for pre-transforming
         """
+        from .transformer import to_arrow_table
+
         if self._grpc_channel:
             raise ValueError("pre_transform_spec not yet supported over gRPC")
         else:
             # Preprocess inline_dataset
             inline_datasets = inline_datasets or dict()
-            inline_datasets = {name: to_arrow_ipc_bytes(value, stream=True) for name, value in inline_datasets.items()}
+            inline_batches = dict()
+            for name, value in inline_datasets.items():
+                if isinstance(value, pa.Table):
+                    table = value
+                else:
+                    table = to_arrow_table(value)
+                schema = table.schema
+                batches = table.to_batches(max_chunksize=8096)
+                inline_batches[name] = (schema, batches)
+
             new_spec, warnings = self.embedded_runtime.pre_transform_spec(
-                spec, local_tz=local_tz, row_limit=row_limit, inline_datasets=inline_datasets
+                spec, local_tz=local_tz, row_limit=row_limit, inline_datasets=inline_batches
             )
             warnings = json.loads(warnings)
             return new_spec, warnings
