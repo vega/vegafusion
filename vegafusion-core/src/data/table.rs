@@ -211,7 +211,6 @@ impl From<RecordBatch> for VegaFusionTable {
     }
 }
 
-
 impl Hash for VegaFusionTable {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.to_ipc_bytes().unwrap().hash(state)
