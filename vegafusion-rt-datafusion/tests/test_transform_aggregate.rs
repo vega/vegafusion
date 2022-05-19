@@ -154,7 +154,7 @@ fn test_bin_aggregate() {
             Some(Field::String("Beak Depth (mm)".to_string())),
             Some(Field::String("Flipper Length (mm)".to_string())),
         ]),
-        ops: Some(vec![AggregateOpSpec::Mean, AggregateOpSpec::Max]),
+        ops: Some(vec![AggregateOpSpec::Min, AggregateOpSpec::Max]),
         as_: None,
         cross: None,
         drop: None,
