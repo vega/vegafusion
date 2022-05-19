@@ -177,8 +177,7 @@ jobs:
           node-version: '17'
       - name: Install protoc
         run: |
-          sudo apt-get update
-          sudo apt-get install -y protobuf
+          sudo snap install protobuf --classic
       - name: Build package
         working-directory: vegafusion-wasm/
         run: |
