@@ -43,9 +43,6 @@ jobs:
         run: |
           sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
         if: ${{ runner.os == 'Linux' }}
-      - name: Install protoc
-        run: |
-          sudo snap install protobuf --classic
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -86,9 +83,6 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: Install protoc
-        run: |
-          sudo snap install protobuf --classic
       - name: Cache rust dependencies
         uses: Swatinem/rust-cache@v1
         with:
@@ -128,9 +122,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
-      - name: Install protoc
-        run: |
-          sudo snap install protobuf --classic
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
