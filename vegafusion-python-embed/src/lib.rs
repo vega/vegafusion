@@ -23,6 +23,11 @@ use vegafusion_core::arrow::pyarrow::PyArrowConvert;
 use vegafusion_core::arrow::record_batch::RecordBatch;
 use vegafusion_core::data::table::VegaFusionTable;
 
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
+
 #[derive(Clone, Serialize, Deserialize)]
 struct PreTransformWarning {
     #[serde(rename = "type")]
