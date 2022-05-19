@@ -90,11 +90,11 @@ impl PyTaskGraphRuntime {
                 let list = tuple.get_item(1)?.cast_as::<PyList>()?;
                 let batches: Vec<_> = list
                     .iter()
-                    .map(|item| RecordBatch::from_pyarrow(item))
+                    .map(RecordBatch::from_pyarrow)
                     .collect::<PyResult<Vec<_>>>()?;
                 Ok((
                     name.to_string(),
-                    VegaFusionTable::try_new(Arc::new(schema.clone()), batches.clone())?,
+                    VegaFusionTable::try_new(Arc::new(schema), batches)?,
                 ))
             })
             .collect::<PyResult<HashMap<_, _>>>()?;
