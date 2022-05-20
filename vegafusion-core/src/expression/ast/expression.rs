@@ -7,12 +7,8 @@
  * this program the details of the active license.
  */
 use crate::error::{Result, VegaFusionError};
-use crate::expression::column_usage::{ColumnUsage, GetColumnUsage, VlSelectionFields};
-use crate::expression::visitors::{
-    CheckSupportedExprVisitor, ClearSpansVisitor, DatumColumnUsageVisitor, ExpressionVisitor,
-    GetInputVariablesVisitor, ImplicitVariablesExprVisitor, MutExpressionVisitor,
-    UpdateVariablesExprVisitor,
-};
+use crate::expression::column_usage::{DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields};
+use crate::expression::visitors::{CheckSupportedExprVisitor, ClearSpansVisitor, DatasetsColumnUsageVisitor, ExpressionVisitor, GetInputVariablesVisitor, ImplicitVariablesExprVisitor, MutExpressionVisitor, UpdateVariablesExprVisitor};
 use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::{
     literal, ArrayExpression, BinaryExpression, CallExpression, ConditionalExpression, Expression,
@@ -24,6 +20,8 @@ use crate::task_graph::task::InputVariable;
 use itertools::sorted;
 use std::fmt::{Display, Formatter};
 use std::ops::Deref;
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 
 /// Trait that all AST node types implement
 pub trait ExpressionTrait: Display {
@@ -329,10 +327,10 @@ impl<V: Into<literal::Value>> From<V> for Expr {
     }
 }
 
-impl GetColumnUsage for Expression {
-    fn column_usage(&self, vl_selection_fields: &VlSelectionFields) -> ColumnUsage {
-        let mut visitor = DatumColumnUsageVisitor::new(&vl_selection_fields);
+impl GetDatasetsColumnUsage for Expression {
+    fn datasets_column_usage(&self, datum_var: &Option<ScopedVariable>, usage_scope: &[u32], task_scope: &TaskScope, vl_selection_fields: &VlSelectionFields) -> DatasetsColumnUsage {
+        let mut visitor = DatasetsColumnUsageVisitor::new(datum_var, usage_scope, task_scope, vl_selection_fields);
         self.walk(&mut visitor);
-        visitor.column_usage
+        visitor.dataset_column_usage
     }
 }

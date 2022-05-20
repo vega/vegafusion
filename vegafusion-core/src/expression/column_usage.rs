@@ -7,12 +7,10 @@
  * this program the details of the active license.
  */
 use std::collections::{HashMap, HashSet};
-use crate::proto::gen::tasks::Variable;
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 
-pub type VlSelectionFields = HashMap<String, Vec<String>>;
-pub type VlSelectionFields2 = HashMap<ScopedVariable, Vec<String>>;
+pub type VlSelectionFields = HashMap<ScopedVariable, Vec<String>>;
 
 /// Enum storing info on which dataset columns are used in a given context.
 /// Due to the dynamic nature of Vega specifications, it's not always possible to statically
@@ -53,6 +51,13 @@ impl ColumnUsage {
     }
 }
 
+impl From<&str> for ColumnUsage {
+    fn from(column: &str) -> Self {
+        let columns: HashSet<_> = vec![column.to_string()].into_iter().collect();
+        Self::Known(columns)
+    }
+}
+
 impl From<&[&str]> for ColumnUsage {
     fn from(columns: &[&str]) -> Self {
         let columns: HashSet<_> = columns.iter().map(|s| s.to_string()).collect();
@@ -68,12 +73,8 @@ impl From<&[String]> for ColumnUsage {
 }
 
 
-pub trait GetColumnUsage {
-    fn column_usage(&self, vl_selection_fields: &VlSelectionFields) -> ColumnUsage;
-}
-
-
 /// Struct that tracks the usage of all columns across a collection of datasets
+#[derive(Clone, Debug, PartialEq)]
 pub struct DatasetsColumnUsage {
     usages: HashMap<ScopedVariable, ColumnUsage>
 }
@@ -83,6 +84,17 @@ impl DatasetsColumnUsage {
         Self {
             usages: Default::default()
         }
+    }
+
+    pub fn with_column_usage(&self, datum_var: &ScopedVariable, usage: ColumnUsage) -> Self {
+        let other_column_usage = Self {
+            usages: vec![(datum_var.clone(), usage)].into_iter().collect()
+        };
+        self.union(&other_column_usage)
+    }
+
+    pub fn with_unknown_usage(&self, datum_var: &ScopedVariable) -> Self {
+        self.with_column_usage(datum_var, ColumnUsage::Unknown)
     }
 
     /// Take the union of two DatasetColumnUsage instances.
@@ -96,7 +108,7 @@ impl DatasetsColumnUsage {
             let self_usage = self.usages.get(&var).cloned().unwrap_or_else(|| ColumnUsage::empty());
             let other_usage = other.usages.get(&var).cloned().unwrap_or_else(|| ColumnUsage::empty());
             let combined_usage = self_usage.union(&other_usage);
-            usages[var] = combined_usage;
+            usages.insert(var, combined_usage);
         }
 
         Self {
@@ -105,14 +117,14 @@ impl DatasetsColumnUsage {
     }
 }
 
-pub trait GetDatasetColumnUsage {
-    fn dataset_column_usage(
+pub trait GetDatasetsColumnUsage {
+    fn datasets_column_usage(
         &self,
-        datum_name: &str,
+        datum_var: &Option<ScopedVariable>,
         usage_scope: &[u32],
         task_scope: &TaskScope,
-        vl_selection_fields: &VlSelectionFields2
-    ) -> DatasetColumnUsage;
+        vl_selection_fields: &VlSelectionFields,
+    ) -> DatasetsColumnUsage;
 }
 
 

@@ -309,51 +309,97 @@ mod test_check_supported {
 
 mod test_column_usage {
     use crate::*;
-    use vegafusion_core::expression::column_usage::ColumnUsage;
+    use vegafusion_core::expression::column_usage::{
+        ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
+    };
     use vegafusion_core::expression::parser::parse;
-    use vegafusion_core::expression::visitors::VlSelectionFields;
+    use vegafusion_core::proto::gen::tasks::Variable;
+    use vegafusion_core::task_graph::graph::ScopedVariable;
+    use vegafusion_core::task_graph::scope::TaskScope;
 
     #[rstest(
         expr,
-        usage,
-        case("no_such_fn(23)", ColumnUsage::empty()),
+        data_a_usage,
+        brush2_store_usage,
+        case("no_such_fn(23)", None, None),
         case(
             "isValid(datum[\"average_b\"]) && isFinite(+datum[\"average_b\"])",
-            ColumnUsage::from(vec!["average_b"].as_slice())
+            Some(ColumnUsage::from(vec!["average_b"].as_slice())),
+            None,
         ),
         case(
             "datum['one'] + datum.two",
-            ColumnUsage::from(vec!["one", "two"].as_slice())
+            Some(ColumnUsage::from(vec!["one", "two"].as_slice())),
+            None,
         ),
         case(
             "datum.one + datum['two'] + datum['th' + 'ree']",
-            ColumnUsage::Unknown
+            Some(ColumnUsage::Unknown),
+            None,
         ),
         case(
             "vlSelectionTest(\"brush1_store\", datum)",
-            ColumnUsage::Unknown
+            Some(ColumnUsage::Unknown),
+            None,
         ),
         case(
             "vlSelectionTest(\"brush2_store\", datum)",
-            ColumnUsage::from(vec!["AA", "BB", "CC"].as_slice())
+            Some(ColumnUsage::from(vec!["AA", "BB", "CC"].as_slice())),
+            Some(ColumnUsage::Unknown),
         ),
         case(
             "!length(data(\"brush2_store\")) || vlSelectionTest(\"brush2_store\", datum)",
-            ColumnUsage::from(vec!["AA", "BB", "CC"].as_slice())
+            Some(ColumnUsage::from(vec!["AA", "BB", "CC"].as_slice())),
+            Some(ColumnUsage::Unknown),
+        ),
+        case(
+            "data(\"brush2_store\")",
+            None,
+            Some(ColumnUsage::Unknown),
         ),
     )]
-    fn test(expr: &str, usage: ColumnUsage) {
+    fn test(
+        expr: &str,
+        data_a_usage: Option<ColumnUsage>,
+        brush2_store_usage: Option<ColumnUsage>,
+    ) {
         let expr = parse(expr).unwrap();
+
+        // Build expected usage
+        let data_a_var: ScopedVariable = (Variable::new_data("dataA"), Vec::new());
+        let mut expected = DatasetsColumnUsage::empty();
+        if let Some(data_a_usage) = data_a_usage {
+            expected = expected.with_column_usage(&data_a_var, data_a_usage);
+        }
+        if let Some(brush2_store_usage) = brush2_store_usage {
+            let brush2_store_var: ScopedVariable = (Variable::new_data("brush2_store"), Vec::new());
+            expected = expected.with_column_usage(&brush2_store_var, brush2_store_usage);
+        }
 
         // Define selection dataset fields
         let selection_fields: VlSelectionFields = vec![(
-            "brush2_store".to_string(),
+            (Variable::new_data("brush2_store"), Vec::new()),
             vec!["AA".to_string(), "BB".to_string(), "CC".to_string()],
         )]
         .into_iter()
         .collect();
-        let result = expr.column_usage(&selection_fields);
-        assert_eq!(result, usage);
+
+        // Build dataset_column_usage args
+        let datum_var: ScopedVariable = (Variable::new_data("dataA"), Vec::new());
+        let usage_scope = Vec::new();
+        let mut task_scope = TaskScope::new();
+        task_scope
+            .add_variable(&Variable::new_data("brush2_store"), &[])
+            .unwrap();
+
+        // Compute dataset column usage
+        let usage = expr.datasets_column_usage(
+            &Some(datum_var),
+            &usage_scope,
+            &task_scope,
+            &selection_fields,
+        );
+        assert_eq!(usage, expected);
     }
 
     #[test]
