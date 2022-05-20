@@ -1,8 +1,8 @@
 [package]
 name = "vegafusion-python-embed"
-version = "0.4.1"
-edition = "2021"
 license = "AGPL-3.0-or-later"
+edition = "2021"
+version = "0.4.1"
 
 [lib]
 name = "vegafusion_embed"
