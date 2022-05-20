@@ -3,9 +3,11 @@ use crate::expression::column_usage::{
 };
 use crate::expression::parser::parse;
 use crate::proto::gen::tasks::Variable;
+use crate::spec::chart::ChartSpec;
+use crate::spec::data::DataSpec;
 use crate::spec::mark::{MarkEncodeSpec, MarkEncodingField, MarkEncodingSpec, MarkSpec};
 use crate::spec::scale::{ScaleDataReferenceSpec, ScaleDomainSpec, ScaleRangeSpec, ScaleSpec};
-use crate::spec::signal::{SignalOnEventSpec, SignalOnEventSpecOrList, SignalSpec};
+use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 
@@ -144,31 +146,84 @@ impl GetDatasetsColumnUsage for MarkSpec {
     ) -> DatasetsColumnUsage {
         // Initialize empty usage
         let mut usage = DatasetsColumnUsage::empty();
+        if self.type_ == "group" {
+            // group marks with data, signals, scales, marks
+            for sig in &self.signals {
+                usage = usage.union(&sig.datasets_column_usage(
+                    &None,
+                    usage_scope,
+                    task_scope,
+                    vl_selection_fields,
+                ))
+            }
 
-        if let Some(from) = &self.from {
-            let data_name = if let Some(data) = &from.data {
-                Some(data.clone())
-            } else if let Some(facet) = &from.facet {
-                Some(facet.data.clone())
-            } else {
-                None
-            };
+            for scale in &self.scales {
+                usage = usage.union(&scale.datasets_column_usage(
+                    &None,
+                    usage_scope,
+                    task_scope,
+                    vl_selection_fields,
+                ))
+            }
 
-            if let Some(data_name) = data_name {
-                let data_var = Variable::new_data(&data_name);
-                if let Ok(resolved) = task_scope.resolve_scope(&data_var, usage_scope) {
-                    let scoped_datum_var: ScopedVariable = (resolved.var, resolved.scope);
-                    if let Some(encode) = &self.encode {
-                        usage = usage.union(&encode.datasets_column_usage(
-                            &Some(scoped_datum_var),
-                            usage_scope,
-                            task_scope,
-                            vl_selection_fields,
-                        ))
+            for data in &self.data {
+                usage = usage.union(&data.datasets_column_usage(
+                    &None,
+                    usage_scope,
+                    task_scope,
+                    vl_selection_fields,
+                ))
+            }
+
+            let mut child_group_idx = 0;
+            for mark in &self.marks {
+                if mark.type_ == "group" {
+                    let mut child_usage_scope = Vec::from(usage_scope);
+                    child_usage_scope.push(child_group_idx as u32);
+                    usage = usage.union(&mark.datasets_column_usage(
+                        &None,
+                        child_usage_scope.as_slice(),
+                        task_scope,
+                        vl_selection_fields,
+                    ));
+                    child_group_idx += 1;
+                } else {
+                    usage = usage.union(&mark.datasets_column_usage(
+                        &None,
+                        usage_scope,
+                        task_scope,
+                        vl_selection_fields,
+                    ))
+                }
+            }
+        } else {
+            // non-group mark with "from" data source
+            if let Some(from) = &self.from {
+                let data_name = if let Some(data) = &from.data {
+                    Some(data.clone())
+                } else if let Some(facet) = &from.facet {
+                    Some(facet.data.clone())
+                } else {
+                    None
+                };
+
+                if let Some(data_name) = data_name {
+                    let data_var = Variable::new_data(&data_name);
+                    if let Ok(resolved) = task_scope.resolve_scope(&data_var, usage_scope) {
+                        let scoped_datum_var: ScopedVariable = (resolved.var, resolved.scope);
+                        if let Some(encode) = &self.encode {
+                            usage = usage.union(&encode.datasets_column_usage(
+                                &Some(scoped_datum_var),
+                                usage_scope,
+                                task_scope,
+                                vl_selection_fields,
+                            ))
+                        }
                     }
                 }
             }
         }
+
         usage
     }
 }
@@ -196,7 +251,7 @@ impl GetDatasetsColumnUsage for ScaleDataReferenceSpec {
 impl GetDatasetsColumnUsage for ScaleDomainSpec {
     fn datasets_column_usage(
         &self,
-        datum_var: &Option<ScopedVariable>,
+        _datum_var: &Option<ScopedVariable>,
         usage_scope: &[u32],
         task_scope: &TaskScope,
         vl_selection_fields: &VlSelectionFields,
@@ -211,7 +266,7 @@ impl GetDatasetsColumnUsage for ScaleDomainSpec {
         };
         for scale_data_ref in scale_data_refs {
             usage = usage.union(&scale_data_ref.datasets_column_usage(
-                datum_var,
+                &None,
                 usage_scope,
                 task_scope,
                 vl_selection_fields,
@@ -224,7 +279,7 @@ impl GetDatasetsColumnUsage for ScaleDomainSpec {
 impl GetDatasetsColumnUsage for ScaleRangeSpec {
     fn datasets_column_usage(
         &self,
-        datum_var: &Option<ScopedVariable>,
+        _datum_var: &Option<ScopedVariable>,
         usage_scope: &[u32],
         task_scope: &TaskScope,
         vl_selection_fields: &VlSelectionFields,
@@ -233,7 +288,7 @@ impl GetDatasetsColumnUsage for ScaleRangeSpec {
         match &self {
             ScaleRangeSpec::Reference(data_ref) => {
                 usage = usage.union(&data_ref.datasets_column_usage(
-                    datum_var,
+                    &None,
                     usage_scope,
                     task_scope,
                     vl_selection_fields,
@@ -248,7 +303,7 @@ impl GetDatasetsColumnUsage for ScaleRangeSpec {
 impl GetDatasetsColumnUsage for ScaleSpec {
     fn datasets_column_usage(
         &self,
-        datum_var: &Option<ScopedVariable>,
+        _datum_var: &Option<ScopedVariable>,
         usage_scope: &[u32],
         task_scope: &TaskScope,
         vl_selection_fields: &VlSelectionFields,
@@ -256,7 +311,7 @@ impl GetDatasetsColumnUsage for ScaleSpec {
         let mut usage = DatasetsColumnUsage::empty();
         if let Some(domain) = &self.domain {
             usage = usage.union(&domain.datasets_column_usage(
-                datum_var,
+                &None,
                 usage_scope,
                 task_scope,
                 vl_selection_fields,
@@ -265,7 +320,7 @@ impl GetDatasetsColumnUsage for ScaleSpec {
 
         if let Some(range) = &self.range {
             usage = usage.union(&range.datasets_column_usage(
-                datum_var,
+                &None,
                 usage_scope,
                 task_scope,
                 vl_selection_fields,
@@ -278,7 +333,7 @@ impl GetDatasetsColumnUsage for ScaleSpec {
 impl GetDatasetsColumnUsage for SignalSpec {
     fn datasets_column_usage(
         &self,
-        datum_var: &Option<ScopedVariable>,
+        _datum_var: &Option<ScopedVariable>,
         usage_scope: &[u32],
         task_scope: &TaskScope,
         vl_selection_fields: &VlSelectionFields,
@@ -310,7 +365,95 @@ impl GetDatasetsColumnUsage for SignalSpec {
         for expr_str in expr_strs {
             if let Ok(parsed) = parse(&expr_str) {
                 usage = usage.union(&parsed.datasets_column_usage(
-                    datum_var,
+                    &None,
+                    usage_scope,
+                    task_scope,
+                    vl_selection_fields,
+                ))
+            }
+        }
+
+        usage
+    }
+}
+
+impl GetDatasetsColumnUsage for DataSpec {
+    fn datasets_column_usage(
+        &self,
+        _datum_var: &Option<ScopedVariable>,
+        usage_scope: &[u32],
+        _task_scope: &TaskScope,
+        _vl_selection_fields: &VlSelectionFields,
+    ) -> DatasetsColumnUsage {
+        let mut usage = DatasetsColumnUsage::empty();
+        if let Some(source) = &self.source {
+            // For right now, assume that all columns in source dataset are required by this
+            // dataset. Eventually we'll want to examine the individual transforms in this dataset
+            // to determine the precise subset of columns that are required.
+            let source_var = Variable::new_data(source);
+            if let Ok(resolved) = _task_scope.resolve_scope(&source_var, usage_scope) {
+                let data_var = (resolved.var, resolved.scope);
+                usage = usage.with_unknown_usage(&data_var);
+            }
+        }
+        usage
+    }
+}
+
+impl GetDatasetsColumnUsage for ChartSpec {
+    fn datasets_column_usage(
+        &self,
+        _datum_var: &Option<ScopedVariable>,
+        usage_scope: &[u32],
+        task_scope: &TaskScope,
+        vl_selection_fields: &VlSelectionFields,
+    ) -> DatasetsColumnUsage {
+        // Initialize empty usage
+        let mut usage = DatasetsColumnUsage::empty();
+
+        // group marks with data, signals, scales, marks
+        for sig in &self.signals {
+            usage = usage.union(&sig.datasets_column_usage(
+                &None,
+                usage_scope,
+                task_scope,
+                vl_selection_fields,
+            ))
+        }
+
+        for scale in &self.scales {
+            usage = usage.union(&scale.datasets_column_usage(
+                &None,
+                usage_scope,
+                task_scope,
+                vl_selection_fields,
+            ))
+        }
+
+        for data in &self.data {
+            usage = usage.union(&data.datasets_column_usage(
+                &None,
+                usage_scope,
+                task_scope,
+                vl_selection_fields,
+            ))
+        }
+
+        let mut child_group_idx = 0;
+        for mark in &self.marks {
+            if mark.type_ == "group" {
+                let mut child_usage_scope = Vec::from(usage_scope);
+                child_usage_scope.push(child_group_idx as u32);
+                usage = usage.union(&mark.datasets_column_usage(
+                    &None,
+                    child_usage_scope.as_slice(),
+                    task_scope,
+                    vl_selection_fields,
+                ));
+                child_group_idx += 1;
+            } else {
+                usage = usage.union(&mark.datasets_column_usage(
+                    &None,
                     usage_scope,
                     task_scope,
                     vl_selection_fields,
@@ -328,6 +471,7 @@ mod tests {
         ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
     };
     use crate::proto::gen::tasks::Variable;
+    use crate::spec::data::DataSpec;
     use crate::spec::mark::{MarkEncodeSpec, MarkSpec};
     use crate::spec::scale::ScaleSpec;
     use crate::spec::signal::SignalSpec;
@@ -496,6 +640,30 @@ mod tests {
 
         let expected = DatasetsColumnUsage::empty()
             .with_unknown_usage(&(Variable::new_data("brush2_store"), Vec::new()))
+            .with_unknown_usage(&(Variable::new_data("dataA"), Vec::new()));
+
+        assert_eq!(usage, expected);
+    }
+
+    #[test]
+    fn test_data_usage() {
+        let dataset: DataSpec = serde_json::from_value(json!({
+            "name": "dataB",
+            "source": "dataA",
+            "transform": []
+        }))
+        .unwrap();
+
+        // Build dataset_column_usage args
+        let usage_scope = Vec::new();
+        let task_scope = task_scope();
+
+        let usage =
+            dataset.datasets_column_usage(&None, &usage_scope, &task_scope, &Default::default());
+
+        println!("{:#?}", usage);
+
+        let expected = DatasetsColumnUsage::empty()
             .with_unknown_usage(&(Variable::new_data("dataA"), Vec::new()));
 
         assert_eq!(usage, expected);

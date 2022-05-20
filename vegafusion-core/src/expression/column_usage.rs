@@ -6,9 +6,9 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use std::collections::{HashMap, HashSet};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
+use std::collections::{HashMap, HashSet};
 
 pub type VlSelectionFields = HashMap<ScopedVariable, Vec<String>>;
 
@@ -72,23 +72,22 @@ impl From<&[String]> for ColumnUsage {
     }
 }
 
-
 /// Struct that tracks the usage of all columns across a collection of datasets
 #[derive(Clone, Debug, PartialEq)]
 pub struct DatasetsColumnUsage {
-    usages: HashMap<ScopedVariable, ColumnUsage>
+    usages: HashMap<ScopedVariable, ColumnUsage>,
 }
 
 impl DatasetsColumnUsage {
     pub fn empty() -> Self {
         Self {
-            usages: Default::default()
+            usages: Default::default(),
         }
     }
 
     pub fn with_column_usage(&self, datum_var: &ScopedVariable, usage: ColumnUsage) -> Self {
         let other_column_usage = Self {
-            usages: vec![(datum_var.clone(), usage)].into_iter().collect()
+            usages: vec![(datum_var.clone(), usage)].into_iter().collect(),
         };
         self.union(&other_column_usage)
     }
@@ -105,15 +104,21 @@ impl DatasetsColumnUsage {
 
         let mut usages: HashMap<ScopedVariable, ColumnUsage> = HashMap::new();
         for var in union_vars {
-            let self_usage = self.usages.get(&var).cloned().unwrap_or_else(|| ColumnUsage::empty());
-            let other_usage = other.usages.get(&var).cloned().unwrap_or_else(|| ColumnUsage::empty());
+            let self_usage = self
+                .usages
+                .get(&var)
+                .cloned()
+                .unwrap_or_else(|| ColumnUsage::empty());
+            let other_usage = other
+                .usages
+                .get(&var)
+                .cloned()
+                .unwrap_or_else(|| ColumnUsage::empty());
             let combined_usage = self_usage.union(&other_usage);
             usages.insert(var, combined_usage);
         }
 
-        Self {
-            usages
-        }
+        Self { usages }
     }
 }
 
@@ -126,7 +131,6 @@ pub trait GetDatasetsColumnUsage {
         vl_selection_fields: &VlSelectionFields,
     ) -> DatasetsColumnUsage;
 }
-
 
 #[cfg(test)]
 mod tests {

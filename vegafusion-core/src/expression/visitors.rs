@@ -12,9 +12,7 @@ use crate::proto::gen::expression::{
     Identifier, Literal, LogicalExpression, MemberExpression, ObjectExpression, UnaryExpression,
 };
 
-use crate::expression::column_usage::{
-    ColumnUsage, DatasetsColumnUsage, VlSelectionFields,
-};
+use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
 use crate::expression::supported::{
     ALL_DATA_FNS, ALL_EXPRESSION_CONSTANTS, ALL_SCALE_FNS, IMPLICIT_VARS, SUPPORTED_DATA_FNS,
     SUPPORTED_EXPRESSION_FNS, SUPPORTED_SCALE_FNS,
@@ -246,7 +244,6 @@ impl ExpressionVisitor for ImplicitVariablesExprVisitor {
     }
 }
 
-
 /// Visitor to collect the columns
 #[derive(Clone)]
 pub struct DatasetsColumnUsageVisitor<'a> {
@@ -276,7 +273,9 @@ impl<'a> DatasetsColumnUsageVisitor<'a> {
 
 impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
     fn visit_member(&mut self, node: &MemberExpression) {
-        if let (Some(datum_var), Some(object), Some(property)) = (&self.datum_var, &node.object, &node.property) {
+        if let (Some(datum_var), Some(object), Some(property)) =
+            (&self.datum_var, &node.object, &node.property)
+        {
             if let (Some(Expr::Identifier(object_id)), Some(property_expr)) =
                 (&object.expr, &property.expr)
             {
@@ -297,9 +296,8 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                             }
                             _ => {
                                 // Unknown usage (e.g. `datum['col_' + 'name']`)
-                                self.dataset_column_usage = self
-                                    .dataset_column_usage
-                                    .with_unknown_usage(&datum_var);
+                                self.dataset_column_usage =
+                                    self.dataset_column_usage.with_unknown_usage(&datum_var);
                             }
                         }
                     } else {
@@ -314,9 +312,8 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                             }
                             _ => {
                                 // Unknown datum usage
-                                self.dataset_column_usage = self
-                                    .dataset_column_usage
-                                    .with_unknown_usage(&datum_var);
+                                self.dataset_column_usage =
+                                    self.dataset_column_usage.with_unknown_usage(&datum_var);
                             }
                         }
                     }
@@ -340,7 +337,10 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
             {
                 // Resolve data variable
                 let reference_data_var = Variable::new_data(reference_data_name);
-                if let Ok(resolved) = self.task_scope.resolve_scope(&reference_data_var, self.usage_scope) {
+                if let Ok(resolved) = self
+                    .task_scope
+                    .resolve_scope(&reference_data_var, self.usage_scope)
+                {
                     let scoped_reference_data_var: ScopedVariable = (resolved.var, resolved.scope);
                     // e.g. data('other_dataset')
                     // We don't know which columns in the referenced dataset are used
@@ -351,7 +351,9 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                     // Handle vlSelectionTest, which also uses datum columns
                     if node.callee == "vlSelectionTest" {
                         if let Some(datum_var) = self.datum_var {
-                            if let Some(fields) = self.vl_selection_fields.get(&scoped_reference_data_var) {
+                            if let Some(fields) =
+                                self.vl_selection_fields.get(&scoped_reference_data_var)
+                            {
                                 // Add selection fields to usage for datum
                                 self.dataset_column_usage =
                                     self.dataset_column_usage.with_column_usage(
@@ -361,9 +363,8 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                             } else {
                                 // Unknown fields dataset, so we don't know which datum columns
                                 // are needed at runtime
-                                self.dataset_column_usage = self
-                                    .dataset_column_usage
-                                    .with_unknown_usage(&datum_var);
+                                self.dataset_column_usage =
+                                    self.dataset_column_usage.with_unknown_usage(&datum_var);
                             }
                         }
                     }
@@ -371,9 +372,8 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                     // Unknown brushing dataset, so we don't know which datum columns
                     // are needed at runtime
                     if let Some(datum_var) = self.datum_var {
-                        self.dataset_column_usage = self
-                            .dataset_column_usage
-                            .with_unknown_usage(&datum_var);
+                        self.dataset_column_usage =
+                            self.dataset_column_usage.with_unknown_usage(&datum_var);
                     }
                 }
             }
