@@ -5,6 +5,7 @@ use crate::expression::parser::parse;
 use crate::proto::gen::tasks::Variable;
 use crate::spec::mark::{MarkEncodeSpec, MarkEncodingField, MarkEncodingSpec, MarkSpec};
 use crate::spec::scale::{ScaleDataReferenceSpec, ScaleDomainSpec, ScaleRangeSpec, ScaleSpec};
+use crate::spec::signal::{SignalOnEventSpec, SignalOnEventSpecOrList, SignalSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 
@@ -274,6 +275,53 @@ impl GetDatasetsColumnUsage for ScaleSpec {
     }
 }
 
+impl GetDatasetsColumnUsage for SignalSpec {
+    fn datasets_column_usage(
+        &self,
+        datum_var: &Option<ScopedVariable>,
+        usage_scope: &[u32],
+        task_scope: &TaskScope,
+        vl_selection_fields: &VlSelectionFields,
+    ) -> DatasetsColumnUsage {
+        let mut usage = DatasetsColumnUsage::empty();
+        let mut expr_strs = Vec::new();
+
+        // Collect all expression strings used in the signal definition
+        // init
+        if let Some(init) = &self.init {
+            expr_strs.push(init.clone())
+        }
+
+        // update
+        if let Some(update) = &self.update {
+            expr_strs.push(update.clone())
+        }
+
+        // on
+        for sig_on in &self.on {
+            expr_strs.push(sig_on.update.clone());
+            for sig_event in sig_on.events.to_vec() {
+                if let SignalOnEventSpec::Signal(signal) = sig_event {
+                    expr_strs.push(signal.signal.clone());
+                }
+            }
+        }
+
+        for expr_str in expr_strs {
+            if let Ok(parsed) = parse(&expr_str) {
+                usage = usage.union(&parsed.datasets_column_usage(
+                    datum_var,
+                    usage_scope,
+                    task_scope,
+                    vl_selection_fields,
+                ))
+            }
+        }
+
+        usage
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::expression::column_usage::{
@@ -282,6 +330,7 @@ mod tests {
     use crate::proto::gen::tasks::Variable;
     use crate::spec::mark::{MarkEncodeSpec, MarkSpec};
     use crate::spec::scale::ScaleSpec;
+    use crate::spec::signal::SignalSpec;
     use crate::task_graph::graph::ScopedVariable;
     use crate::task_graph::scope::TaskScope;
     use serde_json::json;
@@ -422,6 +471,32 @@ mod tests {
             &(Variable::new_data("dataA"), Vec::new()),
             ColumnUsage::from(vec!["colZ"].as_slice()),
         );
+
+        assert_eq!(usage, expected);
+    }
+
+    #[test]
+    fn test_signal_usage() {
+        let signal: SignalSpec = serde_json::from_value(json!({
+            "name": "indexDate",
+            "description": "A date value that updates in response to mousemove.",
+            "update": "length(data('brush2_store'))",
+            "on": [{"events": "mousemove", "update": "length(data('dataA'))"}]
+        }))
+        .unwrap();
+
+        // Build dataset_column_usage args
+        let usage_scope = Vec::new();
+        let task_scope = task_scope();
+
+        let usage =
+            signal.datasets_column_usage(&None, &usage_scope, &task_scope, &Default::default());
+
+        println!("{:#?}", usage);
+
+        let expected = DatasetsColumnUsage::empty()
+            .with_unknown_usage(&(Variable::new_data("brush2_store"), Vec::new()))
+            .with_unknown_usage(&(Variable::new_data("dataA"), Vec::new()));
 
         assert_eq!(usage, expected);
     }
