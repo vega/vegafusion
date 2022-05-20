@@ -1,12 +1,12 @@
 [package]
 name = "vegafusion-core"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
 [features]
 tonic_support = [ "tonic", "tonic-build",]
-pyarrow = ["pyo3", "arrow/pyarrow", "datafusion-common/pyarrow"]
+pyarrow = [ "pyo3", "arrow/pyarrow", "datafusion-common/pyarrow",]
 
 [dependencies]
 thiserror = "^1.0.29"
