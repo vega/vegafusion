@@ -265,7 +265,9 @@ mod test_vega_specs {
         // case("vega/parallel-coords", 0.001),
         // case("vega/splom-outer", 0.001),
 
-        case("vega/playfair", 0.001),
+        // // Named mark used as a dataset not supported
+        // case("vega/playfair", 0.001),
+
         case("vega/population", 0.001),
         case("vega/quantile-dot-plot", 0.001),
         case("vega/regression", 0.001),

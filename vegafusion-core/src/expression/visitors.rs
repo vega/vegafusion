@@ -12,12 +12,16 @@ use crate::proto::gen::expression::{
     Identifier, Literal, LogicalExpression, MemberExpression, ObjectExpression, UnaryExpression,
 };
 
+use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
 use crate::expression::supported::{
     ALL_DATA_FNS, ALL_EXPRESSION_CONSTANTS, ALL_SCALE_FNS, IMPLICIT_VARS, SUPPORTED_DATA_FNS,
     SUPPORTED_EXPRESSION_FNS, SUPPORTED_SCALE_FNS,
 };
+use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::literal::Value;
 use crate::proto::gen::tasks::Variable;
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task::InputVariable;
 use std::collections::HashSet;
 
@@ -173,7 +177,7 @@ impl ExpressionVisitor for UpdateVariablesExprVisitor {
     }
 }
 
-/// Visitor to collect all unbound input variables in the expression
+/// Visitor to check whether an expression is supported by the VegaFusion Runtime
 #[derive(Clone, Default)]
 pub struct CheckSupportedExprVisitor {
     pub supported: bool,
@@ -217,7 +221,7 @@ impl ExpressionVisitor for CheckSupportedExprVisitor {
     }
 }
 
-/// Visitor to collect all output variables in the expression
+/// Visitor to collect all implicit variables used in an expression
 #[derive(Clone, Default)]
 pub struct ImplicitVariablesExprVisitor {
     pub implicit_vars: HashSet<String>,
@@ -236,6 +240,141 @@ impl ExpressionVisitor for ImplicitVariablesExprVisitor {
         // implicit vars like datum and event do not count as a variables
         if IMPLICIT_VARS.contains(node.name.as_str()) {
             self.implicit_vars.insert(node.name.clone());
+        }
+    }
+}
+
+/// Visitor to collect the columns
+#[derive(Clone)]
+pub struct DatasetsColumnUsageVisitor<'a> {
+    pub vl_selection_fields: &'a VlSelectionFields,
+    pub datum_var: &'a Option<ScopedVariable>,
+    pub usage_scope: &'a [u32],
+    pub task_scope: &'a TaskScope,
+    pub dataset_column_usage: DatasetsColumnUsage,
+}
+
+impl<'a> DatasetsColumnUsageVisitor<'a> {
+    pub fn new(
+        datum_var: &'a Option<ScopedVariable>,
+        usage_scope: &'a [u32],
+        task_scope: &'a TaskScope,
+        vl_selection_fields: &'a VlSelectionFields,
+    ) -> Self {
+        Self {
+            vl_selection_fields,
+            datum_var,
+            usage_scope,
+            task_scope,
+            dataset_column_usage: DatasetsColumnUsage::empty(),
+        }
+    }
+}
+
+impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
+    fn visit_member(&mut self, node: &MemberExpression) {
+        if let (Some(datum_var), Some(object), Some(property)) =
+            (&self.datum_var, &node.object, &node.property)
+        {
+            if let (Some(Expr::Identifier(object_id)), Some(property_expr)) =
+                (&object.expr, &property.expr)
+            {
+                if object_id.name == "datum" {
+                    // This expression is a member expression on the datum free variable
+                    if node.computed {
+                        match property_expr {
+                            Expr::Literal(Literal {
+                                value: Some(Value::String(name)),
+                                ..
+                            }) => {
+                                // Found `datum['col_name']` usage
+                                self.dataset_column_usage = self
+                                    .dataset_column_usage
+                                    .with_column_usage(datum_var, ColumnUsage::from(name.as_str()));
+                            }
+                            _ => {
+                                // Unknown usage (e.g. `datum['col_' + 'name']`)
+                                self.dataset_column_usage =
+                                    self.dataset_column_usage.with_unknown_usage(datum_var);
+                            }
+                        }
+                    } else {
+                        match property_expr {
+                            Expr::Identifier(id) => {
+                                // Found `datum.col_name` usage
+                                self.dataset_column_usage =
+                                    self.dataset_column_usage.with_column_usage(
+                                        datum_var,
+                                        ColumnUsage::from(id.name.as_str()),
+                                    );
+                            }
+                            _ => {
+                                // Unknown datum usage
+                                self.dataset_column_usage =
+                                    self.dataset_column_usage.with_unknown_usage(datum_var);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn visit_call(&mut self, node: &CallExpression) {
+        // Handle data functions
+        if ALL_DATA_FNS.contains(node.callee.as_str()) {
+            // First argument should be a string
+            if let Some(Expression {
+                expr:
+                    Some(Expr::Literal(Literal {
+                        value: Some(Value::String(reference_data_name)),
+                        ..
+                    })),
+                ..
+            }) = node.arguments.get(0)
+            {
+                // Resolve data variable
+                let reference_data_var = Variable::new_data(reference_data_name);
+                if let Ok(resolved) = self
+                    .task_scope
+                    .resolve_scope(&reference_data_var, self.usage_scope)
+                {
+                    let scoped_reference_data_var: ScopedVariable = (resolved.var, resolved.scope);
+                    // e.g. data('other_dataset')
+                    // We don't know which columns in the referenced dataset are used
+                    self.dataset_column_usage = self
+                        .dataset_column_usage
+                        .with_unknown_usage(&scoped_reference_data_var);
+
+                    // Handle vlSelectionTest, which also uses datum columns
+                    if node.callee == "vlSelectionTest" {
+                        if let Some(datum_var) = self.datum_var {
+                            if let Some(fields) =
+                                self.vl_selection_fields.get(&scoped_reference_data_var)
+                            {
+                                // Add selection fields to usage for datum
+                                self.dataset_column_usage =
+                                    self.dataset_column_usage.with_column_usage(
+                                        datum_var,
+                                        ColumnUsage::from(fields.as_slice()),
+                                    );
+                            } else {
+                                // Unknown fields dataset, so we don't know which datum columns
+                                // are needed at runtime
+                                self.dataset_column_usage =
+                                    self.dataset_column_usage.with_unknown_usage(datum_var);
+                            }
+                        }
+                    }
+                } else {
+                    // Unknown brushing dataset, so we don't know which datum columns
+                    // are needed at runtime
+                    if let Some(datum_var) = self.datum_var {
+                        self.dataset_column_usage =
+                            self.dataset_column_usage.with_unknown_usage(datum_var);
+                    }
+                }
+            }
         }
     }
 }

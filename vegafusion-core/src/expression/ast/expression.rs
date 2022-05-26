@@ -7,9 +7,13 @@
  * this program the details of the active license.
  */
 use crate::error::{Result, VegaFusionError};
+use crate::expression::column_usage::{
+    DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
+};
 use crate::expression::visitors::{
-    CheckSupportedExprVisitor, ClearSpansVisitor, ExpressionVisitor, GetInputVariablesVisitor,
-    ImplicitVariablesExprVisitor, MutExpressionVisitor, UpdateVariablesExprVisitor,
+    CheckSupportedExprVisitor, ClearSpansVisitor, DatasetsColumnUsageVisitor, ExpressionVisitor,
+    GetInputVariablesVisitor, ImplicitVariablesExprVisitor, MutExpressionVisitor,
+    UpdateVariablesExprVisitor,
 };
 use crate::proto::gen::expression::expression::Expr;
 use crate::proto::gen::expression::{
@@ -18,6 +22,8 @@ use crate::proto::gen::expression::{
     UnaryExpression,
 };
 use crate::proto::gen::tasks::Variable;
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task::InputVariable;
 use itertools::sorted;
 use std::fmt::{Display, Formatter};
@@ -324,5 +330,24 @@ impl<V: Into<literal::Value>> From<V> for Expr {
         let v = v.into();
         let repr = v.to_string();
         Self::Literal(Literal::new(v, &repr))
+    }
+}
+
+impl GetDatasetsColumnUsage for Expression {
+    fn datasets_column_usage(
+        &self,
+        datum_var: &Option<ScopedVariable>,
+        usage_scope: &[u32],
+        task_scope: &TaskScope,
+        vl_selection_fields: &VlSelectionFields,
+    ) -> DatasetsColumnUsage {
+        let mut visitor = DatasetsColumnUsageVisitor::new(
+            datum_var,
+            usage_scope,
+            task_scope,
+            vl_selection_fields,
+        );
+        self.walk(&mut visitor);
+        visitor.dataset_column_usage
     }
 }

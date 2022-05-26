@@ -7,6 +7,7 @@
  * this program the details of the active license.
  */
 pub mod ast;
+pub mod column_usage;
 pub mod lexer;
 pub mod ops;
 pub mod parser;

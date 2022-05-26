@@ -9,6 +9,7 @@
 use crate::error::Result;
 use crate::planning::extract::extract_server_data;
 use crate::planning::optimize_server::split_data_url_nodes;
+use crate::planning::projection_pushdown::projection_pushdown;
 use crate::planning::split_domain_data::split_domain_data;
 use crate::planning::stitch::{stitch_specs, CommPlan};
 use crate::planning::stringify_local_datetimes::stringify_local_datetimes;
@@ -19,6 +20,7 @@ pub struct PlannerConfig {
     pub split_domain_data: bool,
     pub split_url_data_nodes: bool,
     pub stringify_local_datetimes: bool,
+    pub projection_pushdown: bool,
 }
 
 impl Default for PlannerConfig {
@@ -27,6 +29,7 @@ impl Default for PlannerConfig {
             split_domain_data: true,
             split_url_data_nodes: true,
             stringify_local_datetimes: false,
+            projection_pushdown: true,
         }
     }
 }
@@ -40,6 +43,14 @@ pub struct SpecPlan {
 impl SpecPlan {
     pub fn try_new(full_spec: &ChartSpec, config: &PlannerConfig) -> Result<Self> {
         let mut client_spec = full_spec.clone();
+
+        // Attempt to limit the columns produced by each dataset to only include those
+        // that are actually used downstream
+        if config.projection_pushdown {
+            projection_pushdown(&mut client_spec)?;
+        }
+
+        // Split datasets that contain a mix of supported and unsupported transforms
         if config.split_domain_data {
             split_domain_data(&mut client_spec)?;
         }
