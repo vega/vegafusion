@@ -288,16 +288,14 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                                 ..
                             }) => {
                                 // Found `datum['col_name']` usage
-                                self.dataset_column_usage =
-                                    self.dataset_column_usage.with_column_usage(
-                                        &datum_var,
-                                        ColumnUsage::from(name.as_str()),
-                                    );
+                                self.dataset_column_usage = self
+                                    .dataset_column_usage
+                                    .with_column_usage(datum_var, ColumnUsage::from(name.as_str()));
                             }
                             _ => {
                                 // Unknown usage (e.g. `datum['col_' + 'name']`)
                                 self.dataset_column_usage =
-                                    self.dataset_column_usage.with_unknown_usage(&datum_var);
+                                    self.dataset_column_usage.with_unknown_usage(datum_var);
                             }
                         }
                     } else {
@@ -306,14 +304,14 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                                 // Found `datum.col_name` usage
                                 self.dataset_column_usage =
                                     self.dataset_column_usage.with_column_usage(
-                                        &datum_var,
+                                        datum_var,
                                         ColumnUsage::from(id.name.as_str()),
                                     );
                             }
                             _ => {
                                 // Unknown datum usage
                                 self.dataset_column_usage =
-                                    self.dataset_column_usage.with_unknown_usage(&datum_var);
+                                    self.dataset_column_usage.with_unknown_usage(datum_var);
                             }
                         }
                     }
@@ -357,14 +355,14 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                                 // Add selection fields to usage for datum
                                 self.dataset_column_usage =
                                     self.dataset_column_usage.with_column_usage(
-                                        &datum_var,
+                                        datum_var,
                                         ColumnUsage::from(fields.as_slice()),
                                     );
                             } else {
                                 // Unknown fields dataset, so we don't know which datum columns
                                 // are needed at runtime
                                 self.dataset_column_usage =
-                                    self.dataset_column_usage.with_unknown_usage(&datum_var);
+                                    self.dataset_column_usage.with_unknown_usage(datum_var);
                             }
                         }
                     }
@@ -373,7 +371,7 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                     // are needed at runtime
                     if let Some(datum_var) = self.datum_var {
                         self.dataset_column_usage =
-                            self.dataset_column_usage.with_unknown_usage(&datum_var);
+                            self.dataset_column_usage.with_unknown_usage(datum_var);
                     }
                 }
             }

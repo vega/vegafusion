@@ -108,12 +108,12 @@ impl DatasetsColumnUsage {
                 .usages
                 .get(&var)
                 .cloned()
-                .unwrap_or_else(|| ColumnUsage::empty());
+                .unwrap_or_else(ColumnUsage::empty);
             let other_usage = other
                 .usages
                 .get(&var)
                 .cloned()
-                .unwrap_or_else(|| ColumnUsage::empty());
+                .unwrap_or_else(ColumnUsage::empty);
             let combined_usage = self_usage.union(&other_usage);
             usages.insert(var, combined_usage);
         }

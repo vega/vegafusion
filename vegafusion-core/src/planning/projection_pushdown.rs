@@ -22,7 +22,7 @@ impl GetDatasetsColumnUsage for MarkEncodingField {
         if let Some(datum_var) = datum_var {
             let column_usage = match self {
                 MarkEncodingField::Field(field) => {
-                    if field.contains(".") || field.contains("[") {
+                    if field.contains('.') || field.contains('[') {
                         // Specification of a nested column like "target['x']" or "source.x"
                         // (https://vega.github.io/vega/docs/types/#Field)
                         // Eventually we could add a separate parser to identify the column portion,
@@ -63,7 +63,7 @@ impl GetDatasetsColumnUsage for MarkEncodingSpec {
                     &Some(datum_var.clone()),
                     usage_scope,
                     task_scope,
-                    &vl_selection_fields,
+                    vl_selection_fields,
                 ))
             }
 
@@ -75,12 +75,12 @@ impl GetDatasetsColumnUsage for MarkEncodingSpec {
                             &Some(datum_var.clone()),
                             usage_scope,
                             task_scope,
-                            &vl_selection_fields,
+                            vl_selection_fields,
                         ))
                     }
                     Err(_) => {
                         // Failed to parse expression, unknown column usage
-                        usage = usage.with_unknown_usage(&datum_var);
+                        usage = usage.with_unknown_usage(datum_var);
                     }
                 }
             }
@@ -93,12 +93,12 @@ impl GetDatasetsColumnUsage for MarkEncodingSpec {
                             &Some(datum_var.clone()),
                             usage_scope,
                             task_scope,
-                            &vl_selection_fields,
+                            vl_selection_fields,
                         ))
                     }
                     Err(_) => {
                         // Failed to parse expression, unknown column usage
-                        usage = usage.with_unknown_usage(&datum_var);
+                        usage = usage.with_unknown_usage(datum_var);
                     }
                 }
             }
@@ -201,10 +201,8 @@ impl GetDatasetsColumnUsage for MarkSpec {
             if let Some(from) = &self.from {
                 let data_name = if let Some(data) = &from.data {
                     Some(data.clone())
-                } else if let Some(facet) = &from.facet {
-                    Some(facet.data.clone())
                 } else {
-                    None
+                    from.facet.as_ref().map(|facet| facet.data.clone())
                 };
 
                 if let Some(data_name) = data_name {
