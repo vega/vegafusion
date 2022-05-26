@@ -274,12 +274,6 @@ impl GetDatasetsColumnUsage for MarkSpec {
                     if !self.transform.is_empty() {
                         usage = usage.with_unknown_usage(&scoped_datum_var);
                     }
-
-                    // Check if mark is named. If it is, then it creates a dataset with a `datum`
-                    // column that includes all of the from datasets columns
-                    if self.name.is_some() {
-                        usage = usage.with_unknown_usage(&scoped_datum_var);
-                    }
                 }
             }
         }
