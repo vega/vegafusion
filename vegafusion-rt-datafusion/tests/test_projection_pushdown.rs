@@ -1,13 +1,11 @@
-
-
 #[cfg(test)]
 mod test_custom_specs {
-    use std::fs;
+    use crate::crate_dir;
     use rstest::rstest;
+    use std::fs;
     use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_core::spec::transform::TransformSpec;
-    use crate::crate_dir;
 
     # [rstest(
         spec_name,
@@ -22,7 +20,10 @@ mod test_custom_specs {
         let spec_str = fs::read_to_string(spec_path).unwrap();
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
-        let planner_config = PlannerConfig { projection_pushdown: true, ..Default::default()};
+        let planner_config = PlannerConfig {
+            projection_pushdown: true,
+            ..Default::default()
+        };
         let spec_plan = SpecPlan::try_new(&spec, &planner_config).unwrap();
         let data = &spec_plan.server_spec.data[data_index];
         let tx = &data.transform[data.transform.len() - 1];

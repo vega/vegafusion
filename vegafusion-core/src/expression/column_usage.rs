@@ -90,7 +90,7 @@ impl DatasetsColumnUsage {
     pub fn with_column_usage(&self, datum_var: &ScopedVariable, usage: ColumnUsage) -> Self {
         let other_column_usage = Self {
             usages: vec![(datum_var.clone(), usage)].into_iter().collect(),
-            aliases: Default::default()
+            aliases: Default::default(),
         };
         self.union(&other_column_usage)
     }
@@ -104,7 +104,7 @@ impl DatasetsColumnUsage {
         aliases.insert(from, to);
         Self {
             usages: self.usages.clone(),
-            aliases
+            aliases,
         }
     }
 
@@ -122,7 +122,6 @@ impl DatasetsColumnUsage {
 
         let mut usages: HashMap<ScopedVariable, ColumnUsage> = HashMap::new();
         for var in union_vars {
-
             // Check if var is an alias
             let var = aliases.get(&var).unwrap_or(&var).clone();
 

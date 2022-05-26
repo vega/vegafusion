@@ -1,4 +1,3 @@
-use itertools::sorted;
 use crate::error::Result;
 use crate::expression::column_usage::{
     ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
@@ -14,6 +13,7 @@ use crate::spec::transform::project::ProjectTransformSpec;
 use crate::spec::transform::TransformSpec;
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
+use itertools::sorted;
 
 /// This planning phase attempts to identify the precise subset of columns that are required
 /// of each dataset. If this can be determined for a particular dataset, then a projection
@@ -291,7 +291,6 @@ impl GetDatasetsColumnUsage for MarkSpec {
         }
 
         // All marks with "from" data source
-
 
         usage
     }
