@@ -353,16 +353,13 @@ impl GetDatasetsColumnUsage for ScaleRangeSpec {
         vl_selection_fields: &VlSelectionFields,
     ) -> DatasetsColumnUsage {
         let mut usage = DatasetsColumnUsage::empty();
-        match &self {
-            ScaleRangeSpec::Reference(data_ref) => {
-                usage = usage.union(&data_ref.datasets_column_usage(
-                    &None,
-                    usage_scope,
-                    task_scope,
-                    vl_selection_fields,
-                ))
-            }
-            _ => {}
+        if let ScaleRangeSpec::Reference(data_ref) = &self {
+            usage = usage.union(&data_ref.datasets_column_usage(
+                &None,
+                usage_scope,
+                task_scope,
+                vl_selection_fields,
+            ))
         }
         usage
     }
