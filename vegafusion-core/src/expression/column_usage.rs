@@ -76,18 +76,21 @@ impl From<&[String]> for ColumnUsage {
 #[derive(Clone, Debug, PartialEq)]
 pub struct DatasetsColumnUsage {
     pub usages: HashMap<ScopedVariable, ColumnUsage>,
+    pub aliases: HashMap<ScopedVariable, ScopedVariable>,
 }
 
 impl DatasetsColumnUsage {
     pub fn empty() -> Self {
         Self {
             usages: Default::default(),
+            aliases: Default::default(),
         }
     }
 
     pub fn with_column_usage(&self, datum_var: &ScopedVariable, usage: ColumnUsage) -> Self {
         let other_column_usage = Self {
             usages: vec![(datum_var.clone(), usage)].into_iter().collect(),
+            aliases: Default::default()
         };
         self.union(&other_column_usage)
     }
@@ -96,14 +99,33 @@ impl DatasetsColumnUsage {
         self.with_column_usage(datum_var, ColumnUsage::Unknown)
     }
 
+    pub fn with_alias(&self, from: ScopedVariable, to: ScopedVariable) -> Self {
+        let mut aliases = self.aliases.clone();
+        aliases.insert(from, to);
+        Self {
+            usages: self.usages.clone(),
+            aliases
+        }
+    }
+
     /// Take the union of two DatasetColumnUsage instances.
     pub fn union(&self, other: &DatasetsColumnUsage) -> DatasetsColumnUsage {
         let self_vars: HashSet<_> = self.usages.keys().cloned().collect();
         let other_vars: HashSet<_> = other.usages.keys().cloned().collect();
         let union_vars: HashSet<_> = self_vars.union(&other_vars).cloned().collect();
 
+        // Union aliases
+        let mut aliases = self.aliases.clone();
+        for (key, val) in &other.aliases {
+            aliases.insert(key.clone(), val.clone());
+        }
+
         let mut usages: HashMap<ScopedVariable, ColumnUsage> = HashMap::new();
         for var in union_vars {
+
+            // Check if var is an alias
+            let var = aliases.get(&var).unwrap_or(&var).clone();
+
             let self_usage = self
                 .usages
                 .get(&var)
@@ -118,7 +140,7 @@ impl DatasetsColumnUsage {
             usages.insert(var, combined_usage);
         }
 
-        Self { usages }
+        Self { usages, aliases }
     }
 }
 
