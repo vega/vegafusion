@@ -16,13 +16,32 @@ use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::scalar::ScalarValue;
 use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
+use std::str::FromStr;
 use std::sync::Arc;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 pub fn time_format_fn(local_tz: chrono_tz::Tz, args: &[Expr], _schema: &DFSchema) -> Result<Expr> {
     let format_str = extract_format_str(args)?;
+
+    // Handle format timezone override
+    let format_tz = if args.len() >= 3 {
+        // Second argument is a an override local timezone string
+        let format_tz_expr = &args[2];
+        if let Expr::Literal(ScalarValue::Utf8(Some(format_tz_str))) = format_tz_expr {
+            chrono_tz::Tz::from_str(format_tz_str)
+                .ok()
+                .with_context(|| format!("Failed to parse {} as a timezone", format_tz_str))?
+        } else {
+            return Err(VegaFusionError::parse(
+                "Third argument to timeFormat must be a timezone string",
+            ));
+        }
+    } else {
+        local_tz
+    };
+
     Ok(Expr::ScalarUDF {
-        fun: Arc::new(make_time_format_udf(&local_tz, &local_tz, &format_str)),
+        fun: Arc::new(make_time_format_udf(&local_tz, &format_tz, &format_str)),
         args: Vec::from(&args[..1]),
     })
 }
