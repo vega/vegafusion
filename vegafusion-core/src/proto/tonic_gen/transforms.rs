@@ -153,10 +153,17 @@ pub struct WindowFrame {
     #[prost(int64, optional, tag="2")]
     pub end: ::core::option::Option<i64>,
 }
+// Project
+
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Project {
+    #[prost(string, repeated, tag="1")]
+    pub fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
 /// Top-level transform
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transform {
-    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8, 9")]
+    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8, 9, 10")]
     pub transform_kind: ::core::option::Option<transform::TransformKind>,
 }
 /// Nested message and enum types in `Transform`.
@@ -181,6 +188,8 @@ pub mod transform {
         Joinaggregate(super::JoinAggregate),
         #[prost(message, tag="9")]
         Window(super::Window),
+        #[prost(message, tag="10")]
+        Project(super::Project),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]

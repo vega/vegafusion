@@ -184,6 +184,11 @@ message WindowFrame {
   optional int64 end = 2;
 }
 
+// Project
+
+message Project {
+  repeated string fields = 1;
+}
 
 // Top-level transform
 message Transform {
@@ -197,6 +202,7 @@ message Transform {
     TimeUnit timeunit = 7;
     JoinAggregate joinaggregate = 8;
     Window window = 9;
+    Project project = 10;
   }
 }
 

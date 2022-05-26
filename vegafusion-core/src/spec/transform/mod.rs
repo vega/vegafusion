@@ -14,6 +14,7 @@ pub mod filter;
 pub mod formula;
 pub mod joinaggregate;
 pub mod lookup;
+pub mod project;
 pub mod sequence;
 pub mod timeunit;
 pub mod unsupported;
@@ -28,6 +29,7 @@ use crate::spec::transform::collect::CollectTransformSpec;
 use crate::spec::transform::formula::FormulaTransformSpec;
 use crate::spec::transform::joinaggregate::JoinAggregateTransformSpec;
 use crate::spec::transform::lookup::LookupTransformSpec;
+use crate::spec::transform::project::ProjectTransformSpec;
 use crate::spec::transform::sequence::SequenceTransformSpec;
 use crate::spec::transform::timeunit::TimeUnitTransformSpec;
 use crate::spec::transform::unsupported::*;
@@ -48,6 +50,7 @@ pub enum TransformSpec {
     Timeunit(TimeUnitTransformSpec),
     JoinAggregate(JoinAggregateTransformSpec),
     Window(WindowTransformSpec),
+    Project(ProjectTransformSpec),
 
     // Unsupported
     CountPattern(CountpatternTransformSpec),
@@ -79,7 +82,6 @@ pub enum TransformSpec {
     Partition(PartitionTransformSpec),
     Pie(PieTransformSpec),
     Pivot(PivotTransformSpec),
-    Project(ProjectTransformSpec),
     Quantile(QuantileTransformSpec),
     Regression(RegressionTransformSpec),
     ResolveFilter(ResolvefilterTransformSpec),

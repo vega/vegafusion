@@ -14,6 +14,7 @@ pub mod filter;
 pub mod formula;
 pub mod joinaggregate;
 pub mod pipeline;
+pub mod project;
 pub mod timeunit;
 pub mod utils;
 pub mod window;
@@ -50,6 +51,7 @@ pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
         TransformKind::Timeunit(tx) => tx,
         TransformKind::Joinaggregate(tx) => tx,
         TransformKind::Window(tx) => tx,
+        TransformKind::Project(tx) => tx,
     }
 }
 
