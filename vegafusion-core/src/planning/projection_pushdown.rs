@@ -1,3 +1,4 @@
+use itertools::sorted;
 use crate::error::Result;
 use crate::expression::column_usage::{
     ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
@@ -216,6 +217,17 @@ impl GetDatasetsColumnUsage for MarkSpec {
                 }
             }
 
+            // Handle group mark with from->data. For now, this results in unknown usage because
+            // the data columns can be used by outside of the encoding channels
+            // (e.g. in the title object) with the parent variable
+            if let Some(data) = self.from.as_ref().and_then(|from| from.data.clone()) {
+                let from_data_var = Variable::new_data(&data);
+                if let Ok(resolved) = task_scope.resolve_scope(&from_data_var, usage_scope) {
+                    let scoped_from_data_var = (resolved.var, resolved.scope);
+                    usage = usage.with_unknown_usage(&scoped_from_data_var);
+                }
+            }
+
             let mut child_group_idx = 0;
             for mark in &self.marks {
                 if mark.type_ == "group" {
@@ -237,46 +249,49 @@ impl GetDatasetsColumnUsage for MarkSpec {
                     ))
                 }
             }
-        }
+        } else {
+            // non-group marks
+            if let Some(from) = &self.from {
+                if let Some(data_name) = &from.data {
+                    let data_var = Variable::new_data(data_name);
+                    if let Ok(resolved) = task_scope.resolve_scope(&data_var, usage_scope) {
+                        let scoped_datum_var: ScopedVariable = (resolved.var, resolved.scope);
+                        if let Some(encode) = &self.encode {
+                            usage = usage.union(&encode.datasets_column_usage(
+                                &Some(scoped_datum_var.clone()),
+                                usage_scope,
+                                task_scope,
+                                vl_selection_fields,
+                            ))
+                        }
 
-        // All marks with "from" data source
-        if let Some(from) = &self.from {
-            if let Some(data_name) = &from.data {
-                let data_var = Variable::new_data(data_name);
-                if let Ok(resolved) = task_scope.resolve_scope(&data_var, usage_scope) {
-                    let scoped_datum_var: ScopedVariable = (resolved.var, resolved.scope);
-                    if let Some(encode) = &self.encode {
-                        usage = usage.union(&encode.datasets_column_usage(
-                            &Some(scoped_datum_var.clone()),
-                            usage_scope,
-                            task_scope,
-                            vl_selection_fields,
-                        ))
-                    }
-
-                    // Handle sort expression
-                    if let Some(sort) = &self.sort {
-                        let sort_fields = sort.field.to_vec();
-                        for sort_field in sort_fields {
-                            if let Ok(parsed) = parse(&sort_field) {
-                                usage = usage.union(&parsed.datasets_column_usage(
-                                    &Some(scoped_datum_var.clone()),
-                                    usage_scope,
-                                    task_scope,
-                                    vl_selection_fields,
-                                ));
+                        // Handle sort expression
+                        if let Some(sort) = &self.sort {
+                            let sort_fields = sort.field.to_vec();
+                            for sort_field in sort_fields {
+                                if let Ok(parsed) = parse(&sort_field) {
+                                    usage = usage.union(&parsed.datasets_column_usage(
+                                        &Some(scoped_datum_var.clone()),
+                                        usage_scope,
+                                        task_scope,
+                                        vl_selection_fields,
+                                    ));
+                                }
                             }
                         }
-                    }
 
-                    // Check for mark-level transforms. We don't look inside of these yet,
-                    // so we don't know which columns are used
-                    if !self.transform.is_empty() {
-                        usage = usage.with_unknown_usage(&scoped_datum_var);
+                        // Check for mark-level transforms. We don't look inside of these yet,
+                        // so we don't know which columns are used
+                        if !self.transform.is_empty() {
+                            usage = usage.with_unknown_usage(&scoped_datum_var);
+                        }
                     }
                 }
             }
         }
+
+        // All marks with "from" data source
+
 
         usage
     }
@@ -545,7 +560,7 @@ impl<'a> MutChartVisitor for InsertProjectionVisitor<'a> {
             if !columns.is_empty() {
                 // We know exactly which columns are required of this dataset (and it's not none),
                 // so we can append a projection transform to limit the columns that are produced
-                let proj_fields: Vec<_> = columns.iter().cloned().collect();
+                let proj_fields: Vec<_> = sorted(columns).cloned().collect();
                 let proj_transform = TransformSpec::Project(ProjectTransformSpec {
                     fields: proj_fields,
                     extra: Default::default(),
