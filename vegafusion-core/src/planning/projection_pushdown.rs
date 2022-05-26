@@ -1,15 +1,44 @@
+use crate::error::Result;
 use crate::expression::column_usage::{
     ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
 };
 use crate::expression::parser::parse;
 use crate::proto::gen::tasks::Variable;
-use crate::spec::chart::ChartSpec;
+use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::mark::{MarkEncodeSpec, MarkEncodingField, MarkEncodingSpec, MarkSpec};
 use crate::spec::scale::{ScaleDataReferenceSpec, ScaleDomainSpec, ScaleRangeSpec, ScaleSpec};
 use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
+use crate::spec::transform::project::ProjectTransformSpec;
+use crate::spec::transform::TransformSpec;
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
+
+/// This planning phase attempts to identify the precise subset of columns that are required
+/// of each dataset. If this can be determined for a particular dataset, then a projection
+/// transform is appended to the dataset's transform array. If it cannot be determined, then
+/// no change is made.
+pub fn projection_pushdown(chart_spec: &mut ChartSpec) -> Result<()> {
+    let datum_var = None;
+    let usage_scope = Vec::new();
+    let task_scope = chart_spec.to_task_scope()?;
+
+    // Note: In the future, we may attempt to identify the fields that are required in the
+    // presence of a call to vlSelectionTest. Since we don't do this yet, vl_selection_fields is
+    // empty (meaning we don't know which fields are used by vlSelectionTest).
+    let vl_selection_fields = Default::default();
+
+    let datasets_column_usage = chart_spec.datasets_column_usage(
+        &datum_var,
+        usage_scope.as_slice(),
+        &task_scope,
+        &vl_selection_fields,
+    );
+
+    let mut visitor = InsertProjectionVisitor::new(&datasets_column_usage);
+    chart_spec.walk_mut(&mut visitor)?;
+    Ok(())
+}
 
 impl GetDatasetsColumnUsage for MarkEncodingField {
     fn datasets_column_usage(
@@ -175,6 +204,18 @@ impl GetDatasetsColumnUsage for MarkSpec {
                 ))
             }
 
+            // Handle group from->facet->name. In this case, a new dataset is named for the
+            // subsets of the input dataset. For now, this means we don't know what columns
+            // from the input dataset are used. In the future, we could track which columns of
+            // the subset datasets are used.
+            if let Some(facet) = self.from.as_ref().and_then(|from| from.facet.clone()) {
+                let facet_data_var = Variable::new_data(&facet.data);
+                if let Ok(resolved) = task_scope.resolve_scope(&facet_data_var, usage_scope) {
+                    let scoped_facet_data_var = (resolved.var, resolved.scope);
+                    usage = usage.with_unknown_usage(&scoped_facet_data_var);
+                }
+            }
+
             let mut child_group_idx = 0;
             for mark in &self.marks {
                 if mark.type_ == "group" {
@@ -196,27 +237,48 @@ impl GetDatasetsColumnUsage for MarkSpec {
                     ))
                 }
             }
-        } else {
-            // non-group mark with "from" data source
-            if let Some(from) = &self.from {
-                let data_name = if let Some(data) = &from.data {
-                    Some(data.clone())
-                } else {
-                    from.facet.as_ref().map(|facet| facet.data.clone())
-                };
+        }
 
-                if let Some(data_name) = data_name {
-                    let data_var = Variable::new_data(&data_name);
-                    if let Ok(resolved) = task_scope.resolve_scope(&data_var, usage_scope) {
-                        let scoped_datum_var: ScopedVariable = (resolved.var, resolved.scope);
-                        if let Some(encode) = &self.encode {
-                            usage = usage.union(&encode.datasets_column_usage(
-                                &Some(scoped_datum_var),
-                                usage_scope,
-                                task_scope,
-                                vl_selection_fields,
-                            ))
+        // All marks with "from" data source
+        if let Some(from) = &self.from {
+            if let Some(data_name) = &from.data {
+                let data_var = Variable::new_data(data_name);
+                if let Ok(resolved) = task_scope.resolve_scope(&data_var, usage_scope) {
+                    let scoped_datum_var: ScopedVariable = (resolved.var, resolved.scope);
+                    if let Some(encode) = &self.encode {
+                        usage = usage.union(&encode.datasets_column_usage(
+                            &Some(scoped_datum_var.clone()),
+                            usage_scope,
+                            task_scope,
+                            vl_selection_fields,
+                        ))
+                    }
+
+                    // Handle sort expression
+                    if let Some(sort) = &self.sort {
+                        let sort_fields = sort.field.to_vec();
+                        for sort_field in sort_fields {
+                            if let Ok(parsed) = parse(&sort_field) {
+                                usage = usage.union(&parsed.datasets_column_usage(
+                                    &Some(scoped_datum_var.clone()),
+                                    usage_scope,
+                                    task_scope,
+                                    vl_selection_fields,
+                                ));
+                            }
                         }
+                    }
+
+                    // Check for mark-level transforms. We don't look inside of these yet,
+                    // so we don't know which columns are used
+                    if !self.transform.is_empty() {
+                        usage = usage.with_unknown_usage(&scoped_datum_var);
+                    }
+
+                    // Check if mark is named. If it is, then it creates a dataset with a `datum`
+                    // column that includes all of the from datasets columns
+                    if self.name.is_some() {
+                        usage = usage.with_unknown_usage(&scoped_datum_var);
                     }
                 }
             }
@@ -380,7 +442,7 @@ impl GetDatasetsColumnUsage for DataSpec {
         &self,
         _datum_var: &Option<ScopedVariable>,
         usage_scope: &[u32],
-        _task_scope: &TaskScope,
+        task_scope: &TaskScope,
         _vl_selection_fields: &VlSelectionFields,
     ) -> DatasetsColumnUsage {
         let mut usage = DatasetsColumnUsage::empty();
@@ -389,9 +451,21 @@ impl GetDatasetsColumnUsage for DataSpec {
             // dataset. Eventually we'll want to examine the individual transforms in this dataset
             // to determine the precise subset of columns that are required.
             let source_var = Variable::new_data(source);
-            if let Ok(resolved) = _task_scope.resolve_scope(&source_var, usage_scope) {
+            if let Ok(resolved) = task_scope.resolve_scope(&source_var, usage_scope) {
                 let data_var = (resolved.var, resolved.scope);
                 usage = usage.with_unknown_usage(&data_var);
+            }
+        }
+
+        // Check for lookup transform and ensure that all columns are kept from the looked up
+        // dataset
+        for tx in &self.transform {
+            if let TransformSpec::Lookup(lookup) = tx {
+                let lookup_from_var = Variable::new_data(&lookup.from);
+                if let Ok(resolved) = task_scope.resolve_scope(&lookup_from_var, usage_scope) {
+                    let lookup_data_var = (resolved.var, resolved.scope);
+                    usage = usage.with_unknown_usage(&lookup_data_var);
+                }
             }
         }
         usage
@@ -402,7 +476,7 @@ impl GetDatasetsColumnUsage for ChartSpec {
     fn datasets_column_usage(
         &self,
         _datum_var: &Option<ScopedVariable>,
-        usage_scope: &[u32],
+        _usage_scope: &[u32],
         task_scope: &TaskScope,
         vl_selection_fields: &VlSelectionFields,
     ) -> DatasetsColumnUsage {
@@ -411,18 +485,14 @@ impl GetDatasetsColumnUsage for ChartSpec {
 
         // group marks with data, signals, scales, marks
         for sig in &self.signals {
-            usage = usage.union(&sig.datasets_column_usage(
-                &None,
-                usage_scope,
-                task_scope,
-                vl_selection_fields,
-            ))
+            usage =
+                usage.union(&sig.datasets_column_usage(&None, &[], task_scope, vl_selection_fields))
         }
 
         for scale in &self.scales {
             usage = usage.union(&scale.datasets_column_usage(
                 &None,
-                usage_scope,
+                &[],
                 task_scope,
                 vl_selection_fields,
             ))
@@ -431,7 +501,7 @@ impl GetDatasetsColumnUsage for ChartSpec {
         for data in &self.data {
             usage = usage.union(&data.datasets_column_usage(
                 &None,
-                usage_scope,
+                &[],
                 task_scope,
                 vl_selection_fields,
             ))
@@ -440,8 +510,7 @@ impl GetDatasetsColumnUsage for ChartSpec {
         let mut child_group_idx = 0;
         for mark in &self.marks {
             if mark.type_ == "group" {
-                let mut child_usage_scope = Vec::from(usage_scope);
-                child_usage_scope.push(child_group_idx as u32);
+                let child_usage_scope = vec![child_group_idx as u32];
                 usage = usage.union(&mark.datasets_column_usage(
                     &None,
                     child_usage_scope.as_slice(),
@@ -452,7 +521,7 @@ impl GetDatasetsColumnUsage for ChartSpec {
             } else {
                 usage = usage.union(&mark.datasets_column_usage(
                     &None,
-                    usage_scope,
+                    &[],
                     task_scope,
                     vl_selection_fields,
                 ))
@@ -460,6 +529,38 @@ impl GetDatasetsColumnUsage for ChartSpec {
         }
 
         usage
+    }
+}
+
+/// Visitor to collect the non-UTC time scales
+struct InsertProjectionVisitor<'a> {
+    pub columns_usage: &'a DatasetsColumnUsage,
+}
+
+impl<'a> InsertProjectionVisitor<'a> {
+    pub fn new(columns_usage: &'a DatasetsColumnUsage) -> Self {
+        Self { columns_usage }
+    }
+}
+
+impl<'a> MutChartVisitor for InsertProjectionVisitor<'a> {
+    fn visit_data(&mut self, data: &mut DataSpec, scope: &[u32]) -> Result<()> {
+        let data_var = Variable::new_data(&data.name);
+        let scoped_data_var = (data_var, Vec::from(scope));
+        if let Some(ColumnUsage::Known(columns)) = self.columns_usage.usages.get(&scoped_data_var) {
+            if !columns.is_empty() {
+                // We know exactly which columns are required of this dataset (and it's not none),
+                // so we can append a projection transform to limit the columns that are produced
+                let proj_fields: Vec<_> = columns.iter().cloned().collect();
+                let proj_transform = TransformSpec::Project(ProjectTransformSpec {
+                    fields: proj_fields,
+                    extra: Default::default(),
+                });
+                let transforms = &mut data.transform;
+                transforms.push(proj_transform);
+            }
+        }
+        Ok(())
     }
 }
 

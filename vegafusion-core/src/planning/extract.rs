@@ -198,11 +198,13 @@ impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
             type_: "group".to_string(),
             name: None,
             from: None,
+            sort: None,
             encode: None,
             data: vec![],
             signals: vec![],
             marks: vec![],
             scales: vec![],
+            transform: vec![],
             extra: Default::default(),
         };
         if parent_scope.is_empty() {

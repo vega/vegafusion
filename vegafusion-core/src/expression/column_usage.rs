@@ -75,7 +75,7 @@ impl From<&[String]> for ColumnUsage {
 /// Struct that tracks the usage of all columns across a collection of datasets
 #[derive(Clone, Debug, PartialEq)]
 pub struct DatasetsColumnUsage {
-    usages: HashMap<ScopedVariable, ColumnUsage>,
+    pub usages: HashMap<ScopedVariable, ColumnUsage>,
 }
 
 impl DatasetsColumnUsage {
