@@ -20,6 +20,19 @@ use crate::task_graph::scope::TaskScope;
 use itertools::sorted;
 use std::collections::{HashMap, HashSet};
 
+#[derive(Debug, Clone)]
+pub enum LocalDatetimesConfig {
+    UtcMillis,
+    LocalNaiveString,
+    TimezoneNaiveString(String),
+}
+
+impl Default for LocalDatetimesConfig {
+    fn default() -> Self {
+        Self::UtcMillis
+    }
+}
+
 /// This planning phase converts select datetime columns from the default millisecond UTC
 /// representation to naive datetime strings in the local timezone. This is only done for datetime
 /// columns that are scaled using a (non-utc) `time` scale in the client specification.
@@ -31,6 +44,7 @@ pub fn stringify_local_datetimes(
     server_spec: &mut ChartSpec,
     client_spec: &mut ChartSpec,
     comm_plan: &CommPlan,
+    format_tz: &Option<String>,
 ) -> Result<()> {
     // Build task scope for client spec
     let client_scope = client_spec.to_task_scope()?;
@@ -59,8 +73,11 @@ pub fn stringify_local_datetimes(
 
     // Add formula transforms to server spec
     let server_scope = server_spec.to_task_scope()?;
-    let mut visitor =
-        StringifyLocalDatetimeFieldsVisitor::new(local_datetime_fields.clone(), server_scope);
+    let mut visitor = StringifyLocalDatetimeFieldsVisitor::new(
+        local_datetime_fields.clone(),
+        server_scope,
+        format_tz,
+    );
     server_spec.walk_mut(&mut visitor)?;
 
     // Add format spec to client spec (to parse strings as local dates)
@@ -166,16 +183,19 @@ impl ChartVisitor for CollectLocalTimeScaledFieldsVisitor {
 struct StringifyLocalDatetimeFieldsVisitor {
     pub local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
     pub scope: TaskScope,
+    pub format_tz: Option<String>,
 }
 
 impl StringifyLocalDatetimeFieldsVisitor {
     pub fn new(
         local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
         scope: TaskScope,
+        format_tz: &Option<String>,
     ) -> Self {
         Self {
             local_datetime_fields,
             scope,
+            format_tz: format_tz.clone(),
         }
     }
 }
@@ -185,9 +205,21 @@ impl MutChartVisitor for StringifyLocalDatetimeFieldsVisitor {
         let data_var = (Variable::new_data(&data.name), Vec::from(scope));
         if let Some(fields) = self.local_datetime_fields.get(&data_var) {
             for field in sorted(fields) {
+                let expr_str = match &self.format_tz {
+                    None => {
+                        format!("timeFormat(datum['{}'], '%Y-%m-%d %H:%M:%S.%L')", field)
+                    }
+                    Some(local_tz) => {
+                        format!(
+                            "timeFormat(datum['{}'], '%Y-%m-%d %H:%M:%S.%L', '{}')",
+                            field, local_tz
+                        )
+                    }
+                };
+
                 let transforms = &mut data.transform;
                 let transform = FormulaTransformSpec {
-                    expr: format!("timeFormat(datum['{}'], '%Y-%m-%d %H:%M:%S.%L')", field),
+                    expr: expr_str,
                     as_: field.to_string(),
                     extra: Default::default(),
                 };
@@ -203,9 +235,18 @@ impl MutChartVisitor for StringifyLocalDatetimeFieldsVisitor {
             let source_resolved_var = (source_resolved.var, source_resolved.scope);
             if let Some(fields) = self.local_datetime_fields.get(&source_resolved_var) {
                 for field in sorted(fields) {
+                    let expr_str = match &self.format_tz {
+                        None => {
+                            format!("toDate(datum['{}'])", field)
+                        }
+                        Some(local_tz) => {
+                            format!("toDate(datum['{}'], '{}')", field, local_tz)
+                        }
+                    };
+
                     let transforms = &mut data.transform;
                     let transform = FormulaTransformSpec {
-                        expr: format!("toDate(datum['{}'])", field),
+                        expr: expr_str,
                         as_: field.to_string(),
                         extra: Default::default(),
                     };

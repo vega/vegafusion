@@ -12,14 +12,14 @@ use crate::planning::optimize_server::split_data_url_nodes;
 use crate::planning::projection_pushdown::projection_pushdown;
 use crate::planning::split_domain_data::split_domain_data;
 use crate::planning::stitch::{stitch_specs, CommPlan};
-use crate::planning::stringify_local_datetimes::stringify_local_datetimes;
+use crate::planning::stringify_local_datetimes::{stringify_local_datetimes, LocalDatetimesConfig};
 use crate::spec::chart::ChartSpec;
 
 #[derive(Debug, Clone)]
 pub struct PlannerConfig {
     pub split_domain_data: bool,
     pub split_url_data_nodes: bool,
-    pub stringify_local_datetimes: bool,
+    pub local_datetimes_config: LocalDatetimesConfig,
     pub projection_pushdown: bool,
 }
 
@@ -28,7 +28,7 @@ impl Default for PlannerConfig {
         Self {
             split_domain_data: true,
             split_url_data_nodes: true,
-            stringify_local_datetimes: false,
+            local_datetimes_config: Default::default(),
             projection_pushdown: true,
         }
     }
@@ -64,8 +64,21 @@ impl SpecPlan {
             split_data_url_nodes(&mut server_spec)?;
         }
 
-        if config.stringify_local_datetimes {
-            stringify_local_datetimes(&mut server_spec, &mut client_spec, &comm_plan)?;
+        match &config.local_datetimes_config {
+            LocalDatetimesConfig::LocalNaiveString => {
+                stringify_local_datetimes(&mut server_spec, &mut client_spec, &comm_plan, &None)?;
+            }
+            LocalDatetimesConfig::TimezoneNaiveString(format_tz) => {
+                stringify_local_datetimes(
+                    &mut server_spec,
+                    &mut client_spec,
+                    &comm_plan,
+                    &Some(format_tz.clone()),
+                )?;
+            }
+            LocalDatetimesConfig::UtcMillis => {
+                // Leave local datetimes as UTC milliseconds
+            }
         }
 
         Ok(Self {

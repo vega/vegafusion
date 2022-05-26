@@ -11,7 +11,9 @@ pub struct PreTransformRequest {
     pub spec: ::prost::alloc::string::String,
     #[prost(string, tag="2")]
     pub local_tz: ::prost::alloc::string::String,
-    #[prost(message, optional, tag="3")]
+    #[prost(string, optional, tag="3")]
+    pub format_tz: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(message, optional, tag="4")]
     pub opts: ::core::option::Option<PreTransformOpts>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]

@@ -11,7 +11,8 @@ message PreTransformOpts {
 message PreTransformRequest {
   string spec = 1;
   string local_tz = 2;
-  PreTransformOpts opts = 3;
+  optional string format_tz = 3;
+  PreTransformOpts opts = 4;
 }
 
 message PreTransformResponse {

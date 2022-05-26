@@ -1154,6 +1154,7 @@ mod test_pre_transform_inline {
         let request = PreTransformRequest {
             spec: serde_json::to_string(&inline_spec).unwrap(),
             local_tz,
+            format_tz: None,
             opts: Some(opts),
         };
         let response = runtime.pre_transform_spec_request(request).await.unwrap();
@@ -1291,6 +1292,7 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
     let request = PreTransformRequest {
         spec: serde_json::to_string(&full_spec).unwrap(),
         local_tz,
+        format_tz: None,
         opts: Some(opts),
     };
     let response = runtime.pre_transform_spec_request(request).await.unwrap();
