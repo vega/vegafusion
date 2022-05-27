@@ -50,7 +50,7 @@ impl DataSpec {
         sorted(signals).into_iter().collect()
     }
 
-    pub fn supported(&self) -> DependencyNodeSupported {
+    pub fn supported(&self, extract_inline_data: bool) -> DependencyNodeSupported {
         if let Some(Some(format_type)) = self.format.as_ref().map(|fmt| fmt.type_.clone()) {
             if !matches!(format_type.as_str(), "csv" | "tsv" | "arrow" | "json") {
                 // We don't know how to read the data, so full node is unsupported
@@ -59,7 +59,7 @@ impl DataSpec {
         }
 
         // Inline values array not supported (they should be kept on the server)
-        if self.values.is_some() {
+        if !extract_inline_data && self.values.is_some() {
             return DependencyNodeSupported::Unsupported;
         }
 

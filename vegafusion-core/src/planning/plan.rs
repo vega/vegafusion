@@ -21,6 +21,7 @@ pub struct PlannerConfig {
     pub split_url_data_nodes: bool,
     pub local_datetimes_config: LocalDatetimesConfig,
     pub projection_pushdown: bool,
+    pub extract_inline_data: bool,
 }
 
 impl Default for PlannerConfig {
@@ -30,6 +31,7 @@ impl Default for PlannerConfig {
             split_url_data_nodes: true,
             local_datetimes_config: Default::default(),
             projection_pushdown: true,
+            extract_inline_data: false,
         }
     }
 }
@@ -57,7 +59,7 @@ impl SpecPlan {
 
         let mut task_scope = client_spec.to_task_scope()?;
 
-        let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope)?;
+        let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope, config)?;
         let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec)?;
 
         if config.split_url_data_nodes {

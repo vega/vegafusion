@@ -9,6 +9,7 @@
 use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::expression::parser::parse;
 use crate::expression::supported::BUILT_IN_SIGNALS;
+use crate::planning::plan::PlannerConfig;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use crate::spec::chart::{ChartSpec, ChartVisitor};
 use crate::spec::data::{DataSpec, DependencyNodeSupported};
@@ -27,8 +28,9 @@ use std::collections::{HashMap, HashSet};
 /// partially supported
 pub fn get_supported_data_variables(
     chart_spec: &ChartSpec,
+    config: &PlannerConfig,
 ) -> Result<HashMap<ScopedVariable, DependencyNodeSupported>> {
-    let data_graph = build_dependency_graph(chart_spec)?;
+    let data_graph = build_dependency_graph(chart_spec, config)?;
     // Sort dataset nodes topologically
     let nodes: Vec<NodeIndex> = match toposort(&data_graph, None) {
         Ok(v) => v,
@@ -131,9 +133,10 @@ pub fn get_supported_data_variables(
 
 pub fn build_dependency_graph(
     chart_spec: &ChartSpec,
+    config: &PlannerConfig,
 ) -> Result<DiGraph<(ScopedVariable, DependencyNodeSupported), ()>> {
     // Initialize graph with nodes
-    let mut nodes_visitor = AddDependencyNodesVisitor::new();
+    let mut nodes_visitor = AddDependencyNodesVisitor::new(config.extract_inline_data);
     chart_spec.walk(&mut nodes_visitor)?;
 
     // Add dependency edges
@@ -152,11 +155,12 @@ pub fn build_dependency_graph(
 #[derive(Debug, Default)]
 pub struct AddDependencyNodesVisitor {
     pub dependency_graph: DiGraph<(ScopedVariable, DependencyNodeSupported), ()>,
-    node_indexes: HashMap<ScopedVariable, NodeIndex>,
+    pub node_indexes: HashMap<ScopedVariable, NodeIndex>,
+    pub extract_inline_data: bool,
 }
 
 impl AddDependencyNodesVisitor {
-    pub fn new() -> Self {
+    pub fn new(extract_inline_data: bool) -> Self {
         let mut dependency_graph = DiGraph::new();
         let mut node_indexes = HashMap::new();
 
@@ -171,6 +175,7 @@ impl AddDependencyNodesVisitor {
         Self {
             dependency_graph,
             node_indexes,
+            extract_inline_data,
         }
     }
 }
@@ -179,7 +184,7 @@ impl ChartVisitor for AddDependencyNodesVisitor {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         // Add scoped variable for dataset as node
         let scoped_var = (Variable::new_data(&data.name), Vec::from(scope));
-        let data_suported = data.supported();
+        let data_suported = data.supported(self.extract_inline_data);
         let node_index = self
             .dependency_graph
             .add_node((scoped_var.clone(), data_suported.clone()));
@@ -218,6 +223,18 @@ impl ChartVisitor for AddDependencyNodesVisitor {
         Ok(())
     }
 
+    fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
+        // Named non-group marks can serve as datasets
+        if let Some(name) = &mark.name {
+            let scoped_var = (Variable::new_data(name), Vec::from(scope));
+            let node_index = self
+                .dependency_graph
+                .add_node((scoped_var.clone(), DependencyNodeSupported::Unsupported));
+            self.node_indexes.insert(scoped_var, node_index);
+        }
+        Ok(())
+    }
+
     fn visit_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
         if let Some(from) = &mark.from {
             if let Some(facet) = &from.facet {
@@ -239,18 +256,6 @@ impl ChartVisitor for AddDependencyNodesVisitor {
             self.node_indexes.insert(scoped_var, node_index);
         }
 
-        Ok(())
-    }
-
-    fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
-        // Named non-group marks can serve as datasets
-        if let Some(name) = &mark.name {
-            let scoped_var = (Variable::new_data(name), Vec::from(scope));
-            let node_index = self
-                .dependency_graph
-                .add_node((scoped_var.clone(), DependencyNodeSupported::Unsupported));
-            self.node_indexes.insert(scoped_var, node_index);
-        }
         Ok(())
     }
 }

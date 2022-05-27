@@ -230,6 +230,7 @@ impl TaskGraphRuntime {
             &spec,
             &PlannerConfig {
                 local_datetimes_config,
+                extract_inline_data: true,
                 ..Default::default()
             },
         )?;
