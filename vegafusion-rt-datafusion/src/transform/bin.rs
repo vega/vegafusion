@@ -120,21 +120,48 @@ impl TransformTrait for Bin {
             (bin_start.alias("bin0"), "bin0".to_string())
         };
 
+        let mut select_exprs: Vec<_> = dataframe
+            .schema()
+            .fields()
+            .iter()
+            .filter_map(|field| {
+                if field.name() != &name {
+                    Some(col(field.name()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        select_exprs.push(bin_start);
         let dataframe = dataframe
-            .select(vec![Expr::Wildcard, bin_start])
+            .select(select_exprs)
             .with_context(|| "Failed to evaluate binning transform".to_string())?;
 
         // Split end into a separate select so that DataFusion knows to offset from previously
         // computed bin start, rather than recompute it.
         let bin_end = col(&name) + lit(step);
-        let bin_end = if let Some(as1) = &self.alias_1 {
-            bin_end.alias(as1)
+        let (bin_end, name) = if let Some(as1) = &self.alias_1 {
+            (bin_end.alias(as1), as1.to_string())
         } else {
-            bin_end.alias("bin1")
+            (bin_end.alias("bin1"), "bin1".to_string())
         };
 
+        let mut select_exprs: Vec<_> = dataframe
+            .schema()
+            .fields()
+            .iter()
+            .filter_map(|field| {
+                if field.name() != &name {
+                    Some(col(field.name()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        select_exprs.push(bin_end);
+
         let dataframe = dataframe
-            .select(vec![Expr::Wildcard, bin_end])
+            .select(select_exprs)
             .with_context(|| "Failed to evaluate binning transform".to_string())?;
 
         Ok((dataframe, output_value.into_iter().collect()))

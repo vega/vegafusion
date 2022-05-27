@@ -139,9 +139,7 @@ impl VegaFusionTable {
                     // Handle odd special case where vega will interpret
                     // [{}, {}] as [{"datum": {}}, {"datum": {}}]
                     if props.is_empty() {
-                        values = Cow::Owned(
-                            vec![json!({"datum": {"__dummy": 0}}); values.len()]
-                        )
+                        values = Cow::Owned(vec![json!({"datum": {"__dummy": 0}}); values.len()])
                     }
                 } else {
                     // Array of scalars, need to wrap elements objects with "data" field

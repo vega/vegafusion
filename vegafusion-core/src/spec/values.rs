@@ -96,6 +96,22 @@ impl NumberOrSignalSpec {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum ValueOrSignalSpec {
+    Signal(SignalExpressionSpec),
+    Value(serde_json::Value),
+}
+
+impl ValueOrSignalSpec {
+    pub fn input_vars(&self) -> Result<Vec<InputVariable>> {
+        match self {
+            Self::Signal(signal) => Ok(parse(&signal.signal)?.input_vars()),
+            _ => Ok(Default::default()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CompareSpec {
     pub field: StringOrStringList,
 

@@ -110,7 +110,6 @@
       "type": "group",
 
       "from": {
-        "data": "trellis",
         "facet": {
           "name": "faceted_tuples",
           "data": "tuples",

@@ -6,13 +6,13 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use crate::data::table::VegaFusionTable;
 use crate::spec::transform::TransformSpec;
 use crate::spec::values::StringOrSignalSpec;
 use itertools::sorted;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
-use crate::data::table::VegaFusionTable;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DataSpec {

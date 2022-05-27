@@ -77,7 +77,21 @@ impl TransformTrait for TimeUnit {
         let timeunit_start_value = timeunit_start_value.alias(&timeunit_start_alias);
 
         // Add timeunit start value to the dataframe
-        let dataframe = dataframe.select(vec![Expr::Wildcard, timeunit_start_value])?;
+        let mut select_exprs: Vec<_> = dataframe
+            .schema()
+            .fields()
+            .iter()
+            .filter_map(|field| {
+                if field.name() != &timeunit_start_alias {
+                    Some(col(field.name()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        select_exprs.push(timeunit_start_value);
+
+        let dataframe = dataframe.select(select_exprs)?;
 
         // Handle timeunit end value (In the future, disable this when interval=false)
         let timeunit_end_udf = make_timeunit_end_udf(units_mask.as_slice(), local_tz);
@@ -92,7 +106,20 @@ impl TransformTrait for TimeUnit {
         let timeunit_end_value = timeunit_end_value.alias(&timeunit_end_alias);
 
         // Add timeunit end value to the dataframe
-        let dataframe = dataframe.select(vec![Expr::Wildcard, timeunit_end_value])?;
+        let mut select_exprs: Vec<_> = dataframe
+            .schema()
+            .fields()
+            .iter()
+            .filter_map(|field| {
+                if field.name() != &timeunit_end_alias {
+                    Some(col(field.name()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        select_exprs.push(timeunit_end_value);
+        let dataframe = dataframe.select(select_exprs)?;
 
         Ok((dataframe, Vec::new()))
     }

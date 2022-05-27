@@ -16,7 +16,7 @@ use crate::proto::gen::tasks::{
     ScanUrlFormat, Task, Variable,
 };
 use crate::proto::gen::transforms::TransformPipeline;
-use crate::spec::chart::ChartVisitor;
+use crate::spec::chart::{ChartSpec, ChartVisitor};
 use crate::spec::data::{DataFormatParseSpec, DataSpec};
 use crate::spec::mark::{MarkFacetSpec, MarkSpec};
 use crate::spec::scale::{
@@ -24,7 +24,7 @@ use crate::spec::scale::{
     ScaleSpec,
 };
 use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
-use crate::spec::values::{SignalExpressionSpec, StringOrSignalSpec};
+use crate::spec::values::{SignalExpressionSpec, StringOrSignalSpec, ValueOrSignalSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_value::TaskValue;
@@ -440,6 +440,20 @@ impl<'a> InputVarsChartVisitor<'a> {
 }
 
 impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
+    fn visit_chart(&mut self, chart: &ChartSpec) -> Result<()> {
+        // Handle signals in title
+        if let Some(title) = &chart.title {
+            if let Some(text) = &title.text {
+                for input_var in text.input_vars()? {
+                    let resolved = self.task_scope.resolve_scope(&input_var.var, &[])?;
+                    let var = resolved.output_var.unwrap_or(resolved.var);
+                    self.input_vars.insert((var, resolved.scope));
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
         // Handle from data/facet of group mark
         self.process_mark_from(mark, scope)?;
@@ -468,6 +482,18 @@ impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
     fn visit_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
         // Handle from data/facet of group mark
         self.process_mark_from(mark, scope)?;
+
+        // Handle signals in title
+        if let Some(title) = &mark.title {
+            if let Some(text) = &title.text {
+                for input_var in text.input_vars()? {
+                    let resolved = self.task_scope.resolve_scope(&input_var.var, &[])?;
+                    let var = resolved.output_var.unwrap_or(resolved.var);
+                    self.input_vars.insert((var, resolved.scope));
+                }
+            }
+        }
+
         Ok(())
     }
 

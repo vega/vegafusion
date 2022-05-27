@@ -207,6 +207,7 @@ impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
             marks: vec![],
             scales: vec![],
             transform: vec![],
+            title: None,
             extra: Default::default(),
         };
         if parent_scope.is_empty() {

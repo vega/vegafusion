@@ -11,6 +11,7 @@ pub mod data;
 pub mod mark;
 pub mod scale;
 pub mod signal;
+pub mod title;
 pub mod transform;
 pub mod values;
 pub mod visitors;
