@@ -12,6 +12,7 @@ use itertools::sorted;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
+use crate::data::table::VegaFusionTable;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DataSpec {
@@ -59,8 +60,19 @@ impl DataSpec {
         }
 
         // Inline values array not supported (they should be kept on the server)
-        if !extract_inline_data && self.values.is_some() {
-            return DependencyNodeSupported::Unsupported;
+        if let Some(values) = &self.values {
+            if !extract_inline_data {
+                return DependencyNodeSupported::Unsupported;
+            }
+            if let Value::Array(values) = values {
+                if values.is_empty() {
+                    // Empty data not supported
+                    return DependencyNodeSupported::Unsupported;
+                }
+            } else {
+                // Non-array data not
+                return DependencyNodeSupported::Unsupported;
+            }
         }
 
         let all_supported = self.transform.iter().all(|tx| tx.supported());
