@@ -22,7 +22,7 @@
           "expr": "datum[\"options\"] && datum[\"options\"][\"price\"]",
           "as": "options.price"
         },
-        {"type": "filter", "expr": "datum.options != null"}
+        {"type": "filter", "expr": "datum.options != null && datum.options.price != null"}
       ]
     }
   ],
