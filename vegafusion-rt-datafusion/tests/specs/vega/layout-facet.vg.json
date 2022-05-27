@@ -107,7 +107,6 @@
       "type": "group",
 
       "from": {
-        "data": "trellis",
         "facet": {
           "name": "faceted_tuples",
           "data": "tuples",
@@ -166,7 +165,6 @@
       "role": "row-header",
 
       "from": {
-        "data": "trellis",
         "facet": {
           "name": "faceted_tuples",
           "data": "tuples",
