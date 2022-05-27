@@ -135,7 +135,15 @@ impl VegaFusionTable {
             // Handle special case where array elements are non-object scalars
             let mut values = Cow::Borrowed(values);
             if let Some(first) = values.get(0) {
-                if !matches!(first, Value::Object(_)) {
+                if let Value::Object(props) = first {
+                    // Handle odd special case where vega will interpret
+                    // [{}, {}] as [{"datum": {}}, {"datum": {}}]
+                    if props.is_empty() {
+                        values = Cow::Owned(
+                            vec![json!({"datum": {"__dummy": 0}}); values.len()]
+                        )
+                    }
+                } else {
                     // Array of scalars, need to wrap elements objects with "data" field
                     values = Cow::Owned(
                         values
