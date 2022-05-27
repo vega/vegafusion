@@ -12,6 +12,7 @@ use crate::arrow::{
     record_batch::RecordBatch,
 };
 use crate::error::{Result, ResultWithContext, VegaFusionError};
+use std::borrow::Cow;
 
 use std::convert::TryFrom;
 use std::sync::Arc;
@@ -27,6 +28,7 @@ use crate::data::json_writer::record_batches_to_json_rows;
 
 use arrow::array::StructArray;
 use arrow::json::reader::DecoderOptions;
+use serde_json::{json, Value};
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
@@ -130,6 +132,20 @@ impl VegaFusionTable {
 
     pub fn from_json(value: &serde_json::Value, batch_size: usize) -> Result<Self> {
         if let serde_json::Value::Array(values) = value {
+            // Handle special case where array elements are non-object scalars
+            let mut values = Cow::Borrowed(values);
+            if let Some(first) = values.get(0) {
+                if !matches!(first, Value::Object(_)) {
+                    // Array of scalars, need to wrap elements objects with "data" field
+                    values = Cow::Owned(
+                        values
+                            .iter()
+                            .map(|value| json!({ "data": value }))
+                            .collect(),
+                    )
+                }
+            }
+
             let schema_result = json::reader::infer_json_schema_from_iterator(
                 values.iter().take(1024).map(|v| Ok(v.clone())),
             );
