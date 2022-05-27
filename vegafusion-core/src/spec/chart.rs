@@ -56,7 +56,7 @@ pub fn default_schema() -> String {
 impl ChartSpec {
     pub fn walk(&self, visitor: &mut dyn ChartVisitor) -> Result<()> {
         // Visit top-level chart
-        visitor.visit_chart(&self)?;
+        visitor.visit_chart(self)?;
 
         // Top-level with empty scope
         let scope: Vec<u32> = Vec::new();

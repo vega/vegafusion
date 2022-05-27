@@ -12,7 +12,7 @@ use crate::expression::compiler::utils::{to_numeric, ExprHelpers};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
-use datafusion::logical_plan::{col, lit, DFSchema, Expr};
+use datafusion::logical_plan::{col, lit, DFSchema};
 use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::scalar::ScalarValue;

@@ -24,7 +24,7 @@ use crate::spec::scale::{
     ScaleSpec,
 };
 use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
-use crate::spec::values::{SignalExpressionSpec, StringOrSignalSpec, ValueOrSignalSpec};
+use crate::spec::values::{SignalExpressionSpec, StringOrSignalSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_value::TaskValue;

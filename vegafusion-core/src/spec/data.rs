@@ -6,7 +6,7 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use crate::data::table::VegaFusionTable;
+
 use crate::spec::transform::TransformSpec;
 use crate::spec::values::StringOrSignalSpec;
 use itertools::sorted;
