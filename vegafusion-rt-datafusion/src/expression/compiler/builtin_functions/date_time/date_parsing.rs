@@ -42,8 +42,14 @@ lazy_static! {
         // e.g. Sun Jul 8 00:34:60 2001
         StrftimeItems::new("%a %b %e %T %Y"),
 
+        // e.g. 01 Jan 2012 00:00:00
+        StrftimeItems::new("%d %b %Y %T"),
+
         // e.g. Sun, 01 Jan 2012 00:00:00
         StrftimeItems::new("%a, %d %b %Y %T"),
+
+        // e.g. December 17, 1995 03:00:00
+        StrftimeItems::new("%B %d, %Y %T"),
     ];
 }
 
