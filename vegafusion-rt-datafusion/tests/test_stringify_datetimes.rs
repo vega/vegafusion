@@ -12,13 +12,9 @@ lazy_static! {
 mod test_stringify_datetimes {
     use crate::{crate_dir, TOKIO_RUNTIME};
     use rstest::rstest;
-    use serde_json::Value;
     use std::fs;
-    use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
-    use vegafusion_core::planning::stringify_local_datetimes::LocalDatetimesConfig;
     use vegafusion_core::proto::gen::services::pre_transform_result;
     use vegafusion_core::spec::chart::ChartSpec;
-    use vegafusion_core::spec::transform::TransformSpec;
     use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
     #[rstest(
