@@ -60,7 +60,7 @@ class VegaFusionRuntime:
             # No grpc channel, get or initialize an embedded runtime
             return self.embedded_runtime.process_request_bytes(request)
 
-    def pre_transform_spec(self, spec, local_tz, format_tz=None, row_limit=None, inline_datasets=None):
+    def pre_transform_spec(self, spec, local_tz, output_tz=None, row_limit=None, inline_datasets=None):
         """
         Evaluate supported transforms in an input Vega specification and produce a new
         specification with pre-transformed datasets included inline.
@@ -69,7 +69,7 @@ class VegaFusionRuntime:
         :param local_tz: Name of timezone to be considered local. E.g. 'America/New_York'.
             This can be computed for the local system using the tzlocal package and the
             tzlocal.get_localzone_name() function.
-        :param format_tz: Name of timezone (e.g. 'America/New_York') that local datetime
+        :param output_tz: Name of timezone (e.g. 'America/New_York') that local datetime
             values should be converted to when formatted as naive datetime strings
             in the resulting pre-transformed spec. Defaults to `local_tz`.
         :param row_limit: Maximum number of dataset rows to include in the returned
@@ -112,7 +112,7 @@ class VegaFusionRuntime:
             new_spec, warnings = self.embedded_runtime.pre_transform_spec(
                 spec,
                 local_tz=local_tz,
-                format_tz=format_tz,
+                output_tz=output_tz,
                 row_limit=row_limit,
                 inline_datasets=inline_batches
             )

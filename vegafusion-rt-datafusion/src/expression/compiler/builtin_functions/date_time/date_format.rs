@@ -24,7 +24,7 @@ pub fn time_format_fn(local_tz: chrono_tz::Tz, args: &[Expr], _schema: &DFSchema
     let format_str = extract_format_str(args)?;
 
     // Handle format timezone override
-    let format_tz = if args.len() >= 3 {
+    let output_tz = if args.len() >= 3 {
         // Second argument is a an override local timezone string
         let format_tz_expr = &args[2];
         if let Expr::Literal(ScalarValue::Utf8(Some(format_tz_str))) = format_tz_expr {
@@ -41,7 +41,7 @@ pub fn time_format_fn(local_tz: chrono_tz::Tz, args: &[Expr], _schema: &DFSchema
     };
 
     Ok(Expr::ScalarUDF {
-        fun: Arc::new(make_time_format_udf(&local_tz, &format_tz, &format_str)),
+        fun: Arc::new(make_time_format_udf(&local_tz, &output_tz, &format_str)),
         args: Vec::from(&args[..1]),
     })
 }
@@ -89,11 +89,11 @@ pub fn extract_format_str(args: &[Expr]) -> Result<String> {
 
 pub fn make_time_format_udf(
     local_tz: &chrono_tz::Tz,
-    format_tz: &chrono_tz::Tz,
+    output_tz: &chrono_tz::Tz,
     format_str: &str,
 ) -> ScalarUDF {
     let local_tz = *local_tz;
-    let format_tz = *format_tz;
+    let output_tz = *output_tz;
     let format_str = format_str.to_string();
     let time_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single argument
@@ -111,7 +111,7 @@ pub fn make_time_format_udf(
 
                 // Convert to local timezone
                 let datetime: DateTime<chrono_tz::Tz> =
-                    format_tz.from_utc_datetime(&naive_utc_datetime);
+                    output_tz.from_utc_datetime(&naive_utc_datetime);
 
                 // Format as string
                 let formatted = datetime.format(&format_str);
