@@ -12,7 +12,9 @@ use crate::planning::optimize_server::split_data_url_nodes;
 use crate::planning::projection_pushdown::projection_pushdown;
 use crate::planning::split_domain_data::split_domain_data;
 use crate::planning::stitch::{stitch_specs, CommPlan};
-use crate::planning::stringify_local_datetimes::{stringify_local_datetimes, OutputLocalDatetimesConfig};
+use crate::planning::stringify_local_datetimes::{
+    stringify_local_datetimes, OutputLocalDatetimesConfig,
+};
 use crate::spec::chart::ChartSpec;
 
 #[derive(Debug, Clone)]
