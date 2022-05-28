@@ -3,38 +3,38 @@ on:
   pull_request:
     types: [opened, synchronize]
 jobs:
-#  rust-fmt-clippy:
-#    runs-on: ubuntu-latest
-#    env:
-#      RUSTFLAGS: "-D warnings"
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@v2
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#          components: rustfmt, clippy
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Check cargo fmt compliance
-#        run: cargo fmt --all -- --check
-#      - name: Check no rustc warnings
-#        run: cargo check --tests
-#      - name: Check for clippy warnings
-#        run: cargo clippy
+  rust-fmt-clippy:
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Check cargo fmt compliance
+        run: cargo fmt --all -- --check
+      - name: Check no rustc warnings
+        run: cargo check --tests
+      - name: Check for clippy warnings
+        run: cargo clippy
 
   test-rust:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os:
-#         - ubuntu-20.04
+         - ubuntu-20.04
          - windows-2019
-#         - macos-10.15
+         - macos-10.15
 
     steps:
       - name: Check out repository code
@@ -66,269 +66,269 @@ jobs:
           command: test
           args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
 
-#  build-vegafusion-server:
-#    strategy:
-#      matrix:
-#        options: [
-#            [ubuntu-20.04,  linux-64],
-#            [windows-2019,  win-64],
-#            [macos-10.15,   osx-64],
-#        ]
-#    runs-on: ${{ matrix.options[0] }}
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@v2
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Build vegafusion-server
-#        uses: actions-rs/cargo@v1
-#        with:
-#          command: build
-#          args: -p vegafusion-server --release
-#      - name: zip executable (Windows)
-#        uses: papeloto/action-zip@v1
-#        if: runner.os == 'Windows'
-#        with:
-#          files: target/release/vegafusion-server.exe
-#          dest: vegafusion-server-${{ matrix.options[1] }}.zip
-#      - name: zip executable (Mac or Linux)
-#        uses: papeloto/action-zip@v1
-#        if: runner.os != 'Windows'
-#        with:
-#          files: target/release/vegafusion-server
-#          dest: vegafusion-server-${{ matrix.options[1] }}.zip
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: vegafusion-server
-#          path: |
-#            vegafusion-server-*
-#
-#  build-vegafusion-python-embed:
-#    runs-on: ${{ matrix.os }}
-#    strategy:
-#      matrix:
-#        os:
-#         - ubuntu-20.04
-#         - windows-2019
-#         - macos-11
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@v2
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Build wheels
-#        uses: messense/maturin-action@v1
-#        with:
-#          maturin-version: latest
-#          command: build
-#          manylinux: 2010
-#          args: --release -m vegafusion-python-embed/Cargo.toml --strip
-#      - name: Download Apple Silicon toolchain
-#        if: ${{ runner.os == 'macOS' }}
-#        run: |
-#          rustup target add aarch64-apple-darwin
-#      - name: Build Apple Silicon wheels
-#        if: ${{ runner.os == 'macOS' }}
-#        uses: messense/maturin-action@v1
-#        with:
-#          maturin-version: latest
-#          command: build
-#          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
-#      - name: Remove unwanted universal
-#        if: ${{ runner.os == 'macOS' }}
-#        run: |
-#          rm -rf target/wheels/*universal2*.whl
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: vegafusion-python-embed-wheels
-#          path: |
-#            target/wheels/*.tar.gz
-#            target/wheels/*cp37*.whl
-#            target/wheels/*cp38*.whl
-#            target/wheels/*cp39*.whl
-#            target/wheels/*cp310*.whl
-#
-#  build-vegafusion-wasm:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@v2
-#      - name: Install wasm-pack
-#        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-#      - name: Install node
-#        uses: actions/setup-node@v2
-#        with:
-#          node-version: '17'
-#      - name: Install protoc
-#        run: |
-#          sudo snap install protobuf --classic
-#      - name: Build package
-#        working-directory: vegafusion-wasm/
-#        run: |
-#          npm run build
-#          wasm-pack pack
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: vegafusion-wasm-packages
-#          path: vegafusion-wasm/pkg
-#      - name: Build and pack vegafusion-embed package
-#        working-directory: javascript/vegafusion-embed/
-#        run: |
-#          npm install
-#          npm run prepack
-#          npm pack
-#          mkdir packed
-#          mv vegafusion-embed-*.tgz packed;
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: vegafusion-embed-packages
-#          path: javascript/vegafusion-embed/packed
-#
-#  build-vegafusion-wheel:
-#    runs-on: ubuntu-latest
-#    defaults:
-#      run:
-#        shell: bash -l {0}
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@v2
-#      - uses: conda-incubator/setup-miniconda@v2
-#        with:
-#          auto-update-conda: true
-#          activate-environment: vegafusion_dev
-#          miniforge-version: latest
-#          environment-file: python/vegafusion-jupyter/conda-linux-64-cp310.lock
-#      - name: Build vegafusion
-#        working-directory: python/vegafusion
-#        run: |
-#          python setup.py sdist bdist_wheel
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: vegafusion-wheel
-#          path: |
-#            python/vegafusion/dist/*.whl
-#            python/vegafusion/dist/*.tar.gz
-#
-#  build-vegafusion-jupyter-package:
-#    needs: [build-vegafusion-wheel, build-vegafusion-wasm]
-#    runs-on: ubuntu-latest
-#    defaults:
-#      run:
-#        shell: bash -l {0}
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@v2
-#      - uses: conda-incubator/setup-miniconda@v2
-#        with:
-#          auto-update-conda: true
-#          activate-environment: vegafusion_dev
-#          miniforge-version: latest
-#          environment-file: python/vegafusion-jupyter/conda-linux-64-cp310.lock
-#      - name: Download vegafusion-wasm packages
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: vegafusion-wasm-packages
-#          path: vegafusion-wasm/pkg
-#      - name: Build vegafusion-embed
-#        working-directory: javascript/vegafusion-embed/
-#        run: |
-#          npm install
-#          npm run build
-#      - name: Download vegafusion wheel
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: vegafusion-wheel
-#          path: target/wheels/
-#      - name: Install vegafusion wheel
-#        run: |
-#          python -m pip install target/wheels/vegafusion-*.whl
-#      - name: Install vegafusion-wasm npm dependencies
-#        working-directory: vegafusion-wasm/
-#        run: |
-#          npm install
-#      - name: Build vegafusion-jupyter
-#        working-directory: python/vegafusion-jupyter
-#        run: |
-#          python setup.py sdist bdist_wheel
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: vegafusion-jupyter-packages
-#          path: |
-#            python/vegafusion-jupyter/dist/*.whl
-#            python/vegafusion-jupyter/dist/*.tar.gz
-#
-#  test-vegafusion-jupyter:
-#    needs: [ build-vegafusion-python-embed, build-vegafusion-jupyter-package ]
-#    strategy:
-#      matrix:
-#        options: [
-#            [ubuntu-20.04,  linux-64, "bash -l {0}",  manylinux2010_x86_64, cp37],
-#            [ubuntu-20.04,  linux-64, "bash -l {0}",  manylinux2010_x86_64, cp310],
-## TODO: Should run tests on Windows and Mac as well, but there a GitHub action issues
-##            [windows-2019,  win-64,   "pwsh",         win_amd64,            cp37],
-##            [macos-10.15,   osx-64,   "bash -l {0}",  macosx_10_7_x86_64,   cp37],
-#        ]
-#    runs-on: ${{ matrix.options[0] }}
-#    defaults:
-#      run:
-#        shell: ${{ matrix.options[2] }}
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@v2
-#      - name: Create conda test environment
-#        uses: conda-incubator/setup-miniconda@v2
-#        with:
-#          auto-update-conda: true
-#          activate-environment: vegafusion_dev
-#          miniforge-version: latest
-#          environment-file: python/vegafusion-jupyter/conda-${{ matrix.options[1] }}-${{ matrix.options[4] }}.lock
-#      - name: Install Chrome
-#        uses: browser-actions/setup-chrome@latest
-#        with:
-#          chrome-version: stable
-#      - name: Download vegafusion wheel
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: vegafusion-wheel
-#          path: target/wheels/
-#      - name: Download vegafusion-python-embed wheel
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: vegafusion-jupyter-packages
-#          path: target/wheels/
-#      - name: Download vegafusion-jupyter wheel
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: vegafusion-python-embed-wheels
-#          path: target/wheels/
-#      - name: install wheels
-#        working-directory: target/wheels/
-#        run: |
-#          python -m pip install vegafusion_python*${{ matrix.options[4] }}*${{ matrix.options[3] }}*.whl
-#          python -m pip install vegafusion-*.whl
-#          python -m pip install vegafusion_jupyter*.whl
-#      - name: Test vegafusion-jupter
-#        env:
-#          VEGAFUSION_TEST_HEADLESS: 1
-#        working-directory: python/vegafusion-jupyter/tests/
-#        run: pytest
+  build-vegafusion-server:
+    strategy:
+      matrix:
+        options: [
+            [ubuntu-20.04,  linux-64],
+            [windows-2019,  win-64],
+            [macos-10.15,   osx-64],
+        ]
+    runs-on: ${{ matrix.options[0] }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Build vegafusion-server
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: -p vegafusion-server --release
+      - name: zip executable (Windows)
+        uses: papeloto/action-zip@v1
+        if: runner.os == 'Windows'
+        with:
+          files: target/release/vegafusion-server.exe
+          dest: vegafusion-server-${{ matrix.options[1] }}.zip
+      - name: zip executable (Mac or Linux)
+        uses: papeloto/action-zip@v1
+        if: runner.os != 'Windows'
+        with:
+          files: target/release/vegafusion-server
+          dest: vegafusion-server-${{ matrix.options[1] }}.zip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-server
+          path: |
+            vegafusion-server-*
+
+  build-vegafusion-python-embed:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+         - ubuntu-20.04
+         - windows-2019
+         - macos-11
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Build wheels
+        uses: messense/maturin-action@v1
+        with:
+          maturin-version: latest
+          command: build
+          manylinux: 2010
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip
+      - name: Download Apple Silicon toolchain
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          rustup target add aarch64-apple-darwin
+      - name: Build Apple Silicon wheels
+        if: ${{ runner.os == 'macOS' }}
+        uses: messense/maturin-action@v1
+        with:
+          maturin-version: latest
+          command: build
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
+      - name: Remove unwanted universal
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          rm -rf target/wheels/*universal2*.whl
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: |
+            target/wheels/*.tar.gz
+            target/wheels/*cp37*.whl
+            target/wheels/*cp38*.whl
+            target/wheels/*cp39*.whl
+            target/wheels/*cp310*.whl
+
+  build-vegafusion-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Install node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '17'
+      - name: Install protoc
+        run: |
+          sudo snap install protobuf --classic
+      - name: Build package
+        working-directory: vegafusion-wasm/
+        run: |
+          npm run build
+          wasm-pack pack
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-wasm-packages
+          path: vegafusion-wasm/pkg
+      - name: Build and pack vegafusion-embed package
+        working-directory: javascript/vegafusion-embed/
+        run: |
+          npm install
+          npm run prepack
+          npm pack
+          mkdir packed
+          mv vegafusion-embed-*.tgz packed;
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-embed-packages
+          path: javascript/vegafusion-embed/packed
+
+  build-vegafusion-wheel:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          activate-environment: vegafusion_dev
+          miniforge-version: latest
+          environment-file: python/vegafusion-jupyter/conda-linux-64-cp310.lock
+      - name: Build vegafusion
+        working-directory: python/vegafusion
+        run: |
+          python setup.py sdist bdist_wheel
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-wheel
+          path: |
+            python/vegafusion/dist/*.whl
+            python/vegafusion/dist/*.tar.gz
+
+  build-vegafusion-jupyter-package:
+    needs: [build-vegafusion-wheel, build-vegafusion-wasm]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          activate-environment: vegafusion_dev
+          miniforge-version: latest
+          environment-file: python/vegafusion-jupyter/conda-linux-64-cp310.lock
+      - name: Download vegafusion-wasm packages
+        uses: actions/download-artifact@v2
+        with:
+          name: vegafusion-wasm-packages
+          path: vegafusion-wasm/pkg
+      - name: Build vegafusion-embed
+        working-directory: javascript/vegafusion-embed/
+        run: |
+          npm install
+          npm run build
+      - name: Download vegafusion wheel
+        uses: actions/download-artifact@v2
+        with:
+          name: vegafusion-wheel
+          path: target/wheels/
+      - name: Install vegafusion wheel
+        run: |
+          python -m pip install target/wheels/vegafusion-*.whl
+      - name: Install vegafusion-wasm npm dependencies
+        working-directory: vegafusion-wasm/
+        run: |
+          npm install
+      - name: Build vegafusion-jupyter
+        working-directory: python/vegafusion-jupyter
+        run: |
+          python setup.py sdist bdist_wheel
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-jupyter-packages
+          path: |
+            python/vegafusion-jupyter/dist/*.whl
+            python/vegafusion-jupyter/dist/*.tar.gz
+
+  test-vegafusion-jupyter:
+    needs: [ build-vegafusion-python-embed, build-vegafusion-jupyter-package ]
+    strategy:
+      matrix:
+        options: [
+            [ubuntu-20.04,  linux-64, "bash -l {0}",  manylinux2010_x86_64, cp37],
+            [ubuntu-20.04,  linux-64, "bash -l {0}",  manylinux2010_x86_64, cp310],
+# TODO: Should run tests on Windows and Mac as well, but there a GitHub action issues
+#            [windows-2019,  win-64,   "pwsh",         win_amd64,            cp37],
+#            [macos-10.15,   osx-64,   "bash -l {0}",  macosx_10_7_x86_64,   cp37],
+        ]
+    runs-on: ${{ matrix.options[0] }}
+    defaults:
+      run:
+        shell: ${{ matrix.options[2] }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Create conda test environment
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          activate-environment: vegafusion_dev
+          miniforge-version: latest
+          environment-file: python/vegafusion-jupyter/conda-${{ matrix.options[1] }}-${{ matrix.options[4] }}.lock
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@latest
+        with:
+          chrome-version: stable
+      - name: Download vegafusion wheel
+        uses: actions/download-artifact@v2
+        with:
+          name: vegafusion-wheel
+          path: target/wheels/
+      - name: Download vegafusion-python-embed wheel
+        uses: actions/download-artifact@v2
+        with:
+          name: vegafusion-jupyter-packages
+          path: target/wheels/
+      - name: Download vegafusion-jupyter wheel
+        uses: actions/download-artifact@v2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: target/wheels/
+      - name: install wheels
+        working-directory: target/wheels/
+        run: |
+          python -m pip install vegafusion_python*${{ matrix.options[4] }}*${{ matrix.options[3] }}*.whl
+          python -m pip install vegafusion-*.whl
+          python -m pip install vegafusion_jupyter*.whl
+      - name: Test vegafusion-jupter
+        env:
+          VEGAFUSION_TEST_HEADLESS: 1
+        working-directory: python/vegafusion-jupyter/tests/
+        run: pytest
