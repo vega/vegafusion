@@ -3,43 +3,38 @@ on:
   pull_request:
     types: [opened, synchronize]
 jobs:
-  disk-space:
-    runs-on: windows-2022
+  rust-fmt-clippy:
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-D warnings"
     steps:
-      - run: Get-PSDrive
-
-#  rust-fmt-clippy:
-#    runs-on: ubuntu-latest
-#    env:
-#      RUSTFLAGS: "-D warnings"
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@v2
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#          components: rustfmt, clippy
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Check cargo fmt compliance
-#        run: cargo fmt --all -- --check
-#      - name: Check no rustc warnings
-#        run: cargo check --tests
-#      - name: Check for clippy warnings
-#        run: cargo clippy
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Check cargo fmt compliance
+        run: cargo fmt --all -- --check
+      - name: Check no rustc warnings
+        run: cargo check --tests
+      - name: Check for clippy warnings
+        run: cargo clippy
 
   test-rust:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os:
-#         - ubuntu-20.04
+         - ubuntu-20.04
          - windows-2022
-#         - macos-10.15
+         - macos-10.15
 
     steps:
       - name: Check out repository code
