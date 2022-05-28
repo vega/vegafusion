@@ -8,11 +8,14 @@
  */
 use crate::error::Result;
 use crate::expression::parser::parse;
-use crate::spec::transform::TransformSpecTrait;
+use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use crate::expression::column_usage::{ColumnUsage, GetDatasetsColumnUsage, VlSelectionFields};
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FormulaTransformSpec {
@@ -38,5 +41,28 @@ impl TransformSpecTrait for FormulaTransformSpec {
     fn input_vars(&self) -> Result<Vec<InputVariable>> {
         let expr = parse(&self.expr)?;
         Ok(expr.input_vars())
+    }
+
+    fn transform_columns(
+        &self,
+        datum_var: &Option<ScopedVariable>,
+        usage_scope: &[u32],
+        task_scope: &TaskScope,
+        vl_selection_fields: &VlSelectionFields,
+    ) -> TransformColumns {
+        if let Ok(parsed) = parse(&self.expr) {
+            let usage = parsed.datasets_column_usage(
+                datum_var,
+                usage_scope,
+                task_scope,
+                vl_selection_fields,
+            );
+            TransformColumns::PassThrough {
+                usage,
+                produced: ColumnUsage::empty().with_column(&self.as_)
+            }
+        } else {
+            TransformColumns::Unknown
+        }
     }
 }

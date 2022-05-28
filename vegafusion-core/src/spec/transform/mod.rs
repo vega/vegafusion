@@ -37,7 +37,9 @@ use crate::spec::transform::window::WindowTransformSpec;
 use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use crate::expression::column_usage::{ColumnUsage};
+use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -173,14 +175,24 @@ pub trait TransformSpecTrait {
     fn input_vars(&self) -> Result<Vec<InputVariable>> {
         Ok(Default::default())
     }
+
+    fn transform_columns(
+        &self,
+        _datum_var: &Option<ScopedVariable>,
+        _usage_scope: &[u32],
+        _task_scope: &TaskScope,
+        _vl_selection_fields: &VlSelectionFields,
+    ) -> TransformColumns {
+        return TransformColumns::Unknown
+    }
 }
 
-pub enum TransformColumnUsage {
+pub enum TransformColumns {
     /// Transforms that pass through existing columns and produce zero or more new columns
-    PassThrough {usage: ColumnUsage, produced: Vec<String>},
+    PassThrough {usage: DatasetsColumnUsage, produced: ColumnUsage},
 
     /// Transforms that overwrite all input columns, leaving only those produced by the transform
-    Overwrite {usage: ColumnUsage, produced: Vec<String>},
+    Overwrite {usage: DatasetsColumnUsage, produced: ColumnUsage},
 
     /// Transforms with unknown usage and/or production of columns
     Unknown
