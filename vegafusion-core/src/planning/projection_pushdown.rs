@@ -508,7 +508,7 @@ impl GetDatasetsColumnUsage for ChartSpec {
 
         // Handle data
         // Here we need to be careful to traverse datasets in rever topological order.
-        if let Ok(dep_graph) = build_dependency_graph(self) {
+        if let Ok(dep_graph) = build_dependency_graph(self, &Default::default()) {
             if let Ok(node_indexes) = toposort(&dep_graph, None) {
                 // Iterate over dependencies in reverse topological order
                 for node_idx in node_indexes.iter().rev() {
