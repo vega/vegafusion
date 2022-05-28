@@ -437,94 +437,6 @@ impl GetDatasetsColumnUsage for SignalSpec {
     }
 }
 
-impl GetDatasetsColumnUsage for DataSpec {
-    fn datasets_column_usage(
-        &self,
-        _datum_var: &Option<ScopedVariable>,
-        usage_scope: &[u32],
-        task_scope: &TaskScope,
-        vl_selection_fields: &VlSelectionFields,
-    ) -> DatasetsColumnUsage {
-        let mut usage = DatasetsColumnUsage::empty();
-        if let Some(source) = &self.source {
-            let source_var = Variable::new_data(source);
-            if let Ok(resolved) = task_scope.resolve_scope(&source_var, usage_scope) {
-                let scoped_source_var = (resolved.var, resolved.scope);
-                let datum_var = Some(scoped_source_var.clone());
-
-                // Maintain collection of the columns that have been produced so far
-                let mut all_produced = ColumnUsage::empty();
-
-                // Track whether all transforms in the pipeline are pass through.
-                let mut all_passthrough = true;
-
-                // iterate through transforms
-                for tx in &self.transform {
-                    let tx_cols = tx.transform_columns(
-                        &datum_var,
-                        usage_scope,
-                        task_scope,
-                        vl_selection_fields,
-                    );
-                    match tx_cols {
-                        TransformColumns::PassThrough { usage: tx_usage, produced: tx_produced } => {
-                            // Add used columns
-                            usage = usage.union(&tx_usage);
-
-                            // Remove columns that were produced previously
-                            usage = usage.without_column_usage(&scoped_source_var, &all_produced);
-
-                            // Update produced columns
-                            all_produced = all_produced.union(&tx_produced);
-                        }
-                        TransformColumns::Overwrite { usage: tx_usage, .. } => {
-                            // Add used columns
-                            usage = usage.union(&tx_usage);
-
-                            // Remove columns that were produced previously
-                            usage = usage.without_column_usage(&scoped_source_var, &all_produced);
-
-                            // Downstream transforms no longer have access to source data columns,
-                            // so we're done
-                            all_passthrough = false;
-                            break
-                        }
-                        TransformColumns::Unknown => {
-                            // All bets are off
-                            usage = usage.with_unknown_usage(&scoped_source_var);
-                            all_passthrough = false;
-                            break
-                        }
-                    }
-                }
-
-                // If all transforms were passthrough, then we may need to propagate the
-                // column usages of this dataset to it's source
-                if all_passthrough {
-                    let self_var = Variable::new_data(&self.name);
-                    let self_scoped_var: ScopedVariable = (self_var, Vec::from(usage_scope));
-                    if let Some(self_usage) = usage.usages.get(&self_scoped_var) {
-                        let self_usage_not_produced = self_usage.difference(&all_produced);
-                        usage = usage.with_column_usage(&scoped_source_var, self_usage_not_produced);
-                    }
-                }
-            }
-        }
-
-        // Check for lookup transform and ensure that all columns are kept from the looked up
-        // dataset
-        for tx in &self.transform {
-            if let TransformSpec::Lookup(lookup) = tx {
-                let lookup_from_var = Variable::new_data(&lookup.from);
-                if let Ok(resolved) = task_scope.resolve_scope(&lookup_from_var, usage_scope) {
-                    let lookup_data_var = (resolved.var, resolved.scope);
-                    usage = usage.with_unknown_usage(&lookup_data_var);
-                }
-            }
-        }
-        usage
-    }
-}
 
 impl GetDatasetsColumnUsage for ChartSpec {
     fn datasets_column_usage(
@@ -582,12 +494,13 @@ impl GetDatasetsColumnUsage for ChartSpec {
                     let (scoped_dep_var, _) = dep_graph.node_weight(*node_idx).expect("Expected node in graph");
                     if matches!(scoped_dep_var.0.ns(), VariableNamespace::Data) {
                         if let Ok(data) = self.get_nested_data(scoped_dep_var.1.as_slice(), &scoped_dep_var.0.name) {
-                            usage = usage.union(&data.datasets_column_usage(
-                                &None,
-                                &[],
+                            usage = usage.union(&datasets_column_usage_for_data(
+                                data,
+                                &usage,
+                                scoped_dep_var.1.as_slice(),
                                 task_scope,
                                 vl_selection_fields,
-                            ))
+                            ));
                         }
                     }
                 }
@@ -596,6 +509,96 @@ impl GetDatasetsColumnUsage for ChartSpec {
 
         usage
     }
+}
+
+/// We need a separate interface for getting dataset column usage from datasets to account
+/// for the fact that determining the usage of a dataset requires information about the usage
+/// of itself.
+fn datasets_column_usage_for_data(
+    data: &DataSpec,
+    usage: &DatasetsColumnUsage,
+    usage_scope: &[u32],
+    task_scope: &TaskScope,
+    vl_selection_fields: &VlSelectionFields,
+) -> DatasetsColumnUsage {
+    let mut usage = usage.clone();
+    if let Some(source) = &data.source {
+        let source_var = Variable::new_data(source);
+        if let Ok(resolved) = task_scope.resolve_scope(&source_var, usage_scope) {
+            let scoped_source_var = (resolved.var, resolved.scope);
+            let datum_var = Some(scoped_source_var.clone());
+
+            // Maintain collection of the columns that have been produced so far
+            let mut all_produced = ColumnUsage::empty();
+
+            // Track whether all transforms in the pipeline are pass through.
+            let mut all_passthrough = true;
+
+            // iterate through transforms
+            for tx in &data.transform {
+                let tx_cols = tx.transform_columns(
+                    &datum_var,
+                    usage_scope,
+                    task_scope,
+                    vl_selection_fields,
+                );
+                match tx_cols {
+                    TransformColumns::PassThrough { usage: tx_usage, produced: tx_produced } => {
+                        // Add used columns
+                        usage = usage.union(&tx_usage);
+
+                        // Remove columns that were produced previously
+                        usage = usage.without_column_usage(&scoped_source_var, &all_produced);
+
+                        // Update produced columns
+                        all_produced = all_produced.union(&tx_produced);
+                    }
+                    TransformColumns::Overwrite { usage: tx_usage, .. } => {
+                        // Add used columns
+                        usage = usage.union(&tx_usage);
+
+                        // Remove columns that were produced previously
+                        usage = usage.without_column_usage(&scoped_source_var, &all_produced);
+
+                        // Downstream transforms no longer have access to source data columns,
+                        // so we're done
+                        all_passthrough = false;
+                        break
+                    }
+                    TransformColumns::Unknown => {
+                        // All bets are off
+                        usage = usage.with_unknown_usage(&scoped_source_var);
+                        all_passthrough = false;
+                        break
+                    }
+                }
+            }
+
+            // If all transforms were passthrough, then we may need to propagate the
+            // column usages of this dataset to it's source
+            if all_passthrough {
+                let self_var = Variable::new_data(&data.name);
+                let self_scoped_var: ScopedVariable = (self_var, Vec::from(usage_scope));
+                if let Some(self_usage) = usage.usages.get(&self_scoped_var) {
+                    let self_usage_not_produced = self_usage.difference(&all_produced);
+                    usage = usage.with_column_usage(&scoped_source_var, self_usage_not_produced);
+                }
+            }
+        }
+    }
+
+    // Check for lookup transform and ensure that all columns are kept from the looked up
+    // dataset
+    for tx in &data.transform {
+        if let TransformSpec::Lookup(lookup) = tx {
+            let lookup_from_var = Variable::new_data(&lookup.from);
+            if let Ok(resolved) = task_scope.resolve_scope(&lookup_from_var, usage_scope) {
+                let lookup_data_var = (resolved.var, resolved.scope);
+                usage = usage.with_unknown_usage(&lookup_data_var);
+            }
+        }
+    }
+    usage
 }
 
 /// Visitor to collect the non-UTC time scales
@@ -801,8 +804,6 @@ mod tests {
         let usage =
             signal.datasets_column_usage(&None, &usage_scope, &task_scope, &Default::default());
 
-        println!("{:#?}", usage);
-
         let expected = DatasetsColumnUsage::empty()
             .with_unknown_usage(&(Variable::new_data("brush2_store"), Vec::new()))
             .with_unknown_usage(&(Variable::new_data("dataA"), Vec::new()));
@@ -810,27 +811,4 @@ mod tests {
         assert_eq!(usage, expected);
     }
 
-    #[test]
-    fn test_data_usage() {
-        let dataset: DataSpec = serde_json::from_value(json!({
-            "name": "dataB",
-            "source": "dataA",
-            "transform": []
-        }))
-        .unwrap();
-
-        // Build dataset_column_usage args
-        let usage_scope = Vec::new();
-        let task_scope = task_scope();
-
-        let usage =
-            dataset.datasets_column_usage(&None, &usage_scope, &task_scope, &Default::default());
-
-        println!("{:#?}", usage);
-
-        let expected = DatasetsColumnUsage::empty()
-            .with_unknown_usage(&(Variable::new_data("dataA"), Vec::new()));
-
-        assert_eq!(usage, expected);
-    }
 }
