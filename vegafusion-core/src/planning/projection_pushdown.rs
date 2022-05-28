@@ -10,7 +10,7 @@ use crate::spec::mark::{MarkEncodeSpec, MarkEncodingField, MarkEncodingSpec, Mar
 use crate::spec::scale::{ScaleDataReferenceSpec, ScaleDomainSpec, ScaleRangeSpec, ScaleSpec};
 use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
 use crate::spec::transform::project::ProjectTransformSpec;
-use crate::spec::transform::TransformSpec;
+use crate::spec::transform::{TransformColumns, TransformSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use itertools::sorted;
@@ -448,17 +448,55 @@ impl GetDatasetsColumnUsage for DataSpec {
         _datum_var: &Option<ScopedVariable>,
         usage_scope: &[u32],
         task_scope: &TaskScope,
-        _vl_selection_fields: &VlSelectionFields,
+        vl_selection_fields: &VlSelectionFields,
     ) -> DatasetsColumnUsage {
         let mut usage = DatasetsColumnUsage::empty();
         if let Some(source) = &self.source {
-            // For right now, assume that all columns in source dataset are required by this
-            // dataset. Eventually we'll want to examine the individual transforms in this dataset
-            // to determine the precise subset of columns that are required.
             let source_var = Variable::new_data(source);
             if let Ok(resolved) = task_scope.resolve_scope(&source_var, usage_scope) {
-                let data_var = (resolved.var, resolved.scope);
-                usage = usage.with_unknown_usage(&data_var);
+                let scoped_source_var = (resolved.var, resolved.scope);
+                let datum_var = Some(scoped_source_var.clone());
+
+                // Maintain collection of the columns that have been produced so far
+                let mut all_produced = ColumnUsage::empty();
+
+                // iterate through transforms
+                for tx in &self.transform {
+                    let tx_cols = tx.transform_columns(
+                        &datum_var,
+                        usage_scope,
+                        task_scope,
+                        vl_selection_fields,
+                    );
+                    match tx_cols {
+                        TransformColumns::PassThrough { usage: tx_usage, produced: tx_produced } => {
+                            // Add used columns
+                            usage = usage.union(&tx_usage);
+
+                            // Remove columns that were produced previously
+                            usage = usage.without_column_usage(&scoped_source_var, &all_produced);
+
+                            // Update produced columns
+                            all_produced = all_produced.union(&tx_produced);
+                        }
+                        TransformColumns::Overwrite { usage: tx_usage, .. } => {
+                            // Add used columns
+                            usage = usage.union(&tx_usage);
+
+                            // Remove columns that were produced previously
+                            usage = usage.without_column_usage(&scoped_source_var, &all_produced);
+
+                            // Downstream transforms no longer have access to source data columns,
+                            // so we're done
+                            break
+                        }
+                        TransformColumns::Unknown => {
+                            // All bets are off
+                            usage = usage.with_unknown_usage(&scoped_source_var);
+                            break
+                        }
+                    }
+                }
             }
         }
 
