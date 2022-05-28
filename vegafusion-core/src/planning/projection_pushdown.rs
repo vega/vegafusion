@@ -66,11 +66,19 @@ impl GetDatasetsColumnUsage for MarkEncodingField {
                         ColumnUsage::empty().with_column(field)
                     }
                 }
-                MarkEncodingField::Object(_) => {
+                MarkEncodingField::Object(field_object) => {
                     // Field is an object that should have a "field" property.
                     // Eventually we can add support for this form, for now declare as unknown
                     // column usage
-                    ColumnUsage::Unknown
+                    if field_object.signal.is_some() {
+                        // Dynamically determined field
+                        ColumnUsage::Unknown
+                    } else if let Some(field) = &field_object.datum {
+                        // Just like specifying a string
+                        ColumnUsage::empty().with_column(field)
+                    } else {
+                        ColumnUsage::empty()
+                    }
                 }
             };
             DatasetsColumnUsage::empty().with_column_usage(datum_var, column_usage)
