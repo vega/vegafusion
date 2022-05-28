@@ -544,21 +544,25 @@ fn datasets_column_usage_for_data(
                 );
                 match tx_cols {
                     TransformColumns::PassThrough { usage: tx_usage, produced: tx_produced } => {
+                        // Remove previously created columns from tx_usage
+                        let tx_usage = tx_usage.without_column_usage(
+                            &scoped_source_var, &all_produced
+                        );
+
                         // Add used columns
                         usage = usage.union(&tx_usage);
-
-                        // Remove columns that were produced previously
-                        usage = usage.without_column_usage(&scoped_source_var, &all_produced);
 
                         // Update produced columns
                         all_produced = all_produced.union(&tx_produced);
                     }
                     TransformColumns::Overwrite { usage: tx_usage, .. } => {
+                        // Remove previously created columns from tx_usage
+                        let tx_usage = tx_usage.without_column_usage(
+                            &scoped_source_var, &all_produced
+                        );
+
                         // Add used columns
                         usage = usage.union(&tx_usage);
-
-                        // Remove columns that were produced previously
-                        usage = usage.without_column_usage(&scoped_source_var, &all_produced);
 
                         // Downstream transforms no longer have access to source data columns,
                         // so we're done
