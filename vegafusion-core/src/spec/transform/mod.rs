@@ -183,7 +183,7 @@ pub trait TransformSpecTrait {
         _task_scope: &TaskScope,
         _vl_selection_fields: &VlSelectionFields,
     ) -> TransformColumns {
-        return TransformColumns::Unknown;
+        TransformColumns::Unknown
     }
 }
 

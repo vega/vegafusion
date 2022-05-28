@@ -659,7 +659,7 @@ mod tests {
         ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
     };
     use crate::proto::gen::tasks::Variable;
-    use crate::spec::data::DataSpec;
+
     use crate::spec::mark::{MarkEncodeSpec, MarkSpec};
     use crate::spec::scale::ScaleSpec;
     use crate::spec::signal::SignalSpec;
