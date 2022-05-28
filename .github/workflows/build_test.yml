@@ -46,7 +46,7 @@ jobs:
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.60
+          toolchain: 1.60.0
           override: true
       - name: Install node
         uses: actions/setup-node@v2
