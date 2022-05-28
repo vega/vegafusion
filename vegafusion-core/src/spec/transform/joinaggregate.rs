@@ -93,10 +93,8 @@ impl TransformSpecTrait for JoinAggregateTransformSpec {
                 .iter()
                 .map(|field| field.field())
                 .collect();
-            for field in &self.fields {
-                if let Some(field) = field {
-                    usage_cols.push(field.field())
-                }
+            for field in self.fields.iter().flatten() {
+                usage_cols.push(field.field())
             }
             let col_usage = ColumnUsage::from(usage_cols.as_slice());
             let usage = DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage);

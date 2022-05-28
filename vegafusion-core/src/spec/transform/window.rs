@@ -161,10 +161,8 @@ impl TransformSpecTrait for WindowTransformSpec {
                 .iter()
                 .map(|field| field.field())
                 .collect();
-            for field in &self.fields {
-                if let Some(field) = field {
-                    usage_cols.push(field.field())
-                }
+            for field in self.fields.iter().flatten() {
+                usage_cols.push(field.field())
             }
             if let Some(sort) = &self.sort {
                 usage_cols.extend(sort.field.to_vec())

@@ -148,10 +148,14 @@ impl TransformSpecTrait for AggregateTransformSpec {
 
             // Compute used columns (both groupby and fields)
             let mut usage_cols: Vec<_> = self.groupby.iter().map(|field| field.field()).collect();
-            for field in self.fields.clone().unwrap_or_default() {
-                if let Some(field) = field {
-                    usage_cols.push(field.field())
-                }
+            for field in self
+                .fields
+                .clone()
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+            {
+                usage_cols.push(field.field())
             }
             let col_usage = ColumnUsage::from(usage_cols.as_slice());
             let usage = DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage);
