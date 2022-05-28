@@ -9,15 +9,15 @@
 use crate::error::Result;
 use crate::expression::parser::parse;
 
+use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::spec::values::{Field, SignalExpressionSpec};
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
-use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
-use crate::task_graph::graph::ScopedVariable;
-use crate::task_graph::scope::TaskScope;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BinTransformSpec {
@@ -129,16 +129,22 @@ impl TransformSpecTrait for BinTransformSpec {
     ) -> TransformColumns {
         if let Some(datum_var) = datum_var {
             // Compute produced columns
-            let bin_start = self.as_.and_then(|as_| as_.get(0).cloned()).unwrap_or_else(|| "bin0".to_string());
-            let bin_end = self.as_.and_then(|as_| as_.get(1).cloned()).unwrap_or_else(|| "bin1".to_string());
+            let bin_start = self
+                .as_
+                .as_ref()
+                .and_then(|as_| as_.get(0).cloned())
+                .unwrap_or_else(|| "bin0".to_string());
+            let bin_end = self
+                .as_
+                .as_ref()
+                .and_then(|as_| as_.get(1).cloned())
+                .unwrap_or_else(|| "bin1".to_string());
             let produced = ColumnUsage::from(vec![bin_start, bin_end].as_slice());
 
             // Compute used columns
             let field = self.field.field();
             let col_usage = ColumnUsage::empty().with_column(&field);
-            let usage = DatasetsColumnUsage::empty().with_column_usage(
-                datum_var, col_usage
-            );
+            let usage = DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage);
 
             TransformColumns::PassThrough { usage, produced }
         } else {

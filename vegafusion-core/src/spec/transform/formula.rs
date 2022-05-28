@@ -7,15 +7,15 @@
  * this program the details of the active license.
  */
 use crate::error::Result;
+use crate::expression::column_usage::{ColumnUsage, GetDatasetsColumnUsage, VlSelectionFields};
 use crate::expression::parser::parse;
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::expression::column_usage::{ColumnUsage, GetDatasetsColumnUsage, VlSelectionFields};
-use crate::task_graph::graph::ScopedVariable;
-use crate::task_graph::scope::TaskScope;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FormulaTransformSpec {
@@ -59,7 +59,7 @@ impl TransformSpecTrait for FormulaTransformSpec {
             );
             TransformColumns::PassThrough {
                 usage,
-                produced: ColumnUsage::empty().with_column(&self.as_)
+                produced: ColumnUsage::empty().with_column(&self.as_),
             }
         } else {
             TransformColumns::Unknown

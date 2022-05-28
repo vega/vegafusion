@@ -55,7 +55,10 @@ impl TransformSpecTrait for FilterTransformSpec {
                 task_scope,
                 vl_selection_fields,
             );
-            TransformColumns::PassThrough { usage, produced: ColumnUsage::empty() }
+            TransformColumns::PassThrough {
+                usage,
+                produced: ColumnUsage::empty(),
+            }
         } else {
             TransformColumns::Unknown
         }

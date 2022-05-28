@@ -6,13 +6,13 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
-use crate::task_graph::graph::ScopedVariable;
-use crate::task_graph::scope::TaskScope;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ExtentTransformSpec {
@@ -38,10 +38,12 @@ impl TransformSpecTrait for ExtentTransformSpec {
         _vl_selection_fields: &VlSelectionFields,
     ) -> TransformColumns {
         if let Some(datum_var) = datum_var {
-            let usage = DatasetsColumnUsage::empty().with_column_usage(
-                datum_var, ColumnUsage::empty().with_column(&self.field)
-            );
-            TransformColumns::PassThrough { usage, produced: ColumnUsage::empty() }
+            let usage = DatasetsColumnUsage::empty()
+                .with_column_usage(datum_var, ColumnUsage::empty().with_column(&self.field));
+            TransformColumns::PassThrough {
+                usage,
+                produced: ColumnUsage::empty(),
+            }
         } else {
             TransformColumns::Unknown
         }

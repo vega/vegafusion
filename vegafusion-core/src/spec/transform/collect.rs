@@ -6,10 +6,10 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
 
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::spec::values::CompareSpec;
@@ -34,10 +34,11 @@ impl TransformSpecTrait for CollectTransformSpec {
     ) -> TransformColumns {
         if let Some(datum_var) = datum_var {
             let col_usage = ColumnUsage::from(self.sort.field.to_vec().as_slice());
-            let usage = DatasetsColumnUsage::empty().with_column_usage(
-                datum_var, col_usage
-            );
-            TransformColumns::PassThrough { usage, produced: ColumnUsage::empty() }
+            let usage = DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage);
+            TransformColumns::PassThrough {
+                usage,
+                produced: ColumnUsage::empty(),
+            }
         } else {
             TransformColumns::Unknown
         }

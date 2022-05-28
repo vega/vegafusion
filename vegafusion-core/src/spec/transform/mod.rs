@@ -23,6 +23,7 @@ pub mod window;
 use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransformSpec};
 
 use crate::error::Result;
+use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
 use crate::spec::transform::aggregate::AggregateTransformSpec;
 use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
@@ -34,12 +35,11 @@ use crate::spec::transform::sequence::SequenceTransformSpec;
 use crate::spec::transform::timeunit::TimeUnitTransformSpec;
 use crate::spec::transform::unsupported::*;
 use crate::spec::transform::window::WindowTransformSpec;
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
-use crate::task_graph::graph::ScopedVariable;
-use crate::task_graph::scope::TaskScope;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -183,17 +183,23 @@ pub trait TransformSpecTrait {
         _task_scope: &TaskScope,
         _vl_selection_fields: &VlSelectionFields,
     ) -> TransformColumns {
-        return TransformColumns::Unknown
+        return TransformColumns::Unknown;
     }
 }
 
 pub enum TransformColumns {
     /// Transforms that pass through existing columns and produce zero or more new columns
-    PassThrough {usage: DatasetsColumnUsage, produced: ColumnUsage},
+    PassThrough {
+        usage: DatasetsColumnUsage,
+        produced: ColumnUsage,
+    },
 
     /// Transforms that overwrite all input columns, leaving only those produced by the transform
-    Overwrite {usage: DatasetsColumnUsage, produced: ColumnUsage},
+    Overwrite {
+        usage: DatasetsColumnUsage,
+        produced: ColumnUsage,
+    },
 
     /// Transforms with unknown usage and/or production of columns
-    Unknown
+    Unknown,
 }

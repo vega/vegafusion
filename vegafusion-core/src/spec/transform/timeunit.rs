@@ -6,13 +6,13 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
-use crate::task_graph::graph::ScopedVariable;
-use crate::task_graph::scope::TaskScope;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TimeUnitTransformSpec {
@@ -91,22 +91,28 @@ impl TransformSpecTrait for TimeUnitTransformSpec {
     ) -> TransformColumns {
         if let Some(datum_var) = datum_var {
             // Compute produced columns
-            let bin_start = self.as_.and_then(|as_| as_.get(0).cloned()).unwrap_or_else(|| "unit0".to_string());
+            let bin_start = self
+                .as_
+                .clone()
+                .and_then(|as_| as_.get(0).cloned())
+                .unwrap_or_else(|| "unit0".to_string());
             let mut produced_cols = vec![bin_start];
 
             if self.interval.unwrap_or(true) {
-                let bin_end = self.as_.and_then(|as_| as_.get(1).cloned()).unwrap_or_else(|| "unit1".to_string());
+                let bin_end = self
+                    .as_
+                    .clone()
+                    .and_then(|as_| as_.get(1).cloned())
+                    .unwrap_or_else(|| "unit1".to_string());
                 produced_cols.push(bin_end)
             }
 
             let produced = ColumnUsage::from(produced_cols.as_slice());
 
             // Compute used columns
-            let field = self.field.field();
+            let field = self.field.clone();
             let col_usage = ColumnUsage::empty().with_column(&field);
-            let usage = DatasetsColumnUsage::empty().with_column_usage(
-                datum_var, col_usage
-            );
+            let usage = DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage);
 
             TransformColumns::PassThrough { usage, produced }
         } else {
