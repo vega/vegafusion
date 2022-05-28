@@ -37,9 +37,9 @@ jobs:
     strategy:
       matrix:
         os:
-         - ubuntu-20.04
+#         - ubuntu-20.04
          - windows-2022
-         - macos-10.15
+#         - macos-10.15
 
     steps:
       - name: Check out repository code
@@ -70,6 +70,7 @@ jobs:
         uses: actions-rs/cargo@v1
         env:
           CARGO_HOME: C:\cargo_home\
+          CARGO_TARGET_DIR: C:\cargo_target_dir\
         with:
           command: test
           args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
