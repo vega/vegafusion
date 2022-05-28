@@ -11,10 +11,10 @@
       "name": "source_0",
       "values": [
         {"date": "Sun, 01 Jan 2012 23:00:00", "price": 150},
-        {"date": "Sun, 02 Jan 2012 00:00:00", "price": 100},
-        {"date": "Sun, 02 Jan 2012 01:00:00", "price": 170},
-        {"date": "Sun, 02 Jan 2012 02:00:00", "price": 165},
-        {"date": "Sun, 02 Jan 2012 03:00:00", "price": 200}
+        {"date": "Mon, 02 Jan 2012 00:00:00", "price": 100},
+        {"date": "Mon, 02 Jan 2012 01:00:00", "price": 170},
+        {"date": "Mon, 02 Jan 2012 02:00:00", "price": 165},
+        {"date": "Mon, 02 Jan 2012 03:00:00", "price": 200}
       ]
     },
     {

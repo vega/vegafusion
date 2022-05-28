@@ -13,6 +13,7 @@ use crate::spec::data::DataSpec;
 use crate::spec::mark::MarkSpec;
 use crate::spec::scale::ScaleSpec;
 use crate::spec::signal::SignalSpec;
+use crate::spec::title::TitleSpec;
 use crate::spec::visitors::{
     DefinitionVarsChartVisitor, InputVarsChartVisitor, MakeTaskScopeVisitor, MakeTasksVisitor,
     UpdateVarsChartVisitor,
@@ -41,6 +42,9 @@ pub struct ChartSpec {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scales: Vec<ScaleSpec>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<TitleSpec>,
+
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
@@ -51,6 +55,9 @@ pub fn default_schema() -> String {
 
 impl ChartSpec {
     pub fn walk(&self, visitor: &mut dyn ChartVisitor) -> Result<()> {
+        // Visit top-level chart
+        visitor.visit_chart(self)?;
+
         // Top-level with empty scope
         let scope: Vec<u32> = Vec::new();
         for data in &self.data {
@@ -84,6 +91,9 @@ impl ChartSpec {
     }
 
     pub fn walk_mut(&mut self, visitor: &mut dyn MutChartVisitor) -> Result<()> {
+        // Visit top-level chart
+        visitor.visit_chart(self)?;
+
         // Top-level with empty scope
         let scope: Vec<u32> = Vec::new();
         for data in &mut self.data {
@@ -290,6 +300,9 @@ impl ChartSpec {
 }
 
 pub trait ChartVisitor {
+    fn visit_chart(&mut self, _chart: &ChartSpec) -> Result<()> {
+        Ok(())
+    }
     fn visit_data(&mut self, _data: &DataSpec, _scope: &[u32]) -> Result<()> {
         Ok(())
     }
@@ -308,6 +321,9 @@ pub trait ChartVisitor {
 }
 
 pub trait MutChartVisitor {
+    fn visit_chart(&mut self, _chart: &mut ChartSpec) -> Result<()> {
+        Ok(())
+    }
     fn visit_data(&mut self, _data: &mut DataSpec, _scope: &[u32]) -> Result<()> {
         Ok(())
     }

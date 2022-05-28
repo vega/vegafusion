@@ -18,13 +18,15 @@ use crate::task_graph::scope::TaskScope;
 
 use crate::task_graph::graph::ScopedVariable;
 
+use crate::planning::plan::PlannerConfig;
 use std::collections::{HashMap, HashSet};
 
 pub fn extract_server_data(
     client_spec: &mut ChartSpec,
     task_scope: &mut TaskScope,
+    config: &PlannerConfig,
 ) -> Result<ChartSpec> {
-    let supported_vars = get_supported_data_variables(client_spec)?;
+    let supported_vars = get_supported_data_variables(client_spec, config)?;
 
     let mut extract_server_visitor =
         ExtractServerDependenciesVisitor::new(supported_vars, task_scope);
@@ -205,6 +207,7 @@ impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
             marks: vec![],
             scales: vec![],
             transform: vec![],
+            title: None,
             extra: Default::default(),
         };
         if parent_scope.is_empty() {

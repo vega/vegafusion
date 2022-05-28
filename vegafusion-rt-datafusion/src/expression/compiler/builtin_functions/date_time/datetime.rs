@@ -20,8 +20,49 @@ use datafusion::scalar::ScalarValue;
 use datafusion_expr::{
     ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature, Volatility,
 };
+use std::str::FromStr;
 use std::sync::Arc;
-use vegafusion_core::error::{Result, ResultWithContext};
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+
+pub fn to_date_transform(
+    local_tz: chrono_tz::Tz,
+    args: &[Expr],
+    schema: &DFSchema,
+) -> Result<Expr> {
+    // Datetime from string or integer in milliseconds
+    let mut arg = args[0].clone();
+    let dtype = arg
+        .get_type(schema)
+        .with_context(|| format!("Failed to infer type of expression: {:?}", arg))?;
+
+    if is_string_datatype(&dtype) {
+        let local_tz = if args.len() == 2 {
+            // Second argument is a an override local timezone string
+            let local_tz_expr = &args[1];
+            if let Expr::Literal(ScalarValue::Utf8(Some(local_tz_str))) = local_tz_expr {
+                chrono_tz::Tz::from_str(local_tz_str)
+                    .ok()
+                    .with_context(|| format!("Failed to parse {} as a timezone", local_tz_str))?
+            } else {
+                return Err(VegaFusionError::parse(
+                    "Second argument to toDate must be a timezone string",
+                ));
+            }
+        } else {
+            local_tz
+        };
+
+        arg = Expr::ScalarUDF {
+            fun: Arc::new(make_date_str_to_millis_udf(
+                DateParseMode::JavaScript,
+                &Some(local_tz),
+            )),
+            args: vec![arg],
+        }
+    }
+
+    cast_to(arg, &DataType::Int64, schema)
+}
 
 pub fn datetime_transform(
     local_tz: chrono_tz::Tz,

@@ -11,6 +11,7 @@ use crate::spec::chart::{ChartVisitor, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::scale::ScaleSpec;
 use crate::spec::signal::SignalSpec;
+use crate::spec::title::TitleSpec;
 use crate::spec::values::StringOrStringList;
 use serde::{Deserialize, Serialize};
 use serde_json::{Number, Value};
@@ -47,6 +48,9 @@ pub struct MarkSpec {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transform: Vec<Value>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<TitleSpec>,
 
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,

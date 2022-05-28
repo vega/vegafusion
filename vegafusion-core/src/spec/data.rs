@@ -6,6 +6,7 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+
 use crate::spec::transform::TransformSpec;
 use crate::spec::values::StringOrSignalSpec;
 use itertools::sorted;
@@ -50,7 +51,7 @@ impl DataSpec {
         sorted(signals).into_iter().collect()
     }
 
-    pub fn supported(&self) -> DependencyNodeSupported {
+    pub fn supported(&self, extract_inline_data: bool) -> DependencyNodeSupported {
         if let Some(Some(format_type)) = self.format.as_ref().map(|fmt| fmt.type_.clone()) {
             if !matches!(format_type.as_str(), "csv" | "tsv" | "arrow" | "json") {
                 // We don't know how to read the data, so full node is unsupported
@@ -59,8 +60,19 @@ impl DataSpec {
         }
 
         // Inline values array not supported (they should be kept on the server)
-        if self.values.is_some() {
-            return DependencyNodeSupported::Unsupported;
+        if let Some(values) = &self.values {
+            if !extract_inline_data {
+                return DependencyNodeSupported::Unsupported;
+            }
+            if let Value::Array(values) = values {
+                if values.is_empty() {
+                    // Empty data not supported
+                    return DependencyNodeSupported::Unsupported;
+                }
+            } else {
+                // Non-array data not
+                return DependencyNodeSupported::Unsupported;
+            }
         }
 
         let all_supported = self.transform.iter().all(|tx| tx.supported());

@@ -282,6 +282,7 @@ mod test_datetime {
         case("datetime('2020/05/16 09:30')"),
         case("datetime('05/16/2020 09:30')"),
         case("datetime('May 16 2020 09:30')"),
+        case("datetime('July 15, 2010')"),
         case("datetime('2020 May 16  09:30')"),
         case("datetime('2020-01-01 00:00')"),
         case("datetime('2020-01-01')"),
