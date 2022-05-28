@@ -3,7 +3,7 @@ use crate::expression::column_usage::{
     ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
 };
 use crate::expression::parser::parse;
-use crate::proto::gen::tasks::Variable;
+use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::mark::{MarkEncodeSpec, MarkEncodingField, MarkEncodingSpec, MarkSpec};
@@ -14,6 +14,8 @@ use crate::spec::transform::{TransformColumns, TransformSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use itertools::sorted;
+use petgraph::algo::toposort;
+use crate::planning::dependency_graph::build_dependency_graph;
 
 /// This planning phase attempts to identify the precise subset of columns that are required
 /// of each dataset. If this can be determined for a particular dataset, then a projection
@@ -196,14 +198,7 @@ impl GetDatasetsColumnUsage for MarkSpec {
                 ))
             }
 
-            for data in &self.data {
-                usage = usage.union(&data.datasets_column_usage(
-                    &None,
-                    usage_scope,
-                    task_scope,
-                    vl_selection_fields,
-                ))
-            }
+            // Data is handled at chart-level
 
             // Handle group from->facet->name. In this case, a new dataset is named for the
             // subsets of the input dataset. For now, this means we don't know what columns
@@ -460,6 +455,9 @@ impl GetDatasetsColumnUsage for DataSpec {
                 // Maintain collection of the columns that have been produced so far
                 let mut all_produced = ColumnUsage::empty();
 
+                // Track whether all transforms in the pipeline are pass through.
+                let mut all_passthrough = true;
+
                 // iterate through transforms
                 for tx in &self.transform {
                     let tx_cols = tx.transform_columns(
@@ -488,13 +486,26 @@ impl GetDatasetsColumnUsage for DataSpec {
 
                             // Downstream transforms no longer have access to source data columns,
                             // so we're done
+                            all_passthrough = false;
                             break
                         }
                         TransformColumns::Unknown => {
                             // All bets are off
                             usage = usage.with_unknown_usage(&scoped_source_var);
+                            all_passthrough = false;
                             break
                         }
+                    }
+                }
+
+                // If all transforms were passthrough, then we may need to propagate the
+                // column usages of this dataset to it's source
+                if all_passthrough {
+                    let self_var = Variable::new_data(&self.name);
+                    let self_scoped_var: ScopedVariable = (self_var, Vec::from(usage_scope));
+                    if let Some(self_usage) = usage.usages.get(&self_scoped_var) {
+                        let self_usage_not_produced = self_usage.difference(&all_produced);
+                        usage = usage.with_column_usage(&scoped_source_var, self_usage_not_produced);
                     }
                 }
             }
@@ -541,15 +552,6 @@ impl GetDatasetsColumnUsage for ChartSpec {
             ))
         }
 
-        for data in &self.data {
-            usage = usage.union(&data.datasets_column_usage(
-                &None,
-                &[],
-                task_scope,
-                vl_selection_fields,
-            ))
-        }
-
         let mut child_group_idx = 0;
         for mark in &self.marks {
             if mark.type_ == "group" {
@@ -568,6 +570,27 @@ impl GetDatasetsColumnUsage for ChartSpec {
                     task_scope,
                     vl_selection_fields,
                 ))
+            }
+        }
+
+        // Handle data
+        // Here we need to be careful to traverse datasets in rever topological order.
+        if let Ok(dep_graph) = build_dependency_graph(self) {
+            if let Ok(node_indexes) = toposort(&dep_graph, None) {
+                // Iterate over dependencies in reverse topological order
+                for node_idx in node_indexes.iter().rev() {
+                    let (scoped_dep_var, _) = dep_graph.node_weight(*node_idx).expect("Expected node in graph");
+                    if matches!(scoped_dep_var.0.ns(), VariableNamespace::Data) {
+                        if let Ok(data) = self.get_nested_data(scoped_dep_var.1.as_slice(), &scoped_dep_var.0.name) {
+                            usage = usage.union(&data.datasets_column_usage(
+                                &None,
+                                &[],
+                                task_scope,
+                                vl_selection_fields,
+                            ))
+                        }
+                    }
+                }
             }
         }
 
