@@ -6,11 +6,14 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use crate::spec::transform::TransformSpecTrait;
+use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::spec::values::Field;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use crate::expression::column_usage::{ColumnUsage, VlSelectionFields};
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AggregateTransformSpec {
@@ -113,5 +116,62 @@ impl TransformSpecTrait for AggregateTransformSpec {
             return false;
         }
         true
+    }
+
+    fn transform_columns(
+        &self,
+        datum_var: &Option<ScopedVariable>,
+        _usage_scope: &[u32],
+        _task_scope: &TaskScope,
+        _vl_selection_fields: &VlSelectionFields,
+    ) -> TransformColumns {
+        if let Some(datum_var) = datum_var {
+            // Compute produced columns
+            // Only handle the case where "as" contains a list of strings with length matching ops
+            let ops = self.ops.clone().unwrap_or_else(|| vec![AggregateOpSpec::Count]);
+            let as_: Vec<_> = self.as_.unwrap_or_default().iter().cloned().collect::<Option<Vec<_>>>().unwrap_or_default();
+            let produced = if ops.len() == as_.len() {
+                ColumnUsage::from(as_.as_slice())
+            } else {
+                ColumnUsage::Unknown
+            };
+
+            // Compute usaged columns
+            // self.fi
+            //
+            // if let Some(as_) = &self.as_ {
+            //
+            // }
+            //
+            // ops.iter().enumerate().map(|(index, op)| {
+            //     let new_col = self.as_
+            //         .and_then(|as_| as_.get(index).cloned().flatten())
+            //         .unwrap_or_else(|| {
+            //             let field = self.
+            //         })
+            // })
+            //
+            // let bin_start = self.as_.and_then(|as_| as_.get(0).cloned()).unwrap_or_else(|| "unit0".to_string());
+            // let mut produced_cols = vec![bin_start];
+            //
+            // if self.interval.unwrap_or(true) {
+            //     let bin_end = self.as_.and_then(|as_| as_.get(1).cloned()).unwrap_or_else(|| "unit1".to_string());
+            //     produced_cols.push(bin_end)
+            // }
+            //
+            // let produced = ColumnUsage::from(produced_cols.as_slice());
+            //
+            // // Compute used columns
+            // let field = self.field.field();
+            // let col_usage = ColumnUsage::empty().with_column(&field);
+            // let usage = DatasetsColumnUsage::empty().with_column_usage(
+            //     datum_var, col_usage
+            // );
+            //
+            // TransformColumns::PassThrough { usage, produced }
+            todo!()
+        } else {
+            TransformColumns::Unknown
+        }
     }
 }
