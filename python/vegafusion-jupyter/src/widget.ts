@@ -103,7 +103,7 @@ export class VegaFusionView extends DOMWidgetView {
       } else {
         // Assume we have a Vega-Lite spec, compile to vega
         let vega_spec = this.vegalite_compile(parsed);
-        vega_spec_json = JSON.stringify(vega_spec.spec);
+        vega_spec_json = JSON.stringify(vega_spec.spec, null, 2);
       }
 
       let config = {
