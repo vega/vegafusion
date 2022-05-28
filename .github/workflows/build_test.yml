@@ -76,8 +76,6 @@ jobs:
       - name: Run Rust Tests (MacOs/Linux)
         if: ${{ runner.os != 'Windows' }}
         uses: actions-rs/cargo@v1
-        env:
-          CARGO_HOME: C:\cargo_home\
         with:
           command: test
           args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
