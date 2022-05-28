@@ -31,45 +31,56 @@ jobs:
 #        run: cargo check --tests
 #      - name: Check for clippy warnings
 #        run: cargo clippy
-#
-#  test-rust:
-#    runs-on: ${{ matrix.os }}
-#    strategy:
-#      matrix:
-#        os:
-#         - ubuntu-20.04
-#         - windows-2022
-#         - macos-10.15
-#
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@v2
-#      - name: Install apt system dependencies needed to build nodecanvas
-#        run: |
-#          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
-#        if: ${{ runner.os == 'Linux' }}
-#      - name: Install protoc on Window
-#        run: |
-#          choco install --yes protoc
-#        if: ${{ runner.os == 'Windows' }}
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Install node
-#        uses: actions/setup-node@v2
-#        with:
-#          node-version: '17'
-#      - name: Install test node dependencies
-#        working-directory: vegafusion-rt-datafusion/tests/util/vegajs_runtime
-#        run: |
-#          npm install
-#      - name: Run Rust Tests
-#        uses: actions-rs/cargo@v1
-#        with:
-#          command: test
-#          args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
+
+  test-rust:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+         - ubuntu-20.04
+         - windows-2022
+         - macos-10.15
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install apt system dependencies needed to build nodecanvas
+        run: |
+          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
+        if: ${{ runner.os == 'Linux' }}
+      - name: Install protoc on Window
+        run: |
+          choco install --yes protoc
+        if: ${{ runner.os == 'Windows' }}
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Install node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '17'
+      - name: Install test node dependencies
+        working-directory: vegafusion-rt-datafusion/tests/util/vegajs_runtime
+        run: |
+          npm install
+      - name: Run Rust Tests (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        uses: actions-rs/cargo@v1
+        env:
+          CARGO_HOME: C:\cargo_home\
+        with:
+          command: test
+          args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
+      - name: Run Rust Tests (MacOs/Linux)
+        if: ${{ runner.os != 'Windows' }}
+        uses: actions-rs/cargo@v1
+        env:
+          CARGO_HOME: C:\cargo_home\
+        with:
+          command: test
+          args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
 
 #  build-vegafusion-server:
 #    strategy:
