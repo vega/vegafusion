@@ -648,7 +648,9 @@ impl<'a> MutChartVisitor for InsertProjectionVisitor<'a> {
             if !columns.is_empty() {
                 // We know exactly which columns are required of this dataset (and it's not none),
                 // so we can append a projection transform to limit the columns that are produced
-                let proj_fields: Vec<_> = sorted(columns).cloned().collect();
+                // Note: empty strings here seem to break vega, filter them out
+                let proj_fields: Vec<_> =
+                    sorted(columns).cloned().filter(|f| !f.is_empty()).collect();
                 let proj_transform = TransformSpec::Project(ProjectTransformSpec {
                     fields: proj_fields,
                     extra: Default::default(),
