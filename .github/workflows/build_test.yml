@@ -56,10 +56,6 @@ jobs:
         working-directory: vegafusion-rt-datafusion/tests/util/vegajs_runtime
         run: |
           npm install
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
-        with:
-          cache-on-failure: True
       - name: Run Rust Tests
         uses: actions-rs/cargo@v1
         with:
