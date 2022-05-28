@@ -9,8 +9,7 @@ use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::mark::{MarkEncodeSpec, MarkEncodingField, MarkEncodingSpec, MarkSpec};
 use crate::spec::scale::{
-    ScaleDataReferenceSort, ScaleDataReferenceSortParameters, ScaleDataReferenceSpec,
-    ScaleDomainSpec, ScaleRangeSpec, ScaleSpec,
+    ScaleDataReferenceSort, ScaleDataReferenceSpec, ScaleDomainSpec, ScaleRangeSpec, ScaleSpec,
 };
 use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
 use crate::spec::transform::project::ProjectTransformSpec;
