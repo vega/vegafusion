@@ -22,6 +22,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
+use vegafusion_core::planning::stringify_local_datetimes::OutputLocalDatetimesConfig;
 use vegafusion_core::planning::watch::{ExportUpdate, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
@@ -196,15 +197,23 @@ impl TaskGraphRuntime {
         // Parse spec
         let spec_string = request.spec;
         let local_tz = request.local_tz;
+        let output_tz = request.output_tz;
 
-        self.pre_transform_spec(&spec_string, &local_tz, row_limit, inline_datasets)
-            .await
+        self.pre_transform_spec(
+            &spec_string,
+            &local_tz,
+            &output_tz,
+            row_limit,
+            inline_datasets,
+        )
+        .await
     }
 
     pub async fn pre_transform_spec(
         &self,
         spec: &str,
         local_tz: &str,
+        output_tz: &Option<String>,
         row_limit: Option<u32>,
         inline_datasets: HashMap<String, VegaFusionTable>,
     ) -> Result<PreTransformResult> {
@@ -212,10 +221,16 @@ impl TaskGraphRuntime {
             serde_json::from_str(spec).with_context(|| "Failed to parse spec".to_string())?;
 
         // Create spec plan
+        let local_datetimes_config = match output_tz {
+            None => OutputLocalDatetimesConfig::LocalNaiveString,
+            Some(output_tz) => OutputLocalDatetimesConfig::TimezoneNaiveString(output_tz.clone()),
+        };
+
         let plan = SpecPlan::try_new(
             &spec,
             &PlannerConfig {
-                stringify_local_datetimes: true,
+                local_datetimes_config,
+                extract_inline_data: true,
                 ..Default::default()
             },
         )?;

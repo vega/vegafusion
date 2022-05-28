@@ -16,7 +16,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_parts::{
     UTCQUARTER_UDF, UTCSECONDS_UDF, UTCYEAR_UDF, YEAR_TRANSFORM,
 };
 use crate::expression::compiler::builtin_functions::date_time::datetime::{
-    datetime_transform, UTC_COMPONENTS,
+    datetime_transform, to_date_transform, UTC_COMPONENTS,
 };
 use crate::expression::compiler::builtin_functions::math::isfinite::make_is_finite_udf;
 use crate::expression::compiler::builtin_functions::math::isnan::make_is_nan_udf;
@@ -419,7 +419,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     );
     callables.insert(
         "toDate".to_string(),
-        VegaFusionCallable::LocalTransform(Arc::new(datetime_transform)),
+        VegaFusionCallable::LocalTransform(Arc::new(to_date_transform)),
     );
     callables.insert(
         "toNumber".to_string(),

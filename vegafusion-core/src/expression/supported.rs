@@ -15,7 +15,7 @@ lazy_static! {
             .collect();
 
     pub static ref IMPLICIT_VARS: HashSet<&'static str> =
-        vec!["datum", "event"]
+        vec!["datum", "event", "parent"]
             .into_iter()
             .collect();
 
