@@ -37,6 +37,7 @@ use crate::spec::transform::window::WindowTransformSpec;
 use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
+use crate::expression::column_usage::{ColumnUsage};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -108,6 +109,7 @@ impl Deref for TransformSpec {
             TransformSpec::Aggregate(t) => t,
             TransformSpec::Collect(t) => t,
             TransformSpec::Timeunit(t) => t,
+            TransformSpec::Project(t) => t,
 
             // Supported for dependency determination, not implementation
             TransformSpec::Lookup(t) => t,
@@ -143,7 +145,6 @@ impl Deref for TransformSpec {
             TransformSpec::Partition(t) => t,
             TransformSpec::Pie(t) => t,
             TransformSpec::Pivot(t) => t,
-            TransformSpec::Project(t) => t,
             TransformSpec::Quantile(t) => t,
             TransformSpec::Regression(t) => t,
             TransformSpec::ResolveFilter(t) => t,
@@ -172,4 +173,15 @@ pub trait TransformSpecTrait {
     fn input_vars(&self) -> Result<Vec<InputVariable>> {
         Ok(Default::default())
     }
+}
+
+pub enum TransformColumnUsage {
+    /// Transforms that pass through existing columns and produce zero or more new columns
+    PassThrough {usage: ColumnUsage, produced: Vec<String>},
+
+    /// Transforms that overwrite all input columns, leaving only those produced by the transform
+    Overwrite {usage: ColumnUsage, produced: Vec<String>},
+
+    /// Transforms with unknown usage and/or production of columns
+    Unknown
 }
