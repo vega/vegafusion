@@ -11,7 +11,7 @@ use crate::spec::values::Field;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::expression::column_usage::{ColumnUsage, VlSelectionFields};
+use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 
@@ -136,40 +136,18 @@ impl TransformSpecTrait for AggregateTransformSpec {
                 ColumnUsage::Unknown
             };
 
-            // Compute usaged columns
-            // self.fi
-            //
-            // if let Some(as_) = &self.as_ {
-            //
-            // }
-            //
-            // ops.iter().enumerate().map(|(index, op)| {
-            //     let new_col = self.as_
-            //         .and_then(|as_| as_.get(index).cloned().flatten())
-            //         .unwrap_or_else(|| {
-            //             let field = self.
-            //         })
-            // })
-            //
-            // let bin_start = self.as_.and_then(|as_| as_.get(0).cloned()).unwrap_or_else(|| "unit0".to_string());
-            // let mut produced_cols = vec![bin_start];
-            //
-            // if self.interval.unwrap_or(true) {
-            //     let bin_end = self.as_.and_then(|as_| as_.get(1).cloned()).unwrap_or_else(|| "unit1".to_string());
-            //     produced_cols.push(bin_end)
-            // }
-            //
-            // let produced = ColumnUsage::from(produced_cols.as_slice());
-            //
-            // // Compute used columns
-            // let field = self.field.field();
-            // let col_usage = ColumnUsage::empty().with_column(&field);
-            // let usage = DatasetsColumnUsage::empty().with_column_usage(
-            //     datum_var, col_usage
-            // );
-            //
-            // TransformColumns::PassThrough { usage, produced }
-            todo!()
+            // Compute used columns (both groupby and fields)
+            let mut usage_cols: Vec<_> = self.groupby.iter().map(|field| field.field()).collect();
+            for field in self.fields.unwrap_or_default() {
+                if let Some(field) = field {
+                    usage_cols.push(field.field())
+                }
+            }
+            let col_usage= ColumnUsage::from(usage_cols.as_slice());
+            let usage = DatasetsColumnUsage::empty().with_column_usage(
+                datum_var, col_usage
+            );
+            TransformColumns::PassThrough { usage, produced }
         } else {
             TransformColumns::Unknown
         }

@@ -7,11 +7,14 @@
  * this program the details of the active license.
  */
 use crate::spec::transform::aggregate::AggregateOpSpec;
-use crate::spec::transform::TransformSpecTrait;
+use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::spec::values::Field;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct JoinAggregateTransformSpec {
@@ -55,5 +58,40 @@ impl TransformSpecTrait for JoinAggregateTransformSpec {
         }
 
         true
+    }
+
+    fn transform_columns(
+        &self,
+        datum_var: &Option<ScopedVariable>,
+        _usage_scope: &[u32],
+        _task_scope: &TaskScope,
+        _vl_selection_fields: &VlSelectionFields,
+    ) -> TransformColumns {
+        if let Some(datum_var) = datum_var {
+            // Compute produced columns
+            // Only handle the case where "as" contains a list of strings with length matching ops
+            let ops = self.ops.clone().unwrap_or_else(|| vec![AggregateOpSpec::Count]);
+            let as_: Vec<_> = self.as_.unwrap_or_default().iter().cloned().collect::<Option<Vec<_>>>().unwrap_or_default();
+            let produced = if ops.len() == as_.len() {
+                ColumnUsage::from(as_.as_slice())
+            } else {
+                ColumnUsage::Unknown
+            };
+
+            // Compute used columns (both groupby and fields)
+            let mut usage_cols: Vec<_> = self.groupby.iter().map(|field| field.field()).collect();
+            for field in self.fields.unwrap_or_default() {
+                if let Some(field) = field {
+                    usage_cols.push(field.field())
+                }
+            }
+            let col_usage= ColumnUsage::from(usage_cols.as_slice());
+            let usage = DatasetsColumnUsage::empty().with_column_usage(
+                datum_var, col_usage
+            );
+            TransformColumns::PassThrough { usage, produced }
+        } else {
+            TransformColumns::Unknown
+        }
     }
 }
