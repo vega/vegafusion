@@ -3,11 +3,15 @@ use crate::expression::column_usage::{
     ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
 };
 use crate::expression::parser::parse;
+use crate::planning::dependency_graph::build_dependency_graph;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::mark::{MarkEncodeSpec, MarkEncodingField, MarkEncodingSpec, MarkSpec};
-use crate::spec::scale::{ScaleDataReferenceSpec, ScaleDomainSpec, ScaleRangeSpec, ScaleSpec};
+use crate::spec::scale::{
+    ScaleDataReferenceSort, ScaleDataReferenceSortParameters, ScaleDataReferenceSpec,
+    ScaleDomainSpec, ScaleRangeSpec, ScaleSpec,
+};
 use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
 use crate::spec::transform::project::ProjectTransformSpec;
 use crate::spec::transform::{TransformColumns, TransformSpec};
@@ -15,7 +19,6 @@ use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use itertools::sorted;
 use petgraph::algo::toposort;
-use crate::planning::dependency_graph::build_dependency_graph;
 
 /// This planning phase attempts to identify the precise subset of columns that are required
 /// of each dataset. If this can be determined for a particular dataset, then a projection
@@ -303,8 +306,20 @@ impl GetDatasetsColumnUsage for ScaleDataReferenceSpec {
         let data_var = Variable::new_data(&self.data);
         if let Ok(resolved) = task_scope.resolve_scope(&data_var, usage_scope) {
             let scoped_datum_var: ScopedVariable = (resolved.var, resolved.scope);
+
+            // Handle field
             usage =
-                usage.with_column_usage(&scoped_datum_var, ColumnUsage::from(self.field.as_str()))
+                usage.with_column_usage(&scoped_datum_var, ColumnUsage::from(self.field.as_str()));
+
+            // Handle sort field
+            if let Some(ScaleDataReferenceSort::Parameters(sort_params)) = &self.sort {
+                if let Some(sort_field) = &sort_params.field {
+                    usage = usage.with_column_usage(
+                        &scoped_datum_var,
+                        ColumnUsage::from(sort_field.as_str()),
+                    );
+                }
+            }
         }
 
         usage
@@ -437,7 +452,6 @@ impl GetDatasetsColumnUsage for SignalSpec {
     }
 }
 
-
 impl GetDatasetsColumnUsage for ChartSpec {
     fn datasets_column_usage(
         &self,
@@ -491,9 +505,13 @@ impl GetDatasetsColumnUsage for ChartSpec {
             if let Ok(node_indexes) = toposort(&dep_graph, None) {
                 // Iterate over dependencies in reverse topological order
                 for node_idx in node_indexes.iter().rev() {
-                    let (scoped_dep_var, _) = dep_graph.node_weight(*node_idx).expect("Expected node in graph");
+                    let (scoped_dep_var, _) = dep_graph
+                        .node_weight(*node_idx)
+                        .expect("Expected node in graph");
                     if matches!(scoped_dep_var.0.ns(), VariableNamespace::Data) {
-                        if let Ok(data) = self.get_nested_data(scoped_dep_var.1.as_slice(), &scoped_dep_var.0.name) {
+                        if let Ok(data) = self
+                            .get_nested_data(scoped_dep_var.1.as_slice(), &scoped_dep_var.0.name)
+                        {
                             usage = usage.union(&datasets_column_usage_for_data(
                                 data,
                                 &usage,
@@ -536,18 +554,16 @@ fn datasets_column_usage_for_data(
 
             // iterate through transforms
             for tx in &data.transform {
-                let tx_cols = tx.transform_columns(
-                    &datum_var,
-                    usage_scope,
-                    task_scope,
-                    vl_selection_fields,
-                );
+                let tx_cols =
+                    tx.transform_columns(&datum_var, usage_scope, task_scope, vl_selection_fields);
                 match tx_cols {
-                    TransformColumns::PassThrough { usage: tx_usage, produced: tx_produced } => {
+                    TransformColumns::PassThrough {
+                        usage: tx_usage,
+                        produced: tx_produced,
+                    } => {
                         // Remove previously created columns from tx_usage
-                        let tx_usage = tx_usage.without_column_usage(
-                            &scoped_source_var, &all_produced
-                        );
+                        let tx_usage =
+                            tx_usage.without_column_usage(&scoped_source_var, &all_produced);
 
                         // Add used columns
                         usage = usage.union(&tx_usage);
@@ -555,11 +571,12 @@ fn datasets_column_usage_for_data(
                         // Update produced columns
                         all_produced = all_produced.union(&tx_produced);
                     }
-                    TransformColumns::Overwrite { usage: tx_usage, .. } => {
+                    TransformColumns::Overwrite {
+                        usage: tx_usage, ..
+                    } => {
                         // Remove previously created columns from tx_usage
-                        let tx_usage = tx_usage.without_column_usage(
-                            &scoped_source_var, &all_produced
-                        );
+                        let tx_usage =
+                            tx_usage.without_column_usage(&scoped_source_var, &all_produced);
 
                         // Add used columns
                         usage = usage.union(&tx_usage);
@@ -567,13 +584,13 @@ fn datasets_column_usage_for_data(
                         // Downstream transforms no longer have access to source data columns,
                         // so we're done
                         all_passthrough = false;
-                        break
+                        break;
                     }
                     TransformColumns::Unknown => {
                         // All bets are off
                         usage = usage.with_unknown_usage(&scoped_source_var);
                         all_passthrough = false;
-                        break
+                        break;
                     }
                 }
             }
@@ -814,5 +831,4 @@ mod tests {
 
         assert_eq!(usage, expected);
     }
-
 }
