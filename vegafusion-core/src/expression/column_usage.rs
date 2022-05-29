@@ -10,7 +10,7 @@ use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use std::collections::{HashMap, HashSet};
 
-pub type VlSelectionFields = HashMap<ScopedVariable, Vec<String>>;
+pub type VlSelectionFields = HashMap<ScopedVariable, ColumnUsage>;
 
 /// Enum storing info on which dataset columns are used in a given context.
 /// Due to the dynamic nature of Vega specifications, it's not always possible to statically

@@ -1,3 +1,4 @@
+use crate::data::table::VegaFusionTable;
 use crate::error::Result;
 use crate::expression::column_usage::{
     ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
@@ -5,7 +6,7 @@ use crate::expression::column_usage::{
 use crate::expression::parser::parse;
 use crate::planning::dependency_graph::build_dependency_graph;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
-use crate::spec::chart::{ChartSpec, MutChartVisitor};
+use crate::spec::chart::{ChartSpec, ChartVisitor, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::mark::{MarkEncodeSpec, MarkEncodingField, MarkEncodingSpec, MarkSpec};
 use crate::spec::scale::{
@@ -16,6 +17,7 @@ use crate::spec::transform::project::ProjectTransformSpec;
 use crate::spec::transform::{TransformColumns, TransformSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
+use arrow::array::StringArray;
 use itertools::sorted;
 use petgraph::algo::toposort;
 
@@ -28,10 +30,10 @@ pub fn projection_pushdown(chart_spec: &mut ChartSpec) -> Result<()> {
     let usage_scope = Vec::new();
     let task_scope = chart_spec.to_task_scope()?;
 
-    // Note: In the future, we may attempt to identify the fields that are required in the
-    // presence of a call to vlSelectionTest. Since we don't do this yet, vl_selection_fields is
-    // empty (meaning we don't know which fields are used by vlSelectionTest).
-    let vl_selection_fields = Default::default();
+    // Collect field usage for vlSelectionTest datasets
+    let mut vl_selection_visitor = CollectVlSelectionTestFieldsVisitor::new(task_scope.clone());
+    chart_spec.walk(&mut vl_selection_visitor)?;
+    let vl_selection_fields = vl_selection_visitor.vl_selection_fields;
 
     let datasets_column_usage = chart_spec.datasets_column_usage(
         &datum_var,
@@ -663,6 +665,83 @@ impl<'a> MutChartVisitor for InsertProjectionVisitor<'a> {
     }
 }
 
+/// Visitor to collect the columns used in vl_selection_test datasets.
+/// Note: This is a bit of a hack which relies on implementation details of how Vega-Lite
+/// generates Vega. This may break in the future if Vega-Lite changes how selections are
+/// represented.
+#[derive(Clone)]
+pub struct CollectVlSelectionTestFieldsVisitor {
+    pub vl_selection_fields: VlSelectionFields,
+    pub task_scope: TaskScope,
+}
+
+impl CollectVlSelectionTestFieldsVisitor {
+    pub fn new(task_scope: TaskScope) -> Self {
+        Self {
+            vl_selection_fields: Default::default(),
+            task_scope,
+        }
+    }
+}
+
+impl ChartVisitor for CollectVlSelectionTestFieldsVisitor {
+    fn visit_signal(&mut self, signal: &SignalSpec, scope: &[u32]) -> Result<()> {
+        // Look for signal named {name}_tuple_fields with structure like
+        //
+        // {
+        //   "name": "brush_tuple_fields",
+        //   "value": [
+        //     {"field": "Miles_per_Gallon", "channel": "x", "type": "R"},
+        //     {"field": "Horsepower", "channel": "y", "type": "R"}
+        //   ]
+        // }
+        //
+        // With a corresponding dataset named "{name}_store". If we fine this pair, then use the
+        // "field" entries in {name}_tuple_fields as column usage fields.
+        if signal.name.ends_with("_tuple_fields") {
+            // Build name of potential store
+            let dataset_name = signal.name.trim_end_matches("_tuple_fields").to_string();
+            let mut store_name = dataset_name.clone();
+            store_name.push_str("_store");
+            let store_var = Variable::new_data(&store_name);
+
+            // Try to re
+            if let Ok(resolved) = self.task_scope.resolve_scope(&store_var, scope) {
+                let scoped_brush_var: ScopedVariable = (resolved.var, resolved.scope);
+
+                if let Some(value) = &signal.value {
+                    if let Ok(table) = VegaFusionTable::from_json(value, 16) {
+                        // Check that we have "field", "channel", and "type" columns
+                        let schema = &table.schema;
+                        if schema.field_with_name("channel").is_ok()
+                            && schema.field_with_name("type").is_ok()
+                        {
+                            if let Ok(field_index) = schema.index_of("field") {
+                                if let Ok(batch) = table.to_record_batch() {
+                                    let field_array = batch.column(field_index);
+                                    if let Some(field_array) =
+                                        field_array.as_any().downcast_ref::<StringArray>()
+                                    {
+                                        for col in field_array.iter().flatten() {
+                                            let usage = self
+                                                .vl_selection_fields
+                                                .entry(scoped_brush_var.clone())
+                                                .or_insert_with(|| ColumnUsage::empty());
+
+                                            *usage = usage.with_column(col);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::expression::column_usage::{
@@ -680,7 +759,7 @@ mod tests {
     fn selection_fields() -> VlSelectionFields {
         vec![(
             (Variable::new_data("brush2_store"), Vec::new()),
-            vec!["AA".to_string(), "BB".to_string(), "CC".to_string()],
+            ColumnUsage::from(vec!["AA", "BB", "CC"].as_slice()),
         )]
         .into_iter()
         .collect()
