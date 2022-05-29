@@ -701,7 +701,7 @@ impl ChartVisitor for CollectVlSelectionTestFieldsVisitor {
         if signal.name.ends_with("_tuple_fields") {
             // Build name of potential store
             let dataset_name = signal.name.trim_end_matches("_tuple_fields").to_string();
-            let mut store_name = dataset_name.clone();
+            let mut store_name = dataset_name;
             store_name.push_str("_store");
             let store_var = Variable::new_data(&store_name);
 
@@ -726,7 +726,7 @@ impl ChartVisitor for CollectVlSelectionTestFieldsVisitor {
                                             let usage = self
                                                 .vl_selection_fields
                                                 .entry(scoped_brush_var.clone())
-                                                .or_insert_with(|| ColumnUsage::empty());
+                                                .or_insert_with(ColumnUsage::empty);
 
                                             *usage = usage.with_column(col);
                                         }
