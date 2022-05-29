@@ -223,7 +223,18 @@ pub struct MarkFacetSpec {
 #[serde(untagged)]
 pub enum MarkEncodingField {
     Field(String),
-    Object(Value),
+    Object(MarkEncodingFieldObject),
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MarkEncodingFieldObject {
+    pub signal: Option<String>,
+    pub datum: Option<String>,
+    pub group: Option<String>,
+    pub parent: Option<String>,
+
+    #[serde(flatten)]
+    pub extra: HashMap<String, Value>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
