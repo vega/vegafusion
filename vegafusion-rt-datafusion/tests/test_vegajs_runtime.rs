@@ -134,10 +134,7 @@ fn test_evaluate_filter_transform() {
     assert_eq!(
         result_signals,
         vec![ScalarValue::List(
-            Some(Box::new(vec![
-                ScalarValue::from(6.0),
-                ScalarValue::from(10.0)
-            ])),
+            Some(vec![ScalarValue::from(6.0), ScalarValue::from(10.0)]),
             Box::new(DataType::Float64)
         )]
     );

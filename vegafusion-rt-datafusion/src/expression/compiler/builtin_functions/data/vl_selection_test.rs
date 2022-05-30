@@ -332,7 +332,7 @@ impl TryFrom<ScalarValue> for SelectionRow {
                     .get("values")
                     .with_context(|| "Missing required property 'values'".to_string())?;
                 let values = match struct_values.get(*values_index) {
-                    Some(ScalarValue::List(Some(elements), _)) => elements.as_ref().clone(),
+                    Some(ScalarValue::List(Some(elements), _)) => elements.clone(),
                     _ => {
                         return Err(VegaFusionError::internal(
                             &"Expected 'values' to be an array".to_string(),
@@ -437,7 +437,7 @@ pub fn vl_selection_test_fn(
 
     // Extract vector of rows for selection dataset
     let rows = if let ScalarValue::List(Some(elements), _) = table.to_scalar_value()? {
-        elements.as_ref().clone()
+        elements
     } else {
         unreachable!()
     };

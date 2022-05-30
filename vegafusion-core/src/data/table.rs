@@ -100,10 +100,7 @@ impl VegaFusionTable {
         if self.num_rows() == 0 {
             // Return empty list with (arbitrary) Float64 type
             let dtype = DataType::Float64;
-            return Ok(ScalarValue::List(
-                Some(Box::new(Vec::new())),
-                Box::new(dtype),
-            ));
+            return Ok(ScalarValue::List(Some(Vec::new()), Box::new(dtype)));
         }
 
         let mut elements: Vec<ScalarValue> = Vec::new();
@@ -119,7 +116,7 @@ impl VegaFusionTable {
         }
 
         let dtype = elements[0].get_datatype();
-        Ok(ScalarValue::List(Some(Box::new(elements)), Box::new(dtype)))
+        Ok(ScalarValue::List(Some(elements), Box::new(dtype)))
     }
 
     pub fn to_json(&self) -> serde_json::Value {

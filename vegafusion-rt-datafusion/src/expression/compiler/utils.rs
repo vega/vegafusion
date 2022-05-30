@@ -10,7 +10,6 @@ use datafusion::arrow::array::{ArrayRef, BooleanArray};
 use datafusion::arrow::datatypes::{DataType, Schema};
 use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::logical_plan::{and, Column, DFSchema, Expr, ExprSchemable};
-use datafusion::optimizer::utils::expr_to_columns;
 use datafusion::physical_plan::planner::DefaultPhysicalPlanner;
 use datafusion::physical_plan::{ColumnarValue, PhysicalExpr, PhysicalPlanner};
 use datafusion::scalar::ScalarValue;
@@ -19,6 +18,7 @@ use std::collections::HashSet;
 use std::convert::TryFrom;
 
 use datafusion::execution::context::{default_session_builder, SessionState};
+use datafusion_expr::utils::expr_to_columns;
 use datafusion_expr::BuiltinScalarFunction;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
