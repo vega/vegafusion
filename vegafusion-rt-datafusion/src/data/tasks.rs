@@ -32,8 +32,9 @@ use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
+use vegafusion_core::arrow::datatypes::TimeUnit;
 
-use crate::expression::compiler::builtin_functions::date_time::local_to_utc::make_to_utc_millis_fn;
+use crate::expression::compiler::builtin_functions::date_time::local_to_utc::{make_to_utc_millis_fn, make_utc_ts_to_utc_millis_fn};
 use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
@@ -271,15 +272,21 @@ fn process_datetimes(
                             args: vec![col(&spec.name)],
                         }
                     } else if let DataType::Timestamp(_, tz) = dtype {
-                        let timestamp_millis = Expr::ScalarFunction {
-                            fun: BuiltinScalarFunction::ToTimestampMillis,
-                            args: vec![col(&spec.name)],
-                        };
                         match tz {
                             Some(tz) if tz.to_lowercase() == "utc" => {
-                                cast_to(timestamp_millis, &DataType::Int64, schema)?
+                                let timestamp_millis = cast_to(
+                                    col(&spec.name),
+                                    &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".to_string())),
+                                    schema
+                                )?;
+                                cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
                             }
                             _ => {
+                                let timestamp_millis = cast_to(
+                                    col(&spec.name),
+                                    &DataType::Timestamp(TimeUnit::Millisecond, None),
+                                    schema
+                                )?;
                                 // Treat as local
                                 let tz_config =
                                     tz_config.with_context(|| "No local timezone info provided")?;
@@ -324,16 +331,21 @@ fn process_datetimes(
             {
                 let expr = match field.data_type() {
                     DataType::Timestamp(_, tz) => {
-                        let timestamp_millis = Expr::ScalarFunction {
-                            fun: BuiltinScalarFunction::ToTimestampMillis,
-                            args: vec![col(field.name())],
-                        };
-
                         match tz {
                             Some(tz) if tz.to_lowercase() == "utc" => {
+                                let timestamp_millis = cast_to(
+                                    col(field.name()),
+                                    &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".to_string())),
+                                    schema
+                                )?;
                                 cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
                             }
                             _ => {
+                                let timestamp_millis = cast_to(
+                                    col(field.name()),
+                                    &DataType::Timestamp(TimeUnit::Millisecond, None),
+                                    schema
+                                )?;
                                 let tz_config =
                                     tz_config.with_context(|| "No local timezone info provided")?;
                                 Expr::ScalarUDF {
