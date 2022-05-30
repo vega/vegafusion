@@ -7,6 +7,7 @@
  * this program the details of the active license.
  */
 use crate::expression::compiler::call::{default_callables, VegaFusionCallable};
+use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion::scalar::ScalarValue;
 use num_traits::float::FloatConst;
 use std::collections::HashMap;
@@ -18,7 +19,7 @@ pub struct CompilationConfig {
     pub data_scope: HashMap<String, VegaFusionTable>,
     pub callable_scope: HashMap<String, VegaFusionCallable>,
     pub constants: HashMap<String, ScalarValue>,
-    pub local_tz: Option<chrono_tz::Tz>,
+    pub tz_config: Option<RuntimeTzConfig>,
 }
 
 impl Default for CompilationConfig {
@@ -28,7 +29,7 @@ impl Default for CompilationConfig {
             data_scope: Default::default(),
             callable_scope: default_callables(),
             constants: default_constants(),
-            local_tz: None,
+            tz_config: None,
         }
     }
 }

@@ -7,6 +7,7 @@
  * this program the details of the active license.
  */
 
+use crate::task_graph::timezone::RuntimeTzConfig;
 use chrono::{NaiveDateTime, TimeZone, Timelike};
 use datafusion::arrow::array::{Int64Array, TimestampMillisecondArray};
 use datafusion::physical_plan::functions::make_scalar_function;
@@ -17,7 +18,8 @@ use vegafusion_core::arrow::array::ArrayRef;
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 
-pub fn make_to_utc_millis_fn(local_tz: chrono_tz::Tz) -> ScalarUDF {
+pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
+    let local_tz = tz_config.default_input_tz;
     let to_utc_millis_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single string argument
         let arg = &args[0];

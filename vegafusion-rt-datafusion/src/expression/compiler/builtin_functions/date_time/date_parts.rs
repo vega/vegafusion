@@ -9,6 +9,7 @@
 
 use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
 use crate::expression::compiler::call::LocalTransformFn;
+use crate::task_graph::timezone::RuntimeTzConfig;
 use chrono::{DateTime, Datelike, NaiveDateTime, TimeZone, Timelike, Weekday};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
@@ -80,8 +81,8 @@ pub fn make_local_datepart_transform(
 ) -> LocalTransformFn {
     let name = name.to_string();
     let local_datepart_transform =
-        move |local_tz: chrono_tz::Tz, args: &[Expr], _schema: &DFSchema| -> Result<Expr> {
-            let udf = make_datepart_udf(local_tz, extract_fn, &name);
+        move |tz_config: &RuntimeTzConfig, args: &[Expr], _schema: &DFSchema| -> Result<Expr> {
+            let udf = make_datepart_udf(tz_config.local_tz, extract_fn, &name);
             Ok(Expr::ScalarUDF {
                 fun: Arc::new(udf),
                 args: Vec::from(args),

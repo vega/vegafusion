@@ -13,7 +13,7 @@ use crate::expression::parser::parse;
 use crate::proto::gen::tasks::data_url_task::Url;
 use crate::proto::gen::tasks::{
     scan_url_format, DataSourceTask, DataUrlTask, DataValuesTask, ParseFieldSpec, ParseFieldSpecs,
-    ScanUrlFormat, Task, Variable,
+    ScanUrlFormat, Task, TzConfig, Variable,
 };
 use crate::proto::gen::transforms::TransformPipeline;
 use crate::spec::chart::{ChartSpec, ChartVisitor};
@@ -106,15 +106,18 @@ impl ChartVisitor for MakeTaskScopeVisitor {
 #[derive(Clone, Debug, Default)]
 pub struct MakeTasksVisitor {
     pub tasks: Vec<Task>,
-    pub local_tz: String,
+    pub tz_config: TzConfig,
     pub inline_datasets: HashMap<String, VegaFusionTable>,
 }
 
 impl MakeTasksVisitor {
-    pub fn new(tz: &str, inline_datasets: Option<HashMap<String, VegaFusionTable>>) -> Self {
+    pub fn new(
+        tz_config: &TzConfig,
+        inline_datasets: Option<HashMap<String, VegaFusionTable>>,
+    ) -> Self {
         Self {
             tasks: Default::default(),
-            local_tz: tz.to_string(),
+            tz_config: tz_config.clone(),
             inline_datasets: inline_datasets.unwrap_or_default(),
         }
     }
@@ -186,7 +189,7 @@ impl ChartVisitor for MakeTasksVisitor {
                                 format_type,
                                 pipeline,
                             },
-                            &self.local_tz,
+                            &self.tz_config,
                         );
 
                         self.tasks.push(task);
@@ -209,7 +212,7 @@ impl ChartVisitor for MakeTasksVisitor {
                     pipeline,
                     url: Some(proto_url),
                 },
-                &self.local_tz,
+                &self.tz_config,
             )
         } else if let Some(source) = &data.source {
             Task::new_data_source(
@@ -219,7 +222,7 @@ impl ChartVisitor for MakeTasksVisitor {
                     source: source.clone(),
                     pipeline,
                 },
-                &self.local_tz,
+                &self.tz_config,
             )
         } else {
             let values_table = match data.values.as_ref() {
@@ -243,7 +246,7 @@ impl ChartVisitor for MakeTasksVisitor {
                         format_type,
                         pipeline,
                     },
-                    &self.local_tz,
+                    &self.tz_config,
                 )
             }
         };
@@ -259,7 +262,7 @@ impl ChartVisitor for MakeTasksVisitor {
             Task::new_value(signal_var, scope, value)
         } else if let Some(update) = &signal.update {
             let expression = parse(update)?;
-            Task::new_signal(signal_var, scope, expression, &self.local_tz)
+            Task::new_signal(signal_var, scope, expression, &self.tz_config)
         } else {
             return Err(VegaFusionError::internal(format!(
                 "Signal must have an initial value or an update expression: {:#?}",

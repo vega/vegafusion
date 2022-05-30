@@ -30,7 +30,7 @@ use vegafusion_core::planning::watch::{
 };
 use vegafusion_core::proto::gen::pretransform::{PreTransformOpts, PreTransformRequest};
 use vegafusion_core::proto::gen::services::pre_transform_result;
-use vegafusion_core::proto::gen::tasks::TaskGraph;
+use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -1362,6 +1362,10 @@ async fn check_spec_sequence(
     // Initialize runtime
     let vegajs_runtime = vegajs_runtime();
     let local_tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
+    let tz_config = TzConfig {
+        local_tz,
+        default_input_tz: None,
+    };
 
     let spec_plan = SpecPlan::try_new(&full_spec, &Default::default()).unwrap();
 
@@ -1384,7 +1388,7 @@ async fn check_spec_sequence(
     );
 
     // Build task graph
-    let tasks = spec_plan.server_spec.to_tasks(&local_tz, None).unwrap();
+    let tasks = spec_plan.server_spec.to_tasks(&tz_config, None).unwrap();
     let mut task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let task_graph_mapping = task_graph.build_mapping();
 

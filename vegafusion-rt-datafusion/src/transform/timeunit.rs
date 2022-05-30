@@ -43,8 +43,9 @@ impl TransformTrait for TimeUnit {
         let local_tz = if self.timezone != Some(TimeUnitTimeZone::Utc as i32) {
             Some(
                 config
-                    .local_tz
-                    .with_context(|| "No local timezone info provided".to_string())?,
+                    .tz_config
+                    .with_context(|| "No local timezone info provided".to_string())?
+                    .local_tz,
             )
         } else {
             None

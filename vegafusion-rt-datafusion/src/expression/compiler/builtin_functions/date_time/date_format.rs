@@ -7,6 +7,7 @@
  * this program the details of the active license.
  */
 use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
+use crate::task_graph::timezone::RuntimeTzConfig;
 use chrono::TimeZone;
 use chrono::{DateTime, NaiveDateTime};
 use datafusion::arrow::array::{ArrayRef, Int64Array, StringArray};
@@ -20,7 +21,11 @@ use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
-pub fn time_format_fn(local_tz: chrono_tz::Tz, args: &[Expr], _schema: &DFSchema) -> Result<Expr> {
+pub fn time_format_fn(
+    tz_config: &RuntimeTzConfig,
+    args: &[Expr],
+    _schema: &DFSchema,
+) -> Result<Expr> {
     let format_str = extract_format_str(args)?;
 
     // Handle format timezone override
@@ -37,20 +42,28 @@ pub fn time_format_fn(local_tz: chrono_tz::Tz, args: &[Expr], _schema: &DFSchema
             ));
         }
     } else {
-        local_tz
+        tz_config.local_tz
     };
 
     Ok(Expr::ScalarUDF {
-        fun: Arc::new(make_time_format_udf(&local_tz, &output_tz, &format_str)),
+        fun: Arc::new(make_time_format_udf(
+            &tz_config.default_input_tz,
+            &output_tz,
+            &format_str,
+        )),
         args: Vec::from(&args[..1]),
     })
 }
 
-pub fn utc_format_fn(local_tz: chrono_tz::Tz, args: &[Expr], _schema: &DFSchema) -> Result<Expr> {
+pub fn utc_format_fn(
+    tz_config: &RuntimeTzConfig,
+    args: &[Expr],
+    _schema: &DFSchema,
+) -> Result<Expr> {
     let format_str = extract_format_str(args)?;
     Ok(Expr::ScalarUDF {
         fun: Arc::new(make_time_format_udf(
-            &local_tz,
+            &tz_config.default_input_tz,
             &chrono_tz::UTC,
             &format_str,
         )),
@@ -88,17 +101,17 @@ pub fn extract_format_str(args: &[Expr]) -> Result<String> {
 }
 
 pub fn make_time_format_udf(
-    local_tz: &chrono_tz::Tz,
+    default_input_tz: &chrono_tz::Tz,
     output_tz: &chrono_tz::Tz,
     format_str: &str,
 ) -> ScalarUDF {
-    let local_tz = *local_tz;
+    let default_input_tz = *default_input_tz;
     let output_tz = *output_tz;
     let format_str = format_str.to_string();
     let time_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single argument
         let arg = &args[0];
-        let arg = process_input_datetime(arg, &local_tz);
+        let arg = process_input_datetime(arg, &default_input_tz);
 
         let utc_millis_array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
 
