@@ -34,7 +34,9 @@ use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 use vegafusion_core::arrow::datatypes::TimeUnit;
 
-use crate::expression::compiler::builtin_functions::date_time::local_to_utc::{make_to_utc_millis_fn, make_utc_ts_to_utc_millis_fn};
+use crate::expression::compiler::builtin_functions::date_time::local_to_utc::{
+    make_to_utc_millis_fn, make_utc_ts_to_utc_millis_fn,
+};
 use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
@@ -276,8 +278,11 @@ fn process_datetimes(
                             Some(tz) if tz.to_lowercase() == "utc" => {
                                 let timestamp_millis = cast_to(
                                     col(&spec.name),
-                                    &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".to_string())),
-                                    schema
+                                    &DataType::Timestamp(
+                                        TimeUnit::Millisecond,
+                                        Some("UTC".to_string()),
+                                    ),
+                                    schema,
                                 )?;
                                 cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
                             }
@@ -285,7 +290,7 @@ fn process_datetimes(
                                 let timestamp_millis = cast_to(
                                     col(&spec.name),
                                     &DataType::Timestamp(TimeUnit::Millisecond, None),
-                                    schema
+                                    schema,
                                 )?;
                                 // Treat as local
                                 let tz_config =
@@ -330,31 +335,32 @@ fn process_datetimes(
                 && matches!(field.data_type(), DataType::Timestamp(_, _))
             {
                 let expr = match field.data_type() {
-                    DataType::Timestamp(_, tz) => {
-                        match tz {
-                            Some(tz) if tz.to_lowercase() == "utc" => {
-                                let timestamp_millis = cast_to(
-                                    col(field.name()),
-                                    &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".to_string())),
-                                    schema
-                                )?;
-                                cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
-                            }
-                            _ => {
-                                let timestamp_millis = cast_to(
-                                    col(field.name()),
-                                    &DataType::Timestamp(TimeUnit::Millisecond, None),
-                                    schema
-                                )?;
-                                let tz_config =
-                                    tz_config.with_context(|| "No local timezone info provided")?;
-                                Expr::ScalarUDF {
-                                    fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
-                                    args: vec![timestamp_millis],
-                                }
+                    DataType::Timestamp(_, tz) => match tz {
+                        Some(tz) if tz.to_lowercase() == "utc" => {
+                            let timestamp_millis = cast_to(
+                                col(field.name()),
+                                &DataType::Timestamp(
+                                    TimeUnit::Millisecond,
+                                    Some("UTC".to_string()),
+                                ),
+                                schema,
+                            )?;
+                            cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
+                        }
+                        _ => {
+                            let timestamp_millis = cast_to(
+                                col(field.name()),
+                                &DataType::Timestamp(TimeUnit::Millisecond, None),
+                                schema,
+                            )?;
+                            let tz_config =
+                                tz_config.with_context(|| "No local timezone info provided")?;
+                            Expr::ScalarUDF {
+                                fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
+                                args: vec![timestamp_millis],
                             }
                         }
-                    }
+                    },
                     _ => unreachable!(),
                 };
                 Ok(expr.alias(field.name()))
