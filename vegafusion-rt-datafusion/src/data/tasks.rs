@@ -26,7 +26,6 @@ use datafusion::dataframe::DataFrame;
 use datafusion::execution::options::CsvReadOptions;
 use datafusion::logical_plan::Expr;
 use datafusion::prelude::{col, SessionContext};
-use datafusion_expr::BuiltinScalarFunction;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
@@ -35,7 +34,7 @@ use tokio::io::AsyncReadExt;
 use vegafusion_core::arrow::datatypes::TimeUnit;
 
 use crate::expression::compiler::builtin_functions::date_time::local_to_utc::{
-    make_to_utc_millis_fn, make_utc_ts_to_utc_millis_fn,
+    make_to_utc_millis_fn,
 };
 use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
