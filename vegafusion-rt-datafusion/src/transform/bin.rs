@@ -52,7 +52,7 @@ impl TransformTrait for Bin {
         fname.insert_str(0, "bin_");
 
         let fields = ScalarValue::List(
-            Some(Box::new(vec![ScalarValue::from(self.field.as_str())])),
+            Some(vec![ScalarValue::from(self.field.as_str())]),
             Box::new(DataType::Utf8),
         );
         let output_value = if self.signal.is_some() {

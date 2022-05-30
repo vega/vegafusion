@@ -136,6 +136,7 @@ impl TransformTrait for JoinAggregate {
                 JoinType::Inner,
                 &["__unit_rhs"],
                 &["__unit_lhs"],
+                None,
             )?
         } else {
             let grouped_dataframe = dataframe
@@ -167,6 +168,7 @@ impl TransformTrait for JoinAggregate {
                 JoinType::Inner,
                 left_cols.as_slice(),
                 right_cols.as_slice(),
+                None,
             )?;
 
             dataframe
