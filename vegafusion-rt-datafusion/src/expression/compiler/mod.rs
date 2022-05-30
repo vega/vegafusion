@@ -400,11 +400,11 @@ mod test_compile {
         let result_value = result_expr.eval_to_scalar().unwrap();
 
         let expected_value = ScalarValue::List(
-            Some(Box::new(vec![
+            Some(vec![
                 ScalarValue::from(1.0),
                 ScalarValue::from(2.0),
                 ScalarValue::from(3.0),
-            ])),
+            ]),
             Box::new(DataType::Float64),
         );
 
@@ -427,7 +427,7 @@ mod test_compile {
         // Check evaluated value. Empty array is given Float64 data type
         let result_value = result_expr.eval_to_scalar().unwrap();
 
-        let expected_value = ScalarValue::List(Some(Box::new(vec![])), Box::new(DataType::Float64));
+        let expected_value = ScalarValue::List(Some(vec![]), Box::new(DataType::Float64));
 
         println!("value: {:?}", result_value);
         assert_eq!(result_value, expected_value);
@@ -461,29 +461,20 @@ mod test_compile {
         // Check evaluated value
         let result_value = result_expr.eval_to_scalar().unwrap();
         let expected_value = ScalarValue::List(
-            Some(Box::new(vec![
+            Some(vec![
                 ScalarValue::List(
-                    Some(Box::new(vec![
-                        ScalarValue::from(1.0),
-                        ScalarValue::from(2.0),
-                    ])),
+                    Some(vec![ScalarValue::from(1.0), ScalarValue::from(2.0)]),
                     Box::new(DataType::Float64),
                 ),
                 ScalarValue::List(
-                    Some(Box::new(vec![
-                        ScalarValue::from(3.0),
-                        ScalarValue::from(4.0),
-                    ])),
+                    Some(vec![ScalarValue::from(3.0), ScalarValue::from(4.0)]),
                     Box::new(DataType::Float64),
                 ),
                 ScalarValue::List(
-                    Some(Box::new(vec![
-                        ScalarValue::from(5.0),
-                        ScalarValue::from(6.0),
-                    ])),
+                    Some(vec![ScalarValue::from(5.0), ScalarValue::from(6.0)]),
                     Box::new(DataType::Float64),
                 ),
-            ])),
+            ]),
             Box::new(DataType::List(Box::new(Field::new(
                 "item",
                 DataType::Float64,

@@ -23,13 +23,13 @@ deterministic-hash = "1.0.1"
 chrono = "0.4.19"
 
 [dependencies.arrow]
-version = "13.0.0"
+version = "14.0.0"
 default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "a82589100d7b07cb629476a2df7eac002f48b8a0"
+rev = "0ff59de810f344b197b2e9491a0a9aefca52d88f"
 
 [dependencies.pyo3]
 version = "0.16.4"
