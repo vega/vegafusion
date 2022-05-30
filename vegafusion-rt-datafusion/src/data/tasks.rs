@@ -33,9 +33,7 @@ use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 use vegafusion_core::arrow::datatypes::TimeUnit;
 
-use crate::expression::compiler::builtin_functions::date_time::local_to_utc::{
-    make_to_utc_millis_fn,
-};
+use crate::expression::compiler::builtin_functions::date_time::local_to_utc::make_to_utc_millis_fn;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
