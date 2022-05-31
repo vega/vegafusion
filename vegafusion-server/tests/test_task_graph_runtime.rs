@@ -30,7 +30,7 @@ use vegafusion_core::proto::gen::services::query_result::Response;
 use vegafusion_core::proto::gen::services::vega_fusion_runtime_client::VegaFusionRuntimeClient;
 use vegafusion_core::proto::gen::services::{query_request, QueryRequest};
 use vegafusion_core::proto::gen::tasks::{
-    NodeValueIndex, TaskGraph, TaskGraphValueRequest, VariableNamespace,
+    NodeValueIndex, TaskGraph, TaskGraphValueRequest, TzConfig, VariableNamespace,
 };
 use vegafusion_core::spec::chart::ChartSpec; // Add methods on commands
 
@@ -71,8 +71,12 @@ async fn try_it_from_spec() {
     .unwrap();
 
     let local_tz = "America/New_York";
+    let tz_config = TzConfig {
+        local_tz: local_tz.to_string(),
+        default_input_tz: None,
+    };
     let task_scope = chart.to_task_scope().unwrap();
-    let tasks = chart.to_tasks(local_tz, None).unwrap();
+    let tasks = chart.to_tasks(&tz_config, None).unwrap();
 
     let graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let request = QueryRequest {

@@ -12,16 +12,14 @@ use crate::planning::optimize_server::split_data_url_nodes;
 use crate::planning::projection_pushdown::projection_pushdown;
 use crate::planning::split_domain_data::split_domain_data;
 use crate::planning::stitch::{stitch_specs, CommPlan};
-use crate::planning::stringify_local_datetimes::{
-    stringify_local_datetimes, OutputLocalDatetimesConfig,
-};
+use crate::planning::stringify_local_datetimes::stringify_local_datetimes;
 use crate::spec::chart::ChartSpec;
 
 #[derive(Debug, Clone)]
 pub struct PlannerConfig {
     pub split_domain_data: bool,
     pub split_url_data_nodes: bool,
-    pub local_datetimes_config: OutputLocalDatetimesConfig,
+    pub stringify_local_datetimes: bool,
     pub projection_pushdown: bool,
     pub extract_inline_data: bool,
 }
@@ -31,7 +29,7 @@ impl Default for PlannerConfig {
         Self {
             split_domain_data: true,
             split_url_data_nodes: true,
-            local_datetimes_config: Default::default(),
+            stringify_local_datetimes: false,
             projection_pushdown: true,
             extract_inline_data: false,
         }
@@ -68,21 +66,8 @@ impl SpecPlan {
             split_data_url_nodes(&mut server_spec)?;
         }
 
-        match &config.local_datetimes_config {
-            OutputLocalDatetimesConfig::LocalNaiveString => {
-                stringify_local_datetimes(&mut server_spec, &mut client_spec, &comm_plan, &None)?;
-            }
-            OutputLocalDatetimesConfig::TimezoneNaiveString(output_tz) => {
-                stringify_local_datetimes(
-                    &mut server_spec,
-                    &mut client_spec,
-                    &comm_plan,
-                    &Some(output_tz.clone()),
-                )?;
-            }
-            OutputLocalDatetimesConfig::UtcMillis => {
-                // Leave local datetimes as UTC milliseconds
-            }
+        if config.stringify_local_datetimes {
+            stringify_local_datetimes(&mut server_spec, &mut client_spec, &comm_plan)?;
         }
 
         Ok(Self {

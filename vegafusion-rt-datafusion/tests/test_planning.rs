@@ -7,7 +7,7 @@
  * this program the details of the active license.
  */
 use vegafusion_core::planning::extract::extract_server_data;
-use vegafusion_core::proto::gen::tasks::{TaskGraph, Variable};
+use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig, Variable};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
@@ -20,7 +20,10 @@ use vegafusion_core::planning::stitch::stitch_specs;
 #[tokio::test(flavor = "multi_thread")]
 async fn test_extract_server_data() {
     let mut spec = spec1();
-    let local_tz = "America/New_York";
+    let tz_config = TzConfig {
+        local_tz: "America/New_York".to_string(),
+        default_input_tz: None,
+    };
 
     // Get full spec's scope
     let mut task_scope = spec.to_task_scope().unwrap();
@@ -57,7 +60,7 @@ async fn test_extract_server_data() {
     let client_stubs: Vec<_> = client_inputs.difference(&client_defs).collect();
     println!("client_stubs: {:?}", client_stubs);
 
-    let tasks = server_spec.to_tasks(local_tz, None).unwrap();
+    let tasks = server_spec.to_tasks(&tz_config, None).unwrap();
     let graph = Arc::new(TaskGraph::new(tasks, &task_scope).unwrap());
     let mapping = graph.build_mapping();
     // println!("{:#?}", mapping);

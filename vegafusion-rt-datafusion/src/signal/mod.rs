@@ -12,6 +12,7 @@ use crate::expression::compiler::utils::ExprHelpers;
 use crate::task_graph::task::TaskCall;
 use async_trait::async_trait;
 
+use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::tasks::SignalTask;
 use vegafusion_core::task_graph::task::TaskDependencies;
@@ -22,9 +23,9 @@ impl TaskCall for SignalTask {
     async fn eval(
         &self,
         values: &[TaskValue],
-        local_tz: &Option<chrono_tz::Tz>,
+        tz_config: &Option<RuntimeTzConfig>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
-        let config = build_compilation_config(&self.input_vars(), values, local_tz);
+        let config = build_compilation_config(&self.input_vars(), values, tz_config);
         let expression = self.expr.as_ref().unwrap();
         let expr = compile(expression, &config, None)?;
         let value = expr.eval_to_scalar()?;

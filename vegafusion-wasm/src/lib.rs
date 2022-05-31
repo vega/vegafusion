@@ -12,7 +12,7 @@ use prost::Message;
 
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::proto::gen::tasks::{
-    NodeValueIndex, TaskGraph, TaskGraphValueRequest, VariableNamespace,
+    NodeValueIndex, TaskGraph, TaskGraphValueRequest, TzConfig, VariableNamespace,
 };
 use vegafusion_core::task_graph::task_value::TaskValue;
 use wasm_bindgen::prelude::*;
@@ -362,7 +362,11 @@ pub fn render_vegafusion(
         .expect("Failed to create task scope for server spec");
 
     let local_tz = local_timezone();
-    let tasks = spec_plan.server_spec.to_tasks(&local_tz, None).unwrap();
+    let tz_config = TzConfig {
+        local_tz,
+        default_input_tz: None,
+    };
+    let tasks = spec_plan.server_spec.to_tasks(&tz_config, None).unwrap();
     let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
 
     // Create closure to update chart from received messages

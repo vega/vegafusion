@@ -3,7 +3,7 @@ use vegafusion_core::planning::plan::SpecPlan;
 use vegafusion_core::planning::watch::ExportUpdateBatch;
 use vegafusion_core::proto::gen::services::query_request::Request;
 use vegafusion_core::proto::gen::services::{QueryRequest, QueryResult};
-use vegafusion_core::proto::gen::tasks::{TaskGraph, TaskGraphValueRequest, Variable};
+use vegafusion_core::proto::gen::tasks::{TaskGraph, TaskGraphValueRequest, TzConfig, Variable};
 use vegafusion_core::spec::chart::ChartSpec;
 
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
@@ -43,10 +43,13 @@ async fn eval_spec_sequence_from_files(spec_name: &str) {
 }
 
 async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> QueryResult {
-    let local_tz = "America/New_York";
+    let tz_config = TzConfig {
+        local_tz: "America/New_York".to_string(),
+        default_input_tz: None,
+    };
     let spec_plan = SpecPlan::try_new(&full_spec, &Default::default()).unwrap();
     let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
-    let tasks = spec_plan.server_spec.to_tasks(local_tz, None).unwrap();
+    let tasks = spec_plan.server_spec.to_tasks(&tz_config, None).unwrap();
     let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let task_graph_mapping = task_graph.build_mapping();
 
@@ -67,7 +70,10 @@ async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> Q
 }
 
 async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdateBatch>) {
-    let local_tz = "America/New_York";
+    let tz_config = TzConfig {
+        local_tz: "America/New_York".to_string(),
+        default_input_tz: None,
+    };
     let spec_plan = SpecPlan::try_new(&full_spec, &Default::default()).unwrap();
     let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
     let comm_plan = spec_plan.comm_plan.clone();
@@ -87,7 +93,7 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
     // );
 
     // Build task graph
-    let tasks = spec_plan.server_spec.to_tasks(local_tz, None).unwrap();
+    let tasks = spec_plan.server_spec.to_tasks(&tz_config, None).unwrap();
     let mut task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let task_graph_mapping = task_graph.build_mapping();
 

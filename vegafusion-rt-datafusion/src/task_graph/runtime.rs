@@ -13,16 +13,15 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
+use crate::task_graph::timezone::RuntimeTzConfig;
 use futures_util::{future, FutureExt};
 use prost::Message as ProstMessage;
 use serde_json::Value;
 use std::convert::{TryFrom, TryInto};
 use std::panic::AssertUnwindSafe;
-use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
-use vegafusion_core::planning::stringify_local_datetimes::OutputLocalDatetimesConfig;
 use vegafusion_core::planning::watch::{ExportUpdate, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
@@ -38,7 +37,7 @@ use vegafusion_core::proto::gen::services::{
 };
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse,
-    TaskValue as ProtoTaskValue, Variable,
+    TaskValue as ProtoTaskValue, TzConfig, Variable,
 };
 use vegafusion_core::spec::chart::ChartSpec;
 
@@ -213,7 +212,7 @@ impl TaskGraphRuntime {
         &self,
         spec: &str,
         local_tz: &str,
-        output_tz: &Option<String>,
+        default_input_tz: &Option<String>,
         row_limit: Option<u32>,
         inline_datasets: HashMap<String, VegaFusionTable>,
     ) -> Result<PreTransformResult> {
@@ -221,25 +220,24 @@ impl TaskGraphRuntime {
             serde_json::from_str(spec).with_context(|| "Failed to parse spec".to_string())?;
 
         // Create spec plan
-        let local_datetimes_config = match output_tz {
-            None => OutputLocalDatetimesConfig::LocalNaiveString,
-            Some(output_tz) => OutputLocalDatetimesConfig::TimezoneNaiveString(output_tz.clone()),
-        };
-
         let plan = SpecPlan::try_new(
             &spec,
             &PlannerConfig {
-                local_datetimes_config,
+                stringify_local_datetimes: true,
                 extract_inline_data: true,
                 ..Default::default()
             },
         )?;
 
         // Create task graph for server spec
+        let tz_config = TzConfig {
+            local_tz: local_tz.to_string(),
+            default_input_tz: default_input_tz.clone(),
+        };
         let task_scope = plan.server_spec.to_task_scope().unwrap();
         let tasks = plan
             .server_spec
-            .to_tasks(local_tz, Some(inline_datasets))
+            .to_tasks(&tz_config, Some(inline_datasets))
             .unwrap();
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
@@ -375,10 +373,10 @@ async fn get_or_compute_node_value(
 
         // Clone task so we can move it to async block
         let task = task.clone();
-        let local_tz = task
-            .local_tz
-            .as_ref()
-            .and_then(|tz| chrono_tz::Tz::from_str(tz).ok());
+        let tz_config = task.tz_config.clone().and_then(|tz_config| {
+            RuntimeTzConfig::try_new(&tz_config.local_tz, &tz_config.default_input_tz).ok()
+        });
+
         let cache_key = node.state_fingerprint;
         let cloned_cache = cache.clone();
 
@@ -416,7 +414,7 @@ async fn get_or_compute_node_value(
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            task.eval(&input_values, &local_tz).await
+            task.eval(&input_values, &tz_config).await
         };
 
         // get or construct from cache

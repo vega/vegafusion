@@ -11,7 +11,7 @@ use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::expression::parser::parse;
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::proto::gen::tasks::{
-    DataSourceTask, DataUrlTask, NodeValueIndex, Task, TaskGraph, Variable,
+    DataSourceTask, DataUrlTask, NodeValueIndex, Task, TaskGraph, TzConfig, Variable,
 };
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::proto::gen::transforms::{
@@ -24,7 +24,10 @@ use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn try_it() {
-    let tz = "America/New_York";
+    let tz_config = TzConfig {
+        local_tz: "America/New_York".to_string(),
+        default_input_tz: None,
+    };
     let mut task_scope = TaskScope::new();
     task_scope
         .add_variable(&Variable::new_signal("url"), Default::default())
@@ -56,7 +59,7 @@ async fn try_it() {
                 format_type: None,
                 pipeline: None,
             },
-            tz,
+            &tz_config,
         ),
         Task::new_data_source(
             Variable::new_data("datasetA"),
@@ -80,7 +83,7 @@ async fn try_it() {
                     ],
                 }),
             },
-            tz,
+            &tz_config,
         ),
     ];
 
@@ -132,9 +135,12 @@ async fn try_it_from_spec() {
     )
     .unwrap();
 
-    let local_tz = "America/New_York";
+    let tz_config = TzConfig {
+        local_tz: "America/New_York".to_string(),
+        default_input_tz: None,
+    };
     let task_scope = chart.to_task_scope().unwrap();
-    let tasks = chart.to_tasks(local_tz, None).unwrap();
+    let tasks = chart.to_tasks(&tz_config, None).unwrap();
 
     println!("task_scope: {:?}", task_scope);
     println!("tasks: {:?}", tasks);

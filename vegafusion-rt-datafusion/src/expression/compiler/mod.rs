@@ -78,6 +78,7 @@ mod test_compile {
     };
     use datafusion::logical_plan::{and, DFSchema, Expr, Operator};
 
+    use crate::task_graph::timezone::RuntimeTzConfig;
     use datafusion::physical_plan::ColumnarValue;
     use datafusion::prelude::{col, concat, lit};
     use datafusion::scalar::ScalarValue;
@@ -706,7 +707,10 @@ mod test_compile {
     fn try_datetime() {
         let expr = parse("datetime('2007-04-05T14:30:00')").unwrap();
         let config = CompilationConfig {
-            local_tz: Some(chrono_tz::Tz::America__New_York),
+            tz_config: Some(RuntimeTzConfig {
+                local_tz: chrono_tz::Tz::America__New_York,
+                default_input_tz: chrono_tz::Tz::America__New_York,
+            }),
             ..Default::default()
         };
         let result_expr = compile(&expr, &config, None).unwrap();

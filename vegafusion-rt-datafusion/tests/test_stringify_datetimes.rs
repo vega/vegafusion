@@ -19,7 +19,7 @@ mod test_stringify_datetimes {
 
     #[rstest(
         local_tz,
-        output_tz,
+        default_input_tz,
         expected_hours_time,
         expected_hours_time_end,
         case("UTC", "UTC", "2012-01-01 01:00:00.000", "2012-01-01 02:00:00.000"),
@@ -32,31 +32,31 @@ mod test_stringify_datetimes {
         case(
             "UTC",
             "America/New_York",
-            "2011-12-31 20:00:00.000",
-            "2011-12-31 21:00:00.000"
+            "2012-01-01 06:00:00.000",
+            "2012-01-01 07:00:00.000"
         ),
         case(
             "America/Los_Angeles",
             "America/New_York",
+            "2012-01-01 22:00:00.000",
+            "2012-01-01 23:00:00.000"
+        ),
+        case(
+            "America/New_York",
+            "America/Los_Angeles",
             "2012-01-01 04:00:00.000",
             "2012-01-01 05:00:00.000"
-        ),
-        case(
-            "America/New_York",
-            "America/Los_Angeles",
-            "2011-12-31 22:00:00.000",
-            "2011-12-31 23:00:00.000"
         )
     )]
     fn test(
         local_tz: &str,
-        output_tz: &str,
+        default_input_tz: &str,
         expected_hours_time: &str,
         expected_hours_time_end: &str,
     ) {
         TOKIO_RUNTIME.block_on(check_github_hist(
             local_tz,
-            output_tz,
+            default_input_tz,
             expected_hours_time,
             expected_hours_time_end,
         ));
@@ -64,7 +64,7 @@ mod test_stringify_datetimes {
 
     async fn check_github_hist(
         local_tz: &str,
-        output_tz: &str,
+        default_input_tz: &str,
         expected_hours_time: &str,
         expected_hours_time_end: &str,
     ) {
@@ -83,7 +83,7 @@ mod test_stringify_datetimes {
             .pre_transform_spec(
                 &spec_str,
                 &local_tz,
-                &Some(output_tz.to_string()),
+                &Some(default_input_tz.to_string()),
                 None,
                 Default::default(),
             )
