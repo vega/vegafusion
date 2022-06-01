@@ -4,7 +4,7 @@ path = "src/main.rs"
 
 [package]
 name = "vegafusion-server"
-version = "0.6.0-rc1"
+version = "0.6.0-rc2"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
