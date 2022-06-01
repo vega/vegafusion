@@ -38,9 +38,9 @@ def to_arrow_table(data):
         # Copy un-aligned columns to align them
         # (arrow-rs seems to have trouble with un-aligned arrays)
         values = getattr(data[col], "values", None)
-        if values:
+        if values is not None:
             flags = getattr(values, "flags", None)
-            if flags:
+            if flags is not None:
                 try:
                     aligned = flags["ALIGNED"]
                     if not aligned:
