@@ -26,7 +26,7 @@ def to_arrow_table(data):
     import pyarrow as pa
 
     # Reset named index(ex) into a column
-    if data.index.name is not None:
+    if getattr(data.index, "name", None) is not None:
         data = data.reset_index()
 
     # Expand categoricals (not yet supported in VegaFusion)
