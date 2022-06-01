@@ -78,6 +78,7 @@ mod test_compile {
     };
     use datafusion::logical_plan::{and, DFSchema, Expr, Operator};
 
+    use crate::task_graph::timezone::RuntimeTzConfig;
     use datafusion::physical_plan::ColumnarValue;
     use datafusion::prelude::{col, concat, lit};
     use datafusion::scalar::ScalarValue;
@@ -400,11 +401,11 @@ mod test_compile {
         let result_value = result_expr.eval_to_scalar().unwrap();
 
         let expected_value = ScalarValue::List(
-            Some(Box::new(vec![
+            Some(vec![
                 ScalarValue::from(1.0),
                 ScalarValue::from(2.0),
                 ScalarValue::from(3.0),
-            ])),
+            ]),
             Box::new(DataType::Float64),
         );
 
@@ -427,7 +428,7 @@ mod test_compile {
         // Check evaluated value. Empty array is given Float64 data type
         let result_value = result_expr.eval_to_scalar().unwrap();
 
-        let expected_value = ScalarValue::List(Some(Box::new(vec![])), Box::new(DataType::Float64));
+        let expected_value = ScalarValue::List(Some(vec![]), Box::new(DataType::Float64));
 
         println!("value: {:?}", result_value);
         assert_eq!(result_value, expected_value);
@@ -461,29 +462,20 @@ mod test_compile {
         // Check evaluated value
         let result_value = result_expr.eval_to_scalar().unwrap();
         let expected_value = ScalarValue::List(
-            Some(Box::new(vec![
+            Some(vec![
                 ScalarValue::List(
-                    Some(Box::new(vec![
-                        ScalarValue::from(1.0),
-                        ScalarValue::from(2.0),
-                    ])),
+                    Some(vec![ScalarValue::from(1.0), ScalarValue::from(2.0)]),
                     Box::new(DataType::Float64),
                 ),
                 ScalarValue::List(
-                    Some(Box::new(vec![
-                        ScalarValue::from(3.0),
-                        ScalarValue::from(4.0),
-                    ])),
+                    Some(vec![ScalarValue::from(3.0), ScalarValue::from(4.0)]),
                     Box::new(DataType::Float64),
                 ),
                 ScalarValue::List(
-                    Some(Box::new(vec![
-                        ScalarValue::from(5.0),
-                        ScalarValue::from(6.0),
-                    ])),
+                    Some(vec![ScalarValue::from(5.0), ScalarValue::from(6.0)]),
                     Box::new(DataType::Float64),
                 ),
-            ])),
+            ]),
             Box::new(DataType::List(Box::new(Field::new(
                 "item",
                 DataType::Float64,
@@ -715,7 +707,10 @@ mod test_compile {
     fn try_datetime() {
         let expr = parse("datetime('2007-04-05T14:30:00')").unwrap();
         let config = CompilationConfig {
-            local_tz: Some(chrono_tz::Tz::America__New_York),
+            tz_config: Some(RuntimeTzConfig {
+                local_tz: chrono_tz::Tz::America__New_York,
+                default_input_tz: chrono_tz::Tz::America__New_York,
+            }),
             ..Default::default()
         };
         let result_expr = compile(&expr, &config, None).unwrap();

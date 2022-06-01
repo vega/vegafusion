@@ -50,11 +50,12 @@ use crate::expression::compiler::builtin_functions::type_checking::isdate::is_da
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_string::to_string_transform;
+use crate::task_graph::timezone::RuntimeTzConfig;
 
 pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>;
 pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
 pub type LocalTransformFn =
-    Arc<dyn Fn(chrono_tz::Tz, &[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
+    Arc<dyn Fn(&RuntimeTzConfig, &[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
 pub type DataFn =
     Arc<dyn Fn(&VegaFusionTable, &[Expression], &DFSchema) -> Result<Expr> + Send + Sync>;
 
@@ -181,10 +182,10 @@ pub fn compile_call(
         }
         VegaFusionCallable::LocalTransform(callable) => {
             let args = compile_scalar_arguments(node, config, schema, &None)?;
-            let local_tz = config
-                .local_tz
+            let tz_config = config
+                .tz_config
                 .with_context(|| "No local timezone info provided".to_string())?;
-            callable(local_tz, &args, schema)
+            callable(&tz_config, &args, schema)
         }
         _ => {
             todo!()

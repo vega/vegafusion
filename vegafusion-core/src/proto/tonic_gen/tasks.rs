@@ -130,6 +130,14 @@ pub struct SignalTask {
     #[prost(message, optional, tag="2")]
     pub expr: ::core::option::Option<super::expression::Expression>,
 }
+/// ## Timezone config
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TzConfig {
+    #[prost(string, tag="1")]
+    pub local_tz: ::prost::alloc::string::String,
+    #[prost(string, optional, tag="2")]
+    pub default_input_tz: ::core::option::Option<::prost::alloc::string::String>,
+}
 /// ## Top-level Task
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Task {
@@ -137,8 +145,8 @@ pub struct Task {
     pub variable: ::core::option::Option<Variable>,
     #[prost(uint32, repeated, tag="2")]
     pub scope: ::prost::alloc::vec::Vec<u32>,
-    #[prost(string, optional, tag="8")]
-    pub local_tz: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(message, optional, tag="8")]
+    pub tz_config: ::core::option::Option<TzConfig>,
     #[prost(oneof="task::TaskKind", tags="3, 4, 5, 6, 7")]
     pub task_kind: ::core::option::Option<task::TaskKind>,
 }

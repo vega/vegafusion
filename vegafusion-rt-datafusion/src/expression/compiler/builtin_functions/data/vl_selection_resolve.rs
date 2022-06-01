@@ -68,7 +68,7 @@ pub fn vl_selection_resolve_fn(
 
     // Extract vector of rows for selection dataset
     let rows = if let ScalarValue::List(Some(elements), _) = table.to_scalar_value()? {
-        elements.as_ref().clone()
+        elements
     } else {
         unreachable!()
     };
@@ -84,13 +84,9 @@ pub fn vl_selection_resolve_fn(
             let value = match field.typ {
                 SelectionType::Enum => {
                     if let ScalarValue::List(Some(elements), _) = value {
-                        elements.as_ref().clone()
+                        elements.clone()
                     } else {
                         vec![value.clone()]
-                        // return Err(VegaFusionError::internal(&format!(
-                        //     "values must be a two-element array. Found {}",
-                        //     value
-                        // )))
                     }
                 }
                 _ => {
@@ -133,7 +129,7 @@ pub fn vl_selection_resolve_fn(
                 .get(0)
                 .map(|s| s.get_datatype())
                 .unwrap_or(DataType::Float64);
-            let values = ScalarValue::List(Some(Box::new(values)), Box::new(dtype));
+            let values = ScalarValue::List(Some(values), Box::new(dtype));
             (name, values)
         })
         .sorted_by_key(|(n, _)| n.clone())

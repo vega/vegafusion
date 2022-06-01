@@ -11,7 +11,6 @@ use crate::util::vegajs_runtime::vegajs_runtime;
 use datafusion::scalar::ScalarValue;
 
 use std::convert::TryFrom;
-use std::str::FromStr;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 
 use vegafusion_core::data::table::VegaFusionTable;
@@ -23,6 +22,7 @@ use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 use vegafusion_rt_datafusion::expression::compiler::compile;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 use vegafusion_rt_datafusion::expression::compiler::utils::ExprHelpers;
+use vegafusion_rt_datafusion::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
 use vegafusion_rt_datafusion::transform::TransformTrait;
 
@@ -50,9 +50,9 @@ pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
 
     // Add local timezone info to config
     let local_tz_str = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
-    let local_tz = chrono_tz::Tz::from_str(&local_tz_str).unwrap();
+    // let local_tz = chrono_tz::Tz::from_str(&local_tz_str).unwrap();
     let config = CompilationConfig {
-        local_tz: Some(local_tz),
+        tz_config: Some(RuntimeTzConfig::try_new(&local_tz_str, &None).unwrap()),
         ..config.clone()
     };
 

@@ -13,6 +13,19 @@ mod test_custom_specs {
         projection_fields,
         case("vegalite/point_2d", 0, vec!["Horsepower", "Miles_per_Gallon"]),
         case("vegalite/point_bubble", 0, vec!["Acceleration", "Horsepower", "Miles_per_Gallon"]),
+        case("vegalite/concat_marginal_histograms", 0, vec![
+            "bin_maxbins_10_IMDB Rating",
+            "bin_maxbins_10_IMDB Rating_end",
+            "bin_maxbins_10_Rotten Tomatoes Rating",
+            "bin_maxbins_10_Rotten Tomatoes Rating_end"
+        ]),
+        case("vegalite/rect_binned_heatmap", 0, vec![
+            "__count",
+            "bin_maxbins_40_Rotten Tomatoes Rating",
+            "bin_maxbins_40_Rotten Tomatoes Rating_end",
+            "bin_maxbins_60_IMDB Rating",
+            "bin_maxbins_60_IMDB Rating_end"
+        ]),
     )]
     fn test(spec_name: &str, data_index: usize, projection_fields: Vec<&str>) {
         // Load spec

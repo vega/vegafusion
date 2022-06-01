@@ -98,6 +98,12 @@ message SignalTask {
   expression.Expression expr = 2;
 }
 
+// ## Timezone config
+message TzConfig {
+  string local_tz = 1;
+  optional string default_input_tz = 2;
+}
+
 // ## Top-level Task
 message Task {
   Variable variable = 1;
@@ -109,7 +115,7 @@ message Task {
     DataSourceTask data_source = 6;
     SignalTask signal = 7;
   }
-  optional string local_tz = 8;
+  TzConfig tz_config = 8;
 }
 
 

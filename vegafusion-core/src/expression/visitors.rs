@@ -353,11 +353,9 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                                 self.vl_selection_fields.get(&scoped_reference_data_var)
                             {
                                 // Add selection fields to usage for datum
-                                self.dataset_column_usage =
-                                    self.dataset_column_usage.with_column_usage(
-                                        datum_var,
-                                        ColumnUsage::from(fields.as_slice()),
-                                    );
+                                self.dataset_column_usage = self
+                                    .dataset_column_usage
+                                    .with_column_usage(datum_var, fields.clone());
                             } else {
                                 // Unknown fields dataset, so we don't know which datum columns
                                 // are needed at runtime

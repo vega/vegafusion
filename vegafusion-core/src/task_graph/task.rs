@@ -8,7 +8,8 @@
  */
 use crate::error::{Result, VegaFusionError};
 use crate::proto::gen::tasks::{
-    task::TaskKind, DataSourceTask, DataUrlTask, DataValuesTask, NodeValueIndex, Task, Variable,
+    task::TaskKind, DataSourceTask, DataUrlTask, DataValuesTask, NodeValueIndex, Task, TzConfig,
+    Variable,
 };
 use crate::proto::gen::tasks::{SignalTask, TaskValue as ProtoTaskValue};
 use crate::task_graph::task_value::TaskValue;
@@ -41,7 +42,7 @@ impl Task {
             variable: Some(variable),
             scope: Vec::from(scope),
             task_kind: Some(TaskKind::Value(ProtoTaskValue::try_from(&value).unwrap())),
-            local_tz: None,
+            tz_config: None,
         }
     }
 
@@ -57,13 +58,13 @@ impl Task {
         variable: Variable,
         scope: &[u32],
         task: DataUrlTask,
-        local_tz: &str,
+        tz_config: &TzConfig,
     ) -> Self {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
             task_kind: Some(TaskKind::DataUrl(task)),
-            local_tz: Some(local_tz.to_string()),
+            tz_config: Some(tz_config.clone()),
         }
     }
 
@@ -71,13 +72,13 @@ impl Task {
         variable: Variable,
         scope: &[u32],
         task: DataValuesTask,
-        local_tz: &str,
+        tz_config: &TzConfig,
     ) -> Self {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
             task_kind: Some(TaskKind::DataValues(task)),
-            local_tz: Some(local_tz.to_string()),
+            tz_config: Some(tz_config.clone()),
         }
     }
 
@@ -85,23 +86,28 @@ impl Task {
         variable: Variable,
         scope: &[u32],
         task: DataSourceTask,
-        local_tz: &str,
+        tz_config: &TzConfig,
     ) -> Self {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
             task_kind: Some(TaskKind::DataSource(task)),
-            local_tz: Some(local_tz.to_string()),
+            tz_config: Some(tz_config.clone()),
         }
     }
 
-    pub fn new_signal(variable: Variable, scope: &[u32], expr: Expression, local_tz: &str) -> Self {
+    pub fn new_signal(
+        variable: Variable,
+        scope: &[u32],
+        expr: Expression,
+        tz_config: &TzConfig,
+    ) -> Self {
         let task_kind = TaskKind::Signal(SignalTask { expr: Some(expr) });
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
             task_kind: Some(task_kind),
-            local_tz: Some(local_tz.to_string()),
+            tz_config: Some(tz_config.clone()),
         }
     }
 

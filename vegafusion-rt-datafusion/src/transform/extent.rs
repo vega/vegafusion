@@ -47,7 +47,7 @@ impl TransformTrait for Extent {
             // Build two-element list of the extents
             let element_datatype = min_val_scalar.get_datatype();
             let extent_list = TaskValue::Scalar(ScalarValue::List(
-                Some(Box::new(vec![min_val_scalar, max_val_scalar])),
+                Some(vec![min_val_scalar, max_val_scalar]),
                 Box::new(element_datatype),
             ));
             vec![extent_list]

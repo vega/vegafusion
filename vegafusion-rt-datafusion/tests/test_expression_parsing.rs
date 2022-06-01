@@ -379,7 +379,7 @@ mod test_column_usage {
         // Define selection dataset fields
         let selection_fields: VlSelectionFields = vec![(
             (Variable::new_data("brush2_store"), Vec::new()),
-            vec!["AA".to_string(), "BB".to_string(), "CC".to_string()],
+            ColumnUsage::from(vec!["AA", "BB", "CC"].as_slice()),
         )]
         .into_iter()
         .collect();

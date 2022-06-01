@@ -6,7 +6,7 @@ harness = false
 name = "vegafusion-rt-datafusion"
 license = "AGPL-3.0-or-later"
 edition = "2021"
-version = "0.4.1"
+version = "0.6.0-rc1"
 
 [features]
 pyarrow = [ "vegafusion-core/pyarrow",]
@@ -50,11 +50,11 @@ features = [ "derive",]
 
 [dependencies.datafusion]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "a82589100d7b07cb629476a2df7eac002f48b8a0"
+rev = "0ff59de810f344b197b2e9491a0a9aefca52d88f"
 
 [dependencies.datafusion-expr]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "a82589100d7b07cb629476a2df7eac002f48b8a0"
+rev = "0ff59de810f344b197b2e9491a0a9aefca52d88f"
 
 [dependencies.tokio]
 version = "1.18.1"

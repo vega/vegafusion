@@ -7,6 +7,7 @@
  * this program the details of the active license.
  */
 use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
+use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion::arrow::array::ArrayRef;
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::logical_plan::{DFSchema, Expr};
@@ -16,18 +17,18 @@ use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 
-pub fn time_fn(local_tz: chrono_tz::Tz, args: &[Expr], _schema: &DFSchema) -> Result<Expr> {
+pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], _schema: &DFSchema) -> Result<Expr> {
     Ok(Expr::ScalarUDF {
-        fun: Arc::new(make_time_udf(local_tz)),
+        fun: Arc::new(make_time_udf(tz_config.default_input_tz)),
         args: Vec::from(args),
     })
 }
 
-pub fn make_time_udf(local_tz: chrono_tz::Tz) -> ScalarUDF {
+pub fn make_time_udf(default_input_tz: chrono_tz::Tz) -> ScalarUDF {
     let time_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single argument
         let arg = &args[0];
-        let arg = process_input_datetime(arg, &local_tz);
+        let arg = process_input_datetime(arg, &default_input_tz);
         Ok(arg)
     };
     let time_fn = make_scalar_function(time_fn);

@@ -27,11 +27,11 @@ use datafusion::arrow::compute::{cast, unary};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use std::sync::Arc;
 
-fn process_input_datetime(arg: &ArrayRef, tz: &chrono_tz::Tz) -> ArrayRef {
+fn process_input_datetime(arg: &ArrayRef, default_input_tz: &chrono_tz::Tz) -> ArrayRef {
     match arg.data_type() {
         DataType::Utf8 => {
             let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
-            datetime_strs_to_millis(array, DateParseMode::JavaScript, &Some(*tz)) as _
+            datetime_strs_to_millis(array, DateParseMode::JavaScript, &Some(*default_input_tz)) as _
         }
         DataType::Timestamp(TimeUnit::Millisecond, _) => {
             cast(arg, &DataType::Int64).expect("Failed to case timestamp to Int64")

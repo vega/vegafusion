@@ -78,7 +78,7 @@ impl PyTaskGraphRuntime {
         &self,
         spec: String,
         local_tz: String,
-        output_tz: Option<String>,
+        default_input_tz: Option<String>,
         row_limit: Option<u32>,
         inline_datasets: &PyDict,
     ) -> PyResult<(String, String)> {
@@ -105,7 +105,7 @@ impl PyTaskGraphRuntime {
             .block_on(self.runtime.pre_transform_spec(
                 &spec,
                 &local_tz,
-                &output_tz,
+                &default_input_tz,
                 row_limit,
                 inline_datasets,
             ))?;

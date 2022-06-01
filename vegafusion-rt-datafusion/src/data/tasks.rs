@@ -26,14 +26,15 @@ use datafusion::dataframe::DataFrame;
 use datafusion::execution::options::CsvReadOptions;
 use datafusion::logical_plan::Expr;
 use datafusion::prelude::{col, SessionContext};
-use datafusion_expr::BuiltinScalarFunction;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
+use vegafusion_core::arrow::datatypes::TimeUnit;
 
 use crate::expression::compiler::builtin_functions::date_time::local_to_utc::make_to_utc_millis_fn;
+use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
@@ -47,7 +48,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
     values: &[TaskValue],
-    local_tz: &Option<chrono_tz::Tz>,
+    tz_config: &Option<RuntimeTzConfig>,
 ) -> CompilationConfig {
     // Build compilation config from input_vals
     let mut signal_scope: HashMap<String, ScalarValue> = HashMap::new();
@@ -69,7 +70,7 @@ pub fn build_compilation_config(
     CompilationConfig {
         signal_scope,
         data_scope,
-        local_tz: *local_tz,
+        tz_config: *tz_config,
         ..Default::default()
     }
 }
@@ -79,10 +80,10 @@ impl TaskCall for DataUrlTask {
     async fn eval(
         &self,
         values: &[TaskValue],
-        local_tz: &Option<chrono_tz::Tz>,
+        tz_config: &Option<RuntimeTzConfig>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Build compilation config for url signal (if any) and transforms (if any)
-        let config = build_compilation_config(&self.input_vars(), values, local_tz);
+        let config = build_compilation_config(&self.input_vars(), values, tz_config);
 
         // Build url string
         let url = match self.url.as_ref().unwrap() {
@@ -114,7 +115,7 @@ impl TaskCall for DataUrlTask {
             )));
         };
 
-        let df = process_datetimes(&parse, date_mode, df, local_tz)?;
+        let df = process_datetimes(&parse, date_mode, df, tz_config)?;
 
         // Apply transforms (if any)
         let (transformed_df, output_values) = if self
@@ -235,7 +236,7 @@ fn process_datetimes(
     parse: &Option<Parse>,
     date_mode: DateParseMode,
     df: Arc<DataFrame>,
-    local_tz: &Option<chrono_tz::Tz>,
+    tz_config: &Option<RuntimeTzConfig>,
 ) -> Result<Arc<DataFrame>> {
     // Perform specialized date parsing
     let mut date_fields: Vec<String> = Vec::new();
@@ -255,7 +256,7 @@ fn process_datetimes(
                     date_fields.push(date_field.name().clone());
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
-                        let datetime_udf = get_datetime_udf(date_mode, local_tz);
+                        let datetime_udf = get_datetime_udf(date_mode, tz_config);
 
                         Expr::ScalarUDF {
                             fun: Arc::new(datetime_udf),
@@ -263,27 +264,36 @@ fn process_datetimes(
                         }
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically, use local time
-                        let local_tz =
-                            local_tz.with_context(|| "No local timezone info provided")?;
+                        let tz_config =
+                            tz_config.with_context(|| "No local timezone info provided")?;
                         Expr::ScalarUDF {
-                            fun: Arc::new(make_datetime_components_udf(local_tz)),
+                            fun: Arc::new(make_datetime_components_udf(tz_config.default_input_tz)),
                             args: vec![col(&spec.name)],
                         }
                     } else if let DataType::Timestamp(_, tz) = dtype {
-                        let timestamp_millis = Expr::ScalarFunction {
-                            fun: BuiltinScalarFunction::ToTimestampMillis,
-                            args: vec![col(&spec.name)],
-                        };
                         match tz {
                             Some(tz) if tz.to_lowercase() == "utc" => {
-                                cast_to(timestamp_millis, &DataType::Int64, schema)?
+                                let timestamp_millis = cast_to(
+                                    col(&spec.name),
+                                    &DataType::Timestamp(
+                                        TimeUnit::Millisecond,
+                                        Some("UTC".to_string()),
+                                    ),
+                                    schema,
+                                )?;
+                                cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
                             }
                             _ => {
+                                let timestamp_millis = cast_to(
+                                    col(&spec.name),
+                                    &DataType::Timestamp(TimeUnit::Millisecond, None),
+                                    schema,
+                                )?;
                                 // Treat as local
-                                let local_tz =
-                                    local_tz.with_context(|| "No local timezone info provided")?;
+                                let tz_config =
+                                    tz_config.with_context(|| "No local timezone info provided")?;
                                 Expr::ScalarUDF {
-                                    fun: Arc::new(make_to_utc_millis_fn(local_tz)),
+                                    fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
                                     args: vec![timestamp_millis],
                                 }
                             }
@@ -322,26 +332,32 @@ fn process_datetimes(
                 && matches!(field.data_type(), DataType::Timestamp(_, _))
             {
                 let expr = match field.data_type() {
-                    DataType::Timestamp(_, tz) => {
-                        let timestamp_millis = Expr::ScalarFunction {
-                            fun: BuiltinScalarFunction::ToTimestampMillis,
-                            args: vec![col(field.name())],
-                        };
-
-                        match tz {
-                            Some(tz) if tz.to_lowercase() == "utc" => {
-                                cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
-                            }
-                            _ => {
-                                let local_tz =
-                                    local_tz.with_context(|| "No local timezone info provided")?;
-                                Expr::ScalarUDF {
-                                    fun: Arc::new(make_to_utc_millis_fn(local_tz)),
-                                    args: vec![timestamp_millis],
-                                }
+                    DataType::Timestamp(_, tz) => match tz {
+                        Some(tz) if tz.to_lowercase() == "utc" => {
+                            let timestamp_millis = cast_to(
+                                col(field.name()),
+                                &DataType::Timestamp(
+                                    TimeUnit::Millisecond,
+                                    Some("UTC".to_string()),
+                                ),
+                                schema,
+                            )?;
+                            cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
+                        }
+                        _ => {
+                            let timestamp_millis = cast_to(
+                                col(field.name()),
+                                &DataType::Timestamp(TimeUnit::Millisecond, None),
+                                schema,
+                            )?;
+                            let tz_config =
+                                tz_config.with_context(|| "No local timezone info provided")?;
+                            Expr::ScalarUDF {
+                                fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
+                                args: vec![timestamp_millis],
                             }
                         }
-                    }
+                    },
                     _ => unreachable!(),
                 };
                 Ok(expr.alias(field.name()))
@@ -359,7 +375,7 @@ impl TaskCall for DataValuesTask {
     async fn eval(
         &self,
         values: &[TaskValue],
-        local_tz: &Option<chrono_tz::Tz>,
+        tz_config: &Option<RuntimeTzConfig>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Deserialize data into table
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
@@ -377,16 +393,16 @@ impl TaskCall for DataValuesTask {
         {
             let pipeline = self.pipeline.as_ref().unwrap();
             let values_df = values_table.to_dataframe()?;
-            let values_df = process_datetimes(&parse, date_mode, values_df, local_tz)?;
+            let values_df = process_datetimes(&parse, date_mode, values_df, tz_config)?;
 
-            let config = build_compilation_config(&self.input_vars(), values, local_tz);
+            let config = build_compilation_config(&self.input_vars(), values, tz_config);
             let (df, output_values) = pipeline.eval(values_df, &config).await?;
 
             (VegaFusionTable::from_dataframe(df).await?, output_values)
         } else {
             // No transforms
             let values_df = values_table.to_dataframe()?;
-            let values_df = process_datetimes(&parse, date_mode, values_df, local_tz)?;
+            let values_df = process_datetimes(&parse, date_mode, values_df, tz_config)?;
             (
                 VegaFusionTable::from_dataframe(values_df).await?,
                 Vec::new(),
@@ -404,10 +420,10 @@ impl TaskCall for DataSourceTask {
     async fn eval(
         &self,
         values: &[TaskValue],
-        local_tz: &Option<chrono_tz::Tz>,
+        tz_config: &Option<RuntimeTzConfig>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         let input_vars = self.input_vars();
-        let mut config = build_compilation_config(&input_vars, values, local_tz);
+        let mut config = build_compilation_config(&input_vars, values, tz_config);
 
         // Remove source table from config
         let source_table = config.data_scope.remove(&self.source).unwrap_or_else(|| {

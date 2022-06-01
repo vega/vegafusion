@@ -10,6 +10,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
     make_date_str_to_millis_udf, DateParseMode,
 };
 use crate::expression::compiler::utils::{cast_to, is_string_datatype};
+use crate::task_graph::timezone::RuntimeTzConfig;
 use chrono::{DateTime, TimeZone};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
@@ -25,7 +26,7 @@ use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 pub fn to_date_transform(
-    local_tz: chrono_tz::Tz,
+    tz_config: &RuntimeTzConfig,
     args: &[Expr],
     schema: &DFSchema,
 ) -> Result<Expr> {
@@ -36,26 +37,26 @@ pub fn to_date_transform(
         .with_context(|| format!("Failed to infer type of expression: {:?}", arg))?;
 
     if is_string_datatype(&dtype) {
-        let local_tz = if args.len() == 2 {
+        let default_input_tz = if args.len() == 2 {
             // Second argument is a an override local timezone string
-            let local_tz_expr = &args[1];
-            if let Expr::Literal(ScalarValue::Utf8(Some(local_tz_str))) = local_tz_expr {
-                chrono_tz::Tz::from_str(local_tz_str)
+            let input_tz_expr = &args[1];
+            if let Expr::Literal(ScalarValue::Utf8(Some(input_tz_str))) = input_tz_expr {
+                chrono_tz::Tz::from_str(input_tz_str)
                     .ok()
-                    .with_context(|| format!("Failed to parse {} as a timezone", local_tz_str))?
+                    .with_context(|| format!("Failed to parse {} as a timezone", input_tz_str))?
             } else {
                 return Err(VegaFusionError::parse(
                     "Second argument to toDate must be a timezone string",
                 ));
             }
         } else {
-            local_tz
+            tz_config.default_input_tz
         };
 
         arg = Expr::ScalarUDF {
             fun: Arc::new(make_date_str_to_millis_udf(
                 DateParseMode::JavaScript,
-                &Some(local_tz),
+                &Some(default_input_tz),
             )),
             args: vec![arg],
         }
@@ -65,7 +66,7 @@ pub fn to_date_transform(
 }
 
 pub fn datetime_transform(
-    local_tz: chrono_tz::Tz,
+    tz_config: &RuntimeTzConfig,
     args: &[Expr],
     schema: &DFSchema,
 ) -> Result<Expr> {
@@ -80,7 +81,7 @@ pub fn datetime_transform(
             arg = Expr::ScalarUDF {
                 fun: Arc::new(make_date_str_to_millis_udf(
                     DateParseMode::JavaScript,
-                    &Some(local_tz),
+                    &Some(tz_config.default_input_tz),
                 )),
                 args: vec![arg],
             }
@@ -95,13 +96,13 @@ pub fn datetime_transform(
             .collect::<Result<Vec<_>>>()?;
 
         Ok(Expr::ScalarUDF {
-            fun: Arc::new(make_datetime_components_udf(local_tz)),
+            fun: Arc::new(make_datetime_components_udf(tz_config.default_input_tz)),
             args: int_args,
         })
     }
 }
 
-pub fn make_datetime_components_udf(tz: chrono_tz::Tz) -> ScalarUDF {
+pub fn make_datetime_components_udf(input_tz: chrono_tz::Tz) -> ScalarUDF {
     let datetime_components: ScalarFunctionImplementation =
         Arc::new(move |args: &[ColumnarValue]| {
             // pad with defaults out to 7 arguments
@@ -181,7 +182,7 @@ pub fn make_datetime_components_udf(tz: chrono_tz::Tz) -> ScalarUDF {
                         year += 1900
                     }
 
-                    let datetime: Option<DateTime<_>> = tz
+                    let datetime: Option<DateTime<_>> = input_tz
                         .ymd_opt(year as i32, month as u32 + 1, day as u32)
                         .single()
                         .and_then(|date| {

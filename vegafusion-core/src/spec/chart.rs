@@ -8,7 +8,7 @@
  */
 use crate::data::table::VegaFusionTable;
 use crate::error::{Result, ResultWithContext, VegaFusionError};
-use crate::proto::gen::tasks::Task;
+use crate::proto::gen::tasks::{Task, TzConfig};
 use crate::spec::data::DataSpec;
 use crate::spec::mark::MarkSpec;
 use crate::spec::scale::ScaleSpec;
@@ -134,10 +134,10 @@ impl ChartSpec {
 
     pub fn to_tasks(
         &self,
-        local_tz: &str,
+        tz_config: &TzConfig,
         inline_datasets: Option<HashMap<String, VegaFusionTable>>,
     ) -> Result<Vec<Task>> {
-        let mut visitor = MakeTasksVisitor::new(local_tz, inline_datasets);
+        let mut visitor = MakeTasksVisitor::new(tz_config, inline_datasets);
         self.walk(&mut visitor)?;
         Ok(visitor.tasks)
     }
@@ -209,13 +209,13 @@ impl ChartSpec {
     }
 
     pub fn get_nested_data(&self, path: &[u32], name: &str) -> Result<&DataSpec> {
-        let signals = if path.is_empty() {
+        let datasets = if path.is_empty() {
             &self.data
         } else {
             let group = self.get_nested_group(path)?;
             &group.data
         };
-        signals
+        datasets
             .iter()
             .find(|s| s.name == name)
             .with_context(|| format!("No data named {} found at path {:?}", name, path))

@@ -73,7 +73,7 @@ impl ScalarValueHelpers for ScalarValue {
                     (elements, dtype)
                 };
 
-                ScalarValue::List(Some(Box::new(elements)), Box::new(dtype))
+                ScalarValue::List(Some(elements), Box::new(dtype))
             }
         };
         Ok(scalar_value)

@@ -10,7 +10,7 @@ use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use std::collections::{HashMap, HashSet};
 
-pub type VlSelectionFields = HashMap<ScopedVariable, Vec<String>>;
+pub type VlSelectionFields = HashMap<ScopedVariable, ColumnUsage>;
 
 /// Enum storing info on which dataset columns are used in a given context.
 /// Due to the dynamic nature of Vega specifications, it's not always possible to statically
@@ -45,6 +45,20 @@ impl ColumnUsage {
             }
             _ => {
                 // If either is Unknown, then the union is unknown
+                ColumnUsage::Unknown
+            }
+        }
+    }
+
+    pub fn difference(&self, other: &ColumnUsage) -> ColumnUsage {
+        match (self, other) {
+            (ColumnUsage::Known(self_cols), ColumnUsage::Known(other_cols)) => {
+                // If both column usages are known, we can take the set difference the known columns
+                let new_cols: HashSet<_> = self_cols.difference(other_cols).cloned().collect();
+                ColumnUsage::Known(new_cols)
+            }
+            _ => {
+                // If either is Unknown, then the difference is unknown
                 ColumnUsage::Unknown
             }
         }
@@ -97,6 +111,18 @@ impl DatasetsColumnUsage {
 
     pub fn with_unknown_usage(&self, datum_var: &ScopedVariable) -> Self {
         self.with_column_usage(datum_var, ColumnUsage::Unknown)
+    }
+
+    pub fn without_column_usage(&self, datum_var: &ScopedVariable, usage: &ColumnUsage) -> Self {
+        let mut new_usages = self.usages.clone();
+        if let Some(current_usage) = new_usages.get(datum_var) {
+            let new_usage = current_usage.difference(usage);
+            new_usages.insert(datum_var.clone(), new_usage);
+        }
+        Self {
+            usages: new_usages,
+            aliases: self.aliases.clone(),
+        }
     }
 
     pub fn with_alias(&self, from: ScopedVariable, to: ScopedVariable) -> Self {
@@ -191,6 +217,35 @@ mod tests {
     #[test]
     fn test_union_unknown_unknown() {
         let union = ColumnUsage::Unknown.union(&ColumnUsage::Unknown);
+        assert_eq!(union, ColumnUsage::Unknown)
+    }
+
+    #[test]
+    fn test_difference_known_known() {
+        let left = ColumnUsage::from(vec!["one", "two", "three"].as_slice());
+        let right = ColumnUsage::from(vec!["three", "four"].as_slice());
+        let union = left.difference(&right);
+        let expected = ColumnUsage::from(vec!["one", "two"].as_slice());
+        assert_eq!(union, expected)
+    }
+
+    #[test]
+    fn test_difference_known_unknown() {
+        let left = ColumnUsage::from(vec!["one", "two"].as_slice());
+        let union = left.difference(&ColumnUsage::Unknown);
+        assert_eq!(union, ColumnUsage::Unknown)
+    }
+
+    #[test]
+    fn test_difference_unknown_known() {
+        let right = ColumnUsage::from(vec!["two", "three", "four"].as_slice());
+        let union = ColumnUsage::Unknown.difference(&right);
+        assert_eq!(union, ColumnUsage::Unknown)
+    }
+
+    #[test]
+    fn test_difference_unknown_unknown() {
+        let union = ColumnUsage::Unknown.difference(&ColumnUsage::Unknown);
         assert_eq!(union, ColumnUsage::Unknown)
     }
 }
