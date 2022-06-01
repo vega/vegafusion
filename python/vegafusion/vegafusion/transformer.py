@@ -33,7 +33,7 @@ def to_arrow_table(data):
     for col, dtype in data.dtypes.items():
         if isinstance(dtype, pd.CategoricalDtype):
             cat = data[col].cat
-            data[col] = cat.categories[cat.codes]
+            data = data.assign(**{col: cat.categories[cat.codes]})
 
     # Convert DataFrame to table
     try:
