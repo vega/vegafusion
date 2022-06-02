@@ -26,14 +26,27 @@ def to_arrow_table(data):
     import pyarrow as pa
 
     # Reset named index(ex) into a column
-    if data.index.name is not None:
+    if getattr(data.index, "name", None) is not None:
         data = data.reset_index()
 
-    # Expand categoricals (not yet supported in VegaFusion)
     for col, dtype in data.dtypes.items():
+        # Expand categoricals (not yet supported in VegaFusion)
         if isinstance(dtype, pd.CategoricalDtype):
             cat = data[col].cat
-            data[col] = cat.categories[cat.codes]
+            data = data.assign(**{col: cat.categories[cat.codes]})
+
+        # Copy un-aligned columns to align them
+        # (arrow-rs seems to have trouble with un-aligned arrays)
+        values = getattr(data[col], "values", None)
+        if values is not None:
+            flags = getattr(values, "flags", None)
+            if flags is not None:
+                try:
+                    aligned = flags["ALIGNED"]
+                    if not aligned:
+                        data = data.assign(**{col: data[col].copy()})
+                except IndexError:
+                    pass
 
     # Convert DataFrame to table
     try:
