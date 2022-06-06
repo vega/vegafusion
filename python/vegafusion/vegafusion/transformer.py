@@ -29,11 +29,21 @@ def to_arrow_table(data):
     if getattr(data.index, "name", None) is not None:
         data = data.reset_index()
 
-    for col, dtype in data.dtypes.items():
+    # Use pyarrow to infer schema from DataFrame
+    candidate_schema = pa.Schema.from_pandas(data)
+
+    for col, pd_type in data.dtypes.items():
+        # Get inferred pyarrow type
+        pa_type = candidate_schema.field(col).type
+
         # Expand categoricals (not yet supported in VegaFusion)
-        if isinstance(dtype, pd.CategoricalDtype):
+        if isinstance(pd_type, pd.CategoricalDtype):
             cat = data[col].cat
             data = data.assign(**{col: cat.categories[cat.codes]})
+
+        # Convert Decimal columns to float
+        if isinstance(pa_type, (pa.Decimal128Type, pa.Decimal256Type)):
+            data = data.assign(**{col: data[col].astype("float64")})
 
         # Copy un-aligned columns to align them
         # (arrow-rs seems to have trouble with un-aligned arrays)
@@ -55,8 +65,8 @@ def to_arrow_table(data):
         # Try converting object columns to strings to handle cases where a
         # column has a mix of numbers and strings
         mapping = dict()
-        for col, dtype in data.dtypes.items():
-            if dtype.kind == "O":
+        for col, pd_type in data.dtypes.items():
+            if pd_type.kind == "O":
                 mapping[col] = data[col].astype(str)
         data = data.assign(**mapping)
         # Try again, allowing exception to propagate this time
