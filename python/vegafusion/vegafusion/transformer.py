@@ -29,9 +29,26 @@ def to_arrow_table(data):
     if getattr(data.index, "name", None) is not None:
         data = data.reset_index()
 
-    for col, dtype in data.dtypes.items():
+    # Use pyarrow to infer schema from DataFrame
+    for col, pd_type in data.dtypes.items():
+        try:
+            candidate_schema = pa.Schema.from_pandas(data[[col]])
+
+            # Get inferred pyarrow type
+            pa_type = candidate_schema.field(col).type
+
+            # Convert Decimal columns to float
+            if isinstance(pa_type, (pa.Decimal128Type, pa.Decimal256Type)):
+                data = data.assign(**{col: data[col].astype("float64")})
+
+        except pa.ArrowTypeError:
+            if pd_type.kind == "O":
+                # Try converting object columns to strings to handle cases where a
+                # column has a mix of numbers and strings
+                data = data.assign(**{col: data[col].astype(str)})
+
         # Expand categoricals (not yet supported in VegaFusion)
-        if isinstance(dtype, pd.CategoricalDtype):
+        if isinstance(pd_type, pd.CategoricalDtype):
             cat = data[col].cat
             data = data.assign(**{col: cat.categories[cat.codes]})
 
@@ -49,18 +66,8 @@ def to_arrow_table(data):
                     pass
 
     # Convert DataFrame to table
-    try:
-        table = pa.Table.from_pandas(data)
-    except pa.ArrowTypeError as e:
-        # Try converting object columns to strings to handle cases where a
-        # column has a mix of numbers and strings
-        mapping = dict()
-        for col, dtype in data.dtypes.items():
-            if dtype.kind == "O":
-                mapping[col] = data[col].astype(str)
-        data = data.assign(**mapping)
-        # Try again, allowing exception to propagate this time
-        table = pa.Table.from_pandas(data)
+    table = pa.Table.from_pandas(data)
+
     return table
 
 

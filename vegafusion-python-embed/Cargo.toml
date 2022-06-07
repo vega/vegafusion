@@ -2,7 +2,7 @@
 name = "vegafusion-python-embed"
 license = "AGPL-3.0-or-later"
 edition = "2021"
-version = "0.6.0-rc2"
+version = "0.6.0-rc3"
 
 [lib]
 name = "vegafusion_embed"
