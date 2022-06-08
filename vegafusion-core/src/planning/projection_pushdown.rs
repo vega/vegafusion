@@ -328,7 +328,7 @@ impl GetDatasetsColumnUsage for ScaleDataReferenceSpec {
                 if let Some(sort_field) = &sort_params.field {
                     usage = usage.with_column_usage(
                         &scoped_datum_var,
-                        ColumnUsage::from(unescape_field(&sort_field).as_str()),
+                        ColumnUsage::from(unescape_field(sort_field).as_str()),
                     );
                 }
             }
