@@ -6,7 +6,6 @@ pub fn escape_field(col: &str) -> String {
     let col = col.replace('\"', "\\\"");
 
     // Escape period with backslash
-    
 
     col.replace('.', "\\.")
 }
@@ -19,7 +18,6 @@ pub fn unescape_field(col: &str) -> String {
     let col = col.replace("\\\"", "\"");
 
     //  Unescape backslash period
-    
 
     col.replace("\\.", ".")
 }
