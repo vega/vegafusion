@@ -1,0 +1,266 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 200,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {
+      "name": "big_movies",
+      "values": [
+        {
+          "title": "Avengers: Endgame",
+          "release_date": 1556236800000,
+          "release_year": 2019,
+          "tomatometer_status": "Certified-Fresh",
+          "tomatometer_rating": 94,
+          "audience_rating": 90,
+          "gross": 858373000,
+          "critic_audience_diff": 4,
+          "rt_link": "m/avengers_endgame"
+        },
+        {
+          "title": "Avatar",
+          "release_date": 1261094400000,
+          "release_year": 2009,
+          "tomatometer_status": "Certified-Fresh",
+          "tomatometer_rating": 82,
+          "audience_rating": 82,
+          "gross": 760507625,
+          "critic_audience_diff": 0,
+          "rt_link": "m/avatar"
+        },
+        {
+          "title": "Black Panther",
+          "release_date": 1518739200000,
+          "release_year": 2018,
+          "tomatometer_status": "Certified-Fresh",
+          "tomatometer_rating": 96,
+          "audience_rating": 79,
+          "gross": 700426566,
+          "critic_audience_diff": 17,
+          "rt_link": "m/black_panther_2018"
+        },
+        {
+          "title": "Avengers: Infinity War",
+          "release_date": 1524787200000,
+          "release_year": 2018,
+          "tomatometer_status": "Certified-Fresh",
+          "tomatometer_rating": 85,
+          "audience_rating": 91,
+          "gross": 678815482,
+          "critic_audience_diff": 6,
+          "rt_link": "m/avengers_infinity_war"
+        },
+        {
+          "title": "Titanic",
+          "release_date": 882489600000,
+          "release_year": 1997,
+          "tomatometer_status": "Certified-Fresh",
+          "tomatometer_rating": 89,
+          "audience_rating": 69,
+          "gross": 659363944,
+          "critic_audience_diff": 20,
+          "rt_link": "m/titanic"
+        }
+      ],
+      "format": {}
+    },
+    {
+      "name": "data_0",
+      "source": "big_movies",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "toNumber(datum[\"audience_rating\"])",
+          "as": "audience_rating"
+        },
+        {
+          "type": "formula",
+          "expr": "toNumber(datum[\"tomatometer_rating\"])",
+          "as": "tomatometer_rating"
+        },
+        {
+          "type": "extent",
+          "field": "tomatometer_rating",
+          "signal": "layer_1_bin_step_5_tomatometer_rating_extent"
+        },
+        {
+          "type": "bin",
+          "field": "tomatometer_rating",
+          "as": [
+            "bin_step_5_tomatometer_rating",
+            "bin_step_5_tomatometer_rating_end"
+          ],
+          "signal": "layer_1_bin_step_5_tomatometer_rating_bins",
+          "extent": {"signal": "layer_1_bin_step_5_tomatometer_rating_extent"},
+          "step": 5
+        },
+        {
+          "type": "extent",
+          "field": "audience_rating",
+          "signal": "layer_0_bin_step_5_audience_rating_extent"
+        },
+        {
+          "type": "bin",
+          "field": "audience_rating",
+          "as": [
+            "bin_step_5_audience_rating",
+            "bin_step_5_audience_rating_end"
+          ],
+          "signal": "layer_0_bin_step_5_audience_rating_bins",
+          "extent": {"signal": "layer_0_bin_step_5_audience_rating_extent"},
+          "step": 5
+        }
+      ]
+    },
+    {
+      "name": "data_1",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": [
+            "bin_step_5_tomatometer_rating",
+            "bin_step_5_tomatometer_rating_end"
+          ],
+          "ops": ["mean"],
+          "fields": ["gross"],
+          "as": ["mean_gross"]
+        }
+      ]
+    },
+    {
+      "name": "data_2",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": [
+            "bin_step_5_audience_rating",
+            "bin_step_5_audience_rating_end"
+          ],
+          "ops": ["mean"],
+          "fields": ["gross"],
+          "as": ["mean_gross"]
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_marks",
+      "type": "line",
+      "style": ["line"],
+      "sort": {"field": "datum[\"bin_step_5_audience_rating\"]"},
+      "from": {"data": "data_2"},
+      "encode": {
+        "update": {
+          "stroke": {"value": "#C84654"},
+          "description": {
+            "signal": "\"Rating: \" + (!isValid(datum[\"bin_step_5_audience_rating\"]) || !isFinite(+datum[\"bin_step_5_audience_rating\"]) ? \"null\" : format(datum[\"bin_step_5_audience_rating\"], \"\") + \" – \" + format(datum[\"bin_step_5_audience_rating_end\"], \"\")) + \"; Median Gross: \" + (format(datum[\"mean_gross\"], \"\"))"
+          },
+          "x": {
+            "signal": "scale(\"x\", 0.5 * datum[\"bin_step_5_audience_rating\"] + 0.5 * datum[\"bin_step_5_audience_rating_end\"])"
+          },
+          "y": {"scale": "y", "field": "mean_gross"},
+          "defined": {
+            "signal": "isValid(datum[\"bin_step_5_audience_rating\"]) && isFinite(+datum[\"bin_step_5_audience_rating\"]) && isValid(datum[\"mean_gross\"]) && isFinite(+datum[\"mean_gross\"])"
+          }
+        }
+      }
+    },
+    {
+      "name": "layer_1_marks",
+      "type": "line",
+      "style": ["line"],
+      "sort": {"field": "datum[\"bin_step_5_tomatometer_rating\"]"},
+      "from": {"data": "data_1"},
+      "encode": {
+        "update": {
+          "stroke": {"value": "#2965CC"},
+          "description": {
+            "signal": "\"tomatometer_rating (binned): \" + (!isValid(datum[\"bin_step_5_tomatometer_rating\"]) || !isFinite(+datum[\"bin_step_5_tomatometer_rating\"]) ? \"null\" : format(datum[\"bin_step_5_tomatometer_rating\"], \"\") + \" – \" + format(datum[\"bin_step_5_tomatometer_rating_end\"], \"\")) + \"; Mean of gross: \" + (format(datum[\"mean_gross\"], \"\"))"
+          },
+          "x": {
+            "signal": "scale(\"x\", 0.5 * datum[\"bin_step_5_tomatometer_rating\"] + 0.5 * datum[\"bin_step_5_tomatometer_rating_end\"])"
+          },
+          "y": {"scale": "y", "field": "mean_gross"},
+          "defined": {
+            "signal": "isValid(datum[\"bin_step_5_tomatometer_rating\"]) && isFinite(+datum[\"bin_step_5_tomatometer_rating\"]) && isValid(datum[\"mean_gross\"]) && isFinite(+datum[\"mean_gross\"])"
+          }
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "linear",
+      "domain": {
+        "fields": [
+          {
+            "signal": "[layer_0_bin_step_5_audience_rating_bins.start, layer_0_bin_step_5_audience_rating_bins.stop]"
+          },
+          {
+            "signal": "[layer_1_bin_step_5_tomatometer_rating_bins.start, layer_1_bin_step_5_tomatometer_rating_bins.stop]"
+          }
+        ]
+      },
+      "range": [0, {"signal": "width"}],
+      "domainMax": 100,
+      "domainMin": 0,
+      "bins": {"signal": "layer_0_bin_step_5_audience_rating_bins"},
+      "zero": false
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {
+        "fields": [
+          {"data": "data_2", "field": "mean_gross"},
+          {"data": "data_1", "field": "mean_gross"}
+        ]
+      },
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    }
+  ],
+  "axes": [
+    {
+      "scale": "y",
+      "orient": "left",
+      "gridScale": "x",
+      "grid": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "Rating",
+      "labelFlush": true,
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(width/10)"},
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "Median Gross",
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
+    }
+  ]
+}

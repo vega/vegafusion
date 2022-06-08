@@ -76,6 +76,7 @@ impl ScaleTypeSpec {
 pub enum ScaleDomainSpec {
     FieldReference(ScaleDataReferenceSpec),
     FieldsReference(ScaleDataReferencesSpec),
+    FieldsSignals(ScaleSignalsSpec),
     Signal(SignalExpressionSpec),
     Array(Vec<ScaleArrayElementSpec>),
     Value(Value),
@@ -100,6 +101,14 @@ pub struct ScaleDataReferenceSpec {
     // Need to support sort objects as well as booleans
     // #[serde(skip_serializing_if = "Option::is_none")]
     // pub sort: Option<bool>,
+    #[serde(flatten)]
+    pub extra: HashMap<String, Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ScaleSignalsSpec {
+    pub fields: Vec<SignalExpressionSpec>,
+
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
