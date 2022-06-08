@@ -3,6 +3,7 @@ use crate::error::Result;
 use crate::expression::column_usage::{
     ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
 };
+use crate::expression::escape::{escape_field, unescape_field};
 use crate::expression::parser::parse;
 use crate::planning::dependency_graph::build_dependency_graph;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
@@ -65,7 +66,7 @@ impl GetDatasetsColumnUsage for MarkEncodingField {
                         // but for now just declare as unknown column usage
                         ColumnUsage::Unknown
                     } else {
-                        ColumnUsage::empty().with_column(field)
+                        ColumnUsage::empty().with_column(&unescape_field(field))
                     }
                 }
                 MarkEncodingField::Object(field_object) => {
@@ -77,7 +78,7 @@ impl GetDatasetsColumnUsage for MarkEncodingField {
                         ColumnUsage::Unknown
                     } else if let Some(field) = &field_object.datum {
                         // Just like specifying a string
-                        ColumnUsage::empty().with_column(field)
+                        ColumnUsage::empty().with_column(&unescape_field(field))
                     } else {
                         ColumnUsage::empty()
                     }
@@ -317,15 +318,17 @@ impl GetDatasetsColumnUsage for ScaleDataReferenceSpec {
             let scoped_datum_var: ScopedVariable = (resolved.var, resolved.scope);
 
             // Handle field
-            usage =
-                usage.with_column_usage(&scoped_datum_var, ColumnUsage::from(self.field.as_str()));
+            usage = usage.with_column_usage(
+                &scoped_datum_var,
+                ColumnUsage::from(unescape_field(&self.field).as_str()),
+            );
 
             // Handle sort field
             if let Some(ScaleDataReferenceSort::Parameters(sort_params)) = &self.sort {
                 if let Some(sort_field) = &sort_params.field {
                     usage = usage.with_column_usage(
                         &scoped_datum_var,
-                        ColumnUsage::from(sort_field.as_str()),
+                        ColumnUsage::from(unescape_field(&sort_field).as_str()),
                     );
                 }
             }
@@ -651,8 +654,12 @@ impl<'a> MutChartVisitor for InsertProjectionVisitor<'a> {
                 // We know exactly which columns are required of this dataset (and it's not none),
                 // so we can append a projection transform to limit the columns that are produced
                 // Note: empty strings here seem to break vega, filter them out
-                let proj_fields: Vec<_> =
-                    sorted(columns).cloned().filter(|f| !f.is_empty()).collect();
+                let proj_fields: Vec<_> = sorted(columns)
+                    .cloned()
+                    .filter(|f| !f.is_empty())
+                    .map(|f| escape_field(&f))
+                    .collect();
+
                 let proj_transform = TransformSpec::Project(ProjectTransformSpec {
                     fields: proj_fields,
                     extra: Default::default(),
