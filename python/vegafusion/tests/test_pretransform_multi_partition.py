@@ -4,10 +4,9 @@ import json
 
 
 def test_pre_transform_multi_partition():
-    n = 6
+    n = 4050
     order_items = pd.DataFrame({
         "menu_item": [0] * n + [1] * n
-        # "menu_item": [0] * 4050 + [1] * 4050
     })
 
     vega_spec = r"""
