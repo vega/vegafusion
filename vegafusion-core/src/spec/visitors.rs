@@ -533,6 +533,9 @@ impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
                 ScaleDomainSpec::FieldsReference(field_references) => {
                     references.extend(field_references.fields.clone());
                 }
+                ScaleDomainSpec::FieldsSignals(fields_signals) => {
+                    signals.extend(fields_signals.fields.clone());
+                }
                 ScaleDomainSpec::Signal(signal_expr) => {
                     signals.push(signal_expr.clone());
                 }
