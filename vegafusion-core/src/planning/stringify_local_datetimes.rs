@@ -7,6 +7,7 @@
  * this program the details of the active license.
  */
 use crate::error::Result;
+use crate::planning::plan::PlannerWarnings;
 use crate::planning::stitch::CommPlan;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use crate::spec::chart::{ChartSpec, ChartVisitor, MutChartVisitor};
@@ -31,14 +32,15 @@ pub fn stringify_local_datetimes(
     server_spec: &mut ChartSpec,
     client_spec: &mut ChartSpec,
     comm_plan: &CommPlan,
+    warnings: &mut Vec<PlannerWarnings>,
 ) -> Result<()> {
     // Build task scope for client spec
     let client_scope = client_spec.to_task_scope()?;
 
     // Collect the name/scope of all time scales
-    let mut visitor = CollectTimeScalesVisitor::new();
+    let mut visitor = CollectScalesTypesVisitor::new();
     client_spec.walk(&mut visitor)?;
-    let local_time_scales = visitor.local_time_scales;
+    let local_time_scales = visitor.scale_types;
 
     // Gather candidate datasets
     let candidate_datasets: HashSet<_> = comm_plan
@@ -55,7 +57,7 @@ pub fn stringify_local_datetimes(
         candidate_datasets,
     );
     client_spec.walk(&mut visitor)?;
-    let local_datetime_fields = visitor.local_datetime_fields;
+    let local_datetime_fields = visitor.get_local_datetime_fields(warnings);
 
     // Add formula transforms to server spec
     let server_scope = server_spec.to_task_scope()?;
@@ -71,25 +73,23 @@ pub fn stringify_local_datetimes(
 }
 
 /// Visitor to collect the non-UTC time scales
-struct CollectTimeScalesVisitor {
-    pub local_time_scales: HashSet<ScopedVariable>,
+struct CollectScalesTypesVisitor {
+    pub scale_types: HashMap<ScopedVariable, ScaleTypeSpec>,
 }
 
-impl CollectTimeScalesVisitor {
+impl CollectScalesTypesVisitor {
     pub fn new() -> Self {
         Self {
-            local_time_scales: Default::default(),
+            scale_types: Default::default(),
         }
     }
 }
 
-impl ChartVisitor for CollectTimeScalesVisitor {
+impl ChartVisitor for CollectScalesTypesVisitor {
     fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
-        if matches!(scale.type_, Some(ScaleTypeSpec::Time)) {
-            self.local_time_scales
-                .insert((Variable::new_scale(&scale.name), Vec::from(scope)));
-        }
-
+        let var = (Variable::new_scale(&scale.name), Vec::from(scope));
+        self.scale_types
+            .insert(var, scale.type_.clone().unwrap_or(ScaleTypeSpec::Linear));
         Ok(())
     }
 }
@@ -98,22 +98,61 @@ impl ChartVisitor for CollectTimeScalesVisitor {
 struct CollectLocalTimeScaledFieldsVisitor {
     pub scope: TaskScope,
     pub candidate_datasets: HashSet<ScopedVariable>,
-    pub local_time_scales: HashSet<ScopedVariable>,
-    pub local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
+    pub scale_types: HashMap<ScopedVariable, ScaleTypeSpec>,
+    pub data_fields_scale_types: HashMap<ScopedVariable, HashMap<String, HashSet<ScaleTypeSpec>>>,
 }
 
 impl CollectLocalTimeScaledFieldsVisitor {
     pub fn new(
         scope: TaskScope,
-        local_time_scales: HashSet<ScopedVariable>,
+        scale_types: HashMap<ScopedVariable, ScaleTypeSpec>,
         candidate_datasets: HashSet<ScopedVariable>,
     ) -> Self {
         Self {
             scope,
             candidate_datasets,
-            local_time_scales,
-            local_datetime_fields: Default::default(),
+            scale_types,
+            data_fields_scale_types: Default::default(),
         }
+    }
+
+    pub fn get_local_datetime_fields(
+        &self,
+        warnings: &mut Vec<PlannerWarnings>,
+    ) -> HashMap<ScopedVariable, HashSet<String>> {
+        let mut local_datetime_fields: HashMap<ScopedVariable, HashSet<String>> =
+            Default::default();
+
+        for (dataset_var, field_scale_types) in &self.data_fields_scale_types {
+            for (field, scale_types) in field_scale_types {
+                // Check if field is scaled with a Time scale
+                if scale_types.contains(&ScaleTypeSpec::Time) {
+                    let fields = local_datetime_fields
+                        .entry(dataset_var.clone())
+                        .or_default();
+                    fields.insert(field.clone());
+
+                    // Check if field is scaled with other scales
+                    if scale_types.len() > 1 {
+                        let other_scales: Vec<_> = scale_types
+                            .iter()
+                            .cloned()
+                            .filter(|scale_type| !matches!(scale_type, ScaleTypeSpec::Time))
+                            .map(|scale_type| {
+                                serde_json::to_string(&scale_type)
+                                    .expect("Failed to convert scale type to JSON string")
+                            })
+                            .collect();
+                        let other_scales = other_scales.join(", ");
+                        warnings.push(PlannerWarnings::StringifyDatetimeMixedUsage(
+                            format!("Field \"{}\" of dataset \"{}\" is scaled using both time and the following non-time scales: {}", field, dataset_var.0.name, other_scales)
+                        ))
+                    }
+                }
+            }
+        }
+
+        local_datetime_fields
     }
 }
 
@@ -142,13 +181,17 @@ impl ChartVisitor for CollectLocalTimeScaledFieldsVisitor {
                                             resolved_scale.scope.clone(),
                                         );
 
-                                        if self.local_time_scales.contains(&resolved_scoped_scale) {
-                                            // Save off field for dataset
-                                            let entry = self
-                                                .local_datetime_fields
+                                        if let Some(scale_type) =
+                                            self.scale_types.get(&resolved_scoped_scale)
+                                        {
+                                            let dataset = self
+                                                .data_fields_scale_types
                                                 .entry(resolved_data_scoped.clone());
-                                            let fields = entry.or_default();
-                                            fields.insert(field.clone());
+                                            let fields = dataset.or_default();
+
+                                            let field_entry = fields.entry(field.clone());
+                                            let scale_types = field_entry.or_default();
+                                            scale_types.insert(scale_type.clone());
                                         }
                                     }
                                 }

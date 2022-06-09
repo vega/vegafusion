@@ -37,8 +37,13 @@ pub struct PreTransformBrokenInteractivityWarning {
 pub struct PreTransformUnsupportedWarning {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PlannerWarning {
+    #[prost(string, tag="1")]
+    pub message: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformWarning {
-    #[prost(oneof="pre_transform_warning::WarningType", tags="1, 2, 3")]
+    #[prost(oneof="pre_transform_warning::WarningType", tags="1, 2, 3, 4")]
     pub warning_type: ::core::option::Option<pre_transform_warning::WarningType>,
 }
 /// Nested message and enum types in `PreTransformWarning`.
@@ -51,6 +56,8 @@ pub mod pre_transform_warning {
         BrokenInteractivity(super::PreTransformBrokenInteractivityWarning),
         #[prost(message, tag="3")]
         Unsupported(super::PreTransformUnsupportedWarning),
+        #[prost(message, tag="4")]
+        Planner(super::PlannerWarning),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
