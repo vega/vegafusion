@@ -337,9 +337,9 @@ impl TaskGraphRuntime {
         // Add planner warnings
         for planner_warning in &plan.warnings {
             warnings.push(PreTransformWarning {
-                warning_type: Some(WarningType::Planner(
-                    PlannerWarning { message: planner_warning.message()  },
-                )),
+                warning_type: Some(WarningType::Planner(PlannerWarning {
+                    message: planner_warning.message(),
+                })),
             });
         }
 

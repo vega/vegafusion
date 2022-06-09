@@ -17,13 +17,13 @@ use crate::spec::chart::ChartSpec;
 
 #[derive(Clone, Debug)]
 pub enum PlannerWarnings {
-    StringifyDatetimeMixedUsage(String)
+    StringifyDatetimeMixedUsage(String),
 }
 
 impl PlannerWarnings {
     pub fn message(&self) -> String {
         match &self {
-            PlannerWarnings::StringifyDatetimeMixedUsage(message) => message.clone()
+            PlannerWarnings::StringifyDatetimeMixedUsage(message) => message.clone(),
         }
     }
 }
@@ -53,7 +53,7 @@ pub struct SpecPlan {
     pub server_spec: ChartSpec,
     pub client_spec: ChartSpec,
     pub comm_plan: CommPlan,
-    pub warnings: Vec<PlannerWarnings>
+    pub warnings: Vec<PlannerWarnings>,
 }
 
 impl SpecPlan {
@@ -83,7 +83,12 @@ impl SpecPlan {
         }
 
         if config.stringify_local_datetimes {
-            stringify_local_datetimes(&mut server_spec, &mut client_spec, &comm_plan, &mut warnings)?;
+            stringify_local_datetimes(
+                &mut server_spec,
+                &mut client_spec,
+                &comm_plan,
+                &mut warnings,
+            )?;
         }
 
         Ok(Self {
