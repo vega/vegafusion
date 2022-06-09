@@ -6,7 +6,6 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use crate::data::table::VegaFusionTable;
 use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::proto::gen::tasks::{Task, TzConfig};
 use crate::spec::data::DataSpec;
@@ -132,12 +131,8 @@ impl ChartSpec {
         Ok(visitor.task_scope)
     }
 
-    pub fn to_tasks(
-        &self,
-        tz_config: &TzConfig,
-        inline_datasets: Option<HashMap<String, VegaFusionTable>>,
-    ) -> Result<Vec<Task>> {
-        let mut visitor = MakeTasksVisitor::new(tz_config, inline_datasets);
+    pub fn to_tasks(&self, tz_config: &TzConfig) -> Result<Vec<Task>> {
+        let mut visitor = MakeTasksVisitor::new(tz_config);
         self.walk(&mut visitor)?;
         Ok(visitor.tasks)
     }

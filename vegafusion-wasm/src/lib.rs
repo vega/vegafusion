@@ -366,7 +366,7 @@ pub fn render_vegafusion(
         local_tz,
         default_input_tz: None,
     };
-    let tasks = spec_plan.server_spec.to_tasks(&tz_config, None).unwrap();
+    let tasks = spec_plan.server_spec.to_tasks(&tz_config).unwrap();
     let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
 
     // Create closure to update chart from received messages

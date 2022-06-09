@@ -29,7 +29,7 @@ use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_value::TaskValue;
 use serde_json::Value;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 
@@ -107,18 +107,13 @@ impl ChartVisitor for MakeTaskScopeVisitor {
 pub struct MakeTasksVisitor {
     pub tasks: Vec<Task>,
     pub tz_config: TzConfig,
-    pub inline_datasets: HashMap<String, VegaFusionTable>,
 }
 
 impl MakeTasksVisitor {
-    pub fn new(
-        tz_config: &TzConfig,
-        inline_datasets: Option<HashMap<String, VegaFusionTable>>,
-    ) -> Self {
+    pub fn new(tz_config: &TzConfig) -> Self {
         Self {
             tasks: Default::default(),
             tz_config: tz_config.clone(),
-            inline_datasets: inline_datasets.unwrap_or_default(),
         }
     }
 }
@@ -175,33 +170,6 @@ impl ChartVisitor for MakeTasksVisitor {
                     Url::Expr(url_expr)
                 }
             };
-
-            // Handle inline data
-            if let Url::String(url) = &proto_url {
-                if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
-                    let inline_name = inline_name.trim().to_string();
-                    return if let Some(inline_dataset) = self.inline_datasets.get(&inline_name) {
-                        let task = Task::new_data_values(
-                            data_var,
-                            scope,
-                            DataValuesTask {
-                                values: inline_dataset.to_ipc_bytes()?,
-                                format_type,
-                                pipeline,
-                            },
-                            &self.tz_config,
-                        );
-
-                        self.tasks.push(task);
-                        Ok(())
-                    } else {
-                        Err(VegaFusionError::internal(format!(
-                            "No inline dataset named {}",
-                            inline_name
-                        )))
-                    };
-                }
-            }
 
             Task::new_data_url(
                 data_var,

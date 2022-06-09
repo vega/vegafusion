@@ -8,9 +8,8 @@
  */
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyList, PyString, PyTuple};
+use pyo3::types::{PyBytes, PyDict, PyString};
 use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::runtime::Runtime;
 use vegafusion_core::error::ToExternalError;
 use vegafusion_core::proto::gen::pretransform::pre_transform_warning::WarningType;
@@ -18,9 +17,6 @@ use vegafusion_core::proto::gen::services::pre_transform_result;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use serde::{Deserialize, Serialize};
-use vegafusion_core::arrow::datatypes::Schema;
-use vegafusion_core::arrow::pyarrow::PyArrowConvert;
-use vegafusion_core::arrow::record_batch::RecordBatch;
 use vegafusion_core::data::table::VegaFusionTable;
 
 use mimalloc::MiMalloc;
@@ -86,17 +82,9 @@ impl PyTaskGraphRuntime {
             .iter()
             .map(|(name, table_bytes)| {
                 let name = name.cast_as::<PyString>()?;
-                let tuple = table_bytes.cast_as::<PyTuple>()?;
-                let schema = Schema::from_pyarrow(tuple.get_item(0)?)?;
-                let list = tuple.get_item(1)?.cast_as::<PyList>()?;
-                let batches: Vec<_> = list
-                    .iter()
-                    .map(RecordBatch::from_pyarrow)
-                    .collect::<PyResult<Vec<_>>>()?;
-                Ok((
-                    name.to_string(),
-                    VegaFusionTable::try_new(Arc::new(schema), batches)?,
-                ))
+                let ipc_bytes = table_bytes.cast_as::<PyBytes>()?;
+                let table = VegaFusionTable::from_ipc_bytes(ipc_bytes.as_bytes())?;
+                Ok((name.to_string(), table))
             })
             .collect::<PyResult<HashMap<_, _>>>()?;
 

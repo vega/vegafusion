@@ -60,7 +60,7 @@ async fn test_extract_server_data() {
     let client_stubs: Vec<_> = client_inputs.difference(&client_defs).collect();
     println!("client_stubs: {:?}", client_stubs);
 
-    let tasks = server_spec.to_tasks(&tz_config, None).unwrap();
+    let tasks = server_spec.to_tasks(&tz_config).unwrap();
     let graph = Arc::new(TaskGraph::new(tasks, &task_scope).unwrap());
     let mapping = graph.build_mapping();
     // println!("{:#?}", mapping);
@@ -72,6 +72,7 @@ async fn test_extract_server_data() {
             mapping
                 .get(&(Variable::new_data("data_3"), Vec::new()))
                 .unwrap(),
+            Default::default(),
         )
         .await
         .unwrap();
@@ -87,6 +88,7 @@ async fn test_extract_server_data() {
                     Vec::new(),
                 ))
                 .unwrap(),
+            Default::default(),
         )
         .await
         .unwrap();

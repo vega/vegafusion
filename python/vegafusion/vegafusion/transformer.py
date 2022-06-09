@@ -79,9 +79,12 @@ def to_arrow_ipc_bytes(data, stream=False):
     :param stream: If True, write IPC Stream format. If False (default), write ipc file format.
     :return: bytes
     """
-    import pyarrow as pa
-
     table = to_arrow_table(data)
+    return arrow_table_to_ipc_bytes(table, stream=stream)
+
+
+def arrow_table_to_ipc_bytes(table, stream=False):
+    import pyarrow as pa
 
     # Next we write the Arrow table as a feather file (The Arrow IPC format on disk).
     # Write it in memory first so we can hash the contents before touching disk.
