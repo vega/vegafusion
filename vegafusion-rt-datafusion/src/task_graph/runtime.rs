@@ -59,6 +59,7 @@ impl TaskGraphRuntime {
         &self,
         task_graph: Arc<TaskGraph>,
         node_value_index: &NodeValueIndex,
+        inline_datasets: HashMap<String, VegaFusionTable>,
     ) -> Result<TaskValue> {
         // We shouldn't panic inside get_or_compute_node_value, but since this may be used
         // in a server context, wrap in catch_unwind just in case.
@@ -66,6 +67,7 @@ impl TaskGraphRuntime {
             task_graph,
             node_value_index.node_index as usize,
             self.cache.clone(),
+            inline_datasets,
         ))
         .catch_unwind()
         .await;
@@ -118,7 +120,7 @@ impl TaskGraphRuntime {
                         Ok(async move {
                             let value = task_graph_runtime
                                 .clone()
-                                .get_node_value(task_graph, node_value_index)
+                                .get_node_value(task_graph, node_value_index, Default::default())
                                 .await?;
 
                             Ok::<_, VegaFusionError>(ResponseTaskValue {
@@ -235,10 +237,7 @@ impl TaskGraphRuntime {
             default_input_tz: default_input_tz.clone(),
         };
         let task_scope = plan.server_spec.to_task_scope().unwrap();
-        let tasks = plan
-            .server_spec
-            .to_tasks(&tz_config, Some(inline_datasets))
-            .unwrap();
+        let tasks = plan.server_spec.to_tasks(&tz_config).unwrap();
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
 
@@ -249,7 +248,11 @@ impl TaskGraphRuntime {
                 .get(var)
                 .unwrap_or_else(|| panic!("Failed to lookup variable '{:?}'", var));
             let value = self
-                .get_node_value(Arc::new(task_graph.clone()), node_index)
+                .get_node_value(
+                    Arc::new(task_graph.clone()),
+                    node_index,
+                    inline_datasets.clone(),
+                )
                 .await
                 .expect("Failed to get node value");
 
@@ -358,6 +361,7 @@ async fn get_or_compute_node_value(
     task_graph: Arc<TaskGraph>,
     node_index: usize,
     cache: VegaFusionCache,
+    inline_datasets: HashMap<String, VegaFusionTable>,
 ) -> Result<CacheValue> {
     // Get the cache key for requested node
     let node = task_graph.node(node_index).unwrap();
@@ -388,6 +392,7 @@ async fn get_or_compute_node_value(
                     task_graph.clone(),
                     input_node_index,
                     cloned_cache.clone(),
+                    inline_datasets.clone(),
                 )));
             }
 
@@ -414,7 +419,7 @@ async fn get_or_compute_node_value(
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            task.eval(&input_values, &tz_config).await
+            task.eval(&input_values, &tz_config, inline_datasets).await
         };
 
         // get or construct from cache

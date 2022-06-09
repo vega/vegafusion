@@ -81,6 +81,7 @@ impl TaskCall for DataUrlTask {
         &self,
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
+        inline_datasets: HashMap<String, VegaFusionTable>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Build compilation config for url signal (if any) and transforms (if any)
         let config = build_compilation_config(&self.input_vars(), values, tz_config);
@@ -102,7 +103,17 @@ impl TaskCall for DataUrlTask {
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
 
         let date_mode = DateParseMode::JavaScript;
-        let df = if url.ends_with(".csv") || url.ends_with(".tsv") {
+        let df = if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
+            let inline_name = inline_name.trim().to_string();
+            if let Some(inline_dataset) = inline_datasets.get(&inline_name) {
+                inline_dataset.to_dataframe()?
+            } else {
+                return Err(VegaFusionError::internal(format!(
+                    "No inline dataset named {}",
+                    inline_name
+                )));
+            }
+        } else if url.ends_with(".csv") || url.ends_with(".tsv") {
             read_csv(url, &parse).await?
         } else if url.ends_with(".json") {
             read_json(&url, self.batch_size as usize).await?
@@ -376,6 +387,7 @@ impl TaskCall for DataValuesTask {
         &self,
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
+        _inline_datasets: HashMap<String, VegaFusionTable>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Deserialize data into table
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
@@ -421,6 +433,7 @@ impl TaskCall for DataSourceTask {
         &self,
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
+        _inline_datasets: HashMap<String, VegaFusionTable>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         let input_vars = self.input_vars();
         let mut config = build_compilation_config(&input_vars, values, tz_config);

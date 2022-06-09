@@ -11,6 +11,8 @@ use crate::expression::compiler::compile;
 use crate::expression::compiler::utils::ExprHelpers;
 use crate::task_graph::task::TaskCall;
 use async_trait::async_trait;
+use std::collections::HashMap;
+use vegafusion_core::data::table::VegaFusionTable;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::error::Result;
@@ -24,6 +26,7 @@ impl TaskCall for SignalTask {
         &self,
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
+        _inline_datasets: HashMap<String, VegaFusionTable>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         let config = build_compilation_config(&self.input_vars(), values, tz_config);
         let expression = self.expr.as_ref().unwrap();

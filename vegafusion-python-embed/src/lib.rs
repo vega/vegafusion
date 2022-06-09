@@ -88,10 +88,7 @@ impl PyTaskGraphRuntime {
                 let name = name.cast_as::<PyString>()?;
                 let ipc_bytes = table_bytes.cast_as::<PyBytes>()?;
                 let table = VegaFusionTable::from_ipc_bytes(ipc_bytes.as_bytes())?;
-                Ok((
-                    name.to_string(),
-                    table,
-                ))
+                Ok((name.to_string(), table))
             })
             .collect::<PyResult<HashMap<_, _>>>()?;
 

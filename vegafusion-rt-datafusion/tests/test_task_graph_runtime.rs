@@ -92,7 +92,7 @@ async fn try_it() {
     let graph_runtime = TaskGraphRuntime::new(Some(20), Some(1024_i32.pow(3) as usize));
     // let result = graph_runtime.get_node_value(graph, 2, None).await.unwrap();
     let result = graph_runtime
-        .get_node_value(graph, &NodeValueIndex::new(2, Some(0)))
+        .get_node_value(graph, &NodeValueIndex::new(2, Some(0)), Default::default())
         .await
         .unwrap();
 
@@ -140,7 +140,7 @@ async fn try_it_from_spec() {
         default_input_tz: None,
     };
     let task_scope = chart.to_task_scope().unwrap();
-    let tasks = chart.to_tasks(&tz_config, None).unwrap();
+    let tasks = chart.to_tasks(&tz_config).unwrap();
 
     println!("task_scope: {:?}", task_scope);
     println!("tasks: {:?}", tasks);
@@ -149,7 +149,7 @@ async fn try_it_from_spec() {
 
     let graph_runtime = TaskGraphRuntime::new(Some(20), Some(1024_i32.pow(3) as usize));
     let result = graph_runtime
-        .get_node_value(graph, &NodeValueIndex::new(2, Some(0)))
+        .get_node_value(graph, &NodeValueIndex::new(2, Some(0)), Default::default())
         .await
         .unwrap();
     println!("result: {:?}", result);
