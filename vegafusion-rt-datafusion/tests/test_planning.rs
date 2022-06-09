@@ -88,7 +88,7 @@ async fn test_extract_server_data() {
                     Vec::new(),
                 ))
                 .unwrap(),
-            &Default::default(),
+            Default::default(),
         )
         .await
         .unwrap();
