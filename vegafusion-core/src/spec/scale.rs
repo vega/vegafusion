@@ -32,7 +32,7 @@ pub struct ScaleSpec {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum ScaleTypeSpec {
     // Quantitative Scales

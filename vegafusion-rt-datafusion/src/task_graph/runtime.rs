@@ -26,7 +26,7 @@ use vegafusion_core::planning::watch::{ExportUpdate, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_warning::WarningType;
-use vegafusion_core::proto::gen::pretransform::PreTransformWarning;
+use vegafusion_core::proto::gen::pretransform::{PlannerWarning, PreTransformWarning};
 use vegafusion_core::proto::gen::pretransform::{
     PreTransformBrokenInteractivityWarning, PreTransformRequest, PreTransformResponse,
     PreTransformRowLimitWarning, PreTransformUnsupportedWarning,
@@ -334,6 +334,15 @@ impl TaskGraphRuntime {
                 warning_type: Some(WarningType::BrokenInteractivity(
                     PreTransformBrokenInteractivityWarning { vars },
                 )),
+            });
+        }
+
+        // Add planner warnings
+        for planner_warning in &plan.warnings {
+            warnings.push(PreTransformWarning {
+                warning_type: Some(WarningType::Planner(PlannerWarning {
+                    message: planner_warning.message(),
+                })),
             });
         }
 

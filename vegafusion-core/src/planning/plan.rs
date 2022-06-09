@@ -15,6 +15,19 @@ use crate::planning::stitch::{stitch_specs, CommPlan};
 use crate::planning::stringify_local_datetimes::stringify_local_datetimes;
 use crate::spec::chart::ChartSpec;
 
+#[derive(Clone, Debug)]
+pub enum PlannerWarnings {
+    StringifyDatetimeMixedUsage(String),
+}
+
+impl PlannerWarnings {
+    pub fn message(&self) -> String {
+        match &self {
+            PlannerWarnings::StringifyDatetimeMixedUsage(message) => message.clone(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct PlannerConfig {
     pub split_domain_data: bool,
@@ -40,10 +53,13 @@ pub struct SpecPlan {
     pub server_spec: ChartSpec,
     pub client_spec: ChartSpec,
     pub comm_plan: CommPlan,
+    pub warnings: Vec<PlannerWarnings>,
 }
 
 impl SpecPlan {
     pub fn try_new(full_spec: &ChartSpec, config: &PlannerConfig) -> Result<Self> {
+        let mut warnings: Vec<PlannerWarnings> = Vec::new();
+
         let mut client_spec = full_spec.clone();
 
         // Attempt to limit the columns produced by each dataset to only include those
@@ -67,13 +83,19 @@ impl SpecPlan {
         }
 
         if config.stringify_local_datetimes {
-            stringify_local_datetimes(&mut server_spec, &mut client_spec, &comm_plan)?;
+            stringify_local_datetimes(
+                &mut server_spec,
+                &mut client_spec,
+                &comm_plan,
+                &mut warnings,
+            )?;
         }
 
         Ok(Self {
             server_spec,
             client_spec,
             comm_plan,
+            warnings,
         })
     }
 }

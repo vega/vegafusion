@@ -123,6 +123,12 @@ impl PyTaskGraphRuntime {
                                 message: "Unable to pre-transform any datasets in the Vega specification".to_string()
                             }
                         }
+                        WarningType::Planner(warning) => {
+                            PreTransformWarning {
+                                typ: "Planner".to_string(),
+                                message: warning.message.clone()
+                            }
+                        }
                     }
                 }).collect();
 

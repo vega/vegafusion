@@ -30,11 +30,16 @@ message PreTransformBrokenInteractivityWarning {
 
 message PreTransformUnsupportedWarning {}
 
+message PlannerWarning {
+  string message = 1;
+}
+
 message PreTransformWarning {
   oneof warning_type {
     PreTransformRowLimitWarning row_limit = 1;
       PreTransformBrokenInteractivityWarning broken_interactivity = 2;
       PreTransformUnsupportedWarning unsupported = 3;
+      PlannerWarning planner = 4;
   }
 }
 
