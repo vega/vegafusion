@@ -8,9 +8,8 @@
  */
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyList, PyString, PyTuple};
+use pyo3::types::{PyBytes, PyDict, PyString};
 use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::runtime::Runtime;
 use vegafusion_core::error::ToExternalError;
 use vegafusion_core::proto::gen::pretransform::pre_transform_warning::WarningType;
@@ -18,9 +17,6 @@ use vegafusion_core::proto::gen::services::pre_transform_result;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use serde::{Deserialize, Serialize};
-use vegafusion_core::arrow::datatypes::Schema;
-use vegafusion_core::arrow::pyarrow::PyArrowConvert;
-use vegafusion_core::arrow::record_batch::RecordBatch;
 use vegafusion_core::data::table::VegaFusionTable;
 
 use mimalloc::MiMalloc;
