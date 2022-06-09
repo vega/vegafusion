@@ -86,16 +86,11 @@ impl PyTaskGraphRuntime {
             .iter()
             .map(|(name, table_bytes)| {
                 let name = name.cast_as::<PyString>()?;
-                let tuple = table_bytes.cast_as::<PyTuple>()?;
-                let schema = Schema::from_pyarrow(tuple.get_item(0)?)?;
-                let list = tuple.get_item(1)?.cast_as::<PyList>()?;
-                let batches: Vec<_> = list
-                    .iter()
-                    .map(RecordBatch::from_pyarrow)
-                    .collect::<PyResult<Vec<_>>>()?;
+                let ipc_bytes = table_bytes.cast_as::<PyBytes>()?;
+                let table = VegaFusionTable::from_ipc_bytes(ipc_bytes.as_bytes())?;
                 Ok((
                     name.to_string(),
-                    VegaFusionTable::try_new(Arc::new(schema), batches)?,
+                    table,
                 ))
             })
             .collect::<PyResult<HashMap<_, _>>>()?;

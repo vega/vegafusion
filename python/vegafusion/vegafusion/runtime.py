@@ -91,7 +91,7 @@ class VegaFusionRuntime:
                     'Unsupported': No transforms in the provided Vega specification were
                         eligible for pre-transforming
         """
-        from .transformer import to_arrow_table
+        from .transformer import to_arrow_ipc_bytes, arrow_table_to_ipc_bytes
 
         if self._grpc_channel:
             raise ValueError("pre_transform_spec not yet supported over gRPC")
@@ -101,12 +101,10 @@ class VegaFusionRuntime:
             inline_batches = dict()
             for name, value in inline_datasets.items():
                 if isinstance(value, pa.Table):
-                    table = value
+                    table_bytes = arrow_table_to_ipc_bytes(value, stream=True)
                 else:
-                    table = to_arrow_table(value)
-                schema = table.schema
-                batches = table.to_batches(max_chunksize=8096)
-                inline_batches[name] = (schema, batches)
+                    table_bytes = to_arrow_ipc_bytes(value, stream=True)
+                inline_batches[name] = table_bytes
 
             new_spec, warnings = self.embedded_runtime.pre_transform_spec(
                 spec,
