@@ -10,7 +10,7 @@ use crate::task_graph::timezone::RuntimeTzConfig;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::convert::TryInto;
-use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::tasks::task::TaskKind;
 use vegafusion_core::proto::gen::tasks::Task;
@@ -22,7 +22,7 @@ pub trait TaskCall {
         &self,
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
-        inline_datasets: HashMap<String, VegaFusionTable>,
+        inline_datasets: HashMap<String, VegaFusionDataset>,
     ) -> Result<(TaskValue, Vec<TaskValue>)>;
 }
 
@@ -32,7 +32,7 @@ impl TaskCall for Task {
         &self,
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
-        inline_datasets: HashMap<String, VegaFusionTable>,
+        inline_datasets: HashMap<String, VegaFusionDataset>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         match self.task_kind() {
             TaskKind::Value(value) => Ok((value.try_into()?, Default::default())),

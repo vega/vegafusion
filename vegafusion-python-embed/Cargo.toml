@@ -8,6 +8,9 @@ version = "0.6.0-rc5"
 name = "vegafusion_embed"
 crate-type = [ "cdylib",]
 
+[dependencies.deterministic-hash]
+version="1.0.1"
+
 [dependencies.serde]
 version = "1.0.137"
 features = [ "derive",]

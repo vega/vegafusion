@@ -76,7 +76,7 @@ async fn try_it_from_spec() {
         default_input_tz: None,
     };
     let task_scope = chart.to_task_scope().unwrap();
-    let tasks = chart.to_tasks(&tz_config).unwrap();
+    let tasks = chart.to_tasks(&tz_config, &Default::default()).unwrap();
 
     let graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let request = QueryRequest {
