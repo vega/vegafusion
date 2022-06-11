@@ -3,13 +3,8 @@ import vegafusion as vf
 import json
 
 
-def test_pre_transform_multi_partition():
-    n = 4050
-    order_items = pd.DataFrame({
-        "menu_item": [0] * n + [1] * n
-    })
-
-    vega_spec = r"""
+def order_items_spec():
+    return r"""
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
   "background": "white",
@@ -77,17 +72,47 @@ def test_pre_transform_multi_partition():
   ]
 }
 """
+
+
+def test_pre_transform_multi_partition():
+    n = 4050
+    order_items = pd.DataFrame({
+        "menu_item": [0] * n + [1] * n
+    })
+
+    vega_spec = order_items_spec()
     new_spec, warnings = vf.runtime.pre_transform_spec(vega_spec, "UTC", inline_datasets={
         "order_items": order_items,
     })
     new_spec = json.loads(new_spec)
-    data0 = new_spec["data"][1]
-    datum0 = data0["values"][0]
-    datum1 = data0["values"][1]
+    assert new_spec["data"][1] == dict(
+        name="data_0",
+        values=[
+            {"menu_item": 0, "__count": n},
+            {"menu_item": 1, "__count": n},
+        ]
+    )
 
-    # Check for expected counts in data_0 dataset
-    assert data0["name"] == "data_0"
-    assert datum0["menu_item"] == 0
-    assert datum0["__count"] == n
-    assert datum1["menu_item"] == 1
-    assert datum1["__count"] == n
+
+def test_pre_transform_cache_cleared():
+    # Make sure that result changes when input DataFrame changes
+    def check(n):
+        order_items = pd.DataFrame({
+            "menu_item": [0] * n + [1] * n
+        })
+
+        vega_spec = order_items_spec()
+        new_spec, warnings = vf.runtime.pre_transform_spec(vega_spec, "UTC", inline_datasets={
+            "order_items": order_items,
+        })
+        new_spec = json.loads(new_spec)
+        assert new_spec["data"][1] == dict(
+            name="data_0",
+            values=[
+                {"menu_item": 0, "__count": n},
+                {"menu_item": 1, "__count": n},
+            ]
+        )
+
+    check(16)
+    check(32)

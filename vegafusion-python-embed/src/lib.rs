@@ -17,9 +17,9 @@ use vegafusion_core::proto::gen::services::pre_transform_result;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use serde::{Deserialize, Serialize};
-use vegafusion_core::data::table::VegaFusionTable;
 
 use mimalloc::MiMalloc;
+use vegafusion_core::data::dataset::VegaFusionDataset;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -83,8 +83,9 @@ impl PyTaskGraphRuntime {
             .map(|(name, table_bytes)| {
                 let name = name.cast_as::<PyString>()?;
                 let ipc_bytes = table_bytes.cast_as::<PyBytes>()?;
-                let table = VegaFusionTable::from_ipc_bytes(ipc_bytes.as_bytes())?;
-                Ok((name.to_string(), table))
+                let ipc_bytes = ipc_bytes.as_bytes();
+                let dataset = VegaFusionDataset::from_table_ipc_bytes(ipc_bytes)?;
+                Ok((name.to_string(), dataset))
             })
             .collect::<PyResult<HashMap<_, _>>>()?;
 

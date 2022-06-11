@@ -32,7 +32,9 @@ use std::io::Write;
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 use vegafusion_core::arrow::datatypes::TimeUnit;
+use vegafusion_core::data::dataset::VegaFusionDataset;
 
+use crate::data::dataset::VegaFusionDatasetUtils;
 use crate::expression::compiler::builtin_functions::date_time::local_to_utc::make_to_utc_millis_fn;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
@@ -81,7 +83,7 @@ impl TaskCall for DataUrlTask {
         &self,
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
-        inline_datasets: HashMap<String, VegaFusionTable>,
+        inline_datasets: HashMap<String, VegaFusionDataset>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Build compilation config for url signal (if any) and transforms (if any)
         let config = build_compilation_config(&self.input_vars(), values, tz_config);
@@ -95,6 +97,10 @@ impl TaskCall for DataUrlTask {
                 url_scalar.to_scalar_string()?
             }
         };
+
+        // Strip trailing Hash, e.g. https://foo.csv#1234 -> https://foo.csv
+        let url_parts: Vec<&str> = url.splitn(2, '#').collect();
+        let url = url_parts.get(0).cloned().unwrap_or(&url).to_string();
 
         // Handle references to vega default datasets (e.g. "data/us-10m.json")
         let url = check_builtin_dataset(url);
@@ -387,7 +393,7 @@ impl TaskCall for DataValuesTask {
         &self,
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
-        _inline_datasets: HashMap<String, VegaFusionTable>,
+        _inline_datasets: HashMap<String, VegaFusionDataset>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Deserialize data into table
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
@@ -433,7 +439,7 @@ impl TaskCall for DataSourceTask {
         &self,
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
-        _inline_datasets: HashMap<String, VegaFusionTable>,
+        _inline_datasets: HashMap<String, VegaFusionDataset>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         let input_vars = self.input_vars();
         let mut config = build_compilation_config(&input_vars, values, tz_config);

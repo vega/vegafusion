@@ -49,7 +49,10 @@ async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> Q
     };
     let spec_plan = SpecPlan::try_new(&full_spec, &Default::default()).unwrap();
     let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
-    let tasks = spec_plan.server_spec.to_tasks(&tz_config).unwrap();
+    let tasks = spec_plan
+        .server_spec
+        .to_tasks(&tz_config, &Default::default())
+        .unwrap();
     let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let task_graph_mapping = task_graph.build_mapping();
 
@@ -93,7 +96,10 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
     // );
 
     // Build task graph
-    let tasks = spec_plan.server_spec.to_tasks(&tz_config).unwrap();
+    let tasks = spec_plan
+        .server_spec
+        .to_tasks(&tz_config, &Default::default())
+        .unwrap();
     let mut task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let task_graph_mapping = task_graph.build_mapping();
 

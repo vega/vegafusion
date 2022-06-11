@@ -1390,7 +1390,10 @@ async fn check_spec_sequence(
     );
 
     // Build task graph
-    let tasks = spec_plan.server_spec.to_tasks(&tz_config).unwrap();
+    let tasks = spec_plan
+        .server_spec
+        .to_tasks(&tz_config, &Default::default())
+        .unwrap();
     let mut task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let task_graph_mapping = task_graph.build_mapping();
 

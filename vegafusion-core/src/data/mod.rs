@@ -6,6 +6,7 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+pub mod dataset;
 pub mod json_writer;
 pub mod scalar;
 pub mod table;

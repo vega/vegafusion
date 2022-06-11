@@ -6,6 +6,7 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use crate::data::dataset::VegaFusionDataset;
 use crate::data::scalar::{ScalarValue, ScalarValueHelpers};
 use crate::data::table::VegaFusionTable;
 use crate::error::{Result, VegaFusionError};
@@ -29,7 +30,7 @@ use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_value::TaskValue;
 use serde_json::Value;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::ops::Deref;
 
@@ -103,22 +104,24 @@ impl ChartVisitor for MakeTaskScopeVisitor {
 }
 
 /// For a spec that is fully supported on the server, collect tasks
-#[derive(Clone, Debug, Default)]
-pub struct MakeTasksVisitor {
+#[derive(Clone, Debug)]
+pub struct MakeTasksVisitor<'a> {
     pub tasks: Vec<Task>,
     pub tz_config: TzConfig,
+    pub datasets: &'a HashMap<String, VegaFusionDataset>,
 }
 
-impl MakeTasksVisitor {
-    pub fn new(tz_config: &TzConfig) -> Self {
+impl<'a> MakeTasksVisitor<'a> {
+    pub fn new(tz_config: &TzConfig, datasets: &'a HashMap<String, VegaFusionDataset>) -> Self {
         Self {
             tasks: Default::default(),
             tz_config: tz_config.clone(),
+            datasets,
         }
     }
 }
 
-impl ChartVisitor for MakeTasksVisitor {
+impl<'a> ChartVisitor for MakeTasksVisitor<'a> {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         let data_var = Variable::new_data(&data.name);
 
@@ -163,13 +166,23 @@ impl ChartVisitor for MakeTasksVisitor {
         };
 
         let task = if let Some(url) = &data.url {
-            let proto_url = match url {
+            let mut proto_url = match url {
                 StringOrSignalSpec::String(url) => Url::String(url.clone()),
                 StringOrSignalSpec::Signal(expr) => {
                     let url_expr = parse(&expr.signal)?;
                     Url::Expr(url_expr)
                 }
             };
+
+            // Append fingerprint to URL that references an inline dataset
+            if let Url::String(url) = &proto_url {
+                if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
+                    let inline_name = inline_name.trim().to_string();
+                    if let Some(dataset) = self.datasets.get(&inline_name) {
+                        proto_url = Url::String(format!("{}#{}", url, dataset.fingerprint()));
+                    }
+                }
+            }
 
             Task::new_data_url(
                 data_var,

@@ -3108,6 +3108,7 @@ dependencies = [
 name = "vegafusion-python-embed"
 version = "0.6.0-rc5"
 dependencies = [
+ "deterministic-hash",
  "mimalloc",
  "pyo3",
  "serde",

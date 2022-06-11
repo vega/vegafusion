@@ -20,7 +20,7 @@ use serde_json::Value;
 use std::convert::{TryFrom, TryInto};
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
-use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 use vegafusion_core::planning::watch::{ExportUpdate, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
@@ -59,7 +59,7 @@ impl TaskGraphRuntime {
         &self,
         task_graph: Arc<TaskGraph>,
         node_value_index: &NodeValueIndex,
-        inline_datasets: HashMap<String, VegaFusionTable>,
+        inline_datasets: HashMap<String, VegaFusionDataset>,
     ) -> Result<TaskValue> {
         // We shouldn't panic inside get_or_compute_node_value, but since this may be used
         // in a server context, wrap in catch_unwind just in case.
@@ -190,8 +190,8 @@ impl TaskGraphRuntime {
         let inline_datasets = inline_pretransform_datasets
             .iter()
             .map(|inline_dataset| {
-                let table = VegaFusionTable::from_ipc_bytes(&inline_dataset.table)?;
-                Ok((inline_dataset.name.clone(), table))
+                let dataset = VegaFusionDataset::from_table_ipc_bytes(&inline_dataset.table)?;
+                Ok((inline_dataset.name.clone(), dataset))
             })
             .collect::<Result<HashMap<_, _>>>()?;
 
@@ -216,7 +216,7 @@ impl TaskGraphRuntime {
         local_tz: &str,
         default_input_tz: &Option<String>,
         row_limit: Option<u32>,
-        inline_datasets: HashMap<String, VegaFusionTable>,
+        inline_datasets: HashMap<String, VegaFusionDataset>,
     ) -> Result<PreTransformResult> {
         let spec: ChartSpec =
             serde_json::from_str(spec).with_context(|| "Failed to parse spec".to_string())?;
@@ -237,7 +237,10 @@ impl TaskGraphRuntime {
             default_input_tz: default_input_tz.clone(),
         };
         let task_scope = plan.server_spec.to_task_scope().unwrap();
-        let tasks = plan.server_spec.to_tasks(&tz_config).unwrap();
+        let tasks = plan
+            .server_spec
+            .to_tasks(&tz_config, &inline_datasets)
+            .unwrap();
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
 
@@ -370,7 +373,7 @@ async fn get_or_compute_node_value(
     task_graph: Arc<TaskGraph>,
     node_index: usize,
     cache: VegaFusionCache,
-    inline_datasets: HashMap<String, VegaFusionTable>,
+    inline_datasets: HashMap<String, VegaFusionDataset>,
 ) -> Result<CacheValue> {
     // Get the cache key for requested node
     let node = task_graph.node(node_index).unwrap();
