@@ -122,49 +122,6 @@ mod test_stringify_datetimes {
             }
         }
     }
-
-    #[tokio::test]
-    async fn test_mixed_scale_warning() {
-        // Load spec
-        let spec_path = format!(
-            "{}/tests/specs/pre_transform/shipping_mixed_scales.vg.json",
-            crate_dir()
-        );
-        let spec_str = fs::read_to_string(spec_path).unwrap();
-
-        // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
-        let local_tz = "UTC".to_string();
-
-        let pre_tx_result = runtime
-            .pre_transform_spec(&spec_str, &local_tz, &None, None, Default::default())
-            .await
-            .unwrap();
-
-        let pre_tx_result = pre_tx_result.result.unwrap();
-
-        match pre_tx_result {
-            pre_transform_result::Result::Response(response) => {
-                let warnings = response.warnings;
-                assert_eq!(warnings.len(), 1);
-                let warning = warnings.get(0).unwrap();
-                if let WarningType::Planner(warning) = warning.warning_type.as_ref().unwrap() {
-                    assert_eq!(
-                        warning.message,
-                        "Field \"ship_date\" of dataset \"data_0\" is scaled using both time and the following non-time scales: \"ordinal\""
-                    )
-                } else {
-                    panic!(
-                        "Expected Planner warning type, received: {:?}",
-                        warning.warning_type
-                    )
-                }
-            }
-            pre_transform_result::Result::Error(err) => {
-                panic!("Pre Transform Error: {:?}", err)
-            }
-        }
-    }
 }
 
 fn crate_dir() -> String {
