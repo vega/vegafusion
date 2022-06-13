@@ -16,6 +16,7 @@ use crate::spec::values::StringOrStringList;
 use serde::{Deserialize, Serialize};
 use serde_json::{Number, Value};
 use std::collections::HashMap;
+use crate::spec::axis::AxisSpec;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MarkSpec {
@@ -47,6 +48,9 @@ pub struct MarkSpec {
     pub scales: Vec<ScaleSpec>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub axes: Vec<AxisSpec>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transform: Vec<Value>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -65,6 +69,9 @@ impl MarkSpec {
         }
         for scale in &self.scales {
             visitor.visit_scale(scale, &scope)?;
+        }
+        for axis in &self.axes {
+            visitor.visit_axis(axis, &scope)?;
         }
         for signal in &self.signals {
             visitor.visit_signal(signal, &scope)?;
@@ -96,6 +103,9 @@ impl MarkSpec {
         }
         for scale in &mut self.scales {
             visitor.visit_scale(scale, &scope)?;
+        }
+        for axis in &mut self.axes {
+            visitor.visit_axis(axis, &scope)?;
         }
         for signal in &mut self.signals {
             visitor.visit_signal(signal, &scope)?;

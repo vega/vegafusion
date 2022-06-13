@@ -15,3 +15,4 @@ pub mod title;
 pub mod transform;
 pub mod values;
 pub mod visitors;
+pub mod axis;
