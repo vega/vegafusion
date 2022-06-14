@@ -7,7 +7,6 @@
  * this program the details of the active license.
  */
 
-use std::collections::HashMap;
 use crate::error::Result;
 use crate::expression::escape::escape_field;
 use crate::proto::gen::tasks::Variable;
@@ -18,15 +17,18 @@ use crate::spec::scale::{
     ScaleDomainSpec, ScaleSpec, ScaleTypeSpec,
 };
 use crate::spec::transform::aggregate::AggregateOpSpec;
+use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use itertools::Itertools;
-use crate::task_graph::graph::ScopedVariable;
+use std::collections::HashMap;
 
 /// This optimization extracts the intensive data processing from scale.domain.data specifications
 /// into dedicated datasets. Domain calculations can't be entirely evaluated on the server, but
 /// this approach still allows the heavy data processing to happen on the server, and to avoid
 /// serializing the full dataset to send to the client.
-pub fn split_domain_data(spec: &mut ChartSpec) -> Result<HashMap<ScopedVariable, (ScopedVariable, String)>> {
+pub fn split_domain_data(
+    spec: &mut ChartSpec,
+) -> Result<HashMap<ScopedVariable, (ScopedVariable, String)>> {
     let task_scope = spec.to_task_scope()?;
     let mut visitor = SplitScaleDomainVisitor::new(&task_scope);
     spec.walk_mut(&mut visitor)?;
@@ -84,7 +86,8 @@ impl<'a> MutChartVisitor for SplitScaleDomainVisitor<'a> {
                 data_name, scale.name, field_name, scope_suffix
             );
             let new_data_var = (Variable::new_data(&new_data_name), Vec::from(scope));
-            self.domain_dataset_fields.insert(new_data_var, (data_var, field_name.clone()));
+            self.domain_dataset_fields
+                .insert(new_data_var, (data_var, field_name.clone()));
             let (new_data, new_domain) = if discrete_scale {
                 // Extract sort field and op
                 let (sort_field, sort_op) = if let Some(ScaleDataReferenceSort::Parameters(

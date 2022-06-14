@@ -89,7 +89,7 @@ impl SpecPlan {
                 &mut server_spec,
                 &mut client_spec,
                 &comm_plan,
-                &domain_dataset_fields
+                &domain_dataset_fields,
             )?;
         }
 

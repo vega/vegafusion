@@ -6,6 +6,7 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+pub mod axis;
 pub mod chart;
 pub mod data;
 pub mod mark;
@@ -15,4 +16,3 @@ pub mod title;
 pub mod transform;
 pub mod values;
 pub mod visitors;
-pub mod axis;

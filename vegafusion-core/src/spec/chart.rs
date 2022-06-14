@@ -9,6 +9,7 @@
 use crate::data::dataset::VegaFusionDataset;
 use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::proto::gen::tasks::{Task, TzConfig};
+use crate::spec::axis::AxisSpec;
 use crate::spec::data::DataSpec;
 use crate::spec::mark::MarkSpec;
 use crate::spec::scale::ScaleSpec;
@@ -24,7 +25,6 @@ use itertools::sorted;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::spec::axis::AxisSpec;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ChartSpec {

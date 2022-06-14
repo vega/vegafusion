@@ -7,6 +7,7 @@
  * this program the details of the active license.
  */
 use crate::error::{Result, ResultWithContext, VegaFusionError};
+use crate::spec::axis::AxisSpec;
 use crate::spec::chart::{ChartVisitor, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::scale::ScaleSpec;
@@ -16,7 +17,6 @@ use crate::spec::values::StringOrStringList;
 use serde::{Deserialize, Serialize};
 use serde_json::{Number, Value};
 use std::collections::HashMap;
-use crate::spec::axis::AxisSpec;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MarkSpec {

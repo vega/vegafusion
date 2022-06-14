@@ -26,5 +26,5 @@ pub struct AxisSpec {
 pub enum AxisFormatTypeSpec {
     Number,
     Time,
-    Utc
+    Utc,
 }
