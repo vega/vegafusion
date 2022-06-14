@@ -116,6 +116,7 @@ mod test_custom_specs {
         case("custom/seattle_temps_heatmap", 0.001),
         case("custom/movies_agg_parameterize", 0.001),
         case("custom/escaped_column_name1", 0.001),
+        case("custom/layered_movies", 0.001),
         case("custom/layered_movies", 0.001)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64) {

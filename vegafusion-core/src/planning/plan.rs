@@ -58,7 +58,7 @@ pub struct SpecPlan {
 
 impl SpecPlan {
     pub fn try_new(full_spec: &ChartSpec, config: &PlannerConfig) -> Result<Self> {
-        let mut warnings: Vec<PlannerWarnings> = Vec::new();
+        let warnings: Vec<PlannerWarnings> = Vec::new();
 
         let mut client_spec = full_spec.clone();
 
@@ -69,9 +69,11 @@ impl SpecPlan {
         }
 
         // Split datasets that contain a mix of supported and unsupported transforms
-        if config.split_domain_data {
-            split_domain_data(&mut client_spec)?;
-        }
+        let domain_dataset_fields = if config.split_domain_data {
+            split_domain_data(&mut client_spec)?
+        } else {
+            Default::default()
+        };
 
         let mut task_scope = client_spec.to_task_scope()?;
 
@@ -87,7 +89,7 @@ impl SpecPlan {
                 &mut server_spec,
                 &mut client_spec,
                 &comm_plan,
-                &mut warnings,
+                &domain_dataset_fields
             )?;
         }
 

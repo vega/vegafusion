@@ -7,6 +7,7 @@
  * this program the details of the active license.
  */
 
+use std::collections::HashMap;
 use crate::error::Result;
 use crate::expression::escape::escape_field;
 use crate::proto::gen::tasks::Variable;
@@ -19,14 +20,15 @@ use crate::spec::scale::{
 use crate::spec::transform::aggregate::AggregateOpSpec;
 use crate::task_graph::scope::TaskScope;
 use itertools::Itertools;
+use crate::task_graph::graph::ScopedVariable;
 
 /// This optimization extracts the intensive data processing from scale.domain.data specifications
 /// into dedicated datasets. Domain calculations can't be entirely evaluated on the server, but
 /// this approach still allows the heavy data processing to happen on the server, and to avoid
 /// serializing the full dataset to send to the client.
-pub fn split_domain_data(spec: &mut ChartSpec) -> Result<()> {
+pub fn split_domain_data(spec: &mut ChartSpec) -> Result<HashMap<ScopedVariable, (ScopedVariable, String)>> {
     let task_scope = spec.to_task_scope()?;
-    let mut visitor = SplitUrlDataNodeVisitor::new(&task_scope);
+    let mut visitor = SplitScaleDomainVisitor::new(&task_scope);
     spec.walk_mut(&mut visitor)?;
     for (scope, data) in visitor.new_datasets {
         if scope.is_empty() {
@@ -37,29 +39,32 @@ pub fn split_domain_data(spec: &mut ChartSpec) -> Result<()> {
         }
     }
 
-    Ok(())
+    Ok(visitor.domain_dataset_fields)
 }
 
 #[derive(Debug, Clone)]
-pub struct SplitUrlDataNodeVisitor<'a> {
+pub struct SplitScaleDomainVisitor<'a> {
     pub task_scope: &'a TaskScope,
     pub new_datasets: Vec<(Vec<u32>, DataSpec)>,
+    pub domain_dataset_fields: HashMap<ScopedVariable, (ScopedVariable, String)>,
 }
 
-impl<'a> SplitUrlDataNodeVisitor<'a> {
+impl<'a> SplitScaleDomainVisitor<'a> {
     pub fn new(task_scope: &'a TaskScope) -> Self {
         Self {
             new_datasets: Vec::new(),
             task_scope,
+            domain_dataset_fields: Default::default(),
         }
     }
 }
 
-impl<'a> MutChartVisitor for SplitUrlDataNodeVisitor<'a> {
+impl<'a> MutChartVisitor for SplitScaleDomainVisitor<'a> {
     fn visit_scale(&mut self, scale: &mut ScaleSpec, scope: &[u32]) -> Result<()> {
         let discrete_scale = scale.type_.clone().unwrap_or_default().is_discrete();
         if let Some(ScaleDomainSpec::FieldReference(field_ref)) = &scale.domain {
             let data_name = field_ref.data.clone();
+            let data_var = (Variable::new_data(&data_name), Vec::from(scope));
             let field_name = &field_ref.field;
 
             // Validate whether we can do anything
@@ -78,6 +83,8 @@ impl<'a> MutChartVisitor for SplitUrlDataNodeVisitor<'a> {
                 "{}_{}_domain_{}{}",
                 data_name, scale.name, field_name, scope_suffix
             );
+            let new_data_var = (Variable::new_data(&new_data_name), Vec::from(scope));
+            self.domain_dataset_fields.insert(new_data_var, (data_var, field_name.clone()));
             let (new_data, new_domain) = if discrete_scale {
                 // Extract sort field and op
                 let (sort_field, sort_op) = if let Some(ScaleDataReferenceSort::Parameters(
