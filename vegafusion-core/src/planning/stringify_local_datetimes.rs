@@ -62,15 +62,15 @@ pub fn stringify_local_datetimes(
     // Add formula transforms to server spec
     let server_scope = server_spec.to_task_scope()?;
     let mut visitor = StringifyLocalDatetimeFieldsVisitor::new(
-        local_datetime_fields.clone(),
-        server_scope,
-        domain_dataset_fields.clone(),
+        &local_datetime_fields,
+        &server_scope,
+        &domain_dataset_fields,
     );
     server_spec.walk_mut(&mut visitor)?;
 
     // Add format spec to client spec (to parse strings as local dates)
     let mut visitor =
-        FormatLocalDatetimeFieldsVisitor::new(local_datetime_fields, domain_dataset_fields.clone());
+        FormatLocalDatetimeFieldsVisitor::new(&local_datetime_fields, &domain_dataset_fields);
     client_spec.walk_mut(&mut visitor)?;
 
     Ok(())
@@ -228,17 +228,17 @@ fn get_local_datetime_fields(
 }
 
 /// Visitor to stringify select datetime fields
-struct StringifyLocalDatetimeFieldsVisitor {
-    pub local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
-    pub scope: TaskScope,
-    pub domain_dataset_fields: HashMap<ScopedVariable, (ScopedVariable, String)>,
+struct StringifyLocalDatetimeFieldsVisitor<'a> {
+    pub local_datetime_fields: &'a HashMap<ScopedVariable, HashSet<String>>,
+    pub scope: &'a TaskScope,
+    pub domain_dataset_fields: &'a HashMap<ScopedVariable, (ScopedVariable, String)>,
 }
 
-impl StringifyLocalDatetimeFieldsVisitor {
+impl<'a> StringifyLocalDatetimeFieldsVisitor<'a> {
     pub fn new(
-        local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
-        scope: TaskScope,
-        domain_dataset_fields: HashMap<ScopedVariable, (ScopedVariable, String)>,
+        local_datetime_fields: &'a HashMap<ScopedVariable, HashSet<String>>,
+        scope: &'a TaskScope,
+        domain_dataset_fields: &'a HashMap<ScopedVariable, (ScopedVariable, String)>,
     ) -> Self {
         Self {
             local_datetime_fields,
@@ -248,7 +248,7 @@ impl StringifyLocalDatetimeFieldsVisitor {
     }
 }
 
-impl MutChartVisitor for StringifyLocalDatetimeFieldsVisitor {
+impl<'a> MutChartVisitor for StringifyLocalDatetimeFieldsVisitor<'a> {
     fn visit_data(&mut self, data: &mut DataSpec, scope: &[u32]) -> Result<()> {
         let data_var = (Variable::new_data(&data.name), Vec::from(scope));
 
@@ -296,15 +296,15 @@ impl MutChartVisitor for StringifyLocalDatetimeFieldsVisitor {
 }
 
 /// Visitor to add format parse specification for local dates
-struct FormatLocalDatetimeFieldsVisitor {
-    pub local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
-    pub domain_dataset_fields: HashMap<ScopedVariable, (ScopedVariable, String)>,
+struct FormatLocalDatetimeFieldsVisitor<'a> {
+    pub local_datetime_fields: &'a HashMap<ScopedVariable, HashSet<String>>,
+    pub domain_dataset_fields: &'a HashMap<ScopedVariable, (ScopedVariable, String)>,
 }
 
-impl FormatLocalDatetimeFieldsVisitor {
+impl<'a> FormatLocalDatetimeFieldsVisitor<'a> {
     pub fn new(
-        local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
-        domain_dataset_fields: HashMap<ScopedVariable, (ScopedVariable, String)>,
+        local_datetime_fields: &'a HashMap<ScopedVariable, HashSet<String>>,
+        domain_dataset_fields: &'a HashMap<ScopedVariable, (ScopedVariable, String)>,
     ) -> Self {
         Self {
             local_datetime_fields,
@@ -313,7 +313,7 @@ impl FormatLocalDatetimeFieldsVisitor {
     }
 }
 
-impl MutChartVisitor for FormatLocalDatetimeFieldsVisitor {
+impl<'a> MutChartVisitor for FormatLocalDatetimeFieldsVisitor<'a> {
     fn visit_data(&mut self, data: &mut DataSpec, scope: &[u32]) -> Result<()> {
         let data_var = (Variable::new_data(&data.name), Vec::from(scope));
         let fields = get_local_datetime_fields(
