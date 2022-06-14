@@ -68,7 +68,6 @@ impl SpecPlan {
             projection_pushdown(&mut client_spec)?;
         }
 
-        // Split datasets that contain a mix of supported and unsupported transforms
         let domain_dataset_fields = if config.split_domain_data {
             split_domain_data(&mut client_spec)?
         } else {
