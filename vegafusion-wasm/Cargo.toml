@@ -1,6 +1,6 @@
 [package]
 name = "vegafusion-wasm"
-version = "0.6.0-rc6"
+version = "0.6.0-rc7"
 edition = "2021"
 
 [lib]

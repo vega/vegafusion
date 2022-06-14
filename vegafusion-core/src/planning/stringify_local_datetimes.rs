@@ -7,13 +7,13 @@
  * this program the details of the active license.
  */
 use crate::error::Result;
-use crate::planning::plan::PlannerWarnings;
 use crate::planning::stitch::CommPlan;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
+use crate::spec::axis::{AxisFormatTypeSpec, AxisSpec};
 use crate::spec::chart::{ChartSpec, ChartVisitor, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::mark::{MarkEncodingField, MarkSpec};
-use crate::spec::scale::{ScaleSpec, ScaleTypeSpec};
+use crate::spec::scale::{ScaleDomainSpec, ScaleSpec, ScaleTypeSpec};
 use crate::spec::transform::formula::FormulaTransformSpec;
 use crate::spec::transform::TransformSpec;
 use crate::task_graph::graph::ScopedVariable;
@@ -32,7 +32,7 @@ pub fn stringify_local_datetimes(
     server_spec: &mut ChartSpec,
     client_spec: &mut ChartSpec,
     comm_plan: &CommPlan,
-    warnings: &mut Vec<PlannerWarnings>,
+    domain_dataset_fields: &HashMap<ScopedVariable, (ScopedVariable, String)>,
 ) -> Result<()> {
     // Build task scope for client spec
     let client_scope = client_spec.to_task_scope()?;
@@ -40,7 +40,7 @@ pub fn stringify_local_datetimes(
     // Collect the name/scope of all time scales
     let mut visitor = CollectScalesTypesVisitor::new();
     client_spec.walk(&mut visitor)?;
-    let local_time_scales = visitor.scale_types;
+    let local_time_scales = visitor.local_time_scales;
 
     // Gather candidate datasets
     let candidate_datasets: HashSet<_> = comm_plan
@@ -57,16 +57,20 @@ pub fn stringify_local_datetimes(
         candidate_datasets,
     );
     client_spec.walk(&mut visitor)?;
-    let local_datetime_fields = visitor.get_local_datetime_fields(warnings);
+    let local_datetime_fields = visitor.local_datetime_fields;
 
     // Add formula transforms to server spec
     let server_scope = server_spec.to_task_scope()?;
-    let mut visitor =
-        StringifyLocalDatetimeFieldsVisitor::new(local_datetime_fields.clone(), server_scope);
+    let mut visitor = StringifyLocalDatetimeFieldsVisitor::new(
+        &local_datetime_fields,
+        &server_scope,
+        domain_dataset_fields,
+    );
     server_spec.walk_mut(&mut visitor)?;
 
     // Add format spec to client spec (to parse strings as local dates)
-    let mut visitor = FormatLocalDatetimeFieldsVisitor::new(local_datetime_fields);
+    let mut visitor =
+        FormatLocalDatetimeFieldsVisitor::new(&local_datetime_fields, domain_dataset_fields);
     client_spec.walk_mut(&mut visitor)?;
 
     Ok(())
@@ -74,13 +78,13 @@ pub fn stringify_local_datetimes(
 
 /// Visitor to collect the non-UTC time scales
 struct CollectScalesTypesVisitor {
-    pub scale_types: HashMap<ScopedVariable, ScaleTypeSpec>,
+    pub local_time_scales: HashSet<ScopedVariable>,
 }
 
 impl CollectScalesTypesVisitor {
     pub fn new() -> Self {
         Self {
-            scale_types: Default::default(),
+            local_time_scales: Default::default(),
         }
     }
 }
@@ -88,8 +92,18 @@ impl CollectScalesTypesVisitor {
 impl ChartVisitor for CollectScalesTypesVisitor {
     fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
         let var = (Variable::new_scale(&scale.name), Vec::from(scope));
-        self.scale_types
-            .insert(var, scale.type_.clone().unwrap_or(ScaleTypeSpec::Linear));
+        if matches!(scale.type_, Some(ScaleTypeSpec::Time)) {
+            self.local_time_scales.insert(var);
+        }
+
+        Ok(())
+    }
+
+    fn visit_axis(&mut self, axis: &AxisSpec, scope: &[u32]) -> Result<()> {
+        if matches!(axis.format_type, Some(AxisFormatTypeSpec::Time)) {
+            let var = (Variable::new_scale(&axis.scale), Vec::from(scope));
+            self.local_time_scales.insert(var);
+        }
         Ok(())
     }
 }
@@ -98,61 +112,22 @@ impl ChartVisitor for CollectScalesTypesVisitor {
 struct CollectLocalTimeScaledFieldsVisitor {
     pub scope: TaskScope,
     pub candidate_datasets: HashSet<ScopedVariable>,
-    pub scale_types: HashMap<ScopedVariable, ScaleTypeSpec>,
-    pub data_fields_scale_types: HashMap<ScopedVariable, HashMap<String, HashSet<ScaleTypeSpec>>>,
+    pub local_time_scales: HashSet<ScopedVariable>,
+    pub local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
 }
 
 impl CollectLocalTimeScaledFieldsVisitor {
     pub fn new(
         scope: TaskScope,
-        scale_types: HashMap<ScopedVariable, ScaleTypeSpec>,
+        local_time_scales: HashSet<ScopedVariable>,
         candidate_datasets: HashSet<ScopedVariable>,
     ) -> Self {
         Self {
             scope,
             candidate_datasets,
-            scale_types,
-            data_fields_scale_types: Default::default(),
+            local_time_scales,
+            local_datetime_fields: Default::default(),
         }
-    }
-
-    pub fn get_local_datetime_fields(
-        &self,
-        warnings: &mut Vec<PlannerWarnings>,
-    ) -> HashMap<ScopedVariable, HashSet<String>> {
-        let mut local_datetime_fields: HashMap<ScopedVariable, HashSet<String>> =
-            Default::default();
-
-        for (dataset_var, field_scale_types) in &self.data_fields_scale_types {
-            for (field, scale_types) in field_scale_types {
-                // Check if field is scaled with a Time scale
-                if scale_types.contains(&ScaleTypeSpec::Time) {
-                    let fields = local_datetime_fields
-                        .entry(dataset_var.clone())
-                        .or_default();
-                    fields.insert(field.clone());
-
-                    // Check if field is scaled with other scales
-                    if scale_types.len() > 1 {
-                        let other_scales: Vec<_> = scale_types
-                            .iter()
-                            .cloned()
-                            .filter(|scale_type| !matches!(scale_type, ScaleTypeSpec::Time))
-                            .map(|scale_type| {
-                                serde_json::to_string(&scale_type)
-                                    .expect("Failed to convert scale type to JSON string")
-                            })
-                            .collect();
-                        let other_scales = other_scales.join(", ");
-                        warnings.push(PlannerWarnings::StringifyDatetimeMixedUsage(
-                            format!("Field \"{}\" of dataset \"{}\" is scaled using both time and the following non-time scales: {}", field, dataset_var.0.name, other_scales)
-                        ))
-                    }
-                }
-            }
-        }
-
-        local_datetime_fields
     }
 }
 
@@ -181,17 +156,13 @@ impl ChartVisitor for CollectLocalTimeScaledFieldsVisitor {
                                             resolved_scale.scope.clone(),
                                         );
 
-                                        if let Some(scale_type) =
-                                            self.scale_types.get(&resolved_scoped_scale)
-                                        {
-                                            let dataset = self
-                                                .data_fields_scale_types
+                                        if self.local_time_scales.contains(&resolved_scoped_scale) {
+                                            // Save off field for dataset
+                                            let entry = self
+                                                .local_datetime_fields
                                                 .entry(resolved_data_scoped.clone());
-                                            let fields = dataset.or_default();
-
-                                            let field_entry = fields.entry(field.clone());
-                                            let scale_types = field_entry.or_default();
-                                            scale_types.insert(scale_type.clone());
+                                            let fields = entry.or_default();
+                                            fields.insert(field.clone());
                                         }
                                     }
                                 }
@@ -203,41 +174,101 @@ impl ChartVisitor for CollectLocalTimeScaledFieldsVisitor {
         }
         Ok(())
     }
+
+    fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
+        let scale_var: ScopedVariable = (Variable::new_scale(&scale.name), Vec::from(scope));
+        if self.local_time_scales.contains(&scale_var) {
+            if let Some(domain) = &scale.domain {
+                let field_refs = match domain {
+                    ScaleDomainSpec::FieldReference(field_ref) => {
+                        vec![field_ref.clone()]
+                    }
+                    ScaleDomainSpec::FieldsReference(fields_ref) => fields_ref.fields.clone(),
+                    _ => Default::default(),
+                };
+                for field_ref in &field_refs {
+                    let data_var = Variable::new_data(&field_ref.data);
+                    if let Ok(resolved) = self.scope.resolve_scope(&data_var, scope) {
+                        let scoped_data_var = (resolved.var, resolved.scope);
+                        if self.candidate_datasets.contains(&scoped_data_var) {
+                            // Save off field for dataset
+                            let entry = self.local_datetime_fields.entry(scoped_data_var.clone());
+                            let fields = entry.or_default();
+                            fields.insert(field_ref.field.clone());
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+fn get_local_datetime_fields(
+    data_var: &ScopedVariable,
+    local_datetime_fields: &HashMap<ScopedVariable, HashSet<String>>,
+    domain_dataset_fields: &HashMap<ScopedVariable, (ScopedVariable, String)>,
+) -> HashSet<String> {
+    // Map dataset variable
+    if let Some(fields) = local_datetime_fields.get(data_var) {
+        fields.clone()
+    } else if let Some((mapped_var, field)) = domain_dataset_fields.get(data_var) {
+        if let Some(fields) = local_datetime_fields.get(mapped_var) {
+            if fields.contains(field) {
+                vec![field.clone()].into_iter().collect()
+            } else {
+                Default::default()
+            }
+        } else {
+            Default::default()
+        }
+    } else {
+        Default::default()
+    }
 }
 
 /// Visitor to stringify select datetime fields
-struct StringifyLocalDatetimeFieldsVisitor {
-    pub local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
-    pub scope: TaskScope,
+struct StringifyLocalDatetimeFieldsVisitor<'a> {
+    pub local_datetime_fields: &'a HashMap<ScopedVariable, HashSet<String>>,
+    pub scope: &'a TaskScope,
+    pub domain_dataset_fields: &'a HashMap<ScopedVariable, (ScopedVariable, String)>,
 }
 
-impl StringifyLocalDatetimeFieldsVisitor {
+impl<'a> StringifyLocalDatetimeFieldsVisitor<'a> {
     pub fn new(
-        local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
-        scope: TaskScope,
+        local_datetime_fields: &'a HashMap<ScopedVariable, HashSet<String>>,
+        scope: &'a TaskScope,
+        domain_dataset_fields: &'a HashMap<ScopedVariable, (ScopedVariable, String)>,
     ) -> Self {
         Self {
             local_datetime_fields,
             scope,
+            domain_dataset_fields,
         }
     }
 }
 
-impl MutChartVisitor for StringifyLocalDatetimeFieldsVisitor {
+impl<'a> MutChartVisitor for StringifyLocalDatetimeFieldsVisitor<'a> {
     fn visit_data(&mut self, data: &mut DataSpec, scope: &[u32]) -> Result<()> {
         let data_var = (Variable::new_data(&data.name), Vec::from(scope));
-        if let Some(fields) = self.local_datetime_fields.get(&data_var) {
-            for field in sorted(fields) {
-                let expr_str = format!("timeFormat(datum['{}'], '%Y-%m-%d %H:%M:%S.%L')", field);
 
-                let transforms = &mut data.transform;
-                let transform = FormulaTransformSpec {
-                    expr: expr_str,
-                    as_: field.to_string(),
-                    extra: Default::default(),
-                };
-                transforms.push(TransformSpec::Formula(transform))
-            }
+        // Map dataset variable
+        let fields = get_local_datetime_fields(
+            &data_var,
+            self.local_datetime_fields,
+            self.domain_dataset_fields,
+        );
+
+        for field in sorted(fields) {
+            let expr_str = format!("timeFormat(datum['{}'], '%Y-%m-%d %H:%M:%S.%L')", field);
+
+            let transforms = &mut data.transform;
+            let transform = FormulaTransformSpec {
+                expr: expr_str,
+                as_: field.to_string(),
+                extra: Default::default(),
+            };
+            transforms.push(TransformSpec::Formula(transform))
         }
 
         // Check if dataset is a child a stringified dataset. If so, we need to convert
@@ -265,31 +296,39 @@ impl MutChartVisitor for StringifyLocalDatetimeFieldsVisitor {
 }
 
 /// Visitor to add format parse specification for local dates
-struct FormatLocalDatetimeFieldsVisitor {
-    pub local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
+struct FormatLocalDatetimeFieldsVisitor<'a> {
+    pub local_datetime_fields: &'a HashMap<ScopedVariable, HashSet<String>>,
+    pub domain_dataset_fields: &'a HashMap<ScopedVariable, (ScopedVariable, String)>,
 }
 
-impl FormatLocalDatetimeFieldsVisitor {
-    pub fn new(local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>) -> Self {
+impl<'a> FormatLocalDatetimeFieldsVisitor<'a> {
+    pub fn new(
+        local_datetime_fields: &'a HashMap<ScopedVariable, HashSet<String>>,
+        domain_dataset_fields: &'a HashMap<ScopedVariable, (ScopedVariable, String)>,
+    ) -> Self {
         Self {
             local_datetime_fields,
+            domain_dataset_fields,
         }
     }
 }
 
-impl MutChartVisitor for FormatLocalDatetimeFieldsVisitor {
+impl<'a> MutChartVisitor for FormatLocalDatetimeFieldsVisitor<'a> {
     fn visit_data(&mut self, data: &mut DataSpec, scope: &[u32]) -> Result<()> {
         let data_var = (Variable::new_data(&data.name), Vec::from(scope));
-        if let Some(fields) = self.local_datetime_fields.get(&data_var) {
-            for field in sorted(fields) {
-                let transforms = &mut data.transform;
-                let transform = FormulaTransformSpec {
-                    expr: format!("toDate(datum['{}'])", field),
-                    as_: field.to_string(),
-                    extra: Default::default(),
-                };
-                transforms.insert(0, TransformSpec::Formula(transform))
-            }
+        let fields = get_local_datetime_fields(
+            &data_var,
+            self.local_datetime_fields,
+            self.domain_dataset_fields,
+        );
+        for field in sorted(fields) {
+            let transforms = &mut data.transform;
+            let transform = FormulaTransformSpec {
+                expr: format!("toDate(datum['{}'])", field),
+                as_: field.to_string(),
+                extra: Default::default(),
+            };
+            transforms.insert(0, TransformSpec::Formula(transform))
         }
 
         Ok(())

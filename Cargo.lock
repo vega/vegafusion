@@ -3081,7 +3081,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-core"
-version = "0.6.0-rc6"
+version = "0.6.0-rc7"
 dependencies = [
  "arrow",
  "bytes",
@@ -3106,7 +3106,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-python-embed"
-version = "0.6.0-rc6"
+version = "0.6.0-rc7"
 dependencies = [
  "deterministic-hash",
  "mimalloc",
@@ -3120,7 +3120,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-rt-datafusion"
-version = "0.6.0-rc6"
+version = "0.6.0-rc7"
 dependencies = [
  "async-lock",
  "async-recursion",
@@ -3157,7 +3157,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-server"
-version = "0.6.0-rc6"
+version = "0.6.0-rc7"
 dependencies = [
  "assert_cmd",
  "clap 3.1.1",
@@ -3177,7 +3177,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-wasm"
-version = "0.6.0-rc6"
+version = "0.6.0-rc7"
 dependencies = [
  "chrono",
  "console_error_panic_hook",

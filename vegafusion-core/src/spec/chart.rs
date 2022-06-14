@@ -9,6 +9,7 @@
 use crate::data::dataset::VegaFusionDataset;
 use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::proto::gen::tasks::{Task, TzConfig};
+use crate::spec::axis::AxisSpec;
 use crate::spec::data::DataSpec;
 use crate::spec::mark::MarkSpec;
 use crate::spec::scale::ScaleSpec;
@@ -42,6 +43,9 @@ pub struct ChartSpec {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scales: Vec<ScaleSpec>,
 
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub axes: Vec<AxisSpec>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<TitleSpec>,
 
@@ -65,6 +69,9 @@ impl ChartSpec {
         }
         for scale in &self.scales {
             visitor.visit_scale(scale, &scope)?;
+        }
+        for axis in &self.axes {
+            visitor.visit_axis(axis, &scope)?;
         }
         for signal in &self.signals {
             visitor.visit_signal(signal, &scope)?;
@@ -101,6 +108,9 @@ impl ChartSpec {
         }
         for scale in &mut self.scales {
             visitor.visit_scale(scale, &scope)?;
+        }
+        for axis in &mut self.axes {
+            visitor.visit_axis(axis, &scope)?;
         }
         for signal in &mut self.signals {
             visitor.visit_signal(signal, &scope)?;
@@ -312,6 +322,9 @@ pub trait ChartVisitor {
     fn visit_scale(&mut self, _scale: &ScaleSpec, _scope: &[u32]) -> Result<()> {
         Ok(())
     }
+    fn visit_axis(&mut self, _axis: &AxisSpec, _scope: &[u32]) -> Result<()> {
+        Ok(())
+    }
     fn visit_non_group_mark(&mut self, _mark: &MarkSpec, _scope: &[u32]) -> Result<()> {
         Ok(())
     }
@@ -331,6 +344,9 @@ pub trait MutChartVisitor {
         Ok(())
     }
     fn visit_scale(&mut self, _scale: &mut ScaleSpec, _scope: &[u32]) -> Result<()> {
+        Ok(())
+    }
+    fn visit_axis(&mut self, _axis: &mut AxisSpec, _scope: &[u32]) -> Result<()> {
         Ok(())
     }
     fn visit_non_group_mark(&mut self, _mark: &mut MarkSpec, _scope: &[u32]) -> Result<()> {

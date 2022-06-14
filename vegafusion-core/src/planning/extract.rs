@@ -206,6 +206,7 @@ impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
             signals: vec![],
             marks: vec![],
             scales: vec![],
+            axes: vec![],
             transform: vec![],
             title: None,
             extra: Default::default(),
