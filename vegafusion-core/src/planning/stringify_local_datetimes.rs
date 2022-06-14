@@ -64,13 +64,13 @@ pub fn stringify_local_datetimes(
     let mut visitor = StringifyLocalDatetimeFieldsVisitor::new(
         &local_datetime_fields,
         &server_scope,
-        &domain_dataset_fields,
+        domain_dataset_fields,
     );
     server_spec.walk_mut(&mut visitor)?;
 
     // Add format spec to client spec (to parse strings as local dates)
     let mut visitor =
-        FormatLocalDatetimeFieldsVisitor::new(&local_datetime_fields, &domain_dataset_fields);
+        FormatLocalDatetimeFieldsVisitor::new(&local_datetime_fields, domain_dataset_fields);
     client_spec.walk_mut(&mut visitor)?;
 
     Ok(())
@@ -255,8 +255,8 @@ impl<'a> MutChartVisitor for StringifyLocalDatetimeFieldsVisitor<'a> {
         // Map dataset variable
         let fields = get_local_datetime_fields(
             &data_var,
-            &self.local_datetime_fields,
-            &self.domain_dataset_fields,
+            self.local_datetime_fields,
+            self.domain_dataset_fields,
         );
 
         for field in sorted(fields) {
@@ -318,8 +318,8 @@ impl<'a> MutChartVisitor for FormatLocalDatetimeFieldsVisitor<'a> {
         let data_var = (Variable::new_data(&data.name), Vec::from(scope));
         let fields = get_local_datetime_fields(
             &data_var,
-            &self.local_datetime_fields,
-            &self.domain_dataset_fields,
+            self.local_datetime_fields,
+            self.domain_dataset_fields,
         );
         for field in sorted(fields) {
             let transforms = &mut data.transform;
