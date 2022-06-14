@@ -13,7 +13,6 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AxisSpec {
     pub scale: String,
-    pub orient: String,
 
     #[serde(rename = "formatType", skip_serializing_if = "Option::is_none")]
     pub format_type: Option<AxisFormatTypeSpec>,
