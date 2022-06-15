@@ -41,9 +41,15 @@ pub fn to_date_transform(
             // Second argument is a an override local timezone string
             let input_tz_expr = &args[1];
             if let Expr::Literal(ScalarValue::Utf8(Some(input_tz_str))) = input_tz_expr {
-                chrono_tz::Tz::from_str(input_tz_str)
-                    .ok()
-                    .with_context(|| format!("Failed to parse {} as a timezone", input_tz_str))?
+                if input_tz_str == "local" {
+                    tz_config.local_tz
+                } else {
+                    chrono_tz::Tz::from_str(input_tz_str)
+                        .ok()
+                        .with_context(|| {
+                            format!("Failed to parse {} as a timezone", input_tz_str)
+                        })?
+                }
             } else {
                 return Err(VegaFusionError::parse(
                     "Second argument to toDate must be a timezone string",

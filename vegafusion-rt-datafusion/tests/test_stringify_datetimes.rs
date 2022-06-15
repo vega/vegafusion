@@ -191,8 +191,31 @@ mod test_stringify_datetimes {
         }
     }
 
-    #[tokio::test]
-    async fn test_local_datetime_ordinal_color() {
+    #[rstest(
+        local_tz,
+        default_input_tz,
+        expected_ship_date,
+        case("UTC", "UTC", "2011-01-08 00:00:00.000"),
+        case("America/New_York", "UTC", "2011-01-07 19:00:00.000"),
+        case("UTC", "America/New_York", "2011-01-08 00:00:00.000")
+    )]
+    fn test_local_datetime_ordinal_color(
+        local_tz: &str,
+        default_input_tz: &str,
+        expected_ship_date: &str,
+    ) {
+        TOKIO_RUNTIME.block_on(check_local_datetime_ordinal_color(
+            local_tz,
+            default_input_tz,
+            expected_ship_date,
+        ));
+    }
+
+    async fn check_local_datetime_ordinal_color(
+        local_tz: &str,
+        default_input_tz: &str,
+        expected_ship_date: &str,
+    ) {
         // Load spec
         let spec_path = format!(
             "{}/tests/specs/pre_transform/shipping_mixed_scales.vg.json",
@@ -202,15 +225,12 @@ mod test_stringify_datetimes {
 
         // Initialize task graph runtime
         let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
-        // let local_tz = "America/New_York".to_string();
-        let local_tz = "UTC".to_string();
-        let default_input_tz = "UTC".to_string();
 
         let pre_tx_result = runtime
             .pre_transform_spec(
                 &spec_str,
-                &local_tz,
-                &Some(default_input_tz),
+                local_tz,
+                &Some(default_input_tz.to_string()),
                 None,
                 Default::default(),
             )
@@ -230,7 +250,6 @@ mod test_stringify_datetimes {
                 let first = values[0].as_object().expect("Expected object");
 
                 // Check hours_time
-                let expected_ship_date = "2011-01-08 00:00:00.000";
                 let hours_time = first
                     .get("ship_date")
                     .expect("Expected ship_date")
@@ -245,7 +264,6 @@ mod test_stringify_datetimes {
                 let values = data.as_array().expect("Expected array");
                 let first = values[0].as_object().expect("Expected object");
 
-                let expected_ship_date = "2011-01-08 00:00:00.000";
                 let hours_time = first
                     .get("ship_date")
                     .expect("Expected ship_date")

@@ -279,7 +279,7 @@ impl<'a> MutChartVisitor for StringifyLocalDatetimeFieldsVisitor<'a> {
             let source_resolved_var = (source_resolved.var, source_resolved.scope);
             if let Some(fields) = self.local_datetime_fields.get(&source_resolved_var) {
                 for field in sorted(fields) {
-                    let expr_str = format!("toDate(datum['{}'])", field);
+                    let expr_str = format!("toDate(datum['{}'], 'local')", field);
                     let transforms = &mut data.transform;
                     let transform = FormulaTransformSpec {
                         expr: expr_str,
