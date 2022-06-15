@@ -22,30 +22,30 @@ mod test_stringify_datetimes {
         default_input_tz,
         expected_hours_time,
         expected_hours_time_end,
-        case("UTC", "UTC", "2012-01-01 01:00:00.000", "2012-01-01 02:00:00.000"),
+        case("UTC", "UTC", "2012-01-01T01:00:00.000", "2012-01-01T02:00:00.000"),
         case(
             "America/New_York",
             "America/New_York",
-            "2012-01-01 01:00:00.000",
-            "2012-01-01 02:00:00.000"
+            "2012-01-01T01:00:00.000",
+            "2012-01-01T02:00:00.000"
         ),
         case(
             "UTC",
             "America/New_York",
-            "2012-01-01 06:00:00.000",
-            "2012-01-01 07:00:00.000"
+            "2012-01-01T06:00:00.000",
+            "2012-01-01T07:00:00.000"
         ),
         case(
             "America/Los_Angeles",
             "America/New_York",
-            "2012-01-01 22:00:00.000",
-            "2012-01-01 23:00:00.000"
+            "2012-01-01T22:00:00.000",
+            "2012-01-01T23:00:00.000"
         ),
         case(
             "America/New_York",
             "America/Los_Angeles",
-            "2012-01-01 04:00:00.000",
-            "2012-01-01 05:00:00.000"
+            "2012-01-01T04:00:00.000",
+            "2012-01-01T05:00:00.000"
         )
     )]
     fn test_github_hist(
@@ -161,7 +161,7 @@ mod test_stringify_datetimes {
                 let first = values[0].as_object().expect("Expected object");
 
                 // Check hours_time
-                let expected_month_date = "2012-01-01 00:00:00.000";
+                let expected_month_date = "2012-01-01T00:00:00.000";
                 let hours_time = first
                     .get("month_date")
                     .expect("Expected month_date")
@@ -176,7 +176,7 @@ mod test_stringify_datetimes {
                 let values = data.as_array().expect("Expected array");
                 let first = values[0].as_object().expect("Expected object");
 
-                let expected_month_date = "2012-01-01 00:00:00.000";
+                let expected_month_date = "2012-01-01T00:00:00.000";
                 let hours_time = first
                     .get("month_date")
                     .expect("Expected month_date")
@@ -195,9 +195,9 @@ mod test_stringify_datetimes {
         local_tz,
         default_input_tz,
         expected_ship_date,
-        case("UTC", "UTC", "2011-01-08 00:00:00.000"),
-        case("America/New_York", "UTC", "2011-01-07 19:00:00.000"),
-        case("UTC", "America/New_York", "2011-01-08 00:00:00.000")
+        case("UTC", "UTC", "2011-01-08T00:00:00.000"),
+        case("America/New_York", "UTC", "2011-01-07T19:00:00.000"),
+        case("UTC", "America/New_York", "2011-01-08T00:00:00.000")
     )]
     fn test_local_datetime_ordinal_color(
         local_tz: &str,
