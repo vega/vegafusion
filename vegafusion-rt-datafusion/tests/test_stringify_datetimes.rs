@@ -191,7 +191,6 @@ mod test_stringify_datetimes {
         }
     }
 
-
     #[rstest(
         local_tz,
         default_input_tz,
@@ -230,7 +229,7 @@ mod test_stringify_datetimes {
         let pre_tx_result = runtime
             .pre_transform_spec(
                 &spec_str,
-                &local_tz,
+                local_tz,
                 &Some(default_input_tz.to_string()),
                 None,
                 Default::default(),

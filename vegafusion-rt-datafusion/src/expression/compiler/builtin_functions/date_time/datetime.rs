@@ -46,7 +46,9 @@ pub fn to_date_transform(
                 } else {
                     chrono_tz::Tz::from_str(input_tz_str)
                         .ok()
-                        .with_context(|| format!("Failed to parse {} as a timezone", input_tz_str))?
+                        .with_context(|| {
+                            format!("Failed to parse {} as a timezone", input_tz_str)
+                        })?
                 }
             } else {
                 return Err(VegaFusionError::parse(
