@@ -260,7 +260,7 @@ impl<'a> MutChartVisitor for StringifyLocalDatetimeFieldsVisitor<'a> {
         );
 
         for field in sorted(fields) {
-            let expr_str = format!("timeFormat(datum['{}'], '%Y-%m-%d %H:%M:%S.%L')", field);
+            let expr_str = format!("timeFormat(datum['{}'], '%Y-%m-%dT%H:%M:%S.%L')", field);
 
             let transforms = &mut data.transform;
             let transform = FormulaTransformSpec {
