@@ -27,17 +27,32 @@ pub mod query_result {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct PreTransformResult {
-    #[prost(oneof="pre_transform_result::Result", tags="1, 2")]
-    pub result: ::core::option::Option<pre_transform_result::Result>,
+pub struct PreTransformSpecResult {
+    #[prost(oneof="pre_transform_spec_result::Result", tags="1, 2")]
+    pub result: ::core::option::Option<pre_transform_spec_result::Result>,
 }
-/// Nested message and enum types in `PreTransformResult`.
-pub mod pre_transform_result {
+/// Nested message and enum types in `PreTransformSpecResult`.
+pub mod pre_transform_spec_result {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Result {
         #[prost(message, tag="1")]
         Error(super::super::errors::Error),
         #[prost(message, tag="2")]
-        Response(super::super::pretransform::PreTransformResponse),
+        Response(super::super::pretransform::PreTransformSpecResponse),
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PreTransformValuesResult {
+    #[prost(oneof="pre_transform_values_result::Result", tags="1, 2")]
+    pub result: ::core::option::Option<pre_transform_values_result::Result>,
+}
+/// Nested message and enum types in `PreTransformValuesResult`.
+pub mod pre_transform_values_result {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Result {
+        #[prost(message, tag="1")]
+        Error(super::super::errors::Error),
+        #[prost(message, tag="2")]
+        Response(super::super::pretransform::PreTransformValuesResponse),
     }
 }

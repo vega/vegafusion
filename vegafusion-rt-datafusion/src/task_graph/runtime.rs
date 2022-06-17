@@ -25,21 +25,26 @@ use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 use vegafusion_core::planning::watch::{ExportUpdate, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
-use vegafusion_core::proto::gen::pretransform::pre_transform_warning::WarningType;
-use vegafusion_core::proto::gen::pretransform::{PlannerWarning, PreTransformWarning};
+use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
+use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::{WarningType as ValuesWarningType};
 use vegafusion_core::proto::gen::pretransform::{
-    PreTransformBrokenInteractivityWarning, PreTransformRequest, PreTransformResponse,
-    PreTransformRowLimitWarning, PreTransformUnsupportedWarning,
+    PlannerWarning, PreTransformSpecWarning, PreTransformValuesRequest, PreTransformValuesResponse,
+    PreTransformValuesWarning,
+};
+use vegafusion_core::proto::gen::pretransform::{
+    PreTransformBrokenInteractivityWarning, PreTransformRowLimitWarning, PreTransformSpecRequest,
+    PreTransformSpecResponse, PreTransformUnsupportedWarning,
 };
 use vegafusion_core::proto::gen::services::{
-    pre_transform_result, query_request, query_result, PreTransformResult, QueryRequest,
-    QueryResult,
+    pre_transform_spec_result, pre_transform_values_result, query_request, query_result,
+    PreTransformSpecResult, PreTransformValuesResult, QueryRequest, QueryResult,
 };
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse,
     TaskValue as ProtoTaskValue, TzConfig, Variable,
 };
 use vegafusion_core::spec::chart::ChartSpec;
+use vegafusion_core::task_graph::graph::ScopedVariable;
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -176,8 +181,8 @@ impl TaskGraphRuntime {
 
     pub async fn pre_transform_spec_request(
         &self,
-        request: PreTransformRequest,
-    ) -> Result<PreTransformResult> {
+        request: PreTransformSpecRequest,
+    ) -> Result<PreTransformSpecResult> {
         // Get row limit
         let row_limit = request.opts.as_ref().and_then(|opts| opts.row_limit);
 
@@ -217,7 +222,7 @@ impl TaskGraphRuntime {
         default_input_tz: &Option<String>,
         row_limit: Option<u32>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
-    ) -> Result<PreTransformResult> {
+    ) -> Result<PreTransformSpecResult> {
         let spec: ChartSpec =
             serde_json::from_str(spec).with_context(|| "Failed to parse spec".to_string())?;
 
@@ -307,18 +312,18 @@ impl TaskGraphRuntime {
         }
 
         // Build warnings
-        let mut warnings: Vec<PreTransformWarning> = Vec::new();
+        let mut warnings: Vec<PreTransformSpecWarning> = Vec::new();
 
         // Add unsupported warning (
         if plan.comm_plan.server_to_client.is_empty() {
-            warnings.push(PreTransformWarning {
+            warnings.push(PreTransformSpecWarning {
                 warning_type: Some(WarningType::Unsupported(PreTransformUnsupportedWarning {})),
             });
         }
 
         // Add Row Limit warning
         if !limited_datasets.is_empty() {
-            warnings.push(PreTransformWarning {
+            warnings.push(PreTransformSpecWarning {
                 warning_type: Some(WarningType::RowLimit(PreTransformRowLimitWarning {
                     datasets: limited_datasets,
                 })),
@@ -333,7 +338,7 @@ impl TaskGraphRuntime {
                 .iter()
                 .map(|var| var.0.clone())
                 .collect();
-            warnings.push(PreTransformWarning {
+            warnings.push(PreTransformSpecWarning {
                 warning_type: Some(WarningType::BrokenInteractivity(
                     PreTransformBrokenInteractivityWarning { vars },
                 )),
@@ -342,7 +347,7 @@ impl TaskGraphRuntime {
 
         // Add planner warnings
         for planner_warning in &plan.warnings {
-            warnings.push(PreTransformWarning {
+            warnings.push(PreTransformSpecWarning {
                 warning_type: Some(WarningType::Planner(PlannerWarning {
                     message: planner_warning.message(),
                 })),
@@ -350,9 +355,9 @@ impl TaskGraphRuntime {
         }
 
         // Build result
-        let response = PreTransformResult {
-            result: Some(pre_transform_result::Result::Response(
-                PreTransformResponse {
+        let response = PreTransformSpecResult {
+            result: Some(pre_transform_spec_result::Result::Response(
+                PreTransformSpecResponse {
                     spec: serde_json::to_string(&spec)
                         .expect("Failed to convert chart spec to string"),
                     warnings,
@@ -361,6 +366,131 @@ impl TaskGraphRuntime {
         };
 
         Ok(response)
+    }
+
+    pub async fn pre_transform_values_request(
+        &self,
+        request: PreTransformValuesRequest,
+    ) -> Result<PreTransformValuesResult> {
+        // Extract and deserialize inline datasets
+        let inline_pretransform_datasets = request
+            .opts
+            .clone()
+            .map(|opts| opts.inline_datasets)
+            .unwrap_or_default();
+
+        let inline_datasets = inline_pretransform_datasets
+            .iter()
+            .map(|inline_dataset| {
+                let dataset = VegaFusionDataset::from_table_ipc_bytes(&inline_dataset.table)?;
+                Ok((inline_dataset.name.clone(), dataset))
+            })
+            .collect::<Result<HashMap<_, _>>>()?;
+
+        // Extract requested variables
+        let variables: Vec<ScopedVariable> = request
+            .opts
+            .map(|opts| opts.variables)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|var| (var.variable.unwrap(), var.scope))
+            .collect();
+
+        // Parse spec
+        let spec_string = request.spec;
+        let local_tz = request.local_tz;
+        let default_input_tz = request.default_input_tz;
+
+        let (values, warnings) = self.pre_transform_values(
+            &spec_string,
+            variables.as_slice(),
+            &local_tz,
+            &default_input_tz,
+            inline_datasets,
+        )
+        .await?;
+
+        let response_values: Vec<_> = values.iter().zip(&variables).map(|(value, var)| {
+            let proto_value = ProtoTaskValue::try_from(value)?;
+            Ok(ResponseTaskValue {
+                variable: Some(var.0.clone()),
+                scope: var.1.clone(),
+                value: Some(proto_value)
+            })
+        }).collect::<Result<Vec<_>>>()?;
+
+        // Build result
+        let result = PreTransformValuesResult {
+            result: Some(pre_transform_values_result::Result::Response(
+                PreTransformValuesResponse { values: response_values, warnings },
+            )),
+        };
+
+        Ok(result)
+    }
+
+    pub async fn pre_transform_values(
+        &self,
+        spec: &str,
+        variables: &[ScopedVariable],
+        local_tz: &str,
+        default_input_tz: &Option<String>,
+        inline_datasets: HashMap<String, VegaFusionDataset>,
+    ) -> Result<(Vec<TaskValue>, Vec<PreTransformValuesWarning>)> {
+        let spec: ChartSpec =
+            serde_json::from_str(spec).with_context(|| "Failed to parse spec".to_string())?;
+
+        // Create spec plan
+        let plan = SpecPlan::try_new(
+            &spec,
+            &PlannerConfig {
+                stringify_local_datetimes: true,
+                extract_inline_data: true,
+                split_domain_data: false,
+                projection_pushdown: false,
+                ..Default::default()
+            },
+        )?;
+
+        // Create task graph for server spec
+        let tz_config = TzConfig {
+            local_tz: local_tz.to_string(),
+            default_input_tz: default_input_tz.clone(),
+        };
+        let task_scope = plan.server_spec.to_task_scope().unwrap();
+        let tasks = plan
+            .server_spec
+            .to_tasks(&tz_config, &inline_datasets)
+            .unwrap();
+        let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
+        let task_graph_mapping = task_graph.build_mapping();
+
+        let mut warnings: Vec<PreTransformValuesWarning> = Vec::new();
+
+        // Add planner warnings
+        for planner_warning in &plan.warnings {
+            warnings.push(PreTransformValuesWarning {
+                warning_type: Some(ValuesWarningType::Planner(PlannerWarning {
+                    message: planner_warning.message(),
+                })),
+            });
+        }
+
+        // Gather the values of requested variables
+        let mut values: Vec<TaskValue> = Vec::new();
+        for var in variables {
+            let node_index = task_graph_mapping.get(var).with_context(|| format!("No such variable: {:?}", var))?;
+            let value = self
+                .get_node_value(
+                    Arc::new(task_graph.clone()),
+                    &node_index,
+                    inline_datasets.clone(),
+                )
+                .await?;
+            values.push(value);
+        }
+
+        Ok((values, warnings))
     }
 
     pub async fn clear_cache(&self) {
