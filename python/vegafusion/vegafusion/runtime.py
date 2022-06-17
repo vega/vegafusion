@@ -60,6 +60,21 @@ class VegaFusionRuntime:
             # No grpc channel, get or initialize an embedded runtime
             return self.embedded_runtime.process_request_bytes(request)
 
+    @staticmethod
+    def _serialize_inline_datasets(inline_datasets=None):
+        from .transformer import to_arrow_ipc_bytes, arrow_table_to_ipc_bytes
+
+        # Preprocess inline_dataset
+        inline_datasets = inline_datasets or dict()
+        inline_dataset_bytes = dict()
+        for name, value in inline_datasets.items():
+            if isinstance(value, pa.Table):
+                table_bytes = arrow_table_to_ipc_bytes(value, stream=True)
+            else:
+                table_bytes = to_arrow_ipc_bytes(value, stream=True)
+            inline_dataset_bytes[name] = table_bytes
+        return inline_dataset_bytes
+
     def pre_transform_spec(self, spec, local_tz, default_input_tz=None, row_limit=None, inline_datasets=None):
         """
         Evaluate supported transforms in an input Vega specification and produce a new
@@ -91,30 +106,56 @@ class VegaFusionRuntime:
                     'Unsupported': No transforms in the provided Vega specification were
                         eligible for pre-transforming
         """
-        from .transformer import to_arrow_ipc_bytes, arrow_table_to_ipc_bytes
-
         if self._grpc_channel:
             raise ValueError("pre_transform_spec not yet supported over gRPC")
         else:
-            # Preprocess inline_dataset
-            inline_datasets = inline_datasets or dict()
-            inline_batches = dict()
-            for name, value in inline_datasets.items():
-                if isinstance(value, pa.Table):
-                    table_bytes = arrow_table_to_ipc_bytes(value, stream=True)
-                else:
-                    table_bytes = to_arrow_ipc_bytes(value, stream=True)
-                inline_batches[name] = table_bytes
-
+            inline_dataset_bytes = self._serialize_inline_datasets(inline_datasets)
             new_spec, warnings = self.embedded_runtime.pre_transform_spec(
                 spec,
                 local_tz=local_tz,
                 default_input_tz=default_input_tz,
                 row_limit=row_limit,
-                inline_datasets=inline_batches
+                inline_datasets=inline_dataset_bytes
             )
             warnings = json.loads(warnings)
             return new_spec, warnings
+
+    def pre_transform_datasets(self, spec, variables, local_tz, default_input_tz=None, inline_datasets=None):
+        from .transformer import to_arrow_ipc_bytes, arrow_table_to_ipc_bytes
+
+        if self._grpc_channel:
+            raise ValueError("pre_transform_spec not yet supported over gRPC")
+        else:
+            # Serialize inline datasets
+            inline_dataset_bytes = self._serialize_inline_datasets(inline_datasets)
+
+            # Build input variables
+            pre_tx_vars = []
+            err_msg = "Elements of variables argument must be strings are two-element tuples"
+            for var in variables:
+                if isinstance(var, str):
+                    pre_tx_vars.append((var, []))
+                elif isinstance(var, (list, tuple)):
+                    if len(var) == 2:
+                        pre_tx_vars.append(tuple(var))
+                    else:
+                        raise ValueError(err_msg)
+                else:
+                    raise ValueError(err_msg)
+
+            values, warnings = self.embedded_runtime.pre_transform_datasets(
+                spec,
+                pre_tx_vars,
+                local_tz=local_tz,
+                default_input_tz=default_input_tz,
+                inline_datasets=inline_dataset_bytes
+            )
+
+            # Deserialize values to Arrow tables
+            datasets = [pa.ipc.deserialize_pandas(value) for value in values]
+
+            warnings = json.loads(warnings)
+            return datasets, warnings
 
     @property
     def worker_threads(self):
