@@ -53,6 +53,7 @@ VegaFusion contains several packages using a variety of languages and build tool
 From the repository root:
 ```bash
 cd vegafusion-wasm
+npm install
 wasm-pack build --release
 ```
 
@@ -60,6 +61,13 @@ wasm-pack build --release
 ```bash
 cd vegafusion-wasm/pkg
 npm link
+```
+
+### Build `javascript/vegafusion-embed` package
+```bash
+cd javascript/vegafusion-embed
+npm install
+npm run build
 ```
 
 ### Build the `vegafusion-python` PyO3 Python package in development mode
@@ -76,7 +84,8 @@ maturin develop --release
 From the repository root:
 ```bash
 cd python/vegafusion-jupyter/
-cd npm link vegafusion-wasm
+npm link vegafusion-wasm
+npm install
 pip install -e ".[test]"
 ```
 
@@ -84,7 +93,7 @@ Then, build the jupyterlab extension
 
 ```bash
 jupyter labextension develop --overwrite .
-yarn run build
+yarn run build:dev
 ```
 
 ## Running tests
