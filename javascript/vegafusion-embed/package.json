@@ -40,7 +40,7 @@
     "clean:lib": "rimraf lib",
     "lint": "eslint . --ext .ts,.tsx --fix",
     "lint:check": "eslint . --ext .ts,.tsx",
-    "prepack": "npm run build:lib",
+    "prepack": "npm run build:prod",
     "watch": "npm-run-all -p watch:*",
     "watch:lib": "tsc -w"
   },
