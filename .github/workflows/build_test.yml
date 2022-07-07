@@ -50,7 +50,7 @@ jobs:
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.60.0
+          toolchain: stable
           override: true
       - name: Install node
         uses: actions/setup-node@v2
@@ -91,7 +91,7 @@ jobs:
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.60.0
+          toolchain: stable
           override: true
       - name: Cache rust dependencies
         uses: Swatinem/rust-cache@v1
@@ -140,10 +140,10 @@ jobs:
         run: |
           choco install --yes protoc
         if: ${{ runner.os == 'Windows' }}
-      - name: Install latest stable Rust toolchain
+      - name: Install nightly Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.60.0
+          toolchain: nightly
           override: true
       - name: Cache rust dependencies
         uses: Swatinem/rust-cache@v1
@@ -155,7 +155,8 @@ jobs:
           maturin-version: latest
           command: build
           manylinux: 2010
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip
+          rust-toolchain: nightly
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip --rustc-extra-args="-Z oom=panic"
       - name: Download Apple Silicon toolchain
         if: ${{ runner.os == 'macOS' }}
         run: |
@@ -166,7 +167,8 @@ jobs:
         with:
           maturin-version: latest
           command: build
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
+          rust-toolchain: nightly
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip --rustc-extra-args="-Z oom=panic" --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
       - name: Remove unwanted universal
         if: ${{ runner.os == 'macOS' }}
         run: |
@@ -206,19 +208,6 @@ jobs:
         with:
           name: vegafusion-wasm-packages
           path: vegafusion-wasm/pkg
-      - name: Build and pack vegafusion-embed package
-        working-directory: javascript/vegafusion-embed/
-        run: |
-          npm install
-          npm run prepack
-          npm pack
-          mkdir packed
-          mv vegafusion-embed-*.tgz packed;
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: vegafusion-embed-packages
-          path: javascript/vegafusion-embed/packed
 
   build-vegafusion-wheel:
     runs-on: ubuntu-latest
