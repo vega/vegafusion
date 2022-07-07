@@ -33,7 +33,3 @@ features = [ "macros", "rt-multi-thread",]
 [dependencies.pyo3]
 version = "0.16.4"
 features = [ "extension-module",]
-
-[dependencies.mimalloc]
-version = "*"
-default-features = false

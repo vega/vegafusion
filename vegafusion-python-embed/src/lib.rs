@@ -17,12 +17,8 @@ use vegafusion_core::proto::gen::services::pre_transform_result;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use serde::{Deserialize, Serialize};
-
-use mimalloc::MiMalloc;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 
-#[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;
 
 #[derive(Clone, Serialize, Deserialize)]
 struct PreTransformWarning {
