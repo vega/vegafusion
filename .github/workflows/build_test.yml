@@ -149,15 +149,13 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: True
-      - name: Set nightly toolchain as default
-        run: |
-          rustup default nightly
       - name: Build wheels
         uses: messense/maturin-action@v1
         with:
           maturin-version: latest
           command: build
           manylinux: 2010
+          rust-toolchain: nightly
           args: --release -m vegafusion-python-embed/Cargo.toml --strip --rustc-extra-args="-Z oom=panic"
       - name: Download Apple Silicon toolchain
         if: ${{ runner.os == 'macOS' }}
@@ -169,6 +167,7 @@ jobs:
         with:
           maturin-version: latest
           command: build
+          rust-toolchain: nightly
           args: --release -m vegafusion-python-embed/Cargo.toml --strip --rustc-extra-args="-Z oom=panic" --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
       - name: Remove unwanted universal
         if: ${{ runner.os == 'macOS' }}
