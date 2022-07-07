@@ -19,7 +19,6 @@ use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 use serde::{Deserialize, Serialize};
 use vegafusion_core::data::dataset::VegaFusionDataset;
 
-
 #[derive(Clone, Serialize, Deserialize)]
 struct PreTransformWarning {
     #[serde(rename = "type")]
