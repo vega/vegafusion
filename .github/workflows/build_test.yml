@@ -140,7 +140,7 @@ jobs:
         run: |
           choco install --yes protoc
         if: ${{ runner.os == 'Windows' }}
-      - name: Install latest stable Rust toolchain
+      - name: Install nightly Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
@@ -149,6 +149,9 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: True
+      - name: Set nightly toolchain as default
+        run: |
+          rustup default nightly
       - name: Build wheels
         uses: messense/maturin-action@v1
         with:
