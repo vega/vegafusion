@@ -2,7 +2,7 @@
 name = "vegafusion-python-embed"
 license = "AGPL-3.0-or-later"
 edition = "2021"
-version = "0.6.1"
+version = "0.6.2"
 
 [lib]
 name = "vegafusion_embed"
@@ -33,7 +33,3 @@ features = [ "macros", "rt-multi-thread",]
 [dependencies.pyo3]
 version = "0.16.4"
 features = [ "extension-module",]
-
-[dependencies.mimalloc]
-version = "*"
-default-features = false
