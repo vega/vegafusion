@@ -16,6 +16,7 @@ pub mod joinaggregate;
 pub mod lookup;
 pub mod project;
 pub mod sequence;
+pub mod stack;
 pub mod timeunit;
 pub mod unsupported;
 pub mod window;
@@ -32,6 +33,7 @@ use crate::spec::transform::joinaggregate::JoinAggregateTransformSpec;
 use crate::spec::transform::lookup::LookupTransformSpec;
 use crate::spec::transform::project::ProjectTransformSpec;
 use crate::spec::transform::sequence::SequenceTransformSpec;
+use crate::spec::transform::stack::StackTransformSpec;
 use crate::spec::transform::timeunit::TimeUnitTransformSpec;
 use crate::spec::transform::unsupported::*;
 use crate::spec::transform::window::WindowTransformSpec;
@@ -54,6 +56,7 @@ pub enum TransformSpec {
     JoinAggregate(JoinAggregateTransformSpec),
     Window(WindowTransformSpec),
     Project(ProjectTransformSpec),
+    /**/ Stack(StackTransformSpec),
 
     // Unsupported
     CountPattern(CountpatternTransformSpec),
@@ -90,7 +93,6 @@ pub enum TransformSpec {
     ResolveFilter(ResolvefilterTransformSpec),
     Sample(SampleTransformSpec),
     Sequence(SequenceTransformSpec),
-    Stack(StackTransformSpec),
     Stratify(StratifyTransformSpec),
     Tree(TreeTransformSpec),
     TreeLinks(TreelinksTransformSpec),
@@ -112,6 +114,7 @@ impl Deref for TransformSpec {
             TransformSpec::Collect(t) => t,
             TransformSpec::Timeunit(t) => t,
             TransformSpec::Project(t) => t,
+            TransformSpec::Stack(t) => t,
 
             // Supported for dependency determination, not implementation
             TransformSpec::Lookup(t) => t,
@@ -151,7 +154,6 @@ impl Deref for TransformSpec {
             TransformSpec::Regression(t) => t,
             TransformSpec::ResolveFilter(t) => t,
             TransformSpec::Sample(t) => t,
-            TransformSpec::Stack(t) => t,
             TransformSpec::Stratify(t) => t,
             TransformSpec::Tree(t) => t,
             TransformSpec::TreeLinks(t) => t,

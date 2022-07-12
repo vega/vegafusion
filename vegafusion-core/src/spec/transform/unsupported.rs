@@ -61,7 +61,6 @@ unsupported_transforms!(
     RegressionTransformSpec,
     ResolvefilterTransformSpec,
     SampleTransformSpec,
-    StackTransformSpec,
     StratifyTransformSpec,
     TreeTransformSpec,
     TreelinksTransformSpec,
