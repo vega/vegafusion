@@ -12,8 +12,8 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
 use datafusion::physical_plan::aggregates;
-use datafusion_expr::{case, col, lit, when, BuiltInWindowFunction, Expr, WindowFunction};
-use std::ops::{Add, Sub};
+use datafusion_expr::{col, lit, when, BuiltInWindowFunction, Expr, WindowFunction};
+use std::ops::Sub;
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::{SortOrder, Stack};
@@ -87,7 +87,7 @@ impl TransformTrait for Stack {
         // Build window expression
         let fun = WindowFunction::AggregateFunction(aggregates::AggregateFunction::Sum);
 
-        // Case field to number and replace with 0 when null
+        // Cast field to number and replace with 0 when null
         let numeric_field = to_numeric(col(&self.field), dataframe.schema())?;
         let numeric_field =
             when(col(&self.field).is_not_null(), numeric_field).otherwise(lit(0.0))?;
@@ -103,7 +103,17 @@ impl TransformTrait for Stack {
 
         selection_0.push(window_expr);
 
-        let dataframe = dataframe.select(selection_0.clone())?;
+        // For offset zero, we need to evaluate positive and negative field values separately,
+        // then union the results. This is required to make sure stacks do not overlap. Negative
+        // values stack in the negative direction and positive values stack in the positive
+        // direction.
+        let dataframe_pos = dataframe.filter(numeric_field.clone().gt_eq(lit(0.0)))?;
+        let dataframe_pos = dataframe_pos.select(selection_0.clone())?;
+
+        let dataframe_neg = dataframe.filter(numeric_field.clone().lt(lit(0.0)))?;
+        let dataframe_neg = dataframe_neg.select(selection_0.clone())?;
+
+        let dataframe = dataframe_pos.union(dataframe_neg)?;
 
         // Restore original order
         let dataframe = dataframe.sort(vec![Expr::Sort {
