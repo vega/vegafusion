@@ -156,7 +156,7 @@ jobs:
           command: build
           manylinux: 2010
           rust-toolchain: nightly
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip --rustc-extra-args="-Z oom=panic"
+          args: --release -m vegafusion-python-embed/Cargo.toml --rustc-extra-args="-Z oom=panic" --strip
       - name: Download Apple Silicon toolchain
         if: ${{ runner.os == 'macOS' }}
         run: |
@@ -168,7 +168,7 @@ jobs:
           maturin-version: latest
           command: build
           rust-toolchain: nightly
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip --rustc-extra-args="-Z oom=panic" --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
+          args: --release -m vegafusion-python-embed/Cargo.toml --rustc-extra-args="-Z oom=panic" --strip --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
       - name: Remove unwanted universal
         if: ${{ runner.os == 'macOS' }}
         run: |
