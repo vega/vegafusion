@@ -809,7 +809,7 @@ mod test_vegalite_specs {
         case("vegalite/stacked_bar_h_normalized_labeled", 0.001),
 
         // (Legend matches, but difference stack order)
-        case("vegalite/stacked_bar_h_order_custom", 0.3),
+        case("vegalite/stacked_bar_h_order_custom", 0.001),
 
         case("vegalite/stacked_bar_h_order", 0.001),
         case("vegalite/stacked_bar_h", 0.001),
