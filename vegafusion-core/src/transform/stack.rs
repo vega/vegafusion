@@ -53,8 +53,8 @@ impl Stack {
             .unwrap_or_default();
 
         // Extract aliases
-        let alias0 = spec.as_().get(0).cloned().unwrap_or("y0".to_string());
-        let alias1 = spec.as_().get(1).cloned().unwrap_or("y1".to_string());
+        let alias0 = spec.as_().get(0).cloned().unwrap_or_else(|| "y0".to_string());
+        let alias1 = spec.as_().get(1).cloned().unwrap_or_else(|| "y1".to_string());
 
         Ok(Self {
             field: spec.field.field(),
