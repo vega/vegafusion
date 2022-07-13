@@ -272,7 +272,10 @@ mod test_vega_specs {
         // case("vega/playfair", 0.001),
 
         case("vega/population", 0.001),
-        case("vega/quantile-dot-plot", 0.001),
+
+        //  // "field" property of stack transform is required
+        // case("vega/quantile-dot-plot", 0.001),
+
         case("vega/regression", 0.001),
         case("vega/scales-discretize", 0.001),
         case("vega/scatter-brush-filter", 0.001),
