@@ -15,11 +15,10 @@ use util::check::check_transform_evaluation;
 use util::datasets::vega_json_dataset;
 use util::equality::TablesEqualConfig;
 
-use vegafusion_core::spec::transform::bin::{BinExtent, BinTransformSpec};
 use vegafusion_core::spec::transform::stack::StackTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_core::spec::values::{
-    CompareSpec, Field, SignalExpressionSpec, SortOrderOrList, SortOrderSpec, StringOrStringList,
+    CompareSpec, Field, SortOrderOrList, SortOrderSpec, StringOrStringList,
 };
 
 #[test]
