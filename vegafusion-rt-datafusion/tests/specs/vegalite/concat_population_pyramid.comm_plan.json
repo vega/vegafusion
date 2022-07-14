@@ -2,30 +2,25 @@
   "server_to_client": [
     {
       "namespace": "data",
-      "name": "_server_data_2",
-      "scope": []
-    },
-    {
-      "namespace": "data",
-      "name": "_server_data_4",
-      "scope": []
-    },
-    {
-      "namespace": "data",
       "name": "data_1_concat_0_y_domain_age",
       "scope": []
-    },
-    {
+    }, {
+      "namespace": "data",
+      "name": "data_2",
+      "scope": []
+    }, {
       "namespace": "data",
       "name": "data_3_concat_2_y_domain_age",
       "scope": []
-    },
-    {
+    }, {
+      "namespace": "data",
+      "name": "data_4",
+      "scope": []
+    }, {
       "namespace": "data",
       "name": "source_0",
       "scope": []
-    },
-    {
+    }, {
       "namespace": "data",
       "name": "source_0_concat_1_y_domain_age",
       "scope": []

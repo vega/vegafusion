@@ -153,17 +153,34 @@ pub struct WindowFrame {
     #[prost(int64, optional, tag="2")]
     pub end: ::core::option::Option<i64>,
 }
-// Project
-
+/// Project
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Project {
     #[prost(string, repeated, tag="1")]
     pub fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
+/// Stack
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Stack {
+    #[prost(string, tag="1")]
+    pub field: ::prost::alloc::string::String,
+    #[prost(enumeration="StackOffset", tag="2")]
+    pub offset: i32,
+    #[prost(enumeration="SortOrder", repeated, tag="3")]
+    pub sort: ::prost::alloc::vec::Vec<i32>,
+    #[prost(string, repeated, tag="4")]
+    pub sort_fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag="5")]
+    pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag="6")]
+    pub alias_0: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag="7")]
+    pub alias_1: ::core::option::Option<::prost::alloc::string::String>,
+}
 /// Top-level transform
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transform {
-    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8, 9, 10")]
+    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11")]
     pub transform_kind: ::core::option::Option<transform::TransformKind>,
 }
 /// Nested message and enum types in `Transform`.
@@ -190,6 +207,8 @@ pub mod transform {
         Window(super::Window),
         #[prost(message, tag="10")]
         Project(super::Project),
+        #[prost(message, tag="11")]
+        Stack(super::Stack),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -268,4 +287,11 @@ pub enum WindowOp {
     NthValue = 10,
     PrevValue = 11,
     NextValue = 12,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum StackOffset {
+    Zero = 0,
+    Center = 1,
+    Normalize = 2,
 }

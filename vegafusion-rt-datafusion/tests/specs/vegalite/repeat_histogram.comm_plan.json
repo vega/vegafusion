@@ -22,22 +22,22 @@
     },
     {
       "namespace": "data",
-      "name": "_server_data_0",
+      "name": "data_0",
       "scope": []
     },
     {
       "namespace": "data",
-      "name": "_server_data_1",
+      "name": "data_1",
       "scope": []
     },
     {
       "namespace": "data",
-      "name": "_server_data_2",
+      "name": "data_2",
       "scope": []
     },
     {
       "namespace": "data",
-      "name": "_server_data_3",
+      "name": "data_3",
       "scope": []
     }
   ],

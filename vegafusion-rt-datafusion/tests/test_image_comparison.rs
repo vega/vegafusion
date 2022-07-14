@@ -272,7 +272,10 @@ mod test_vega_specs {
         // case("vega/playfair", 0.001),
 
         case("vega/population", 0.001),
-        case("vega/quantile-dot-plot", 0.001),
+
+        //  // "field" property of stack transform is required
+        // case("vega/quantile-dot-plot", 0.001),
+
         case("vega/regression", 0.001),
         case("vega/scales-discretize", 0.001),
         case("vega/scatter-brush-filter", 0.001),
@@ -809,7 +812,7 @@ mod test_vegalite_specs {
         case("vegalite/stacked_bar_h_normalized_labeled", 0.001),
 
         // (Legend matches, but difference stack order)
-        case("vegalite/stacked_bar_h_order_custom", 0.3),
+        case("vegalite/stacked_bar_h_order_custom", 0.001),
 
         case("vegalite/stacked_bar_h_order", 0.001),
         case("vegalite/stacked_bar_h", 0.001),

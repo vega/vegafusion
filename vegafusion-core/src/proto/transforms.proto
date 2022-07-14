@@ -185,9 +185,25 @@ message WindowFrame {
 }
 
 // Project
-
 message Project {
   repeated string fields = 1;
+}
+
+// Stack
+message Stack {
+  string field = 1;
+  StackOffset offset = 2;
+  repeated SortOrder sort = 3;
+  repeated string sort_fields = 4;
+  repeated string groupby = 5;
+  optional string alias_0 = 6;
+  optional string alias_1 = 7;
+}
+
+enum StackOffset {
+  Zero = 0;
+  Center = 1;
+  Normalize = 2;
 }
 
 // Top-level transform
@@ -203,6 +219,7 @@ message Transform {
     JoinAggregate joinaggregate = 8;
     Window window = 9;
     Project project = 10;
+    Stack stack = 11;
   }
 }
 

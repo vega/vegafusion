@@ -2,7 +2,19 @@
   "server_to_client": [
     {
       "namespace": "data",
-      "name": "_server_source_0",
+      "name": "column_domain",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "source_0",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "source_0_color_domain_site",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "source_0_y_domain_variety",
       "scope": []
     }
   ],
