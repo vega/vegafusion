@@ -16,25 +16,24 @@ use util::datasets::vega_json_dataset;
 use util::equality::TablesEqualConfig;
 use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
 
+use rstest::rstest;
 use vegafusion_core::spec::transform::stack::StackTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_core::spec::values::{
     CompareSpec, Field, SortOrderOrList, SortOrderSpec, StringOrStringList,
 };
-use rstest::rstest;
-
 
 #[cfg(test)]
 mod test_stack {
-    use vegafusion_core::spec::transform::stack::StackOffsetSpec;
     use super::*;
+    use vegafusion_core::spec::transform::stack::StackOffsetSpec;
 
     #[rstest(
         offset,
         case(None),
         case(Some(StackOffsetSpec::Zero)),
         case(Some(StackOffsetSpec::Normalize)),
-        case(Some(StackOffsetSpec::Center)),
+        case(Some(StackOffsetSpec::Center))
     )]
     fn test(offset: Option<StackOffsetSpec>) {
         let dataset = vega_json_dataset("penguins");
@@ -70,18 +69,17 @@ mod test_stack {
     fn test_marker() {} // Help IDE detect test module
 }
 
-
 #[cfg(test)]
 mod test_stack_with_group {
-    use vegafusion_core::spec::transform::stack::StackOffsetSpec;
     use super::*;
+    use vegafusion_core::spec::transform::stack::StackOffsetSpec;
 
     #[rstest(
         offset,
         case(None),
         case(Some(StackOffsetSpec::Zero)),
         case(Some(StackOffsetSpec::Normalize)),
-        case(Some(StackOffsetSpec::Center)),
+        case(Some(StackOffsetSpec::Center))
     )]
     fn test(offset: Option<StackOffsetSpec>) {
         let dataset = vega_json_dataset("penguins");
@@ -115,18 +113,17 @@ mod test_stack_with_group {
     fn test_marker() {} // Help IDE detect test module
 }
 
-
 #[cfg(test)]
 mod test_stack_with_group_sort {
-    use vegafusion_core::spec::transform::stack::StackOffsetSpec;
     use super::*;
+    use vegafusion_core::spec::transform::stack::StackOffsetSpec;
 
     #[rstest(
         offset,
         case(None),
         case(Some(StackOffsetSpec::Zero)),
         case(Some(StackOffsetSpec::Normalize)),
-        case(Some(StackOffsetSpec::Center)),
+        case(Some(StackOffsetSpec::Center))
     )]
     fn test(offset: Option<StackOffsetSpec>) {
         let dataset = vega_json_dataset("penguins");
@@ -169,18 +166,17 @@ mod test_stack_with_group_sort {
     fn test_marker() {} // Help IDE detect test module
 }
 
-
 #[cfg(test)]
 mod test_stack_with_group_sort_negative {
-    use vegafusion_core::spec::transform::stack::StackOffsetSpec;
     use super::*;
+    use vegafusion_core::spec::transform::stack::StackOffsetSpec;
 
     #[rstest(
         offset,
         case(None),
         case(Some(StackOffsetSpec::Zero)),
         case(Some(StackOffsetSpec::Normalize)),
-        case(Some(StackOffsetSpec::Center)),
+        case(Some(StackOffsetSpec::Center))
     )]
     fn test(offset: Option<StackOffsetSpec>) {
         let dataset = vega_json_dataset("penguins");

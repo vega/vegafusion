@@ -14,7 +14,7 @@ use datafusion::dataframe::DataFrame;
 use datafusion::physical_plan::aggregates;
 use datafusion_expr::logical_plan::JoinType;
 use datafusion_expr::{
-    abs, col, lit, max, sum, when, AggregateFunction, BuiltInWindowFunction, Expr, WindowFunction,
+    abs, col, lit, max, when, AggregateFunction, BuiltInWindowFunction, Expr, WindowFunction,
 };
 use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
@@ -76,7 +76,7 @@ impl TransformTrait for Stack {
         let offset = StackOffset::from_i32(self.offset).expect("Failed to convert stack offset");
         let dataframe = match offset {
             StackOffset::Zero => eval_zero_offset(
-                &self,
+                self,
                 dataframe,
                 input_fields.as_slice(),
                 &alias0,
@@ -84,7 +84,7 @@ impl TransformTrait for Stack {
                 order_by.as_slice(),
             )?,
             StackOffset::Normalize => eval_normalize_center_offset(
-                &self,
+                self,
                 dataframe,
                 input_fields.as_slice(),
                 &alias0,
@@ -93,7 +93,7 @@ impl TransformTrait for Stack {
                 &offset,
             )?,
             StackOffset::Center => eval_normalize_center_offset(
-                &self,
+                self,
                 dataframe,
                 input_fields.as_slice(),
                 &alias0,
@@ -153,8 +153,7 @@ fn eval_normalize_center_offset(
         let total_dataframe = dataframe.aggregate(partition_by.clone(), vec![total_agg])?;
         let total_dataframe =
             total_dataframe.select(vec![Expr::Wildcard, lit(true).alias("__unit_lhs")])?;
-        let mut dataframe =
-            dataframe.select(vec![Expr::Wildcard, lit(true).alias("__unit_rhs")])?;
+        let dataframe = dataframe.select(vec![Expr::Wildcard, lit(true).alias("__unit_rhs")])?;
 
         dataframe.join(
             total_dataframe,
@@ -202,7 +201,7 @@ fn eval_normalize_center_offset(
         order_by: Vec::from(order_by),
         window_frame: None,
     }
-    .alias(&alias1);
+    .alias(alias1);
 
     selection_0.push(window_expr);
     selection_0.push(col("__total"));
@@ -249,8 +248,8 @@ fn eval_normalize_center_offset(
                 )?;
 
             let first = col("__max_total").sub(col("__total")).div(lit(2.0));
-            let alias1_col = col(&alias1).add(first).alias(alias1);
-            let alias0_col = alias1_col.clone().sub(numeric_field).alias(&alias0);
+            let alias1_col = col(alias1).add(first).alias(alias1);
+            let alias0_col = alias1_col.clone().sub(numeric_field).alias(alias0);
             selection_1.push(alias0_col);
             selection_1.push(alias1_col);
 
@@ -259,13 +258,13 @@ fn eval_normalize_center_offset(
             dataframe
         }
         StackOffset::Normalize => {
-            let alias0_col = col(&alias1)
+            let alias0_col = col(alias1)
                 .sub(numeric_field)
                 .div(col("__total"))
-                .alias(&alias0);
+                .alias(alias0);
             selection_1.push(alias0_col);
 
-            let alias1_col = col(&alias1).div(col("__total")).alias(&alias1);
+            let alias1_col = col(alias1).div(col("__total")).alias(alias1);
             selection_1.push(alias1_col);
 
             dataframe
@@ -315,7 +314,7 @@ fn eval_zero_offset(
         order_by: Vec::from(order_by),
         window_frame: None,
     }
-    .alias(&alias1);
+    .alias(alias1);
 
     selection_0.push(window_expr);
 
@@ -351,9 +350,9 @@ fn eval_zero_offset(
         .collect();
 
     // Now compute alias1 column by adding numeric field to alias0
-    let alias0_col = col(&alias1).sub(numeric_field).alias(&alias0);
+    let alias0_col = col(alias1).sub(numeric_field).alias(alias0);
     selection_1.push(alias0_col);
-    selection_1.push(col(&alias1));
+    selection_1.push(col(alias1));
 
     let dataframe = dataframe.select(selection_1.clone())?;
     Ok(dataframe)
