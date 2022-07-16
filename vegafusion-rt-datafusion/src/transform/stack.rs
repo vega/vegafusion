@@ -120,7 +120,7 @@ fn eval_normalize_center_offset(
     let mut selection_0: Vec<_> = input_fields
         .iter()
         .filter_map(|field| {
-            if field == &alias0 || field == &alias1 {
+            if field == alias0 || field == alias1 {
                 None
             } else {
                 Some(col(field))
@@ -288,7 +288,7 @@ fn eval_zero_offset(
     let mut selection_0: Vec<_> = input_fields
         .iter()
         .filter_map(|field| {
-            if field == &alias0 || field == &alias1 {
+            if field == alias0 || field == alias1 {
                 None
             } else {
                 Some(col(field))
