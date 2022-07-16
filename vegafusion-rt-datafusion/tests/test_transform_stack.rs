@@ -32,7 +32,9 @@ mod test_stack {
     #[rstest(
         offset,
         case(None),
-        case(Some(StackOffsetSpec::Zero))
+        case(Some(StackOffsetSpec::Zero)),
+        case(Some(StackOffsetSpec::Normalize)),
+        case(Some(StackOffsetSpec::Center)),
     )]
     fn test(offset: Option<StackOffsetSpec>) {
         let dataset = vega_json_dataset("penguins");
@@ -45,6 +47,8 @@ mod test_stack {
             offset,
             extra: Default::default(),
         };
+
+        println!("{}", serde_json::to_string_pretty(&stack_spec).unwrap());
 
         let transform_specs = vec![TransformSpec::Stack(stack_spec)];
 
@@ -75,7 +79,9 @@ mod test_stack_with_group {
     #[rstest(
         offset,
         case(None),
-        case(Some(StackOffsetSpec::Zero))
+        case(Some(StackOffsetSpec::Zero)),
+        case(Some(StackOffsetSpec::Normalize)),
+        case(Some(StackOffsetSpec::Center)),
     )]
     fn test(offset: Option<StackOffsetSpec>) {
         let dataset = vega_json_dataset("penguins");
@@ -118,7 +124,9 @@ mod test_stack_with_group_sort {
     #[rstest(
         offset,
         case(None),
-        case(Some(StackOffsetSpec::Zero))
+        case(Some(StackOffsetSpec::Zero)),
+        case(Some(StackOffsetSpec::Normalize)),
+        case(Some(StackOffsetSpec::Center)),
     )]
     fn test(offset: Option<StackOffsetSpec>) {
         let dataset = vega_json_dataset("penguins");
@@ -170,7 +178,9 @@ mod test_stack_with_group_sort_negative {
     #[rstest(
         offset,
         case(None),
-        case(Some(StackOffsetSpec::Zero))
+        case(Some(StackOffsetSpec::Zero)),
+        case(Some(StackOffsetSpec::Normalize)),
+        case(Some(StackOffsetSpec::Center)),
     )]
     fn test(offset: Option<StackOffsetSpec>) {
         let dataset = vega_json_dataset("penguins");
