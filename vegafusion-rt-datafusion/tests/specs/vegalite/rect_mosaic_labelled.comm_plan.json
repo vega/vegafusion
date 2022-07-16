@@ -2,7 +2,19 @@
   "server_to_client": [
     {
       "namespace": "data",
-      "name": "_server_source_0",
+      "name": "data_0",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_1",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_1_opacity_domain_Cylinders",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_2",
       "scope": []
     }
   ],

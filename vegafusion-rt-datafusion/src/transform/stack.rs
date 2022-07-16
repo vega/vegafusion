@@ -170,7 +170,7 @@ fn eval_normalize_center_offset(
         let groupby_aliases: Vec<String> = partition_by
             .iter()
             .enumerate()
-            .map(|(i, _a)| format!("grp_field_{}", i))
+            .map(|(i, _a)| format!("grp_field_{:?}{}", stack.groupby, i))
             .collect();
 
         let mut select_exprs = vec![col("__total")];
