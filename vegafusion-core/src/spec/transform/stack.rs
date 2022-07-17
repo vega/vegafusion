@@ -57,10 +57,6 @@ pub enum StackOffsetSpec {
 }
 
 impl TransformSpecTrait for StackTransformSpec {
-    fn supported(&self) -> bool {
-        self.offset() == StackOffsetSpec::Zero
-    }
-
     fn transform_columns(
         &self,
         datum_var: &Option<ScopedVariable>,

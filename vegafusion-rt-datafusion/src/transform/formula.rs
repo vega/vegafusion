@@ -36,17 +36,22 @@ impl TransformTrait for Formula {
         // Rename with alias
         let formula_expr = formula_expr.alias(&self.r#as);
 
-        let mut selections: Vec<_> = dataframe
-            .schema()
-            .fields()
-            .iter()
-            .filter_map(|f| match f.field().name() {
-                s if s != &self.r#as => Some(col(s)),
-                _ => None,
-            })
-            .collect();
-
-        selections.push(formula_expr);
+        // Build selections. If as field name is already present, replace it with
+        // formula expression at the same position. Otherwise append formula expression
+        // to the end of the selection list
+        let mut selections = Vec::new();
+        let mut as_field_added = false;
+        for field in dataframe.schema().fields().iter() {
+            if field.name() == &self.r#as {
+                selections.push(formula_expr.clone());
+                as_field_added = true;
+            } else {
+                selections.push(col(field.name()))
+            }
+        }
+        if !as_field_added {
+            selections.push(formula_expr);
+        }
 
         // dataframe
         let result = dataframe.select(selections).with_context(|| {
