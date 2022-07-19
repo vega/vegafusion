@@ -74,13 +74,13 @@ impl ScaleTypeSpec {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ScaleDomainSpec {
+    Array(Vec<ScaleArrayElementSpec>),
     FieldReference(ScaleDataReferenceSpec),
     FieldsReference(ScaleDataReferencesSpec),
     FieldsVecStrings(ScaleVecStringsSpec),
     FieldsStrings(ScaleStringsSpec),
     FieldsSignals(ScaleSignalsSpec),
     Signal(SignalExpressionSpec),
-    Array(Vec<ScaleArrayElementSpec>),
     Value(Value),
 }
 
