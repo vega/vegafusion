@@ -117,7 +117,8 @@ mod test_custom_specs {
         case("custom/movies_agg_parameterize", 0.001),
         case("custom/escaped_column_name1", 0.001),
         case("custom/layered_movies", 0.001),
-        case("custom/shipping_mixed_scales", 0.001)
+        case("custom/shipping_mixed_scales", 0.001),
+        case("custom/datum_color", 0.001)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
         println!("spec_name: {}", spec_name);
@@ -1281,6 +1282,7 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
 
     // Load spec
     let full_spec = load_spec(spec_name);
+    println!("{:#?}", full_spec);
 
     let vegajs_runtime = vegajs_runtime();
 
