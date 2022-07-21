@@ -180,16 +180,15 @@ impl PyTaskGraphRuntime {
             }
         }).collect();
 
-        // todo!()
         let response_list: PyObject = Python::with_gil(|py| -> PyResult<PyObject> {
-            let mut response_list = PyList::empty(py);
+            let response_list = PyList::empty(py);
             for value in values {
                 let bytes: PyObject = if let TaskValue::Table(table) = value {
                     PyBytes::new(py, table.to_ipc_bytes()?.as_slice()).into()
                 } else {
                     return Err(PyErr::from(VegaFusionError::internal("Unexpected value type")))
                 };
-                response_list.append(bytes);
+                response_list.append(bytes)?;
             }
             Ok(response_list.into())
         })?;
