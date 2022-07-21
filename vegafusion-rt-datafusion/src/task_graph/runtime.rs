@@ -39,10 +39,7 @@ use vegafusion_core::proto::gen::services::{
     pre_transform_spec_result, pre_transform_values_result, query_request, query_result,
     PreTransformSpecResult, PreTransformValuesResult, QueryRequest, QueryResult,
 };
-use vegafusion_core::proto::gen::tasks::{
-    task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse,
-    TaskValue as ProtoTaskValue, TzConfig, Variable,
-};
+use vegafusion_core::proto::gen::tasks::{task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse, TaskValue as ProtoTaskValue, TzConfig, Variable, VariableNamespace};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 
@@ -439,6 +436,32 @@ impl TaskGraphRuntime {
     ) -> Result<(Vec<TaskValue>, Vec<PreTransformValuesWarning>)> {
         let spec: ChartSpec =
             serde_json::from_str(spec).with_context(|| "Failed to parse spec".to_string())?;
+
+        // Check that requested variables exist
+        for var in variables {
+            let scope = var.1.as_slice();
+            match &var.0.ns() {
+                VariableNamespace::Signal => {
+                    if spec.get_nested_signal(scope, &var.0.name).is_err() {
+                        return Err(VegaFusionError::pre_transform(
+                            format!("No signal named {} with scope {:?}", var.0.name, scope)
+                        ))
+                    }
+                }
+                VariableNamespace::Data => {
+                    if spec.get_nested_data(scope, &var.0.name).is_err() {
+                        return Err(VegaFusionError::pre_transform(
+                            format!("No dataset named {} with scope {:?}", var.0.name, scope)
+                        ))
+                    }
+                }
+                VariableNamespace::Scale => {
+                    return Err(VegaFusionError::pre_transform(
+                        format!("pre_transform_values does not support scale variable {:?}", var.0)
+                    ))
+                }
+            }
+        }
 
         // Create spec plan
         let plan = SpecPlan::try_new(
