@@ -502,7 +502,17 @@ impl TaskGraphRuntime {
         // Gather the values of requested variables
         let mut values: Vec<TaskValue> = Vec::new();
         for var in variables {
-            let node_index = task_graph_mapping.get(var).with_context(|| format!("No such variable: {:?}", var))?;
+            let node_index = if let Some(node_index) = task_graph_mapping.get(var) {
+                node_index
+            } else {
+                return Err(VegaFusionError::pre_transform(
+                    format!(
+                        "Requested variable {:?}\n requires transforms or signal \
+                        expressions that are not yet supported", var
+                    )
+                ))
+            };
+
             let value = self
                 .get_node_value(
                     Arc::new(task_graph.clone()),
