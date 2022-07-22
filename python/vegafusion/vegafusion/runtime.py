@@ -120,11 +120,33 @@ class VegaFusionRuntime:
             warnings = json.loads(warnings)
             return new_spec, warnings
 
-    def pre_transform_datasets(self, spec, variables, local_tz, default_input_tz=None, inline_datasets=None):
-        from .transformer import to_arrow_ipc_bytes, arrow_table_to_ipc_bytes
+    def pre_transform_datasets(self, spec, datasets, local_tz, default_input_tz=None, inline_datasets=None):
+        """
+        Extract the fully evaluated form of the requested datasets from a Vega specification
+        as pandas DataFrames.
 
+        :param spec: A Vega specification
+        :param datasets: A list with elements that are either:
+          - The name of a top-level dataset as a string
+          - A two-element tuple where the first element is the name of a dataset as a string
+            and the second element is the nested scope of the dataset as a list of integers
+        :param local_tz: Name of timezone to be considered local. E.g. 'America/New_York'.
+            This can be computed for the local system using the tzlocal package and the
+            tzlocal.get_localzone_name() function.
+        :param default_input_tz: Name of timezone (e.g. 'America/New_York') that naive datetime
+            strings should be interpreted in. Defaults to `local_tz`.
+        :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
+            Tables. Inline datasets may be referenced by the input specification using
+            the following url syntax 'vegafusion+dataset://{dataset_name}'.
+        :return:
+            Two-element tuple:
+                0. List of pandas DataFrames corresponding to the input datasets list
+                1. A list of warnings as dictionaries. Each warning dict has a 'type'
+                   key indicating the warning type, and a 'message' key containing
+                   a description of the warning.
+        """
         if self._grpc_channel:
-            raise ValueError("pre_transform_spec not yet supported over gRPC")
+            raise ValueError("pre_transform_datasets not yet supported over gRPC")
         else:
             # Serialize inline datasets
             inline_dataset_bytes = self._serialize_inline_datasets(inline_datasets)
@@ -132,7 +154,7 @@ class VegaFusionRuntime:
             # Build input variables
             pre_tx_vars = []
             err_msg = "Elements of variables argument must be strings are two-element tuples"
-            for var in variables:
+            for var in datasets:
                 if isinstance(var, str):
                     pre_tx_vars.append((var, []))
                 elif isinstance(var, (list, tuple)):
