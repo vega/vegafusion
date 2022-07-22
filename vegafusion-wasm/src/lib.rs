@@ -105,8 +105,9 @@ impl MsgReceiver {
         let window = web_sys::window().expect("no global `window` exists");
         let _document = window.document().expect("should have a document on window");
         let dataflow = js_sys::JSON::parse(
-            &serde_json::to_string(&spec).expect("Failed to parse spec as JSON")
-        ).unwrap();
+            &serde_json::to_string(&spec).expect("Failed to parse spec as JSON"),
+        )
+        .unwrap();
 
         let view = View::new(dataflow);
         view.initialize(element);
@@ -153,9 +154,9 @@ impl MsgReceiver {
                                     log(&format!("DataType: {:#?}", &value.get_datatype()));
                                 }
 
-                                let js_value = js_sys::JSON::parse(
-                                    &serde_json::to_string(&json).unwrap()
-                                ).unwrap();
+                                let js_value =
+                                    js_sys::JSON::parse(&serde_json::to_string(&json).unwrap())
+                                        .unwrap();
 
                                 set_signal_value(view, &var.name, scope.as_slice(), js_value);
                             }
@@ -168,8 +169,9 @@ impl MsgReceiver {
                                 }
 
                                 let js_value = js_sys::JSON::parse(
-                                    &serde_json::to_string(&value.to_json()).unwrap()
-                                ).unwrap();
+                                    &serde_json::to_string(&value.to_json()).unwrap(),
+                                )
+                                .unwrap();
 
                                 set_data_value(view, &var.name, scope.as_slice(), js_value);
                             }
@@ -227,8 +229,9 @@ impl MsgReceiver {
                 VariableNamespace::Signal => {
                     let closure = Closure::wrap(Box::new(move |name: String, val: JsValue| {
                         let val: serde_json::Value = serde_json::from_str(
-                            &js_sys::JSON::stringify(&val).unwrap().as_string().unwrap()
-                        ).unwrap();
+                            &js_sys::JSON::stringify(&val).unwrap().as_string().unwrap(),
+                        )
+                        .unwrap();
                         if verbose {
                             log(&format!("VegaFusion(wasm): Sending signal {}", name));
                             log(&serde_json::to_string_pretty(&val).unwrap());
@@ -270,8 +273,9 @@ impl MsgReceiver {
                 VariableNamespace::Data => {
                     let closure = Closure::wrap(Box::new(move |name: String, val: JsValue| {
                         let val: serde_json::Value = serde_json::from_str(
-                            &js_sys::JSON::stringify(&val).unwrap().as_string().unwrap()
-                        ).unwrap();
+                            &js_sys::JSON::stringify(&val).unwrap().as_string().unwrap(),
+                        )
+                        .unwrap();
 
                         if verbose {
                             log(&format!("VegaFusion(wasm): Sending data {}", name));
@@ -324,9 +328,8 @@ impl MsgReceiver {
         buf.reserve(request_msg.encoded_len());
         request_msg.encode(&mut buf).unwrap();
 
-        let context = js_sys::JSON::parse(
-            &serde_json::to_string(&serde_json::Value::Null).unwrap()
-        ).unwrap();
+        let context =
+            js_sys::JSON::parse(&serde_json::to_string(&serde_json::Value::Null).unwrap()).unwrap();
 
         let js_buffer = js_sys::Uint8Array::from(buf.as_slice());
         send_msg_fn
