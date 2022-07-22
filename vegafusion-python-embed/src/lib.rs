@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use tokio::runtime::Runtime;
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
-use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::{WarningType as ValueWarningType};
+use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
 use vegafusion_core::proto::gen::services::pre_transform_spec_result;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
@@ -36,7 +36,9 @@ struct PyTaskGraphRuntime {
     tokio_runtime: Runtime,
 }
 
-fn deserialize_inline_datasets(inline_datasets: &PyDict) -> PyResult<HashMap<String, VegaFusionDataset>> {
+fn deserialize_inline_datasets(
+    inline_datasets: &PyDict,
+) -> PyResult<HashMap<String, VegaFusionDataset>> {
     inline_datasets
         .iter()
         .map(|(name, table_bytes)| {
@@ -48,7 +50,6 @@ fn deserialize_inline_datasets(inline_datasets: &PyDict) -> PyResult<HashMap<Str
         })
         .collect::<PyResult<HashMap<_, _>>>()
 }
-
 
 #[pymethods]
 impl PyTaskGraphRuntime {
@@ -153,11 +154,14 @@ impl PyTaskGraphRuntime {
         let inline_datasets = deserialize_inline_datasets(inline_datasets)?;
 
         // Build variables
-        let variables: Vec<ScopedVariable> = variables.iter().map(|input_var| {
-            let var = Variable::new_data(&input_var.0);
-            let scope = input_var.1.clone();
-            (var, scope)
-        }).collect();
+        let variables: Vec<ScopedVariable> = variables
+            .iter()
+            .map(|input_var| {
+                let var = Variable::new_data(&input_var.0);
+                let scope = input_var.1.clone();
+                (var, scope)
+            })
+            .collect();
 
         let (values, warnings) = self
             .tokio_runtime
@@ -169,16 +173,15 @@ impl PyTaskGraphRuntime {
                 inline_datasets,
             ))?;
 
-        let warnings: Vec<_> = warnings.iter().map(|warning| {
-            match warning.warning_type.as_ref().unwrap() {
-                ValueWarningType::Planner(planner_warning) => {
-                    PreTransformSpecWarning {
-                        typ: "Planner".to_string(),
-                        message: planner_warning.message.clone()
-                    }
-                }
-            }
-        }).collect();
+        let warnings: Vec<_> = warnings
+            .iter()
+            .map(|warning| match warning.warning_type.as_ref().unwrap() {
+                ValueWarningType::Planner(planner_warning) => PreTransformSpecWarning {
+                    typ: "Planner".to_string(),
+                    message: planner_warning.message.clone(),
+                },
+            })
+            .collect();
 
         let response_list: PyObject = Python::with_gil(|py| -> PyResult<PyObject> {
             let response_list = PyList::empty(py);
@@ -186,7 +189,9 @@ impl PyTaskGraphRuntime {
                 let bytes: PyObject = if let TaskValue::Table(table) = value {
                     PyBytes::new(py, table.to_ipc_bytes()?.as_slice()).into()
                 } else {
-                    return Err(PyErr::from(VegaFusionError::internal("Unexpected value type")))
+                    return Err(PyErr::from(VegaFusionError::internal(
+                        "Unexpected value type",
+                    )));
                 };
                 response_list.append(bytes)?;
             }

@@ -26,7 +26,7 @@ use vegafusion_core::planning::watch::{ExportUpdate, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
-use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::{WarningType as ValuesWarningType};
+use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
 use vegafusion_core::proto::gen::pretransform::{
     PlannerWarning, PreTransformSpecWarning, PreTransformValuesRequest, PreTransformValuesResponse,
     PreTransformValuesWarning,
@@ -39,7 +39,10 @@ use vegafusion_core::proto::gen::services::{
     pre_transform_spec_result, pre_transform_values_result, query_request, query_result,
     PreTransformSpecResult, PreTransformValuesResult, QueryRequest, QueryResult,
 };
-use vegafusion_core::proto::gen::tasks::{task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse, TaskValue as ProtoTaskValue, TzConfig, Variable, VariableNamespace};
+use vegafusion_core::proto::gen::tasks::{
+    task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse,
+    TaskValue as ProtoTaskValue, TzConfig, Variable, VariableNamespace,
+};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 
@@ -398,28 +401,36 @@ impl TaskGraphRuntime {
         let local_tz = request.local_tz;
         let default_input_tz = request.default_input_tz;
 
-        let (values, warnings) = self.pre_transform_values(
-            &spec_string,
-            variables.as_slice(),
-            &local_tz,
-            &default_input_tz,
-            inline_datasets,
-        )
-        .await?;
+        let (values, warnings) = self
+            .pre_transform_values(
+                &spec_string,
+                variables.as_slice(),
+                &local_tz,
+                &default_input_tz,
+                inline_datasets,
+            )
+            .await?;
 
-        let response_values: Vec<_> = values.iter().zip(&variables).map(|(value, var)| {
-            let proto_value = ProtoTaskValue::try_from(value)?;
-            Ok(ResponseTaskValue {
-                variable: Some(var.0.clone()),
-                scope: var.1.clone(),
-                value: Some(proto_value)
+        let response_values: Vec<_> = values
+            .iter()
+            .zip(&variables)
+            .map(|(value, var)| {
+                let proto_value = ProtoTaskValue::try_from(value)?;
+                Ok(ResponseTaskValue {
+                    variable: Some(var.0.clone()),
+                    scope: var.1.clone(),
+                    value: Some(proto_value),
+                })
             })
-        }).collect::<Result<Vec<_>>>()?;
+            .collect::<Result<Vec<_>>>()?;
 
         // Build result
         let result = PreTransformValuesResult {
             result: Some(pre_transform_values_result::Result::Response(
-                PreTransformValuesResponse { values: response_values, warnings },
+                PreTransformValuesResponse {
+                    values: response_values,
+                    warnings,
+                },
             )),
         };
 
@@ -443,22 +454,25 @@ impl TaskGraphRuntime {
             match &var.0.ns() {
                 VariableNamespace::Signal => {
                     if spec.get_nested_signal(scope, &var.0.name).is_err() {
-                        return Err(VegaFusionError::pre_transform(
-                            format!("No signal named {} with scope {:?}", var.0.name, scope)
-                        ))
+                        return Err(VegaFusionError::pre_transform(format!(
+                            "No signal named {} with scope {:?}",
+                            var.0.name, scope
+                        )));
                     }
                 }
                 VariableNamespace::Data => {
                     if spec.get_nested_data(scope, &var.0.name).is_err() {
-                        return Err(VegaFusionError::pre_transform(
-                            format!("No dataset named {} with scope {:?}", var.0.name, scope)
-                        ))
+                        return Err(VegaFusionError::pre_transform(format!(
+                            "No dataset named {} with scope {:?}",
+                            var.0.name, scope
+                        )));
                     }
                 }
                 VariableNamespace::Scale => {
-                    return Err(VegaFusionError::pre_transform(
-                        format!("pre_transform_values does not support scale variable {:?}", var.0)
-                    ))
+                    return Err(VegaFusionError::pre_transform(format!(
+                        "pre_transform_values does not support scale variable {:?}",
+                        var.0
+                    )))
                 }
             }
         }
@@ -505,12 +519,11 @@ impl TaskGraphRuntime {
             let node_index = if let Some(node_index) = task_graph_mapping.get(var) {
                 node_index
             } else {
-                return Err(VegaFusionError::pre_transform(
-                    format!(
-                        "Requested variable {:?}\n requires transforms or signal \
-                        expressions that are not yet supported", var
-                    )
-                ))
+                return Err(VegaFusionError::pre_transform(format!(
+                    "Requested variable {:?}\n requires transforms or signal \
+                        expressions that are not yet supported",
+                    var
+                )));
             };
 
             let value = self

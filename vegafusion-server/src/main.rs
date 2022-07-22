@@ -13,12 +13,16 @@ use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{
     VegaFusionRuntime as TonicVegaFusionRuntime,
     VegaFusionRuntimeServer as TonicVegaFusionRuntimeServer,
 };
-use vegafusion_core::proto::gen::services::{PreTransformSpecResult, PreTransformValuesResult, QueryRequest, QueryResult};
+use vegafusion_core::proto::gen::services::{
+    PreTransformSpecResult, PreTransformValuesResult, QueryRequest, QueryResult,
+};
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use clap::Parser;
 use regex::Regex;
-use vegafusion_core::proto::gen::pretransform::{PreTransformSpecRequest, PreTransformValuesRequest};
+use vegafusion_core::proto::gen::pretransform::{
+    PreTransformSpecRequest, PreTransformValuesRequest,
+};
 
 #[derive(Clone)]
 pub struct VegaFusionRuntimeGrpc {
@@ -62,7 +66,10 @@ impl TonicVegaFusionRuntime for VegaFusionRuntimeGrpc {
         }
     }
 
-    async fn pre_transform_values(&self, request: Request<PreTransformValuesRequest>) -> Result<Response<PreTransformValuesResult>, Status> {
+    async fn pre_transform_values(
+        &self,
+        request: Request<PreTransformValuesRequest>,
+    ) -> Result<Response<PreTransformValuesResult>, Status> {
         let result = self
             .runtime
             .pre_transform_values_request(request.into_inner())
