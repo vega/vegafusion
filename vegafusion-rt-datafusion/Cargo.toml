@@ -30,6 +30,7 @@ async-lock = "2.5.0"
 tempfile = "3.3.0"
 futures-util = "0.3.21"
 bytes = "1.1.0"
+url = "2.2"
 
 [dev-dependencies]
 futures = "0.3.21"
@@ -50,11 +51,11 @@ features = [ "derive",]
 
 [dependencies.datafusion]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "0ff59de810f344b197b2e9491a0a9aefca52d88f"
+rev = "9bf8bfbab47823effcbc78f98a675be64221f7cf"
 
 [dependencies.datafusion-expr]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "0ff59de810f344b197b2e9491a0a9aefca52d88f"
+rev = "9bf8bfbab47823effcbc78f98a675be64221f7cf"
 
 [dependencies.tokio]
 version = "1.18.1"

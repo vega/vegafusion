@@ -59,8 +59,11 @@ pub enum VegaFusionError {
     #[error("IO Error: {0}\n{1}")]
     IOError(std::io::Error, ErrorContext),
 
-    #[error("IO Error: {0}\n{1}")]
+    #[error("Serde Json Error: {0}\n{1}")]
     SerdeJsonError(serde_json::Error, ErrorContext),
+
+    #[error("Url Parse Error: {0}\n{1}")]
+    UrlParseError(url::ParseError, ErrorContext),
 }
 
 impl VegaFusionError {
@@ -107,6 +110,10 @@ impl VegaFusionError {
             SerdeJsonError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::SerdeJsonError(err, context)
+            }
+            UrlParseError(err, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::UrlParseError(err, context)
             }
         }
     }
@@ -160,6 +167,9 @@ impl VegaFusionError {
             }
             SerdeJsonError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
+            }
+            UrlParseError(err, context) => {
+                VegaFusionError::UrlParseError(err.clone(), context.clone())
             }
         }
     }
@@ -231,6 +241,12 @@ impl From<std::io::Error> for VegaFusionError {
 impl From<serde_json::Error> for VegaFusionError {
     fn from(err: serde_json::Error) -> Self {
         Self::SerdeJsonError(err, Default::default())
+    }
+}
+
+impl From<url::ParseError> for VegaFusionError {
+    fn from(err: url::ParseError) -> Self {
+        Self::UrlParseError(err, Default::default())
     }
 }
 

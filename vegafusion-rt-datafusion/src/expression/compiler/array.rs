@@ -93,7 +93,7 @@ pub fn make_array_constructor_udf() -> ScalarUDF {
         // Build ListArray data
         let list_array_data = ArrayDataBuilder::new(array_dtype)
             .len(num_rows)
-            .null_bit_buffer(flat_valid_builder.finish())
+            .null_bit_buffer(Some(flat_valid_builder.finish()))
             .add_buffer(offsets.data().buffers()[0].clone())
             .add_child_data(flat_values.data().clone())
             .build()?;

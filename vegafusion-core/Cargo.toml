@@ -21,15 +21,16 @@ ordered-float = "^2.10.0"
 petgraph = "0.6.0"
 deterministic-hash = "1.0.1"
 chrono = "0.4.19"
+url = "2.2"
 
 [dependencies.arrow]
-version = "14.0.0"
+version = "15.0.0"
 default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "0ff59de810f344b197b2e9491a0a9aefca52d88f"
+rev = "9bf8bfbab47823effcbc78f98a675be64221f7cf"
 
 [dependencies.pyo3]
 version = "0.16.4"
