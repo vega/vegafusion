@@ -13,12 +13,16 @@ use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{
     VegaFusionRuntime as TonicVegaFusionRuntime,
     VegaFusionRuntimeServer as TonicVegaFusionRuntimeServer,
 };
-use vegafusion_core::proto::gen::services::{PreTransformResult, QueryRequest, QueryResult};
+use vegafusion_core::proto::gen::services::{
+    PreTransformSpecResult, PreTransformValuesResult, QueryRequest, QueryResult,
+};
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use clap::Parser;
 use regex::Regex;
-use vegafusion_core::proto::gen::pretransform::PreTransformRequest;
+use vegafusion_core::proto::gen::pretransform::{
+    PreTransformSpecRequest, PreTransformValuesRequest,
+};
 
 #[derive(Clone)]
 pub struct VegaFusionRuntimeGrpc {
@@ -50,11 +54,25 @@ impl TonicVegaFusionRuntime for VegaFusionRuntimeGrpc {
 
     async fn pre_transform_spec(
         &self,
-        request: Request<PreTransformRequest>,
-    ) -> Result<Response<PreTransformResult>, Status> {
+        request: Request<PreTransformSpecRequest>,
+    ) -> Result<Response<PreTransformSpecResult>, Status> {
         let result = self
             .runtime
             .pre_transform_spec_request(request.into_inner())
+            .await;
+        match result {
+            Ok(result) => Ok(Response::new(result)),
+            Err(err) => Err(Status::unknown(err.to_string())),
+        }
+    }
+
+    async fn pre_transform_values(
+        &self,
+        request: Request<PreTransformValuesRequest>,
+    ) -> Result<Response<PreTransformValuesResult>, Status> {
+        let result = self
+            .runtime
+            .pre_transform_values_request(request.into_inner())
             .await;
         match result {
             Ok(result) => Ok(Response::new(result)),

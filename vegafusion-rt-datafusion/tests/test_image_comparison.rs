@@ -28,8 +28,8 @@ use vegafusion_core::planning::plan::SpecPlan;
 use vegafusion_core::planning::watch::{
     ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace, Watch, WatchNamespace, WatchPlan,
 };
-use vegafusion_core::proto::gen::pretransform::{PreTransformOpts, PreTransformRequest};
-use vegafusion_core::proto::gen::services::pre_transform_result;
+use vegafusion_core::proto::gen::pretransform::{PreTransformSpecOpts, PreTransformSpecRequest};
+use vegafusion_core::proto::gen::services::pre_transform_spec_result;
 use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
@@ -1154,11 +1154,11 @@ mod test_pre_transform_inline {
         }];
 
         // Pre-transform specs
-        let opts = PreTransformOpts {
+        let opts = PreTransformSpecOpts {
             row_limit: None,
             inline_datasets,
         };
-        let request = PreTransformRequest {
+        let request = PreTransformSpecRequest {
             spec: serde_json::to_string(&inline_spec).unwrap(),
             local_tz,
             output_tz: None,
@@ -1167,10 +1167,10 @@ mod test_pre_transform_inline {
         let response = runtime.pre_transform_spec_request(request).await.unwrap();
 
         let pre_transform_spec: ChartSpec = match response.result.unwrap() {
-            pre_transform_result::Result::Error(_) => {
+            pre_transform_spec_result::Result::Error(_) => {
                 panic!("Pre-transform error")
             }
-            pre_transform_result::Result::Response(response) => {
+            pre_transform_spec_result::Result::Response(response) => {
                 // println!("Warnings: {:#?}", response.warnings);
                 serde_json::from_str(&response.spec).unwrap()
             }
@@ -1293,11 +1293,11 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
     let local_tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
 
     // Pre-transform specs
-    let opts = PreTransformOpts {
+    let opts = PreTransformSpecOpts {
         row_limit: None,
         inline_datasets: vec![],
     };
-    let request = PreTransformRequest {
+    let request = PreTransformSpecRequest {
         spec: serde_json::to_string(&full_spec).unwrap(),
         local_tz,
         output_tz: None,
@@ -1306,10 +1306,10 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
     let response = runtime.pre_transform_spec_request(request).await.unwrap();
 
     let pre_transform_spec: ChartSpec = match response.result.unwrap() {
-        pre_transform_result::Result::Error(_) => {
+        pre_transform_spec_result::Result::Error(_) => {
             panic!("Pre-transform error")
         }
-        pre_transform_result::Result::Response(response) => {
+        pre_transform_spec_result::Result::Response(response) => {
             // println!("Warnings: {:#?}", response.warnings);
             serde_json::from_str(&response.spec).unwrap()
         }

@@ -50,6 +50,9 @@ pub enum VegaFusionError {
     #[error("Vega Specification error: {0}\n{1}")]
     SpecificationError(String, ErrorContext),
 
+    #[error("Pre-transform error: {0}\n{1}")]
+    PreTransformError(String, ErrorContext),
+
     #[error("Arrow error: {0}\n{1}")]
     ArrowError(ArrowError, ErrorContext),
 
@@ -95,6 +98,10 @@ impl VegaFusionError {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::SpecificationError(msg, context)
             }
+            PreTransformError(msg, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::PreTransformError(msg, context)
+            }
             ArrowError(msg, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::ArrowError(msg, context)
@@ -138,6 +145,10 @@ impl VegaFusionError {
         Self::SpecificationError(message.into(), Default::default())
     }
 
+    pub fn pre_transform<S: Into<String>>(message: S) -> Self {
+        Self::PreTransformError(message.into(), Default::default())
+    }
+
     /// Duplicate error. Not a precise Clone because some of the wrapped error types aren't Clone
     /// These are converted to internal errors
     pub fn duplicate(&self) -> Self {
@@ -155,6 +166,9 @@ impl VegaFusionError {
             }
             SpecificationError(msg, context) => {
                 VegaFusionError::SpecificationError(msg.clone(), context.clone())
+            }
+            PreTransformError(msg, context) => {
+                VegaFusionError::PreTransformError(msg.clone(), context.clone())
             }
             ArrowError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())

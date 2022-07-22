@@ -13,7 +13,7 @@ mod test_stringify_datetimes {
     use crate::{crate_dir, TOKIO_RUNTIME};
     use rstest::rstest;
     use std::fs;
-    use vegafusion_core::proto::gen::services::pre_transform_result;
+    use vegafusion_core::proto::gen::services::pre_transform_spec_result;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
@@ -91,10 +91,10 @@ mod test_stringify_datetimes {
             .unwrap();
 
         match pre_tx_result.result.unwrap() {
-            pre_transform_result::Result::Error(err) => {
+            pre_transform_spec_result::Result::Error(err) => {
                 panic!("pre_transform_spec error: {:?}", err);
             }
-            pre_transform_result::Result::Response(response) => {
+            pre_transform_spec_result::Result::Response(response) => {
                 let spec: ChartSpec = serde_json::from_str(&response.spec).unwrap();
                 let data = spec.data[0].values.as_ref().unwrap();
                 let values = data.as_array().expect("Expected array");
@@ -151,7 +151,7 @@ mod test_stringify_datetimes {
         let pre_tx_result = pre_tx_result.result.unwrap();
 
         match pre_tx_result {
-            pre_transform_result::Result::Response(response) => {
+            pre_transform_spec_result::Result::Response(response) => {
                 let spec: ChartSpec = serde_json::from_str(&response.spec).unwrap();
                 println!("{}", serde_json::to_string_pretty(&spec).unwrap());
 
@@ -185,7 +185,7 @@ mod test_stringify_datetimes {
                     .to_string();
                 assert_eq!(hours_time, expected_month_date);
             }
-            pre_transform_result::Result::Error(err) => {
+            pre_transform_spec_result::Result::Error(err) => {
                 panic!("Pre Transform Error: {:?}", err)
             }
         }
@@ -240,7 +240,7 @@ mod test_stringify_datetimes {
         let pre_tx_result = pre_tx_result.result.unwrap();
 
         match pre_tx_result {
-            pre_transform_result::Result::Response(response) => {
+            pre_transform_spec_result::Result::Response(response) => {
                 let spec: ChartSpec = serde_json::from_str(&response.spec).unwrap();
                 println!("{}", serde_json::to_string_pretty(&spec).unwrap());
 
@@ -272,7 +272,7 @@ mod test_stringify_datetimes {
                     .to_string();
                 assert_eq!(hours_time, expected_ship_date);
             }
-            pre_transform_result::Result::Error(err) => {
+            pre_transform_spec_result::Result::Error(err) => {
                 panic!("Pre Transform Error: {:?}", err)
             }
         }
