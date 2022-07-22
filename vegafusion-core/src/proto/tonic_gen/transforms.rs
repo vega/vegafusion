@@ -13,7 +13,7 @@ pub struct Formula {
     pub r#as: ::prost::alloc::string::String,
 }
 /// Extent
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct Extent {
     #[prost(string, tag="1")]
     pub field: ::prost::alloc::string::String,
@@ -21,7 +21,7 @@ pub struct Extent {
     pub signal: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Collect
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct Collect {
     #[prost(string, repeated, tag="1")]
     pub fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
@@ -73,7 +73,7 @@ pub struct Bin {
     pub nice: bool,
 }
 /// Aggregate
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct Aggregate {
     #[prost(string, repeated, tag="1")]
     pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
@@ -85,7 +85,7 @@ pub struct Aggregate {
     pub ops: ::prost::alloc::vec::Vec<i32>,
 }
 /// JoinAggregate
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct JoinAggregate {
     #[prost(string, repeated, tag="1")]
     pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
@@ -97,7 +97,7 @@ pub struct JoinAggregate {
     pub aliases: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// TimeUnit
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct TimeUnit {
     #[prost(string, tag="1")]
     pub field: ::prost::alloc::string::String,
@@ -119,7 +119,7 @@ pub struct WindowTransformOp {
 }
 /// Nested message and enum types in `WindowTransformOp`.
 pub mod window_transform_op {
-    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[derive(Clone, PartialEq, Eq, ::prost::Oneof)]
     pub enum Op {
         #[prost(enumeration="super::AggregateOp", tag="1")]
         AggregateOp(i32),
@@ -146,7 +146,7 @@ pub struct Window {
     #[prost(message, optional, tag="8")]
     pub frame: ::core::option::Option<WindowFrame>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct WindowFrame {
     #[prost(int64, optional, tag="1")]
     pub start: ::core::option::Option<i64>,
@@ -154,13 +154,13 @@ pub struct WindowFrame {
     pub end: ::core::option::Option<i64>,
 }
 /// Project
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct Project {
     #[prost(string, repeated, tag="1")]
     pub fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// Stack
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct Stack {
     #[prost(string, tag="1")]
     pub field: ::prost::alloc::string::String,

@@ -44,7 +44,7 @@ pub struct WindowTransformSpec {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum WindowOpSpec {
     #[serde(rename = "row_number")]

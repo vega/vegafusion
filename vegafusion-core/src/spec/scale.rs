@@ -107,7 +107,7 @@ pub struct ScaleDataReferenceSpec {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScaleVecStringsSpec {
     pub fields: Vec<Vec<String>>,
 
@@ -115,7 +115,7 @@ pub struct ScaleVecStringsSpec {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScaleStringsSpec {
     pub fields: Vec<String>,
 

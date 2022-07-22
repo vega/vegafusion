@@ -173,10 +173,10 @@ impl ScalarValueHelpers for ScalarValue {
                 return Ok([v0.to_f64()?, v1.to_f64()?]);
             }
         }
-        return Err(VegaFusionError::internal(&format!(
+        Err(VegaFusionError::internal(&format!(
             "Cannot convert {} to [f64; 2]",
             self
-        )));
+        )))
     }
 
     fn to_scalar_string(&self) -> Result<String> {

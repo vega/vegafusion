@@ -71,7 +71,7 @@ impl TryFrom<ScopedVariable> for Watch {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WatchPlan {
     pub server_to_client: Vec<Watch>,
     pub client_to_server: Vec<Watch>,
@@ -96,7 +96,7 @@ impl From<CommPlan> for WatchPlan {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WatchValue {
     pub watch: Watch,
     pub value: Value,
@@ -107,7 +107,7 @@ pub struct WatchValues {
     pub values: Vec<WatchValue>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ExportUpdateNamespace {
     Signal,

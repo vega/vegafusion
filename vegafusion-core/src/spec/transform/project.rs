@@ -18,7 +18,7 @@ use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task::InputVariable;
 
 /// Struct that serializes to Vega spec for the filter transform
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectTransformSpec {
     pub fields: Vec<String>,
 
