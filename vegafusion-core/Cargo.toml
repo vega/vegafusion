@@ -24,13 +24,13 @@ chrono = "0.4.19"
 url = "2.2"
 
 [dependencies.arrow]
-version = "15.0.0"
+version = "18.0.0"
 default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "10058f658fe72c1811b5074ad61a723ec4e60abd"
+rev = "d25e822c1ef85ee7c0297b4b38d05a51b0d2e46f"
 
 [dependencies.pyo3]
 version = "0.16.4"
