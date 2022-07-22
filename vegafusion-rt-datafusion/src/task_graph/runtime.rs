@@ -516,7 +516,7 @@ impl TaskGraphRuntime {
             let value = self
                 .get_node_value(
                     Arc::new(task_graph.clone()),
-                    &node_index,
+                    node_index,
                     inline_datasets.clone(),
                 )
                 .await?;
