@@ -37,8 +37,8 @@ conda activate vegafusion_dev
 ### Install test npm dependencies
 Note: The `npm` command is included in the `nodejs` conda-forge package installed in the development conda environment.
 
-```bash
 From the repository root:
+```bash
 cd vegafusion-rt-datafusion/tests/util/vegajs_runtime/
 npm install
 ```
@@ -53,13 +53,23 @@ VegaFusion contains several packages using a variety of languages and build tool
 From the repository root:
 ```bash
 cd vegafusion-wasm
+npm install
 wasm-pack build --release
 ```
 
 ### Link `vegafusion-wasm`
+From the repository root:
 ```bash
 cd vegafusion-wasm/pkg
 npm link
+```
+
+### Build `javascript/vegafusion-embed` package
+From the repository root:
+```bash
+cd javascript/vegafusion-embed
+npm install
+npm run build
 ```
 
 ### Build the `vegafusion-python` PyO3 Python package in development mode
@@ -76,7 +86,8 @@ maturin develop --release
 From the repository root:
 ```bash
 cd python/vegafusion-jupyter/
-cd npm link vegafusion-wasm
+npm link vegafusion-wasm
+npm install
 pip install -e ".[test]"
 ```
 
@@ -84,7 +95,7 @@ Then, build the jupyterlab extension
 
 ```bash
 jupyter labextension develop --overwrite .
-yarn run build
+yarn run build:dev
 ```
 
 ## Running tests
