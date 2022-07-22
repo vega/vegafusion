@@ -59,7 +59,7 @@ impl DataSpec {
             }
         }
 
-        // Inline values array not supported (they should be kept on the server)
+        // Check if inline values array is supported
         if let Some(values) = &self.values {
             if !extract_inline_data {
                 return DependencyNodeSupported::Unsupported;
@@ -70,7 +70,7 @@ impl DataSpec {
                     return DependencyNodeSupported::Unsupported;
                 }
             } else {
-                // Non-array data not
+                // Non-array data not supported
                 return DependencyNodeSupported::Unsupported;
             }
         }

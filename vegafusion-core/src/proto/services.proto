@@ -7,7 +7,8 @@ import "errors.proto";
 
 service VegaFusionRuntime {
   rpc TaskGraphQuery(QueryRequest) returns (QueryResult) {}
-  rpc PreTransformSpec(pretransform.PreTransformRequest) returns (PreTransformResult) {}
+  rpc PreTransformSpec(pretransform.PreTransformSpecRequest) returns (PreTransformSpecResult) {}
+  rpc PreTransformValues(pretransform.PreTransformValuesRequest) returns (PreTransformValuesResult) {}
 }
 
 message QueryRequest {
@@ -23,9 +24,16 @@ message QueryResult {
   }
 }
 
-message PreTransformResult {
+message PreTransformSpecResult {
   oneof result {
     errors.Error error = 1;
-    pretransform.PreTransformResponse response = 2;
+    pretransform.PreTransformSpecResponse response = 2;
+  }
+}
+
+message PreTransformValuesResult {
+  oneof result {
+    errors.Error error = 1;
+    pretransform.PreTransformValuesResponse response = 2;
   }
 }

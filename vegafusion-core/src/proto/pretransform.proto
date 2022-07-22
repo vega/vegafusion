@@ -3,21 +3,31 @@ package pretransform;
 
 import "tasks.proto";
 
-message PreTransformOpts {
+/// Pre transform spec messages
+message PreTransformSpecOpts {
   optional uint32 row_limit = 1;
   repeated PreTransformInlineDataset inline_datasets = 2;
 }
 
-message PreTransformRequest {
+message PreTransformSpecRequest {
   string spec = 1;
   string local_tz = 2;
   optional string output_tz = 3;
-  PreTransformOpts opts = 4;
+  PreTransformSpecOpts opts = 4;
 }
 
-message PreTransformResponse {
+message PreTransformSpecResponse {
   string spec = 1;
-  repeated PreTransformWarning warnings = 2;
+  repeated PreTransformSpecWarning warnings = 2;
+}
+
+message PreTransformSpecWarning {
+  oneof warning_type {
+    PreTransformRowLimitWarning row_limit = 1;
+    PreTransformBrokenInteractivityWarning broken_interactivity = 2;
+    PreTransformUnsupportedWarning unsupported = 3;
+    PlannerWarning planner = 4;
+  }
 }
 
 message PreTransformRowLimitWarning {
@@ -30,22 +40,43 @@ message PreTransformBrokenInteractivityWarning {
 
 message PreTransformUnsupportedWarning {}
 
-message PlannerWarning {
-  string message = 1;
+/// Pre transform value messages
+message PreTransformVariable {
+  tasks.Variable variable = 1;
+  repeated uint32 scope = 2;
 }
 
-message PreTransformWarning {
+message PreTransformValuesOpts {
+  repeated PreTransformVariable variables = 1;
+  repeated PreTransformInlineDataset inline_datasets = 2;
+}
+
+message PreTransformValuesRequest {
+  string spec = 1;
+  string local_tz = 2;
+  optional string default_input_tz = 3;
+  PreTransformValuesOpts opts = 4;
+}
+
+message PreTransformValuesResponse {
+  repeated tasks.ResponseTaskValue values = 1;
+  repeated PreTransformValuesWarning warnings = 2;
+}
+
+message PreTransformValuesWarning {
   oneof warning_type {
-    PreTransformRowLimitWarning row_limit = 1;
-      PreTransformBrokenInteractivityWarning broken_interactivity = 2;
-      PreTransformUnsupportedWarning unsupported = 3;
-      PlannerWarning planner = 4;
+    PlannerWarning planner = 1;
   }
 }
 
+/// Common pre-transform messages
 message PreTransformInlineDataset {
   // Inline dataset name
   string name = 1;
   // Serialized Arrow record batch in Arrow IPC format
   bytes table = 2;
+}
+
+message PlannerWarning {
+  string message = 1;
 }
