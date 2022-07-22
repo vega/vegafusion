@@ -592,8 +592,8 @@ dependencies = [
 
 [[package]]
 name = "datafusion"
-version = "8.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bf8bfbab47823effcbc78f98a675be64221f7cf#9bf8bfbab47823effcbc78f98a675be64221f7cf"
+version = "9.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=10058f658fe72c1811b5074ad61a723ec4e60abd#10058f658fe72c1811b5074ad61a723ec4e60abd"
 dependencies = [
  "ahash",
  "arrow",
@@ -602,6 +602,7 @@ dependencies = [
  "datafusion-common",
  "datafusion-data-access",
  "datafusion-expr",
+ "datafusion-optimizer",
  "datafusion-physical-expr",
  "datafusion-row",
  "datafusion-sql",
@@ -629,8 +630,8 @@ dependencies = [
 
 [[package]]
 name = "datafusion-common"
-version = "8.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bf8bfbab47823effcbc78f98a675be64221f7cf#9bf8bfbab47823effcbc78f98a675be64221f7cf"
+version = "9.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=10058f658fe72c1811b5074ad61a723ec4e60abd#10058f658fe72c1811b5074ad61a723ec4e60abd"
 dependencies = [
  "arrow",
  "ordered-float 3.0.0",
@@ -641,8 +642,8 @@ dependencies = [
 
 [[package]]
 name = "datafusion-data-access"
-version = "8.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bf8bfbab47823effcbc78f98a675be64221f7cf#9bf8bfbab47823effcbc78f98a675be64221f7cf"
+version = "9.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=10058f658fe72c1811b5074ad61a723ec4e60abd#10058f658fe72c1811b5074ad61a723ec4e60abd"
 dependencies = [
  "async-trait",
  "chrono",
@@ -654,8 +655,8 @@ dependencies = [
 
 [[package]]
 name = "datafusion-expr"
-version = "8.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bf8bfbab47823effcbc78f98a675be64221f7cf#9bf8bfbab47823effcbc78f98a675be64221f7cf"
+version = "9.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=10058f658fe72c1811b5074ad61a723ec4e60abd#10058f658fe72c1811b5074ad61a723ec4e60abd"
 dependencies = [
  "ahash",
  "arrow",
@@ -664,9 +665,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "datafusion-optimizer"
+version = "9.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=10058f658fe72c1811b5074ad61a723ec4e60abd#10058f658fe72c1811b5074ad61a723ec4e60abd"
+dependencies = [
+ "arrow",
+ "async-trait",
+ "chrono",
+ "datafusion-common",
+ "datafusion-expr",
+ "datafusion-physical-expr",
+ "hashbrown 0.12.0",
+ "log",
+]
+
+[[package]]
 name = "datafusion-physical-expr"
-version = "8.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bf8bfbab47823effcbc78f98a675be64221f7cf#9bf8bfbab47823effcbc78f98a675be64221f7cf"
+version = "9.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=10058f658fe72c1811b5074ad61a723ec4e60abd#10058f658fe72c1811b5074ad61a723ec4e60abd"
 dependencies = [
  "ahash",
  "arrow",
@@ -689,8 +705,8 @@ dependencies = [
 
 [[package]]
 name = "datafusion-row"
-version = "8.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bf8bfbab47823effcbc78f98a675be64221f7cf#9bf8bfbab47823effcbc78f98a675be64221f7cf"
+version = "9.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=10058f658fe72c1811b5074ad61a723ec4e60abd#10058f658fe72c1811b5074ad61a723ec4e60abd"
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -700,8 +716,8 @@ dependencies = [
 
 [[package]]
 name = "datafusion-sql"
-version = "8.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bf8bfbab47823effcbc78f98a675be64221f7cf#9bf8bfbab47823effcbc78f98a675be64221f7cf"
+version = "9.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=10058f658fe72c1811b5074ad61a723ec4e60abd#10058f658fe72c1811b5074ad61a723ec4e60abd"
 dependencies = [
  "ahash",
  "arrow",
@@ -2526,9 +2542,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "sqlparser"
-version = "0.17.0"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddc2739f3a9bfc68e2f7b7695589f6cb0181c88af73ceaee0c84215cd2a2ae28"
+checksum = "f531637a13132fa3d38c54d4cd8f115905e5dc3e72f6e77bd6160481f482e25d"
 dependencies = [
  "log",
 ]

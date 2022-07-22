@@ -527,17 +527,10 @@ async fn build_csv_schema(
     parse: &Option<Parse>,
 ) -> Result<SchemaRef> {
     let ctx = SessionContext::new();
-    let uri: String = uri.into();
-    let file_url = format!("file://{}", uri.as_str());
-    let url = Box::new(url::Url::parse(&file_url)?);
-    let path = ListingTableUrl::parse(&file_url)?;
-
-    let object_store = ctx.runtime_env().object_store(url)?;
-
-    let listing_opts = csv_opts.to_listing_options(1);
-    let inferred_schema = listing_opts
-        .infer_schema(Arc::clone(&object_store), &path)
-        .await?;
+    let table_path = ListingTableUrl::parse(uri.into().as_str())?;
+    let target_partitions = ctx.copied_config().target_partitions;
+    let listing_options = csv_opts.to_listing_options(target_partitions);
+    let inferred_schema = listing_options.infer_schema(&ctx.state(), &table_path).await?;
 
     // Get HashMap of provided columns formats
     let format_specs = if let Some(parse) = parse {
