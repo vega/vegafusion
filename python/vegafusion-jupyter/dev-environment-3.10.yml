@@ -18,7 +18,7 @@ dependencies:
   - voila
   - nbval
   - jupytext
-  - selenium
+  - selenium =4.2
   - scikit-image
   - tenacity
   - flaky
