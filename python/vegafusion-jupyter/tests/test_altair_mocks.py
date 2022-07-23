@@ -280,29 +280,29 @@ def test_altair_mock(mock_name, img_tolerance, delay):
         altair_imgs = export_image_sequence(
             chrome_driver, altair_notebook, name + "_altair", actions, delay
         )
-        vegafusion_arrow_imgs = export_image_sequence(
-            chrome_driver, vegafusion_arrow_notebook, name + "_vegafusion_feather", actions, delay
-        )
-        vegafusion_default_imgs = export_image_sequence(
-            chrome_driver, vegafusion_default_notebook, name + "_vegafusion", actions, delay
-        )
-
-        for i in range(len(altair_imgs)):
-            altair_img = altair_imgs[i]
-            vegafusion_arrow_img = vegafusion_arrow_imgs[i]
-            vegafusion_default_img = vegafusion_default_imgs[i]
-
-            assert altair_img.shape == vegafusion_arrow_img.shape, "Size mismatch with Arrow data transformer"
-            assert altair_img.shape == vegafusion_default_img.shape, "Size mismatch with default data transformer"
-
-            similarity_arrow_value = ssim(altair_img, vegafusion_arrow_img, channel_axis=2)
-            similarity_default_value = ssim(altair_img, vegafusion_default_img, channel_axis=2)
-
-            print(f"({i}) similarity_arrow_value={similarity_arrow_value}")
-            print(f"({i}) similarity_default_value={similarity_default_value}")
-
-            assert similarity_arrow_value >= img_tolerance, f"Similarity failed with Arrow data transformer on image {i}"
-            assert similarity_default_value >= img_tolerance, f"Similarity failed with default data transformer on image {i}"
+        # vegafusion_arrow_imgs = export_image_sequence(
+        #     chrome_driver, vegafusion_arrow_notebook, name + "_vegafusion_feather", actions, delay
+        # )
+        # vegafusion_default_imgs = export_image_sequence(
+        #     chrome_driver, vegafusion_default_notebook, name + "_vegafusion", actions, delay
+        # )
+        #
+        # for i in range(len(altair_imgs)):
+        #     altair_img = altair_imgs[i]
+        #     vegafusion_arrow_img = vegafusion_arrow_imgs[i]
+        #     vegafusion_default_img = vegafusion_default_imgs[i]
+        #
+        #     assert altair_img.shape == vegafusion_arrow_img.shape, "Size mismatch with Arrow data transformer"
+        #     assert altair_img.shape == vegafusion_default_img.shape, "Size mismatch with default data transformer"
+        #
+        #     similarity_arrow_value = ssim(altair_img, vegafusion_arrow_img, channel_axis=2)
+        #     similarity_default_value = ssim(altair_img, vegafusion_default_img, channel_axis=2)
+        #
+        #     print(f"({i}) similarity_arrow_value={similarity_arrow_value}")
+        #     print(f"({i}) similarity_default_value={similarity_default_value}")
+        #
+        #     assert similarity_arrow_value >= img_tolerance, f"Similarity failed with Arrow data transformer on image {i}"
+        #     assert similarity_default_value >= img_tolerance, f"Similarity failed with default data transformer on image {i}"
 
     finally:
         voila_proc.kill()
@@ -362,6 +362,8 @@ def export_image_sequence(
         def get_canvas():
             return chrome_driver.find_element("xpath", "//canvas")
 
+        time.sleep(3)
+        print(chrome_driver.page_source)
         canvas = get_canvas()
         time.sleep(delay)
 
