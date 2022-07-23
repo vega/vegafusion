@@ -125,7 +125,7 @@ jobs:
 #          path: |
 #            vegafusion-server-*
 
-#  build-vegafusion-python-embed:
+  build-vegafusion-python-embed:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
