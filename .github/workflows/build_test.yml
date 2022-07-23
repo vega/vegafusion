@@ -3,127 +3,127 @@ on:
   pull_request:
     types: [opened, synchronize]
 jobs:
-  rust-fmt-clippy:
-    runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: 1.60.0
-          override: true
-          components: rustfmt, clippy
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
-        with:
-          cache-on-failure: True
-      - name: Check cargo fmt compliance
-        run: cargo fmt --all -- --check
-      - name: Check no rustc warnings
-        run: cargo check --tests
-      - name: Check for clippy warnings
-        run: cargo clippy
-
-  test-rust:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os:
-         - ubuntu-20.04
-         - windows-2022
-         - macos-10.15
-
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: Install apt system dependencies needed to build nodecanvas
-        run: |
-          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
-        if: ${{ runner.os == 'Linux' }}
-      - name: Install protoc on Window
-        run: |
-          choco install --yes protoc
-        if: ${{ runner.os == 'Windows' }}
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Install node
-        uses: actions/setup-node@v2
-        with:
-          node-version: '17'
-      - name: Install test node dependencies
-        working-directory: vegafusion-rt-datafusion/tests/util/vegajs_runtime
-        run: |
-          npm install
-      - name: Run Rust Tests (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        uses: actions-rs/cargo@v1
-        env:
-          CARGO_HOME: C:\cargo_home\
-          CARGO_TARGET_DIR: C:\cargo_target_dir\
-        with:
-          command: test
-          args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
-      - name: Run Rust Tests (MacOs/Linux)
-        if: ${{ runner.os != 'Windows' }}
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
-
-  build-vegafusion-server:
-    strategy:
-      matrix:
-        options: [
-            [ubuntu-20.04,  linux-64],
-            [windows-2022,  win-64],
-            [macos-10.15,   osx-64],
-        ]
-    runs-on: ${{ matrix.options[0] }}
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
-        with:
-          cache-on-failure: True
-      - name: Install protoc on Window
-        run: |
-          choco install --yes protoc
-        if: ${{ runner.os == 'Windows' }}
-      - name: Build vegafusion-server
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: -p vegafusion-server --release
-      - name: zip executable (Windows)
-        uses: papeloto/action-zip@v1
-        if: runner.os == 'Windows'
-        with:
-          files: target/release/vegafusion-server.exe
-          dest: vegafusion-server-${{ matrix.options[1] }}.zip
-      - name: zip executable (Mac or Linux)
-        uses: papeloto/action-zip@v1
-        if: runner.os != 'Windows'
-        with:
-          files: target/release/vegafusion-server
-          dest: vegafusion-server-${{ matrix.options[1] }}.zip
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: vegafusion-server
-          path: |
-            vegafusion-server-*
+#  rust-fmt-clippy:
+#    runs-on: ubuntu-latest
+#    env:
+#      RUSTFLAGS: "-D warnings"
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@v2
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: 1.60.0
+#          override: true
+#          components: rustfmt, clippy
+#      - name: Cache rust dependencies
+#        uses: Swatinem/rust-cache@v1
+#        with:
+#          cache-on-failure: True
+#      - name: Check cargo fmt compliance
+#        run: cargo fmt --all -- --check
+#      - name: Check no rustc warnings
+#        run: cargo check --tests
+#      - name: Check for clippy warnings
+#        run: cargo clippy
+#
+#  test-rust:
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os:
+#         - ubuntu-20.04
+#         - windows-2022
+#         - macos-10.15
+#
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@v2
+#      - name: Install apt system dependencies needed to build nodecanvas
+#        run: |
+#          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
+#        if: ${{ runner.os == 'Linux' }}
+#      - name: Install protoc on Window
+#        run: |
+#          choco install --yes protoc
+#        if: ${{ runner.os == 'Windows' }}
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#          override: true
+#      - name: Install node
+#        uses: actions/setup-node@v2
+#        with:
+#          node-version: '17'
+#      - name: Install test node dependencies
+#        working-directory: vegafusion-rt-datafusion/tests/util/vegajs_runtime
+#        run: |
+#          npm install
+#      - name: Run Rust Tests (Windows)
+#        if: ${{ runner.os == 'Windows' }}
+#        uses: actions-rs/cargo@v1
+#        env:
+#          CARGO_HOME: C:\cargo_home\
+#          CARGO_TARGET_DIR: C:\cargo_target_dir\
+#        with:
+#          command: test
+#          args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
+#      - name: Run Rust Tests (MacOs/Linux)
+#        if: ${{ runner.os != 'Windows' }}
+#        uses: actions-rs/cargo@v1
+#        with:
+#          command: test
+#          args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
+#
+#  build-vegafusion-server:
+#    strategy:
+#      matrix:
+#        options: [
+#            [ubuntu-20.04,  linux-64],
+#            [windows-2022,  win-64],
+#            [macos-10.15,   osx-64],
+#        ]
+#    runs-on: ${{ matrix.options[0] }}
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@v2
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#          override: true
+#      - name: Cache rust dependencies
+#        uses: Swatinem/rust-cache@v1
+#        with:
+#          cache-on-failure: True
+#      - name: Install protoc on Window
+#        run: |
+#          choco install --yes protoc
+#        if: ${{ runner.os == 'Windows' }}
+#      - name: Build vegafusion-server
+#        uses: actions-rs/cargo@v1
+#        with:
+#          command: build
+#          args: -p vegafusion-server --release
+#      - name: zip executable (Windows)
+#        uses: papeloto/action-zip@v1
+#        if: runner.os == 'Windows'
+#        with:
+#          files: target/release/vegafusion-server.exe
+#          dest: vegafusion-server-${{ matrix.options[1] }}.zip
+#      - name: zip executable (Mac or Linux)
+#        uses: papeloto/action-zip@v1
+#        if: runner.os != 'Windows'
+#        with:
+#          files: target/release/vegafusion-server
+#          dest: vegafusion-server-${{ matrix.options[1] }}.zip
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: vegafusion-server
+#          path: |
+#            vegafusion-server-*
 
   build-vegafusion-python-embed:
     runs-on: ${{ matrix.os }}
@@ -131,8 +131,8 @@ jobs:
       matrix:
         os:
          - ubuntu-20.04
-         - windows-2022
-         - macos-11
+#         - windows-2022
+#         - macos-11
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -289,7 +289,7 @@ jobs:
     strategy:
       matrix:
         options: [
-            [ubuntu-20.04,  linux-64, "bash -l {0}",  manylinux2010_x86_64, cp37],
+#            [ubuntu-20.04,  linux-64, "bash -l {0}",  manylinux2010_x86_64, cp37],
             [ubuntu-20.04,  linux-64, "bash -l {0}",  manylinux2010_x86_64, cp310],
 # TODO: Should run tests on Windows and Mac as well, but there a GitHub action issues
 #            [windows-2019,  win-64,   "pwsh",         win_amd64,            cp37],
