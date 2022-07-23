@@ -81,6 +81,14 @@ cd vegafusion-python-embed
 maturin develop --release
 ```
 
+### Install the `vegafusion` Python package in development mode
+
+From the repository root:
+```bash
+cd python/vegafusion/
+pip install -e .
+```
+
 ### Install the `vegafusion-jupyter` Python package in development mode
 
 From the repository root:
@@ -95,7 +103,7 @@ Then, build the jupyterlab extension
 
 ```bash
 jupyter labextension develop --overwrite .
-yarn run build:dev
+npm run build:dev
 ```
 
 ## Running tests
