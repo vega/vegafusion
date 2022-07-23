@@ -156,7 +156,7 @@ jobs:
           command: build
           manylinux: 2010
           rust-toolchain: nightly
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip -i python3.10 -i python3.9 -i python3.8 -i python3.7 --rustc-extra-args="-Z oom=panic"
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip -i python3.10 --rustc-extra-args="-Z oom=panic"
       - name: Download Apple Silicon toolchain
         if: ${{ runner.os == 'macOS' }}
         run: |
