@@ -85,7 +85,7 @@ pub enum SignalOnEventSpec {
     Selector(String),
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SignalOnSignalEvent {
     pub signal: String,
 
@@ -93,7 +93,7 @@ pub struct SignalOnSignalEvent {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SignalOnScaleEvent {
     pub scale: String,
 

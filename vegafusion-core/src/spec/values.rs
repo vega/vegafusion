@@ -11,7 +11,7 @@ use crate::expression::parser::parse;
 use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum StringOrStringList {
     String(String),
@@ -50,7 +50,7 @@ impl Field {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FieldObject {
     pub field: String,
 
@@ -58,7 +58,7 @@ pub struct FieldObject {
     pub as_: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SignalExpressionSpec {
     pub signal: String,
 }
@@ -119,7 +119,7 @@ pub struct CompareSpec {
     pub order: Option<SortOrderOrList>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum SortOrderSpec {
     Descending,

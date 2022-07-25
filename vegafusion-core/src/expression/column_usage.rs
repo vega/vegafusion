@@ -18,7 +18,7 @@ pub type VlSelectionFields = HashMap<ScopedVariable, ColumnUsage>;
 /// ColumnUsage::Unknown variant is used.  In the context of projection pushdown,
 /// the ColumnUsage::Unknown variant indicates that all of original dataset columns must be
 /// maintained
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ColumnUsage {
     Unknown,
     Known(HashSet<String>),

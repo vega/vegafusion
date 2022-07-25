@@ -1,5 +1,5 @@
 /// ESTree-style AST nodes
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct Span {
     #[prost(int32, tag="1")]
     pub start: i32,
@@ -27,12 +27,12 @@ pub mod literal {
         Null(bool),
     }
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct IdentifierAbc {
     #[prost(string, tag="1")]
     pub name: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct Identifier {
     #[prost(string, tag="1")]
     pub name: ::prost::alloc::string::String,

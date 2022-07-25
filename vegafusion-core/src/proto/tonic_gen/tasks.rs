@@ -6,7 +6,7 @@ pub struct TaskValue {
 }
 /// Nested message and enum types in `TaskValue`.
 pub mod task_value {
-    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    #[derive(Clone, PartialEq, Eq, ::prost::Oneof)]
     pub enum Data {
         ///
         /// Representation of scalar as single column, single row, record batch in Arrow IPC format
@@ -26,7 +26,7 @@ pub struct Variable {
     pub namespace: i32,
 }
 /// ## Scan URL Task
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct ParseFieldSpec {
     #[prost(string, tag="1")]
     pub name: ::prost::alloc::string::String,
@@ -131,7 +131,7 @@ pub struct SignalTask {
     pub expr: ::core::option::Option<super::expression::Expression>,
 }
 /// ## Timezone config
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct TzConfig {
     #[prost(string, tag="1")]
     pub local_tz: ::prost::alloc::string::String,
@@ -167,14 +167,14 @@ pub mod task {
     }
 }
 /// ## Task Graph
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct IncomingEdge {
     #[prost(uint32, tag="1")]
     pub source: u32,
     #[prost(uint32, optional, tag="2")]
     pub output: ::core::option::Option<u32>,
 }
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Clone, PartialEq, Eq, ::prost::Message)]
 pub struct OutgoingEdge {
     #[prost(uint32, tag="1")]
     pub target: u32,

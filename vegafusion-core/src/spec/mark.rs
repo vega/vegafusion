@@ -220,7 +220,7 @@ pub struct MarkFromSpec {
     pub facet: Option<MarkFacetSpec>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MarkFacetSpec {
     pub data: String,
     pub name: String,
@@ -236,7 +236,7 @@ pub enum MarkEncodingField {
     Object(MarkEncodingFieldObject),
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MarkEncodingFieldObject {
     pub signal: Option<String>,
     pub datum: Option<String>,
