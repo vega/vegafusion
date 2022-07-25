@@ -23,6 +23,7 @@ use datafusion::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use datafusion::arrow::ipc::reader::{FileReader, StreamReader};
 use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::dataframe::DataFrame;
+use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::execution::options::CsvReadOptions;
 use datafusion::logical_plan::Expr;
 use datafusion::prelude::{col, SessionContext};
@@ -30,7 +31,6 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
-use datafusion::datasource::listing::ListingTableUrl;
 use tokio::io::AsyncReadExt;
 use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::data::dataset::VegaFusionDataset;
@@ -530,7 +530,9 @@ async fn build_csv_schema(
     let table_path = ListingTableUrl::parse(uri.into().as_str())?;
     let target_partitions = ctx.copied_config().target_partitions;
     let listing_options = csv_opts.to_listing_options(target_partitions);
-    let inferred_schema = listing_options.infer_schema(&ctx.state(), &table_path).await?;
+    let inferred_schema = listing_options
+        .infer_schema(&ctx.state(), &table_path)
+        .await?;
 
     // Get HashMap of provided columns formats
     let format_specs = if let Some(parse) = parse {
