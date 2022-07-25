@@ -43,21 +43,21 @@ pub mod pre_transform_spec_warning {
         Planner(super::PlannerWarning),
     }
 }
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformRowLimitWarning {
     #[prost(message, repeated, tag="1")]
     pub datasets: ::prost::alloc::vec::Vec<super::tasks::Variable>,
 }
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformBrokenInteractivityWarning {
     #[prost(message, repeated, tag="1")]
     pub vars: ::prost::alloc::vec::Vec<super::tasks::Variable>,
 }
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformUnsupportedWarning {
 }
 //// Pre transform value messages
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformVariable {
     #[prost(message, optional, tag="1")]
     pub variable: ::core::option::Option<super::tasks::Variable>,
@@ -103,7 +103,7 @@ pub mod pre_transform_values_warning {
     }
 }
 //// Common pre-transform messages
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformInlineDataset {
     /// Inline dataset name
     #[prost(string, tag="1")]
@@ -112,7 +112,7 @@ pub struct PreTransformInlineDataset {
     #[prost(bytes="vec", tag="2")]
     pub table: ::prost::alloc::vec::Vec<u8>,
 }
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PlannerWarning {
     #[prost(string, tag="1")]
     pub message: ::prost::alloc::string::String,

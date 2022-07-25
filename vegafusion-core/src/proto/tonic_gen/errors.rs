@@ -1,4 +1,4 @@
-#[derive(Clone, PartialEq, Eq, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TaskGraphValueError {
     #[prost(string, tag="1")]
     pub msg: ::prost::alloc::string::String,

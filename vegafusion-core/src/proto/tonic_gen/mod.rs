@@ -7,7 +7,7 @@
  * this program the details of the active license.
  */
 #[rustfmt::skip]
-#[allow(clippy::module_inception)]
+#[allow(clippy::all)]
 pub mod expression;
 
 #[rustfmt::skip]
