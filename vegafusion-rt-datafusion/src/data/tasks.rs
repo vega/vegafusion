@@ -30,6 +30,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
+use datafusion::datasource::listing::ListingTableUrl;
 use tokio::io::AsyncReadExt;
 use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::data::dataset::VegaFusionDataset;
@@ -526,13 +527,10 @@ async fn build_csv_schema(
     parse: &Option<Parse>,
 ) -> Result<SchemaRef> {
     let ctx = SessionContext::new();
-
-    let uri: String = uri.into();
-    let (object_store, path) = ctx.runtime_env().object_store(&uri)?;
-    let listing_opts = csv_opts.to_listing_options(1);
-    let inferred_schema = listing_opts
-        .infer_schema(Arc::clone(&object_store), path)
-        .await?;
+    let table_path = ListingTableUrl::parse(uri.into().as_str())?;
+    let target_partitions = ctx.copied_config().target_partitions;
+    let listing_options = csv_opts.to_listing_options(target_partitions);
+    let inferred_schema = listing_options.infer_schema(&ctx.state(), &table_path).await?;
 
     // Get HashMap of provided columns formats
     let format_specs = if let Some(parse) = parse {
