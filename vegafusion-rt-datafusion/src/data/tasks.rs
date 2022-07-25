@@ -101,7 +101,7 @@ impl TaskCall for DataUrlTask {
 
         // Strip trailing Hash, e.g. https://foo.csv#1234 -> https://foo.csv
         let url_parts: Vec<&str> = url.splitn(2, '#').collect();
-        let url = url_parts.get(0).cloned().unwrap_or(&url).to_string();
+        let url = url_parts.first().cloned().unwrap_or(&url).to_string();
 
         // Handle references to vega default datasets (e.g. "data/us-10m.json")
         let url = check_builtin_dataset(url);

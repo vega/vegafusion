@@ -102,7 +102,7 @@ pub struct WatchValue {
     pub value: Value,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WatchValues {
     pub values: Vec<WatchValue>,
 }
@@ -126,7 +126,7 @@ impl TryFrom<VariableNamespace> for ExportUpdateNamespace {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExportUpdate {
     pub namespace: ExportUpdateNamespace,
     pub name: String,

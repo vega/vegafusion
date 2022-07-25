@@ -223,12 +223,10 @@ impl VegaJsRuntime {
     {
         let json_str = Self::clean_json_string(json_str);
         match serde_json::from_str(&json_str) {
-            Err(_err) => {
-                return Err(VegaFusionError::internal(&format!(
-                    "Failed to parse result as json:\n{}",
-                    json_str
-                )))
-            }
+            Err(_err) => Err(VegaFusionError::internal(&format!(
+                "Failed to parse result as json:\n{}",
+                json_str
+            ))),
             Ok(result) => Ok(result),
         }
     }
@@ -442,14 +440,14 @@ impl VegaJsRuntime {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ExportImageFormat {
     Png,
     Svg,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ExportImage {
     Png(String),

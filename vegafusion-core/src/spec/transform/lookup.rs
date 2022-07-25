@@ -22,7 +22,7 @@ use crate::task_graph::task::InputVariable;
 
 /// Struct that serializes to Vega spec for the lookup transform.
 /// This is currently only needed to report the proper input dependencies
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LookupTransformSpec {
     pub from: String,
 

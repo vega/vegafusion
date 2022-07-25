@@ -186,7 +186,7 @@ pub fn parse_datetime_fallback(
                 // Parsing time
                 if c.is_whitespace() {
                     continue;
-                } else if c.is_digit(10) {
+                } else if c.is_ascii_digit() {
                     has_time = true;
                     time_tokens[time_ind].push(c)
                 } else if (time_ind < 2 && c == ':') || (time_ind == 2 && c == '.') {
@@ -209,7 +209,7 @@ pub fn parse_datetime_fallback(
             }
             2 => {
                 // Parsing timezone
-                if c.is_digit(10) {
+                if c.is_ascii_digit() {
                     timezone_tokens[timezone_ind].push(c)
                 } else if timezone_ind == 0 && c == ':' {
                     timezone_ind += 1;

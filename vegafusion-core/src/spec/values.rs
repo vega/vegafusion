@@ -27,7 +27,7 @@ impl StringOrStringList {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Field {
     String(String),
@@ -63,7 +63,7 @@ pub struct SignalExpressionSpec {
     pub signal: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum StringOrSignalSpec {
     String(String),
@@ -95,7 +95,7 @@ impl NumberOrSignalSpec {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ValueOrSignalSpec {
     Signal(SignalExpressionSpec),
@@ -111,7 +111,7 @@ impl ValueOrSignalSpec {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CompareSpec {
     pub field: StringOrStringList,
 
@@ -126,7 +126,7 @@ pub enum SortOrderSpec {
     Ascending,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum SortOrderOrList {
     SortOrder(SortOrderSpec),

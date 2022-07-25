@@ -611,8 +611,7 @@ async fn get_or_compute_node_value(
         };
 
         // get or construct from cache
-        let result = cache.get_or_try_insert_with(cache_key, fut).await;
 
-        result
+        cache.get_or_try_insert_with(cache_key, fut).await
     }
 }

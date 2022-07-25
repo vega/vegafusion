@@ -157,21 +157,21 @@ impl MarkSpec {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MarkEncodeSpec {
     // e.g. enter, update, hover, etc.
     #[serde(flatten)]
     pub encodings: HashMap<String, MarkEncodingsSpec>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MarkEncodingsSpec {
     // e.g. x, fill, width, etc.
     #[serde(flatten)]
     pub channels: HashMap<String, MarkEncodingOrList>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum MarkEncodingOrList {
     List(Vec<MarkEncodingSpec>),
@@ -187,7 +187,7 @@ impl MarkEncodingOrList {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MarkEncodingSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<Value>,
@@ -211,7 +211,7 @@ pub struct MarkEncodingSpec {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MarkFromSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
@@ -229,7 +229,7 @@ pub struct MarkFacetSpec {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum MarkEncodingField {
     Field(String),
@@ -247,7 +247,7 @@ pub struct MarkEncodingFieldObject {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MarkSort {
     pub field: StringOrStringList,
 
