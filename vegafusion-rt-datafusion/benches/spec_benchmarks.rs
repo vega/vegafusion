@@ -68,8 +68,8 @@ async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> Q
             indices: vec![node_index.clone()],
         })),
     };
-    let result = runtime.query_request(request).await.unwrap();
-    result
+
+    runtime.query_request(request).await.unwrap()
 }
 
 async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdateBatch>) {

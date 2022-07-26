@@ -244,7 +244,7 @@ pub fn calculate_bin_params(
             .filter(|s| *s > min_step_size)
             .collect();
         *valid_steps
-            .get(0)
+            .first()
             .unwrap_or_else(|| tx.steps.last().unwrap())
     } else {
         // Otherwise, use span to determine the step size

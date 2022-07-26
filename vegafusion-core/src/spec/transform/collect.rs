@@ -16,7 +16,7 @@ use crate::spec::values::CompareSpec;
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CollectTransformSpec {
     pub sort: CompareSpec,
 

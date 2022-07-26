@@ -28,9 +28,9 @@ pub fn if_fn(arguments: &[Expression]) -> Result<Expression> {
             span: None,
         })
     } else {
-        return Err(VegaFusionError::compilation(&format!(
+        Err(VegaFusionError::compilation(&format!(
             "The if function requires exactly 3 arguments. Received {}",
             arguments.len()
-        )));
+        )))
     }
 }

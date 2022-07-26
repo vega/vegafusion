@@ -12,7 +12,7 @@ use vegafusion_core::proto::gen::expression as proto_expression;
 /// ESTree-style AST Node for identifiers
 ///
 /// https://github.com/estree/estree/blob/0fa6c005fa452f1f970b3923d5faa38178906d08/es5.md#identifier
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Identifier {
     pub name: String,
 }

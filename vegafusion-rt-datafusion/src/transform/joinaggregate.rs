@@ -163,15 +163,13 @@ impl TransformTrait for JoinAggregate {
 
             let right_cols: Vec<_> = groupby_aliases.iter().map(|s| s.as_str()).collect();
 
-            let dataframe = dataframe.join(
+            dataframe.join(
                 grouped_dataframe,
                 JoinType::Inner,
                 left_cols.as_slice(),
                 right_cols.as_slice(),
                 None,
-            )?;
-
-            dataframe
+            )?
         };
 
         Ok((dataframe, Vec::new()))

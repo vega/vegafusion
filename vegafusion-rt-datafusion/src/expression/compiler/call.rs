@@ -153,27 +153,25 @@ pub fn compile_call(
                         if let Some(dataset) = config.data_scope.get(name) {
                             callee(dataset, &node.arguments[1..], schema)
                         } else {
-                            return Err(VegaFusionError::internal(&format!(
+                            Err(VegaFusionError::internal(&format!(
                                 "No dataset named {}. Available: {:?}",
                                 name,
                                 config.data_scope.keys()
-                            )));
+                            )))
                         }
                     }
-                    _ => {
-                        return Err(VegaFusionError::internal(&format!(
-                            "The first argument to the {} function must be a literal \
+                    _ => Err(VegaFusionError::internal(&format!(
+                        "The first argument to the {} function must be a literal \
                                 string with the name of a dataset",
-                            &node.callee
-                        )))
-                    }
+                        &node.callee
+                    ))),
                 }
             } else {
-                return Err(VegaFusionError::internal(&format!(
+                Err(VegaFusionError::internal(&format!(
                     "The first argument to the {} function must be a literal \
                                 string with the name of a dataset",
                     &node.callee
-                )));
+                )))
             }
         }
         VegaFusionCallable::Transform(callable) => {

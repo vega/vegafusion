@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScaleSpec {
     pub name: String,
 
@@ -71,7 +71,7 @@ impl ScaleTypeSpec {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ScaleDomainSpec {
     Array(Vec<ScaleArrayElementSpec>),
@@ -84,7 +84,7 @@ pub enum ScaleDomainSpec {
     Value(Value),
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScaleDataReferencesSpec {
     pub fields: Vec<ScaleDataReferenceSpec>,
 
@@ -92,7 +92,7 @@ pub struct ScaleDataReferencesSpec {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScaleDataReferenceSpec {
     pub data: String,
     pub field: String,
@@ -107,7 +107,7 @@ pub struct ScaleDataReferenceSpec {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScaleVecStringsSpec {
     pub fields: Vec<Vec<String>>,
 
@@ -115,7 +115,7 @@ pub struct ScaleVecStringsSpec {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScaleStringsSpec {
     pub fields: Vec<String>,
 
@@ -123,7 +123,7 @@ pub struct ScaleStringsSpec {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScaleSignalsSpec {
     pub fields: Vec<SignalExpressionSpec>,
 
@@ -131,7 +131,7 @@ pub struct ScaleSignalsSpec {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ScaleDataReferenceSort {
     Bool(bool),
@@ -144,7 +144,7 @@ impl Default for ScaleDataReferenceSort {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScaleDataReferenceSortParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub op: Option<AggregateOpSpec>,
@@ -156,14 +156,14 @@ pub struct ScaleDataReferenceSortParameters {
     pub order: Option<SortOrderSpec>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ScaleArrayElementSpec {
     Signal(SignalExpressionSpec),
     Value(Value),
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ScaleBinsSpec {
     Signal(SignalExpressionSpec),
@@ -171,7 +171,7 @@ pub enum ScaleBinsSpec {
     Value(Value),
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ScaleRangeSpec {
     Reference(ScaleDataReferenceSpec),

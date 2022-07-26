@@ -23,6 +23,7 @@ use datafusion::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use datafusion::arrow::ipc::reader::{FileReader, StreamReader};
 use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::dataframe::DataFrame;
+use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::execution::options::CsvReadOptions;
 use datafusion::logical_plan::Expr;
 use datafusion::prelude::{col, SessionContext};
@@ -100,7 +101,7 @@ impl TaskCall for DataUrlTask {
 
         // Strip trailing Hash, e.g. https://foo.csv#1234 -> https://foo.csv
         let url_parts: Vec<&str> = url.splitn(2, '#').collect();
-        let url = url_parts.get(0).cloned().unwrap_or(&url).to_string();
+        let url = url_parts.first().cloned().unwrap_or(&url).to_string();
 
         // Handle references to vega default datasets (e.g. "data/us-10m.json")
         let url = check_builtin_dataset(url);
@@ -526,12 +527,11 @@ async fn build_csv_schema(
     parse: &Option<Parse>,
 ) -> Result<SchemaRef> {
     let ctx = SessionContext::new();
-
-    let uri: String = uri.into();
-    let (object_store, path) = ctx.runtime_env().object_store(&uri)?;
-    let listing_opts = csv_opts.to_listing_options(1);
-    let inferred_schema = listing_opts
-        .infer_schema(Arc::clone(&object_store), path)
+    let table_path = ListingTableUrl::parse(uri.into().as_str())?;
+    let target_partitions = ctx.copied_config().target_partitions;
+    let listing_options = csv_opts.to_listing_options(target_partitions);
+    let inferred_schema = listing_options
+        .infer_schema(&ctx.state(), &table_path)
         .await?;
 
     // Get HashMap of provided columns formats

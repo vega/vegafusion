@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WindowTransformSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sort: Option<CompareSpec>,
@@ -44,7 +44,7 @@ pub struct WindowTransformSpec {
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum WindowOpSpec {
     #[serde(rename = "row_number")]
@@ -79,7 +79,7 @@ pub enum WindowOpSpec {
     NextValue,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum WindowTransformOpSpec {
     Aggregate(AggregateOpSpec),

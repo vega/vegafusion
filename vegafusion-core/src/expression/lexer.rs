@@ -202,7 +202,7 @@ pub fn tokenize_single_token(data: &str) -> Result<(Token, usize)> {
         '&' => tokenize_logical_and(data)?,
         c @ '"' | c @ '\'' => tokenize_string(data, c)?,
         '>' | '<' | '=' | '!' => tokenize_comparison_operators(data)?,
-        c if c.is_digit(10) || c == '.' => tokenize_dot_or_number(data)?,
+        c if c.is_ascii_digit() || c == '.' => tokenize_dot_or_number(data)?,
         c if c.is_alphabetic() || c == '_' => tokenize_ident(data)?,
         other => {
             return Err(VegaFusionError::parse(&format!(
@@ -484,7 +484,7 @@ fn tokenize_dot_or_number(data: &str) -> Result<(Token, usize)> {
     let mut last_char_was_e = false;
 
     let taken = take_while(data, |c| {
-        if c.is_digit(10) {
+        if c.is_ascii_digit() {
             seen_digit = true;
             last_char_was_e = false;
             Ok(true)

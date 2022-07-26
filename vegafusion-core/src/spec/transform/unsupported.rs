@@ -14,7 +14,7 @@ use std::collections::HashMap;
 macro_rules! unsupported_transforms {
     ( $( $name:ident ),* ) => {
         $(
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
         pub struct $name {
             #[serde(flatten)]
             pub extra: HashMap<String, Value>,
