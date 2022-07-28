@@ -12,6 +12,7 @@ pub mod collect;
 pub mod extent;
 pub mod filter;
 pub mod formula;
+pub mod impute;
 pub mod joinaggregate;
 pub mod lookup;
 pub mod project;
@@ -29,6 +30,7 @@ use crate::spec::transform::aggregate::AggregateTransformSpec;
 use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
 use crate::spec::transform::formula::FormulaTransformSpec;
+use crate::spec::transform::impute::ImputeTransformSpec;
 use crate::spec::transform::joinaggregate::JoinAggregateTransformSpec;
 use crate::spec::transform::lookup::LookupTransformSpec;
 use crate::spec::transform::project::ProjectTransformSpec;
@@ -56,7 +58,8 @@ pub enum TransformSpec {
     JoinAggregate(JoinAggregateTransformSpec),
     Window(WindowTransformSpec),
     Project(ProjectTransformSpec),
-    /**/ Stack(StackTransformSpec),
+    Stack(StackTransformSpec),
+    Impute(ImputeTransformSpec),
 
     // Unsupported
     CountPattern(CountpatternTransformSpec),
@@ -75,7 +78,6 @@ pub enum TransformSpec {
     Graticule(GraticuleTransformSpec),
     Heatmap(HeatmapTransformSpec),
     Identifier(IdentifierTransformSpec),
-    Impute(ImputeTransformSpec),
     IsoContour(IsocontourTransformSpec),
     Kde(KdeTransformSpec),
     Kde2d(Kde2dTransformSpec),
@@ -115,6 +117,7 @@ impl Deref for TransformSpec {
             TransformSpec::Timeunit(t) => t,
             TransformSpec::Project(t) => t,
             TransformSpec::Stack(t) => t,
+            TransformSpec::Impute(t) => t,
 
             // Supported for dependency determination, not implementation
             TransformSpec::Lookup(t) => t,
@@ -137,7 +140,6 @@ impl Deref for TransformSpec {
             TransformSpec::Graticule(t) => t,
             TransformSpec::Heatmap(t) => t,
             TransformSpec::Identifier(t) => t,
-            TransformSpec::Impute(t) => t,
             TransformSpec::IsoContour(t) => t,
             TransformSpec::JoinAggregate(t) => t,
             TransformSpec::Kde(t) => t,

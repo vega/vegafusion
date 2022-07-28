@@ -45,7 +45,6 @@ unsupported_transforms!(
     GraticuleTransformSpec,
     HeatmapTransformSpec,
     IdentifierTransformSpec,
-    ImputeTransformSpec,
     IsocontourTransformSpec,
     KdeTransformSpec,
     Kde2dTransformSpec,
