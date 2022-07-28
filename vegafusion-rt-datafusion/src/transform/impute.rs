@@ -16,7 +16,7 @@ impl TransformTrait for Impute {
     async fn eval(
         &self,
         dataframe: Arc<DataFrame>,
-        config: &CompilationConfig,
+        _config: &CompilationConfig,
     ) -> vegafusion_core::error::Result<(Arc<DataFrame>, Vec<TaskValue>)> {
         // Create ScalarValue used to fill in null values
         let value =
@@ -43,7 +43,7 @@ fn zero_groupby(
 ) -> Result<Arc<DataFrame>> {
     // Value replacement for field with no groupby fields specified is equivalent to replacing
     // null values of that column with the fill value
-    let mut select_columns: Vec<_> = dataframe
+    let select_columns: Vec<_> = dataframe
         .schema()
         .fields()
         .iter()
