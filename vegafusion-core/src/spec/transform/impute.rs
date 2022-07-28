@@ -1,10 +1,10 @@
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
-use crate::proto::gen::expression::literal::Value;
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::spec::values::Field;
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -30,7 +30,7 @@ pub struct ImputeTransformSpec {
 
 impl ImputeTransformSpec {
     pub fn method(&self) -> ImputeMethodSpec {
-        self.method.unwrap_or(ImputeMethodSpec::Value)
+        self.method.clone().unwrap_or(ImputeMethodSpec::Value)
     }
 }
 
