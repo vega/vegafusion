@@ -13,7 +13,7 @@ pub struct ImputeTransformSpec {
     pub key: Field,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub keyvals: Option<Vec<Value>>,
+    pub keyvals: Option<Value>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub method: Option<ImputeMethodSpec>,
@@ -32,6 +32,10 @@ impl ImputeTransformSpec {
     pub fn method(&self) -> ImputeMethodSpec {
         self.method.clone().unwrap_or(ImputeMethodSpec::Value)
     }
+
+    pub fn groupby(&self) -> Vec<Field> {
+        self.groupby.clone().unwrap_or_default()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -45,6 +49,15 @@ pub enum ImputeMethodSpec {
 }
 
 impl TransformSpecTrait for ImputeTransformSpec {
+    fn supported(&self) -> bool {
+        self.field.as_().is_none()
+            && self.key.as_().is_none()
+            && self.keyvals.is_none()
+            && self.method() == ImputeMethodSpec::Value
+            && self.groupby().len() <= 1
+            && self.value.is_some()
+    }
+
     fn transform_columns(
         &self,
         datum_var: &Option<ScopedVariable>,
