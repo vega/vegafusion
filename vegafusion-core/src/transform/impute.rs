@@ -15,10 +15,10 @@ impl Impute {
         };
 
         // Extract field
-        let field = spec.field.field().clone();
+        let field = spec.field.field();
 
         // Extract key
-        let key = spec.key.field().clone();
+        let key = spec.key.field();
 
         // Extract groupby
         let groupby: Vec<_> = spec
@@ -30,11 +30,10 @@ impl Impute {
             .collect();
 
         // Extract Value
-        let value_json = if let Some(value) = &spec.value {
-            Some(serde_json::to_string(value).unwrap())
-        } else {
-            None
-        };
+        let value_json = spec
+            .value
+            .as_ref()
+            .map(|value| serde_json::to_string(value).unwrap());
 
         // keyvals not yet supported
 
