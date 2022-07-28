@@ -177,10 +177,24 @@ pub struct Stack {
     #[prost(string, optional, tag="7")]
     pub alias_1: ::core::option::Option<::prost::alloc::string::String>,
 }
+/// Impute
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Impute {
+    #[prost(string, tag="1")]
+    pub field: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub key: ::prost::alloc::string::String,
+    #[prost(enumeration="ImputeMethod", tag="3")]
+    pub method: i32,
+    #[prost(string, repeated, tag="4")]
+    pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag="5")]
+    pub value_json: ::core::option::Option<::prost::alloc::string::String>,
+}
 /// Top-level transform
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transform {
-    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11")]
+    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12")]
     pub transform_kind: ::core::option::Option<transform::TransformKind>,
 }
 /// Nested message and enum types in `Transform`.
@@ -209,6 +223,8 @@ pub mod transform {
         Project(super::Project),
         #[prost(message, tag="11")]
         Stack(super::Stack),
+        #[prost(message, tag="12")]
+        Impute(super::Impute),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -294,4 +310,13 @@ pub enum StackOffset {
     Zero = 0,
     Center = 1,
     Normalize = 2,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ImputeMethod {
+    ImputeValue = 0,
+    ImputeMean = 1,
+    ImputeMedian = 2,
+    ImputeMax = 3,
+    ImputeMin = 4,
 }

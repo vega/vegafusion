@@ -12,6 +12,7 @@ pub mod collect;
 pub mod extent;
 pub mod filter;
 pub mod formula;
+pub mod impute;
 pub mod joinaggregate;
 pub mod pipeline;
 pub mod project;
@@ -54,6 +55,7 @@ pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
         TransformKind::Window(tx) => tx,
         TransformKind::Project(tx) => tx,
         TransformKind::Stack(tx) => tx,
+        TransformKind::Impute(tx) => tx,
     }
 }
 

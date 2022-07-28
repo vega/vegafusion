@@ -206,6 +206,23 @@ enum StackOffset {
   Normalize = 2;
 }
 
+// Impute
+message Impute {
+  string field = 1;
+  string key = 2;
+  ImputeMethod method = 3;
+  repeated string groupby = 4;
+  optional string value_json = 5;
+}
+
+enum ImputeMethod {
+    ImputeValue = 0;
+    ImputeMean = 1;
+    ImputeMedian = 2;
+    ImputeMax = 3;
+    ImputeMin = 4;
+}
+
 // Top-level transform
 message Transform {
   oneof transform_kind {
@@ -220,6 +237,7 @@ message Transform {
     Window window = 9;
     Project project = 10;
     Stack stack = 11;
+    Impute impute = 12;
   }
 }
 
