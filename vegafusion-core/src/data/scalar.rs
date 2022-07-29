@@ -13,6 +13,7 @@ pub use datafusion_common::ScalarValue;
 use serde_json::{Map, Value};
 use std::convert::TryFrom;
 use std::ops::Deref;
+use arrow::datatypes::Field;
 
 // Prefix for special values JSON encoded as strings
 pub const DATETIME_PREFIX: &str = "__$datetime:";
@@ -73,7 +74,7 @@ impl ScalarValueHelpers for ScalarValue {
                     (elements, dtype)
                 };
 
-                ScalarValue::List(Some(elements), Box::new(dtype))
+                ScalarValue::List(Some(elements), Box::new(Field::new("item", dtype, true)))
             }
         };
         Ok(scalar_value)
