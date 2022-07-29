@@ -104,10 +104,12 @@ impl MsgReceiver {
         // Mount vega chart
         let window = web_sys::window().expect("no global `window` exists");
         let _document = window.document().expect("should have a document on window");
-        let dataflow = parse(js_sys::JSON::parse(
-            &serde_json::to_string(&spec).expect("Failed to parse spec as JSON"),
-        )
-        .unwrap());
+        let dataflow = parse(
+            js_sys::JSON::parse(
+                &serde_json::to_string(&spec).expect("Failed to parse spec as JSON"),
+            )
+            .unwrap(),
+        );
 
         let view = View::new(dataflow);
         view.initialize(element);
