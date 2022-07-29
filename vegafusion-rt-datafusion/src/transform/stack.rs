@@ -247,7 +247,7 @@ fn eval_normalize_center_offset(
                     None,
                 )?;
 
-            let first = col("__max_total").sub(col("__total")).div(lit(2.0));
+            let first = col("__max_total").sub(col("__total")).div(lit(2));
             let alias1_col = col(alias1).add(first).alias(alias1);
             let alias0_col = alias1_col.clone().sub(numeric_field).alias(alias0);
             selection_1.push(alias0_col);
@@ -322,10 +322,10 @@ fn eval_zero_offset(
     // then union the results. This is required to make sure stacks do not overlap. Negative
     // values stack in the negative direction and positive values stack in the positive
     // direction.
-    let dataframe_pos = dataframe.filter(numeric_field.clone().gt_eq(lit(0.0)))?;
+    let dataframe_pos = dataframe.filter(numeric_field.clone().gt_eq(lit(0)))?;
     let dataframe_pos = dataframe_pos.select(selection_0.clone())?;
 
-    let dataframe_neg = dataframe.filter(numeric_field.clone().lt(lit(0.0)))?;
+    let dataframe_neg = dataframe.filter(numeric_field.clone().lt(lit(0)))?;
     let dataframe_neg = dataframe_neg.select(selection_0.clone())?;
 
     let dataframe = dataframe_pos.union(dataframe_neg)?;
