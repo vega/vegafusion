@@ -77,8 +77,7 @@ pub fn make_array_constructor_udf() -> ScalarUDF {
                 indices_builder.append_value(col_major_idx);
                 flat_valid_builder.append(arg.is_valid(r));
             }
-            offsets_builder
-                .append_value((num_args * (r + 1)) as i32);
+            offsets_builder.append_value((num_args * (r + 1)) as i32);
         }
 
         let flat_values = datafusion::arrow::compute::take(

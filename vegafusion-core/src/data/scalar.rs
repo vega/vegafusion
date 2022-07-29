@@ -10,10 +10,10 @@ use crate::arrow::datatypes::DataType;
 use crate::error::{Result, VegaFusionError};
 pub use datafusion_common::ScalarValue;
 
+use arrow::datatypes::Field;
 use serde_json::{Map, Value};
 use std::convert::TryFrom;
 use std::ops::Deref;
-use arrow::datatypes::Field;
 
 // Prefix for special values JSON encoded as strings
 pub const DATETIME_PREFIX: &str = "__$datetime:";

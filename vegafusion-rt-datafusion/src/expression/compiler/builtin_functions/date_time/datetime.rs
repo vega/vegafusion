@@ -203,8 +203,7 @@ pub fn make_datetime_components_udf(input_tz: chrono_tz::Tz) -> ScalarUDF {
                     if let Some(datetime) = datetime {
                         // Always convert to UTC
                         let datetime = datetime.with_timezone(&chrono::Utc);
-                        datetime_builder
-                            .append_value(datetime.timestamp_millis());
+                        datetime_builder.append_value(datetime.timestamp_millis());
                     } else {
                         // Invalid date
                         datetime_builder.append_null();
