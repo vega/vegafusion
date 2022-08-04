@@ -772,8 +772,8 @@ mod tests {
 
         assert_eq!(
             String::from_utf8(buf).unwrap(),
-            r#"{"nanos":1542129070011,"micros":1542129070011,"millis":1542129070011,"secs":1542129070000,"name":"a"}
-{"nanos":null,"micros":null,"millis":null,"secs":null,"name":"b"}
+            r#"{"micros":1542129070011,"millis":1542129070011,"name":"a","nanos":1542129070011,"secs":1542129070000}
+{"micros":null,"millis":null,"name":"b","nanos":null,"secs":null}
 "#
         );
     }
@@ -861,8 +861,8 @@ mod tests {
 
         assert_eq!(
             String::from_utf8(buf).unwrap(),
-            r#"{"time32sec":"00:02:00","time32msec":"00:00:00.120","time64usec":"00:00:00.000120","time64nsec":"00:00:00.000000120","name":"a"}
-{"time32sec":null,"time32msec":null,"time64usec":null,"time64nsec":null,"name":"b"}
+            r#"{"name":"a","time32msec":"00:00:00.120","time32sec":"00:02:00","time64nsec":"00:00:00.000000120","time64usec":"00:00:00.000120"}
+{"name":"b","time32msec":null,"time32sec":null,"time64nsec":null,"time64usec":null}
 "#
         );
     }
@@ -904,8 +904,8 @@ mod tests {
 
         assert_eq!(
             String::from_utf8(buf).unwrap(),
-            r#"{"duration_sec":"PT120S","duration_msec":"PT0.120S","duration_usec":"PT0.000120S","duration_nsec":"PT0.000000120S","name":"a"}
-{"duration_sec":null,"duration_msec":null,"duration_usec":null,"duration_nsec":null,"name":"b"}
+            r#"{"duration_msec":"PT0.120S","duration_nsec":"PT0.000000120S","duration_sec":"PT120S","duration_usec":"PT0.000120S","name":"a"}
+{"duration_msec":null,"duration_nsec":null,"duration_sec":null,"duration_usec":null,"name":"b"}
 "#
         );
     }
