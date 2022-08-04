@@ -31,9 +31,14 @@ pub fn extract_server_data(
 
     // Check for partially or unsupported data variables
     for (var, dep) in supported_vars.iter() {
-        if matches!(var.0.ns(), VariableNamespace::Data) && !matches!(dep, DependencyNodeSupported::Supported) {
+        if matches!(var.0.ns(), VariableNamespace::Data)
+            && !matches!(dep, DependencyNodeSupported::Supported)
+        {
             let message = if var.1.is_empty() {
-                format!("Some transforms applied to the '{}' dataset are not yet supported", var.0.name)
+                format!(
+                    "Some transforms applied to the '{}' dataset are not yet supported",
+                    var.0.name
+                )
             } else {
                 format!("Some transforms applied to the '{}' dataset with scope {:?} are not yet supported", var.0.name, var.1.as_slice())
             };

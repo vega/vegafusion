@@ -31,7 +31,13 @@ async fn test_extract_server_data() {
     // println!("{:#?}", task_scope);
 
     let mut warnings: Vec<PlannerWarnings> = Vec::new();
-    let server_spec = extract_server_data(&mut spec, &mut task_scope, &mut warnings, &Default::default()).unwrap();
+    let server_spec = extract_server_data(
+        &mut spec,
+        &mut task_scope,
+        &mut warnings,
+        &Default::default(),
+    )
+    .unwrap();
     // println!("{}", serde_json::to_string_pretty(&server_spec).unwrap());
 
     let client_defs: HashSet<_> = spec.definition_vars().unwrap().into_iter().collect();
@@ -108,8 +114,13 @@ async fn test_extract_stitch_data() {
     let mut task_scope = spec.to_task_scope().unwrap();
 
     let mut warnings: Vec<PlannerWarnings> = Vec::new();
-    let mut server_spec =
-        extract_server_data(&mut spec, &mut task_scope, &mut warnings, &Default::default()).unwrap();
+    let mut server_spec = extract_server_data(
+        &mut spec,
+        &mut task_scope,
+        &mut warnings,
+        &Default::default(),
+    )
+    .unwrap();
     let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
 
     println!("{:#?}", comm_plan);
@@ -128,8 +139,13 @@ async fn try_extract_split_server_data() {
     let mut task_scope = spec.to_task_scope().unwrap();
 
     let mut warnings: Vec<PlannerWarnings> = Vec::new();
-    let mut server_spec =
-        extract_server_data(&mut spec, &mut task_scope, &mut warnings, &Default::default()).unwrap();
+    let mut server_spec = extract_server_data(
+        &mut spec,
+        &mut task_scope,
+        &mut warnings,
+        &Default::default(),
+    )
+    .unwrap();
     let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
 
     println!("{:#?}", comm_plan);

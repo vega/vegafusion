@@ -78,7 +78,8 @@ impl SpecPlan {
 
         let mut task_scope = client_spec.to_task_scope()?;
 
-        let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope, &mut warnings, config)?;
+        let mut server_spec =
+            extract_server_data(&mut client_spec, &mut task_scope, &mut warnings, config)?;
         let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec)?;
 
         if config.split_url_data_nodes {
