@@ -1,0 +1,43 @@
+[package]
+name = "vegafusion-sql"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["std"]
+std = []
+# Enable JSON output in the `cli` example:
+json_example = ["serde"]
+
+[dependencies]
+log = "0.4"
+serde = { version = "1.0", features = ["derive"], optional = true }
+sqlgen = {git = "https://github.com/vegafusion/sqlgen-rs.git", rev = "20aa0cacc9b1ced19c2dfe967a0fd7d3fe7c619e" }
+# Make sqlx optional
+sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "sqlite", "macros"] }
+async-trait = "0.1.56"
+
+[dependencies.vegafusion-core]
+path = "../vegafusion-core"
+
+[dependencies.datafusion-expr]
+git = "https://github.com/apache/arrow-datafusion.git"
+rev = "57f47ab9230a9a12b3244191dcf1623f8b69fd61"
+
+[dependencies.datafusion-common]
+git = "https://github.com/apache/arrow-datafusion.git"
+rev = "57f47ab9230a9a12b3244191dcf1623f8b69fd61"
+
+[dev-dependencies]
+serde_json = { version = "1.0" }
+simple_logger = "2.1"
+matches = "0.1"
+pretty_assertions = "1"
+tokio = "1.18.2"
+
+[dev-dependencies.datafusion]
+git = "https://github.com/apache/arrow-datafusion.git"
+rev = "57f47ab9230a9a12b3244191dcf1623f8b69fd61"
+
+[dependencies.vegafusion-rt-datafusion]
+path = "../vegafusion-rt-datafusion"
