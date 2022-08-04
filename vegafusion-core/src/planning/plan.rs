@@ -18,12 +18,14 @@ use crate::spec::chart::ChartSpec;
 #[derive(Clone, Debug)]
 pub enum PlannerWarnings {
     StringifyDatetimeMixedUsage(String),
+    UnsupportedTransforms(String),
 }
 
 impl PlannerWarnings {
     pub fn message(&self) -> String {
         match &self {
             PlannerWarnings::StringifyDatetimeMixedUsage(message) => message.clone(),
+            PlannerWarnings::UnsupportedTransforms(message) => message.clone(),
         }
     }
 }
@@ -58,7 +60,7 @@ pub struct SpecPlan {
 
 impl SpecPlan {
     pub fn try_new(full_spec: &ChartSpec, config: &PlannerConfig) -> Result<Self> {
-        let warnings: Vec<PlannerWarnings> = Vec::new();
+        let mut warnings: Vec<PlannerWarnings> = Vec::new();
 
         let mut client_spec = full_spec.clone();
 
@@ -76,7 +78,8 @@ impl SpecPlan {
 
         let mut task_scope = client_spec.to_task_scope()?;
 
-        let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope, config)?;
+        let mut server_spec =
+            extract_server_data(&mut client_spec, &mut task_scope, &mut warnings, config)?;
         let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec)?;
 
         if config.split_url_data_nodes {
