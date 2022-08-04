@@ -1,0 +1,133 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {
+      "name": "df2",
+      "values": [
+        {
+          "x": 1,
+          "y": 1,
+          "color": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }, {
+          "x": 1,
+          "y": 1,
+          "color": "BBBBBBBBBBBBBBBBBBBBBB"
+        }, {
+          "x": 1,
+          "y": 1,
+          "color": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+        }, {
+          "x": 1,
+          "y": 1,
+          "color": "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
+        }
+      ]
+    },
+    {
+      "name": "data_0",
+      "source": "df2",
+      "transform": [
+        {
+          "type": "stack",
+          "groupby": ["x"],
+          "field": "y",
+
+          "as": ["y_start", "y_end"],
+          "offset": "zero"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {"name": "x_step", "value": 20},
+    {
+      "name": "width",
+      "update": "bandspace(domain('x').length, 0.1, 0.05) * x_step"
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_marks",
+      "type": "rect",
+      "style": ["bar"],
+      "from": {"data": "data_0"},
+      "encode": {
+        "update": {
+          "fill": {"scale": "color", "field": "color"},
+          "ariaRoleDescription": {"value": "bar"},
+          "description": {
+            "signal": "\"x: \" + (isValid(datum[\"x\"]) ? datum[\"x\"] : \"\"+datum[\"x\"]) + \"; y: \" + (format(datum[\"y\"], \"\")) + \"; color: \" + (isValid(datum[\"color\"]) ? datum[\"color\"] : \"\"+datum[\"color\"])"
+          },
+          "x": {"scale": "x", "field": "x"},
+          "width": {"scale": "x", "band": 1},
+          "y": {"scale": "y", "field": "y_end"},
+          "y2": {"scale": "y", "field": "y_start"}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "band",
+      "domain": {"data": "data_0", "field": "x", "sort": true},
+      "range": {"step": {"signal": "x_step"}},
+      "paddingInner": 0.1,
+      "paddingOuter": 0.05
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {"data": "data_0", "fields": ["y_start", "y_end"]},
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": {"data": "data_0", "field": "color", "sort": true},
+      "range": "category"
+    }
+  ],
+  "axes": [
+    {
+      "scale": "y",
+      "orient": "left",
+      "gridScale": "x",
+      "grid": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "x",
+      "labelAlign": "right",
+      "labelAngle": 270,
+      "labelBaseline": "middle",
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "y",
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
+    }
+  ],
+  "legends": [{"fill": "color", "symbolType": "square", "title": "color"}]
+}
