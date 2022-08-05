@@ -118,7 +118,8 @@ mod test_custom_specs {
         case("custom/escaped_column_name1", 0.001),
         case("custom/layered_movies", 0.001),
         case("custom/shipping_mixed_scales", 0.001),
-        case("custom/datum_color", 0.001)
+        case("custom/datum_color", 0.001),
+        case("custom/bug_153", 0.001)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
         println!("spec_name: {}", spec_name);
@@ -1381,19 +1382,19 @@ async fn check_spec_sequence(
 
     // println!("task_scope: {:#?}", task_scope);
 
-    println!(
-        "client_spec: {}",
-        serde_json::to_string_pretty(&spec_plan.client_spec).unwrap()
-    );
-    println!(
-        "server_spec: {}",
-        serde_json::to_string_pretty(&spec_plan.server_spec).unwrap()
-    );
-
-    println!(
-        "comm_plan:\n---\n{}\n---",
-        serde_json::to_string_pretty(&WatchPlan::from(spec_plan.comm_plan.clone())).unwrap()
-    );
+    // println!(
+    //     "client_spec: {}",
+    //     serde_json::to_string_pretty(&spec_plan.client_spec).unwrap()
+    // );
+    // println!(
+    //     "server_spec: {}",
+    //     serde_json::to_string_pretty(&spec_plan.server_spec).unwrap()
+    // );
+    //
+    // println!(
+    //     "comm_plan:\n---\n{}\n---",
+    //     serde_json::to_string_pretty(&WatchPlan::from(spec_plan.comm_plan.clone())).unwrap()
+    // );
 
     // Build task graph
     let tasks = spec_plan

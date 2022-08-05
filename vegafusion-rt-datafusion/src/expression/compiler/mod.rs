@@ -406,7 +406,7 @@ mod test_compile {
                 ScalarValue::from(2.0),
                 ScalarValue::from(3.0),
             ]),
-            Box::new(DataType::Float64),
+            Box::new(Field::new("item", DataType::Float64, true)),
         );
 
         println!("value: {:?}", result_value);
@@ -428,7 +428,10 @@ mod test_compile {
         // Check evaluated value. Empty array is given Float64 data type
         let result_value = result_expr.eval_to_scalar().unwrap();
 
-        let expected_value = ScalarValue::List(Some(vec![]), Box::new(DataType::Float64));
+        let expected_value = ScalarValue::List(
+            Some(vec![]),
+            Box::new(Field::new("item", DataType::Float64, true)),
+        );
 
         println!("value: {:?}", result_value);
         assert_eq!(result_value, expected_value);
@@ -465,22 +468,22 @@ mod test_compile {
             Some(vec![
                 ScalarValue::List(
                     Some(vec![ScalarValue::from(1.0), ScalarValue::from(2.0)]),
-                    Box::new(DataType::Float64),
+                    Box::new(Field::new("item", DataType::Float64, true)),
                 ),
                 ScalarValue::List(
                     Some(vec![ScalarValue::from(3.0), ScalarValue::from(4.0)]),
-                    Box::new(DataType::Float64),
+                    Box::new(Field::new("item", DataType::Float64, true)),
                 ),
                 ScalarValue::List(
                     Some(vec![ScalarValue::from(5.0), ScalarValue::from(6.0)]),
-                    Box::new(DataType::Float64),
+                    Box::new(Field::new("item", DataType::Float64, true)),
                 ),
             ]),
-            Box::new(DataType::List(Box::new(Field::new(
+            Box::new(Field::new(
                 "item",
-                DataType::Float64,
+                DataType::List(Box::new(Field::new("item", DataType::Float64, true))),
                 true,
-            )))),
+            )),
         );
 
         println!("value: {:?}", result_value);

@@ -13,7 +13,7 @@ jobs:
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.60.0
+          toolchain: stable
           override: true
           components: rustfmt, clippy
       - name: Cache rust dependencies
@@ -43,10 +43,11 @@ jobs:
         run: |
           sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
         if: ${{ runner.os == 'Linux' }}
-      - name: Install protoc on Window
-        run: |
-          choco install --yes protoc
-        if: ${{ runner.os == 'Windows' }}
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: '3.19.4'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -97,10 +98,11 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: True
-      - name: Install protoc on Window
-        run: |
-          choco install --yes protoc
-        if: ${{ runner.os == 'Windows' }}
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: '3.19.4'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build vegafusion-server
         uses: actions-rs/cargo@v1
         with:
@@ -145,6 +147,11 @@ jobs:
         with:
           toolchain: nightly
           override: true
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: '3.19.4'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Cache rust dependencies
         uses: Swatinem/rust-cache@v1
         with:
@@ -195,9 +202,11 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '17'
-      - name: Install protoc
-        run: |
-          sudo snap install protobuf --classic
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: '3.19.4'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build package
         working-directory: vegafusion-wasm/
         run: |

@@ -88,6 +88,33 @@ dependencies = [
  "lexical-core",
  "multiversion",
  "num",
+ "rand",
+ "regex",
+ "serde",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
+name = "arrow"
+version = "19.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89b7e88e4739c3616cae75adce6660c9c1a80f2660545eb77afbe0e4a0f048a0"
+dependencies = [
+ "ahash",
+ "bitflags",
+ "chrono",
+ "comfy-table",
+ "csv",
+ "flatbuffers",
+ "half 2.1.0",
+ "hashbrown 0.12.0",
+ "hex",
+ "indexmap",
+ "lazy_static",
+ "lexical-core",
+ "multiversion",
+ "num",
  "pyo3",
  "rand",
  "regex",
@@ -675,16 +702,16 @@ version = "9.0.0"
 source = "git+https://github.com/apache/arrow-datafusion.git?rev=57f47ab9230a9a12b3244191dcf1623f8b69fd61#57f47ab9230a9a12b3244191dcf1623f8b69fd61"
 dependencies = [
  "ahash",
- "arrow",
+ "arrow 17.0.0",
  "async-trait",
  "chrono",
- "datafusion-common",
+ "datafusion-common 9.0.0",
  "datafusion-data-access",
- "datafusion-expr",
- "datafusion-optimizer",
- "datafusion-physical-expr",
- "datafusion-row",
- "datafusion-sql",
+ "datafusion-expr 9.0.0",
+ "datafusion-optimizer 9.0.0",
+ "datafusion-physical-expr 9.0.0",
+ "datafusion-row 9.0.0",
+ "datafusion-sql 9.0.0",
  "futures",
  "glob",
  "hashbrown 0.12.0",
@@ -694,12 +721,51 @@ dependencies = [
  "num_cpus",
  "ordered-float 3.0.0",
  "parking_lot 0.12.0",
- "parquet",
+ "parquet 17.0.0",
  "paste",
  "pin-project-lite",
  "rand",
  "smallvec",
- "sqlparser",
+ "sqlparser 0.18.0",
+ "tempfile",
+ "tokio",
+ "tokio-stream",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "datafusion"
+version = "10.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=b2be7abd6fb4154f725cc4235318515f1183619a#b2be7abd6fb4154f725cc4235318515f1183619a"
+dependencies = [
+ "ahash",
+ "arrow 19.0.0",
+ "async-trait",
+ "bytes",
+ "chrono",
+ "datafusion-common 10.0.0",
+ "datafusion-expr 10.0.0",
+ "datafusion-optimizer 10.0.0",
+ "datafusion-physical-expr 10.0.0",
+ "datafusion-row 10.0.0",
+ "datafusion-sql 10.0.0",
+ "futures",
+ "glob",
+ "hashbrown 0.12.0",
+ "itertools",
+ "lazy_static",
+ "log",
+ "num_cpus",
+ "object_store",
+ "ordered-float 3.0.0",
+ "parking_lot 0.12.0",
+ "parquet 19.0.0",
+ "paste",
+ "pin-project-lite",
+ "rand",
+ "smallvec",
+ "sqlparser 0.19.0",
  "tempfile",
  "tokio",
  "tokio-stream",
@@ -712,11 +778,23 @@ name = "datafusion-common"
 version = "9.0.0"
 source = "git+https://github.com/apache/arrow-datafusion.git?rev=57f47ab9230a9a12b3244191dcf1623f8b69fd61#57f47ab9230a9a12b3244191dcf1623f8b69fd61"
 dependencies = [
- "arrow",
+ "arrow 17.0.0",
  "ordered-float 3.0.0",
- "parquet",
+ "parquet 17.0.0",
+ "sqlparser 0.18.0",
+]
+
+[[package]]
+name = "datafusion-common"
+version = "10.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=b2be7abd6fb4154f725cc4235318515f1183619a#b2be7abd6fb4154f725cc4235318515f1183619a"
+dependencies = [
+ "arrow 19.0.0",
+ "object_store",
+ "ordered-float 3.0.0",
+ "parquet 19.0.0",
  "pyo3",
- "sqlparser",
+ "sqlparser 0.19.0",
 ]
 
 [[package]]
@@ -738,9 +816,20 @@ version = "9.0.0"
 source = "git+https://github.com/apache/arrow-datafusion.git?rev=57f47ab9230a9a12b3244191dcf1623f8b69fd61#57f47ab9230a9a12b3244191dcf1623f8b69fd61"
 dependencies = [
  "ahash",
- "arrow",
- "datafusion-common",
- "sqlparser",
+ "arrow 17.0.0",
+ "datafusion-common 9.0.0",
+ "sqlparser 0.18.0",
+]
+
+[[package]]
+name = "datafusion-expr"
+version = "10.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=b2be7abd6fb4154f725cc4235318515f1183619a#b2be7abd6fb4154f725cc4235318515f1183619a"
+dependencies = [
+ "ahash",
+ "arrow 19.0.0",
+ "datafusion-common 10.0.0",
+ "sqlparser 0.19.0",
 ]
 
 [[package]]
@@ -748,12 +837,27 @@ name = "datafusion-optimizer"
 version = "9.0.0"
 source = "git+https://github.com/apache/arrow-datafusion.git?rev=57f47ab9230a9a12b3244191dcf1623f8b69fd61#57f47ab9230a9a12b3244191dcf1623f8b69fd61"
 dependencies = [
- "arrow",
+ "arrow 17.0.0",
  "async-trait",
  "chrono",
- "datafusion-common",
- "datafusion-expr",
- "datafusion-physical-expr",
+ "datafusion-common 9.0.0",
+ "datafusion-expr 9.0.0",
+ "datafusion-physical-expr 9.0.0",
+ "hashbrown 0.12.0",
+ "log",
+]
+
+[[package]]
+name = "datafusion-optimizer"
+version = "10.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=b2be7abd6fb4154f725cc4235318515f1183619a#b2be7abd6fb4154f725cc4235318515f1183619a"
+dependencies = [
+ "arrow 19.0.0",
+ "async-trait",
+ "chrono",
+ "datafusion-common 10.0.0",
+ "datafusion-expr 10.0.0",
+ "datafusion-physical-expr 10.0.0",
  "hashbrown 0.12.0",
  "log",
 ]
@@ -764,13 +868,37 @@ version = "9.0.0"
 source = "git+https://github.com/apache/arrow-datafusion.git?rev=57f47ab9230a9a12b3244191dcf1623f8b69fd61#57f47ab9230a9a12b3244191dcf1623f8b69fd61"
 dependencies = [
  "ahash",
- "arrow",
+ "arrow 17.0.0",
  "blake2",
  "blake3",
  "chrono",
- "datafusion-common",
- "datafusion-expr",
- "datafusion-row",
+ "datafusion-common 9.0.0",
+ "datafusion-expr 9.0.0",
+ "datafusion-row 9.0.0",
+ "hashbrown 0.12.0",
+ "lazy_static",
+ "md-5",
+ "ordered-float 3.0.0",
+ "paste",
+ "rand",
+ "regex",
+ "sha2 0.10.2",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "datafusion-physical-expr"
+version = "10.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=b2be7abd6fb4154f725cc4235318515f1183619a#b2be7abd6fb4154f725cc4235318515f1183619a"
+dependencies = [
+ "ahash",
+ "arrow 19.0.0",
+ "blake2",
+ "blake3",
+ "chrono",
+ "datafusion-common 10.0.0",
+ "datafusion-expr 10.0.0",
+ "datafusion-row 10.0.0",
  "hashbrown 0.12.0",
  "lazy_static",
  "md-5",
@@ -787,8 +915,19 @@ name = "datafusion-row"
 version = "9.0.0"
 source = "git+https://github.com/apache/arrow-datafusion.git?rev=57f47ab9230a9a12b3244191dcf1623f8b69fd61#57f47ab9230a9a12b3244191dcf1623f8b69fd61"
 dependencies = [
- "arrow",
- "datafusion-common",
+ "arrow 17.0.0",
+ "datafusion-common 9.0.0",
+ "paste",
+ "rand",
+]
+
+[[package]]
+name = "datafusion-row"
+version = "10.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=b2be7abd6fb4154f725cc4235318515f1183619a#b2be7abd6fb4154f725cc4235318515f1183619a"
+dependencies = [
+ "arrow 19.0.0",
+ "datafusion-common 10.0.0",
  "paste",
  "rand",
 ]
@@ -799,11 +938,25 @@ version = "9.0.0"
 source = "git+https://github.com/apache/arrow-datafusion.git?rev=57f47ab9230a9a12b3244191dcf1623f8b69fd61#57f47ab9230a9a12b3244191dcf1623f8b69fd61"
 dependencies = [
  "ahash",
- "arrow",
- "datafusion-common",
- "datafusion-expr",
+ "arrow 17.0.0",
+ "datafusion-common 9.0.0",
+ "datafusion-expr 9.0.0",
  "hashbrown 0.12.0",
- "sqlparser",
+ "sqlparser 0.18.0",
+ "tokio",
+]
+
+[[package]]
+name = "datafusion-sql"
+version = "10.0.0"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=b2be7abd6fb4154f725cc4235318515f1183619a#b2be7abd6fb4154f725cc4235318515f1183619a"
+dependencies = [
+ "ahash",
+ "arrow 19.0.0",
+ "datafusion-common 10.0.0",
+ "datafusion-expr 10.0.0",
+ "hashbrown 0.12.0",
+ "sqlparser 0.19.0",
  "tokio",
 ]
 
@@ -1885,6 +2038,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "object_store"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "857af043f5d9f36ed4f71815857f79b841412dda1cf0ca5a29608874f6f038e2"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "chrono",
+ "futures",
+ "itertools",
+ "percent-encoding",
+ "snafu",
+ "tokio",
+ "tracing",
+ "url",
+ "walkdir",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2001,7 +2173,7 @@ version = "17.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "367d46126e60d229e9e47e3d793c622a18c0e60a749573b7936bf3b0701cb8a3"
 dependencies = [
- "arrow",
+ "arrow 17.0.0",
  "base64",
  "brotli",
  "byteorder",
@@ -2015,6 +2187,31 @@ dependencies = [
  "rand",
  "snap",
  "thrift",
+ "zstd",
+]
+
+[[package]]
+name = "parquet"
+version = "19.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2cfcf237362047888b342e4f0e213a9b303133b085853e447f2c58e65e00099d"
+dependencies = [
+ "arrow 19.0.0",
+ "base64",
+ "brotli",
+ "byteorder",
+ "bytes",
+ "chrono",
+ "flate2",
+ "futures",
+ "lz4",
+ "num",
+ "num-bigint",
+ "parquet-format",
+ "rand",
+ "snap",
+ "thrift",
+ "tokio",
  "zstd",
 ]
 
@@ -2788,6 +2985,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ecab6c735a6bb4139c0caafd0cc3635748bbb3acf4550e8138122099251f309"
 
 [[package]]
+name = "snafu"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5177903bf45656592d9eb5c0e22f408fc023aae51dbe2088889b71633ba451f2"
+dependencies = [
+ "doc-comment",
+ "snafu-derive",
+]
+
+[[package]]
+name = "snafu-derive"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "410b26ed97440d90ced3e2488c868d56a86e2064f5d7d6f417909b286afe25e5"
+dependencies = [
+ "heck 0.4.0",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "snap"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2842,6 +3061,15 @@ name = "sqlparser"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f531637a13132fa3d38c54d4cd8f115905e5dc3e72f6e77bd6160481f482e25d"
+dependencies = [
+ "log",
+]
+
+[[package]]
+name = "sqlparser"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8ec7ef1bad82a2453dbaef7218b6f036e545edcce1ffd55f6e7af7bea43cce2"
 dependencies = [
  "log",
 ]
@@ -3516,10 +3744,10 @@ checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 name = "vegafusion-core"
 version = "0.9.0"
 dependencies = [
- "arrow",
+ "arrow 19.0.0",
  "bytes",
  "chrono",
- "datafusion-common",
+ "datafusion-common 10.0.0",
  "deterministic-hash",
  "itertools",
  "lazy_static",
@@ -3562,8 +3790,8 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "criterion",
- "datafusion",
- "datafusion-expr",
+ "datafusion 10.0.0",
+ "datafusion-expr 10.0.0",
  "dssim",
  "float-cmp",
  "futures",
@@ -3612,9 +3840,9 @@ name = "vegafusion-sql"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "datafusion",
- "datafusion-common",
- "datafusion-expr",
+ "datafusion 9.0.0",
+ "datafusion-common 9.0.0",
+ "datafusion-expr 9.0.0",
  "log",
  "matches",
  "pretty_assertions",

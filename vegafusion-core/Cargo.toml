@@ -16,20 +16,20 @@ prost-types = "0.10.1"
 itertools = "0.10.3"
 lazy_static = "^1.4.0"
 regex = "^1.5.5"
-serde_json = "1.0.81"
+serde_json = { version = "1.0.81", features = ["preserve_order"] }
 ordered-float = "^2.10.0"
 petgraph = "0.6.0"
 deterministic-hash = "1.0.1"
 chrono = "0.4.19"
 
 [dependencies.arrow]
-version = "17.0.0"
+version = "19.0.0"
 default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "57f47ab9230a9a12b3244191dcf1623f8b69fd61"
+rev = "b2be7abd6fb4154f725cc4235318515f1183619a"
 
 [dependencies.pyo3]
 version = "0.16.4"

@@ -11,6 +11,7 @@ use crate::expression::compiler::utils::to_numeric;
 use crate::transform::utils::{DataFrameUtils, RecordBatchUtils};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
+use datafusion::arrow::datatypes::Field;
 use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::{col, max, min};
 use datafusion::scalar::ScalarValue;
@@ -48,7 +49,7 @@ impl TransformTrait for Extent {
             let element_datatype = min_val_scalar.get_datatype();
             let extent_list = TaskValue::Scalar(ScalarValue::List(
                 Some(vec![min_val_scalar, max_val_scalar]),
-                Box::new(element_datatype),
+                Box::new(Field::new("item", element_datatype, true)),
             ));
             vec![extent_list]
         } else {
