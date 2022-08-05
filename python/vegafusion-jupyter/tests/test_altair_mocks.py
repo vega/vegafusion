@@ -360,7 +360,7 @@ def export_image_sequence(
         # Get canvas element (the canvas that Vega renders to)
         @retry(wait=wait.wait_fixed(0.5), stop=stop.stop_after_delay(10))
         def get_canvas():
-            return chrome_driver.find_element_by_xpath("//canvas")
+            return chrome_driver.find_element("xpath", "//canvas")
 
         canvas = get_canvas()
         time.sleep(delay)

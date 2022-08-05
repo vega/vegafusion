@@ -17,7 +17,7 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::fs;
 
-use vegafusion_core::arrow::datatypes::DataType;
+use vegafusion_core::arrow::datatypes::{DataType, Field};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::planning::watch::{
     ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace, Watch, WatchNamespace,
@@ -135,7 +135,7 @@ fn test_evaluate_filter_transform() {
         result_signals,
         vec![ScalarValue::List(
             Some(vec![ScalarValue::from(6.0), ScalarValue::from(10.0)]),
-            Box::new(DataType::Float64)
+            Box::new(Field::new("item", DataType::Float64, true))
         )]
     );
 
