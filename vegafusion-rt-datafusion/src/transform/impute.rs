@@ -25,8 +25,10 @@ impl TransformTrait for Impute {
         // JSON numbers are always interpreted as floats, but if the value is an integer we'd
         // like the fill value to be an integer as well to avoid converting an integer input
         // column to floats
-        let value = if json_value.is_number() && json_value.as_f64().unwrap().fract() == 0.0 {
+        let value = if json_value.is_i64() {
             ScalarValue::from(json_value.as_i64().unwrap())
+        } else if json_value.is_f64() && json_value.as_f64().unwrap().fract() == 0.0 {
+            ScalarValue::from(json_value.as_f64().unwrap() as i64)
         } else {
             ScalarValue::from_json(&json_value)?
         };
