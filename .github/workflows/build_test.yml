@@ -47,6 +47,7 @@ jobs:
         uses: arduino/setup-protoc@v1
         with:
           version: '3.19.4'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -101,6 +102,7 @@ jobs:
         uses: arduino/setup-protoc@v1
         with:
           version: '3.19.4'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build vegafusion-server
         uses: actions-rs/cargo@v1
         with:
@@ -149,6 +151,7 @@ jobs:
         uses: arduino/setup-protoc@v1
         with:
           version: '3.19.4'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Cache rust dependencies
         uses: Swatinem/rust-cache@v1
         with:
@@ -203,6 +206,7 @@ jobs:
         uses: arduino/setup-protoc@v1
         with:
           version: '3.19.4'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build package
         working-directory: vegafusion-wasm/
         run: |
