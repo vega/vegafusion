@@ -1,14 +1,27 @@
-pub mod sql;
-
 use std::collections::{HashMap};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::Schema;
-use crate::dataframe::DataFrame;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::error::Result;
+use crate::connection::SqlDatabaseConnection;
+use crate::dataframe::SqlDataFrame;
 
-pub trait Context: Send + Sync {
-    fn tables(&self) -> Result<HashMap<String, Schema>>;
+#[derive(Clone)]
+pub struct SqlContext {
+    conn: Arc<dyn SqlDatabaseConnection>
+}
 
-    fn table(&self, name: &str) -> Result<Arc<dyn DataFrame>>;
-    fn scan_dataframe(&self, df: Arc<dyn DataFrame>) -> Result<Arc<dyn DataFrame>>;
+impl SqlContext {
+    pub fn new(conn: Arc<dyn SqlDatabaseConnection>) -> Self {
+        Self {
+            conn
+        }
+    }
+
+    fn table(&self, name: &str) -> Result<Arc<SqlDataFrame>> {
+        Ok(Arc::new(SqlDataFrame::try_new(self.conn.clone(), name)?))
+    }
+
+    fn tables(&self) -> Result<HashMap<String, Schema>> {
+        self.conn.tables()
+    }
 }
