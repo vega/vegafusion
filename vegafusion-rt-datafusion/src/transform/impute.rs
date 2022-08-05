@@ -19,8 +19,17 @@ impl TransformTrait for Impute {
         _config: &CompilationConfig,
     ) -> vegafusion_core::error::Result<(Arc<DataFrame>, Vec<TaskValue>)> {
         // Create ScalarValue used to fill in null values
-        let value =
-            ScalarValue::from_json(&serde_json::from_str(self.value_json.as_ref().unwrap())?)?;
+        let json_value: serde_json::Value =
+            serde_json::from_str(self.value_json.as_ref().unwrap())?;
+
+        // JSON numbers are always interpreted as floats, but if the value is an integer we'd
+        // like the fill value to be an integer as well to avoid converting an integer input
+        // column to floats
+        let value = if json_value.is_number() && json_value.as_f64().unwrap().fract() == 0.0 {
+            ScalarValue::from(json_value.as_i64().unwrap())
+        } else {
+            ScalarValue::from_json(&json_value)?
+        };
 
         let dataframe = match self.groupby.len() {
             0 => zero_groupby(self, dataframe, value)?,
