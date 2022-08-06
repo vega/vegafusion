@@ -2,7 +2,7 @@
 name = "vegafusion-core"
 license = "AGPL-3.0-or-later"
 edition = "2021"
-version = "0.9.0"
+version = "0.9.1"
 
 [features]
 tonic_support = [ "tonic", "tonic-build",]
@@ -16,11 +16,14 @@ prost-types = "0.10.1"
 itertools = "0.10.3"
 lazy_static = "^1.4.0"
 regex = "^1.5.5"
-serde_json = { version = "1.0.81", features = ["preserve_order"] }
 ordered-float = "^2.10.0"
 petgraph = "0.6.0"
 deterministic-hash = "1.0.1"
 chrono = "0.4.19"
+
+[dependencies.serde_json]
+version = "1.0.81"
+features = [ "preserve_order",]
 
 [dependencies.arrow]
 version = "19.0.0"
