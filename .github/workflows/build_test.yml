@@ -25,7 +25,7 @@ jobs:
       - name: Check no rustc warnings
         run: cargo check --tests
       - name: Check for clippy warnings
-        run: cargo clippy
+        run: cargo clippy -- -A clippy::borrow_deref_ref
 
   test-rust:
     runs-on: ${{ matrix.os }}
