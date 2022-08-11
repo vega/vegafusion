@@ -36,10 +36,7 @@ impl SqlDatabaseConnection for SqLiteConnection {
     async fn fetch_query(&self, query: &Query, schema: &Schema) -> Result<VegaFusionTable> {
 
         // Convert query AST to string
-        let mut dialect: Dialect = Default::default();
-        dialect.quote_style = Some('"');
-
-        let query = query.sql(&dialect).map_err(
+        let query = query.sql(&Dialect::sqlite()).map_err(
             |err| VegaFusionError::internal(err.to_string())
         )?;
 

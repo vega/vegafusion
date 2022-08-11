@@ -7,7 +7,7 @@ use sqlgen::ast::{OrderByExpr, Query, SetExpr, TableAlias, TableFactor, TableWit
 use sqlgen::ast::Expr;
 use sqlgen::ast::Ident;
 use sqlgen::ast::{Cte, With};
-use sqlgen::dialect::DialectDisplay;
+use sqlgen::dialect::{Dialect, DialectDisplay};
 use sqlgen::parser::Parser;
 use crate::connection::SqlDatabaseConnection;
 
@@ -57,7 +57,7 @@ impl SqlDataFrame {
         new_ctes.push(query);
 
         let combined_query = query_chain_to_cte(new_ctes.as_slice(), &self.prefix);
-        let query_str = combined_query.sql(&Default::default()).expect("Failed to create query");
+        let query_str = combined_query.sql(&Dialect::datafusion()).expect("Failed to create query");
         let logical_plan = self.session_context.create_logical_plan(&query_str)?;
         let new_schema: Schema = logical_plan.schema().as_ref().into();
 
@@ -157,7 +157,7 @@ fn rename_tables_in_table_factor(table_factor: &mut TableFactor, old_name: &str,
 #[cfg(test)]
 mod test {
     use std::sync::Arc;
-    use sqlgen::dialect::DialectDisplay;
+    use sqlgen::dialect::{Dialect, DialectDisplay};
     use sqlx::SqlitePool;
     use vegafusion_core::arrow::datatypes::{DataType, Field, Schema};
     use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
@@ -188,8 +188,8 @@ mod test {
         let df = df.chain_query_str("select date, symbol, price, price * 2 as dbl_price from parent order by date").unwrap();
         println!("{:#?}", df.schema);
 
-        // Extract SQL in
-        let s = df.as_query().sql(&Default::default()).unwrap();
+        // Extract SQL in the sqlite dialect
+        let s = df.as_query().sql(&Dialect::sqlite()).unwrap();
         println!("{}", s);
 
         let table = df.collect().await.unwrap();
