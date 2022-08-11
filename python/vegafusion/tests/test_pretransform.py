@@ -74,7 +74,7 @@ def order_items_spec():
 """
 
 
-def movies_histogram_spec(agg = "count"):
+def movies_histogram_spec(agg="count"):
     return """
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -205,6 +205,288 @@ def movies_histogram_spec(agg = "count"):
 }"""
 
 
+def standalone_aggregate_spec(agg="count"):
+    return """
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "data": [
+    {
+      "name": "df",
+      "values": [
+        {
+          "x": "a",
+          "y": 1
+        },
+        {
+          "x": "a",
+          "y": 2
+        },
+        {
+          "x": "a",
+          "y": 3
+        }
+      ]
+    },
+    {
+      "name": "data_0",
+      "source": "df",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": [
+            "x"
+          ],
+          "fields": [
+            "y"
+          ],
+          "ops": [
+            """ + '"' + agg + '"' + """
+          ],
+          "as": [
+            "median_y"
+          ]
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum['median_y']) && isFinite(+datum['median_y'])"
+        },
+        {
+          "type": "project",
+          "fields": [
+            "median_y",
+            "x"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "data_0_x_domain_x",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": [
+            "x"
+          ],
+          "fields": [],
+          "ops": [],
+          "as": []
+        },
+        {
+          "type": "formula",
+          "expr": "datum['x']",
+          "as": "sort_field"
+        }
+      ]
+    },
+    {
+      "name": "data_0_y_domain_median_y",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "+datum['median_y']",
+          "as": "median_y"
+        },
+        {
+          "type": "aggregate",
+          "groupby": [],
+          "fields": [
+            "median_y",
+            "median_y"
+          ],
+          "ops": [
+            "min",
+            "max"
+          ],
+          "as": [
+            "min",
+            "max"
+          ]
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "name": "width",
+      "init": "isFinite(containerSize()[0]) ? containerSize()[0] : 200",
+      "on": [
+        {
+          "events": "window:resize",
+          "update": "isFinite(containerSize()[0]) ? containerSize()[0] : 200"
+        }
+      ]
+    },
+    {
+      "name": "height",
+      "init": "isFinite(containerSize()[1]) ? containerSize()[1] : 200",
+      "on": [
+        {
+          "events": "window:resize",
+          "update": "isFinite(containerSize()[1]) ? containerSize()[1] : 200"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "type": "rect",
+      "name": "layer_0_marks",
+      "from": {
+        "data": "data_0"
+      },
+      "encode": {
+        "update": {
+          "tooltip": {
+            "signal": "{'x': isValid(datum['x']) ? datum['x'] : ''+datum['x'], 'Median of y': format(datum['median_y'], '')}"
+          },
+          "fill": {
+            "value": "#4c78a8"
+          },
+          "description": {
+            "signal": "'x: ' + (isValid(datum['x']) ? datum['x'] : ''+datum['x']) + '; Median of y: ' + (format(datum['median_y'], ''))"
+          },
+          "width": {
+            "scale": "x",
+            "band": 1
+          },
+          "x": {
+            "field": "x",
+            "scale": "x"
+          },
+          "y": {
+            "field": "median_y",
+            "scale": "y"
+          },
+          "y2": {
+            "value": 0,
+            "scale": "y"
+          },
+          "ariaRoleDescription": {
+            "value": "bar"
+          }
+        }
+      },
+      "style": [
+        "bar"
+      ],
+      "clip": true
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "band",
+      "domain": {
+        "data": "data_0_x_domain_x",
+        "field": "x",
+        "sort": true
+      },
+      "range": [
+        0,
+        {
+          "signal": "width"
+        }
+      ],
+      "paddingOuter": 0.05,
+      "paddingInner": 0.1
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": [
+        {
+          "signal": "(data('data_0_y_domain_median_y')[0] || {}).min"
+        },
+        {
+          "signal": "(data('data_0_y_domain_median_y')[0] || {}).max"
+        }
+      ],
+      "range": [
+        {
+          "signal": "height"
+        },
+        0
+      ],
+      "nice": true,
+      "zero": true
+    }
+  ],
+  "axes": [
+    {
+      "scale": "y",
+      "grid": true,
+      "minExtent": 0,
+      "aria": false,
+      "orient": "left",
+      "gridScale": "x",
+      "zindex": 0,
+      "tickCount": {
+        "signal": "ceil(height/40)"
+      },
+      "maxExtent": 0,
+      "labels": false,
+      "ticks": false,
+      "domain": false
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "title": "x",
+      "labelAlign": "right",
+      "labelBaseline": "middle",
+      "grid": false,
+      "labelAngle": 270,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "title": "Median of y",
+      "zindex": 0,
+      "labelOverlap": true,
+      "tickCount": {
+        "signal": "ceil(height/40)"
+      },
+      "orient": "left",
+      "grid": false
+    }
+  ],
+  "padding": 5,
+  "background": "white",
+  "autosize": {
+    "type": "fit",
+    "contains": "padding"
+  },
+  "config": {
+    "customFormatTypes": true,
+    "style": {
+      "guide-label": {
+        "font": "'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      },
+      "guide-title": {
+        "font": "'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      },
+      "group-title": {
+        "font": "'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      },
+      "group-subtitle": {
+        "font": "'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      },
+      "cell": {},
+      "text": {
+        "font": "'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      }
+    }
+  },
+  "style": "cell",
+  "usermeta": {
+    "warnings": []
+  }
+}    
+    """
+
+
 def test_pre_transform_multi_partition():
     n = 4050
     order_items = pd.DataFrame({
@@ -271,7 +553,7 @@ def test_pre_transform_datasets():
     pd.testing.assert_frame_equal(datasets[0], expected)
 
 
-def test_pre_transform_planner_warning():
+def test_pre_transform_planner_warning1():
     # Pre-transform with supported aggregate function should result in no warnings
     vega_spec = movies_histogram_spec("mean")
     datasets, warnings = vf.runtime.pre_transform_spec(vega_spec, "UTC")
@@ -285,3 +567,19 @@ def test_pre_transform_planner_warning():
     warning = warnings[0]
     assert warning["type"] == "Planner"
     assert "source_0" in warning["message"]
+
+
+def test_pre_transform_planner_warning2():
+    # Pre-transform with supported aggregate function should result in no warnings
+    vega_spec = standalone_aggregate_spec("mean")
+    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec, "UTC")
+    assert len(warnings) == 0
+
+    # Pre-transform with unsupported aggregate function should result in one warning
+    vega_spec = standalone_aggregate_spec("ci0")
+    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec, "UTC")
+    assert len(warnings) == 1
+
+    warning = warnings[0]
+    assert warning["type"] == "Planner"
+    assert "data_0" in warning["message"]
