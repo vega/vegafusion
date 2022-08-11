@@ -18,6 +18,7 @@ pub struct SqLiteConnection {
     pub pool: Arc<SqlitePool>,
     pub table: String,
     pub schema: Schema,
+    pub dialect: Dialect,
 }
 
 impl SqLiteConnection {
@@ -26,22 +27,16 @@ impl SqLiteConnection {
         Self {
             pool,
             table: table.to_string(),
-            schema: schema.clone()
+            schema: schema.clone(),
+            dialect: Dialect::sqlite(),
         }
     }
 }
 
+
 #[async_trait]
 impl SqlDatabaseConnection for SqLiteConnection {
-    async fn fetch_query(&self, query: &Query, schema: &Schema) -> Result<VegaFusionTable> {
-
-        // Convert query AST to string
-        let query = query.sql(&Dialect::sqlite()).map_err(
-            |err| VegaFusionError::internal(err.to_string())
-        )?;
-
-        println!("Query str:\n{}", query);
-
+    async fn fetch_query(&self, query: &str, schema: &Schema) -> Result<VegaFusionTable> {
         // Should fetch batches of partition size instead of fetching all
         let recs = sqlx::query(&query)
             .fetch_all(self.pool.as_ref())
@@ -83,6 +78,10 @@ impl SqlDatabaseConnection for SqLiteConnection {
         let schema_ref: SchemaRef = Arc::new(schema.clone());
         let batch = RecordBatch::try_new(schema_ref.clone(), columns)?;
         VegaFusionTable::try_new(schema_ref.clone(), vec![batch])
+    }
+
+    fn dialect(&self) -> &Dialect {
+        &self.dialect
     }
 
     fn tables(&self) -> Result<HashMap<String, Schema>> {

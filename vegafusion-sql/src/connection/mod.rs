@@ -9,17 +9,20 @@ use async_trait::async_trait;
 use datafusion::datasource::empty::EmptyTable;
 use datafusion::prelude::SessionContext;
 use sqlgen::ast::Query;
+use sqlgen::dialect::Dialect;
 
 
 #[async_trait]
 pub trait SqlDatabaseConnection: Send + Sync {
     async fn fetch_query(
         &self,
-        query: &Query,
+        query: &str,
         schema: &Schema
     ) -> Result<VegaFusionTable>;
 
     fn tables(&self) -> Result<HashMap<String, Schema>>;
+
+    fn dialect(&self) -> &Dialect;
 
     fn session_context(&self) -> Result<SessionContext> {
         let ctx = SessionContext::new();

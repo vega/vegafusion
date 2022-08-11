@@ -57,7 +57,13 @@ impl SqlDataFrame {
         new_ctes.push(query);
 
         let combined_query = query_chain_to_cte(new_ctes.as_slice(), &self.prefix);
-        let query_str = combined_query.sql(&Dialect::datafusion()).expect("Failed to create query");
+
+        // First, the combined query to a string using the connection's dialect to make sure
+        // that it is supported by the connection
+        combined_query.sql(self.conn.dialect())?;
+
+        // Now convert to string in the DataFusion dialect for schema inference
+        let query_str = combined_query.sql(&Dialect::datafusion())?;
         let logical_plan = self.session_context.create_logical_plan(&query_str)?;
         let new_schema: Schema = logical_plan.schema().as_ref().into();
 
@@ -86,7 +92,8 @@ impl SqlDataFrame {
     }
 
     async fn collect(&self) -> Result<VegaFusionTable> {
-        self.conn.fetch_query(&self.as_query(), &self.schema).await
+        let query_string = self.as_query().sql(self.conn.dialect())?;
+        self.conn.fetch_query(&query_string, &self.schema).await
     }
 }
 
