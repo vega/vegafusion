@@ -17,11 +17,11 @@ impl SqlContext {
         }
     }
 
-    fn table(&self, name: &str) -> Result<Arc<SqlDataFrame>> {
-        Ok(Arc::new(SqlDataFrame::try_new(self.conn.clone(), name)?))
+    async fn table(&self, name: &str) -> Result<Arc<SqlDataFrame>> {
+        Ok(Arc::new(SqlDataFrame::try_new(self.conn.clone(), name).await?))
     }
 
-    fn tables(&self) -> Result<HashMap<String, Schema>> {
-        self.conn.tables()
+    async fn tables(&self) -> Result<HashMap<String, Schema>> {
+        self.conn.tables().await
     }
 }

@@ -20,13 +20,13 @@ pub trait SqlDatabaseConnection: Send + Sync {
         schema: &Schema
     ) -> Result<VegaFusionTable>;
 
-    fn tables(&self) -> Result<HashMap<String, Schema>>;
+    async fn tables(&self) -> Result<HashMap<String, Schema>>;
 
     fn dialect(&self) -> &Dialect;
 
-    fn session_context(&self) -> Result<SessionContext> {
+    async fn session_context(&self) -> Result<SessionContext> {
         let ctx = SessionContext::new();
-        for (table_name, schema) in self.tables()? {
+        for (table_name, schema) in self.tables().await? {
             let table = EmptyTable::new(Arc::new(schema));
             ctx.register_table(table_name.as_str(), Arc::new(table));
         }

@@ -21,8 +21,8 @@ pub struct SqlDataFrame {
 }
 
 impl SqlDataFrame {
-    pub fn try_new(conn: Arc<dyn SqlDatabaseConnection>, table: &str) -> Result<Self> {
-        let tables = conn.tables()?;
+    pub async fn try_new(conn: Arc<dyn SqlDatabaseConnection>, table: &str) -> Result<Self> {
+        let tables = conn.tables().await?;
         let schema = tables
             .get(table)
             .cloned()
@@ -41,7 +41,7 @@ impl SqlDataFrame {
             prefix: "t_".to_string(),
             ctes: vec![query],
             schema: Arc::new(schema.clone()),
-            session_context: Arc::new(conn.session_context()?),
+            session_context: Arc::new(conn.session_context().await?),
             conn,
         })
     }
@@ -145,20 +145,13 @@ mod test {
 
     #[tokio::test]
     async fn try_it() {
-        let schema = Schema::new(vec![
-            Field::new("index", DataType::Int64, true),
-            Field::new("symbol", DataType::Utf8, true),
-            Field::new("date", DataType::Utf8, true),
-            Field::new("price", DataType::Float64, true),
-        ]);
-
         let pool = SqlitePool::connect(&"/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db")
             .await
             .unwrap();
 
-        let conn = SqLiteConnection::new(Arc::new(pool), "stock", &schema);
+        let conn = SqLiteConnection::new(Arc::new(pool));
 
-        let df = SqlDataFrame::try_new(Arc::new(conn), "stock").unwrap();
+        let df = SqlDataFrame::try_new(Arc::new(conn), "stock").await.unwrap();
         println!("{:#?}", df.schema);
 
         // Transform query

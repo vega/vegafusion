@@ -3652,6 +3652,7 @@ dependencies = [
  "log",
  "matches",
  "pretty_assertions",
+ "regex",
  "serde",
  "serde_json",
  "simple_logger",

@@ -16,6 +16,7 @@ sqlgen = {git = "https://github.com/vegafusion/sqlgen-rs.git", rev = "d17338efc0
 # Make sqlx optional
 sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "sqlite", "macros"] }
 async-trait = "0.1.56"
+regex = "1.6.0"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"

@@ -23,7 +23,7 @@ async fn try_it() {
     ]);
 
     let conn = SqLiteConnection::new(
-        Arc::new(pool), "stock", &schema
+        Arc::new(pool)
     );
 
     // let query = Query::select_star_from("stock");

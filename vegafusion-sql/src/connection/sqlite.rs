@@ -2,11 +2,12 @@ use std::collections::HashMap;
 use sqlx::{Row, SqlitePool};
 use std::sync::Arc;
 use vegafusion_core::arrow::array::{ArrayRef, Float64Array, Int64Array, StringArray};
-use vegafusion_core::arrow::datatypes::{DataType, Schema, SchemaRef};
+use vegafusion_core::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use vegafusion_core::arrow::record_batch::RecordBatch;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, VegaFusionError};
 use async_trait::async_trait;
+use regex::Regex;
 use sqlgen::ast::Query;
 use sqlgen::dialect::{Dialect, DialectDisplay};
 use sqlx::sqlite::SqliteRow;
@@ -16,23 +17,18 @@ use crate::connection::SqlDatabaseConnection;
 #[derive(Clone, Debug)]
 pub struct SqLiteConnection {
     pub pool: Arc<SqlitePool>,
-    pub table: String,
-    pub schema: Schema,
     pub dialect: Dialect,
 }
 
 impl SqLiteConnection {
     // Also input a table name (regular or temporary) to use as the source
-    pub fn new(pool: Arc<SqlitePool>, table: &str, schema: &Schema) -> Self {
+    pub fn new(pool: Arc<SqlitePool>) -> Self {
         Self {
             pool,
-            table: table.to_string(),
-            schema: schema.clone(),
             dialect: Dialect::sqlite(),
         }
     }
 }
-
 
 #[async_trait]
 impl SqlDatabaseConnection for SqLiteConnection {
@@ -84,11 +80,44 @@ impl SqlDatabaseConnection for SqLiteConnection {
         &self.dialect
     }
 
-    fn tables(&self) -> Result<HashMap<String, Schema>> {
-        Ok(vec![(self.table.clone(), self.schema.clone())].into_iter().collect())
+    async fn tables(&self) -> Result<HashMap<String, Schema>> {
+        let recs = sqlx::query(
+            r#"
+            SELECT name, sql FROM sqlite_schema
+            WHERE type='table'
+            ORDER BY name;
+        "#,
+        )
+            .fetch_all(self.pool.clone().as_ref())
+            .await
+            .map_err(|err| {
+                VegaFusionError::internal("Failed to query sqlite schema")
+            })?;
+
+        let re_pair = Regex::new(r#"("\w+"\s*\w+,?)"#).unwrap();
+        let re_field = Regex::new(r#""(\w+)" (\w+),?"#).unwrap();
+
+        let mut schemas: HashMap<String, Schema> = HashMap::new();
+        for rec in recs {
+            let mut fields = Vec::new();
+            let table_name: &str = rec.get(0);
+            let create_str: &str = rec.get(1);
+            println!("{:?}", create_str);
+
+            for v in re_pair.find_iter(create_str) {
+                let field = re_field.captures(v.as_str()).unwrap();
+                let col = field.get(1).unwrap().as_str().to_string();
+                let typ = field.get(2).unwrap().as_str().to_string();
+                let df_type = sqlite_to_arrow_dtype(&typ)?;
+                fields.push(Field::new(&col, df_type, true));
+            }
+
+            let schema = Schema::new(fields);
+            schemas.insert(table_name.to_string(), schema);
+        }
+        Ok(schemas)
     }
 }
-
 
 
 /// Generic helper to extract row values at an index
@@ -100,4 +129,16 @@ where T: sqlx::Decode<'a, sqlx::Sqlite> + sqlx::Type<sqlx::Sqlite>
         .map(|row| row.try_get(field_index).ok())
         .collect();
     values
+}
+
+fn sqlite_to_arrow_dtype(sql_type: &str) -> Result<DataType> {
+    match sql_type {
+        "INTEGER" => Ok(DataType::Int64),
+        "REAL" => Ok(DataType::Float64),
+        "TEXT" => Ok(DataType::Utf8),
+        _ => Err(VegaFusionError::internal(format!(
+            "Unsupported sql type: {}",
+            sql_type
+        ))),
+    }
 }
