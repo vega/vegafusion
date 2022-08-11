@@ -28,6 +28,10 @@ rev = "b2be7abd6fb4154f725cc4235318515f1183619a"
 git = "https://github.com/apache/arrow-datafusion.git"
 rev = "b2be7abd6fb4154f725cc4235318515f1183619a"
 
+[dependencies.datafusion]
+git = "https://github.com/apache/arrow-datafusion.git"
+rev = "b2be7abd6fb4154f725cc4235318515f1183619a"
+
 [dev-dependencies]
 serde_json = { version = "1.0" }
 simple_logger = "2.1"
