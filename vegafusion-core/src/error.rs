@@ -54,6 +54,9 @@ pub enum VegaFusionError {
     PreTransformError(String, ErrorContext),
 
     #[error("Arrow error: {0}\n{1}")]
+    FormatError(std::fmt::Error, ErrorContext),
+
+    #[error("Arrow error: {0}\n{1}")]
     ArrowError(ArrowError, ErrorContext),
 
     #[error("DataFusion error: {0}\n{1}")]
@@ -98,6 +101,10 @@ impl VegaFusionError {
             PreTransformError(msg, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::PreTransformError(msg, context)
+            }
+            FormatError(msg, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::FormatError(msg, context)
             }
             ArrowError(msg, mut context) => {
                 context.contexts.push(context_fn().into());
@@ -163,6 +170,9 @@ impl VegaFusionError {
             PreTransformError(msg, context) => {
                 VegaFusionError::PreTransformError(msg.clone(), context.clone())
             }
+            FormatError(err, context) => {
+                VegaFusionError::FormatError(err.clone(), context.clone())
+            }
             ArrowError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
@@ -227,6 +237,12 @@ impl From<ParseFloatError> for VegaFusionError {
 impl From<DataFusionError> for VegaFusionError {
     fn from(err: DataFusionError) -> Self {
         Self::DataFusionError(err, Default::default())
+    }
+}
+
+impl From<std::fmt::Error> for VegaFusionError {
+    fn from(err: std::fmt::Error) -> Self {
+        Self::FormatError(err, Default::default())
     }
 }
 
