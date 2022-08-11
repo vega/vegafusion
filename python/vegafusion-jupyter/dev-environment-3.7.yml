@@ -11,7 +11,7 @@ dependencies:
   - conda-lock
   - pip
   - jupytext
-  - python-chromedriver-binary =102
+  - python-chromedriver-binary =104
   - pytest >=4.6
   - pytest-cov
   - vega_datasets
