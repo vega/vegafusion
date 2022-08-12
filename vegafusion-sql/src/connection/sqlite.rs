@@ -8,8 +8,7 @@ use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, VegaFusionError};
 use async_trait::async_trait;
 use regex::Regex;
-use sqlgen::ast::Query;
-use sqlgen::dialect::{Dialect, DialectDisplay};
+use sqlgen::dialect::Dialect;
 use sqlx::sqlite::SqliteRow;
 use crate::connection::SqlDatabaseConnection;
 
@@ -76,10 +75,6 @@ impl SqlDatabaseConnection for SqLiteConnection {
         VegaFusionTable::try_new(schema_ref.clone(), vec![batch])
     }
 
-    fn dialect(&self) -> &Dialect {
-        &self.dialect
-    }
-
     async fn tables(&self) -> Result<HashMap<String, Schema>> {
         let recs = sqlx::query(
             r#"
@@ -90,7 +85,7 @@ impl SqlDatabaseConnection for SqLiteConnection {
         )
             .fetch_all(self.pool.clone().as_ref())
             .await
-            .map_err(|err| {
+            .map_err(|_err| {
                 VegaFusionError::internal("Failed to query sqlite schema")
             })?;
 
@@ -115,6 +110,10 @@ impl SqlDatabaseConnection for SqLiteConnection {
             schemas.insert(table_name.to_string(), schema);
         }
         Ok(schemas)
+    }
+
+    fn dialect(&self) -> &Dialect {
+        &self.dialect
     }
 }
 

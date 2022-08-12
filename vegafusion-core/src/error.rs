@@ -67,6 +67,10 @@ pub enum VegaFusionError {
 
     #[error("IO Error: {0}\n{1}")]
     SerdeJsonError(serde_json::Error, ErrorContext),
+
+    #[cfg(feature = "sqlgen")]
+    #[error("IO Error: {0}\n{1}")]
+    SqlParseError(sqlgen::parser::ParserError, ErrorContext),
 }
 
 impl VegaFusionError {
@@ -121,6 +125,11 @@ impl VegaFusionError {
             SerdeJsonError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::SerdeJsonError(err, context)
+            }
+            #[cfg(feature = "sqlgen")]
+            SqlParseError(err, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::SqlParseError(err, context)
             }
         }
     }
@@ -184,6 +193,10 @@ impl VegaFusionError {
             }
             SerdeJsonError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
+            }
+            #[cfg(feature = "sqlgen")]
+            SqlParseError(err, context) => {
+                VegaFusionError::SqlParseError(err.clone(), context.clone())
             }
         }
     }
@@ -261,6 +274,13 @@ impl From<std::io::Error> for VegaFusionError {
 impl From<serde_json::Error> for VegaFusionError {
     fn from(err: serde_json::Error) -> Self {
         Self::SerdeJsonError(err, Default::default())
+    }
+}
+
+#[cfg(feature = "sqlgen")]
+impl From<sqlgen::parser::ParserError> for VegaFusionError {
+    fn from(err: sqlgen::parser::ParserError) -> Self {
+        Self::SqlParseError(err, Default::default())
     }
 }
 

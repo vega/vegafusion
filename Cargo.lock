@@ -3566,6 +3566,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+ "sqlgen",
  "thiserror",
  "tonic",
  "tonic-build",

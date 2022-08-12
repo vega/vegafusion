@@ -20,6 +20,7 @@ regex = "1.6.0"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
+features = ["sqlgen"]
 
 [dependencies.datafusion-expr]
 git = "https://github.com/apache/arrow-datafusion.git"

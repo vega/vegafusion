@@ -35,7 +35,7 @@ impl SqlDataFrame {
             .collect();
         let select_items = columns.join(", ");
         let query =
-            Parser::parse_sql_query(&format!("select {} from {}", select_items, table)).unwrap();
+            Parser::parse_sql_query(&format!("select {} from {}", select_items, table))?;
 
         Ok(Self {
             prefix: "t_".to_string(),
@@ -55,8 +55,7 @@ impl SqlDataFrame {
     }
 
     fn chain_query_str(&self, query: &str) -> Result<Arc<Self>> {
-        let query_ast = Parser::parse_sql_query(query)
-            .map_err(|err| VegaFusionError::internal(err.to_string()))?;
+        let query_ast = Parser::parse_sql_query(query)?;
         self.chain_query(query_ast)
     }
 
