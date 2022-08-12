@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use sqlx::{Row, SqlitePool};
 use std::sync::Arc;
-use vegafusion_core::arrow::array::{ArrayRef, Float64Array, Int64Array, StringArray};
+use vegafusion_core::arrow::array::{ArrayRef, Float32Array, Float64Array, Int32Array, Int64Array, StringArray, UInt32Array, UInt64Array};
 use vegafusion_core::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use vegafusion_core::arrow::record_batch::RecordBatch;
 use vegafusion_core::data::table::VegaFusionTable;
@@ -43,15 +43,34 @@ impl SqlConnection for SqLiteConnection {
         let mut columns: Vec<ArrayRef> = Vec::new();
         for (field_index, field) in schema.fields().iter().enumerate() {
             let array = match field.data_type() {
+                DataType::Int32 => {
+                    let values = extract_row_values::<i32>(&recs, field_index);
+                    Arc::new(Int32Array::from(values)) as ArrayRef
+                }
                 DataType::Int64 => {
                     let values = extract_row_values::<i64>(&recs, field_index);
                     Arc::new(Int64Array::from(values)) as ArrayRef
+                }
+                DataType::UInt32 => {
+                    let values = extract_row_values::<u32>(&recs, field_index);
+                    Arc::new(UInt32Array::from(values)) as ArrayRef
+                }
+                DataType::UInt64 => {
+                    // Sqlite doesn't support u64, extract as signed then convert to u64
+                    let values = extract_row_values::<i64>(&recs, field_index);
+                    Arc::new(UInt64Array::from_iter(
+                        values.iter().map(|v| v.map(|v| v as u64))
+                    )) as ArrayRef
+                }
+                DataType::Float32 => {
+                    let values = extract_row_values::<f32>(&recs, field_index);
+                    Arc::new(Float32Array::from(values)) as ArrayRef
                 }
                 DataType::Float64 => {
                     let values = extract_row_values::<f64>(&recs, field_index);
                     Arc::new(Float64Array::from(values)) as ArrayRef
                 }
-                DataType::Utf8 => {
+                DataType::Utf8 | DataType::LargeUtf8 => {
                     let values: Vec<Option<String>> = recs
                         .iter()
                         .map(|row| {

@@ -282,4 +282,29 @@ mod test {
         let table = df.collect().await.unwrap();
         println!("{}", table.pretty_format(Some(10)).unwrap());
     }
+
+    #[tokio::test]
+    async fn try_it3() {
+        let pool = SqlitePool::connect(&"/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db")
+            .await
+            .unwrap();
+
+        let conn = SqLiteConnection::new(Arc::new(pool));
+
+        let df = SqlDataFrame::try_new(Arc::new(conn), "stock").await.unwrap();
+
+        let df = df.chain_query_str(&format!(
+            "SELECT *, ROW_NUMBER() over () as row from {parent}", parent = df.parent_name()
+        )).unwrap();
+
+        // Extract SQL in the sqlite dialect
+        let s = df.as_query().sql(&Dialect::sqlite()).unwrap();
+        println!("sqlite: {}", s);
+
+        let s = df.as_query().sql(&Dialect::datafusion()).unwrap();
+        println!("datafusion: {}", s);
+
+        let table = df.collect().await.unwrap();
+        println!("{}", table.pretty_format(Some(10)).unwrap());
+    }
 }
