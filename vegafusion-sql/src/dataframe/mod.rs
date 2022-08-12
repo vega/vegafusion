@@ -92,14 +92,14 @@ impl SqlDataFrame {
         self.conn.fetch_query(&query_string, &self.schema).await
     }
 
-    pub async fn sort(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
+    pub fn sort(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
         let mut query = self.make_select_star();
         let sql_exprs = expr.iter().map(|expr| expr.to_sql_order()).collect::<Result<Vec<_>>>()?;
         query.order_by = sql_exprs;
         self.chain_query(query)
     }
 
-    pub async fn select(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
+    pub fn select(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
         // let mut query = self.make_select_star();
         let dialect = Dialect::datafusion();
         let sql_expr_strs = expr.iter().map(|expr|
@@ -203,7 +203,7 @@ mod test {
             col("symbol"),
             col("price"),
             col("price").mul(lit(2)).alias("dbl_price")
-        ]).await.unwrap();
+        ]).unwrap();
 
         let df = df.sort(vec![
             Expr::Sort {
@@ -211,7 +211,7 @@ mod test {
                 asc: false,
                 nulls_first: true
             }
-        ]).await.unwrap();
+        ]).unwrap();
 
         // Extract SQL in the sqlite dialect
         let s = df.as_query().sql(&Dialect::sqlite()).unwrap();
