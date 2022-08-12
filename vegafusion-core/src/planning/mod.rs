@@ -14,4 +14,5 @@ pub mod projection_pushdown;
 pub mod split_domain_data;
 pub mod stitch;
 pub mod stringify_local_datetimes;
+pub mod unsupported_data_warning;
 pub mod watch;

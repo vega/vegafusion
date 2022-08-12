@@ -13,7 +13,6 @@ use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use std::collections::HashSet;
 use std::sync::Arc;
-use vegafusion_core::planning::plan::PlannerWarnings;
 use vegafusion_core::planning::split_domain_data::split_domain_data;
 
 use vegafusion_core::planning::stitch::stitch_specs;
@@ -30,14 +29,7 @@ async fn test_extract_server_data() {
     let mut task_scope = spec.to_task_scope().unwrap();
     // println!("{:#?}", task_scope);
 
-    let mut warnings: Vec<PlannerWarnings> = Vec::new();
-    let server_spec = extract_server_data(
-        &mut spec,
-        &mut task_scope,
-        &mut warnings,
-        &Default::default(),
-    )
-    .unwrap();
+    let server_spec = extract_server_data(&mut spec, &mut task_scope, &Default::default()).unwrap();
     // println!("{}", serde_json::to_string_pretty(&server_spec).unwrap());
 
     let client_defs: HashSet<_> = spec.definition_vars().unwrap().into_iter().collect();
@@ -113,14 +105,8 @@ async fn test_extract_stitch_data() {
     // Get full spec's scope
     let mut task_scope = spec.to_task_scope().unwrap();
 
-    let mut warnings: Vec<PlannerWarnings> = Vec::new();
-    let mut server_spec = extract_server_data(
-        &mut spec,
-        &mut task_scope,
-        &mut warnings,
-        &Default::default(),
-    )
-    .unwrap();
+    let mut server_spec =
+        extract_server_data(&mut spec, &mut task_scope, &Default::default()).unwrap();
     let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
 
     println!("{:#?}", comm_plan);
@@ -138,14 +124,8 @@ async fn try_extract_split_server_data() {
     // Get full spec's scope
     let mut task_scope = spec.to_task_scope().unwrap();
 
-    let mut warnings: Vec<PlannerWarnings> = Vec::new();
-    let mut server_spec = extract_server_data(
-        &mut spec,
-        &mut task_scope,
-        &mut warnings,
-        &Default::default(),
-    )
-    .unwrap();
+    let mut server_spec =
+        extract_server_data(&mut spec, &mut task_scope, &Default::default()).unwrap();
     let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
 
     println!("{:#?}", comm_plan);

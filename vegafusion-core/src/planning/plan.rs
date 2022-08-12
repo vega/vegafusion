@@ -13,6 +13,7 @@ use crate::planning::projection_pushdown::projection_pushdown;
 use crate::planning::split_domain_data::split_domain_data;
 use crate::planning::stitch::{stitch_specs, CommPlan};
 use crate::planning::stringify_local_datetimes::stringify_local_datetimes;
+use crate::planning::unsupported_data_warning::add_unsupported_data_warnings;
 use crate::spec::chart::ChartSpec;
 
 #[derive(Clone, Debug)]
@@ -62,6 +63,9 @@ impl SpecPlan {
     pub fn try_new(full_spec: &ChartSpec, config: &PlannerConfig) -> Result<Self> {
         let mut warnings: Vec<PlannerWarnings> = Vec::new();
 
+        // Collect warnings associated with unsupported datasets
+        add_unsupported_data_warnings(full_spec, config, &mut warnings)?;
+
         let mut client_spec = full_spec.clone();
 
         // Attempt to limit the columns produced by each dataset to only include those
@@ -78,8 +82,7 @@ impl SpecPlan {
 
         let mut task_scope = client_spec.to_task_scope()?;
 
-        let mut server_spec =
-            extract_server_data(&mut client_spec, &mut task_scope, &mut warnings, config)?;
+        let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope, config)?;
         let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec)?;
 
         if config.split_url_data_nodes {
