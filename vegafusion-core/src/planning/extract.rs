@@ -8,7 +8,7 @@
  */
 use crate::error::Result;
 use crate::planning::dependency_graph::{get_supported_data_variables, scoped_var_for_input_var};
-use crate::proto::gen::tasks::{Variable, VariableNamespace};
+use crate::proto::gen::tasks::Variable;
 use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::{DataSpec, DependencyNodeSupported};
 use crate::spec::mark::MarkSpec;
@@ -18,33 +18,15 @@ use crate::task_graph::scope::TaskScope;
 
 use crate::task_graph::graph::ScopedVariable;
 
-use crate::planning::plan::{PlannerConfig, PlannerWarnings};
+use crate::planning::plan::PlannerConfig;
 use std::collections::{HashMap, HashSet};
 
 pub fn extract_server_data(
     client_spec: &mut ChartSpec,
     task_scope: &mut TaskScope,
-    warnings: &mut Vec<PlannerWarnings>,
     config: &PlannerConfig,
 ) -> Result<ChartSpec> {
     let supported_vars = get_supported_data_variables(client_spec, config)?;
-
-    // Check for partially or unsupported data variables
-    for (var, dep) in supported_vars.iter() {
-        if matches!(var.0.ns(), VariableNamespace::Data)
-            && !matches!(dep, DependencyNodeSupported::Supported)
-        {
-            let message = if var.1.is_empty() {
-                format!(
-                    "Some transforms applied to the '{}' dataset are not yet supported",
-                    var.0.name
-                )
-            } else {
-                format!("Some transforms applied to the '{}' dataset with scope {:?} are not yet supported", var.0.name, var.1.as_slice())
-            };
-            warnings.push(PlannerWarnings::UnsupportedTransforms(message));
-        }
-    }
 
     let mut extract_server_visitor =
         ExtractServerDependenciesVisitor::new(supported_vars, task_scope);

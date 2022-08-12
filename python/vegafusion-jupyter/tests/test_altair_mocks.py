@@ -394,7 +394,9 @@ def export_image_sequence(
 
             elif action_type == "move_to":
                 coords = action["coords"]
-                chain = chain.move_to_element_with_offset(canvas, coords[0], coords[1])
+                xoffset = canvas.size["width"] / 2
+                yoffset = canvas.size["height"] / 2
+                chain = chain.move_to_element_with_offset(canvas, coords[0] - xoffset, coords[1] - yoffset)
             elif action_type == "move_by":
                 coords = action["coords"]
                 chain = chain.move_by_offset(coords[0], coords[1])
