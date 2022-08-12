@@ -10,7 +10,7 @@ use async_trait::async_trait;
 use regex::Regex;
 use sqlgen::dialect::Dialect;
 use sqlx::sqlite::SqliteRow;
-use crate::connection::SqlDatabaseConnection;
+use crate::connection::SqlConnection;
 
 
 #[derive(Clone, Debug)]
@@ -30,7 +30,7 @@ impl SqLiteConnection {
 }
 
 #[async_trait]
-impl SqlDatabaseConnection for SqLiteConnection {
+impl SqlConnection for SqLiteConnection {
     async fn fetch_query(&self, query: &str, schema: &Schema) -> Result<VegaFusionTable> {
         // Should fetch batches of partition size instead of fetching all
         let recs = sqlx::query(&query)

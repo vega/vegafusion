@@ -10,10 +10,11 @@ use datafusion::datasource::empty::EmptyTable;
 use datafusion::prelude::SessionContext;
 use sqlgen::ast::Query;
 use sqlgen::dialect::Dialect;
+use crate::dataframe::SqlDataFrame;
 
 
 #[async_trait]
-pub trait SqlDatabaseConnection: Send + Sync {
+pub trait SqlConnection: Send + Sync {
     async fn fetch_query(
         &self,
         query: &str,

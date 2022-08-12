@@ -1,4 +1,4 @@
-use crate::connection::SqlDatabaseConnection;
+use crate::connection::SqlConnection;
 use datafusion::prelude::SessionContext;
 use sqlgen::ast::Expr;
 use sqlgen::ast::Ident;
@@ -16,12 +16,12 @@ pub struct SqlDataFrame {
     prefix: String,
     schema: SchemaRef,
     ctes: Vec<Query>,
-    conn: Arc<dyn SqlDatabaseConnection>,
+    conn: Arc<dyn SqlConnection>,
     session_context: Arc<SessionContext>,
 }
 
 impl SqlDataFrame {
-    pub async fn try_new(conn: Arc<dyn SqlDatabaseConnection>, table: &str) -> Result<Self> {
+    pub async fn try_new(conn: Arc<dyn SqlConnection>, table: &str) -> Result<Self> {
         let tables = conn.tables().await?;
         let schema = tables
             .get(table)

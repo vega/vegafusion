@@ -6,7 +6,7 @@ use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 use sqlgen::ast::{Query, SetExpr, TableFactor, TableWithJoins, Ident, ObjectName, Select, SelectItem};
 use sqlgen::dialect::DialectDisplay;
 use sqlgen::parser::Parser;
-use vegafusion_sql::connection::SqlDatabaseConnection;
+use vegafusion_sql::connection::SqlConnection;
 use vegafusion_sql::connection::sqlite::SqLiteConnection;
 
 #[tokio::test]
