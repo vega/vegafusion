@@ -1,4 +1,4 @@
-use crate::ast::value::Value as SqlValue;
+use sqlgen::ast::Value as SqlValue;
 use datafusion_common::ScalarValue;
 use vegafusion_core::error::{Result, VegaFusionError};
 
@@ -87,6 +87,9 @@ impl ToSqlScalar for ScalarValue {
             )),
             ScalarValue::Struct(_, _) => Err(VegaFusionError::internal(
                 "Struct cannot be converted to SQL",
+            )),
+            ScalarValue::Dictionary(_, _) => Err(VegaFusionError::internal(
+                "Dictionary cannot be converted to SQL",
             )),
             ScalarValue::Decimal128(_, _, _) => Err(VegaFusionError::internal(
                 "Decimal128 cannot be converted to SQL",

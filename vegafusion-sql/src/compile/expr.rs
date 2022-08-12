@@ -1,14 +1,10 @@
-use crate::ast::{
-    expr::Expr as SqlExpr,
-    function::{
-        Function as SqlFunction, FunctionArg as SqlFunctionArg,
-        FunctionArgExpr as SqlFunctionArgExpr,
-    },
-    ident::{Ident, ObjectName as SqlObjectName},
-    operator::{BinaryOperator as SqlBinaryOperator, UnaryOperator as SqlUnaryOperator},
-};
 use crate::compile::data_type::ToSqlDataType;
 use crate::compile::scalar::ToSqlScalar;
+use sqlgen::ast::{
+    BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction,
+    FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr, Ident,
+    ObjectName as SqlObjectName, UnaryOperator as SqlUnaryOperator,
+};
 
 use datafusion_expr::{Expr, Operator};
 
@@ -233,7 +229,7 @@ impl ToSqlExpr for Expr {
 #[cfg(test)]
 mod tests {
     use super::ToSqlExpr;
-    use crate::ast::display::DialectDisplay;
+    use sqlgen::dialect::DialectDisplay;
     use datafusion_expr::{col, lit, BuiltinScalarFunction, Expr};
     use vegafusion_core::arrow::datatypes::DataType;
 
@@ -242,7 +238,7 @@ mod tests {
         let df_expr = Expr::Negative(Box::new(col("A"))) + lit(12);
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);
-        let sql_str = sql_expr.try_to_string(&Default::default()).unwrap();
+        let sql_str = sql_expr.sql(&Default::default()).unwrap();
         assert_eq!(sql_str, "- A + 12".to_string());
     }
 
@@ -255,7 +251,7 @@ mod tests {
 
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);
-        let sql_str = sql_expr.try_to_string(&Default::default()).unwrap();
+        let sql_str = sql_expr.sql(&Default::default()).unwrap();
         assert_eq!(sql_str, "sin(1.2) + B".to_string());
     }
 
@@ -268,7 +264,7 @@ mod tests {
 
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);
-        let sql_str = sql_expr.try_to_string(&Default::default()).unwrap();
+        let sql_str = sql_expr.sql(&Default::default()).unwrap();
         assert_eq!(sql_str, "upper(\"foo\")".to_string());
     }
 
@@ -281,7 +277,7 @@ mod tests {
 
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);
-        let sql_str = sql_expr.try_to_string(&Default::default()).unwrap();
+        let sql_str = sql_expr.sql(&Default::default()).unwrap();
         assert_eq!(sql_str, "CAST(2.8 AS INT) + 4".to_string());
     }
 
@@ -297,7 +293,7 @@ mod tests {
 
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);
-        let sql_str = sql_expr.try_to_string(&Default::default()).unwrap();
+        let sql_str = sql_expr.sql(&Default::default()).unwrap();
         assert_eq!(sql_str, "A BETWEEN 0 AND 10 OR B".to_string());
     }
 }

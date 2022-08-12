@@ -1,4 +1,4 @@
-// pub mod compile;
+pub mod compile;
 pub mod connection;
 pub mod dataframe;
 

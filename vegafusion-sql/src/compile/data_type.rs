@@ -1,4 +1,4 @@
-use crate::ast::data_type::DataType as SqlDataType;
+use sqlgen::ast::DataType as SqlDataType;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, VegaFusionError};
 
@@ -65,7 +65,7 @@ impl ToSqlDataType for DataType {
             DataType::Struct(_) => Err(VegaFusionError::internal(
                 "Struct cannot be converted to SQL",
             )),
-            DataType::Union(_, _) => Err(VegaFusionError::internal(
+            DataType::Union(_, _, _) => Err(VegaFusionError::internal(
                 "Union cannot be converted to SQL",
             )),
             DataType::Dictionary(_, _) => Err(VegaFusionError::internal(
@@ -73,6 +73,9 @@ impl ToSqlDataType for DataType {
             )),
             DataType::Decimal(_, _) => Err(VegaFusionError::internal(
                 "Decimal cannot be converted to SQL",
+            )),
+            DataType::Decimal256(_, _) => Err(VegaFusionError::internal(
+                "Decimal256 cannot be converted to SQL",
             )),
             DataType::Map(_, _) => Err(VegaFusionError::internal("Map cannot be converted to SQL")),
         }
