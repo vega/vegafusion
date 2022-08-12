@@ -38,7 +38,7 @@ impl SqlDataFrame {
             Parser::parse_sql_query(&format!("select {} from {}", select_items, table))?;
 
         Ok(Self {
-            prefix: "t_".to_string(),
+            prefix: format!("{}_", table),
             ctes: vec![query],
             schema: Arc::new(schema.clone()),
             session_context: Arc::new(conn.session_context().await?),
