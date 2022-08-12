@@ -54,12 +54,12 @@ impl SqlDataFrame {
         query_chain_to_cte(self.ctes.as_slice(), &self.prefix)
     }
 
-    fn chain_query_str(&self, query: &str) -> Result<Arc<Self>> {
+    pub fn chain_query_str(&self, query: &str) -> Result<Arc<Self>> {
         let query_ast = Parser::parse_sql_query(query)?;
         self.chain_query(query_ast)
     }
 
-    fn chain_query(&self, query: Query) -> Result<Arc<Self>> {
+    pub fn chain_query(&self, query: Query) -> Result<Arc<Self>> {
         let mut new_ctes = self.ctes.clone();
         new_ctes.push(query);
 
