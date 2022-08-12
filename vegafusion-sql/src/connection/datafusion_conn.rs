@@ -1,0 +1,54 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+use datafusion::prelude::SessionContext;
+use crate::connection::SqlConnection;
+use async_trait::async_trait;
+use sqlgen::dialect::Dialect;
+use vegafusion_core::arrow::datatypes::Schema;
+use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::error::ResultWithContext;
+use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
+
+#[derive(Clone)]
+pub struct DataFusionConnection {
+    dialect: Dialect,
+    ctx: Arc<SessionContext>
+}
+
+impl DataFusionConnection {
+    pub fn new(ctx: Arc<SessionContext>) -> Self {
+        Self {
+            dialect: Dialect::datafusion(),
+            ctx
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl SqlConnection for DataFusionConnection {
+    async fn fetch_query(&self, query: &str, _schema: &Schema) -> vegafusion_core::error::Result<VegaFusionTable> {
+        let df = self.ctx.sql(query).await?;
+        VegaFusionTable::from_dataframe(df).await
+    }
+
+    async fn tables(&self) -> vegafusion_core::error::Result<HashMap<String, Schema>> {
+        let state = self.ctx.as_ref().state.clone();
+        let state = state.read();
+        let catalog_names = state.catalog_list.catalog_names();
+        let first_catalog_name = catalog_names.get(0).unwrap();
+        let catalog = state.catalog_list.catalog(first_catalog_name).unwrap();
+
+        let schema_provider_names = catalog.schema_names();
+        let first_schema_provider_name = schema_provider_names.get(0).unwrap();
+        let schema_provider = catalog.schema(first_schema_provider_name).unwrap();
+
+        Ok(schema_provider.table_names().iter().map(|name| {
+            let schema = schema_provider.table(name).unwrap().schema().as_ref().clone();
+            (name.clone(), schema)
+        }).collect())
+    }
+
+    fn dialect(&self) -> &Dialect {
+        &self.dialect
+    }
+}

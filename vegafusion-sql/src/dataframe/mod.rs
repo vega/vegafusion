@@ -202,14 +202,16 @@ fn query_chain_to_cte(queries: &[Query], prefix: &str) -> Query {
 #[cfg(test)]
 mod test {
     use std::ops::Mul;
-    use crate::connection::sqlite::SqLiteConnection;
+    use crate::connection::sqlite_conn::SqLiteConnection;
     use crate::dataframe::SqlDataFrame;
     use sqlgen::dialect::{Dialect, DialectDisplay};
     use sqlx::SqlitePool;
     use std::sync::Arc;
+    use datafusion::prelude::SessionContext;
     use datafusion_expr::{BuiltInWindowFunction, col, Expr, lit, max, WindowFunction};
     use vegafusion_core::arrow::datatypes::{DataType, Field, Schema};
     use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
+    use crate::connection::datafusion_conn::DataFusionConnection;
 
     #[tokio::test]
     async fn try_it() {
@@ -298,7 +300,7 @@ mod test {
         let conn = SqLiteConnection::new(Arc::new(pool));
 
         let df = SqlDataFrame::try_new(Arc::new(conn), "stock").await.unwrap();
-        
+
         let df = df.select(vec![
             Expr::Wildcard,
             Expr::WindowFunction {
@@ -313,6 +315,41 @@ mod test {
         // Extract SQL in the sqlite dialect
         let s = df.as_query().sql(&Dialect::sqlite()).unwrap();
         println!("sqlite: {}", s);
+
+        let s = df.as_query().sql(&Dialect::datafusion()).unwrap();
+        println!("datafusion: {}", s);
+
+        let table = df.collect().await.unwrap();
+        println!("{}", table.pretty_format(Some(10)).unwrap());
+    }
+
+    #[tokio::test]
+    async fn try_datafusion_connection() {
+        let ctx = SessionContext::new();
+
+        let stock_path = "/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/stock.csv";
+        ctx.register_csv("stock",  stock_path, Default::default()).await.unwrap();
+
+        let conn = DataFusionConnection::new(Arc::new(ctx));
+        let df = SqlDataFrame::try_new(Arc::new(conn), "stock").await.unwrap();
+
+        let df = df.select(vec![
+            col("date"),
+            col("symbol"),
+            col("price"),
+            col("price").mul(lit(2)).alias("dbl_price")
+        ]).unwrap();
+
+        let df = df.aggregate(
+            vec![col("symbol")],
+            vec![max(col("dbl_price")).alias("max_dbl_price")]
+        ).unwrap();
+
+        let df = df.sort(vec![Expr::Sort {
+            expr: Box::new(col("max_dbl_price")),
+            asc: false,
+            nulls_first: true
+        }]).unwrap();
 
         let s = df.as_query().sql(&Dialect::datafusion()).unwrap();
         println!("datafusion: {}", s);

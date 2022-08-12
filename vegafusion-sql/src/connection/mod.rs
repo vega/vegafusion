@@ -1,4 +1,5 @@
-pub mod sqlite;
+pub mod sqlite_conn;
+pub mod datafusion_conn;
 
 use std::collections::HashMap;
 use std::sync::Arc;

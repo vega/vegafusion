@@ -33,3 +33,7 @@ if __name__ == "__main__":
 
         # Write dataset
         df.to_sql(name, conn)
+
+        # Write parquet
+        parq_file = here / "data" / f"{name}.csv"
+        df.to_csv(parq_file, index=False)

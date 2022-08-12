@@ -7,7 +7,7 @@ use sqlgen::ast::{Query, SetExpr, TableFactor, TableWithJoins, Ident, ObjectName
 use sqlgen::dialect::DialectDisplay;
 use sqlgen::parser::Parser;
 use vegafusion_sql::connection::SqlConnection;
-use vegafusion_sql::connection::sqlite::SqLiteConnection;
+use vegafusion_sql::connection::sqlite_conn::SqLiteConnection;
 
 #[tokio::test]
 async fn try_it() {
