@@ -174,9 +174,27 @@ impl ToSqlExpr for Expr {
             Expr::ScalarUDF { .. } => Err(VegaFusionError::internal(
                 "ScalarUDF cannot be converted to SQL",
             )),
-            Expr::AggregateFunction { .. } => Err(VegaFusionError::internal(
-                "AggregateFunction cannot be converted to SQL",
-            )),
+            Expr::AggregateFunction { fun, args, distinct } => {
+                let ident = Ident {
+                    value: fun.to_string(),
+                    quote_style: None,
+                };
+                let args = args
+                    .iter()
+                    .map(|expr| {
+                        Ok(SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(
+                            expr.to_sql()?,
+                        )))
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+
+                Ok(SqlExpr::Function(SqlFunction {
+                    name: SqlObjectName(vec![ident]),
+                    args,
+                    over: None,
+                    distinct: false,
+                }))
+            },
             Expr::WindowFunction { .. } => Err(VegaFusionError::internal(
                 "WindowFunction cannot be converted to SQL",
             )),

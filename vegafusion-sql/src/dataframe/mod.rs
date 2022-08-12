@@ -12,6 +12,7 @@ use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use crate::compile::expr::ToSqlExpr;
 use crate::compile::order::ToSqlOrderByExpr;
 use crate::compile::select::ToSqlSelectItem;
 
@@ -74,7 +75,8 @@ impl SqlDataFrame {
         combined_query.sql(self.conn.dialect())?;
 
         // Now convert to string in the DataFusion dialect for schema inference
-        let query_str = combined_query.sql(&Dialect::datafusion())?;
+        let dialect = Dialect::datafusion();
+        let query_str = combined_query.sql(&dialect)?;
         let logical_plan = self.session_context.create_logical_plan(&query_str)?;
         let new_schema: Schema = logical_plan.schema().as_ref().into();
 
@@ -100,7 +102,6 @@ impl SqlDataFrame {
     }
 
     pub fn select(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
-        // let mut query = self.make_select_star();
         let dialect = Dialect::datafusion();
         let sql_expr_strs = expr.iter().map(|expr|
             Ok(expr.to_sql_select()?.sql(&dialect)?)
@@ -111,6 +112,32 @@ impl SqlDataFrame {
             "select {select_csv} from {parent}",
             select_csv=select_csv,
             parent=self.parent_name()
+        ))?;
+
+        self.chain_query(query)
+    }
+
+    pub fn aggregate(&self, group_expr: Vec<DfExpr>, aggr_expr: Vec<DfExpr>) -> Result<Arc<Self>> {
+        let dialect = Dialect::datafusion();
+        let sql_group_expr_strs = group_expr.iter().map(|expr| {
+            Ok(expr.to_sql()?.sql(&dialect)?)
+        }).collect::<Result<Vec<_>>>()?;
+
+        let mut sql_aggr_expr_strs = aggr_expr.iter().map(|expr| {
+            Ok(expr.to_sql_select()?.sql(&dialect)?)
+        }).collect::<Result<Vec<_>>>()?;
+
+        // Add group exprs to selection
+        sql_aggr_expr_strs.extend(sql_group_expr_strs.clone());
+
+        let group_by_csv = sql_group_expr_strs.join(", ");
+        let aggr_csv = sql_aggr_expr_strs.join(", ");
+
+        let query = Parser::parse_sql_query(&format!(
+            "select {aggr_csv} from {parent} group by {group_by_csv}",
+            aggr_csv=aggr_csv,
+            parent=self.parent_name(),
+            group_by_csv=group_by_csv
         ))?;
 
         self.chain_query(query)
@@ -174,7 +201,7 @@ mod test {
     use sqlgen::dialect::{Dialect, DialectDisplay};
     use sqlx::SqlitePool;
     use std::sync::Arc;
-    use datafusion_expr::{col, Expr, lit};
+    use datafusion_expr::{col, Expr, lit, max};
     use vegafusion_core::arrow::datatypes::{DataType, Field, Schema};
     use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 
@@ -188,15 +215,6 @@ mod test {
 
         let df = SqlDataFrame::try_new(Arc::new(conn), "stock").await.unwrap();
         println!("{:#?}", df.schema);
-
-        // Transform query
-        // let df = df
-        //     .chain_query_str(&format!(
-        //         "select date, symbol, price, price * 2 as dbl_price from {parent}",
-        //         parent = df.parent_name()
-        //     ))
-        //     .unwrap();
-        // println!("{:#?}", df.schema);
 
         let df = df.select(vec![
             col("date"),
@@ -215,7 +233,51 @@ mod test {
 
         // Extract SQL in the sqlite dialect
         let s = df.as_query().sql(&Dialect::sqlite()).unwrap();
-        println!("{}", s);
+        println!("sqlite: {}", s);
+
+        let s = df.as_query().sql(&Dialect::datafusion()).unwrap();
+        println!("datafusion: {}", s);
+
+        let table = df.collect().await.unwrap();
+        println!("{}", table.pretty_format(Some(10)).unwrap());
+    }
+
+    #[tokio::test]
+    async fn try_it2() {
+        let pool = SqlitePool::connect(&"/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db")
+            .await
+            .unwrap();
+
+        let conn = SqLiteConnection::new(Arc::new(pool));
+
+        let df = SqlDataFrame::try_new(Arc::new(conn), "stock").await.unwrap();
+
+        let df = df.select(vec![
+            col("date"),
+            col("symbol"),
+            col("price"),
+            col("price").mul(lit(2)).alias("dbl_price")
+        ]).unwrap();
+
+        let df = df.aggregate(
+            vec![col("symbol")],
+            vec![max(col("dbl_price")).alias("max_dbl_price")]
+        ).unwrap();
+
+        let df = df.sort(vec![Expr::Sort {
+            expr: Box::new(col("max_dbl_price")),
+            asc: false,
+            nulls_first: true
+        }]).unwrap();
+
+        println!("{:#?}", df.schema);
+
+        // Extract SQL in the sqlite dialect
+        let s = df.as_query().sql(&Dialect::sqlite()).unwrap();
+        println!("sqlite: {}", s);
+
+        let s = df.as_query().sql(&Dialect::datafusion()).unwrap();
+        println!("datafusion: {}", s);
 
         let table = df.collect().await.unwrap();
         println!("{}", table.pretty_format(Some(10)).unwrap());
