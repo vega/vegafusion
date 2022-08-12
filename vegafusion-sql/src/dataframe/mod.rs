@@ -1,15 +1,19 @@
 use crate::connection::SqlConnection;
-use datafusion::prelude::SessionContext;
-use sqlgen::ast::Expr;
+use datafusion::prelude::{SessionContext, Expr as DfExpr};
 use sqlgen::ast::Ident;
 use sqlgen::ast::{Cte, With};
-use sqlgen::ast::{OrderByExpr, Query, SetExpr, TableAlias, TableFactor, TableWithJoins};
+use sqlgen::ast::{
+    OrderByExpr, Query, SetExpr, TableAlias, TableFactor, TableWithJoins,
+    Select
+};
 use sqlgen::dialect::{Dialect, DialectDisplay};
 use sqlgen::parser::Parser;
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use crate::compile::order::ToSqlOrderByExpr;
+use crate::compile::select::ToSqlSelectItem;
 
 #[derive(Clone)]
 pub struct SqlDataFrame {
@@ -83,9 +87,39 @@ impl SqlDataFrame {
         }))
     }
 
-    async fn collect(&self) -> Result<VegaFusionTable> {
+    pub async fn collect(&self) -> Result<VegaFusionTable> {
         let query_string = self.as_query().sql(self.conn.dialect())?;
         self.conn.fetch_query(&query_string, &self.schema).await
+    }
+
+    pub async fn sort(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
+        let mut query = self.make_select_star();
+        let sql_exprs = expr.iter().map(|expr| expr.to_sql_order()).collect::<Result<Vec<_>>>()?;
+        query.order_by = sql_exprs;
+        self.chain_query(query)
+    }
+
+    pub async fn select(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
+        // let mut query = self.make_select_star();
+        let dialect = Dialect::datafusion();
+        let sql_expr_strs = expr.iter().map(|expr|
+            Ok(expr.to_sql_select()?.sql(&dialect)?)
+        ).collect::<Result<Vec<_>>>()?;
+
+        let select_csv = sql_expr_strs.join(", ");
+        let query = Parser::parse_sql_query(&format!(
+            "select {select_csv} from {parent}",
+            select_csv=select_csv,
+            parent=self.parent_name()
+        ))?;
+
+        self.chain_query(query)
+    }
+
+    fn make_select_star(&self) -> Query {
+        Parser::parse_sql_query(&format!(
+            "select * from {parent}", parent=self.parent_name()
+        )).unwrap()
     }
 }
 
@@ -134,11 +168,13 @@ fn query_chain_to_cte(queries: &[Query], prefix: &str) -> Query {
 
 #[cfg(test)]
 mod test {
+    use std::ops::Mul;
     use crate::connection::sqlite::SqLiteConnection;
     use crate::dataframe::SqlDataFrame;
     use sqlgen::dialect::{Dialect, DialectDisplay};
     use sqlx::SqlitePool;
     use std::sync::Arc;
+    use datafusion_expr::{col, Expr, lit};
     use vegafusion_core::arrow::datatypes::{DataType, Field, Schema};
     use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 
@@ -154,20 +190,28 @@ mod test {
         println!("{:#?}", df.schema);
 
         // Transform query
-        let df = df
-            .chain_query_str(&format!(
-                "select date, symbol, price, price * 2 as dbl_price from {parent}",
-                parent = df.parent_name()
-            ))
-            .unwrap();
-        println!("{:#?}", df.schema);
+        // let df = df
+        //     .chain_query_str(&format!(
+        //         "select date, symbol, price, price * 2 as dbl_price from {parent}",
+        //         parent = df.parent_name()
+        //     ))
+        //     .unwrap();
+        // println!("{:#?}", df.schema);
 
-        let df = df
-            .chain_query_str(&format!(
-                "select * from {parent} order by date",
-                parent = df.parent_name()
-            ))
-            .unwrap();
+        let df = df.select(vec![
+            col("date"),
+            col("symbol"),
+            col("price"),
+            col("price").mul(lit(2)).alias("dbl_price")
+        ]).await.unwrap();
+
+        let df = df.sort(vec![
+            Expr::Sort {
+                expr: Box::new(col("price")),
+                asc: false,
+                nulls_first: true
+            }
+        ]).await.unwrap();
 
         // Extract SQL in the sqlite dialect
         let s = df.as_query().sql(&Dialect::sqlite()).unwrap();
