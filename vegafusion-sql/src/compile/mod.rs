@@ -3,3 +3,4 @@ pub mod expr;
 pub mod scalar;
 pub mod select;
 pub mod order;
+pub mod window;

@@ -9,12 +9,14 @@ use sqlgen::ast::{
 use sqlgen::dialect::{Dialect, DialectDisplay};
 use sqlgen::parser::Parser;
 use std::sync::Arc;
+use datafusion_expr::Expr;
 use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use crate::compile::expr::ToSqlExpr;
 use crate::compile::order::ToSqlOrderByExpr;
 use crate::compile::select::ToSqlSelectItem;
+use crate::compile::window::ToSqlWindowFunction;
 
 #[derive(Clone)]
 pub struct SqlDataFrame {
@@ -104,7 +106,11 @@ impl SqlDataFrame {
     pub fn select(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
         let dialect = Dialect::datafusion();
         let sql_expr_strs = expr.iter().map(|expr|
-            Ok(expr.to_sql_select()?.sql(&dialect)?)
+            if matches!(expr, Expr::WindowFunction {..}) {
+                Ok(expr.to_sql_window()?.sql(&dialect)?)
+            } else {
+                Ok(expr.to_sql_select()?.sql(&dialect)?)
+            }
         ).collect::<Result<Vec<_>>>()?;
 
         let select_csv = sql_expr_strs.join(", ");
@@ -201,7 +207,7 @@ mod test {
     use sqlgen::dialect::{Dialect, DialectDisplay};
     use sqlx::SqlitePool;
     use std::sync::Arc;
-    use datafusion_expr::{col, Expr, lit, max};
+    use datafusion_expr::{BuiltInWindowFunction, col, Expr, lit, max, WindowFunction};
     use vegafusion_core::arrow::datatypes::{DataType, Field, Schema};
     use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 
@@ -292,10 +298,17 @@ mod test {
         let conn = SqLiteConnection::new(Arc::new(pool));
 
         let df = SqlDataFrame::try_new(Arc::new(conn), "stock").await.unwrap();
-
-        let df = df.chain_query_str(&format!(
-            "SELECT *, ROW_NUMBER() over () as row from {parent}", parent = df.parent_name()
-        )).unwrap();
+        
+        let df = df.select(vec![
+            Expr::Wildcard,
+            Expr::WindowFunction {
+                fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
+                args: vec![],
+                partition_by: vec![],
+                order_by: vec![],
+                window_frame: None
+            }
+        ]).unwrap();
 
         // Extract SQL in the sqlite dialect
         let s = df.as_query().sql(&Dialect::sqlite()).unwrap();
