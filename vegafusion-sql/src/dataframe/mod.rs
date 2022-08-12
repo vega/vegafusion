@@ -155,7 +155,6 @@ mod test {
         println!("{:#?}", df.schema);
 
         // Transform query
-        let parent = df.parent_name();
         let df = df
             .chain_query_str(&format!(
                 "select date, symbol, price, price * 2 as dbl_price from {parent}",

@@ -102,7 +102,6 @@ impl SqlDatabaseConnection for SqLiteConnection {
             let mut fields = Vec::new();
             let table_name: &str = rec.get(0);
             let create_str: &str = rec.get(1);
-            println!("{:?}", create_str);
 
             for v in re_pair.find_iter(create_str) {
                 let field = re_field.captures(v.as_str()).unwrap();
