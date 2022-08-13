@@ -19,7 +19,7 @@ use vegafusion_core::error::Result;
 #[derive(Clone)]
 pub enum VegaFusionDataset {
     Table { table: VegaFusionTable, hash: u64 },
-    SqlDataFrame(SqlDataFrame),
+    SqlDataFrame(Arc<SqlDataFrame>),
 }
 
 impl VegaFusionDataset {

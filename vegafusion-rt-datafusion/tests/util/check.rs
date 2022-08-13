@@ -24,6 +24,7 @@ use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 use vegafusion_rt_datafusion::expression::compiler::utils::ExprHelpers;
 use vegafusion_rt_datafusion::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
+use vegafusion_rt_datafusion::transform::pipeline::TransformPipelineUtils;
 use vegafusion_rt_datafusion::transform::TransformTrait;
 
 pub fn check_expr_supported(expr_str: &str) {
@@ -91,7 +92,7 @@ pub fn check_transform_evaluation(
     let df = data.to_dataframe().unwrap();
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
 
-    let (result_df, result_signals) = TOKIO_RUNTIME
+    let (result_data, result_signals) = TOKIO_RUNTIME
         .block_on(pipeline.eval(df, compilation_config))
         .unwrap();
     let result_signals = result_signals
@@ -99,7 +100,6 @@ pub fn check_transform_evaluation(
         .map(|v| v.as_scalar().map(|v| v.clone()))
         .collect::<Result<Vec<ScalarValue>>>()
         .unwrap();
-    let result_data = VegaFusionTable::from_dataframe_blocking(result_df).unwrap();
 
     // println!(
     //     "result data\n{}",

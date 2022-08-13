@@ -48,6 +48,7 @@ use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValues
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
+use crate::transform::pipeline::TransformPipelineUtils;
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
@@ -117,7 +118,7 @@ impl TaskCall for DataUrlTask {
                 match inline_dataset {
                     VegaFusionDataset::Table { table, .. } => table.to_dataframe()?,
                     VegaFusionDataset::SqlDataFrame(sql_df) => {
-                        return eval_sql_df(sql_df, &self.pipeline, &config).await
+                        return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await
                     }
                 }
             } else {
@@ -153,7 +154,7 @@ async fn eval_df(
     let df = process_datetimes(parse, date_mode, df, &config.tz_config)?;
 
     // Apply transforms (if any)
-    let (transformed_df, output_values) = if pipeline
+    let (transformed_table, output_values) = if pipeline
         .as_ref()
         .map(|p| !p.transforms.is_empty())
         .unwrap_or(false)
@@ -162,22 +163,19 @@ async fn eval_df(
         pipeline.eval(df, &config).await?
     } else {
         // No transforms
-        (df, Vec::new())
+        (VegaFusionTable::from_dataframe(df).await?, Vec::new())
     };
 
-    let table_value = TaskValue::Table(VegaFusionTable::from_dataframe(transformed_df).await?);
+    let table_value = TaskValue::Table(transformed_table);
 
     Ok((table_value, output_values))
 }
 
 async fn eval_sql_df(
-    sql_df: &SqlDataFrame,
+    sql_df: Arc<SqlDataFrame>,
     pipeline: &Option<TransformPipeline>,
     config: &CompilationConfig,
 ) -> Result<(TaskValue, Vec<TaskValue>)> {
-    // To start immediately perform query and convert to DataFrame
-    let df = sql_df.collect().await?.to_dataframe()?;
-
     // Apply transforms (if any)
     let (transformed_df, output_values) = if pipeline
         .as_ref()
@@ -185,13 +183,13 @@ async fn eval_sql_df(
         .unwrap_or(false)
     {
         let pipeline = pipeline.as_ref().unwrap();
-        pipeline.eval(df, &config).await?
+        pipeline.eval_sql(sql_df, &config).await?
     } else {
         // No transforms
-        (df, Vec::new())
+        (sql_df.collect().await?, Vec::new())
     };
 
-    let table_value = TaskValue::Table(VegaFusionTable::from_dataframe(transformed_df).await?);
+    let table_value = TaskValue::Table(transformed_df);
 
     Ok((table_value, output_values))
 }
@@ -456,9 +454,9 @@ impl TaskCall for DataValuesTask {
             let values_df = process_datetimes(&parse, date_mode, values_df, tz_config)?;
 
             let config = build_compilation_config(&self.input_vars(), values, tz_config);
-            let (df, output_values) = pipeline.eval(values_df, &config).await?;
+            let (table, output_values) = pipeline.eval(values_df, &config).await?;
 
-            (VegaFusionTable::from_dataframe(df).await?, output_values)
+            (table, output_values)
         } else {
             // No transforms
             let values_df = values_table.to_dataframe()?;
@@ -503,8 +501,8 @@ impl TaskCall for DataSourceTask {
         {
             let pipeline = self.pipeline.as_ref().unwrap();
             let values_df = source_table.to_dataframe()?;
-            let (df, output_values) = pipeline.eval(values_df, &config).await?;
-            (VegaFusionTable::from_dataframe(df).await?, output_values)
+            let (table, output_values) = pipeline.eval(values_df, &config).await?;
+            (table, output_values)
         } else {
             // No transforms
             (source_table, Vec::new())

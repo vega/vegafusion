@@ -80,12 +80,11 @@ impl TransformTrait for Transform {
 
     async fn eval_sql(
         &self,
-        _dataframe: Arc<SqlDataFrame>,
-        _config: &CompilationConfig,
+        sql_df: Arc<SqlDataFrame>,
+        config: &CompilationConfig,
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
-        Err(VegaFusionError::sql_not_supported(format!(
-            "Transform does not support SQL Evaluation: {:?}",
-            self
-        )))
+        to_transform_trait(self.transform_kind())
+            .eval_sql(sql_df, config)
+            .await
     }
 }

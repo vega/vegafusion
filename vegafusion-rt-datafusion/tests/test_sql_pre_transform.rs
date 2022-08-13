@@ -46,7 +46,7 @@ mod tests {
 
         // Build inline datasets
         let inline_datasets: HashMap<String, VegaFusionDataset> =
-            vec![("movie".to_string(), VegaFusionDataset::SqlDataFrame(sql_df))]
+            vec![("movie".to_string(), VegaFusionDataset::SqlDataFrame(Arc::new(sql_df)))]
                 .into_iter()
                 .collect();
 
