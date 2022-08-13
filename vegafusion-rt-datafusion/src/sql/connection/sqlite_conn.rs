@@ -125,8 +125,8 @@ impl SqlConnection for SqLiteConnection {
                 VegaFusionError::internal("Failed to query sqlite schema")
             })?;
 
-        let re_pair = Regex::new(r#"("\w+"\s*\w+,?)"#).unwrap();
-        let re_field = Regex::new(r#""(\w+)" (\w+),?"#).unwrap();
+        let re_pair = Regex::new(r#"("[\w\s]+"\s*\w+,?)"#).unwrap();
+        let re_field = Regex::new(r#""([\w\s]+)" (\w+),?"#).unwrap();
 
         let mut schemas: HashMap<String, Schema> = HashMap::new();
         for rec in recs {
