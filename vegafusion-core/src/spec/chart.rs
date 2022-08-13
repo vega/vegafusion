@@ -6,7 +6,6 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use crate::data::dataset::VegaFusionDataset;
 use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::proto::gen::tasks::{Task, TzConfig};
 use crate::spec::axis::AxisSpec;
@@ -145,9 +144,9 @@ impl ChartSpec {
     pub fn to_tasks(
         &self,
         tz_config: &TzConfig,
-        datasets: &HashMap<String, VegaFusionDataset>,
+        dataset_fingerprints: &HashMap<String, String>,
     ) -> Result<Vec<Task>> {
-        let mut visitor = MakeTasksVisitor::new(tz_config, datasets);
+        let mut visitor = MakeTasksVisitor::new(tz_config, dataset_fingerprints);
         self.walk(&mut visitor)?;
         Ok(visitor.tasks)
     }

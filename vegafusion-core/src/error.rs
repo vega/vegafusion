@@ -180,7 +180,7 @@ impl VegaFusionError {
                 VegaFusionError::PreTransformError(msg.clone(), context.clone())
             }
             FormatError(err, context) => {
-                VegaFusionError::FormatError(err.clone(), context.clone())
+                VegaFusionError::FormatError(*err, context.clone())
             }
             ArrowError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())

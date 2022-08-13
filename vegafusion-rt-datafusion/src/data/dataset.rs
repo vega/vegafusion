@@ -6,17 +6,37 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use crate::data::table::VegaFusionTableUtils;
 use datafusion::prelude::DataFrame;
 use std::sync::Arc;
-use vegafusion_core::{data::dataset::VegaFusionDataset, error::Result};
 
-pub trait VegaFusionDatasetUtils {
-    fn to_dataframe(&self) -> Result<Arc<DataFrame>>;
+use vegafusion_core::error::Result;
+use vegafusion_core::data::table::VegaFusionTable;
+
+#[derive(Clone, Debug)]
+pub enum VegaFusionDataset {
+    Table { table: VegaFusionTable, hash: u64 },
 }
 
-impl VegaFusionDatasetUtils for VegaFusionDataset {
-    fn to_dataframe(&self) -> Result<Arc<DataFrame>> {
+impl VegaFusionDataset {
+    pub fn fingerprint(&self) -> String {
+        match self {
+            VegaFusionDataset::Table { hash, .. } => hash.to_string(),
+        }
+    }
+
+    pub fn from_table_ipc_bytes(ipc_bytes: &[u8]) -> Result<Self> {
+        // Hash ipc bytes
+        let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
+        ipc_bytes.hash(&mut hasher);
+        let hash = hasher.finish();
+        let table = VegaFusionTable::from_ipc_bytes(ipc_bytes)?;
+        Ok(Self::Table { table, hash })
+    }
+
+    pub fn to_dataframe(&self) -> Result<Arc<DataFrame>> {
         match self {
             VegaFusionDataset::Table { table, .. } => table.to_dataframe(),
         }

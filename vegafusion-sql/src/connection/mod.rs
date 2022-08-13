@@ -9,9 +9,9 @@ use vegafusion_core::error::Result;
 use async_trait::async_trait;
 use datafusion::datasource::empty::EmptyTable;
 use datafusion::prelude::SessionContext;
-use sqlgen::ast::Query;
+
 use sqlgen::dialect::Dialect;
-use crate::dataframe::SqlDataFrame;
+
 
 
 #[async_trait]

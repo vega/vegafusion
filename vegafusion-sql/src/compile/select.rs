@@ -28,11 +28,11 @@ impl ToSqlSelectItem for Expr {
 #[cfg(test)]
 mod tests {
     use std::ops::Add;
-    use super::ToSqlExpr;
+    
     use sqlgen::dialect::{Dialect, DialectDisplay};
-    use datafusion_expr::{col, lit, BuiltinScalarFunction, Expr};
-    use vegafusion_core::arrow::datatypes::DataType;
-    use crate::compile::order::ToSqlOrderByExpr;
+    use datafusion_expr::{col, lit, Expr};
+    
+    
     use crate::compile::select::ToSqlSelectItem;
 
     #[test]

@@ -1,5 +1,5 @@
 use datafusion_expr::{Expr, WindowFunction};
-use sqlgen::ast::{Function as SqlFunction, FunctionArg, FunctionArgExpr, Ident, ObjectName, SelectItem as SqlSelectItem, WindowSpec as SqlWindowSpec};
+use sqlgen::ast::{Function as SqlFunction, FunctionArg, FunctionArgExpr, Ident, ObjectName, WindowSpec as SqlWindowSpec};
 use vegafusion_core::error::{Result, VegaFusionError};
 use crate::compile::expr::ToSqlExpr;
 use crate::compile::order::ToSqlOrderByExpr;
@@ -27,8 +27,8 @@ impl ToSqlWindowFunction for Expr {
                 let args = args.iter().map(|arg| {
                     Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(arg.to_sql()?)))
                 }).collect::<Result<Vec<_>>>()?;
-                let partition_by = partition_by.iter().map(|arg| Ok(arg.to_sql()?)).collect::<Result<Vec<_>>>()?;
-                let order_by = order_by.iter().map(|arg| Ok(arg.to_sql_order()?)).collect::<Result<Vec<_>>>()?;
+                let partition_by = partition_by.iter().map(|arg| arg.to_sql()).collect::<Result<Vec<_>>>()?;
+                let order_by = order_by.iter().map(|arg| arg.to_sql_order()).collect::<Result<Vec<_>>>()?;
 
                 if window_frame.is_some() {
                     return Err(VegaFusionError::internal("Window frame is not yet supported"))

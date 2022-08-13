@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use datafusion::prelude::SessionContext;
 use crate::connection::SqlConnection;
-use async_trait::async_trait;
+
 use sqlgen::dialect::Dialect;
 use vegafusion_core::arrow::datatypes::Schema;
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::ResultWithContext;
+
 use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 
 #[derive(Clone)]

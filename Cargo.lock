@@ -3599,6 +3599,7 @@ dependencies = [
  "criterion",
  "datafusion",
  "datafusion-expr",
+ "deterministic-hash",
  "dssim",
  "float-cmp",
  "futures",

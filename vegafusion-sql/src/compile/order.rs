@@ -1,4 +1,4 @@
-use std::fmt::format;
+
 use datafusion_expr::Expr;
 use sqlgen::ast::{OrderByExpr as SqlOrderByExpr};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -29,10 +29,10 @@ impl ToSqlOrderByExpr for Expr {
 
 #[cfg(test)]
 mod tests {
-    use super::ToSqlExpr;
+    
     use sqlgen::dialect::DialectDisplay;
-    use datafusion_expr::{col, lit, BuiltinScalarFunction, Expr};
-    use vegafusion_core::arrow::datatypes::DataType;
+    use datafusion_expr::{col, Expr};
+    
     use crate::compile::order::ToSqlOrderByExpr;
 
     #[test]

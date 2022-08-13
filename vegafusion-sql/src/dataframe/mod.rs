@@ -3,8 +3,7 @@ use datafusion::prelude::{SessionContext, Expr as DfExpr};
 use sqlgen::ast::Ident;
 use sqlgen::ast::{Cte, With};
 use sqlgen::ast::{
-    OrderByExpr, Query, SetExpr, TableAlias, TableFactor, TableWithJoins,
-    Select
+    Query, TableAlias
 };
 use sqlgen::dialect::{Dialect, DialectDisplay};
 use sqlgen::parser::Parser;
@@ -12,7 +11,7 @@ use std::sync::Arc;
 use datafusion_expr::Expr;
 use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::error::{Result, ResultWithContext};
 use crate::compile::expr::ToSqlExpr;
 use crate::compile::order::ToSqlOrderByExpr;
 use crate::compile::select::ToSqlSelectItem;
@@ -209,13 +208,13 @@ mod test {
     use std::sync::Arc;
     use datafusion::prelude::SessionContext;
     use datafusion_expr::{BuiltInWindowFunction, col, Expr, lit, max, WindowFunction};
-    use vegafusion_core::arrow::datatypes::{DataType, Field, Schema};
+    
     use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
     use crate::connection::datafusion_conn::DataFusionConnection;
 
     #[tokio::test]
     async fn try_it() {
-        let pool = SqlitePool::connect(&"/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db")
+        let pool = SqlitePool::connect("/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db")
             .await
             .unwrap();
 
@@ -252,7 +251,7 @@ mod test {
 
     #[tokio::test]
     async fn try_it2() {
-        let pool = SqlitePool::connect(&"/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db")
+        let pool = SqlitePool::connect("/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db")
             .await
             .unwrap();
 
@@ -293,7 +292,7 @@ mod test {
 
     #[tokio::test]
     async fn try_it3() {
-        let pool = SqlitePool::connect(&"/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db")
+        let pool = SqlitePool::connect("/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db")
             .await
             .unwrap();
 

@@ -20,7 +20,6 @@ use serde_json::Value;
 use std::convert::{TryFrom, TryInto};
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
-use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 use vegafusion_core::planning::watch::{ExportUpdate, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
@@ -45,6 +44,7 @@ use vegafusion_core::proto::gen::tasks::{
 };
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
+use crate::data::dataset::VegaFusionDataset;
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -236,6 +236,11 @@ impl TaskGraphRuntime {
             },
         )?;
 
+        // Extract inline dataset fingerprints
+        let dataset_fingerprints = inline_datasets.iter().map(
+            |(k, ds)| (k.clone(), ds.fingerprint())
+        ).collect::<HashMap<_, _>>();
+
         // Create task graph for server spec
         let tz_config = TzConfig {
             local_tz: local_tz.to_string(),
@@ -244,7 +249,7 @@ impl TaskGraphRuntime {
         let task_scope = plan.server_spec.to_task_scope().unwrap();
         let tasks = plan
             .server_spec
-            .to_tasks(&tz_config, &inline_datasets)
+            .to_tasks(&tz_config, &dataset_fingerprints)
             .unwrap();
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
@@ -489,6 +494,11 @@ impl TaskGraphRuntime {
             },
         )?;
 
+        // Extract inline dataset fingerprints
+        let dataset_fingerprints = inline_datasets.iter().map(
+            |(k, ds)| (k.clone(), ds.fingerprint())
+        ).collect::<HashMap<_, _>>();
+
         // Create task graph for server spec
         let tz_config = TzConfig {
             local_tz: local_tz.to_string(),
@@ -497,7 +507,7 @@ impl TaskGraphRuntime {
         let task_scope = plan.server_spec.to_task_scope().unwrap();
         let tasks = plan
             .server_spec
-            .to_tasks(&tz_config, &inline_datasets)
+            .to_tasks(&tz_config, &dataset_fingerprints)
             .unwrap();
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();

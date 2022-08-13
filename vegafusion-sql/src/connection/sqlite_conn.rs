@@ -33,7 +33,7 @@ impl SqLiteConnection {
 impl SqlConnection for SqLiteConnection {
     async fn fetch_query(&self, query: &str, schema: &Schema) -> Result<VegaFusionTable> {
         // Should fetch batches of partition size instead of fetching all
-        let recs = sqlx::query(&query)
+        let recs = sqlx::query(query)
             .fetch_all(self.pool.as_ref())
             .await
             .unwrap_or_else(|_| panic!("Failed to fetch result for query: {}", query));
@@ -91,7 +91,7 @@ impl SqlConnection for SqLiteConnection {
         // Build record batch
         let schema_ref: SchemaRef = Arc::new(schema.clone());
         let batch = RecordBatch::try_new(schema_ref.clone(), columns)?;
-        VegaFusionTable::try_new(schema_ref.clone(), vec![batch])
+        VegaFusionTable::try_new(schema_ref, vec![batch])
     }
 
     async fn tables(&self) -> Result<HashMap<String, Schema>> {

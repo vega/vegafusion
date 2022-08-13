@@ -30,6 +30,7 @@ async-lock = "2.5.0"
 tempfile = "3.3.0"
 futures-util = "0.3.21"
 bytes = "1.1.0"
+deterministic-hash = "1.0.1"
 
 [dev-dependencies]
 futures = "0.3.21"

@@ -174,7 +174,7 @@ impl ToSqlExpr for Expr {
             Expr::ScalarUDF { .. } => Err(VegaFusionError::internal(
                 "ScalarUDF cannot be converted to SQL",
             )),
-            Expr::AggregateFunction { fun, args, distinct } => {
+            Expr::AggregateFunction { fun, args, distinct: _ } => {
                 let ident = Ident {
                     value: fun.to_string(),
                     quote_style: None,
