@@ -31,7 +31,7 @@ tempfile = "3.3.0"
 futures-util = "0.3.21"
 bytes = "1.1.0"
 deterministic-hash = "1.0.1"
-sqlgen = {git = "https://github.com/vegafusion/sqlgen-rs.git", rev = "bf7a8cf556767bdb1ac613a8aea3040b4a260a24" }
+sqlgen = {git = "https://github.com/vegafusion/sqlgen-rs.git", rev = "cd9bba0383c6a3eb6bdd6f85504fed7e9317e77c" }
 # Make sqlx optional
 sqlx = { version = "0.6.1", features = [ "runtime-tokio-rustls", "sqlite", "macros"] }
 libsqlite3-sys = {version="0.24.1", features=["bundled"]}
