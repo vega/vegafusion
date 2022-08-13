@@ -26,7 +26,7 @@ mod tests {
     use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
     #[tokio::test]
-    async fn test_pre_transform_dataset() {
+    async fn test_sql_pre_transform_histogram() {
         // Load spec
         let spec_path = format!(
             "{}/tests/specs/inline_datasets/histogram.vg.json",

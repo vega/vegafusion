@@ -7,14 +7,12 @@ use sqlx::{Row, SqlitePool};
 use std::collections::HashMap;
 use std::fmt::format;
 use std::sync::Arc;
-use vegafusion_core::arrow::array::{
-    ArrayRef, Float32Array, Float64Array, Int32Array, Int64Array, StringArray, UInt32Array,
-    UInt64Array,
-};
+use vegafusion_core::arrow::array::{ArrayRef, Float32Array, Float64Array, Int32Array, Int64Array, NullArray, StringArray, UInt32Array, UInt64Array};
 use vegafusion_core::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use vegafusion_core::arrow::record_batch::RecordBatch;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, VegaFusionError};
+use crate::data::table::VegaFusionTableUtils;
 
 #[derive(Clone, Debug)]
 pub struct SqLiteConnection {
@@ -56,7 +54,7 @@ impl SqlConnection for SqLiteConnection {
         let recs = sqlx::query(query)
             .fetch_all(self.pool.as_ref())
             .await
-            .unwrap_or_else(|_| panic!("Failed to fetch result for query: {}", query));
+            .unwrap_or_else(|err| panic!("Failed to fetch result for query: {}\n{:?}", query, err));
 
         // iterate over columns according to schema
         // Loop over columns
@@ -101,6 +99,9 @@ impl SqlConnection for SqLiteConnection {
                     let strs: Vec<_> = values.iter().map(|v| v.as_deref()).collect();
                     Arc::new(StringArray::from(strs)) as ArrayRef
                 }
+                DataType::Null => {
+                    Arc::new(NullArray::new(recs.len())) as ArrayRef
+                }
                 dtype => {
                     panic!("Unsupported schema type {:?}", dtype)
                 }
@@ -111,7 +112,10 @@ impl SqlConnection for SqLiteConnection {
         // Build record batch
         let schema_ref: SchemaRef = Arc::new(schema.clone());
         let batch = RecordBatch::try_new(schema_ref.clone(), columns)?;
-        VegaFusionTable::try_new(schema_ref, vec![batch])
+
+        let table = VegaFusionTable::try_new(schema_ref, vec![batch])?;
+        // println!("{}", table.pretty_format(Some(10)).unwrap());
+        Ok(table)
     }
 
     async fn tables(&self) -> Result<HashMap<String, Schema>> {
