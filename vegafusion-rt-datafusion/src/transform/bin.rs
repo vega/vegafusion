@@ -179,7 +179,7 @@ impl TransformTrait for Bin {
         // Add column with bin index
         let bin_index_name = "__bin_index";
         let bin_index =
-            round((col(&self.field).sub(lit(start)).div(lit(step))).add(lit(1.0e-14 + 0.5)))
+            floor((col(&self.field).sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
                 .alias(bin_index_name);
         let sql_df = sql_df.select(vec![Expr::Wildcard, bin_index.clone()])?;
 
