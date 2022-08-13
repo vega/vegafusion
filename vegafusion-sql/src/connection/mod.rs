@@ -16,6 +16,8 @@ use sqlgen::dialect::Dialect;
 
 #[async_trait]
 pub trait SqlConnection: Send + Sync {
+    fn id(&self) -> String;
+
     async fn fetch_query(
         &self,
         query: &str,

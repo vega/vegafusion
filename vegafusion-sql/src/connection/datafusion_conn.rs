@@ -26,6 +26,10 @@ impl DataFusionConnection {
 
 #[async_trait::async_trait]
 impl SqlConnection for DataFusionConnection {
+    fn id(&self) -> String {
+        "datafusion".to_string()
+    }
+
     async fn fetch_query(&self, query: &str, _schema: &Schema) -> vegafusion_core::error::Result<VegaFusionTable> {
         let df = self.ctx.sql(query).await?;
         VegaFusionTable::from_dataframe(df).await

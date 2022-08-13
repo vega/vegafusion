@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::format;
 use sqlx::{Row, SqlitePool};
 use std::sync::Arc;
 use vegafusion_core::arrow::array::{ArrayRef, Float32Array, Float64Array, Int32Array, Int64Array, StringArray, UInt32Array, UInt64Array};
@@ -15,22 +16,38 @@ use crate::connection::SqlConnection;
 
 #[derive(Clone, Debug)]
 pub struct SqLiteConnection {
+    pub uri: String,
     pub pool: Arc<SqlitePool>,
     pub dialect: Dialect,
 }
 
 impl SqLiteConnection {
     // Also input a table name (regular or temporary) to use as the source
-    pub fn new(pool: Arc<SqlitePool>) -> Self {
-        Self {
-            pool,
+    pub async fn try_new(uri: &str) -> Result<Self> {
+        // pool
+        let pool = SqlitePool::connect(uri)
+            .await
+            .map_err(|err| {
+                VegaFusionError::internal(
+                    format!("Failed to connect to sqlite database at {}: {:?}", uri, err)
+                )
+            })?;
+
+        Ok(Self {
+            uri: uri.to_string(),
+            pool: Arc::new(pool),
             dialect: Dialect::sqlite(),
-        }
+        })
     }
 }
 
 #[async_trait]
 impl SqlConnection for SqLiteConnection {
+    fn id(&self) -> String {
+        // Maybe add file modification time to id to automatically detect database changes
+        self.uri.clone()
+    }
+
     async fn fetch_query(&self, query: &str, schema: &Schema) -> Result<VegaFusionTable> {
         // Should fetch batches of partition size instead of fetching all
         let recs = sqlx::query(query)

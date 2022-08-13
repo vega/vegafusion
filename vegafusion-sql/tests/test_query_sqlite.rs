@@ -11,9 +11,9 @@ use vegafusion_sql::connection::sqlite_conn::SqLiteConnection;
 
 #[tokio::test]
 async fn try_it() {
-    let pool = SqlitePool::connect(&"/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db")
-        .await
-        .unwrap();
+    let conn = SqLiteConnection::try_new(
+        "/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db"
+    ).await.unwrap();
 
     let schema = Schema::new(vec![
         // Field::new("index", DataType::Int64, true),
@@ -21,10 +21,6 @@ async fn try_it() {
         // Field::new("date", DataType::Utf8, true),
         Field::new("price", DataType::Float64, true),
     ]);
-
-    let conn = SqLiteConnection::new(
-        Arc::new(pool)
-    );
 
     // let query = Query::select_star_from("stock");
     let query = Parser::parse_sql_query("SELECT symbol, price from stock").unwrap();

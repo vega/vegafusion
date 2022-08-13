@@ -1,3 +1,5 @@
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use crate::connection::SqlConnection;
 use datafusion::prelude::{SessionContext, Expr as DfExpr};
 use sqlgen::ast::Ident;
@@ -50,6 +52,19 @@ impl SqlDataFrame {
             session_context: Arc::new(conn.session_context().await?),
             conn,
         })
+    }
+
+    pub fn fingerprint(&self) -> u64 {
+        let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
+
+        // Add connection id in hash
+        self.conn.id().hash(&mut hasher);
+
+        // Add query to hash
+        let query_str = self.as_query().sql(self.conn.dialect()).unwrap();
+        query_str.hash(&mut hasher);
+
+        hasher.finish()
     }
 
     pub fn parent_name(&self) -> String {
@@ -214,11 +229,9 @@ mod test {
 
     #[tokio::test]
     async fn try_it() {
-        let pool = SqlitePool::connect("/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db")
-            .await
-            .unwrap();
-
-        let conn = SqLiteConnection::new(Arc::new(pool));
+        let conn = SqLiteConnection::try_new(
+            "/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db"
+        ).await.unwrap();
 
         let df = SqlDataFrame::try_new(Arc::new(conn), "stock").await.unwrap();
         println!("{:#?}", df.schema);
