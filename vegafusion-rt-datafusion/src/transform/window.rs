@@ -13,13 +13,14 @@ use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::Expr;
 use datafusion::prelude::{col, lit};
 use std::sync::Arc;
-use vegafusion_core::error::Result;
+use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{
     window_transform_op, AggregateOp, SortOrder, Window, WindowOp,
 };
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::expression::compiler::utils::to_numeric;
+use crate::sql::dataframe::SqlDataFrame;
 use datafusion::physical_plan::aggregates;
 use datafusion_expr::{BuiltInWindowFunction, WindowFunction};
 
@@ -151,5 +152,15 @@ impl TransformTrait for Window {
         let dataframe = dataframe.select(selections)?;
 
         Ok((dataframe, Vec::new()))
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "Window transform does not support SQL Evaluation"
+        )))
     }
 }

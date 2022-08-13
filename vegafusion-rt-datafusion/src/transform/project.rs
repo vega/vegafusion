@@ -12,9 +12,10 @@ use datafusion::dataframe::DataFrame;
 use std::collections::HashSet;
 
 use std::sync::Arc;
-use vegafusion_core::error::Result;
+use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Project;
 
+use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -51,5 +52,15 @@ impl TransformTrait for Project {
 
         let result = dataframe.select_columns(select_field_strs.as_slice())?;
         Ok((result, Default::default()))
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "Project transform does not support SQL Evaluation"
+        )))
     }
 }

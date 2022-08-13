@@ -14,6 +14,7 @@ use datafusion::logical_plan::{
 };
 
 use crate::expression::compiler::utils::to_numeric;
+use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion_expr::aggregate_function;
 use std::sync::Arc;
@@ -173,5 +174,15 @@ impl TransformTrait for JoinAggregate {
         };
 
         Ok((dataframe, Vec::new()))
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "JoinAggregate transform does not support SQL Evaluation"
+        )))
     }
 }

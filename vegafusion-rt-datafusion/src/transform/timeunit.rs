@@ -13,7 +13,7 @@ use datafusion::arrow::array::{ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::prelude::{col, DataFrame};
 use std::sync::Arc;
-use vegafusion_core::error::{Result, ResultWithContext};
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -22,6 +22,7 @@ use datafusion::arrow::temporal_conversions::date64_to_datetime;
 
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
 
+use crate::sql::dataframe::SqlDataFrame;
 use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
@@ -123,6 +124,16 @@ impl TransformTrait for TimeUnit {
         let dataframe = dataframe.select(select_exprs)?;
 
         Ok((dataframe, Vec::new()))
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "TimeUnit transform does not support SQL Evaluation"
+        )))
     }
 }
 

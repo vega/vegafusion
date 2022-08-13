@@ -12,10 +12,11 @@ use crate::transform::TransformTrait;
 use datafusion::dataframe::DataFrame;
 
 use crate::expression::compiler::utils::cast_to;
+use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
-use vegafusion_core::error::Result;
+use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Filter;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -48,5 +49,15 @@ impl TransformTrait for Filter {
             .select_columns(&col_names)?;
 
         Ok((result, Default::default()))
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "Filter transform does not support SQL Evaluation"
+        )))
     }
 }

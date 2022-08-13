@@ -8,6 +8,7 @@
  */
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::to_numeric;
+use crate::sql::dataframe::SqlDataFrame;
 use crate::transform::utils::{DataFrameUtils, RecordBatchUtils};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
@@ -16,7 +17,7 @@ use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::{col, max, min};
 use datafusion::scalar::ScalarValue;
 use std::sync::Arc;
-use vegafusion_core::error::Result;
+use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Extent;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -57,5 +58,15 @@ impl TransformTrait for Extent {
         };
 
         Ok((dataframe, output_values))
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "Extent transform does not support SQL Evaluation"
+        )))
     }
 }

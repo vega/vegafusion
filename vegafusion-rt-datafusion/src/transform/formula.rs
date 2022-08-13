@@ -14,9 +14,10 @@ use datafusion::dataframe::DataFrame;
 use datafusion::prelude::col;
 
 use std::sync::Arc;
-use vegafusion_core::error::{Result, ResultWithContext};
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Formula;
 
+use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -62,5 +63,15 @@ impl TransformTrait for Formula {
         })?;
 
         Ok((result, Default::default()))
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "Formula transform does not support SQL Evaluation"
+        )))
     }
 }

@@ -1,4 +1,5 @@
 use crate::expression::compiler::config::CompilationConfig;
+use crate::sql::dataframe::SqlDataFrame;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::common::ScalarValue;
@@ -44,6 +45,16 @@ impl TransformTrait for Impute {
         };
 
         Ok((dataframe, Vec::new()))
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "Impute transform does not support SQL Evaluation"
+        )))
     }
 }
 

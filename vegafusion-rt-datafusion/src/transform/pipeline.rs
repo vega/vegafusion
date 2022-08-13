@@ -14,8 +14,9 @@ use itertools::Itertools;
 use std::collections::HashMap;
 
 use std::sync::Arc;
-use vegafusion_core::error::Result;
+use vegafusion_core::error::{Result, VegaFusionError};
 
+use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
@@ -69,5 +70,15 @@ impl TransformTrait for TransformPipeline {
             .unzip();
 
         Ok((result_df, signals_values))
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "Pipeline transform does not support SQL Evaluation"
+        )))
     }
 }

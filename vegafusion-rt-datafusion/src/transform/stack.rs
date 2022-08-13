@@ -8,6 +8,7 @@
  */
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::to_numeric;
+use crate::sql::dataframe::SqlDataFrame;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
@@ -104,6 +105,16 @@ impl TransformTrait for Stack {
         };
 
         Ok((dataframe, Default::default()))
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "Stack transform does not support SQL Evaluation"
+        )))
     }
 }
 

@@ -25,6 +25,7 @@ use vegafusion_core::arrow::datatypes::{DataType, Field};
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
+use crate::sql::dataframe::SqlDataFrame;
 use vegafusion_core::proto::gen::transforms::Bin;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -165,6 +166,16 @@ impl TransformTrait for Bin {
             .with_context(|| "Failed to evaluate binning transform".to_string())?;
 
         Ok((dataframe, output_value.into_iter().collect()))
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "Bin transform does not support SQL Evaluation"
+        )))
     }
 }
 

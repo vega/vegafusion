@@ -25,8 +25,9 @@ use crate::expression::compiler::config::CompilationConfig;
 use datafusion::dataframe::DataFrame;
 
 use std::sync::Arc;
-use vegafusion_core::error::Result;
+use vegafusion_core::error::{Result, VegaFusionError};
 
+use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::proto::gen::transforms::Transform;
@@ -40,6 +41,12 @@ pub trait TransformTrait: TransformDependencies {
         dataframe: Arc<DataFrame>,
         config: &CompilationConfig,
     ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)>;
+
+    async fn eval_sql(
+        &self,
+        dataframe: Arc<SqlDataFrame>,
+        config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)>;
 }
 
 pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
@@ -69,5 +76,16 @@ impl TransformTrait for Transform {
         to_transform_trait(self.transform_kind())
             .eval(dataframe, config)
             .await
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "Transform does not support SQL Evaluation: {:?}",
+            self
+        )))
     }
 }

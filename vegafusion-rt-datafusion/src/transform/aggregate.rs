@@ -13,6 +13,7 @@ use datafusion::logical_plan::{avg, col, count, count_distinct, lit, max, min, s
 use std::collections::HashMap;
 
 use crate::expression::compiler::utils::to_numeric;
+use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion_expr::{aggregate_function, BuiltInWindowFunction, WindowFunction};
 use std::sync::Arc;
@@ -182,5 +183,15 @@ impl TransformTrait for Aggregate {
 
         let grouped_dataframe = grouped_dataframe.select(projections)?;
         Ok((grouped_dataframe, Vec::new()))
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "Aggregate transform does not support SQL evaluation"
+        )))
     }
 }

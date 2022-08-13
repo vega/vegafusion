@@ -12,9 +12,10 @@ use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::{col, Expr};
 
 use std::sync::Arc;
-use vegafusion_core::error::{Result, ResultWithContext};
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{Collect, SortOrder};
 
+use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -41,5 +42,15 @@ impl TransformTrait for Collect {
             .sort(sort_exprs)
             .with_context(|| "Collect transform failed".to_string())?;
         Ok((result, Default::default()))
+    }
+
+    async fn eval_sql(
+        &self,
+        _dataframe: Arc<SqlDataFrame>,
+        _config: &CompilationConfig,
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        Err(VegaFusionError::sql_not_supported(format!(
+            "Collect transform does not support SQL Evaluation"
+        )))
     }
 }
