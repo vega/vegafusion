@@ -13,7 +13,7 @@ use std::sync::Arc;
 use datafusion_expr::Expr;
 use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, ResultWithContext};
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use crate::sql::compile::expr::ToSqlExpr;
 use crate::sql::compile::order::ToSqlOrderByExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
@@ -88,7 +88,9 @@ impl SqlDataFrame {
 
         // First, convert the combined query to a string using the connection's dialect to make
         // sure that it is supported by the connection
-        combined_query.sql(self.conn.dialect())?;
+        combined_query.sql(self.conn.dialect()).map_err(|err| {
+            VegaFusionError::sql_not_supported(err.to_string())
+        });
 
         // Now convert to string in the DataFusion dialect for schema inference
         let dialect = Dialect::datafusion();

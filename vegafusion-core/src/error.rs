@@ -53,6 +53,9 @@ pub enum VegaFusionError {
     #[error("Pre-transform error: {0}\n{1}")]
     PreTransformError(String, ErrorContext),
 
+    #[error("SQL Not Supported error: {0}\n{1}")]
+    SqlNotSupported(String, ErrorContext),
+
     #[error("Arrow error: {0}\n{1}")]
     FormatError(std::fmt::Error, ErrorContext),
 
@@ -106,6 +109,10 @@ impl VegaFusionError {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::PreTransformError(msg, context)
             }
+            SqlNotSupported(msg, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::SqlNotSupported(msg, context)
+            }
             FormatError(msg, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::FormatError(msg, context)
@@ -158,6 +165,10 @@ impl VegaFusionError {
         Self::PreTransformError(message.into(), Default::default())
     }
 
+    pub fn sql_not_supported<S: Into<String>>(message: S) -> Self {
+        Self::SqlNotSupported(message.into(), Default::default())
+    }
+
     /// Duplicate error. Not a precise Clone because some of the wrapped error types aren't Clone
     /// These are converted to internal errors
     pub fn duplicate(&self) -> Self {
@@ -179,9 +190,10 @@ impl VegaFusionError {
             PreTransformError(msg, context) => {
                 VegaFusionError::PreTransformError(msg.clone(), context.clone())
             }
-            FormatError(err, context) => {
-                VegaFusionError::FormatError(*err, context.clone())
+            SqlNotSupported(msg, context) => {
+                VegaFusionError::SqlNotSupported(msg.clone(), context.clone())
             }
+            FormatError(err, context) => VegaFusionError::FormatError(*err, context.clone()),
             ArrowError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
