@@ -11,7 +11,7 @@ use async_trait::async_trait;
 use regex::Regex;
 use sqlgen::dialect::Dialect;
 use sqlx::sqlite::SqliteRow;
-use crate::connection::SqlConnection;
+use crate::sql::connection::SqlConnection;
 
 
 #[derive(Clone, Debug)]

@@ -31,6 +31,9 @@ tempfile = "3.3.0"
 futures-util = "0.3.21"
 bytes = "1.1.0"
 deterministic-hash = "1.0.1"
+sqlgen = {git = "https://github.com/vegafusion/sqlgen-rs.git", rev = "40e2548b97428605e05db885ed598d9682f4fe0c" }
+# Make sqlx optional
+sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "sqlite", "macros"] }
 
 [dev-dependencies]
 futures = "0.3.21"
@@ -44,6 +47,7 @@ lodepng = "3.6.1"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
+features = ["sqlgen"]
 
 [dependencies.serde]
 version = "1.0.137"

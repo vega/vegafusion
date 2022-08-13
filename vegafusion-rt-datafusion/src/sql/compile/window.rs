@@ -1,8 +1,8 @@
 use datafusion_expr::{Expr, WindowFunction};
 use sqlgen::ast::{Function as SqlFunction, FunctionArg, FunctionArgExpr, Ident, ObjectName, WindowSpec as SqlWindowSpec};
 use vegafusion_core::error::{Result, VegaFusionError};
-use crate::compile::expr::ToSqlExpr;
-use crate::compile::order::ToSqlOrderByExpr;
+use crate::sql::compile::expr::ToSqlExpr;
+use crate::sql::compile::order::ToSqlOrderByExpr;
 
 
 pub trait ToSqlWindowFunction {

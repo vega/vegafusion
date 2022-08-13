@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use datafusion::prelude::SessionContext;
-use crate::connection::SqlConnection;
+use crate::sql::connection::SqlConnection;
+use crate::data::table::VegaFusionTableUtils;
 
 use sqlgen::dialect::Dialect;
 use vegafusion_core::arrow::datatypes::Schema;
 use vegafusion_core::data::table::VegaFusionTable;
 
-use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
+
 
 #[derive(Clone)]
 pub struct DataFusionConnection {

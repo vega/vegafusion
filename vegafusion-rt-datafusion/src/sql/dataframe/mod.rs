@@ -1,6 +1,6 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-use crate::connection::SqlConnection;
+use crate::sql::connection::SqlConnection;
 use datafusion::prelude::{SessionContext, Expr as DfExpr};
 use sqlgen::ast::Ident;
 use sqlgen::ast::{Cte, With};
@@ -14,10 +14,10 @@ use datafusion_expr::Expr;
 use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext};
-use crate::compile::expr::ToSqlExpr;
-use crate::compile::order::ToSqlOrderByExpr;
-use crate::compile::select::ToSqlSelectItem;
-use crate::compile::window::ToSqlWindowFunction;
+use crate::sql::compile::expr::ToSqlExpr;
+use crate::sql::compile::order::ToSqlOrderByExpr;
+use crate::sql::compile::select::ToSqlSelectItem;
+use crate::sql::compile::window::ToSqlWindowFunction;
 
 #[derive(Clone)]
 pub struct SqlDataFrame {
@@ -215,22 +215,28 @@ fn query_chain_to_cte(queries: &[Query], prefix: &str) -> Query {
 
 #[cfg(test)]
 mod test {
+    use crate::sql::connection::sqlite_conn::SqLiteConnection;
+    use crate::sql::dataframe::SqlDataFrame;
+    use crate::sql::connection::datafusion_conn::DataFusionConnection;
+    use crate::data::table::VegaFusionTableUtils;
+
     use std::ops::Mul;
-    use crate::connection::sqlite_conn::SqLiteConnection;
-    use crate::dataframe::SqlDataFrame;
     use sqlgen::dialect::{Dialect, DialectDisplay};
     use sqlx::SqlitePool;
     use std::sync::Arc;
     use datafusion::prelude::SessionContext;
     use datafusion_expr::{BuiltInWindowFunction, col, Expr, lit, max, WindowFunction};
-    
-    use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
-    use crate::connection::datafusion_conn::DataFusionConnection;
+
+    fn crate_dir() -> String {
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .display()
+            .to_string()
+    }
 
     #[tokio::test]
     async fn try_it() {
         let conn = SqLiteConnection::try_new(
-            "/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db"
+            &format!("{}/tests/data/vega_datasets.db", crate_dir())
         ).await.unwrap();
 
         let df = SqlDataFrame::try_new(Arc::new(conn), "stock").await.unwrap();
@@ -264,11 +270,9 @@ mod test {
 
     #[tokio::test]
     async fn try_it2() {
-        let pool = SqlitePool::connect("/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db")
-            .await
-            .unwrap();
-
-        let conn = SqLiteConnection::new(Arc::new(pool));
+        let conn = SqLiteConnection::try_new(
+            &format!("{}/tests/data/vega_datasets.db", crate_dir())
+        ).await.unwrap();
 
         let df = SqlDataFrame::try_new(Arc::new(conn), "stock").await.unwrap();
 
@@ -305,11 +309,9 @@ mod test {
 
     #[tokio::test]
     async fn try_it3() {
-        let pool = SqlitePool::connect("/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db")
-            .await
-            .unwrap();
-
-        let conn = SqLiteConnection::new(Arc::new(pool));
+        let conn = SqLiteConnection::try_new(
+            &format!("{}/tests/data/vega_datasets.db", crate_dir())
+        ).await.unwrap();
 
         let df = SqlDataFrame::try_new(Arc::new(conn), "stock").await.unwrap();
 
@@ -338,9 +340,8 @@ mod test {
     #[tokio::test]
     async fn try_datafusion_connection() {
         let ctx = SessionContext::new();
-
-        let stock_path = "/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/stock.csv";
-        ctx.register_csv("stock",  stock_path, Default::default()).await.unwrap();
+        let stock_path = format!("{}/tests/data/stock.csv", crate_dir());
+        ctx.register_csv("stock",  &stock_path, Default::default()).await.unwrap();
 
         let conn = DataFusionConnection::new(Arc::new(ctx));
         let df = SqlDataFrame::try_new(Arc::new(conn), "stock").await.unwrap();

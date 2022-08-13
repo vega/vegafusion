@@ -2,7 +2,7 @@
 use datafusion_expr::Expr;
 use sqlgen::ast::{OrderByExpr as SqlOrderByExpr};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-use crate::compile::expr::ToSqlExpr;
+use crate::sql::compile::expr::ToSqlExpr;
 
 
 pub trait ToSqlOrderByExpr {
@@ -33,7 +33,7 @@ mod tests {
     use sqlgen::dialect::DialectDisplay;
     use datafusion_expr::{col, Expr};
     
-    use crate::compile::order::ToSqlOrderByExpr;
+    use crate::sql::compile::order::ToSqlOrderByExpr;
 
     #[test]
     pub fn test_non_sort_expr() {

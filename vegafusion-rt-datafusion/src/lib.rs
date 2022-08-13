@@ -15,3 +15,4 @@ pub mod signal;
 pub mod task_graph;
 pub mod tokio_runtime;
 pub mod transform;
+pub mod sql;

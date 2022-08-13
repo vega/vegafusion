@@ -6,13 +6,17 @@ use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 use sqlgen::ast::{Query, SetExpr, TableFactor, TableWithJoins, Ident, ObjectName, Select, SelectItem};
 use sqlgen::dialect::DialectDisplay;
 use sqlgen::parser::Parser;
-use vegafusion_sql::connection::SqlConnection;
-use vegafusion_sql::connection::sqlite_conn::SqLiteConnection;
+use vegafusion_rt_datafusion::sql::connection::SqlConnection;
+use vegafusion_rt_datafusion::sql::connection::sqlite_conn::SqLiteConnection;
+
+mod util;
+use util::crate_dir;
+
 
 #[tokio::test]
 async fn try_it() {
     let conn = SqLiteConnection::try_new(
-        "/media/jmmease/SSD2/rustDev/vega-fusion/vega-fusion/vegafusion-sql/tests/data/vega_datasets.db"
+        &format!("{}/tests/data/vega_datasets.db", crate_dir())
     ).await.unwrap();
 
     let schema = Schema::new(vec![

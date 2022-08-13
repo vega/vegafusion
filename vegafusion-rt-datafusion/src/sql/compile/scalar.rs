@@ -1,5 +1,5 @@
 use sqlgen::ast::Value as SqlValue;
-use datafusion_common::ScalarValue;
+use datafusion::scalar::ScalarValue;
 use vegafusion_core::error::{Result, VegaFusionError};
 
 pub trait ToSqlScalar {

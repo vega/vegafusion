@@ -8,6 +8,8 @@ if __name__ == "__main__":
     # Delete and open database file
     db_file = here / "data" / "vega_datasets.db"
     db_file.unlink(True)
+    db_file.parent.mkdir(parents=True, exist_ok=True)
+
     conn = sqlite3.connect(db_file)
 
     # Download datasets

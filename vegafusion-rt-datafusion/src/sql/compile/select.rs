@@ -1,7 +1,7 @@
 use datafusion_expr::Expr;
 use sqlgen::ast::{Ident, SelectItem as SqlSelectItem};
 use vegafusion_core::error::Result;
-use crate::compile::expr::ToSqlExpr;
+use crate::sql::compile::expr::ToSqlExpr;
 
 
 pub trait ToSqlSelectItem {
@@ -33,7 +33,7 @@ mod tests {
     use datafusion_expr::{col, lit, Expr};
     
     
-    use crate::compile::select::ToSqlSelectItem;
+    use crate::sql::compile::select::ToSqlSelectItem;
 
     #[test]
     pub fn test_select_wildcard() {

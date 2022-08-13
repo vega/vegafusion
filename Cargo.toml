@@ -6,7 +6,6 @@ members = [
     "vegafusion-python-embed",
     "vegafusion-wasm",
     "vegafusion-server",
-    "vegafusion-sql"
 ]
 
 [profile.release]

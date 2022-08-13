@@ -1,5 +1,5 @@
-use crate::compile::data_type::ToSqlDataType;
-use crate::compile::scalar::ToSqlScalar;
+use crate::sql::compile::data_type::ToSqlDataType;
+use crate::sql::compile::scalar::ToSqlScalar;
 use sqlgen::ast::{
     BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction,
     FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr, Ident,
