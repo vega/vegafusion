@@ -117,7 +117,7 @@ impl TaskCall for DataUrlTask {
                 match inline_dataset {
                     VegaFusionDataset::Table { table, .. } => table.to_dataframe()?,
                     VegaFusionDataset::SqlDataFrame(sql_df) => {
-                        return eval_sql_df(sql_df, &self.pipeline, &config, &tz_config).await
+                        return eval_sql_df(sql_df, &self.pipeline, &config).await
                     }
                 }
             } else {
@@ -139,7 +139,7 @@ impl TaskCall for DataUrlTask {
             )));
         };
 
-        eval_df(df, &self.pipeline, &config, tz_config, date_mode, &parse).await
+        eval_df(df, &self.pipeline, &config, date_mode, &parse).await
     }
 }
 
@@ -147,11 +147,10 @@ async fn eval_df(
     df: Arc<DataFrame>,
     pipeline: &Option<TransformPipeline>,
     config: &CompilationConfig,
-    tz_config: &Option<RuntimeTzConfig>,
     date_mode: DateParseMode,
     parse: &Option<Parse>,
 ) -> Result<(TaskValue, Vec<TaskValue>)> {
-    let df = process_datetimes(parse, date_mode, df, tz_config)?;
+    let df = process_datetimes(parse, date_mode, df, &config.tz_config)?;
 
     // Apply transforms (if any)
     let (transformed_df, output_values) = if pipeline
@@ -175,9 +174,26 @@ async fn eval_sql_df(
     sql_df: &SqlDataFrame,
     pipeline: &Option<TransformPipeline>,
     config: &CompilationConfig,
-    tz_config: &Option<RuntimeTzConfig>,
 ) -> Result<(TaskValue, Vec<TaskValue>)> {
-    todo!()
+    // To start immediately perform query and convert to DataFrame
+    let df = sql_df.collect().await?.to_dataframe()?;
+
+    // Apply transforms (if any)
+    let (transformed_df, output_values) = if pipeline
+        .as_ref()
+        .map(|p| !p.transforms.is_empty())
+        .unwrap_or(false)
+    {
+        let pipeline = pipeline.as_ref().unwrap();
+        pipeline.eval(df, &config).await?
+    } else {
+        // No transforms
+        (df, Vec::new())
+    };
+
+    let table_value = TaskValue::Table(VegaFusionTable::from_dataframe(transformed_df).await?);
+
+    Ok((table_value, output_values))
 }
 
 lazy_static! {
