@@ -12,10 +12,24 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::Null => Ok(SqlValue::Null),
             ScalarValue::Boolean(v) => Ok(v.map(SqlValue::Boolean).unwrap_or(SqlValue::Null)),
             ScalarValue::Float32(v) => Ok(v
-                .map(|v| SqlValue::Number(v.to_string(), false))
+                .map(|v| {
+                    let repr = if v.fract() == 0.0 {
+                        format!("{:.1}", v)
+                    } else {
+                        v.to_string()
+                    };
+                    SqlValue::Number(repr, false)
+                })
                 .unwrap_or(SqlValue::Null)),
             ScalarValue::Float64(v) => Ok(v
-                .map(|v| SqlValue::Number(v.to_string(), false))
+                .map(|v| {
+                    let repr = if v.fract() == 0.0 {
+                        format!("{:.1}", v)
+                    } else {
+                        v.to_string()
+                    };
+                    SqlValue::Number(repr, false)
+                })
                 .unwrap_or(SqlValue::Null)),
             ScalarValue::Int8(v) => Ok(v
                 .map(|v| SqlValue::Number(v.to_string(), false))
