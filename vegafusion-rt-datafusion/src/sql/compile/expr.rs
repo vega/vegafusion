@@ -68,22 +68,22 @@ impl ToSqlExpr for Expr {
                     Operator::BitwiseOr => SqlBinaryOperator::BitwiseOr,
                     Operator::StringConcat => SqlBinaryOperator::StringConcat,
                 };
-                Ok(SqlExpr::BinaryOp {
+                Ok(SqlExpr::Nested(Box::new(SqlExpr::BinaryOp {
                     left: Box::new(left.to_sql()?),
                     op: sql_op,
                     right: Box::new(right.to_sql()?),
-                })
+                })))
             }
-            Expr::Not(expr) => Ok(SqlExpr::UnaryOp {
+            Expr::Not(expr) => Ok(SqlExpr::Nested(Box::new(SqlExpr::UnaryOp {
                 op: SqlUnaryOperator::Not,
                 expr: Box::new(expr.to_sql()?),
-            }),
+            }))),
             Expr::IsNotNull(expr) => Ok(SqlExpr::IsNull(Box::new(expr.to_sql()?))),
             Expr::IsNull(expr) => Ok(SqlExpr::IsNotNull(Box::new(expr.to_sql()?))),
-            Expr::Negative(expr) => Ok(SqlExpr::UnaryOp {
+            Expr::Negative(expr) => Ok(SqlExpr::Nested(Box::new(SqlExpr::UnaryOp {
                 op: SqlUnaryOperator::Minus,
                 expr: Box::new(expr.to_sql()?),
-            }),
+            }))),
             Expr::GetIndexedField { .. } => Err(VegaFusionError::internal(
                 "GetIndexedField cannot be converted to SQL",
             )),
