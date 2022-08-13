@@ -156,16 +156,23 @@ impl SqlDataFrame {
 
         // Add group exprs to selection
         sql_aggr_expr_strs.extend(sql_group_expr_strs.clone());
-
-        let group_by_csv = sql_group_expr_strs.join(", ");
         let aggr_csv = sql_aggr_expr_strs.join(", ");
 
-        let query = Parser::parse_sql_query(&format!(
-            "select {aggr_csv} from {parent} group by {group_by_csv}",
-            aggr_csv = aggr_csv,
-            parent = self.parent_name(),
-            group_by_csv = group_by_csv
-        ))?;
+        let query = if sql_group_expr_strs.is_empty() {
+            Parser::parse_sql_query(&format!(
+                "select {aggr_csv} from {parent}",
+                aggr_csv = aggr_csv,
+                parent = self.parent_name(),
+            ))?
+        } else {
+            let group_by_csv = sql_group_expr_strs.join(", ");
+            Parser::parse_sql_query(&format!(
+                "select {aggr_csv} from {parent} group by {group_by_csv}",
+                aggr_csv = aggr_csv,
+                parent = self.parent_name(),
+                group_by_csv = group_by_csv
+            ))?
+        };
 
         self.chain_query(query)
     }
