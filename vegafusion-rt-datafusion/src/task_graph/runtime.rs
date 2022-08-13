@@ -11,6 +11,7 @@ use std::collections::HashMap;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
+use crate::data::dataset::VegaFusionDataset;
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -44,7 +45,6 @@ use vegafusion_core::proto::gen::tasks::{
 };
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
-use crate::data::dataset::VegaFusionDataset;
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -237,9 +237,10 @@ impl TaskGraphRuntime {
         )?;
 
         // Extract inline dataset fingerprints
-        let dataset_fingerprints = inline_datasets.iter().map(
-            |(k, ds)| (k.clone(), ds.fingerprint())
-        ).collect::<HashMap<_, _>>();
+        let dataset_fingerprints = inline_datasets
+            .iter()
+            .map(|(k, ds)| (k.clone(), ds.fingerprint()))
+            .collect::<HashMap<_, _>>();
 
         // Create task graph for server spec
         let tz_config = TzConfig {
@@ -495,9 +496,10 @@ impl TaskGraphRuntime {
         )?;
 
         // Extract inline dataset fingerprints
-        let dataset_fingerprints = inline_datasets.iter().map(
-            |(k, ds)| (k.clone(), ds.fingerprint())
-        ).collect::<HashMap<_, _>>();
+        let dataset_fingerprints = inline_datasets
+            .iter()
+            .map(|(k, ds)| (k.clone(), ds.fingerprint()))
+            .collect::<HashMap<_, _>>();
 
         // Create task graph for server spec
         let tz_config = TzConfig {

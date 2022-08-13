@@ -6,6 +6,7 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use crate::data::dataset::VegaFusionDataset;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use async_trait::async_trait;
 use std::collections::HashMap;
@@ -14,7 +15,6 @@ use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::tasks::task::TaskKind;
 use vegafusion_core::proto::gen::tasks::Task;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use crate::data::dataset::VegaFusionDataset;
 
 #[async_trait]
 pub trait TaskCall {

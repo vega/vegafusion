@@ -1,18 +1,20 @@
-use std::collections::HashMap;
-use std::fmt::format;
-use sqlx::{Row, SqlitePool};
-use std::sync::Arc;
-use vegafusion_core::arrow::array::{ArrayRef, Float32Array, Float64Array, Int32Array, Int64Array, StringArray, UInt32Array, UInt64Array};
-use vegafusion_core::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
-use vegafusion_core::arrow::record_batch::RecordBatch;
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, VegaFusionError};
+use crate::sql::connection::SqlConnection;
 use async_trait::async_trait;
 use regex::Regex;
 use sqlgen::dialect::Dialect;
 use sqlx::sqlite::SqliteRow;
-use crate::sql::connection::SqlConnection;
-
+use sqlx::{Row, SqlitePool};
+use std::collections::HashMap;
+use std::fmt::format;
+use std::sync::Arc;
+use vegafusion_core::arrow::array::{
+    ArrayRef, Float32Array, Float64Array, Int32Array, Int64Array, StringArray, UInt32Array,
+    UInt64Array,
+};
+use vegafusion_core::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
+use vegafusion_core::arrow::record_batch::RecordBatch;
+use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::error::{Result, VegaFusionError};
 
 #[derive(Clone, Debug)]
 pub struct SqLiteConnection {
@@ -25,13 +27,12 @@ impl SqLiteConnection {
     // Also input a table name (regular or temporary) to use as the source
     pub async fn try_new(uri: &str) -> Result<Self> {
         // pool
-        let pool = SqlitePool::connect(uri)
-            .await
-            .map_err(|err| {
-                VegaFusionError::internal(
-                    format!("Failed to connect to sqlite database at {}: {:?}", uri, err)
-                )
-            })?;
+        let pool = SqlitePool::connect(uri).await.map_err(|err| {
+            VegaFusionError::internal(format!(
+                "Failed to connect to sqlite database at {}: {:?}",
+                uri, err
+            ))
+        })?;
 
         Ok(Self {
             uri: uri.to_string(),
@@ -76,7 +77,7 @@ impl SqlConnection for SqLiteConnection {
                     // Sqlite doesn't support u64, extract as signed then convert to u64
                     let values = extract_row_values::<i64>(&recs, field_index);
                     Arc::new(UInt64Array::from_iter(
-                        values.iter().map(|v| v.map(|v| v as u64))
+                        values.iter().map(|v| v.map(|v| v as u64)),
                     )) as ArrayRef
                 }
                 DataType::Float32 => {
@@ -119,11 +120,9 @@ impl SqlConnection for SqLiteConnection {
             ORDER BY name;
         "#,
         )
-            .fetch_all(self.pool.clone().as_ref())
-            .await
-            .map_err(|_err| {
-                VegaFusionError::internal("Failed to query sqlite schema")
-            })?;
+        .fetch_all(self.pool.clone().as_ref())
+        .await
+        .map_err(|_err| VegaFusionError::internal("Failed to query sqlite schema"))?;
 
         let re_pair = Regex::new(r#"("[\w\s]+"\s*\w+,?)"#).unwrap();
         let re_field = Regex::new(r#""([\w\s]+)" (\w+),?"#).unwrap();
@@ -153,10 +152,10 @@ impl SqlConnection for SqLiteConnection {
     }
 }
 
-
 /// Generic helper to extract row values at an index
 fn extract_row_values<'a, T>(recs: &'a Vec<SqliteRow>, field_index: usize) -> Vec<Option<T>>
-where T: sqlx::Decode<'a, sqlx::Sqlite> + sqlx::Type<sqlx::Sqlite>
+where
+    T: sqlx::Decode<'a, sqlx::Sqlite> + sqlx::Type<sqlx::Sqlite>,
 {
     let values: Vec<Option<T>> = recs
         .iter()

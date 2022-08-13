@@ -1,23 +1,24 @@
-use std::sync::Arc;
 use datafusion::arrow::datatypes::{Field, Schema};
-use sqlx::SqlitePool;
-use vegafusion_core::arrow::datatypes::DataType;
-use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
-use sqlgen::ast::{Query, SetExpr, TableFactor, TableWithJoins, Ident, ObjectName, Select, SelectItem};
+use sqlgen::ast::{
+    Ident, ObjectName, Query, Select, SelectItem, SetExpr, TableFactor, TableWithJoins,
+};
 use sqlgen::dialect::DialectDisplay;
 use sqlgen::parser::Parser;
-use vegafusion_rt_datafusion::sql::connection::SqlConnection;
+use sqlx::SqlitePool;
+use std::sync::Arc;
+use vegafusion_core::arrow::datatypes::DataType;
+use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 use vegafusion_rt_datafusion::sql::connection::sqlite_conn::SqLiteConnection;
+use vegafusion_rt_datafusion::sql::connection::SqlConnection;
 
 mod util;
 use util::crate_dir;
 
-
 #[tokio::test]
 async fn try_it() {
-    let conn = SqLiteConnection::try_new(
-        &format!("{}/tests/data/vega_datasets.db", crate_dir())
-    ).await.unwrap();
+    let conn = SqLiteConnection::try_new(&format!("{}/tests/data/vega_datasets.db", crate_dir()))
+        .await
+        .unwrap();
 
     let schema = Schema::new(vec![
         // Field::new("index", DataType::Int64, true),

@@ -1,26 +1,24 @@
+use crate::data::table::VegaFusionTableUtils;
+use crate::sql::connection::SqlConnection;
+use datafusion::prelude::SessionContext;
 use std::collections::HashMap;
 use std::sync::Arc;
-use datafusion::prelude::SessionContext;
-use crate::sql::connection::SqlConnection;
-use crate::data::table::VegaFusionTableUtils;
 
 use sqlgen::dialect::Dialect;
 use vegafusion_core::arrow::datatypes::Schema;
 use vegafusion_core::data::table::VegaFusionTable;
 
-
-
 #[derive(Clone)]
 pub struct DataFusionConnection {
     dialect: Dialect,
-    ctx: Arc<SessionContext>
+    ctx: Arc<SessionContext>,
 }
 
 impl DataFusionConnection {
     pub fn new(ctx: Arc<SessionContext>) -> Self {
         Self {
             dialect: Dialect::datafusion(),
-            ctx
+            ctx,
         }
     }
 }
@@ -31,7 +29,11 @@ impl SqlConnection for DataFusionConnection {
         "datafusion".to_string()
     }
 
-    async fn fetch_query(&self, query: &str, _schema: &Schema) -> vegafusion_core::error::Result<VegaFusionTable> {
+    async fn fetch_query(
+        &self,
+        query: &str,
+        _schema: &Schema,
+    ) -> vegafusion_core::error::Result<VegaFusionTable> {
         let df = self.ctx.sql(query).await?;
         VegaFusionTable::from_dataframe(df).await
     }
@@ -47,10 +49,19 @@ impl SqlConnection for DataFusionConnection {
         let first_schema_provider_name = schema_provider_names.get(0).unwrap();
         let schema_provider = catalog.schema(first_schema_provider_name).unwrap();
 
-        Ok(schema_provider.table_names().iter().map(|name| {
-            let schema = schema_provider.table(name).unwrap().schema().as_ref().clone();
-            (name.clone(), schema)
-        }).collect())
+        Ok(schema_provider
+            .table_names()
+            .iter()
+            .map(|name| {
+                let schema = schema_provider
+                    .table(name)
+                    .unwrap()
+                    .schema()
+                    .as_ref()
+                    .clone();
+                (name.clone(), schema)
+            })
+            .collect())
     }
 
     fn dialect(&self) -> &Dialect {

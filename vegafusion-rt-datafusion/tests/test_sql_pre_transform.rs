@@ -13,8 +13,8 @@ mod util;
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
     use crate::util::crate_dir;
+    use std::collections::HashMap;
     use std::fs;
     use std::sync::Arc;
     use vegafusion_core::error::VegaFusionError;
@@ -28,21 +28,27 @@ mod tests {
     #[tokio::test]
     async fn test_pre_transform_dataset() {
         // Load spec
-        let spec_path = format!("{}/tests/specs/inline_datasets/histogram.vg.json", crate_dir());
+        let spec_path = format!(
+            "{}/tests/specs/inline_datasets/histogram.vg.json",
+            crate_dir()
+        );
         let spec_str = fs::read_to_string(spec_path).unwrap();
 
         // Build sqlite-backed SqlDataFrame for movies dataset
-        let conn = SqLiteConnection::try_new(
-            &format!("{}/tests/data/vega_datasets.db", crate_dir())
-        ).await.unwrap();
+        let conn =
+            SqLiteConnection::try_new(&format!("{}/tests/data/vega_datasets.db", crate_dir()))
+                .await
+                .unwrap();
 
-        let sql_df = SqlDataFrame::try_new(Arc::new(conn), "movie").await.unwrap();
+        let sql_df = SqlDataFrame::try_new(Arc::new(conn), "movie")
+            .await
+            .unwrap();
 
         // Build inline datasets
-        let inline_datasets: HashMap<String, VegaFusionDataset> = vec![(
-            "movie".to_string(),
-            VegaFusionDataset::SqlDataFrame(sql_df)
-        )].into_iter().collect();
+        let inline_datasets: HashMap<String, VegaFusionDataset> =
+            vec![("movie".to_string(), VegaFusionDataset::SqlDataFrame(sql_df))]
+                .into_iter()
+                .collect();
 
         // Initialize task graph runtime
         let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));

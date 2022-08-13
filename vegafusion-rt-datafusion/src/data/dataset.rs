@@ -6,20 +6,20 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 use crate::data::table::VegaFusionTableUtils;
 use datafusion::prelude::DataFrame;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
-use vegafusion_core::error::Result;
-use vegafusion_core::data::table::VegaFusionTable;
 use crate::sql::dataframe::SqlDataFrame;
+use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::error::Result;
 
 #[derive(Clone)]
 pub enum VegaFusionDataset {
     Table { table: VegaFusionTable, hash: u64 },
-    SqlDataFrame(SqlDataFrame)
+    SqlDataFrame(SqlDataFrame),
 }
 
 impl VegaFusionDataset {

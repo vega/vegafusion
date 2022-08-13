@@ -174,7 +174,11 @@ impl ToSqlExpr for Expr {
             Expr::ScalarUDF { .. } => Err(VegaFusionError::internal(
                 "ScalarUDF cannot be converted to SQL",
             )),
-            Expr::AggregateFunction { fun, args, distinct: _ } => {
+            Expr::AggregateFunction {
+                fun,
+                args,
+                distinct: _,
+            } => {
                 let ident = Ident {
                     value: fun.to_string(),
                     quote_style: None,
@@ -194,7 +198,7 @@ impl ToSqlExpr for Expr {
                     over: None,
                     distinct: false,
                 }))
-            },
+            }
             Expr::WindowFunction { .. } => Err(VegaFusionError::internal(
                 "WindowFunction cannot be converted to SQL",
             )),
@@ -247,8 +251,8 @@ impl ToSqlExpr for Expr {
 #[cfg(test)]
 mod tests {
     use super::ToSqlExpr;
-    use sqlgen::dialect::DialectDisplay;
     use datafusion_expr::{col, lit, BuiltinScalarFunction, Expr};
+    use sqlgen::dialect::DialectDisplay;
     use vegafusion_core::arrow::datatypes::DataType;
 
     #[test]

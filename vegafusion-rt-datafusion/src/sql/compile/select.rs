@@ -1,8 +1,7 @@
+use crate::sql::compile::expr::ToSqlExpr;
 use datafusion_expr::Expr;
 use sqlgen::ast::{Ident, SelectItem as SqlSelectItem};
 use vegafusion_core::error::Result;
-use crate::sql::compile::expr::ToSqlExpr;
-
 
 pub trait ToSqlSelectItem {
     fn to_sql_select(&self) -> Result<SqlSelectItem>;
@@ -11,28 +10,26 @@ pub trait ToSqlSelectItem {
 impl ToSqlSelectItem for Expr {
     fn to_sql_select(&self) -> Result<SqlSelectItem> {
         Ok(match self {
-            Expr::Alias(expr, alias) => {
-                SqlSelectItem::ExprWithAlias { expr: expr.to_sql()?, alias: Ident { value: alias.clone(), quote_style: Some('"')} }
-            }
-            Expr::Wildcard => {
-                SqlSelectItem::Wildcard
-            }
-            expr => {
-                SqlSelectItem::UnnamedExpr(expr.to_sql()?)
-            }
+            Expr::Alias(expr, alias) => SqlSelectItem::ExprWithAlias {
+                expr: expr.to_sql()?,
+                alias: Ident {
+                    value: alias.clone(),
+                    quote_style: Some('"'),
+                },
+            },
+            Expr::Wildcard => SqlSelectItem::Wildcard,
+            expr => SqlSelectItem::UnnamedExpr(expr.to_sql()?),
         })
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::ops::Add;
-    
-    use sqlgen::dialect::{Dialect, DialectDisplay};
+
     use datafusion_expr::{col, lit, Expr};
-    
-    
+    use sqlgen::dialect::{Dialect, DialectDisplay};
+
     use crate::sql::compile::select::ToSqlSelectItem;
 
     #[test]
