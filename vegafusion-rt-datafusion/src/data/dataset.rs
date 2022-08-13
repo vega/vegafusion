@@ -14,16 +14,19 @@ use std::sync::Arc;
 
 use vegafusion_core::error::Result;
 use vegafusion_core::data::table::VegaFusionTable;
+use crate::sql::dataframe::SqlDataFrame;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum VegaFusionDataset {
     Table { table: VegaFusionTable, hash: u64 },
+    SqlDataFrame(SqlDataFrame)
 }
 
 impl VegaFusionDataset {
     pub fn fingerprint(&self) -> String {
         match self {
             VegaFusionDataset::Table { hash, .. } => hash.to_string(),
+            VegaFusionDataset::SqlDataFrame(sql_df) => sql_df.fingerprint().to_string(),
         }
     }
 
@@ -34,11 +37,5 @@ impl VegaFusionDataset {
         let hash = hasher.finish();
         let table = VegaFusionTable::from_ipc_bytes(ipc_bytes)?;
         Ok(Self::Table { table, hash })
-    }
-
-    pub fn to_dataframe(&self) -> Result<Arc<DataFrame>> {
-        match self {
-            VegaFusionDataset::Table { table, .. } => table.to_dataframe(),
-        }
     }
 }

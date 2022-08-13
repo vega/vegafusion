@@ -36,6 +36,7 @@ use vegafusion_core::arrow::datatypes::TimeUnit;
 
 use crate::data::dataset::VegaFusionDataset;
 use crate::expression::compiler::builtin_functions::date_time::local_to_utc::make_to_utc_millis_fn;
+use crate::sql::dataframe::SqlDataFrame;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
@@ -44,6 +45,7 @@ use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::proto::gen::tasks::scan_url_format;
 use vegafusion_core::proto::gen::tasks::scan_url_format::Parse;
 use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask};
+use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -112,7 +114,12 @@ impl TaskCall for DataUrlTask {
         let df = if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
             let inline_name = inline_name.trim().to_string();
             if let Some(inline_dataset) = inline_datasets.get(&inline_name) {
-                inline_dataset.to_dataframe()?
+                match inline_dataset {
+                    VegaFusionDataset::Table { table, .. } => table.to_dataframe()?,
+                    VegaFusionDataset::SqlDataFrame(sql_df) => {
+                        return eval_sql_df(sql_df, &self.pipeline, &config, &tz_config).await
+                    }
+                }
             } else {
                 return Err(VegaFusionError::internal(format!(
                     "No inline dataset named {}",
@@ -132,26 +139,45 @@ impl TaskCall for DataUrlTask {
             )));
         };
 
-        let df = process_datetimes(&parse, date_mode, df, tz_config)?;
-
-        // Apply transforms (if any)
-        let (transformed_df, output_values) = if self
-            .pipeline
-            .as_ref()
-            .map(|p| !p.transforms.is_empty())
-            .unwrap_or(false)
-        {
-            let pipeline = self.pipeline.as_ref().unwrap();
-            pipeline.eval(df, &config).await?
-        } else {
-            // No transforms
-            (df, Vec::new())
-        };
-
-        let table_value = TaskValue::Table(VegaFusionTable::from_dataframe(transformed_df).await?);
-
-        Ok((table_value, output_values))
+        eval_df(df, &self.pipeline, &config, tz_config, date_mode, &parse).await
     }
+}
+
+async fn eval_df(
+    df: Arc<DataFrame>,
+    pipeline: &Option<TransformPipeline>,
+    config: &CompilationConfig,
+    tz_config: &Option<RuntimeTzConfig>,
+    date_mode: DateParseMode,
+    parse: &Option<Parse>,
+) -> Result<(TaskValue, Vec<TaskValue>)> {
+    let df = process_datetimes(parse, date_mode, df, tz_config)?;
+
+    // Apply transforms (if any)
+    let (transformed_df, output_values) = if pipeline
+        .as_ref()
+        .map(|p| !p.transforms.is_empty())
+        .unwrap_or(false)
+    {
+        let pipeline = pipeline.as_ref().unwrap();
+        pipeline.eval(df, &config).await?
+    } else {
+        // No transforms
+        (df, Vec::new())
+    };
+
+    let table_value = TaskValue::Table(VegaFusionTable::from_dataframe(transformed_df).await?);
+
+    Ok((table_value, output_values))
+}
+
+async fn eval_sql_df(
+    sql_df: &SqlDataFrame,
+    pipeline: &Option<TransformPipeline>,
+    config: &CompilationConfig,
+    tz_config: &Option<RuntimeTzConfig>,
+) -> Result<(TaskValue, Vec<TaskValue>)> {
+    todo!()
 }
 
 lazy_static! {
