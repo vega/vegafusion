@@ -50,6 +50,8 @@ impl SqlConnection for SqLiteConnection {
     }
 
     async fn fetch_query(&self, query: &str, schema: &Schema) -> Result<VegaFusionTable> {
+        // println!("sqlite: {}", query);
+
         // Should fetch batches of partition size instead of fetching all
         let recs = sqlx::query(query)
             .fetch_all(self.pool.as_ref())

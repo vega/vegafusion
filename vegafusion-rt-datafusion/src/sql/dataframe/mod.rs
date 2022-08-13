@@ -13,6 +13,7 @@ use sqlgen::parser::Parser;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
+use datafusion::common::DFSchema;
 use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -49,6 +50,14 @@ impl SqlDataFrame {
             session_context: Arc::new(conn.session_context().await?),
             conn,
         })
+    }
+
+    pub fn schema(&self) -> Schema {
+        self.schema.as_ref().clone()
+    }
+
+    pub fn schema_df(&self) -> DFSchema {
+        DFSchema::try_from(self.schema.as_ref().clone()).unwrap()
     }
 
     pub fn fingerprint(&self) -> u64 {
