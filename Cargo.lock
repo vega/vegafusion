@@ -2764,7 +2764,7 @@ dependencies = [
 [[package]]
 name = "sqlgen"
 version = "0.1.0"
-source = "git+https://github.com/vegafusion/sqlgen-rs.git?rev=95c1a06af33d0de1918340fd5ca80906d4624c74#95c1a06af33d0de1918340fd5ca80906d4624c74"
+source = "git+https://github.com/vegafusion/sqlgen-rs.git?rev=bf7a8cf556767bdb1ac613a8aea3040b4a260a24#bf7a8cf556767bdb1ac613a8aea3040b4a260a24"
 dependencies = [
  "log",
 ]
