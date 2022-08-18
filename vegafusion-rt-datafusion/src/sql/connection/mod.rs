@@ -11,6 +11,7 @@ use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::Result;
 
 use sqlgen::dialect::Dialect;
+use crate::expression::compiler::call::make_session_context;
 
 #[async_trait]
 pub trait SqlConnection: Send + Sync {
@@ -23,7 +24,7 @@ pub trait SqlConnection: Send + Sync {
     fn dialect(&self) -> &Dialect;
 
     async fn session_context(&self) -> Result<SessionContext> {
-        let ctx = SessionContext::new();
+        let ctx = make_session_context();
         for (table_name, schema) in self.tables().await? {
             let table = EmptyTable::new(Arc::new(schema));
             ctx.register_table(table_name.as_str(), Arc::new(table))?;

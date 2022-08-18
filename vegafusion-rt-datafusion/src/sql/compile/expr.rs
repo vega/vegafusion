@@ -78,8 +78,8 @@ impl ToSqlExpr for Expr {
                 op: SqlUnaryOperator::Not,
                 expr: Box::new(expr.to_sql()?),
             }))),
-            Expr::IsNotNull(expr) => Ok(SqlExpr::IsNull(Box::new(expr.to_sql()?))),
-            Expr::IsNull(expr) => Ok(SqlExpr::IsNotNull(Box::new(expr.to_sql()?))),
+            Expr::IsNotNull(expr) => Ok(SqlExpr::IsNotNull(Box::new(expr.to_sql()?))),
+            Expr::IsNull(expr) => Ok(SqlExpr::IsNull(Box::new(expr.to_sql()?))),
             Expr::Negative(expr) => Ok(SqlExpr::Nested(Box::new(SqlExpr::UnaryOp {
                 op: SqlUnaryOperator::Minus,
                 expr: Box::new(expr.to_sql()?),
@@ -171,9 +171,27 @@ impl ToSqlExpr for Expr {
                     distinct: false,
                 }))
             }
-            Expr::ScalarUDF { .. } => Err(VegaFusionError::internal(
-                "ScalarUDF cannot be converted to SQL",
-            )),
+            Expr::ScalarUDF { fun, args } => {
+                let ident = Ident {
+                    value: fun.name.clone(),
+                    quote_style: None,
+                };
+                let args = args
+                    .iter()
+                    .map(|expr| {
+                        Ok(SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(
+                            expr.to_sql()?,
+                        )))
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+
+                Ok(SqlExpr::Function(SqlFunction {
+                    name: SqlObjectName(vec![ident]),
+                    args,
+                    over: None,
+                    distinct: false,
+                }))
+            },
             Expr::AggregateFunction {
                 fun,
                 args,

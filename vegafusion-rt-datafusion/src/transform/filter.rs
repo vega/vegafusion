@@ -11,7 +11,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use datafusion::dataframe::DataFrame;
 
-use crate::expression::compiler::utils::cast_to;
+use crate::expression::compiler::utils::{cast_to, to_boolean};
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use std::sync::Arc;
@@ -27,11 +27,19 @@ impl TransformTrait for Filter {
         dataframe: Arc<DataFrame>,
         config: &CompilationConfig,
     ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
-        let logical_expr = compile(
+        let filter_expr = compile(
             self.expr.as_ref().unwrap(),
             config,
             Some(dataframe.schema()),
         )?;
+
+        // Cast filter expr to boolean
+        let filter_expr = cast_to(
+            filter_expr,
+            &DataType::Boolean,
+            dataframe.schema(),
+        )?;
+
         // Save off initial columns and select them below to filter out any intermediary columns
         // that the expression may produce
         let col_names: Vec<_> = dataframe
@@ -42,7 +50,7 @@ impl TransformTrait for Filter {
             .collect();
         let result = dataframe
             .filter(cast_to(
-                logical_expr,
+                filter_expr,
                 &DataType::Boolean,
                 dataframe.schema(),
             )?)?
@@ -53,11 +61,25 @@ impl TransformTrait for Filter {
 
     async fn eval_sql(
         &self,
-        _dataframe: Arc<SqlDataFrame>,
-        _config: &CompilationConfig,
+        dataframe: Arc<SqlDataFrame>,
+        config: &CompilationConfig,
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
-        Err(VegaFusionError::sql_not_supported(format!(
-            "Filter transform does not support SQL Evaluation"
-        )))
+        let filter_expr = compile(
+            self.expr.as_ref().unwrap(),
+            config,
+            Some(&dataframe.schema_df()),
+        )?;
+
+        // Cast filter expr to boolean
+        let filter_expr = cast_to(
+            filter_expr,
+            &DataType::Boolean,
+            &dataframe.schema_df(),
+        )?;
+        // let filter_expr = to_boolean(filter_expr, &dataframe.schema_df())?;
+
+        let result = dataframe.filter(filter_expr)?;
+
+        Ok((result, Default::default()))
     }
 }

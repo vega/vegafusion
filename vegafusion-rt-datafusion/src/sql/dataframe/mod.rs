@@ -18,6 +18,7 @@ use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
+
 #[derive(Clone)]
 pub struct SqlDataFrame {
     prefix: String,
@@ -25,6 +26,7 @@ pub struct SqlDataFrame {
     ctes: Vec<Query>,
     conn: Arc<dyn SqlConnection>,
     session_context: Arc<SessionContext>,
+    dialect: Arc<Dialect>,
 }
 
 impl SqlDataFrame {
@@ -49,7 +51,15 @@ impl SqlDataFrame {
             schema: Arc::new(schema.clone()),
             session_context: Arc::new(conn.session_context().await?),
             conn,
+            dialect: Arc::new(Self::make_dialect()),
         })
+    }
+
+    fn make_dialect() -> Dialect {
+        let mut dialect = Dialect::datafusion();
+        dialect.functions.insert("isvalid".to_string());
+        dialect.functions.insert("isfinite".to_string());
+        dialect
     }
 
     pub fn schema(&self) -> Schema {
@@ -99,10 +109,11 @@ impl SqlDataFrame {
             .map_err(|err| VegaFusionError::sql_not_supported(err.to_string()))?;
 
         // Now convert to string in the DataFusion dialect for schema inference
-        let dialect = Dialect::datafusion();
-        let query_str = combined_query.sql(&dialect)?;
+        let query_str = combined_query.sql(&self.dialect)?;
+        println!("datafusion: {}", query_str);
         let logical_plan = self.session_context.create_logical_plan(&query_str)?;
         let new_schema: Schema = logical_plan.schema().as_ref().into();
+
 
         Ok(Arc::new(SqlDataFrame {
             prefix: self.prefix.clone(),
@@ -110,6 +121,7 @@ impl SqlDataFrame {
             ctes: new_ctes,
             conn: self.conn.clone(),
             session_context: self.session_context.clone(),
+            dialect: self.dialect.clone(),
         }))
     }
 
@@ -129,14 +141,13 @@ impl SqlDataFrame {
     }
 
     pub fn select(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
-        let dialect = Dialect::datafusion();
         let sql_expr_strs = expr
             .iter()
             .map(|expr| {
                 if matches!(expr, Expr::WindowFunction { .. }) {
-                    Ok(expr.to_sql_window()?.sql(&dialect)?)
+                    Ok(expr.to_sql_window()?.sql(&self.dialect)?)
                 } else {
-                    Ok(expr.to_sql_select()?.sql(&dialect)?)
+                    Ok(expr.to_sql_select()?.sql(&self.dialect)?)
                 }
             })
             .collect::<Result<Vec<_>>>()?;
@@ -152,15 +163,14 @@ impl SqlDataFrame {
     }
 
     pub fn aggregate(&self, group_expr: Vec<DfExpr>, aggr_expr: Vec<DfExpr>) -> Result<Arc<Self>> {
-        let dialect = Dialect::datafusion();
         let sql_group_expr_strs = group_expr
             .iter()
-            .map(|expr| Ok(expr.to_sql()?.sql(&dialect)?))
+            .map(|expr| Ok(expr.to_sql()?.sql(&self.dialect)?))
             .collect::<Result<Vec<_>>>()?;
 
         let mut sql_aggr_expr_strs = aggr_expr
             .iter()
-            .map(|expr| Ok(expr.to_sql_select()?.sql(&dialect)?))
+            .map(|expr| Ok(expr.to_sql_select()?.sql(&self.dialect)?))
             .collect::<Result<Vec<_>>>()?;
 
         // Add group exprs to selection
@@ -186,6 +196,18 @@ impl SqlDataFrame {
         self.chain_query(query)
     }
 
+    pub fn filter(&self, predicate: Expr) -> Result<Arc<Self>> {
+        let sql_predicate = predicate.to_sql()?;
+
+        let query = Parser::parse_sql_query(&format!(
+            "select * from {parent} where {sql_predicate}",
+            parent = self.parent_name(),
+            sql_predicate = sql_predicate.sql(&self.dialect)?,
+        ))?;
+
+        self.chain_query(query)
+    }
+
     fn make_select_star(&self) -> Query {
         Parser::parse_sql_query(&format!(
             "select * from {parent}",
@@ -193,6 +215,7 @@ impl SqlDataFrame {
         ))
         .unwrap()
     }
+
 }
 
 fn cte_name_for_index(prefix: &str, index: usize) -> String {

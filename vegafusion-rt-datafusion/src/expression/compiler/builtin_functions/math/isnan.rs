@@ -44,7 +44,7 @@ pub fn make_is_nan_udf() -> ScalarUDF {
 
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Boolean)));
     ScalarUDF::new(
-        "isNaN",
+        "isnan",
         &Signature::any(1, Volatility::Immutable),
         &return_type,
         &is_nan,
