@@ -207,7 +207,19 @@ impl TransformTrait for Bin {
         let bin_end_name = self.alias_1.clone().unwrap_or("bin1".to_string());
         let bin_end = (col(&bin_start_name) + lit(step)).alias(&bin_end_name);
 
-        let sql_df = sql_df.select(vec![Expr::Wildcard, bin_end])?;
+        // Compute final projection that removes __bin_index column
+        let mut select_exprs = schema.fields().iter().filter_map(|field| {
+            let name = field.name();
+            if name == &bin_start_name || name == &bin_end_name {
+                None
+            } else {
+                Some(col(name))
+            }
+        }).collect::<Vec<_>>();
+        select_exprs.push(col(&bin_start_name));
+        select_exprs.push(bin_end);
+
+        let sql_df = sql_df.select(select_exprs)?;
 
         Ok((sql_df, output_value.into_iter().collect()))
     }
