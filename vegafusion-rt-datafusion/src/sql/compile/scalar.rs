@@ -13,7 +13,10 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::Boolean(v) => Ok(v.map(SqlValue::Boolean).unwrap_or(SqlValue::Null)),
             ScalarValue::Float32(v) => Ok(v
                 .map(|v| {
-                    let repr = if v.fract() == 0.0 {
+                    let repr = if !v.is_finite() {
+                        // Wrap inf, -inf, and nan in single quotes
+                        format!("'{}'", v)
+                    } else if v.fract() == 0.0 {
                         format!("{:.1}", v)
                     } else {
                         v.to_string()
@@ -23,7 +26,10 @@ impl ToSqlScalar for ScalarValue {
                 .unwrap_or(SqlValue::Null)),
             ScalarValue::Float64(v) => Ok(v
                 .map(|v| {
-                    let repr = if v.fract() == 0.0 {
+                    let repr = if !v.is_finite() {
+                        // Wrap inf, -inf, and nan in single quotes
+                        format!("'{}'", v)
+                    } else if v.fract() == 0.0 {
                         format!("{:.1}", v)
                     } else {
                         v.to_string()

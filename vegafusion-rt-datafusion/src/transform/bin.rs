@@ -187,9 +187,9 @@ impl TransformTrait for Bin {
         let bin_start = (col(bin_index_name).mul(lit(step))).add(lit(start));
         let bin_start_name = self.alias_0.clone().unwrap_or("bin0".to_string());
 
-        // Use 1/0 for infinity. SqlEngines without infinity support sill convert this to null
-        let inf = lit(1.0).div(lit(0.0));
-        let neg_inf = lit(-1.0).div(lit(0.0));
+        // Explicitly cast (-)inf to float64 to help DataFusion with type inference
+        let inf = Expr::Cast { expr: Box::new(lit(f64::INFINITY)), data_type: DataType::Float64 };
+        let neg_inf = Expr::Cast { expr: Box::new(lit(f64::NEG_INFINITY)), data_type: DataType::Float64 };
         let eps = lit(1.0e-14);
 
         let bin_start = when(col(bin_index_name).lt(lit(0.0)), neg_inf)
