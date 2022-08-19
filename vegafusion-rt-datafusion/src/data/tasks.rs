@@ -36,6 +36,8 @@ use vegafusion_core::arrow::datatypes::TimeUnit;
 
 use crate::data::dataset::VegaFusionDataset;
 use crate::expression::compiler::builtin_functions::date_time::local_to_utc::make_to_utc_millis_fn;
+use crate::expression::compiler::call::make_session_context;
+use crate::sql::connection::datafusion_conn::DataFusionConnection;
 use crate::sql::dataframe::SqlDataFrame;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use crate::transform::pipeline::TransformPipelineUtils;
@@ -140,36 +142,18 @@ impl TaskCall for DataUrlTask {
             )));
         };
 
-        eval_df(df, &self.pipeline, &config, date_mode, &parse).await
+        // Process datetime columns
+        let df = process_datetimes(&parse, date_mode, df, &config.tz_config)?;
+
+        let ctx = make_session_context();
+        ctx.register_table("df", df)?;
+        let sql_conn = DataFusionConnection::new(Arc::new(ctx));
+        let sql_df = SqlDataFrame::try_new(Arc::new(sql_conn), "df").await?;
+
+        eval_sql_df(Arc::new(sql_df), &self.pipeline, &config).await
     }
 }
 
-async fn eval_df(
-    df: Arc<DataFrame>,
-    pipeline: &Option<TransformPipeline>,
-    config: &CompilationConfig,
-    date_mode: DateParseMode,
-    parse: &Option<Parse>,
-) -> Result<(TaskValue, Vec<TaskValue>)> {
-    let df = process_datetimes(parse, date_mode, df, &config.tz_config)?;
-
-    // Apply transforms (if any)
-    let (transformed_table, output_values) = if pipeline
-        .as_ref()
-        .map(|p| !p.transforms.is_empty())
-        .unwrap_or(false)
-    {
-        let pipeline = pipeline.as_ref().unwrap();
-        pipeline.eval(df, &config).await?
-    } else {
-        // No transforms
-        (VegaFusionTable::from_dataframe(df).await?, Vec::new())
-    };
-
-    let table_value = TaskValue::Table(transformed_table);
-
-    Ok((table_value, output_values))
-}
 
 async fn eval_sql_df(
     sql_df: Arc<SqlDataFrame>,
@@ -450,11 +434,19 @@ impl TaskCall for DataValuesTask {
             .unwrap_or(false)
         {
             let pipeline = self.pipeline.as_ref().unwrap();
-            let values_df = values_table.to_dataframe()?;
-            let values_df = process_datetimes(&parse, date_mode, values_df, tz_config)?;
 
+            let df = values_table.to_dataframe()?;
             let config = build_compilation_config(&self.input_vars(), values, tz_config);
-            let (table, output_values) = pipeline.eval(values_df, &config).await?;
+
+            // Process datetime columns
+            let df = process_datetimes(&parse, date_mode, df, &config.tz_config)?;
+
+            let ctx = make_session_context();
+            ctx.register_table("df", df)?;
+            let sql_conn = DataFusionConnection::new(Arc::new(ctx));
+            let sql_df = SqlDataFrame::try_new(Arc::new(sql_conn), "df").await?;
+
+            let (table, output_values) = pipeline.eval_sql(Arc::new(sql_df), &config).await?;
 
             (table, output_values)
         } else {
@@ -500,8 +492,15 @@ impl TaskCall for DataSourceTask {
             .unwrap_or(false)
         {
             let pipeline = self.pipeline.as_ref().unwrap();
-            let values_df = source_table.to_dataframe()?;
-            let (table, output_values) = pipeline.eval(values_df, &config).await?;
+            let df = source_table.to_dataframe()?;
+
+            let ctx = make_session_context();
+            ctx.register_table("df", df)?;
+            let sql_conn = DataFusionConnection::new(Arc::new(ctx));
+            let sql_df = SqlDataFrame::try_new(Arc::new(sql_conn), "df").await?;
+
+            let (table, output_values) = pipeline.eval_sql(Arc::new(sql_df), &config).await?;
+
             (table, output_values)
         } else {
             // No transforms
