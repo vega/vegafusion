@@ -25,7 +25,7 @@ impl DataFusionConnection {
 
 pub fn make_datafusion_dialect() -> Dialect {
     let mut dialect = Dialect::datafusion();
-    dialect.functions.insert("isvalid".to_string());
+    dialect.functions.insert("isnan".to_string());
     dialect.functions.insert("isfinite".to_string());
     dialect
 }
