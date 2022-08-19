@@ -43,6 +43,7 @@ impl SqlDataFrame {
             .map(|f| format!("\"{}\"", f.name()))
             .collect();
         let select_items = columns.join(", ");
+        println!("{}", format!("select {} from {}", select_items, table));
         let query = Parser::parse_sql_query(&format!("select {} from {}", select_items, table))?;
 
         Ok(Self {
@@ -103,7 +104,7 @@ impl SqlDataFrame {
 
         // Now convert to string in the DataFusion dialect for schema inference
         let query_str = combined_query.sql(&self.dialect)?;
-        // println!("datafusion: {}", query_str);
+        println!("datafusion: {}", query_str);
         let logical_plan = self.session_context.create_logical_plan(&query_str)?;
         let new_schema: Schema = logical_plan.schema().as_ref().into();
 

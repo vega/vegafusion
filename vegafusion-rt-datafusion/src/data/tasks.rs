@@ -492,14 +492,8 @@ impl TaskCall for DataSourceTask {
             .unwrap_or(false)
         {
             let pipeline = self.pipeline.as_ref().unwrap();
-            let df = source_table.to_dataframe()?;
-
-            let ctx = make_session_context();
-            ctx.register_table("df", df)?;
-            let sql_conn = DataFusionConnection::new(Arc::new(ctx));
-            let sql_df = SqlDataFrame::try_new(Arc::new(sql_conn), "df").await?;
-
-            let (table, output_values) = pipeline.eval_sql(Arc::new(sql_df), &config).await?;
+            let sql_df = source_table.to_sql_dataframe().await?;
+            let (table, output_values) = pipeline.eval_sql(sql_df, &config).await?;
 
             (table, output_values)
         } else {

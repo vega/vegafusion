@@ -16,6 +16,9 @@ use vegafusion_core::arrow::datatypes::SchemaRef;
 use vegafusion_core::arrow::util::pretty::pretty_format_batches;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext};
+use crate::expression::compiler::call::make_session_context;
+use crate::sql::connection::datafusion_conn::DataFusionConnection;
+use crate::sql::dataframe::SqlDataFrame;
 
 #[async_trait]
 pub trait VegaFusionTableUtils {
@@ -24,6 +27,7 @@ pub trait VegaFusionTableUtils {
     fn pretty_format(&self, max_rows: Option<usize>) -> Result<String>;
     fn to_memtable(&self) -> MemTable;
     fn to_dataframe(&self) -> Result<Arc<DataFrame>>;
+    async fn to_sql_dataframe(&self) -> Result<Arc<SqlDataFrame>>;
 }
 
 #[async_trait]
@@ -78,5 +82,12 @@ impl VegaFusionTableUtils for VegaFusionTable {
         ctx.register_table("df", Arc::new(provider)).unwrap();
         ctx.table("df")
             .with_context(|| "Failed to create DataFrame".to_string())
+    }
+
+    async fn to_sql_dataframe(&self) -> Result<Arc<SqlDataFrame>> {
+        let ctx = make_session_context();
+        ctx.register_table("tbl", Arc::new(self.to_memtable()))?;
+        let sql_conn = DataFusionConnection::new(Arc::new(ctx));
+        Ok(Arc::new(SqlDataFrame::try_new(Arc::new(sql_conn), "tbl").await?))
     }
 }

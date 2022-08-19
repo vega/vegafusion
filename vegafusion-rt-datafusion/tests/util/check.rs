@@ -89,11 +89,11 @@ pub fn check_transform_evaluation(
     // );
     // println!("expected signals: {:?}", expected_signals);
 
-    let df = data.to_dataframe().unwrap();
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
+    let sql_df = (*TOKIO_RUNTIME).block_on(data.to_sql_dataframe()).unwrap();
 
     let (result_data, result_signals) = TOKIO_RUNTIME
-        .block_on(pipeline.eval(df, compilation_config))
+        .block_on(pipeline.eval_sql(sql_df, compilation_config))
         .unwrap();
     let result_signals = result_signals
         .into_iter()
