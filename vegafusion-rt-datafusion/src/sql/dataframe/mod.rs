@@ -11,11 +11,13 @@ use sqlgen::ast::{Query, TableAlias};
 use sqlgen::dialect::{Dialect, DialectDisplay};
 use sqlgen::parser::Parser;
 use std::collections::hash_map::DefaultHasher;
+use std::fmt::format;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use crate::sql::connection::datafusion_conn::make_datafusion_dialect;
 
 #[derive(Clone)]
 pub struct SqlDataFrame {
@@ -49,15 +51,8 @@ impl SqlDataFrame {
             schema: Arc::new(schema.clone()),
             session_context: Arc::new(conn.session_context().await?),
             conn,
-            dialect: Arc::new(Self::make_dialect()),
+            dialect: Arc::new(make_datafusion_dialect()),
         })
-    }
-
-    fn make_dialect() -> Dialect {
-        let mut dialect = Dialect::datafusion();
-        dialect.functions.insert("isvalid".to_string());
-        dialect.functions.insert("isfinite".to_string());
-        dialect
     }
 
     pub fn schema(&self) -> Schema {
@@ -196,7 +191,7 @@ impl SqlDataFrame {
             sql_predicate = sql_predicate.sql(&self.dialect)?,
         ))?;
 
-        self.chain_query(query)
+        self.chain_query(query).with_context(|| format!("unsupported filter expression: {}", predicate))
     }
 
     fn make_select_star(&self) -> Query {

@@ -17,10 +17,17 @@ pub struct DataFusionConnection {
 impl DataFusionConnection {
     pub fn new(ctx: Arc<SessionContext>) -> Self {
         Self {
-            dialect: Dialect::datafusion(),
+            dialect: make_datafusion_dialect(),
             ctx,
         }
     }
+}
+
+pub fn make_datafusion_dialect() -> Dialect {
+    let mut dialect = Dialect::datafusion();
+    dialect.functions.insert("isvalid".to_string());
+    dialect.functions.insert("isfinite".to_string());
+    dialect
 }
 
 #[async_trait::async_trait]
