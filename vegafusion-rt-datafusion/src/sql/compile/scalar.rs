@@ -63,11 +63,11 @@ impl ToSqlScalar for ScalarValue {
                 .unwrap_or(SqlValue::Null)),
             ScalarValue::Utf8(v) => Ok(v
                 .as_ref()
-                .map(|v| SqlValue::DoubleQuotedString(v.clone()))
+                .map(|v| SqlValue::SingleQuotedString(v.clone()))
                 .unwrap_or(SqlValue::Null)),
             ScalarValue::LargeUtf8(v) => Ok(v
                 .as_ref()
-                .map(|v| SqlValue::DoubleQuotedString(v.clone()))
+                .map(|v| SqlValue::SingleQuotedString(v.clone()))
                 .unwrap_or(SqlValue::Null)),
             ScalarValue::Binary(_) => Err(VegaFusionError::internal(
                 "Binary cannot be converted to SQL",
