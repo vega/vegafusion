@@ -178,9 +178,8 @@ impl TransformTrait for Bin {
 
         // Add column with bin index
         let bin_index_name = "__bin_index";
-        let bin_index =
-            floor((col(&self.field).sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
-                .alias(bin_index_name);
+        let bin_index = floor((col(&self.field).sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
+            .alias(bin_index_name);
         let sql_df = sql_df.select(vec![Expr::Wildcard, bin_index.clone()])?;
 
         // Add column with bin start
@@ -188,8 +187,14 @@ impl TransformTrait for Bin {
         let bin_start_name = self.alias_0.clone().unwrap_or("bin0".to_string());
 
         // Explicitly cast (-)inf to float64 to help DataFusion with type inference
-        let inf = Expr::Cast { expr: Box::new(lit(f64::INFINITY)), data_type: DataType::Float64 };
-        let neg_inf = Expr::Cast { expr: Box::new(lit(f64::NEG_INFINITY)), data_type: DataType::Float64 };
+        let inf = Expr::Cast {
+            expr: Box::new(lit(f64::INFINITY)),
+            data_type: DataType::Float64,
+        };
+        let neg_inf = Expr::Cast {
+            expr: Box::new(lit(f64::NEG_INFINITY)),
+            data_type: DataType::Float64,
+        };
         let eps = lit(1.0e-14);
 
         let bin_start = when(col(bin_index_name).lt(lit(0.0)), neg_inf)
@@ -208,14 +213,18 @@ impl TransformTrait for Bin {
         let bin_end = (col(&bin_start_name) + lit(step)).alias(&bin_end_name);
 
         // Compute final projection that removes __bin_index column
-        let mut select_exprs = schema.fields().iter().filter_map(|field| {
-            let name = field.name();
-            if name == &bin_start_name || name == &bin_end_name {
-                None
-            } else {
-                Some(col(name))
-            }
-        }).collect::<Vec<_>>();
+        let mut select_exprs = schema
+            .fields()
+            .iter()
+            .filter_map(|field| {
+                let name = field.name();
+                if name == &bin_start_name || name == &bin_end_name {
+                    None
+                } else {
+                    Some(col(name))
+                }
+            })
+            .collect::<Vec<_>>();
         select_exprs.push(col(&bin_start_name));
         select_exprs.push(bin_end);
 

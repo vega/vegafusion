@@ -38,6 +38,7 @@ use crate::data::dataset::VegaFusionDataset;
 use crate::expression::compiler::builtin_functions::date_time::local_to_utc::make_to_utc_millis_fn;
 use crate::sql::dataframe::SqlDataFrame;
 use crate::task_graph::timezone::RuntimeTzConfig;
+use crate::transform::pipeline::TransformPipelineUtils;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
@@ -48,7 +49,6 @@ use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValues
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
-use crate::transform::pipeline::TransformPipelineUtils;
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],

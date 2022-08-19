@@ -1,3 +1,4 @@
+use crate::data::table::VegaFusionTableUtils;
 use crate::sql::connection::SqlConnection;
 use async_trait::async_trait;
 use regex::Regex;
@@ -7,12 +8,14 @@ use sqlx::{Row, SqlitePool};
 use std::collections::HashMap;
 use std::fmt::format;
 use std::sync::Arc;
-use vegafusion_core::arrow::array::{ArrayRef, Float32Array, Float64Array, Int32Array, Int64Array, NullArray, StringArray, UInt32Array, UInt64Array};
+use vegafusion_core::arrow::array::{
+    ArrayRef, Float32Array, Float64Array, Int32Array, Int64Array, NullArray, StringArray,
+    UInt32Array, UInt64Array,
+};
 use vegafusion_core::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use vegafusion_core::arrow::record_batch::RecordBatch;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, VegaFusionError};
-use crate::data::table::VegaFusionTableUtils;
 
 #[derive(Clone, Debug)]
 pub struct SqLiteConnection {
@@ -48,7 +51,7 @@ impl SqlConnection for SqLiteConnection {
     }
 
     async fn fetch_query(&self, query: &str, schema: &Schema) -> Result<VegaFusionTable> {
-        // println!("sqlite: {}", query);
+        println!("sqlite: {}", query);
 
         // Should fetch batches of partition size instead of fetching all
         let recs = sqlx::query(query)
@@ -99,9 +102,7 @@ impl SqlConnection for SqLiteConnection {
                     let strs: Vec<_> = values.iter().map(|v| v.as_deref()).collect();
                     Arc::new(StringArray::from(strs)) as ArrayRef
                 }
-                DataType::Null => {
-                    Arc::new(NullArray::new(recs.len())) as ArrayRef
-                }
+                DataType::Null => Arc::new(NullArray::new(recs.len())) as ArrayRef,
                 dtype => {
                     panic!("Unsupported schema type {:?}", dtype)
                 }

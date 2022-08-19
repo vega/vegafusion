@@ -34,11 +34,7 @@ impl TransformTrait for Filter {
         )?;
 
         // Cast filter expr to boolean
-        let filter_expr = cast_to(
-            filter_expr,
-            &DataType::Boolean,
-            dataframe.schema(),
-        )?;
+        let filter_expr = cast_to(filter_expr, &DataType::Boolean, dataframe.schema())?;
 
         // Save off initial columns and select them below to filter out any intermediary columns
         // that the expression may produce
@@ -71,11 +67,7 @@ impl TransformTrait for Filter {
         )?;
 
         // Cast filter expr to boolean
-        let filter_expr = cast_to(
-            filter_expr,
-            &DataType::Boolean,
-            &dataframe.schema_df(),
-        )?;
+        let filter_expr = cast_to(filter_expr, &DataType::Boolean, &dataframe.schema_df())?;
         // let filter_expr = to_boolean(filter_expr, &dataframe.schema_df())?;
 
         let result = dataframe.filter(filter_expr)?;

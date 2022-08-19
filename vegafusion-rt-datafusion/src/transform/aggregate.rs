@@ -15,9 +15,9 @@ use std::collections::HashMap;
 use crate::expression::compiler::utils::to_numeric;
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
+use datafusion::common::DFSchema;
 use datafusion_expr::{aggregate_function, BuiltInWindowFunction, WindowFunction};
 use std::sync::Arc;
-use datafusion::common::DFSchema;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
@@ -76,7 +76,6 @@ impl TransformTrait for Aggregate {
         dataframe: Arc<SqlDataFrame>,
         _config: &CompilationConfig,
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
-
         let group_exprs: Vec<_> = self.groupby.iter().map(|c| col(c)).collect();
         let (mut agg_exprs, projections) = get_agg_and_proj_exprs(self, &dataframe.schema_df())?;
 
@@ -90,7 +89,7 @@ impl TransformTrait for Aggregate {
                 order_by: Vec::new(),
                 window_frame: None,
             }
-                .alias("__row_number");
+            .alias("__row_number");
 
             // Add min(__row_number) aggregation that we can sort by later
             agg_exprs.push(min(col("__row_number")).alias("__min_row_number"));
@@ -120,7 +119,6 @@ impl TransformTrait for Aggregate {
         Ok((grouped_dataframe, Vec::new()))
     }
 }
-
 
 fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr>, Vec<Expr>)> {
     // DataFusion does not allow repeated (field, op) combinations in an aggregate expression,
@@ -156,7 +154,7 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
         } else if field.is_empty() {
             op_name(op).to_string()
         } else {
-            format!("{}_{}", op_name(op), field, )
+            format!("{}_{}", op_name(op), field,)
         };
 
         let key = (column, *op_code);
@@ -183,8 +181,6 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
     }
     Ok((agg_exprs, projections))
 }
-
-
 
 fn make_aggr_expr(col_name: Option<String>, op: &AggregateOp, schema: &DFSchema) -> Result<Expr> {
     let column = if let Some(col_name) = col_name {
@@ -251,4 +247,3 @@ fn make_aggr_expr(col_name: Option<String>, op: &AggregateOp, schema: &DFSchema)
     };
     Ok(agg_expr)
 }
-

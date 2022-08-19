@@ -10,8 +10,8 @@ use vegafusion_core::arrow::datatypes::Schema;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::Result;
 
-use sqlgen::dialect::Dialect;
 use crate::expression::compiler::call::make_session_context;
+use sqlgen::dialect::Dialect;
 
 #[async_trait]
 pub trait SqlConnection: Send + Sync {

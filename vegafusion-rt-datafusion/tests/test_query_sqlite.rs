@@ -45,9 +45,7 @@ async fn query_version() {
         .await
         .unwrap();
 
-    let schema = Schema::new(vec![
-        Field::new("version", DataType::Utf8, true),
-    ]);
+    let schema = Schema::new(vec![Field::new("version", DataType::Utf8, true)]);
 
     // let query = Query::select_star_from("stock");
     let query = Parser::parse_sql_query("select sqlite_version() as version, floor(1.4)").unwrap();

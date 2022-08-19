@@ -2,6 +2,7 @@ use crate::sql::compile::expr::ToSqlExpr;
 use crate::sql::compile::order::ToSqlOrderByExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::connection::SqlConnection;
+use datafusion::common::DFSchema;
 use datafusion::prelude::{Expr as DfExpr, SessionContext};
 use datafusion_expr::Expr;
 use sqlgen::ast::Ident;
@@ -12,11 +13,9 @@ use sqlgen::parser::Parser;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
-use datafusion::common::DFSchema;
 use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-
 
 #[derive(Clone)]
 pub struct SqlDataFrame {
@@ -109,10 +108,9 @@ impl SqlDataFrame {
 
         // Now convert to string in the DataFusion dialect for schema inference
         let query_str = combined_query.sql(&self.dialect)?;
-        println!("datafusion: {}", query_str);
+        // println!("datafusion: {}", query_str);
         let logical_plan = self.session_context.create_logical_plan(&query_str)?;
         let new_schema: Schema = logical_plan.schema().as_ref().into();
-
 
         Ok(Arc::new(SqlDataFrame {
             prefix: self.prefix.clone(),
@@ -142,9 +140,7 @@ impl SqlDataFrame {
     pub fn select(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
         let sql_expr_strs = expr
             .iter()
-            .map(|expr| {
-                Ok(expr.to_sql_select()?.sql(&self.dialect)?)
-            })
+            .map(|expr| Ok(expr.to_sql_select()?.sql(&self.dialect)?))
             .collect::<Result<Vec<_>>>()?;
 
         let select_csv = sql_expr_strs.join(", ");
@@ -210,7 +206,6 @@ impl SqlDataFrame {
         ))
         .unwrap()
     }
-
 }
 
 fn cte_name_for_index(prefix: &str, index: usize) -> String {

@@ -9,12 +9,12 @@
 use datafusion::arrow::array::{ArrayRef, BooleanArray, Float32Array, Float64Array};
 use datafusion::arrow::compute::no_simd_compare_op_scalar;
 use datafusion::arrow::datatypes::DataType;
+use datafusion::common::DFSchema;
 use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion_expr::{Expr, ExprSchemable, lit, ReturnTypeFunction, Signature, Volatility};
+use datafusion_expr::{lit, Expr, ExprSchemable, ReturnTypeFunction, Signature, Volatility};
 use std::sync::Arc;
-use datafusion::common::DFSchema;
-use vegafusion_core::error::{VegaFusionError, Result, ResultWithContext};
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 /// `isFinite(value)`
 ///
@@ -30,13 +30,16 @@ pub fn is_finite_fn(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
 
         Ok(match dtype {
             DataType::Float16 | DataType::Float32 | DataType::Float64 => {
-                let is_finite_udf= make_is_finite_udf();
-                Expr::ScalarUDF { fun: Arc::new(is_finite_udf), args: vec![arg] }
-            },
+                let is_finite_udf = make_is_finite_udf();
+                Expr::ScalarUDF {
+                    fun: Arc::new(is_finite_udf),
+                    args: vec![arg],
+                }
+            }
             _ => {
                 // Non-numeric types cannot be non-finite
                 lit(true)
-            },
+            }
         })
     } else {
         Err(VegaFusionError::parse(format!(

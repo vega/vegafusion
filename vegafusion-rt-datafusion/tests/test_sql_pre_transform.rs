@@ -30,6 +30,8 @@ mod tests {
         // Load spec
         let spec_path = format!(
             "{}/tests/specs/inline_datasets/histogram.vg.json",
+            // "{}/tests/specs/inline_datasets/rect_binned_heatmap.vg.json",
+            // "{}/tests/specs/inline_datasets/layer_histogram_global_mean.vg.json",
             crate_dir()
         );
         let spec_str = fs::read_to_string(spec_path).unwrap();
@@ -45,10 +47,12 @@ mod tests {
             .unwrap();
 
         // Build inline datasets
-        let inline_datasets: HashMap<String, VegaFusionDataset> =
-            vec![("movie".to_string(), VegaFusionDataset::SqlDataFrame(Arc::new(sql_df)))]
-                .into_iter()
-                .collect();
+        let inline_datasets: HashMap<String, VegaFusionDataset> = vec![(
+            "movie".to_string(),
+            VegaFusionDataset::SqlDataFrame(Arc::new(sql_df)),
+        )]
+        .into_iter()
+        .collect();
 
         // Initialize task graph runtime
         let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));

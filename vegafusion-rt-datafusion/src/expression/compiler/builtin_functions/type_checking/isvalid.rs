@@ -9,12 +9,12 @@
 use datafusion::arrow::array::ArrayRef;
 use datafusion::arrow::compute::is_not_null;
 use datafusion::arrow::datatypes::DataType;
+use datafusion::common::DFSchema;
 use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::{Expr, ExprSchemable, ReturnTypeFunction, Signature, Volatility};
 use std::sync::Arc;
-use datafusion::common::DFSchema;
-use vegafusion_core::error::{VegaFusionError, Result, ResultWithContext};
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 /// `isValid(value)`
 ///

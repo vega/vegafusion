@@ -1,12 +1,17 @@
 use crate::sql::compile::data_type::ToSqlDataType;
 use crate::sql::compile::scalar::ToSqlScalar;
-use sqlgen::ast::{BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArg, FunctionArgExpr as SqlFunctionArgExpr, FunctionArgExpr, Ident, ObjectName as SqlObjectName, ObjectName, UnaryOperator as SqlUnaryOperator, WindowSpec as SqlWindowSpec};
+use sqlgen::ast::{
+    BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction,
+    FunctionArg as SqlFunctionArg, FunctionArg, FunctionArgExpr as SqlFunctionArgExpr,
+    FunctionArgExpr, Ident, ObjectName as SqlObjectName, ObjectName,
+    UnaryOperator as SqlUnaryOperator, WindowSpec as SqlWindowSpec,
+};
 
 use datafusion_expr::{Expr, Operator, WindowFunction};
 
-use vegafusion_core::error::{Result, VegaFusionError};
 use crate::sql::compile::function_arg::ToSqlFunctionArg;
 use crate::sql::compile::order::ToSqlOrderByExpr;
+use vegafusion_core::error::{Result, VegaFusionError};
 
 pub trait ToSqlExpr {
     fn to_sql(&self) -> Result<SqlExpr>;
@@ -155,9 +160,7 @@ impl ToSqlExpr for Expr {
                 };
                 let args = args
                     .iter()
-                    .map(|expr| {
-                        Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?))
-                    })
+                    .map(|expr| Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?)))
                     .collect::<Result<Vec<_>>>()?;
 
                 Ok(SqlExpr::Function(SqlFunction {
@@ -174,9 +177,7 @@ impl ToSqlExpr for Expr {
                 };
                 let args = args
                     .iter()
-                    .map(|expr| {
-                        Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?))
-                    })
+                    .map(|expr| Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?)))
                     .collect::<Result<Vec<_>>>()?;
 
                 Ok(SqlExpr::Function(SqlFunction {
@@ -185,7 +186,7 @@ impl ToSqlExpr for Expr {
                     over: None,
                     distinct: false,
                 }))
-            },
+            }
             Expr::AggregateFunction {
                 fun,
                 args,
@@ -197,9 +198,7 @@ impl ToSqlExpr for Expr {
                 };
                 let args = args
                     .iter()
-                    .map(|expr| {
-                        Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?))
-                    })
+                    .map(|expr| Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?)))
                     .collect::<Result<Vec<_>>>()?;
 
                 Ok(SqlExpr::Function(SqlFunction {
@@ -209,7 +208,13 @@ impl ToSqlExpr for Expr {
                     distinct: false,
                 }))
             }
-            Expr::WindowFunction { fun, args, partition_by, order_by, window_frame } => {
+            Expr::WindowFunction {
+                fun,
+                args,
+                partition_by,
+                order_by,
+                window_frame,
+            } => {
                 // Extract function name
                 let name_str = match fun {
                     WindowFunction::AggregateFunction(agg) => agg.to_string(),
@@ -256,7 +261,7 @@ impl ToSqlExpr for Expr {
                 };
 
                 Ok(SqlExpr::Function(sql_fun))
-            },
+            }
             Expr::AggregateUDF { fun, args } => {
                 let ident = Ident {
                     value: fun.name.clone(),
@@ -264,9 +269,7 @@ impl ToSqlExpr for Expr {
                 };
                 let args = args
                     .iter()
-                    .map(|expr| {
-                        Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?))
-                    })
+                    .map(|expr| Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?)))
                     .collect::<Result<Vec<_>>>()?;
 
                 Ok(SqlExpr::Function(SqlFunction {

@@ -16,6 +16,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, VegaFusionError};
 
+use crate::data::table::VegaFusionTableUtils;
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use vegafusion_core::data::table::VegaFusionTable;
@@ -23,7 +24,6 @@ use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::TransformDependencies;
-use crate::data::table::VegaFusionTableUtils;
 
 #[async_trait]
 pub trait TransformPipelineUtils {
@@ -90,30 +90,35 @@ impl TransformPipelineUtils for TransformPipeline {
         Ok((table, signals_values))
     }
 
-    async fn eval_sql(&self, sql_df: Arc<SqlDataFrame>, config: &CompilationConfig) -> Result<(VegaFusionTable, Vec<TaskValue>)> {
+    async fn eval_sql(
+        &self,
+        sql_df: Arc<SqlDataFrame>,
+        config: &CompilationConfig,
+    ) -> Result<(VegaFusionTable, Vec<TaskValue>)> {
         let mut result_sql_df = sql_df;
         let mut result_outputs: HashMap<Variable, TaskValue> = Default::default();
         let mut config = config.clone();
 
         // Helper function to add variable value to config
-        let add_output_var_to_config = |config: &mut CompilationConfig, var: &Variable, val: TaskValue| -> Result<()> {
-            match var.ns() {
-                VariableNamespace::Signal => {
-                    config
-                        .signal_scope
-                        .insert(var.name.clone(), val.as_scalar()?.clone());
+        let add_output_var_to_config =
+            |config: &mut CompilationConfig, var: &Variable, val: TaskValue| -> Result<()> {
+                match var.ns() {
+                    VariableNamespace::Signal => {
+                        config
+                            .signal_scope
+                            .insert(var.name.clone(), val.as_scalar()?.clone());
+                    }
+                    VariableNamespace::Data => {
+                        config
+                            .data_scope
+                            .insert(var.name.clone(), val.as_table()?.clone());
+                    }
+                    VariableNamespace::Scale => {
+                        unimplemented!()
+                    }
                 }
-                VariableNamespace::Data => {
-                    config
-                        .data_scope
-                        .insert(var.name.clone(), val.as_table()?.clone());
-                }
-                VariableNamespace::Scale => {
-                    unimplemented!()
-                }
-            }
-            Ok(())
-        };
+                Ok(())
+            };
 
         let mut next_tx_ind = 0;
         for (tx_ind, tx) in self.transforms.iter().enumerate() {
@@ -124,9 +129,9 @@ impl TransformPipelineUtils for TransformPipeline {
                     // Transform not support using SQL, break out of for loop and
                     // handle this transform and then remaining with DataFrames
                     println!("{}", _msg);
-                    break
+                    break;
                 }
-                Err(err) => return Err(err)
+                Err(err) => return Err(err),
             };
 
             result_sql_df = tx_result.0;
@@ -171,7 +176,6 @@ impl TransformPipelineUtils for TransformPipeline {
             .into_iter()
             .sorted_by_key(|(k, _v)| k.clone())
             .unzip();
-
 
         Ok((table, signals_values))
     }

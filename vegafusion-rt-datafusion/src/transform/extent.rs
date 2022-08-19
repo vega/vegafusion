@@ -6,6 +6,7 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use crate::data::table::VegaFusionTableUtils;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::to_numeric;
 use crate::sql::dataframe::SqlDataFrame;
@@ -13,18 +14,17 @@ use crate::transform::utils::{DataFrameUtils, RecordBatchUtils};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::arrow::datatypes::Field;
+use datafusion::arrow::ipc::Schema;
+use datafusion::common::DFSchema;
 use datafusion::dataframe::DataFrame;
 use datafusion::logical_plan::{col, max, min};
 use datafusion::scalar::ScalarValue;
-use std::sync::Arc;
-use datafusion::arrow::ipc::Schema;
-use datafusion::common::DFSchema;
 use datafusion_expr::Expr;
+use std::sync::Arc;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Extent;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use crate::data::table::VegaFusionTableUtils;
 
 #[async_trait]
 impl TransformTrait for Extent {
@@ -75,15 +75,12 @@ impl TransformTrait for Extent {
     }
 }
 
-
 fn min_max_exprs(field: &str, schema: &DFSchema) -> Result<(Expr, Expr)> {
     let field_col = col(field);
-    let min_expr =
-        min(to_numeric(field_col.clone(), schema)?).alias("__min_val");
+    let min_expr = min(to_numeric(field_col.clone(), schema)?).alias("__min_val");
     let max_expr = max(to_numeric(field_col, schema)?).alias("__max_val");
     Ok((min_expr, max_expr))
 }
-
 
 fn extract_extent_list(table: &VegaFusionTable) -> Result<TaskValue> {
     let result_rb = table.to_record_batch()?;

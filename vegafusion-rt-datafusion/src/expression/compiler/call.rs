@@ -18,7 +18,9 @@ use crate::expression::compiler::builtin_functions::date_time::date_parts::{
 use crate::expression::compiler::builtin_functions::date_time::datetime::{
     datetime_transform, to_date_transform, UTC_COMPONENTS,
 };
-use crate::expression::compiler::builtin_functions::math::isfinite::{is_finite_fn, make_is_finite_udf};
+use crate::expression::compiler::builtin_functions::math::isfinite::{
+    is_finite_fn, make_is_finite_udf,
+};
 use crate::expression::compiler::builtin_functions::math::isnan::make_is_nan_udf;
 use crate::expression::compiler::builtin_functions::math::pow::make_pow_udf;
 use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_valid_fn;
@@ -28,12 +30,12 @@ use crate::expression::compiler::utils::cast_to;
 use datafusion::arrow::datatypes::DataType;
 use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::udf::ScalarUDF;
+use datafusion::prelude::SessionContext;
 use datafusion_expr::BuiltinScalarFunction;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
-use datafusion::prelude::SessionContext;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{
@@ -442,7 +444,6 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
 
     callables
 }
-
 
 pub fn make_session_context() -> SessionContext {
     let mut ctx = SessionContext::new();
