@@ -226,14 +226,14 @@ fn make_aggr_expr(col_name: Option<String>, op: &AggregateOp, schema: &DFSchema)
         AggregateOp::Valid => {
             let valid = Expr::Cast {
                 expr: Box::new(Expr::IsNotNull(Box::new(column))),
-                data_type: DataType::UInt64,
+                data_type: DataType::Int64,
             };
             sum(valid)
         }
         AggregateOp::Missing => {
             let missing = Expr::Cast {
                 expr: Box::new(Expr::IsNull(Box::new(column))),
-                data_type: DataType::UInt64,
+                data_type: DataType::Int64,
             };
             sum(missing)
         }
