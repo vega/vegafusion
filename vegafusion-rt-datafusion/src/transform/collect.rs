@@ -46,11 +46,24 @@ impl TransformTrait for Collect {
 
     async fn eval_sql(
         &self,
-        _dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<SqlDataFrame>,
         _config: &CompilationConfig,
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
-        Err(VegaFusionError::sql_not_supported(format!(
-            "Collect transform does not support SQL Evaluation"
-        )))
+        let sort_exprs: Vec<_> = self
+            .fields
+            .clone()
+            .into_iter()
+            .zip(&self.order)
+            .map(|(field, order)| Expr::Sort {
+                expr: Box::new(col(&field)),
+                asc: *order == SortOrder::Ascending as i32,
+                nulls_first: *order == SortOrder::Ascending as i32,
+            })
+            .collect();
+
+        let result = dataframe
+            .sort(sort_exprs)
+            .with_context(|| "Collect transform failed".to_string())?;
+        Ok((result, Default::default()))
     }
 }
