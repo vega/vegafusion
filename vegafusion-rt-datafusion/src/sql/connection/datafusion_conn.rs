@@ -34,6 +34,7 @@ impl SqlConnection for DataFusionConnection {
         query: &str,
         _schema: &Schema,
     ) -> vegafusion_core::error::Result<VegaFusionTable> {
+        println!("datafusion query: {}", query);
         let df = self.ctx.sql(query).await?;
         VegaFusionTable::from_dataframe(df).await
     }
