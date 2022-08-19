@@ -189,6 +189,8 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
 fn make_aggr_expr(col_name: Option<String>, op: &AggregateOp, schema: &DFSchema) -> Result<Expr> {
     let column = if let Some(col_name) = col_name {
         col(&col_name)
+    } else if matches!(op, AggregateOp::Count) {
+        Expr::Wildcard
     } else {
         lit(0i32)
     };

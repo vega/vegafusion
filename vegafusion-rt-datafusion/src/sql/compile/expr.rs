@@ -5,6 +5,7 @@ use sqlgen::ast::{BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function
 use datafusion_expr::{Expr, Operator, WindowFunction};
 
 use vegafusion_core::error::{Result, VegaFusionError};
+use crate::sql::compile::function_arg::ToSqlFunctionArg;
 use crate::sql::compile::order::ToSqlOrderByExpr;
 
 pub trait ToSqlExpr {
@@ -155,9 +156,7 @@ impl ToSqlExpr for Expr {
                 let args = args
                     .iter()
                     .map(|expr| {
-                        Ok(SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(
-                            expr.to_sql()?,
-                        )))
+                        Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?))
                     })
                     .collect::<Result<Vec<_>>>()?;
 
@@ -176,9 +175,7 @@ impl ToSqlExpr for Expr {
                 let args = args
                     .iter()
                     .map(|expr| {
-                        Ok(SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(
-                            expr.to_sql()?,
-                        )))
+                        Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?))
                     })
                     .collect::<Result<Vec<_>>>()?;
 
@@ -201,9 +198,7 @@ impl ToSqlExpr for Expr {
                 let args = args
                     .iter()
                     .map(|expr| {
-                        Ok(SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(
-                            expr.to_sql()?,
-                        )))
+                        Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?))
                     })
                     .collect::<Result<Vec<_>>>()?;
 
@@ -224,7 +219,7 @@ impl ToSqlExpr for Expr {
                 // Process args
                 let args = args
                     .iter()
-                    .map(|arg| Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(arg.to_sql()?))))
+                    .map(|arg| Ok(SqlFunctionArg::Unnamed(arg.to_sql_function_arg()?)))
                     .collect::<Result<Vec<_>>>()?;
 
                 let partition_by = partition_by
@@ -270,9 +265,7 @@ impl ToSqlExpr for Expr {
                 let args = args
                     .iter()
                     .map(|expr| {
-                        Ok(SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(
-                            expr.to_sql()?,
-                        )))
+                        Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?))
                     })
                     .collect::<Result<Vec<_>>>()?;
 
