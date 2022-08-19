@@ -1,7 +1,6 @@
 use crate::sql::compile::expr::ToSqlExpr;
 use crate::sql::compile::order::ToSqlOrderByExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
-use crate::sql::compile::window::ToSqlWindowFunction;
 use crate::sql::connection::SqlConnection;
 use datafusion::prelude::{Expr as DfExpr, SessionContext};
 use datafusion_expr::Expr;
@@ -144,11 +143,7 @@ impl SqlDataFrame {
         let sql_expr_strs = expr
             .iter()
             .map(|expr| {
-                if matches!(expr, Expr::WindowFunction { .. }) {
-                    Ok(expr.to_sql_window()?.sql(&self.dialect)?)
-                } else {
-                    Ok(expr.to_sql_select()?.sql(&self.dialect)?)
-                }
+                Ok(expr.to_sql_select()?.sql(&self.dialect)?)
             })
             .collect::<Result<Vec<_>>>()?;
 

@@ -1,14 +1,11 @@
 use crate::sql::compile::data_type::ToSqlDataType;
 use crate::sql::compile::scalar::ToSqlScalar;
-use sqlgen::ast::{
-    BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction,
-    FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr, Ident,
-    ObjectName as SqlObjectName, UnaryOperator as SqlUnaryOperator,
-};
+use sqlgen::ast::{BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArg, FunctionArgExpr as SqlFunctionArgExpr, FunctionArgExpr, Ident, ObjectName as SqlObjectName, ObjectName, UnaryOperator as SqlUnaryOperator, WindowSpec as SqlWindowSpec};
 
-use datafusion_expr::{Expr, Operator};
+use datafusion_expr::{Expr, Operator, WindowFunction};
 
 use vegafusion_core::error::{Result, VegaFusionError};
+use crate::sql::compile::order::ToSqlOrderByExpr;
 
 pub trait ToSqlExpr {
     fn to_sql(&self) -> Result<SqlExpr>;
@@ -217,9 +214,54 @@ impl ToSqlExpr for Expr {
                     distinct: false,
                 }))
             }
-            Expr::WindowFunction { .. } => Err(VegaFusionError::internal(
-                "WindowFunction cannot be converted to SQL",
-            )),
+            Expr::WindowFunction { fun, args, partition_by, order_by, window_frame } => {
+                // Extract function name
+                let name_str = match fun {
+                    WindowFunction::AggregateFunction(agg) => agg.to_string(),
+                    WindowFunction::BuiltInWindowFunction(win_fn) => win_fn.to_string(),
+                };
+
+                // Process args
+                let args = args
+                    .iter()
+                    .map(|arg| Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(arg.to_sql()?))))
+                    .collect::<Result<Vec<_>>>()?;
+
+                let partition_by = partition_by
+                    .iter()
+                    .map(|arg| arg.to_sql())
+                    .collect::<Result<Vec<_>>>()?;
+
+                let order_by = order_by
+                    .iter()
+                    .map(|arg| arg.to_sql_order())
+                    .collect::<Result<Vec<_>>>()?;
+
+                if window_frame.is_some() {
+                    return Err(VegaFusionError::internal(
+                        "Window frame is not yet supported",
+                    ));
+                }
+
+                // Process over
+                let over = SqlWindowSpec {
+                    partition_by,
+                    order_by,
+                    window_frame: None,
+                };
+
+                let sql_fun = SqlFunction {
+                    name: ObjectName(vec![Ident {
+                        value: name_str,
+                        quote_style: None,
+                    }]),
+                    args,
+                    over: Some(over),
+                    distinct: false,
+                };
+
+                Ok(SqlExpr::Function(sql_fun))
+            },
             Expr::AggregateUDF { fun, args } => {
                 let ident = Ident {
                     value: fun.name.clone(),
