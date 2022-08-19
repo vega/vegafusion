@@ -20,7 +20,7 @@ ordered-float = "^2.10.0"
 petgraph = "0.6.0"
 deterministic-hash = "1.0.1"
 chrono = "0.4.19"
-sqlgen = {git = "https://github.com/vegafusion/sqlgen-rs.git", rev = "3b742e8ec3cdf5e6c0e68c44ecc7d58cd0f45cb2", optional=true}
+sqlgen = {git = "https://github.com/vegafusion/sqlgen-rs.git", rev = "e5ac9609dfffbf98af1fd8f2bc8a07216451bb51", optional=true}
 
 [dependencies.serde_json]
 version = "1.0.81"

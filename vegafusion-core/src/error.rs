@@ -68,12 +68,12 @@ pub enum VegaFusionError {
     #[error("IO Error: {0}\n{1}")]
     IOError(std::io::Error, ErrorContext),
 
-    #[error("IO Error: {0}\n{1}")]
+    #[error("Serde JSON Error: {0}\n{1}")]
     SerdeJsonError(serde_json::Error, ErrorContext),
 
     #[cfg(feature = "sqlgen")]
-    #[error("IO Error: {0}\n{1}")]
-    SqlParseError(sqlgen::parser::ParserError, ErrorContext),
+    #[error("SqlGen Error: {0}\n{1}")]
+    SqlParseError(sqlgen::parser::SqlGenError, ErrorContext),
 }
 
 impl VegaFusionError {
@@ -290,8 +290,8 @@ impl From<serde_json::Error> for VegaFusionError {
 }
 
 #[cfg(feature = "sqlgen")]
-impl From<sqlgen::parser::ParserError> for VegaFusionError {
-    fn from(err: sqlgen::parser::ParserError) -> Self {
+impl From<sqlgen::parser::SqlGenError> for VegaFusionError {
+    fn from(err: sqlgen::parser::SqlGenError) -> Self {
         Self::SqlParseError(err, Default::default())
     }
 }
