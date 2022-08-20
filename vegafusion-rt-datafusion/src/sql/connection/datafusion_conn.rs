@@ -30,6 +30,7 @@ pub fn make_datafusion_dialect() -> Dialect {
 
     // datetime
     dialect.functions.insert("datetime_components".to_string());
+    dialect.functions.insert("vg_time".to_string());
 
     // date parts
     dialect.functions.insert("year".to_string());

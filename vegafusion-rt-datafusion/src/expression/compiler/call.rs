@@ -40,7 +40,7 @@ use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
 use crate::expression::compiler::builtin_functions::date_time::date_format::{time_format_fn, TIMEFORMAT_UDF, utc_format_fn};
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::DATETIME_STRING_TO_MILLIS_UDF;
-use crate::expression::compiler::builtin_functions::date_time::time::time_fn;
+use crate::expression::compiler::builtin_functions::date_time::time::{time_fn, TIME_UDF};
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
@@ -436,6 +436,7 @@ pub fn make_session_context() -> SessionContext {
     // datetime
     ctx.register_udf((*DATETIME_COMPONENTS).clone());
     ctx.register_udf((*DATETIME_STRING_TO_MILLIS_UDF).clone());
+    ctx.register_udf((*TIME_UDF).clone());
 
     // date parts
     ctx.register_udf((*YEAR_UDF).clone());
