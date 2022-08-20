@@ -27,7 +27,26 @@ pub fn make_datafusion_dialect() -> Dialect {
     let mut dialect = Dialect::datafusion();
     dialect.functions.insert("isnan".to_string());
     dialect.functions.insert("isfinite".to_string());
+
+    // datetime
     dialect.functions.insert("datetime_components".to_string());
+
+    // date parts
+    dialect.functions.insert("year".to_string());
+    dialect.functions.insert("month".to_string());
+    dialect.functions.insert("quarter".to_string());
+    dialect.functions.insert("date".to_string());
+    dialect.functions.insert("dayofyear".to_string());
+    dialect.functions.insert("day".to_string());
+    dialect.functions.insert("hours".to_string());
+    dialect.functions.insert("minutes".to_string());
+    dialect.functions.insert("seconds".to_string());
+    dialect.functions.insert("milliseconds".to_string());
+
+    // timeunit transform
+    dialect.functions.insert("timeunit_start".to_string());
+    dialect.functions.insert("timeunit_end".to_string());
+
     dialect
 }
 
@@ -44,7 +63,8 @@ impl SqlConnection for DataFusionConnection {
     ) -> vegafusion_core::error::Result<VegaFusionTable> {
         println!("datafusion query: {}", query);
         let df = self.ctx.sql(query).await?;
-        VegaFusionTable::from_dataframe(df).await
+        let res = VegaFusionTable::from_dataframe(df).await?;
+        Ok(res)
     }
 
     async fn tables(&self) -> vegafusion_core::error::Result<HashMap<String, Schema>> {

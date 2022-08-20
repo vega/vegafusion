@@ -6,6 +6,7 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use std::ops::Deref;
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
     make_date_str_to_millis_udf, DateParseMode,
 };
@@ -70,7 +71,7 @@ pub fn to_date_transform(
     cast_to(arg, &DataType::Int64, schema)
 }
 
-pub fn datetime_transform(
+pub fn datetime_transform_fn(
     tz_config: &RuntimeTzConfig,
     args: &[Expr],
     schema: &DFSchema,
@@ -258,6 +259,15 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
         &return_type,
         &datetime_components,
     )
+}
+
+pub fn make_datetime_components_fn(tz_config: &RuntimeTzConfig, args: &[Expr], _schema: &DFSchema) -> Result<Expr> {
+    let mut udf_args = vec![lit(tz_config.default_input_tz.to_string())];
+    udf_args.extend(Vec::from(args));
+    Ok(Expr::ScalarUDF {
+        fun: Arc::new(DATETIME_COMPONENTS.deref().clone()),
+        args: udf_args,
+    })
 }
 
 lazy_static! {

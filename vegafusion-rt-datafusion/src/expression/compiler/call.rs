@@ -9,15 +9,8 @@
 use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
 use crate::expression::compiler::builtin_functions::array::span::make_span_udf;
 use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
-use crate::expression::compiler::builtin_functions::date_time::date_parts::{
-    DATE_TRANSFORM, DAYOFYEAR_TRANSFORM, DAY_TRANSFORM, HOURS_TRANSFORM, MILLISECONDS_TRANSFORM,
-    MINUTES_TRANSFORM, MONTH_TRANSFORM, QUARTER_TRANSFORM, SECONDS_TRANSFORM, UTCDATE_UDF,
-    UTCDAYOFYEAR_UDF, UTCDAY_UDF, UTCHOURS_UDF, UTCMILLISECONDS_UDF, UTCMINUTES_UDF, UTCMONTH_UDF,
-    UTCQUARTER_UDF, UTCSECONDS_UDF, UTCYEAR_UDF, YEAR_TRANSFORM,
-};
-use crate::expression::compiler::builtin_functions::date_time::datetime::{
-    datetime_transform, to_date_transform,
-};
+use crate::expression::compiler::builtin_functions::date_time::date_parts::{DATE_TRANSFORM, DAYOFYEAR_TRANSFORM, DAY_TRANSFORM, HOURS_TRANSFORM, MILLISECONDS_TRANSFORM, MINUTES_TRANSFORM, MONTH_TRANSFORM, QUARTER_TRANSFORM, SECONDS_TRANSFORM, YEAR_TRANSFORM, YEAR_UDF, MONTH_UDF, QUARTER_UDF, DATE_UDF, DAYOFYEAR_UDF, DAY_UDF, HOURS_UDF, MINUTES_UDF, SECONDS_UDF, MILLISECONDS_UDF};
+use crate::expression::compiler::builtin_functions::date_time::datetime::{DATETIME_COMPONENTS, datetime_transform_fn, make_datetime_components_fn, to_date_transform};
 use crate::expression::compiler::builtin_functions::math::isfinite::{
     is_finite_fn, make_is_finite_udf,
 };
@@ -58,7 +51,7 @@ use crate::transform::timeunit::{TIMEUNIT_END_UDF, TIMEUNIT_START_UDF};
 
 pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>;
 pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
-pub type LocalTransformFn =
+pub type TzTransformFn =
     Arc<dyn Fn(&RuntimeTzConfig, &[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
 pub type DataFn =
     Arc<dyn Fn(&VegaFusionTable, &[Expression], &DFSchema) -> Result<Expr> + Send + Sync>;
@@ -73,7 +66,11 @@ pub enum VegaFusionCallable {
 
     /// A function that uses the local timezone to operate on the compiled arguments and
     /// produces a new expression.
-    LocalTransform(LocalTransformFn),
+    LocalTransform(TzTransformFn),
+
+    /// A function that uses the UTC timezone to operate on the compiled arguments and
+    /// produces a new expression.
+    UtcTransform(TzTransformFn),
 
     /// Runtime function that is build in to DataFusion
     BuiltinScalarFunction {
@@ -187,6 +184,14 @@ pub fn compile_call(
             let tz_config = config
                 .tz_config
                 .with_context(|| "No local timezone info provided".to_string())?;
+            callable(&tz_config, &args, schema)
+        }
+        VegaFusionCallable::UtcTransform(callable) => {
+            let args = compile_scalar_arguments(node, config, schema, &None)?;
+            let tz_config = RuntimeTzConfig {
+                local_tz: chrono_tz::UTC,
+                default_input_tz: chrono_tz::UTC,
+            };
             callable(&tz_config, &args, schema)
         }
         _ => {
@@ -313,91 +318,58 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         VegaFusionCallable::LocalTransform(MILLISECONDS_TRANSFORM.deref().clone()),
     );
 
+    // UTC
     callables.insert(
         "utcyear".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCYEAR_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(YEAR_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcquarter".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCQUARTER_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(QUARTER_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcmonth".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCMONTH_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(MONTH_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcday".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCDAY_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(DAY_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcdate".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCDATE_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(DATE_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcdayofyear".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCDAYOFYEAR_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(DAYOFYEAR_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utchours".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCHOURS_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(HOURS_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcminutes".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCMINUTES_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(MINUTES_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcseconds".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCSECONDS_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(SECONDS_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcmilliseconds".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCMILLISECONDS_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(MILLISECONDS_TRANSFORM.deref().clone()),
     );
 
     // date time
     callables.insert(
         "datetime".to_string(),
-        VegaFusionCallable::LocalTransform(Arc::new(datetime_transform)),
+        VegaFusionCallable::LocalTransform(Arc::new(datetime_transform_fn)),
     );
 
-    // TODO make utc a transform that adds "UTC" timezone arg to UTC_COMPONENTS
-    // callables.insert(
-    //     "utc".to_string(),
-    //     VegaFusionCallable::ScalarUDF {
-    //         udf: UTC_COMPONENTS.deref().clone(),
-    //         cast: Some(DataType::Int64),
-    //     },
-    // );
+    callables.insert(
+        "utc".to_string(),
+        VegaFusionCallable::UtcTransform(Arc::new(make_datetime_components_fn)),
+    );
 
     callables.insert(
         "time".to_string(),
@@ -458,9 +430,24 @@ pub fn make_session_context() -> SessionContext {
     // isFinite
     ctx.register_udf(make_is_finite_udf());
 
-    // timeunit_start
+    // timeunit
     ctx.register_udf((*TIMEUNIT_START_UDF).clone());
     ctx.register_udf((*TIMEUNIT_END_UDF).clone());
+
+    // datetime
+    ctx.register_udf((*DATETIME_COMPONENTS).clone());
+
+    // date parts
+    ctx.register_udf((*YEAR_UDF).clone());
+    ctx.register_udf((*MONTH_UDF).clone());
+    ctx.register_udf((*QUARTER_UDF).clone());
+    ctx.register_udf((*DATE_UDF).clone());
+    ctx.register_udf((*DAYOFYEAR_UDF).clone());
+    ctx.register_udf((*DAY_UDF).clone());
+    ctx.register_udf((*HOURS_UDF).clone());
+    ctx.register_udf((*MINUTES_UDF).clone());
+    ctx.register_udf((*SECONDS_UDF).clone());
+    ctx.register_udf((*MILLISECONDS_UDF).clone());
 
     ctx
 }
