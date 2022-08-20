@@ -38,9 +38,7 @@ use vegafusion_core::proto::gen::expression::{
 use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
-use crate::expression::compiler::builtin_functions::date_time::date_format::{
-    time_format_fn, utc_format_fn,
-};
+use crate::expression::compiler::builtin_functions::date_time::date_format::{time_format_fn, TIMEFORMAT_UDF, utc_format_fn};
 use crate::expression::compiler::builtin_functions::date_time::time::time_fn;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
@@ -448,6 +446,9 @@ pub fn make_session_context() -> SessionContext {
     ctx.register_udf((*MINUTES_UDF).clone());
     ctx.register_udf((*SECONDS_UDF).clone());
     ctx.register_udf((*MILLISECONDS_UDF).clone());
+
+    // timeformat
+    ctx.register_udf((*TIMEFORMAT_UDF).clone());
 
     ctx
 }

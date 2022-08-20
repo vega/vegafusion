@@ -47,6 +47,9 @@ pub fn make_datafusion_dialect() -> Dialect {
     dialect.functions.insert("timeunit_start".to_string());
     dialect.functions.insert("timeunit_end".to_string());
 
+    // timeformat
+    dialect.functions.insert("vg_timeformat".to_string());
+
     dialect
 }
 
