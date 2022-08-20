@@ -28,29 +28,6 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 impl TransformTrait for Extent {
-    async fn eval(
-        &self,
-        dataframe: Arc<DataFrame>,
-        _config: &CompilationConfig,
-    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
-        let output_values = if self.signal.is_some() {
-            let (min_expr, max_expr) = min_max_exprs(self.field.as_str(), dataframe.schema())?;
-
-            let extent_df = dataframe
-                .aggregate(Vec::new(), vec![min_expr, max_expr])
-                .unwrap();
-
-            // Eval to single row dataframe and extract scalar values
-            let result_table = VegaFusionTable::from_dataframe(extent_df).await?;
-            let extent_list = extract_extent_list(&result_table)?;
-            vec![extent_list]
-        } else {
-            Vec::new()
-        };
-
-        Ok((dataframe, output_values))
-    }
-
     async fn eval_sql(
         &self,
         sql_df: Arc<SqlDataFrame>,

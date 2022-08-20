@@ -26,51 +26,6 @@ use vegafusion_core::transform::aggregate::op_name;
 
 #[async_trait]
 impl TransformTrait for Aggregate {
-    async fn eval(
-        &self,
-        dataframe: Arc<DataFrame>,
-        _config: &CompilationConfig,
-    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
-        let group_exprs: Vec<_> = self.groupby.iter().map(|c| col(c)).collect();
-        let (mut agg_exprs, projections) = get_agg_and_proj_exprs(self, dataframe.schema())?;
-
-        let dataframe = if !self.groupby.is_empty() {
-            //  Add row_number column that we can sort by
-            let row_number_expr = Expr::WindowFunction {
-                fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
-                args: Vec::new(),
-                partition_by: Vec::new(),
-                order_by: Vec::new(),
-                window_frame: None,
-            }
-            .alias("__row_number");
-
-            // Add min(__row_number) aggregation that we can sort by later
-            agg_exprs.push(min(col("__row_number")).alias("__min_row_number"));
-
-            dataframe.select(vec![Expr::Wildcard, row_number_expr])?
-        } else {
-            dataframe
-        };
-
-        let mut grouped_dataframe = dataframe
-            .aggregate(group_exprs, agg_exprs)
-            .with_context(|| "Failed to perform aggregate transform".to_string())?;
-
-        if !self.groupby.is_empty() {
-            // Sort groups according to the lowest row number of a value in that group
-            let sort_exprs = vec![Expr::Sort {
-                expr: Box::new(col("__min_row_number")),
-                asc: true,
-                nulls_first: false,
-            }];
-            grouped_dataframe = grouped_dataframe.sort(sort_exprs)?;
-        }
-
-        let grouped_dataframe = grouped_dataframe.select(projections)?;
-        Ok((grouped_dataframe, Vec::new()))
-    }
-
     async fn eval_sql(
         &self,
         dataframe: Arc<SqlDataFrame>,

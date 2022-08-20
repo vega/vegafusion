@@ -22,39 +22,6 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 impl TransformTrait for Filter {
-    async fn eval(
-        &self,
-        dataframe: Arc<DataFrame>,
-        config: &CompilationConfig,
-    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
-        let filter_expr = compile(
-            self.expr.as_ref().unwrap(),
-            config,
-            Some(dataframe.schema()),
-        )?;
-
-        // Cast filter expr to boolean
-        let filter_expr = cast_to(filter_expr, &DataType::Boolean, dataframe.schema())?;
-
-        // Save off initial columns and select them below to filter out any intermediary columns
-        // that the expression may produce
-        let col_names: Vec<_> = dataframe
-            .schema()
-            .fields()
-            .iter()
-            .map(|field| field.name().as_str())
-            .collect();
-        let result = dataframe
-            .filter(cast_to(
-                filter_expr,
-                &DataType::Boolean,
-                dataframe.schema(),
-            )?)?
-            .select_columns(&col_names)?;
-
-        Ok((result, Default::default()))
-    }
-
     async fn eval_sql(
         &self,
         dataframe: Arc<SqlDataFrame>,

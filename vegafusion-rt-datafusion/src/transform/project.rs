@@ -22,39 +22,6 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 impl TransformTrait for Project {
-    async fn eval(
-        &self,
-        dataframe: Arc<DataFrame>,
-        _config: &CompilationConfig,
-    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
-        // Collect all dataframe fields into a HashSet for fast membership test
-        let all_fields: HashSet<_> = dataframe
-            .schema()
-            .fields()
-            .iter()
-            .map(|field| field.name().clone())
-            .collect();
-
-        // Keep all of the project columns that are present in the dataframe.
-        // Skip projection fields that are not found
-        let select_fields: Vec<_> = self
-            .fields
-            .iter()
-            .filter_map(|field| {
-                if all_fields.contains(field) {
-                    Some(field.clone())
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        let select_field_strs: Vec<_> = select_fields.iter().map(|f| f.as_str()).collect();
-
-        let result = dataframe.select_columns(select_field_strs.as_slice())?;
-        Ok((result, Default::default()))
-    }
-
     async fn eval_sql(
         &self,
         dataframe: Arc<SqlDataFrame>,

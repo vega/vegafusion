@@ -36,12 +36,6 @@ use vegafusion_core::transform::TransformDependencies;
 
 #[async_trait]
 pub trait TransformTrait: TransformDependencies {
-    async fn eval(
-        &self,
-        dataframe: Arc<DataFrame>,
-        config: &CompilationConfig,
-    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)>;
-
     async fn eval_sql(
         &self,
         dataframe: Arc<SqlDataFrame>,
@@ -68,16 +62,6 @@ pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
 
 #[async_trait]
 impl TransformTrait for Transform {
-    async fn eval(
-        &self,
-        dataframe: Arc<DataFrame>,
-        config: &CompilationConfig,
-    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
-        to_transform_trait(self.transform_kind())
-            .eval(dataframe, config)
-            .await
-    }
-
     async fn eval_sql(
         &self,
         sql_df: Arc<SqlDataFrame>,
