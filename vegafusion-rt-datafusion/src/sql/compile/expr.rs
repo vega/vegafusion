@@ -70,6 +70,8 @@ impl ToSqlExpr for Expr {
                     Operator::BitwiseAnd => SqlBinaryOperator::BitwiseAnd,
                     Operator::BitwiseOr => SqlBinaryOperator::BitwiseOr,
                     Operator::StringConcat => SqlBinaryOperator::StringConcat,
+                    Operator::BitwiseShiftRight => SqlBinaryOperator::PGBitwiseShiftRight,
+                    Operator::BitwiseShiftLeft => SqlBinaryOperator::PGBitwiseShiftLeft,
                 };
                 Ok(SqlExpr::Nested(Box::new(SqlExpr::BinaryOp {
                     left: Box::new(left.to_sql()?),

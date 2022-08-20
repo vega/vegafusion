@@ -71,8 +71,8 @@ impl ToSqlDataType for DataType {
             DataType::Dictionary(_, _) => Err(VegaFusionError::internal(
                 "Dictionary cannot be converted to SQL",
             )),
-            DataType::Decimal(_, _) => Err(VegaFusionError::internal(
-                "Decimal cannot be converted to SQL",
+            DataType::Decimal128(_, _) => Err(VegaFusionError::internal(
+                "Decimal128 cannot be converted to SQL",
             )),
             DataType::Decimal256(_, _) => Err(VegaFusionError::internal(
                 "Decimal256 cannot be converted to SQL",
