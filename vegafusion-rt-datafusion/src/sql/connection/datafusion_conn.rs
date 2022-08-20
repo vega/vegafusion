@@ -51,6 +51,9 @@ pub fn make_datafusion_dialect() -> Dialect {
     dialect.functions.insert("vg_timeformat".to_string());
     dialect.functions.insert("vg_datetime_to_millis".to_string());
 
+    // math
+    dialect.functions.insert("pow".to_string());
+
     dialect
 }
 

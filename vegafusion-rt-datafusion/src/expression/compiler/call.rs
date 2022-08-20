@@ -15,7 +15,7 @@ use crate::expression::compiler::builtin_functions::math::isfinite::{
     is_finite_fn, make_is_finite_udf,
 };
 use crate::expression::compiler::builtin_functions::math::isnan::make_is_nan_udf;
-use crate::expression::compiler::builtin_functions::math::pow::make_pow_udf;
+use crate::expression::compiler::builtin_functions::math::pow::{make_pow_udf, POW_UDF};
 use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_valid_fn;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
@@ -451,6 +451,9 @@ pub fn make_session_context() -> SessionContext {
 
     // timeformat
     ctx.register_udf((*TIMEFORMAT_UDF).clone());
+
+    // math
+    ctx.register_udf((*POW_UDF).clone());
 
     ctx
 }

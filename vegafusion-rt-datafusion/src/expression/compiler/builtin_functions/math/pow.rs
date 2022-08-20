@@ -59,3 +59,7 @@ pub fn make_pow_udf() -> ScalarUDF {
         &pow,
     )
 }
+
+lazy_static! {
+    pub static ref POW_UDF: ScalarUDF = make_pow_udf();
+}
