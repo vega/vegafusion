@@ -102,7 +102,7 @@ impl TransformTrait for Aggregate {
         // Perform aggregation
         let mut grouped_dataframe = dataframe.aggregate(group_exprs, agg_exprs)?;
 
-        // Maybe sory by min row number
+        // Maybe sort by min row number
         if !self.groupby.is_empty() {
             // Sort groups according to the lowest row number of a value in that group
             let sort_exprs = vec![Expr::Sort {
@@ -182,7 +182,7 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
     Ok((agg_exprs, projections))
 }
 
-fn make_aggr_expr(col_name: Option<String>, op: &AggregateOp, schema: &DFSchema) -> Result<Expr> {
+pub fn make_aggr_expr(col_name: Option<String>, op: &AggregateOp, schema: &DFSchema) -> Result<Expr> {
     let column = if let Some(col_name) = col_name {
         col(&col_name)
     } else if matches!(op, AggregateOp::Count) {
