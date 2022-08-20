@@ -219,7 +219,7 @@ fn unpack_timeunit_udf_args(
     ))
 }
 
-fn make_timeunit_start_udf2() -> ScalarUDF {
+fn make_timeunit_start_udf() -> ScalarUDF {
     let timeunit_start: ScalarFunctionImplementation =
         Arc::new(|columns: &[ColumnarValue]| {
             let (timestamp, tz, units_mask) = unpack_timeunit_udf_args(columns)?;
@@ -256,7 +256,7 @@ fn make_timeunit_start_udf2() -> ScalarUDF {
 }
 
 
-fn make_timeunit_end_udf2() -> ScalarUDF {
+fn make_timeunit_end_udf() -> ScalarUDF {
     let timeunit_end: ScalarFunctionImplementation = Arc::new(|columns: &[ColumnarValue]| {
         let (timestamp, tz, units_mask) = unpack_timeunit_udf_args(columns)?;
 
@@ -290,73 +290,6 @@ fn make_timeunit_end_udf2() -> ScalarUDF {
 
     ScalarUDF::new("timeunit_end", &signature, &return_type, &timeunit_end)
 }
-
-// fn make_timeunit_start_udf(units_mask: &[bool], local_tz: Option<chrono_tz::Tz>) -> ScalarUDF {
-//     let units_mask = Vec::from(units_mask);
-//     let timeunit = move |args: &[ArrayRef]| {
-//         let arg = &args[0];
-//
-//         // Input UTC
-//         let array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
-//         let result_array: Int64Array = if let Some(local_tz) = local_tz {
-//             // Input is in UTC, compute timeunit values in local, return results in UTC
-//             let tz = local_tz;
-//             unary(array, |value| {
-//                 perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
-//             })
-//         } else {
-//             // Input is in UTC, compute timeunit values in UTC, return results in UTC
-//             let tz = chrono_tz::UTC;
-//             unary(array, |value| {
-//                 perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
-//             })
-//         };
-//
-//         Ok(Arc::new(result_array) as ArrayRef)
-//     };
-//
-//     let timeunit = make_scalar_function(timeunit);
-//     let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
-//
-//     ScalarUDF::new(
-//         "timeunit",
-//         &Signature::uniform(1, vec![DataType::Int64], Volatility::Immutable),
-//         &return_type,
-//         &timeunit,
-//     )
-// }
-//
-// fn make_timeunit_end_udf(units_mask: &[bool], local_tz: Option<chrono_tz::Tz>) -> ScalarUDF {
-//     let units_mask = Vec::from(units_mask);
-//     let timeunit_end = move |args: &[ArrayRef]| {
-//         let arg = &args[0];
-//
-//         let start_array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
-//         let result_array: Int64Array = if let Some(local_tz) = local_tz {
-//             let tz = local_tz;
-//             unary(start_array, |value| {
-//                 perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
-//             })
-//         } else {
-//             let tz = chrono_tz::UTC;
-//             unary(start_array, |value| {
-//                 perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
-//             })
-//         };
-//
-//         Ok(Arc::new(result_array) as ArrayRef)
-//     };
-//
-//     let timeunit = make_scalar_function(timeunit_end);
-//     let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
-//
-//     ScalarUDF::new(
-//         "timeunit_end",
-//         &Signature::uniform(1, vec![DataType::Int64], Volatility::Immutable),
-//         &return_type,
-//         &timeunit,
-//     )
-// }
 
 /// For timestamp specified in UTC, perform time unit in the provided timezone (either UTC or Local)
 fn perform_timeunit_start_from_utc<T: TimeZone>(
@@ -608,6 +541,6 @@ fn perform_timeunit_end_from_utc<T: TimeZone>(
 
 lazy_static! {
     // Local
-    pub static ref TIMEUNIT_START_UDF: ScalarUDF = make_timeunit_start_udf2();
-    pub static ref TIMEUNIT_END_UDF: ScalarUDF = make_timeunit_end_udf2();
+    pub static ref TIMEUNIT_START_UDF: ScalarUDF = make_timeunit_start_udf();
+    pub static ref TIMEUNIT_END_UDF: ScalarUDF = make_timeunit_end_udf();
 }
