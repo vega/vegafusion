@@ -906,28 +906,28 @@ mod test_image_comparison_timeunit {
     fn test_image_comparison(
         #[values(
             vec![TimeUnitUnitSpec::Year],
-            vec![TimeUnitUnitSpec::Quarter],
-            vec![TimeUnitUnitSpec::Month],
-            vec![TimeUnitUnitSpec::Week],
-            vec![TimeUnitUnitSpec::Date],
-            vec![TimeUnitUnitSpec::Day],
-            vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Quarter],
-            vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Month],
-            vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Week],
+            // vec![TimeUnitUnitSpec::Quarter],
+            // vec![TimeUnitUnitSpec::Month],
+            // vec![TimeUnitUnitSpec::Week],
+            // vec![TimeUnitUnitSpec::Date],
+            // vec![TimeUnitUnitSpec::Day],
+            // vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Quarter],
+            // vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Month],
+            // vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Week],
         )]
         units: Vec<TimeUnitUnitSpec>,
 
         #[values(
             TimeUnitTimeZoneSpec::Utc,
-            TimeUnitTimeZoneSpec::Local,
+            // TimeUnitTimeZoneSpec::Local,
         )]
         timezone: TimeUnitTimeZoneSpec,
 
         #[values(
-            "custom/bar_month_temporal_initial_parameterize",
-            "custom/bar_month_temporal_initial_parameterize_local",
+            // "custom/bar_month_temporal_initial_parameterize",
+            // "custom/bar_month_temporal_initial_parameterize_local",
             "custom/stacked_bar_weather_timeunit_parameterize",
-            "custom/stacked_bar_weather_timeunit_parameterize_local",
+            // "custom/stacked_bar_weather_timeunit_parameterize_local",
         )]
         spec_name: &str,
     ) {

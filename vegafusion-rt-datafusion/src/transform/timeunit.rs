@@ -28,7 +28,8 @@ use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::{ColumnarValue, lit, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility};
 use std::str::FromStr;
-
+use sqlgen::dialect::DialectDisplay;
+use crate::sql::compile::select::ToSqlSelectItem;
 
 
 #[async_trait]
@@ -38,13 +39,6 @@ impl TransformTrait for TimeUnit {
         dataframe: Arc<DataFrame>,
         config: &CompilationConfig,
     ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
-        let _units: Vec<_> = self
-            .units
-            .clone()
-            .into_iter()
-            .map(|unit| TimeUnitUnit::from_i32(unit).unwrap())
-            .collect();
-
         let local_tz = if self.timezone != Some(TimeUnitTimeZone::Utc as i32) {
             Some(
                 config
@@ -163,12 +157,123 @@ impl TransformTrait for TimeUnit {
 
     async fn eval_sql(
         &self,
-        _dataframe: Arc<SqlDataFrame>,
-        _config: &CompilationConfig,
+        dataframe: Arc<SqlDataFrame>,
+        config: &CompilationConfig,
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
-        Err(VegaFusionError::sql_not_supported(format!(
-            "TimeUnit transform does not support SQL Evaluation"
-        )))
+        let local_tz = if self.timezone != Some(TimeUnitTimeZone::Utc as i32) {
+            Some(
+                config
+                    .tz_config
+                    .with_context(|| "No local timezone info provided".to_string())?
+                    .local_tz,
+            )
+        } else {
+            None
+        };
+
+        let units_mask = vec![
+            self.units.contains(&(TimeUnitUnit::Year as i32)), // 0
+            self.units.contains(&(TimeUnitUnit::Quarter as i32)), // 1
+            self.units.contains(&(TimeUnitUnit::Month as i32)), // 2
+            self.units.contains(&(TimeUnitUnit::Date as i32)), // 3
+            self.units.contains(&(TimeUnitUnit::Week as i32)), // 4
+            self.units.contains(&(TimeUnitUnit::Day as i32)),  // 5
+            self.units.contains(&(TimeUnitUnit::DayOfYear as i32)), // 6
+            self.units.contains(&(TimeUnitUnit::Hours as i32)), // 7
+            self.units.contains(&(TimeUnitUnit::Minutes as i32)), // 8
+            self.units.contains(&(TimeUnitUnit::Seconds as i32)), // 9
+            self.units.contains(&(TimeUnitUnit::Milliseconds as i32)), // 10
+        ];
+
+        // Handle timeunit start value (we always do this)
+        let timeunit_start_udf = &TIMEUNIT_START_UDF;
+
+        // let timeunit_start_udf = make_timeunit_start_udf(units_mask.as_slice(), local_tz);
+        let tz_str = local_tz.map(|tz| tz.to_string()).unwrap_or_else(|| "UTC".to_string());
+        let timeunit_start_value = timeunit_start_udf.call(vec![
+            col(&self.field),
+            lit(tz_str.clone()),
+            lit(units_mask[0]),
+            lit(units_mask[1]),
+            lit(units_mask[2]),
+            lit(units_mask[3]),
+            lit(units_mask[4]),
+            lit(units_mask[5]),
+            lit(units_mask[6]),
+            lit(units_mask[7]),
+            lit(units_mask[8]),
+            lit(units_mask[9]),
+            lit(units_mask[10]),
+        ]);
+
+        // Apply alias
+        let timeunit_start_alias = if let Some(alias_0) = &self.alias_0 {
+            alias_0.clone()
+        } else {
+            "unit0".to_string()
+        };
+        let timeunit_start_value = timeunit_start_value.alias(&timeunit_start_alias);
+
+        // Add timeunit start value to the dataframe
+        let mut select_exprs: Vec<_> = dataframe
+            .schema_df()
+            .fields()
+            .iter()
+            .filter_map(|field| {
+                if field.name() != &timeunit_start_alias {
+                    Some(col(field.name()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        select_exprs.push(timeunit_start_value);
+
+        let dataframe = dataframe.select(select_exprs)?;
+
+        // Handle timeunit end value (In the future, disable this when interval=false)
+        let timeunit_end_udf = &TIMEUNIT_END_UDF;
+        let timeunit_end_value = timeunit_end_udf.call(vec![
+            col(&timeunit_start_alias),
+            lit(tz_str),
+            lit(units_mask[0]),
+            lit(units_mask[1]),
+            lit(units_mask[2]),
+            lit(units_mask[3]),
+            lit(units_mask[4]),
+            lit(units_mask[5]),
+            lit(units_mask[6]),
+            lit(units_mask[7]),
+            lit(units_mask[8]),
+            lit(units_mask[9]),
+            lit(units_mask[10]),
+        ]);
+
+        // Apply alias
+        let timeunit_end_alias = if let Some(alias_1) = &self.alias_1 {
+            alias_1.clone()
+        } else {
+            "unit1".to_string()
+        };
+        let timeunit_end_value = timeunit_end_value.alias(&timeunit_end_alias);
+
+        // Add timeunit end value to the dataframe
+        let mut select_exprs: Vec<_> = dataframe
+            .schema()
+            .fields()
+            .iter()
+            .filter_map(|field| {
+                if field.name() != &timeunit_end_alias {
+                    Some(col(field.name()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        select_exprs.push(timeunit_end_value);
+        let dataframe = dataframe.select(select_exprs)?;
+
+        Ok((dataframe, Vec::new()))
     }
 }
 
