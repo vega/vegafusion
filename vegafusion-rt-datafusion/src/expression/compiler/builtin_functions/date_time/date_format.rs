@@ -137,6 +137,7 @@ pub fn make_time_format_udf() -> ScalarUDF {
         };
 
         let data_array = process_input_datetime(&data_array, &default_input_tz);
+
         let utc_millis_array = data_array.as_any().downcast_ref::<Int64Array>().unwrap();
 
         let formatted = Arc::new(StringArray::from_iter(utc_millis_array.iter().map(|utc_millis| {
@@ -167,12 +168,12 @@ pub fn make_time_format_udf() -> ScalarUDF {
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Utf8)));
 
     let signature: Signature = Signature::one_of(vec![
+        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Timestamp(TimeUnit::Millisecond, None), DataType::Utf8]),
+        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Date32, DataType::Utf8]),
+        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Date64, DataType::Utf8]),
+        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Int64, DataType::Utf8]),
+        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Float64, DataType::Utf8]),
         TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Utf8, DataType::Utf8]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Utf8, DataType::Timestamp(TimeUnit::Millisecond, None)]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Utf8, DataType::Date32]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Utf8, DataType::Date64]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Utf8, DataType::Int64]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Utf8, DataType::Float64]),
     ], Volatility::Immutable);
 
     ScalarUDF::new(

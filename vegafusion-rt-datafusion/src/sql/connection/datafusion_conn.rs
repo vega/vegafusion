@@ -49,6 +49,7 @@ pub fn make_datafusion_dialect() -> Dialect {
 
     // timeformat
     dialect.functions.insert("vg_timeformat".to_string());
+    dialect.functions.insert("vg_datetime_to_millis".to_string());
 
     dialect
 }
@@ -67,6 +68,7 @@ impl SqlConnection for DataFusionConnection {
         println!("datafusion query: {}", query);
         let df = self.ctx.sql(query).await?;
         let res = VegaFusionTable::from_dataframe(df).await?;
+        // println!("{}", res.pretty_format(Some(10)).unwrap());
         Ok(res)
     }
 

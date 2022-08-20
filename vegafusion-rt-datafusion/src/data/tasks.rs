@@ -7,9 +7,7 @@
  * this program the details of the active license.
  */
 use crate::data::table::VegaFusionTableUtils;
-use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
-    get_datetime_udf, DateParseMode,
-};
+use crate::expression::compiler::builtin_functions::date_time::date_parsing::{DateParseMode, DATETIME_STRING_TO_MILLIS_UDF};
 use crate::expression::compiler::builtin_functions::date_time::datetime::{DATETIME_COMPONENTS, make_datetime_components_udf};
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
@@ -298,11 +296,12 @@ fn process_datetimes(
                     date_fields.push(date_field.name().clone());
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
-                        let datetime_udf = get_datetime_udf(date_mode, tz_config);
+                        let default_input_tz_str = tz_config.map(|tz_config| tz_config.default_input_tz.to_string()).unwrap_or_else(|| "UTC".to_string());
+                        let date_mode_str = date_mode.to_string();
 
                         Expr::ScalarUDF {
-                            fun: Arc::new(datetime_udf),
-                            args: vec![col(&spec.name)],
+                            fun: Arc::new((*DATETIME_STRING_TO_MILLIS_UDF).clone()),
+                            args: vec![lit(default_input_tz_str), lit(date_mode_str), col(&spec.name)],
                         }
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically, use local time

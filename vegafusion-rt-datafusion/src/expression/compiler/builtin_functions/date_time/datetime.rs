@@ -7,9 +7,7 @@
  * this program the details of the active license.
  */
 use std::ops::Deref;
-use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
-    make_date_str_to_millis_udf, DateParseMode,
-};
+use crate::expression::compiler::builtin_functions::date_time::date_parsing::{DateParseMode, DATETIME_STRING_TO_MILLIS_UDF};
 use crate::expression::compiler::utils::{cast_to, is_string_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
 use chrono::{DateTime, TimeZone};
@@ -60,11 +58,8 @@ pub fn to_date_transform(
         };
 
         arg = Expr::ScalarUDF {
-            fun: Arc::new(make_date_str_to_millis_udf(
-                DateParseMode::JavaScript,
-                &Some(default_input_tz),
-            )),
-            args: vec![arg],
+            fun: Arc::new((*DATETIME_STRING_TO_MILLIS_UDF).clone()),
+            args: vec![lit(default_input_tz.to_string()), lit(DateParseMode::JavaScript.to_string()), arg],
         }
     }
 
@@ -84,12 +79,11 @@ pub fn datetime_transform_fn(
             .with_context(|| format!("Failed to infer type of expression: {:?}", arg))?;
 
         if is_string_datatype(&dtype) {
+            let default_input_tz_str = tz_config.default_input_tz.to_string();
+            let date_mode_str = DateParseMode::JavaScript.to_string();
             arg = Expr::ScalarUDF {
-                fun: Arc::new(make_date_str_to_millis_udf(
-                    DateParseMode::JavaScript,
-                    &Some(tz_config.default_input_tz),
-                )),
-                args: vec![arg],
+                fun: Arc::new((*DATETIME_STRING_TO_MILLIS_UDF).clone()),
+                args: vec![lit(default_input_tz_str), lit(date_mode_str), arg],
             }
         }
 
