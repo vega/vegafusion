@@ -16,7 +16,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_parts::{
     UTCQUARTER_UDF, UTCSECONDS_UDF, UTCYEAR_UDF, YEAR_TRANSFORM,
 };
 use crate::expression::compiler::builtin_functions::date_time::datetime::{
-    datetime_transform, to_date_transform, UTC_COMPONENTS,
+    datetime_transform, to_date_transform,
 };
 use crate::expression::compiler::builtin_functions::math::isfinite::{
     is_finite_fn, make_is_finite_udf,
@@ -54,6 +54,7 @@ use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::t
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_string::to_string_transform;
 use crate::task_graph::timezone::RuntimeTzConfig;
+use crate::transform::timeunit::{TIMEUNIT_END_UDF, TIMEUNIT_START_UDF};
 
 pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>;
 pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
@@ -388,13 +389,16 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         "datetime".to_string(),
         VegaFusionCallable::LocalTransform(Arc::new(datetime_transform)),
     );
-    callables.insert(
-        "utc".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTC_COMPONENTS.deref().clone(),
-            cast: Some(DataType::Int64),
-        },
-    );
+
+    // TODO make utc a transform that adds "UTC" timezone arg to UTC_COMPONENTS
+    // callables.insert(
+    //     "utc".to_string(),
+    //     VegaFusionCallable::ScalarUDF {
+    //         udf: UTC_COMPONENTS.deref().clone(),
+    //         cast: Some(DataType::Int64),
+    //     },
+    // );
+
     callables.insert(
         "time".to_string(),
         VegaFusionCallable::LocalTransform(Arc::new(time_fn)),
@@ -453,6 +457,10 @@ pub fn make_session_context() -> SessionContext {
 
     // isFinite
     ctx.register_udf(make_is_finite_udf());
+
+    // timeunit_start
+    ctx.register_udf((*TIMEUNIT_START_UDF).clone());
+    ctx.register_udf((*TIMEUNIT_END_UDF).clone());
 
     ctx
 }

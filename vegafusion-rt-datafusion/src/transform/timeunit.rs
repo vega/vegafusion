@@ -21,11 +21,15 @@ use datafusion::arrow::compute::kernels::arity::unary;
 use datafusion::arrow::temporal_conversions::date64_to_datetime;
 
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
+use datafusion::common::{DataFusionError, ScalarValue};
 
 use crate::sql::dataframe::SqlDataFrame;
 use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
+use datafusion_expr::{ColumnarValue, lit, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility};
+use std::str::FromStr;
+
+
 
 #[async_trait]
 impl TransformTrait for TimeUnit {
@@ -67,8 +71,25 @@ impl TransformTrait for TimeUnit {
         ];
 
         // Handle timeunit start value (we always do this)
-        let timeunit_start_udf = make_timeunit_start_udf(units_mask.as_slice(), local_tz);
-        let timeunit_start_value = timeunit_start_udf.call(vec![col(&self.field)]);
+        let timeunit_start_udf = &TIMEUNIT_START_UDF;
+
+        // let timeunit_start_udf = make_timeunit_start_udf(units_mask.as_slice(), local_tz);
+        let tz_str = local_tz.map(|tz| tz.to_string()).unwrap_or_else(|| "UTC".to_string());
+        let timeunit_start_value = timeunit_start_udf.call(vec![
+            col(&self.field),
+            lit(tz_str.clone()),
+            lit(units_mask[0]),
+            lit(units_mask[1]),
+            lit(units_mask[2]),
+            lit(units_mask[3]),
+            lit(units_mask[4]),
+            lit(units_mask[5]),
+            lit(units_mask[6]),
+            lit(units_mask[7]),
+            lit(units_mask[8]),
+            lit(units_mask[9]),
+            lit(units_mask[10]),
+        ]);
 
         // Apply alias
         let timeunit_start_alias = if let Some(alias_0) = &self.alias_0 {
@@ -96,8 +117,22 @@ impl TransformTrait for TimeUnit {
         let dataframe = dataframe.select(select_exprs)?;
 
         // Handle timeunit end value (In the future, disable this when interval=false)
-        let timeunit_end_udf = make_timeunit_end_udf(units_mask.as_slice(), local_tz);
-        let timeunit_end_value = timeunit_end_udf.call(vec![col(&timeunit_start_alias)]);
+        let timeunit_end_udf = &TIMEUNIT_END_UDF;
+        let timeunit_end_value = timeunit_end_udf.call(vec![
+            col(&timeunit_start_alias),
+            lit(tz_str),
+            lit(units_mask[0]),
+            lit(units_mask[1]),
+            lit(units_mask[2]),
+            lit(units_mask[3]),
+            lit(units_mask[4]),
+            lit(units_mask[5]),
+            lit(units_mask[6]),
+            lit(units_mask[7]),
+            lit(units_mask[8]),
+            lit(units_mask[9]),
+            lit(units_mask[10]),
+        ]);
 
         // Apply alias
         let timeunit_end_alias = if let Some(alias_1) = &self.alias_1 {
@@ -137,72 +172,191 @@ impl TransformTrait for TimeUnit {
     }
 }
 
-fn make_timeunit_start_udf(units_mask: &[bool], local_tz: Option<chrono_tz::Tz>) -> ScalarUDF {
-    let units_mask = Vec::from(units_mask);
-    let timeunit = move |args: &[ArrayRef]| {
-        let arg = &args[0];
 
-        // Input UTC
-        let array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
-        let result_array: Int64Array = if let Some(local_tz) = local_tz {
-            // Input is in UTC, compute timeunit values in local, return results in UTC
-            let tz = local_tz;
-            unary(array, |value| {
-                perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
-            })
+fn extract_bool(value: &ColumnarValue) -> std::result::Result<bool, DataFusionError> {
+    if let ColumnarValue::Scalar(scalar) = value {
+        if let ScalarValue::Boolean(Some(value)) = scalar {
+            Ok(*value)
         } else {
-            // Input is in UTC, compute timeunit values in UTC, return results in UTC
-            let tz = chrono_tz::UTC;
-            unary(array, |value| {
-                perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
-            })
-        };
-
-        Ok(Arc::new(result_array) as ArrayRef)
-    };
-
-    let timeunit = make_scalar_function(timeunit);
-    let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
-
-    ScalarUDF::new(
-        "timeunit",
-        &Signature::uniform(1, vec![DataType::Int64], Volatility::Immutable),
-        &return_type,
-        &timeunit,
-    )
+            Err(DataFusionError::Internal(
+                "expected boolean value".to_string(),
+            ))
+        }
+    } else {
+        Err(DataFusionError::Internal("unexpected argument".to_string()))
+    }
 }
 
-fn make_timeunit_end_udf(units_mask: &[bool], local_tz: Option<chrono_tz::Tz>) -> ScalarUDF {
-    let units_mask = Vec::from(units_mask);
-    let timeunit_end = move |args: &[ArrayRef]| {
-        let arg = &args[0];
-
-        let start_array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
-        let result_array: Int64Array = if let Some(local_tz) = local_tz {
-            let tz = local_tz;
-            unary(start_array, |value| {
-                perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
-            })
-        } else {
-            let tz = chrono_tz::UTC;
-            unary(start_array, |value| {
-                perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
-            })
-        };
-
-        Ok(Arc::new(result_array) as ArrayRef)
+fn unpack_timeunit_udf_args(
+    columns: &[ColumnarValue],
+) -> std::result::Result<(ArrayRef, chrono_tz::Tz, Vec<bool>), DataFusionError> {
+    let timestamp = columns[0].clone().into_array(1);
+    let tz_str = if let ColumnarValue::Scalar(scalar) = &columns[1] {
+        scalar.to_string()
+    } else {
+        return Err(DataFusionError::Internal("unexpected argument".to_string()));
     };
 
-    let timeunit = make_scalar_function(timeunit_end);
-    let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
+    let tz = chrono_tz::Tz::from_str(&tz_str)
+        .map_err(|err| DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str)))?;
 
-    ScalarUDF::new(
-        "timeunit_end",
-        &Signature::uniform(1, vec![DataType::Int64], Volatility::Immutable),
-        &return_type,
-        &timeunit,
-    )
+    Ok((
+        timestamp,
+        tz,
+        vec![
+            extract_bool(&columns[2])?,
+            extract_bool(&columns[3])?,
+            extract_bool(&columns[4])?,
+            extract_bool(&columns[5])?,
+            extract_bool(&columns[6])?,
+            extract_bool(&columns[7])?,
+            extract_bool(&columns[8])?,
+            extract_bool(&columns[9])?,
+            extract_bool(&columns[10])?,
+            extract_bool(&columns[11])?,
+            extract_bool(&columns[12])?,
+        ],
+    ))
 }
+
+fn make_timeunit_start_udf2() -> ScalarUDF {
+    let timeunit_start: ScalarFunctionImplementation =
+        Arc::new(|columns: &[ColumnarValue]| {
+            let (timestamp, tz, units_mask) = unpack_timeunit_udf_args(columns)?;
+
+            let array = timestamp.as_any().downcast_ref::<Int64Array>().unwrap();
+            let result_array: Int64Array = unary(array, |value| {
+                perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+            });
+
+            Ok(ColumnarValue::Array(Arc::new(result_array) as ArrayRef))
+        });
+
+    let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
+    let signature: Signature = Signature::exact(
+        vec![
+            DataType::Int64,   // [0] timestamp
+            DataType::Utf8,    // [1] timezone
+            DataType::Boolean, // [2] Year
+            DataType::Boolean, // [3] Quarter
+            DataType::Boolean, // [4] Month
+            DataType::Boolean, // [5] Date
+            DataType::Boolean, // [6] Week
+            DataType::Boolean, // [7] Day
+            DataType::Boolean, // [8] DayOfYear
+            DataType::Boolean, // [9] Hours
+            DataType::Boolean, // [10] Minutes
+            DataType::Boolean, // [11] Seconds
+            DataType::Boolean, // [12] Milliseconds
+        ],
+        Volatility::Immutable,
+    );
+
+    ScalarUDF::new("timeunit_start", &signature, &return_type, &timeunit_start)
+}
+
+
+fn make_timeunit_end_udf2() -> ScalarUDF {
+    let timeunit_end: ScalarFunctionImplementation = Arc::new(|columns: &[ColumnarValue]| {
+        let (timestamp, tz, units_mask) = unpack_timeunit_udf_args(columns)?;
+
+        let array = timestamp.as_any().downcast_ref::<Int64Array>().unwrap();
+        let result_array: Int64Array = unary(array, |value| {
+            perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+        });
+
+        Ok(ColumnarValue::Array(Arc::new(result_array) as ArrayRef))
+    });
+
+    let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
+    let signature: Signature = Signature::exact(
+        vec![
+            DataType::Int64,   // [0] start timestamp
+            DataType::Utf8,    // [1] timezone
+            DataType::Boolean, // [2] Year
+            DataType::Boolean, // [3] Quarter
+            DataType::Boolean, // [4] Month
+            DataType::Boolean, // [5] Date
+            DataType::Boolean, // [6] Week
+            DataType::Boolean, // [7] Day
+            DataType::Boolean, // [8] DayOfYear
+            DataType::Boolean, // [9] Hours
+            DataType::Boolean, // [10] Minutes
+            DataType::Boolean, // [11] Seconds
+            DataType::Boolean, // [12] Milliseconds
+        ],
+        Volatility::Immutable,
+    );
+
+    ScalarUDF::new("timeunit_end", &signature, &return_type, &timeunit_end)
+}
+
+// fn make_timeunit_start_udf(units_mask: &[bool], local_tz: Option<chrono_tz::Tz>) -> ScalarUDF {
+//     let units_mask = Vec::from(units_mask);
+//     let timeunit = move |args: &[ArrayRef]| {
+//         let arg = &args[0];
+//
+//         // Input UTC
+//         let array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
+//         let result_array: Int64Array = if let Some(local_tz) = local_tz {
+//             // Input is in UTC, compute timeunit values in local, return results in UTC
+//             let tz = local_tz;
+//             unary(array, |value| {
+//                 perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+//             })
+//         } else {
+//             // Input is in UTC, compute timeunit values in UTC, return results in UTC
+//             let tz = chrono_tz::UTC;
+//             unary(array, |value| {
+//                 perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+//             })
+//         };
+//
+//         Ok(Arc::new(result_array) as ArrayRef)
+//     };
+//
+//     let timeunit = make_scalar_function(timeunit);
+//     let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
+//
+//     ScalarUDF::new(
+//         "timeunit",
+//         &Signature::uniform(1, vec![DataType::Int64], Volatility::Immutable),
+//         &return_type,
+//         &timeunit,
+//     )
+// }
+//
+// fn make_timeunit_end_udf(units_mask: &[bool], local_tz: Option<chrono_tz::Tz>) -> ScalarUDF {
+//     let units_mask = Vec::from(units_mask);
+//     let timeunit_end = move |args: &[ArrayRef]| {
+//         let arg = &args[0];
+//
+//         let start_array = arg.as_any().downcast_ref::<Int64Array>().unwrap();
+//         let result_array: Int64Array = if let Some(local_tz) = local_tz {
+//             let tz = local_tz;
+//             unary(start_array, |value| {
+//                 perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+//             })
+//         } else {
+//             let tz = chrono_tz::UTC;
+//             unary(start_array, |value| {
+//                 perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
+//             })
+//         };
+//
+//         Ok(Arc::new(result_array) as ArrayRef)
+//     };
+//
+//     let timeunit = make_scalar_function(timeunit_end);
+//     let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
+//
+//     ScalarUDF::new(
+//         "timeunit_end",
+//         &Signature::uniform(1, vec![DataType::Int64], Volatility::Immutable),
+//         &return_type,
+//         &timeunit,
+//     )
+// }
 
 /// For timestamp specified in UTC, perform time unit in the provided timezone (either UTC or Local)
 fn perform_timeunit_start_from_utc<T: TimeZone>(
@@ -450,4 +604,10 @@ fn perform_timeunit_end_from_utc<T: TimeZone>(
         // Not unit specified, only thing to do is keep dt_start
         dt_start
     }
+}
+
+lazy_static! {
+    // Local
+    pub static ref TIMEUNIT_START_UDF: ScalarUDF = make_timeunit_start_udf2();
+    pub static ref TIMEUNIT_END_UDF: ScalarUDF = make_timeunit_end_udf2();
 }

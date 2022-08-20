@@ -10,7 +10,7 @@ use crate::data::table::VegaFusionTableUtils;
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
     get_datetime_udf, DateParseMode,
 };
-use crate::expression::compiler::builtin_functions::date_time::datetime::make_datetime_components_udf;
+use crate::expression::compiler::builtin_functions::date_time::datetime::{DATETIME_COMPONENTS, make_datetime_components_udf};
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{
@@ -31,6 +31,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
+use datafusion_expr::lit;
 use tokio::io::AsyncReadExt;
 use vegafusion_core::arrow::datatypes::TimeUnit;
 
@@ -308,8 +309,8 @@ fn process_datetimes(
                         let tz_config =
                             tz_config.with_context(|| "No local timezone info provided")?;
                         Expr::ScalarUDF {
-                            fun: Arc::new(make_datetime_components_udf(tz_config.default_input_tz)),
-                            args: vec![col(&spec.name)],
+                            fun: Arc::new((*DATETIME_COMPONENTS).clone()),
+                            args: vec![lit(tz_config.default_input_tz.to_string()), col(&spec.name)],
                         }
                     } else if let DataType::Timestamp(_, tz) = dtype {
                         match tz {

@@ -27,6 +27,7 @@ pub fn make_datafusion_dialect() -> Dialect {
     let mut dialect = Dialect::datafusion();
     dialect.functions.insert("isnan".to_string());
     dialect.functions.insert("isfinite".to_string());
+    dialect.functions.insert("datetime_components".to_string());
     dialect
 }
 
