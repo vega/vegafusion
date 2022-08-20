@@ -26,7 +26,7 @@ use datafusion_expr::{BuiltInWindowFunction, WindowFunction};
 
 #[async_trait]
 impl TransformTrait for Window {
-    async fn eval_sql(
+    async fn eval(
         &self,
         dataframe: Arc<SqlDataFrame>,
         _config: &CompilationConfig,

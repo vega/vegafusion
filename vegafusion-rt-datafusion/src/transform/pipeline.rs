@@ -68,7 +68,7 @@ impl TransformPipelineUtils for TransformPipeline {
 
         for tx in self.transforms.iter() {
             // Append transform and update result df
-            let tx_result = tx.eval_sql(result_sql_df.clone(), &config).await?;
+            let tx_result = tx.eval(result_sql_df.clone(), &config).await?;
 
             result_sql_df = tx_result.0;
 

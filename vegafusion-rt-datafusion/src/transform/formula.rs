@@ -23,7 +23,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 impl TransformTrait for Formula {
-    async fn eval_sql(
+    async fn eval(
         &self,
         dataframe: Arc<SqlDataFrame>,
         config: &CompilationConfig,

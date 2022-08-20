@@ -26,7 +26,7 @@ use vegafusion_core::transform::aggregate::op_name;
 
 #[async_trait]
 impl TransformTrait for Aggregate {
-    async fn eval_sql(
+    async fn eval(
         &self,
         dataframe: Arc<SqlDataFrame>,
         _config: &CompilationConfig,

@@ -34,7 +34,7 @@ use crate::sql::compile::select::ToSqlSelectItem;
 
 #[async_trait]
 impl TransformTrait for TimeUnit {
-    async fn eval_sql(
+    async fn eval(
         &self,
         dataframe: Arc<SqlDataFrame>,
         config: &CompilationConfig,
