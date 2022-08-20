@@ -67,7 +67,6 @@ lazy_static! {
 
 #[derive(Debug, Copy, Clone)]
 pub enum DateParseMode {
-    Local,
     Utc,
     JavaScript,
 }
@@ -75,9 +74,6 @@ pub enum DateParseMode {
 pub fn get_datetime_udf(mode: DateParseMode, tz_config: &Option<RuntimeTzConfig>) -> ScalarUDF {
     let default_input_tz = tz_config.map(|tz_config| tz_config.default_input_tz);
     match mode {
-        DateParseMode::Local => {
-            make_date_str_to_millis_udf(DateParseMode::Local, &default_input_tz)
-        }
         DateParseMode::Utc => make_date_str_to_millis_udf(DateParseMode::Utc, &default_input_tz),
         DateParseMode::JavaScript => {
             make_date_str_to_millis_udf(DateParseMode::JavaScript, &default_input_tz)
