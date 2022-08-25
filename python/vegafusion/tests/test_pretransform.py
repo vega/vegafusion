@@ -1,7 +1,7 @@
 import pandas as pd
 import vegafusion as vf
 import json
-
+from datetime import date
 
 def order_items_spec():
     return r"""
@@ -487,6 +487,62 @@ def standalone_aggregate_spec(agg="count"):
     """
 
 
+def date_column_spec():
+    return r"""
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "A scatterplot showing horsepower and miles per gallons for various cars.",
+  "background": "white",
+  "padding": 5,
+  "width": 400,
+  "height": 20,
+  "style": "cell",
+  "data": [
+    {
+      "name": "data_0",
+      "url": "vegafusion+dataset://dates",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "toDate(datum[\"date_col\"])",
+          "as": "date_col"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "marks",
+      "type": "symbol",
+      "style": ["point"],
+      "from": {"data": "data_0"},
+      "encode": {
+        "update": {
+          "opacity": {"value": 0.7},
+          "fill": {"value": "transparent"},
+          "stroke": {"value": "#4c78a8"},
+          "ariaRoleDescription": {"value": "point"},
+          "description": {
+            "signal": "\"date32: \" + (timeFormat(datum[\"date32\"], '%b %d, %Y'))"
+          },
+          "x": {"scale": "x", "field": "date_col"},
+          "y": {"signal": "height", "mult": 0.5}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "time",
+      "domain": {"data": "data_0", "field": "date_col"},
+      "range": [0, {"signal": "width"}]
+    }
+  ]
+}
+"""
+
+
 def test_pre_transform_multi_partition():
     n = 4050
     order_items = pd.DataFrame({
@@ -583,3 +639,19 @@ def test_pre_transform_planner_warning2():
     warning = warnings[0]
     assert warning["type"] == "Planner"
     assert "data_0" in warning["message"]
+
+
+def test_date32_pre_transform_dataset():
+    # Test to make sure that date32 columns are interpreted in the local timezone
+    dates_df = pd.DataFrame({
+        "date_col": [date(2022, 1, 1), date(2022, 1, 2), date(2022, 1, 3)],
+    })
+    spec = date_column_spec()
+
+    (output_ds,), warnings = vf.runtime.pre_transform_datasets(
+        spec, ["data_0"], "America/New_York", default_input_tz="UTC", inline_datasets=dict(dates=dates_df)
+    )
+
+    assert list(output_ds.date_col) == [
+        "2022-01-01T00:00:00.000", "2022-01-02T00:00:00.000", "2022-01-03T00:00:00.000"
+    ]
