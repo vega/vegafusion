@@ -14,7 +14,7 @@ use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
 use std::sync::Arc;
-use vegafusion_core::arrow::array::ArrayRef;
+use vegafusion_core::arrow::array::{ArrayRef, Date64Array};
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 
@@ -25,7 +25,7 @@ pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
         let arg = &args[0];
         let naive_datetime_millis = arg
             .as_any()
-            .downcast_ref::<TimestampMillisecondArray>()
+            .downcast_ref::<Date64Array>()
             .unwrap();
         let array: Int64Array = unary(naive_datetime_millis, |v| {
             // Build naive datetime for time
@@ -63,7 +63,9 @@ pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
         "to_utc_millis_fn",
         &Signature::uniform(
             1,
-            vec![DataType::Timestamp(TimeUnit::Millisecond, None)],
+            vec![
+                DataType::Date64,
+            ],
             Volatility::Immutable,
         ),
         &return_type,
