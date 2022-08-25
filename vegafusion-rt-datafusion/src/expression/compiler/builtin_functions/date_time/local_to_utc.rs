@@ -23,11 +23,11 @@ pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
     let to_utc_millis_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single string argument
         let arg = &args[0];
-        let date_strs = arg
+        let naive_datetime_millis = arg
             .as_any()
             .downcast_ref::<TimestampMillisecondArray>()
             .unwrap();
-        let array: Int64Array = unary(date_strs, |v| {
+        let array: Int64Array = unary(naive_datetime_millis, |v| {
             // Build naive datetime for time
             let seconds = v / 1000;
             let milliseconds = v % 1000;
@@ -50,6 +50,7 @@ pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
                     .unwrap_or_else(|| panic!("Failed to convert {:?}", naive_local_datetime))
             };
 
+            // Get timestamp millis (in UTC)
             local_datetime.timestamp_millis()
         });
         Ok(Arc::new(array) as ArrayRef)
