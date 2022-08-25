@@ -9,24 +9,38 @@
 
 use crate::task_graph::timezone::RuntimeTzConfig;
 use chrono::{NaiveDateTime, TimeZone, Timelike};
-use datafusion::arrow::array::{Int64Array, TimestampMillisecondArray};
+use datafusion::arrow::array::Int64Array;
 use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
 use std::sync::Arc;
-use vegafusion_core::arrow::array::{ArrayRef, Date64Array};
+use vegafusion_core::arrow::array::{ArrayRef, Date64Array, TimestampMillisecondArray};
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
+use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
 
 pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
-    let local_tz = tz_config.default_input_tz;
+    let default_input_tz = tz_config.default_input_tz;
+    let local_tz = tz_config.local_tz;
+
     let to_utc_millis_fn = move |args: &[ArrayRef]| {
         // Signature ensures there is a single string argument
         let arg = &args[0];
+
+        // Determine which timezone to interpret timestamps in based on datatype
+        let input_tz = if matches!(arg.data_type(), &DataType::Date32) {
+            local_tz
+        } else {
+            default_input_tz
+        };
+
+        let arg = process_input_datetime(arg, &input_tz);
+
         let naive_datetime_millis = arg
             .as_any()
-            .downcast_ref::<Date64Array>()
+            .downcast_ref::<Int64Array>()
             .unwrap();
+
         let array: Int64Array = unary(naive_datetime_millis, |v| {
             // Build naive datetime for time
             let seconds = v / 1000;
@@ -35,7 +49,7 @@ pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
             let naive_local_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
 
             // Get UTC offset when the naive datetime is considered to be in local time
-            let local_datetime = if let Some(local_datetime) = local_tz
+            let local_datetime = if let Some(local_datetime) = input_tz
                 .from_local_datetime(&naive_local_datetime)
                 .earliest()
             {
@@ -44,7 +58,7 @@ pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
                 // Try adding 1 hour to handle daylight savings boundaries
                 let hour = naive_local_datetime.hour();
                 let new_naive_local_datetime = naive_local_datetime.with_hour(hour + 1).unwrap();
-                local_tz
+                input_tz
                     .from_local_datetime(&new_naive_local_datetime)
                     .earliest()
                     .unwrap_or_else(|| panic!("Failed to convert {:?}", naive_local_datetime))
@@ -64,7 +78,11 @@ pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
         &Signature::uniform(
             1,
             vec![
+                DataType::Utf8,
+                DataType::Timestamp(TimeUnit::Millisecond, None),
+                DataType::Date32,
                 DataType::Date64,
+                DataType::Int64,
             ],
             Volatility::Immutable,
         ),
