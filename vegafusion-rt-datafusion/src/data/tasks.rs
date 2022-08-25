@@ -350,7 +350,7 @@ fn process_datetimes(
 
                         Expr::ScalarUDF {
                             fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
-                            args: vec![col(&field.name())],
+                            args: vec![col(field.name())],
                         }
                     }
                     DataType::Date32 => {
@@ -360,7 +360,7 @@ fn process_datetimes(
 
                         Expr::ScalarUDF {
                             fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
-                            args: vec![col(&field.name())],
+                            args: vec![col(field.name())],
                         }
                     }
                     _ => col(field.name()),

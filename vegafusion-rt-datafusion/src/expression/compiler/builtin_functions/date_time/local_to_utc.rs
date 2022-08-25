@@ -7,6 +7,7 @@
  * this program the details of the active license.
  */
 
+use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use chrono::{NaiveDateTime, TimeZone, Timelike};
 use datafusion::arrow::array::Int64Array;
@@ -14,10 +15,9 @@ use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
 use std::sync::Arc;
-use vegafusion_core::arrow::array::{ArrayRef, Date64Array, TimestampMillisecondArray};
+use vegafusion_core::arrow::array::ArrayRef;
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
-use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
 
 pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
     let default_input_tz = tz_config.default_input_tz;
@@ -36,10 +36,7 @@ pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
 
         let arg = process_input_datetime(arg, &input_tz);
 
-        let naive_datetime_millis = arg
-            .as_any()
-            .downcast_ref::<Int64Array>()
-            .unwrap();
+        let naive_datetime_millis = arg.as_any().downcast_ref::<Int64Array>().unwrap();
 
         let array: Int64Array = unary(naive_datetime_millis, |v| {
             // Build naive datetime for time
