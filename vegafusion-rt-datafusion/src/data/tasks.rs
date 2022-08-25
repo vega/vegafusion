@@ -299,22 +299,28 @@ fn process_datetimes(
                                     ),
                                     schema,
                                 )?;
+                                // Already in UTC millis, so we can cast directly to Int64
                                 cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
                             }
                             _ => {
-                                let timestamp_millis = cast_to(
-                                    col(&spec.name),
-                                    &DataType::Timestamp(TimeUnit::Millisecond, None),
-                                    schema,
-                                )?;
-                                // Treat as local
+                                // Treat as default_input_tz
                                 let tz_config =
                                     tz_config.with_context(|| "No local timezone info provided")?;
+
                                 Expr::ScalarUDF {
                                     fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
-                                    args: vec![timestamp_millis],
+                                    args: vec![col(&spec.name)],
                                 }
                             }
+                        }
+                    } else if let DataType::Date32 | DataType::Date64 = dtype {
+                        // Treat as default_input_tz
+                        let tz_config =
+                            tz_config.with_context(|| "No local timezone info provided")?;
+
+                        Expr::ScalarUDF {
+                            fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
+                            args: vec![col(&spec.name)],
                         }
                     } else {
                         continue;
