@@ -53,7 +53,7 @@
     "watch:labextension": "jupyter labextension watch ."
   },
   "dependencies": {
-    "@jupyter-widgets/base": "^1.1.10 || ^2.0.0 || ^3.0.0 || ^4.0.0",
+    "@jupyter-widgets/base": "^2 || ^3 || ^4 || ^5 || ^6",
     "@jupyterlab/notebook": "^3.0.0 || ^4.0.0",
     "marked": "^4.0.10",
     "vega-lite": "^4.17.0",
