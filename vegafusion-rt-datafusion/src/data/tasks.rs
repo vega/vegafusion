@@ -293,7 +293,6 @@ fn process_datetimes(
 
                 let schema = df.schema();
                 if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
-                    date_fields.push(date_field.name().clone());
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
                         let default_input_tz_str = tz_config.map(|tz_config| tz_config.default_input_tz.to_string()).unwrap_or_else(|| "UTC".to_string());
@@ -311,37 +310,12 @@ fn process_datetimes(
                             fun: Arc::new((*DATETIME_COMPONENTS).clone()),
                             args: vec![lit(tz_config.default_input_tz.to_string()), col(&spec.name)],
                         }
-                    } else if let DataType::Timestamp(_, tz) = dtype {
-                        match tz {
-                            Some(tz) if tz.to_lowercase() == "utc" => {
-                                let timestamp_millis = cast_to(
-                                    col(&spec.name),
-                                    &DataType::Timestamp(
-                                        TimeUnit::Millisecond,
-                                        Some("UTC".to_string()),
-                                    ),
-                                    schema,
-                                )?;
-                                cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
-                            }
-                            _ => {
-                                let timestamp_millis = cast_to(
-                                    col(&spec.name),
-                                    &DataType::Timestamp(TimeUnit::Millisecond, None),
-                                    schema,
-                                )?;
-                                // Treat as local
-                                let tz_config =
-                                    tz_config.with_context(|| "No local timezone info provided")?;
-                                Expr::ScalarUDF {
-                                    fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
-                                    args: vec![timestamp_millis],
-                                }
-                            }
-                        }
                     } else {
                         continue;
                     };
+
+                    // Add to date_fields if special date processing was performed
+                    date_fields.push(date_field.name().clone());
 
                     let mut columns: Vec<_> = schema
                         .fields()
@@ -369,9 +343,7 @@ fn process_datetimes(
         .fields()
         .iter()
         .map(|field| {
-            if !date_fields.contains(field.name())
-                && matches!(field.data_type(), DataType::Timestamp(_, _))
-            {
+            if !date_fields.contains(field.name()) {
                 let expr = match field.data_type() {
                     DataType::Timestamp(_, tz) => match tz {
                         Some(tz) if tz.to_lowercase() == "utc" => {
@@ -386,22 +358,40 @@ fn process_datetimes(
                             cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
                         }
                         _ => {
-                            let timestamp_millis = cast_to(
-                                col(field.name()),
-                                &DataType::Timestamp(TimeUnit::Millisecond, None),
-                                schema,
-                            )?;
                             let tz_config =
                                 tz_config.with_context(|| "No local timezone info provided")?;
                             Expr::ScalarUDF {
                                 fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
-                                args: vec![timestamp_millis],
+                                args: vec![col(field.name())],
                             }
                         }
                     },
-                    _ => unreachable!(),
+                    DataType::Date64 => {
+                        let tz_config =
+                            tz_config.with_context(|| "No local timezone info provided")?;
+
+                        Expr::ScalarUDF {
+                            fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
+                            args: vec![col(field.name())],
+                        }
+                    }
+                    DataType::Date32 => {
+                        let tz_config =
+                            tz_config.with_context(|| "No local timezone info provided")?;
+
+                        Expr::ScalarUDF {
+                            fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
+                            args: vec![col(field.name())],
+                        }
+                    }
+                    _ => col(field.name()),
                 };
-                Ok(expr.alias(field.name()))
+
+                Ok(if matches!(expr, Expr::Alias(_, _)) {
+                    expr
+                } else {
+                    expr.alias(field.name())
+                })
             } else {
                 Ok(col(field.name()))
             }

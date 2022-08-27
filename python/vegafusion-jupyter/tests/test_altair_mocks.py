@@ -16,11 +16,15 @@ import shutil
 from tenacity import retry, wait, stop
 import os
 from flaky import flaky
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+import json
+
 
 here = Path(__file__).parent
 altair_mocks_dir = here / "altair_mocks"
 temp_notebooks_dir = here / "temp_notebooks"
 temp_screenshots_dir = here / "temp_screenshot"
+failure_output = here / "failures"
 
 altair_markdown_template = r"""
 ```python
@@ -82,6 +86,9 @@ def setup_module(module):
 
     shutil.rmtree(temp_screenshots_dir, ignore_errors=True)
     temp_screenshots_dir.mkdir(parents=True, exist_ok=True)
+
+    shutil.rmtree(failure_output, ignore_errors=True)
+    failure_output.mkdir(parents=True, exist_ok=True)
 
 
 @flaky(max_runs=2)
@@ -266,11 +273,12 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     chrome_opts = webdriver.ChromeOptions()
     if os.environ.get("VEGAFUSION_TEST_HEADLESS"):
         chrome_opts.add_argument("--headless")
+    chrome_opts.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
     chrome_driver = webdriver.Chrome(options=chrome_opts)
     chrome_driver.set_window_size(800, 800)
 
     # Launch Voila server
-    voila_proc = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
+    voila_proc = Popen(["voila", "--no-browser", "--debug", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
 
     # Sleep to allow Voila itself to start (this does not include loading a particular dashboard).
     time.sleep(1.5)
@@ -362,7 +370,23 @@ def export_image_sequence(
         def get_canvas():
             return chrome_driver.find_element("xpath", "//canvas")
 
-        canvas = get_canvas()
+        try:
+            canvas = get_canvas()
+        except:
+            # Write screenshot
+            chrome_driver.get_screenshot_as_file(str(failure_output / f"{name}_here.png"))
+
+            # Write logs
+            with open(failure_output / f"{name}_console.log", "wt") as f:
+                for log in chrome_driver.get_log("browser"):
+                    f.write(json.dumps(log) + "\n")
+
+            # Write html dump
+            root = chrome_driver.find_element("xpath", "//html")
+            with open(failure_output / f"{name}_page.html", "wt") as f:
+                f.write(root.get_attribute('innerHTML'))
+
+            raise
         time.sleep(delay)
 
         # Process actions

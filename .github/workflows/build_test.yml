@@ -351,3 +351,10 @@ jobs:
           VEGAFUSION_TEST_HEADLESS: 1
         working-directory: python/vegafusion-jupyter/tests/
         run: pytest
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: vegafusion-jupyter-test-failures
+          path: |
+            python/vegafusion-jupyter/tests/failures/*
