@@ -344,7 +344,6 @@ fn process_datetimes(
                         }
                     },
                     DataType::Date64 => {
-                        // Treat as default_input_tz
                         let tz_config =
                             tz_config.with_context(|| "No local timezone info provided")?;
 
@@ -354,7 +353,6 @@ fn process_datetimes(
                         }
                     }
                     DataType::Date32 => {
-                        // Treat as local_tz by overwriting default_input_tz
                         let tz_config =
                             tz_config.with_context(|| "No local timezone info provided")?;
 
