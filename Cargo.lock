@@ -647,7 +647,7 @@ dependencies = [
 [[package]]
 name = "datafusion"
 version = "11.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=c8d61d8e3ce48120cc7074cfa2143cd79d33f22f#c8d61d8e3ce48120cc7074cfa2143cd79d33f22f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=2cecc9519321ac8278790faed4aae1c45ec84a05#2cecc9519321ac8278790faed4aae1c45ec84a05"
 dependencies = [
  "ahash 0.8.0",
  "arrow",
@@ -686,7 +686,7 @@ dependencies = [
 [[package]]
 name = "datafusion-common"
 version = "11.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=c8d61d8e3ce48120cc7074cfa2143cd79d33f22f#c8d61d8e3ce48120cc7074cfa2143cd79d33f22f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=2cecc9519321ac8278790faed4aae1c45ec84a05#2cecc9519321ac8278790faed4aae1c45ec84a05"
 dependencies = [
  "arrow",
  "object_store",
@@ -700,7 +700,7 @@ dependencies = [
 [[package]]
 name = "datafusion-expr"
 version = "11.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=c8d61d8e3ce48120cc7074cfa2143cd79d33f22f#c8d61d8e3ce48120cc7074cfa2143cd79d33f22f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=2cecc9519321ac8278790faed4aae1c45ec84a05#2cecc9519321ac8278790faed4aae1c45ec84a05"
 dependencies = [
  "ahash 0.8.0",
  "arrow",
@@ -711,7 +711,7 @@ dependencies = [
 [[package]]
 name = "datafusion-optimizer"
 version = "11.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=c8d61d8e3ce48120cc7074cfa2143cd79d33f22f#c8d61d8e3ce48120cc7074cfa2143cd79d33f22f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=2cecc9519321ac8278790faed4aae1c45ec84a05#2cecc9519321ac8278790faed4aae1c45ec84a05"
 dependencies = [
  "arrow",
  "async-trait",
@@ -726,7 +726,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-expr"
 version = "11.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=c8d61d8e3ce48120cc7074cfa2143cd79d33f22f#c8d61d8e3ce48120cc7074cfa2143cd79d33f22f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=2cecc9519321ac8278790faed4aae1c45ec84a05#2cecc9519321ac8278790faed4aae1c45ec84a05"
 dependencies = [
  "ahash 0.8.0",
  "arrow",
@@ -750,7 +750,7 @@ dependencies = [
 [[package]]
 name = "datafusion-row"
 version = "11.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=c8d61d8e3ce48120cc7074cfa2143cd79d33f22f#c8d61d8e3ce48120cc7074cfa2143cd79d33f22f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=2cecc9519321ac8278790faed4aae1c45ec84a05#2cecc9519321ac8278790faed4aae1c45ec84a05"
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -761,7 +761,7 @@ dependencies = [
 [[package]]
 name = "datafusion-sql"
 version = "11.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=c8d61d8e3ce48120cc7074cfa2143cd79d33f22f#c8d61d8e3ce48120cc7074cfa2143cd79d33f22f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=2cecc9519321ac8278790faed4aae1c45ec84a05#2cecc9519321ac8278790faed4aae1c45ec84a05"
 dependencies = [
  "ahash 0.8.0",
  "arrow",
@@ -2283,7 +2283,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "indoc",
  "libc",
- "parking_lot 0.12.0",
+ "parking_lot 0.11.2",
  "pyo3-build-config",
  "pyo3-ffi",
  "pyo3-macros",
@@ -2794,9 +2794,9 @@ dependencies = [
 
 [[package]]
 name = "sqlparser"
-version = "0.21.0"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06f81e3ef3e44bcec9b9a349555f93178d2a427c2bb3e9611c50180085ad07a9"
+checksum = "6483de5881514f11fe570f53fcee3cd9194e91eb43659cb356df69f99ef0f83e"
 dependencies = [
  "log",
 ]
