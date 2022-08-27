@@ -8,7 +8,7 @@
  */
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{to_numeric, ExprHelpers};
+use crate::expression::compiler::utils::{to_numeric, ExprHelpers, cast_to};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
@@ -55,9 +55,11 @@ impl TransformTrait for Bin {
         // Compute output signal value
         let output_value = compute_output_value(&self, start, stop, step);
 
+        let numeric_field = to_numeric(col(&self.field), &sql_df.schema_df())?;
+
         // Add column with bin index
         let bin_index_name = "__bin_index";
-        let bin_index = floor((col(&self.field).sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
+        let bin_index = floor((numeric_field.clone().sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
             .alias(bin_index_name);
         let sql_df = sql_df.select(vec![Expr::Wildcard, bin_index.clone()])?;
 
@@ -78,7 +80,7 @@ impl TransformTrait for Bin {
 
         let bin_start = when(col(bin_index_name).lt(lit(0.0)), neg_inf)
             .when(
-                abs(col(&self.field).sub(lit(last_stop))).lt(eps),
+                abs(numeric_field.sub(lit(last_stop))).lt(eps),
                 lit(*bin_starts.last().unwrap()),
             )
             .when(col(bin_index_name).gt_eq(lit(n)), inf)
