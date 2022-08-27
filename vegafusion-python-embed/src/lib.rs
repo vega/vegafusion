@@ -18,7 +18,7 @@ use vegafusion_core::proto::gen::services::pre_transform_spec_result;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use serde::{Deserialize, Serialize};
-use vegafusion_core::data::dataset::VegaFusionDataset;
+use vegafusion_rt_datafusion::data::dataset::VegaFusionDataset;
 use vegafusion_core::proto::gen::tasks::Variable;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
