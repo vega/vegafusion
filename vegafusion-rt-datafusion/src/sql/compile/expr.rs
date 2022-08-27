@@ -192,7 +192,7 @@ impl ToSqlExpr for Expr {
             Expr::AggregateFunction {
                 fun,
                 args,
-                distinct: _,
+                distinct,
             } => {
                 let ident = Ident {
                     value: fun.to_string(),
@@ -207,7 +207,7 @@ impl ToSqlExpr for Expr {
                     name: SqlObjectName(vec![ident]),
                     args,
                     over: None,
-                    distinct: false,
+                    distinct: *distinct,
                 }))
             }
             Expr::WindowFunction {
