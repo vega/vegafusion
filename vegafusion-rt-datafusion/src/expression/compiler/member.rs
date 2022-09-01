@@ -22,7 +22,10 @@ use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::prelude::lit;
 use datafusion::scalar::ScalarValue;
-use datafusion_expr::{ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility};
+use datafusion_expr::Expr::ScalarFunction;
+use datafusion_expr::{
+    BuiltinScalarFunction, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
+};
 use std::convert::TryFrom;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -82,10 +85,13 @@ pub fn compile_member(
     let compiled_object = compile(node.object(), config, Some(schema))?;
     let dtype = data_type(&compiled_object, schema)?;
 
-    let udf = match dtype {
+    let expr = match dtype {
         DataType::Struct(ref fields) => {
             if fields.iter().any(|f| f.name() == &property_string) {
-                make_get_object_member_udf(&dtype, &property_string)?
+                Expr::ScalarUDF {
+                    fun: Arc::new(make_get_object_member_udf(&dtype, &property_string)?),
+                    args: vec![compiled_object],
+                }
             } else {
                 // Property does not exist, return null
                 return Ok(lit(ScalarValue::try_from(&DataType::Float64).unwrap()));
@@ -95,16 +101,29 @@ pub fn compile_member(
             if property_string == "length" {
                 // Special case to treat foo.length as length(foo) when foo is not an object
                 // make_length()
-                make_length_udf()
-            } else if matches!(
-                dtype,
-                DataType::List(_)
-                    | DataType::FixedSizeList(_, _)
-                    | DataType::Utf8
-                    | DataType::LargeUtf8
-            ) {
+                Expr::ScalarUDF {
+                    fun: Arc::new(make_length_udf()),
+                    args: vec![compiled_object],
+                }
+            } else if matches!(dtype, DataType::Utf8 | DataType::LargeUtf8) {
                 if let Some(index) = index {
-                    make_get_element_udf(index as i32)
+                    // SQL substr function is 1-indexed so add one
+                    Expr::ScalarFunction {
+                        fun: BuiltinScalarFunction::Substr,
+                        args: vec![compiled_object, lit((index + 1) as i32), lit(1)],
+                    }
+                } else {
+                    return Err(VegaFusionError::compilation(&format!(
+                        "Non-numeric element index: {}",
+                        property_string
+                    )));
+                }
+            } else if matches!(dtype, DataType::List(_) | DataType::FixedSizeList(_, _)) {
+                if let Some(index) = index {
+                    Expr::ScalarUDF {
+                        fun: Arc::new(make_get_element_udf(index as i32)),
+                        args: vec![compiled_object],
+                    }
                 } else {
                     return Err(VegaFusionError::compilation(&format!(
                         "Non-numeric element index: {}",
@@ -120,10 +139,7 @@ pub fn compile_member(
         }
     };
 
-    Ok(Expr::ScalarUDF {
-        fun: Arc::new(udf),
-        args: vec![compiled_object],
-    })
+    Ok(expr)
 }
 
 pub fn make_get_object_member_udf(
@@ -191,17 +207,6 @@ pub fn make_get_element_udf(index: i32) -> ScalarUDF {
                             }
                         }
                     }
-                    ScalarValue::Utf8(Some(s)) | ScalarValue::LargeUtf8(Some(s)) => {
-                        match s.get((index as usize)..((index + 1) as usize)) {
-                            Some(substring) => ColumnarValue::Scalar(ScalarValue::from(substring)),
-                            None => {
-                                // out of bounds, null
-                                ColumnarValue::Scalar(
-                                    ScalarValue::try_from(&DataType::Utf8).unwrap(),
-                                )
-                            }
-                        }
-                    }
                     _ => {
                         // null
                         ColumnarValue::Scalar(ScalarValue::try_from(&DataType::Float64).unwrap())
@@ -210,13 +215,6 @@ pub fn make_get_element_udf(index: i32) -> ScalarUDF {
             }
             ColumnarValue::Array(array) => {
                 match array.data_type() {
-                    DataType::Utf8 | DataType::LargeUtf8 => {
-                        // String length
-                        ColumnarValue::Array(
-                            kernels::substring::substring(array.as_ref(), index as i64, Some(1))
-                                .unwrap(),
-                        )
-                    }
                     DataType::List(_) => {
                         // There is not substring-like kernel for general list arrays.
                         // So instead, build indices into the flat buffer and use take
@@ -252,7 +250,6 @@ pub fn make_get_element_udf(index: i32) -> ScalarUDF {
 
     let return_type: ReturnTypeFunction = Arc::new(move |dtype| {
         let new_dtype = match &dtype[0] {
-            DataType::Utf8 => DataType::Utf8,
             DataType::List(field) => field.data_type().clone(),
             dtype => {
                 return Err(DataFusionError::Internal(format!(
