@@ -46,6 +46,7 @@ use crate::expression::compiler::builtin_functions::type_checking::isdate::is_da
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_string::to_string_transform;
+use crate::expression::compiler::object::make_object_constructor_udf;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use crate::transform::timeunit::{TIMEUNIT_END_UDF, TIMEUNIT_START_UDF};
 
@@ -461,6 +462,8 @@ pub fn make_session_context() -> SessionContext {
     ctx.register_udf(array_constructor_udf());
     ctx.register_udf(make_length_udf());
 
+    // struct
+    ctx.register_udf(make_object_constructor_udf());
 
     ctx
 }
