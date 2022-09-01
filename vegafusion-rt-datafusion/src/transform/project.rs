@@ -18,6 +18,7 @@ use vegafusion_core::proto::gen::transforms::Project;
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion_expr::col;
+use vegafusion_core::expression::escape::unescape_field;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
@@ -41,8 +42,9 @@ impl TransformTrait for Project {
             .fields
             .iter()
             .filter_map(|field| {
-                if all_fields.contains(field) {
-                    Some(field.clone())
+                let field = unescape_field(field);
+                if all_fields.contains(&field) {
+                    Some(field)
                 } else {
                     None
                 }
