@@ -281,6 +281,24 @@ impl ToSqlExpr for Expr {
                     distinct: false,
                 }))
             }
+            Expr::IsTrue(_) => Err(VegaFusionError::internal(
+                "IsTrue cannot be converted to SQL",
+            )),
+            Expr::IsFalse(_) => Err(VegaFusionError::internal(
+                "IsFalse cannot be converted to SQL",
+            )),
+            Expr::IsUnknown(_) => Err(VegaFusionError::internal(
+                "IsUnknown cannot be converted to SQL",
+            )),
+            Expr::IsNotTrue(_) => Err(VegaFusionError::internal(
+                "IsNotTrue cannot be converted to SQL",
+            )),
+            Expr::IsNotFalse(_) => Err(VegaFusionError::internal(
+                "IsNotFalse cannot be converted to SQL",
+            )),
+            Expr::IsNotUnknown(_) => Err(VegaFusionError::internal(
+                "IsNotUnknown cannot be converted to SQL",
+            )),
             Expr::InList { .. } => Err(VegaFusionError::internal(
                 "InList cannot be converted to SQL",
             )),
@@ -291,7 +309,7 @@ impl ToSqlExpr for Expr {
                 "Exists cannot be converted to SQL",
             )),
             Expr::InSubquery { .. } => Err(VegaFusionError::internal(
-                "InSubquery  cannot be converted to SQL",
+                "InSubquery cannot be converted to SQL",
             )),
             Expr::ScalarSubquery(_) => Err(VegaFusionError::internal(
                 "ScalarSubquery cannot be converted to SQL",
