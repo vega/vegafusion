@@ -35,7 +35,7 @@ impl ToSqlExpr for Expr {
             Expr::ScalarVariable(_, _) => Err(VegaFusionError::internal(
                 "ScalarVariable cannot be converted to SQL",
             )),
-            Expr::Literal(value) => Ok(SqlExpr::Value(value.to_sql()?)),
+            Expr::Literal(value) => Ok(value.to_sql()?),
             Expr::BinaryExpr { left, op, right } => {
                 let sql_op = match op {
                     Operator::Eq => SqlBinaryOperator::Eq,

@@ -34,6 +34,7 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
 };
+use crate::expression::compiler::array::array_constructor_udf;
 
 use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
@@ -455,6 +456,11 @@ pub fn make_session_context() -> SessionContext {
 
     // math
     ctx.register_udf((*POW_UDF).clone());
+
+    // list
+    ctx.register_udf(array_constructor_udf());
+    ctx.register_udf(make_length_udf());
+
 
     ctx
 }

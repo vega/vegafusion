@@ -1,17 +1,17 @@
 use datafusion::scalar::ScalarValue;
-use sqlgen::ast::Value as SqlValue;
+use sqlgen::ast::{Value as SqlValue, Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, ObjectName as SqlObjectName, Ident, FunctionArgExpr};
 use vegafusion_core::error::{Result, VegaFusionError};
 
 pub trait ToSqlScalar {
-    fn to_sql(&self) -> Result<SqlValue>;
+    fn to_sql(&self) -> Result<SqlExpr>;
 }
 
 impl ToSqlScalar for ScalarValue {
-    fn to_sql(&self) -> Result<SqlValue> {
+    fn to_sql(&self) -> Result<SqlExpr> {
         match self {
-            ScalarValue::Null => Ok(SqlValue::Null),
-            ScalarValue::Boolean(v) => Ok(v.map(SqlValue::Boolean).unwrap_or(SqlValue::Null)),
-            ScalarValue::Float32(v) => Ok(v
+            ScalarValue::Null => Ok(SqlExpr::Value(SqlValue::Null)),
+            ScalarValue::Boolean(v) => Ok(SqlExpr::Value(v.map(SqlValue::Boolean).unwrap_or(SqlValue::Null))),
+            ScalarValue::Float32(v) => Ok(SqlExpr::Value(v
                 .map(|v| {
                     let repr = if !v.is_finite() {
                         // Wrap inf, -inf, and nan in single quotes
@@ -23,8 +23,8 @@ impl ToSqlScalar for ScalarValue {
                     };
                     SqlValue::Number(repr, false)
                 })
-                .unwrap_or(SqlValue::Null)),
-            ScalarValue::Float64(v) => Ok(v
+                .unwrap_or(SqlValue::Null))),
+            ScalarValue::Float64(v) => Ok(SqlExpr::Value(v
                 .map(|v| {
                     let repr = if !v.is_finite() {
                         // Wrap inf, -inf, and nan in single quotes
@@ -36,47 +36,64 @@ impl ToSqlScalar for ScalarValue {
                     };
                     SqlValue::Number(repr, false)
                 })
-                .unwrap_or(SqlValue::Null)),
-            ScalarValue::Int8(v) => Ok(v
+                .unwrap_or(SqlValue::Null))),
+            ScalarValue::Int8(v) => Ok(SqlExpr::Value(v
                 .map(|v| SqlValue::Number(v.to_string(), false))
-                .unwrap_or(SqlValue::Null)),
-            ScalarValue::Int16(v) => Ok(v
+                .unwrap_or(SqlValue::Null))),
+            ScalarValue::Int16(v) => Ok(SqlExpr::Value(v
                 .map(|v| SqlValue::Number(v.to_string(), false))
-                .unwrap_or(SqlValue::Null)),
-            ScalarValue::Int32(v) => Ok(v
+                .unwrap_or(SqlValue::Null))),
+            ScalarValue::Int32(v) => Ok(SqlExpr::Value(v
                 .map(|v| SqlValue::Number(v.to_string(), false))
-                .unwrap_or(SqlValue::Null)),
-            ScalarValue::Int64(v) => Ok(v
+                .unwrap_or(SqlValue::Null))),
+            ScalarValue::Int64(v) => Ok(SqlExpr::Value(v
                 .map(|v| SqlValue::Number(v.to_string(), false))
-                .unwrap_or(SqlValue::Null)),
-            ScalarValue::UInt8(v) => Ok(v
+                .unwrap_or(SqlValue::Null))),
+            ScalarValue::UInt8(v) => Ok(SqlExpr::Value(v
                 .map(|v| SqlValue::Number(v.to_string(), false))
-                .unwrap_or(SqlValue::Null)),
-            ScalarValue::UInt16(v) => Ok(v
+                .unwrap_or(SqlValue::Null))),
+            ScalarValue::UInt16(v) => Ok(SqlExpr::Value(v
                 .map(|v| SqlValue::Number(v.to_string(), false))
-                .unwrap_or(SqlValue::Null)),
-            ScalarValue::UInt32(v) => Ok(v
+                .unwrap_or(SqlValue::Null))),
+            ScalarValue::UInt32(v) => Ok(SqlExpr::Value(v
                 .map(|v| SqlValue::Number(v.to_string(), false))
-                .unwrap_or(SqlValue::Null)),
-            ScalarValue::UInt64(v) => Ok(v
+                .unwrap_or(SqlValue::Null))),
+            ScalarValue::UInt64(v) => Ok(SqlExpr::Value(v
                 .map(|v| SqlValue::Number(v.to_string(), false))
-                .unwrap_or(SqlValue::Null)),
-            ScalarValue::Utf8(v) => Ok(v
+                .unwrap_or(SqlValue::Null))),
+            ScalarValue::Utf8(v) => Ok(SqlExpr::Value(v
                 .as_ref()
                 .map(|v| SqlValue::SingleQuotedString(v.clone()))
-                .unwrap_or(SqlValue::Null)),
-            ScalarValue::LargeUtf8(v) => Ok(v
+                .unwrap_or(SqlValue::Null))),
+            ScalarValue::LargeUtf8(v) => Ok(SqlExpr::Value(v
                 .as_ref()
                 .map(|v| SqlValue::SingleQuotedString(v.clone()))
-                .unwrap_or(SqlValue::Null)),
+                .unwrap_or(SqlValue::Null))),
             ScalarValue::Binary(_) => Err(VegaFusionError::internal(
                 "Binary cannot be converted to SQL",
             )),
             ScalarValue::LargeBinary(_) => Err(VegaFusionError::internal(
                 "LargeBinary cannot be converted to SQL",
             )),
-            ScalarValue::List(_, _) => {
-                Err(VegaFusionError::internal("List cannot be converted to SQL"))
+            ScalarValue::List(args, _) => {
+                let function_ident = Ident {
+                    value: "make_list".to_string(),
+                    quote_style: None
+                };
+
+                let args = args.clone().unwrap_or_default()
+                    .iter()
+                    .map(|expr| {
+                        Ok(SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(expr.to_sql()?)))
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+
+                Ok(SqlExpr::Function(SqlFunction {
+                    name: SqlObjectName(vec![function_ident]),
+                    args,
+                    over: None,
+                    distinct: false,
+                }))
             }
             ScalarValue::Date32(_) => Err(VegaFusionError::internal(
                 "Date32 cannot be converted to SQL",

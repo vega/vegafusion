@@ -55,6 +55,10 @@ pub fn make_datafusion_dialect() -> Dialect {
     // math
     dialect.functions.insert("pow".to_string());
 
+    // list
+    dialect.functions.insert("make_list".to_string());
+    dialect.functions.insert("len".to_string());
+
     dialect
 }
 

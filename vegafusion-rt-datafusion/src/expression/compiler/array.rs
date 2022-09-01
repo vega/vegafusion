@@ -112,7 +112,7 @@ pub fn make_array_constructor_udf() -> ScalarUDF {
         )))))
     });
     ScalarUDF::new(
-        "list",
+        "make_list",
         &Signature::variadic_equal(Volatility::Immutable),
         &return_type,
         &array_constructor,
