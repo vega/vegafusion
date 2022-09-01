@@ -48,7 +48,7 @@ fn process_input_datetime(arg: &ArrayRef, default_input_tz: &chrono_tz::Tz) -> A
             int_array
         }
         DataType::Int64 => arg.clone(),
-        DataType::Float64 => cast(arg, &DataType::Int64).expect("Failed to case float to int"),
+        DataType::Float64 => cast(arg, &DataType::Int64).expect("Failed to cast float to int"),
         _ => panic!("Unexpected data type for date part function:"),
     }
 }

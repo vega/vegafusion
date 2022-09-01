@@ -6,21 +6,26 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use std::ops::Deref;
-use crate::expression::compiler::builtin_functions::date_time::date_parsing::{DateParseMode, DATETIME_STRING_TO_MILLIS_UDF};
+use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
+    DateParseMode, DATETIME_STRING_TO_MILLIS_UDF,
+};
 use crate::expression::compiler::utils::{cast_to, is_string_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
 use chrono::{DateTime, TimeZone};
-use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
+use datafusion::arrow::array::{Array, ArrayRef, Float64Array, Int64Array};
+use datafusion::arrow::compute::cast as arrow_cast;
 use datafusion::arrow::datatypes::DataType;
+use datafusion::error::DataFusionError;
 use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
-use datafusion_expr::{lit, ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature, Volatility};
+use datafusion_expr::{
+    lit, ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature, Volatility,
+};
+use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
-use datafusion::error::DataFusionError;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 pub fn to_date_transform(
@@ -59,7 +64,11 @@ pub fn to_date_transform(
 
         arg = Expr::ScalarUDF {
             fun: Arc::new((*DATETIME_STRING_TO_MILLIS_UDF).clone()),
-            args: vec![lit(default_input_tz.to_string()), lit(DateParseMode::JavaScript.to_string()), arg],
+            args: vec![
+                lit(default_input_tz.to_string()),
+                lit(DateParseMode::JavaScript.to_string()),
+                arg,
+            ],
         }
     }
 
@@ -110,11 +119,14 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
             let tz_str = if let ColumnarValue::Scalar(tz_scalar) = &args[0] {
                 tz_scalar.to_string()
             } else {
-                return Err(DataFusionError::Internal("Expected timezone to be a scalar".to_string()))
+                return Err(DataFusionError::Internal(
+                    "Expected timezone to be a scalar".to_string(),
+                ));
             };
 
-            let input_tz = chrono_tz::Tz::from_str(&tz_str)
-                .map_err(|err| DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str)))?;
+            let input_tz = chrono_tz::Tz::from_str(&tz_str).map_err(|err| {
+                DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
+            })?;
 
             // pad with defaults out to 8 arguments (timezone plus 7 datetime components)
             let num_args = args.len();
@@ -157,13 +169,20 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
             };
 
             // To int64 arrays
-            let years = args[1].as_any().downcast_ref::<Int64Array>().unwrap();
-            let months = args[2].as_any().downcast_ref::<Int64Array>().unwrap();
-            let days = args[3].as_any().downcast_ref::<Int64Array>().unwrap();
-            let hours = args[4].as_any().downcast_ref::<Int64Array>().unwrap();
-            let minutes = args[5].as_any().downcast_ref::<Int64Array>().unwrap();
-            let seconds = args[6].as_any().downcast_ref::<Int64Array>().unwrap();
-            let milliseconds = args[7].as_any().downcast_ref::<Int64Array>().unwrap();
+            let years_ref = arrow_cast(&args[1], &DataType::Int64)?;
+            let years = years_ref.as_any().downcast_ref::<Int64Array>().unwrap();
+            let months_ref = arrow_cast(&args[2], &DataType::Int64)?;
+            let months = months_ref.as_any().downcast_ref::<Int64Array>().unwrap();
+            let days_ref = arrow_cast(&args[3], &DataType::Int64)?;
+            let days = days_ref.as_any().downcast_ref::<Int64Array>().unwrap();
+            let hours_ref = arrow_cast(&args[4], &DataType::Int64)?;
+            let hours = hours_ref.as_any().downcast_ref::<Int64Array>().unwrap();
+            let minutes_ref = arrow_cast(&args[5], &DataType::Int64)?;
+            let minutes = minutes_ref.as_any().downcast_ref::<Int64Array>().unwrap();
+            let seconds_ref = arrow_cast(&args[6], &DataType::Int64)?;
+            let seconds = seconds_ref.as_any().downcast_ref::<Int64Array>().unwrap();
+            let millis_ref = arrow_cast(&args[7], &DataType::Int64)?;
+            let millis = millis_ref.as_any().downcast_ref::<Int64Array>().unwrap();
 
             let num_rows = years.len();
             let mut datetime_builder = Int64Array::builder(num_rows);
@@ -175,7 +194,7 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
                     || hours.is_null(i)
                     || minutes.is_null(i)
                     || seconds.is_null(i)
-                    || milliseconds.is_null(i)
+                    || millis.is_null(i)
                 {
                     // If any component is null, propagate null
                     datetime_builder.append_null();
@@ -186,7 +205,7 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
                     let hour = hours.value(i);
                     let minute = minutes.value(i);
                     let second = seconds.value(i);
-                    let millisecond = milliseconds.value(i);
+                    let milli = millis.value(i);
 
                     // Treat 00-99 as 1900 to 1999
                     let mut year = year;
@@ -202,7 +221,7 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
                                 hour as u32,
                                 minute as u32,
                                 second as u32,
-                                millisecond as u32,
+                                milli as u32,
                             )
                         });
 
@@ -232,7 +251,7 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
     // vega signature: datetime(year, month[, day, hour, min, sec, millisec])
     let sig = |n: usize| {
         let mut args = vec![DataType::Utf8];
-        args.extend(vec![DataType::Int64; n]);
+        args.extend(vec![DataType::Float64; n]);
         args
     };
     let signature = Signature::one_of(
@@ -255,7 +274,11 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
     )
 }
 
-pub fn make_datetime_components_fn(tz_config: &RuntimeTzConfig, args: &[Expr], _schema: &DFSchema) -> Result<Expr> {
+pub fn make_datetime_components_fn(
+    tz_config: &RuntimeTzConfig,
+    args: &[Expr],
+    _schema: &DFSchema,
+) -> Result<Expr> {
     let mut udf_args = vec![lit(tz_config.default_input_tz.to_string())];
     udf_args.extend(Vec::from(args));
     Ok(Expr::ScalarUDF {

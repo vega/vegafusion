@@ -147,6 +147,7 @@ pub fn make_datepart_udf(
         TypeSignature::Exact(vec![DataType::Utf8, DataType::Date32]),
         TypeSignature::Exact(vec![DataType::Utf8, DataType::Date64]),
         TypeSignature::Exact(vec![DataType::Utf8, DataType::Int64]),
+        TypeSignature::Exact(vec![DataType::Utf8, DataType::Float64]),
     ], Volatility::Immutable);
 
     ScalarUDF::new(
