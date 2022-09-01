@@ -299,9 +299,16 @@ impl ToSqlExpr for Expr {
             Expr::IsNotUnknown(_) => Err(VegaFusionError::internal(
                 "IsNotUnknown cannot be converted to SQL",
             )),
-            Expr::InList { .. } => Err(VegaFusionError::internal(
-                "InList cannot be converted to SQL",
-            )),
+            Expr::InList { expr, list, negated } => {
+                let sql_expr = expr.to_sql()?;
+                let sql_list = list.iter().map(|expr| expr.to_sql()).collect::<Result<Vec<_>>>()?;
+
+                Ok(SqlExpr::InList {
+                    expr: Box::new(sql_expr),
+                    list: sql_list,
+                    negated: *negated
+                })
+            },
             Expr::Wildcard => Err(VegaFusionError::internal(
                 "Wildcard cannot be converted to SQL",
             )),
