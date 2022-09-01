@@ -144,6 +144,7 @@ pub fn make_datepart_udf(
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
 
     let signature = Signature::one_of(vec![
+        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8]),
         TypeSignature::Exact(vec![DataType::Utf8, DataType::Date32]),
         TypeSignature::Exact(vec![DataType::Utf8, DataType::Date64]),
         TypeSignature::Exact(vec![DataType::Utf8, DataType::Int64]),
