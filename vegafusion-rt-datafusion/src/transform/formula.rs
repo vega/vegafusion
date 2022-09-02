@@ -19,7 +19,9 @@ use vegafusion_core::proto::gen::transforms::Formula;
 
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
+use datafusion::logical_plan::ExprSimplifiable;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use crate::expression::compiler::utils::VfSimplifyInfo;
 
 #[async_trait]
 impl TransformTrait for Formula {
@@ -33,6 +35,9 @@ impl TransformTrait for Formula {
             config,
             Some(&dataframe.schema_df()),
         )?;
+
+        // Simplify expression prior to evaluation
+        let formula_expr = formula_expr.simplify(&VfSimplifyInfo::from(dataframe.schema_df()))?;
 
         // Rename with alias
         let formula_expr = formula_expr.alias(&self.r#as);

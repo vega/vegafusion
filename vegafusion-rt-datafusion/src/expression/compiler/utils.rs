@@ -9,7 +9,7 @@
 use datafusion::arrow::array::{ArrayRef, BooleanArray};
 use datafusion::arrow::datatypes::{DataType, Schema};
 use datafusion::arrow::record_batch::RecordBatch;
-use datafusion::logical_plan::{and, Column, DFSchema, Expr, ExprSchemable};
+use datafusion::logical_plan::{and, Column, DFSchema, Expr, ExprSchemable, SimplifyInfo};
 use datafusion::physical_plan::planner::DefaultPhysicalPlanner;
 use datafusion::physical_plan::{ColumnarValue, PhysicalExpr, PhysicalPlanner};
 use datafusion::scalar::ScalarValue;
@@ -17,10 +17,11 @@ use datafusion::scalar::ScalarValue;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
-use datafusion::execution::context::{default_session_builder, SessionState};
+use datafusion::execution::context::{default_session_builder, ExecutionProps, SessionState};
 use datafusion_expr::utils::expr_to_columns;
-use datafusion_expr::BuiltinScalarFunction;
+use datafusion_expr::{BuiltinScalarFunction, lit};
 use std::sync::Arc;
+use datafusion::error::DataFusionError;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 lazy_static! {
@@ -242,5 +243,42 @@ impl ExprHelpers for Expr {
         };
 
         Ok(col_result)
+    }
+}
+
+/// In order to simplify expressions, DataFusion must have information
+/// about the expressions.
+///
+/// You can provide that information using DataFusion [DFSchema]
+/// objects or from some other implemention
+pub struct VfSimplifyInfo {
+    /// The input schema
+    schema: DFSchema,
+
+    /// Execution specific details needed for constant evaluation such
+    /// as the current time for `now()` and [VariableProviders]
+    execution_props: ExecutionProps,
+}
+
+impl SimplifyInfo for VfSimplifyInfo {
+    fn is_boolean_type(&self, expr: &Expr) -> std::result::Result<bool, DataFusionError> {
+        Ok(matches!(expr.get_type(&self.schema)?, DataType::Boolean))
+    }
+
+    fn nullable(&self, expr: &Expr) -> std::result::Result<bool, DataFusionError> {
+        expr.nullable(&self.schema)
+    }
+
+    fn execution_props(&self) -> &ExecutionProps {
+        &self.execution_props
+    }
+}
+
+impl From<DFSchema> for VfSimplifyInfo {
+    fn from(schema: DFSchema) -> Self {
+        Self {
+            schema,
+            execution_props: ExecutionProps::new(),
+        }
     }
 }

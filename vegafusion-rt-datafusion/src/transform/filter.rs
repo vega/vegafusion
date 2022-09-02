@@ -11,10 +11,11 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use datafusion::dataframe::DataFrame;
 
-use crate::expression::compiler::utils::{cast_to, to_boolean};
+use crate::expression::compiler::utils::{cast_to, to_boolean, VfSimplifyInfo};
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use std::sync::Arc;
+use datafusion::logical_plan::ExprSimplifiable;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Filter;
@@ -36,7 +37,10 @@ impl TransformTrait for Filter {
         // Cast filter expr to boolean
         let filter_expr = to_boolean(filter_expr, &dataframe.schema_df())?;
 
-        let result = dataframe.filter(filter_expr)?;
+        // Simplify expression prior to evaluation
+        let simplified_expr = filter_expr.simplify(&VfSimplifyInfo::from(dataframe.schema_df()))?;
+
+        let result = dataframe.filter(simplified_expr)?;
 
         Ok((result, Default::default()))
     }
