@@ -888,7 +888,7 @@ mod test_vegalite_specs {
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
         println!("spec_name: {}", spec_name);
         TOKIO_RUNTIME.block_on(check_spec_sequence_from_files(spec_name, tolerance));
-        // TOKIO_RUNTIME.block_on(check_pre_transform_spec_from_files(spec_name, tolerance));
+        TOKIO_RUNTIME.block_on(check_pre_transform_spec_from_files(spec_name, tolerance));
     }
 
     #[test]
