@@ -77,6 +77,7 @@ pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
             vec![
                 DataType::Utf8,
                 DataType::Timestamp(TimeUnit::Millisecond, None),
+                DataType::Timestamp(TimeUnit::Nanosecond, None),
                 DataType::Date32,
                 DataType::Date64,
                 DataType::Int64,

@@ -36,6 +36,10 @@ fn process_input_datetime(arg: &ArrayRef, default_input_tz: &chrono_tz::Tz) -> A
         DataType::Timestamp(TimeUnit::Millisecond, _) => {
             cast(arg, &DataType::Int64).expect("Failed to case timestamp to Int64")
         }
+        DataType::Timestamp(_, _) => {
+            let arg_ms = cast(arg, &DataType::Timestamp(TimeUnit::Millisecond, None)).expect("Failed to convert timestamp[ns] to timestamp[ms]");
+            cast(&arg_ms, &DataType::Int64).expect("Failed to case timestamp to Int64")
+        }
         DataType::Date32 => {
             let ms_per_day = 1000 * 60 * 60 * 24_i64;
             let array = arg.as_any().downcast_ref::<Date32Array>().unwrap();
