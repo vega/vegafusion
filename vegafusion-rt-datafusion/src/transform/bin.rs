@@ -8,7 +8,7 @@
  */
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{to_numeric, ExprHelpers, cast_to};
+use crate::expression::compiler::utils::{cast_to, to_numeric, ExprHelpers};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
@@ -32,7 +32,6 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 impl TransformTrait for Bin {
-
     async fn eval(
         &self,
         sql_df: Arc<SqlDataFrame>,
@@ -59,8 +58,9 @@ impl TransformTrait for Bin {
 
         // Add column with bin index
         let bin_index_name = "__bin_index";
-        let bin_index = floor((numeric_field.clone().sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
-            .alias(bin_index_name);
+        let bin_index =
+            floor((numeric_field.clone().sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
+                .alias(bin_index_name);
         let sql_df = sql_df.select(vec![Expr::Wildcard, bin_index.clone()])?;
 
         // Add column with bin start
@@ -87,7 +87,21 @@ impl TransformTrait for Bin {
             .otherwise(bin_start)?
             .alias(&bin_start_name);
 
-        let sql_df = sql_df.select(vec![Expr::Wildcard, bin_start])?;
+        let mut select_exprs = sql_df
+            .schema()
+            .fields
+            .iter()
+            .filter_map(|field| {
+                if field.name() == &bin_start_name {
+                    None
+                } else {
+                    Some(col(field.name()))
+                }
+            })
+            .collect::<Vec<_>>();
+        select_exprs.push(bin_start);
+
+        let sql_df = sql_df.select(select_exprs)?;
 
         // Add bin end column
         let bin_end_name = self.alias_1.clone().unwrap_or("bin1".to_string());
