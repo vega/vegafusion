@@ -34,8 +34,7 @@ impl TransformTrait for Filter {
         )?;
 
         // Cast filter expr to boolean
-        let filter_expr = cast_to(filter_expr, &DataType::Boolean, &dataframe.schema_df())?;
-        // let filter_expr = to_boolean(filter_expr, &dataframe.schema_df())?;
+        let filter_expr = to_boolean(filter_expr, &dataframe.schema_df())?;
 
         let result = dataframe.filter(filter_expr)?;
 
