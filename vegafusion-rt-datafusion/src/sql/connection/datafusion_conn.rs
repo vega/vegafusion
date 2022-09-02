@@ -59,9 +59,6 @@ pub fn make_datafusion_dialect() -> Dialect {
     dialect.functions.insert("make_list".to_string());
     dialect.functions.insert("len".to_string());
 
-    // struct
-    dialect.functions.insert("make_struct".to_string());
-
     dialect
 }
 

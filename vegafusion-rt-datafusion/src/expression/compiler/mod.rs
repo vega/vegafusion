@@ -67,6 +67,7 @@ mod test_compile {
     use crate::expression::compiler::array::array_constructor_udf;
     use crate::expression::compiler::compile;
     use crate::expression::compiler::config::CompilationConfig;
+    use crate::expression::compiler::object::make_object_constructor_udf;
     use crate::expression::compiler::utils::ExprHelpers;
     use vegafusion_core::expression::parser::parse;
 
@@ -489,47 +490,47 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    // #[test]
-    // fn test_compile_object() {
-    //     let expr = parse("{a: 1, 'two': {three: 3}}").unwrap();
-    //     let result_expr = compile(&expr, &Default::default(), None).unwrap();
-    //
-    //     let expected_expr = Expr::ScalarUDF {
-    //         fun: Arc::new(make_object_constructor_udf(
-    //             &["a".to_string(), "two".to_string()],
-    //             &[
-    //                 DataType::Float64,
-    //                 DataType::Struct(vec![Field::new("three", DataType::Float64, false)]),
-    //             ],
-    //         )),
-    //         args: vec![
-    //             lit(1.0),
-    //             Expr::ScalarUDF {
-    //                 fun: Arc::new(make_object_constructor_udf(
-    //                     &["three".to_string()],
-    //                     &[DataType::Float64],
-    //                 )),
-    //                 args: vec![lit(3.0)],
-    //             },
-    //         ],
-    //     };
-    //
-    //     println!("expr: {:?}", result_expr);
-    //     assert_eq!(result_expr, expected_expr);
-    //
-    //     // Check evaluated value
-    //     let result_value = result_expr.eval_to_scalar().unwrap();
-    //     let expected_value = ScalarValue::from(vec![
-    //         ("a", ScalarValue::from(1.0)),
-    //         (
-    //             "two",
-    //             ScalarValue::from(vec![("three", ScalarValue::from(3.0))]),
-    //         ),
-    //     ]);
-    //
-    //     println!("value: {:?}", result_value);
-    //     assert_eq!(result_value, expected_value);
-    // }
+    #[test]
+    fn test_compile_object() {
+        let expr = parse("{a: 1, 'two': {three: 3}}").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+
+        let expected_expr = Expr::ScalarUDF {
+            fun: Arc::new(make_object_constructor_udf(
+                &["a".to_string(), "two".to_string()],
+                &[
+                    DataType::Float64,
+                    DataType::Struct(vec![Field::new("three", DataType::Float64, false)]),
+                ],
+            )),
+            args: vec![
+                lit(1.0),
+                Expr::ScalarUDF {
+                    fun: Arc::new(make_object_constructor_udf(
+                        &["three".to_string()],
+                        &[DataType::Float64],
+                    )),
+                    args: vec![lit(3.0)],
+                },
+            ],
+        };
+
+        println!("expr: {:?}", result_expr);
+        assert_eq!(result_expr, expected_expr);
+
+        // Check evaluated value
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        let expected_value = ScalarValue::from(vec![
+            ("a", ScalarValue::from(1.0)),
+            (
+                "two",
+                ScalarValue::from(vec![("three", ScalarValue::from(3.0))]),
+            ),
+        ]);
+
+        println!("value: {:?}", result_value);
+        assert_eq!(result_value, expected_value);
+    }
 
     #[test]
     fn test_eval_object_member() {

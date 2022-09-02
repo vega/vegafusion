@@ -6,16 +6,14 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use std::ops::Rem;
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::arrow::array::{ArrayRef, StructArray};
 use datafusion::arrow::datatypes::{DataType, Field};
 use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
 use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion_expr::{ColumnarValue, lit, ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature, Volatility};
+use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
 use std::sync::Arc;
-use datafusion::common::DataFusionError;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ObjectExpression;
 
@@ -24,109 +22,57 @@ pub fn compile_object(
     config: &CompilationConfig,
     schema: &DFSchema,
 ) -> Result<Expr> {
-    let mut args: Vec<Expr> = Vec::new();
-
+    let mut keys: Vec<String> = Vec::new();
+    let mut values: Vec<Expr> = Vec::new();
+    let mut value_types: Vec<DataType> = Vec::new();
     for prop in &node.properties {
         let expr = compile(prop.value(), config, Some(schema))?;
         let name = prop.key().to_object_key_string();
-        args.push(lit(name));
-        args.push(expr);
+        keys.push(name);
+        value_types.push(expr.get_type(schema)?);
+        values.push(expr)
     }
 
-    let udf = make_object_constructor_udf();
+    let udf = make_object_constructor_udf(keys.as_slice(), value_types.as_slice());
 
     Ok(Expr::ScalarUDF {
         fun: Arc::new(udf),
-        args,
+        args: values,
     })
 }
 
+pub fn make_object_constructor_udf(keys: &[String], value_types: &[DataType]) -> ScalarUDF {
+    // Build fields vector
+    let fields: Vec<_> = keys
+        .iter()
+        .zip(value_types.iter())
+        .map(|(k, dtype)| Field::new(k, dtype.clone(), false))
+        .collect();
 
-pub fn make_object_constructor_udf() -> ScalarUDF {
-    let object_constructor: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
-        if args.len().rem(2) != 0 {
-            return Err(DataFusionError::Internal("make_struct expects an even number of arguments".to_string()))
-        }
+    let struct_dtype = DataType::Struct(fields.clone());
 
-        // Collect field names
-        let mut field_names: Vec<String> = Vec::new();
-        for field_index in 0..(args.len() / 2) {
-            let field_name_index = field_index * 2;
-            if let ColumnarValue::Scalar(field_name) = &args[field_name_index] {
-                field_names.push(field_name.to_string());
-            } else {
-                return Err(DataFusionError::Internal(
-                    "make_struct expects an even numbered arguments to be field name strings".to_string())
-                )
-            }
-        }
+    let object_constructor = move |args: &[ArrayRef]| {
+        let pairs: Vec<_> = fields
+            .iter()
+            .zip(args.iter())
+            .map(|(f, v)| (f.clone(), v.clone()))
+            .collect();
+        Ok(Arc::new(StructArray::from(pairs)) as ArrayRef)
+    };
 
-        // Compute broadcast length
-        let mut len = None;
-        for field_index in 0..(args.len() / 2) {
-            let field_val_index = field_index * 2 + 1;
-            if let ColumnarValue::Array(array) = &args[field_val_index] {
-                len = Some(array.len());
-            }
-        }
-        let len = len.unwrap_or(1);
+    let object_constructor = make_scalar_function(object_constructor);
 
-        // Collect field values
-        let mut field_values: Vec<(Field, ArrayRef)> = Vec::new();
-        for field_index in 0..(args.len() / 2) {
-            // Extract field name as string
-            let field_name_index = field_index * 2;
-            let field_name = if let ColumnarValue::Scalar(field_name) = &args[field_name_index] {
-                field_name.to_string()
-            } else {
-                return Err(DataFusionError::Internal(
-                    "make_struct expects an even numbered arguments to be field name strings".to_string())
-                )
-            };
+    let return_type: ReturnTypeFunction = Arc::new(move |_args| Ok(Arc::new(struct_dtype.clone())));
 
-            // Extract data type to build filed
-            let field_val_index = field_index * 2 + 1;
-            let field_val = &args[field_val_index];
-            let dtype = field_val.data_type();
-            let field = Field::new(&field_name, dtype, true);
-
-            let field_val_array = match field_val {
-                ColumnarValue::Array(array) => {
-                    field_values.push((field, array.clone()))
-                }
-                ColumnarValue::Scalar(scalar) => {
-                    field_values.push((field, scalar.to_array_of_size(len)))
-                }
-            };
-        }
-
-        let struct_array = Arc::new(StructArray::from(field_values)) as ArrayRef;
-
-        Ok(ColumnarValue::Array(struct_array))
-    });
-
-    let return_type: ReturnTypeFunction = Arc::new(move |dtypes| {
-        // Note: we don't have access to the field names here, only the argument types.
-        // So we use dummy c{i} field names
-        let mut fields: Vec<Field> = Vec::new();
-        for field_index in 0..(dtypes.len() / 2) {
-            let field_val_index = field_index * 2 + 1;
-            let field_val_dtype = &dtypes[field_val_index];
-            let field_name = format!("c{}", field_index);
-            let field = Field::new(&field_name, field_val_dtype.clone(), true);
-            fields.push(field);
-        }
-        Ok(Arc::new(DataType::Struct(fields)))
-    });
-
-    // Accept up to 10 fields
-    let type_sigs: Vec<_> = (0..=10).map(|v| TypeSignature::Any(v*2)).collect();
-
-    let signature = Signature::one_of(type_sigs, Volatility::Immutable);
+    let name_csv: Vec<_> = keys
+        .iter()
+        .zip(value_types)
+        .map(|(k, dtype)| format!("{}: {}", k, dtype))
+        .collect();
 
     ScalarUDF::new(
-        "make_struct",
-        &signature,
+        &format!("object{{{}}}", name_csv.join(",")),
+        &Signature::any(keys.len(), Volatility::Immutable),
         &return_type,
         &object_constructor,
     )

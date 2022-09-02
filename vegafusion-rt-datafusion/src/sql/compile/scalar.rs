@@ -1,8 +1,6 @@
 use datafusion::scalar::ScalarValue;
-use datafusion_expr::lit;
 use sqlgen::ast::{Value as SqlValue, Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, ObjectName as SqlObjectName, Ident, FunctionArgExpr};
 use vegafusion_core::error::{Result, VegaFusionError};
-use crate::sql::compile::expr::ToSqlExpr;
 
 pub trait ToSqlScalar {
     fn to_sql(&self) -> Result<SqlExpr>;
@@ -124,26 +122,9 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::IntervalMonthDayNano(_) => Err(VegaFusionError::internal(
                 "IntervalMonthDayNano cannot be converted to SQL",
             )),
-            ScalarValue::Struct(values, fields) => {
-                let function_ident = Ident {
-                    value: "make_struct".to_string(),
-                    quote_style: None
-                };
-
-                let mut args: Vec<SqlFunctionArg> = Vec::new();
-
-                for (val, field) in values.clone().unwrap_or_default().iter().zip(fields.iter()) {
-                    args.push(SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(lit(field.name().as_str()).to_sql()?)));
-                    args.push(SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(val.to_sql()?)));
-                }
-
-                Ok(SqlExpr::Function(SqlFunction {
-                    name: SqlObjectName(vec![function_ident]),
-                    args,
-                    over: None,
-                    distinct: false,
-                }))
-            },
+            ScalarValue::Struct(_, _) => Err(VegaFusionError::internal(
+                "Struct cannot be converted to SQL",
+            )),
             ScalarValue::Dictionary(_, _) => Err(VegaFusionError::internal(
                 "Dictionary cannot be converted to SQL",
             )),
