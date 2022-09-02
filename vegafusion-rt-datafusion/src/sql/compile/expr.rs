@@ -7,7 +7,7 @@ use sqlgen::ast::{
     UnaryOperator as SqlUnaryOperator, WindowSpec as SqlWindowSpec,
 };
 
-use datafusion_expr::{Expr, Operator, WindowFunction};
+use datafusion_expr::{AggregateFunction, BuiltinScalarFunction, Expr, Operator, WindowFunction};
 
 use crate::sql::compile::function_arg::ToSqlFunctionArg;
 use crate::sql::compile::order::ToSqlOrderByExpr;
@@ -156,8 +156,80 @@ impl ToSqlExpr for Expr {
                 Err(VegaFusionError::internal("Sort cannot be converted to SQL"))
             }
             Expr::ScalarFunction { fun, args } => {
+                let value = match fun {
+                    BuiltinScalarFunction::Abs => "abs",
+                    BuiltinScalarFunction::Acos => "acos",
+                    BuiltinScalarFunction::Asin => "asin",
+                    BuiltinScalarFunction::Atan => "atan",
+                    BuiltinScalarFunction::Atan2 => "atan2",
+                    BuiltinScalarFunction::Ceil => "ceil",
+                    BuiltinScalarFunction::Coalesce => "coalesce",
+                    BuiltinScalarFunction::Cos => "cos",
+                    BuiltinScalarFunction::Digest => "digest",
+                    BuiltinScalarFunction::Exp => "exp",
+                    BuiltinScalarFunction::Floor => "floor",
+                    BuiltinScalarFunction::Ln => "ln",
+                    BuiltinScalarFunction::Log => "log",
+                    BuiltinScalarFunction::Log10 => "log10",
+                    BuiltinScalarFunction::Log2 => "log2",
+                    BuiltinScalarFunction::Power => "pow",
+                    BuiltinScalarFunction::Round => "round",
+                    BuiltinScalarFunction::Signum => "signum",
+                    BuiltinScalarFunction::Sin => "sin",
+                    BuiltinScalarFunction::Sqrt => "sqrt",
+                    BuiltinScalarFunction::Tan => "tan",
+                    BuiltinScalarFunction::Trunc => "trunc",
+                    BuiltinScalarFunction::MakeArray => "make_array",
+                    BuiltinScalarFunction::Ascii => "ascii",
+                    BuiltinScalarFunction::BitLength => "bit_length",
+                    BuiltinScalarFunction::Btrim => "btrim",
+                    BuiltinScalarFunction::CharacterLength => "length",
+                    BuiltinScalarFunction::Chr => "chr",
+                    BuiltinScalarFunction::Concat => "concat",
+                    BuiltinScalarFunction::ConcatWithSeparator => "concat_ws",
+                    BuiltinScalarFunction::DatePart => "date_part",
+                    BuiltinScalarFunction::DateTrunc => "date_trunc",
+                    BuiltinScalarFunction::DateBin => "date_bin",
+                    BuiltinScalarFunction::InitCap => "initcap",
+                    BuiltinScalarFunction::Left => "left",
+                    BuiltinScalarFunction::Lpad => "lpad",
+                    BuiltinScalarFunction::Lower => "lower",
+                    BuiltinScalarFunction::Ltrim => "ltrim",
+                    BuiltinScalarFunction::MD5 => "md5",
+                    BuiltinScalarFunction::NullIf => "nullif",
+                    BuiltinScalarFunction::OctetLength => "octet_length",
+                    BuiltinScalarFunction::Random => "random",
+                    BuiltinScalarFunction::RegexpReplace => "regexp_replace",
+                    BuiltinScalarFunction::Repeat => "repeat",
+                    BuiltinScalarFunction::Replace => "replace",
+                    BuiltinScalarFunction::Reverse => "reverse",
+                    BuiltinScalarFunction::Right => "right",
+                    BuiltinScalarFunction::Rpad => "rpad",
+                    BuiltinScalarFunction::Rtrim => "rtrim",
+                    BuiltinScalarFunction::SHA224 => "sha224",
+                    BuiltinScalarFunction::SHA256 => "sha256",
+                    BuiltinScalarFunction::SHA384 => "sha384",
+                    BuiltinScalarFunction::SHA512 => "sha512",
+                    BuiltinScalarFunction::SplitPart => "split_part",
+                    BuiltinScalarFunction::StartsWith => "starts_with",
+                    BuiltinScalarFunction::Strpos => "strpos",
+                    BuiltinScalarFunction::Substr => "substr",
+                    BuiltinScalarFunction::ToHex => "to_hex",
+                    BuiltinScalarFunction::ToTimestamp => "to_timestamp",
+                    BuiltinScalarFunction::ToTimestampMillis => "to_timestamp_millis",
+                    BuiltinScalarFunction::ToTimestampMicros => "to_timestamp_micros",
+                    BuiltinScalarFunction::ToTimestampSeconds => "to_timestamp_seconds",
+                    BuiltinScalarFunction::FromUnixtime => "from_unixtime",
+                    BuiltinScalarFunction::Now => "now",
+                    BuiltinScalarFunction::Translate => "translate",
+                    BuiltinScalarFunction::Trim => "trim",
+                    BuiltinScalarFunction::Upper => "upper",
+                    BuiltinScalarFunction::RegexpMatch => "regexp_match",
+                    BuiltinScalarFunction::Struct => "struct",
+                    BuiltinScalarFunction::ArrowTypeof => "arrow_typeof"
+                };
                 let ident = Ident {
-                    value: fun.to_string(),
+                    value: value.to_string(),
                     quote_style: None,
                 };
                 let args = args
@@ -194,8 +266,29 @@ impl ToSqlExpr for Expr {
                 args,
                 distinct,
             } => {
+                let value = match fun {
+                    AggregateFunction::Min => "min",
+                    AggregateFunction::Max => "max",
+                    AggregateFunction::Count => "count",
+                    AggregateFunction::Avg => "avg",
+                    AggregateFunction::Sum => "sum",
+                    AggregateFunction::Median => "median",
+                    AggregateFunction::ApproxDistinct => "approx_distinct",
+                    AggregateFunction::ArrayAgg => "array_agg",
+                    AggregateFunction::Variance => "var",
+                    AggregateFunction::VariancePop => "var_pop",
+                    AggregateFunction::Stddev => "stddev",
+                    AggregateFunction::StddevPop => "stddev_pop",
+                    AggregateFunction::Covariance => "covar",
+                    AggregateFunction::CovariancePop => "covar_pop",
+                    AggregateFunction::Correlation => "corr",
+                    AggregateFunction::ApproxPercentileCont => "approx_percentile_cont",
+                    AggregateFunction::ApproxPercentileContWithWeight => "approx_percentile_cont_with_weight",
+                    AggregateFunction::ApproxMedian => "approx_median",
+                    AggregateFunction::Grouping => "grouping",
+                };
                 let ident = Ident {
-                    value: fun.to_string(),
+                    value: value.to_ascii_lowercase(),
                     quote_style: None,
                 };
                 let args = args
