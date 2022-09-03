@@ -121,6 +121,7 @@ impl TaskCall for DataUrlTask {
                 match inline_dataset {
                     VegaFusionDataset::Table { table, .. } => table.to_dataframe()?,
                     VegaFusionDataset::SqlDataFrame(sql_df) => {
+                        // Eval pipeline transforms directly without custom datetime processing
                         return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await
                     }
                 }
