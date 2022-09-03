@@ -149,7 +149,7 @@ def setup_module(module):
         ("casestudy/beckers_barley_trellis_plot", 1.0, 0.5),
         ("casestudy/anscombe_plot", 1.0, 0.5),
         ("casestudy/us_population_over_time_facet", 1.0, 0.5),
-        ("casestudy/one_dot_per_zipcode", 0.999, 0.5),
+        ("casestudy/one_dot_per_zipcode", 0.999, 1.0),
         ("circular/donut", 1.0, 0.5),
         ("circular/pie", 1.0, 0.5),
         ("circular/pie_with_labels", 1.0, 0.5),
