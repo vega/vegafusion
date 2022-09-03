@@ -22,7 +22,7 @@ impl ToSqlDataType for DataType {
             }
             DataType::Float16 => Ok(SqlDataType::Float(Some(16))),
             DataType::Float32 => Ok(SqlDataType::Float(Some(32))),
-            DataType::Float64 => Ok(SqlDataType::Float(Some(64))),
+            DataType::Float64 => Ok(SqlDataType::Double),
             DataType::Timestamp(_, _) => Err(VegaFusionError::internal(
                 "Timestamp cannot be converted to SQL",
             )),
