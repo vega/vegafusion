@@ -77,6 +77,7 @@ impl SqlConnection for DataFusionConnection {
         let df = self.ctx.sql(query).await?;
         let res = VegaFusionTable::from_dataframe(df).await?;
         // println!("{}", res.pretty_format(Some(10)).unwrap());
+        // println!("{:#?}", res.schema);
         Ok(res)
     }
 
