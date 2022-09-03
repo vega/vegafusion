@@ -16,10 +16,10 @@ use util::datasets::vega_json_dataset;
 use util::equality::TablesEqualConfig;
 
 use rstest::rstest;
-use vegafusion_core::spec::transform::aggregate::{AggregateOpSpec, AggregateTransformSpec};
-use vegafusion_core::spec::transform::bin::{BinExtent, BinTransformSpec};
+use vegafusion_core::spec::transform::aggregate::AggregateOpSpec;
+
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_core::spec::values::{Field, SignalExpressionSpec};
+use vegafusion_core::spec::values::Field;
 
 mod test_joinaggregate_zero {
     use crate::*;
@@ -65,7 +65,6 @@ mod test_joinaggregate_zero {
         );
     }
 }
-
 
 mod test_joinaggregate_single {
     use crate::*;

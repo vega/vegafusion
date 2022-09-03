@@ -7,15 +7,17 @@
  * this program the details of the active license.
  */
 use crate::data::table::VegaFusionTableUtils;
-use crate::expression::compiler::builtin_functions::date_time::date_parsing::{DateParseMode, DATETIME_STRING_TO_MILLIS_UDF};
-use crate::expression::compiler::builtin_functions::date_time::datetime::{DATETIME_COMPONENTS, make_datetime_components_udf};
+use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
+    DateParseMode, DATETIME_STRING_TO_MILLIS_UDF,
+};
+use crate::expression::compiler::builtin_functions::date_time::datetime::DATETIME_COMPONENTS;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{
     cast_to, is_integer_datatype, is_string_datatype, ExprHelpers,
 };
 use crate::task_graph::task::TaskCall;
-use crate::transform::TransformTrait;
+
 use async_trait::async_trait;
 use datafusion::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use datafusion::arrow::ipc::reader::{FileReader, StreamReader};
@@ -25,11 +27,11 @@ use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::execution::options::CsvReadOptions;
 use datafusion::logical_plan::Expr;
 use datafusion::prelude::{col, SessionContext};
+use datafusion_expr::lit;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
-use datafusion_expr::lit;
 use tokio::io::AsyncReadExt;
 use vegafusion_core::arrow::datatypes::TimeUnit;
 
@@ -153,7 +155,6 @@ impl TaskCall for DataUrlTask {
     }
 }
 
-
 async fn eval_sql_df(
     sql_df: Arc<SqlDataFrame>,
     pipeline: &Option<TransformPipeline>,
@@ -166,7 +167,7 @@ async fn eval_sql_df(
         .unwrap_or(false)
     {
         let pipeline = pipeline.as_ref().unwrap();
-        pipeline.eval_sql(sql_df, &config).await?
+        pipeline.eval_sql(sql_df, config).await?
     } else {
         // No transforms
         (sql_df.collect().await?, Vec::new())
@@ -295,12 +296,18 @@ fn process_datetimes(
                 if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
-                        let default_input_tz_str = tz_config.map(|tz_config| tz_config.default_input_tz.to_string()).unwrap_or_else(|| "UTC".to_string());
+                        let default_input_tz_str = tz_config
+                            .map(|tz_config| tz_config.default_input_tz.to_string())
+                            .unwrap_or_else(|| "UTC".to_string());
                         let date_mode_str = date_mode.to_string();
 
                         Expr::ScalarUDF {
                             fun: Arc::new((*DATETIME_STRING_TO_MILLIS_UDF).clone()),
-                            args: vec![lit(default_input_tz_str), lit(date_mode_str), col(&spec.name)],
+                            args: vec![
+                                lit(default_input_tz_str),
+                                lit(date_mode_str),
+                                col(&spec.name),
+                            ],
                         }
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically, use local time
@@ -308,7 +315,10 @@ fn process_datetimes(
                             tz_config.with_context(|| "No local timezone info provided")?;
                         Expr::ScalarUDF {
                             fun: Arc::new((*DATETIME_COMPONENTS).clone()),
-                            args: vec![lit(tz_config.default_input_tz.to_string()), col(&spec.name)],
+                            args: vec![
+                                lit(tz_config.default_input_tz.to_string()),
+                                col(&spec.name),
+                            ],
                         }
                     } else {
                         continue;

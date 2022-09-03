@@ -6,6 +6,9 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use crate::expression::compiler::call::make_session_context;
+use crate::sql::connection::datafusion_conn::DataFusionConnection;
+use crate::sql::dataframe::SqlDataFrame;
 use crate::transform::utils::DataFrameUtils;
 use async_trait::async_trait;
 use datafusion::dataframe::DataFrame;
@@ -16,9 +19,6 @@ use vegafusion_core::arrow::datatypes::SchemaRef;
 use vegafusion_core::arrow::util::pretty::pretty_format_batches;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext};
-use crate::expression::compiler::call::make_session_context;
-use crate::sql::connection::datafusion_conn::DataFusionConnection;
-use crate::sql::dataframe::SqlDataFrame;
 
 #[async_trait]
 pub trait VegaFusionTableUtils {
@@ -88,6 +88,8 @@ impl VegaFusionTableUtils for VegaFusionTable {
         let ctx = make_session_context();
         ctx.register_table("tbl", Arc::new(self.to_memtable()))?;
         let sql_conn = DataFusionConnection::new(Arc::new(ctx));
-        Ok(Arc::new(SqlDataFrame::try_new(Arc::new(sql_conn), "tbl").await?))
+        Ok(Arc::new(
+            SqlDataFrame::try_new(Arc::new(sql_conn), "tbl").await?,
+        ))
     }
 }

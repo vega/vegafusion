@@ -8,23 +8,21 @@
  */
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{cast_to, to_numeric, ExprHelpers};
+use crate::expression::compiler::utils::{to_numeric, ExprHelpers};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::dataframe::DataFrame;
+
 use datafusion::logical_plan::{col, lit, DFSchema};
-use datafusion::physical_plan::functions::make_scalar_function;
-use datafusion::physical_plan::udf::ScalarUDF;
+
 use datafusion::scalar::ScalarValue;
-use datafusion_expr::{abs, floor, round, when, Expr, ReturnTypeFunction, Signature, Volatility};
+use datafusion_expr::{abs, floor, when, Expr};
 use float_cmp::approx_eq;
 use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
-use vegafusion_core::arrow::array::{ArrayRef, Float64Array, Int64Array};
-use vegafusion_core::arrow::compute::unary;
+
 use vegafusion_core::arrow::datatypes::{DataType, Field};
 use vegafusion_core::data::scalar::ScalarValueHelpers;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::error::{Result, VegaFusionError};
 
 use crate::sql::dataframe::SqlDataFrame;
 use vegafusion_core::proto::gen::transforms::Bin;
@@ -52,7 +50,7 @@ impl TransformTrait for Bin {
         let last_stop = *bin_starts.last().unwrap() + step;
 
         // Compute output signal value
-        let output_value = compute_output_value(&self, start, stop, step);
+        let output_value = compute_output_value(self, start, stop, step);
 
         let numeric_field = to_numeric(col(&self.field), &sql_df.schema_df())?;
 
@@ -61,7 +59,7 @@ impl TransformTrait for Bin {
         let bin_index =
             floor((numeric_field.clone().sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
                 .alias(bin_index_name);
-        let sql_df = sql_df.select(vec![Expr::Wildcard, bin_index.clone()])?;
+        let sql_df = sql_df.select(vec![Expr::Wildcard, bin_index])?;
 
         // Add column with bin start
         let bin_start = (col(bin_index_name).mul(lit(step))).add(lit(start));
@@ -137,7 +135,8 @@ fn compute_output_value(bin_tx: &Bin, start: f64, stop: f64, step: f64) -> Optio
         Some(vec![ScalarValue::from(bin_tx.field.as_str())]),
         Box::new(Field::new("item", DataType::Utf8, true)),
     );
-    let output_value = if bin_tx.signal.is_some() {
+
+    if bin_tx.signal.is_some() {
         Some(TaskValue::Scalar(ScalarValue::from(vec![
             ("fields", fields),
             ("fname", ScalarValue::from(fname.as_str())),
@@ -147,8 +146,7 @@ fn compute_output_value(bin_tx: &Bin, start: f64, stop: f64, step: f64) -> Optio
         ])))
     } else {
         None
-    };
-    output_value
+    }
 }
 
 #[inline(always)]

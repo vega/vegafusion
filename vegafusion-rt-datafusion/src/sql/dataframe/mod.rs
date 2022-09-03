@@ -11,13 +11,13 @@ use sqlgen::ast::{Query, TableAlias};
 use sqlgen::dialect::{Dialect, DialectDisplay};
 use sqlgen::parser::Parser;
 use std::collections::hash_map::DefaultHasher;
-use std::fmt::format;
+
+use crate::sql::connection::datafusion_conn::make_datafusion_dialect;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-use crate::sql::connection::datafusion_conn::make_datafusion_dialect;
 
 #[derive(Clone)]
 pub struct SqlDataFrame {
@@ -197,7 +197,8 @@ impl SqlDataFrame {
             sql_predicate = sql_predicate.sql(&self.dialect)?,
         ))?;
 
-        self.chain_query(query).with_context(|| format!("unsupported filter expression: {}", predicate))
+        self.chain_query(query)
+            .with_context(|| format!("unsupported filter expression: {}", predicate))
     }
 
     fn make_select_star(&self) -> Query {
@@ -262,7 +263,7 @@ mod test {
     use datafusion::prelude::SessionContext;
     use datafusion_expr::{col, lit, max, BuiltInWindowFunction, Expr, WindowFunction};
     use sqlgen::dialect::{Dialect, DialectDisplay};
-    use sqlx::SqlitePool;
+
     use std::ops::Mul;
     use std::sync::Arc;
 

@@ -1,4 +1,3 @@
-use crate::data::table::VegaFusionTableUtils;
 use crate::sql::connection::SqlConnection;
 use async_trait::async_trait;
 use regex::Regex;
@@ -6,7 +5,7 @@ use sqlgen::dialect::Dialect;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Row, SqlitePool};
 use std::collections::HashMap;
-use std::fmt::format;
+
 use std::sync::Arc;
 use vegafusion_core::arrow::array::{
     ArrayRef, Float32Array, Float64Array, Int32Array, Int64Array, NullArray, StringArray,

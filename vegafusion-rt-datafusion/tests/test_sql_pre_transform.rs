@@ -17,7 +17,7 @@ mod tests {
     use std::collections::HashMap;
     use std::fs;
     use std::sync::Arc;
-    use vegafusion_core::error::VegaFusionError;
+
     use vegafusion_core::proto::gen::tasks::Variable;
     use vegafusion_rt_datafusion::data::dataset::VegaFusionDataset;
     use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
@@ -58,7 +58,7 @@ mod tests {
         let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
 
         // Perform per transform values
-        let (values, warnings) = runtime
+        let (values, _warnings) = runtime
             .pre_transform_values(
                 &spec_str,
                 &[(Variable::new_data("source_0"), vec![])],

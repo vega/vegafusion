@@ -8,15 +8,13 @@
  */
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
-use datafusion::dataframe::DataFrame;
 
 use itertools::Itertools;
 use std::collections::HashMap;
 
 use std::sync::Arc;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::error::Result;
 
-use crate::data::table::VegaFusionTableUtils;
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use vegafusion_core::data::table::VegaFusionTable;

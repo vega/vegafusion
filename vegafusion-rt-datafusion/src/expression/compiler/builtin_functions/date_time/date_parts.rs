@@ -12,16 +12,19 @@ use crate::expression::compiler::call::TzTransformFn;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use chrono::{DateTime, Datelike, NaiveDateTime, TimeZone, Timelike, Weekday};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
-use datafusion::arrow::datatypes::{DataType, TimeUnit};
+use datafusion::arrow::datatypes::DataType;
 use datafusion::logical_plan::{DFSchema, Expr};
-use datafusion::physical_plan::functions::make_scalar_function;
-use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion_expr::{ColumnarValue, lit, ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature, Volatility};
-use std::sync::Arc;
+
 use datafusion::common::DataFusionError;
+use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::scalar::ScalarValue;
-use vegafusion_core::error::Result;
+use datafusion_expr::{
+    lit, ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature,
+    Volatility,
+};
 use std::str::FromStr;
+use std::sync::Arc;
+use vegafusion_core::error::Result;
 
 #[inline(always)]
 pub fn extract_year(dt: &DateTime<chrono_tz::Tz>) -> i64 {
@@ -78,9 +81,7 @@ pub fn extract_millisecond(dt: &DateTime<chrono_tz::Tz>) -> i64 {
     dt.nanosecond() as i64 / 1000000
 }
 
-pub fn make_tz_datepart_transform(
-    udf: &ScalarUDF
-) -> TzTransformFn {
+pub fn make_tz_datepart_transform(udf: &ScalarUDF) -> TzTransformFn {
     let udf = udf.clone();
     let local_datepart_transform =
         move |tz_config: &RuntimeTzConfig, args: &[Expr], _schema: &DFSchema| -> Result<Expr> {
@@ -94,21 +95,21 @@ pub fn make_tz_datepart_transform(
     Arc::new(local_datepart_transform)
 }
 
-pub fn make_datepart_udf(
-    extract_fn: fn(&DateTime<chrono_tz::Tz>) -> i64,
-    name: &str,
-) -> ScalarUDF {
-    let inner_name = name.to_string();
+pub fn make_datepart_udf(extract_fn: fn(&DateTime<chrono_tz::Tz>) -> i64, name: &str) -> ScalarUDF {
+    let _inner_name = name.to_string();
     let part_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
         // Extract timezone string
         let tz_str = if let ColumnarValue::Scalar(tz_scalar) = &args[0] {
             tz_scalar.to_string()
         } else {
-            return Err(DataFusionError::Internal("Expected timezone to be a scalar".to_string()))
+            return Err(DataFusionError::Internal(
+                "Expected timezone to be a scalar".to_string(),
+            ));
         };
 
-        let tz = chrono_tz::Tz::from_str(&tz_str)
-            .map_err(|err| DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str)))?;
+        let tz = chrono_tz::Tz::from_str(&tz_str).map_err(|_err| {
+            DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
+        })?;
 
         // Signature ensures there is a single argument
         let arg = args[1].clone().into_array(1);
@@ -143,20 +144,18 @@ pub fn make_datepart_udf(
 
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
 
-    let signature = Signature::one_of(vec![
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Date32]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Date64]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Int64]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Float64]),
-    ], Volatility::Immutable);
+    let signature = Signature::one_of(
+        vec![
+            TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8]),
+            TypeSignature::Exact(vec![DataType::Utf8, DataType::Date32]),
+            TypeSignature::Exact(vec![DataType::Utf8, DataType::Date64]),
+            TypeSignature::Exact(vec![DataType::Utf8, DataType::Int64]),
+            TypeSignature::Exact(vec![DataType::Utf8, DataType::Float64]),
+        ],
+        Volatility::Immutable,
+    );
 
-    ScalarUDF::new(
-        name,
-        &signature,
-        &return_type,
-        &part_fn,
-    )
+    ScalarUDF::new(name, &signature, &return_type, &part_fn)
 }
 
 lazy_static! {

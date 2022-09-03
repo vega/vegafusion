@@ -6,8 +6,7 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use crate::data::table::VegaFusionTableUtils;
-use datafusion::prelude::DataFrame;
+
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;

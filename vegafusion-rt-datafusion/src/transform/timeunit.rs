@@ -11,9 +11,9 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::arrow::array::{ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
-use datafusion::prelude::{col, DataFrame};
+use datafusion::prelude::col;
 use std::sync::Arc;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -24,13 +24,12 @@ use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, U
 use datafusion::common::{DataFusionError, ScalarValue};
 
 use crate::sql::dataframe::SqlDataFrame;
-use datafusion::physical_plan::functions::make_scalar_function;
-use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion_expr::{ColumnarValue, lit, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility};
-use std::str::FromStr;
-use sqlgen::dialect::DialectDisplay;
-use crate::sql::compile::select::ToSqlSelectItem;
 
+use datafusion::physical_plan::udf::ScalarUDF;
+use datafusion_expr::{
+    lit, ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
+};
+use std::str::FromStr;
 
 #[async_trait]
 impl TransformTrait for TimeUnit {
@@ -68,7 +67,9 @@ impl TransformTrait for TimeUnit {
         let timeunit_start_udf = &TIMEUNIT_START_UDF;
 
         // let timeunit_start_udf = make_timeunit_start_udf(units_mask.as_slice(), local_tz);
-        let tz_str = local_tz.map(|tz| tz.to_string()).unwrap_or_else(|| "UTC".to_string());
+        let tz_str = local_tz
+            .map(|tz| tz.to_string())
+            .unwrap_or_else(|| "UTC".to_string());
         let timeunit_start_value = timeunit_start_udf.call(vec![
             col(&self.field),
             lit(tz_str.clone()),
@@ -156,7 +157,6 @@ impl TransformTrait for TimeUnit {
     }
 }
 
-
 fn extract_bool(value: &ColumnarValue) -> std::result::Result<bool, DataFusionError> {
     if let ColumnarValue::Scalar(scalar) = value {
         if let ScalarValue::Boolean(Some(value)) = scalar {
@@ -181,8 +181,9 @@ fn unpack_timeunit_udf_args(
         return Err(DataFusionError::Internal("unexpected argument".to_string()));
     };
 
-    let tz = chrono_tz::Tz::from_str(&tz_str)
-        .map_err(|err| DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str)))?;
+    let tz = chrono_tz::Tz::from_str(&tz_str).map_err(|_err| {
+        DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
+    })?;
 
     Ok((
         timestamp,
@@ -204,17 +205,16 @@ fn unpack_timeunit_udf_args(
 }
 
 fn make_timeunit_start_udf() -> ScalarUDF {
-    let timeunit_start: ScalarFunctionImplementation =
-        Arc::new(|columns: &[ColumnarValue]| {
-            let (timestamp, tz, units_mask) = unpack_timeunit_udf_args(columns)?;
+    let timeunit_start: ScalarFunctionImplementation = Arc::new(|columns: &[ColumnarValue]| {
+        let (timestamp, tz, units_mask) = unpack_timeunit_udf_args(columns)?;
 
-            let array = timestamp.as_any().downcast_ref::<Int64Array>().unwrap();
-            let result_array: Int64Array = unary(array, |value| {
-                perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
-            });
-
-            Ok(ColumnarValue::Array(Arc::new(result_array) as ArrayRef))
+        let array = timestamp.as_any().downcast_ref::<Int64Array>().unwrap();
+        let result_array: Int64Array = unary(array, |value| {
+            perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
         });
+
+        Ok(ColumnarValue::Array(Arc::new(result_array) as ArrayRef))
+    });
 
     let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
     let signature: Signature = Signature::exact(
@@ -238,7 +238,6 @@ fn make_timeunit_start_udf() -> ScalarUDF {
 
     ScalarUDF::new("timeunit_start", &signature, &return_type, &timeunit_start)
 }
-
 
 fn make_timeunit_end_udf() -> ScalarUDF {
     let timeunit_end: ScalarFunctionImplementation = Arc::new(|columns: &[ColumnarValue]| {

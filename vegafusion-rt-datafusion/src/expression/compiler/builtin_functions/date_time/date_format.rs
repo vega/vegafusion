@@ -13,13 +13,16 @@ use chrono::{DateTime, NaiveDateTime};
 use datafusion::arrow::array::{ArrayRef, Int64Array, StringArray};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::logical_plan::{DFSchema, Expr};
-use datafusion::physical_plan::functions::make_scalar_function;
+
+use datafusion::common::DataFusionError;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::scalar::ScalarValue;
-use datafusion_expr::{ColumnarValue, lit, ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature, Volatility};
+use datafusion_expr::{
+    lit, ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature,
+    Volatility,
+};
 use std::str::FromStr;
 use std::sync::Arc;
-use datafusion::common::DataFusionError;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 pub fn time_format_fn(
@@ -46,7 +49,10 @@ pub fn time_format_fn(
         tz_config.local_tz
     };
 
-    let mut udf_args = vec![lit(tz_config.default_input_tz.to_string()), lit(output_tz.to_string())];
+    let mut udf_args = vec![
+        lit(tz_config.default_input_tz.to_string()),
+        lit(output_tz.to_string()),
+    ];
     udf_args.extend(Vec::from(&args[..1]));
     udf_args.push(lit(format_str));
 
@@ -109,53 +115,66 @@ pub fn make_time_format_udf() -> ScalarUDF {
         let default_input_tz = if let ColumnarValue::Scalar(default_input_tz) = &args[0] {
             default_input_tz.to_string()
         } else {
-            return Err(DataFusionError::Internal("Expected default_input_tz to be a scalar".to_string()))
+            return Err(DataFusionError::Internal(
+                "Expected default_input_tz to be a scalar".to_string(),
+            ));
         };
-        let default_input_tz = chrono_tz::Tz::from_str(&default_input_tz)
-            .map_err(|err| DataFusionError::Internal(format!("Failed to parse {} as a timezone", default_input_tz)))?;
+        let default_input_tz = chrono_tz::Tz::from_str(&default_input_tz).map_err(|_err| {
+            DataFusionError::Internal(format!(
+                "Failed to parse {} as a timezone",
+                default_input_tz
+            ))
+        })?;
 
         // [1] output timezone string
         let output_tz = if let ColumnarValue::Scalar(output_tz) = &args[1] {
             output_tz.to_string()
         } else {
-            return Err(DataFusionError::Internal("Expected output_tz to be a scalar".to_string()))
+            return Err(DataFusionError::Internal(
+                "Expected output_tz to be a scalar".to_string(),
+            ));
         };
-        let output_tz = chrono_tz::Tz::from_str(&output_tz)
-            .map_err(|err| DataFusionError::Internal(format!("Failed to parse {} as a timezone", output_tz)))?;
+        let output_tz = chrono_tz::Tz::from_str(&output_tz).map_err(|_err| {
+            DataFusionError::Internal(format!("Failed to parse {} as a timezone", output_tz))
+        })?;
 
         // [2] data array
         let data_array = match &args[2] {
             ColumnarValue::Array(array) => array.clone(),
-            ColumnarValue::Scalar(scalar) => scalar.to_array()
+            ColumnarValue::Scalar(scalar) => scalar.to_array(),
         };
 
         // [3] time format string
         let format_str = if let ColumnarValue::Scalar(format_str) = &args[3] {
             format_str.to_string()
         } else {
-            return Err(DataFusionError::Internal("Expected output_tz to be a scalar".to_string()))
+            return Err(DataFusionError::Internal(
+                "Expected output_tz to be a scalar".to_string(),
+            ));
         };
 
         let data_array = process_input_datetime(&data_array, &default_input_tz);
 
         let utc_millis_array = data_array.as_any().downcast_ref::<Int64Array>().unwrap();
 
-        let formatted = Arc::new(StringArray::from_iter(utc_millis_array.iter().map(|utc_millis| {
-            utc_millis.map(|utc_millis| {
-                // Load as UTC datetime
-                let utc_seconds = utc_millis / 1_000;
-                let utc_nanos = (utc_millis % 1_000 * 1_000_000) as u32;
-                let naive_utc_datetime = NaiveDateTime::from_timestamp(utc_seconds, utc_nanos);
+        let formatted = Arc::new(StringArray::from_iter(utc_millis_array.iter().map(
+            |utc_millis| {
+                utc_millis.map(|utc_millis| {
+                    // Load as UTC datetime
+                    let utc_seconds = utc_millis / 1_000;
+                    let utc_nanos = (utc_millis % 1_000 * 1_000_000) as u32;
+                    let naive_utc_datetime = NaiveDateTime::from_timestamp(utc_seconds, utc_nanos);
 
-                // Convert to local timezone
-                let datetime: DateTime<chrono_tz::Tz> =
-                    output_tz.from_utc_datetime(&naive_utc_datetime);
+                    // Convert to local timezone
+                    let datetime: DateTime<chrono_tz::Tz> =
+                        output_tz.from_utc_datetime(&naive_utc_datetime);
 
-                // Format as string
-                let formatted = datetime.format(&format_str);
-                formatted.to_string()
-            })
-        }))) as ArrayRef;
+                    // Format as string
+                    let formatted = datetime.format(&format_str);
+                    formatted.to_string()
+                })
+            },
+        ))) as ArrayRef;
 
         // maybe back to scalar
         if formatted.len() != 1 {
@@ -167,21 +186,49 @@ pub fn make_time_format_udf() -> ScalarUDF {
 
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Utf8)));
 
-    let signature: Signature = Signature::one_of(vec![
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Timestamp(TimeUnit::Millisecond, None), DataType::Utf8]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Date32, DataType::Utf8]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Date64, DataType::Utf8]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Int64, DataType::Utf8]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Float64, DataType::Utf8]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8, DataType::Utf8, DataType::Utf8]),
-    ], Volatility::Immutable);
+    let signature: Signature = Signature::one_of(
+        vec![
+            TypeSignature::Exact(vec![
+                DataType::Utf8,
+                DataType::Utf8,
+                DataType::Timestamp(TimeUnit::Millisecond, None),
+                DataType::Utf8,
+            ]),
+            TypeSignature::Exact(vec![
+                DataType::Utf8,
+                DataType::Utf8,
+                DataType::Date32,
+                DataType::Utf8,
+            ]),
+            TypeSignature::Exact(vec![
+                DataType::Utf8,
+                DataType::Utf8,
+                DataType::Date64,
+                DataType::Utf8,
+            ]),
+            TypeSignature::Exact(vec![
+                DataType::Utf8,
+                DataType::Utf8,
+                DataType::Int64,
+                DataType::Utf8,
+            ]),
+            TypeSignature::Exact(vec![
+                DataType::Utf8,
+                DataType::Utf8,
+                DataType::Float64,
+                DataType::Utf8,
+            ]),
+            TypeSignature::Exact(vec![
+                DataType::Utf8,
+                DataType::Utf8,
+                DataType::Utf8,
+                DataType::Utf8,
+            ]),
+        ],
+        Volatility::Immutable,
+    );
 
-    ScalarUDF::new(
-        "vg_timeformat",
-        &signature,
-        &return_type,
-        &time_fn,
-    )
+    ScalarUDF::new("vg_timeformat", &signature, &return_type, &time_fn)
 }
 
 lazy_static! {

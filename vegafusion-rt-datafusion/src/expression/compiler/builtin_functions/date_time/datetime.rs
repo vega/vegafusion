@@ -12,7 +12,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
 use crate::expression::compiler::utils::{cast_to, is_string_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
 use chrono::{DateTime, TimeZone};
-use datafusion::arrow::array::{Array, ArrayRef, Float64Array, Int64Array};
+use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
 use datafusion::arrow::compute::cast as arrow_cast;
 use datafusion::arrow::datatypes::DataType;
 use datafusion::error::DataFusionError;
@@ -124,7 +124,7 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
                 ));
             };
 
-            let input_tz = chrono_tz::Tz::from_str(&tz_str).map_err(|err| {
+            let input_tz = chrono_tz::Tz::from_str(&tz_str).map_err(|_err| {
                 DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
             })?;
 

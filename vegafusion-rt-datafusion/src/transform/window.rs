@@ -9,11 +9,11 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::dataframe::DataFrame;
+
 use datafusion::logical_plan::Expr;
 use datafusion::prelude::{col, lit};
 use std::sync::Arc;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::{
     window_transform_op, AggregateOp, SortOrder, Window, WindowOp,
 };

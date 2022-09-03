@@ -8,11 +8,11 @@
  */
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
-use datafusion::dataframe::DataFrame;
+
 use datafusion::logical_plan::{col, Expr};
 
 use std::sync::Arc;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::{Collect, SortOrder};
 
 use crate::sql::dataframe::SqlDataFrame;
@@ -21,7 +21,6 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 impl TransformTrait for Collect {
-
     async fn eval(
         &self,
         dataframe: Arc<SqlDataFrame>,

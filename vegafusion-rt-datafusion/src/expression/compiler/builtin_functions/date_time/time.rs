@@ -8,18 +8,20 @@
  */
 use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion::arrow::array::ArrayRef;
+
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::logical_plan::{DFSchema, Expr};
-use datafusion::physical_plan::functions::make_scalar_function;
-use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion_expr::{ColumnarValue, lit, ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature, Volatility};
-use std::sync::Arc;
+
 use datafusion::common::DataFusionError;
+use datafusion::physical_plan::udf::ScalarUDF;
+use datafusion_expr::{
+    lit, ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature,
+    Volatility,
+};
+use std::str::FromStr;
+use std::sync::Arc;
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::Result;
-use std::str::FromStr;
-
 
 pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], _schema: &DFSchema) -> Result<Expr> {
     let mut udf_args = vec![lit(tz_config.default_input_tz.to_string())];
@@ -27,7 +29,7 @@ pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], _schema: &DFSchema) -
 
     Ok(Expr::ScalarUDF {
         fun: Arc::new((*TIME_UDF).clone()),
-        args: udf_args
+        args: udf_args,
     })
 }
 
@@ -37,15 +39,21 @@ pub fn make_time_udf2() -> ScalarUDF {
         let default_input_tz = if let ColumnarValue::Scalar(default_input_tz) = &args[0] {
             default_input_tz.to_string()
         } else {
-            return Err(DataFusionError::Internal("Expected default_input_tz to be a scalar".to_string()))
+            return Err(DataFusionError::Internal(
+                "Expected default_input_tz to be a scalar".to_string(),
+            ));
         };
-        let default_input_tz = chrono_tz::Tz::from_str(&default_input_tz)
-            .map_err(|err| DataFusionError::Internal(format!("Failed to parse {} as a timezone", default_input_tz)))?;
+        let default_input_tz = chrono_tz::Tz::from_str(&default_input_tz).map_err(|_err| {
+            DataFusionError::Internal(format!(
+                "Failed to parse {} as a timezone",
+                default_input_tz
+            ))
+        })?;
 
         // [1] data array
         let data_array = match &args[1] {
             ColumnarValue::Array(array) => array.clone(),
-            ColumnarValue::Scalar(scalar) => scalar.to_array()
+            ColumnarValue::Scalar(scalar) => scalar.to_array(),
         };
 
         let result_array = process_input_datetime(&data_array, &default_input_tz);
@@ -59,21 +67,22 @@ pub fn make_time_udf2() -> ScalarUDF {
     });
 
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
-    let signature: Signature = Signature::one_of(vec![
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Timestamp(TimeUnit::Millisecond, None)]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Date32]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Date64]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Int64]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Float64]),
-        TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8]),
-    ], Volatility::Immutable);
+    let signature: Signature = Signature::one_of(
+        vec![
+            TypeSignature::Exact(vec![
+                DataType::Utf8,
+                DataType::Timestamp(TimeUnit::Millisecond, None),
+            ]),
+            TypeSignature::Exact(vec![DataType::Utf8, DataType::Date32]),
+            TypeSignature::Exact(vec![DataType::Utf8, DataType::Date64]),
+            TypeSignature::Exact(vec![DataType::Utf8, DataType::Int64]),
+            TypeSignature::Exact(vec![DataType::Utf8, DataType::Float64]),
+            TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8]),
+        ],
+        Volatility::Immutable,
+    );
 
-    ScalarUDF::new(
-        "vg_time",
-        &signature,
-        &return_type,
-        &time_fn,
-    )
+    ScalarUDF::new("vg_time", &signature, &return_type, &time_fn)
 }
 
 lazy_static! {

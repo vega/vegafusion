@@ -9,19 +9,18 @@
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
-use datafusion::dataframe::DataFrame;
 
 use datafusion::prelude::col;
 
 use std::sync::Arc;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Formula;
 
+use crate::expression::compiler::utils::VfSimplifyInfo;
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion::logical_plan::ExprSimplifiable;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use crate::expression::compiler::utils::VfSimplifyInfo;
 
 #[async_trait]
 impl TransformTrait for Formula {

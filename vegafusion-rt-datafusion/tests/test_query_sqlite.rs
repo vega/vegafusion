@@ -1,11 +1,8 @@
 use datafusion::arrow::datatypes::{Field, Schema};
-use sqlgen::ast::{
-    Ident, ObjectName, Query, Select, SelectItem, SetExpr, TableFactor, TableWithJoins,
-};
+
 use sqlgen::dialect::DialectDisplay;
 use sqlgen::parser::Parser;
-use sqlx::SqlitePool;
-use std::sync::Arc;
+
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 use vegafusion_rt_datafusion::sql::connection::sqlite_conn::SqLiteConnection;
@@ -32,7 +29,7 @@ async fn try_it() {
 
     // let query = Query::select_star_from("stock");
     let query = Parser::parse_sql_query("SELECT symbol, price from stock").unwrap();
-    let query_str = query.sql(&conn.dialect()).unwrap();
+    let query_str = query.sql(conn.dialect()).unwrap();
 
     let result = conn.fetch_query(&query_str, &schema).await.unwrap();
 
@@ -49,7 +46,7 @@ async fn query_version() {
 
     // let query = Query::select_star_from("stock");
     let query = Parser::parse_sql_query("select sqlite_version() as version, floor(1.4)").unwrap();
-    let query_str = query.sql(&conn.dialect()).unwrap();
+    let query_str = query.sql(conn.dialect()).unwrap();
 
     let result = conn.fetch_query(&query_str, &schema).await.unwrap();
 

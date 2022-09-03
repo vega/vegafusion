@@ -20,7 +20,7 @@ use datafusion_expr::{
     abs, col, lit, max, when, AggregateFunction, BuiltInWindowFunction, Expr, WindowFunction,
 };
 use sqlgen::dialect::DialectDisplay;
-use std::fmt::format;
+
 use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
 use vegafusion_core::error::{Result, VegaFusionError};
@@ -150,7 +150,7 @@ fn eval_normalize_center_offset_sql(
     } else {
         let partition_by_strs = partition_by
             .iter()
-            .map(|p| Ok(p.to_sql()?.sql(&dataframe.dialect())?))
+            .map(|p| Ok(p.to_sql()?.sql(dataframe.dialect())?))
             .collect::<Result<Vec<_>>>()?;
         let partition_by_csv = partition_by_strs.join(", ");
 

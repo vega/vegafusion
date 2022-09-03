@@ -9,15 +9,14 @@
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
-use datafusion::dataframe::DataFrame;
 
-use crate::expression::compiler::utils::{cast_to, to_boolean, VfSimplifyInfo};
+use crate::expression::compiler::utils::{to_boolean, VfSimplifyInfo};
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
-use std::sync::Arc;
 use datafusion::logical_plan::ExprSimplifiable;
-use vegafusion_core::arrow::datatypes::DataType;
-use vegafusion_core::error::{Result, VegaFusionError};
+use std::sync::Arc;
+
+use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Filter;
 use vegafusion_core::task_graph::task_value::TaskValue;
 

@@ -22,10 +22,9 @@ pub mod utils;
 pub mod window;
 
 use crate::expression::compiler::config::CompilationConfig;
-use datafusion::dataframe::DataFrame;
 
 use std::sync::Arc;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::error::Result;
 
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;

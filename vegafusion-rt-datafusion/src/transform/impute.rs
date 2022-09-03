@@ -76,7 +76,7 @@ fn zero_groupby_sql(
         })
         .collect();
 
-    Ok(dataframe.select(select_columns)?)
+    dataframe.select(select_columns)
 }
 
 fn single_groupby_sql(

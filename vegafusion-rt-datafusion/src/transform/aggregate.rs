@@ -8,7 +8,7 @@
  */
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
-use datafusion::dataframe::DataFrame;
+
 use datafusion::logical_plan::{avg, col, count, count_distinct, lit, max, min, sum, Expr};
 use std::collections::HashMap;
 
@@ -19,7 +19,7 @@ use datafusion::common::DFSchema;
 use datafusion_expr::{aggregate_function, BuiltInWindowFunction, WindowFunction};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::aggregate::op_name;
@@ -137,7 +137,11 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
     Ok((agg_exprs, projections))
 }
 
-pub fn make_aggr_expr(col_name: Option<String>, op: &AggregateOp, schema: &DFSchema) -> Result<Expr> {
+pub fn make_aggr_expr(
+    col_name: Option<String>,
+    op: &AggregateOp,
+    schema: &DFSchema,
+) -> Result<Expr> {
     let column = if let Some(col_name) = col_name {
         col(&col_name)
     } else if matches!(op, AggregateOp::Count) {

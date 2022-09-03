@@ -6,23 +6,23 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use crate::data::table::VegaFusionTableUtils;
+
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::to_numeric;
 use crate::sql::dataframe::SqlDataFrame;
-use crate::transform::utils::{DataFrameUtils, RecordBatchUtils};
+use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::arrow::datatypes::Field;
-use datafusion::arrow::ipc::Schema;
+
 use datafusion::common::DFSchema;
-use datafusion::dataframe::DataFrame;
+
 use datafusion::logical_plan::{col, max, min};
 use datafusion::scalar::ScalarValue;
 use datafusion_expr::Expr;
 use std::sync::Arc;
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Extent;
 use vegafusion_core::task_graph::task_value::TaskValue;
 

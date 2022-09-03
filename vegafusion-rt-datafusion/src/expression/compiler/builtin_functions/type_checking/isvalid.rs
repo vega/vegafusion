@@ -6,15 +6,12 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use datafusion::arrow::array::ArrayRef;
-use datafusion::arrow::compute::is_not_null;
-use datafusion::arrow::datatypes::DataType;
+
 use datafusion::common::DFSchema;
-use datafusion::physical_plan::functions::make_scalar_function;
-use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion_expr::{Expr, ExprSchemable, ReturnTypeFunction, Signature, Volatility};
-use std::sync::Arc;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+
+use datafusion_expr::Expr;
+
+use vegafusion_core::error::{Result, VegaFusionError};
 
 /// `isValid(value)`
 ///

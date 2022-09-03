@@ -2,8 +2,7 @@ use crate::sql::compile::data_type::ToSqlDataType;
 use crate::sql::compile::scalar::ToSqlScalar;
 use sqlgen::ast::{
     BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction,
-    FunctionArg as SqlFunctionArg, FunctionArg, FunctionArgExpr as SqlFunctionArgExpr,
-    FunctionArgExpr, Ident, ObjectName as SqlObjectName, ObjectName,
+    FunctionArg as SqlFunctionArg, Ident, ObjectName as SqlObjectName, ObjectName,
     UnaryOperator as SqlUnaryOperator, WindowSpec as SqlWindowSpec,
 };
 
@@ -226,7 +225,7 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::Upper => "upper",
                     BuiltinScalarFunction::RegexpMatch => "regexp_match",
                     BuiltinScalarFunction::Struct => "struct",
-                    BuiltinScalarFunction::ArrowTypeof => "arrow_typeof"
+                    BuiltinScalarFunction::ArrowTypeof => "arrow_typeof",
                 };
                 let ident = Ident {
                     value: value.to_string(),
@@ -283,7 +282,9 @@ impl ToSqlExpr for Expr {
                     AggregateFunction::CovariancePop => "covar_pop",
                     AggregateFunction::Correlation => "corr",
                     AggregateFunction::ApproxPercentileCont => "approx_percentile_cont",
-                    AggregateFunction::ApproxPercentileContWithWeight => "approx_percentile_cont_with_weight",
+                    AggregateFunction::ApproxPercentileContWithWeight => {
+                        "approx_percentile_cont_with_weight"
+                    }
                     AggregateFunction::ApproxMedian => "approx_median",
                     AggregateFunction::Grouping => "grouping",
                 };
@@ -392,16 +393,23 @@ impl ToSqlExpr for Expr {
             Expr::IsNotUnknown(_) => Err(VegaFusionError::internal(
                 "IsNotUnknown cannot be converted to SQL",
             )),
-            Expr::InList { expr, list, negated } => {
+            Expr::InList {
+                expr,
+                list,
+                negated,
+            } => {
                 let sql_expr = expr.to_sql()?;
-                let sql_list = list.iter().map(|expr| expr.to_sql()).collect::<Result<Vec<_>>>()?;
+                let sql_list = list
+                    .iter()
+                    .map(|expr| expr.to_sql())
+                    .collect::<Result<Vec<_>>>()?;
 
                 Ok(SqlExpr::InList {
                     expr: Box::new(sql_expr),
                     list: sql_list,
-                    negated: *negated
+                    negated: *negated,
                 })
-            },
+            }
             Expr::Wildcard => Err(VegaFusionError::internal(
                 "Wildcard cannot be converted to SQL",
             )),

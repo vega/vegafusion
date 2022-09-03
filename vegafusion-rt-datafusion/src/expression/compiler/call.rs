@@ -6,11 +6,19 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use crate::expression::compiler::array::array_constructor_udf;
 use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
 use crate::expression::compiler::builtin_functions::array::span::make_span_udf;
 use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
-use crate::expression::compiler::builtin_functions::date_time::date_parts::{DATE_TRANSFORM, DAYOFYEAR_TRANSFORM, DAY_TRANSFORM, HOURS_TRANSFORM, MILLISECONDS_TRANSFORM, MINUTES_TRANSFORM, MONTH_TRANSFORM, QUARTER_TRANSFORM, SECONDS_TRANSFORM, YEAR_TRANSFORM, YEAR_UDF, MONTH_UDF, QUARTER_UDF, DATE_UDF, DAYOFYEAR_UDF, DAY_UDF, HOURS_UDF, MINUTES_UDF, SECONDS_UDF, MILLISECONDS_UDF};
-use crate::expression::compiler::builtin_functions::date_time::datetime::{DATETIME_COMPONENTS, datetime_transform_fn, make_datetime_components_fn, to_date_transform};
+use crate::expression::compiler::builtin_functions::date_time::date_parts::{
+    DATE_TRANSFORM, DATE_UDF, DAYOFYEAR_TRANSFORM, DAYOFYEAR_UDF, DAY_TRANSFORM, DAY_UDF,
+    HOURS_TRANSFORM, HOURS_UDF, MILLISECONDS_TRANSFORM, MILLISECONDS_UDF, MINUTES_TRANSFORM,
+    MINUTES_UDF, MONTH_TRANSFORM, MONTH_UDF, QUARTER_TRANSFORM, QUARTER_UDF, SECONDS_TRANSFORM,
+    SECONDS_UDF, YEAR_TRANSFORM, YEAR_UDF,
+};
+use crate::expression::compiler::builtin_functions::date_time::datetime::{
+    datetime_transform_fn, make_datetime_components_fn, to_date_transform, DATETIME_COMPONENTS,
+};
 use crate::expression::compiler::builtin_functions::math::isfinite::{
     is_finite_fn, make_is_finite_udf,
 };
@@ -34,12 +42,13 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
 };
-use crate::expression::compiler::array::array_constructor_udf;
 
 use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
-use crate::expression::compiler::builtin_functions::date_time::date_format::{time_format_fn, TIMEFORMAT_UDF, utc_format_fn};
+use crate::expression::compiler::builtin_functions::date_time::date_format::{
+    time_format_fn, utc_format_fn, TIMEFORMAT_UDF,
+};
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::DATETIME_STRING_TO_MILLIS_UDF;
 use crate::expression::compiler::builtin_functions::date_time::time::{time_fn, TIME_UDF};
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
@@ -460,7 +469,6 @@ pub fn make_session_context() -> SessionContext {
     // list
     ctx.register_udf(array_constructor_udf());
     ctx.register_udf(make_length_udf());
-
 
     ctx
 }

@@ -37,7 +37,8 @@ fn process_input_datetime(arg: &ArrayRef, default_input_tz: &chrono_tz::Tz) -> A
             cast(arg, &DataType::Int64).expect("Failed to case timestamp to Int64")
         }
         DataType::Timestamp(_, _) => {
-            let arg_ms = cast(arg, &DataType::Timestamp(TimeUnit::Millisecond, None)).expect("Failed to convert timestamp[ns] to timestamp[ms]");
+            let arg_ms = cast(arg, &DataType::Timestamp(TimeUnit::Millisecond, None))
+                .expect("Failed to convert timestamp[ns] to timestamp[ms]");
             cast(&arg_ms, &DataType::Int64).expect("Failed to case timestamp to Int64")
         }
         DataType::Date32 => {

@@ -8,22 +8,19 @@
  */
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
-use datafusion::dataframe::DataFrame;
-use datafusion::logical_plan::{
-    avg, col, count, count_distinct, lit, max, min, sum, Expr, JoinType,
-};
 
-use crate::expression::compiler::utils::to_numeric;
+use datafusion::logical_plan::{col, Expr};
+
 use crate::sql::compile::expr::ToSqlExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
 use crate::transform::aggregate::make_aggr_expr;
 use async_trait::async_trait;
-use datafusion_expr::{aggregate_function, BuiltInWindowFunction, WindowFunction};
+use datafusion_expr::{BuiltInWindowFunction, WindowFunction};
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
-use vegafusion_core::arrow::datatypes::DataType;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+
+use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::{AggregateOp, JoinAggregate};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::aggregate::op_name;
@@ -74,7 +71,7 @@ impl TransformTrait for JoinAggregate {
         let new_col_csv = new_col_strs.join(", ");
 
         // Build csv str of input columns
-        let mut input_col_exprs = schema
+        let input_col_exprs = schema
             .fields()
             .iter()
             .map(|field| col(field.name()))

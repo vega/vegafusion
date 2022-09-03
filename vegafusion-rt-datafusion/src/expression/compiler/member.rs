@@ -22,7 +22,7 @@ use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::prelude::lit;
 use datafusion::scalar::ScalarValue;
-use datafusion_expr::Expr::ScalarFunction;
+
 use datafusion_expr::{
     BuiltinScalarFunction, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
 };

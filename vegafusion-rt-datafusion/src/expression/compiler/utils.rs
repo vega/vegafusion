@@ -17,11 +17,11 @@ use datafusion::scalar::ScalarValue;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
+use datafusion::error::DataFusionError;
 use datafusion::execution::context::{default_session_builder, ExecutionProps, SessionState};
 use datafusion_expr::utils::expr_to_columns;
-use datafusion_expr::{BuiltinScalarFunction, lit};
+use datafusion_expr::{lit, BuiltinScalarFunction};
 use std::sync::Arc;
-use datafusion::error::DataFusionError;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 lazy_static! {
@@ -90,7 +90,10 @@ pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let dtype = data_type(&value, schema)?;
     let boolean_value = if matches!(dtype, DataType::Boolean) {
         and(value.clone(), Expr::IsNotNull(Box::new(value)))
-    } else if matches!(dtype, DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64) {
+    } else if matches!(
+        dtype,
+        DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64
+    ) {
         and(
             value.clone().not_eq(lit(0)),
             Expr::IsNotNull(Box::new(value)),
