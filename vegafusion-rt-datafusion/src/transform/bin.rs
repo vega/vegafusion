@@ -149,21 +149,6 @@ fn compute_output_value(bin_tx: &Bin, start: f64, stop: f64, step: f64) -> Optio
     }
 }
 
-#[inline(always)]
-fn lookup_bin_edge(v: f64, bin_starts: &[f64], step: f64, last_stop: f64) -> f64 {
-    let n = bin_starts.len() as i32;
-    let bin_ind = (1.0e-14 + (v - bin_starts[0]) / step).floor() as i32;
-    if bin_ind < 0 {
-        f64::NEG_INFINITY
-    } else if bin_ind == n && (v - last_stop).abs() <= 1.0e-14 {
-        *bin_starts.last().unwrap()
-    } else if bin_ind >= n {
-        f64::INFINITY
-    } else {
-        bin_starts[bin_ind as usize]
-    }
-}
-
 #[derive(Clone, Debug)]
 pub struct BinParams {
     pub start: f64,
