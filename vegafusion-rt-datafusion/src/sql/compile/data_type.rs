@@ -14,12 +14,14 @@ impl ToSqlDataType for DataType {
                 Ok(SqlDataType::Real)
             }
             DataType::Boolean => Ok(SqlDataType::Boolean),
-            DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64 => {
-                Ok(SqlDataType::Int(None))
-            }
-            DataType::UInt8 | DataType::UInt16 | DataType::UInt32 | DataType::UInt64 => {
-                Ok(SqlDataType::UnsignedInt(None))
-            }
+            DataType::Int8 => Ok(SqlDataType::TinyInt(None)),
+            DataType::Int16 => Ok(SqlDataType::SmallInt(None)),
+            DataType::Int32 => Ok(SqlDataType::Int(None)),
+            DataType::Int64 => Ok(SqlDataType::BigInt( None)),
+            DataType::UInt8 => Ok(SqlDataType::UnsignedTinyInt(None)),
+            DataType::UInt16 => Ok(SqlDataType::UnsignedSmallInt(None)),
+            DataType::UInt32 => Ok(SqlDataType::UnsignedInt(None)),
+            DataType::UInt64 => Ok(SqlDataType::UnsignedBigInt(None)),
             DataType::Float16 => Ok(SqlDataType::Float(Some(16))),
             DataType::Float32 => Ok(SqlDataType::Float(Some(32))),
             DataType::Float64 => Ok(SqlDataType::Double),
