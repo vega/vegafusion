@@ -38,16 +38,16 @@ pub fn make_datafusion_dialect() -> Dialect {
     dialect.functions.insert("vg_time".to_string());
 
     // date parts
-    dialect.functions.insert("year".to_string());
-    dialect.functions.insert("month".to_string());
-    dialect.functions.insert("quarter".to_string());
-    dialect.functions.insert("date".to_string());
-    dialect.functions.insert("dayofyear".to_string());
-    dialect.functions.insert("day".to_string());
-    dialect.functions.insert("hours".to_string());
-    dialect.functions.insert("minutes".to_string());
-    dialect.functions.insert("seconds".to_string());
-    dialect.functions.insert("milliseconds".to_string());
+    dialect.functions.insert("year_tz".to_string());
+    dialect.functions.insert("month_tz".to_string());
+    dialect.functions.insert("quarter_tz".to_string());
+    dialect.functions.insert("date_tz".to_string());
+    dialect.functions.insert("dayofyear_tz".to_string());
+    dialect.functions.insert("day_tz".to_string());
+    dialect.functions.insert("hours_tz".to_string());
+    dialect.functions.insert("minutes_tz".to_string());
+    dialect.functions.insert("seconds_tz".to_string());
+    dialect.functions.insert("milliseconds_tz".to_string());
 
     // timeunit transform
     dialect.functions.insert("timeunit_start".to_string());

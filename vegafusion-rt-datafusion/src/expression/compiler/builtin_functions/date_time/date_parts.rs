@@ -86,8 +86,8 @@ pub fn make_tz_datepart_transform(udf: &ScalarUDF) -> TzTransformFn {
     let udf = udf.clone();
     let local_datepart_transform =
         move |tz_config: &RuntimeTzConfig, args: &[Expr], _schema: &DFSchema| -> Result<Expr> {
-            let mut udf_args = vec![lit(tz_config.local_tz.to_string())];
-            udf_args.extend(Vec::from(args));
+            let mut udf_args = Vec::from(args);
+            udf_args.push(lit(tz_config.local_tz.to_string()));
             Ok(Expr::ScalarUDF {
                 fun: Arc::new(udf.clone()),
                 args: udf_args,
@@ -100,7 +100,7 @@ pub fn make_datepart_udf(extract_fn: fn(&DateTime<chrono_tz::Tz>) -> i64, name: 
     let _inner_name = name.to_string();
     let part_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
         // Extract timezone string
-        let tz_str = if let ColumnarValue::Scalar(tz_scalar) = &args[0] {
+        let tz_str = if let ColumnarValue::Scalar(tz_scalar) = &args[1] {
             tz_scalar.to_string()
         } else {
             return Err(DataFusionError::Internal(
@@ -113,7 +113,7 @@ pub fn make_datepart_udf(extract_fn: fn(&DateTime<chrono_tz::Tz>) -> i64, name: 
         })?;
 
         // Signature ensures there is a single argument
-        let arg = args[1].clone().into_array(1);
+        let arg = args[0].clone().into_array(1);
         let arg = process_input_datetime(&arg, &tz);
 
         let mut result_builder = Int64Array::builder(arg.len());
@@ -148,14 +148,17 @@ pub fn make_datepart_udf(extract_fn: fn(&DateTime<chrono_tz::Tz>) -> i64, name: 
     let signature = Signature::one_of(
         vec![
             TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8]),
-            TypeSignature::Exact(vec![DataType::Utf8, DataType::Date32]),
-            TypeSignature::Exact(vec![DataType::Utf8, DataType::Date64]),
+            TypeSignature::Exact(vec![DataType::Date32, DataType::Utf8]),
+            TypeSignature::Exact(vec![DataType::Date64, DataType::Utf8]),
             TypeSignature::Exact(vec![
-                DataType::Utf8,
-                DataType::Timestamp(TimeUnit::Millisecond, None),
+                DataType::Timestamp(TimeUnit::Millisecond, None), DataType::Utf8
             ]),
-            TypeSignature::Exact(vec![DataType::Utf8, DataType::Int64]),
-            TypeSignature::Exact(vec![DataType::Utf8, DataType::Float64]),
+            TypeSignature::Exact(vec![
+                DataType::Timestamp(TimeUnit::Nanosecond, None),
+                DataType::Utf8
+            ]),
+            TypeSignature::Exact(vec![DataType::Int64, DataType::Utf8]),
+            TypeSignature::Exact(vec![DataType::Float64, DataType::Utf8]),
         ],
         Volatility::Immutable,
     );
@@ -166,25 +169,25 @@ pub fn make_datepart_udf(extract_fn: fn(&DateTime<chrono_tz::Tz>) -> i64, name: 
 lazy_static! {
     // Local UDFs
     pub static ref YEAR_UDF: ScalarUDF =
-        make_datepart_udf(extract_year, "year");
+        make_datepart_udf(extract_year, "year_tz");
     pub static ref MONTH_UDF: ScalarUDF =
-        make_datepart_udf(extract_month, "month");
+        make_datepart_udf(extract_month, "month_tz");
     pub static ref QUARTER_UDF: ScalarUDF =
-        make_datepart_udf(extract_quarter, "quarter");
+        make_datepart_udf(extract_quarter, "quarter_tz");
     pub static ref DATE_UDF: ScalarUDF =
-        make_datepart_udf(extract_date, "date");
+        make_datepart_udf(extract_date, "date_tz");
     pub static ref DAYOFYEAR_UDF: ScalarUDF =
-        make_datepart_udf(extract_dayofyear, "dayofyear");
+        make_datepart_udf(extract_dayofyear, "dayofyear_tz");
     pub static ref DAY_UDF: ScalarUDF =
-        make_datepart_udf(extract_day, "day");
+        make_datepart_udf(extract_day, "day_tz");
     pub static ref HOURS_UDF: ScalarUDF =
-        make_datepart_udf(extract_hour, "hours");
+        make_datepart_udf(extract_hour, "hours_tz");
     pub static ref MINUTES_UDF: ScalarUDF =
-        make_datepart_udf(extract_minute, "minutes");
+        make_datepart_udf(extract_minute, "minutes_tz");
     pub static ref SECONDS_UDF: ScalarUDF =
-        make_datepart_udf(extract_second, "seconds");
+        make_datepart_udf(extract_second, "seconds_tz");
     pub static ref MILLISECONDS_UDF: ScalarUDF =
-        make_datepart_udf(extract_millisecond, "milliseconds");
+        make_datepart_udf(extract_millisecond, "milliseconds_tz");
 
     // Local transforms
     pub static ref YEAR_TRANSFORM: TzTransformFn =
