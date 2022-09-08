@@ -36,7 +36,7 @@ pub fn to_date_transform(
     schema: &DFSchema,
 ) -> Result<Expr> {
     // Datetime from string or integer in milliseconds
-    let mut arg = args[0].clone();
+    let arg = args[0].clone();
     let dtype = arg
         .get_type(schema)
         .with_context(|| format!("Failed to infer type of expression: {:?}", arg))?;

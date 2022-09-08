@@ -16,8 +16,11 @@ pub mod date_format;
 pub mod date_parsing;
 pub mod date_parts;
 pub mod datetime;
-pub mod local_to_utc;
 pub mod time;
+pub mod date_to_timestamptz;
+pub mod timestamp_to_timestamptz;
+pub mod epoch_to_timestamptz;
+pub mod str_to_timestamptz;
 
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
     datetime_strs_to_timestamp_millis, DateParseMode,

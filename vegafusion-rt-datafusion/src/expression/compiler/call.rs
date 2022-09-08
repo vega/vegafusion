@@ -50,7 +50,11 @@ use crate::expression::compiler::builtin_functions::date_time::date_format::{
     time_format_fn, utc_format_fn, TIMEFORMAT_UDF,
 };
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::DATETIME_STRING_TO_MILLIS_UDF;
+use crate::expression::compiler::builtin_functions::date_time::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::time::{time_fn, TIME_UDF};
+use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
@@ -444,6 +448,11 @@ pub fn make_session_context() -> SessionContext {
     ctx.register_udf((*TIMEUNIT_END_UDF).clone());
 
     // datetime
+    ctx.register_udf((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone());
+    ctx.register_udf((*DATE_TO_TIMESTAMPTZ_UDF).clone());
+    ctx.register_udf((*EPOCH_TO_TIMESTAMPTZ_UDF).clone());
+    ctx.register_udf((*STR_TO_TIMESTAMPTZ_UDF).clone());
+
     ctx.register_udf((*DATETIME_COMPONENTS).clone());
     ctx.register_udf((*DATETIME_STRING_TO_MILLIS_UDF).clone());
     ctx.register_udf((*TIME_UDF).clone());

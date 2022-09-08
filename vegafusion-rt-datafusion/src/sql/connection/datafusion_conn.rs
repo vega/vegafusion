@@ -29,6 +29,11 @@ pub fn make_datafusion_dialect() -> Dialect {
     dialect.functions.insert("isfinite".to_string());
 
     // datetime
+    dialect.functions.insert("date_to_timestamptz".to_string());
+    dialect.functions.insert("timestamp_to_timestamptz".to_string());
+    dialect.functions.insert("epoch_to_timestamptz".to_string());
+    dialect.functions.insert("str_to_timestamptz".to_string());
+
     dialect.functions.insert("datetime_components".to_string());
     dialect.functions.insert("vg_time".to_string());
 

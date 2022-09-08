@@ -8,13 +8,13 @@
  */
 use crate::data::table::VegaFusionTableUtils;
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
-    DateParseMode, DATETIME_STRING_TO_MILLIS_UDF,
+    DateParseMode,
 };
 use crate::expression::compiler::builtin_functions::date_time::datetime::DATETIME_COMPONENTS;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{
-    cast_to, is_integer_datatype, is_string_datatype, ExprHelpers,
+    is_integer_datatype, is_string_datatype, ExprHelpers,
 };
 use crate::task_graph::task::TaskCall;
 
@@ -33,10 +33,9 @@ use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
-use vegafusion_core::arrow::datatypes::TimeUnit;
+
 
 use crate::data::dataset::VegaFusionDataset;
-use crate::expression::compiler::builtin_functions::date_time::local_to_utc::make_to_utc_timestamp_fn;
 use crate::expression::compiler::call::make_session_context;
 use crate::sql::connection::datafusion_conn::DataFusionConnection;
 use crate::sql::dataframe::SqlDataFrame;
@@ -52,6 +51,9 @@ use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValues
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
+use crate::expression::compiler::builtin_functions::date_time::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
@@ -297,18 +299,21 @@ fn process_datetimes(
                 if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
+
                         let default_input_tz_str = tz_config
                             .map(|tz_config| tz_config.default_input_tz.to_string())
                             .unwrap_or_else(|| "UTC".to_string());
-                        let date_mode_str = date_mode.to_string();
 
-                        Expr::ScalarUDF {
-                            fun: Arc::new((*DATETIME_STRING_TO_MILLIS_UDF).clone()),
-                            args: vec![
-                                lit(default_input_tz_str),
-                                lit(date_mode_str),
-                                col(&spec.name),
-                            ],
+                        if matches!(date_mode, DateParseMode::JavaScript) {
+                            Expr::ScalarUDF {
+                                fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+                                args: vec![col(&spec.name), lit(default_input_tz_str)],
+                            }
+                        } else {
+                            Expr::ScalarUDF {
+                                fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+                                args: vec![col(&spec.name), lit("UTC")],
+                            }
                         }
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically, use local time
@@ -359,22 +364,19 @@ fn process_datetimes(
                     DataType::Timestamp(_, tz) => match tz {
                         Some(tz) if tz.to_lowercase() == "utc" => {
                             // Timestamp already in UTC
-                            cast_to(
-                                col(field.name()),
-                                &DataType::Timestamp(
-                                    TimeUnit::Millisecond,
-                                    Some("UTC".to_string()),
-                                ),
-                                schema,
-                            )?
+                            Expr::ScalarUDF {
+                                fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
+                                args: vec![col(field.name()), lit("UTC")],
+                            }
                         }
                         _ => {
                             // Naive timestamp, interpret as default_input_tz
                             let tz_config =
                                 tz_config.with_context(|| "No local timezone info provided")?;
+
                             Expr::ScalarUDF {
-                                fun: Arc::new(make_to_utc_timestamp_fn(&tz_config)),
-                                args: vec![col(field.name())],
+                                fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
+                                args: vec![col(field.name()), lit(tz_config.default_input_tz.to_string())],
                             }
                         }
                     },
@@ -383,8 +385,8 @@ fn process_datetimes(
                             tz_config.with_context(|| "No local timezone info provided")?;
 
                         Expr::ScalarUDF {
-                            fun: Arc::new(make_to_utc_timestamp_fn(&tz_config)),
-                            args: vec![col(field.name())],
+                            fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
+                            args: vec![col(field.name()), lit(tz_config.default_input_tz.to_string())],
                         }
                     }
                     DataType::Date32 => {
@@ -392,8 +394,8 @@ fn process_datetimes(
                             tz_config.with_context(|| "No local timezone info provided")?;
 
                         Expr::ScalarUDF {
-                            fun: Arc::new(make_to_utc_timestamp_fn(&tz_config)),
-                            args: vec![col(field.name())],
+                            fun: Arc::new((*DATE_TO_TIMESTAMPTZ_UDF).clone()),
+                            args: vec![col(field.name()), lit(tz_config.local_tz.to_string())],
                         }
                     }
                     _ => col(field.name()),
