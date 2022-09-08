@@ -20,18 +20,26 @@ pub mod local_to_utc;
 pub mod time;
 
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
-    datetime_strs_to_millis, DateParseMode,
+    datetime_strs_to_timestamp_millis, DateParseMode,
 };
 use datafusion::arrow::array::{ArrayRef, Date32Array, Int64Array, StringArray};
 use datafusion::arrow::compute::{cast, unary};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use std::sync::Arc;
 
-fn process_input_datetime(arg: &ArrayRef, default_input_tz: &chrono_tz::Tz) -> ArrayRef {
+pub fn process_input_datetime(arg: &ArrayRef, default_input_tz: &chrono_tz::Tz) -> ArrayRef {
     match arg.data_type() {
         DataType::Utf8 => {
             let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
-            datetime_strs_to_millis(array, DateParseMode::JavaScript, &Some(*default_input_tz)) as _
+            cast(
+                &datetime_strs_to_timestamp_millis(
+                    array,
+                    DateParseMode::JavaScript,
+                    &Some(*default_input_tz),
+                ),
+                &DataType::Int64,
+            )
+            .expect("Failed to case timestamp to Int64")
         }
         DataType::Timestamp(TimeUnit::Millisecond, _) => {
             cast(arg, &DataType::Int64).expect("Failed to case timestamp to Int64")

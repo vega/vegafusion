@@ -24,6 +24,7 @@ use datafusion_expr::{
 };
 use std::str::FromStr;
 use std::sync::Arc;
+use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::error::Result;
 
 #[inline(always)]
@@ -149,6 +150,10 @@ pub fn make_datepart_udf(extract_fn: fn(&DateTime<chrono_tz::Tz>) -> i64, name: 
             TypeSignature::Exact(vec![DataType::Utf8, DataType::Utf8]),
             TypeSignature::Exact(vec![DataType::Utf8, DataType::Date32]),
             TypeSignature::Exact(vec![DataType::Utf8, DataType::Date64]),
+            TypeSignature::Exact(vec![
+                DataType::Utf8,
+                DataType::Timestamp(TimeUnit::Millisecond, None),
+            ]),
             TypeSignature::Exact(vec![DataType::Utf8, DataType::Int64]),
             TypeSignature::Exact(vec![DataType::Utf8, DataType::Float64]),
         ],

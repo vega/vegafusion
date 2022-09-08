@@ -16,7 +16,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use std::str::FromStr;
-use vegafusion_core::arrow::datatypes::DataType;
+use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::{
@@ -122,6 +122,20 @@ pub struct FieldSpec {
 impl FieldSpec {
     pub fn to_test_expr(&self, values: &ScalarValue, schema: &DFSchema) -> Result<Expr> {
         let field_col = col(&self.field);
+
+        // Convert timestamp column to integer milliseconds before comparisons.
+        let field_col = if matches!(
+            field_col.get_type(schema)?,
+            DataType::Timestamp(TimeUnit::Millisecond, _)
+        ) {
+            Expr::Cast {
+                expr: Box::new(field_col),
+                data_type: DataType::Int64,
+            }
+        } else {
+            field_col
+        };
+
         let expr = match self.typ {
             SelectionType::Enum => {
                 let list_values: Vec<_> = if let ScalarValue::List(Some(elements), _) = &values {
@@ -131,6 +145,7 @@ impl FieldSpec {
                     // convert values to single element list
                     vec![lit(values.clone())]
                 };
+
                 Expr::InList {
                     expr: Box::new(field_col),
                     list: list_values,

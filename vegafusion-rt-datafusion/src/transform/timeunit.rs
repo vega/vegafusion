@@ -10,7 +10,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::arrow::array::{ArrayRef, Int64Array};
-use datafusion::arrow::datatypes::DataType;
+use datafusion::arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
 use datafusion::prelude::col;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
@@ -25,11 +25,14 @@ use datafusion::common::{DataFusionError, ScalarValue};
 
 use crate::sql::dataframe::SqlDataFrame;
 
+use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::{
-    lit, ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
+    lit, ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, Signature, TypeSignature,
+    Volatility,
 };
 use std::str::FromStr;
+use vegafusion_core::arrow::array::TimestampMillisecondArray;
 
 #[async_trait]
 impl TransformTrait for TimeUnit {
@@ -174,7 +177,6 @@ fn extract_bool(value: &ColumnarValue) -> std::result::Result<bool, DataFusionEr
 fn unpack_timeunit_udf_args(
     columns: &[ColumnarValue],
 ) -> std::result::Result<(ArrayRef, chrono_tz::Tz, Vec<bool>), DataFusionError> {
-    let timestamp = columns[0].clone().into_array(1);
     let tz_str = if let ColumnarValue::Scalar(scalar) = &columns[1] {
         scalar.to_string()
     } else {
@@ -184,6 +186,9 @@ fn unpack_timeunit_udf_args(
     let tz = chrono_tz::Tz::from_str(&tz_str).map_err(|_err| {
         DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
     })?;
+
+    let timestamp = columns[0].clone().into_array(1);
+    let timestamp = process_input_datetime(&timestamp, &tz);
 
     Ok((
         timestamp,
@@ -209,17 +214,23 @@ fn make_timeunit_start_udf() -> ScalarUDF {
         let (timestamp, tz, units_mask) = unpack_timeunit_udf_args(columns)?;
 
         let array = timestamp.as_any().downcast_ref::<Int64Array>().unwrap();
-        let result_array: Int64Array = unary(array, |value| {
+        let result_array: TimestampMillisecondArray = unary(array, |value| {
             perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
         });
 
         Ok(ColumnarValue::Array(Arc::new(result_array) as ArrayRef))
     });
 
-    let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
-    let signature: Signature = Signature::exact(
-        vec![
-            DataType::Int64,   // [0] timestamp
+    let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| {
+        Ok(Arc::new(DataType::Timestamp(
+            ArrowTimeUnit::Millisecond,
+            None,
+        )))
+    });
+
+    let make_sig = |timestamp_dtype: DataType| -> TypeSignature {
+        TypeSignature::Exact(vec![
+            timestamp_dtype,   // [0] timestamp
             DataType::Utf8,    // [1] timezone
             DataType::Boolean, // [2] Year
             DataType::Boolean, // [3] Quarter
@@ -232,6 +243,16 @@ fn make_timeunit_start_udf() -> ScalarUDF {
             DataType::Boolean, // [10] Minutes
             DataType::Boolean, // [11] Seconds
             DataType::Boolean, // [12] Milliseconds
+        ])
+    };
+
+    let signature: Signature = Signature::one_of(
+        vec![
+            make_sig(DataType::Int64),
+            make_sig(DataType::Date64),
+            make_sig(DataType::Date32),
+            make_sig(DataType::Timestamp(ArrowTimeUnit::Millisecond, None)),
+            make_sig(DataType::Timestamp(ArrowTimeUnit::Nanosecond, None)),
         ],
         Volatility::Immutable,
     );
@@ -244,29 +265,34 @@ fn make_timeunit_end_udf() -> ScalarUDF {
         let (timestamp, tz, units_mask) = unpack_timeunit_udf_args(columns)?;
 
         let array = timestamp.as_any().downcast_ref::<Int64Array>().unwrap();
-        let result_array: Int64Array = unary(array, |value| {
+        let result_array: TimestampMillisecondArray = unary(array, |value| {
             perform_timeunit_end_from_utc(value, units_mask.as_slice(), tz).timestamp_millis()
         });
 
         Ok(ColumnarValue::Array(Arc::new(result_array) as ArrayRef))
     });
 
-    let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| Ok(Arc::new(DataType::Int64)));
+    let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| {
+        Ok(Arc::new(DataType::Timestamp(
+            ArrowTimeUnit::Millisecond,
+            None,
+        )))
+    });
     let signature: Signature = Signature::exact(
         vec![
-            DataType::Int64,   // [0] start timestamp
-            DataType::Utf8,    // [1] timezone
-            DataType::Boolean, // [2] Year
-            DataType::Boolean, // [3] Quarter
-            DataType::Boolean, // [4] Month
-            DataType::Boolean, // [5] Date
-            DataType::Boolean, // [6] Week
-            DataType::Boolean, // [7] Day
-            DataType::Boolean, // [8] DayOfYear
-            DataType::Boolean, // [9] Hours
-            DataType::Boolean, // [10] Minutes
-            DataType::Boolean, // [11] Seconds
-            DataType::Boolean, // [12] Milliseconds
+            DataType::Timestamp(ArrowTimeUnit::Millisecond, None), // [0] start timestamp
+            DataType::Utf8,                                        // [1] timezone
+            DataType::Boolean,                                     // [2] Year
+            DataType::Boolean,                                     // [3] Quarter
+            DataType::Boolean,                                     // [4] Month
+            DataType::Boolean,                                     // [5] Date
+            DataType::Boolean,                                     // [6] Week
+            DataType::Boolean,                                     // [7] Day
+            DataType::Boolean,                                     // [8] DayOfYear
+            DataType::Boolean,                                     // [9] Hours
+            DataType::Boolean,                                     // [10] Minutes
+            DataType::Boolean,                                     // [11] Seconds
+            DataType::Boolean,                                     // [12] Milliseconds
         ],
         Volatility::Immutable,
     );

@@ -15,11 +15,11 @@ use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
 use std::sync::Arc;
-use vegafusion_core::arrow::array::ArrayRef;
+use vegafusion_core::arrow::array::{ArrayRef, TimestampMillisecondArray};
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 
-pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
+pub fn make_to_utc_timestamp_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
     let default_input_tz = tz_config.default_input_tz;
     let local_tz = tz_config.local_tz;
 
@@ -38,7 +38,7 @@ pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
 
         let naive_datetime_millis = arg.as_any().downcast_ref::<Int64Array>().unwrap();
 
-        let array: Int64Array = unary(naive_datetime_millis, |v| {
+        let array: TimestampMillisecondArray = unary(naive_datetime_millis, |v| {
             // Build naive datetime for time
             let seconds = v / 1000;
             let milliseconds = v % 1000;
@@ -68,7 +68,8 @@ pub fn make_to_utc_millis_fn(tz_config: &RuntimeTzConfig) -> ScalarUDF {
     };
 
     let to_utc_millis_fn = make_scalar_function(to_utc_millis_fn);
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
+    let return_type: ReturnTypeFunction =
+        Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
 
     ScalarUDF::new(
         "to_utc_millis_fn",

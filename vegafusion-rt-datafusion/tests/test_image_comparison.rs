@@ -23,7 +23,7 @@ use tokio::runtime::Runtime;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
 
-use vegafusion_core::planning::plan::SpecPlan;
+use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 
 use vegafusion_core::planning::watch::{
     ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace, Watch, WatchNamespace, WatchPlan,
@@ -370,10 +370,8 @@ mod test_vegalite_specs {
         case("vegalite/bar_column_fold", 0.001),
         case("vegalite/bar_column_pivot", 0.001),
         case("vegalite/bar_corner_radius_end", 0.001),
-
         // Different ordering of bars with the same length
         case("vegalite/bar_count_minimap", 0.1),
-
         case("vegalite/bar_custom_sort_full", 0.001),
         case("vegalite/bar_custom_sort_partial", 0.001),
         case("vegalite/bar_custom_time_domain", 0.001),
@@ -1377,7 +1375,10 @@ async fn check_spec_sequence(
         default_input_tz: None,
     };
 
-    let spec_plan = SpecPlan::try_new(&full_spec, &Default::default()).unwrap();
+    let planner_config = PlannerConfig {
+        ..Default::default()
+    };
+    let spec_plan = SpecPlan::try_new(&full_spec, &planner_config).unwrap();
 
     let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
 

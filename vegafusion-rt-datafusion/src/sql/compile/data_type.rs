@@ -17,7 +17,7 @@ impl ToSqlDataType for DataType {
             DataType::Int8 => Ok(SqlDataType::TinyInt(None)),
             DataType::Int16 => Ok(SqlDataType::SmallInt(None)),
             DataType::Int32 => Ok(SqlDataType::Int(None)),
-            DataType::Int64 => Ok(SqlDataType::BigInt( None)),
+            DataType::Int64 => Ok(SqlDataType::BigInt(None)),
             DataType::UInt8 => Ok(SqlDataType::UnsignedTinyInt(None)),
             DataType::UInt16 => Ok(SqlDataType::UnsignedSmallInt(None)),
             DataType::UInt32 => Ok(SqlDataType::UnsignedInt(None)),

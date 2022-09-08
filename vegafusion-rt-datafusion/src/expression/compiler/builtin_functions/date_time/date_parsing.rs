@@ -9,7 +9,7 @@
 use chrono::{
     DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Offset, TimeZone, Timelike, Utc,
 };
-use datafusion::arrow::array::{ArrayRef, Int64Array, StringArray};
+use datafusion::arrow::array::{ArrayRef, StringArray};
 use datafusion::arrow::datatypes::DataType;
 use std::fmt::{Display, Formatter};
 
@@ -24,7 +24,8 @@ use datafusion_expr::{
     ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
 };
 use std::str::FromStr;
-use vegafusion_core::arrow::array::Array;
+use vegafusion_core::arrow::array::{Array, TimestampMillisecondArray};
+use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::VegaFusionError;
 
@@ -395,7 +396,8 @@ pub fn make_date_str_to_millis_udf() -> ScalarUDF {
 
         let date_strs = date_strs.as_any().downcast_ref::<StringArray>().unwrap();
 
-        let result_array = datetime_strs_to_millis(date_strs, mode, &Some(default_input_tz));
+        let result_array =
+            datetime_strs_to_timestamp_millis(date_strs, mode, &Some(default_input_tz));
 
         // maybe back to scalar
         if result_array.len() != 1 {
@@ -405,7 +407,8 @@ pub fn make_date_str_to_millis_udf() -> ScalarUDF {
         }
     });
 
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
+    let return_type: ReturnTypeFunction =
+        Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
     let signature: Signature = Signature::exact(
         vec![DataType::Utf8, DataType::Utf8, DataType::Utf8],
         Volatility::Immutable,
@@ -419,12 +422,12 @@ pub fn make_date_str_to_millis_udf() -> ScalarUDF {
     )
 }
 
-pub fn datetime_strs_to_millis(
+pub fn datetime_strs_to_timestamp_millis(
     date_strs: &StringArray,
     mode: DateParseMode,
     default_input_tz: &Option<chrono_tz::Tz>,
 ) -> ArrayRef {
-    let millis_array = Int64Array::from(
+    let millis_array = TimestampMillisecondArray::from(
         date_strs
             .iter()
             .map(|date_str| -> Option<i64> {

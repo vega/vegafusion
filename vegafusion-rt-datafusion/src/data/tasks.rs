@@ -36,7 +36,7 @@ use tokio::io::AsyncReadExt;
 use vegafusion_core::arrow::datatypes::TimeUnit;
 
 use crate::data::dataset::VegaFusionDataset;
-use crate::expression::compiler::builtin_functions::date_time::local_to_utc::make_to_utc_millis_fn;
+use crate::expression::compiler::builtin_functions::date_time::local_to_utc::make_to_utc_timestamp_fn;
 use crate::expression::compiler::call::make_session_context;
 use crate::sql::connection::datafusion_conn::DataFusionConnection;
 use crate::sql::dataframe::SqlDataFrame;
@@ -122,7 +122,7 @@ impl TaskCall for DataUrlTask {
                     VegaFusionDataset::Table { table, .. } => table.to_dataframe()?,
                     VegaFusionDataset::SqlDataFrame(sql_df) => {
                         // Eval pipeline transforms directly without custom datetime processing
-                        return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await
+                        return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await;
                     }
                 }
             } else {
@@ -358,21 +358,22 @@ fn process_datetimes(
                 let expr = match field.data_type() {
                     DataType::Timestamp(_, tz) => match tz {
                         Some(tz) if tz.to_lowercase() == "utc" => {
-                            let timestamp_millis = cast_to(
+                            // Timestamp already in UTC
+                            cast_to(
                                 col(field.name()),
                                 &DataType::Timestamp(
                                     TimeUnit::Millisecond,
                                     Some("UTC".to_string()),
                                 ),
                                 schema,
-                            )?;
-                            cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
+                            )?
                         }
                         _ => {
+                            // Naive timestamp, interpret as default_input_tz
                             let tz_config =
                                 tz_config.with_context(|| "No local timezone info provided")?;
                             Expr::ScalarUDF {
-                                fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
+                                fun: Arc::new(make_to_utc_timestamp_fn(&tz_config)),
                                 args: vec![col(field.name())],
                             }
                         }
@@ -382,7 +383,7 @@ fn process_datetimes(
                             tz_config.with_context(|| "No local timezone info provided")?;
 
                         Expr::ScalarUDF {
-                            fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
+                            fun: Arc::new(make_to_utc_timestamp_fn(&tz_config)),
                             args: vec![col(field.name())],
                         }
                     }
@@ -391,7 +392,7 @@ fn process_datetimes(
                             tz_config.with_context(|| "No local timezone info provided")?;
 
                         Expr::ScalarUDF {
-                            fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
+                            fun: Arc::new(make_to_utc_timestamp_fn(&tz_config)),
                             args: vec![col(field.name())],
                         }
                     }

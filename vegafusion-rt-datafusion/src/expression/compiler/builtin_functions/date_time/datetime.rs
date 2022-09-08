@@ -9,7 +9,7 @@
 use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
     DateParseMode, DATETIME_STRING_TO_MILLIS_UDF,
 };
-use crate::expression::compiler::utils::{cast_to, is_string_datatype};
+use crate::expression::compiler::utils::{cast_to, is_numeric_datatype, is_string_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
 use chrono::{DateTime, TimeZone};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
@@ -26,6 +26,8 @@ use datafusion_expr::{
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
+use vegafusion_core::arrow::array::TimestampMillisecondBuilder;
+use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 pub fn to_date_transform(
@@ -62,17 +64,19 @@ pub fn to_date_transform(
             tz_config.default_input_tz
         };
 
-        arg = Expr::ScalarUDF {
+        Ok(Expr::ScalarUDF {
             fun: Arc::new((*DATETIME_STRING_TO_MILLIS_UDF).clone()),
             args: vec![
                 lit(default_input_tz.to_string()),
                 lit(DateParseMode::JavaScript.to_string()),
                 arg,
             ],
-        }
+        })
+    } else if is_numeric_datatype(&dtype) {
+        cast_to(arg, &DataType::Int64, schema)
+    } else {
+        Ok(arg)
     }
-
-    cast_to(arg, &DataType::Int64, schema)
 }
 
 pub fn datetime_transform_fn(
@@ -185,7 +189,7 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
             let millis = millis_ref.as_any().downcast_ref::<Int64Array>().unwrap();
 
             let num_rows = years.len();
-            let mut datetime_builder = Int64Array::builder(num_rows);
+            let mut datetime_builder = TimestampMillisecondBuilder::new(num_rows);
 
             for i in 0..num_rows {
                 if years.is_null(i)
@@ -246,7 +250,8 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
             }
         });
 
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
+    let return_type: ReturnTypeFunction =
+        Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
 
     // vega signature: datetime(year, month[, day, hour, min, sec, millisec])
     let sig = |n: usize| {
