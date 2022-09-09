@@ -116,7 +116,8 @@ impl TaskCall for DataUrlTask {
                 match inline_dataset {
                     VegaFusionDataset::Table { table, .. } => table.to_dataframe()?,
                     VegaFusionDataset::SqlDataFrame(sql_df) => {
-                        // Eval pipeline transforms directly without custom datetime processing
+                        // Process datetime columns and evaluage transforms
+                        let sql_df = process_datetimes(&parse, sql_df.clone(), &config.tz_config)?;
                         return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await;
                     }
                 }
@@ -139,15 +140,17 @@ impl TaskCall for DataUrlTask {
             )));
         };
 
-        // Process datetime columns
-        let df = process_datetimes(&parse, df, &config.tz_config)?;
-
+        // Construct SqlDataFrame
         let ctx = make_session_context();
-        ctx.register_table("df", df)?;
+        ctx.register_table("tbl", df)?;
         let sql_conn = DataFusionConnection::new(Arc::new(ctx));
-        let sql_df = SqlDataFrame::try_new(Arc::new(sql_conn), "df").await?;
 
-        eval_sql_df(Arc::new(sql_df), &self.pipeline, &config).await
+        let sql_df = Arc::new(SqlDataFrame::try_new(Arc::new(sql_conn), "tbl").await?);
+
+        // Process datetime columns
+        let sql_df = process_datetimes(&parse, sql_df, &config.tz_config)?;
+
+        eval_sql_df(sql_df, &self.pipeline, &config).await
     }
 }
 
@@ -271,17 +274,17 @@ fn check_builtin_dataset(url: String) -> String {
 
 fn process_datetimes(
     parse: &Option<Parse>,
-    df: Arc<DataFrame>,
+    sql_df: Arc<SqlDataFrame>,
     tz_config: &Option<RuntimeTzConfig>,
-) -> Result<Arc<DataFrame>> {
+) -> Result<Arc<SqlDataFrame>> {
     // Perform specialized date parsing
     let mut date_fields: Vec<String> = Vec::new();
-    let mut df = df;
+    let mut df = sql_df;
     if let Some(scan_url_format::Parse::Object(formats)) = parse {
         for spec in &formats.specs {
             let datatype = &spec.datatype;
             if datatype.starts_with("date") || datatype.starts_with("utc") {
-                let schema = df.schema();
+                let schema = df.schema_df();
                 if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
@@ -428,28 +431,20 @@ impl TaskCall for DataValuesTask {
         {
             let pipeline = self.pipeline.as_ref().unwrap();
 
-            let df = values_table.to_dataframe()?;
             let config = build_compilation_config(&self.input_vars(), values, tz_config);
 
             // Process datetime columns
-            let df = process_datetimes(&parse, df, &config.tz_config)?;
+            let sql_df = values_table.to_sql_dataframe().await?;
+            let sql_df = process_datetimes(&parse, sql_df, &config.tz_config)?;
 
-            let ctx = make_session_context();
-            ctx.register_table("df", df)?;
-            let sql_conn = DataFusionConnection::new(Arc::new(ctx));
-            let sql_df = SqlDataFrame::try_new(Arc::new(sql_conn), "df").await?;
-
-            let (table, output_values) = pipeline.eval_sql(Arc::new(sql_df), &config).await?;
+            let (table, output_values) = pipeline.eval_sql(sql_df, &config).await?;
 
             (table, output_values)
         } else {
             // No transforms
-            let values_df = values_table.to_dataframe()?;
+            let values_df = values_table.to_sql_dataframe().await?;
             let values_df = process_datetimes(&parse, values_df, tz_config)?;
-            (
-                VegaFusionTable::from_dataframe(values_df).await?,
-                Vec::new(),
-            )
+            (values_df.collect().await?, Vec::new())
         };
 
         let table_value = TaskValue::Table(transformed_table);
