@@ -25,45 +25,45 @@ impl DataFusionConnection {
 
 pub fn make_datafusion_dialect() -> Dialect {
     let mut dialect = Dialect::datafusion();
-    dialect.functions.insert("isnan".to_string());
-    dialect.functions.insert("isfinite".to_string());
+    let functions = &mut dialect.functions;
+
+    functions.insert("isnan".to_string());
+    functions.insert("isfinite".to_string());
 
     // datetime
-    dialect.functions.insert("date_to_timestamptz".to_string());
-    dialect
-        .functions
-        .insert("timestamp_to_timestamptz".to_string());
-    dialect.functions.insert("epoch_to_timestamptz".to_string());
-    dialect.functions.insert("str_to_timestamptz".to_string());
+    functions.insert("date_to_timestamptz".to_string());
+    functions.insert("timestamp_to_timestamptz".to_string());
+    functions.insert("epoch_to_timestamptz".to_string());
+    functions.insert("str_to_timestamptz".to_string());
+    functions.insert("make_timestamptz".to_string());
 
-    dialect.functions.insert("datetime_components".to_string());
-    dialect.functions.insert("vg_time".to_string());
+    functions.insert("vg_time".to_string());
 
     // date parts
-    dialect.functions.insert("year_tz".to_string());
-    dialect.functions.insert("month_tz".to_string());
-    dialect.functions.insert("quarter_tz".to_string());
-    dialect.functions.insert("date_tz".to_string());
-    dialect.functions.insert("dayofyear_tz".to_string());
-    dialect.functions.insert("day_tz".to_string());
-    dialect.functions.insert("hours_tz".to_string());
-    dialect.functions.insert("minutes_tz".to_string());
-    dialect.functions.insert("seconds_tz".to_string());
-    dialect.functions.insert("milliseconds_tz".to_string());
+    functions.insert("year_tz".to_string());
+    functions.insert("month_tz".to_string());
+    functions.insert("quarter_tz".to_string());
+    functions.insert("date_tz".to_string());
+    functions.insert("dayofyear_tz".to_string());
+    functions.insert("day_tz".to_string());
+    functions.insert("hours_tz".to_string());
+    functions.insert("minutes_tz".to_string());
+    functions.insert("seconds_tz".to_string());
+    functions.insert("milliseconds_tz".to_string());
 
     // timeunit transform
-    dialect.functions.insert("timeunit_start".to_string());
-    dialect.functions.insert("timeunit_end".to_string());
+    functions.insert("timeunit_start".to_string());
+    functions.insert("timeunit_end".to_string());
 
     // timeformat
-    dialect.functions.insert("vg_timeformat".to_string());
+    functions.insert("vg_timeformat".to_string());
 
     // math
-    dialect.functions.insert("pow".to_string());
+    functions.insert("pow".to_string());
 
     // list
-    dialect.functions.insert("make_list".to_string());
-    dialect.functions.insert("len".to_string());
+    functions.insert("make_list".to_string());
+    functions.insert("len".to_string());
 
     dialect
 }
@@ -79,7 +79,7 @@ impl SqlConnection for DataFusionConnection {
         query: &str,
         _schema: &Schema,
     ) -> vegafusion_core::error::Result<VegaFusionTable> {
-        // println!("datafusion query: {}", query);
+        println!("datafusion query: {}", query);
         let df = self.ctx.sql(query).await?;
         let res = VegaFusionTable::from_dataframe(df).await?;
         // println!("{}", res.pretty_format(Some(10)).unwrap());

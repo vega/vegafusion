@@ -300,8 +300,14 @@ fn process_datetimes(
                         Expr::ScalarUDF {
                             fun: Arc::new((*DATETIME_COMPONENTS).clone()),
                             args: vec![
-                                lit(tz_config.default_input_tz.to_string()),
-                                col(&spec.name),
+                                col(&spec.name),                             // year
+                                lit(0),                                      // month
+                                lit(1),                                      // day
+                                lit(0),                                      // hour
+                                lit(0),                                      // minute
+                                lit(0),                                      // second
+                                lit(0),                                      // millisecond
+                                lit(tz_config.default_input_tz.to_string()), // time zone
                             ],
                         }
                     } else {
