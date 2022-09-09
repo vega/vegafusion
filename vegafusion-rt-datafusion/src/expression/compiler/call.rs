@@ -47,7 +47,7 @@ use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
 use crate::expression::compiler::builtin_functions::date_time::date_format::{
-    time_format_fn, utc_format_fn, TIMEFORMAT_UDF,
+    time_format_fn, utc_format_fn, FORMAT_TIMESTAMPTZ_UDF,
 };
 use crate::expression::compiler::builtin_functions::date_time::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
@@ -470,7 +470,7 @@ pub fn make_session_context() -> SessionContext {
     ctx.register_udf((*MILLISECONDS_UDF).clone());
 
     // timeformat
-    ctx.register_udf((*TIMEFORMAT_UDF).clone());
+    ctx.register_udf((*FORMAT_TIMESTAMPTZ_UDF).clone());
 
     // math
     ctx.register_udf((*POW_UDF).clone());

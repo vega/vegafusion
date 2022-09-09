@@ -7,7 +7,6 @@
  * this program the details of the active license.
  */
 use crate::expression::compiler::utils::to_boolean;
-use datafusion::arrow::datatypes::DataType;
 use datafusion::logical_plan::{DFSchema, Expr};
 use vegafusion_core::error::{Result, VegaFusionError};
 

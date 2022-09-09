@@ -36,7 +36,6 @@ pub fn make_datafusion_dialect() -> Dialect {
     functions.insert("epoch_ms_to_timestamptz".to_string());
     functions.insert("str_to_timestamptz".to_string());
     functions.insert("make_timestamptz".to_string());
-
     functions.insert("timestamptz_to_epoch_ms".to_string());
 
     // date parts
@@ -56,7 +55,7 @@ pub fn make_datafusion_dialect() -> Dialect {
     functions.insert("timeunit_end".to_string());
 
     // timeformat
-    functions.insert("vg_timeformat".to_string());
+    functions.insert("format_timestamptz".to_string());
 
     // math
     functions.insert("pow".to_string());
