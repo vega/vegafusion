@@ -9,7 +9,7 @@
 use datafusion::arrow::array::{ArrayRef, BooleanArray};
 use datafusion::arrow::datatypes::{DataType, Schema};
 use datafusion::arrow::record_batch::RecordBatch;
-use datafusion::logical_plan::{and, Column, DFSchema, Expr, ExprSchemable, SimplifyInfo};
+use datafusion::logical_plan::{Column, DFSchema, Expr, ExprSchemable, SimplifyInfo};
 use datafusion::physical_plan::planner::DefaultPhysicalPlanner;
 use datafusion::physical_plan::{ColumnarValue, PhysicalExpr, PhysicalPlanner};
 use datafusion::scalar::ScalarValue;
@@ -20,7 +20,7 @@ use std::convert::TryFrom;
 use datafusion::error::DataFusionError;
 use datafusion::execution::context::{default_session_builder, ExecutionProps, SessionState};
 use datafusion_expr::utils::expr_to_columns;
-use datafusion_expr::{lit, BuiltinScalarFunction};
+use datafusion_expr::{coalesce, lit, BuiltinScalarFunction};
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
@@ -89,26 +89,23 @@ pub fn data_type(value: &Expr, schema: &DFSchema) -> Result<DataType> {
 pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let dtype = data_type(&value, schema)?;
     let boolean_value = if matches!(dtype, DataType::Boolean) {
-        and(value.clone(), Expr::IsNotNull(Box::new(value)))
+        coalesce(vec![value, lit(false)])
     } else if matches!(
         dtype,
         DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64
     ) {
-        and(
-            value.clone().not_eq(lit(0)),
-            Expr::IsNotNull(Box::new(value)),
-        )
+        coalesce(vec![value.clone().not_eq(lit(0)), lit(false)])
     } else {
         // TODO: JavaScript falsey cast
         //  - empty string to false
         //  - NaN to false
-        and(
+        coalesce(vec![
             Expr::Cast {
                 expr: Box::new(value.clone()),
                 data_type: DataType::Boolean,
             },
-            Expr::IsNotNull(Box::new(value)),
-        )
+            lit(false),
+        ])
     };
 
     Ok(boolean_value)
