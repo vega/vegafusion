@@ -53,9 +53,14 @@ pub fn make_epoch_to_timestamptz() -> ScalarUDF {
     let signature: Signature =
         Signature::exact(vec![DataType::Int64, DataType::Utf8], Volatility::Immutable);
 
-    ScalarUDF::new("epoch_to_timestamptz", &signature, &return_type, &scalar_fn)
+    ScalarUDF::new(
+        "epoch_ms_to_timestamptz",
+        &signature,
+        &return_type,
+        &scalar_fn,
+    )
 }
 
 lazy_static! {
-    pub static ref EPOCH_TO_TIMESTAMPTZ_UDF: ScalarUDF = make_epoch_to_timestamptz();
+    pub static ref EPOCH_MS_TO_TIMESTAMPTZ_UDF: ScalarUDF = make_epoch_to_timestamptz();
 }

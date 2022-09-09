@@ -33,11 +33,11 @@ pub fn make_datafusion_dialect() -> Dialect {
     // datetime
     functions.insert("date_to_timestamptz".to_string());
     functions.insert("timestamp_to_timestamptz".to_string());
-    functions.insert("epoch_to_timestamptz".to_string());
+    functions.insert("epoch_ms_to_timestamptz".to_string());
     functions.insert("str_to_timestamptz".to_string());
     functions.insert("make_timestamptz".to_string());
 
-    functions.insert("vg_time".to_string());
+    functions.insert("timestamptz_to_epoch_ms".to_string());
 
     // date parts
     functions.insert("year_tz".to_string());
