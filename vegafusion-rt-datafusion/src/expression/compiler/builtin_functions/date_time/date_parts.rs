@@ -151,11 +151,12 @@ pub fn make_datepart_udf(extract_fn: fn(&DateTime<chrono_tz::Tz>) -> i64, name: 
             TypeSignature::Exact(vec![DataType::Date32, DataType::Utf8]),
             TypeSignature::Exact(vec![DataType::Date64, DataType::Utf8]),
             TypeSignature::Exact(vec![
-                DataType::Timestamp(TimeUnit::Millisecond, None), DataType::Utf8
+                DataType::Timestamp(TimeUnit::Millisecond, None),
+                DataType::Utf8,
             ]),
             TypeSignature::Exact(vec![
                 DataType::Timestamp(TimeUnit::Nanosecond, None),
-                DataType::Utf8
+                DataType::Utf8,
             ]),
             TypeSignature::Exact(vec![DataType::Int64, DataType::Utf8]),
             TypeSignature::Exact(vec![DataType::Float64, DataType::Utf8]),

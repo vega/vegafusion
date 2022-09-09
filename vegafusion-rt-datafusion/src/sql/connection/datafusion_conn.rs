@@ -30,7 +30,9 @@ pub fn make_datafusion_dialect() -> Dialect {
 
     // datetime
     dialect.functions.insert("date_to_timestamptz".to_string());
-    dialect.functions.insert("timestamp_to_timestamptz".to_string());
+    dialect
+        .functions
+        .insert("timestamp_to_timestamptz".to_string());
     dialect.functions.insert("epoch_to_timestamptz".to_string());
     dialect.functions.insert("str_to_timestamptz".to_string());
 
@@ -55,9 +57,6 @@ pub fn make_datafusion_dialect() -> Dialect {
 
     // timeformat
     dialect.functions.insert("vg_timeformat".to_string());
-    dialect
-        .functions
-        .insert("vg_datetime_to_millis".to_string());
 
     // math
     dialect.functions.insert("pow".to_string());

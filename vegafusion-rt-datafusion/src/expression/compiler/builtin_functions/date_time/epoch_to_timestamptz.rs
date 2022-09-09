@@ -1,14 +1,16 @@
 use datafusion::common::DataFusionError;
-use datafusion_expr::{ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature, Volatility};
+use datafusion_expr::{
+    ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
+    Volatility,
+};
 use std::sync::Arc;
-use vegafusion_core::arrow::array::{ArrayRef};
+use vegafusion_core::arrow::array::ArrayRef;
 
+use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::millis_to_timestamp;
+use datafusion::arrow::array::Int64Array;
+use std::str::FromStr;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
-use std::str::FromStr;
-use datafusion::arrow::array::Int64Array;
-use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::millis_to_timestamp;
-
 
 pub fn make_epoch_to_timestamptz() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
@@ -30,7 +32,10 @@ pub fn make_epoch_to_timestamptz() -> ScalarUDF {
             DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
         })?;
 
-        let millis_array = timestamp_array.as_any().downcast_ref::<Int64Array>().unwrap();
+        let millis_array = timestamp_array
+            .as_any()
+            .downcast_ref::<Int64Array>()
+            .unwrap();
         let timestamp_array = millis_to_timestamp(millis_array, tz);
         let timestamp_array = Arc::new(timestamp_array) as ArrayRef;
 
@@ -45,14 +50,11 @@ pub fn make_epoch_to_timestamptz() -> ScalarUDF {
     let return_type: ReturnTypeFunction =
         Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
 
-    let signature: Signature = Signature::exact(
-        vec![DataType::Int64, DataType::Utf8],
-        Volatility::Immutable,
-    );
+    let signature: Signature =
+        Signature::exact(vec![DataType::Int64, DataType::Utf8], Volatility::Immutable);
 
     ScalarUDF::new("epoch_to_timestamptz", &signature, &return_type, &scalar_fn)
 }
-
 
 lazy_static! {
     pub static ref EPOCH_TO_TIMESTAMPTZ_UDF: ScalarUDF = make_epoch_to_timestamptz();

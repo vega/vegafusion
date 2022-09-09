@@ -49,7 +49,6 @@ use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_
 use crate::expression::compiler::builtin_functions::date_time::date_format::{
     time_format_fn, utc_format_fn, TIMEFORMAT_UDF,
 };
-use crate::expression::compiler::builtin_functions::date_time::date_parsing::DATETIME_STRING_TO_MILLIS_UDF;
 use crate::expression::compiler::builtin_functions::date_time::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
@@ -454,7 +453,6 @@ pub fn make_session_context() -> SessionContext {
     ctx.register_udf((*STR_TO_TIMESTAMPTZ_UDF).clone());
 
     ctx.register_udf((*DATETIME_COMPONENTS).clone());
-    ctx.register_udf((*DATETIME_STRING_TO_MILLIS_UDF).clone());
     ctx.register_udf((*TIME_UDF).clone());
 
     // date parts

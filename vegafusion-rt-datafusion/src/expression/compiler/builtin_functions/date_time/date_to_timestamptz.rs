@@ -1,17 +1,16 @@
-use chrono::{NaiveDateTime};
+use chrono::NaiveDateTime;
+use chrono::TimeZone;
 use datafusion::common::DataFusionError;
 use datafusion_expr::{
     ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
     Volatility,
 };
+use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::{ArrayRef, Date32Array, TimestampMillisecondArray};
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
-use std::str::FromStr;
-use chrono::TimeZone;
-
 
 pub fn make_date_to_timestamptz() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {

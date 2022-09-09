@@ -1,15 +1,17 @@
+use chrono::TimeZone;
 use chrono::{NaiveDateTime, Timelike};
+use datafusion::arrow::array::Int64Array;
 use datafusion::common::DataFusionError;
-use datafusion_expr::{ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature, TypeSignature, Volatility};
+use datafusion_expr::{
+    ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
+    TypeSignature, Volatility,
+};
+use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::{ArrayRef, TimestampMillisecondArray};
-use vegafusion_core::arrow::compute::{unary, cast};
+use vegafusion_core::arrow::compute::{cast, unary};
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
-use std::str::FromStr;
-use chrono::TimeZone;
-use datafusion::arrow::array::Int64Array;
-
 
 pub fn make_timestamp_to_timestamptz() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
@@ -37,11 +39,17 @@ pub fn make_timestamp_to_timestamptz() -> ScalarUDF {
                 cast(&timestamp_array, &DataType::Int64)?
             }
             DataType::Timestamp(_, _) => {
-                let timestamp_millis = cast(&timestamp_array, &DataType::Timestamp(TimeUnit::Millisecond, None))?;
+                let timestamp_millis = cast(
+                    &timestamp_array,
+                    &DataType::Timestamp(TimeUnit::Millisecond, None),
+                )?;
                 cast(&timestamp_millis, &DataType::Int64)?
             }
             dtype => {
-                return Err(DataFusionError::Internal(format!("Unexpected data type for timestamp_to_timestamptz: {:?}", dtype)))
+                return Err(DataFusionError::Internal(format!(
+                    "Unexpected data type for timestamp_to_timestamptz: {:?}",
+                    dtype
+                )))
             }
         };
 
@@ -60,19 +68,33 @@ pub fn make_timestamp_to_timestamptz() -> ScalarUDF {
     let return_type: ReturnTypeFunction =
         Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
 
-    let signature: Signature = Signature::one_of(vec![
-        TypeSignature::Exact(vec![DataType::Timestamp(TimeUnit::Millisecond, None), DataType::Utf8]),
-        TypeSignature::Exact(vec![DataType::Timestamp(TimeUnit::Nanosecond, None), DataType::Utf8]),
-        TypeSignature::Exact(vec![DataType::Date64, DataType::Utf8]),
-    ],
+    let signature: Signature = Signature::one_of(
+        vec![
+            TypeSignature::Exact(vec![
+                DataType::Timestamp(TimeUnit::Millisecond, None),
+                DataType::Utf8,
+            ]),
+            TypeSignature::Exact(vec![
+                DataType::Timestamp(TimeUnit::Nanosecond, None),
+                DataType::Utf8,
+            ]),
+            TypeSignature::Exact(vec![DataType::Date64, DataType::Utf8]),
+        ],
         Volatility::Immutable,
     );
 
-    ScalarUDF::new("timestamp_to_timestamptz", &signature, &return_type, &scalar_fn)
+    ScalarUDF::new(
+        "timestamp_to_timestamptz",
+        &signature,
+        &return_type,
+        &scalar_fn,
+    )
 }
 
-
-pub fn millis_to_timestamp(millis_array: &Int64Array, tz: chrono_tz::Tz) -> TimestampMillisecondArray {
+pub fn millis_to_timestamp(
+    millis_array: &Int64Array,
+    tz: chrono_tz::Tz,
+) -> TimestampMillisecondArray {
     unary(millis_array, |v| {
         // Build naive datetime for time
         let seconds = v / 1000;
@@ -81,17 +103,15 @@ pub fn millis_to_timestamp(millis_array: &Int64Array, tz: chrono_tz::Tz) -> Time
         let naive_local_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
 
         // Get UTC offset when the naive datetime is considered to be in local time
-        let local_datetime = if let Some(local_datetime) = tz
-            .from_local_datetime(&naive_local_datetime)
-            .earliest()
+        let local_datetime = if let Some(local_datetime) =
+            tz.from_local_datetime(&naive_local_datetime).earliest()
         {
             local_datetime
         } else {
             // Try adding 1 hour to handle daylight savings boundaries
             let hour = naive_local_datetime.hour();
             let new_naive_local_datetime = naive_local_datetime.with_hour(hour + 1).unwrap();
-            tz
-                .from_local_datetime(&new_naive_local_datetime)
+            tz.from_local_datetime(&new_naive_local_datetime)
                 .earliest()
                 .unwrap_or_else(|| panic!("Failed to convert {:?}", naive_local_datetime))
         };

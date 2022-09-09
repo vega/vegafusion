@@ -6,9 +6,7 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
-    DateParseMode, DATETIME_STRING_TO_MILLIS_UDF,
-};
+use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype, is_string_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
 use chrono::{DateTime, TimeZone};
@@ -65,12 +63,8 @@ pub fn to_date_transform(
         };
 
         Ok(Expr::ScalarUDF {
-            fun: Arc::new((*DATETIME_STRING_TO_MILLIS_UDF).clone()),
-            args: vec![
-                lit(default_input_tz.to_string()),
-                lit(DateParseMode::JavaScript.to_string()),
-                arg,
-            ],
+            fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+            args: vec![arg, lit(default_input_tz.to_string())],
         })
     } else if is_numeric_datatype(&dtype) {
         cast_to(arg, &DataType::Int64, schema)
@@ -93,10 +87,9 @@ pub fn datetime_transform_fn(
 
         if is_string_datatype(&dtype) {
             let default_input_tz_str = tz_config.default_input_tz.to_string();
-            let date_mode_str = DateParseMode::JavaScript.to_string();
             arg = Expr::ScalarUDF {
-                fun: Arc::new((*DATETIME_STRING_TO_MILLIS_UDF).clone()),
-                args: vec![lit(default_input_tz_str), lit(date_mode_str), arg],
+                fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+                args: vec![arg, lit(default_input_tz_str)],
             }
         }
 
