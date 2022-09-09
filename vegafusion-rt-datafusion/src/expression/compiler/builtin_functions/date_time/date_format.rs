@@ -85,7 +85,7 @@ fn to_timestamptz_expr(arg: &Expr, schema: &DFSchema, default_input_tz: &str) ->
             fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
             args: vec![
                 cast_to(arg.clone(), &DataType::Int64, schema)?,
-                lit(default_input_tz),
+                lit("UTC"),
             ],
         },
         dtype => {

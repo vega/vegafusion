@@ -1282,7 +1282,7 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
 
     // Load spec
     let full_spec = load_spec(spec_name);
-    println!("{:#?}", full_spec);
+    // println!("{:#?}", full_spec);
 
     let vegajs_runtime = vegajs_runtime();
 
