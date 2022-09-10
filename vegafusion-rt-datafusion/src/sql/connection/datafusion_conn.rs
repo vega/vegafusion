@@ -44,7 +44,7 @@ pub fn make_datafusion_dialect() -> Dialect {
     functions.insert("timeunit_end".to_string());
 
     // timeformat
-    functions.insert("format_timestamptz".to_string());
+    functions.insert("format_timestamp".to_string());
 
     // math
     functions.insert("pow".to_string());
@@ -70,7 +70,7 @@ impl SqlConnection for DataFusionConnection {
         println!("datafusion query: {}", query);
         let df = self.ctx.sql(query).await?;
         let res = VegaFusionTable::from_dataframe(df).await?;
-        // println!("{}", res.pretty_format(Some(10)).unwrap());
+        println!("{}", res.pretty_format(Some(10)).unwrap());
         // println!("{:#?}", res.schema);
         Ok(res)
     }

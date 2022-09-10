@@ -82,13 +82,13 @@ fn extract_timestamp_arg(
             DataType::Timestamp(_, _) => arg.clone(),
             DataType::Utf8 => Expr::ScalarUDF {
                 fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
-                args: vec![arg.clone(), lit("UTC")],
+                args: vec![arg.clone(), lit(default_input_tz)],
             },
             dtype if is_numeric_datatype(&dtype) => Expr::ScalarUDF {
                 fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
                 args: vec![
                     cast_to(arg.clone(), &DataType::Int64, schema)?,
-                    lit(default_input_tz),
+                    lit("UTC"),
                 ],
             },
             dtype => {

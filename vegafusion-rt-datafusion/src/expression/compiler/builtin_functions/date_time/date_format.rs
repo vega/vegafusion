@@ -15,6 +15,7 @@ use datafusion::logical_plan::{DFSchema, Expr};
 
 use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use datafusion::common::DataFusionError;
 use datafusion::physical_plan::udf::ScalarUDF;
@@ -49,12 +50,20 @@ pub fn time_format_fn(
         tz_config.local_tz.to_string()
     };
 
-    let timestamptz_expr =
+    let mut timestamptz_expr =
         to_timestamptz_expr(&args[0], schema, &tz_config.default_input_tz.to_string())?;
-    let udf_args = vec![timestamptz_expr, lit(format_str), lit(format_tz_str)];
+
+    if format_tz_str.to_ascii_lowercase() != "utc" {
+        timestamptz_expr = Expr::ScalarUDF {
+            fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
+            args: vec![timestamptz_expr, lit(format_tz_str)],
+        }
+    }
+
+    let udf_args = vec![timestamptz_expr, lit(format_str)];
 
     Ok(Expr::ScalarUDF {
-        fun: Arc::new((*FORMAT_TIMESTAMPTZ_UDF).clone()),
+        fun: Arc::new((*FORMAT_TIMESTAMP_UDF).clone()),
         args: udf_args,
     })
 }
@@ -69,7 +78,7 @@ pub fn utc_format_fn(
         to_timestamptz_expr(&args[0], schema, &tz_config.default_input_tz.to_string())?;
     let udf_args = vec![timestamptz_expr, lit(format_str), lit("UTC")];
     Ok(Expr::ScalarUDF {
-        fun: Arc::new((*FORMAT_TIMESTAMPTZ_UDF).clone()),
+        fun: Arc::new((*FORMAT_TIMESTAMP_UDF).clone()),
         args: udf_args,
     })
 }
@@ -141,18 +150,6 @@ pub fn make_time_format_udf() -> ScalarUDF {
             ));
         };
 
-        // [2] output timezone string
-        let output_tz = if let ColumnarValue::Scalar(output_tz) = &args[2] {
-            output_tz.to_string()
-        } else {
-            return Err(DataFusionError::Internal(
-                "Expected output_tz to be a scalar".to_string(),
-            ));
-        };
-        let output_tz = chrono_tz::Tz::from_str(&output_tz).map_err(|_err| {
-            DataFusionError::Internal(format!("Failed to parse {} as a timezone", output_tz))
-        })?;
-
         let utc_millis_array = data_array
             .as_any()
             .downcast_ref::<TimestampMillisecondArray>()
@@ -164,14 +161,10 @@ pub fn make_time_format_udf() -> ScalarUDF {
                     // Load as UTC datetime
                     let utc_seconds = utc_millis / 1_000;
                     let utc_nanos = (utc_millis % 1_000 * 1_000_000) as u32;
-                    let naive_utc_datetime = NaiveDateTime::from_timestamp(utc_seconds, utc_nanos);
-
-                    // Convert to local timezone
-                    let datetime: DateTime<chrono_tz::Tz> =
-                        output_tz.from_utc_datetime(&naive_utc_datetime);
+                    let naive_datetime = NaiveDateTime::from_timestamp(utc_seconds, utc_nanos);
 
                     // Format as string
-                    let formatted = datetime.format(&format_str);
+                    let formatted = naive_datetime.format(&format_str);
                     formatted.to_string()
                 })
             },
@@ -191,14 +184,13 @@ pub fn make_time_format_udf() -> ScalarUDF {
         vec![
             DataType::Timestamp(TimeUnit::Millisecond, None),
             DataType::Utf8,
-            DataType::Utf8,
         ],
         Volatility::Immutable,
     );
 
-    ScalarUDF::new("format_timestamptz", &signature, &return_type, &time_fn)
+    ScalarUDF::new("format_timestamp", &signature, &return_type, &time_fn)
 }
 
 lazy_static! {
-    pub static ref FORMAT_TIMESTAMPTZ_UDF: ScalarUDF = make_time_format_udf();
+    pub static ref FORMAT_TIMESTAMP_UDF: ScalarUDF = make_time_format_udf();
 }

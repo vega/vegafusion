@@ -41,7 +41,7 @@ use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
 use crate::expression::compiler::builtin_functions::date_time::date_format::{
-    time_format_fn, utc_format_fn, FORMAT_TIMESTAMPTZ_UDF,
+    time_format_fn, utc_format_fn, FORMAT_TIMESTAMP_UDF,
 };
 use crate::expression::compiler::builtin_functions::date_time::date_parts::{
     DATE_TRANSFORM, HOUR_TRANSFORM, MINUTE_TRANSFORM, MONTH_TRANSFORM, SECOND_TRANSFORM,
@@ -458,7 +458,7 @@ pub fn make_session_context() -> SessionContext {
     ctx.register_udf((*TIMESTAMPTZ_TO_EPOCH_MS).clone());
 
     // timeformat
-    ctx.register_udf((*FORMAT_TIMESTAMPTZ_UDF).clone());
+    ctx.register_udf((*FORMAT_TIMESTAMP_UDF).clone());
 
     // math
     ctx.register_udf((*POW_UDF).clone());
