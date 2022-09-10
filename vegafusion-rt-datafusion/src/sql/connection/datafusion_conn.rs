@@ -33,22 +33,11 @@ pub fn make_datafusion_dialect() -> Dialect {
     // datetime
     functions.insert("date_to_timestamptz".to_string());
     functions.insert("timestamp_to_timestamptz".to_string());
+    functions.insert("timestamptz_to_timestamp".to_string());
     functions.insert("epoch_ms_to_timestamptz".to_string());
     functions.insert("str_to_timestamptz".to_string());
     functions.insert("make_timestamptz".to_string());
     functions.insert("timestamptz_to_epoch_ms".to_string());
-
-    // date parts
-    functions.insert("year_tz".to_string());
-    functions.insert("month_tz".to_string());
-    functions.insert("quarter_tz".to_string());
-    functions.insert("date_tz".to_string());
-    functions.insert("dayofyear_tz".to_string());
-    functions.insert("day_tz".to_string());
-    functions.insert("hours_tz".to_string());
-    functions.insert("minutes_tz".to_string());
-    functions.insert("seconds_tz".to_string());
-    functions.insert("milliseconds_tz".to_string());
 
     // timeunit transform
     functions.insert("timeunit_start".to_string());
@@ -78,7 +67,7 @@ impl SqlConnection for DataFusionConnection {
         query: &str,
         _schema: &Schema,
     ) -> vegafusion_core::error::Result<VegaFusionTable> {
-        // println!("datafusion query: {}", query);
+        println!("datafusion query: {}", query);
         let df = self.ctx.sql(query).await?;
         let res = VegaFusionTable::from_dataframe(df).await?;
         // println!("{}", res.pretty_format(Some(10)).unwrap());

@@ -20,6 +20,7 @@ pub mod epoch_to_timestamptz;
 pub mod str_to_timestamptz;
 pub mod time;
 pub mod timestamp_to_timestamptz;
+pub mod timestamptz_to_timestamp;
 
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::datetime_strs_to_timestamp_millis;
 use datafusion::arrow::array::{ArrayRef, Date32Array, Int64Array, StringArray};

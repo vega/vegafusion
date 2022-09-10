@@ -10,12 +10,6 @@ use crate::expression::compiler::array::array_constructor_udf;
 use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
 use crate::expression::compiler::builtin_functions::array::span::make_span_udf;
 use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
-use crate::expression::compiler::builtin_functions::date_time::date_parts::{
-    DATE_TRANSFORM, DATE_UDF, DAYOFYEAR_TRANSFORM, DAYOFYEAR_UDF, DAY_TRANSFORM, DAY_UDF,
-    HOURS_TRANSFORM, HOURS_UDF, MILLISECONDS_TRANSFORM, MILLISECONDS_UDF, MINUTES_TRANSFORM,
-    MINUTES_UDF, MONTH_TRANSFORM, MONTH_UDF, QUARTER_TRANSFORM, QUARTER_UDF, SECONDS_TRANSFORM,
-    SECONDS_UDF, YEAR_TRANSFORM, YEAR_UDF,
-};
 use crate::expression::compiler::builtin_functions::date_time::datetime::{
     datetime_transform_fn, make_datetime_components_fn, to_date_transform, DATETIME_COMPONENTS,
 };
@@ -49,6 +43,11 @@ use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_
 use crate::expression::compiler::builtin_functions::date_time::date_format::{
     time_format_fn, utc_format_fn, FORMAT_TIMESTAMPTZ_UDF,
 };
+use crate::expression::compiler::builtin_functions::date_time::date_parts::{
+    DATE_TRANSFORM, HOUR_TRANSFORM, MINUTE_TRANSFORM, MONTH_TRANSFORM, SECOND_TRANSFORM,
+    UTCDATE_TRANSFORM, UTCHOUR_TRANSFORM, UTCMINUTE_TRANSFORM, UTCMONTH_TRANSFORM,
+    UTCSECOND_TRANSFORM, UTCYEAR_TRANSFORM, YEAR_TRANSFORM,
+};
 use crate::expression::compiler::builtin_functions::date_time::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
@@ -56,6 +55,7 @@ use crate::expression::compiler::builtin_functions::date_time::time::{
     time_fn, TIMESTAMPTZ_TO_EPOCH_MS,
 };
 use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
@@ -295,84 +295,84 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         "year".to_string(),
         VegaFusionCallable::LocalTransform(YEAR_TRANSFORM.deref().clone()),
     );
-    callables.insert(
-        "quarter".to_string(),
-        VegaFusionCallable::LocalTransform(QUARTER_TRANSFORM.deref().clone()),
-    );
+    // callables.insert(
+    //     "quarter".to_string(),
+    //     VegaFusionCallable::LocalTransform(QUARTER_TRANSFORM.deref().clone()),
+    // );
     callables.insert(
         "month".to_string(),
         VegaFusionCallable::LocalTransform(MONTH_TRANSFORM.deref().clone()),
     );
-    callables.insert(
-        "day".to_string(),
-        VegaFusionCallable::LocalTransform(DAY_TRANSFORM.deref().clone()),
-    );
+    // callables.insert(
+    //     "day".to_string(),
+    //     VegaFusionCallable::LocalTransform(DAY_TRANSFORM.deref().clone()),
+    // );
     callables.insert(
         "date".to_string(),
         VegaFusionCallable::LocalTransform(DATE_TRANSFORM.deref().clone()),
     );
-    callables.insert(
-        "dayofyear".to_string(),
-        VegaFusionCallable::LocalTransform(DAYOFYEAR_TRANSFORM.deref().clone()),
-    );
+    // callables.insert(
+    //     "dayofyear".to_string(),
+    //     VegaFusionCallable::LocalTransform(DAYOFYEAR_TRANSFORM.deref().clone()),
+    // );
     callables.insert(
         "hours".to_string(),
-        VegaFusionCallable::LocalTransform(HOURS_TRANSFORM.deref().clone()),
+        VegaFusionCallable::LocalTransform(HOUR_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "minutes".to_string(),
-        VegaFusionCallable::LocalTransform(MINUTES_TRANSFORM.deref().clone()),
+        VegaFusionCallable::LocalTransform(MINUTE_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "seconds".to_string(),
-        VegaFusionCallable::LocalTransform(SECONDS_TRANSFORM.deref().clone()),
+        VegaFusionCallable::LocalTransform(SECOND_TRANSFORM.deref().clone()),
     );
-    callables.insert(
-        "milliseconds".to_string(),
-        VegaFusionCallable::LocalTransform(MILLISECONDS_TRANSFORM.deref().clone()),
-    );
+    // callables.insert(
+    //     "milliseconds".to_string(),
+    //     VegaFusionCallable::LocalTransform(MILLISECONDS_TRANSFORM.deref().clone()),
+    // );
 
     // UTC
     callables.insert(
         "utcyear".to_string(),
-        VegaFusionCallable::UtcTransform(YEAR_TRANSFORM.deref().clone()),
+        VegaFusionCallable::UtcTransform(UTCYEAR_TRANSFORM.deref().clone()),
     );
-    callables.insert(
-        "utcquarter".to_string(),
-        VegaFusionCallable::UtcTransform(QUARTER_TRANSFORM.deref().clone()),
-    );
+    // callables.insert(
+    //     "utcquarter".to_string(),
+    //     VegaFusionCallable::UtcTransform(UTCQUARTER_TRANSFORM.deref().clone()),
+    // );
     callables.insert(
         "utcmonth".to_string(),
-        VegaFusionCallable::UtcTransform(MONTH_TRANSFORM.deref().clone()),
+        VegaFusionCallable::UtcTransform(UTCMONTH_TRANSFORM.deref().clone()),
     );
-    callables.insert(
-        "utcday".to_string(),
-        VegaFusionCallable::UtcTransform(DAY_TRANSFORM.deref().clone()),
-    );
+    // callables.insert(
+    //     "utcday".to_string(),
+    //     VegaFusionCallable::UtcTransform(UTCDAY_TRANSFORM.deref().clone()),
+    // );
     callables.insert(
         "utcdate".to_string(),
-        VegaFusionCallable::UtcTransform(DATE_TRANSFORM.deref().clone()),
+        VegaFusionCallable::UtcTransform(UTCDATE_TRANSFORM.deref().clone()),
     );
-    callables.insert(
-        "utcdayofyear".to_string(),
-        VegaFusionCallable::UtcTransform(DAYOFYEAR_TRANSFORM.deref().clone()),
-    );
+    // callables.insert(
+    //     "utcdayofyear".to_string(),
+    //     VegaFusionCallable::UtcTransform(UTCDAYOFYEAR_TRANSFORM.deref().clone()),
+    // );
     callables.insert(
         "utchours".to_string(),
-        VegaFusionCallable::UtcTransform(HOURS_TRANSFORM.deref().clone()),
+        VegaFusionCallable::UtcTransform(UTCHOUR_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcminutes".to_string(),
-        VegaFusionCallable::UtcTransform(MINUTES_TRANSFORM.deref().clone()),
+        VegaFusionCallable::UtcTransform(UTCMINUTE_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcseconds".to_string(),
-        VegaFusionCallable::UtcTransform(SECONDS_TRANSFORM.deref().clone()),
+        VegaFusionCallable::UtcTransform(UTCSECOND_TRANSFORM.deref().clone()),
     );
-    callables.insert(
-        "utcmilliseconds".to_string(),
-        VegaFusionCallable::UtcTransform(MILLISECONDS_TRANSFORM.deref().clone()),
-    );
+    // callables.insert(
+    //     "utcmilliseconds".to_string(),
+    //     VegaFusionCallable::UtcTransform(UTCMILLISECOND_TRANSFORM.deref().clone()),
+    // );
 
     // date time
     callables.insert(
@@ -450,24 +450,12 @@ pub fn make_session_context() -> SessionContext {
 
     // datetime
     ctx.register_udf((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone());
+    ctx.register_udf((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone());
     ctx.register_udf((*DATE_TO_TIMESTAMPTZ_UDF).clone());
     ctx.register_udf((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone());
     ctx.register_udf((*STR_TO_TIMESTAMPTZ_UDF).clone());
-
     ctx.register_udf((*DATETIME_COMPONENTS).clone());
     ctx.register_udf((*TIMESTAMPTZ_TO_EPOCH_MS).clone());
-
-    // date parts
-    ctx.register_udf((*YEAR_UDF).clone());
-    ctx.register_udf((*MONTH_UDF).clone());
-    ctx.register_udf((*QUARTER_UDF).clone());
-    ctx.register_udf((*DATE_UDF).clone());
-    ctx.register_udf((*DAYOFYEAR_UDF).clone());
-    ctx.register_udf((*DAY_UDF).clone());
-    ctx.register_udf((*HOURS_UDF).clone());
-    ctx.register_udf((*MINUTES_UDF).clone());
-    ctx.register_udf((*SECONDS_UDF).clone());
-    ctx.register_udf((*MILLISECONDS_UDF).clone());
 
     // timeformat
     ctx.register_udf((*FORMAT_TIMESTAMPTZ_UDF).clone());
