@@ -32,8 +32,8 @@ default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
-git = "https://github.com/apache/arrow-datafusion.git"
-rev = "331922036a23265084ab091fa2ab5c57da42c841"
+git = "https://github.com/jonmmease/arrow-datafusion.git"
+rev = "606da487de2495992537ef9cb7b55ec00576ed52"
 
 [dependencies.pyo3]
 version = "0.17.1"
