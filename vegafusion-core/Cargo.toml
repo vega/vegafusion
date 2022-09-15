@@ -27,16 +27,16 @@ version = "1.0.81"
 features = [ "preserve_order",]
 
 [dependencies.arrow]
-version = "21.0.0"
+version = "22.0.0"
 default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
-git = "https://github.com/jonmmease/arrow-datafusion.git"
-rev = "233e42e6cce74d447da5b2aeb21c445b765c12f8"
+git = "https://github.com/apache/arrow-datafusion.git"
+rev = "331922036a23265084ab091fa2ab5c57da42c841"
 
 [dependencies.pyo3]
-version = "0.16.4"
+version = "0.17.1"
 optional = true
 
 [dependencies.serde]

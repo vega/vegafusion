@@ -1,4 +1,3 @@
-use std::fmt::format;
 use chrono::TimeZone;
 use chrono::{NaiveDateTime, Timelike};
 use datafusion::arrow::array::Int64Array;
@@ -7,13 +6,13 @@ use datafusion_expr::{
     ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
     TypeSignature, Volatility,
 };
+use std::fmt::format;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::{ArrayRef, TimestampMillisecondArray};
 use vegafusion_core::arrow::compute::{cast, unary};
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
-
 
 pub fn make_timestamp_to_timestamptz() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
@@ -37,7 +36,10 @@ pub fn make_timestamp_to_timestamptz() -> ScalarUDF {
 
         // Normalize input to integer array of milliseconds
         let timestamp_array = to_timestamp_ms(&timestamp_array)?;
-        let timestamp_millis = timestamp_array.as_any().downcast_ref::<TimestampMillisecondArray>().unwrap();
+        let timestamp_millis = timestamp_array
+            .as_any()
+            .downcast_ref::<TimestampMillisecondArray>()
+            .unwrap();
         let timestamp_array = convert_timezone(timestamp_millis, tz);
         let timestamp_array = Arc::new(timestamp_array) as ArrayRef;
 
@@ -111,10 +113,16 @@ pub fn to_timestamp_ms(array: &ArrayRef) -> Result<ArrayRef, DataFusionError> {
             if time_unit == &TimeUnit::Millisecond {
                 Ok(array.clone())
             } else {
-                Ok(cast(array, &DataType::Timestamp(TimeUnit::Millisecond, None))?)
+                Ok(cast(
+                    array,
+                    &DataType::Timestamp(TimeUnit::Millisecond, None),
+                )?)
             }
         }
-        dtype => Err(DataFusionError::Internal(format!("Unexpected datatime in to_timestamp_ms: {:?}", dtype)))
+        dtype => Err(DataFusionError::Internal(format!(
+            "Unexpected datatime in to_timestamp_ms: {:?}",
+            dtype
+        ))),
     }
 }
 

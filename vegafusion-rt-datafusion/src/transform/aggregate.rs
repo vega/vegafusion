@@ -166,21 +166,25 @@ pub fn make_aggr_expr(
             fun: aggregate_function::AggregateFunction::Variance,
             distinct: false,
             args: vec![numeric_column()],
+            filter: None,
         },
         AggregateOp::Variancep => Expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::VariancePop,
             distinct: false,
             args: vec![numeric_column()],
+            filter: None,
         },
         AggregateOp::Stdev => Expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Stddev,
             distinct: false,
             args: vec![numeric_column()],
+            filter: None,
         },
         AggregateOp::Stdevp => Expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::StddevPop,
             distinct: false,
             args: vec![numeric_column()],
+            filter: None,
         },
         AggregateOp::Valid => {
             let valid = Expr::Cast {

@@ -149,7 +149,10 @@ fn test_evaluate_filter_transform() {
     )
     .unwrap();
 
-    assert_eq!(result_data.to_json(), expected_dataset.to_json());
+    assert_eq!(
+        result_data.to_json().unwrap(),
+        expected_dataset.to_json().unwrap()
+    );
 }
 
 #[test]

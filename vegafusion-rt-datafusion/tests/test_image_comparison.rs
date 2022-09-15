@@ -1517,7 +1517,7 @@ async fn check_spec_sequence(
                 .map(|(scoped_var, value)| {
                     let json_value = match value {
                         TaskValue::Scalar(value) => value.to_json().unwrap(),
-                        TaskValue::Table(value) => value.to_json(),
+                        TaskValue::Table(value) => value.to_json().unwrap(),
                     };
                     ExportUpdate {
                         namespace: ExportUpdateNamespace::try_from(scoped_var.0.namespace())

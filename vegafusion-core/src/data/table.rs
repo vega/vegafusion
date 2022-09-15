@@ -126,12 +126,12 @@ impl VegaFusionTable {
         ))
     }
 
-    pub fn to_json(&self) -> serde_json::Value {
+    pub fn to_json(&self) -> Result<serde_json::Value> {
         let mut rows: Vec<serde_json::Value> = Vec::with_capacity(self.num_rows());
-        for row in record_batches_to_json_rows(&self.batches) {
+        for row in record_batches_to_json_rows(&self.batches)? {
             rows.push(serde_json::Value::Object(row));
         }
-        serde_json::Value::Array(rows)
+        Ok(serde_json::Value::Array(rows))
     }
 
     pub fn from_json(value: &serde_json::Value, batch_size: usize) -> Result<Self> {

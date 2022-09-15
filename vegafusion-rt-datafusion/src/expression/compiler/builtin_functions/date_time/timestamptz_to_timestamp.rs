@@ -1,14 +1,17 @@
+use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::to_timestamp_ms;
 use chrono::NaiveDateTime;
 use chrono::TimeZone;
 use datafusion::common::DataFusionError;
-use datafusion_expr::{ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature, TypeSignature, Volatility};
+use datafusion_expr::{
+    ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
+    TypeSignature, Volatility,
+};
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::{ArrayRef, TimestampMillisecondArray};
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
-use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::to_timestamp_ms;
 
 pub fn make_timestamptz_to_timestamp() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
@@ -72,7 +75,7 @@ pub fn make_timestamptz_to_timestamp() -> ScalarUDF {
             TypeSignature::Exact(vec![
                 DataType::Timestamp(TimeUnit::Nanosecond, None),
                 DataType::Utf8,
-            ])
+            ]),
         ],
         Volatility::Immutable,
     );

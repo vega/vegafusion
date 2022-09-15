@@ -133,6 +133,7 @@ fn eval_normalize_center_offset(
         fun: AggregateFunction::Sum,
         args: vec![col(stack_col_name)],
         distinct: false,
+        filter: None,
     }
     .alias("__total");
 

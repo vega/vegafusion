@@ -15,16 +15,19 @@ use datafusion::logical_plan::{DFSchema, Expr};
 
 use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::to_timestamp_ms;
 use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use datafusion::common::DataFusionError;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::scalar::ScalarValue;
-use datafusion_expr::{lit, ColumnarValue, ExprSchemable, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility, TypeSignature};
+use datafusion_expr::{
+    lit, ColumnarValue, ExprSchemable, ReturnTypeFunction, ScalarFunctionImplementation, Signature,
+    TypeSignature, Volatility,
+};
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, VegaFusionError};
-use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::to_timestamp_ms;
 
 pub fn time_format_fn(
     tz_config: &RuntimeTzConfig,
@@ -189,7 +192,7 @@ pub fn make_time_format_udf() -> ScalarUDF {
             TypeSignature::Exact(vec![
                 DataType::Timestamp(TimeUnit::Nanosecond, None),
                 DataType::Utf8,
-            ])
+            ]),
         ],
         Volatility::Immutable,
     );

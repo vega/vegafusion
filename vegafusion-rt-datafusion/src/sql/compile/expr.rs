@@ -68,6 +68,7 @@ impl ToSqlExpr for Expr {
                     Operator::RegexNotIMatch => SqlBinaryOperator::PGRegexNotIMatch,
                     Operator::BitwiseAnd => SqlBinaryOperator::BitwiseAnd,
                     Operator::BitwiseOr => SqlBinaryOperator::BitwiseOr,
+                    Operator::BitwiseXor => SqlBinaryOperator::BitwiseXor,
                     Operator::StringConcat => SqlBinaryOperator::StringConcat,
                     Operator::BitwiseShiftRight => SqlBinaryOperator::PGBitwiseShiftRight,
                     Operator::BitwiseShiftLeft => SqlBinaryOperator::PGBitwiseShiftLeft,
@@ -264,6 +265,7 @@ impl ToSqlExpr for Expr {
                 fun,
                 args,
                 distinct,
+                filter,
             } => {
                 let value = match fun {
                     AggregateFunction::Min => "min",
@@ -358,7 +360,7 @@ impl ToSqlExpr for Expr {
 
                 Ok(SqlExpr::Function(sql_fun))
             }
-            Expr::AggregateUDF { fun, args } => {
+            Expr::AggregateUDF { fun, args, filter } => {
                 let ident = Ident {
                     value: fun.name.clone(),
                     quote_style: None,
@@ -427,6 +429,13 @@ impl ToSqlExpr for Expr {
             )),
             Expr::GroupingSet(_) => Err(VegaFusionError::internal(
                 "GroupingSet cannot be converted to SQL",
+            )),
+            Expr::Like { .. } => Err(VegaFusionError::internal("Like cannot be converted to SQL")),
+            Expr::ILike { .. } => Err(VegaFusionError::internal(
+                "ILike cannot be converted to SQL",
+            )),
+            Expr::SimilarTo { .. } => Err(VegaFusionError::internal(
+                "SimilarTo cannot be converted to SQL",
             )),
         }
     }

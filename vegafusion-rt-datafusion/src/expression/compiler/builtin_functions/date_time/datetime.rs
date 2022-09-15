@@ -6,6 +6,7 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype, is_string_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -26,7 +27,6 @@ use std::sync::Arc;
 use vegafusion_core::arrow::array::TimestampMillisecondBuilder;
 use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 
 pub fn to_date_transform(
     tz_config: &RuntimeTzConfig,
@@ -69,10 +69,7 @@ pub fn to_date_transform(
     } else if is_numeric_datatype(&dtype) {
         Ok(Expr::ScalarUDF {
             fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
-            args: vec![
-                cast_to(arg, &DataType::Int64, schema)?,
-                lit("UTC")
-            ]
+            args: vec![cast_to(arg, &DataType::Int64, schema)?, lit("UTC")],
         })
     } else {
         Ok(arg)
@@ -204,7 +201,7 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
             let millis = args[6].as_any().downcast_ref::<Int64Array>().unwrap();
 
             let num_rows = years.len();
-            let mut datetime_builder = TimestampMillisecondBuilder::new(num_rows);
+            let mut datetime_builder = TimestampMillisecondBuilder::new();
 
             for i in 0..num_rows {
                 if years.is_null(i)

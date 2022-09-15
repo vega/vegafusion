@@ -31,5 +31,5 @@ version = "1.18.1"
 features = [ "macros", "rt-multi-thread",]
 
 [dependencies.pyo3]
-version = "0.16.4"
+version = "0.17.1"
 features = [ "extension-module",]

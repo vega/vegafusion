@@ -8,8 +8,8 @@ use vegafusion_core::arrow::array::ArrayRef;
 
 use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::convert_timezone;
 use datafusion::arrow::array::{Int64Array, TimestampMillisecondArray};
-use std::str::FromStr;
 use datafusion::arrow::compute::cast;
+use std::str::FromStr;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
 
@@ -33,8 +33,14 @@ pub fn make_epoch_to_timestamptz() -> ScalarUDF {
             DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
         })?;
 
-        let timestamp_millis = cast(&timestamp_array, &DataType::Timestamp(TimeUnit::Millisecond, None))?;
-        let timestamp_millis = timestamp_millis.as_any().downcast_ref::<TimestampMillisecondArray>().unwrap();
+        let timestamp_millis = cast(
+            &timestamp_array,
+            &DataType::Timestamp(TimeUnit::Millisecond, None),
+        )?;
+        let timestamp_millis = timestamp_millis
+            .as_any()
+            .downcast_ref::<TimestampMillisecondArray>()
+            .unwrap();
         let timestamp_array = convert_timezone(&timestamp_millis, tz);
         let timestamp_array = Arc::new(timestamp_array) as ArrayRef;
 
