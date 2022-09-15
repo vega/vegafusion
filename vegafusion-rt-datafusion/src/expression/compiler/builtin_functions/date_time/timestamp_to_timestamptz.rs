@@ -1,3 +1,4 @@
+use std::fmt::format;
 use chrono::TimeZone;
 use chrono::{NaiveDateTime, Timelike};
 use datafusion::arrow::array::Int64Array;
@@ -12,6 +13,7 @@ use vegafusion_core::arrow::array::{ArrayRef, TimestampMillisecondArray};
 use vegafusion_core::arrow::compute::{cast, unary};
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
+
 
 pub fn make_timestamp_to_timestamptz() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
@@ -34,27 +36,9 @@ pub fn make_timestamp_to_timestamptz() -> ScalarUDF {
         })?;
 
         // Normalize input to integer array of milliseconds
-        let millis_array = match timestamp_array.data_type() {
-            DataType::Timestamp(TimeUnit::Millisecond, _) | DataType::Date64 => {
-                cast(&timestamp_array, &DataType::Int64)?
-            }
-            DataType::Timestamp(_, _) => {
-                let timestamp_millis = cast(
-                    &timestamp_array,
-                    &DataType::Timestamp(TimeUnit::Millisecond, None),
-                )?;
-                cast(&timestamp_millis, &DataType::Int64)?
-            }
-            dtype => {
-                return Err(DataFusionError::Internal(format!(
-                    "Unexpected data type for timestamp_to_timestamptz: {:?}",
-                    dtype
-                )))
-            }
-        };
-
-        let millis_array = millis_array.as_any().downcast_ref::<Int64Array>().unwrap();
-        let timestamp_array = millis_to_timestamp(millis_array, tz);
+        let timestamp_array = to_timestamp_ms(&timestamp_array)?;
+        let timestamp_millis = timestamp_array.as_any().downcast_ref::<TimestampMillisecondArray>().unwrap();
+        let timestamp_array = convert_timezone(timestamp_millis, tz);
         let timestamp_array = Arc::new(timestamp_array) as ArrayRef;
 
         // maybe back to scalar
@@ -91,8 +75,8 @@ pub fn make_timestamp_to_timestamptz() -> ScalarUDF {
     )
 }
 
-pub fn millis_to_timestamp(
-    millis_array: &Int64Array,
+pub fn convert_timezone(
+    millis_array: &TimestampMillisecondArray,
     tz: chrono_tz::Tz,
 ) -> TimestampMillisecondArray {
     unary(millis_array, |v| {
@@ -119,6 +103,19 @@ pub fn millis_to_timestamp(
         // Get timestamp millis (in UTC)
         local_datetime.timestamp_millis()
     })
+}
+
+pub fn to_timestamp_ms(array: &ArrayRef) -> Result<ArrayRef, DataFusionError> {
+    match array.data_type() {
+        DataType::Timestamp(time_unit, _) => {
+            if time_unit == &TimeUnit::Millisecond {
+                Ok(array.clone())
+            } else {
+                Ok(cast(array, &DataType::Timestamp(TimeUnit::Millisecond, None))?)
+            }
+        }
+        dtype => Err(DataFusionError::Internal(format!("Unexpected datatime in to_timestamp_ms: {:?}", dtype)))
+    }
 }
 
 lazy_static! {

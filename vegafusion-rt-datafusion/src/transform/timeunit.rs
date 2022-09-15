@@ -336,20 +336,39 @@ impl TransformTrait for TimeUnit {
             })
             .collect();
 
-        select_strs.push(format!(
-            "{} + INTERVAL '{}' as {}",
-            col(&timeunit_start_alias)
-                .to_sql()
-                .unwrap()
-                .sql(dialect)
-                .unwrap(),
-            interval_str,
-            col(&timeunit_end_alias)
-                .to_sql()
-                .unwrap()
-                .sql(dialect)
-                .unwrap(),
-        ));
+        if let Some(tz_str) = tz_str {
+            // Apply offset in UTC
+            select_strs.push(format!(
+                "timestamp_to_timestamptz(timestamptz_to_timestamp({start}, '{tz}') + INTERVAL '{interval}', '{tz}') as {end}",
+                start=col(&timeunit_start_alias)
+                    .to_sql()
+                    .unwrap()
+                    .sql(dialect)
+                    .unwrap(),
+                interval=interval_str,
+                end=col(&timeunit_end_alias)
+                    .to_sql()
+                    .unwrap()
+                    .sql(dialect)
+                    .unwrap(),
+                tz=tz_str
+            ));
+        } else {
+            select_strs.push(format!(
+                "{start} + INTERVAL '{interval}' as {end}",
+                start = col(&timeunit_start_alias)
+                    .to_sql()
+                    .unwrap()
+                    .sql(dialect)
+                    .unwrap(),
+                interval = interval_str,
+                end = col(&timeunit_end_alias)
+                    .to_sql()
+                    .unwrap()
+                    .sql(dialect)
+                    .unwrap(),
+            ));
+        }
         let select_csv = select_strs.join(", ");
 
         let dataframe = dataframe.chain_query_str(&format!(

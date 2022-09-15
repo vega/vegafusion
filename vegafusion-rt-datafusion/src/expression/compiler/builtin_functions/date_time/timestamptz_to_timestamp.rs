@@ -1,16 +1,14 @@
 use chrono::NaiveDateTime;
 use chrono::TimeZone;
 use datafusion::common::DataFusionError;
-use datafusion_expr::{
-    ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
-    Volatility,
-};
+use datafusion_expr::{ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature, TypeSignature, Volatility};
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::{ArrayRef, TimestampMillisecondArray};
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
+use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::to_timestamp_ms;
 
 pub fn make_timestamptz_to_timestamp() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
@@ -32,10 +30,12 @@ pub fn make_timestamptz_to_timestamp() -> ScalarUDF {
             DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
         })?;
 
+        let timestamp_array = to_timestamp_ms(&timestamp_array)?;
         let timestamp_array = timestamp_array
             .as_any()
             .downcast_ref::<TimestampMillisecondArray>()
             .unwrap();
+
         let timestamp_array: TimestampMillisecondArray = unary(timestamp_array, |v| {
             // Build naive datetime for time
             let seconds = v / 1000;
@@ -63,10 +63,16 @@ pub fn make_timestamptz_to_timestamp() -> ScalarUDF {
     let return_type: ReturnTypeFunction =
         Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
 
-    let signature: Signature = Signature::exact(
+    let signature: Signature = Signature::one_of(
         vec![
-            DataType::Timestamp(TimeUnit::Millisecond, None),
-            DataType::Utf8,
+            TypeSignature::Exact(vec![
+                DataType::Timestamp(TimeUnit::Millisecond, None),
+                DataType::Utf8,
+            ]),
+            TypeSignature::Exact(vec![
+                DataType::Timestamp(TimeUnit::Nanosecond, None),
+                DataType::Utf8,
+            ])
         ],
         Volatility::Immutable,
     );

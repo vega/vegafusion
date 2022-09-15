@@ -90,6 +90,7 @@ impl SqlDataFrame {
     }
 
     pub fn chain_query_str(&self, query: &str) -> Result<Arc<Self>> {
+        // println!("chain_query_str: {}", query);
         let query_ast = Parser::parse_sql_query(query)?;
         self.chain_query(query_ast)
     }
