@@ -11,7 +11,7 @@ use crate::expression::compiler::builtin_functions::array::length::make_length_u
 use crate::expression::compiler::builtin_functions::array::span::make_span_udf;
 use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
 use crate::expression::compiler::builtin_functions::date_time::datetime::{
-    datetime_transform_fn, make_datetime_components_fn, to_date_transform, DATETIME_COMPONENTS,
+    datetime_transform_fn, make_datetime_components_fn, to_date_transform, MAKE_TIMESTAMPTZ,
 };
 use crate::expression::compiler::builtin_functions::math::isfinite::{
     is_finite_fn, make_is_finite_udf,
@@ -61,7 +61,6 @@ use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::t
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_string::to_string_transform;
 use crate::task_graph::timezone::RuntimeTzConfig;
-use crate::transform::timeunit::{TIMEUNIT_END_UDF, TIMEUNIT_START_UDF};
 
 pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>;
 pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
@@ -444,17 +443,13 @@ pub fn make_session_context() -> SessionContext {
     // isFinite
     ctx.register_udf(make_is_finite_udf());
 
-    // timeunit
-    ctx.register_udf((*TIMEUNIT_START_UDF).clone());
-    ctx.register_udf((*TIMEUNIT_END_UDF).clone());
-
     // datetime
     ctx.register_udf((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone());
     ctx.register_udf((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone());
     ctx.register_udf((*DATE_TO_TIMESTAMPTZ_UDF).clone());
     ctx.register_udf((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone());
     ctx.register_udf((*STR_TO_TIMESTAMPTZ_UDF).clone());
-    ctx.register_udf((*DATETIME_COMPONENTS).clone());
+    ctx.register_udf((*MAKE_TIMESTAMPTZ).clone());
     ctx.register_udf((*TIMESTAMPTZ_TO_EPOCH_MS).clone());
 
     // timeformat

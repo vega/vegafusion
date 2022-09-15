@@ -41,8 +41,6 @@ pub fn make_local_datepart_transform(part: &str, offset: Option<i32>) -> TzTrans
             expr = expr + lit(offset);
         }
 
-        println!("expr: {}", expr);
-
         Ok(expr)
     };
     Arc::new(local_datepart_transform)
@@ -86,10 +84,7 @@ fn extract_timestamp_arg(
             },
             dtype if is_numeric_datatype(&dtype) => Expr::ScalarUDF {
                 fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
-                args: vec![
-                    cast_to(arg.clone(), &DataType::Int64, schema)?,
-                    lit("UTC"),
-                ],
+                args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?, lit("UTC")],
             },
             dtype => {
                 return Err(VegaFusionError::compilation(format!(

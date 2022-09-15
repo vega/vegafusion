@@ -100,7 +100,7 @@ pub fn datetime_transform_fn(
             &schema,
         )?;
         Ok(Expr::ScalarUDF {
-            fun: Arc::new((*DATETIME_COMPONENTS).clone()),
+            fun: Arc::new((*MAKE_TIMESTAMPTZ).clone()),
             args: udf_args,
         })
     }
@@ -114,7 +114,7 @@ pub fn make_datetime_components_fn(
     let udf_args =
         extract_datetime_component_args(args, &tz_config.default_input_tz.to_string(), &schema)?;
     Ok(Expr::ScalarUDF {
-        fun: Arc::new(DATETIME_COMPONENTS.deref().clone()),
+        fun: Arc::new(MAKE_TIMESTAMPTZ.deref().clone()),
         args: udf_args,
     })
 }
@@ -283,5 +283,5 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
 }
 
 lazy_static! {
-    pub static ref DATETIME_COMPONENTS: ScalarUDF = make_datetime_components_udf();
+    pub static ref MAKE_TIMESTAMPTZ: ScalarUDF = make_datetime_components_udf();
 }

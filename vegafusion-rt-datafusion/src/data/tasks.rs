@@ -7,7 +7,7 @@
  * this program the details of the active license.
  */
 use crate::data::table::VegaFusionTableUtils;
-use crate::expression::compiler::builtin_functions::date_time::datetime::DATETIME_COMPONENTS;
+use crate::expression::compiler::builtin_functions::date_time::datetime::MAKE_TIMESTAMPTZ;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{is_integer_datatype, is_string_datatype, ExprHelpers};
@@ -301,7 +301,7 @@ fn process_datetimes(
                         let tz_config =
                             tz_config.with_context(|| "No local timezone info provided")?;
                         Expr::ScalarUDF {
-                            fun: Arc::new((*DATETIME_COMPONENTS).clone()),
+                            fun: Arc::new((*MAKE_TIMESTAMPTZ).clone()),
                             args: vec![
                                 col(&spec.name),                             // year
                                 lit(0),                                      // month
