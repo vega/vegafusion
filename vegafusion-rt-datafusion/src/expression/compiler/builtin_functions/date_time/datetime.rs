@@ -26,6 +26,7 @@ use std::sync::Arc;
 use vegafusion_core::arrow::array::TimestampMillisecondBuilder;
 use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 
 pub fn to_date_transform(
     tz_config: &RuntimeTzConfig,
@@ -66,7 +67,13 @@ pub fn to_date_transform(
             args: vec![arg, lit(default_input_tz.to_string())],
         })
     } else if is_numeric_datatype(&dtype) {
-        cast_to(arg, &DataType::Int64, schema)
+        Ok(Expr::ScalarUDF {
+            fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
+            args: vec![
+                cast_to(arg, &DataType::Int64, schema)?,
+                lit("UTC")
+            ]
+        })
     } else {
         Ok(arg)
     }
