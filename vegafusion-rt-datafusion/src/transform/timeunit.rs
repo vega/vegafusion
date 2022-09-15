@@ -31,6 +31,7 @@ use crate::expression::compiler::builtin_functions::date_time::datetime::MAKE_TI
 use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
 use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
+use crate::sql::compile::expr::ToSqlExpr;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::BuiltinScalarFunction::Exp;
 use datafusion_expr::{
@@ -38,6 +39,7 @@ use datafusion_expr::{
     ScalarFunctionImplementation, Signature, TypeSignature, Volatility,
 };
 use itertools::Itertools;
+use sqlgen::dialect::DialectDisplay;
 use std::str::FromStr;
 use vegafusion_core::arrow::array::TimestampMillisecondArray;
 
@@ -313,21 +315,40 @@ impl TransformTrait for TimeUnit {
         } else {
             "unit1".to_string()
         };
+        let dialect = dataframe.dialect();
         let mut select_strs: Vec<_> = dataframe
             .schema()
             .fields()
             .iter()
             .filter_map(|field| {
                 if field.name() != &timeunit_end_alias {
-                    Some(field.name().clone())
+                    // Convert column name to string with dialect's rules for quoting
+                    Some(
+                        col(field.name().as_str())
+                            .to_sql()
+                            .unwrap()
+                            .sql(dialect)
+                            .unwrap(),
+                    )
                 } else {
                     None
                 }
             })
             .collect();
+
         select_strs.push(format!(
             "{} + INTERVAL '{}' as {}",
-            timeunit_start_alias, interval_str, timeunit_end_alias
+            col(&timeunit_start_alias)
+                .to_sql()
+                .unwrap()
+                .sql(dialect)
+                .unwrap(),
+            interval_str,
+            col(&timeunit_end_alias)
+                .to_sql()
+                .unwrap()
+                .sql(dialect)
+                .unwrap(),
         ));
         let select_csv = select_strs.join(", ");
 
