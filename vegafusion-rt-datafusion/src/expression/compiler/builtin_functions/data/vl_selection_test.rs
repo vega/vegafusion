@@ -16,6 +16,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use std::str::FromStr;
+use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -23,6 +24,7 @@ use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
 
+use crate::expression::compiler::builtin_functions::date_time::time::TIMESTAMPTZ_TO_EPOCH_MS;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::expression::literal::Value;
 
@@ -128,9 +130,9 @@ impl FieldSpec {
             field_col.get_type(schema)?,
             DataType::Timestamp(TimeUnit::Millisecond, _)
         ) {
-            Expr::Cast {
-                expr: Box::new(field_col),
-                data_type: DataType::Int64,
+            Expr::ScalarUDF {
+                fun: Arc::new((*TIMESTAMPTZ_TO_EPOCH_MS).clone()),
+                args: vec![field_col],
             }
         } else {
             field_col
