@@ -159,7 +159,7 @@ impl SqlConnection for SqLiteConnection {
 }
 
 /// Generic helper to extract row values at an index
-fn extract_row_values<'a, T>(recs: &'a Vec<SqliteRow>, field_index: usize) -> Vec<Option<T>>
+fn extract_row_values<'a, T>(recs: &'a [SqliteRow], field_index: usize) -> Vec<Option<T>>
 where
     T: sqlx::Decode<'a, sqlx::Sqlite> + sqlx::Type<sqlx::Sqlite>,
 {

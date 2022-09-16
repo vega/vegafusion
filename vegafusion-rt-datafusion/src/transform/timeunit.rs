@@ -273,30 +273,30 @@ impl TransformTrait for TimeUnit {
             .collect::<Vec<TimeUnitUnit>>();
 
         // Add timeunit start
-        let (timeunit_start_value, interval_str) = match units_vec.as_slice() {
-            &[TimeUnitUnit::Year] => timeunit_date_trunc(&self.field, TimeUnitUnit::Year, &tz_str)?,
-            &[TimeUnitUnit::Year, TimeUnitUnit::Quarter] => {
+        let (timeunit_start_value, interval_str) = match *units_vec.as_slice() {
+            [TimeUnitUnit::Year] => timeunit_date_trunc(&self.field, TimeUnitUnit::Year, &tz_str)?,
+            [TimeUnitUnit::Year, TimeUnitUnit::Quarter] => {
                 timeunit_date_trunc(&self.field, TimeUnitUnit::Quarter, &tz_str)?
             }
-            &[TimeUnitUnit::Year, TimeUnitUnit::Month] => {
+            [TimeUnitUnit::Year, TimeUnitUnit::Month] => {
                 timeunit_date_trunc(&self.field, TimeUnitUnit::Month, &tz_str)?
             }
-            &[TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date] => {
+            [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date] => {
                 timeunit_date_trunc(&self.field, TimeUnitUnit::Date, &tz_str)?
             }
-            &[TimeUnitUnit::Year, TimeUnitUnit::DayOfYear] => {
+            [TimeUnitUnit::Year, TimeUnitUnit::DayOfYear] => {
                 timeunit_date_trunc(&self.field, TimeUnitUnit::Date, &tz_str)?
             }
-            &[TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours] => {
+            [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours] => {
                 timeunit_date_trunc(&self.field, TimeUnitUnit::Hours, &tz_str)?
             }
-            &[TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes] => {
+            [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes] => {
                 timeunit_date_trunc(&self.field, TimeUnitUnit::Minutes, &tz_str)?
             }
-            &[TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes, TimeUnitUnit::Seconds] => {
+            [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes, TimeUnitUnit::Seconds] => {
                 timeunit_date_trunc(&self.field, TimeUnitUnit::Seconds, &tz_str)?
             }
-            &[TimeUnitUnit::Day] => timeunit_weekday(&self.field, &tz_str)?,
+            [TimeUnitUnit::Day] => timeunit_weekday(&self.field, &tz_str)?,
             _ => {
                 // Check if timeunit can be handled by make_timestamptz
                 let units_set = units_vec.iter().cloned().collect::<HashSet<_>>();

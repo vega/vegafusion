@@ -63,7 +63,7 @@ impl TransformTrait for Bin {
 
         // Add column with bin start
         let bin_start = (col(bin_index_name).mul(lit(step))).add(lit(start));
-        let bin_start_name = self.alias_0.clone().unwrap_or("bin0".to_string());
+        let bin_start_name = self.alias_0.clone().unwrap_or_else(|| "bin0".to_string());
 
         // Explicitly cast (-)inf to float64 to help DataFusion with type inference
         let inf = Expr::Cast {
@@ -102,7 +102,7 @@ impl TransformTrait for Bin {
         let sql_df = sql_df.select(select_exprs)?;
 
         // Add bin end column
-        let bin_end_name = self.alias_1.clone().unwrap_or("bin1".to_string());
+        let bin_end_name = self.alias_1.clone().unwrap_or_else(|| "bin1".to_string());
         let bin_end = (col(&bin_start_name) + lit(step)).alias(&bin_end_name);
 
         // Compute final projection that removes __bin_index column
