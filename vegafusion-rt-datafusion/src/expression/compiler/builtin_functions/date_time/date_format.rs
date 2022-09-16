@@ -7,8 +7,7 @@
  * this program the details of the active license.
  */
 use crate::task_graph::timezone::RuntimeTzConfig;
-use chrono::TimeZone;
-use chrono::{DateTime, NaiveDateTime};
+use chrono::NaiveDateTime;
 use datafusion::arrow::array::{ArrayRef, StringArray, TimestampMillisecondArray};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion::logical_plan::{DFSchema, Expr};
@@ -25,7 +24,6 @@ use datafusion_expr::{
     lit, ColumnarValue, ExprSchemable, ReturnTypeFunction, ScalarFunctionImplementation, Signature,
     TypeSignature, Volatility,
 };
-use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, VegaFusionError};
 
@@ -77,7 +75,7 @@ pub fn utc_format_fn(
     let format_str = extract_format_str(args)?;
     let timestamptz_expr =
         to_timestamptz_expr(&args[0], schema, &tz_config.default_input_tz.to_string())?;
-    let udf_args = vec![timestamptz_expr, lit(format_str), lit("UTC")];
+    let udf_args = vec![timestamptz_expr, lit(format_str)];
     Ok(Expr::ScalarUDF {
         fun: Arc::new((*FORMAT_TIMESTAMP_UDF).clone()),
         args: udf_args,
@@ -93,7 +91,7 @@ fn to_timestamptz_expr(arg: &Expr, schema: &DFSchema, default_input_tz: &str) ->
         },
         dtype if is_numeric_datatype(&dtype) => Expr::ScalarUDF {
             fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
-            args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?, lit("UTC")],
+            args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?, lit(default_input_tz)],
         },
         dtype => {
             return Err(VegaFusionError::internal(format!(

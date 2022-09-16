@@ -7,7 +7,7 @@ use std::sync::Arc;
 use vegafusion_core::arrow::array::ArrayRef;
 
 use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::convert_timezone;
-use datafusion::arrow::array::{Int64Array, TimestampMillisecondArray};
+use datafusion::arrow::array::{TimestampMillisecondArray};
 use datafusion::arrow::compute::cast;
 use std::str::FromStr;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};

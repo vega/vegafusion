@@ -9,11 +9,11 @@
 use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
-use crate::expression::compiler::call::{TransformFn, TzTransformFn};
-use crate::expression::compiler::utils::{cast_to, is_numeric_datatype, VfSimplifyInfo};
+use crate::expression::compiler::call::TzTransformFn;
+use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion::arrow::datatypes::DataType;
-use datafusion::logical_plan::{DFSchema, Expr, ExprSimplifiable};
+use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion_expr::{lit, BuiltinScalarFunction, ExprSchemable};
 use std::sync::Arc;
 use vegafusion_core::error::{Result, VegaFusionError};

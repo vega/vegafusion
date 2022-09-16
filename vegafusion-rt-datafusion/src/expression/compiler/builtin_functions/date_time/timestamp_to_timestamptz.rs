@@ -1,12 +1,10 @@
 use chrono::TimeZone;
 use chrono::{NaiveDateTime, Timelike};
-use datafusion::arrow::array::Int64Array;
 use datafusion::common::DataFusionError;
 use datafusion_expr::{
     ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
     TypeSignature, Volatility,
 };
-use std::fmt::format;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::{ArrayRef, TimestampMillisecondArray};

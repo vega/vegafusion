@@ -110,17 +110,21 @@ impl ScalarValueHelpers for ScalarValue {
                 // To UTC integer milliseconds (alread in UTC)
                 Value::from(*v)
             }
-            ScalarValue::TimestampSecond(Some(_v), _) => {
-                unimplemented!()
+            ScalarValue::TimestampSecond(Some(v), _) => {
+                let millis = v * 1_000;
+                Value::from(millis)
             }
-            ScalarValue::TimestampMillisecond(Some(_v), _) => {
-                unimplemented!()
+            ScalarValue::TimestampMillisecond(Some(v), _) => {
+                let millis = *v;
+                Value::from(millis)
             }
-            ScalarValue::TimestampMicrosecond(Some(_v), _) => {
-                unimplemented!()
+            ScalarValue::TimestampMicrosecond(Some(v), _) => {
+                let millis = *v / 1_000;
+                Value::from(millis)
             }
-            ScalarValue::TimestampNanosecond(Some(_v), _) => {
-                unimplemented!()
+            ScalarValue::TimestampNanosecond(Some(v), _) => {
+                let millis = *v / 1_000_000;
+                Value::from(millis)
             }
             ScalarValue::IntervalYearMonth(Some(_v)) => {
                 unimplemented!()

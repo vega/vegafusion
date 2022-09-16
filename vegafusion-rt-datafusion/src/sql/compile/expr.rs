@@ -454,7 +454,7 @@ mod tests {
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);
         let sql_str = sql_expr.sql(&Default::default()).unwrap();
-        assert_eq!(sql_str, "- A + 12".to_string());
+        assert_eq!(sql_str, "((- A) + 12)".to_string());
     }
 
     #[test]
@@ -467,7 +467,7 @@ mod tests {
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);
         let sql_str = sql_expr.sql(&Default::default()).unwrap();
-        assert_eq!(sql_str, "sin(1.2) + B".to_string());
+        assert_eq!(sql_str, "(sin(1.2) + B)".to_string());
     }
 
     #[test]
@@ -480,7 +480,7 @@ mod tests {
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);
         let sql_str = sql_expr.sql(&Default::default()).unwrap();
-        assert_eq!(sql_str, "upper(\"foo\")".to_string());
+        assert_eq!(sql_str, "upper('foo')".to_string());
     }
 
     #[test]
@@ -493,7 +493,7 @@ mod tests {
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);
         let sql_str = sql_expr.sql(&Default::default()).unwrap();
-        assert_eq!(sql_str, "CAST(2.8 AS INT) + 4".to_string());
+        assert_eq!(sql_str, "(CAST(2.8 AS BIGINT) + 4)".to_string());
     }
 
     #[test]
@@ -509,6 +509,6 @@ mod tests {
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);
         let sql_str = sql_expr.sql(&Default::default()).unwrap();
-        assert_eq!(sql_str, "A BETWEEN 0 AND 10 OR B".to_string());
+        assert_eq!(sql_str, "(A BETWEEN 0 AND 10 OR B)".to_string());
     }
 }

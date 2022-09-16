@@ -45,7 +45,7 @@ mod tests {
         let expr = col("a").add(lit(23));
         let sql_expr = expr.to_sql_select().unwrap();
         let sql_str = sql_expr.sql(&Dialect::datafusion()).unwrap();
-        assert_eq!(sql_str, "\"a\" + 23");
+        assert_eq!(sql_str, "(\"a\" + 23)");
     }
 
     #[test]
@@ -53,6 +53,6 @@ mod tests {
         let expr = col("a").add(lit(23)).alias("foo");
         let sql_expr = expr.to_sql_select().unwrap();
         let sql_str = sql_expr.sql(&Dialect::datafusion()).unwrap();
-        assert_eq!(sql_str, "\"a\" + 23 AS \"foo\"");
+        assert_eq!(sql_str, "(\"a\" + 23) AS \"foo\"");
     }
 }
