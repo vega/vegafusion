@@ -98,11 +98,8 @@ pub fn datetime_transform_fn(
 
         cast_to(arg, &DataType::Int64, schema)
     } else {
-        let udf_args = extract_datetime_component_args(
-            args,
-            &tz_config.default_input_tz.to_string(),
-            &schema,
-        )?;
+        let udf_args =
+            extract_datetime_component_args(args, &tz_config.default_input_tz.to_string(), schema)?;
         Ok(Expr::ScalarUDF {
             fun: Arc::new((*MAKE_TIMESTAMPTZ).clone()),
             args: udf_args,
@@ -116,7 +113,7 @@ pub fn make_datetime_components_fn(
     schema: &DFSchema,
 ) -> Result<Expr> {
     let udf_args =
-        extract_datetime_component_args(args, &tz_config.default_input_tz.to_string(), &schema)?;
+        extract_datetime_component_args(args, &tz_config.default_input_tz.to_string(), schema)?;
     Ok(Expr::ScalarUDF {
         fun: Arc::new(MAKE_TIMESTAMPTZ.deref().clone()),
         args: udf_args,

@@ -17,28 +17,18 @@ use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
 use vegafusion_core::task_graph::task_value::TaskValue;
-use datafusion::arrow::temporal_conversions::date64_to_datetime;
-
-use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
-use datafusion::common::{DataFusionError, ScalarValue};
 
 use crate::sql::dataframe::SqlDataFrame;
 
 use crate::expression::compiler::builtin_functions::date_time::datetime::MAKE_TIMESTAMPTZ;
-use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
+
 use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 use crate::sql::compile::expr::ToSqlExpr;
-use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion_expr::BuiltinScalarFunction::Exp;
-use datafusion_expr::{
-    floor, lit, BuiltinScalarFunction, ColumnarValue, Expr, ReturnTypeFunction,
-    ScalarFunctionImplementation, Signature, TypeSignature, Volatility,
-};
+
+use datafusion_expr::{floor, lit, BuiltinScalarFunction, Expr};
 use itertools::Itertools;
 use sqlgen::dialect::DialectDisplay;
-use std::str::FromStr;
-use vegafusion_core::arrow::array::TimestampMillisecondArray;
 
 // Implementation of timeunit start using the SQL DATE_TRUNC function
 fn timeunit_date_trunc(
@@ -190,7 +180,7 @@ fn timeunit_date_part(
     if units_set.contains(&TimeUnitUnit::Seconds) {
         make_timestamptz_args[4] = Expr::ScalarFunction {
             fun: BuiltinScalarFunction::DatePart,
-            args: vec![lit("second"), inner.clone()],
+            args: vec![lit("second"), inner],
         };
 
         interval_str = "1 SECOND".to_string();
@@ -205,12 +195,8 @@ fn timeunit_date_part(
     Ok((start_expr, interval_str))
 }
 
-
 // timeunit transform for 'day' unit (day of the week)
-fn timeunit_weekday(
-    field: &str,
-    tz_str: &Option<String>,
-) -> Result<(Expr, String)> {
+fn timeunit_weekday(field: &str, tz_str: &Option<String>) -> Result<(Expr, String)> {
     // Compute input timestamp expression based on timezone
     let inner = if let Some(tz_str) = tz_str {
         Expr::ScalarUDF {
@@ -225,7 +211,7 @@ fn timeunit_weekday(
     // where Sunday is 0 and Saturday is 6
     let weekday0 = Expr::ScalarFunction {
         fun: BuiltinScalarFunction::DatePart,
-        args: vec![lit("dow"), inner.clone()],
+        args: vec![lit("dow"), inner],
     };
 
     // Add one to line up with the signature of MAKE_TIMESTAMPTZ
@@ -236,7 +222,7 @@ fn timeunit_weekday(
     let make_timestamptz_args = vec![
         lit(2012), // 0 year
         lit(0),    // 1 month
-        weekday1,     // 2 date
+        weekday1,  // 2 date
         lit(0),    // 3 hour
         lit(0),    // 4 minute
         lit(0),    // 5 second
@@ -310,9 +296,7 @@ impl TransformTrait for TimeUnit {
             &[TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes, TimeUnitUnit::Seconds] => {
                 timeunit_date_trunc(&self.field, TimeUnitUnit::Seconds, &tz_str)?
             }
-            &[TimeUnitUnit::Day] => {
-                timeunit_weekday(&self.field, &tz_str)?
-            }
+            &[TimeUnitUnit::Day] => timeunit_weekday(&self.field, &tz_str)?,
             _ => {
                 // Check if timeunit can be handled by make_timestamptz
                 let units_set = units_vec.iter().cloned().collect::<HashSet<_>>();

@@ -38,7 +38,7 @@ pub fn make_date_to_timestamptz() -> ScalarUDF {
         let timestamp_array: TimestampMillisecondArray = unary(date_array, |v| {
             // Build naive datetime for time
             let seconds = (v as i64) * s_per_day;
-            let nanoseconds = 0 as u32;
+            let nanoseconds = 0_u32;
             let naive_local_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
 
             // Compute UTC date time when naive date time is interpreted in the provided timezone

@@ -7,7 +7,7 @@ use std::sync::Arc;
 use vegafusion_core::arrow::array::ArrayRef;
 
 use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::convert_timezone;
-use datafusion::arrow::array::{TimestampMillisecondArray};
+use datafusion::arrow::array::TimestampMillisecondArray;
 use datafusion::arrow::compute::cast;
 use std::str::FromStr;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
@@ -41,7 +41,7 @@ pub fn make_epoch_to_timestamptz() -> ScalarUDF {
             .as_any()
             .downcast_ref::<TimestampMillisecondArray>()
             .unwrap();
-        let timestamp_array = convert_timezone(&timestamp_millis, tz);
+        let timestamp_array = convert_timezone(timestamp_millis, tz);
         let timestamp_array = Arc::new(timestamp_array) as ArrayRef;
 
         // maybe back to scalar

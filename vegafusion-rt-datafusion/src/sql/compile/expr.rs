@@ -265,7 +265,7 @@ impl ToSqlExpr for Expr {
                 fun,
                 args,
                 distinct,
-                filter,
+                filter: _,
             } => {
                 let value = match fun {
                     AggregateFunction::Min => "min",
@@ -360,7 +360,11 @@ impl ToSqlExpr for Expr {
 
                 Ok(SqlExpr::Function(sql_fun))
             }
-            Expr::AggregateUDF { fun, args, filter } => {
+            Expr::AggregateUDF {
+                fun,
+                args,
+                filter: _,
+            } => {
                 let ident = Ident {
                     value: fun.name.clone(),
                     quote_style: None,

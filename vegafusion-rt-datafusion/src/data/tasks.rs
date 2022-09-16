@@ -405,7 +405,7 @@ fn process_datetimes(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    Ok(df.select(selection)?)
+    df.select(selection)
 }
 
 #[async_trait]

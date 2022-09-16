@@ -82,10 +82,10 @@ mod test_compile {
     use datafusion::physical_plan::ColumnarValue;
     use datafusion::prelude::{col, concat, lit};
     use datafusion::scalar::ScalarValue;
+    use datafusion_expr::BuiltinScalarFunction;
     use std::collections::HashMap;
     use std::convert::TryFrom;
     use std::sync::Arc;
-    use datafusion_expr::BuiltinScalarFunction;
 
     // use vegafusion_client::expression::parser::parse;
 
@@ -191,9 +191,10 @@ mod test_compile {
                     expr: Box::new(lit(32.0)),
                     data_type: DataType::Boolean,
                 },
-                lit(false)
-            ]
-        }.not();
+                lit(false),
+            ],
+        }
+        .not();
 
         assert_eq!(result_expr, expected_expr);
 
@@ -221,8 +222,8 @@ mod test_compile {
                             expr: Box::new(lit(32.0)),
                             data_type: DataType::Boolean,
                         },
-                        lit(false)
-                    ]
+                        lit(false),
+                    ],
                 }),
                 Box::new(lit(7.0)),
             )],
@@ -266,7 +267,6 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
         println!("expr: {:?}", result_expr);
 
-
         let expected_expr = Expr::Case {
             expr: None,
             when_then_expr: vec![(
@@ -277,8 +277,8 @@ mod test_compile {
                             expr: Box::new(lit(5.0)),
                             data_type: DataType::Boolean,
                         },
-                        lit(false)
-                    ]
+                        lit(false),
+                    ],
                 }),
                 Box::new(lit(55.0)),
             )],
@@ -627,8 +627,8 @@ mod test_compile {
                             expr: Box::new(lit(32.0)),
                             data_type: DataType::Boolean,
                         },
-                        lit(false)
-                    ]
+                        lit(false),
+                    ],
                 }),
                 Box::new(lit(7.0)),
             )],

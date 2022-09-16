@@ -94,14 +94,14 @@ pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
         dtype,
         DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64
     ) {
-        coalesce(vec![value.clone().not_eq(lit(0)), lit(false)])
+        coalesce(vec![value.not_eq(lit(0)), lit(false)])
     } else {
         // TODO: JavaScript falsey cast
         //  - empty string to false
         //  - NaN to false
         coalesce(vec![
             Expr::Cast {
-                expr: Box::new(value.clone()),
+                expr: Box::new(value),
                 data_type: DataType::Boolean,
             },
             lit(false),
