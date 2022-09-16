@@ -98,10 +98,7 @@ mod test_custom_specs {
         case("custom/connected_scatterplot", 0.001),
         case("custom/layer_line_co2_concentration", 0.001),
         case("custom/window_rank_matches", 0.001),
-
-        // // day date_part not supported in DataFusion yet
-        // case("custom/circle_github_punchcard", 0.001),
-
+        case("custom/circle_github_punchcard", 0.001),
         case("custom/rect_lasagna", 0.001),
         case("custom/rect_heatmap_weather", 0.001),
         case("custom/layer_line_rolling_mean_point_raw", 0.001),
@@ -453,9 +450,8 @@ mod test_vegalite_specs {
         case("vegalite/circle_bubble_health_income", 0.001),
         case("vegalite/circle_custom_tick_labels", 0.001),
         case("vegalite/circle_flatten", 0.001),
-        // day function not supported in DataFusion yet
-        // case("vegalite/circle_github_punchcard", 0.001),
-        // case("vegalite/circle_labelangle_orient_signal", 0.001),
+        case("vegalite/circle_github_punchcard", 0.001),
+        case("vegalite/circle_labelangle_orient_signal", 0.001),
         case("vegalite/circle_natural_disasters", 0.001),
         case("vegalite/circle_opacity", 0.001),
         case("vegalite/circle_scale_quantile", 0.001),
@@ -913,7 +909,7 @@ mod test_image_comparison_timeunit {
             vec![TimeUnitUnitSpec::Month],
             // vec![TimeUnitUnitSpec::Week],
             vec![TimeUnitUnitSpec::Date],
-            // vec![TimeUnitUnitSpec::Day],
+            vec![TimeUnitUnitSpec::Day],
             vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Quarter],
             vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Month],
             // vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Week],

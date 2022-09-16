@@ -43,11 +43,7 @@ use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_
 use crate::expression::compiler::builtin_functions::date_time::date_format::{
     time_format_fn, utc_format_fn, FORMAT_TIMESTAMP_UDF,
 };
-use crate::expression::compiler::builtin_functions::date_time::date_parts::{
-    DATE_TRANSFORM, HOUR_TRANSFORM, MINUTE_TRANSFORM, MONTH_TRANSFORM, SECOND_TRANSFORM,
-    UTCDATE_TRANSFORM, UTCHOUR_TRANSFORM, UTCMINUTE_TRANSFORM, UTCMONTH_TRANSFORM,
-    UTCSECOND_TRANSFORM, UTCYEAR_TRANSFORM, YEAR_TRANSFORM,
-};
+use crate::expression::compiler::builtin_functions::date_time::date_parts::{DATE_TRANSFORM, DAY_TRANSFORM, DAYOFYEAR_TRANSFORM, HOUR_TRANSFORM, MINUTE_TRANSFORM, MONTH_TRANSFORM, QUARTER_TRANSFORM, SECOND_TRANSFORM, UTCDATE_TRANSFORM, UTCDAY_TRANSFORM, UTCDAYOFYEAR_TRANSFORM, UTCHOUR_TRANSFORM, UTCMINUTE_TRANSFORM, UTCMONTH_TRANSFORM, UTCQUARTER_TRANSFORM, UTCSECOND_TRANSFORM, UTCYEAR_TRANSFORM, YEAR_TRANSFORM};
 use crate::expression::compiler::builtin_functions::date_time::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
@@ -294,26 +290,26 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         "year".to_string(),
         VegaFusionCallable::LocalTransform(YEAR_TRANSFORM.deref().clone()),
     );
-    // callables.insert(
-    //     "quarter".to_string(),
-    //     VegaFusionCallable::LocalTransform(QUARTER_TRANSFORM.deref().clone()),
-    // );
+    callables.insert(
+        "quarter".to_string(),
+        VegaFusionCallable::LocalTransform(QUARTER_TRANSFORM.deref().clone()),
+    );
     callables.insert(
         "month".to_string(),
         VegaFusionCallable::LocalTransform(MONTH_TRANSFORM.deref().clone()),
     );
-    // callables.insert(
-    //     "day".to_string(),
-    //     VegaFusionCallable::LocalTransform(DAY_TRANSFORM.deref().clone()),
-    // );
+    callables.insert(
+        "day".to_string(),
+        VegaFusionCallable::LocalTransform(DAY_TRANSFORM.deref().clone()),
+    );
     callables.insert(
         "date".to_string(),
         VegaFusionCallable::LocalTransform(DATE_TRANSFORM.deref().clone()),
     );
-    // callables.insert(
-    //     "dayofyear".to_string(),
-    //     VegaFusionCallable::LocalTransform(DAYOFYEAR_TRANSFORM.deref().clone()),
-    // );
+    callables.insert(
+        "dayofyear".to_string(),
+        VegaFusionCallable::LocalTransform(DAYOFYEAR_TRANSFORM.deref().clone()),
+    );
     callables.insert(
         "hours".to_string(),
         VegaFusionCallable::LocalTransform(HOUR_TRANSFORM.deref().clone()),
@@ -336,26 +332,26 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         "utcyear".to_string(),
         VegaFusionCallable::UtcTransform(UTCYEAR_TRANSFORM.deref().clone()),
     );
-    // callables.insert(
-    //     "utcquarter".to_string(),
-    //     VegaFusionCallable::UtcTransform(UTCQUARTER_TRANSFORM.deref().clone()),
-    // );
+    callables.insert(
+        "utcquarter".to_string(),
+        VegaFusionCallable::UtcTransform(UTCQUARTER_TRANSFORM.deref().clone()),
+    );
     callables.insert(
         "utcmonth".to_string(),
         VegaFusionCallable::UtcTransform(UTCMONTH_TRANSFORM.deref().clone()),
     );
-    // callables.insert(
-    //     "utcday".to_string(),
-    //     VegaFusionCallable::UtcTransform(UTCDAY_TRANSFORM.deref().clone()),
-    // );
+    callables.insert(
+        "utcday".to_string(),
+        VegaFusionCallable::UtcTransform(UTCDAY_TRANSFORM.deref().clone()),
+    );
     callables.insert(
         "utcdate".to_string(),
         VegaFusionCallable::UtcTransform(UTCDATE_TRANSFORM.deref().clone()),
     );
-    // callables.insert(
-    //     "utcdayofyear".to_string(),
-    //     VegaFusionCallable::UtcTransform(UTCDAYOFYEAR_TRANSFORM.deref().clone()),
-    // );
+    callables.insert(
+        "utcdayofyear".to_string(),
+        VegaFusionCallable::UtcTransform(UTCDAYOFYEAR_TRANSFORM.deref().clone()),
+    );
     callables.insert(
         "utchours".to_string(),
         VegaFusionCallable::UtcTransform(UTCHOUR_TRANSFORM.deref().clone()),

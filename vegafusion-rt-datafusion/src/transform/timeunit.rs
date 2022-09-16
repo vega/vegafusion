@@ -13,7 +13,7 @@ use datafusion::arrow::array::{ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
 use datafusion::prelude::col;
 use std::collections::HashSet;
-use std::ops::{Div, Mul, Sub};
+use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
@@ -44,7 +44,7 @@ use std::str::FromStr;
 use vegafusion_core::arrow::array::TimestampMillisecondArray;
 
 // Implementation of timeunit start using the SQL DATE_TRUNC function
-fn date_trunc(
+fn timeunit_date_trunc(
     field: &str,
     smallest_unit: TimeUnitUnit,
     tz_str: &Option<String>,
@@ -92,7 +92,7 @@ fn date_trunc(
 }
 
 // Implementation of timeunit start using MAKE_TIMESTAMPTZ and the SQL DATE_PART function
-fn date_part(
+fn timeunit_date_part(
     field: &str,
     units_set: &HashSet<TimeUnitUnit>,
     tz_str: &Option<String>,
@@ -208,6 +208,54 @@ fn date_part(
     Ok((start_expr, interval_str))
 }
 
+
+// timeunit transform for 'day' unit (day of the week)
+fn timeunit_weekday(
+    field: &str,
+    tz_str: &Option<String>,
+) -> Result<(Expr, String)> {
+    // Compute input timestamp expression based on timezone
+    let inner = if let Some(tz_str) = tz_str {
+        Expr::ScalarUDF {
+            fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
+            args: vec![col(field), lit(tz_str.clone())],
+        }
+    } else {
+        col(field)
+    };
+
+    // Use DATE_PART to extract the weekday
+    // where Sunday is 0 and Saturday is 6
+    let weekday0 = Expr::ScalarFunction {
+        fun: BuiltinScalarFunction::DatePart,
+        args: vec![lit("dow"), inner.clone()],
+    };
+
+    // Add one to line up with the signature of MAKE_TIMESTAMPTZ
+    // where Sunday is 1 and Saturday is 7
+    let weekday1 = weekday0.add(lit(1));
+
+    // The year 2012 starts with a Sunday, so we can set the day of the month to match weekday1
+    let make_timestamptz_args = vec![
+        lit(2012), // 0 year
+        lit(0),    // 1 month
+        weekday1,     // 2 date
+        lit(0),    // 3 hour
+        lit(0),    // 4 minute
+        lit(0),    // 5 second
+        lit(0),    // 6 millisecond
+        lit(tz_str.clone().unwrap_or_else(|| "UTC".to_string())),
+    ];
+
+    // Construct expression to make timestamp from components
+    let start_expr = Expr::ScalarUDF {
+        fun: Arc::new((*MAKE_TIMESTAMPTZ).clone()),
+        args: make_timestamptz_args,
+    };
+
+    Ok((start_expr, "1 DAY".to_string()))
+}
+
 #[async_trait]
 impl TransformTrait for TimeUnit {
     async fn eval(
@@ -243,27 +291,30 @@ impl TransformTrait for TimeUnit {
 
         // Add timeunit start
         let (timeunit_start_value, interval_str) = match units_vec.as_slice() {
-            &[TimeUnitUnit::Year] => date_trunc(&self.field, TimeUnitUnit::Year, &tz_str)?,
+            &[TimeUnitUnit::Year] => timeunit_date_trunc(&self.field, TimeUnitUnit::Year, &tz_str)?,
             &[TimeUnitUnit::Year, TimeUnitUnit::Quarter] => {
-                date_trunc(&self.field, TimeUnitUnit::Quarter, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Quarter, &tz_str)?
             }
             &[TimeUnitUnit::Year, TimeUnitUnit::Month] => {
-                date_trunc(&self.field, TimeUnitUnit::Month, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Month, &tz_str)?
             }
             &[TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date] => {
-                date_trunc(&self.field, TimeUnitUnit::Date, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Date, &tz_str)?
             }
             &[TimeUnitUnit::Year, TimeUnitUnit::DayOfYear] => {
-                date_trunc(&self.field, TimeUnitUnit::Date, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Date, &tz_str)?
             }
             &[TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours] => {
-                date_trunc(&self.field, TimeUnitUnit::Hours, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Hours, &tz_str)?
             }
             &[TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes] => {
-                date_trunc(&self.field, TimeUnitUnit::Minutes, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Minutes, &tz_str)?
             }
             &[TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes, TimeUnitUnit::Seconds] => {
-                date_trunc(&self.field, TimeUnitUnit::Seconds, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Seconds, &tz_str)?
+            }
+            &[TimeUnitUnit::Day] => {
+                timeunit_weekday(&self.field, &tz_str)?
             }
             _ => {
                 // Check if timeunit can be handled by make_timestamptz
@@ -280,7 +331,7 @@ impl TransformTrait for TimeUnit {
                 .into_iter()
                 .collect::<HashSet<_>>();
                 if units_set.is_subset(&date_part_units) {
-                    date_part(&self.field, &units_set, &tz_str)?
+                    timeunit_date_part(&self.field, &units_set, &tz_str)?
                 } else {
                     return Err(VegaFusionError::internal(format!(
                         "Unsupported combination of timeunit units: {:?}",
