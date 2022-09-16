@@ -34,7 +34,7 @@ jobs:
         os:
          - ubuntu-latest
          - windows-2022
-         - macos-10.15
+         - macos-11
 
     steps:
       - name: Check out repository code
@@ -83,7 +83,7 @@ jobs:
         options: [
             [ubuntu-latest,  linux-64],
             [windows-2022,  win-64],
-            [macos-10.15,   osx-64],
+            [macos-11,   osx-64],
         ]
     runs-on: ${{ matrix.options[0] }}
     steps:
@@ -302,7 +302,7 @@ jobs:
             [ubuntu-latest,  linux-64, "bash -l {0}",  manylinux2014_x86_64, cp310],
 # TODO: Should run tests on Windows and Mac as well, but there a GitHub action issues
 #            [windows-2019,  win-64,   "pwsh",         win_amd64,            cp37],
-#            [macos-10.15,   osx-64,   "bash -l {0}",  macosx_10_7_x86_64,   cp37],
+#            [macos-11,   osx-64,   "bash -l {0}",  macosx_10_7_x86_64,   cp37],
         ]
     runs-on: ${{ matrix.options[0] }}
     defaults:
