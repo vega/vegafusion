@@ -35,6 +35,8 @@ sqlgen = {git = "https://github.com/vegafusion/sqlgen-rs.git", rev = "e5ac9609df
 # Make sqlx optional
 sqlx = { version = "0.6.1", features = [ "runtime-tokio-rustls", "sqlite", "macros"] }
 libsqlite3-sys = {version="0.24.1", features=["bundled"]}
+log = "0.4.17"
+env_logger = "0.9.0"
 
 [dev-dependencies]
 futures = "0.3.21"

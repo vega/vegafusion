@@ -1,6 +1,7 @@
 use crate::data::table::VegaFusionTableUtils;
 use crate::sql::connection::SqlConnection;
 use datafusion::prelude::SessionContext;
+use log::Level;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -63,11 +64,13 @@ impl SqlConnection for DataFusionConnection {
         query: &str,
         _schema: &Schema,
     ) -> vegafusion_core::error::Result<VegaFusionTable> {
-        // println!("datafusion query: {}", query);
+        info!("{}", query);
         let df = self.ctx.sql(query).await?;
         let res = VegaFusionTable::from_dataframe(df).await?;
-        // println!("{}", res.pretty_format(Some(10)).unwrap());
-        // println!("{:#?}", res.schema);
+        if log_enabled!(Level::Debug) {
+            debug!("\n{}", res.pretty_format(Some(5)).unwrap());
+            debug!("{:?}", res.schema);
+        }
         Ok(res)
     }
 

@@ -10,6 +10,7 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyString};
 use std::collections::HashMap;
+use std::sync::Once;
 use tokio::runtime::Runtime;
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
@@ -17,11 +18,23 @@ use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::War
 use vegafusion_core::proto::gen::services::pre_transform_spec_result;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
+use env_logger::{Builder, Target};
 use serde::{Deserialize, Serialize};
 use vegafusion_core::proto::gen::tasks::Variable;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_rt_datafusion::data::dataset::VegaFusionDataset;
+
+static INIT: Once = Once::new();
+
+pub fn initialize_logging() {
+    INIT.call_once(|| {
+        // Init logger to write to stdout
+        let mut builder = Builder::from_default_env();
+        builder.target(Target::Stdout);
+        builder.init();
+    });
+}
 
 #[derive(Clone, Serialize, Deserialize)]
 struct PreTransformSpecWarning {
@@ -59,6 +72,8 @@ impl PyTaskGraphRuntime {
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
     ) -> PyResult<Self> {
+        initialize_logging();
+
         let mut tokio_runtime_builder = tokio::runtime::Builder::new_multi_thread();
         tokio_runtime_builder.enable_all();
 

@@ -9,6 +9,9 @@
 #[macro_use]
 extern crate lazy_static;
 
+#[macro_use]
+extern crate log;
+
 pub mod data;
 pub mod expression;
 pub mod signal;

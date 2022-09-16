@@ -51,6 +51,9 @@ pub fn initialize() {
         let output_dir = format!("{}/tests/output/", crate_dir());
         std::fs::remove_dir_all(&output_dir).ok();
         std::fs::create_dir(&output_dir).expect("Failed to create output directory");
+
+        // Init logger
+        env_logger::init();
     });
 }
 
