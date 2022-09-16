@@ -75,14 +75,15 @@ impl TransformSpecTrait for TimeUnitTransformSpec {
             || self.step.is_some()
             || self.extent.is_some()
             || self.maxbins.is_some()
-            || self.signal.is_some() {
+            || self.signal.is_some()
+        {
             false
         } else {
             if let Some(units) = &self.units {
                 for unit in units {
                     if matches!(unit, TimeUnitUnitSpec::Week | TimeUnitUnitSpec::DayOfYear) {
                         // week and dayofyear units are not yet supported
-                        return false
+                        return false;
                     }
                 }
             }
