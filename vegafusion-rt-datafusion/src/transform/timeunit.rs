@@ -178,7 +178,7 @@ fn timeunit_date_part(
 
     // Second
     if units_set.contains(&TimeUnitUnit::Seconds) {
-        make_timestamptz_args[4] = Expr::ScalarFunction {
+        make_timestamptz_args[5] = Expr::ScalarFunction {
             fun: BuiltinScalarFunction::DatePart,
             args: vec![lit("second"), inner],
         };
