@@ -417,8 +417,9 @@ def export_image_sequence(
                 chain = ActionChains(chrome_driver)
 
             elif action_type == "move_to":
+                coords = action["coords"]
+
                 # # Origin of top-left corner
-                # coords = action["coords"]
                 # chain = chain.move_to_element_with_offset(canvas, coords[0], coords[1])
 
                 # Origin of element center
