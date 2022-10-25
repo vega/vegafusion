@@ -9,7 +9,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::dataframe::DataFrame;
+
 use datafusion::logical_plan::Expr;
 use datafusion::prelude::{col, lit};
 use std::sync::Arc;
@@ -20,6 +20,7 @@ use vegafusion_core::proto::gen::transforms::{
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::expression::compiler::utils::to_numeric;
+use crate::sql::dataframe::SqlDataFrame;
 use datafusion::physical_plan::aggregates;
 use datafusion_expr::{BuiltInWindowFunction, WindowFunction};
 
@@ -27,9 +28,9 @@ use datafusion_expr::{BuiltInWindowFunction, WindowFunction};
 impl TransformTrait for Window {
     async fn eval(
         &self,
-        dataframe: Arc<DataFrame>,
+        dataframe: Arc<SqlDataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
         let mut order_by: Vec<_> = self
             .sort_fields
             .iter()
@@ -42,7 +43,7 @@ impl TransformTrait for Window {
             .collect();
 
         let mut selections: Vec<_> = dataframe
-            .schema()
+            .schema_df()
             .fields()
             .iter()
             .map(|f| col(f.field().name()))
@@ -82,7 +83,7 @@ impl TransformTrait for Window {
                         let op = AggregateOp::from_i32(*op).unwrap();
 
                         let numeric_field = || {
-                            to_numeric(col(field), dataframe.schema()).unwrap_or_else(|_| {
+                            to_numeric(col(field), &dataframe.schema_df()).unwrap_or_else(|_| {
                                 panic!("Failed to convert field {} to numeric data type", field)
                             })
                         };

@@ -24,7 +24,7 @@ use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 use vegafusion_rt_datafusion::expression::compiler::utils::ExprHelpers;
 use vegafusion_rt_datafusion::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
-use vegafusion_rt_datafusion::transform::TransformTrait;
+use vegafusion_rt_datafusion::transform::pipeline::TransformPipelineUtils;
 
 pub fn check_expr_supported(expr_str: &str) {
     let expr = parse(expr_str).unwrap();
@@ -88,18 +88,17 @@ pub fn check_transform_evaluation(
     // );
     // println!("expected signals: {:?}", expected_signals);
 
-    let df = data.to_dataframe().unwrap();
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
+    let sql_df = (*TOKIO_RUNTIME).block_on(data.to_sql_dataframe()).unwrap();
 
-    let (result_df, result_signals) = TOKIO_RUNTIME
-        .block_on(pipeline.eval(df, compilation_config))
+    let (result_data, result_signals) = TOKIO_RUNTIME
+        .block_on(pipeline.eval_sql(sql_df, compilation_config))
         .unwrap();
     let result_signals = result_signals
         .into_iter()
         .map(|v| v.as_scalar().map(|v| v.clone()))
         .collect::<Result<Vec<ScalarValue>>>()
         .unwrap();
-    let result_data = VegaFusionTable::from_dataframe_blocking(result_df).unwrap();
 
     // println!(
     //     "result data\n{}",

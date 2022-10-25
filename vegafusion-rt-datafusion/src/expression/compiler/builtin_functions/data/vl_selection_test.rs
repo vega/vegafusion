@@ -16,13 +16,15 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use std::str::FromStr;
-use vegafusion_core::arrow::datatypes::DataType;
+use std::sync::Arc;
+use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
 
+use crate::expression::compiler::builtin_functions::date_time::time::TIMESTAMPTZ_TO_EPOCH_MS;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::expression::literal::Value;
 
@@ -122,6 +124,20 @@ pub struct FieldSpec {
 impl FieldSpec {
     pub fn to_test_expr(&self, values: &ScalarValue, schema: &DFSchema) -> Result<Expr> {
         let field_col = col(&self.field);
+
+        // Convert timestamp column to integer milliseconds before comparisons.
+        let field_col = if matches!(
+            field_col.get_type(schema)?,
+            DataType::Timestamp(TimeUnit::Millisecond, _)
+        ) {
+            Expr::ScalarUDF {
+                fun: Arc::new((*TIMESTAMPTZ_TO_EPOCH_MS).clone()),
+                args: vec![field_col],
+            }
+        } else {
+            field_col
+        };
+
         let expr = match self.typ {
             SelectionType::Enum => {
                 let list_values: Vec<_> = if let ScalarValue::List(Some(elements), _) = &values {
@@ -131,6 +147,7 @@ impl FieldSpec {
                     // convert values to single element list
                     vec![lit(values.clone())]
                 };
+
                 Expr::InList {
                     expr: Box::new(field_col),
                     list: list_values,

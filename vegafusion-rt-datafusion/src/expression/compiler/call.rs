@@ -6,28 +6,26 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use crate::expression::compiler::array::array_constructor_udf;
 use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
 use crate::expression::compiler::builtin_functions::array::span::make_span_udf;
 use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
-use crate::expression::compiler::builtin_functions::date_time::date_parts::{
-    DATE_TRANSFORM, DAYOFYEAR_TRANSFORM, DAY_TRANSFORM, HOURS_TRANSFORM, MILLISECONDS_TRANSFORM,
-    MINUTES_TRANSFORM, MONTH_TRANSFORM, QUARTER_TRANSFORM, SECONDS_TRANSFORM, UTCDATE_UDF,
-    UTCDAYOFYEAR_UDF, UTCDAY_UDF, UTCHOURS_UDF, UTCMILLISECONDS_UDF, UTCMINUTES_UDF, UTCMONTH_UDF,
-    UTCQUARTER_UDF, UTCSECONDS_UDF, UTCYEAR_UDF, YEAR_TRANSFORM,
-};
 use crate::expression::compiler::builtin_functions::date_time::datetime::{
-    datetime_transform, to_date_transform, UTC_COMPONENTS,
+    datetime_transform_fn, make_datetime_components_fn, to_date_transform, MAKE_TIMESTAMPTZ,
 };
-use crate::expression::compiler::builtin_functions::math::isfinite::make_is_finite_udf;
+use crate::expression::compiler::builtin_functions::math::isfinite::{
+    is_finite_fn, make_is_finite_udf,
+};
 use crate::expression::compiler::builtin_functions::math::isnan::make_is_nan_udf;
-use crate::expression::compiler::builtin_functions::math::pow::make_pow_udf;
-use crate::expression::compiler::builtin_functions::type_checking::isvalid::make_is_valid_udf;
+use crate::expression::compiler::builtin_functions::math::pow::{make_pow_udf, POW_UDF};
+use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_valid_fn;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::cast_to;
 use datafusion::arrow::datatypes::DataType;
 use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::udf::ScalarUDF;
+use datafusion::prelude::SessionContext;
 use datafusion_expr::BuiltinScalarFunction;
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -43,9 +41,23 @@ use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
 use crate::expression::compiler::builtin_functions::date_time::date_format::{
-    time_format_fn, utc_format_fn,
+    time_format_fn, utc_format_fn, FORMAT_TIMESTAMP_UDF,
 };
-use crate::expression::compiler::builtin_functions::date_time::time::time_fn;
+use crate::expression::compiler::builtin_functions::date_time::date_parts::{
+    DATE_TRANSFORM, DAYOFYEAR_TRANSFORM, DAY_TRANSFORM, HOUR_TRANSFORM, MINUTE_TRANSFORM,
+    MONTH_TRANSFORM, QUARTER_TRANSFORM, SECOND_TRANSFORM, UTCDATE_TRANSFORM,
+    UTCDAYOFYEAR_TRANSFORM, UTCDAY_TRANSFORM, UTCHOUR_TRANSFORM, UTCMINUTE_TRANSFORM,
+    UTCMONTH_TRANSFORM, UTCQUARTER_TRANSFORM, UTCSECOND_TRANSFORM, UTCYEAR_TRANSFORM,
+    YEAR_TRANSFORM,
+};
+use crate::expression::compiler::builtin_functions::date_time::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::time::{
+    time_fn, TIMESTAMPTZ_TO_EPOCH_MS,
+};
+use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
@@ -54,7 +66,7 @@ use crate::task_graph::timezone::RuntimeTzConfig;
 
 pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>;
 pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
-pub type LocalTransformFn =
+pub type TzTransformFn =
     Arc<dyn Fn(&RuntimeTzConfig, &[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
 pub type DataFn =
     Arc<dyn Fn(&VegaFusionTable, &[Expression], &DFSchema) -> Result<Expr> + Send + Sync>;
@@ -69,7 +81,11 @@ pub enum VegaFusionCallable {
 
     /// A function that uses the local timezone to operate on the compiled arguments and
     /// produces a new expression.
-    LocalTransform(LocalTransformFn),
+    LocalTransform(TzTransformFn),
+
+    /// A function that uses the UTC timezone to operate on the compiled arguments and
+    /// produces a new expression.
+    UtcTransform(TzTransformFn),
 
     /// Runtime function that is build in to DataFusion
     BuiltinScalarFunction {
@@ -185,6 +201,14 @@ pub fn compile_call(
                 .with_context(|| "No local timezone info provided".to_string())?;
             callable(&tz_config, &args, schema)
         }
+        VegaFusionCallable::UtcTransform(callable) => {
+            let args = compile_scalar_arguments(node, config, schema, &None)?;
+            let tz_config = RuntimeTzConfig {
+                local_tz: chrono_tz::UTC,
+                default_input_tz: chrono_tz::UTC,
+            };
+            callable(&tz_config, &args, schema)
+        }
         _ => {
             todo!()
         }
@@ -238,18 +262,12 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
 
     callables.insert(
         "isFinite".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: make_is_finite_udf(),
-            cast: None,
-        },
+        VegaFusionCallable::Transform(Arc::new(is_finite_fn)),
     );
 
     callables.insert(
         "isValid".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: make_is_valid_udf(),
-            cast: None,
-        },
+        VegaFusionCallable::Transform(Arc::new(is_valid_fn)),
     );
 
     callables.insert(
@@ -300,104 +318,74 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     );
     callables.insert(
         "hours".to_string(),
-        VegaFusionCallable::LocalTransform(HOURS_TRANSFORM.deref().clone()),
+        VegaFusionCallable::LocalTransform(HOUR_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "minutes".to_string(),
-        VegaFusionCallable::LocalTransform(MINUTES_TRANSFORM.deref().clone()),
+        VegaFusionCallable::LocalTransform(MINUTE_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "seconds".to_string(),
-        VegaFusionCallable::LocalTransform(SECONDS_TRANSFORM.deref().clone()),
+        VegaFusionCallable::LocalTransform(SECOND_TRANSFORM.deref().clone()),
     );
-    callables.insert(
-        "milliseconds".to_string(),
-        VegaFusionCallable::LocalTransform(MILLISECONDS_TRANSFORM.deref().clone()),
-    );
+    // callables.insert(
+    //     "milliseconds".to_string(),
+    //     VegaFusionCallable::LocalTransform(MILLISECONDS_TRANSFORM.deref().clone()),
+    // );
 
+    // UTC
     callables.insert(
         "utcyear".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCYEAR_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(UTCYEAR_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcquarter".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCQUARTER_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(UTCQUARTER_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcmonth".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCMONTH_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(UTCMONTH_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcday".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCDAY_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(UTCDAY_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcdate".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCDATE_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(UTCDATE_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcdayofyear".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCDAYOFYEAR_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(UTCDAYOFYEAR_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utchours".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCHOURS_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(UTCHOUR_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcminutes".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCMINUTES_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(UTCMINUTE_TRANSFORM.deref().clone()),
     );
     callables.insert(
         "utcseconds".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCSECONDS_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UtcTransform(UTCSECOND_TRANSFORM.deref().clone()),
     );
-    callables.insert(
-        "utcmilliseconds".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTCMILLISECONDS_UDF.deref().clone(),
-            cast: None,
-        },
-    );
+    // callables.insert(
+    //     "utcmilliseconds".to_string(),
+    //     VegaFusionCallable::UtcTransform(UTCMILLISECOND_TRANSFORM.deref().clone()),
+    // );
 
     // date time
     callables.insert(
         "datetime".to_string(),
-        VegaFusionCallable::LocalTransform(Arc::new(datetime_transform)),
+        VegaFusionCallable::LocalTransform(Arc::new(datetime_transform_fn)),
     );
+
     callables.insert(
         "utc".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: UTC_COMPONENTS.deref().clone(),
-            cast: Some(DataType::Int64),
-        },
+        VegaFusionCallable::UtcTransform(Arc::new(make_datetime_components_fn)),
     );
+
     callables.insert(
         "time".to_string(),
         VegaFusionCallable::LocalTransform(Arc::new(time_fn)),
@@ -446,4 +434,35 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     );
 
     callables
+}
+
+pub fn make_session_context() -> SessionContext {
+    let mut ctx = SessionContext::new();
+
+    // isNan
+    ctx.register_udf(make_is_nan_udf());
+
+    // isFinite
+    ctx.register_udf(make_is_finite_udf());
+
+    // datetime
+    ctx.register_udf((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone());
+    ctx.register_udf((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone());
+    ctx.register_udf((*DATE_TO_TIMESTAMPTZ_UDF).clone());
+    ctx.register_udf((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone());
+    ctx.register_udf((*STR_TO_TIMESTAMPTZ_UDF).clone());
+    ctx.register_udf((*MAKE_TIMESTAMPTZ).clone());
+    ctx.register_udf((*TIMESTAMPTZ_TO_EPOCH_MS).clone());
+
+    // timeformat
+    ctx.register_udf((*FORMAT_TIMESTAMP_UDF).clone());
+
+    // math
+    ctx.register_udf((*POW_UDF).clone());
+
+    // list
+    ctx.register_udf(array_constructor_udf());
+    ctx.register_udf(make_length_udf());
+
+    ctx
 }

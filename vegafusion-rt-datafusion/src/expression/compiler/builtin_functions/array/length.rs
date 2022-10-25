@@ -72,7 +72,7 @@ pub fn make_length_udf() -> ScalarUDF {
 
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int32)));
     ScalarUDF::new(
-        "length",
+        "len",
         &Signature::any(1, Volatility::Immutable),
         &return_type,
         &length_fn,

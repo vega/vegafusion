@@ -76,12 +76,13 @@ mod test_compile {
         array::{ArrayRef, Float64Array, StructArray},
         datatypes::{DataType, Field, Schema},
     };
-    use datafusion::logical_plan::{and, DFSchema, Expr, Operator};
+    use datafusion::logical_plan::{DFSchema, Expr, Operator};
 
     use crate::task_graph::timezone::RuntimeTzConfig;
     use datafusion::physical_plan::ColumnarValue;
     use datafusion::prelude::{col, concat, lit};
     use datafusion::scalar::ScalarValue;
+    use datafusion_expr::BuiltinScalarFunction;
     use std::collections::HashMap;
     use std::convert::TryFrom;
     use std::sync::Arc;
@@ -183,14 +184,18 @@ mod test_compile {
         println!("expr: {:?}", result_expr);
 
         // unary not should cast numeric value to boolean
-        let expected_expr = and(
-            Expr::Cast {
-                expr: Box::new(lit(32.0)),
-                data_type: DataType::Boolean,
-            },
-            Expr::is_not_null(lit(32.0)),
-        )
+        let expected_expr = Expr::ScalarFunction {
+            fun: BuiltinScalarFunction::Coalesce,
+            args: vec![
+                Expr::Cast {
+                    expr: Box::new(lit(32.0)),
+                    data_type: DataType::Boolean,
+                },
+                lit(false),
+            ],
+        }
         .not();
+
         assert_eq!(result_expr, expected_expr);
 
         // Check evaluated value
@@ -210,17 +215,21 @@ mod test_compile {
         let expected_expr = Expr::Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(and(
-                    Expr::Cast {
-                        expr: Box::new(lit(32.0)),
-                        data_type: DataType::Boolean,
-                    },
-                    Expr::is_not_null(lit(32.0)),
-                )),
+                Box::new(Expr::ScalarFunction {
+                    fun: BuiltinScalarFunction::Coalesce,
+                    args: vec![
+                        Expr::Cast {
+                            expr: Box::new(lit(32.0)),
+                            data_type: DataType::Boolean,
+                        },
+                        lit(false),
+                    ],
+                }),
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),
         };
+
         assert_eq!(result_expr, expected_expr);
 
         // Check evaluated value
@@ -261,17 +270,21 @@ mod test_compile {
         let expected_expr = Expr::Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(and(
-                    Expr::Cast {
-                        expr: Box::new(lit(5.0)),
-                        data_type: DataType::Boolean,
-                    },
-                    Expr::is_not_null(lit(5.0)),
-                )),
+                Box::new(Expr::ScalarFunction {
+                    fun: BuiltinScalarFunction::Coalesce,
+                    args: vec![
+                        Expr::Cast {
+                            expr: Box::new(lit(5.0)),
+                            data_type: DataType::Boolean,
+                        },
+                        lit(false),
+                    ],
+                }),
                 Box::new(lit(55.0)),
             )],
             else_expr: Some(Box::new(lit(5.0))),
         };
+
         assert_eq!(result_expr, expected_expr);
 
         // Check evaluated value
@@ -607,17 +620,21 @@ mod test_compile {
         let expected_expr = Expr::Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(and(
-                    Expr::Cast {
-                        expr: Box::new(lit(32.0)),
-                        data_type: DataType::Boolean,
-                    },
-                    Expr::is_not_null(lit(32.0)),
-                )),
+                Box::new(Expr::ScalarFunction {
+                    fun: BuiltinScalarFunction::Coalesce,
+                    args: vec![
+                        Expr::Cast {
+                            expr: Box::new(lit(32.0)),
+                            data_type: DataType::Boolean,
+                        },
+                        lit(false),
+                    ],
+                }),
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),
         };
+
         assert_eq!(result_expr, expected_expr);
         println!("expr: {:?}", result_expr);
 

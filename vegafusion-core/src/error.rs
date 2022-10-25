@@ -53,6 +53,12 @@ pub enum VegaFusionError {
     #[error("Pre-transform error: {0}\n{1}")]
     PreTransformError(String, ErrorContext),
 
+    #[error("SQL Not Supported error: {0}\n{1}")]
+    SqlNotSupported(String, ErrorContext),
+
+    #[error("Arrow error: {0}\n{1}")]
+    FormatError(std::fmt::Error, ErrorContext),
+
     #[error("Arrow error: {0}\n{1}")]
     ArrowError(ArrowError, ErrorContext),
 
@@ -62,8 +68,12 @@ pub enum VegaFusionError {
     #[error("IO Error: {0}\n{1}")]
     IOError(std::io::Error, ErrorContext),
 
-    #[error("IO Error: {0}\n{1}")]
+    #[error("Serde JSON Error: {0}\n{1}")]
     SerdeJsonError(serde_json::Error, ErrorContext),
+
+    #[cfg(feature = "sqlgen")]
+    #[error("SqlGen Error: {0}\n{1}")]
+    SqlParseError(sqlgen::parser::SqlGenError, ErrorContext),
 }
 
 impl VegaFusionError {
@@ -99,6 +109,14 @@ impl VegaFusionError {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::PreTransformError(msg, context)
             }
+            SqlNotSupported(msg, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::SqlNotSupported(msg, context)
+            }
+            FormatError(msg, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::FormatError(msg, context)
+            }
             ArrowError(msg, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::ArrowError(msg, context)
@@ -114,6 +132,11 @@ impl VegaFusionError {
             SerdeJsonError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::SerdeJsonError(err, context)
+            }
+            #[cfg(feature = "sqlgen")]
+            SqlParseError(err, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::SqlParseError(err, context)
             }
         }
     }
@@ -142,6 +165,10 @@ impl VegaFusionError {
         Self::PreTransformError(message.into(), Default::default())
     }
 
+    pub fn sql_not_supported<S: Into<String>>(message: S) -> Self {
+        Self::SqlNotSupported(message.into(), Default::default())
+    }
+
     /// Duplicate error. Not a precise Clone because some of the wrapped error types aren't Clone
     /// These are converted to internal errors
     pub fn duplicate(&self) -> Self {
@@ -163,6 +190,10 @@ impl VegaFusionError {
             PreTransformError(msg, context) => {
                 VegaFusionError::PreTransformError(msg.clone(), context.clone())
             }
+            SqlNotSupported(msg, context) => {
+                VegaFusionError::SqlNotSupported(msg.clone(), context.clone())
+            }
+            FormatError(err, context) => VegaFusionError::FormatError(*err, context.clone()),
             ArrowError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
@@ -174,6 +205,10 @@ impl VegaFusionError {
             }
             SerdeJsonError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
+            }
+            #[cfg(feature = "sqlgen")]
+            SqlParseError(err, context) => {
+                VegaFusionError::SqlParseError(err.clone(), context.clone())
             }
         }
     }
@@ -230,6 +265,12 @@ impl From<DataFusionError> for VegaFusionError {
     }
 }
 
+impl From<std::fmt::Error> for VegaFusionError {
+    fn from(err: std::fmt::Error) -> Self {
+        Self::FormatError(err, Default::default())
+    }
+}
+
 impl From<ArrowError> for VegaFusionError {
     fn from(err: ArrowError) -> Self {
         Self::ArrowError(err, Default::default())
@@ -245,6 +286,13 @@ impl From<std::io::Error> for VegaFusionError {
 impl From<serde_json::Error> for VegaFusionError {
     fn from(err: serde_json::Error) -> Self {
         Self::SerdeJsonError(err, Default::default())
+    }
+}
+
+#[cfg(feature = "sqlgen")]
+impl From<sqlgen::parser::SqlGenError> for VegaFusionError {
+    fn from(err: sqlgen::parser::SqlGenError) -> Self {
+        Self::SqlParseError(err, Default::default())
     }
 }
 

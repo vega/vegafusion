@@ -30,6 +30,13 @@ async-lock = "2.5.0"
 tempfile = "3.3.0"
 futures-util = "0.3.21"
 bytes = "1.1.0"
+deterministic-hash = "1.0.1"
+sqlgen = {git = "https://github.com/vegafusion/sqlgen-rs.git", rev = "e5ac9609dfffbf98af1fd8f2bc8a07216451bb51" }
+# Make sqlx optional
+sqlx = { version = "0.6.1", features = [ "runtime-tokio-rustls", "sqlite", "macros"] }
+libsqlite3-sys = {version="0.24.1", features=["bundled"]}
+log = "0.4.17"
+env_logger = "0.9.0"
 
 [dev-dependencies]
 futures = "0.3.21"
@@ -43,6 +50,7 @@ lodepng = "3.6.1"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
+features = ["sqlgen"]
 
 [dependencies.serde]
 version = "1.0.137"
@@ -50,11 +58,11 @@ features = [ "derive",]
 
 [dependencies.datafusion]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "b2be7abd6fb4154f725cc4235318515f1183619a"
+rev = "c59a76754e7e45063cb51c273f2a53aa325676a4"
 
 [dependencies.datafusion-expr]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "b2be7abd6fb4154f725cc4235318515f1183619a"
+rev = "c59a76754e7e45063cb51c273f2a53aa325676a4"
 
 [dependencies.tokio]
 version = "1.18.1"

@@ -6,11 +6,11 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use crate::data::dataset::VegaFusionDataset;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::convert::TryInto;
-use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::tasks::task::TaskKind;
 use vegafusion_core::proto::gen::tasks::Task;

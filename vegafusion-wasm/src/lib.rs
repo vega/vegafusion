@@ -162,17 +162,16 @@ impl MsgReceiver {
                                 set_signal_value(view, &var.name, scope.as_slice(), js_value);
                             }
                             TaskValue::Table(value) => {
-                                let json = value.to_json();
+                                let json = value.to_json().expect("Failed to serialize table");
                                 if self.verbose {
                                     log(&format!("VegaFusion(wasm): Received {}", var.name));
                                     log(&serde_json::to_string_pretty(&json).unwrap());
                                     log(&format!("Schema: {:#?}", &value.schema));
                                 }
 
-                                let js_value = js_sys::JSON::parse(
-                                    &serde_json::to_string(&value.to_json()).unwrap(),
-                                )
-                                .unwrap();
+                                let js_value =
+                                    js_sys::JSON::parse(&serde_json::to_string(&json).unwrap())
+                                        .unwrap();
 
                                 set_data_value(view, &var.name, scope.as_slice(), js_value);
                             }

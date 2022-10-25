@@ -8,23 +8,26 @@
  */
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
-use datafusion::dataframe::DataFrame;
+
 use std::collections::HashSet;
 
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Project;
 
+use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
+use datafusion_expr::col;
+use vegafusion_core::expression::escape::unescape_field;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 impl TransformTrait for Project {
     async fn eval(
         &self,
-        dataframe: Arc<DataFrame>,
+        dataframe: Arc<SqlDataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
         // Collect all dataframe fields into a HashSet for fast membership test
         let all_fields: HashSet<_> = dataframe
             .schema()
@@ -39,17 +42,17 @@ impl TransformTrait for Project {
             .fields
             .iter()
             .filter_map(|field| {
-                if all_fields.contains(field) {
-                    Some(field.clone())
+                let field = unescape_field(field);
+                if all_fields.contains(&field) {
+                    Some(field)
                 } else {
                     None
                 }
             })
             .collect();
 
-        let select_field_strs: Vec<_> = select_fields.iter().map(|f| f.as_str()).collect();
-
-        let result = dataframe.select_columns(select_field_strs.as_slice())?;
+        let select_col_exprs: Vec<_> = select_fields.iter().map(|f| col(f)).collect();
+        let result = dataframe.select(select_col_exprs)?;
         Ok((result, Default::default()))
     }
 }

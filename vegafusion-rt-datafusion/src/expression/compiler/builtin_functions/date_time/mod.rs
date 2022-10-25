@@ -13,28 +13,38 @@ Functions for working with date-time values.
 See: https://vega.github.io/vega/docs/expressions/#datetime-functions
 */
 pub mod date_format;
-pub mod date_parsing;
 pub mod date_parts;
+pub mod date_to_timestamptz;
 pub mod datetime;
-pub mod local_to_utc;
+pub mod epoch_to_timestamptz;
+pub mod str_to_timestamptz;
 pub mod time;
+pub mod timestamp_to_timestamptz;
+pub mod timestamptz_to_timestamp;
 
-use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
-    datetime_strs_to_millis, DateParseMode,
-};
+use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::datetime_strs_to_timestamp_millis;
 use datafusion::arrow::array::{ArrayRef, Date32Array, Int64Array, StringArray};
 use datafusion::arrow::compute::{cast, unary};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use std::sync::Arc;
 
-fn process_input_datetime(arg: &ArrayRef, default_input_tz: &chrono_tz::Tz) -> ArrayRef {
+pub fn process_input_datetime(arg: &ArrayRef, default_input_tz: &chrono_tz::Tz) -> ArrayRef {
     match arg.data_type() {
         DataType::Utf8 => {
             let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
-            datetime_strs_to_millis(array, DateParseMode::JavaScript, &Some(*default_input_tz)) as _
+            cast(
+                &datetime_strs_to_timestamp_millis(array, &Some(*default_input_tz)),
+                &DataType::Int64,
+            )
+            .expect("Failed to case timestamp to Int64")
         }
         DataType::Timestamp(TimeUnit::Millisecond, _) => {
             cast(arg, &DataType::Int64).expect("Failed to case timestamp to Int64")
+        }
+        DataType::Timestamp(_, _) => {
+            let arg_ms = cast(arg, &DataType::Timestamp(TimeUnit::Millisecond, None))
+                .expect("Failed to convert timestamp[ns] to timestamp[ms]");
+            cast(&arg_ms, &DataType::Int64).expect("Failed to case timestamp to Int64")
         }
         DataType::Date32 => {
             let ms_per_day = 1000 * 60 * 60 * 24_i64;
@@ -48,7 +58,7 @@ fn process_input_datetime(arg: &ArrayRef, default_input_tz: &chrono_tz::Tz) -> A
             int_array
         }
         DataType::Int64 => arg.clone(),
-        DataType::Float64 => cast(arg, &DataType::Int64).expect("Failed to case float to int"),
+        DataType::Float64 => cast(arg, &DataType::Int64).expect("Failed to cast float to int"),
         _ => panic!("Unexpected data type for date part function:"),
     }
 }

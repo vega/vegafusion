@@ -9,12 +9,13 @@
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
-use datafusion::dataframe::DataFrame;
 
-use crate::expression::compiler::utils::cast_to;
+use crate::expression::compiler::utils::{to_boolean, VfSimplifyInfo};
+use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
+use datafusion::logical_plan::ExprSimplifiable;
 use std::sync::Arc;
-use vegafusion_core::arrow::datatypes::DataType;
+
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Filter;
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -23,29 +24,22 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Filter {
     async fn eval(
         &self,
-        dataframe: Arc<DataFrame>,
+        dataframe: Arc<SqlDataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
-        let logical_expr = compile(
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        let filter_expr = compile(
             self.expr.as_ref().unwrap(),
             config,
-            Some(dataframe.schema()),
+            Some(&dataframe.schema_df()),
         )?;
-        // Save off initial columns and select them below to filter out any intermediary columns
-        // that the expression may produce
-        let col_names: Vec<_> = dataframe
-            .schema()
-            .fields()
-            .iter()
-            .map(|field| field.name().as_str())
-            .collect();
-        let result = dataframe
-            .filter(cast_to(
-                logical_expr,
-                &DataType::Boolean,
-                dataframe.schema(),
-            )?)?
-            .select_columns(&col_names)?;
+
+        // Cast filter expr to boolean
+        let filter_expr = to_boolean(filter_expr, &dataframe.schema_df())?;
+
+        // Simplify expression prior to evaluation
+        let simplified_expr = filter_expr.simplify(&VfSimplifyInfo::from(dataframe.schema_df()))?;
+
+        let result = dataframe.filter(simplified_expr)?;
 
         Ok((result, Default::default()))
     }

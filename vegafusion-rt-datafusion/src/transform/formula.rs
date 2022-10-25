@@ -9,7 +9,6 @@
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
-use datafusion::dataframe::DataFrame;
 
 use datafusion::prelude::col;
 
@@ -17,21 +16,27 @@ use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Formula;
 
+use crate::expression::compiler::utils::VfSimplifyInfo;
+use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
+use datafusion::logical_plan::ExprSimplifiable;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
 impl TransformTrait for Formula {
     async fn eval(
         &self,
-        dataframe: Arc<DataFrame>,
+        dataframe: Arc<SqlDataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
         let formula_expr = compile(
             self.expr.as_ref().unwrap(),
             config,
-            Some(dataframe.schema()),
+            Some(&dataframe.schema_df()),
         )?;
+
+        // Simplify expression prior to evaluation
+        let formula_expr = formula_expr.simplify(&VfSimplifyInfo::from(dataframe.schema_df()))?;
 
         // Rename with alias
         let formula_expr = formula_expr.alias(&self.r#as);

@@ -23,7 +23,7 @@ use tokio::runtime::Runtime;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
 
-use vegafusion_core::planning::plan::SpecPlan;
+use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 
 use vegafusion_core::planning::watch::{
     ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace, Watch, WatchNamespace, WatchPlan,
@@ -51,6 +51,9 @@ pub fn initialize() {
         let output_dir = format!("{}/tests/output/", crate_dir());
         std::fs::remove_dir_all(&output_dir).ok();
         std::fs::create_dir(&output_dir).expect("Failed to create output directory");
+
+        // Init logger
+        env_logger::init();
     });
 }
 
@@ -370,10 +373,8 @@ mod test_vegalite_specs {
         case("vegalite/bar_column_fold", 0.001),
         case("vegalite/bar_column_pivot", 0.001),
         case("vegalite/bar_corner_radius_end", 0.001),
-
         // Different ordering of bars with the same length
         case("vegalite/bar_count_minimap", 0.1),
-
         case("vegalite/bar_custom_sort_full", 0.001),
         case("vegalite/bar_custom_sort_partial", 0.001),
         case("vegalite/bar_custom_time_domain", 0.001),
@@ -537,6 +538,7 @@ mod test_vegalite_specs {
         case("vegalite/interactive_layered_crossfilter", 0.001),
         case("vegalite/interactive_legend_dblclick", 0.001),
         case("vegalite/interactive_legend", 0.001),
+
         case("vegalite/interactive_line_brush_cursor", 0.001),
         case("vegalite/interactive_line_hover", 0.001),
 
@@ -908,12 +910,12 @@ mod test_image_comparison_timeunit {
             vec![TimeUnitUnitSpec::Year],
             vec![TimeUnitUnitSpec::Quarter],
             vec![TimeUnitUnitSpec::Month],
-            vec![TimeUnitUnitSpec::Week],
+            // vec![TimeUnitUnitSpec::Week],
             vec![TimeUnitUnitSpec::Date],
             vec![TimeUnitUnitSpec::Day],
             vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Quarter],
             vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Month],
-            vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Week],
+            // vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Week],
         )]
         units: Vec<TimeUnitUnitSpec>,
 
@@ -1283,7 +1285,7 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
 
     // Load spec
     let full_spec = load_spec(spec_name);
-    println!("{:#?}", full_spec);
+    // println!("{:#?}", full_spec);
 
     let vegajs_runtime = vegajs_runtime();
 
@@ -1376,7 +1378,10 @@ async fn check_spec_sequence(
         default_input_tz: None,
     };
 
-    let spec_plan = SpecPlan::try_new(&full_spec, &Default::default()).unwrap();
+    let planner_config = PlannerConfig {
+        ..Default::default()
+    };
+    let spec_plan = SpecPlan::try_new(&full_spec, &planner_config).unwrap();
 
     let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
 
@@ -1386,10 +1391,10 @@ async fn check_spec_sequence(
     //     "client_spec: {}",
     //     serde_json::to_string_pretty(&spec_plan.client_spec).unwrap()
     // );
-    // println!(
-    //     "server_spec: {}",
-    //     serde_json::to_string_pretty(&spec_plan.server_spec).unwrap()
-    // );
+    println!(
+        "server_spec: {}",
+        serde_json::to_string_pretty(&spec_plan.server_spec).unwrap()
+    );
     //
     // println!(
     //     "comm_plan:\n---\n{}\n---",
@@ -1511,7 +1516,7 @@ async fn check_spec_sequence(
                 .map(|(scoped_var, value)| {
                     let json_value = match value {
                         TaskValue::Scalar(value) => value.to_json().unwrap(),
-                        TaskValue::Table(value) => value.to_json(),
+                        TaskValue::Table(value) => value.to_json().unwrap(),
                     };
                     ExportUpdate {
                         namespace: ExportUpdateNamespace::try_from(scoped_var.0.namespace())

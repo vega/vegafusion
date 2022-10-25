@@ -40,7 +40,7 @@ impl TaskValue {
     pub fn to_json(&self) -> Result<Value> {
         match self {
             TaskValue::Scalar(value) => value.to_json(),
-            TaskValue::Table(value) => Ok(value.to_json()),
+            TaskValue::Table(value) => Ok(value.to_json()?),
         }
     }
 

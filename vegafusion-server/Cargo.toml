@@ -39,5 +39,5 @@ version = "0.7.2"
 features = [ "tls",]
 
 [dependencies.clap]
-version = "3.1.0"
+version = "3.2.22"
 features = [ "derive",]

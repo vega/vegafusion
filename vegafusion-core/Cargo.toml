@@ -20,22 +20,23 @@ ordered-float = "^2.10.0"
 petgraph = "0.6.0"
 deterministic-hash = "1.0.1"
 chrono = "0.4.19"
+sqlgen = {git = "https://github.com/vegafusion/sqlgen-rs.git", rev = "e5ac9609dfffbf98af1fd8f2bc8a07216451bb51", optional=true}
 
 [dependencies.serde_json]
 version = "1.0.81"
 features = [ "preserve_order",]
 
 [dependencies.arrow]
-version = "19.0.0"
+version = "22.0.0"
 default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "b2be7abd6fb4154f725cc4235318515f1183619a"
+rev = "c59a76754e7e45063cb51c273f2a53aa325676a4"
 
 [dependencies.pyo3]
-version = "0.16.4"
+version = "0.17.1"
 optional = true
 
 [dependencies.serde]

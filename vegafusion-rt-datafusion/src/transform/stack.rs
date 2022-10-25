@@ -8,14 +8,17 @@
  */
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::to_numeric;
+use crate::sql::compile::expr::ToSqlExpr;
+use crate::sql::compile::select::ToSqlSelectItem;
+use crate::sql::dataframe::SqlDataFrame;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::dataframe::DataFrame;
 use datafusion::physical_plan::aggregates;
-use datafusion_expr::logical_plan::JoinType;
 use datafusion_expr::{
     abs, col, lit, max, when, AggregateFunction, BuiltInWindowFunction, Expr, WindowFunction,
 };
+use sqlgen::dialect::DialectDisplay;
+
 use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
 use vegafusion_core::error::{Result, VegaFusionError};
@@ -26,16 +29,15 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Stack {
     async fn eval(
         &self,
-        dataframe: Arc<DataFrame>,
+        dataframe: Arc<SqlDataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
-        // Assume offset is Zero until others are implemented
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
         let alias0 = self.alias_0.clone().expect("alias0 expected");
         let alias1 = self.alias_1.clone().expect("alias1 expected");
 
         // Save off input columns
         let input_fields: Vec<_> = dataframe
-            .schema()
+            .schema_df()
             .fields()
             .iter()
             .map(|f| f.field().name().clone())
@@ -109,105 +111,69 @@ impl TransformTrait for Stack {
 
 fn eval_normalize_center_offset(
     stack: &Stack,
-    dataframe: Arc<DataFrame>,
+    dataframe: Arc<SqlDataFrame>,
     input_fields: &[String],
     alias0: &str,
     alias1: &str,
     order_by: &[Expr],
     offset: &StackOffset,
-) -> Result<Arc<DataFrame>> {
-    // Build first selection
-    let mut selection_0: Vec<_> = input_fields
-        .iter()
-        .filter_map(|field| {
-            if field == alias0 || field == alias1 {
-                None
-            } else {
-                Some(col(field))
-            }
-        })
-        .collect();
-    selection_0.push(col("__row_number"));
-
-    // Build groupby columns
+) -> Result<Arc<SqlDataFrame>> {
+    // Build groupby columns expressions
     let partition_by: Vec<_> = stack.groupby.iter().map(|group| col(group)).collect();
 
-    // Build a dataframe that holds the sum of each partition
-
-    // Build window expression
-    let fun = WindowFunction::AggregateFunction(aggregates::AggregateFunction::Sum);
-
     // Cast field to number, replace with 0 when null, take absolute value
-    let numeric_field = to_numeric(col(&stack.field), dataframe.schema())?;
+    let numeric_field = to_numeric(col(&stack.field), &dataframe.schema_df())?;
     let numeric_field = when(col(&stack.field).is_not_null(), numeric_field).otherwise(lit(0))?;
     let numeric_field = abs(numeric_field);
 
+    let stack_col_name = "__stack";
+    let dataframe = dataframe.select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)])?;
+
     let total_agg = Expr::AggregateFunction {
         fun: AggregateFunction::Sum,
-        args: vec![numeric_field.clone()],
+        args: vec![col(stack_col_name)],
         distinct: false,
+        filter: None,
     }
     .alias("__total");
 
+    let total_agg_str = total_agg.to_sql_select()?.sql(dataframe.dialect())?;
+
+    // Add __total column with total or total per partition
     let dataframe = if partition_by.is_empty() {
-        let total_dataframe = dataframe.aggregate(partition_by.clone(), vec![total_agg])?;
-        let total_dataframe =
-            total_dataframe.select(vec![Expr::Wildcard, lit(true).alias("__unit_lhs")])?;
-        let dataframe = dataframe.select(vec![Expr::Wildcard, lit(true).alias("__unit_rhs")])?;
-
-        dataframe.join(
-            total_dataframe,
-            JoinType::Full,
-            vec!["__unit_lhs"].as_slice(),
-            vec!["__unit_rhs"].as_slice(),
-            None,
-        )?
+        dataframe.chain_query_str(&format!(
+            "SELECT * from {parent} CROSS JOIN (SELECT {total_agg_str} from {parent})",
+            parent = dataframe.parent_name(),
+            total_agg_str = total_agg_str,
+        ))?
     } else {
-        let total_dataframe = dataframe.aggregate(partition_by.clone(), vec![total_agg])?;
-
-        // Rename group cols prior to join
-        let groupby_aliases: Vec<String> = partition_by
+        let partition_by_strs = partition_by
             .iter()
-            .enumerate()
-            .map(|(i, _a)| format!("grp_field_{:?}{}", stack.groupby, i))
-            .collect();
+            .map(|p| Ok(p.to_sql()?.sql(dataframe.dialect())?))
+            .collect::<Result<Vec<_>>>()?;
+        let partition_by_csv = partition_by_strs.join(", ");
 
-        let mut select_exprs = vec![col("__total")];
-        select_exprs.extend(
-            partition_by
-                .clone()
-                .into_iter()
-                .zip(&groupby_aliases)
-                .map(|(n, alias)| n.alias(alias)),
-        );
-        let total_dataframe = total_dataframe.select(select_exprs)?;
-
-        let left_cols: Vec<_> = stack.groupby.iter().map(|name| name.as_str()).collect();
-        let right_cols: Vec<_> = groupby_aliases.iter().map(|name| name.as_str()).collect();
-        dataframe.join(
-            total_dataframe,
-            JoinType::Inner,
-            left_cols.as_slice(),
-            right_cols.as_slice(),
-            None,
-        )?
+        dataframe.chain_query_str(&format!(
+            "SELECT * from {parent} INNER JOIN (SELECT {partition_by_csv}, {total_agg_str} from {parent} GROUP BY {partition_by_csv}) as __inner USING ({partition_by_csv})",
+            parent = dataframe.parent_name(),
+            partition_by_csv = partition_by_csv,
+            total_agg_str = total_agg_str,
+        ))?
     };
 
-    // Build window function
+    // Build window function to compute cumulative sum of stack column
+    let fun = WindowFunction::AggregateFunction(aggregates::AggregateFunction::Sum);
     let window_expr = Expr::WindowFunction {
         fun,
-        args: vec![numeric_field.clone()],
+        args: vec![col(stack_col_name)],
         partition_by,
         order_by: Vec::from(order_by),
         window_frame: None,
     }
     .alias(alias1);
 
-    selection_0.push(window_expr);
-    selection_0.push(col("__total"));
-
     // Perform selection to add new field value
-    let dataframe = dataframe.select(selection_0.clone())?;
+    let dataframe = dataframe.select(vec![Expr::Wildcard, window_expr])?;
 
     // Restore original order
     let dataframe = dataframe.sort(vec![Expr::Sort {
@@ -216,8 +182,8 @@ fn eval_normalize_center_offset(
         nulls_first: false,
     }])?;
 
-    // Build selection_1
-    let mut selection_1: Vec<_> = input_fields
+    // Build final_selection
+    let mut final_selection: Vec<_> = input_fields
         .iter()
         .filter_map(|field| {
             if field == alias0 || field == alias1 {
@@ -231,82 +197,62 @@ fn eval_normalize_center_offset(
     // Now compute alias1 column by adding numeric field to alias0
     let dataframe = match offset {
         StackOffset::Center => {
-            // Center bars between 0 and the max total length bar
             let max_total = max(col("__total")).alias("__max_total");
-            let max_total_dataframe = dataframe
-                .aggregate(vec![lit(true)], vec![max_total])?
-                .select(vec![Expr::Wildcard, lit(true).alias("__max_unit_rhs")])?;
+            let max_total_str = max_total.to_sql_select()?.sql(dataframe.dialect())?;
 
-            let dataframe = dataframe
-                .select(vec![Expr::Wildcard, lit(true).alias("__max_unit_lhs")])?
-                .join(
-                    max_total_dataframe,
-                    JoinType::Inner,
-                    vec!["__max_unit_lhs"].as_slice(),
-                    vec!["__max_unit_rhs"].as_slice(),
-                    None,
-                )?;
+            let dataframe = dataframe.chain_query_str(&format!(
+                "SELECT * from {parent} CROSS JOIN (SELECT {max_total_str} from {parent})",
+                parent = dataframe.parent_name(),
+                max_total_str = max_total_str,
+            ))?;
 
             let first = col("__max_total").sub(col("__total")).div(lit(2));
-            let alias1_col = col(alias1).add(first).alias(alias1);
-            let alias0_col = alias1_col.clone().sub(numeric_field).alias(alias0);
-            selection_1.push(alias0_col);
-            selection_1.push(alias1_col);
-
-            println!("{:#?}", dataframe.schema());
+            let first_col = col(alias1).add(first);
+            let alias1_col = first_col.clone().alias(alias1);
+            let alias0_col = first_col.sub(col(stack_col_name)).alias(alias0);
+            final_selection.push(alias0_col);
+            final_selection.push(alias1_col);
 
             dataframe
         }
         StackOffset::Normalize => {
             let alias0_col = col(alias1)
-                .sub(numeric_field)
+                .sub(col(stack_col_name))
                 .div(col("__total"))
                 .alias(alias0);
-            selection_1.push(alias0_col);
+            final_selection.push(alias0_col);
 
             let alias1_col = col(alias1).div(col("__total")).alias(alias1);
-            selection_1.push(alias1_col);
+            final_selection.push(alias1_col);
 
             dataframe
         }
         _ => return Err(VegaFusionError::internal("Unexpected stack offset")),
     };
 
-    let dataframe = dataframe.select(selection_1.clone())?;
+    let dataframe = dataframe.select(final_selection.clone())?;
     Ok(dataframe)
 }
 
 fn eval_zero_offset(
     stack: &Stack,
-    dataframe: Arc<DataFrame>,
+    dataframe: Arc<SqlDataFrame>,
     input_fields: &[String],
     alias0: &str,
     alias1: &str,
     order_by: &[Expr],
-) -> Result<Arc<DataFrame>> {
-    // Build first selection
-    let mut selection_0: Vec<_> = input_fields
-        .iter()
-        .filter_map(|field| {
-            if field == alias0 || field == alias1 {
-                None
-            } else {
-                Some(col(field))
-            }
-        })
-        .collect();
-    selection_0.push(col("__row_number"));
-
-    // Build groupby columns
+) -> Result<Arc<SqlDataFrame>> {
+    // Build groupby / partitionby columns
     let partition_by: Vec<_> = stack.groupby.iter().map(|group| col(group)).collect();
 
     // Build window expression
     let fun = WindowFunction::AggregateFunction(aggregates::AggregateFunction::Sum);
 
     // Cast field to number and replace with 0 when null
-    let numeric_field = to_numeric(col(&stack.field), dataframe.schema())?;
+    let numeric_field = to_numeric(col(&stack.field), &dataframe.schema_df())?;
     let numeric_field = when(col(&stack.field).is_not_null(), numeric_field).otherwise(lit(0))?;
 
+    // Build window function to compute stacked value
     let window_expr = Expr::WindowFunction {
         fun,
         args: vec![numeric_field.clone()],
@@ -316,19 +262,19 @@ fn eval_zero_offset(
     }
     .alias(alias1);
 
-    selection_0.push(window_expr);
+    let window_expr_str = window_expr.to_sql_select()?.sql(dataframe.dialect())?;
 
     // For offset zero, we need to evaluate positive and negative field values separately,
     // then union the results. This is required to make sure stacks do not overlap. Negative
     // values stack in the negative direction and positive values stack in the positive
     // direction.
-    let dataframe_pos = dataframe.filter(numeric_field.clone().gt_eq(lit(0)))?;
-    let dataframe_pos = dataframe_pos.select(selection_0.clone())?;
-
-    let dataframe_neg = dataframe.filter(numeric_field.clone().lt(lit(0)))?;
-    let dataframe_neg = dataframe_neg.select(selection_0.clone())?;
-
-    let dataframe = dataframe_pos.union(dataframe_neg)?;
+    let dataframe = dataframe.chain_query_str(&format!(
+        "(SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} >= 0) UNION ALL \
+        (SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} < 0)",
+        parent = dataframe.parent_name(),
+        window_expr_str = window_expr_str,
+        numeric_field = numeric_field.to_sql()?.sql(dataframe.dialect())?
+    ))?;
 
     // Restore original order
     let dataframe = dataframe.sort(vec![Expr::Sort {
@@ -337,8 +283,8 @@ fn eval_zero_offset(
         nulls_first: false,
     }])?;
 
-    // Build selection_1
-    let mut selection_1: Vec<_> = input_fields
+    // Build final selection
+    let mut final_selection: Vec<_> = input_fields
         .iter()
         .filter_map(|field| {
             if field == alias0 || field == alias1 {
@@ -349,11 +295,11 @@ fn eval_zero_offset(
         })
         .collect();
 
-    // Now compute alias1 column by adding numeric field to alias0
+    // Now compute alias0 column by adding numeric field to alias1
     let alias0_col = col(alias1).sub(numeric_field).alias(alias0);
-    selection_1.push(alias0_col);
-    selection_1.push(col(alias1));
+    final_selection.push(alias0_col);
+    final_selection.push(col(alias1));
 
-    let dataframe = dataframe.select(selection_1.clone())?;
+    let dataframe = dataframe.select(final_selection.clone())?;
     Ok(dataframe)
 }

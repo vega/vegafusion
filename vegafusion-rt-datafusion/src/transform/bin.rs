@@ -11,20 +11,20 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{to_numeric, ExprHelpers};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::dataframe::DataFrame;
+
 use datafusion::logical_plan::{col, lit, DFSchema};
-use datafusion::physical_plan::functions::make_scalar_function;
-use datafusion::physical_plan::udf::ScalarUDF;
+
 use datafusion::scalar::ScalarValue;
-use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
+use datafusion_expr::{abs, floor, when, Expr};
 use float_cmp::approx_eq;
+use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
-use vegafusion_core::arrow::array::{ArrayRef, Float64Array, Int64Array};
-use vegafusion_core::arrow::compute::unary;
+
 use vegafusion_core::arrow::datatypes::{DataType, Field};
 use vegafusion_core::data::scalar::ScalarValueHelpers;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::error::{Result, VegaFusionError};
 
+use crate::sql::dataframe::SqlDataFrame;
 use vegafusion_core::proto::gen::transforms::Bin;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -32,11 +32,13 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Bin {
     async fn eval(
         &self,
-        dataframe: Arc<DataFrame>,
+        sql_df: Arc<SqlDataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        let schema = sql_df.schema_df();
+
         // Compute binning solution
-        let params = calculate_bin_params(self, dataframe.schema(), config)?;
+        let params = calculate_bin_params(self, &schema, config)?;
 
         let BinParams {
             start,
@@ -48,138 +50,102 @@ impl TransformTrait for Bin {
         let last_stop = *bin_starts.last().unwrap() + step;
 
         // Compute output signal value
-        let mut fname = self.field.clone();
-        fname.insert_str(0, "bin_");
+        let output_value = compute_output_value(self, start, stop, step);
 
-        let fields = ScalarValue::List(
-            Some(vec![ScalarValue::from(self.field.as_str())]),
-            Box::new(Field::new("item", DataType::Utf8, true)),
-        );
-        let output_value = if self.signal.is_some() {
-            Some(TaskValue::Scalar(ScalarValue::from(vec![
-                ("fields", fields),
-                ("fname", ScalarValue::from(fname.as_str())),
-                ("start", ScalarValue::from(start)),
-                ("step", ScalarValue::from(step)),
-                ("stop", ScalarValue::from(stop)),
-            ])))
-        } else {
-            None
+        let numeric_field = to_numeric(col(&self.field), &sql_df.schema_df())?;
+
+        // Add column with bin index
+        let bin_index_name = "__bin_index";
+        let bin_index =
+            floor((numeric_field.clone().sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
+                .alias(bin_index_name);
+        let sql_df = sql_df.select(vec![Expr::Wildcard, bin_index])?;
+
+        // Add column with bin start
+        let bin_start = (col(bin_index_name).mul(lit(step))).add(lit(start));
+        let bin_start_name = self.alias_0.clone().unwrap_or_else(|| "bin0".to_string());
+
+        // Explicitly cast (-)inf to float64 to help DataFusion with type inference
+        let inf = Expr::Cast {
+            expr: Box::new(lit(f64::INFINITY)),
+            data_type: DataType::Float64,
         };
-
-        // Investigate: Would it be faster to define this function once and input the binning
-        // parameters?
-        //
-        // Implementation handles Float64 and Int64 separately to avoid having DataFusion
-        // copy the full integer array into a float array. This improves performance on integer
-        // columns, but this should be extended to the other numeric types as well.
-        let bin = move |args: &[ArrayRef]| {
-            let arg = &args[0];
-            let dtype = arg.data_type();
-            let binned_values = match dtype {
-                DataType::Float64 => {
-                    let field_values = args[0].as_any().downcast_ref::<Float64Array>().unwrap();
-                    let binned_values: Float64Array = unary(field_values, |v| {
-                        lookup_bin_edge(v, bin_starts.as_slice(), step, last_stop)
-                    });
-                    binned_values
-                }
-                DataType::Int64 => {
-                    let field_values = args[0].as_any().downcast_ref::<Int64Array>().unwrap();
-                    let binned_values: Float64Array = unary(field_values, |v| {
-                        let v = v as f64;
-                        lookup_bin_edge(v, bin_starts.as_slice(), step, last_stop)
-                    });
-                    binned_values
-                }
-                _ => unreachable!(),
-            };
-
-            Ok(Arc::new(binned_values) as ArrayRef)
+        let neg_inf = Expr::Cast {
+            expr: Box::new(lit(f64::NEG_INFINITY)),
+            data_type: DataType::Float64,
         };
-        let bin = make_scalar_function(bin);
+        let eps = lit(1.0e-14);
 
-        let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Float64)));
-        let bin = ScalarUDF::new(
-            "bin",
-            &Signature::uniform(
-                1,
-                vec![DataType::Float64, DataType::Int64],
-                Volatility::Immutable,
-            ),
-            &return_type,
-            &bin,
-        );
+        let bin_start = when(col(bin_index_name).lt(lit(0.0)), neg_inf)
+            .when(
+                abs(numeric_field.sub(lit(last_stop))).lt(eps),
+                lit(*bin_starts.last().unwrap()),
+            )
+            .when(col(bin_index_name).gt_eq(lit(n)), inf)
+            .otherwise(bin_start)?
+            .alias(&bin_start_name);
 
-        let bin_start = bin.call(vec![to_numeric(col(&self.field), dataframe.schema())?]);
-
-        // Name binned columns
-        let (bin_start, name) = if let Some(as0) = &self.alias_0 {
-            (bin_start.alias(as0), as0.to_string())
-        } else {
-            (bin_start.alias("bin0"), "bin0".to_string())
-        };
-
-        let mut select_exprs: Vec<_> = dataframe
+        let mut select_exprs = sql_df
             .schema()
-            .fields()
+            .fields
             .iter()
             .filter_map(|field| {
-                if field.name() != &name {
-                    Some(col(field.name()))
-                } else {
+                if field.name() == &bin_start_name {
                     None
+                } else {
+                    Some(col(field.name()))
                 }
             })
-            .collect();
+            .collect::<Vec<_>>();
         select_exprs.push(bin_start);
-        let dataframe = dataframe
-            .select(select_exprs)
-            .with_context(|| "Failed to evaluate binning transform".to_string())?;
 
-        // Split end into a separate select so that DataFusion knows to offset from previously
-        // computed bin start, rather than recompute it.
-        let bin_end = col(&name) + lit(step);
-        let (bin_end, name) = if let Some(as1) = &self.alias_1 {
-            (bin_end.alias(as1), as1.to_string())
-        } else {
-            (bin_end.alias("bin1"), "bin1".to_string())
-        };
+        let sql_df = sql_df.select(select_exprs)?;
 
-        let mut select_exprs: Vec<_> = dataframe
-            .schema()
+        // Add bin end column
+        let bin_end_name = self.alias_1.clone().unwrap_or_else(|| "bin1".to_string());
+        let bin_end = (col(&bin_start_name) + lit(step)).alias(&bin_end_name);
+
+        // Compute final projection that removes __bin_index column
+        let mut select_exprs = schema
             .fields()
             .iter()
             .filter_map(|field| {
-                if field.name() != &name {
-                    Some(col(field.name()))
-                } else {
+                let name = field.name();
+                if name == &bin_start_name || name == &bin_end_name {
                     None
+                } else {
+                    Some(col(name))
                 }
             })
-            .collect();
+            .collect::<Vec<_>>();
+        select_exprs.push(col(&bin_start_name));
         select_exprs.push(bin_end);
 
-        let dataframe = dataframe
-            .select(select_exprs)
-            .with_context(|| "Failed to evaluate binning transform".to_string())?;
+        let sql_df = sql_df.select(select_exprs)?;
 
-        Ok((dataframe, output_value.into_iter().collect()))
+        Ok((sql_df, output_value.into_iter().collect()))
     }
 }
 
-#[inline(always)]
-fn lookup_bin_edge(v: f64, bin_starts: &[f64], step: f64, last_stop: f64) -> f64 {
-    let n = bin_starts.len() as i32;
-    let bin_ind = (1.0e-14 + (v - bin_starts[0]) / step).floor() as i32;
-    if bin_ind < 0 {
-        f64::NEG_INFINITY
-    } else if bin_ind == n && (v - last_stop).abs() <= 1.0e-14 {
-        *bin_starts.last().unwrap()
-    } else if bin_ind >= n {
-        f64::INFINITY
+fn compute_output_value(bin_tx: &Bin, start: f64, stop: f64, step: f64) -> Option<TaskValue> {
+    let mut fname = bin_tx.field.clone();
+    fname.insert_str(0, "bin_");
+
+    let fields = ScalarValue::List(
+        Some(vec![ScalarValue::from(bin_tx.field.as_str())]),
+        Box::new(Field::new("item", DataType::Utf8, true)),
+    );
+
+    if bin_tx.signal.is_some() {
+        Some(TaskValue::Scalar(ScalarValue::from(vec![
+            ("fields", fields),
+            ("fname", ScalarValue::from(fname.as_str())),
+            ("start", ScalarValue::from(start)),
+            ("step", ScalarValue::from(step)),
+            ("stop", ScalarValue::from(stop)),
+        ])))
     } else {
-        bin_starts[bin_ind as usize]
+        None
     }
 }
 

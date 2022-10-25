@@ -7,17 +7,12 @@
  * this program the details of the active license.
  */
 use crate::data::table::VegaFusionTableUtils;
-use crate::expression::compiler::builtin_functions::date_time::date_parsing::{
-    get_datetime_udf, DateParseMode,
-};
-use crate::expression::compiler::builtin_functions::date_time::datetime::make_datetime_components_udf;
+use crate::expression::compiler::builtin_functions::date_time::datetime::MAKE_TIMESTAMPTZ;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{
-    cast_to, is_integer_datatype, is_string_datatype, ExprHelpers,
-};
+use crate::expression::compiler::utils::{is_integer_datatype, is_string_datatype, ExprHelpers};
 use crate::task_graph::task::TaskCall;
-use crate::transform::TransformTrait;
+
 use async_trait::async_trait;
 use datafusion::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use datafusion::arrow::ipc::reader::{FileReader, StreamReader};
@@ -27,17 +22,22 @@ use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::execution::options::CsvReadOptions;
 use datafusion::logical_plan::Expr;
 use datafusion::prelude::{col, SessionContext};
+use datafusion_expr::lit;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
-use vegafusion_core::arrow::datatypes::TimeUnit;
-use vegafusion_core::data::dataset::VegaFusionDataset;
 
-use crate::data::dataset::VegaFusionDatasetUtils;
-use crate::expression::compiler::builtin_functions::date_time::local_to_utc::make_to_utc_millis_fn;
+use crate::data::dataset::VegaFusionDataset;
+use crate::expression::compiler::builtin_functions::date_time::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::call::make_session_context;
+use crate::sql::connection::datafusion_conn::DataFusionConnection;
+use crate::sql::dataframe::SqlDataFrame;
 use crate::task_graph::timezone::RuntimeTzConfig;
+use crate::transform::pipeline::TransformPipelineUtils;
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
@@ -45,6 +45,7 @@ use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::proto::gen::tasks::scan_url_format;
 use vegafusion_core::proto::gen::tasks::scan_url_format::Parse;
 use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask};
+use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -109,11 +110,17 @@ impl TaskCall for DataUrlTask {
         // Load data from URL
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
 
-        let date_mode = DateParseMode::JavaScript;
         let df = if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
             let inline_name = inline_name.trim().to_string();
             if let Some(inline_dataset) = inline_datasets.get(&inline_name) {
-                inline_dataset.to_dataframe()?
+                match inline_dataset {
+                    VegaFusionDataset::Table { table, .. } => table.to_dataframe()?,
+                    VegaFusionDataset::SqlDataFrame(sql_df) => {
+                        // Process datetime columns and evaluage transforms
+                        let sql_df = process_datetimes(&parse, sql_df.clone(), &config.tz_config)?;
+                        return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await;
+                    }
+                }
             } else {
                 return Err(VegaFusionError::internal(format!(
                     "No inline dataset named {}",
@@ -133,26 +140,41 @@ impl TaskCall for DataUrlTask {
             )));
         };
 
-        let df = process_datetimes(&parse, date_mode, df, tz_config)?;
+        // Construct SqlDataFrame
+        let ctx = make_session_context();
+        ctx.register_table("tbl", df)?;
+        let sql_conn = DataFusionConnection::new(Arc::new(ctx));
 
-        // Apply transforms (if any)
-        let (transformed_df, output_values) = if self
-            .pipeline
-            .as_ref()
-            .map(|p| !p.transforms.is_empty())
-            .unwrap_or(false)
-        {
-            let pipeline = self.pipeline.as_ref().unwrap();
-            pipeline.eval(df, &config).await?
-        } else {
-            // No transforms
-            (df, Vec::new())
-        };
+        let sql_df = Arc::new(SqlDataFrame::try_new(Arc::new(sql_conn), "tbl").await?);
 
-        let table_value = TaskValue::Table(VegaFusionTable::from_dataframe(transformed_df).await?);
+        // Process datetime columns
+        let sql_df = process_datetimes(&parse, sql_df, &config.tz_config)?;
 
-        Ok((table_value, output_values))
+        eval_sql_df(sql_df, &self.pipeline, &config).await
     }
+}
+
+async fn eval_sql_df(
+    sql_df: Arc<SqlDataFrame>,
+    pipeline: &Option<TransformPipeline>,
+    config: &CompilationConfig,
+) -> Result<(TaskValue, Vec<TaskValue>)> {
+    // Apply transforms (if any)
+    let (transformed_df, output_values) = if pipeline
+        .as_ref()
+        .map(|p| !p.transforms.is_empty())
+        .unwrap_or(false)
+    {
+        let pipeline = pipeline.as_ref().unwrap();
+        pipeline.eval_sql(sql_df, config).await?
+    } else {
+        // No transforms
+        (sql_df.collect().await?, Vec::new())
+    };
+
+    let table_value = TaskValue::Table(transformed_df);
+
+    Ok((table_value, output_values))
 }
 
 lazy_static! {
@@ -252,40 +274,44 @@ fn check_builtin_dataset(url: String) -> String {
 
 fn process_datetimes(
     parse: &Option<Parse>,
-    date_mode: DateParseMode,
-    df: Arc<DataFrame>,
+    sql_df: Arc<SqlDataFrame>,
     tz_config: &Option<RuntimeTzConfig>,
-) -> Result<Arc<DataFrame>> {
+) -> Result<Arc<SqlDataFrame>> {
     // Perform specialized date parsing
     let mut date_fields: Vec<String> = Vec::new();
-    let mut df = df;
+    let mut df = sql_df;
     if let Some(scan_url_format::Parse::Object(formats)) = parse {
         for spec in &formats.specs {
             let datatype = &spec.datatype;
             if datatype.starts_with("date") || datatype.starts_with("utc") {
-                let date_mode = if datatype.starts_with("utc") {
-                    DateParseMode::Utc
-                } else {
-                    date_mode
-                };
-
-                let schema = df.schema();
+                let schema = df.schema_df();
                 if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
-                        let datetime_udf = get_datetime_udf(date_mode, tz_config);
+                        let default_input_tz_str = tz_config
+                            .map(|tz_config| tz_config.default_input_tz.to_string())
+                            .unwrap_or_else(|| "UTC".to_string());
 
                         Expr::ScalarUDF {
-                            fun: Arc::new(datetime_udf),
-                            args: vec![col(&spec.name)],
+                            fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+                            args: vec![col(&spec.name), lit(default_input_tz_str)],
                         }
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically, use local time
                         let tz_config =
                             tz_config.with_context(|| "No local timezone info provided")?;
                         Expr::ScalarUDF {
-                            fun: Arc::new(make_datetime_components_udf(tz_config.default_input_tz)),
-                            args: vec![col(&spec.name)],
+                            fun: Arc::new((*MAKE_TIMESTAMPTZ).clone()),
+                            args: vec![
+                                col(&spec.name),                             // year
+                                lit(0),                                      // month
+                                lit(1),                                      // day
+                                lit(0),                                      // hour
+                                lit(0),                                      // minute
+                                lit(0),                                      // second
+                                lit(0),                                      // millisecond
+                                lit(tz_config.default_input_tz.to_string()), // time zone
+                            ],
                         }
                     } else {
                         continue;
@@ -324,22 +350,23 @@ fn process_datetimes(
                 let expr = match field.data_type() {
                     DataType::Timestamp(_, tz) => match tz {
                         Some(tz) if tz.to_lowercase() == "utc" => {
-                            let timestamp_millis = cast_to(
-                                col(field.name()),
-                                &DataType::Timestamp(
-                                    TimeUnit::Millisecond,
-                                    Some("UTC".to_string()),
-                                ),
-                                schema,
-                            )?;
-                            cast_to(timestamp_millis, &DataType::Int64, schema).unwrap()
+                            // Timestamp already in UTC
+                            Expr::ScalarUDF {
+                                fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
+                                args: vec![col(field.name()), lit("UTC")],
+                            }
                         }
                         _ => {
+                            // Naive timestamp, interpret as default_input_tz
                             let tz_config =
                                 tz_config.with_context(|| "No local timezone info provided")?;
+
                             Expr::ScalarUDF {
-                                fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
-                                args: vec![col(field.name())],
+                                fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
+                                args: vec![
+                                    col(field.name()),
+                                    lit(tz_config.default_input_tz.to_string()),
+                                ],
                             }
                         }
                     },
@@ -348,8 +375,11 @@ fn process_datetimes(
                             tz_config.with_context(|| "No local timezone info provided")?;
 
                         Expr::ScalarUDF {
-                            fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
-                            args: vec![col(field.name())],
+                            fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
+                            args: vec![
+                                col(field.name()),
+                                lit(tz_config.default_input_tz.to_string()),
+                            ],
                         }
                     }
                     DataType::Date32 => {
@@ -357,8 +387,8 @@ fn process_datetimes(
                             tz_config.with_context(|| "No local timezone info provided")?;
 
                         Expr::ScalarUDF {
-                            fun: Arc::new(make_to_utc_millis_fn(&tz_config)),
-                            args: vec![col(field.name())],
+                            fun: Arc::new((*DATE_TO_TIMESTAMPTZ_UDF).clone()),
+                            args: vec![col(field.name()), lit(tz_config.local_tz.to_string())],
                         }
                     }
                     _ => col(field.name()),
@@ -375,7 +405,7 @@ fn process_datetimes(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    Ok(df.select(selection)?)
+    df.select(selection)
 }
 
 #[async_trait]
@@ -391,7 +421,6 @@ impl TaskCall for DataValuesTask {
 
         // Get parse format for date processing
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
-        let date_mode = DateParseMode::JavaScript;
 
         // Apply transforms (if any)
         let (transformed_table, output_values) = if self
@@ -401,21 +430,21 @@ impl TaskCall for DataValuesTask {
             .unwrap_or(false)
         {
             let pipeline = self.pipeline.as_ref().unwrap();
-            let values_df = values_table.to_dataframe()?;
-            let values_df = process_datetimes(&parse, date_mode, values_df, tz_config)?;
 
             let config = build_compilation_config(&self.input_vars(), values, tz_config);
-            let (df, output_values) = pipeline.eval(values_df, &config).await?;
 
-            (VegaFusionTable::from_dataframe(df).await?, output_values)
+            // Process datetime columns
+            let sql_df = values_table.to_sql_dataframe().await?;
+            let sql_df = process_datetimes(&parse, sql_df, &config.tz_config)?;
+
+            let (table, output_values) = pipeline.eval_sql(sql_df, &config).await?;
+
+            (table, output_values)
         } else {
             // No transforms
-            let values_df = values_table.to_dataframe()?;
-            let values_df = process_datetimes(&parse, date_mode, values_df, tz_config)?;
-            (
-                VegaFusionTable::from_dataframe(values_df).await?,
-                Vec::new(),
-            )
+            let values_df = values_table.to_sql_dataframe().await?;
+            let values_df = process_datetimes(&parse, values_df, tz_config)?;
+            (values_df.collect().await?, Vec::new())
         };
 
         let table_value = TaskValue::Table(transformed_table);
@@ -451,9 +480,10 @@ impl TaskCall for DataSourceTask {
             .unwrap_or(false)
         {
             let pipeline = self.pipeline.as_ref().unwrap();
-            let values_df = source_table.to_dataframe()?;
-            let (df, output_values) = pipeline.eval(values_df, &config).await?;
-            (VegaFusionTable::from_dataframe(df).await?, output_values)
+            let sql_df = source_table.to_sql_dataframe().await?;
+            let (table, output_values) = pipeline.eval_sql(sql_df, &config).await?;
+
+            (table, output_values)
         } else {
             // No transforms
             (source_table, Vec::new())

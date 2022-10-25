@@ -9,7 +9,7 @@
 use datafusion::arrow::array::{ArrayRef, BooleanArray};
 use datafusion::arrow::datatypes::{DataType, Schema};
 use datafusion::arrow::record_batch::RecordBatch;
-use datafusion::logical_plan::{and, Column, DFSchema, Expr, ExprSchemable};
+use datafusion::logical_plan::{Column, DFSchema, Expr, ExprSchemable, SimplifyInfo};
 use datafusion::physical_plan::planner::DefaultPhysicalPlanner;
 use datafusion::physical_plan::{ColumnarValue, PhysicalExpr, PhysicalPlanner};
 use datafusion::scalar::ScalarValue;
@@ -17,9 +17,10 @@ use datafusion::scalar::ScalarValue;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
-use datafusion::execution::context::{default_session_builder, SessionState};
+use datafusion::error::DataFusionError;
+use datafusion::execution::context::{default_session_builder, ExecutionProps, SessionState};
 use datafusion_expr::utils::expr_to_columns;
-use datafusion_expr::BuiltinScalarFunction;
+use datafusion_expr::{coalesce, lit, BuiltinScalarFunction};
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
@@ -88,18 +89,23 @@ pub fn data_type(value: &Expr, schema: &DFSchema) -> Result<DataType> {
 pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let dtype = data_type(&value, schema)?;
     let boolean_value = if matches!(dtype, DataType::Boolean) {
-        and(Expr::IsNotNull(Box::new(value.clone())), value)
+        coalesce(vec![value, lit(false)])
+    } else if matches!(
+        dtype,
+        DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64
+    ) {
+        coalesce(vec![value.not_eq(lit(0)), lit(false)])
     } else {
         // TODO: JavaScript falsey cast
         //  - empty string to false
         //  - NaN to false
-        and(
+        coalesce(vec![
             Expr::Cast {
-                expr: Box::new(value.clone()),
+                expr: Box::new(value),
                 data_type: DataType::Boolean,
             },
-            Expr::IsNotNull(Box::new(value)),
-        )
+            lit(false),
+        ])
     };
 
     Ok(boolean_value)
@@ -237,5 +243,42 @@ impl ExprHelpers for Expr {
         };
 
         Ok(col_result)
+    }
+}
+
+/// In order to simplify expressions, DataFusion must have information
+/// about the expressions.
+///
+/// You can provide that information using DataFusion [DFSchema]
+/// objects or from some other implemention
+pub struct VfSimplifyInfo {
+    /// The input schema
+    schema: DFSchema,
+
+    /// Execution specific details needed for constant evaluation such
+    /// as the current time for `now()` and [VariableProviders]
+    execution_props: ExecutionProps,
+}
+
+impl SimplifyInfo for VfSimplifyInfo {
+    fn is_boolean_type(&self, expr: &Expr) -> std::result::Result<bool, DataFusionError> {
+        Ok(matches!(expr.get_type(&self.schema)?, DataType::Boolean))
+    }
+
+    fn nullable(&self, expr: &Expr) -> std::result::Result<bool, DataFusionError> {
+        expr.nullable(&self.schema)
+    }
+
+    fn execution_props(&self) -> &ExecutionProps {
+        &self.execution_props
+    }
+}
+
+impl From<DFSchema> for VfSimplifyInfo {
+    fn from(schema: DFSchema) -> Self {
+        Self {
+            schema,
+            execution_props: ExecutionProps::new(),
+        }
     }
 }

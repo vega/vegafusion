@@ -149,7 +149,7 @@ def setup_module(module):
         ("casestudy/beckers_barley_trellis_plot", 1.0, 0.5),
         ("casestudy/anscombe_plot", 1.0, 0.5),
         ("casestudy/us_population_over_time_facet", 1.0, 0.5),
-        ("casestudy/one_dot_per_zipcode", 0.999, 0.5),
+        ("casestudy/one_dot_per_zipcode", 0.999, 1.0),
         ("circular/donut", 1.0, 0.5),
         ("circular/pie", 1.0, 0.5),
         ("circular/pie_with_labels", 1.0, 0.5),
@@ -418,6 +418,11 @@ def export_image_sequence(
 
             elif action_type == "move_to":
                 coords = action["coords"]
+
+                # # Origin of top-left corner
+                # chain = chain.move_to_element_with_offset(canvas, coords[0], coords[1])
+
+                # Origin of element center
                 xoffset = canvas.size["width"] / 2
                 yoffset = canvas.size["height"] / 2
                 chain = chain.move_to_element_with_offset(canvas, coords[0] - xoffset, coords[1] - yoffset)

@@ -6,7 +6,6 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use crate::data::dataset::VegaFusionDataset;
 use crate::data::scalar::{ScalarValue, ScalarValueHelpers};
 use crate::data::table::VegaFusionTable;
 use crate::error::{Result, VegaFusionError};
@@ -108,15 +107,15 @@ impl ChartVisitor for MakeTaskScopeVisitor {
 pub struct MakeTasksVisitor<'a> {
     pub tasks: Vec<Task>,
     pub tz_config: TzConfig,
-    pub datasets: &'a HashMap<String, VegaFusionDataset>,
+    pub dataset_fingerprints: &'a HashMap<String, String>,
 }
 
 impl<'a> MakeTasksVisitor<'a> {
-    pub fn new(tz_config: &TzConfig, datasets: &'a HashMap<String, VegaFusionDataset>) -> Self {
+    pub fn new(tz_config: &TzConfig, dataset_fingerprints: &'a HashMap<String, String>) -> Self {
         Self {
             tasks: Default::default(),
             tz_config: tz_config.clone(),
-            datasets,
+            dataset_fingerprints,
         }
     }
 }
@@ -178,8 +177,8 @@ impl<'a> ChartVisitor for MakeTasksVisitor<'a> {
             if let Url::String(url) = &proto_url {
                 if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
                     let inline_name = inline_name.trim().to_string();
-                    if let Some(dataset) = self.datasets.get(&inline_name) {
-                        proto_url = Url::String(format!("{}#{}", url, dataset.fingerprint()));
+                    if let Some(fingerprint) = self.dataset_fingerprints.get(&inline_name) {
+                        proto_url = Url::String(format!("{}#{}", url, fingerprint));
                     }
                 }
             }
