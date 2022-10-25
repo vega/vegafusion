@@ -34,6 +34,21 @@ conda create --name vegafusion_dev --file python/vegafusion-jupyter/conda-win-64
 conda activate vegafusion_dev
 ```
 
+### Install Chrome and Chrome Webdriver
+Install Chrome desktop and a compatible Chrome Driver:
+
+For MacOS
+```
+$ brew install --cask chromedriver
+```
+
+For Linux and Windows, this can be installed with conda
+```
+$ conda install -c conda-forge python-chromedriver-binary
+```
+
+In both cases, make sure the chromedriver version is compatible with the version of Chrome desktop
+
 ### Install test npm dependencies
 Note: The `npm` command is included in the `nodejs` conda-forge package installed in the development conda environment.
 

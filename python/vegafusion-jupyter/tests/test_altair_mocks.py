@@ -3,7 +3,6 @@ import jupytext
 import io
 import tempfile
 from subprocess import Popen
-import chromedriver_binary
 import pytest
 from selenium.webdriver import ActionChains
 from selenium import webdriver
@@ -19,6 +18,11 @@ from flaky import flaky
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import json
 
+try:
+    import chromedriver_binary
+except ImportError:
+    # chromedriver not provided through chromedriver_binary package
+    pass
 
 here = Path(__file__).parent
 altair_mocks_dir = here / "altair_mocks"
