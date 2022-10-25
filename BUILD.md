@@ -19,9 +19,14 @@ For Linux:
 conda create --name vegafusion_dev --file python/vegafusion-jupyter/conda-linux-64-cp310.lock
 ```
 
-For MacOS:
+For MacOS (Intel):
 ```bash
 conda create --name vegafusion_dev --file python/vegafusion-jupyter/conda-osx-64-cp310.lock
+```
+
+For MacOS (Arm):
+```bash
+conda create --name vegafusion_dev --file python/vegafusion-jupyter/conda-osx-arm64-cp310.lock
 ```
 
 For Windows:
@@ -58,8 +63,11 @@ cd vegafusion-rt-datafusion/tests/util/vegajs_runtime/
 npm install
 ```
 
-### Install Chrome
-Install desktop Chrome with version matching the `python-chromedriver-binary` version from the conda lock file above. e.g. `96.0`.  Or, install the version of `python-chromedriver-binary` that matches the version of chrome you already have installed. 
+Note: On a MacOS ARM machine, npm may attempt to build the node canvas dependency from source. The following dependencies may be needed.
+```
+$ brew install pkg-config cairo pango libpng jpeg giflib librsvg
+```
+See https://stackoverflow.com/questions/71352368/is-it-possible-to-install-canvas-with-m1-chip
 
 ## Install/Build packages
 VegaFusion contains several packages using a variety of languages and build tools that need to be built before running the test suite.
@@ -69,14 +77,7 @@ From the repository root:
 ```bash
 cd vegafusion-wasm
 npm install
-wasm-pack build --release
-```
-
-### Link `vegafusion-wasm`
-From the repository root:
-```bash
-cd vegafusion-wasm/pkg
-npm link
+npm run build
 ```
 
 ### Build `javascript/vegafusion-embed` package
@@ -96,12 +97,17 @@ cd vegafusion-python-embed
 maturin develop --release
 ```
 
-### Install the `vegafusion-jupyter` Python package in development mode
+### Install the `vegafusion` Python package in development mode
+From the repository root:
+```bash
+cd python/vegafusion/
+pip install -e .
+```
 
+### Install the `vegafusion-jupyter` Python package in development mode
 From the repository root:
 ```bash
 cd python/vegafusion-jupyter/
-npm link vegafusion-wasm
 npm install
 pip install -e ".[test]"
 ```
@@ -109,8 +115,7 @@ pip install -e ".[test]"
 Then, build the jupyterlab extension
 
 ```bash
-jupyter labextension develop --overwrite .
-yarn run build:dev
+npm run build:dev
 ```
 
 ## Running tests
@@ -167,8 +172,10 @@ maturin build --release --strip --target aarch64-apple-darwin
 
 1. Edit the dev-environment-3.X.yml file
 2. Update lock files with
+
+Note: the 3.7 environment is not supported on `osx-arm64`
 ```bash
 cd python/vegafusion-jupyter/
 conda-lock -f dev-environment-3.7.yml --kind explicit -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp37.lock"
-conda-lock -f dev-environment-3.10.yml --kind explicit -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp310.lock"
+conda-lock -f dev-environment-3.10.yml --kind explicit -p osx-64 -p osx-arm64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp310.lock"
 ```
