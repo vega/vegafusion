@@ -329,6 +329,9 @@ jobs:
         uses: browser-actions/setup-chrome@latest
         with:
           chrome-version: stable
+      - name: Install ChromeDriver
+        run: |
+          conda install -c conda-forge python-chromedriver-binary
       - name: Download vegafusion wheel
         uses: actions/download-artifact@v2
         with:
