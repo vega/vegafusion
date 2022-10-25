@@ -278,7 +278,7 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     chrome_driver.set_window_size(800, 800)
 
     # Launch Voila server
-    voila_proc = Popen(["voila", "--no-browser", "--debug", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
+    voila_proc = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
 
     # Sleep to allow Voila itself to start (this does not include loading a particular dashboard).
     time.sleep(1.5)
