@@ -3,7 +3,6 @@ import jupytext
 import io
 import tempfile
 from subprocess import Popen
-import chromedriver_binary
 import pytest
 from selenium.webdriver import ActionChains
 from selenium import webdriver
@@ -19,6 +18,11 @@ from flaky import flaky
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import json
 
+try:
+    import chromedriver_binary
+except ImportError:
+    # chromedriver not provided through chromedriver_binary package
+    pass
 
 here = Path(__file__).parent
 altair_mocks_dir = here / "altair_mocks"
@@ -278,7 +282,7 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     chrome_driver.set_window_size(800, 800)
 
     # Launch Voila server
-    voila_proc = Popen(["voila", "--no-browser", "--debug", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
+    voila_proc = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
 
     # Sleep to allow Voila itself to start (this does not include loading a particular dashboard).
     time.sleep(1.5)
