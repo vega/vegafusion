@@ -65,7 +65,7 @@ impl TransformTrait for Aggregate {
                 asc: true,
                 nulls_first: false,
             }];
-            grouped_dataframe = grouped_dataframe.sort(sort_exprs)?;
+            grouped_dataframe = grouped_dataframe.sort(sort_exprs, None)?;
         }
 
         // Make final projection

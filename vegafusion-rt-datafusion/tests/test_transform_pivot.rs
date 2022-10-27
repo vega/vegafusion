@@ -43,21 +43,27 @@ mod test_pivot_with_group {
 
     #[rstest(
         op,
-        case(None),
-        case(Some(AggregateOpSpec::Sum)),
-        case(Some(AggregateOpSpec::Count)),
-        case(Some(AggregateOpSpec::Mean)),
-        case(Some(AggregateOpSpec::Max)),
-        case(Some(AggregateOpSpec::Min))
+        limit,
+        case(None, None),
+        case(Some(AggregateOpSpec::Sum), None),
+        case(Some(AggregateOpSpec::Sum), Some(2)),
+        case(Some(AggregateOpSpec::Count), None),
+        case(Some(AggregateOpSpec::Count), Some(3)),
+        case(Some(AggregateOpSpec::Mean), None),
+        case(Some(AggregateOpSpec::Mean), Some(4)),
+        case(Some(AggregateOpSpec::Max), None),
+        case(Some(AggregateOpSpec::Max), Some(10)),
+        case(Some(AggregateOpSpec::Min), None),
+        case(Some(AggregateOpSpec::Min), Some(0))
     )]
-    fn test(op: Option<AggregateOpSpec>) {
+    fn test(op: Option<AggregateOpSpec>, limit: Option<i32>) {
         let dataset = medals();
 
         let pivot_spec = PivotTransformSpec {
             field: "type".to_string(),
             value: "count".to_string(),
             groupby: Some(vec!["country".to_string()]),
-            limit: None,
+            limit,
             op,
             extra: Default::default(),
         };
@@ -86,21 +92,27 @@ mod test_pivot_no_group {
 
     #[rstest(
         op,
-        case(None),
-        case(Some(AggregateOpSpec::Sum)),
-        case(Some(AggregateOpSpec::Count)),
-        case(Some(AggregateOpSpec::Mean)),
-        case(Some(AggregateOpSpec::Max)),
-        case(Some(AggregateOpSpec::Min))
+        limit,
+        case(None, None),
+        case(Some(AggregateOpSpec::Sum), None),
+        case(Some(AggregateOpSpec::Sum), Some(2)),
+        case(Some(AggregateOpSpec::Count), None),
+        case(Some(AggregateOpSpec::Count), Some(3)),
+        case(Some(AggregateOpSpec::Mean), None),
+        case(Some(AggregateOpSpec::Mean), Some(4)),
+        case(Some(AggregateOpSpec::Max), None),
+        case(Some(AggregateOpSpec::Max), Some(10)),
+        case(Some(AggregateOpSpec::Min), None),
+        case(Some(AggregateOpSpec::Min), Some(0))
     )]
-    fn test(op: Option<AggregateOpSpec>) {
+    fn test(op: Option<AggregateOpSpec>, limit: Option<i32>) {
         let dataset = medals();
 
         let pivot_spec = PivotTransformSpec {
             field: "type".to_string(),
             value: "count".to_string(),
             groupby: None,
-            limit: None,
+            limit,
             op,
             extra: Default::default(),
         };

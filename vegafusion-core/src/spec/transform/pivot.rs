@@ -10,7 +10,7 @@ use std::collections::HashMap;
 /// Struct that serializes to Vega spec for the filter transform
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PivotTransformSpec {
-    pub pivot: String,
+    pub field: String,
     pub value: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -40,7 +40,7 @@ impl TransformSpecTrait for PivotTransformSpec {
 
             // Compute used columns (groupby, value, and pivot)
             let mut usage_cols: Vec<_> = self.groupby.clone().unwrap_or_default();
-            usage_cols.push(self.pivot.clone());
+            usage_cols.push(self.field.clone());
             usage_cols.push(self.value.clone());
             let col_usage = ColumnUsage::from(usage_cols.as_slice());
             let usage = DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage);

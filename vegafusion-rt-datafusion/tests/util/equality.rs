@@ -9,6 +9,7 @@
 use datafusion::arrow::array::{ArrayRef, StructArray};
 use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::scalar::ScalarValue;
+use std::collections::{HashMap, HashSet};
 
 use vegafusion_core::error::Result;
 
@@ -41,13 +42,13 @@ pub fn assert_tables_equal(
     config: &TablesEqualConfig,
 ) {
     // Check column names
-    let lhs_columns: Vec<_> = lhs
+    let lhs_columns: HashSet<_> = lhs
         .schema
         .fields()
         .iter()
         .map(|f| f.name().clone())
         .collect();
-    let rhs_columns: Vec<_> = rhs
+    let rhs_columns: HashSet<_> = rhs
         .schema
         .fields()
         .iter()
@@ -137,17 +138,31 @@ fn assert_scalars_almost_equals(lhs: &ScalarValue, rhs: &ScalarValue, tol: f64) 
             ScalarValue::Struct(Some(lhs_vals), lhs_fields),
             ScalarValue::Struct(Some(rhs_vals), rhs_fields),
         ) => {
+            let lhs_map: HashMap<_, _> = lhs_fields
+                .iter()
+                .zip(lhs_vals.iter())
+                .map(|(field, val)| (field.name().clone(), val.clone()))
+                .collect();
+
+            let rhs_map: HashMap<_, _> = rhs_fields
+                .iter()
+                .zip(rhs_vals.iter())
+                .map(|(field, val)| (field.name().clone(), val.clone()))
+                .collect();
+
             // Check column names
-            let lhs_field_names: Vec<_> = lhs_fields.iter().map(|f| f.name().clone()).collect();
-            let rhs_field_names: Vec<_> = rhs_fields.iter().map(|f| f.name().clone()).collect();
+            let lhs_names: HashSet<_> = lhs_map.keys().collect();
+            let rhs_names: HashSet<_> = rhs_map.keys().collect();
+
             assert_eq!(
-                lhs_field_names, rhs_field_names,
+                lhs_names, rhs_names,
                 "Struct fields mismatch\nlhs: {:?}\n, rhs: {:?}",
-                lhs_field_names, rhs_field_names,
+                lhs_names, rhs_names,
             );
 
-            for i in 0..lhs_vals.len() {
-                assert_scalars_almost_equals(&lhs_vals[i], &rhs_vals[i], tol);
+            for (key, lhs_val) in lhs_map.iter() {
+                let rhs_val = &rhs_map[key];
+                assert_scalars_almost_equals(lhs_val, rhs_val, tol);
             }
         }
         (_, _) => {

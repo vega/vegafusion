@@ -4,7 +4,7 @@ use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::connection::SqlConnection;
 use datafusion::common::DFSchema;
 use datafusion::prelude::{Expr as DfExpr, SessionContext};
-use datafusion_expr::Expr;
+use datafusion_expr::{lit, Expr};
 use sqlgen::ast::Ident;
 use sqlgen::ast::{Cte, With};
 use sqlgen::ast::{Query, TableAlias};
@@ -129,13 +129,16 @@ impl SqlDataFrame {
         self.conn.fetch_query(&query_string, &self.schema).await
     }
 
-    pub fn sort(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
+    pub fn sort(&self, expr: Vec<DfExpr>, limit: Option<i32>) -> Result<Arc<Self>> {
         let mut query = self.make_select_star();
         let sql_exprs = expr
             .iter()
             .map(|expr| expr.to_sql_order())
             .collect::<Result<Vec<_>>>()?;
         query.order_by = sql_exprs;
+        if let Some(limit) = limit {
+            query.limit = Some(lit(limit).to_sql().unwrap())
+        }
         self.chain_query(query)
     }
 
@@ -200,6 +203,17 @@ impl SqlDataFrame {
 
         self.chain_query(query)
             .with_context(|| format!("unsupported filter expression: {}", predicate))
+    }
+
+    pub fn limit(&self, limit: i32) -> Result<Arc<Self>> {
+        let query = Parser::parse_sql_query(&format!(
+            "select * from {parent} LIMIT {limit}",
+            parent = self.parent_name(),
+            limit = limit
+        ))?;
+
+        self.chain_query(query)
+            .with_context(|| "unsupported limit query".to_string())
     }
 
     fn make_select_star(&self) -> Query {

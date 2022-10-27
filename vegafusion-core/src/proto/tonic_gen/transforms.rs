@@ -195,7 +195,7 @@ pub struct Impute {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Pivot {
     #[prost(string, tag="1")]
-    pub pivot: ::prost::alloc::string::String,
+    pub field: ::prost::alloc::string::String,
     #[prost(string, tag="2")]
     pub value: ::prost::alloc::string::String,
     #[prost(string, repeated, tag="3")]

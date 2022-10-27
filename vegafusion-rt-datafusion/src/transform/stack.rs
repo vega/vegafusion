@@ -176,11 +176,14 @@ fn eval_normalize_center_offset(
     let dataframe = dataframe.select(vec![Expr::Wildcard, window_expr])?;
 
     // Restore original order
-    let dataframe = dataframe.sort(vec![Expr::Sort {
-        expr: Box::new(col("__row_number")),
-        asc: true,
-        nulls_first: false,
-    }])?;
+    let dataframe = dataframe.sort(
+        vec![Expr::Sort {
+            expr: Box::new(col("__row_number")),
+            asc: true,
+            nulls_first: false,
+        }],
+        None,
+    )?;
 
     // Build final_selection
     let mut final_selection: Vec<_> = input_fields
@@ -277,11 +280,14 @@ fn eval_zero_offset(
     ))?;
 
     // Restore original order
-    let dataframe = dataframe.sort(vec![Expr::Sort {
-        expr: Box::new(col("__row_number")),
-        asc: true,
-        nulls_first: false,
-    }])?;
+    let dataframe = dataframe.sort(
+        vec![Expr::Sort {
+            expr: Box::new(col("__row_number")),
+            asc: true,
+            nulls_first: false,
+        }],
+        None,
+    )?;
 
     // Build final selection
     let mut final_selection: Vec<_> = input_fields

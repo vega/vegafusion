@@ -225,7 +225,7 @@ enum ImputeMethod {
 
 // Pivot
 message Pivot {
-  string pivot = 1;
+  string field = 1;
   string value = 2;
   repeated string groupby = 3;
   optional int32 limit = 4;
