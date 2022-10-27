@@ -40,31 +40,7 @@ impl Aggregate {
             .unwrap_or_else(|| vec![AggregateOpSpec::Count]);
         let ops: Vec<_> = ops
             .iter()
-            .map(|op| match op {
-                AggregateOpSpec::Count => AggregateOp::Count as i32,
-                AggregateOpSpec::Valid => AggregateOp::Valid as i32,
-                AggregateOpSpec::Missing => AggregateOp::Missing as i32,
-                AggregateOpSpec::Distinct => AggregateOp::Distinct as i32,
-                AggregateOpSpec::Sum => AggregateOp::Sum as i32,
-                AggregateOpSpec::Product => AggregateOp::Product as i32,
-                AggregateOpSpec::Mean => AggregateOp::Mean as i32,
-                AggregateOpSpec::Average => AggregateOp::Average as i32,
-                AggregateOpSpec::Variance => AggregateOp::Variance as i32,
-                AggregateOpSpec::Variancep => AggregateOp::Variancep as i32,
-                AggregateOpSpec::Stdev => AggregateOp::Stdev as i32,
-                AggregateOpSpec::Stdevp => AggregateOp::Stdevp as i32,
-                AggregateOpSpec::Stderr => AggregateOp::Stderr as i32,
-                AggregateOpSpec::Median => AggregateOp::Median as i32,
-                AggregateOpSpec::Q1 => AggregateOp::Q1 as i32,
-                AggregateOpSpec::Q3 => AggregateOp::Q3 as i32,
-                AggregateOpSpec::Ci0 => AggregateOp::Ci0 as i32,
-                AggregateOpSpec::Ci1 => AggregateOp::Ci1 as i32,
-                AggregateOpSpec::Min => AggregateOp::Min as i32,
-                AggregateOpSpec::Max => AggregateOp::Max as i32,
-                AggregateOpSpec::Argmin => AggregateOp::Argmin as i32,
-                AggregateOpSpec::Argmax => AggregateOp::Argmax as i32,
-                AggregateOpSpec::Values => AggregateOp::Values as i32,
-            })
+            .map(|op| op_spec_to_proto_op(op) as i32)
             .collect();
 
         Self {
@@ -73,6 +49,34 @@ impl Aggregate {
             ops,
             aliases,
         }
+    }
+}
+
+pub fn op_spec_to_proto_op(op: &AggregateOpSpec) -> AggregateOp {
+    match op {
+        AggregateOpSpec::Count => AggregateOp::Count,
+        AggregateOpSpec::Valid => AggregateOp::Valid,
+        AggregateOpSpec::Missing => AggregateOp::Missing,
+        AggregateOpSpec::Distinct => AggregateOp::Distinct,
+        AggregateOpSpec::Sum => AggregateOp::Sum,
+        AggregateOpSpec::Product => AggregateOp::Product,
+        AggregateOpSpec::Mean => AggregateOp::Mean,
+        AggregateOpSpec::Average => AggregateOp::Average,
+        AggregateOpSpec::Variance => AggregateOp::Variance,
+        AggregateOpSpec::Variancep => AggregateOp::Variancep,
+        AggregateOpSpec::Stdev => AggregateOp::Stdev,
+        AggregateOpSpec::Stdevp => AggregateOp::Stdevp,
+        AggregateOpSpec::Stderr => AggregateOp::Stderr,
+        AggregateOpSpec::Median => AggregateOp::Median,
+        AggregateOpSpec::Q1 => AggregateOp::Q1,
+        AggregateOpSpec::Q3 => AggregateOp::Q3,
+        AggregateOpSpec::Ci0 => AggregateOp::Ci0,
+        AggregateOpSpec::Ci1 => AggregateOp::Ci1,
+        AggregateOpSpec::Min => AggregateOp::Min,
+        AggregateOpSpec::Max => AggregateOp::Max,
+        AggregateOpSpec::Argmin => AggregateOp::Argmin,
+        AggregateOpSpec::Argmax => AggregateOp::Argmax,
+        AggregateOpSpec::Values => AggregateOp::Values,
     }
 }
 

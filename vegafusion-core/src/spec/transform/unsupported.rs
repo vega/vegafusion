@@ -55,7 +55,6 @@ unsupported_transforms!(
     PackTransformSpec,
     PartitionTransformSpec,
     PieTransformSpec,
-    PivotTransformSpec,
     QuantileTransformSpec,
     RegressionTransformSpec,
     ResolvefilterTransformSpec,

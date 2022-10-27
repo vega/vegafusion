@@ -191,10 +191,24 @@ pub struct Impute {
     #[prost(string, optional, tag="5")]
     pub value_json: ::core::option::Option<::prost::alloc::string::String>,
 }
+/// Pivot
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Pivot {
+    #[prost(string, tag="1")]
+    pub pivot: ::prost::alloc::string::String,
+    #[prost(string, tag="2")]
+    pub value: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag="3")]
+    pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag="4")]
+    pub limit: ::core::option::Option<i32>,
+    #[prost(enumeration="AggregateOp", optional, tag="5")]
+    pub op: ::core::option::Option<i32>,
+}
 /// Top-level transform
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transform {
-    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12")]
+    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13")]
     pub transform_kind: ::core::option::Option<transform::TransformKind>,
 }
 /// Nested message and enum types in `Transform`.
@@ -225,6 +239,8 @@ pub mod transform {
         Stack(super::Stack),
         #[prost(message, tag="12")]
         Impute(super::Impute),
+        #[prost(message, tag="13")]
+        Pivot(super::Pivot),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]

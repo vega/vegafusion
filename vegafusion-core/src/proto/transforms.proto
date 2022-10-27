@@ -223,6 +223,15 @@ enum ImputeMethod {
     ImputeMin = 4;
 }
 
+// Pivot
+message Pivot {
+  string pivot = 1;
+  string value = 2;
+  repeated string groupby = 3;
+  optional int32 limit = 4;
+  optional AggregateOp op = 5;
+}
+
 // Top-level transform
 message Transform {
   oneof transform_kind {
@@ -238,6 +247,7 @@ message Transform {
     Project project = 10;
     Stack stack = 11;
     Impute impute = 12;
+    Pivot pivot = 13;
   }
 }
 

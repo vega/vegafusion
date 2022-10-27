@@ -26,6 +26,7 @@ pub mod formula;
 pub mod impute;
 pub mod joinaggregate;
 pub mod pipeline;
+pub mod pivot;
 pub mod project;
 pub mod stack;
 pub mod timeunit;
@@ -85,6 +86,7 @@ impl TransformKind {
             TransformKind::Project(tx) => tx,
             TransformKind::Stack(tx) => tx,
             TransformKind::Impute(tx) => tx,
+            TransformKind::Pivot(tx) => tx,
         }
     }
 }
