@@ -2,7 +2,7 @@
 name = "vegafusion-core"
 license = "AGPL-3.0-or-later"
 edition = "2021"
-version = "0.11.0-rc1"
+version = "0.11.0-rc2"
 
 [features]
 tonic_support = [ "tonic", "tonic-build",]
@@ -20,7 +20,11 @@ ordered-float = "^2.10.0"
 petgraph = "0.6.0"
 deterministic-hash = "1.0.1"
 chrono = "0.4.19"
-sqlgen = {git = "https://github.com/vegafusion/sqlgen-rs.git", rev = "e5ac9609dfffbf98af1fd8f2bc8a07216451bb51", optional=true}
+
+[dependencies.sqlgen]
+git = "https://github.com/vegafusion/sqlgen-rs.git"
+rev = "e5ac9609dfffbf98af1fd8f2bc8a07216451bb51"
+optional = true
 
 [dependencies.serde_json]
 version = "1.0.81"
