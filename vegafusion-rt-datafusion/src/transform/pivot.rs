@@ -47,9 +47,9 @@ impl TransformTrait for Pivot {
         };
 
         if self.groupby.is_empty() {
-            pivot_without_grouping(&self, dataframe).await
+            pivot_without_grouping(self, dataframe).await
         } else {
-            pivot_with_grouping(&self, dataframe).await
+            pivot_with_grouping(self, dataframe).await
         }
     }
 }
@@ -116,11 +116,11 @@ async fn pivot_without_grouping(
     for pivot_val in pivot_vec.iter() {
         // Build aggregate expression string
         let agg_expr = make_aggr_expr(Some(tx.value.clone()), &agg_op, &dataframe.schema_df())?;
-        let agg = agg_expr.alias(pivot_val).to_sql_select()?.sql(&dialect)?;
+        let agg = agg_expr.alias(pivot_val).to_sql_select()?.sql(dialect)?;
 
         // Build predicate expression string
         let predicate_expr = col(&tx.field).eq(lit(pivot_val.as_str()));
-        let predicate = predicate_expr.to_sql()?.sql(&dialect)?;
+        let predicate = predicate_expr.to_sql()?.sql(dialect)?;
 
         // Build subquery
         let subquery = format!(
@@ -133,9 +133,9 @@ async fn pivot_without_grouping(
 
         // Add column to final selections
         let select_expr = if fill_zero {
-            coalesce(vec![col(&pivot_val), lit(0)]).alias(pivot_val)
+            coalesce(vec![col(pivot_val), lit(0)]).alias(pivot_val)
         } else {
-            col(&pivot_val)
+            col(pivot_val)
         };
         final_selections.push(select_expr)
     }
@@ -143,7 +143,7 @@ async fn pivot_without_grouping(
     // Build final query
     let final_selection_strs: Vec<_> = final_selections
         .iter()
-        .map(|sel| sel.to_sql_select().unwrap().sql(&dialect).unwrap())
+        .map(|sel| sel.to_sql_select().unwrap().sql(dialect).unwrap())
         .collect();
     let selection_csv = final_selection_strs.join(", ");
     let mut query_str = format!(
@@ -217,7 +217,7 @@ async fn pivot_with_grouping(
     let grouped_parent_name = grouped_dataframe.parent_name();
 
     // Initialize vector of final selections
-    let mut final_selections: Vec<_> = tx.groupby.iter().map(|c| col(&format!("{}", c))).collect();
+    let mut final_selections: Vec<_> = tx.groupby.iter().map(|c| col(c)).collect();
 
     // Initialize empty query string
     let mut query_str = String::new();
@@ -225,11 +225,11 @@ async fn pivot_with_grouping(
     for (i, pivot_val) in pivot_vec.iter().enumerate() {
         // Build aggregate expression string
         let agg_expr = make_aggr_expr(Some(tx.value.clone()), &agg_op, &dataframe.schema_df())?;
-        let agg = agg_expr.alias(pivot_val).to_sql_select()?.sql(&dialect)?;
+        let agg = agg_expr.alias(pivot_val).to_sql_select()?.sql(dialect)?;
 
         // Build predicate expression string
         let predicate_expr = col(&tx.field).eq(lit(pivot_val.as_str()));
-        let predicate = predicate_expr.to_sql()?.sql(&dialect)?;
+        let predicate = predicate_expr.to_sql()?.sql(dialect)?;
 
         // Build subquery
         let subquery = format!(
@@ -251,9 +251,9 @@ async fn pivot_with_grouping(
 
         // Add column to final selections
         let select_expr = if fill_zero {
-            coalesce(vec![col(&pivot_val), lit(0)]).alias(pivot_val)
+            coalesce(vec![col(pivot_val), lit(0)]).alias(pivot_val)
         } else {
-            col(&pivot_val)
+            col(pivot_val)
         };
         final_selections.push(select_expr)
     }
@@ -261,7 +261,7 @@ async fn pivot_with_grouping(
     // Prepend the initial selection
     let final_selection_strs: Vec<_> = final_selections
         .iter()
-        .map(|sel| sel.to_sql_select().unwrap().sql(&dialect).unwrap())
+        .map(|sel| sel.to_sql_select().unwrap().sql(dialect).unwrap())
         .collect();
     let selection_csv = final_selection_strs.join(", ");
     query_str.insert_str(

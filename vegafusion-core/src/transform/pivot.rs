@@ -11,7 +11,7 @@ impl Pivot {
             field: spec.field.clone(),
             value: spec.value.clone(),
             groupby: spec.groupby.clone().unwrap_or_default(),
-            limit: spec.limit.clone(),
+            limit: spec.limit,
             op,
         })
     }
