@@ -25,14 +25,17 @@ impl TransformTrait for Pivot {
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
         // Make sure the pivot column is a string
         let pivot_dtype = data_type(&col(&self.field), &dataframe.schema_df())?;
-        let dataframe = if is_string_datatype(&pivot_dtype) {
+        let dataframe = if !is_string_datatype(&pivot_dtype) {
             let select_exprs: Vec<_> = dataframe
                 .schema()
                 .fields
                 .iter()
                 .map(|field| {
                     if field.name() == &self.field {
-                        cast_to(col(&self.field), &DataType::Utf8, &dataframe.schema_df())
+                        Ok(
+                            cast_to(col(&self.field), &DataType::Utf8, &dataframe.schema_df())?
+                                .alias(&self.field),
+                        )
                     } else {
                         Ok(col(field.name()))
                     }
