@@ -15,6 +15,7 @@ pub mod formula;
 pub mod impute;
 pub mod joinaggregate;
 pub mod lookup;
+pub mod pivot;
 pub mod project;
 pub mod sequence;
 pub mod stack;
@@ -33,6 +34,7 @@ use crate::spec::transform::formula::FormulaTransformSpec;
 use crate::spec::transform::impute::ImputeTransformSpec;
 use crate::spec::transform::joinaggregate::JoinAggregateTransformSpec;
 use crate::spec::transform::lookup::LookupTransformSpec;
+use crate::spec::transform::pivot::PivotTransformSpec;
 use crate::spec::transform::project::ProjectTransformSpec;
 use crate::spec::transform::sequence::SequenceTransformSpec;
 use crate::spec::transform::stack::StackTransformSpec;
@@ -60,6 +62,7 @@ pub enum TransformSpec {
     Project(ProjectTransformSpec),
     Stack(StackTransformSpec),
     Impute(ImputeTransformSpec),
+    Pivot(PivotTransformSpec),
 
     // Unsupported
     CountPattern(CountpatternTransformSpec),
@@ -89,7 +92,6 @@ pub enum TransformSpec {
     Pack(PackTransformSpec),
     Partition(PartitionTransformSpec),
     Pie(PieTransformSpec),
-    Pivot(PivotTransformSpec),
     Quantile(QuantileTransformSpec),
     Regression(RegressionTransformSpec),
     ResolveFilter(ResolvefilterTransformSpec),
@@ -118,6 +120,7 @@ impl Deref for TransformSpec {
             TransformSpec::Project(t) => t,
             TransformSpec::Stack(t) => t,
             TransformSpec::Impute(t) => t,
+            TransformSpec::Pivot(t) => t,
 
             // Supported for dependency determination, not implementation
             TransformSpec::Lookup(t) => t,
@@ -151,7 +154,6 @@ impl Deref for TransformSpec {
             TransformSpec::Pack(t) => t,
             TransformSpec::Partition(t) => t,
             TransformSpec::Pie(t) => t,
-            TransformSpec::Pivot(t) => t,
             TransformSpec::Quantile(t) => t,
             TransformSpec::Regression(t) => t,
             TransformSpec::ResolveFilter(t) => t,

@@ -15,6 +15,7 @@ pub mod formula;
 pub mod impute;
 pub mod joinaggregate;
 pub mod pipeline;
+pub mod pivot;
 pub mod project;
 pub mod stack;
 pub mod timeunit;
@@ -56,6 +57,7 @@ pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
         TransformKind::Project(tx) => tx,
         TransformKind::Stack(tx) => tx,
         TransformKind::Impute(tx) => tx,
+        TransformKind::Pivot(tx) => tx,
     }
 }
 
