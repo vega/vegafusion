@@ -40,6 +40,9 @@ pub fn make_datafusion_dialect() -> Dialect {
     functions.insert("make_timestamptz".to_string());
     functions.insert("timestamptz_to_epoch_ms".to_string());
 
+    // timeunit
+    functions.insert("vega_timeunit".to_string());
+
     // timeformat
     functions.insert("format_timestamp".to_string());
 

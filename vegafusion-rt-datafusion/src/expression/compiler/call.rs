@@ -63,6 +63,7 @@ use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::t
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_string::to_string_transform;
 use crate::task_graph::timezone::RuntimeTzConfig;
+use crate::transform::timeunit::TIMEUNIT_START_UDF;
 
 pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>;
 pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
@@ -453,6 +454,9 @@ pub fn make_session_context() -> SessionContext {
     ctx.register_udf((*STR_TO_TIMESTAMPTZ_UDF).clone());
     ctx.register_udf((*MAKE_TIMESTAMPTZ).clone());
     ctx.register_udf((*TIMESTAMPTZ_TO_EPOCH_MS).clone());
+
+    // timeunit
+    ctx.register_udf((*TIMEUNIT_START_UDF).clone());
 
     // timeformat
     ctx.register_udf((*FORMAT_TIMESTAMP_UDF).clone());
