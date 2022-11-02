@@ -71,24 +71,12 @@ pub enum TimeUnitUnitSpec {
 
 impl TransformSpecTrait for TimeUnitTransformSpec {
     fn supported(&self) -> bool {
-        if self.units.is_none()
+        let unsupported = self.units.is_none()
             || self.step.is_some()
             || self.extent.is_some()
             || self.maxbins.is_some()
-            || self.signal.is_some()
-        {
-            false
-        } else {
-            if let Some(units) = &self.units {
-                for unit in units {
-                    if matches!(unit, TimeUnitUnitSpec::Week | TimeUnitUnitSpec::DayOfYear) {
-                        // week and dayofyear units are not yet supported
-                        return false;
-                    }
-                }
-            }
-            true
-        }
+            || self.signal.is_some();
+        !unsupported
     }
 
     fn output_signals(&self) -> Vec<String> {
