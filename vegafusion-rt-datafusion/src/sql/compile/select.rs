@@ -28,7 +28,7 @@ mod tests {
     use std::ops::Add;
 
     use crate::expression::escape::flat_col;
-    use datafusion_expr::{col, lit, Expr};
+    use datafusion_expr::{lit, Expr};
     use sqlgen::dialect::{Dialect, DialectDisplay};
 
     use crate::sql::compile::select::ToSqlSelectItem;

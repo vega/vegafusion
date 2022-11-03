@@ -449,7 +449,7 @@ impl ToSqlExpr for Expr {
 mod tests {
     use super::ToSqlExpr;
     use crate::expression::escape::flat_col;
-    use datafusion_expr::{col, lit, BuiltinScalarFunction, Expr};
+    use datafusion_expr::{lit, BuiltinScalarFunction, Expr};
     use sqlgen::dialect::DialectDisplay;
     use vegafusion_core::arrow::datatypes::DataType;
 

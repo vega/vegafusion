@@ -35,7 +35,7 @@ impl ToSqlOrderByExpr for Expr {
 mod tests {
 
     use crate::expression::escape::flat_col;
-    use datafusion_expr::{col, Expr};
+    use datafusion_expr::Expr;
     use sqlgen::dialect::DialectDisplay;
 
     use crate::sql::compile::order::ToSqlOrderByExpr;

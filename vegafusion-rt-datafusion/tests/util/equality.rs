@@ -13,7 +13,7 @@ use std::collections::{HashMap, HashSet};
 
 use vegafusion_core::error::Result;
 
-use datafusion::logical_plan::{col, Expr};
+use datafusion::logical_plan::Expr;
 
 use std::sync::Arc;
 use vegafusion_core::data::table::VegaFusionTable;
