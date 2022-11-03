@@ -25,7 +25,7 @@ mod tests {
     fn test_escape() {
         let col = "'foo'_._\"bar\"";
         let escaped = escape_field(col);
-        assert_eq!(escaped, r#"\'foo\'_\._\"bar\""#)
+        assert_eq!(escaped, r#"\'foo\'_._\"bar\""#)
     }
 
     #[test]
