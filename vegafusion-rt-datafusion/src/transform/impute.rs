@@ -1,11 +1,12 @@
 use crate::expression::compiler::config::CompilationConfig;
+use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::compile::order::ToSqlOrderByExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::common::ScalarValue;
-use datafusion_expr::{col, lit, when, BuiltInWindowFunction, Expr, WindowFunction};
+use datafusion_expr::{lit, when, BuiltInWindowFunction, Expr, WindowFunction};
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
@@ -64,12 +65,15 @@ fn zero_groupby_sql(
         .map(|field| {
             let col_name = field.name();
             if col_name == &tx.field {
-                when(col(&tx.field).is_not_null(), col(&tx.field))
-                    .otherwise(lit(value.clone()))
-                    .unwrap()
-                    .alias(&tx.field)
+                when(
+                    unescaped_col(&tx.field).is_not_null(),
+                    unescaped_col(&tx.field),
+                )
+                .otherwise(lit(value.clone()))
+                .unwrap()
+                .alias(&tx.field)
             } else {
-                col(col_name)
+                unescaped_col(col_name)
             }
         })
         .collect();
@@ -96,10 +100,10 @@ fn single_groupby_sql(
     // We're only supporting a single groupby column for now
     let groupby = tx.groupby.get(0).unwrap().clone();
 
-    let key_col = col(&tx.key);
+    let key_col = unescaped_col(&tx.key);
     let key_col_str = key_col.to_sql_select()?.sql(dataframe.dialect())?;
 
-    let group_col = col(&groupby);
+    let group_col = unescaped_col(&groupby);
     let group_col_str = group_col.to_sql_select()?.sql(dataframe.dialect())?;
 
     // Build row number expr to apply to input table
@@ -115,7 +119,7 @@ fn single_groupby_sql(
 
     // Build order by
     let order_by_expr = Expr::Sort {
-        expr: Box::new(col("__row_number")),
+        expr: Box::new(flat_col("__row_number")),
         asc: true,
         nulls_first: false,
     };
@@ -128,12 +132,15 @@ fn single_groupby_sql(
         .iter()
         .map(|col_name| {
             if col_name == &tx.field {
-                when(col(&tx.field).is_not_null(), col(&tx.field))
-                    .otherwise(lit(value.clone()))
-                    .unwrap()
-                    .alias(&tx.field)
+                when(
+                    unescaped_col(&tx.field).is_not_null(),
+                    unescaped_col(&tx.field),
+                )
+                .otherwise(lit(value.clone()))
+                .unwrap()
+                .alias(&tx.field)
             } else {
-                col(col_name)
+                unescaped_col(col_name)
             }
         })
         .collect();
@@ -141,7 +148,7 @@ fn single_groupby_sql(
     // Add undocumented "_impute" column that Vega adds
     select_columns.push(
         when(
-            col(&tx.field).is_not_null(),
+            unescaped_col(&tx.field).is_not_null(),
             Expr::Cast {
                 expr: Box::new(Expr::Literal(ScalarValue::Boolean(None))),
                 data_type: DataType::Boolean,

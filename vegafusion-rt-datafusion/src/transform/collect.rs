@@ -9,12 +9,13 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion::logical_plan::{col, Expr};
+use datafusion::logical_plan::Expr;
 
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::{Collect, SortOrder};
 
+use crate::expression::escape::unescaped_col;
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -32,7 +33,7 @@ impl TransformTrait for Collect {
             .into_iter()
             .zip(&self.order)
             .map(|(field, order)| Expr::Sort {
-                expr: Box::new(col(&field)),
+                expr: Box::new(unescaped_col(&field)),
                 asc: *order == SortOrder::Ascending as i32,
                 nulls_first: *order == SortOrder::Ascending as i32,
             })

@@ -390,7 +390,9 @@ impl VegaJsRuntime {
         let result_str = fs::read_to_string(result_tmppath)
             .with_context(|| format!("Failed to read {}", result_tmppath))?;
 
-        let result_img: ExportImage = serde_json::from_str(&result_str).unwrap();
+        let result_img: ExportImage = serde_json::from_str(&result_str)
+            .with_context(|| format!("Failed to parse as JSON: {}", result_str))?;
+
         Ok(result_img)
     }
 

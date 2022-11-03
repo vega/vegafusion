@@ -12,7 +12,7 @@ use crate::expression::compiler::utils::{to_numeric, ExprHelpers};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
-use datafusion::logical_plan::{col, lit, DFSchema};
+use datafusion::logical_plan::{lit, DFSchema};
 
 use datafusion::scalar::ScalarValue;
 use datafusion_expr::{abs, floor, when, Expr};
@@ -24,6 +24,7 @@ use vegafusion_core::arrow::datatypes::{DataType, Field};
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::error::{Result, VegaFusionError};
 
+use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
 use vegafusion_core::proto::gen::transforms::Bin;
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -52,7 +53,7 @@ impl TransformTrait for Bin {
         // Compute output signal value
         let output_value = compute_output_value(self, start, stop, step);
 
-        let numeric_field = to_numeric(col(&self.field), &sql_df.schema_df())?;
+        let numeric_field = to_numeric(unescaped_col(&self.field), &sql_df.schema_df())?;
 
         // Add column with bin index
         let bin_index_name = "__bin_index";
@@ -62,7 +63,7 @@ impl TransformTrait for Bin {
         let sql_df = sql_df.select(vec![Expr::Wildcard, bin_index])?;
 
         // Add column with bin start
-        let bin_start = (col(bin_index_name).mul(lit(step))).add(lit(start));
+        let bin_start = (flat_col(bin_index_name).mul(lit(step))).add(lit(start));
         let bin_start_name = self.alias_0.clone().unwrap_or_else(|| "bin0".to_string());
 
         // Explicitly cast (-)inf to float64 to help DataFusion with type inference
@@ -76,12 +77,12 @@ impl TransformTrait for Bin {
         };
         let eps = lit(1.0e-14);
 
-        let bin_start = when(col(bin_index_name).lt(lit(0.0)), neg_inf)
+        let bin_start = when(flat_col(bin_index_name).lt(lit(0.0)), neg_inf)
             .when(
                 abs(numeric_field.sub(lit(last_stop))).lt(eps),
                 lit(*bin_starts.last().unwrap()),
             )
-            .when(col(bin_index_name).gt_eq(lit(n)), inf)
+            .when(flat_col(bin_index_name).gt_eq(lit(n)), inf)
             .otherwise(bin_start)?
             .alias(&bin_start_name);
 
@@ -93,7 +94,7 @@ impl TransformTrait for Bin {
                 if field.name() == &bin_start_name {
                     None
                 } else {
-                    Some(col(field.name()))
+                    Some(flat_col(field.name()))
                 }
             })
             .collect::<Vec<_>>();
@@ -103,7 +104,7 @@ impl TransformTrait for Bin {
 
         // Add bin end column
         let bin_end_name = self.alias_1.clone().unwrap_or_else(|| "bin1".to_string());
-        let bin_end = (col(&bin_start_name) + lit(step)).alias(&bin_end_name);
+        let bin_end = (flat_col(&bin_start_name) + lit(step)).alias(&bin_end_name);
 
         // Compute final projection that removes __bin_index column
         let mut select_exprs = schema
@@ -114,11 +115,11 @@ impl TransformTrait for Bin {
                 if name == &bin_start_name || name == &bin_end_name {
                     None
                 } else {
-                    Some(col(name))
+                    Some(flat_col(name))
                 }
             })
             .collect::<Vec<_>>();
-        select_exprs.push(col(&bin_start_name));
+        select_exprs.push(flat_col(&bin_start_name));
         select_exprs.push(bin_end);
 
         let sql_df = sql_df.select(select_exprs)?;

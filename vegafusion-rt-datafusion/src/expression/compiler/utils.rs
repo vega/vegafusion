@@ -80,9 +80,12 @@ pub fn is_string_datatype(dtype: &DataType) -> bool {
 
 /// get datatype for expression
 pub fn data_type(value: &Expr, schema: &DFSchema) -> Result<DataType> {
-    value
-        .get_type(schema)
-        .with_context(|| format!("Failed to infer datatype of expression: {:?}", value))
+    value.get_type(schema).with_context(|| {
+        format!(
+            "Failed to infer datatype of expression: {:?}\nschema: {:?}",
+            value, schema
+        )
+    })
 }
 
 /// Cast an expression to boolean if not already boolean

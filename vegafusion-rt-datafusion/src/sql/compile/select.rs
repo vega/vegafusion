@@ -27,6 +27,7 @@ impl ToSqlSelectItem for Expr {
 mod tests {
     use std::ops::Add;
 
+    use crate::expression::escape::flat_col;
     use datafusion_expr::{col, lit, Expr};
     use sqlgen::dialect::{Dialect, DialectDisplay};
 
@@ -42,7 +43,7 @@ mod tests {
 
     #[test]
     pub fn test_select_unnamed_expr() {
-        let expr = col("a").add(lit(23));
+        let expr = flat_col("a").add(lit(23));
         let sql_expr = expr.to_sql_select().unwrap();
         let sql_str = sql_expr.sql(&Dialect::datafusion()).unwrap();
         assert_eq!(sql_str, "(\"a\" + 23)");
@@ -50,7 +51,7 @@ mod tests {
 
     #[test]
     pub fn test_select_aliased_expr() {
-        let expr = col("a").add(lit(23)).alias("foo");
+        let expr = flat_col("a").add(lit(23)).alias("foo");
         let sql_expr = expr.to_sql_select().unwrap();
         let sql_str = sql_expr.sql(&Dialect::datafusion()).unwrap();
         assert_eq!(sql_str, "(\"a\" + 23) AS \"foo\"");

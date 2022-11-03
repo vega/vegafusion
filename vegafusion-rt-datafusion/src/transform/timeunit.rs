@@ -11,7 +11,6 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
 use datafusion::common::DataFusionError;
-use datafusion::prelude::col;
 use std::collections::HashSet;
 use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
@@ -28,6 +27,7 @@ use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_ti
 use crate::sql::compile::expr::ToSqlExpr;
 
 use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
+use crate::expression::escape::{flat_col, unescaped_col};
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
 use datafusion_expr::{
     floor, lit, BuiltinScalarFunction, ColumnarValue, Expr, ReturnTypeFunction,
@@ -66,7 +66,7 @@ fn timeunit_date_trunc(
     let start_expr = if let Some(tz_str) = tz_str {
         let local_field = Expr::ScalarUDF {
             fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
-            args: vec![col(field), lit(tz_str.clone())],
+            args: vec![unescaped_col(field), lit(tz_str.clone())],
         };
 
         let local_start_expr = Expr::ScalarFunction {
@@ -82,7 +82,7 @@ fn timeunit_date_trunc(
         // UTC, no timezone conversion needed
         Expr::ScalarFunction {
             fun: BuiltinScalarFunction::DateTrunc,
-            args: vec![lit(part_str), col(field)],
+            args: vec![lit(part_str), unescaped_col(field)],
         }
     };
 
@@ -114,10 +114,10 @@ fn timeunit_date_part(
     let inner = if let Some(tz_str) = tz_str {
         Expr::ScalarUDF {
             fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
-            args: vec![col(field), lit(tz_str.clone())],
+            args: vec![unescaped_col(field), lit(tz_str.clone())],
         }
     } else {
-        col(field)
+        unescaped_col(field)
     };
 
     // Year
@@ -212,10 +212,10 @@ fn timeunit_weekday(field: &str, tz_str: &Option<String>) -> Result<(Expr, Strin
     let inner = if let Some(tz_str) = tz_str {
         Expr::ScalarUDF {
             fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
-            args: vec![col(field), lit(tz_str.clone())],
+            args: vec![unescaped_col(field), lit(tz_str.clone())],
         }
     } else {
-        col(field)
+        unescaped_col(field)
     };
 
     // Use DATE_PART to extract the weekday
@@ -278,7 +278,7 @@ fn timeunit_custom_udf(
         .unwrap_or_else(|| "UTC".to_string());
 
     let timeunit_start_value = timeunit_start_udf.call(vec![
-        col(field),
+        unescaped_col(field),
         lit(tz_str),
         lit(units_mask[0]),
         lit(units_mask[1]),
@@ -432,7 +432,7 @@ impl TransformTrait for TimeUnit {
             .iter()
             .filter_map(|field| {
                 if field.name() != &timeunit_start_alias {
-                    Some(col(field.name()))
+                    Some(flat_col(field.name()))
                 } else {
                     None
                 }
@@ -457,7 +457,7 @@ impl TransformTrait for TimeUnit {
                 if field.name() != &timeunit_end_alias {
                     // Convert column name to string with dialect's rules for quoting
                     Some(
-                        col(field.name().as_str())
+                        flat_col(field.name().as_str())
                             .to_sql()
                             .unwrap()
                             .sql(dialect)
@@ -473,13 +473,13 @@ impl TransformTrait for TimeUnit {
             // Apply offset in UTC
             select_strs.push(format!(
                 "timestamp_to_timestamptz(timestamptz_to_timestamp({start}, '{tz}') + INTERVAL '{interval}', '{tz}') as {end}",
-                start=col(&timeunit_start_alias)
+                start=flat_col(&timeunit_start_alias)
                     .to_sql()
                     .unwrap()
                     .sql(dialect)
                     .unwrap(),
                 interval=interval_str,
-                end=col(&timeunit_end_alias)
+                end=flat_col(&timeunit_end_alias)
                     .to_sql()
                     .unwrap()
                     .sql(dialect)
@@ -489,13 +489,13 @@ impl TransformTrait for TimeUnit {
         } else {
             select_strs.push(format!(
                 "{start} + INTERVAL '{interval}' as {end}",
-                start = col(&timeunit_start_alias)
+                start = flat_col(&timeunit_start_alias)
                     .to_sql()
                     .unwrap()
                     .sql(dialect)
                     .unwrap(),
                 interval = interval_str,
-                end = col(&timeunit_end_alias)
+                end = flat_col(&timeunit_end_alias)
                     .to_sql()
                     .unwrap()
                     .sql(dialect)

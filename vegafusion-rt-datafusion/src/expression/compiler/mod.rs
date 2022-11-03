@@ -78,9 +78,10 @@ mod test_compile {
     };
     use datafusion::logical_plan::{DFSchema, Expr, Operator};
 
+    use crate::expression::escape::flat_col;
     use crate::task_graph::timezone::RuntimeTzConfig;
     use datafusion::physical_plan::ColumnarValue;
-    use datafusion::prelude::{col, concat, lit};
+    use datafusion::prelude::{concat, lit};
     use datafusion::scalar::ScalarValue;
     use datafusion_expr::BuiltinScalarFunction;
     use std::collections::HashMap;
@@ -571,7 +572,7 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), Some(&schema)).unwrap();
 
         let expected_expr = Expr::BinaryExpr {
-            left: Box::new(col("two")),
+            left: Box::new(flat_col("two")),
             op: Operator::Multiply,
             right: Box::new(lit(3.0)),
         };

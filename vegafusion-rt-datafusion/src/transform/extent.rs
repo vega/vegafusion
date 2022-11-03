@@ -17,7 +17,8 @@ use datafusion::arrow::datatypes::Field;
 
 use datafusion::common::DFSchema;
 
-use datafusion::logical_plan::{col, max, min};
+use crate::expression::escape::unescaped_col;
+use datafusion::logical_plan::{max, min};
 use datafusion::scalar::ScalarValue;
 use datafusion_expr::Expr;
 use std::sync::Arc;
@@ -53,7 +54,7 @@ impl TransformTrait for Extent {
 }
 
 fn min_max_exprs(field: &str, schema: &DFSchema) -> Result<(Expr, Expr)> {
-    let field_col = col(field);
+    let field_col = unescaped_col(field);
     let min_expr = min(to_numeric(field_col.clone(), schema)?).alias("__min_val");
     let max_expr = max(to_numeric(field_col, schema)?).alias("__max_val");
     Ok((min_expr, max_expr))

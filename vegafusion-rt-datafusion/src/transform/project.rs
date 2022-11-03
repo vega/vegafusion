@@ -15,9 +15,9 @@ use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Project;
 
+use crate::expression::escape::flat_col;
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
-use datafusion_expr::col;
 use vegafusion_core::expression::escape::unescape_field;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -51,7 +51,7 @@ impl TransformTrait for Project {
             })
             .collect();
 
-        let select_col_exprs: Vec<_> = select_fields.iter().map(|f| col(f)).collect();
+        let select_col_exprs: Vec<_> = select_fields.iter().map(|f| flat_col(f)).collect();
         let result = dataframe.select(select_col_exprs)?;
         Ok((result, Default::default()))
     }

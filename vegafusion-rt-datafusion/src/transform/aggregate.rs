@@ -9,10 +9,11 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion::logical_plan::{avg, col, count, count_distinct, lit, max, min, sum, Expr};
+use datafusion::logical_plan::{avg, count, count_distinct, lit, max, min, sum, Expr};
 use std::collections::HashMap;
 
 use crate::expression::compiler::utils::to_numeric;
+use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion::common::DFSchema;
@@ -31,7 +32,7 @@ impl TransformTrait for Aggregate {
         dataframe: Arc<SqlDataFrame>,
         _config: &CompilationConfig,
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
-        let group_exprs: Vec<_> = self.groupby.iter().map(|c| col(c)).collect();
+        let group_exprs: Vec<_> = self.groupby.iter().map(|c| unescaped_col(c)).collect();
         let (mut agg_exprs, projections) = get_agg_and_proj_exprs(self, &dataframe.schema_df())?;
 
         // Add __row_number column if groupby columns is not empty
@@ -47,7 +48,7 @@ impl TransformTrait for Aggregate {
             .alias("__row_number");
 
             // Add min(__row_number) aggregation that we can sort by later
-            agg_exprs.push(min(col("__row_number")).alias("__min_row_number"));
+            agg_exprs.push(min(flat_col("__row_number")).alias("__min_row_number"));
 
             dataframe.select(vec![Expr::Wildcard, row_number_expr])?
         } else {
@@ -61,7 +62,7 @@ impl TransformTrait for Aggregate {
         if !self.groupby.is_empty() {
             // Sort groups according to the lowest row number of a value in that group
             let sort_exprs = vec![Expr::Sort {
-                expr: Box::new(col("__min_row_number")),
+                expr: Box::new(flat_col("__min_row_number")),
                 asc: true,
                 nulls_first: false,
             }];
@@ -82,7 +83,7 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
     let mut agg_aliases: HashMap<(Option<String>, i32), String> = HashMap::new();
 
     // Initialize vec of final projections with the grouping fields
-    let mut projections: Vec<_> = tx.groupby.iter().map(|f| col(f)).collect();
+    let mut projections: Vec<_> = tx.groupby.iter().map(|f| unescaped_col(f)).collect();
 
     for (i, (field, op_code)) in tx.fields.iter().zip(tx.ops.iter()).enumerate() {
         let op = AggregateOp::from_i32(*op_code).unwrap();
@@ -115,9 +116,9 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
         let key = (column, *op_code);
         if let Some(agg_alias) = agg_aliases.get(&key) {
             // We're already going to preform the aggregation, so alias result
-            projections.push(col(agg_alias).alias(&alias));
+            projections.push(flat_col(agg_alias).alias(&alias));
         } else {
-            projections.push(col(&alias));
+            projections.push(flat_col(&alias));
             agg_aliases.insert(key, alias);
         }
     }
@@ -143,7 +144,7 @@ pub fn make_aggr_expr(
     schema: &DFSchema,
 ) -> Result<Expr> {
     let column = if let Some(col_name) = col_name {
-        col(&col_name)
+        unescaped_col(&col_name)
     } else if matches!(op, AggregateOp::Count) {
         Expr::Wildcard
     } else {

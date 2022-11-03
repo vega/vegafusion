@@ -9,7 +9,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion::logical_plan::{col, Expr};
+use datafusion::logical_plan::Expr;
 
 use crate::sql::compile::expr::ToSqlExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
@@ -20,6 +20,7 @@ use datafusion_expr::{BuiltInWindowFunction, WindowFunction};
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
 
+use crate::expression::escape::{flat_col, unescaped_col};
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::{AggregateOp, JoinAggregate};
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -32,7 +33,7 @@ impl TransformTrait for JoinAggregate {
         dataframe: Arc<SqlDataFrame>,
         _config: &CompilationConfig,
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
-        let group_exprs: Vec<_> = self.groupby.iter().map(|c| col(c)).collect();
+        let group_exprs: Vec<_> = self.groupby.iter().map(|c| unescaped_col(c)).collect();
         let schema = dataframe.schema_df();
 
         let mut agg_exprs = Vec::new();
@@ -48,7 +49,7 @@ impl TransformTrait for JoinAggregate {
                 format!("{}_{}", op_name(op), field)
             };
 
-            new_col_exprs.push(col(&alias));
+            new_col_exprs.push(flat_col(&alias));
 
             let agg_expr = if matches!(op, AggregateOp::Count) {
                 // In Vega, the provided column is always ignored if op is 'count'.
@@ -74,7 +75,7 @@ impl TransformTrait for JoinAggregate {
         let input_col_exprs = schema
             .fields()
             .iter()
-            .map(|field| col(field.name()))
+            .map(|field| flat_col(field.name()))
             .collect::<Vec<_>>();
         let input_col_strs = input_col_exprs
             .iter()
