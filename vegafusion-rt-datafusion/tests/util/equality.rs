@@ -13,12 +13,13 @@ use std::collections::{HashMap, HashSet};
 
 use vegafusion_core::error::Result;
 
-use datafusion::logical_plan::{col, Expr};
+use datafusion::logical_plan::Expr;
 
 use std::sync::Arc;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 use vegafusion_rt_datafusion::expression::compiler::utils::is_numeric_datatype;
+use vegafusion_rt_datafusion::expression::escape::flat_col;
 use vegafusion_rt_datafusion::transform::utils::DataFrameUtils;
 
 #[derive(Debug, Clone)]
@@ -81,7 +82,7 @@ pub fn assert_tables_equal(
             .fields()
             .iter()
             .map(|f| Expr::Sort {
-                expr: Box::new(col(f.name())),
+                expr: Box::new(flat_col(f.name())),
                 asc: false,
                 nulls_first: false,
             })

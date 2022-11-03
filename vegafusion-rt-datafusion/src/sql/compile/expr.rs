@@ -448,13 +448,14 @@ impl ToSqlExpr for Expr {
 #[cfg(test)]
 mod tests {
     use super::ToSqlExpr;
-    use datafusion_expr::{col, lit, BuiltinScalarFunction, Expr};
+    use crate::expression::escape::flat_col;
+    use datafusion_expr::{lit, BuiltinScalarFunction, Expr};
     use sqlgen::dialect::DialectDisplay;
     use vegafusion_core::arrow::datatypes::DataType;
 
     #[test]
     pub fn test1() {
-        let df_expr = Expr::Negative(Box::new(col("A"))) + lit(12);
+        let df_expr = Expr::Negative(Box::new(flat_col("A"))) + lit(12);
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);
         let sql_str = sql_expr.sql(&Default::default()).unwrap();
@@ -466,7 +467,7 @@ mod tests {
         let df_expr = Expr::ScalarFunction {
             fun: BuiltinScalarFunction::Sin,
             args: vec![lit(1.2)],
-        } + col("B");
+        } + flat_col("B");
 
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);
@@ -503,12 +504,12 @@ mod tests {
     #[test]
     pub fn test5() {
         let df_expr = Expr::Between {
-            expr: Box::new(col("A")),
+            expr: Box::new(flat_col("A")),
             negated: false,
             low: Box::new(lit(0)),
             high: Box::new(lit(10)),
         }
-        .or(col("B"));
+        .or(flat_col("B"));
 
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);

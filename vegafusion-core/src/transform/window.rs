@@ -60,11 +60,7 @@ impl Window {
         let fields: Vec<_> = transform
             .fields
             .iter()
-            .map(|f| {
-                f.as_ref()
-                    .map(|f| f.field())
-                    .unwrap_or_else(|| "".to_string())
-            })
+            .map(|f| f.as_ref().map(|f| f.field()).unwrap_or_default())
             .collect();
 
         // Process groupby
@@ -141,7 +137,7 @@ impl Window {
             .clone()
             .unwrap_or_default()
             .iter()
-            .map(|alias| alias.clone().unwrap_or_else(|| "".to_string()))
+            .map(|alias| alias.clone().unwrap_or_default())
             .collect();
 
         // Process params

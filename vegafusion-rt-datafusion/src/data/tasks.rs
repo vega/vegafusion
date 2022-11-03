@@ -21,7 +21,7 @@ use datafusion::dataframe::DataFrame;
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::execution::options::CsvReadOptions;
 use datafusion::logical_plan::Expr;
-use datafusion::prelude::{col, SessionContext};
+use datafusion::prelude::SessionContext;
 use datafusion_expr::lit;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
@@ -34,6 +34,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_to_timestamp
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::call::make_session_context;
+use crate::expression::escape::flat_col;
 use crate::sql::connection::datafusion_conn::DataFusionConnection;
 use crate::sql::dataframe::SqlDataFrame;
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -294,7 +295,7 @@ fn process_datetimes(
 
                         Expr::ScalarUDF {
                             fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
-                            args: vec![col(&spec.name), lit(default_input_tz_str)],
+                            args: vec![flat_col(&spec.name), lit(default_input_tz_str)],
                         }
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically, use local time
@@ -303,7 +304,7 @@ fn process_datetimes(
                         Expr::ScalarUDF {
                             fun: Arc::new((*MAKE_TIMESTAMPTZ).clone()),
                             args: vec![
-                                col(&spec.name),                             // year
+                                flat_col(&spec.name),                        // year
                                 lit(0),                                      // month
                                 lit(1),                                      // day
                                 lit(0),                                      // hour
@@ -328,7 +329,7 @@ fn process_datetimes(
                             if name == &spec.name {
                                 None
                             } else {
-                                Some(col(name))
+                                Some(flat_col(name))
                             }
                         })
                         .collect();
@@ -353,7 +354,7 @@ fn process_datetimes(
                             // Timestamp already in UTC
                             Expr::ScalarUDF {
                                 fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
-                                args: vec![col(field.name()), lit("UTC")],
+                                args: vec![flat_col(field.name()), lit("UTC")],
                             }
                         }
                         _ => {
@@ -364,7 +365,7 @@ fn process_datetimes(
                             Expr::ScalarUDF {
                                 fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
                                 args: vec![
-                                    col(field.name()),
+                                    flat_col(field.name()),
                                     lit(tz_config.default_input_tz.to_string()),
                                 ],
                             }
@@ -377,7 +378,7 @@ fn process_datetimes(
                         Expr::ScalarUDF {
                             fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
                             args: vec![
-                                col(field.name()),
+                                flat_col(field.name()),
                                 lit(tz_config.default_input_tz.to_string()),
                             ],
                         }
@@ -388,10 +389,10 @@ fn process_datetimes(
 
                         Expr::ScalarUDF {
                             fun: Arc::new((*DATE_TO_TIMESTAMPTZ_UDF).clone()),
-                            args: vec![col(field.name()), lit(tz_config.local_tz.to_string())],
+                            args: vec![flat_col(field.name()), lit(tz_config.local_tz.to_string())],
                         }
                     }
-                    _ => col(field.name()),
+                    _ => flat_col(field.name()),
                 };
 
                 Ok(if matches!(expr, Expr::Alias(_, _)) {
@@ -400,7 +401,7 @@ fn process_datetimes(
                     expr.alias(field.name())
                 })
             } else {
-                Ok(col(field.name()))
+                Ok(flat_col(field.name()))
             }
         })
         .collect::<Result<Vec<_>>>()?;

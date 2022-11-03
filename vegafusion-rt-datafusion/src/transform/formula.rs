@@ -10,13 +10,12 @@ use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion::prelude::col;
-
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Formula;
 
 use crate::expression::compiler::utils::VfSimplifyInfo;
+use crate::expression::escape::flat_col;
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion::logical_plan::ExprSimplifiable;
@@ -51,7 +50,7 @@ impl TransformTrait for Formula {
                 selections.push(formula_expr.clone());
                 as_field_added = true;
             } else {
-                selections.push(col(field.name()))
+                selections.push(flat_col(field.name()))
             }
         }
         if !as_field_added {

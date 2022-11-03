@@ -11,7 +11,6 @@ use crate::expression::compiler::utils::{
 };
 use datafusion::logical_plan::{ceil, DFSchema, ExprSchemable};
 use datafusion::logical_plan::{lit, Expr};
-use datafusion::prelude::col;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
@@ -25,6 +24,7 @@ use vegafusion_core::proto::gen::{
 };
 
 use crate::expression::compiler::builtin_functions::date_time::time::TIMESTAMPTZ_TO_EPOCH_MS;
+use crate::expression::escape::flat_col;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::expression::literal::Value;
 
@@ -123,7 +123,7 @@ pub struct FieldSpec {
 
 impl FieldSpec {
     pub fn to_test_expr(&self, values: &ScalarValue, schema: &DFSchema) -> Result<Expr> {
-        let field_col = col(&self.field);
+        let field_col = flat_col(&self.field);
 
         // Convert timestamp column to integer milliseconds before comparisons.
         let field_col = if matches!(

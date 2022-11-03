@@ -16,13 +16,14 @@ use datafusion::arrow::array::{
 use datafusion::arrow::compute::{cast, kernels};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::error::DataFusionError;
-use datafusion::logical_plan::{col, DFSchema, Expr};
+use datafusion::logical_plan::{DFSchema, Expr};
 use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::prelude::lit;
 use datafusion::scalar::ScalarValue;
 
+use crate::expression::escape::flat_col;
 use datafusion_expr::{
     BuiltinScalarFunction, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
 };
@@ -72,7 +73,7 @@ pub fn compile_member(
     match node.object().as_identifier() {
         Ok(Identifier { name, .. }) if name == "datum" => {
             return if schema.field_with_unqualified_name(&property_string).is_ok() {
-                let col_expr = col(&property_string);
+                let col_expr = flat_col(&property_string);
                 Ok(col_expr)
             } else {
                 // Column not in schema, evaluate to scalar null

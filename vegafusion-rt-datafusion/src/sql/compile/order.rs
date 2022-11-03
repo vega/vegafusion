@@ -34,21 +34,22 @@ impl ToSqlOrderByExpr for Expr {
 #[cfg(test)]
 mod tests {
 
-    use datafusion_expr::{col, Expr};
+    use crate::expression::escape::flat_col;
+    use datafusion_expr::Expr;
     use sqlgen::dialect::DialectDisplay;
 
     use crate::sql::compile::order::ToSqlOrderByExpr;
 
     #[test]
     pub fn test_non_sort_expr() {
-        let sort_expr = col("a");
+        let sort_expr = flat_col("a");
         sort_expr.to_sql_order().unwrap_err();
     }
 
     #[test]
     pub fn test_sort_by_col() {
         let sort_expr = Expr::Sort {
-            expr: Box::new(col("a")),
+            expr: Box::new(flat_col("a")),
             asc: false,
             nulls_first: false,
         };

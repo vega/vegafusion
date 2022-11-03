@@ -7,3 +7,4 @@
  * this program the details of the active license.
  */
 pub mod compiler;
+pub mod escape;

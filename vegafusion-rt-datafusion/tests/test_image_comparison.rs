@@ -122,7 +122,9 @@ mod test_custom_specs {
         case("custom/layered_movies", 0.001),
         case("custom/shipping_mixed_scales", 0.001),
         case("custom/datum_color", 0.001),
-        case("custom/bug_153", 0.001)
+        case("custom/bug_153", 0.001),
+        case("custom/period_in_field_name", 0.001),
+        case("custom/period_space_in_field_name", 0.001)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
         println!("spec_name: {}", spec_name);

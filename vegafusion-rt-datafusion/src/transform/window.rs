@@ -11,7 +11,7 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
 use datafusion::logical_plan::Expr;
-use datafusion::prelude::{col, lit};
+use datafusion::prelude::lit;
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::{
@@ -20,6 +20,7 @@ use vegafusion_core::proto::gen::transforms::{
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::expression::compiler::utils::to_numeric;
+use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
 use datafusion::physical_plan::aggregates;
 use datafusion_expr::{BuiltInWindowFunction, WindowFunction};
@@ -36,7 +37,7 @@ impl TransformTrait for Window {
             .iter()
             .zip(&self.sort)
             .map(|(field, order)| Expr::Sort {
-                expr: Box::new(col(field)),
+                expr: Box::new(unescaped_col(field)),
                 asc: *order == SortOrder::Ascending as i32,
                 nulls_first: *order == SortOrder::Ascending as i32,
             })
@@ -46,7 +47,7 @@ impl TransformTrait for Window {
             .schema_df()
             .fields()
             .iter()
-            .map(|f| col(f.field().name()))
+            .map(|f| flat_col(f.field().name()))
             .collect();
 
         let dataframe = if order_by.is_empty() {
@@ -61,7 +62,7 @@ impl TransformTrait for Window {
             .alias("__row_number");
 
             order_by.push(Expr::Sort {
-                expr: Box::new(col("__row_number")),
+                expr: Box::new(flat_col("__row_number")),
                 asc: true,
                 nulls_first: true,
             });
@@ -70,7 +71,11 @@ impl TransformTrait for Window {
             dataframe
         };
 
-        let partition_by: Vec<_> = self.groupby.iter().map(|group| col(group)).collect();
+        let partition_by: Vec<_> = self
+            .groupby
+            .iter()
+            .map(|group| unescaped_col(group))
+            .collect();
 
         let window_exprs: Vec<_> = self
             .ops
@@ -83,9 +88,11 @@ impl TransformTrait for Window {
                         let op = AggregateOp::from_i32(*op).unwrap();
 
                         let numeric_field = || {
-                            to_numeric(col(field), &dataframe.schema_df()).unwrap_or_else(|_| {
-                                panic!("Failed to convert field {} to numeric data type", field)
-                            })
+                            to_numeric(unescaped_col(field), &dataframe.schema_df()).unwrap_or_else(
+                                |_| {
+                                    panic!("Failed to convert field {} to numeric data type", field)
+                                },
+                            )
                         };
 
                         use AggregateOp::*;
@@ -96,7 +103,7 @@ impl TransformTrait for Window {
                             Min => (aggregates::AggregateFunction::Min, numeric_field()),
                             Max => (aggregates::AggregateFunction::Max, numeric_field()),
                             // ArrayAgg only available on master right now
-                            // Values => (aggregates::AggregateFunction::ArrayAgg, col(field)),
+                            // Values => (aggregates::AggregateFunction::ArrayAgg, unescaped_col(field)),
                             _ => {
                                 panic!("Unsupported window aggregate: {:?}", op)
                             }
@@ -115,11 +122,12 @@ impl TransformTrait for Window {
                                 (BuiltInWindowFunction::PercentRank, vec![])
                             }
                             WindowOp::CumeDist => (BuiltInWindowFunction::CumeDist, vec![]),
-                            WindowOp::FirstValue => {
-                                (BuiltInWindowFunction::FirstValue, vec![col(field)])
-                            }
+                            WindowOp::FirstValue => (
+                                BuiltInWindowFunction::FirstValue,
+                                vec![unescaped_col(field)],
+                            ),
                             WindowOp::LastValue => {
-                                (BuiltInWindowFunction::LastValue, vec![col(field)])
+                                (BuiltInWindowFunction::LastValue, vec![unescaped_col(field)])
                             }
                             _ => {
                                 panic!("Unsupported window function: {:?}", op)

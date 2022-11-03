@@ -1,5 +1,6 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{cast_to, data_type, is_string_datatype};
+use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::compile::expr::ToSqlExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
@@ -24,7 +25,7 @@ impl TransformTrait for Pivot {
         _config: &CompilationConfig,
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
         // Make sure the pivot column is a string
-        let pivot_dtype = data_type(&col(&self.field), &dataframe.schema_df())?;
+        let pivot_dtype = data_type(&unescaped_col(&self.field), &dataframe.schema_df())?;
         let dataframe = if !is_string_datatype(&pivot_dtype) {
             let select_exprs: Vec<_> = dataframe
                 .schema()
@@ -32,12 +33,14 @@ impl TransformTrait for Pivot {
                 .iter()
                 .map(|field| {
                     if field.name() == &self.field {
-                        Ok(
-                            cast_to(col(&self.field), &DataType::Utf8, &dataframe.schema_df())?
-                                .alias(&self.field),
-                        )
+                        Ok(cast_to(
+                            unescaped_col(&self.field),
+                            &DataType::Utf8,
+                            &dataframe.schema_df(),
+                        )?
+                        .alias(&self.field))
                     } else {
-                        Ok(col(field.name()))
+                        Ok(unescaped_col(field.name()))
                     }
                 })
                 .collect::<Result<Vec<_>>>()?;
@@ -58,7 +61,7 @@ async fn extract_sorted_pivot_values(
     tx: &Pivot,
     dataframe: &Arc<SqlDataFrame>,
 ) -> Result<Vec<String>> {
-    let agg_query = dataframe.aggregate(vec![col(&tx.field)], vec![])?;
+    let agg_query = dataframe.aggregate(vec![unescaped_col(&tx.field)], vec![])?;
 
     let limit = match tx.limit {
         None | Some(0) => None,
@@ -119,7 +122,7 @@ async fn pivot_without_grouping(
         let agg = agg_expr.alias(pivot_val).to_sql_select()?.sql(dialect)?;
 
         // Build predicate expression string
-        let predicate_expr = col(&tx.field).eq(lit(pivot_val.as_str()));
+        let predicate_expr = unescaped_col(&tx.field).eq(lit(pivot_val.as_str()));
         let predicate = predicate_expr.to_sql()?.sql(dialect)?;
 
         // Build subquery
@@ -133,9 +136,9 @@ async fn pivot_without_grouping(
 
         // Add column to final selections
         let select_expr = if fill_zero {
-            coalesce(vec![col(pivot_val), lit(0)]).alias(pivot_val)
+            coalesce(vec![flat_col(pivot_val), lit(0)]).alias(pivot_val)
         } else {
-            col(pivot_val)
+            flat_col(pivot_val)
         };
         final_selections.push(select_expr)
     }
@@ -201,7 +204,11 @@ async fn pivot_with_grouping(
     let dialect = dataframe.dialect();
 
     // Create dataframe containing the unique group values
-    let groupby_cols: Vec<_> = tx.groupby.iter().map(|field| col(field)).collect();
+    let groupby_cols: Vec<_> = tx
+        .groupby
+        .iter()
+        .map(|field| unescaped_col(field))
+        .collect();
     let groupby_strs: Vec<_> = groupby_cols
         .iter()
         .map(|col| col.to_sql().unwrap().sql(dialect).unwrap())
@@ -209,7 +216,7 @@ async fn pivot_with_grouping(
     let groupby_csv = groupby_strs.join(", ");
     let grouped_dataframe = dataframe.aggregate(
         groupby_cols,
-        vec![min(col("__row_number")).alias("__min_row_number")],
+        vec![min(flat_col("__row_number")).alias("__min_row_number")],
     )?;
 
     // Save off parent table names
@@ -217,7 +224,7 @@ async fn pivot_with_grouping(
     let grouped_parent_name = grouped_dataframe.parent_name();
 
     // Initialize vector of final selections
-    let mut final_selections: Vec<_> = tx.groupby.iter().map(|c| col(c)).collect();
+    let mut final_selections: Vec<_> = tx.groupby.iter().map(|c| unescaped_col(c)).collect();
 
     // Initialize empty query string
     let mut query_str = String::new();
@@ -228,7 +235,7 @@ async fn pivot_with_grouping(
         let agg = agg_expr.alias(pivot_val).to_sql_select()?.sql(dialect)?;
 
         // Build predicate expression string
-        let predicate_expr = col(&tx.field).eq(lit(pivot_val.as_str()));
+        let predicate_expr = unescaped_col(&tx.field).eq(lit(pivot_val.as_str()));
         let predicate = predicate_expr.to_sql()?.sql(dialect)?;
 
         // Build subquery
@@ -251,9 +258,9 @@ async fn pivot_with_grouping(
 
         // Add column to final selections
         let select_expr = if fill_zero {
-            coalesce(vec![col(pivot_val), lit(0)]).alias(pivot_val)
+            coalesce(vec![flat_col(pivot_val), lit(0)]).alias(pivot_val)
         } else {
-            col(pivot_val)
+            flat_col(pivot_val)
         };
         final_selections.push(select_expr)
     }

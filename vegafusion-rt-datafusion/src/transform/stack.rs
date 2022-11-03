@@ -15,10 +15,11 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::physical_plan::aggregates;
 use datafusion_expr::{
-    abs, col, lit, max, when, AggregateFunction, BuiltInWindowFunction, Expr, WindowFunction,
+    abs, lit, max, when, AggregateFunction, BuiltInWindowFunction, Expr, WindowFunction,
 };
 use sqlgen::dialect::DialectDisplay;
 
+use crate::expression::escape::{flat_col, unescaped_col};
 use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
 use vegafusion_core::error::{Result, VegaFusionError};
@@ -50,14 +51,14 @@ impl TransformTrait for Stack {
             .iter()
             .zip(&self.sort)
             .map(|(field, order)| Expr::Sort {
-                expr: Box::new(col(field)),
+                expr: Box::new(unescaped_col(field)),
                 asc: *order == SortOrder::Ascending as i32,
                 nulls_first: *order == SortOrder::Ascending as i32,
             })
             .collect();
 
         order_by.push(Expr::Sort {
-            expr: Box::new(col("__row_number")),
+            expr: Box::new(flat_col("__row_number")),
             asc: true,
             nulls_first: true,
         });
@@ -119,11 +120,16 @@ fn eval_normalize_center_offset(
     offset: &StackOffset,
 ) -> Result<Arc<SqlDataFrame>> {
     // Build groupby columns expressions
-    let partition_by: Vec<_> = stack.groupby.iter().map(|group| col(group)).collect();
+    let partition_by: Vec<_> = stack
+        .groupby
+        .iter()
+        .map(|group| unescaped_col(group))
+        .collect();
 
     // Cast field to number, replace with 0 when null, take absolute value
-    let numeric_field = to_numeric(col(&stack.field), &dataframe.schema_df())?;
-    let numeric_field = when(col(&stack.field).is_not_null(), numeric_field).otherwise(lit(0))?;
+    let numeric_field = to_numeric(unescaped_col(&stack.field), &dataframe.schema_df())?;
+    let numeric_field =
+        when(unescaped_col(&stack.field).is_not_null(), numeric_field).otherwise(lit(0))?;
     let numeric_field = abs(numeric_field);
 
     let stack_col_name = "__stack";
@@ -131,7 +137,7 @@ fn eval_normalize_center_offset(
 
     let total_agg = Expr::AggregateFunction {
         fun: AggregateFunction::Sum,
-        args: vec![col(stack_col_name)],
+        args: vec![flat_col(stack_col_name)],
         distinct: false,
         filter: None,
     }
@@ -165,7 +171,7 @@ fn eval_normalize_center_offset(
     let fun = WindowFunction::AggregateFunction(aggregates::AggregateFunction::Sum);
     let window_expr = Expr::WindowFunction {
         fun,
-        args: vec![col(stack_col_name)],
+        args: vec![flat_col(stack_col_name)],
         partition_by,
         order_by: Vec::from(order_by),
         window_frame: None,
@@ -178,7 +184,7 @@ fn eval_normalize_center_offset(
     // Restore original order
     let dataframe = dataframe.sort(
         vec![Expr::Sort {
-            expr: Box::new(col("__row_number")),
+            expr: Box::new(flat_col("__row_number")),
             asc: true,
             nulls_first: false,
         }],
@@ -192,7 +198,7 @@ fn eval_normalize_center_offset(
             if field == alias0 || field == alias1 {
                 None
             } else {
-                Some(col(field))
+                Some(flat_col(field))
             }
         })
         .collect();
@@ -200,7 +206,7 @@ fn eval_normalize_center_offset(
     // Now compute alias1 column by adding numeric field to alias0
     let dataframe = match offset {
         StackOffset::Center => {
-            let max_total = max(col("__total")).alias("__max_total");
+            let max_total = max(flat_col("__total")).alias("__max_total");
             let max_total_str = max_total.to_sql_select()?.sql(dataframe.dialect())?;
 
             let dataframe = dataframe.chain_query_str(&format!(
@@ -209,23 +215,23 @@ fn eval_normalize_center_offset(
                 max_total_str = max_total_str,
             ))?;
 
-            let first = col("__max_total").sub(col("__total")).div(lit(2));
-            let first_col = col(alias1).add(first);
+            let first = flat_col("__max_total").sub(flat_col("__total")).div(lit(2));
+            let first_col = flat_col(alias1).add(first);
             let alias1_col = first_col.clone().alias(alias1);
-            let alias0_col = first_col.sub(col(stack_col_name)).alias(alias0);
+            let alias0_col = first_col.sub(flat_col(stack_col_name)).alias(alias0);
             final_selection.push(alias0_col);
             final_selection.push(alias1_col);
 
             dataframe
         }
         StackOffset::Normalize => {
-            let alias0_col = col(alias1)
-                .sub(col(stack_col_name))
-                .div(col("__total"))
+            let alias0_col = flat_col(alias1)
+                .sub(flat_col(stack_col_name))
+                .div(flat_col("__total"))
                 .alias(alias0);
             final_selection.push(alias0_col);
 
-            let alias1_col = col(alias1).div(col("__total")).alias(alias1);
+            let alias1_col = flat_col(alias1).div(flat_col("__total")).alias(alias1);
             final_selection.push(alias1_col);
 
             dataframe
@@ -246,14 +252,19 @@ fn eval_zero_offset(
     order_by: &[Expr],
 ) -> Result<Arc<SqlDataFrame>> {
     // Build groupby / partitionby columns
-    let partition_by: Vec<_> = stack.groupby.iter().map(|group| col(group)).collect();
+    let partition_by: Vec<_> = stack
+        .groupby
+        .iter()
+        .map(|group| unescaped_col(group))
+        .collect();
 
     // Build window expression
     let fun = WindowFunction::AggregateFunction(aggregates::AggregateFunction::Sum);
 
     // Cast field to number and replace with 0 when null
-    let numeric_field = to_numeric(col(&stack.field), &dataframe.schema_df())?;
-    let numeric_field = when(col(&stack.field).is_not_null(), numeric_field).otherwise(lit(0))?;
+    let numeric_field = to_numeric(unescaped_col(&stack.field), &dataframe.schema_df())?;
+    let numeric_field =
+        when(unescaped_col(&stack.field).is_not_null(), numeric_field).otherwise(lit(0))?;
 
     // Build window function to compute stacked value
     let window_expr = Expr::WindowFunction {
@@ -282,7 +293,7 @@ fn eval_zero_offset(
     // Restore original order
     let dataframe = dataframe.sort(
         vec![Expr::Sort {
-            expr: Box::new(col("__row_number")),
+            expr: Box::new(flat_col("__row_number")),
             asc: true,
             nulls_first: false,
         }],
@@ -296,15 +307,15 @@ fn eval_zero_offset(
             if field == alias0 || field == alias1 {
                 None
             } else {
-                Some(col(field))
+                Some(flat_col(field))
             }
         })
         .collect();
 
     // Now compute alias0 column by adding numeric field to alias1
-    let alias0_col = col(alias1).sub(numeric_field).alias(alias0);
+    let alias0_col = flat_col(alias1).sub(numeric_field).alias(alias0);
     final_selection.push(alias0_col);
-    final_selection.push(col(alias1));
+    final_selection.push(flat_col(alias1));
 
     let dataframe = dataframe.select(final_selection.clone())?;
     Ok(dataframe)
