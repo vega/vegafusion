@@ -3,7 +3,7 @@ use chrono::{NaiveDateTime, Timelike};
 use datafusion::common::DataFusionError;
 use datafusion_expr::{
     ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
-    TypeSignature, Volatility,
+    Volatility,
 };
 use std::str::FromStr;
 use std::sync::Arc;
@@ -52,20 +52,10 @@ pub fn make_timestamp_to_timestamptz() -> ScalarUDF {
     let return_type: ReturnTypeFunction =
         Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
 
-    let signature: Signature = Signature::one_of(
-        vec![
-            TypeSignature::Exact(vec![
-                DataType::Timestamp(TimeUnit::Millisecond, None),
-                DataType::Utf8,
-            ]),
-            TypeSignature::Exact(vec![
-                DataType::Timestamp(TimeUnit::Nanosecond, None),
-                DataType::Utf8,
-            ]),
-            TypeSignature::Exact(vec![DataType::Date64, DataType::Utf8]),
-        ],
-        Volatility::Immutable,
-    );
+    // Signature should be (Timestamp, UTF8), but specifying Timestamp in the signature
+    // requires specifying the timezone explicitly, and DataFusion doesn't currently
+    // coerce between timezones.
+    let signature: Signature = Signature::any(2, Volatility::Immutable);
 
     ScalarUDF::new(
         "timestamp_to_timestamptz",
@@ -117,6 +107,10 @@ pub fn to_timestamp_ms(array: &ArrayRef) -> Result<ArrayRef, DataFusionError> {
                 )?)
             }
         }
+        DataType::Date64 => Ok(cast(
+            array,
+            &DataType::Timestamp(TimeUnit::Millisecond, None),
+        )?),
         dtype => Err(DataFusionError::Internal(format!(
             "Unexpected datatime in to_timestamp_ms: {:?}",
             dtype
