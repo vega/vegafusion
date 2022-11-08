@@ -350,11 +350,11 @@ fn process_datetimes(
             if !date_fields.contains(field.name()) {
                 let expr = match field.data_type() {
                     DataType::Timestamp(_, tz) => match tz {
-                        Some(tz) if tz.to_lowercase() == "utc" => {
-                            // Timestamp already in UTC
+                        Some(tz) => {
+                            // Timestamp has explicit timezone
                             Expr::ScalarUDF {
                                 fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
-                                args: vec![flat_col(field.name()), lit("UTC")],
+                                args: vec![flat_col(field.name()), lit(tz.as_str())],
                             }
                         }
                         _ => {
