@@ -1,0 +1,434 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 200,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {"name": "hover_store"},
+    {
+      "name": "dataframe",
+      "values": [
+        {
+          "DATE_DAY": "2022-11-06",
+          "LOCATION_NAME": "Brooklyn",
+          "CUSTOMERS": 10
+        },
+        {
+          "DATE_DAY": "2022-11-06",
+          "LOCATION_NAME": "Brooklyn",
+          "CUSTOMERS": 15
+        },
+        {"DATE_DAY": "2022-11-06", "LOCATION_NAME": "Chicago", "CUSTOMERS": 20}
+      ]
+    },
+    {
+      "name": "data_0",
+      "source": "dataframe",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "toDate(datum[\"DATE_DAY\"])",
+          "as": "DATE_DAY"
+        }
+      ]
+    },
+    {
+      "name": "data_1",
+      "source": "data_0",
+      "transform": [
+        {
+          "field": "DATE_DAY",
+          "type": "timeunit",
+          "units": ["year", "month"],
+          "as": ["yearmonth_DATE_DAY", "yearmonth_DATE_DAY_end"]
+        },
+        {
+          "type": "formula",
+          "expr": "datum[\"LOCATION_NAME\"]===\"Brooklyn\" ? 0 : datum[\"LOCATION_NAME\"]===\"Chicago\" ? 1 : datum[\"LOCATION_NAME\"]===\"New Orleans\" ? 2 : datum[\"LOCATION_NAME\"]===\"Philadelphia\" ? 3 : datum[\"LOCATION_NAME\"]===\"San Francisco\" ? 4 : 5",
+          "as": "color_LOCATION_NAME_sort_index"
+        }
+      ]
+    },
+    {
+      "name": "data_2",
+      "source": "data_1",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["yearmonth_DATE_DAY", "LOCATION_NAME"],
+          "ops": ["sum"],
+          "fields": ["CUSTOMERS"],
+          "as": ["sum_CUSTOMERS"]
+        },
+        {
+          "type": "filter",
+          "expr": "(isDate(datum[\"yearmonth_DATE_DAY\"]) || (isValid(datum[\"yearmonth_DATE_DAY\"]) && isFinite(+datum[\"yearmonth_DATE_DAY\"]))) && isValid(datum[\"sum_CUSTOMERS\"]) && isFinite(+datum[\"sum_CUSTOMERS\"])"
+        }
+      ]
+    },
+    {
+      "name": "data_3",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "length(data(\"hover_store\")) && vlSelectionTest(\"hover_store\", datum)"
+        },
+        {
+          "field": "DATE_DAY",
+          "type": "timeunit",
+          "units": ["year", "month"],
+          "as": ["yearmonth_DATE_DAY", "yearmonth_DATE_DAY_end"]
+        },
+        {
+          "type": "formula",
+          "expr": "datum[\"LOCATION_NAME\"]===\"Brooklyn\" ? 0 : datum[\"LOCATION_NAME\"]===\"Chicago\" ? 1 : datum[\"LOCATION_NAME\"]===\"New Orleans\" ? 2 : datum[\"LOCATION_NAME\"]===\"Philadelphia\" ? 3 : datum[\"LOCATION_NAME\"]===\"San Francisco\" ? 4 : 5",
+          "as": "color_LOCATION_NAME_sort_index"
+        }
+      ]
+    },
+    {
+      "name": "data_4",
+      "source": "data_3",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["yearmonth_DATE_DAY", "LOCATION_NAME"],
+          "ops": ["sum"],
+          "fields": ["CUSTOMERS"],
+          "as": ["sum_CUSTOMERS"]
+        },
+        {
+          "type": "filter",
+          "expr": "(isDate(datum[\"yearmonth_DATE_DAY\"]) || (isValid(datum[\"yearmonth_DATE_DAY\"]) && isFinite(+datum[\"yearmonth_DATE_DAY\"]))) && isValid(datum[\"sum_CUSTOMERS\"]) && isFinite(+datum[\"sum_CUSTOMERS\"])"
+        }
+      ]
+    },
+    {
+      "name": "data_5",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "pivot",
+          "field": "LOCATION_NAME",
+          "value": "CUSTOMERS",
+          "groupby": ["DATE_DAY"]
+        },
+        {
+          "type": "formula",
+          "expr": "toDate(datum[\"DATE_DAY\"])",
+          "as": "DATE_DAY"
+        },
+        {
+          "field": "DATE_DAY",
+          "type": "timeunit",
+          "units": ["year", "month"],
+          "as": ["yearmonth_DATE_DAY", "yearmonth_DATE_DAY_end"]
+        },
+        {
+          "type": "aggregate",
+          "groupby": ["yearmonth_DATE_DAY"],
+          "ops": ["sum", "sum"],
+          "fields": ["Brooklyn", "Chicago"],
+          "as": ["sum_Brooklyn", "sum_Chicago"]
+        },
+        {
+          "type": "filter",
+          "expr": "(isDate(datum[\"yearmonth_DATE_DAY\"]) || (isValid(datum[\"yearmonth_DATE_DAY\"]) && isFinite(+datum[\"yearmonth_DATE_DAY\"])))"
+        }
+      ]
+    },
+    {
+      "name": "data_6",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["LOCATION_NAME"],
+          "ops": [],
+          "fields": [],
+          "as": []
+        },
+        {
+          "type": "window",
+          "params": [null],
+          "as": ["rank"],
+          "ops": ["rank"],
+          "fields": [null],
+          "sort": {"field": [], "order": []}
+        },
+        {"type": "filter", "expr": "datum.rank <= 21"}
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "name": "unit",
+      "value": {},
+      "on": [
+        {"events": "mousemove", "update": "isTuple(group()) ? group() : unit"}
+      ]
+    },
+    {
+      "name": "hover",
+      "update": "vlSelectionResolve(\"hover_store\", \"union\", true, true)"
+    },
+    {
+      "name": "hover_tuple",
+      "on": [
+        {
+          "events": [
+            {
+              "source": "scope",
+              "type": "mouseover",
+              "markname": "layer_0_layer_1_layer_0_voronoi"
+            }
+          ],
+          "update": "datum && item().mark.marktype !== 'group' && indexof(item().mark.role, 'legend') < 0 ? {unit: \"layer_0_layer_1_layer_0\", fields: hover_tuple_fields, values: [(item().isVoronoi ? datum.datum : datum)[\"yearmonth_DATE_DAY\"]]} : null",
+          "force": true
+        },
+        {"events": [{"source": "view", "type": "mouseout"}], "update": "null"}
+      ]
+    },
+    {
+      "name": "hover_tuple_fields",
+      "value": [{"type": "E", "field": "yearmonth_DATE_DAY"}]
+    },
+    {
+      "name": "hover_toggle",
+      "value": false,
+      "on": [
+        {
+          "events": [
+            {
+              "source": "scope",
+              "type": "mouseover",
+              "markname": "layer_0_layer_1_layer_0_voronoi"
+            }
+          ],
+          "update": "event.shiftKey"
+        },
+        {"events": [{"source": "view", "type": "mouseout"}], "update": "false"}
+      ]
+    },
+    {
+      "name": "hover_modify",
+      "on": [
+        {
+          "events": {"signal": "hover_tuple"},
+          "update": "modify(\"hover_store\", hover_toggle ? null : hover_tuple, hover_toggle ? null : true, hover_toggle ? hover_tuple : null)"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_layer_0_layer_0_marks",
+      "type": "symbol",
+      "clip": true,
+      "style": ["point"],
+      "interactive": false,
+      "from": {"data": "data_2"},
+      "encode": {
+        "update": {
+          "fill": {"scale": "color", "field": "LOCATION_NAME"},
+          "opacity": {"value": 1},
+          "ariaRoleDescription": {"value": "point"},
+          "description": {
+            "signal": "\"DATE_DAY (year-month): \" + (timeFormat(datum[\"yearmonth_DATE_DAY\"], timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of CUSTOMERS: \" + (format(datum[\"sum_CUSTOMERS\"], \"\")) + \"; LOCATION_NAME: \" + (isValid(datum[\"LOCATION_NAME\"]) ? datum[\"LOCATION_NAME\"] : \"\"+datum[\"LOCATION_NAME\"])"
+          },
+          "x": {"scale": "x", "field": "yearmonth_DATE_DAY"},
+          "y": {"scale": "y", "field": "sum_CUSTOMERS"}
+        }
+      }
+    },
+    {
+      "name": "layer_0_layer_0_layer_1_marks",
+      "type": "symbol",
+      "style": ["point"],
+      "interactive": false,
+      "from": {"data": "data_4"},
+      "encode": {
+        "update": {
+          "fill": {"value": "transparent"},
+          "stroke": {"scale": "color", "field": "LOCATION_NAME"},
+          "ariaRoleDescription": {"value": "point"},
+          "description": {
+            "signal": "\"DATE_DAY (year-month): \" + (timeFormat(datum[\"yearmonth_DATE_DAY\"], timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of CUSTOMERS: \" + (format(datum[\"sum_CUSTOMERS\"], \"\")) + \"; LOCATION_NAME: \" + (isValid(datum[\"LOCATION_NAME\"]) ? datum[\"LOCATION_NAME\"] : \"\"+datum[\"LOCATION_NAME\"])"
+          },
+          "x": {"scale": "x", "field": "yearmonth_DATE_DAY"},
+          "y": {"scale": "y", "field": "sum_CUSTOMERS"}
+        }
+      }
+    },
+    {
+      "name": "layer_0_layer_1_layer_0_marks",
+      "type": "rule",
+      "style": ["rule"],
+      "interactive": true,
+      "from": {"data": "data_5"},
+      "encode": {
+        "update": {
+          "stroke": {"value": "#000"},
+          "opacity": [
+            {
+              "test": "length(data(\"hover_store\")) && vlSelectionTest(\"hover_store\", datum)",
+              "value": 0.3
+            },
+            {"value": 0}
+          ],
+          "tooltip": {
+            "signal": "{\"Sum of Brooklyn\": format(datum[\"sum_Brooklyn\"], \"\"), \"Sum of Chicago\": format(datum[\"sum_Chicago\"], \"\"), \"DATE_DAY (year-month)\": timeFormat(datum[\"yearmonth_DATE_DAY\"], timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))}"
+          },
+          "description": {
+            "signal": "\"DATE_DAY (year-month): \" + (timeFormat(datum[\"yearmonth_DATE_DAY\"], timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of Brooklyn: \" + (format(datum[\"sum_Brooklyn\"], \"\")) + \"; Sum of Chicago: \" + (format(datum[\"sum_Chicago\"], \"\"))"
+          },
+          "x": {"scale": "x", "field": "yearmonth_DATE_DAY"},
+          "y": {"value": 0},
+          "y2": {"field": {"group": "height"}}
+        }
+      }
+    },
+    {
+      "name": "layer_0_layer_1_layer_0_voronoi",
+      "type": "path",
+      "interactive": true,
+      "from": {"data": "layer_0_layer_1_layer_0_marks"},
+      "encode": {
+        "update": {
+          "fill": {"value": "transparent"},
+          "strokeWidth": {"value": 0.35},
+          "stroke": {"value": "transparent"},
+          "isVoronoi": {"value": true},
+          "tooltip": {
+            "signal": "{\"Sum of Brooklyn\": format(datum.datum[\"sum_Brooklyn\"], \"\"), \"Sum of Chicago\": format(datum.datum[\"sum_Chicago\"], \"\"), \"DATE_DAY (year-month)\": timeFormat(datum.datum[\"yearmonth_DATE_DAY\"], timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))}"
+          }
+        }
+      },
+      "transform": [
+        {
+          "type": "voronoi",
+          "x": {"expr": "datum.datum.x || 0"},
+          "y": {"expr": "datum.datum.y || 0"},
+          "size": [{"signal": "width"}, {"signal": "height"}]
+        }
+      ]
+    },
+    {
+      "name": "aggregate_layer_0885ce6c_6ac3_4e76_bb32_56c73c371811_marks",
+      "type": "rule",
+      "style": ["rule"],
+      "interactive": false,
+      "from": {"data": "data_6"},
+      "encode": {"update": {}}
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "time",
+      "domain": {
+        "fields": [
+          {"data": "data_2", "field": "yearmonth_DATE_DAY"},
+          {"data": "data_4", "field": "yearmonth_DATE_DAY"},
+          {"data": "data_5", "field": "yearmonth_DATE_DAY"}
+        ]
+      },
+      "range": [0, {"signal": "width"}]
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {
+        "fields": [
+          {"data": "data_2", "field": "sum_CUSTOMERS"},
+          {"data": "data_4", "field": "sum_CUSTOMERS"}
+        ]
+      },
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": {
+        "fields": [
+          {"data": "data_1", "field": "LOCATION_NAME"},
+          {"data": "data_3", "field": "LOCATION_NAME"}
+        ],
+        "sort": {"op": "min", "field": "color_LOCATION_NAME_sort_index"}
+      },
+      "range": ["#4c78a8", "#f58518", "#e45756", "#72b7b2", "#54a24b"],
+      "interpolate": "hcl"
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": true,
+      "gridScale": "y",
+      "tickCount": {"signal": "ceil(width/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": true,
+      "gridScale": "x",
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "DATE_DAY (year-month)",
+      "labels": true,
+      "ticks": true,
+      "format": {
+        "signal": "timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})"
+      },
+      "labelFlush": true,
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(width/40)"},
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "Sum of CUSTOMERS",
+      "labels": true,
+      "ticks": true,
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
+    }
+  ],
+  "legends": [
+    {
+      "fill": "color",
+      "symbolType": "circle",
+      "title": "LOCATION_NAME",
+      "encode": {"symbols": {"update": {"opacity": {"value": 1}}}},
+      "stroke": "color"
+    }
+  ],
+  "config": {"legend": {"orient": "right"}}
+}
