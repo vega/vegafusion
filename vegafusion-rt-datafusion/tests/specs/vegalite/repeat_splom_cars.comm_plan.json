@@ -17,6 +17,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_color_domain_Origin_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_1",
       "scope": []
     },
@@ -28,6 +33,11 @@
     {
       "namespace": "data",
       "name": "data_1_child__row_Displacementcolumn_Miles_per_Gallon_y_domain_Displacement",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_color_domain_Origin_1",
       "scope": []
     },
     {
@@ -47,6 +57,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_2_color_domain_Origin_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_3",
       "scope": []
     },
@@ -58,6 +73,11 @@
     {
       "namespace": "data",
       "name": "data_3_child__row_Miles_per_Galloncolumn_Miles_per_Gallon_y_domain_Miles_per_Gallon",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3_color_domain_Origin_3",
       "scope": []
     }
   ],

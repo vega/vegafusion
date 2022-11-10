@@ -12,7 +12,17 @@
     },
     {
       "namespace": "data",
+      "name": "data_1_color_domain_gender_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_2_color_domain_gender_1",
       "scope": []
     },
     {

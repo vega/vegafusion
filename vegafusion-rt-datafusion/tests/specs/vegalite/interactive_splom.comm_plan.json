@@ -17,6 +17,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_color_domain_Origin_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_1",
       "scope": []
     },
@@ -28,6 +33,11 @@
     {
       "namespace": "data",
       "name": "data_1_child__row_Horsepowercolumn_Acceleration_y_domain_Horsepower",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_color_domain_Origin_1",
       "scope": []
     },
     {
@@ -47,6 +57,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_2_color_domain_Origin_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_3",
       "scope": []
     },
@@ -58,6 +73,11 @@
     {
       "namespace": "data",
       "name": "data_3_child__row_Accelerationcolumn_Miles_per_Gallon_y_domain_Acceleration",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3_color_domain_Origin_3",
       "scope": []
     },
     {
@@ -77,6 +97,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_4_color_domain_Origin_4",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_5",
       "scope": []
     },
@@ -88,6 +113,11 @@
     {
       "namespace": "data",
       "name": "data_5_child__row_Accelerationcolumn_Horsepower_y_domain_Acceleration",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_5_color_domain_Origin_5",
       "scope": []
     },
     {
@@ -107,6 +137,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_6_color_domain_Origin_6",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_7",
       "scope": []
     },
@@ -122,6 +157,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_7_color_domain_Origin_7",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_8",
       "scope": []
     },
@@ -133,6 +173,11 @@
     {
       "namespace": "data",
       "name": "data_8_child__row_Miles_per_Galloncolumn_Horsepower_y_domain_Miles_per_Gallon",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_8_color_domain_Origin_8",
       "scope": []
     }
   ],

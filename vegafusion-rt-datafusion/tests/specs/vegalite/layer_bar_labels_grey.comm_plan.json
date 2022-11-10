@@ -7,7 +7,17 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_y_domain_Major Genre_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "source_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_y_domain_Major Genre_1",
       "scope": []
     }
   ],

@@ -7,7 +7,47 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_child__column_precipitation_x_domain_month_date_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_child__column_temp_max_x_domain_month_date_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_child__column_wind_x_domain_month_date_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_color_domain_location_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_child__column_precipitation_x_domain_month_date_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_child__column_temp_max_x_domain_month_date_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_child__column_wind_x_domain_month_date_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_color_domain_location_0",
       "scope": []
     }
   ],

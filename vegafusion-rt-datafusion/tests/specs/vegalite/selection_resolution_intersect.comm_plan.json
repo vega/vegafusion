@@ -27,6 +27,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_color_domain_Origin_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_1",
       "scope": []
     },
@@ -52,6 +57,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_1_color_domain_Origin_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_2",
       "scope": []
     },
@@ -63,6 +73,11 @@
     {
       "namespace": "data",
       "name": "data_2_child__row_Horsepowercolumn_Horsepower_y_domain_Horsepower",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_2_color_domain_Origin_2",
       "scope": []
     },
     {
@@ -92,6 +107,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_3_color_domain_Origin_3",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_4",
       "scope": []
     },
@@ -107,6 +127,11 @@
     },
     {
       "namespace": "data",
+      "name": "data_4_color_domain_Origin_4",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_5",
       "scope": []
     },
@@ -118,6 +143,11 @@
     {
       "namespace": "data",
       "name": "data_5_child__row_Miles_per_Galloncolumn_Miles_per_Gallon_y_domain_Miles_per_Gallon",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_5_color_domain_Origin_5",
       "scope": []
     }
   ],

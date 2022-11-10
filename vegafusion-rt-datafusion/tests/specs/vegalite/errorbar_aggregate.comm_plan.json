@@ -7,12 +7,27 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_x_domain_age_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_1",
       "scope": []
     },
     {
       "namespace": "data",
+      "name": "data_1_x_domain_age_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "data_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_2_x_domain_age_1",
       "scope": []
     }
   ],

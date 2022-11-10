@@ -7,7 +7,17 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_color_domain_symbol_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "source_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_color_domain_symbol_0",
       "scope": []
     }
   ],

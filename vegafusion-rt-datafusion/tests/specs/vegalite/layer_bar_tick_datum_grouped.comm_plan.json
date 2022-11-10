@@ -12,7 +12,27 @@
     },
     {
       "namespace": "data",
+      "name": "data_0_xOffset_domain_Origin_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_x_domain_Cylinders_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "source_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_xOffset_domain_Origin_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_x_domain_Cylinders_1",
       "scope": []
     }
   ],
