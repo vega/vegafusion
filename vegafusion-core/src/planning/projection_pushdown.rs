@@ -347,14 +347,20 @@ impl GetDatasetsColumnUsage for ScaleDomainSpec {
         vl_selection_fields: &VlSelectionFields,
     ) -> DatasetsColumnUsage {
         let mut usage = DatasetsColumnUsage::empty();
-        let scale_data_refs = match &self {
-            ScaleDomainSpec::FieldReference(field) => {
-                vec![field.clone()]
+        let (scale_data_refs, sort) = match &self {
+            ScaleDomainSpec::FieldReference(scale_data_ref) => {
+                (vec![scale_data_ref.clone()], scale_data_ref.sort.clone())
             }
-            ScaleDomainSpec::FieldsReference(fields) => fields.fields.clone(),
-            _ => Vec::new(),
+            ScaleDomainSpec::FieldsReference(scale_data_refs) => {
+                (scale_data_refs.fields.clone(), scale_data_refs.sort.clone())
+            }
+            _ => (Vec::new(), None),
         };
         for scale_data_ref in scale_data_refs {
+            // Push sort field down in the case of FieldsReference
+            let mut scale_data_ref = scale_data_ref.clone();
+            scale_data_ref.sort = sort.clone();
+
             usage = usage.union(&scale_data_ref.datasets_column_usage(
                 &None,
                 usage_scope,
