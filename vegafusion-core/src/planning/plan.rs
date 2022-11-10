@@ -68,17 +68,18 @@ impl SpecPlan {
 
         let mut client_spec = full_spec.clone();
 
-        // Attempt to limit the columns produced by each dataset to only include those
-        // that are actually used downstream
-        if config.projection_pushdown {
-            projection_pushdown(&mut client_spec)?;
-        }
-
+        // Push domain data calculations to the server
         let domain_dataset_fields = if config.split_domain_data {
             split_domain_data(&mut client_spec)?
         } else {
             Default::default()
         };
+
+        // Attempt to limit the columns produced by each dataset to only include those
+        // that are actually used downstream
+        if config.projection_pushdown {
+            projection_pushdown(&mut client_spec)?;
+        }
 
         let mut task_scope = client_spec.to_task_scope()?;
 
