@@ -1,4 +1,34 @@
 {
-  "server_to_client": [],
-  "client_to_server": []
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "data_1_color_domain_LOCATION_NAME_0",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_2",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_3_color_domain_LOCATION_NAME_1",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_4",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_5",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_6",
+      "scope": []
+    }
+  ],
+  "client_to_server": [{
+    "namespace": "data",
+    "name": "hover_store",
+    "scope": []
+  }]
 }
