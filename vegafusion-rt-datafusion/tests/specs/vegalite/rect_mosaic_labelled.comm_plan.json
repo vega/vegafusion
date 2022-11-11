@@ -4,15 +4,28 @@
       "namespace": "data",
       "name": "data_0",
       "scope": []
-    }, {
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_color_domain_Origin_0",
+      "scope": []
+    },
+    {
       "namespace": "data",
       "name": "data_1",
       "scope": []
-    }, {
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_color_domain_Origin_1",
+      "scope": []
+    },
+    {
       "namespace": "data",
       "name": "data_1_opacity_domain_Cylinders",
       "scope": []
-    }, {
+    },
+    {
       "namespace": "data",
       "name": "data_2",
       "scope": []

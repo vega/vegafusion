@@ -8,6 +8,7 @@ def test_input_utc():
         input_spec(), "UTC", "UTC", inline_datasets={"seattle_weather": load_dataset()}
     )
     pre_transformed_json = json.loads(pre_transformed)
+    print(json.dumps(pre_transformed_json, indent=2))
     expected_json = json.loads(expected_spec())
     assert pre_transformed_json == expected_json
 
@@ -557,52 +558,40 @@ def expected_spec():
       "name": "source_0_x_domain_month_date",
       "values": [
         {
-          "month_date": "2012-01-01T00:00:00.000",
-          "sort_field": 1325376000000
+          "month_date": "2012-01-01T00:00:00.000"
         },
         {
-          "month_date": "2012-02-01T00:00:00.000",
-          "sort_field": 1328054400000
+          "month_date": "2012-02-01T00:00:00.000"
         },
         {
-          "month_date": "2012-03-01T00:00:00.000",
-          "sort_field": 1330560000000
+          "month_date": "2012-03-01T00:00:00.000"
         },
         {
-          "month_date": "2012-04-01T00:00:00.000",
-          "sort_field": 1333238400000
+          "month_date": "2012-04-01T00:00:00.000"
         },
         {
-          "month_date": "2012-05-01T00:00:00.000",
-          "sort_field": 1335830400000
+          "month_date": "2012-05-01T00:00:00.000"
         },
         {
-          "month_date": "2012-06-01T00:00:00.000",
-          "sort_field": 1338508800000
+          "month_date": "2012-06-01T00:00:00.000"
         },
         {
-          "month_date": "2012-07-01T00:00:00.000",
-          "sort_field": 1341100800000
+          "month_date": "2012-07-01T00:00:00.000"
         },
         {
-          "month_date": "2012-08-01T00:00:00.000",
-          "sort_field": 1343779200000
+          "month_date": "2012-08-01T00:00:00.000"
         },
         {
-          "month_date": "2012-09-01T00:00:00.000",
-          "sort_field": 1346457600000
+          "month_date": "2012-09-01T00:00:00.000"
         },
         {
-          "month_date": "2012-10-01T00:00:00.000",
-          "sort_field": 1349049600000
+          "month_date": "2012-10-01T00:00:00.000"
         },
         {
-          "month_date": "2012-11-01T00:00:00.000",
-          "sort_field": 1351728000000
+          "month_date": "2012-11-01T00:00:00.000"
         },
         {
-          "month_date": "2012-12-01T00:00:00.000",
-          "sort_field": 1354320000000
+          "month_date": "2012-12-01T00:00:00.000"
         }
       ],
       "transform": [
@@ -633,19 +622,19 @@ def expected_spec():
       },
       "encode": {
         "update": {
-          "description": {
-            "signal": "\"Month of the year: \" + (timeFormat(datum[\"month_date\"], timeUnitSpecifier([\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Count of Records: \" + (format(datum[\"__count\"], \"\")) + \"; Weather type: \" + (isValid(datum[\"weather\"]) ? datum[\"weather\"] : \"\"+datum[\"weather\"])"
-          },
           "fill": {
             "field": "weather",
             "scale": "color"
           },
-          "ariaRoleDescription": {
-            "value": "bar"
-          },
           "x": {
             "field": "month_date",
             "scale": "x"
+          },
+          "ariaRoleDescription": {
+            "value": "bar"
+          },
+          "width": {
+            "signal": "max(0.25, bandwidth('x'))"
           },
           "y": {
             "field": "__count_end",
@@ -655,8 +644,8 @@ def expected_spec():
             "field": "__count_start",
             "scale": "y"
           },
-          "width": {
-            "signal": "max(0.25, bandwidth('x'))"
+          "description": {
+            "signal": "\"Month of the year: \" + (timeFormat(datum[\"month_date\"], timeUnitSpecifier([\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Count of Records: \" + (format(datum[\"__count\"], \"\")) + \"; Weather type: \" + (isValid(datum[\"weather\"]) ? datum[\"weather\"] : \"\"+datum[\"weather\"])"
           }
         }
       },
@@ -698,8 +687,8 @@ def expected_spec():
         },
         0
       ],
-      "nice": true,
-      "zero": true
+      "zero": true,
+      "nice": true
     },
     {
       "name": "color",
@@ -723,47 +712,46 @@ def expected_spec():
   "axes": [
     {
       "scale": "y",
+      "grid": true,
+      "orient": "left",
+      "minExtent": 0,
+      "labels": false,
+      "domain": false,
+      "aria": false,
       "tickCount": {
         "signal": "ceil(height/40)"
       },
-      "aria": false,
-      "maxExtent": 0,
-      "minExtent": 0,
-      "domain": false,
-      "ticks": false,
-      "orient": "left",
       "gridScale": "x",
-      "labels": false,
+      "ticks": false,
       "zindex": 0,
-      "grid": true
+      "maxExtent": 0
     },
     {
       "scale": "x",
       "formatType": "time",
-      "labelOverlap": true,
       "zindex": 0,
-      "grid": false,
+      "labelOverlap": true,
       "title": "Month of the year",
+      "orient": "bottom",
+      "grid": false,
       "format": {
         "signal": "timeUnitSpecifier([\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})"
-      },
-      "orient": "bottom"
+      }
     },
     {
       "scale": "y",
-      "zindex": 0,
-      "title": "Count of Records",
-      "grid": false,
       "orient": "left",
+      "grid": false,
       "labelOverlap": true,
       "tickCount": {
         "signal": "ceil(height/40)"
-      }
+      },
+      "zindex": 0,
+      "title": "Count of Records"
     }
   ],
-  "background": "white",
-  "padding": 5,
   "style": "cell",
+  "height": 200,
   "legends": [
     {
       "title": "Weather type",
@@ -771,6 +759,7 @@ def expected_spec():
       "symbolType": "square"
     }
   ],
-  "height": 200
+  "padding": 5,
+  "background": "white"
 }
     """

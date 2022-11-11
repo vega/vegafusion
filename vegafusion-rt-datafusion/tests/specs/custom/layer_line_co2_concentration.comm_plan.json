@@ -4,6 +4,10 @@
       "namespace": "data",
       "name": "source_0",
       "scope": []
+    }, {
+      "namespace": "data",
+      "name": "source_0_color_domain_decade_0",
+      "scope": []
     }
   ],
   "client_to_server": []

@@ -88,6 +88,9 @@ pub enum ScaleDomainSpec {
 pub struct ScaleDataReferencesSpec {
     pub fields: Vec<ScaleDataReferenceSpec>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sort: Option<ScaleDataReferenceSort>,
+
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }

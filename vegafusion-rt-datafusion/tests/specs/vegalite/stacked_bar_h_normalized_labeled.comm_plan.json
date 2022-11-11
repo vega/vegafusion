@@ -6,11 +6,19 @@
       "scope": []
     }, {
       "namespace": "data",
+      "name": "data_0_y_domain_age_1",
+      "scope": []
+    }, {
+      "namespace": "data",
       "name": "data_1",
       "scope": []
     }, {
       "namespace": "data",
       "name": "data_1_color_domain_gender",
+      "scope": []
+    }, {
+      "namespace": "data",
+      "name": "data_1_y_domain_age_0",
       "scope": []
     }
   ],

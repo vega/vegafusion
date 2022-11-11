@@ -152,8 +152,11 @@ pub fn make_aggr_expr(
     };
 
     let numeric_column = || {
-        to_numeric(column.clone(), schema).unwrap_or_else(|_| {
-            panic!("Failed to convert column {:?} to numeric data type", column)
+        to_numeric(column.clone(), schema).unwrap_or_else(|err| {
+            panic!(
+                "Failed to convert column {:?} to numeric data type: {:?}",
+                column, err
+            )
         })
     };
 
