@@ -543,6 +543,127 @@ def date_column_spec():
 """
 
 
+def period_in_col_name_spec():
+    return r"""
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 200,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {
+      "name": "df_period",
+      "url": "vegafusion+dataset://df_period"
+    },
+    {
+      "name": "data_0",
+      "source": "df_period",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"normal\"]) && isFinite(+datum[\"normal\"]) && isValid(datum[\"a.b\"]) && isFinite(+datum[\"a.b\"])"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_marks",
+      "type": "rect",
+      "clip": true,
+      "style": ["bar"],
+      "from": {"data": "data_0"},
+      "encode": {
+        "update": {
+          "tooltip": {
+            "signal": "{\"normal\": format(datum[\"normal\"], \"\"), \"a\\.b\": format(datum[\"a.b\"], \"\")}"
+          },
+          "fill": {"value": "#4c78a8"},
+          "ariaRoleDescription": {"value": "bar"},
+          "description": {
+            "signal": "\"normal: \" + (format(datum[\"normal\"], \"\")) + \"; a\\.b: \" + (format(datum[\"a.b\"], \"\"))"
+          },
+          "xc": {"scale": "x", "field": "normal"},
+          "width": {"value": 5},
+          "y": {"scale": "y", "field": "a\\.b"},
+          "y2": {"scale": "y", "value": 0}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "linear",
+      "domain": {"data": "data_0", "field": "normal"},
+      "range": [0, {"signal": "width"}],
+      "nice": true,
+      "zero": false,
+      "padding": 5
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {"data": "data_0", "field": "a\\.b"},
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "gridScale": "y",
+      "grid": true,
+      "tickCount": {"signal": "ceil(width/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "gridScale": "x",
+      "grid": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "normal",
+      "labelFlush": true,
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(width/40)"},
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "a\\.b",
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
+    }
+  ]
+} 
+    """
+
 def test_pre_transform_multi_partition():
     n = 4050
     order_items = pd.DataFrame({
@@ -655,3 +776,16 @@ def test_date32_pre_transform_dataset():
     assert list(output_ds.date_col) == [
         "2022-01-01T00:00:00.000", "2022-01-02T00:00:00.000", "2022-01-03T00:00:00.000"
     ]
+
+
+def test_period_in_column_name():
+    df_period = pd.DataFrame([[1, 2]], columns=['normal', 'a.b'])
+    spec = period_in_col_name_spec()
+    datasets, warnings = vf.runtime.pre_transform_datasets(spec, ["data_0"], "UTC", inline_datasets=dict(
+        df_period=df_period
+    ))
+    assert len(warnings) == 0
+    assert len(datasets) == 1
+
+    dataset = datasets[0]
+    assert dataset.to_dict("records") == [{"normal": 1, "a.b": 2}]
