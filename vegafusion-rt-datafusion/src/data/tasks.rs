@@ -114,14 +114,12 @@ impl TaskCall for DataUrlTask {
         let df = if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
             let inline_name = inline_name.trim().to_string();
             if let Some(inline_dataset) = inline_datasets.get(&inline_name) {
-                match inline_dataset {
-                    VegaFusionDataset::Table { table, .. } => table.to_dataframe()?,
-                    VegaFusionDataset::SqlDataFrame(sql_df) => {
-                        // Process datetime columns and evaluage transforms
-                        let sql_df = process_datetimes(&parse, sql_df.clone(), &config.tz_config)?;
-                        return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await;
-                    }
-                }
+                let sql_df = match inline_dataset {
+                    VegaFusionDataset::Table { table, .. } => table.to_sql_dataframe().await?,
+                    VegaFusionDataset::SqlDataFrame(sql_df) => sql_df.clone(),
+                };
+                let sql_df = process_datetimes(&parse, sql_df, &config.tz_config)?;
+                return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await;
             } else {
                 return Err(VegaFusionError::internal(format!(
                     "No inline dataset named {}",
