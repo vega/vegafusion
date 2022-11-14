@@ -12,6 +12,7 @@ pub mod collect;
 pub mod extent;
 pub mod filter;
 pub mod formula;
+pub mod identifier;
 pub mod impute;
 pub mod joinaggregate;
 pub mod lookup;
@@ -31,6 +32,7 @@ use crate::spec::transform::aggregate::AggregateTransformSpec;
 use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
 use crate::spec::transform::formula::FormulaTransformSpec;
+use crate::spec::transform::identifier::IdentifierTransformSpec;
 use crate::spec::transform::impute::ImputeTransformSpec;
 use crate::spec::transform::joinaggregate::JoinAggregateTransformSpec;
 use crate::spec::transform::lookup::LookupTransformSpec;
@@ -63,6 +65,7 @@ pub enum TransformSpec {
     Stack(StackTransformSpec),
     Impute(ImputeTransformSpec),
     Pivot(PivotTransformSpec),
+    Identifier(IdentifierTransformSpec),
 
     // Unsupported
     CountPattern(CountpatternTransformSpec),
@@ -80,7 +83,6 @@ pub enum TransformSpec {
     GeoShape(GeoshapeTransformSpec),
     Graticule(GraticuleTransformSpec),
     Heatmap(HeatmapTransformSpec),
-    Identifier(IdentifierTransformSpec),
     IsoContour(IsocontourTransformSpec),
     Kde(KdeTransformSpec),
     Kde2d(Kde2dTransformSpec),

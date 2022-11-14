@@ -232,6 +232,11 @@ message Pivot {
   optional AggregateOp op = 5;
 }
 
+// Identifier
+message Identifier {
+  string as = 1;
+}
+
 // Top-level transform
 message Transform {
   oneof transform_kind {
@@ -248,6 +253,7 @@ message Transform {
     Stack stack = 11;
     Impute impute = 12;
     Pivot pivot = 13;
+    Identifier identifier = 14;
   }
 }
 

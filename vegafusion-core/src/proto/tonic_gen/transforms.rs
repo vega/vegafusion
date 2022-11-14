@@ -205,10 +205,16 @@ pub struct Pivot {
     #[prost(enumeration="AggregateOp", optional, tag="5")]
     pub op: ::core::option::Option<i32>,
 }
+/// Identifier
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Identifier {
+    #[prost(string, tag="1")]
+    pub r#as: ::prost::alloc::string::String,
+}
 /// Top-level transform
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transform {
-    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13")]
+    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14")]
     pub transform_kind: ::core::option::Option<transform::TransformKind>,
 }
 /// Nested message and enum types in `Transform`.
@@ -241,6 +247,8 @@ pub mod transform {
         Impute(super::Impute),
         #[prost(message, tag="13")]
         Pivot(super::Pivot),
+        #[prost(message, tag="14")]
+        Identifier(super::Identifier),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
