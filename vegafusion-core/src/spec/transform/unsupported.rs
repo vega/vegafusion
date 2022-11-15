@@ -44,7 +44,6 @@ unsupported_transforms!(
     GeoshapeTransformSpec,
     GraticuleTransformSpec,
     HeatmapTransformSpec,
-    IdentifierTransformSpec,
     IsocontourTransformSpec,
     KdeTransformSpec,
     Kde2dTransformSpec,
