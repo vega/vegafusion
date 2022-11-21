@@ -1,0 +1,1088 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "autosize": {
+    "type": "fit",
+    "contains": "padding"
+  },
+  "background": "white",
+  "padding": 5,
+  "style": "cell",
+  "data": [
+    {
+      "name": "mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_store"
+    },
+    {
+      "name": "stocks",
+      "url": "data/stocks.csv",
+      "format": {
+        "type": "csv",
+        "parse": {
+          "date": "date"
+        }
+      }
+    },
+    {
+      "name": "data_0",
+      "source": "stocks",
+      "transform": [
+        {
+          "type": "pivot",
+          "field": "symbol",
+          "value": "price",
+          "groupby": [
+            "date"
+          ]
+        },
+        {
+          "type": "formula",
+          "expr": "toDate(datum[\"date\"])",
+          "as": "date"
+        },
+        {
+          "field": "date",
+          "type": "timeunit",
+          "units": [
+            "year"
+          ],
+          "as": [
+            "year_date",
+            "year_date_end"
+          ]
+        },
+        {
+          "type": "aggregate",
+          "groupby": [
+            "year_date"
+          ],
+          "ops": [
+            "sum",
+            "sum",
+            "sum",
+            "sum",
+            "sum"
+          ],
+          "fields": [
+            "AAPL",
+            "AMZN",
+            "GOOG",
+            "IBM",
+            "MSFT"
+          ],
+          "as": [
+            "sum_AAPL",
+            "sum_AMZN",
+            "sum_GOOG",
+            "sum_IBM",
+            "sum_MSFT"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "data_1",
+      "source": "stocks",
+      "transform": [
+        {
+          "field": "date",
+          "type": "timeunit",
+          "units": [
+            "year"
+          ],
+          "as": [
+            "year_date",
+            "year_date_end"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "data_2",
+      "source": "data_1",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "datum[\"symbol\"]===\"AAPL\" ? 0 : datum[\"symbol\"]===\"AMZN\" ? 1 : datum[\"symbol\"]===\"GOOG\" ? 2 : datum[\"symbol\"]===\"IBM\" ? 3 : datum[\"symbol\"]===\"MSFT\" ? 4 : 5",
+          "as": "xOffset_symbol_sort_index"
+        },
+        {
+          "type": "formula",
+          "expr": "datum[\"symbol\"]===\"AAPL\" ? 0 : datum[\"symbol\"]===\"AMZN\" ? 1 : datum[\"symbol\"]===\"GOOG\" ? 2 : datum[\"symbol\"]===\"IBM\" ? 3 : datum[\"symbol\"]===\"MSFT\" ? 4 : 5",
+          "as": "color_symbol_sort_index"
+        }
+      ]
+    },
+    {
+      "name": "data_3",
+      "source": "data_2",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": [
+            "year_date",
+            "symbol"
+          ],
+          "ops": [
+            "sum"
+          ],
+          "fields": [
+            "price"
+          ],
+          "as": [
+            "sum_price"
+          ]
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"sum_price\"]) && isFinite(+datum[\"sum_price\"])"
+        }
+      ]
+    },
+    {
+      "name": "data_4",
+      "source": "data_1",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "datum[\"symbol\"]===\"AAPL\" ? 0 : datum[\"symbol\"]===\"AMZN\" ? 1 : datum[\"symbol\"]===\"GOOG\" ? 2 : datum[\"symbol\"]===\"IBM\" ? 3 : datum[\"symbol\"]===\"MSFT\" ? 4 : 5",
+          "as": "color_symbol_sort_index"
+        }
+      ]
+    },
+    {
+      "name": "data_5",
+      "source": "data_4",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": [
+            "year_date",
+            "symbol"
+          ],
+          "ops": [
+            "sum"
+          ],
+          "fields": [
+            "price"
+          ],
+          "as": [
+            "sum_price"
+          ]
+        },
+        {
+          "type": "impute",
+          "field": "sum_price",
+          "groupby": [
+            "symbol"
+          ],
+          "key": "year_date",
+          "method": "value",
+          "value": 0
+        },
+        {
+          "type": "stack",
+          "groupby": [
+            "year_date"
+          ],
+          "field": "sum_price",
+          "sort": {
+            "field": [
+              "symbol"
+            ],
+            "order": [
+              "descending"
+            ]
+          },
+          "as": [
+            "sum_price_start",
+            "sum_price_end"
+          ],
+          "offset": "zero"
+        }
+      ]
+    },
+    {
+      "name": "data_6",
+      "source": "stocks",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": [
+            "date"
+          ],
+          "ops": [],
+          "fields": [],
+          "as": []
+        },
+        {
+          "type": "window",
+          "params": [
+            null
+          ],
+          "as": [
+            "rank"
+          ],
+          "ops": [
+            "rank"
+          ],
+          "fields": [
+            null
+          ],
+          "sort": {
+            "field": [],
+            "order": []
+          }
+        },
+        {
+          "type": "filter",
+          "expr": "datum.rank <= 21"
+        }
+      ]
+    },
+    {
+      "name": "data_7",
+      "source": "stocks",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": [
+            "symbol"
+          ],
+          "ops": [],
+          "fields": [],
+          "as": []
+        },
+        {
+          "type": "window",
+          "params": [
+            null
+          ],
+          "as": [
+            "rank"
+          ],
+          "ops": [
+            "rank"
+          ],
+          "fields": [
+            null
+          ],
+          "sort": {
+            "field": [],
+            "order": []
+          }
+        },
+        {
+          "type": "filter",
+          "expr": "datum.rank <= 21"
+        }
+      ]
+    },
+    {
+      "name": "data_8",
+      "source": "stocks",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "length(data(\"mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_store\")) && vlSelectionTest(\"mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_store\", datum)"
+        },
+        {
+          "field": "date",
+          "type": "timeunit",
+          "units": [
+            "year"
+          ],
+          "as": [
+            "year_date",
+            "year_date_end"
+          ]
+        },
+        {
+          "type": "formula",
+          "expr": "datum[\"symbol\"]===\"AAPL\" ? 0 : datum[\"symbol\"]===\"AMZN\" ? 1 : datum[\"symbol\"]===\"GOOG\" ? 2 : datum[\"symbol\"]===\"IBM\" ? 3 : datum[\"symbol\"]===\"MSFT\" ? 4 : 5",
+          "as": "color_symbol_sort_index"
+        }
+      ]
+    },
+    {
+      "name": "data_9",
+      "source": "data_8",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": [
+            "year_date",
+            "symbol"
+          ],
+          "ops": [
+            "sum"
+          ],
+          "fields": [
+            "price"
+          ],
+          "as": [
+            "sum_price"
+          ]
+        },
+        {
+          "type": "stack",
+          "groupby": [
+            "year_date"
+          ],
+          "field": "sum_price",
+          "sort": {
+            "field": [
+              "symbol"
+            ],
+            "order": [
+              "descending"
+            ]
+          },
+          "as": [
+            "sum_price_start",
+            "sum_price_end"
+          ],
+          "offset": "zero"
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"sum_price\"]) && isFinite(+datum[\"sum_price\"])"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "name": "width",
+      "init": "isFinite(containerSize()[0]) ? containerSize()[0] : 200",
+      "on": [
+        {
+          "update": "isFinite(containerSize()[0]) ? containerSize()[0] : 200",
+          "events": "window:resize"
+        }
+      ]
+    },
+    {
+      "name": "height",
+      "init": "isFinite(containerSize()[1]) ? containerSize()[1] : 200",
+      "on": [
+        {
+          "update": "isFinite(containerSize()[1]) ? containerSize()[1] : 200",
+          "events": "window:resize"
+        }
+      ]
+    },
+    {
+      "name": "unit",
+      "value": {},
+      "on": [
+        {
+          "events": "mousemove",
+          "update": "isTuple(group()) ? group() : unit"
+        }
+      ]
+    },
+    {
+      "name": "mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46",
+      "update": "vlSelectionResolve(\"mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_store\", \"union\", true, true)"
+    },
+    {
+      "name": "mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_tuple",
+      "on": [
+        {
+          "events": [
+            {
+              "source": "scope",
+              "type": "mouseover",
+              "markname": "layer_0_layer_1_layer_0_voronoi"
+            }
+          ],
+          "update": "datum && item().mark.marktype !== 'group' ? {unit: \"layer_0_layer_1_layer_0\", fields: mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_tuple_fields, values: [(item().isVoronoi ? datum.datum : datum)[\"year_date\"]]} : null",
+          "force": true
+        },
+        {
+          "events": [
+            {
+              "source": "view",
+              "type": "mouseout"
+            }
+          ],
+          "update": "null"
+        }
+      ]
+    },
+    {
+      "name": "mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_tuple_fields",
+      "value": [
+        {
+          "type": "E",
+          "field": "year_date"
+        }
+      ]
+    },
+    {
+      "name": "mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_toggle",
+      "value": false,
+      "on": [
+        {
+          "events": [
+            {
+              "source": "scope",
+              "type": "mouseover",
+              "markname": "layer_0_layer_1_layer_0_voronoi"
+            }
+          ],
+          "update": "event.shiftKey"
+        },
+        {
+          "events": [
+            {
+              "source": "view",
+              "type": "mouseout"
+            }
+          ],
+          "update": "false"
+        }
+      ]
+    },
+    {
+      "name": "mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_modify",
+      "on": [
+        {
+          "events": {
+            "signal": "mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_tuple"
+          },
+          "update": "modify(\"mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_store\", mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_toggle ? null : mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_tuple, mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_toggle ? null : true, mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_toggle ? mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_tuple : null)"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_layer_0_layer_0_layer_0_pathgroup",
+      "type": "group",
+      "from": {
+        "facet": {
+          "name": "faceted_path_layer_0_layer_0_layer_0_layer_0_main",
+          "data": "data_5",
+          "groupby": [
+            "symbol"
+          ]
+        }
+      },
+      "encode": {
+        "update": {
+          "width": {
+            "field": {
+              "group": "width"
+            }
+          },
+          "height": {
+            "field": {
+              "group": "height"
+            }
+          }
+        }
+      },
+      "marks": [
+        {
+          "name": "layer_0_layer_0_layer_0_layer_0_marks",
+          "type": "area",
+          "clip": true,
+          "style": [
+            "area"
+          ],
+          "sort": {
+            "field": "datum[\"year_date\"]"
+          },
+          "interactive": false,
+          "from": {
+            "data": "faceted_path_layer_0_layer_0_layer_0_layer_0_main"
+          },
+          "encode": {
+            "update": {
+              "opacity": {
+                "value": 0.7
+              },
+              "orient": {
+                "value": "vertical"
+              },
+              "fill": {
+                "scale": "layer_0_layer_0_color",
+                "field": "symbol"
+              },
+              "description": {
+                "signal": "\"date (year, UTC): \" + (timeFormat(datum[\"year_date\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of price: \" + (format(datum[\"sum_price\"], \"\")) + \"; symbol: \" + (isValid(datum[\"symbol\"]) ? datum[\"symbol\"] : \"\"+datum[\"symbol\"])"
+              },
+              "x": {
+                "scale": "x",
+                "field": "year_date",
+                "band": 0.5
+              },
+              "y": {
+                "scale": "y",
+                "field": "sum_price_end"
+              },
+              "y2": {
+                "scale": "y",
+                "field": "sum_price_start"
+              },
+              "defined": {
+                "signal": "isValid(datum[\"sum_price\"]) && isFinite(+datum[\"sum_price\"])"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "layer_0_layer_0_layer_0_layer_1_pathgroup",
+      "type": "group",
+      "from": {
+        "facet": {
+          "name": "faceted_path_layer_0_layer_0_layer_0_layer_1_main",
+          "data": "data_5",
+          "groupby": [
+            "symbol"
+          ]
+        }
+      },
+      "encode": {
+        "update": {
+          "width": {
+            "field": {
+              "group": "width"
+            }
+          },
+          "height": {
+            "field": {
+              "group": "height"
+            }
+          }
+        }
+      },
+      "marks": [
+        {
+          "name": "layer_0_layer_0_layer_0_layer_1_marks",
+          "type": "line",
+          "clip": true,
+          "style": [
+            "line"
+          ],
+          "sort": {
+            "field": "datum[\"year_date\"]"
+          },
+          "interactive": false,
+          "from": {
+            "data": "faceted_path_layer_0_layer_0_layer_0_layer_1_main"
+          },
+          "encode": {
+            "update": {
+              "stroke": {
+                "scale": "layer_0_layer_0_color",
+                "field": "symbol"
+              },
+              "description": {
+                "signal": "\"date (year, UTC): \" + (timeFormat(datum[\"year_date\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of price: \" + (format(datum[\"sum_price\"], \"\")) + \"; symbol: \" + (isValid(datum[\"symbol\"]) ? datum[\"symbol\"] : \"\"+datum[\"symbol\"])"
+              },
+              "x": {
+                "scale": "x",
+                "field": "year_date",
+                "band": 0.5
+              },
+              "y": {
+                "scale": "y",
+                "field": "sum_price_end"
+              },
+              "defined": {
+                "signal": "isValid(datum[\"sum_price\"]) && isFinite(+datum[\"sum_price\"])"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "layer_0_layer_0_layer_1_marks",
+      "type": "symbol",
+      "style": [
+        "point"
+      ],
+      "interactive": false,
+      "from": {
+        "data": "data_9"
+      },
+      "encode": {
+        "update": {
+          "fill": {
+            "value": "transparent"
+          },
+          "stroke": {
+            "scale": "layer_0_layer_0_color",
+            "field": "symbol"
+          },
+          "ariaRoleDescription": {
+            "value": "point"
+          },
+          "description": {
+            "signal": "\"date (year, UTC): \" + (timeFormat(datum[\"year_date\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of price: \" + (format(datum[\"sum_price\"], \"\")) + \"; symbol: \" + (isValid(datum[\"symbol\"]) ? datum[\"symbol\"] : \"\"+datum[\"symbol\"])"
+          },
+          "x": {
+            "scale": "x",
+            "field": "year_date",
+            "band": 0.5
+          },
+          "y": {
+            "scale": "y",
+            "field": "sum_price_end"
+          }
+        }
+      }
+    },
+    {
+      "name": "layer_0_layer_1_layer_0_marks",
+      "type": "rule",
+      "style": [
+        "rule"
+      ],
+      "interactive": true,
+      "from": {
+        "data": "data_0"
+      },
+      "encode": {
+        "update": {
+          "stroke": {
+            "value": "CHART_DEFAULT_RULE_COLOR_MARKER"
+          },
+          "opacity": [
+            {
+              "test": "length(data(\"mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_store\")) && vlSelectionTest(\"mouseover_param_239f89db_5335_4e8d_b8f1_698e01278b46_store\", datum)",
+              "value": 0.3
+            },
+            {
+              "value": 0
+            }
+          ],
+          "tooltip": {
+            "signal": "{\"Sum of AAPL\": format(datum[\"sum_AAPL\"], \"\"), \"Sum of AMZN\": format(datum[\"sum_AMZN\"], \"\"), \"Sum of GOOG\": format(datum[\"sum_GOOG\"], \"\"), \"Sum of IBM\": format(datum[\"sum_IBM\"], \"\"), \"Sum of MSFT\": format(datum[\"sum_MSFT\"], \"\"), \"date (year, UTC)\": timeFormat(datum[\"year_date\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))}"
+          },
+          "description": {
+            "signal": "\"date (year, UTC): \" + (timeFormat(datum[\"year_date\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of AAPL: \" + (format(datum[\"sum_AAPL\"], \"\")) + \"; Sum of AMZN: \" + (format(datum[\"sum_AMZN\"], \"\")) + \"; Sum of GOOG: \" + (format(datum[\"sum_GOOG\"], \"\")) + \"; Sum of IBM: \" + (format(datum[\"sum_IBM\"], \"\")) + \"; Sum of MSFT: \" + (format(datum[\"sum_MSFT\"], \"\"))"
+          },
+          "x": {
+            "scale": "x",
+            "field": "year_date",
+            "band": 0.5
+          },
+          "y": {
+            "value": 0
+          },
+          "y2": {
+            "field": {
+              "group": "height"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "layer_0_layer_1_layer_0_voronoi",
+      "type": "path",
+      "interactive": true,
+      "from": {
+        "data": "layer_0_layer_1_layer_0_marks"
+      },
+      "encode": {
+        "update": {
+          "fill": {
+            "value": "transparent"
+          },
+          "strokeWidth": {
+            "value": 0.35
+          },
+          "stroke": {
+            "value": "transparent"
+          },
+          "isVoronoi": {
+            "value": true
+          },
+          "tooltip": {
+            "signal": "{\"Sum of AAPL\": format(datum.datum[\"sum_AAPL\"], \"\"), \"Sum of AMZN\": format(datum.datum[\"sum_AMZN\"], \"\"), \"Sum of GOOG\": format(datum.datum[\"sum_GOOG\"], \"\"), \"Sum of IBM\": format(datum.datum[\"sum_IBM\"], \"\"), \"Sum of MSFT\": format(datum.datum[\"sum_MSFT\"], \"\"), \"date (year, UTC)\": timeFormat(datum.datum[\"year_date\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))}"
+          }
+        }
+      },
+      "transform": [
+        {
+          "type": "voronoi",
+          "x": {
+            "expr": "datum.datum.x || 0"
+          },
+          "y": {
+            "expr": "datum.datum.y || 0"
+          },
+          "size": [
+            {
+              "signal": "width"
+            },
+            {
+              "signal": "height"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "aggregate_color_spec_239f89db_5335_4e8d_b8f1_698e01278b46_marks",
+      "type": "rule",
+      "style": [
+        "rule"
+      ],
+      "interactive": false,
+      "from": {
+        "data": "data_7"
+      },
+      "encode": {
+        "update": {}
+      }
+    },
+    {
+      "name": "layer_0_layer_3_layer_0_marks",
+      "type": "rect",
+      "clip": true,
+      "style": [
+        "bar"
+      ],
+      "interactive": true,
+      "from": {
+        "data": "data_3"
+      },
+      "encode": {
+        "update": {
+          "fill": {
+            "scale": "layer_0_layer_3_color",
+            "field": "symbol"
+          },
+          "opacity": {
+            "value": 1
+          },
+          "tooltip": {
+            "signal": "{\"date (year, UTC)\": timeFormat(datum[\"year_date\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})), \"Sum of price\": format(datum[\"sum_price\"], \"\"), \"symbol\": isValid(datum[\"symbol\"]) ? datum[\"symbol\"] : \"\"+datum[\"symbol\"]}"
+          },
+          "ariaRoleDescription": {
+            "value": "bar"
+          },
+          "description": {
+            "signal": "\"date (year, UTC): \" + (timeFormat(datum[\"year_date\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of price: \" + (format(datum[\"sum_price\"], \"\")) + \"; symbol: \" + (isValid(datum[\"symbol\"]) ? datum[\"symbol\"] : \"\"+datum[\"symbol\"])"
+          },
+          "x": {
+            "scale": "x",
+            "field": "year_date",
+            "offset": {
+              "scale": "xOffset",
+              "field": "symbol"
+            }
+          },
+          "width": {
+            "scale": "xOffset",
+            "band": 1
+          },
+          "y": {
+            "scale": "y",
+            "field": "sum_price"
+          },
+          "y2": {
+            "scale": "y",
+            "value": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "aggregate_xAxis_spec_243f1dfa_a83e_4b86_8f59_71856a3f6aa6_marks",
+      "type": "rule",
+      "style": [
+        "rule"
+      ],
+      "interactive": false,
+      "from": {
+        "data": "data_6"
+      },
+      "encode": {
+        "update": {}
+      }
+    },
+    {
+      "name": "aggregate_color_spec_243f1dfa_a83e_4b86_8f59_71856a3f6aa6_marks",
+      "type": "rule",
+      "style": [
+        "rule"
+      ],
+      "interactive": false,
+      "from": {
+        "data": "data_7"
+      },
+      "encode": {
+        "update": {}
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "band",
+      "domain": {
+        "fields": [
+          {
+            "data": "data_5",
+            "field": "year_date"
+          },
+          {
+            "data": "data_9",
+            "field": "year_date"
+          },
+          {
+            "data": "data_0",
+            "field": "year_date"
+          },
+          {
+            "data": "data_3",
+            "field": "year_date"
+          }
+        ],
+        "sort": true
+      },
+      "range": [
+        0,
+        {
+          "signal": "width"
+        }
+      ],
+      "paddingInner": 0,
+      "paddingOuter": 0
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {
+        "fields": [
+          {
+            "data": "data_5",
+            "field": "sum_price_start"
+          },
+          {
+            "data": "data_5",
+            "field": "sum_price_end"
+          },
+          {
+            "data": "data_9",
+            "field": "sum_price_start"
+          },
+          {
+            "data": "data_9",
+            "field": "sum_price_end"
+          },
+          {
+            "data": "data_3",
+            "field": "sum_price"
+          }
+        ]
+      },
+      "range": [
+        {
+          "signal": "height"
+        },
+        0
+      ],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "xOffset",
+      "type": "band",
+      "domain": {
+        "data": "data_2",
+        "field": "symbol",
+        "sort": {
+          "op": "min",
+          "field": "xOffset_symbol_sort_index"
+        }
+      },
+      "range": [
+        0,
+        {
+          "signal": "bandwidth('x')"
+        }
+      ]
+    },
+    {
+      "name": "layer_0_layer_0_color",
+      "type": "ordinal",
+      "domain": {
+        "fields": [
+          {
+            "data": "data_4",
+            "field": "symbol"
+          },
+          {
+            "data": "data_8",
+            "field": "symbol"
+          }
+        ],
+        "sort": {
+          "op": "min",
+          "field": "color_symbol_sort_index"
+        }
+      },
+      "range": [
+        "#4c78a8",
+        "#f58518",
+        "#e45756",
+        "#72b7b2",
+        "#54a24b",
+        "#eeca3b",
+        "#b279a2",
+        "#ff9da6",
+        "#9d755d",
+        "#bab0ac"
+      ],
+      "interpolate": "hcl"
+    },
+    {
+      "name": "layer_0_layer_3_color",
+      "type": "ordinal",
+      "domain": {
+        "data": "data_2",
+        "field": "symbol",
+        "sort": {
+          "op": "min",
+          "field": "color_symbol_sort_index"
+        }
+      },
+      "range": [
+        "#4c78a8",
+        "#f58518",
+        "#e45756",
+        "#72b7b2",
+        "#54a24b",
+        "#eeca3b",
+        "#b279a2",
+        "#ff9da6",
+        "#9d755d",
+        "#bab0ac"
+      ],
+      "interpolate": "hcl"
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": true,
+      "gridScale": "y",
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": true,
+      "gridScale": "x",
+      "tickCount": {
+        "signal": "ceil(height/40)"
+      },
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "date (year, UTC)",
+      "labels": true,
+      "ticks": true,
+      "format": {
+        "signal": "timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})"
+      },
+      "formatType": "time",
+      "labelFlush": true,
+      "labelOverlap": true,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "Sum of price",
+      "labels": true,
+      "ticks": true,
+      "labelOverlap": true,
+      "tickCount": {
+        "signal": "ceil(height/40)"
+      },
+      "zindex": 0
+    }
+  ],
+  "legends": [
+    {
+      "fill": "layer_0_layer_0_color",
+      "symbolType": "circle",
+      "title": "symbol",
+      "encode": {
+        "symbols": {
+          "update": {
+            "opacity": {
+              "value": 0.7
+            }
+          }
+        }
+      },
+      "stroke": "layer_0_layer_0_color"
+    },
+    {
+      "fill": "layer_0_layer_3_color",
+      "symbolType": "square",
+      "title": "symbol",
+      "encode": {
+        "symbols": {
+          "update": {
+            "opacity": {
+              "value": 1
+            }
+          }
+        }
+      }
+    }
+  ],
+  "config": {
+    "customFormatTypes": true,
+    "legend": {
+      "orient": "right"
+    },
+    "style": {
+      "guide-label": {
+        "font": "\"IBM Plex Sans\", system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      },
+      "guide-title": {
+        "font": "\"IBM Plex Sans\", system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      },
+      "group-title": {
+        "font": "\"IBM Plex Sans\", system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      },
+      "group-subtitle": {
+        "font": "\"IBM Plex Sans\", system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      },
+      "cell": {},
+      "text": {
+        "font": "\"IBM Plex Sans\", system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      }
+    }
+  }
+}
