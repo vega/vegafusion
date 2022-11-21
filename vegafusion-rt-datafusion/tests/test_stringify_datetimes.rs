@@ -284,7 +284,7 @@ mod test_stringify_datetimes {
     async fn test_local_datetime_facet_usage() {
         let local_tz = "UTC";
         let default_input_tz = "America/New_York";
-        let expected_year_date = "asdf";
+        let expected_year_date = "2000-01-01T00:00:00.000";
 
         // Load spec
         let spec_path = format!(

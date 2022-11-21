@@ -43,18 +43,23 @@ pub fn stringify_local_datetimes(
     let local_time_scales = visitor.local_time_scales;
 
     // Gather candidate datasets
-    let candidate_datasets: HashSet<_> = comm_plan
+    let server_to_client_datasets: HashSet<_> = comm_plan
         .server_to_client
         .iter()
         .cloned()
         .filter(|var| var.0.namespace == VariableNamespace::Data as i32)
         .collect();
 
+    let mut visitor =
+        CollectCandidateDatasetMapping::new(client_scope.clone(), server_to_client_datasets);
+    client_spec.walk(&mut visitor)?;
+    let candidate_dataset_mapping = visitor.candidate_dataset_mapping;
+
     // Collect data fields to convert to datetime strings
     let mut visitor = CollectLocalTimeScaledFieldsVisitor::new(
         client_scope,
         local_time_scales,
-        candidate_datasets,
+        candidate_dataset_mapping,
     );
     client_spec.walk(&mut visitor)?;
     let local_datetime_fields = visitor.local_datetime_fields;
@@ -108,10 +113,59 @@ impl ChartVisitor for CollectScalesTypesVisitor {
     }
 }
 
+/// Visitor to collect mapping from mark dataset to server_to_client dataset
+/// (following facet aliasing)
+struct CollectCandidateDatasetMapping {
+    pub scope: TaskScope,
+    pub server_to_client_datasets: HashSet<ScopedVariable>,
+    pub candidate_dataset_mapping: HashMap<ScopedVariable, ScopedVariable>,
+}
+
+impl CollectCandidateDatasetMapping {
+    pub fn new(scope: TaskScope, server_to_client_datasets: HashSet<ScopedVariable>) -> Self {
+        // Initialize candidate_dataset_mapping with all server_to_client datasets
+        let candidate_dataset_mapping: HashMap<_, _> = server_to_client_datasets
+            .iter()
+            .map(|var| (var.clone(), var.clone()))
+            .collect();
+        Self {
+            scope,
+            server_to_client_datasets,
+            candidate_dataset_mapping,
+        }
+    }
+}
+
+impl ChartVisitor for CollectCandidateDatasetMapping {
+    fn visit_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
+        // Add to candidate_dataset_mapping facet datasets that reference a server_to_scale dataset
+        if let Some(from) = &mark.from {
+            if let Some(facet) = &from.facet {
+                let data_var = Variable::new_data(&facet.data);
+                let resolved_data = self.scope.resolve_scope(&data_var, scope)?;
+                let resolved_data_scoped: ScopedVariable =
+                    (resolved_data.var.clone(), resolved_data.scope);
+
+                if self
+                    .server_to_client_datasets
+                    .contains(&resolved_data_scoped)
+                {
+                    let facet_var = Variable::new_data(&facet.name);
+                    let facet_scoped_var: ScopedVariable = (facet_var, Vec::from(scope));
+                    self.candidate_dataset_mapping
+                        .insert(facet_scoped_var, resolved_data_scoped);
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
 /// Visitor to collect data fields that are scaled by a non-UTC time scale
 struct CollectLocalTimeScaledFieldsVisitor {
     pub scope: TaskScope,
-    pub candidate_datasets: HashSet<ScopedVariable>,
+    pub candidate_dataset_mapping: HashMap<ScopedVariable, ScopedVariable>,
     pub local_time_scales: HashSet<ScopedVariable>,
     pub local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
 }
@@ -120,11 +174,11 @@ impl CollectLocalTimeScaledFieldsVisitor {
     pub fn new(
         scope: TaskScope,
         local_time_scales: HashSet<ScopedVariable>,
-        candidate_datasets: HashSet<ScopedVariable>,
+        candidate_dataset_mapping: HashMap<ScopedVariable, ScopedVariable>,
     ) -> Self {
         Self {
             scope,
-            candidate_datasets,
+            candidate_dataset_mapping,
             local_time_scales,
             local_datetime_fields: Default::default(),
         }
@@ -135,10 +189,14 @@ impl ChartVisitor for CollectLocalTimeScaledFieldsVisitor {
     fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
         if let Some(mark_from) = &mark.from {
             if let Some(mark_data) = &mark_from.data {
-                let data_var = Variable::new_data(mark_data);
-                let resolved_data = self.scope.resolve_scope(&data_var, scope)?;
-                let resolved_data_scoped = (resolved_data.var.clone(), resolved_data.scope);
-                if self.candidate_datasets.contains(&resolved_data_scoped) {
+                let mark_data_var = Variable::new_data(mark_data);
+                let resolved_mark_data = self.scope.resolve_scope(&mark_data_var, scope)?;
+                let resolved_mark_data_scoped =
+                    (resolved_mark_data.var.clone(), resolved_mark_data.scope);
+                if let Some(server_to_client_data_var) = self
+                    .candidate_dataset_mapping
+                    .get(&resolved_mark_data_scoped)
+                {
                     // We've found a mark with a dataset that is eligible for date string
                     // conversion
                     if let Some(encode) = &mark.encode {
@@ -160,7 +218,7 @@ impl ChartVisitor for CollectLocalTimeScaledFieldsVisitor {
                                             // Save off field for dataset
                                             let entry = self
                                                 .local_datetime_fields
-                                                .entry(resolved_data_scoped.clone());
+                                                .entry(server_to_client_data_var.clone());
                                             let fields = entry.or_default();
                                             fields.insert(field.clone());
                                         }
@@ -190,7 +248,10 @@ impl ChartVisitor for CollectLocalTimeScaledFieldsVisitor {
                     let data_var = Variable::new_data(&field_ref.data);
                     if let Ok(resolved) = self.scope.resolve_scope(&data_var, scope) {
                         let scoped_data_var = (resolved.var, resolved.scope);
-                        if self.candidate_datasets.contains(&scoped_data_var) {
+                        if self
+                            .candidate_dataset_mapping
+                            .contains_key(&scoped_data_var)
+                        {
                             // Save off field for dataset
                             let entry = self.local_datetime_fields.entry(scoped_data_var.clone());
                             let fields = entry.or_default();
