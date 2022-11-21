@@ -277,6 +277,63 @@ mod test_stringify_datetimes {
             }
         }
     }
+
+    /// This test checks that we're able to identify local timestamp column usage inside facet
+    /// definitions
+    #[tokio::test]
+    async fn test_local_datetime_facet_usage() {
+        let local_tz = "UTC";
+        let default_input_tz = "America/New_York";
+        let expected_year_date = "2000-01-01T00:00:00.000";
+
+        // Load spec
+        let spec_path = format!(
+            "{}/tests/specs/pre_transform/stocks_layered_pivot_bug.vg.json",
+            crate_dir()
+        );
+        let spec_str = fs::read_to_string(spec_path).unwrap();
+
+        // Initialize task graph runtime
+        let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
+
+        let pre_tx_result = runtime
+            .pre_transform_spec(
+                &spec_str,
+                local_tz,
+                &Some(default_input_tz.to_string()),
+                None,
+                Default::default(),
+            )
+            .await
+            .unwrap();
+
+        let pre_tx_result = pre_tx_result.result.unwrap();
+
+        match pre_tx_result {
+            pre_transform_spec_result::Result::Response(response) => {
+                let spec: ChartSpec = serde_json::from_str(&response.spec).unwrap();
+                println!("{}", serde_json::to_string_pretty(&spec).unwrap());
+
+                assert_eq!(&spec.data[7].name, "data_5");
+
+                let data = spec.data[7].values.as_ref().unwrap();
+                let values = data.as_array().expect("Expected array");
+                let first = values[0].as_object().expect("Expected object");
+
+                // Check year_date
+                let hours_time = first
+                    .get("year_date")
+                    .expect("Expected year_date column")
+                    .as_str()
+                    .expect("Expected year_date value to be a string")
+                    .to_string();
+                assert_eq!(hours_time, expected_year_date);
+            }
+            pre_transform_spec_result::Result::Error(err) => {
+                panic!("Pre Transform Error: {:?}", err)
+            }
+        }
+    }
 }
 
 fn crate_dir() -> String {
