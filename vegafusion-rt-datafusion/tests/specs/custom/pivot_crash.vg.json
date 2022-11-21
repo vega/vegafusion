@@ -1,0 +1,650 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {"name": "mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_store"},
+    {
+      "name": "superstore",
+      "values": [
+        {
+          "ship_mode": "Standard Class",
+          "sales": 120.366,
+          "segment": "Consumer"
+        },
+        {
+          "ship_mode": "Second Class",
+          "sales": 44.865,
+          "segment": "Home Office"
+        },
+        {"ship_mode": "Standard Class", "sales": 55.242, "segment": "Consumer"},
+        {"ship_mode": "First Class", "sales": 290.666, "segment": "Consumer"},
+        {"ship_mode": "Second Class", "sales": 162.72, "segment": "Corporate"}
+      ]
+    },
+    {
+      "name": "data_0",
+      "source": "superstore",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "toDate(datum[\"order_date\"])",
+          "as": "order_date"
+        }
+      ]
+    },
+    {
+      "name": "data_1",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "length(data(\"mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_store\")) && vlSelectionTest(\"mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_store\", datum)"
+        },
+        {
+          "field": "order_date",
+          "type": "timeunit",
+          "units": ["year", "month"],
+          "as": ["yearmonth_order_date", "yearmonth_order_date_end"]
+        },
+        {
+          "type": "formula",
+          "expr": "datum[\"ship_mode\"]===\"First Class\" ? 0 : datum[\"ship_mode\"]===\"Same Day\" ? 1 : datum[\"ship_mode\"]===\"Second Class\" ? 2 : datum[\"ship_mode\"]===\"Standard Class\" ? 3 : 4",
+          "as": "color_ship_mode_sort_index"
+        }
+      ]
+    },
+    {
+      "name": "data_2",
+      "source": "data_1",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["yearmonth_order_date", "ship_mode"],
+          "ops": ["sum"],
+          "fields": ["sales"],
+          "as": ["sum_sales"]
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"sum_sales\"]) && isFinite(+datum[\"sum_sales\"])"
+        }
+      ]
+    },
+    {
+      "name": "data_3",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "pivot",
+          "field": "ship_mode",
+          "value": "sales",
+          "groupby": ["order_date"]
+        },
+        {
+          "type": "formula",
+          "expr": "toDate(datum[\"order_date\"])",
+          "as": "order_date"
+        },
+        {
+          "field": "order_date",
+          "type": "timeunit",
+          "units": ["year", "month"],
+          "as": ["yearmonth_order_date", "yearmonth_order_date_end"]
+        },
+        {
+          "type": "aggregate",
+          "groupby": ["yearmonth_order_date"],
+          "ops": ["sum", "sum", "sum", "sum"],
+          "fields": [
+            "First Class",
+            "Same Day",
+            "Second Class",
+            "Standard Class"
+          ],
+          "as": [
+            "sum_First Class",
+            "sum_Same Day",
+            "sum_Second Class",
+            "sum_Standard Class"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "data_4",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["ship_mode"],
+          "ops": [],
+          "fields": [],
+          "as": []
+        },
+        {
+          "type": "window",
+          "params": [null],
+          "as": ["rank"],
+          "ops": ["rank"],
+          "fields": [null],
+          "sort": {"field": [], "order": []}
+        },
+        {"type": "filter", "expr": "datum.rank <= 21"}
+      ]
+    },
+    {
+      "name": "data_5",
+      "source": "data_0",
+      "transform": [
+        {
+          "field": "order_date",
+          "type": "timeunit",
+          "units": ["year", "month"],
+          "as": ["yearmonth_order_date", "yearmonth_order_date_end"]
+        }
+      ]
+    },
+    {
+      "name": "data_6",
+      "source": "data_5",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "datum[\"segment\"]===\"Consumer\" ? 0 : datum[\"segment\"]===\"Corporate\" ? 1 : datum[\"segment\"]===\"Home Office\" ? 2 : 3",
+          "as": "xOffset_segment_sort_index"
+        },
+        {
+          "type": "formula",
+          "expr": "datum[\"segment\"]===\"Consumer\" ? 0 : datum[\"segment\"]===\"Corporate\" ? 1 : datum[\"segment\"]===\"Home Office\" ? 2 : 3",
+          "as": "color_segment_sort_index"
+        }
+      ]
+    },
+    {
+      "name": "data_7",
+      "source": "data_6",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["yearmonth_order_date", "segment"],
+          "ops": ["sum"],
+          "fields": ["sales"],
+          "as": ["sum_sales"]
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"sum_sales\"]) && isFinite(+datum[\"sum_sales\"])"
+        }
+      ]
+    },
+    {
+      "name": "data_8",
+      "source": "data_5",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "datum[\"ship_mode\"]===\"First Class\" ? 0 : datum[\"ship_mode\"]===\"Same Day\" ? 1 : datum[\"ship_mode\"]===\"Second Class\" ? 2 : datum[\"ship_mode\"]===\"Standard Class\" ? 3 : 4",
+          "as": "color_ship_mode_sort_index"
+        }
+      ]
+    },
+    {
+      "name": "data_9",
+      "source": "data_8",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["yearmonth_order_date", "ship_mode"],
+          "ops": ["sum"],
+          "fields": ["sales"],
+          "as": ["sum_sales"]
+        }
+      ]
+    },
+    {
+      "name": "data_10",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["order_date"],
+          "ops": [],
+          "fields": [],
+          "as": []
+        },
+        {
+          "type": "window",
+          "params": [null],
+          "as": ["rank"],
+          "ops": ["rank"],
+          "fields": [null],
+          "sort": {"field": [], "order": []}
+        },
+        {"type": "filter", "expr": "datum.rank <= 21"}
+      ]
+    },
+    {
+      "name": "data_11",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["segment"],
+          "ops": [],
+          "fields": [],
+          "as": []
+        },
+        {
+          "type": "window",
+          "params": [null],
+          "as": ["rank"],
+          "ops": ["rank"],
+          "fields": [null],
+          "sort": {"field": [], "order": []}
+        },
+        {"type": "filter", "expr": "datum.rank <= 21"}
+      ]
+    }
+  ],
+  "signals": [
+    {"name": "x_step", "value": 20},
+    {"name": "width", "update": "bandspace(domain('x').length, 0, 0) * x_step"},
+    {
+      "name": "unit",
+      "value": {},
+      "on": [
+        {"events": "mousemove", "update": "isTuple(group()) ? group() : unit"}
+      ]
+    },
+    {
+      "name": "mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21",
+      "update": "vlSelectionResolve(\"mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_store\", \"union\", true, true)"
+    },
+    {
+      "name": "mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_tuple",
+      "on": [
+        {
+          "events": [
+            {
+              "source": "scope",
+              "type": "mouseover",
+              "markname": "layer_0_layer_1_layer_0_voronoi"
+            }
+          ],
+          "update": "datum && item().mark.marktype !== 'group' && indexof(item().mark.role, 'legend') < 0 ? {unit: \"layer_0_layer_1_layer_0\", fields: mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_tuple_fields, values: [(item().isVoronoi ? datum.datum : datum)[\"yearmonth_order_date\"]]} : null",
+          "force": true
+        },
+        {"events": [{"source": "view", "type": "mouseout"}], "update": "null"}
+      ]
+    },
+    {
+      "name": "mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_tuple_fields",
+      "value": [{"type": "E", "field": "yearmonth_order_date"}]
+    },
+    {
+      "name": "mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_toggle",
+      "value": false,
+      "on": [
+        {
+          "events": [
+            {
+              "source": "scope",
+              "type": "mouseover",
+              "markname": "layer_0_layer_1_layer_0_voronoi"
+            }
+          ],
+          "update": "event.shiftKey"
+        },
+        {"events": [{"source": "view", "type": "mouseout"}], "update": "false"}
+      ]
+    },
+    {
+      "name": "mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_modify",
+      "on": [
+        {
+          "events": {
+            "signal": "mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_tuple"
+          },
+          "update": "modify(\"mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_store\", mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_toggle ? null : mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_tuple, mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_toggle ? null : true, mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_toggle ? mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_tuple : null)"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_layer_0_layer_0_pathgroup",
+      "type": "group",
+      "from": {
+        "facet": {
+          "name": "faceted_path_layer_0_layer_0_layer_0_main",
+          "data": "data_9",
+          "groupby": ["ship_mode"]
+        }
+      },
+      "encode": {
+        "update": {
+          "width": {"field": {"group": "width"}},
+          "height": {"field": {"group": "height"}}
+        }
+      },
+      "marks": [
+        {
+          "name": "layer_0_layer_0_layer_0_marks",
+          "type": "line",
+          "clip": true,
+          "style": ["line"],
+          "sort": {"field": "datum[\"yearmonth_order_date\"]"},
+          "interactive": false,
+          "from": {"data": "faceted_path_layer_0_layer_0_layer_0_main"},
+          "encode": {
+            "update": {
+              "stroke": {
+                "scale": "layer_0_layer_0_color",
+                "field": "ship_mode"
+              },
+              "opacity": {"value": 1},
+              "description": {
+                "signal": "\"order_date (year-month): \" + (timeFormat(datum[\"yearmonth_order_date\"], timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of sales: \" + (format(datum[\"sum_sales\"], \"\")) + \"; ship_mode: \" + (isValid(datum[\"ship_mode\"]) ? datum[\"ship_mode\"] : \"\"+datum[\"ship_mode\"])"
+              },
+              "x": {"scale": "x", "field": "yearmonth_order_date", "band": 0.5},
+              "y": {"scale": "y", "field": "sum_sales"},
+              "defined": {
+                "signal": "isValid(datum[\"sum_sales\"]) && isFinite(+datum[\"sum_sales\"])"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "layer_0_layer_0_layer_1_marks",
+      "type": "symbol",
+      "style": ["point"],
+      "interactive": false,
+      "from": {"data": "data_2"},
+      "encode": {
+        "update": {
+          "fill": {"value": "transparent"},
+          "stroke": {"scale": "layer_0_layer_0_color", "field": "ship_mode"},
+          "ariaRoleDescription": {"value": "point"},
+          "description": {
+            "signal": "\"order_date (year-month): \" + (timeFormat(datum[\"yearmonth_order_date\"], timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of sales: \" + (format(datum[\"sum_sales\"], \"\")) + \"; ship_mode: \" + (isValid(datum[\"ship_mode\"]) ? datum[\"ship_mode\"] : \"\"+datum[\"ship_mode\"])"
+          },
+          "x": {"scale": "x", "field": "yearmonth_order_date", "band": 0.5},
+          "y": {"scale": "y", "field": "sum_sales"}
+        }
+      }
+    },
+    {
+      "name": "layer_0_layer_1_layer_0_marks",
+      "type": "rule",
+      "style": ["rule"],
+      "interactive": true,
+      "from": {"data": "data_3"},
+      "encode": {
+        "update": {
+          "stroke": {"value": "CHART_DEFAULT_RULE_COLOR_MARKER"},
+          "opacity": [
+            {
+              "test": "length(data(\"mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_store\")) && vlSelectionTest(\"mouseover_param_4c659909_3c0f_4dcb_b246_e172208c4c21_store\", datum)",
+              "value": 0.3
+            },
+            {"value": 0}
+          ],
+          "tooltip": {
+            "signal": "{\"Sum of First Class\": format(datum[\"sum_First Class\"], \"\"), \"Sum of Same Day\": format(datum[\"sum_Same Day\"], \"\"), \"Sum of Second Class\": format(datum[\"sum_Second Class\"], \"\"), \"Sum of Standard Class\": format(datum[\"sum_Standard Class\"], \"\"), \"order_date (year-month)\": timeFormat(datum[\"yearmonth_order_date\"], timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))}"
+          },
+          "description": {
+            "signal": "\"order_date (year-month): \" + (timeFormat(datum[\"yearmonth_order_date\"], timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of First Class: \" + (format(datum[\"sum_First Class\"], \"\")) + \"; Sum of Same Day: \" + (format(datum[\"sum_Same Day\"], \"\")) + \"; Sum of Second Class: \" + (format(datum[\"sum_Second Class\"], \"\")) + \"; Sum of Standard Class: \" + (format(datum[\"sum_Standard Class\"], \"\"))"
+          },
+          "x": {"scale": "x", "field": "yearmonth_order_date", "band": 0.5},
+          "y": {"value": 0},
+          "y2": {"field": {"group": "height"}}
+        }
+      }
+    },
+    {
+      "name": "layer_0_layer_1_layer_0_voronoi",
+      "type": "path",
+      "interactive": true,
+      "from": {"data": "layer_0_layer_1_layer_0_marks"},
+      "encode": {
+        "update": {
+          "fill": {"value": "transparent"},
+          "strokeWidth": {"value": 0.35},
+          "stroke": {"value": "transparent"},
+          "isVoronoi": {"value": true},
+          "tooltip": {
+            "signal": "{\"Sum of First Class\": format(datum.datum[\"sum_First Class\"], \"\"), \"Sum of Same Day\": format(datum.datum[\"sum_Same Day\"], \"\"), \"Sum of Second Class\": format(datum.datum[\"sum_Second Class\"], \"\"), \"Sum of Standard Class\": format(datum.datum[\"sum_Standard Class\"], \"\"), \"order_date (year-month)\": timeFormat(datum.datum[\"yearmonth_order_date\"], timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))}"
+          }
+        }
+      },
+      "transform": [
+        {
+          "type": "voronoi",
+          "x": {"expr": "datum.datum.x || 0"},
+          "y": {"expr": "datum.datum.y || 0"},
+          "size": [{"signal": "width"}, {"signal": "height"}]
+        }
+      ]
+    },
+    {
+      "name": "aggregate_color_spec_4c659909_3c0f_4dcb_b246_e172208c4c21_marks",
+      "type": "rule",
+      "style": ["rule"],
+      "interactive": false,
+      "from": {"data": "data_4"},
+      "encode": {"update": {}}
+    },
+    {
+      "name": "layer_0_layer_3_layer_0_marks",
+      "type": "rect",
+      "clip": true,
+      "style": ["bar"],
+      "interactive": true,
+      "from": {"data": "data_7"},
+      "encode": {
+        "update": {
+          "fill": {"scale": "layer_0_layer_3_color", "field": "segment"},
+          "opacity": {"value": 1},
+          "tooltip": {
+            "signal": "{\"order_date (year-month)\": timeFormat(datum[\"yearmonth_order_date\"], timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})), \"Sum of sales\": format(datum[\"sum_sales\"], \"\"), \"segment\": isValid(datum[\"segment\"]) ? datum[\"segment\"] : \"\"+datum[\"segment\"]}"
+          },
+          "ariaRoleDescription": {"value": "bar"},
+          "description": {
+            "signal": "\"order_date (year-month): \" + (timeFormat(datum[\"yearmonth_order_date\"], timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of sales: \" + (format(datum[\"sum_sales\"], \"\")) + \"; segment: \" + (isValid(datum[\"segment\"]) ? datum[\"segment\"] : \"\"+datum[\"segment\"])"
+          },
+          "x": {
+            "scale": "x",
+            "field": "yearmonth_order_date",
+            "offset": {"scale": "xOffset", "field": "segment"}
+          },
+          "width": {"signal": "max(0.25, bandwidth('xOffset'))"},
+          "y": {"scale": "y", "field": "sum_sales"},
+          "y2": {"scale": "y", "value": 0}
+        }
+      }
+    },
+    {
+      "name": "aggregate_xAxis_spec_e77818c3_75d2_43fd_906e_d58b645f8e22_marks",
+      "type": "rule",
+      "style": ["rule"],
+      "interactive": false,
+      "from": {"data": "data_10"},
+      "encode": {"update": {}}
+    },
+    {
+      "name": "aggregate_color_spec_e77818c3_75d2_43fd_906e_d58b645f8e22_marks",
+      "type": "rule",
+      "style": ["rule"],
+      "interactive": false,
+      "from": {"data": "data_11"},
+      "encode": {"update": {}}
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "band",
+      "domain": {
+        "fields": [
+          {"data": "data_9", "field": "yearmonth_order_date"},
+          {"data": "data_2", "field": "yearmonth_order_date"},
+          {"data": "data_3", "field": "yearmonth_order_date"},
+          {"data": "data_7", "field": "yearmonth_order_date"}
+        ],
+        "sort": true
+      },
+      "range": {"step": {"signal": "x_step"}},
+      "paddingInner": 0,
+      "paddingOuter": 0
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {
+        "fields": [
+          {"data": "data_9", "field": "sum_sales"},
+          {"data": "data_2", "field": "sum_sales"},
+          {"data": "data_7", "field": "sum_sales"}
+        ]
+      },
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "xOffset",
+      "type": "band",
+      "domain": {
+        "data": "data_6",
+        "field": "segment",
+        "sort": {"op": "min", "field": "xOffset_segment_sort_index"}
+      },
+      "range": {"step": 20}
+    },
+    {
+      "name": "layer_0_layer_0_color",
+      "type": "ordinal",
+      "domain": {
+        "fields": [
+          {"data": "data_8", "field": "ship_mode"},
+          {"data": "data_1", "field": "ship_mode"}
+        ],
+        "sort": {"op": "min", "field": "color_ship_mode_sort_index"}
+      },
+      "range": [
+        "#4c78a8",
+        "#f58518",
+        "#e45756",
+        "#72b7b2",
+        "#54a24b",
+        "#eeca3b",
+        "#b279a2",
+        "#ff9da6",
+        "#9d755d",
+        "#bab0ac"
+      ],
+      "interpolate": "hcl"
+    },
+    {
+      "name": "layer_0_layer_3_color",
+      "type": "ordinal",
+      "domain": {
+        "data": "data_6",
+        "field": "segment",
+        "sort": {"op": "min", "field": "color_segment_sort_index"}
+      },
+      "range": [
+        "#4c78a8",
+        "#f58518",
+        "#e45756",
+        "#72b7b2",
+        "#54a24b",
+        "#eeca3b",
+        "#b279a2",
+        "#ff9da6",
+        "#9d755d",
+        "#bab0ac"
+      ],
+      "interpolate": "hcl"
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": true,
+      "gridScale": "y",
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": true,
+      "gridScale": "x",
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "order_date (year-month)",
+      "labels": true,
+      "ticks": true,
+      "format": {
+        "signal": "timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})"
+      },
+      "formatType": "time",
+      "labelFlush": true,
+      "labelOverlap": true,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "Sum of sales",
+      "labels": true,
+      "ticks": true,
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
+    }
+  ],
+  "legends": [
+    {
+      "symbolType": "stroke",
+      "stroke": "layer_0_layer_0_color",
+      "title": "ship_mode",
+      "encode": {"symbols": {"update": {"opacity": {"value": 1}}}}
+    },
+    {
+      "fill": "layer_0_layer_3_color",
+      "symbolType": "square",
+      "title": "segment",
+      "encode": {"symbols": {"update": {"opacity": {"value": 1}}}}
+    }
+  ],
+  "config": {
+    "range": {"ramp": {"scheme": "yellowgreenblue"}},
+    "axis": {"domain": false},
+    "legend": {"orient": "right"}
+  }
+}

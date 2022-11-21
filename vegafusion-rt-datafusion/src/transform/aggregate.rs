@@ -16,11 +16,12 @@ use crate::expression::compiler::utils::to_numeric;
 use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
-use datafusion::common::DFSchema;
+use datafusion::common::{DFSchema, ScalarValue};
 use datafusion_expr::{aggregate_function, BuiltInWindowFunction, WindowFunction};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::expression::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::aggregate::op_name;
@@ -144,7 +145,19 @@ pub fn make_aggr_expr(
     schema: &DFSchema,
 ) -> Result<Expr> {
     let column = if let Some(col_name) = col_name {
-        unescaped_col(&col_name)
+        let col_name = unescape_field(&col_name);
+        if schema.index_of_column_by_name(None, &col_name).is_err() {
+            // No column with specified name, short circuit to return default value
+            return if matches!(op, AggregateOp::Sum | AggregateOp::Count) {
+                // return zero for sum and count
+                Ok(lit(0))
+            } else {
+                // return NULL for all other operators
+                Ok(lit(ScalarValue::Float64(None)))
+            };
+        } else {
+            flat_col(&col_name)
+        }
     } else if matches!(op, AggregateOp::Count) {
         Expr::Wildcard
     } else {
