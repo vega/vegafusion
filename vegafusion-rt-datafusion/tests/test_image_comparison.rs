@@ -126,7 +126,8 @@ mod test_custom_specs {
         case("custom/bug_153", 0.001, false),
         case("custom/period_in_field_name", 0.001, false),
         case("custom/period_space_in_field_name", 0.001, false),
-        case("custom/pivot_tooltip1", 0.001, true)
+        case("custom/pivot_tooltip1", 0.001, true),
+        case("custom/pivot_crash", 0.001, false)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64, extract_inline_values: bool) {
         println!("spec_name: {}", spec_name);
