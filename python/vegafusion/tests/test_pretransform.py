@@ -1,4 +1,5 @@
 import pandas as pd
+from pandas import Timestamp, NaT
 import vegafusion as vf
 import json
 from datetime import date
@@ -664,6 +665,136 @@ def period_in_col_name_spec():
 } 
     """
 
+
+def nat_bar_spec():
+    return r"""
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 200,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {
+      "name": "dataframe",
+      "url": "vegafusion+dataset://dataframe",
+      "format": {"type": "json", "parse": {"NULL_TEST": "date"}},
+      "transform": [
+        {
+          "type": "stack",
+          "groupby": ["NULL_TEST"],
+          "field": "SALES",
+          "sort": {"field": [], "order": []},
+          "as": ["SALES_start", "SALES_end"],
+          "offset": "zero"
+        },
+        {
+          "type": "filter",
+          "expr": "(isDate(datum[\"NULL_TEST\"]) || (isValid(datum[\"NULL_TEST\"]) && isFinite(+datum[\"NULL_TEST\"]))) && isValid(datum[\"SALES\"]) && isFinite(+datum[\"SALES\"])"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_marks",
+      "type": "rect",
+      "clip": true,
+      "style": ["bar"],
+      "from": {"data": "dataframe"},
+      "encode": {
+        "update": {
+          "tooltip": {
+            "signal": "{\"NULL_TEST\": timeFormat(datum[\"NULL_TEST\"], '%b %d, %Y'), \"SALES\": format(datum[\"SALES\"], \"\")}"
+          },
+          "fill": {"value": "#4c78a8"},
+          "ariaRoleDescription": {"value": "bar"},
+          "description": {
+            "signal": "\"NULL_TEST: \" + (timeFormat(datum[\"NULL_TEST\"], '%b %d, %Y')) + \"; SALES: \" + (format(datum[\"SALES\"], \"\"))"
+          },
+          "xc": {"scale": "x", "field": "NULL_TEST"},
+          "width": {"value": 5},
+          "y": {"scale": "y", "field": "SALES_end"},
+          "y2": {"scale": "y", "field": "SALES_start"}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "time",
+      "domain": {"data": "dataframe", "field": "NULL_TEST"},
+      "range": [0, {"signal": "width"}],
+      "padding": 5
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {"data": "dataframe", "fields": ["SALES_start", "SALES_end"]},
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "gridScale": "y",
+      "grid": true,
+      "tickCount": {"signal": "ceil(width/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "gridScale": "x",
+      "grid": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "NULL_TEST",
+      "labelFlush": true,
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(width/40)"},
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "SALES",
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
+    }
+  ],
+  "config": {
+    "range": {"ramp": {"scheme": "yellowgreenblue"}},
+    "axis": {"domain": false}
+  }
+}
+    """
+
+
 def test_pre_transform_multi_partition():
     n = 4050
     order_items = pd.DataFrame({
@@ -789,3 +920,49 @@ def test_period_in_column_name():
 
     dataset = datasets[0]
     assert dataset.to_dict("records") == [{"normal": 1, "a.b": 2}]
+
+
+def test_nat_values():
+    dataframe = pd.DataFrame([
+        {'ORDER_DATE': date(2011, 3, 1),
+         'SALES': 457.568,
+         'NULL_TEST': Timestamp('2011-03-01 00:00:00')},
+        {'ORDER_DATE': date(2011, 3, 1),
+         'SALES': 376.509,
+         'NULL_TEST': Timestamp('2011-03-01 00:00:00')},
+        {'ORDER_DATE': date(2011, 3, 1),
+         'SALES': 362.25,
+         'NULL_TEST': Timestamp('2011-03-01 00:00:00')},
+        {'ORDER_DATE': date(2011, 3, 1),
+         'SALES': 129.552,
+         'NULL_TEST': Timestamp('2011-03-01 00:00:00')},
+        {'ORDER_DATE': date(2011, 3, 1), 'SALES': 18.84, 'NULL_TEST': NaT},
+        {'ORDER_DATE': date(2011, 4, 1),
+         'SALES': 66.96,
+         'NULL_TEST': Timestamp('2011-04-01 00:00:00')},
+        {'ORDER_DATE': date(2011, 4, 1), 'SALES': 6.24, 'NULL_TEST': NaT},
+        {'ORDER_DATE': date(2011, 6, 1),
+         'SALES': 881.93,
+         'NULL_TEST': Timestamp('2011-06-01 00:00:00')},
+        {'ORDER_DATE': date(2011, 6, 1),
+         'SALES': 166.72,
+         'NULL_TEST': Timestamp('2011-06-01 00:00:00')},
+        {'ORDER_DATE': date(2011, 6, 1), 'SALES': 25.92, 'NULL_TEST': NaT}
+    ])
+
+    spec = nat_bar_spec()
+
+    datasets, warnings = vf.runtime.pre_transform_datasets(spec, ["dataframe"], "UTC", inline_datasets=dict(
+        dataframe=dataframe
+    ))
+    assert len(warnings) == 0
+    assert len(datasets) == 1
+
+    dataset = datasets[0]
+    assert dataset.to_dict("records")[0] == {
+        'NULL_TEST': '2011-03-01T00:00:00.000',
+        'ORDER_DATE': Timestamp('2011-03-01 00:00:00'),
+        'SALES': 457.568,
+        'SALES_end': 457.568,
+        'SALES_start': 0.0,
+    }
