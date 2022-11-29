@@ -8,7 +8,7 @@ use datafusion_expr::{
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::{ArrayRef, TimestampMillisecondArray};
-use vegafusion_core::arrow::compute::{cast, unary};
+use vegafusion_core::arrow::compute::cast;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
 
@@ -69,30 +69,40 @@ pub fn convert_timezone(
     millis_array: &TimestampMillisecondArray,
     tz: chrono_tz::Tz,
 ) -> TimestampMillisecondArray {
-    unary(millis_array, |v| {
-        // Build naive datetime for time
-        let seconds = v / 1000;
-        let milliseconds = v % 1000;
-        let nanoseconds = (milliseconds * 1_000_000) as u32;
-        let naive_local_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
+    TimestampMillisecondArray::from(
+        millis_array
+            .iter()
+            .map(|v| {
+                v.map(|v| {
+                    // Build naive datetime for time
+                    let seconds = v / 1000;
+                    let milliseconds = v % 1000;
+                    let nanoseconds = (milliseconds * 1_000_000) as u32;
+                    let naive_local_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
 
-        // Get UTC offset when the naive datetime is considered to be in local time
-        let local_datetime = if let Some(local_datetime) =
-            tz.from_local_datetime(&naive_local_datetime).earliest()
-        {
-            local_datetime
-        } else {
-            // Try adding 1 hour to handle daylight savings boundaries
-            let hour = naive_local_datetime.hour();
-            let new_naive_local_datetime = naive_local_datetime.with_hour(hour + 1).unwrap();
-            tz.from_local_datetime(&new_naive_local_datetime)
-                .earliest()
-                .unwrap_or_else(|| panic!("Failed to convert {:?}", naive_local_datetime))
-        };
+                    // Get UTC offset when the naive datetime is considered to be in local time
+                    let local_datetime = if let Some(local_datetime) =
+                        tz.from_local_datetime(&naive_local_datetime).earliest()
+                    {
+                        local_datetime
+                    } else {
+                        // Try adding 1 hour to handle daylight savings boundaries
+                        let hour = naive_local_datetime.hour();
+                        let new_naive_local_datetime =
+                            naive_local_datetime.with_hour(hour + 1).unwrap();
+                        tz.from_local_datetime(&new_naive_local_datetime)
+                            .earliest()
+                            .unwrap_or_else(|| {
+                                panic!("Failed to convert {:?}", naive_local_datetime)
+                            })
+                    };
 
-        // Get timestamp millis (in UTC)
-        local_datetime.timestamp_millis()
-    })
+                    // Get timestamp millis (in UTC)
+                    local_datetime.timestamp_millis()
+                })
+            })
+            .collect::<Vec<Option<_>>>(),
+    )
 }
 
 pub fn to_timestamp_ms(array: &ArrayRef) -> Result<ArrayRef, DataFusionError> {
