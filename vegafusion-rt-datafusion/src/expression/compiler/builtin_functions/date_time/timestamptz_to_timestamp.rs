@@ -9,7 +9,6 @@ use datafusion_expr::{
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::{ArrayRef, TimestampMillisecondArray};
-use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
 
@@ -39,19 +38,27 @@ pub fn make_timestamptz_to_timestamp() -> ScalarUDF {
             .downcast_ref::<TimestampMillisecondArray>()
             .unwrap();
 
-        let timestamp_array: TimestampMillisecondArray = unary(timestamp_array, |v| {
-            // Build naive datetime for time
-            let seconds = v / 1000;
-            let milliseconds = v % 1000;
-            let nanoseconds = (milliseconds * 1_000_000) as u32;
-            let naive_utc_datetime = NaiveDateTime::from_timestamp(seconds, nanoseconds);
+        let timestamp_array = TimestampMillisecondArray::from(
+            timestamp_array
+                .iter()
+                .map(|v| {
+                    v.map(|v| {
+                        // Build naive datetime for time
+                        let seconds = v / 1000;
+                        let milliseconds = v % 1000;
+                        let nanoseconds = (milliseconds * 1_000_000) as u32;
+                        let naive_utc_datetime =
+                            NaiveDateTime::from_timestamp(seconds, nanoseconds);
 
-            // Create local datetime, interpreting the naive datetime as utc
-            let local_datetime = tz.from_utc_datetime(&naive_utc_datetime);
-            let naive_local_datetime = local_datetime.naive_local();
+                        // Create local datetime, interpreting the naive datetime as utc
+                        let local_datetime = tz.from_utc_datetime(&naive_utc_datetime);
+                        let naive_local_datetime = local_datetime.naive_local();
 
-            naive_local_datetime.timestamp_millis()
-        });
+                        naive_local_datetime.timestamp_millis()
+                    })
+                })
+                .collect::<Vec<Option<_>>>(),
+        );
 
         let timestamp_array = Arc::new(timestamp_array) as ArrayRef;
 
