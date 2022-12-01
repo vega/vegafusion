@@ -165,6 +165,49 @@ mod tests {
 +--------+-----+";
         assert_eq!(dataset.pretty_format(None).unwrap(), expected);
     }
+
+    #[tokio::test]
+    async fn test_pre_transform_with_empty_store() {
+        // Load spec
+        let spec_path = format!(
+            "{}/tests/specs/pre_transform/empty_store_array.vg.json",
+            crate_dir()
+        );
+        let spec_str = fs::read_to_string(spec_path).unwrap();
+
+        // Initialize task graph runtime
+        let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
+
+        let (values, warnings) = runtime
+            .pre_transform_values(
+                &spec_str,
+                &[(Variable::new_data("data_3"), vec![])],
+                "UTC",
+                &None,
+                Default::default(),
+            )
+            .await
+            .unwrap();
+
+        // Check there are no warnings
+        assert!(warnings.is_empty());
+
+        // Check single returned dataset
+        assert_eq!(values.len(), 1);
+
+        let dataset = values[0].as_table().cloned().unwrap();
+        let first_row = dataset.head(1);
+
+        println!("{}", first_row.pretty_format(None).unwrap());
+
+        let expected = "\
++-------+-----------+------+-----------------+
+| yield | variety   | year | site            |
++-------+-----------+------+-----------------+
+| 27    | Manchuria | 1931 | University Farm |
++-------+-----------+------+-----------------+";
+        assert_eq!(first_row.pretty_format(None).unwrap(), expected);
+    }
 }
 
 fn crate_dir() -> String {

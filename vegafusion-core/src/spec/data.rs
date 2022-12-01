@@ -64,13 +64,7 @@ impl DataSpec {
             if !extract_inline_data {
                 return DependencyNodeSupported::Unsupported;
             }
-            if let Value::Array(values) = values {
-                if values.is_empty() {
-                    // Empty data not supported
-                    return DependencyNodeSupported::Unsupported;
-                }
-            } else {
-                // Non-array data not supported
+            if !matches!(values, Value::Array(_)) {
                 return DependencyNodeSupported::Unsupported;
             }
         }
