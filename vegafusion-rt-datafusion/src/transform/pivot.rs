@@ -8,10 +8,10 @@ use crate::transform::aggregate::make_aggr_expr;
 use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion_expr::{coalesce, col, lit, min, BuiltInWindowFunction, Expr, WindowFunction};
+use datafusion::prelude::Column;
+use datafusion_expr::{coalesce, lit, min, BuiltInWindowFunction, Expr, WindowFunction};
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
-use datafusion::prelude::Column;
 use vegafusion_core::arrow::array::StringArray;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -71,9 +71,10 @@ async fn extract_sorted_pivot_values(
 
     let sorted_query = agg_query.sort(
         vec![Expr::Sort {
-            expr: Box::new(
-                Expr::Column(Column{ relation: Some(agg_query.parent_name()), name: tx.field.clone() })
-            ),
+            expr: Box::new(Expr::Column(Column {
+                relation: Some(agg_query.parent_name()),
+                name: tx.field.clone(),
+            })),
             asc: true,
             nulls_first: false,
         }],
