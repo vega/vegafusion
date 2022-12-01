@@ -7,6 +7,7 @@
  * this program the details of the active license.
  */
 use crate::expression::compiler::array::array_constructor_udf;
+use crate::expression::compiler::builtin_functions::array::indexof::make_indexof_udf;
 use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
 use crate::expression::compiler::builtin_functions::array::span::make_span_udf;
 use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
@@ -292,6 +293,14 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         },
     );
 
+    callables.insert(
+        "indexof".to_string(),
+        VegaFusionCallable::ScalarUDF {
+            udf: make_indexof_udf(),
+            cast: None,
+        },
+    );
+
     // Date parts
     callables.insert(
         "year".to_string(),
@@ -467,6 +476,7 @@ pub fn make_session_context() -> SessionContext {
     // list
     ctx.register_udf(array_constructor_udf());
     ctx.register_udf(make_length_udf());
+    ctx.register_udf(make_indexof_udf());
 
     ctx
 }

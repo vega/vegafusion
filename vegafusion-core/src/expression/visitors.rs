@@ -206,6 +206,11 @@ impl ExpressionVisitor for CheckSupportedExprVisitor {
             }
         } else if !SUPPORTED_EXPRESSION_FNS.contains(node.name.as_str()) {
             self.supported = false;
+        } else if node.name == "indexof" {
+            // We only support the array variant of indexof (not the string variant)
+            if !(args.len() == 2 && matches!(args[0].expr, Some(Expr::Array(_)))) {
+                self.supported = false;
+            }
         }
     }
 

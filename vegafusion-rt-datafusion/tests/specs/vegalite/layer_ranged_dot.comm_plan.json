@@ -2,7 +2,22 @@
   "server_to_client": [
     {
       "namespace": "data",
-      "name": "_server_source_0",
+      "name": "data_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_y_domain_country_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_y_domain_country_0",
       "scope": []
     }
   ],

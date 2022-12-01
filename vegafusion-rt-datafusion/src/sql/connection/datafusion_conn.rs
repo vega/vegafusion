@@ -52,6 +52,7 @@ pub fn make_datafusion_dialect() -> Dialect {
     // list
     functions.insert("make_list".to_string());
     functions.insert("len".to_string());
+    functions.insert("indexof".to_string());
 
     dialect
 }

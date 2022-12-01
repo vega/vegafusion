@@ -54,7 +54,7 @@ lazy_static! {
         "isNaN", "isFinite", "isValid", "isDate",
 
         // Array
-        "length", "span",
+        "length", "span", "indexof",
 
         // Datetime
         "year", "quarter", "month", "day", "date", "dayofyear", "hours", "minutes", "seconds",
