@@ -69,3 +69,30 @@ fn test_formula_signal_expression() {
         &eq_config,
     );
 }
+
+#[test]
+fn test_formula_indexof() {
+    let dataset = vega_json_dataset("penguins");
+    let transform_specs = vec![
+        TransformSpec::Formula(FormulaTransformSpec {
+            expr: "indexof(['Torgersen', 'Dream'], datum.Island)".to_string(),
+            as_: "indexof_string".to_string(),
+            extra: Default::default(),
+        }),
+        TransformSpec::Formula(FormulaTransformSpec {
+            expr: "indexof([3300, 4300, 3700, 4350], datum['Body Mass (g)'])".to_string(),
+            as_: "indexof_int".to_string(),
+            extra: Default::default(),
+        }),
+    ];
+
+    let comp_config = Default::default();
+    let eq_config = Default::default();
+
+    check_transform_evaluation(
+        &dataset,
+        transform_specs.as_slice(),
+        &comp_config,
+        &eq_config,
+    );
+}

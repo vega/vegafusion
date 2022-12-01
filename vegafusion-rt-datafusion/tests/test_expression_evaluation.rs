@@ -498,3 +498,25 @@ mod test_null_comparison {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
+mod test_indexof {
+    use crate::*;
+
+    #[rstest(
+        expr,
+        case("indexof([4, 3, 7], 4)"),
+        case("indexof([4, 3, 7], 3)"),
+        case("indexof([4, 3, 7], 7)"),
+        case("indexof([4, 3, 7], 8)"),
+        case("indexof(['a4', 'a3', 'a7'], 'a4')"),
+        case("indexof(['a4', 'a3', 'a7'], 'a3')"),
+        case("indexof(['a4', 'a3', 'a7'], 'a7')"),
+        case("indexof(['a4', 'a3', 'a7'], 'a8')")
+    )]
+    fn test(expr: &str) {
+        check_scalar_evaluation(expr, &config_a())
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
