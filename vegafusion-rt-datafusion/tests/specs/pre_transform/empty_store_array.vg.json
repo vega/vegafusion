@@ -1,0 +1,249 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {"name": "click_pointselection__store", "values": []},
+    {
+      "name": "df",
+      "url": "https://raw.githubusercontent.com/vega/vega-datasets/next/data/barley.json",
+      "format": {"type": "json"}
+    },
+    {
+      "name": "data_0",
+      "source": "df",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["variety"],
+          "ops": ["sum"],
+          "fields": ["yield"],
+          "as": ["sum_yield"]
+        }
+      ]
+    },
+    {
+      "name": "data_1",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "window",
+          "params": [null],
+          "as": ["rank"],
+          "ops": ["rank"],
+          "fields": [null],
+          "sort": {"field": [], "order": []}
+        },
+        {"type": "filter", "expr": "datum.rank <= 21"}
+      ]
+    },
+    {
+      "name": "data_2",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"sum_yield\"]) && isFinite(+datum[\"sum_yield\"])"
+        }
+      ]
+    },
+    {
+      "name": "data_3",
+      "source": "df",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "!length(data(\"click_pointselection__store\")) || vlSelectionTest(\"click_pointselection__store\", datum)"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {"name": "x_step", "value": 20},
+    {
+      "name": "width",
+      "update": "bandspace(domain('x').length, 0.1, 0.05) * x_step"
+    },
+    {
+      "name": "unit",
+      "value": {},
+      "on": [
+        {"events": "mousemove", "update": "isTuple(group()) ? group() : unit"}
+      ]
+    },
+    {
+      "name": "click_pointselection_",
+      "update": "vlSelectionResolve(\"click_pointselection__store\", \"union\", true, true)"
+    },
+    {
+      "name": "click_pointselection__tuple",
+      "on": [
+        {
+          "events": [{"source": "scope", "type": "click"}],
+          "update": "datum && item().mark.marktype !== 'group' && indexof(item().mark.role, 'legend') < 0 ? {unit: \"layer_0_layer_0_layer_0\", fields: click_pointselection__tuple_fields, values: [(item().isVoronoi ? datum.datum : datum)[\"variety\"]]} : null",
+          "force": true
+        },
+        {"events": [{"source": "view", "type": "dblclick"}], "update": "null"}
+      ]
+    },
+    {
+      "name": "click_pointselection__tuple_fields",
+      "value": [{"field": "variety", "channel": "x", "type": "E"}]
+    },
+    {
+      "name": "click_pointselection__toggle",
+      "value": false,
+      "on": [
+        {
+          "events": [{"source": "scope", "type": "click"}],
+          "update": "event.shiftKey"
+        },
+        {"events": [{"source": "view", "type": "dblclick"}], "update": "false"}
+      ]
+    },
+    {
+      "name": "click_pointselection__modify",
+      "on": [
+        {
+          "events": {"signal": "click_pointselection__tuple"},
+          "update": "modify(\"click_pointselection__store\", click_pointselection__toggle ? null : click_pointselection__tuple, click_pointselection__toggle ? null : true, click_pointselection__toggle ? click_pointselection__tuple : null)"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_layer_0_layer_0_marks",
+      "type": "rect",
+      "clip": true,
+      "style": ["bar"],
+      "interactive": true,
+      "from": {"data": "data_2"},
+      "encode": {
+        "update": {
+          "fill": {"value": "#4c78a8"},
+          "opacity": [
+            {
+              "test": "!((!length(data(\"click_pointselection__store\")) || vlSelectionTest(\"click_pointselection__store\", datum)))",
+              "value": 0.3
+            },
+            {"value": 1}
+          ],
+          "tooltip": {
+            "signal": "{\"variety\": isValid(datum[\"variety\"]) ? datum[\"variety\"] : \"\"+datum[\"variety\"], \"Sum of yield\": format(datum[\"sum_yield\"], \"\")}"
+          },
+          "ariaRoleDescription": {"value": "bar"},
+          "description": {
+            "signal": "\"variety: \" + (isValid(datum[\"variety\"]) ? datum[\"variety\"] : \"\"+datum[\"variety\"]) + \"; Sum of yield: \" + (format(datum[\"sum_yield\"], \"\"))"
+          },
+          "x": {"scale": "x", "field": "variety"},
+          "width": {"signal": "max(0.25, bandwidth('x'))"},
+          "y": {"scale": "y", "field": "sum_yield"},
+          "y2": {"scale": "y", "value": 0}
+        }
+      }
+    },
+    {
+      "name": "aggregate_xAxis_spec_d9281c21_b2cf_4d59_9022_a24fea76322f_marks",
+      "type": "rule",
+      "style": ["rule"],
+      "interactive": false,
+      "from": {"data": "data_1"},
+      "encode": {"update": {}}
+    },
+    {
+      "name": "__drilldown_brush_marks",
+      "type": "symbol",
+      "style": ["point"],
+      "interactive": false,
+      "from": {"data": "data_3"},
+      "encode": {
+        "update": {
+          "opacity": {"value": 0},
+          "fill": {"value": "transparent"},
+          "stroke": {"value": "#4c78a8"},
+          "ariaRoleDescription": {"value": "point"},
+          "x": {"signal": "width", "mult": 0.5},
+          "y": {"signal": "height", "mult": 0.5}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "band",
+      "domain": {"data": "data_2", "field": "variety", "sort": true},
+      "range": {"step": {"signal": "x_step"}},
+      "paddingInner": 0.1,
+      "paddingOuter": 0.05
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {"data": "data_2", "field": "sum_yield"},
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": true,
+      "gridScale": "y",
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": true,
+      "gridScale": "x",
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "variety",
+      "labels": true,
+      "ticks": true,
+      "labelAlign": "right",
+      "labelAngle": 270,
+      "labelBaseline": "middle",
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "Sum of yield",
+      "labels": true,
+      "ticks": true,
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
+    }
+  ],
+  "config": {
+    "range": {"ramp": {"scheme": "yellowgreenblue"}},
+    "axis": {"domain": false},
+    "legend": {"orient": "right"}
+  }
+}
