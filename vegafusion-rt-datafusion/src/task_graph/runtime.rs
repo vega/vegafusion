@@ -309,24 +309,22 @@ impl TaskGraphRuntime {
                             });
                     let value = if let Some(input_values) = input_values {
                         input_values
-                    } else {
-                        if let Value::Array(values) = &export_update.value {
-                            if let Some(row_limit) = row_limit {
-                                let row_limit = row_limit as usize;
-                                if values.len() > row_limit {
-                                    limited_datasets.push(export_update.to_scoped_var().0);
-                                    Value::Array(Vec::from(&values[..row_limit]))
-                                } else {
-                                    Value::Array(values.clone())
-                                }
+                    } else if let Value::Array(values) = &export_update.value {
+                        if let Some(row_limit) = row_limit {
+                            let row_limit = row_limit as usize;
+                            if values.len() > row_limit {
+                                limited_datasets.push(export_update.to_scoped_var().0);
+                                Value::Array(Vec::from(&values[..row_limit]))
                             } else {
                                 Value::Array(values.clone())
                             }
                         } else {
-                            return Err(VegaFusionError::internal(
-                                "Expected Data value to be an Array",
-                            ));
+                            Value::Array(values.clone())
                         }
+                    } else {
+                        return Err(VegaFusionError::internal(
+                            "Expected Data value to be an Array",
+                        ));
                     };
 
                     // Set inline value

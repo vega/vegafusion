@@ -129,7 +129,7 @@ mod test_custom_specs {
         case("custom/pivot_tooltip1", 0.001, true),
         case("custom/pivot_crash", 0.001, false),
         case("custom/sorted_pivot_lines", 0.001, false),
-        case("custom/stacked_bar_initial_selection", 0.001, false),
+        case("custom/stacked_bar_initial_selection", 0.001, false)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64, extract_inline_values: bool) {
         println!("spec_name: {}", spec_name);
