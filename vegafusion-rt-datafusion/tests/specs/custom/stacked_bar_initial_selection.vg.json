@@ -1,0 +1,218 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {
+      "name": "click_store",
+      "values": [
+        {
+          "unit": "",
+          "fields": [
+            {"field": "number", "channel": "x", "type": "E"},
+            {"field": "group", "channel": "color", "type": "E"}
+          ],
+          "values": [2, "x"]
+        },
+        {
+          "unit": "",
+          "fields": [
+            {"field": "number", "channel": "x", "type": "E"},
+            {"field": "group", "channel": "color", "type": "E"}
+          ],
+          "values": [3, "z"]
+        }
+      ]
+    },
+    {
+      "name": "source_0",
+      "values": [
+        {"number": 1, "group": "x", "value": 0.1},
+        {"number": 1, "group": "y", "value": 0.6},
+        {"number": 1, "group": "z", "value": 0.9},
+        {"number": 2, "group": "x", "value": 0.7},
+        {"number": 2, "group": "y", "value": 0.2},
+        {"number": 2, "group": "z", "value": 1.1},
+        {"number": 3, "group": "x", "value": 0.6},
+        {"number": 3, "group": "y", "value": 0.1},
+        {"number": 3, "group": "z", "value": 0.2}
+      ]
+    },
+    {
+      "name": "data_0",
+      "source": "source_0",
+      "transform": [
+        {
+          "type": "stack",
+          "groupby": ["number"],
+          "field": "value",
+          "sort": {"field": ["group"], "order": ["descending"]},
+          "as": ["value_start", "value_end"],
+          "offset": "zero"
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"value\"]) && isFinite(+datum[\"value\"])"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {"name": "x_step", "value": 20},
+    {
+      "name": "width",
+      "update": "bandspace(domain('x').length, 0.1, 0.05) * x_step"
+    },
+    {
+      "name": "unit",
+      "value": {},
+      "on": [
+        {"events": "mousemove", "update": "isTuple(group()) ? group() : unit"}
+      ]
+    },
+    {
+      "name": "click",
+      "update": "vlSelectionResolve(\"click_store\", \"union\", true, true)"
+    },
+    {
+      "name": "click_tuple",
+      "on": [
+        {
+          "events": [{"source": "scope", "type": "click"}],
+          "update": "datum && item().mark.marktype !== 'group' && indexof(item().mark.role, 'legend') < 0 ? {unit: \"\", fields: click_tuple_fields, values: [(item().isVoronoi ? datum.datum : datum)[\"number\"], (item().isVoronoi ? datum.datum : datum)[\"group\"]]} : null",
+          "force": true
+        },
+        {"events": [{"source": "view", "type": "dblclick"}], "update": "null"}
+      ]
+    },
+    {
+      "name": "click_tuple_fields",
+      "value": [
+        {"field": "number", "channel": "x", "type": "E"},
+        {"field": "group", "channel": "color", "type": "E"}
+      ]
+    },
+    {
+      "name": "click_toggle",
+      "value": false,
+      "on": [
+        {
+          "events": [{"source": "scope", "type": "click"}],
+          "update": "event.shiftKey"
+        },
+        {"events": [{"source": "view", "type": "dblclick"}], "update": "false"}
+      ]
+    },
+    {
+      "name": "click_modify",
+      "on": [
+        {
+          "events": {"signal": "click_tuple"},
+          "update": "modify(\"click_store\", click_toggle ? null : click_tuple, click_toggle ? null : true, click_toggle ? click_tuple : null)"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "marks",
+      "type": "rect",
+      "style": ["bar"],
+      "interactive": true,
+      "from": {"data": "data_0"},
+      "encode": {
+        "update": {
+          "fill": {"scale": "color", "field": "group"},
+          "opacity": [
+            {
+              "test": "!length(data(\"click_store\")) || vlSelectionTest(\"click_store\", datum)",
+              "value": 1
+            },
+            {"value": 0.2}
+          ],
+          "ariaRoleDescription": {"value": "bar"},
+          "description": {
+            "signal": "\"number: \" + (isValid(datum[\"number\"]) ? datum[\"number\"] : \"\"+datum[\"number\"]) + \"; value: \" + (format(datum[\"value\"], \"\")) + \"; group: \" + (isValid(datum[\"group\"]) ? datum[\"group\"] : \"\"+datum[\"group\"])"
+          },
+          "x": {"scale": "x", "field": "number"},
+          "width": {"signal": "max(0.25, bandwidth('x'))"},
+          "y": {"scale": "y", "field": "value_end"},
+          "y2": {"scale": "y", "field": "value_start"}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "band",
+      "domain": {"data": "data_0", "field": "number", "sort": true},
+      "range": {"step": {"signal": "x_step"}},
+      "paddingInner": 0.1,
+      "paddingOuter": 0.05
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {"data": "data_0", "fields": ["value_start", "value_end"]},
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": {"data": "data_0", "field": "group", "sort": true},
+      "range": "category"
+    }
+  ],
+  "axes": [
+    {
+      "scale": "y",
+      "orient": "left",
+      "gridScale": "x",
+      "grid": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "number",
+      "labelAlign": "right",
+      "labelAngle": 270,
+      "labelBaseline": "middle",
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "value",
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
+    }
+  ],
+  "legends": [
+    {
+      "fill": "color",
+      "symbolType": "square",
+      "title": "group",
+      "encode": {"symbols": {"update": {"opacity": {"value": 1}}}}
+    }
+  ],
+  "config": {
+    "range": {"ramp": {"scheme": "yellowgreenblue"}},
+    "axis": {"domain": false}
+  }
+}

@@ -223,12 +223,12 @@ impl TaskGraphRuntime {
         row_limit: Option<u32>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
     ) -> Result<PreTransformSpecResult> {
-        let spec: ChartSpec =
+        let input_spec: ChartSpec =
             serde_json::from_str(spec).with_context(|| "Failed to parse spec".to_string())?;
 
         // Create spec plan
         let plan = SpecPlan::try_new(
-            &spec,
+            &input_spec,
             &PlannerConfig {
                 stringify_local_datetimes: true,
                 extract_inline_data: true,
@@ -291,23 +291,42 @@ impl TaskGraphRuntime {
                 }
                 ExportUpdateNamespace::Data => {
                     let data = spec.get_nested_data_mut(&scope, name)?;
-                    // Handle row_limit
-                    let value = if let Value::Array(values) = &export_update.value {
-                        if let Some(row_limit) = row_limit {
-                            let row_limit = row_limit as usize;
-                            if values.len() > row_limit {
-                                limited_datasets.push(export_update.to_scoped_var().0);
-                                Value::Array(Vec::from(&values[..row_limit]))
+
+                    // If the input dataset includes inline values and no transforms,
+                    // copy the input JSON directly to avoid the case where round-tripping
+                    // through Arrow homogenizes mixed type arrays.
+                    // E.g. round tripping may turn [1, "two"] into ["1", "two"]
+                    let input_values =
+                        input_spec
+                            .get_nested_data(&scope, name)
+                            .ok()
+                            .and_then(|data| {
+                                if data.transform.is_empty() {
+                                    data.values.clone()
+                                } else {
+                                    None
+                                }
+                            });
+                    let value = if let Some(input_values) = input_values {
+                        input_values
+                    } else {
+                        if let Value::Array(values) = &export_update.value {
+                            if let Some(row_limit) = row_limit {
+                                let row_limit = row_limit as usize;
+                                if values.len() > row_limit {
+                                    limited_datasets.push(export_update.to_scoped_var().0);
+                                    Value::Array(Vec::from(&values[..row_limit]))
+                                } else {
+                                    Value::Array(values.clone())
+                                }
                             } else {
                                 Value::Array(values.clone())
                             }
                         } else {
-                            Value::Array(values.clone())
+                            return Err(VegaFusionError::internal(
+                                "Expected Data value to be an Array",
+                            ));
                         }
-                    } else {
-                        return Err(VegaFusionError::internal(
-                            "Expected Data value to be an Array",
-                        ));
                     };
 
                     // Set inline value
