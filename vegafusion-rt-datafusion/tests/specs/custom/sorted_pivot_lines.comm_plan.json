@@ -1,0 +1,35 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "data_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_0_layer_0_layer_0_color_domain_MPAA Rating_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_1_layer_0_layer_0_color_domain_MPAA Rating_1",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}
