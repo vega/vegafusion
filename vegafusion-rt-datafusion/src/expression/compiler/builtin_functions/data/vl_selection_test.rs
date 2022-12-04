@@ -140,12 +140,16 @@ impl FieldSpec {
 
         let expr = match self.typ {
             SelectionType::Enum => {
+                let field_type = field_col.get_type(schema)?;
                 let list_values: Vec<_> = if let ScalarValue::List(Some(elements), _) = &values {
                     // values already a list
-                    elements.iter().map(|el| lit(el.clone())).collect()
+                    elements
+                        .iter()
+                        .map(|el| cast_to(lit(el.clone()), &field_type, schema))
+                        .collect::<Result<Vec<_>>>()?
                 } else {
                     // convert values to single element list
-                    vec![lit(values.clone())]
+                    vec![cast_to(lit(values.clone()), &field_type, schema)?]
                 };
 
                 Expr::InList {
