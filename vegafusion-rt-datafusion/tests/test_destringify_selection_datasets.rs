@@ -4,7 +4,6 @@ mod tests {
     use std::fs;
     use vegafusion_core::proto::gen::services::pre_transform_spec_result;
     use vegafusion_core::spec::chart::ChartSpec;
-    use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
     use vegafusion_core::spec::transform::TransformSpec;
     use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
