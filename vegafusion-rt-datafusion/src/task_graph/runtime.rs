@@ -12,6 +12,7 @@ use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFus
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::data::dataset::VegaFusionDataset;
+use crate::pre_transform::destringify_selection_datetimes::destringify_selection_datetimes;
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -333,6 +334,9 @@ impl TaskGraphRuntime {
                 }
             }
         }
+
+        // Destringify datetime strings in selection store datasets
+        destringify_selection_datetimes(&mut spec)?;
 
         // Build warnings
         let mut warnings: Vec<PreTransformSpecWarning> = Vec::new();

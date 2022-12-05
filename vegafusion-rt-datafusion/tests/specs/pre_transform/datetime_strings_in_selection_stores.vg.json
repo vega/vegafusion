@@ -1,0 +1,129 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "data": [
+    {
+      "name": "source_0",
+      "url": "data/seattle-weather.csv",
+      "format": {"type": "csv", "parse": {"date": "date"}},
+      "transform": [
+        {
+          "field": "date",
+          "type": "timeunit",
+          "units": ["year", "month"],
+          "as": ["yearmonth_date", "yearmonth_date_end"]
+        },
+        {
+          "type": "aggregate",
+          "groupby": ["yearmonth_date", "yearmonth_date_end", "weather"],
+          "ops": ["count"],
+          "fields": [null],
+          "as": ["__count"]
+        },
+        {
+          "type": "stack",
+          "groupby": ["yearmonth_date"],
+          "field": "__count",
+          "sort": {"field": ["weather"], "order": ["descending"]},
+          "as": ["__count_start", "__count_end"],
+          "offset": "zero"
+        },
+        {
+          "type": "filter",
+          "expr": "(isDate(datum[\"yearmonth_date\"]) || (isValid(datum[\"yearmonth_date\"]) && isFinite(+datum[\"yearmonth_date\"])))"
+        }
+      ]
+    },
+    {
+      "name": "click_store",
+      "values": [
+        {
+          "unit": "",
+          "fields": [
+            {"field": "yearmonth_date", "channel": "x", "type": "E"},
+            {"field": "weather", "channel": "color", "type": "E"}
+          ],
+          "values": ["2014-01-01T00:00:00", "sun"]
+        },
+        {
+          "unit": "",
+          "fields": [
+            {"field": "yearmonth_date", "channel": "x", "type": "E"},
+            {"field": "weather", "channel": "color", "type": "E"}
+          ],
+          "values": ["2013-11-01T00:00:00", "rain"]
+        }
+      ]
+    },
+    {
+      "name": "drag_store",
+      "values": [
+        {
+          "unit": "",
+          "fields": [{"field": "yearmonth_date", "channel": "x", "type": "R"}],
+          "values": [["2012-11-27T06:58:03.000", "2013-06-04T06:38:51.000"]]
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "marks",
+      "type": "rect",
+      "style": ["bar"],
+      "interactive": true,
+      "from": {"data": "source_0"},
+      "encode": {
+        "update": {
+          "fill": {"scale": "color", "field": "weather"},
+          "opacity": [
+            {
+              "test": "!length(data(\"click_store\")) || vlSelectionTest(\"click_store\", datum)",
+              "value": 1
+            },
+            {
+              "test": "!length(data(\"drag_store\")) || vlSelectionTest(\"drag_store\", datum)",
+              "value": 1
+            },
+            {"value": 0.3}
+          ],
+          "ariaRoleDescription": {"value": "bar"},
+          "description": {
+            "signal": "\"Month of the year: \" + (timeFormat(datum[\"yearmonth_date\"], timeUnitSpecifier([\"year\",\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Count of Records: \" + (format(datum[\"__count\"], \"\")) + \"; Weather type: \" + (isValid(datum[\"weather\"]) ? datum[\"weather\"] : \"\"+datum[\"weather\"])"
+          },
+          "x2": {"scale": "x", "field": "yearmonth_date", "offset": 1},
+          "x": {"scale": "x", "field": "yearmonth_date_end"},
+          "y": {"scale": "y", "field": "__count_end"},
+          "y2": {"scale": "y", "field": "__count_start"}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "time",
+      "domain": {
+        "data": "source_0",
+        "fields": ["yearmonth_date", "yearmonth_date_end"]
+      },
+      "range": [0, {"signal": "width"}]
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {
+        "data": "source_0",
+        "fields": ["__count_start", "__count_end"]
+      },
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": ["sun", "fog", "drizzle", "rain", "snow"],
+      "range": ["#e7ba52", "#c7c7c7", "#aec7e8", "#1f77b4", "#9467bd"]
+    }
+  ]
+}
