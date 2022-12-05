@@ -11,7 +11,12 @@
           "type": "timeunit",
           "units": ["year", "month"],
           "as": ["yearmonth_date", "yearmonth_date_end"]
-        },
+        }
+      ]
+    }, {
+      "name": "data_0",
+      "source":  "source_0",
+      "transform": [
         {
           "type": "aggregate",
           "groupby": ["yearmonth_date", "yearmonth_date_end", "weather"],
@@ -63,6 +68,26 @@
           "values": [["2012-11-27T06:58:03.000", "2013-06-04T06:38:51.000"]]
         }
       ]
+    },
+    {
+      "name": "click_selected",
+      "source": "source_0",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "!length(data(\"click_store\")) || vlSelectionTest(\"click_store\", datum)"
+        }
+      ]
+    },
+    {
+      "name": "drag_selected",
+      "source": "source_0",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "!length(data(\"drag_store\")) || vlSelectionTest(\"drag_store\", datum)"
+        }
+      ]
     }
   ],
   "marks": [
@@ -71,7 +96,7 @@
       "type": "rect",
       "style": ["bar"],
       "interactive": true,
-      "from": {"data": "source_0"},
+      "from": {"data": "data_0"},
       "encode": {
         "update": {
           "fill": {"scale": "color", "field": "weather"},

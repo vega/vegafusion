@@ -28,19 +28,19 @@ mod tests {
             pre_transform_spec_result::Result::Response(response) => {
                 let chart_spec: ChartSpec = serde_json::from_str(&response.spec).unwrap();
 
-                let data1 = &chart_spec.data[1];
-                assert_eq!(data1.name.as_str(), "click_store");
-                assert_eq!(data1.transform.len(), 1);
-                if let TransformSpec::Formula(formula) = &data1.transform[0] {
+                let click_store = &chart_spec.data[2];
+                assert_eq!(click_store.name.as_str(), "click_store");
+                assert_eq!(click_store.transform.len(), 1);
+                if let TransformSpec::Formula(formula) = &click_store.transform[0] {
                     assert_eq!(formula.expr, "[toDate(datum.values[0]), datum.values[1]]");
                 } else {
                     panic!("Unexpected transform")
                 }
 
-                let data2 = &chart_spec.data[2];
-                assert_eq!(data2.name.as_str(), "drag_store");
-                assert_eq!(data2.transform.len(), 1);
-                if let TransformSpec::Formula(formula) = &data2.transform[0] {
+                let drag_store = &chart_spec.data[3];
+                assert_eq!(drag_store.name.as_str(), "drag_store");
+                assert_eq!(drag_store.transform.len(), 1);
+                if let TransformSpec::Formula(formula) = &drag_store.transform[0] {
                     assert_eq!(
                         formula.expr,
                         "[[toDate(datum.values[0][0]), toDate(datum.values[0][1])]]"
