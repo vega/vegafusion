@@ -289,7 +289,13 @@ impl FieldSpec {
                 };
                 cast_to(ms_expr, field_type, schema)
             }
-            _ => cast_to(lit(scalar), field_type, schema),
+            _ => {
+                if is_numeric_datatype(field_type) && !is_numeric_datatype(&scalar.get_datatype()) {
+                    cast_to(lit(scalar), field_type, schema)
+                } else {
+                    Ok(lit(scalar))
+                }
+            }
         }
     }
 }
