@@ -18,6 +18,7 @@ use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
+use vegafusion_rt_datafusion::task_graph::timezone::RuntimeTzConfig;
 
 fn make_brush_r(ranges: &Vec<Vec<(&str, &str, [f64; 2])>>, typ: &str) -> VegaFusionTable {
     let mut rows: Vec<Value> = Vec::new();
@@ -120,6 +121,10 @@ pub fn check_vl_selection_test(
         data_scope: vec![("brush".to_string(), brush_dataset)]
             .into_iter()
             .collect(),
+        tz_config: Some(RuntimeTzConfig {
+            local_tz: chrono_tz::UTC,
+            default_input_tz: chrono_tz::UTC,
+        }),
         ..Default::default()
     };
     let eq_config = Default::default();
