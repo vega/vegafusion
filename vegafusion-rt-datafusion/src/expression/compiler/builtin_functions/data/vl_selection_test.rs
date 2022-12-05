@@ -7,7 +7,8 @@
  * this program the details of the active license.
  */
 use crate::expression::compiler::utils::{
-    cast_to, is_float_datatype, is_integer_datatype, is_string_datatype, ExprHelpers,
+    cast_to, is_float_datatype, is_integer_datatype, is_numeric_datatype, is_string_datatype,
+    ExprHelpers,
 };
 use datafusion::logical_plan::{ceil, DFSchema, ExprSchemable};
 use datafusion::logical_plan::{lit, Expr};
@@ -23,8 +24,12 @@ use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
 
+use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::{
+    parse_datetime, STR_TO_TIMESTAMPTZ_UDF,
+};
 use crate::expression::compiler::builtin_functions::date_time::time::TIMESTAMPTZ_TO_EPOCH_MS;
 use crate::expression::escape::flat_col;
+use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::expression::literal::Value;
 
@@ -122,7 +127,12 @@ pub struct FieldSpec {
 }
 
 impl FieldSpec {
-    pub fn to_test_expr(&self, values: &ScalarValue, schema: &DFSchema) -> Result<Expr> {
+    pub fn to_test_expr(
+        &self,
+        values: &ScalarValue,
+        schema: &DFSchema,
+        default_input_tz: &str,
+    ) -> Result<Expr> {
         let field_col = flat_col(&self.field);
 
         // Convert timestamp column to integer milliseconds before comparisons.
@@ -141,20 +151,23 @@ impl FieldSpec {
         let expr = match self.typ {
             SelectionType::Enum => {
                 let field_type = field_col.get_type(schema)?;
-                let list_values: Vec<_> = if let ScalarValue::List(Some(elements), _) = &values {
-                    // values already a list
-                    elements
-                        .iter()
-                        .map(|el| cast_to(lit(el.clone()), &field_type, schema))
-                        .collect::<Result<Vec<_>>>()?
+                let list_scalars = if let ScalarValue::List(Some(elements), _) = &values {
+                    elements.clone()
                 } else {
                     // convert values to single element list
-                    vec![cast_to(lit(values.clone()), &field_type, schema)?]
+                    vec![values.clone()]
                 };
+
+                let list_exprs = list_scalars
+                    .into_iter()
+                    .map(|scalar| {
+                        Self::cast_test_scalar(scalar, &field_type, schema, default_input_tz)
+                    })
+                    .collect::<Result<Vec<_>>>()?;
 
                 Expr::InList {
                     expr: Box::new(field_col),
-                    list: list_values,
+                    list: list_exprs,
                     negated: false,
                 }
             }
@@ -175,10 +188,20 @@ impl FieldSpec {
 
                 let (low, high) = match &values {
                     ScalarValue::List(Some(elements), _) if elements.len() == 2 => {
-                        // Don't assume elements are in ascending order
-                        let first = lit(elements[0].clone());
-                        let second = lit(elements[1].clone());
+                        let first = Self::cast_test_scalar(
+                            elements[0].clone(),
+                            &field_dtype,
+                            schema,
+                            default_input_tz,
+                        )?;
+                        let second = Self::cast_test_scalar(
+                            elements[1].clone(),
+                            &field_dtype,
+                            schema,
+                            default_input_tz,
+                        )?;
 
+                        // Don't assume elements are in ascending order
                         // Compute min and max values with Case expression
                         let low = Expr::Case {
                             expr: None,
@@ -243,6 +266,31 @@ impl FieldSpec {
         };
 
         Ok(expr)
+    }
+
+    fn cast_test_scalar(
+        scalar: ScalarValue,
+        field_type: &DataType,
+        schema: &DFSchema,
+        default_input_tz: &str,
+    ) -> Result<Expr> {
+        match scalar {
+            ScalarValue::Utf8(Some(s))
+                if parse_datetime(&s, &Some(chrono_tz::UTC)).is_some()
+                    && is_numeric_datatype(field_type) =>
+            {
+                let timestamp_expr = Expr::ScalarUDF {
+                    fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+                    args: vec![lit(s), lit(default_input_tz)],
+                };
+                let ms_expr = Expr::ScalarUDF {
+                    fun: Arc::new((*TIMESTAMPTZ_TO_EPOCH_MS).clone()),
+                    args: vec![timestamp_expr],
+                };
+                cast_to(ms_expr, field_type, schema)
+            }
+            _ => cast_to(lit(scalar), field_type, schema),
+        }
     }
 }
 
@@ -325,10 +373,10 @@ pub struct SelectionRow {
 }
 
 impl SelectionRow {
-    pub fn to_expr(&self, schema: &DFSchema) -> Result<Expr> {
+    pub fn to_expr(&self, schema: &DFSchema, default_input_tz: &str) -> Result<Expr> {
         let mut exprs: Vec<Expr> = Vec::new();
         for (field, value) in self.fields.iter().zip(self.values.iter()) {
-            exprs.push(field.to_test_expr(value, schema)?);
+            exprs.push(field.to_test_expr(value, schema, default_input_tz)?);
         }
 
         // Take conjunction of expressions
@@ -452,6 +500,7 @@ pub fn vl_selection_test_fn(
     table: &VegaFusionTable,
     args: &[Expression],
     schema: &DFSchema,
+    tz_config: &RuntimeTzConfig,
 ) -> Result<Expr> {
     // Validate args and get operation
     let op = parse_args(args)?;
@@ -467,7 +516,7 @@ pub fn vl_selection_test_fn(
     let mut exprs: Vec<Expr> = Vec::new();
     for row in rows {
         let row_spec = SelectionRow::try_from(row)?;
-        exprs.push(row_spec.to_expr(schema)?)
+        exprs.push(row_spec.to_expr(schema, &tz_config.default_input_tz.to_string())?)
     }
 
     // Combine expressions according to op

@@ -70,8 +70,11 @@ pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync
 pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
 pub type TzTransformFn =
     Arc<dyn Fn(&RuntimeTzConfig, &[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
-pub type DataFn =
-    Arc<dyn Fn(&VegaFusionTable, &[Expression], &DFSchema) -> Result<Expr> + Send + Sync>;
+pub type DataFn = Arc<
+    dyn Fn(&VegaFusionTable, &[Expression], &DFSchema, &RuntimeTzConfig) -> Result<Expr>
+        + Send
+        + Sync,
+>;
 
 #[derive(Clone)]
 pub enum VegaFusionCallable {
@@ -169,7 +172,11 @@ pub fn compile_call(
                         ..
                     }) => {
                         if let Some(dataset) = config.data_scope.get(name) {
-                            callee(dataset, &node.arguments[1..], schema)
+                            let tz_config = config
+                                .tz_config
+                                .with_context(|| "No local timezone info provided".to_string())?;
+
+                            callee(dataset, &node.arguments[1..], schema, &tz_config)
                         } else {
                             Err(VegaFusionError::internal(&format!(
                                 "No dataset named {}. Available: {:?}",
