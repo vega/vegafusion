@@ -11,7 +11,12 @@
           "type": "timeunit",
           "units": ["year", "month"],
           "as": ["yearmonth_date", "yearmonth_date_end"]
-        },
+        }
+      ]
+    }, {
+      "name": "data_0",
+      "source":  "source_0",
+      "transform": [
         {
           "type": "aggregate",
           "groupby": ["yearmonth_date", "yearmonth_date_end", "weather"],
@@ -60,7 +65,27 @@
         {
           "unit": "",
           "fields": [{"field": "yearmonth_date", "channel": "x", "type": "R"}],
-          "values": [["2012-11-27T06:58:03.000", "2013-06-04T06:38:51.000"]]
+          "values": [["2014-01-01T00:00:00", "2013-11-01T00:00:00"]]
+        }
+      ]
+    },
+    {
+      "name": "click_selected",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "!length(data(\"click_store\")) || vlSelectionTest(\"click_store\", datum)"
+        }
+      ]
+    },
+    {
+      "name": "drag_selected",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "!length(data(\"drag_store\")) || vlSelectionTest(\"drag_store\", datum)"
         }
       ]
     }
@@ -71,7 +96,7 @@
       "type": "rect",
       "style": ["bar"],
       "interactive": true,
-      "from": {"data": "source_0"},
+      "from": {"data": "data_0"},
       "encode": {
         "update": {
           "fill": {"scale": "color", "field": "weather"},

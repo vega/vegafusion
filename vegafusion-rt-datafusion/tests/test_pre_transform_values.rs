@@ -208,6 +208,74 @@ mod tests {
 +-------+-----------+------+-----------------+";
         assert_eq!(first_row.pretty_format(None).unwrap(), expected);
     }
+
+    #[tokio::test]
+    async fn test_pre_transform_with_datetime_strings_in_store() {
+        // Load spec
+        let spec_path = format!(
+            "{}/tests/specs/pre_transform/datetime_strings_in_selection_stores.vg.json",
+            crate_dir()
+        );
+        let spec_str = fs::read_to_string(spec_path).unwrap();
+
+        // Initialize task graph runtime
+        let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
+
+        let (values, warnings) = runtime
+            .pre_transform_values(
+                &spec_str,
+                &[
+                    (Variable::new_data("click_selected"), vec![]),
+                    (Variable::new_data("drag_selected"), vec![]),
+                ],
+                "UTC",
+                &None,
+                Default::default(),
+            )
+            .await
+            .unwrap();
+
+        // Check there are no warnings
+        assert!(warnings.is_empty());
+
+        // Check two returned datasets
+        assert_eq!(values.len(), 2);
+
+        // Check click_selected
+        let click_selected = values[0].as_table().cloned().unwrap();
+
+        println!("{}", click_selected.pretty_format(None).unwrap());
+
+        let expected = "\
++---------------------+---------------------+---------+---------+---------------+-------------+
+| yearmonth_date      | yearmonth_date_end  | weather | __count | __count_start | __count_end |
++---------------------+---------------------+---------+---------+---------------+-------------+
+| 2013-11-01 00:00:00 | 2013-12-01 00:00:00 | rain    | 15      | 12            | 27          |
+| 2014-01-01 00:00:00 | 2014-02-01 00:00:00 | sun     | 16      | 0             | 16          |
++---------------------+---------------------+---------+---------+---------------+-------------+";
+        assert_eq!(click_selected.pretty_format(None).unwrap(), expected);
+
+        // Check drag_selected
+        let drag_selected = values[1].as_table().cloned().unwrap();
+        println!("{}", drag_selected.pretty_format(None).unwrap());
+
+        let expected = "\
++---------------------+---------------------+---------+---------+---------------+-------------+
+| yearmonth_date      | yearmonth_date_end  | weather | __count | __count_start | __count_end |
++---------------------+---------------------+---------+---------+---------------+-------------+
+| 2013-11-01 00:00:00 | 2013-12-01 00:00:00 | rain    | 15      | 12            | 27          |
+| 2013-11-01 00:00:00 | 2013-12-01 00:00:00 | drizzle | 1       | 29            | 30          |
+| 2013-11-01 00:00:00 | 2013-12-01 00:00:00 | sun     | 12      | 0             | 12          |
+| 2013-11-01 00:00:00 | 2013-12-01 00:00:00 | fog     | 2       | 27            | 29          |
+| 2013-12-01 00:00:00 | 2014-01-01 00:00:00 | rain    | 13      | 18            | 31          |
+| 2013-12-01 00:00:00 | 2014-01-01 00:00:00 | sun     | 17      | 0             | 17          |
+| 2013-12-01 00:00:00 | 2014-01-01 00:00:00 | snow    | 1       | 17            | 18          |
+| 2014-01-01 00:00:00 | 2014-02-01 00:00:00 | sun     | 16      | 0             | 16          |
+| 2014-01-01 00:00:00 | 2014-02-01 00:00:00 | rain    | 13      | 16            | 29          |
+| 2014-01-01 00:00:00 | 2014-02-01 00:00:00 | fog     | 2       | 29            | 31          |
++---------------------+---------------------+---------+---------+---------------+-------------+";
+        assert_eq!(drag_selected.pretty_format(None).unwrap(), expected);
+    }
 }
 
 fn crate_dir() -> String {

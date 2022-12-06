@@ -23,6 +23,7 @@ use crate::expression::compiler::builtin_functions::data::vl_selection_test::{
     SelectionRow, SelectionType,
 };
 
+use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
@@ -63,6 +64,7 @@ pub fn vl_selection_resolve_fn(
     table: &VegaFusionTable,
     args: &[Expression],
     _schema: &DFSchema,
+    _tz_config: &RuntimeTzConfig,
 ) -> Result<Expr> {
     // Validate args and get operation
     let _op = parse_args(args)?;
