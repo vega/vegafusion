@@ -1,0 +1,716 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "autosize": {
+    "type": "fit",
+    "contains": "padding"
+  },
+  "background": "white",
+  "padding": 5,
+  "style": "cell",
+  "data": [
+    {
+      "name": "interval_intervalselection__store"
+    },
+    {
+      "name": "point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_store"
+    },
+    {
+      "name": "movies", "url": "https://raw.githubusercontent.com/vega/vega-datasets/next/data/movies.json"
+    },
+    {
+      "name": "data_0",
+      "source": "movies",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "toDate(datum[\"Release Date\"])",
+          "as": "Release Date"
+        },
+        {
+          "type": "identifier",
+          "as": "_vgsid_"
+        }
+      ]
+    },
+    {
+      "name": "data_1",
+      "source": "data_0",
+      "transform": [
+        {
+          "field": "Release Date",
+          "type": "timeunit",
+          "units": [
+            "year"
+          ],
+          "as": [
+            "year_Release Date",
+            "year_Release Date_end"
+          ]
+        },
+        {
+          "type": "aggregate",
+          "groupby": [
+            "year_Release Date"
+          ],
+          "ops": [
+            "sum"
+          ],
+          "fields": [
+            "US Gross"
+          ],
+          "as": [
+            "sum_US Gross"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "data_2",
+      "source": "data_1",
+      "transform": [
+        {
+          "type": "identifier",
+          "as": "_vgsid_"
+        },
+        {
+          "type": "filter",
+          "expr": "(isDate(datum[\"year_Release Date\"]) || (isValid(datum[\"year_Release Date\"]) && isFinite(+datum[\"year_Release Date\"]))) && isValid(datum[\"sum_US Gross\"]) && isFinite(+datum[\"sum_US Gross\"])"
+        }
+      ]
+    },
+    {
+      "name": "data_3",
+      "source": "data_1",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "(isDate(datum[\"year_Release Date\"]) || (isValid(datum[\"year_Release Date\"]) && isFinite(+datum[\"year_Release Date\"]))) && isValid(datum[\"sum_US Gross\"]) && isFinite(+datum[\"sum_US Gross\"])"
+        }
+      ]
+    },
+    {
+      "name": "data_4",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "time('1982-03-21T20:48:59.543') <= time(datum['year_Release Date']) && time(datum['year_Release Date']) <= time('1990-01-26T19:52:38.674')"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "name": "width",
+      "init": "isFinite(containerSize()[0]) ? containerSize()[0] : 200",
+      "on": [
+        {
+          "update": "isFinite(containerSize()[0]) ? containerSize()[0] : 200",
+          "events": "window:resize"
+        }
+      ]
+    },
+    {
+      "name": "height",
+      "init": "isFinite(containerSize()[1]) ? containerSize()[1] : 200",
+      "on": [
+        {
+          "update": "isFinite(containerSize()[1]) ? containerSize()[1] : 200",
+          "events": "window:resize"
+        }
+      ]
+    },
+    {
+      "name": "unit",
+      "value": {},
+      "on": [
+        {
+          "events": "mousemove",
+          "update": "isTuple(group()) ? group() : unit"
+        }
+      ]
+    },
+    {
+      "name": "interval_intervalselection_",
+      "update": "vlSelectionResolve(\"interval_intervalselection__store\", \"union\")"
+    },
+    {
+      "name": "point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5",
+      "update": "vlSelectionResolve(\"point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_store\", \"union\", true, true)"
+    },
+    {
+      "name": "interval_intervalselection__x",
+      "value": [],
+      "on": [
+        {
+          "events": {
+            "source": "scope",
+            "type": "mousedown"
+          },
+          "update": "[x(unit), x(unit)]"
+        },
+        {
+          "events": {
+            "source": "window",
+            "type": "mousemove",
+            "consume": true,
+            "between": [
+              {
+                "source": "scope",
+                "type": "mousedown"
+              },
+              {
+                "source": "window",
+                "type": "mouseup"
+              }
+            ]
+          },
+          "update": "[interval_intervalselection__x[0], clamp(x(unit), 0, width)]"
+        },
+        {
+          "events": {
+            "signal": "interval_intervalselection__scale_trigger"
+          },
+          "update": "[scale(\"x\", interval_intervalselection__year_Release_Date[0]), scale(\"x\", interval_intervalselection__year_Release_Date[1])]"
+        },
+        {
+          "events": [
+            {
+              "source": "view",
+              "type": "dblclick"
+            }
+          ],
+          "update": "[0, 0]"
+        }
+      ]
+    },
+    {
+      "name": "interval_intervalselection__year_Release_Date",
+      "on": [
+        {
+          "events": {
+            "signal": "interval_intervalselection__x"
+          },
+          "update": "interval_intervalselection__x[0] === interval_intervalselection__x[1] ? null : invert(\"x\", interval_intervalselection__x)"
+        }
+      ]
+    },
+    {
+      "name": "interval_intervalselection__scale_trigger",
+      "value": {},
+      "on": [
+        {
+          "events": [
+            {
+              "scale": "x"
+            }
+          ],
+          "update": "(!isArray(interval_intervalselection__year_Release_Date) || (+invert(\"x\", interval_intervalselection__x)[0] === +interval_intervalselection__year_Release_Date[0] && +invert(\"x\", interval_intervalselection__x)[1] === +interval_intervalselection__year_Release_Date[1])) ? interval_intervalselection__scale_trigger : {}"
+        }
+      ]
+    },
+    {
+      "name": "interval_intervalselection__tuple",
+      "on": [
+        {
+          "events": [
+            {
+              "signal": "interval_intervalselection__year_Release_Date"
+            }
+          ],
+          "update": "interval_intervalselection__year_Release_Date ? {unit: \"layer_0_layer_0\", fields: interval_intervalselection__tuple_fields, values: [interval_intervalselection__year_Release_Date]} : null"
+        }
+      ]
+    },
+    {
+      "name": "interval_intervalselection__tuple_fields",
+      "value": [
+        {
+          "field": "year_Release Date",
+          "channel": "x",
+          "type": "R"
+        }
+      ]
+    },
+    {
+      "name": "interval_intervalselection__modify",
+      "on": [
+        {
+          "events": {
+            "signal": "interval_intervalselection__tuple"
+          },
+          "update": "modify(\"interval_intervalselection__store\", interval_intervalselection__tuple, true)"
+        }
+      ]
+    },
+    {
+      "name": "point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_tuple",
+      "on": [
+        {
+          "events": [
+            {
+              "source": "scope",
+              "type": "mouseover"
+            }
+          ],
+          "update": "datum && item().mark.marktype !== 'group' ? {unit: \"layer_0_layer_1\", fields: point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_tuple_fields, values: [(item().isVoronoi ? datum.datum : datum)[\"_vgsid_\"]]} : null",
+          "force": true
+        },
+        {
+          "events": [
+            {
+              "source": "view",
+              "type": "dblclick"
+            }
+          ],
+          "update": "null"
+        }
+      ]
+    },
+    {
+      "name": "point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_tuple_fields",
+      "value": [
+        {
+          "type": "E",
+          "field": "_vgsid_"
+        }
+      ]
+    },
+    {
+      "name": "point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_toggle",
+      "value": false,
+      "on": [
+        {
+          "events": [
+            {
+              "source": "scope",
+              "type": "mouseover"
+            }
+          ],
+          "update": "event.shiftKey"
+        },
+        {
+          "events": [
+            {
+              "source": "view",
+              "type": "dblclick"
+            }
+          ],
+          "update": "false"
+        }
+      ]
+    },
+    {
+      "name": "point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_modify",
+      "on": [
+        {
+          "events": {
+            "signal": "point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_tuple"
+          },
+          "update": "modify(\"point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_store\", point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_toggle ? null : point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_tuple, point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_toggle ? null : true, point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_toggle ? point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_tuple : null)"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "interval_intervalselection__brush_bg",
+      "type": "rect",
+      "clip": true,
+      "encode": {
+        "enter": {
+          "fill": {
+            "value": "#333"
+          },
+          "fillOpacity": {
+            "value": 0.125
+          }
+        },
+        "update": {
+          "x": [
+            {
+              "test": "data(\"interval_intervalselection__store\").length && data(\"interval_intervalselection__store\")[0].unit === \"layer_0_layer_0\"",
+              "signal": "interval_intervalselection__x[0]"
+            },
+            {
+              "value": 0
+            }
+          ],
+          "y": [
+            {
+              "test": "data(\"interval_intervalselection__store\").length && data(\"interval_intervalselection__store\")[0].unit === \"layer_0_layer_0\"",
+              "value": 0
+            },
+            {
+              "value": 0
+            }
+          ],
+          "x2": [
+            {
+              "test": "data(\"interval_intervalselection__store\").length && data(\"interval_intervalselection__store\")[0].unit === \"layer_0_layer_0\"",
+              "signal": "interval_intervalselection__x[1]"
+            },
+            {
+              "value": 0
+            }
+          ],
+          "y2": [
+            {
+              "test": "data(\"interval_intervalselection__store\").length && data(\"interval_intervalselection__store\")[0].unit === \"layer_0_layer_0\"",
+              "field": {
+                "group": "height"
+              }
+            },
+            {
+              "value": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "layer_0_layer_0_marks",
+      "type": "symbol",
+      "clip": true,
+      "style": [
+        "point"
+      ],
+      "interactive": true,
+      "from": {
+        "data": "data_3"
+      },
+      "encode": {
+        "update": {
+          "fill": [
+            {
+              "test": "!((inrange(datum[\"year_Release Date\"], [time('1982-03-21T20:48:59.543'), time('1990-01-26T19:52:38.674')])))",
+              "value": "gray"
+            },
+            {
+              "value": "#4c78a8"
+            }
+          ],
+          "opacity": [
+            {
+              "test": "!((inrange(datum[\"year_Release Date\"], [time('1982-03-21T20:48:59.543'), time('1990-01-26T19:52:38.674')])))",
+              "value": 0.3
+            },
+            {
+              "value": 1
+            }
+          ],
+          "ariaRoleDescription": {
+            "value": "point"
+          },
+          "description": {
+            "signal": "\"Release Date (year, UTC): \" + (timeFormat(datum[\"year_Release Date\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of US Gross: \" + (format(datum[\"sum_US Gross\"], \"\"))"
+          },
+          "x": {
+            "scale": "x",
+            "field": "year_Release Date"
+          },
+          "y": {
+            "scale": "y",
+            "field": "sum_US Gross"
+          }
+        }
+      }
+    },
+    {
+      "name": "layer_0_layer_1_marks",
+      "type": "symbol",
+      "clip": true,
+      "style": [
+        "point"
+      ],
+      "interactive": true,
+      "from": {
+        "data": "data_2"
+      },
+      "encode": {
+        "update": {
+          "fill": [
+            {
+              "test": "!((inrange(datum[\"year_Release Date\"], [time('1982-03-21T20:48:59.543'), time('1990-01-26T19:52:38.674')])))",
+              "value": "gray"
+            },
+            {
+              "value": "#4c78a8"
+            }
+          ],
+          "opacity": [
+            {
+              "test": "length(data(\"point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_store\")) && vlSelectionTest(\"point_hover_b9389f8b_5327_492e_8939_c28447ebe2d5_store\", datum)",
+              "value": 1
+            },
+            {
+              "value": 0
+            }
+          ],
+          "tooltip": {
+            "signal": "{\"Release Date (year, UTC)\": timeFormat(datum[\"year_Release Date\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})), \"Sum of US Gross\": format(datum[\"sum_US Gross\"], \"\")}"
+          },
+          "ariaRoleDescription": {
+            "value": "point"
+          },
+          "description": {
+            "signal": "\"Release Date (year, UTC): \" + (timeFormat(datum[\"year_Release Date\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of US Gross: \" + (format(datum[\"sum_US Gross\"], \"\"))"
+          },
+          "x": {
+            "scale": "x",
+            "field": "year_Release Date"
+          },
+          "y": {
+            "scale": "y",
+            "field": "sum_US Gross"
+          },
+          "size": {
+            "value": 100
+          }
+        }
+      }
+    },
+    {
+      "name": "__drilldown_brush_marks",
+      "type": "symbol",
+      "style": [
+        "point"
+      ],
+      "interactive": false,
+      "from": {
+        "data": "data_4"
+      },
+      "encode": {
+        "update": {
+          "opacity": {
+            "value": 0
+          },
+          "fill": {
+            "value": "transparent"
+          },
+          "stroke": {
+            "value": "#4c78a8"
+          },
+          "ariaRoleDescription": {
+            "value": "point"
+          },
+          "x": {
+            "signal": "width",
+            "mult": 0.5
+          },
+          "y": {
+            "signal": "height",
+            "mult": 0.5
+          }
+        }
+      }
+    },
+    {
+      "name": "interval_intervalselection__brush",
+      "type": "rect",
+      "clip": true,
+      "encode": {
+        "enter": {
+          "fill": {
+            "value": "transparent"
+          }
+        },
+        "update": {
+          "x": [
+            {
+              "test": "data(\"interval_intervalselection__store\").length && data(\"interval_intervalselection__store\")[0].unit === \"layer_0_layer_0\"",
+              "signal": "interval_intervalselection__x[0]"
+            },
+            {
+              "value": 0
+            }
+          ],
+          "y": [
+            {
+              "test": "data(\"interval_intervalselection__store\").length && data(\"interval_intervalselection__store\")[0].unit === \"layer_0_layer_0\"",
+              "value": 0
+            },
+            {
+              "value": 0
+            }
+          ],
+          "x2": [
+            {
+              "test": "data(\"interval_intervalselection__store\").length && data(\"interval_intervalselection__store\")[0].unit === \"layer_0_layer_0\"",
+              "signal": "interval_intervalselection__x[1]"
+            },
+            {
+              "value": 0
+            }
+          ],
+          "y2": [
+            {
+              "test": "data(\"interval_intervalselection__store\").length && data(\"interval_intervalselection__store\")[0].unit === \"layer_0_layer_0\"",
+              "field": {
+                "group": "height"
+              }
+            },
+            {
+              "value": 0
+            }
+          ],
+          "stroke": [
+            {
+              "test": "interval_intervalselection__x[0] !== interval_intervalselection__x[1]",
+              "value": "white"
+            },
+            {
+              "value": null
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "time",
+      "domain": {
+        "fields": [
+          {
+            "data": "data_3",
+            "field": "year_Release Date"
+          },
+          {
+            "data": "data_2",
+            "field": "year_Release Date"
+          }
+        ]
+      },
+      "range": [
+        0,
+        {
+          "signal": "width"
+        }
+      ]
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {
+        "fields": [
+          {
+            "data": "data_3",
+            "field": "sum_US Gross"
+          },
+          {
+            "data": "data_2",
+            "field": "sum_US Gross"
+          }
+        ]
+      },
+      "range": [
+        {
+          "signal": "height"
+        },
+        0
+      ],
+      "nice": true,
+      "zero": true
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": true,
+      "gridScale": "y",
+      "tickCount": {
+        "signal": "ceil(width/40)"
+      },
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": true,
+      "gridScale": "x",
+      "tickCount": {
+        "signal": "ceil(height/40)"
+      },
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "Release Date (year, UTC)",
+      "labels": true,
+      "ticks": true,
+      "format": {
+        "signal": "timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})"
+      },
+      "labelFlush": true,
+      "labelOverlap": true,
+      "tickCount": {
+        "signal": "ceil(width/40)"
+      },
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "Sum of US Gross",
+      "labels": true,
+      "ticks": true,
+      "labelOverlap": true,
+      "tickCount": {
+        "signal": "ceil(height/40)"
+      },
+      "zindex": 0
+    }
+  ],
+  "config": {
+    "customFormatTypes": true,
+    "legend": {
+      "orient": "right"
+    },
+    "style": {
+      "guide-label": {
+        "font": "\"IBM Plex Sans\", system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      },
+      "guide-title": {
+        "font": "\"IBM Plex Sans\", system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      },
+      "group-title": {
+        "font": "\"IBM Plex Sans\", system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      },
+      "group-subtitle": {
+        "font": "\"IBM Plex Sans\", system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      },
+      "cell": {},
+      "text": {
+        "font": "\"IBM Plex Sans\", system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      }
+    }
+  },
+  "usermeta": {
+    "selectionConfigs": {
+      "interval_intervalselection_": {
+        "type": "interval",
+        "datetimeFields": [
+          "year_Release Date"
+        ]
+      }
+    }
+  }
+}

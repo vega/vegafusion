@@ -56,7 +56,7 @@ pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema) ->
             // Keep int argument as-is
             arg.clone()
         }
-        dtype if is_numeric_datatype(&dtype) => {
+        dtype if is_numeric_datatype(&dtype) || matches!(dtype, DataType::Boolean) => {
             // Cast other numeric types to Int64
             cast_to(arg.clone(), &DataType::Int64, schema)?
         }
