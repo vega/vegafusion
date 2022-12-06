@@ -9,7 +9,7 @@ use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::Column;
-use datafusion_expr::{coalesce, lit, min, BuiltInWindowFunction, Expr, WindowFunction};
+use datafusion_expr::{coalesce, col, lit, min, when, BuiltInWindowFunction, Expr, WindowFunction};
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::StringArray;
@@ -27,7 +27,26 @@ impl TransformTrait for Pivot {
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
         // Make sure the pivot column is a string
         let pivot_dtype = data_type(&unescaped_col(&self.field), &dataframe.schema_df())?;
-        let dataframe = if !is_string_datatype(&pivot_dtype) {
+        let dataframe = if matches!(pivot_dtype, DataType::Boolean) {
+            // Boolean column type. For consistency with vega, replace 0 with "false" and 1 with "true"
+            let select_exprs: Vec<_> = dataframe
+                .schema()
+                .fields
+                .iter()
+                .map(|field| {
+                    if field.name() == &self.field {
+                        Ok(when(col(&self.field).eq(lit(true)), lit("true"))
+                            .otherwise(lit("false"))
+                            .expect("Failed to construct Case expression")
+                            .alias(&self.field))
+                    } else {
+                        Ok(unescaped_col(field.name()))
+                    }
+                })
+                .collect::<Result<Vec<_>>>()?;
+            dataframe.select(select_exprs)?
+        } else if !is_string_datatype(&pivot_dtype) {
+            // Column type is not string, so cast values to strings
             let select_exprs: Vec<_> = dataframe
                 .schema()
                 .fields
@@ -47,6 +66,7 @@ impl TransformTrait for Pivot {
                 .collect::<Result<Vec<_>>>()?;
             dataframe.select(select_exprs)?
         } else {
+            // Column type is string
             dataframe
         };
 
