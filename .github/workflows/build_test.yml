@@ -331,7 +331,7 @@ jobs:
           chrome-version: stable
       - name: Install ChromeDriver
         run: |
-          conda install -c conda-forge python-chromedriver-binary=106
+          conda install -c conda-forge python-chromedriver-binary=108
       - name: Download vegafusion wheel
         uses: actions/download-artifact@v2
         with:
