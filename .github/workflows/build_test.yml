@@ -305,7 +305,7 @@ jobs:
     strategy:
       matrix:
         options: [
-            [ubuntu-latest,  linux-64, "bash -l {0}",  manylinux2014_x86_64, cp37],
+            [ubuntu-latest,  linux-64, "bash -l {0}",  manylinux2014_x86_64, cp38],
             [ubuntu-latest,  linux-64, "bash -l {0}",  manylinux2014_x86_64, cp310],
 # TODO: Should run tests on Windows and Mac as well, but there a GitHub action issues
 #            [windows-2019,  win-64,   "pwsh",         win_amd64,            cp37],
