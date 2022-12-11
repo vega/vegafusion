@@ -2,7 +2,7 @@
 name = "vegafusion-core"
 license = "AGPL-3.0-or-later"
 edition = "2021"
-version = "0.11.0-rc8"
+version = "0.11.0-rc9"
 
 [features]
 tonic_support = [ "tonic", "tonic-build",]
