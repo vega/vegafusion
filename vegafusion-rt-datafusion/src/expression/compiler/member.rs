@@ -132,10 +132,8 @@ pub fn compile_member(
                     )));
                 }
             } else {
-                return Err(VegaFusionError::compilation(&format!(
-                    "Invalid target for member access: {}",
-                    node.object()
-                )));
+                // Invalid target of member access (e.g. null float64). Return NULL
+                return Ok(lit(ScalarValue::Float64(None)));
             }
         }
     };
