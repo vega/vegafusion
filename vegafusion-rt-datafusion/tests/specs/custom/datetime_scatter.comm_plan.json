@@ -1,0 +1,25 @@
+{
+  "server_to_client": [
+    {
+      "name": "movies",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "movies_x_domain_yearmonth_Release Date",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "movies_y_domain_US Gross",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "point_hover_d28fecf5_2bde_4843_8a5d_16847fc9e606_store",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

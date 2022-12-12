@@ -417,6 +417,9 @@ impl TaskCall for DataValuesTask {
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Deserialize data into table
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
+        if values_table.schema.fields.is_empty() {
+            return Ok((TaskValue::Table(values_table), Default::default()));
+        }
 
         // Get parse format for date processing
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
