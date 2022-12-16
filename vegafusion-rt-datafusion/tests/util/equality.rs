@@ -192,11 +192,12 @@ fn assert_scalars_almost_equals(
                     let rhs = numeric_to_f64(&rhs);
                     assert!(
                         (lhs - rhs).abs() <= tol,
-                        "{} and {} are not equal to within tolerance {}, row {}",
+                        "{} and {} are not equal to within tolerance {}, row {}, coloumn {}",
                         lhs,
                         rhs,
                         tol,
-                        index
+                        index,
+                        name
                     )
                 }
             } else {

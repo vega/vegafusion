@@ -17,7 +17,6 @@ use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::Result;
 use vegafusion_core::expression::parser::parse;
-use vegafusion_core::proto::gen::tasks::TzConfig;
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
