@@ -84,7 +84,7 @@ pub fn check_transform_evaluation(
     // Add local timezone info to compilation config
     let compilation_config = CompilationConfig {
         tz_config: Some(RuntimeTzConfig {
-            local_tz: local_tz,
+            local_tz,
             default_input_tz: local_tz,
         }),
         ..compilation_config.clone()

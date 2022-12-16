@@ -62,7 +62,7 @@ impl RecordBatchUtils for RecordBatch {
     fn column_by_name(&self, name: &str) -> Result<&ArrayRef> {
         match self.schema().column_with_name(name) {
             Some((index, _)) => Ok(self.column(index)),
-            None => Err(VegaFusionError::internal(&format!(
+            None => Err(VegaFusionError::internal(format!(
                 "No column named {}",
                 name
             ))),

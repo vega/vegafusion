@@ -133,7 +133,7 @@ impl TaskCall for DataUrlTask {
         } else if url.ends_with(".arrow") || url.ends_with(".feather") {
             read_arrow(&url).await?
         } else {
-            return Err(VegaFusionError::internal(&format!(
+            return Err(VegaFusionError::internal(format!(
                 "Invalid url file extension {}",
                 url
             )));
@@ -612,7 +612,7 @@ async fn read_json(url: &str, batch_size: usize) -> Result<Arc<DataFrame>> {
         // Assume local file
         let mut file = tokio::fs::File::open(url)
             .await
-            .external(&format!("Failed to open as local file: {}", url))?;
+            .external(format!("Failed to open as local file: {}", url))?;
 
         let mut json_str = String::new();
         file.read_to_string(&mut json_str)
@@ -639,7 +639,7 @@ async fn read_arrow(url: &str) -> Result<Arc<DataFrame>> {
         // Assume local file
         let mut file = tokio::fs::File::open(url)
             .await
-            .external(&format!("Failed to open as local file: {}", url))?;
+            .external(format!("Failed to open as local file: {}", url))?;
 
         let mut buffer: Vec<u8> = Vec::new();
         file.read_to_end(&mut buffer)

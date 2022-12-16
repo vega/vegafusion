@@ -141,7 +141,7 @@ pub fn compile_call(
     schema: &DFSchema,
 ) -> Result<Expr> {
     let callable = config.callable_scope.get(&node.callee).ok_or_else(|| {
-        VegaFusionError::compilation(&format!("No global function named {}", &node.callee))
+        VegaFusionError::compilation(format!("No global function named {}", &node.callee))
     })?;
 
     match callable {
@@ -178,21 +178,21 @@ pub fn compile_call(
 
                             callee(dataset, &node.arguments[1..], schema, &tz_config)
                         } else {
-                            Err(VegaFusionError::internal(&format!(
+                            Err(VegaFusionError::internal(format!(
                                 "No dataset named {}. Available: {:?}",
                                 name,
                                 config.data_scope.keys()
                             )))
                         }
                     }
-                    _ => Err(VegaFusionError::internal(&format!(
+                    _ => Err(VegaFusionError::internal(format!(
                         "The first argument to the {} function must be a literal \
                                 string with the name of a dataset",
                         &node.callee
                     ))),
                 }
             } else {
-                Err(VegaFusionError::internal(&format!(
+                Err(VegaFusionError::internal(format!(
                     "The first argument to the {} function must be a literal \
                                 string with the name of a dataset",
                     &node.callee

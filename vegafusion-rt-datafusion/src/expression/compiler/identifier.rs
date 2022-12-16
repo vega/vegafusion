@@ -17,7 +17,7 @@ pub fn compile_identifier(node: &Identifier, config: &CompilationConfig) -> Resu
     } else if let Some(value) = config.constants.get(&node.name) {
         value.clone()
     } else {
-        return Err(VegaFusionError::compilation(&format!(
+        return Err(VegaFusionError::compilation(format!(
             "No signal named {} in evaluation scope",
             node.name
         )));

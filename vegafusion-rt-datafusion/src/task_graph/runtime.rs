@@ -628,7 +628,7 @@ async fn get_or_compute_node_value(
                     let mut value = match value {
                         Ok(value) => value?,
                         Err(join_err) => {
-                            return Err(VegaFusionError::internal(&join_err.to_string()))
+                            return Err(VegaFusionError::internal(join_err.to_string()))
                         }
                     };
 
