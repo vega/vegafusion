@@ -225,9 +225,9 @@ fn eval_normalize_center_offset(
             dataframe
         }
         StackOffset::Normalize => {
-            let total_zero = flat_col("__total").eq(lit(0));
+            let total_zero = flat_col("__total").eq(lit(0.0));
 
-            let alias0_col = when(total_zero.clone(), lit(0))
+            let alias0_col = when(total_zero.clone(), lit(0.0))
                 .otherwise(
                     flat_col(alias1)
                         .sub(flat_col(stack_col_name))
@@ -237,7 +237,7 @@ fn eval_normalize_center_offset(
 
             final_selection.push(alias0_col);
 
-            let alias1_col = when(total_zero, lit(0))
+            let alias1_col = when(total_zero, lit(0.0))
                 .otherwise(flat_col(alias1).div(flat_col("__total")))?
                 .alias(alias1);
 
