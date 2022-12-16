@@ -235,12 +235,10 @@ mod test_stack_no_divide_by_zero {
     use vegafusion_core::proto::gen::tasks::TzConfig;
     use vegafusion_core::spec::transform::collect::CollectTransformSpec;
     use vegafusion_core::spec::transform::filter::FilterTransformSpec;
-    use vegafusion_core::spec::transform::stack::StackOffsetSpec;
     use vegafusion_core::spec::transform::timeunit::TimeUnitTransformSpec;
     use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 
-    #[rstest(offset, case(Some(StackOffsetSpec::Normalize)))]
-    fn test(offset: Option<StackOffsetSpec>) {
+    fn test() {
         let dataset = vega_json_dataset("movies");
 
         let formula_spec: FormulaTransformSpec = serde_json::from_value(json!(
