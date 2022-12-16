@@ -22,7 +22,7 @@ pub fn parse(expr: &str) -> Result<Expression> {
     let result = perform_parse(&mut tokens, 0.0, expr)?;
     if !tokens.is_empty() {
         let (token, start, _) = &tokens[0];
-        return Err(VegaFusionError::parse(&format!(
+        return Err(VegaFusionError::parse(format!(
             "Unexpected token {} at position {} in expression: {}",
             token, start, expr
         )));
@@ -60,7 +60,7 @@ fn perform_parse(
         // Object literal expression
         parse_object(tokens, start, full_expr)
     } else {
-        Err(VegaFusionError::parse(&format!(
+        Err(VegaFusionError::parse(format!(
             "Unexpected token: {}",
             lhs_token
         )))
@@ -134,7 +134,7 @@ fn perform_parse(
                 break;
             }
         } else {
-            Err(VegaFusionError::parse(&format!(
+            Err(VegaFusionError::parse(format!(
                 "Unexpected token '{}'",
                 token
             )))
@@ -156,14 +156,14 @@ pub fn expect_token(
     expected: Token,
 ) -> Result<(Token, usize, usize)> {
     if tokens.is_empty() {
-        return Err(VegaFusionError::parse(&format!(
+        return Err(VegaFusionError::parse(format!(
             "Expected {}, reached end of expression",
             expected
         )));
     }
     let (token, start, end) = tokens[0].clone();
     if token != expected {
-        return Err(VegaFusionError::parse(&format!(
+        return Err(VegaFusionError::parse(format!(
             "Expected {}, received {}",
             expected, token
         )));
@@ -198,7 +198,7 @@ pub fn parse_atom(token: &Token, start: usize, end: usize) -> Result<Expression>
         Token::String { value, raw } => Expr::from(Literal::new(value.clone(), raw)),
         Token::Identifier { value } => Expr::from(Identifier::new(value)),
         _ => {
-            return Err(VegaFusionError::parse(&format!(
+            return Err(VegaFusionError::parse(format!(
                 "Token not an atom: {}",
                 token
             )))

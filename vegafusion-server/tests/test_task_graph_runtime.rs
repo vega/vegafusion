@@ -90,7 +90,7 @@ async fn try_it_from_spec() {
 
     let mut bin = std::process::Command::cargo_bin("vegafusion-server")
         .expect("Failed to build vegafusion-server");
-    let cmd = bin.args(&["--port", "50059"]);
+    let cmd = bin.args(["--port", "50059"]);
 
     let mut proc = cmd.spawn().expect("Failed to spawn vegafusion-server");
     std::thread::sleep(Duration::from_millis(2000));

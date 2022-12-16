@@ -205,7 +205,7 @@ pub fn tokenize_single_token(data: &str) -> Result<(Token, usize)> {
         c if c.is_ascii_digit() || c == '.' => tokenize_dot_or_number(data)?,
         c if c.is_alphabetic() || c == '_' => tokenize_ident(data)?,
         other => {
-            return Err(VegaFusionError::parse(&format!(
+            return Err(VegaFusionError::parse(format!(
                 "Invalid character: {}",
                 other
             )))
@@ -225,7 +225,7 @@ fn tokenize_plus(data: &str) -> Result<(Token, usize)> {
             ))
         }
         _ => {
-            return Err(VegaFusionError::parse(&format!(
+            return Err(VegaFusionError::parse(format!(
                 "Invalid number of consecutive + characters: {}",
                 taken
             )))
@@ -245,7 +245,7 @@ fn tokenize_minus(data: &str) -> Result<(Token, usize)> {
             ))
         }
         _ => {
-            return Err(VegaFusionError::parse(&format!(
+            return Err(VegaFusionError::parse(format!(
                 "Invalid number of consecutive - characters: {}",
                 taken
             )))
@@ -262,7 +262,7 @@ fn tokenize_single_char_operator(data: &str, ch: char, token: Token) -> Result<(
     let token = match taken {
         c if c == ch.to_string() => token,
         _ => {
-            return Err(VegaFusionError::parse(&format!(
+            return Err(VegaFusionError::parse(format!(
                 "Invalid number of consecutive {} characters: {}",
                 ch, taken
             )))
@@ -278,7 +278,7 @@ fn tokenize_logical_or(data: &str) -> Result<(Token, usize)> {
         "|" => return Err(VegaFusionError::parse("Bitwise OR operator not supported")),
         "||" => Token::LogicalOr,
         _ => {
-            return Err(VegaFusionError::parse(&format!(
+            return Err(VegaFusionError::parse(format!(
                 "Invalid number of consecutive | characters: {}",
                 taken
             )))
@@ -294,7 +294,7 @@ fn tokenize_logical_and(data: &str) -> Result<(Token, usize)> {
         "&" => return Err(VegaFusionError::parse("Bitwise AND operator not supported")),
         "&&" => Token::LogicalAnd,
         _ => {
-            return Err(VegaFusionError::parse(&format!(
+            return Err(VegaFusionError::parse(format!(
                 "Invalid number of consecutive & characters: {}",
                 taken
             )))
@@ -347,7 +347,7 @@ fn tokenize_comparison_operators(data: &str) -> Result<(Token, usize)> {
         "!=" => Token::ExclamationEquals,
         "!==" => Token::ExclamationDoubleEquals,
         _ => {
-            return Err(VegaFusionError::parse(&format!(
+            return Err(VegaFusionError::parse(format!(
                 "Invalid operator: {}",
                 taken
             )))

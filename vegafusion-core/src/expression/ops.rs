@@ -17,7 +17,7 @@ pub fn unary_op_from_token(tok: &Token) -> Result<UnaryOperator> {
         Token::Minus => UnaryOperator::Neg,
         Token::Exclamation => UnaryOperator::Not,
         t => {
-            return Err(VegaFusionError::parse(&format!(
+            return Err(VegaFusionError::parse(format!(
                 "Token '{}' is not a valid prefix operator",
                 t
             )))
@@ -41,7 +41,7 @@ pub fn binary_op_from_token(value: &Token) -> Result<BinaryOperator> {
         Token::LessThan => BinaryOperator::LessThan,
         Token::LessThanEquals => BinaryOperator::LessThanEqual,
         t => {
-            return Err(VegaFusionError::parse(&format!(
+            return Err(VegaFusionError::parse(format!(
                 "Token '{}' is not a valid binary operator",
                 t
             )))
@@ -54,7 +54,7 @@ pub fn logical_op_from_token(value: &Token) -> Result<LogicalOperator> {
         Token::LogicalOr => LogicalOperator::Or,
         Token::LogicalAnd => LogicalOperator::And,
         t => {
-            return Err(VegaFusionError::parse(&format!(
+            return Err(VegaFusionError::parse(format!(
                 "Token '{}' is not a valid logical operator",
                 t
             )))

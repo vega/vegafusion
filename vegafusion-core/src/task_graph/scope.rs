@@ -130,7 +130,7 @@ impl TaskScope {
         }
 
         // Didn't find it
-        Err(VegaFusionError::internal(&format!(
+        Err(VegaFusionError::internal(format!(
             "Failed to resolve variable {:?} used in scope {:?}",
             variable, usage_scope
         )))

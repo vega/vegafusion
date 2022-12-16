@@ -56,7 +56,7 @@ impl TryFrom<&TransformSpec> for TransformKind {
             TransformSpec::Pivot(tx_spec) => Self::Pivot(Pivot::try_new(tx_spec)?),
             TransformSpec::Identifier(tx_spec) => Self::Identifier(Identifier::try_new(tx_spec)?),
             _ => {
-                return Err(VegaFusionError::parse(&format!(
+                return Err(VegaFusionError::parse(format!(
                     "Unsupported transform: {:?}",
                     value
                 )))
