@@ -232,12 +232,9 @@ mod test_stack_with_group_sort_negative {
 mod test_stack_no_divide_by_zero {
     use super::*;
     use serde_json::json;
-    use vegafusion_core::proto::gen::tasks::TzConfig;
-    use vegafusion_core::spec::transform::collect::CollectTransformSpec;
-    use vegafusion_core::spec::transform::filter::FilterTransformSpec;
     use vegafusion_core::spec::transform::timeunit::TimeUnitTransformSpec;
-    use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 
+    #[test]
     fn test() {
         let dataset = vega_json_dataset("movies");
 
