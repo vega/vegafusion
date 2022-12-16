@@ -54,7 +54,7 @@ impl NodeJsRuntime {
         working_dir.push("vegajs_runtime");
 
         let mut proc = Command::new("node")
-            .args(&["-i", "--experimental-repl-await"])
+            .args(["-i", "--experimental-repl-await"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -223,7 +223,7 @@ impl VegaJsRuntime {
     {
         let json_str = Self::clean_json_string(json_str);
         match serde_json::from_str(&json_str) {
-            Err(_err) => Err(VegaFusionError::internal(&format!(
+            Err(_err) => Err(VegaFusionError::internal(format!(
                 "Failed to parse result as json:\n{}",
                 json_str
             ))),
@@ -501,7 +501,7 @@ impl ExportImage {
         attr.set_save_ssim_maps(1);
         let this_img = self.to_dssim(&attr)?;
         let other_img = other.to_dssim(&attr)?;
-        let (diff, ssim_maps) = attr.compare(&this_img, &other_img);
+        let (diff, ssim_maps) = attr.compare(&this_img, other_img);
         // println!("ssim_map: {:?}", ssim_map);
 
         if diff > 0.0 {

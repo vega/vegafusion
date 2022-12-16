@@ -248,14 +248,14 @@ impl<R> ResultWithContext<R> for Option<R> {
     {
         match self {
             Some(val) => Ok(val),
-            None => Err(VegaFusionError::internal(&context_fn().into())),
+            None => Err(VegaFusionError::internal(context_fn().into())),
         }
     }
 }
 
 impl From<ParseFloatError> for VegaFusionError {
     fn from(err: ParseFloatError) -> Self {
-        Self::parse(&err.to_string())
+        Self::parse(err.to_string())
     }
 }
 

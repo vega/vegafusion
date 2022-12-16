@@ -227,3 +227,86 @@ mod test_stack_with_group_sort_negative {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
+#[cfg(test)]
+mod test_stack_no_divide_by_zero {
+    use super::*;
+    use serde_json::json;
+    use vegafusion_core::spec::transform::timeunit::TimeUnitTransformSpec;
+
+    #[test]
+    fn test() {
+        let dataset = vega_json_dataset("movies");
+
+        let formula_spec: FormulaTransformSpec = serde_json::from_value(json!(
+            {
+                "expr": "toDate(datum['Release Date'])",
+                "as": "Release Date"
+            }
+        ))
+        .unwrap();
+
+        let timeunit_spec: TimeUnitTransformSpec = serde_json::from_value(json!(
+            {
+              "field": "Release Date",
+              "type": "timeunit",
+              "units": ["year"],
+              "as": ["year_Release Date", "year_Release Date_end"]
+            }
+        ))
+        .unwrap();
+
+        let stack_spec: StackTransformSpec = serde_json::from_value(json!(
+            {
+              "type": "stack",
+              "groupby": ["year_Release Date"],
+              "field": "US Gross",
+              "sort": {"field": ["Release Date", "Title"], "order": ["descending", "descending"]},
+              "as": ["US Gross_start", "US Gross_end"],
+              "offset": "normalize"
+            }
+        ))
+        .unwrap();
+
+        // Vega sometimes produces NULL or NaN when a stack group has zero sum.
+        // Replace these with 0 to match VegaFusion's behavior
+        let start_formula_spec: FormulaTransformSpec = serde_json::from_value(json!(
+            {
+                "expr": "if(isValid(datum['US Gross_start']) && isFinite(datum['US Gross_start']), datum['US Gross_start'], 0)",
+                "as": "US Gross_start"
+            }
+        )).unwrap();
+
+        let end_formula_spec: FormulaTransformSpec = serde_json::from_value(json!(
+            {
+                "expr": "if(isValid(datum['US Gross_end']) && isFinite(datum['US Gross_end']), datum['US Gross_end'], 0)",
+                "as": "US Gross_end"
+            }
+        )).unwrap();
+
+        let transform_specs = vec![
+            TransformSpec::Formula(formula_spec),
+            TransformSpec::Timeunit(timeunit_spec),
+            TransformSpec::Stack(stack_spec),
+            TransformSpec::Formula(start_formula_spec),
+            TransformSpec::Formula(end_formula_spec),
+        ];
+
+        let comp_config = Default::default();
+
+        let eq_config = TablesEqualConfig {
+            row_order: true,
+            ..Default::default()
+        };
+
+        check_transform_evaluation(
+            &dataset,
+            transform_specs.as_slice(),
+            &comp_config,
+            &eq_config,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}

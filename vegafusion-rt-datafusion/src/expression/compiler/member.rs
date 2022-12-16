@@ -63,7 +63,7 @@ pub fn compile_member(
     } else if let Ok(property) = node.property().as_identifier() {
         property.name.clone()
     } else {
-        return Err(VegaFusionError::compilation(&format!(
+        return Err(VegaFusionError::compilation(format!(
             "Invalid membership property: {}",
             node.property()
         )));
@@ -114,7 +114,7 @@ pub fn compile_member(
                         args: vec![compiled_object, lit((index + 1) as i32), lit(1)],
                     }
                 } else {
-                    return Err(VegaFusionError::compilation(&format!(
+                    return Err(VegaFusionError::compilation(format!(
                         "Non-numeric element index: {}",
                         property_string
                     )));
@@ -126,7 +126,7 @@ pub fn compile_member(
                         args: vec![compiled_object],
                     }
                 } else {
-                    return Err(VegaFusionError::compilation(&format!(
+                    return Err(VegaFusionError::compilation(format!(
                         "Non-numeric element index: {}",
                         property_string
                     )));
@@ -153,7 +153,7 @@ pub fn make_get_object_member_udf(
         {
             Some((field_index, field)) => (field_index, field.data_type().clone()),
             None => {
-                return Err(VegaFusionError::compilation(&format!(
+                return Err(VegaFusionError::compilation(format!(
                     "No object property named {}",
                     property_name
                 )))

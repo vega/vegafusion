@@ -54,7 +54,7 @@ impl FromStr for Op {
             "union" => Self::Union,
             "intersect" => Self::Intersect,
             _ => {
-                return Err(VegaFusionError::internal(&format!(
+                return Err(VegaFusionError::internal(format!(
                     "Invalid vlSelection operation: {}",
                     s
                 )))
@@ -97,7 +97,7 @@ impl FromStr for SelectionType {
             "R-LE" => Self::RangeLe,
             "R-RE" => Self::RangeRe,
             _ => {
-                return Err(VegaFusionError::internal(&format!(
+                return Err(VegaFusionError::internal(format!(
                     "Invalid selection type: {}",
                     s
                 )))
@@ -226,7 +226,7 @@ impl FieldSpec {
                         (lit(low), lit(high))
                     }
                     v => {
-                        return Err(VegaFusionError::internal(&format!(
+                        return Err(VegaFusionError::internal(format!(
                             "values must be a two-element array. Found {}",
                             v
                         )))
@@ -321,7 +321,7 @@ impl TryFrom<ScalarValue> for FieldSpec {
                     Some(ScalarValue::Utf8(Some(field))) => field.clone(),
                     _ => {
                         return Err(VegaFusionError::internal(
-                            &"Expected field to be a string".to_string(),
+                            "Expected field to be a string".to_string(),
                         ))
                     }
                 };
@@ -335,7 +335,7 @@ impl TryFrom<ScalarValue> for FieldSpec {
                 Ok(Self { field, typ })
             }
             _ => Err(VegaFusionError::internal(
-                &"Expected selection field specification to be an object".to_string(),
+                "Expected selection field specification to be an object".to_string(),
             )),
         }
     }
@@ -410,7 +410,7 @@ impl TryFrom<ScalarValue> for SelectionRow {
                     Some(ScalarValue::List(Some(elements), _)) => elements.clone(),
                     _ => {
                         return Err(VegaFusionError::internal(
-                            &"Expected 'values' to be an array".to_string(),
+                            "Expected 'values' to be an array".to_string(),
                         ))
                     }
                 };
@@ -436,7 +436,7 @@ impl TryFrom<ScalarValue> for SelectionRow {
 
                 // Validate lengths
                 if values.len() != fields.len() {
-                    return Err(VegaFusionError::internal(&format!(
+                    return Err(VegaFusionError::internal(format!(
                         "Length of selection fields ({}) must match that of selection values ({})\nfield: {:?}\nvalues: {:?}",
                         fields.len(),
                         values.len(),
@@ -461,7 +461,7 @@ impl TryFrom<ScalarValue> for SelectionRow {
 fn parse_args(args: &[Expression]) -> Result<Op> {
     let n = args.len();
     if !(1..=2).contains(&n) {
-        return Err(VegaFusionError::internal(&format!(
+        return Err(VegaFusionError::internal(format!(
             "vlSelectionTest requires 2 or 3 arguments. Received {}",
             n
         )));
@@ -474,7 +474,7 @@ fn parse_args(args: &[Expression]) -> Result<Op> {
             // All good
         }
         arg => {
-            return Err(VegaFusionError::internal(&format!(
+            return Err(VegaFusionError::internal(format!(
                 "The second argument to vlSelectionTest must be datum. Received {:?}",
                 arg
             )))
@@ -492,7 +492,7 @@ fn parse_args(args: &[Expression]) -> Result<Op> {
                 Op::from_str(value.as_str()).unwrap()
             }
             _ => {
-                return Err(VegaFusionError::internal(&format!(
+                return Err(VegaFusionError::internal(format!(
                     "The third argument to vlSelectionTest, if provided, must be either 'union' or 'intersect'. \
                     Received {}", arg1
                 )))

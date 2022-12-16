@@ -198,7 +198,7 @@ impl ExprHelpers for Expr {
 
     fn eval_to_scalar(&self) -> Result<ScalarValue> {
         if !self.columns()?.is_empty() {
-            return Err(VegaFusionError::compilation(&format!(
+            return Err(VegaFusionError::compilation(format!(
                 "Cannot eval_to_scalar for Expr with column references: {:?}",
                 self
             )));
@@ -214,7 +214,7 @@ impl ExprHelpers for Expr {
             ColumnarValue::Scalar(scalar) => Ok(scalar),
             ColumnarValue::Array(array) => {
                 if array.len() != 1 {
-                    return Err(VegaFusionError::compilation(&format!(
+                    return Err(VegaFusionError::compilation(format!(
                         "Unexpected non-scalar array result when evaluate expr: {:?}",
                         self
                     )));

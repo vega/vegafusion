@@ -79,7 +79,7 @@ impl TaskGraph {
         // Create mapping from toposorted node_index to the final linear node index
         let toposorted: Vec<NodeIndex> = match toposort(&graph, None) {
             Err(err) => {
-                return Err(VegaFusionError::internal(&format!(
+                return Err(VegaFusionError::internal(format!(
                     "failed to sort dependency graph topologically: {:?}",
                     err
                 )))
@@ -323,7 +323,7 @@ impl TaskGraph {
 
             for output_index in 0..self
                 .nodes
-                .get(node_index as usize)
+                .get(node_index)
                 .unwrap()
                 .task()
                 .output_vars()

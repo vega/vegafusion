@@ -95,7 +95,7 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
         } else {
             match field.as_str() {
                 "" => {
-                    return Err(VegaFusionError::specification(&format!(
+                    return Err(VegaFusionError::specification(format!(
                         "Null field is not allowed for {:?} op",
                         op
                     )))
@@ -219,7 +219,7 @@ pub fn make_aggr_expr(
         }
         AggregateOp::Distinct => count_distinct(column),
         _ => {
-            return Err(VegaFusionError::specification(&format!(
+            return Err(VegaFusionError::specification(format!(
                 "Unsupported aggregation op: {:?}",
                 op
             )))

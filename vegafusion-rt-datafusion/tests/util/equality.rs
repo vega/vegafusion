@@ -16,6 +16,7 @@ use vegafusion_core::error::Result;
 use datafusion::logical_plan::Expr;
 
 use std::sync::Arc;
+use vegafusion_core::data::scalar::DATETIME_PREFIX;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 use vegafusion_rt_datafusion::expression::compiler::utils::is_numeric_datatype;
@@ -104,7 +105,7 @@ pub fn assert_tables_equal(
     let rhs_scalars = record_batch_to_scalars(&rhs_rb).unwrap();
 
     for i in 0..lhs_scalars.len() {
-        assert_scalars_almost_equals(&lhs_scalars[i], &rhs_scalars[i], config.tolerance);
+        assert_scalars_almost_equals(&lhs_scalars[i], &rhs_scalars[i], config.tolerance, "row", i);
     }
 }
 
@@ -133,7 +134,13 @@ fn numeric_to_f64(s: &ScalarValue) -> f64 {
     }
 }
 
-fn assert_scalars_almost_equals(lhs: &ScalarValue, rhs: &ScalarValue, tol: f64) {
+fn assert_scalars_almost_equals(
+    lhs: &ScalarValue,
+    rhs: &ScalarValue,
+    tol: f64,
+    name: &str,
+    index: usize,
+) {
     match (lhs, rhs) {
         (
             ScalarValue::Struct(Some(lhs_vals), lhs_fields),
@@ -163,40 +170,57 @@ fn assert_scalars_almost_equals(lhs: &ScalarValue, rhs: &ScalarValue, tol: f64) 
 
             for (key, lhs_val) in lhs_map.iter() {
                 let rhs_val = &rhs_map[key];
-                assert_scalars_almost_equals(lhs_val, rhs_val, tol);
+                assert_scalars_almost_equals(lhs_val, rhs_val, tol, key, index);
             }
         }
         (_, _) => {
+            // Convert TimestampMillisecond to Int64 for comparison
+            let lhs = timestamp_to_int(lhs);
+            let rhs = timestamp_to_int(rhs);
+
             if lhs == rhs || lhs.is_null() && rhs.is_null() {
                 // Equal
             } else if is_numeric_datatype(&lhs.get_datatype())
                 && is_numeric_datatype(&rhs.get_datatype())
             {
-                if (lhs.is_null() || !numeric_to_f64(lhs).is_finite())
-                    && (rhs.is_null() || !numeric_to_f64(rhs).is_finite())
+                if (lhs.is_null() || !numeric_to_f64(&lhs).is_finite())
+                    && (rhs.is_null() || !numeric_to_f64(&rhs).is_finite())
                 {
                     // both null, nan, inf, or -inf (which are all considered null in JSON)
                 } else {
-                    let lhs = numeric_to_f64(lhs);
-                    let rhs = numeric_to_f64(rhs);
+                    let lhs = numeric_to_f64(&lhs);
+                    let rhs = numeric_to_f64(&rhs);
                     assert!(
                         (lhs - rhs).abs() <= tol,
-                        "{} and {} are not equal to within tolerance {}",
+                        "{} and {} are not equal to within tolerance {}, row {}, coloumn {}",
                         lhs,
                         rhs,
-                        tol
+                        tol,
+                        index,
+                        name
                     )
                 }
             } else {
                 // This will fail
-                assert_eq!(lhs, rhs)
+                assert_eq!(lhs, rhs, "Row {}", index)
             }
         }
     }
 }
 
+fn timestamp_to_int(scalar: &ScalarValue) -> ScalarValue {
+    match scalar {
+        ScalarValue::TimestampMillisecond(Some(v), _) => ScalarValue::Int64(Some(*v)),
+        ScalarValue::Utf8(Some(s)) if s.starts_with(DATETIME_PREFIX) => {
+            let v: i64 = s.strip_prefix(DATETIME_PREFIX).unwrap().parse().unwrap();
+            ScalarValue::Int64(Some(v))
+        }
+        _ => scalar.clone(),
+    }
+}
+
 pub fn assert_signals_almost_equal(lhs: Vec<ScalarValue>, rhs: Vec<ScalarValue>, tol: f64) {
     for (lhs_value, rhs_value) in lhs.iter().zip(&rhs) {
-        assert_scalars_almost_equals(lhs_value, rhs_value, tol)
+        assert_scalars_almost_equals(lhs_value, rhs_value, tol, "signal", 0)
     }
 }

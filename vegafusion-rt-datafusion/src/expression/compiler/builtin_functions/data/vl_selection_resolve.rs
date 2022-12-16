@@ -33,7 +33,7 @@ use super::vl_selection_test::Op;
 pub fn parse_args(args: &[Expression]) -> Result<Op> {
     let n = args.len();
     if !(0..=1).contains(&n) {
-        return Err(VegaFusionError::internal(&format!(
+        return Err(VegaFusionError::internal(format!(
             "vlSelectionResolve requires 1 or 2 arguments. Received {}",
             n
         )));
@@ -50,7 +50,7 @@ pub fn parse_args(args: &[Expression]) -> Result<Op> {
                 Op::from_str(value.as_str()).unwrap()
             }
             _ => {
-                return Err(VegaFusionError::internal(&format!(
+                return Err(VegaFusionError::internal(format!(
                     "The second argument to vlSelectionResolve, if provided, must be either 'union' or 'intersect'. \
                     Received {}", arg1
                 )))
@@ -110,7 +110,7 @@ pub fn vl_selection_resolve_fn(
                             // ])), Box::new(DataType::Float64))
                         }
                         v => {
-                            return Err(VegaFusionError::internal(&format!(
+                            return Err(VegaFusionError::internal(format!(
                                 "values must be a two-element array. Found {}",
                                 v
                             )))
