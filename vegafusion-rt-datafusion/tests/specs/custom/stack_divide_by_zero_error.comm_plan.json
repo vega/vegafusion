@@ -1,0 +1,15 @@
+{
+  "server_to_client": [
+    {
+      "name": "movies",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "movies_layer_0_layer_0_color_domain_MPAA Rating",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

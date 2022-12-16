@@ -1,0 +1,149 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 200,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {
+      "name": "movies",
+      "url": "https://raw.githubusercontent.com/vega/vega-datasets/next/data/movies.json",
+      "format": {"type": "json", "parse": {"Release Date": "date"}},
+      "transform": [
+        {
+          "field": "Release Date",
+          "type": "timeunit",
+          "units": ["year"],
+          "as": ["year_Release Date", "year_Release Date_end"]
+        },
+        {
+          "type": "stack",
+          "groupby": ["year_Release Date"],
+          "field": "US Gross",
+          "sort": {"field": ["MPAA Rating"], "order": ["descending"]},
+          "as": ["US Gross_start", "US Gross_end"],
+          "offset": "normalize"
+        },
+        {
+          "type": "filter",
+          "expr": "(isDate(datum[\"year_Release Date\"]) || (isValid(datum[\"year_Release Date\"]) && isFinite(+datum[\"year_Release Date\"]))) && isValid(datum[\"US Gross\"]) && isFinite(+datum[\"US Gross\"])"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_layer_0_marks",
+      "type": "rect",
+      "style": ["bar"],
+      "from": {"data": "movies"},
+      "encode": {
+        "update": {
+          "tooltip": {
+            "signal": "{\"Release Date (year)\": timeFormat(datum[\"year_Release Date\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})), \"US Gross\": format(datum[\"US Gross_end\"]-datum[\"US Gross_start\"], \".0%\"), \"MPAA Rating\": isValid(datum[\"MPAA Rating\"]) ? datum[\"MPAA Rating\"] : \"\"+datum[\"MPAA Rating\"]}"
+          },
+          "fill": {"scale": "layer_0_layer_0_color", "field": "MPAA Rating"},
+          "ariaRoleDescription": {"value": "bar"},
+          "description": {
+            "signal": "\"Release Date (year): \" + (timeFormat(datum[\"year_Release Date\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; US Gross: \" + (format(datum[\"US Gross_end\"]-datum[\"US Gross_start\"], \".0%\")) + \"; MPAA Rating: \" + (isValid(datum[\"MPAA Rating\"]) ? datum[\"MPAA Rating\"] : \"\"+datum[\"MPAA Rating\"])"
+          },
+          "x2": {"scale": "x", "field": "year_Release Date", "offset": 1},
+          "x": {"scale": "x", "field": "year_Release Date_end"},
+          "y": {"scale": "y", "field": "US Gross_end"},
+          "y2": {"scale": "y", "field": "US Gross_start"}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "time",
+      "domain": {
+        "data": "movies",
+        "fields": ["year_Release Date", "year_Release Date_end"]
+      },
+      "range": [0, {"signal": "width"}]
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": [0, 1],
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "layer_0_layer_0_color",
+      "type": "ordinal",
+      "domain": {"data": "movies", "field": "MPAA Rating", "sort": true},
+      "range": "category"
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "gridScale": "y",
+      "grid": true,
+      "tickCount": {"signal": "ceil(width/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "gridScale": "x",
+      "grid": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "Release Date (year)",
+      "format": {
+        "signal": "timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})"
+      },
+      "labelFlush": true,
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(width/40)"},
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "US Gross",
+      "format": ".0%",
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
+    }
+  ],
+  "legends": [
+    {
+      "fill": "layer_0_layer_0_color",
+      "symbolType": "square",
+      "title": "MPAA Rating"
+    }
+  ],
+  "config": {
+    "range": {"ramp": {"scheme": "yellowgreenblue"}},
+    "axis": {"domain": false},
+    "legend": {"orient": "right"}
+  }
+}

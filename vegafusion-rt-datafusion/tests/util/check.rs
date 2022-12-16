@@ -9,6 +9,7 @@
 use crate::util::equality::{assert_signals_almost_equal, assert_tables_equal, TablesEqualConfig};
 use crate::util::vegajs_runtime::vegajs_runtime;
 use datafusion::scalar::ScalarValue;
+use std::str::FromStr;
 
 use std::convert::TryFrom;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
@@ -16,6 +17,7 @@ use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::Result;
 use vegafusion_core::expression::parser::parse;
+use vegafusion_core::proto::gen::tasks::TzConfig;
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
@@ -78,8 +80,19 @@ pub fn check_transform_evaluation(
     equality_config: &TablesEqualConfig,
 ) {
     let vegajs_runtime = vegajs_runtime();
+    let local_tz_str = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
+    let local_tz = chrono_tz::Tz::from_str(&local_tz_str).unwrap();
+    // Add local timezone info to compilation config
+    let compilation_config = CompilationConfig {
+        tz_config: Some(RuntimeTzConfig {
+            local_tz: local_tz,
+            default_input_tz: local_tz,
+        }),
+        ..compilation_config.clone()
+    };
+
     let (expected_data, expected_signals) = vegajs_runtime
-        .eval_transform(data, transform_specs, compilation_config)
+        .eval_transform(data, transform_specs, &compilation_config)
         .unwrap();
 
     // println!(
@@ -92,7 +105,7 @@ pub fn check_transform_evaluation(
     let sql_df = (*TOKIO_RUNTIME).block_on(data.to_sql_dataframe()).unwrap();
 
     let (result_data, result_signals) = TOKIO_RUNTIME
-        .block_on(pipeline.eval_sql(sql_df, compilation_config))
+        .block_on(pipeline.eval_sql(sql_df, &compilation_config))
         .unwrap();
     let result_signals = result_signals
         .into_iter()
