@@ -161,6 +161,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-compression"
+version = "0.3.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "942c7cd7ae39e91bde4820d74132e9862e62c2f386c3aa90ccf55949f5bad63a"
+dependencies = [
+ "bzip2",
+ "flate2",
+ "futures-core",
+ "futures-io",
+ "memchr",
+ "pin-project-lite",
+ "tokio",
+]
+
+[[package]]
 name = "async-lock"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -427,6 +442,27 @@ name = "bytes"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4872d67bab6358e59559027aa3b9157c53d9358c51423c17554809a8858e0f8"
+
+[[package]]
+name = "bzip2"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6afcd980b5f3a45017c57e57a2fcccbb351cc43a356ce117ef760ef8052b89b0"
+dependencies = [
+ "bzip2-sys",
+ "libc",
+]
+
+[[package]]
+name = "bzip2-sys"
+version = "0.1.11+1.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "736a955f3fa7875102d57c82b8cac37ec45224a07fd32d58f9f7a186b6cd4cdc"
+dependencies = [
+ "cc",
+ "libc",
+ "pkg-config",
+]
 
 [[package]]
 name = "cast"
@@ -767,12 +803,14 @@ dependencies = [
 [[package]]
 name = "datafusion"
 version = "13.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=488b2cec3c700821dfdfece2d85c4cd7956e718d#488b2cec3c700821dfdfece2d85c4cd7956e718d"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=a226587de5a17f93c175727bca37844ef0bd934a#a226587de5a17f93c175727bca37844ef0bd934a"
 dependencies = [
  "ahash 0.8.0",
  "arrow",
+ "async-compression",
  "async-trait",
  "bytes",
+ "bzip2",
  "chrono",
  "datafusion-common",
  "datafusion-expr",
@@ -780,6 +818,7 @@ dependencies = [
  "datafusion-physical-expr",
  "datafusion-row",
  "datafusion-sql",
+ "flate2",
  "futures",
  "glob",
  "hashbrown",
@@ -792,6 +831,7 @@ dependencies = [
  "parking_lot 0.12.0",
  "parquet",
  "paste",
+ "percent-encoding",
  "pin-project-lite",
  "rand",
  "smallvec",
@@ -799,6 +839,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "tokio-stream",
+ "tokio-util 0.7.4",
  "url",
  "uuid",
 ]
@@ -806,7 +847,7 @@ dependencies = [
 [[package]]
 name = "datafusion-common"
 version = "13.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=488b2cec3c700821dfdfece2d85c4cd7956e718d#488b2cec3c700821dfdfece2d85c4cd7956e718d"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=a226587de5a17f93c175727bca37844ef0bd934a#a226587de5a17f93c175727bca37844ef0bd934a"
 dependencies = [
  "arrow",
  "object_store",
@@ -819,18 +860,19 @@ dependencies = [
 [[package]]
 name = "datafusion-expr"
 version = "13.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=488b2cec3c700821dfdfece2d85c4cd7956e718d#488b2cec3c700821dfdfece2d85c4cd7956e718d"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=a226587de5a17f93c175727bca37844ef0bd934a#a226587de5a17f93c175727bca37844ef0bd934a"
 dependencies = [
  "ahash 0.8.0",
  "arrow",
  "datafusion-common",
+ "log",
  "sqlparser",
 ]
 
 [[package]]
 name = "datafusion-optimizer"
 version = "13.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=488b2cec3c700821dfdfece2d85c4cd7956e718d#488b2cec3c700821dfdfece2d85c4cd7956e718d"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=a226587de5a17f93c175727bca37844ef0bd934a#a226587de5a17f93c175727bca37844ef0bd934a"
 dependencies = [
  "arrow",
  "async-trait",
@@ -845,7 +887,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-expr"
 version = "13.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=488b2cec3c700821dfdfece2d85c4cd7956e718d#488b2cec3c700821dfdfece2d85c4cd7956e718d"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=a226587de5a17f93c175727bca37844ef0bd934a#a226587de5a17f93c175727bca37844ef0bd934a"
 dependencies = [
  "ahash 0.8.0",
  "arrow",
@@ -869,7 +911,7 @@ dependencies = [
 [[package]]
 name = "datafusion-row"
 version = "13.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=488b2cec3c700821dfdfece2d85c4cd7956e718d#488b2cec3c700821dfdfece2d85c4cd7956e718d"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=a226587de5a17f93c175727bca37844ef0bd934a#a226587de5a17f93c175727bca37844ef0bd934a"
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -880,7 +922,7 @@ dependencies = [
 [[package]]
 name = "datafusion-sql"
 version = "13.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=488b2cec3c700821dfdfece2d85c4cd7956e718d#488b2cec3c700821dfdfece2d85c4cd7956e718d"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=a226587de5a17f93c175727bca37844ef0bd934a#a226587de5a17f93c175727bca37844ef0bd934a"
 dependencies = [
  "arrow",
  "datafusion-common",
