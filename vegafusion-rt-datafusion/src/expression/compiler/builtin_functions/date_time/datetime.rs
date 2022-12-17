@@ -135,18 +135,18 @@ fn extract_datetime_component_args(
     // Pad unspecified args
     if result_args.len() < 2 {
         // default to 1st (zero-based) month of the year
-        result_args.push(lit(0))
+        result_args.push(lit(0i64))
     }
 
     if result_args.len() < 3 {
         // default to 1st of the month
-        result_args.push(lit(1))
+        result_args.push(lit(1i64))
     }
 
     // Remaining args (hour, minute, second, millisecond) default to zero
     let num_args = result_args.len();
     for _ in num_args..7 {
-        result_args.push(lit(0));
+        result_args.push(lit(0i64));
     }
 
     result_args.push(lit(tz_str));
@@ -196,6 +196,7 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
             let hours = args[3].as_any().downcast_ref::<Int64Array>().unwrap();
             let minutes = args[4].as_any().downcast_ref::<Int64Array>().unwrap();
             let seconds = args[5].as_any().downcast_ref::<Int64Array>().unwrap();
+            println!("args[6].data_type(): {}, {:?}, {:?}", args[6].data_type(), args[6], args[6].as_any().downcast_ref::<Int64Array>());
             let millis = args[6].as_any().downcast_ref::<Int64Array>().unwrap();
 
             let num_rows = years.len();
