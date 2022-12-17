@@ -6,7 +6,7 @@ use sqlgen::ast::{
     UnaryOperator as SqlUnaryOperator, WindowSpec as SqlWindowSpec,
 };
 
-use datafusion_expr::{AggregateFunction, BuiltinScalarFunction, Expr, Operator, WindowFunction};
+use datafusion_expr::{AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator, WindowFunction};
 use datafusion_expr::expr::Case;
 
 use crate::sql::compile::function_arg::ToSqlFunctionArg;
@@ -93,12 +93,12 @@ impl ToSqlExpr for Expr {
             Expr::GetIndexedField { .. } => Err(VegaFusionError::internal(
                 "GetIndexedField cannot be converted to SQL",
             )),
-            Expr::Between {
+            Expr::Between(Between {
                 expr,
                 negated,
                 low,
                 high,
-            } => Ok(SqlExpr::Between {
+            }) => Ok(SqlExpr::Between {
                 expr: Box::new(expr.to_sql()?),
                 negated: *negated,
                 low: Box::new(low.to_sql()?),
@@ -450,7 +450,7 @@ impl ToSqlExpr for Expr {
 mod tests {
     use super::ToSqlExpr;
     use crate::expression::escape::flat_col;
-    use datafusion_expr::{lit, BuiltinScalarFunction, Expr};
+    use datafusion_expr::{lit, BuiltinScalarFunction, Expr, Between};
     use sqlgen::dialect::DialectDisplay;
     use vegafusion_core::arrow::datatypes::DataType;
 
@@ -504,12 +504,12 @@ mod tests {
 
     #[test]
     pub fn test5() {
-        let df_expr = Expr::Between {
+        let df_expr = Expr::Between(Between {
             expr: Box::new(flat_col("A")),
             negated: false,
             low: Box::new(lit(0)),
             high: Box::new(lit(10)),
-        }
+        })
         .or(flat_col("B"));
 
         let sql_expr = df_expr.to_sql().unwrap();

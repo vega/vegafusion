@@ -17,6 +17,7 @@ use std::convert::TryFrom;
 use std::str::FromStr;
 use std::sync::Arc;
 use datafusion::common::DFSchema;
+use datafusion_expr::Between;
 use datafusion_expr::expr::Case;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
@@ -250,12 +251,12 @@ impl FieldSpec {
                 let high = cast_to(high, &field_dtype, schema)?;
 
                 match self.typ {
-                    SelectionType::RangeInc => Expr::Between {
+                    SelectionType::RangeInc => Expr::Between(Between {
                         expr: Box::new(field_col),
                         negated: false,
                         low: Box::new(low),
                         high: Box::new(high),
-                    },
+                    }),
                     SelectionType::RangeExc => low.lt(field_col.clone()).and(field_col.lt(high)),
                     SelectionType::RangeLe => low.lt(field_col.clone()).and(field_col.lt_eq(high)),
                     SelectionType::RangeRe => low.lt_eq(field_col.clone()).and(field_col.lt(high)),
