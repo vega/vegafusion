@@ -15,7 +15,7 @@ pyarrow = [ "vegafusion-core/pyarrow",]
 regex = "^1.5.5"
 lazy_static = "^1.4.0"
 serde_json = "1.0.81"
-chrono = "0.4.19"
+chrono = "0.4.22"
 chrono-tz = "0.6.1"
 prost = "0.10.3"
 prost-types = "0.10.1"
@@ -67,11 +67,11 @@ features = [ "derive",]
 
 [dependencies.datafusion]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "b5c23c2c29f0e8ffc0f7021c78274176cf2cacb0"
+rev = "01cf17d0409b40505e5c6408d4cb45429d9bff05"
 
 [dependencies.datafusion-expr]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "b5c23c2c29f0e8ffc0f7021c78274176cf2cacb0"
+rev = "01cf17d0409b40505e5c6408d4cb45429d9bff05"
 
 [dependencies.tokio]
 version = "1.18.1"
