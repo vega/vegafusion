@@ -7,7 +7,7 @@ use sqlgen::ast::{
 };
 
 use datafusion_expr::{AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator, WindowFunction};
-use datafusion_expr::expr::{BinaryExpr, Case};
+use datafusion_expr::expr::{BinaryExpr, Case, Cast};
 
 use crate::sql::compile::function_arg::ToSqlFunctionArg;
 use crate::sql::compile::order::ToSqlOrderByExpr;
@@ -138,7 +138,7 @@ impl ToSqlExpr for Expr {
                     else_result,
                 })
             }
-            Expr::Cast { expr, data_type } => {
+            Expr::Cast(Cast { expr, data_type }) => {
                 let data_type = data_type.to_sql()?;
                 Ok(SqlExpr::Cast {
                     expr: Box::new(expr.to_sql()?),
@@ -451,6 +451,7 @@ mod tests {
     use super::ToSqlExpr;
     use crate::expression::escape::flat_col;
     use datafusion_expr::{lit, BuiltinScalarFunction, Expr, Between};
+    use datafusion_expr::expr::Cast;
     use sqlgen::dialect::DialectDisplay;
     use vegafusion_core::arrow::datatypes::DataType;
 
@@ -491,10 +492,10 @@ mod tests {
 
     #[test]
     pub fn test4() {
-        let df_expr = Expr::Cast {
+        let df_expr = Expr::Cast(Cast {
             expr: Box::new(lit(2.8)),
             data_type: DataType::Int64,
-        } + lit(4);
+        }) + lit(4);
 
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);

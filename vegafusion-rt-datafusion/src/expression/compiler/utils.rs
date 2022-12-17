@@ -24,6 +24,7 @@ use datafusion_expr::{coalesce, lit, BuiltinScalarFunction};
 use std::sync::Arc;
 use datafusion::common::{Column, DFSchema};
 use datafusion::optimizer::expr_simplifier::SimplifyInfo;
+use datafusion_expr::expr::Cast;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 lazy_static! {
@@ -105,10 +106,10 @@ pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
         //  - empty string to false
         //  - NaN to false
         coalesce(vec![
-            Expr::Cast {
+            Expr::Cast(Cast {
                 expr: Box::new(value),
                 data_type: DataType::Boolean,
-            },
+            }),
             lit(false),
         ])
     };
@@ -129,10 +130,10 @@ pub fn to_numeric(value: Expr, schema: &DFSchema) -> Result<Expr> {
         }
     } else {
         // Cast non-numeric types (like UTF-8) to Float64
-        Expr::Cast {
+        Expr::Cast(Cast {
             expr: Box::new(value),
             data_type: DataType::Float64,
-        }
+        })
     };
 
     Ok(numeric_value)
@@ -144,10 +145,10 @@ pub fn to_string(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let utf8_value = if dtype == DataType::Utf8 || dtype == DataType::LargeUtf8 {
         value
     } else {
-        Expr::Cast {
+        Expr::Cast(Cast {
             expr: Box::new(value),
             data_type: DataType::Utf8,
-        }
+        })
     };
 
     Ok(utf8_value)
@@ -167,10 +168,10 @@ pub fn cast_to(value: Expr, cast_dtype: &DataType, schema: &DFSchema) -> Result<
         Ok(value)
     } else {
         // Cast non-numeric types (like UTF-8) to Float64
-        Ok(Expr::Cast {
+        Ok(Expr::Cast(Cast {
             expr: Box::new(value),
             data_type: cast_dtype.clone(),
-        })
+        }))
     }
 }
 

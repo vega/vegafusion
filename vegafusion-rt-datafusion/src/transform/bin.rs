@@ -20,6 +20,7 @@ use float_cmp::approx_eq;
 use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
 use datafusion::common::DFSchema;
+use datafusion_expr::expr::Cast;
 use vegafusion_core::arrow::datatypes::{DataType, Field};
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::error::{Result, VegaFusionError};
@@ -66,14 +67,14 @@ impl TransformTrait for Bin {
         let bin_start_name = self.alias_0.clone().unwrap_or_else(|| "bin0".to_string());
 
         // Explicitly cast (-)inf to float64 to help DataFusion with type inference
-        let inf = Expr::Cast {
+        let inf = Expr::Cast(Cast {
             expr: Box::new(lit(f64::INFINITY)),
             data_type: DataType::Float64,
-        };
-        let neg_inf = Expr::Cast {
+        });
+        let neg_inf = Expr::Cast(Cast {
             expr: Box::new(lit(f64::NEG_INFINITY)),
             data_type: DataType::Float64,
-        };
+        });
         let eps = lit(1.0e-14);
 
         let bin_start = when(flat_col(bin_index_name).lt(lit(0.0)), neg_inf)

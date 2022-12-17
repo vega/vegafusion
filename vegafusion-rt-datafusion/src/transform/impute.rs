@@ -9,6 +9,7 @@ use datafusion::common::ScalarValue;
 use datafusion_expr::{lit, when, BuiltInWindowFunction, Expr, WindowFunction};
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
+use datafusion_expr::expr::Cast;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::error::{Result, VegaFusionError};
@@ -149,10 +150,10 @@ fn single_groupby_sql(
     select_columns.push(
         when(
             unescaped_col(&tx.field).is_not_null(),
-            Expr::Cast {
+            Expr::Cast(Cast {
                 expr: Box::new(Expr::Literal(ScalarValue::Boolean(None))),
                 data_type: DataType::Boolean,
-            },
+            }),
         )
         .otherwise(lit(true))
         .unwrap()

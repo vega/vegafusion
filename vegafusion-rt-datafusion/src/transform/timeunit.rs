@@ -36,6 +36,7 @@ use datafusion_expr::{
 use itertools::Itertools;
 use sqlgen::dialect::DialectDisplay;
 use std::str::FromStr;
+use datafusion_expr::expr::Cast;
 use vegafusion_core::arrow::array::{ArrayRef, Int64Array, TimestampMillisecondArray};
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::temporal_conversions::date64_to_datetime;
@@ -138,10 +139,10 @@ fn timeunit_date_part(
         }
         .sub(lit(1));
 
-        make_timestamptz_args[1] = Expr::Cast {
+        make_timestamptz_args[1] = Expr::Cast(Cast {
             expr: Box::new(floor(month.div(lit(3))).mul(lit(3))),
             data_type: DataType::Int64,
-        };
+        });
 
         interval_str = "3 MONTH".to_string();
     }

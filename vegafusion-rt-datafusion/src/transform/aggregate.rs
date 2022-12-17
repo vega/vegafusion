@@ -19,6 +19,7 @@ use async_trait::async_trait;
 use datafusion::common::{DFSchema, ScalarValue};
 use datafusion_expr::{aggregate_function, BuiltInWindowFunction, WindowFunction};
 use std::sync::Arc;
+use datafusion_expr::expr::Cast;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::expression::escape::unescape_field;
@@ -204,17 +205,17 @@ pub fn make_aggr_expr(
             filter: None,
         },
         AggregateOp::Valid => {
-            let valid = Expr::Cast {
+            let valid = Expr::Cast(Cast {
                 expr: Box::new(Expr::IsNotNull(Box::new(column))),
                 data_type: DataType::Int64,
-            };
+            });
             sum(valid)
         }
         AggregateOp::Missing => {
-            let missing = Expr::Cast {
+            let missing = Expr::Cast(Cast {
                 expr: Box::new(Expr::IsNull(Box::new(column))),
                 data_type: DataType::Int64,
-            };
+            });
             sum(missing)
         }
         AggregateOp::Distinct => count_distinct(column),
