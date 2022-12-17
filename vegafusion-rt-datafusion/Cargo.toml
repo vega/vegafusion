@@ -35,6 +35,7 @@ log = "0.4.17"
 env_logger = "0.9.0"
 ordered-float = "3.4.0"
 uuid = { version = "^1.2", features = ["v4"] }
+lock_api = "^0.4.8"
 
 [dev-dependencies]
 futures = "0.3.21"
@@ -68,11 +69,11 @@ features = [ "derive",]
 
 [dependencies.datafusion]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "dd081d64a2fba8574e63bdd0662c14aec5852b48"
+rev = "175adbda616ca2f339cfba375c1f86535f6e2ad1"
 
 [dependencies.datafusion-expr]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "dd081d64a2fba8574e63bdd0662c14aec5852b48"
+rev = "175adbda616ca2f339cfba375c1f86535f6e2ad1"
 
 [dependencies.tokio]
 version = "1.18.1"
