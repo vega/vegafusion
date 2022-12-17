@@ -17,6 +17,7 @@ use std::convert::TryFrom;
 use std::str::FromStr;
 use std::sync::Arc;
 use datafusion::common::DFSchema;
+use datafusion_expr::expr::Case;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -203,24 +204,24 @@ impl FieldSpec {
 
                         // Don't assume elements are in ascending order
                         // Compute min and max values with Case expression
-                        let low = Expr::Case {
+                        let low = Expr::Case (Case {
                             expr: None,
                             when_then_expr: vec![(
                                 Box::new(first.clone().lt_eq(second.clone())),
                                 Box::new(first.clone()),
                             )],
                             else_expr: Some(Box::new(second.clone())),
-                        }
+                        })
                         .eval_to_scalar()?;
 
-                        let high = Expr::Case {
+                        let high = Expr::Case (Case {
                             expr: None,
                             when_then_expr: vec![(
                                 Box::new(first.clone().lt_eq(second.clone())),
                                 Box::new(second),
                             )],
                             else_expr: Some(Box::new(first)),
-                        }
+                        })
                         .eval_to_scalar()?;
 
                         (lit(low), lit(high))

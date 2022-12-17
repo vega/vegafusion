@@ -7,6 +7,7 @@ use sqlgen::ast::{
 };
 
 use datafusion_expr::{AggregateFunction, BuiltinScalarFunction, Expr, Operator, WindowFunction};
+use datafusion_expr::expr::Case;
 
 use crate::sql::compile::function_arg::ToSqlFunctionArg;
 use crate::sql::compile::order::ToSqlOrderByExpr;
@@ -103,11 +104,11 @@ impl ToSqlExpr for Expr {
                 low: Box::new(low.to_sql()?),
                 high: Box::new(high.to_sql()?),
             }),
-            Expr::Case {
+            Expr::Case (Case {
                 expr,
                 when_then_expr,
                 else_expr,
-            } => {
+            }) => {
                 let (conditions, results): (Vec<Box<Expr>>, Vec<Box<Expr>>) =
                     when_then_expr.iter().cloned().unzip();
 
