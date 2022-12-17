@@ -88,6 +88,7 @@ mod test_compile {
     use std::collections::HashMap;
     use std::convert::TryFrom;
     use std::sync::Arc;
+    use datafusion_expr::expr::Case;
 
     // use vegafusion_client::expression::parser::parse;
 
@@ -214,7 +215,7 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
         println!("expr: {:?}", result_expr);
 
-        let expected_expr = Expr::Case {
+        let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
                 Box::new(Expr::ScalarFunction {
@@ -230,7 +231,7 @@ mod test_compile {
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),
-        };
+        });
 
         assert_eq!(result_expr, expected_expr);
 
@@ -269,7 +270,7 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
         println!("expr: {:?}", result_expr);
 
-        let expected_expr = Expr::Case {
+        let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
                 Box::new(Expr::ScalarFunction {
@@ -285,7 +286,7 @@ mod test_compile {
                 Box::new(lit(55.0)),
             )],
             else_expr: Some(Box::new(lit(5.0))),
-        };
+        });
 
         assert_eq!(result_expr, expected_expr);
 
@@ -619,7 +620,7 @@ mod test_compile {
         let expr = parse("if(32, 7, 9)").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::Case {
+        let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
                 Box::new(Expr::ScalarFunction {
@@ -635,7 +636,7 @@ mod test_compile {
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),
-        };
+        });
 
         assert_eq!(result_expr, expected_expr);
         println!("expr: {:?}", result_expr);
