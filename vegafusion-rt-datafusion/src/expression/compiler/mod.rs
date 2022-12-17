@@ -77,7 +77,7 @@ mod test_compile {
         array::{ArrayRef, Float64Array, StructArray},
         datatypes::{DataType, Field, Schema},
     };
-    use datafusion::logical_plan::{DFSchema, Expr, Operator};
+    use datafusion::logical_expr::{Expr, Operator};
 
     use crate::expression::escape::flat_col;
     use crate::task_graph::timezone::RuntimeTzConfig;
@@ -88,6 +88,7 @@ mod test_compile {
     use std::collections::HashMap;
     use std::convert::TryFrom;
     use std::sync::Arc;
+    use datafusion::common::DFSchema;
     use datafusion_expr::expr::Case;
 
     // use vegafusion_client::expression::parser::parse;

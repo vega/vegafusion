@@ -13,7 +13,7 @@ use std::collections::{HashMap, HashSet};
 
 use vegafusion_core::error::Result;
 
-use datafusion::logical_plan::Expr;
+use datafusion::logical_expr::Expr;
 
 use std::sync::Arc;
 use vegafusion_core::data::scalar::DATETIME_PREFIX;
