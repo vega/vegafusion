@@ -9,7 +9,7 @@
 use datafusion::arrow::array::{ArrayRef, BooleanArray};
 use datafusion::arrow::datatypes::{DataType, Schema};
 use datafusion::arrow::record_batch::RecordBatch;
-use datafusion::logical_plan::{Column, DFSchema, Expr, ExprSchemable, SimplifyInfo};
+use datafusion::logical_expr::{Expr, ExprSchemable};
 use datafusion::physical_plan::planner::DefaultPhysicalPlanner;
 use datafusion::physical_plan::{ColumnarValue, PhysicalExpr, PhysicalPlanner};
 use datafusion::scalar::ScalarValue;
@@ -22,6 +22,8 @@ use datafusion::execution::context::{default_session_builder, ExecutionProps, Se
 use datafusion_expr::utils::expr_to_columns;
 use datafusion_expr::{coalesce, lit, BuiltinScalarFunction};
 use std::sync::Arc;
+use datafusion::common::{Column, DFSchema};
+use datafusion::optimizer::expr_simplifier::SimplifyInfo;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 lazy_static! {

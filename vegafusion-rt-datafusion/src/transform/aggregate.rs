@@ -9,7 +9,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion::logical_plan::{avg, count, count_distinct, lit, max, min, sum, Expr};
+use datafusion::logical_expr::{avg, count, count_distinct, lit, max, min, sum, Expr};
 use std::collections::HashMap;
 
 use crate::expression::compiler::utils::to_numeric;

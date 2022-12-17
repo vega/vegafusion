@@ -16,7 +16,7 @@ use datafusion::arrow::array::{
 use datafusion::arrow::compute::{cast, kernels};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::error::DataFusionError;
-use datafusion::logical_plan::{DFSchema, Expr};
+use datafusion::logical_expr::Expr;
 use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
@@ -29,6 +29,7 @@ use datafusion_expr::{
 };
 use std::convert::TryFrom;
 use std::sync::Arc;
+use datafusion::common::DFSchema;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{Identifier, MemberExpression};
 

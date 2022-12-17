@@ -18,7 +18,7 @@ use crate::expression::compiler::utils::VfSimplifyInfo;
 use crate::expression::escape::flat_col;
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
-use datafusion::logical_plan::ExprSimplifiable;
+use datafusion::optimizer::expr_simplifier::ExprSimplifiable;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]

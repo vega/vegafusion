@@ -9,7 +9,7 @@
 use crate::task_graph::timezone::RuntimeTzConfig;
 
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
-use datafusion::logical_plan::{DFSchema, Expr};
+use datafusion::logical_expr::Expr;
 
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
@@ -20,6 +20,7 @@ use datafusion_expr::{
     Volatility,
 };
 use std::sync::Arc;
+use datafusion::common::DFSchema;
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::{Result, VegaFusionError};
 

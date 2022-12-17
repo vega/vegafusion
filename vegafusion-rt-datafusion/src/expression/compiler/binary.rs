@@ -6,12 +6,14 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use datafusion::common::DFSchema;
 use crate::expression::compiler::utils::{
     cast_to, data_type, is_null_literal, is_numeric_datatype, is_string_datatype, to_numeric,
     to_string,
 };
 use crate::expression::compiler::{compile, config::CompilationConfig};
-use datafusion::logical_plan::{concat, lit, DFSchema, Expr, Operator};
+use datafusion::logical_expr::{Expr, Operator, lit, concat};
+
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::{BinaryExpression, BinaryOperator};

@@ -14,7 +14,7 @@ use chrono::{DateTime, TimeZone};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::error::DataFusionError;
-use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
+use datafusion::logical_expr::{Expr, ExprSchemable};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
@@ -24,6 +24,7 @@ use datafusion_expr::{
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
+use datafusion::common::DFSchema;
 use vegafusion_core::arrow::array::TimestampMillisecondBuilder;
 use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};

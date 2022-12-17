@@ -7,12 +7,13 @@
  * this program the details of the active license.
  */
 use datafusion::arrow::datatypes::DataType;
-use datafusion::logical_plan::{lit, DFSchema, Expr};
+use datafusion::logical_expr::{lit, Expr};
 use datafusion::scalar::ScalarValue;
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::str::FromStr;
+use datafusion::common::DFSchema;
 use vegafusion_core::arrow::datatypes::Field;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;

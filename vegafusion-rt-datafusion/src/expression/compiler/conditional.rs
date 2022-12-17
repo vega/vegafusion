@@ -6,9 +6,10 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
+use datafusion::common::DFSchema;
 use crate::expression::compiler::utils::{cast_to, is_string_datatype, to_boolean};
 use crate::expression::compiler::{compile, config::CompilationConfig};
-use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
+use datafusion::logical_expr::{Expr, ExprSchemable};
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ConditionalExpression;

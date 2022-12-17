@@ -20,6 +20,7 @@ pub mod object;
 pub mod unary;
 pub mod utils;
 
+use datafusion::common::DFSchema;
 use crate::expression::compiler::array::compile_array;
 use crate::expression::compiler::binary::compile_binary;
 use crate::expression::compiler::call::compile_call;
@@ -31,7 +32,7 @@ use crate::expression::compiler::logical::compile_logical;
 use crate::expression::compiler::member::compile_member;
 use crate::expression::compiler::object::compile_object;
 use crate::expression::compiler::unary::compile_unary;
-use datafusion::logical_plan::{DFSchema, Expr};
+use datafusion::logical_expr::Expr;
 use utils::UNIT_SCHEMA;
 
 use vegafusion_core::error::Result;

@@ -9,7 +9,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion::logical_plan::Expr;
+use datafusion::logical_expr::Expr;
 
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};

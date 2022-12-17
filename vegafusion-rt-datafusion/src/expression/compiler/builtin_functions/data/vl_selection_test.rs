@@ -10,13 +10,13 @@ use crate::expression::compiler::utils::{
     cast_to, is_float_datatype, is_integer_datatype, is_numeric_datatype, is_string_datatype,
     ExprHelpers,
 };
-use datafusion::logical_plan::{ceil, DFSchema, ExprSchemable};
-use datafusion::logical_plan::{lit, Expr};
+use datafusion::logical_expr::{lit, Expr, ceil, ExprSchemable};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use std::str::FromStr;
 use std::sync::Arc;
+use datafusion::common::DFSchema;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};

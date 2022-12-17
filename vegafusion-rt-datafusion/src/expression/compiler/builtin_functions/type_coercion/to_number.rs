@@ -8,7 +8,8 @@
  */
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use datafusion::arrow::datatypes::DataType;
-use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
+use datafusion::common::DFSchema;
+use datafusion::logical_expr::{Expr, ExprSchemable};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 pub fn to_number_transform(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
