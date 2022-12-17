@@ -89,7 +89,7 @@ mod test_compile {
     use std::convert::TryFrom;
     use std::sync::Arc;
     use datafusion::common::DFSchema;
-    use datafusion_expr::expr::Case;
+    use datafusion_expr::expr::{BinaryExpr, Case};
 
     // use vegafusion_client::expression::parser::parse;
 
@@ -250,11 +250,11 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
         println!("expr: {:?}", result_expr);
 
-        let expected_expr = Expr::BinaryExpr {
+        let expected_expr = Expr::BinaryExpr(BinaryExpr  {
             left: Box::new(lit(false)),
             op: Operator::Or,
             right: Box::new(lit(true)),
-        };
+        });
         assert_eq!(result_expr, expected_expr);
 
         // Check evaluated value
@@ -306,30 +306,30 @@ mod test_compile {
         println!("expr: {:?}", result_expr);
 
         // 1 + +'2'
-        let t1 = Expr::BinaryExpr {
+        let t1 = Expr::BinaryExpr(BinaryExpr  {
             left: Box::new(lit(1.0)),
             op: Operator::Plus,
             right: Box::new(Expr::Cast {
                 expr: Box::new(lit("2")),
                 data_type: DataType::Float64,
             }),
-        };
+        });
 
         // true * 10
-        let t2 = Expr::BinaryExpr {
+        let t2 = Expr::BinaryExpr(BinaryExpr  {
             left: Box::new(Expr::Cast {
                 expr: Box::new(lit(true)),
                 data_type: DataType::Float64,
             }),
             op: Operator::Multiply,
             right: Box::new(lit(10.0)),
-        };
+        });
 
-        let expected_expr = Expr::BinaryExpr {
+        let expected_expr = Expr::BinaryExpr(BinaryExpr  {
             left: Box::new(t1),
             op: Operator::Plus,
             right: Box::new(t2),
-        };
+        });
 
         println!("{:?}", result_expr);
         assert_eq!(result_expr, expected_expr);
@@ -364,14 +364,14 @@ mod test_compile {
         let expr = parse("'2.0' == 2").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::BinaryExpr {
+        let expected_expr = Expr::BinaryExpr(BinaryExpr  {
             left: Box::new(Expr::Cast {
                 expr: Box::new(lit("2.0")),
                 data_type: DataType::Float64,
             }),
             op: Operator::Eq,
             right: Box::new(lit(2.0)),
-        };
+        });
 
         println!("expr: {:?}", result_expr);
         assert_eq!(result_expr, expected_expr);
@@ -574,11 +574,11 @@ mod test_compile {
 
         let result_expr = compile(&expr, &Default::default(), Some(&schema)).unwrap();
 
-        let expected_expr = Expr::BinaryExpr {
+        let expected_expr = Expr::BinaryExpr(BinaryExpr  {
             left: Box::new(flat_col("two")),
             op: Operator::Multiply,
             right: Box::new(lit(3.0)),
-        };
+        });
 
         println!("expr: {:?}", result_expr);
         assert_eq!(result_expr, expected_expr);

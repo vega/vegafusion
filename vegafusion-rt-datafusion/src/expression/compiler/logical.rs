@@ -11,7 +11,7 @@ use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::common::DFSchema;
 use datafusion::logical_expr::{Expr, Operator};
-use datafusion_expr::expr::Case;
+use datafusion_expr::expr::{BinaryExpr, Case};
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::{LogicalExpression, LogicalOperator};
 
@@ -31,16 +31,16 @@ pub fn compile_logical(
         (DataType::Boolean, DataType::Boolean) => {
             // If both are boolean, the use regular logical operation
             match node.to_operator() {
-                LogicalOperator::Or => Expr::BinaryExpr {
+                LogicalOperator::Or => Expr::BinaryExpr(BinaryExpr  {
                     left: Box::new(compiled_lhs),
                     op: Operator::Or,
                     right: Box::new(compiled_rhs),
-                },
-                LogicalOperator::And => Expr::BinaryExpr {
+                }),
+                LogicalOperator::And => Expr::BinaryExpr(BinaryExpr  {
                     left: Box::new(compiled_lhs),
                     op: Operator::And,
                     right: Box::new(compiled_rhs),
-                },
+                }),
             }
         }
         _ => {

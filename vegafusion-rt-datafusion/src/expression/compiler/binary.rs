@@ -13,6 +13,7 @@ use crate::expression::compiler::utils::{
 };
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::logical_expr::{Expr, Operator, lit, concat};
+use datafusion_expr::expr::BinaryExpr;
 
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::Result;
@@ -33,46 +34,46 @@ pub fn compile_binary(
     let rhs_numeric = to_numeric(rhs.clone(), schema)?;
 
     let new_expr: Expr = match node.to_operator() {
-        BinaryOperator::Minus => Expr::BinaryExpr {
+        BinaryOperator::Minus => Expr::BinaryExpr(BinaryExpr {
             left: Box::new(lhs_numeric),
             op: Operator::Minus,
             right: Box::new(rhs_numeric),
-        },
-        BinaryOperator::Mult => Expr::BinaryExpr {
+        }),
+        BinaryOperator::Mult => Expr::BinaryExpr(BinaryExpr  {
             left: Box::new(lhs_numeric),
             op: Operator::Multiply,
             right: Box::new(rhs_numeric),
-        },
-        BinaryOperator::Div => Expr::BinaryExpr {
+        }),
+        BinaryOperator::Div => Expr::BinaryExpr(BinaryExpr  {
             left: Box::new(cast_to(lhs_numeric, &DataType::Float64, schema)?),
             op: Operator::Divide,
             right: Box::new(rhs_numeric),
-        },
-        BinaryOperator::Mod => Expr::BinaryExpr {
+        }),
+        BinaryOperator::Mod => Expr::BinaryExpr(BinaryExpr  {
             left: Box::new(lhs_numeric),
             op: Operator::Modulo,
             right: Box::new(rhs_numeric),
-        },
-        BinaryOperator::LessThan => Expr::BinaryExpr {
+        }),
+        BinaryOperator::LessThan => Expr::BinaryExpr(BinaryExpr  {
             left: Box::new(lhs_numeric),
             op: Operator::Lt,
             right: Box::new(rhs_numeric),
-        },
-        BinaryOperator::LessThanEqual => Expr::BinaryExpr {
+        }),
+        BinaryOperator::LessThanEqual => Expr::BinaryExpr(BinaryExpr  {
             left: Box::new(lhs_numeric),
             op: Operator::LtEq,
             right: Box::new(rhs_numeric),
-        },
-        BinaryOperator::GreaterThan => Expr::BinaryExpr {
+        }),
+        BinaryOperator::GreaterThan => Expr::BinaryExpr(BinaryExpr  {
             left: Box::new(lhs_numeric),
             op: Operator::Gt,
             right: Box::new(rhs_numeric),
-        },
-        BinaryOperator::GreaterThanEqual => Expr::BinaryExpr {
+        }),
+        BinaryOperator::GreaterThanEqual => Expr::BinaryExpr(BinaryExpr  {
             left: Box::new(lhs_numeric),
             op: Operator::GtEq,
             right: Box::new(rhs_numeric),
-        },
+        }),
         BinaryOperator::StrictEquals => {
             // Use original values, not those converted to numeric
             // Let DataFusion handle numeric casting
@@ -83,11 +84,11 @@ pub fn compile_binary(
             } else if is_numeric_datatype(&lhs_dtype) && is_numeric_datatype(&rhs_dtype)
                 || lhs_dtype == rhs_dtype
             {
-                Expr::BinaryExpr {
+                Expr::BinaryExpr(BinaryExpr  {
                     left: Box::new(lhs),
                     op: Operator::Eq,
                     right: Box::new(rhs),
-                }
+                })
             } else {
                 // Types are not compatible
                 lit(false)
@@ -101,11 +102,11 @@ pub fn compile_binary(
             } else if is_numeric_datatype(&lhs_dtype) && is_numeric_datatype(&rhs_dtype)
                 || lhs_dtype == rhs_dtype
             {
-                Expr::BinaryExpr {
+                Expr::BinaryExpr(BinaryExpr  {
                     left: Box::new(lhs),
                     op: Operator::NotEq,
                     right: Box::new(rhs),
-                }
+                })
             } else {
                 // Types are not compatible
                 lit(false)
@@ -121,11 +122,11 @@ pub fn compile_binary(
             } else {
                 // Both sides are non-strings, use regular numeric plus operation
                 // Use result of to_numeric to handle booleans
-                Expr::BinaryExpr {
+                Expr::BinaryExpr(BinaryExpr  {
                     left: Box::new(lhs_numeric),
                     op: Operator::Plus,
                     right: Box::new(rhs_numeric),
-                }
+                })
             }
         }
         BinaryOperator::Equals => {
@@ -135,18 +136,18 @@ pub fn compile_binary(
                 Expr::IsNull(Box::new(lhs))
             } else if is_string_datatype(&lhs_dtype) && is_string_datatype(&rhs_dtype) {
                 // Regular equality on strings
-                Expr::BinaryExpr {
+                Expr::BinaryExpr(BinaryExpr  {
                     left: Box::new(lhs),
                     op: Operator::Eq,
                     right: Box::new(rhs),
-                }
+                })
             } else {
                 // Both sides converted to numbers
-                Expr::BinaryExpr {
+                Expr::BinaryExpr(BinaryExpr  {
                     left: Box::new(lhs_numeric),
                     op: Operator::Eq,
                     right: Box::new(rhs_numeric),
-                }
+                })
             }
             // TODO: if both null, then equal. If one null, then not equal
         }
@@ -157,19 +158,19 @@ pub fn compile_binary(
                 Expr::IsNotNull(Box::new(lhs))
             } else if is_string_datatype(&lhs_dtype) && is_string_datatype(&rhs_dtype) {
                 // Regular inequality on strings
-                Expr::BinaryExpr {
+                Expr::BinaryExpr(BinaryExpr  {
                     left: Box::new(lhs),
                     op: Operator::NotEq,
                     right: Box::new(rhs),
-                }
+                })
             } else {
                 // Both sides converted to numbers
                 // Both sides converted to numbers
-                Expr::BinaryExpr {
+                Expr::BinaryExpr(BinaryExpr  {
                     left: Box::new(lhs_numeric),
                     op: Operator::NotEq,
                     right: Box::new(rhs_numeric),
-                }
+                })
             }
             // TODO: if both null, then equal. If one null, then not equal
         }
