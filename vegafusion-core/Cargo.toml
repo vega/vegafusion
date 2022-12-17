@@ -19,7 +19,8 @@ regex = "^1.5.5"
 ordered-float = "^2.10.0"
 petgraph = "0.6.0"
 deterministic-hash = "1.0.1"
-chrono = "0.4.22"
+chrono = "0.4.23"
+num-complex = "0.4.2"  # Needed by arrow?
 
 [dependencies.sqlgen]
 git = "https://github.com/vegafusion/sqlgen-rs.git"
@@ -31,13 +32,13 @@ version = "1.0.81"
 features = [ "preserve_order",]
 
 [dependencies.arrow]
-version = "26.0.0"
+version = "27.0.0"
 default_features = false
 features = [ "ipc", "json"]
 
 [dependencies.datafusion-common]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "28ca3eeac437994be836d299748d3fb3e0ed8b04"
+rev = "ebb24c5bf46f2af362aebffba2012875b328e799"
 
 [dependencies.pyo3]
 version = "0.17.1"
