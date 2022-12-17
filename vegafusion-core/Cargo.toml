@@ -31,13 +31,13 @@ version = "1.0.81"
 features = [ "preserve_order",]
 
 [dependencies.arrow]
-version = "23.0.0"
+version = "24.0.0"
 default_features = false
-features = [ "ipc",]
+features = [ "ipc", "json"]
 
 [dependencies.datafusion-common]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "67002a06039523e1356a5c91894b1387b021bbf7"
+rev = "011e6f5d544a97f4e835dd28a2f5a41570acad3d"
 
 [dependencies.pyo3]
 version = "0.17.1"
