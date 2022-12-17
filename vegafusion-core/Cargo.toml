@@ -37,7 +37,7 @@ features = [ "ipc", "json"]
 
 [dependencies.datafusion-common]
 git = "https://github.com/apache/arrow-datafusion.git"
-rev = "175adbda616ca2f339cfba375c1f86535f6e2ad1"
+rev = "bcd8af8e7cfdcafa948340a7de9a2101837eeaaf"
 
 [dependencies.pyo3]
 version = "0.17.1"
