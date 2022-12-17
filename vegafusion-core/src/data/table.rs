@@ -10,6 +10,7 @@ use crate::arrow::{
     datatypes::{DataType, SchemaRef},
     json,
     record_batch::RecordBatch,
+    compute::concat_batches
 };
 use crate::error::{Result, ResultWithContext, VegaFusionError};
 use std::borrow::Cow;
@@ -93,7 +94,7 @@ impl VegaFusionTable {
         if let Some(batch) = self.batches.get(0) {
             schema = batch.schema()
         }
-        RecordBatch::concat(&schema, &self.batches)
+        concat_batches(&schema, &self.batches)
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
 
