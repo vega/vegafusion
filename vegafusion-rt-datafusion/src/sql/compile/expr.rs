@@ -228,6 +228,9 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::RegexpMatch => "regexp_match",
                     BuiltinScalarFunction::Struct => "struct",
                     BuiltinScalarFunction::ArrowTypeof => "arrow_typeof",
+                    BuiltinScalarFunction::CurrentDate => "current_date",
+                    BuiltinScalarFunction::CurrentTime => "current_time",
+                    BuiltinScalarFunction::Uuid => "uuid",
                 };
                 let ident = Ident {
                     value: value.to_string(),
