@@ -92,6 +92,9 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::LargeBinary(_) => Err(VegaFusionError::internal(
                 "LargeBinary cannot be converted to SQL",
             )),
+            ScalarValue::FixedSizeBinary(_, _) => Err(VegaFusionError::internal(
+                "FixedSizeBinary cannot be converted to SQL",
+            )),
             ScalarValue::List(args, _) => {
                 let function_ident = Ident {
                     value: "make_list".to_string(),
