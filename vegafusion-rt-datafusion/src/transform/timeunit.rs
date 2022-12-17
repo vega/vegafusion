@@ -571,7 +571,7 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
     in_tz: T,
 ) -> DateTime<T> {
     // Load and interpret date time as UTC
-    let dt_value = date64_to_datetime(value).with_nanosecond(0).unwrap();
+    let dt_value = date64_to_datetime(value).unwrap().with_nanosecond(0).unwrap();
     let dt_value = Utc.from_local_datetime(&dt_value).earliest().unwrap();
     let mut dt_value = dt_value.with_timezone(&in_tz);
 
