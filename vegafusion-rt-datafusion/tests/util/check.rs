@@ -6,7 +6,7 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use crate::util::equality::{assert_signals_almost_equal, assert_tables_equal, TablesEqualConfig};
+use crate::util::equality::{assert_signals_almost_equal, assert_tables_equal, normalize_scalar, TablesEqualConfig};
 use crate::util::vegajs_runtime::vegajs_runtime;
 use datafusion::scalar::ScalarValue;
 use std::str::FromStr;
@@ -48,6 +48,7 @@ pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
     let expected = vegajs_runtime
         .eval_scalar_expression(expr_str, config)
         .unwrap();
+    let expected = normalize_scalar(&expected);
 
     // Add local timezone info to config
     let local_tz_str = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
@@ -67,6 +68,7 @@ pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
     // Serialize and deserialize to normalize types to those supported by JavaScript
     // (e.g. Int to Float)
     let result = ScalarValue::from_json(&result.to_json().unwrap()).unwrap();
+    let result = normalize_scalar(&result);
 
     println!("{:?}", result);
     assert_eq!(result, expected, " left: {}\nright: {}\n", result, expected);

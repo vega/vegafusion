@@ -112,7 +112,7 @@ pub fn compile_member(
                     // SQL substr function is 1-indexed so add one
                     Expr::ScalarFunction {
                         fun: BuiltinScalarFunction::Substr,
-                        args: vec![compiled_object, lit((index + 1) as i32), lit(1)],
+                        args: vec![compiled_object, lit((index + 1) as i64), lit(1i64)],
                     }
                 } else {
                     return Err(VegaFusionError::compilation(format!(
