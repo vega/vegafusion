@@ -165,7 +165,8 @@ pub fn make_time_format_udf() -> ScalarUDF {
                     // Load as UTC datetime
                     let utc_seconds = utc_millis / 1_000;
                     let utc_nanos = (utc_millis % 1_000 * 1_000_000) as u32;
-                    let naive_datetime = NaiveDateTime::from_timestamp(utc_seconds, utc_nanos);
+                    let naive_datetime = NaiveDateTime::from_timestamp_opt(utc_seconds, utc_nanos)
+                        .expect("invalid or out-of-range datetime");
 
                     // Format as string
                     let formatted = naive_datetime.format(&format_str);

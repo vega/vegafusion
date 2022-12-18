@@ -48,7 +48,8 @@ pub fn make_timestamptz_to_timestamp() -> ScalarUDF {
                         let milliseconds = v % 1000;
                         let nanoseconds = (milliseconds * 1_000_000) as u32;
                         let naive_utc_datetime =
-                            NaiveDateTime::from_timestamp(seconds, nanoseconds);
+                            NaiveDateTime::from_timestamp_opt(seconds, nanoseconds)
+                                .expect("invalid or out-of-range datetime");
 
                         // Create local datetime, interpreting the naive datetime as utc
                         let local_datetime = tz.from_utc_datetime(&naive_utc_datetime);

@@ -10,7 +10,7 @@ use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestam
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype, is_string_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
-use chrono::{DateTime, TimeZone};
+use chrono::{DateTime, Timelike, TimeZone};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::error::DataFusionError;
@@ -229,15 +229,17 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
                     }
 
                     let datetime: Option<DateTime<_>> = input_tz
-                        .ymd_opt(year as i32, month as u32 + 1, day as u32)
+                        .with_ymd_and_hms(
+                            year as i32,
+                            month as u32 + 1,
+                            day as u32,
+                            hour as u32,
+                            minute as u32,
+                            second as u32,
+                        )
                         .single()
-                        .and_then(|date| {
-                            date.and_hms_milli_opt(
-                                hour as u32,
-                                minute as u32,
-                                second as u32,
-                                milli as u32,
-                            )
+                        .and_then(|date: DateTime<_>| {
+                            date.with_nanosecond((milli * 1_000_000) as u32)
                         });
 
                     if let Some(datetime) = datetime {

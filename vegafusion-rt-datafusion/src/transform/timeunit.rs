@@ -652,7 +652,8 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
         // Step 1: Find the date of the first Sunday in the same calendar year as the date.
         // This may occur in isoweek 0, or in the final isoweek of the previous year
 
-        let isoweek0_sunday = NaiveDate::from_isoywd(dt_value.year(), 1, Weekday::Sun);
+        let isoweek0_sunday = NaiveDate::from_isoywd_opt(dt_value.year(), 1, Weekday::Sun)
+            .expect("invalid or out-of-range datetime");
 
         let isoweek0_sunday = NaiveDateTime::new(isoweek0_sunday, dt_value.time());
         let isoweek0_sunday = in_tz
@@ -687,7 +688,8 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
             // (which is January 1st)
             let first_sunday_of_2012 = in_tz
                 .from_local_datetime(&NaiveDateTime::new(
-                    NaiveDate::from_ymd(2012, 1, 1),
+                    NaiveDate::from_ymd_opt(2012, 1, 1)
+                        .expect("invalid or out-of-range datetime"),
                     dt_value.time(),
                 ))
                 .earliest()
@@ -702,10 +704,11 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
         // Day
         // Keep weekday, but make sure Sunday comes before Monday
         let new_date = if weekday == Weekday::Sun {
-            NaiveDate::from_isoywd(dt_value.year(), 1, weekday)
+            NaiveDate::from_isoywd_opt(dt_value.year(), 1, weekday)
         } else {
-            NaiveDate::from_isoywd(dt_value.year(), 2, weekday)
-        };
+            NaiveDate::from_isoywd_opt(dt_value.year(), 2, weekday)
+        }.expect("invalid or out-of-range datetime");
+
         let new_datetime = NaiveDateTime::new(new_date, dt_value.time());
         dt_value = in_tz.from_local_datetime(&new_datetime).earliest().unwrap();
     } else if units_mask[6] {
