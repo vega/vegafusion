@@ -10,6 +10,11 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: '3.19.4'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
