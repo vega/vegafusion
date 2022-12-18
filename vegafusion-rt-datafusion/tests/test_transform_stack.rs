@@ -232,12 +232,12 @@ mod test_stack_with_group_sort_negative {
 mod test_stack_no_divide_by_zero {
     use super::*;
     use serde_json::json;
+    use vegafusion_core::spec::transform::collect::CollectTransformSpec;
     use vegafusion_core::spec::transform::timeunit::TimeUnitTransformSpec;
 
     #[test]
     fn test() {
         let dataset = vega_json_dataset("movies");
-
         let formula_spec: FormulaTransformSpec = serde_json::from_value(json!(
             {
                 "expr": "toDate(datum['Release Date'])",
@@ -268,6 +268,14 @@ mod test_stack_no_divide_by_zero {
         ))
         .unwrap();
 
+        let collect_spec: CollectTransformSpec = serde_json::from_value(json!(
+            {
+              "type": "collect",
+              "sort": {"field": ["Title", "Release Date"]}
+            }
+        ))
+            .unwrap();
+
         // Vega sometimes produces NULL or NaN when a stack group has zero sum.
         // Replace these with 0 to match VegaFusion's behavior
         let start_formula_spec: FormulaTransformSpec = serde_json::from_value(json!(
@@ -288,6 +296,7 @@ mod test_stack_no_divide_by_zero {
             TransformSpec::Formula(formula_spec),
             TransformSpec::Timeunit(timeunit_spec),
             TransformSpec::Stack(stack_spec),
+            TransformSpec::Collect(collect_spec),
             TransformSpec::Formula(start_formula_spec),
             TransformSpec::Formula(end_formula_spec),
         ];
