@@ -174,10 +174,10 @@ async fn grpc_server(
 
     if web {
         println!("Starting gRPC + gRPC-Web server on {}", address);
-        let server = tonic_web::config().enable(server);
+        let server = tonic_web::enable(server);
         Server::builder()
             .accept_http1(true)
-            .add_service(server)
+            .add_service(server.into_inner())
             .serve(addr)
             .await?;
     } else {
