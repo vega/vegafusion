@@ -1,58 +1,66 @@
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryRequest {
-    #[prost(oneof="query_request::Request", tags="1")]
+    #[prost(oneof = "query_request::Request", tags = "1")]
     pub request: ::core::option::Option<query_request::Request>,
 }
 /// Nested message and enum types in `QueryRequest`.
 pub mod query_request {
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Request {
-        #[prost(message, tag="1")]
+        #[prost(message, tag = "1")]
         TaskGraphValues(super::super::tasks::TaskGraphValueRequest),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryResult {
-    #[prost(oneof="query_result::Response", tags="1, 2")]
+    #[prost(oneof = "query_result::Response", tags = "1, 2")]
     pub response: ::core::option::Option<query_result::Response>,
 }
 /// Nested message and enum types in `QueryResult`.
 pub mod query_result {
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Response {
-        #[prost(message, tag="1")]
+        #[prost(message, tag = "1")]
         Error(super::super::errors::Error),
-        #[prost(message, tag="2")]
+        #[prost(message, tag = "2")]
         TaskGraphValues(super::super::tasks::TaskGraphValueResponse),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformSpecResult {
-    #[prost(oneof="pre_transform_spec_result::Result", tags="1, 2")]
+    #[prost(oneof = "pre_transform_spec_result::Result", tags = "1, 2")]
     pub result: ::core::option::Option<pre_transform_spec_result::Result>,
 }
 /// Nested message and enum types in `PreTransformSpecResult`.
 pub mod pre_transform_spec_result {
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Result {
-        #[prost(message, tag="1")]
+        #[prost(message, tag = "1")]
         Error(super::super::errors::Error),
-        #[prost(message, tag="2")]
+        #[prost(message, tag = "2")]
         Response(super::super::pretransform::PreTransformSpecResponse),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformValuesResult {
-    #[prost(oneof="pre_transform_values_result::Result", tags="1, 2")]
+    #[prost(oneof = "pre_transform_values_result::Result", tags = "1, 2")]
     pub result: ::core::option::Option<pre_transform_values_result::Result>,
 }
 /// Nested message and enum types in `PreTransformValuesResult`.
 pub mod pre_transform_values_result {
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Result {
-        #[prost(message, tag="1")]
+        #[prost(message, tag = "1")]
         Error(super::super::errors::Error),
-        #[prost(message, tag="2")]
+        #[prost(message, tag = "2")]
         Response(super::super::pretransform::PreTransformValuesResponse),
     }
 }
@@ -60,6 +68,7 @@ pub mod pre_transform_values_result {
 pub mod vega_fusion_runtime_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
     pub struct VegaFusionRuntimeClient<T> {
         inner: tonic::client::Grpc<T>,
@@ -86,6 +95,10 @@ pub mod vega_fusion_runtime_client {
             let inner = tonic::client::Grpc::new(inner);
             Self { inner }
         }
+        pub fn with_origin(inner: T, origin: Uri) -> Self {
+            let inner = tonic::client::Grpc::with_origin(inner, origin);
+            Self { inner }
+        }
         pub fn with_interceptor<F>(
             inner: T,
             interceptor: F,
@@ -105,19 +118,19 @@ pub mod vega_fusion_runtime_client {
         {
             VegaFusionRuntimeClient::new(InterceptedService::new(inner, interceptor))
         }
-        /// Compress requests with `gzip`.
+        /// Compress requests with the given encoding.
         ///
         /// This requires the server to support it otherwise it might respond with an
         /// error.
         #[must_use]
-        pub fn send_gzip(mut self) -> Self {
-            self.inner = self.inner.send_gzip();
+        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.send_compressed(encoding);
             self
         }
-        /// Enable decompressing responses with `gzip`.
+        /// Enable decompressing responses.
         #[must_use]
-        pub fn accept_gzip(mut self) -> Self {
-            self.inner = self.inner.accept_gzip();
+        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.accept_compressed(encoding);
             self
         }
         pub async fn task_graph_query(
@@ -187,7 +200,7 @@ pub mod vega_fusion_runtime_client {
 pub mod vega_fusion_runtime_server {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
-    ///Generated trait containing gRPC methods that should be implemented for use with VegaFusionRuntimeServer.
+    /// Generated trait containing gRPC methods that should be implemented for use with VegaFusionRuntimeServer.
     #[async_trait]
     pub trait VegaFusionRuntime: Send + Sync + 'static {
         async fn task_graph_query(
@@ -208,8 +221,8 @@ pub mod vega_fusion_runtime_server {
     #[derive(Debug)]
     pub struct VegaFusionRuntimeServer<T: VegaFusionRuntime> {
         inner: _Inner<T>,
-        accept_compression_encodings: (),
-        send_compression_encodings: (),
+        accept_compression_encodings: EnabledCompressionEncodings,
+        send_compression_encodings: EnabledCompressionEncodings,
     }
     struct _Inner<T>(Arc<T>);
     impl<T: VegaFusionRuntime> VegaFusionRuntimeServer<T> {
@@ -232,6 +245,18 @@ pub mod vega_fusion_runtime_server {
             F: tonic::service::Interceptor,
         {
             InterceptedService::new(Self::new(inner), interceptor)
+        }
+        /// Enable decompressing requests with the given encoding.
+        #[must_use]
+        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.accept_compression_encodings.enable(encoding);
+            self
+        }
+        /// Compress responses with the given encoding, if the client supports it.
+        #[must_use]
+        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.send_compression_encodings.enable(encoding);
+            self
         }
     }
     impl<T, B> tonic::codegen::Service<http::Request<B>> for VegaFusionRuntimeServer<T>
@@ -413,7 +438,7 @@ pub mod vega_fusion_runtime_server {
             write!(f, "{:?}", self.0)
         }
     }
-    impl<T: VegaFusionRuntime> tonic::transport::NamedService
+    impl<T: VegaFusionRuntime> tonic::server::NamedService
     for VegaFusionRuntimeServer<T> {
         const NAME: &'static str = "services.VegaFusionRuntime";
     }
