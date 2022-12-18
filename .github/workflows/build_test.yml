@@ -80,7 +80,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
+          args: --release --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
       - name: Upload test artifacts
         uses: actions/upload-artifact@v2
         if: always()
