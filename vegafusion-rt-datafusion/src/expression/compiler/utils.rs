@@ -17,14 +17,14 @@ use datafusion::scalar::ScalarValue;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
+use datafusion::common::{Column, DFSchema};
 use datafusion::error::DataFusionError;
 use datafusion::execution::context::{default_session_builder, ExecutionProps, SessionState};
+use datafusion::optimizer::simplify_expressions::SimplifyInfo;
+use datafusion_expr::expr::Cast;
 use datafusion_expr::utils::expr_to_columns;
 use datafusion_expr::{coalesce, lit, BuiltinScalarFunction};
 use std::sync::Arc;
-use datafusion::common::{Column, DFSchema};
-use datafusion::optimizer::simplify_expressions::SimplifyInfo;
-use datafusion_expr::expr::Cast;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 lazy_static! {

@@ -10,9 +10,10 @@ use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestam
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype, is_string_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
-use chrono::{DateTime, Timelike, TimeZone};
+use chrono::{DateTime, TimeZone, Timelike};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
+use datafusion::common::DFSchema;
 use datafusion::error::DataFusionError;
 use datafusion::logical_expr::{Expr, ExprSchemable};
 use datafusion::physical_plan::udf::ScalarUDF;
@@ -24,7 +25,6 @@ use datafusion_expr::{
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
-use datafusion::common::DFSchema;
 use vegafusion_core::arrow::array::TimestampMillisecondBuilder;
 use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -196,7 +196,12 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
             let hours = args[3].as_any().downcast_ref::<Int64Array>().unwrap();
             let minutes = args[4].as_any().downcast_ref::<Int64Array>().unwrap();
             let seconds = args[5].as_any().downcast_ref::<Int64Array>().unwrap();
-            println!("args[6].data_type(): {}, {:?}, {:?}", args[6].data_type(), args[6], args[6].as_any().downcast_ref::<Int64Array>());
+            println!(
+                "args[6].data_type(): {}, {:?}, {:?}",
+                args[6].data_type(),
+                args[6],
+                args[6].as_any().downcast_ref::<Int64Array>()
+            );
             let millis = args[6].as_any().downcast_ref::<Int64Array>().unwrap();
 
             let num_rows = years.len();

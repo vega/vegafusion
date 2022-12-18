@@ -9,12 +9,12 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::arrow::array::{ArrayRef, StructArray};
 use datafusion::arrow::datatypes::{DataType, Field};
+use datafusion::common::DFSchema;
 use datafusion::logical_expr::{Expr, ExprSchemable};
 use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
 use std::sync::Arc;
-use datafusion::common::DFSchema;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ObjectExpression;
 

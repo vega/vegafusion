@@ -10,10 +10,7 @@ use crate::tokio_runtime::TOKIO_RUNTIME;
 use async_trait::async_trait;
 use datafusion::arrow::array::ArrayRef;
 use datafusion::arrow::datatypes::SchemaRef;
-use datafusion::arrow::{
-    record_batch::RecordBatch,
-    compute::concat_batches,
-};
+use datafusion::arrow::{compute::concat_batches, record_batch::RecordBatch};
 use datafusion::dataframe::DataFrame;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};

@@ -104,9 +104,7 @@ pub fn parse_datetime(
                 // Local midnight to follow JavaScript convention
                 let datetime = date.and_hms_opt(0, 0, 0).expect("Invalid date");
                 let default_input_tz = (*default_input_tz)?;
-                let datetime = default_input_tz
-                    .from_local_datetime(&datetime)
-                    .earliest()?;
+                let datetime = default_input_tz.from_local_datetime(&datetime).earliest()?;
                 return Some(datetime.with_timezone(&chrono::Utc));
             }
         }
@@ -234,8 +232,10 @@ pub fn parse_datetime_fallback(
             let local_tz = (*default_input_tz)?;
 
             // No timezone specified, build NaiveDateTime
-            let naive_date = NaiveDate::from_ymd_opt(year, month, day).expect("invalid or out-of-range date");
-            let naive_time = NaiveTime::from_hms_milli_opt(hour, minute, second, milliseconds).expect("invalid or out-of-range date");
+            let naive_date =
+                NaiveDate::from_ymd_opt(year, month, day).expect("invalid or out-of-range date");
+            let naive_time = NaiveTime::from_hms_milli_opt(hour, minute, second, milliseconds)
+                .expect("invalid or out-of-range date");
             let naive_datetime = NaiveDateTime::new(naive_date, naive_time);
 
             local_tz

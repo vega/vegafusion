@@ -6,8 +6,10 @@ use sqlgen::ast::{
     UnaryOperator as SqlUnaryOperator, WindowSpec as SqlWindowSpec,
 };
 
-use datafusion_expr::{AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator, WindowFunction};
 use datafusion_expr::expr::{BinaryExpr, Case, Cast};
+use datafusion_expr::{
+    AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator, WindowFunction,
+};
 
 use crate::sql::compile::function_arg::ToSqlFunctionArg;
 use crate::sql::compile::order::ToSqlOrderByExpr;
@@ -36,7 +38,7 @@ impl ToSqlExpr for Expr {
                 "ScalarVariable cannot be converted to SQL",
             )),
             Expr::Literal(value) => Ok(value.to_sql()?),
-            Expr::BinaryExpr(BinaryExpr  { left, op, right }) => {
+            Expr::BinaryExpr(BinaryExpr { left, op, right }) => {
                 let sql_op = match op {
                     Operator::Eq => SqlBinaryOperator::Eq,
                     Operator::NotEq => SqlBinaryOperator::NotEq,
@@ -104,7 +106,7 @@ impl ToSqlExpr for Expr {
                 low: Box::new(low.to_sql()?),
                 high: Box::new(high.to_sql()?),
             }),
-            Expr::Case (Case {
+            Expr::Case(Case {
                 expr,
                 when_then_expr,
                 else_expr,
@@ -453,8 +455,8 @@ impl ToSqlExpr for Expr {
 mod tests {
     use super::ToSqlExpr;
     use crate::expression::escape::flat_col;
-    use datafusion_expr::{lit, BuiltinScalarFunction, Expr, Between};
     use datafusion_expr::expr::Cast;
+    use datafusion_expr::{lit, Between, BuiltinScalarFunction, Expr};
     use sqlgen::dialect::DialectDisplay;
     use vegafusion_core::arrow::datatypes::DataType;
 

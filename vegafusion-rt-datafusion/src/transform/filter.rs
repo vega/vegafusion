@@ -13,8 +13,8 @@ use crate::transform::TransformTrait;
 use crate::expression::compiler::utils::{to_boolean, VfSimplifyInfo};
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
-use std::sync::Arc;
 use datafusion::optimizer::simplify_expressions::ExprSimplifier;
+use std::sync::Arc;
 
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Filter;

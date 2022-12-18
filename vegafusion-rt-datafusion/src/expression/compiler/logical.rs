@@ -31,12 +31,12 @@ pub fn compile_logical(
         (DataType::Boolean, DataType::Boolean) => {
             // If both are boolean, the use regular logical operation
             match node.to_operator() {
-                LogicalOperator::Or => Expr::BinaryExpr(BinaryExpr  {
+                LogicalOperator::Or => Expr::BinaryExpr(BinaryExpr {
                     left: Box::new(compiled_lhs),
                     op: Operator::Or,
                     right: Box::new(compiled_rhs),
                 }),
-                LogicalOperator::And => Expr::BinaryExpr(BinaryExpr  {
+                LogicalOperator::And => Expr::BinaryExpr(BinaryExpr {
                     left: Box::new(compiled_lhs),
                     op: Operator::And,
                     right: Box::new(compiled_rhs),
@@ -57,7 +57,7 @@ pub fn compile_logical(
             }
 
             match node.to_operator() {
-                LogicalOperator::Or => Expr::Case(Case{
+                LogicalOperator::Or => Expr::Case(Case {
                     expr: None,
                     when_then_expr: vec![(Box::new(lhs_boolean), Box::new(compiled_lhs))],
                     else_expr: Some(Box::new(compiled_rhs)),

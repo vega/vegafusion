@@ -29,6 +29,7 @@ use crate::sql::compile::expr::ToSqlExpr;
 use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
 use crate::expression::escape::{flat_col, unescaped_col};
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
+use datafusion_expr::expr::Cast;
 use datafusion_expr::{
     floor, lit, BuiltinScalarFunction, ColumnarValue, Expr, ReturnTypeFunction,
     ScalarFunctionImplementation, ScalarUDF, Signature, TypeSignature, Volatility,
@@ -36,7 +37,6 @@ use datafusion_expr::{
 use itertools::Itertools;
 use sqlgen::dialect::DialectDisplay;
 use std::str::FromStr;
-use datafusion_expr::expr::Cast;
 use vegafusion_core::arrow::array::{ArrayRef, Int64Array, TimestampMillisecondArray};
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::temporal_conversions::date64_to_datetime;
@@ -571,7 +571,10 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
     in_tz: T,
 ) -> DateTime<T> {
     // Load and interpret date time as UTC
-    let dt_value = date64_to_datetime(value).unwrap().with_nanosecond(0).unwrap();
+    let dt_value = date64_to_datetime(value)
+        .unwrap()
+        .with_nanosecond(0)
+        .unwrap();
     let dt_value = Utc.from_local_datetime(&dt_value).earliest().unwrap();
     let mut dt_value = dt_value.with_timezone(&in_tz);
 
@@ -688,8 +691,7 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
             // (which is January 1st)
             let first_sunday_of_2012 = in_tz
                 .from_local_datetime(&NaiveDateTime::new(
-                    NaiveDate::from_ymd_opt(2012, 1, 1)
-                        .expect("invalid or out-of-range datetime"),
+                    NaiveDate::from_ymd_opt(2012, 1, 1).expect("invalid or out-of-range datetime"),
                     dt_value.time(),
                 ))
                 .earliest()
@@ -707,7 +709,8 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
             NaiveDate::from_isoywd_opt(dt_value.year(), 1, weekday)
         } else {
             NaiveDate::from_isoywd_opt(dt_value.year(), 2, weekday)
-        }.expect("invalid or out-of-range datetime");
+        }
+        .expect("invalid or out-of-range datetime");
 
         let new_datetime = NaiveDateTime::new(new_date, dt_value.time());
         dt_value = in_tz.from_local_datetime(&new_datetime).earliest().unwrap();

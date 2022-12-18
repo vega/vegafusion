@@ -6,9 +6,9 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use datafusion::common::DFSchema;
 use crate::expression::compiler::utils::{to_boolean, to_numeric};
 use crate::expression::compiler::{compile, config::CompilationConfig};
+use datafusion::common::DFSchema;
 use datafusion::logical_expr::Expr;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::{UnaryExpression, UnaryOperator};

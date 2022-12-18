@@ -215,7 +215,7 @@ pub fn normalize_scalar(scalar: &ScalarValue) -> ScalarValue {
 fn flip_negative_zero(scalar: ScalarValue) -> ScalarValue {
     match scalar {
         ScalarValue::Float64(Some(v)) if v.abs() == 0.0 => ScalarValue::Float64(Some(0.0)),
-        _ => scalar
+        _ => scalar,
     }
 }
 

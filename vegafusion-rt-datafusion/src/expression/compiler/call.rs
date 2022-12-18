@@ -24,6 +24,7 @@ use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::cast_to;
 use datafusion::arrow::datatypes::DataType;
+use datafusion::common::DFSchema;
 use datafusion::logical_expr::Expr;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::prelude::SessionContext;
@@ -32,7 +33,6 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
-use datafusion::common::DFSchema;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{

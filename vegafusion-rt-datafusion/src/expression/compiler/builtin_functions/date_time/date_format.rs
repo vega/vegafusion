@@ -17,7 +17,7 @@ use crate::expression::compiler::builtin_functions::date_time::str_to_timestampt
 use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::to_timestamp_ms;
 use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
-use datafusion::common::{DataFusionError, DFSchema};
+use datafusion::common::{DFSchema, DataFusionError};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::scalar::ScalarValue;
 use datafusion_expr::{

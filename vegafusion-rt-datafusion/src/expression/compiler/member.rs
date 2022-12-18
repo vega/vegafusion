@@ -24,12 +24,12 @@ use datafusion::prelude::lit;
 use datafusion::scalar::ScalarValue;
 
 use crate::expression::escape::flat_col;
+use datafusion::common::DFSchema;
 use datafusion_expr::{
     BuiltinScalarFunction, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
 };
 use std::convert::TryFrom;
 use std::sync::Arc;
-use datafusion::common::DFSchema;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{Identifier, MemberExpression};
 

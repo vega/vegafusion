@@ -78,8 +78,9 @@ pub fn convert_timezone(
                     let seconds = v / 1000;
                     let milliseconds = v % 1000;
                     let nanoseconds = (milliseconds * 1_000_000) as u32;
-                    let naive_local_datetime = NaiveDateTime::from_timestamp_opt(seconds, nanoseconds)
-                        .expect("invalid or out-of-range datetime");
+                    let naive_local_datetime =
+                        NaiveDateTime::from_timestamp_opt(seconds, nanoseconds)
+                            .expect("invalid or out-of-range datetime");
 
                     // Get UTC offset when the naive datetime is considered to be in local time
                     let local_datetime = if let Some(local_datetime) =

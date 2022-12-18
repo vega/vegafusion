@@ -20,7 +20,6 @@ pub mod object;
 pub mod unary;
 pub mod utils;
 
-use datafusion::common::DFSchema;
 use crate::expression::compiler::array::compile_array;
 use crate::expression::compiler::binary::compile_binary;
 use crate::expression::compiler::call::compile_call;
@@ -32,6 +31,7 @@ use crate::expression::compiler::logical::compile_logical;
 use crate::expression::compiler::member::compile_member;
 use crate::expression::compiler::object::compile_object;
 use crate::expression::compiler::unary::compile_unary;
+use datafusion::common::DFSchema;
 use datafusion::logical_expr::Expr;
 use utils::UNIT_SCHEMA;
 
@@ -81,15 +81,15 @@ mod test_compile {
 
     use crate::expression::escape::flat_col;
     use crate::task_graph::timezone::RuntimeTzConfig;
+    use datafusion::common::DFSchema;
     use datafusion::physical_plan::ColumnarValue;
     use datafusion::prelude::{concat, lit};
     use datafusion::scalar::ScalarValue;
+    use datafusion_expr::expr::{BinaryExpr, Case, Cast};
     use datafusion_expr::BuiltinScalarFunction;
     use std::collections::HashMap;
     use std::convert::TryFrom;
     use std::sync::Arc;
-    use datafusion::common::DFSchema;
-    use datafusion_expr::expr::{BinaryExpr, Case, Cast};
 
     // use vegafusion_client::expression::parser::parse;
 
@@ -250,7 +250,7 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
         println!("expr: {:?}", result_expr);
 
-        let expected_expr = Expr::BinaryExpr(BinaryExpr  {
+        let expected_expr = Expr::BinaryExpr(BinaryExpr {
             left: Box::new(lit(false)),
             op: Operator::Or,
             right: Box::new(lit(true)),
@@ -306,7 +306,7 @@ mod test_compile {
         println!("expr: {:?}", result_expr);
 
         // 1 + +'2'
-        let t1 = Expr::BinaryExpr(BinaryExpr  {
+        let t1 = Expr::BinaryExpr(BinaryExpr {
             left: Box::new(lit(1.0)),
             op: Operator::Plus,
             right: Box::new(Expr::Cast(Cast {
@@ -316,7 +316,7 @@ mod test_compile {
         });
 
         // true * 10
-        let t2 = Expr::BinaryExpr(BinaryExpr  {
+        let t2 = Expr::BinaryExpr(BinaryExpr {
             left: Box::new(Expr::Cast(Cast {
                 expr: Box::new(lit(true)),
                 data_type: DataType::Float64,
@@ -325,7 +325,7 @@ mod test_compile {
             right: Box::new(lit(10.0)),
         });
 
-        let expected_expr = Expr::BinaryExpr(BinaryExpr  {
+        let expected_expr = Expr::BinaryExpr(BinaryExpr {
             left: Box::new(t1),
             op: Operator::Plus,
             right: Box::new(t2),
@@ -364,7 +364,7 @@ mod test_compile {
         let expr = parse("'2.0' == 2").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::BinaryExpr(BinaryExpr  {
+        let expected_expr = Expr::BinaryExpr(BinaryExpr {
             left: Box::new(Expr::Cast(Cast {
                 expr: Box::new(lit("2.0")),
                 data_type: DataType::Float64,
@@ -574,7 +574,7 @@ mod test_compile {
 
         let result_expr = compile(&expr, &Default::default(), Some(&schema)).unwrap();
 
-        let expected_expr = Expr::BinaryExpr(BinaryExpr  {
+        let expected_expr = Expr::BinaryExpr(BinaryExpr {
             left: Box::new(flat_col("two")),
             op: Operator::Multiply,
             right: Box::new(lit(3.0)),

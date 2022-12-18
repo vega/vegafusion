@@ -8,24 +8,24 @@
  */
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{ExprHelpers, to_numeric};
+use crate::expression::compiler::utils::{to_numeric, ExprHelpers};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
 use datafusion::logical_expr::lit;
 
+use crate::expression::escape::{flat_col, unescaped_col};
+use crate::sql::dataframe::SqlDataFrame;
+use datafusion::common::DFSchema;
 use datafusion::scalar::ScalarValue;
+use datafusion_expr::expr::Cast;
 use datafusion_expr::{abs, floor, when, Expr};
 use float_cmp::approx_eq;
 use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
-use datafusion::common::DFSchema;
-use datafusion_expr::expr::Cast;
 use vegafusion_core::arrow::datatypes::{DataType, Field};
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::error::{Result, VegaFusionError};
-use crate::expression::escape::{flat_col, unescaped_col};
-use crate::sql::dataframe::SqlDataFrame;
 use vegafusion_core::proto::gen::transforms::Bin;
 use vegafusion_core::task_graph::task_value::TaskValue;
 

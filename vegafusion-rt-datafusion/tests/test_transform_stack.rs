@@ -274,7 +274,7 @@ mod test_stack_no_divide_by_zero {
               "sort": {"field": ["Title", "Release Date"]}
             }
         ))
-            .unwrap();
+        .unwrap();
 
         // Vega sometimes produces NULL or NaN when a stack group has zero sum.
         // Replace these with 0 to match VegaFusion's behavior

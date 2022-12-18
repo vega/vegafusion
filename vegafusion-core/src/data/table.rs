@@ -7,10 +7,10 @@
  * this program the details of the active license.
  */
 use crate::arrow::{
+    compute::concat_batches,
     datatypes::{DataType, SchemaRef},
     json,
     record_batch::RecordBatch,
-    compute::concat_batches
 };
 use crate::error::{Result, ResultWithContext, VegaFusionError};
 use std::borrow::Cow;
