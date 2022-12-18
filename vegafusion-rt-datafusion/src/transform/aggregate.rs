@@ -133,7 +133,7 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
         let agg_expr = make_aggr_expr(col_name, &op, schema)?;
 
         // Apply alias
-        let agg_expr = agg_expr.alias(&alias);
+        let agg_expr = agg_expr.alias(alias);
 
         agg_exprs.push(agg_expr)
     }
