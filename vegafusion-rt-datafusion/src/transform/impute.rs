@@ -6,6 +6,7 @@ use crate::sql::dataframe::SqlDataFrame;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::common::ScalarValue;
+use datafusion_expr::expr::Cast;
 use datafusion_expr::{lit, when, BuiltInWindowFunction, Expr, WindowFunction};
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
@@ -149,10 +150,10 @@ fn single_groupby_sql(
     select_columns.push(
         when(
             unescaped_col(&tx.field).is_not_null(),
-            Expr::Cast {
+            Expr::Cast(Cast {
                 expr: Box::new(Expr::Literal(ScalarValue::Boolean(None))),
                 data_type: DataType::Boolean,
-            },
+            }),
         )
         .otherwise(lit(true))
         .unwrap()

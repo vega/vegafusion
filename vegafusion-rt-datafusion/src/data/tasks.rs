@@ -20,7 +20,7 @@ use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::dataframe::DataFrame;
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::execution::options::CsvReadOptions;
-use datafusion::logical_plan::Expr;
+use datafusion::logical_expr::Expr;
 use datafusion::prelude::SessionContext;
 use datafusion_expr::lit;
 use std::collections::{HashMap, HashSet};

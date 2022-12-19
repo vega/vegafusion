@@ -9,7 +9,7 @@
 use datafusion::arrow::array::{ArrayRef, BooleanArray};
 use datafusion::arrow::datatypes::{DataType, Schema};
 use datafusion::arrow::record_batch::RecordBatch;
-use datafusion::logical_plan::{Column, DFSchema, Expr, ExprSchemable, SimplifyInfo};
+use datafusion::logical_expr::{Expr, ExprSchemable};
 use datafusion::physical_plan::planner::DefaultPhysicalPlanner;
 use datafusion::physical_plan::{ColumnarValue, PhysicalExpr, PhysicalPlanner};
 use datafusion::scalar::ScalarValue;
@@ -17,8 +17,11 @@ use datafusion::scalar::ScalarValue;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
+use datafusion::common::{Column, DFSchema};
 use datafusion::error::DataFusionError;
 use datafusion::execution::context::{default_session_builder, ExecutionProps, SessionState};
+use datafusion::optimizer::simplify_expressions::SimplifyInfo;
+use datafusion_expr::expr::Cast;
 use datafusion_expr::utils::expr_to_columns;
 use datafusion_expr::{coalesce, lit, BuiltinScalarFunction};
 use std::sync::Arc;
@@ -103,10 +106,10 @@ pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
         //  - empty string to false
         //  - NaN to false
         coalesce(vec![
-            Expr::Cast {
+            Expr::Cast(Cast {
                 expr: Box::new(value),
                 data_type: DataType::Boolean,
-            },
+            }),
             lit(false),
         ])
     };
@@ -127,10 +130,10 @@ pub fn to_numeric(value: Expr, schema: &DFSchema) -> Result<Expr> {
         }
     } else {
         // Cast non-numeric types (like UTF-8) to Float64
-        Expr::Cast {
+        Expr::Cast(Cast {
             expr: Box::new(value),
             data_type: DataType::Float64,
-        }
+        })
     };
 
     Ok(numeric_value)
@@ -142,10 +145,10 @@ pub fn to_string(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let utf8_value = if dtype == DataType::Utf8 || dtype == DataType::LargeUtf8 {
         value
     } else {
-        Expr::Cast {
+        Expr::Cast(Cast {
             expr: Box::new(value),
             data_type: DataType::Utf8,
-        }
+        })
     };
 
     Ok(utf8_value)
@@ -165,10 +168,10 @@ pub fn cast_to(value: Expr, cast_dtype: &DataType, schema: &DFSchema) -> Result<
         Ok(value)
     } else {
         // Cast non-numeric types (like UTF-8) to Float64
-        Ok(Expr::Cast {
+        Ok(Expr::Cast(Cast {
             expr: Box::new(value),
             data_type: cast_dtype.clone(),
-        })
+        }))
     }
 }
 

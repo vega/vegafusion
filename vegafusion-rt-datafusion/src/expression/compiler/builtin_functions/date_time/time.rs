@@ -9,11 +9,12 @@
 use crate::task_graph::timezone::RuntimeTzConfig;
 
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
-use datafusion::logical_plan::{DFSchema, Expr};
+use datafusion::logical_expr::Expr;
 
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use datafusion::arrow::compute::cast;
+use datafusion::common::DFSchema;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::{
     lit, ColumnarValue, ExprSchemable, ReturnTypeFunction, ScalarFunctionImplementation, Signature,

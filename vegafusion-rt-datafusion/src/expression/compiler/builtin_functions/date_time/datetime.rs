@@ -10,11 +10,12 @@ use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestam
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype, is_string_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
-use chrono::{DateTime, TimeZone};
+use chrono::{DateTime, TimeZone, Timelike};
 use datafusion::arrow::array::{Array, ArrayRef, Int64Array};
 use datafusion::arrow::datatypes::DataType;
+use datafusion::common::DFSchema;
 use datafusion::error::DataFusionError;
-use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
+use datafusion::logical_expr::{Expr, ExprSchemable};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::scalar::ScalarValue;
@@ -134,18 +135,18 @@ fn extract_datetime_component_args(
     // Pad unspecified args
     if result_args.len() < 2 {
         // default to 1st (zero-based) month of the year
-        result_args.push(lit(0))
+        result_args.push(lit(0i64))
     }
 
     if result_args.len() < 3 {
         // default to 1st of the month
-        result_args.push(lit(1))
+        result_args.push(lit(1i64))
     }
 
     // Remaining args (hour, minute, second, millisecond) default to zero
     let num_args = result_args.len();
     for _ in num_args..7 {
-        result_args.push(lit(0));
+        result_args.push(lit(0i64));
     }
 
     result_args.push(lit(tz_str));
@@ -195,6 +196,12 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
             let hours = args[3].as_any().downcast_ref::<Int64Array>().unwrap();
             let minutes = args[4].as_any().downcast_ref::<Int64Array>().unwrap();
             let seconds = args[5].as_any().downcast_ref::<Int64Array>().unwrap();
+            println!(
+                "args[6].data_type(): {}, {:?}, {:?}",
+                args[6].data_type(),
+                args[6],
+                args[6].as_any().downcast_ref::<Int64Array>()
+            );
             let millis = args[6].as_any().downcast_ref::<Int64Array>().unwrap();
 
             let num_rows = years.len();
@@ -227,15 +234,17 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
                     }
 
                     let datetime: Option<DateTime<_>> = input_tz
-                        .ymd_opt(year as i32, month as u32 + 1, day as u32)
+                        .with_ymd_and_hms(
+                            year as i32,
+                            month as u32 + 1,
+                            day as u32,
+                            hour as u32,
+                            minute as u32,
+                            second as u32,
+                        )
                         .single()
-                        .and_then(|date| {
-                            date.and_hms_milli_opt(
-                                hour as u32,
-                                minute as u32,
-                                second as u32,
-                                milli as u32,
-                            )
+                        .and_then(|date: DateTime<_>| {
+                            date.with_nanosecond((milli * 1_000_000) as u32)
                         });
 
                     if let Some(datetime) = datetime {

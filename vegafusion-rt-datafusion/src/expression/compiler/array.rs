@@ -11,7 +11,8 @@ use datafusion::arrow::array::{
     Array, ArrayDataBuilder, ArrayRef, BooleanBufferBuilder, Int32Array, ListArray,
 };
 use datafusion::arrow::datatypes::{DataType, Field, Float64Type};
-use datafusion::logical_plan::{DFSchema, Expr};
+use datafusion::common::DFSchema;
+use datafusion::logical_expr::Expr;
 use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};

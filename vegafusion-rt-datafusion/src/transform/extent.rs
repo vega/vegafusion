@@ -18,7 +18,7 @@ use datafusion::arrow::datatypes::Field;
 use datafusion::common::DFSchema;
 
 use crate::expression::escape::unescaped_col;
-use datafusion::logical_plan::{max, min};
+use datafusion::logical_expr::{max, min};
 use datafusion::scalar::ScalarValue;
 use datafusion_expr::Expr;
 use std::sync::Arc;

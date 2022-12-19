@@ -31,7 +31,8 @@ use crate::expression::compiler::logical::compile_logical;
 use crate::expression::compiler::member::compile_member;
 use crate::expression::compiler::object::compile_object;
 use crate::expression::compiler::unary::compile_unary;
-use datafusion::logical_plan::{DFSchema, Expr};
+use datafusion::common::DFSchema;
+use datafusion::logical_expr::Expr;
 use utils::UNIT_SCHEMA;
 
 use vegafusion_core::error::Result;
@@ -76,13 +77,15 @@ mod test_compile {
         array::{ArrayRef, Float64Array, StructArray},
         datatypes::{DataType, Field, Schema},
     };
-    use datafusion::logical_plan::{DFSchema, Expr, Operator};
+    use datafusion::logical_expr::{Expr, Operator};
 
     use crate::expression::escape::flat_col;
     use crate::task_graph::timezone::RuntimeTzConfig;
+    use datafusion::common::DFSchema;
     use datafusion::physical_plan::ColumnarValue;
     use datafusion::prelude::{concat, lit};
     use datafusion::scalar::ScalarValue;
+    use datafusion_expr::expr::{BinaryExpr, Case, Cast};
     use datafusion_expr::BuiltinScalarFunction;
     use std::collections::HashMap;
     use std::convert::TryFrom;
@@ -164,10 +167,10 @@ mod test_compile {
         println!("expr: {:?}", result_expr);
 
         // plus prefix on a string should result in a numeric cast
-        let expected_expr = Expr::Cast {
+        let expected_expr = Expr::Cast(Cast {
             expr: Box::new(lit("72")),
             data_type: DataType::Float64,
-        };
+        });
         assert_eq!(result_expr, expected_expr);
 
         // Check evaluated value
@@ -188,10 +191,10 @@ mod test_compile {
         let expected_expr = Expr::ScalarFunction {
             fun: BuiltinScalarFunction::Coalesce,
             args: vec![
-                Expr::Cast {
+                Expr::Cast(Cast {
                     expr: Box::new(lit(32.0)),
                     data_type: DataType::Boolean,
-                },
+                }),
                 lit(false),
             ],
         }
@@ -213,23 +216,23 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
         println!("expr: {:?}", result_expr);
 
-        let expected_expr = Expr::Case {
+        let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
                 Box::new(Expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Coalesce,
                     args: vec![
-                        Expr::Cast {
+                        Expr::Cast(Cast {
                             expr: Box::new(lit(32.0)),
                             data_type: DataType::Boolean,
-                        },
+                        }),
                         lit(false),
                     ],
                 }),
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),
-        };
+        });
 
         assert_eq!(result_expr, expected_expr);
 
@@ -247,11 +250,11 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
         println!("expr: {:?}", result_expr);
 
-        let expected_expr = Expr::BinaryExpr {
+        let expected_expr = Expr::BinaryExpr(BinaryExpr {
             left: Box::new(lit(false)),
             op: Operator::Or,
             right: Box::new(lit(true)),
-        };
+        });
         assert_eq!(result_expr, expected_expr);
 
         // Check evaluated value
@@ -268,23 +271,23 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
         println!("expr: {:?}", result_expr);
 
-        let expected_expr = Expr::Case {
+        let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
                 Box::new(Expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Coalesce,
                     args: vec![
-                        Expr::Cast {
+                        Expr::Cast(Cast {
                             expr: Box::new(lit(5.0)),
                             data_type: DataType::Boolean,
-                        },
+                        }),
                         lit(false),
                     ],
                 }),
                 Box::new(lit(55.0)),
             )],
             else_expr: Some(Box::new(lit(5.0))),
-        };
+        });
 
         assert_eq!(result_expr, expected_expr);
 
@@ -303,30 +306,30 @@ mod test_compile {
         println!("expr: {:?}", result_expr);
 
         // 1 + +'2'
-        let t1 = Expr::BinaryExpr {
+        let t1 = Expr::BinaryExpr(BinaryExpr {
             left: Box::new(lit(1.0)),
             op: Operator::Plus,
-            right: Box::new(Expr::Cast {
+            right: Box::new(Expr::Cast(Cast {
                 expr: Box::new(lit("2")),
                 data_type: DataType::Float64,
-            }),
-        };
+            })),
+        });
 
         // true * 10
-        let t2 = Expr::BinaryExpr {
-            left: Box::new(Expr::Cast {
+        let t2 = Expr::BinaryExpr(BinaryExpr {
+            left: Box::new(Expr::Cast(Cast {
                 expr: Box::new(lit(true)),
                 data_type: DataType::Float64,
-            }),
+            })),
             op: Operator::Multiply,
             right: Box::new(lit(10.0)),
-        };
+        });
 
-        let expected_expr = Expr::BinaryExpr {
+        let expected_expr = Expr::BinaryExpr(BinaryExpr {
             left: Box::new(t1),
             op: Operator::Plus,
             right: Box::new(t2),
-        };
+        });
 
         println!("{:?}", result_expr);
         assert_eq!(result_expr, expected_expr);
@@ -361,14 +364,14 @@ mod test_compile {
         let expr = parse("'2.0' == 2").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::BinaryExpr {
-            left: Box::new(Expr::Cast {
+        let expected_expr = Expr::BinaryExpr(BinaryExpr {
+            left: Box::new(Expr::Cast(Cast {
                 expr: Box::new(lit("2.0")),
                 data_type: DataType::Float64,
-            }),
+            })),
             op: Operator::Eq,
             right: Box::new(lit(2.0)),
-        };
+        });
 
         println!("expr: {:?}", result_expr);
         assert_eq!(result_expr, expected_expr);
@@ -571,11 +574,11 @@ mod test_compile {
 
         let result_expr = compile(&expr, &Default::default(), Some(&schema)).unwrap();
 
-        let expected_expr = Expr::BinaryExpr {
+        let expected_expr = Expr::BinaryExpr(BinaryExpr {
             left: Box::new(flat_col("two")),
             op: Operator::Multiply,
             right: Box::new(lit(3.0)),
-        };
+        });
 
         println!("expr: {:?}", result_expr);
         assert_eq!(result_expr, expected_expr);
@@ -618,23 +621,23 @@ mod test_compile {
         let expr = parse("if(32, 7, 9)").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::Case {
+        let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
                 Box::new(Expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Coalesce,
                     args: vec![
-                        Expr::Cast {
+                        Expr::Cast(Cast {
                             expr: Box::new(lit(32.0)),
                             data_type: DataType::Boolean,
-                        },
+                        }),
                         lit(false),
                     ],
                 }),
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),
-        };
+        });
 
         assert_eq!(result_expr, expected_expr);
         println!("expr: {:?}", result_expr);

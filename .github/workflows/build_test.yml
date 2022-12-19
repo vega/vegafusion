@@ -43,11 +43,10 @@ jobs:
         run: |
           sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
         if: ${{ runner.os == 'Linux' }}
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.19.4'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install protoc on Window
+        run: |
+          choco install --yes protoc
+        if: ${{ runner.os == 'Windows' }}
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -75,7 +74,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
+          args: --release --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
       - name: Upload test artifacts
         uses: actions/upload-artifact@v2
         if: always()
@@ -96,6 +95,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
+      - name: Install protoc on Window
+        run: |
+          choco install --yes protoc
+        if: ${{ runner.os == 'Windows' }}
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -105,11 +108,6 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: True
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.19.4'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build vegafusion-server
         uses: actions-rs/cargo@v1
         with:
@@ -149,16 +147,11 @@ jobs:
         run: |
           choco install --yes protoc
         if: ${{ runner.os == 'Windows' }}
-      - name: Install nightly Rust toolchain
+      - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: stable
           override: true
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.19.4'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Cache rust dependencies
         uses: Swatinem/rust-cache@v1
         with:
@@ -169,8 +162,8 @@ jobs:
           maturin-version: 0.12.20
           command: build
           manylinux: 2014
-          rust-toolchain: nightly
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip -i python3.10 -i python3.9 -i python3.8 -i python3.7 --rustc-extra-args="-Z oom=panic"
+          rust-toolchain: stable
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip -i python3.10 -i python3.9 -i python3.8 -i python3.7
       - name: Download Apple Silicon toolchain
         if: ${{ runner.os == 'macOS' }}
         run: |
@@ -181,8 +174,8 @@ jobs:
         with:
           maturin-version: 0.12.20
           command: build
-          rust-toolchain: nightly
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7 --rustc-extra-args="-Z oom=panic"
+          rust-toolchain: stable
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
       - name: Remove unwanted universal
         if: ${{ runner.os == 'macOS' }}
         run: |
@@ -209,11 +202,6 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '17'
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.19.4'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build package
         working-directory: vegafusion-wasm/
         run: |

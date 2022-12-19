@@ -10,7 +10,7 @@ use crate::tokio_runtime::TOKIO_RUNTIME;
 use async_trait::async_trait;
 use datafusion::arrow::array::ArrayRef;
 use datafusion::arrow::datatypes::SchemaRef;
-use datafusion::arrow::record_batch::RecordBatch;
+use datafusion::arrow::{compute::concat_batches, record_batch::RecordBatch};
 use datafusion::dataframe::DataFrame;
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -38,7 +38,7 @@ impl DataFrameUtils for Arc<DataFrame> {
         if let Some(batch) = batches.get(0) {
             arrow_schema = batch.schema()
         }
-        RecordBatch::concat(&arrow_schema, &batches)
+        concat_batches(&arrow_schema, &batches)
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
 
@@ -48,7 +48,7 @@ impl DataFrameUtils for Arc<DataFrame> {
         if let Some(batch) = batches.get(0) {
             arrow_schema = batch.schema()
         }
-        RecordBatch::concat(&arrow_schema, &batches)
+        concat_batches(&arrow_schema, &batches)
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
 }

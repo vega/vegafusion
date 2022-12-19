@@ -24,6 +24,10 @@ def order_items_spec():
           "ops": ["count"],
           "fields": ["menu_item"],
           "as": ["__count"]
+        },
+        {
+            "type": "collect",
+            "sort": {"field": ["menu_item"]}
         }
       ]
     }
@@ -857,8 +861,9 @@ def test_pre_transform_datasets():
     assert len(warnings) == 0
     assert len(datasets) == 1
 
+    result = datasets[0]
     expected = pd.DataFrame({"menu_item": [0, 1, 2], "__count": [n, 2 * n, 3 * n]})
-    pd.testing.assert_frame_equal(datasets[0], expected)
+    pd.testing.assert_frame_equal(result, expected)
 
 
 def test_pre_transform_planner_warning1():

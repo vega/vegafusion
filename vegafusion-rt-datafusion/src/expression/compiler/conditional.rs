@@ -8,7 +8,9 @@
  */
 use crate::expression::compiler::utils::{cast_to, is_string_datatype, to_boolean};
 use crate::expression::compiler::{compile, config::CompilationConfig};
-use datafusion::logical_plan::{DFSchema, Expr, ExprSchemable};
+use datafusion::common::DFSchema;
+use datafusion::logical_expr::{Expr, ExprSchemable};
+use datafusion_expr::expr::Case;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ConditionalExpression;
@@ -45,9 +47,9 @@ pub fn compile_conditional(
             (consequent_expr, alternate_expr)
         };
 
-    Ok(Expr::Case {
+    Ok(Expr::Case(Case {
         expr: None,
         when_then_expr: vec![(Box::new(test), Box::new(consequent_expr))],
         else_expr: Some(Box::new(alternate_expr)),
-    })
+    }))
 }

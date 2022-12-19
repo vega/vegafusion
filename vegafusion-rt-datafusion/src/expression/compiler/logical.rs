@@ -9,7 +9,9 @@
 use crate::expression::compiler::utils::{cast_to, data_type, is_numeric_datatype, to_boolean};
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::arrow::datatypes::DataType;
-use datafusion::logical_plan::{DFSchema, Expr, Operator};
+use datafusion::common::DFSchema;
+use datafusion::logical_expr::{Expr, Operator};
+use datafusion_expr::expr::{BinaryExpr, Case};
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::{LogicalExpression, LogicalOperator};
 
@@ -29,16 +31,16 @@ pub fn compile_logical(
         (DataType::Boolean, DataType::Boolean) => {
             // If both are boolean, the use regular logical operation
             match node.to_operator() {
-                LogicalOperator::Or => Expr::BinaryExpr {
+                LogicalOperator::Or => Expr::BinaryExpr(BinaryExpr {
                     left: Box::new(compiled_lhs),
                     op: Operator::Or,
                     right: Box::new(compiled_rhs),
-                },
-                LogicalOperator::And => Expr::BinaryExpr {
+                }),
+                LogicalOperator::And => Expr::BinaryExpr(BinaryExpr {
                     left: Box::new(compiled_lhs),
                     op: Operator::And,
                     right: Box::new(compiled_rhs),
-                },
+                }),
             }
         }
         _ => {
@@ -55,16 +57,16 @@ pub fn compile_logical(
             }
 
             match node.to_operator() {
-                LogicalOperator::Or => Expr::Case {
+                LogicalOperator::Or => Expr::Case(Case {
                     expr: None,
                     when_then_expr: vec![(Box::new(lhs_boolean), Box::new(compiled_lhs))],
                     else_expr: Some(Box::new(compiled_rhs)),
-                },
-                LogicalOperator::And => Expr::Case {
+                }),
+                LogicalOperator::And => Expr::Case(Case {
                     expr: None,
                     when_then_expr: vec![(Box::new(lhs_boolean), Box::new(compiled_rhs))],
                     else_expr: Some(Box::new(compiled_lhs)),
-                },
+                }),
             }
         }
     };

@@ -16,7 +16,7 @@ use datafusion::arrow::array::{
 use datafusion::arrow::compute::{cast, kernels};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::error::DataFusionError;
-use datafusion::logical_plan::{DFSchema, Expr};
+use datafusion::logical_expr::Expr;
 use datafusion::physical_plan::functions::make_scalar_function;
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
@@ -24,6 +24,7 @@ use datafusion::prelude::lit;
 use datafusion::scalar::ScalarValue;
 
 use crate::expression::escape::flat_col;
+use datafusion::common::DFSchema;
 use datafusion_expr::{
     BuiltinScalarFunction, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
 };
@@ -111,7 +112,7 @@ pub fn compile_member(
                     // SQL substr function is 1-indexed so add one
                     Expr::ScalarFunction {
                         fun: BuiltinScalarFunction::Substr,
-                        args: vec![compiled_object, lit((index + 1) as i32), lit(1)],
+                        args: vec![compiled_object, lit((index + 1) as i64), lit(1i64)],
                     }
                 } else {
                     return Err(VegaFusionError::compilation(format!(

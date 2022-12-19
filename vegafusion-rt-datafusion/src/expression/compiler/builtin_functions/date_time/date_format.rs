@@ -10,14 +10,14 @@ use crate::task_graph::timezone::RuntimeTzConfig;
 use chrono::NaiveDateTime;
 use datafusion::arrow::array::{ArrayRef, StringArray, TimestampMillisecondArray};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
-use datafusion::logical_plan::{DFSchema, Expr};
+use datafusion::logical_expr::Expr;
 
 use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::to_timestamp_ms;
 use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
-use datafusion::common::DataFusionError;
+use datafusion::common::{DFSchema, DataFusionError};
 use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::scalar::ScalarValue;
 use datafusion_expr::{
@@ -165,7 +165,8 @@ pub fn make_time_format_udf() -> ScalarUDF {
                     // Load as UTC datetime
                     let utc_seconds = utc_millis / 1_000;
                     let utc_nanos = (utc_millis % 1_000 * 1_000_000) as u32;
-                    let naive_datetime = NaiveDateTime::from_timestamp(utc_seconds, utc_nanos);
+                    let naive_datetime = NaiveDateTime::from_timestamp_opt(utc_seconds, utc_nanos)
+                        .expect("invalid or out-of-range datetime");
 
                     // Format as string
                     let formatted = naive_datetime.format(&format_str);

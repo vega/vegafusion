@@ -1,259 +1,282 @@
 /// Filter
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Filter {
-    #[prost(message, optional, tag="1")]
+    #[prost(message, optional, tag = "1")]
     pub expr: ::core::option::Option<super::expression::Expression>,
 }
 /// Formula
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Formula {
-    #[prost(message, optional, tag="1")]
+    #[prost(message, optional, tag = "1")]
     pub expr: ::core::option::Option<super::expression::Expression>,
-    #[prost(string, tag="2")]
+    #[prost(string, tag = "2")]
     pub r#as: ::prost::alloc::string::String,
 }
 /// Extent
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Extent {
-    #[prost(string, tag="1")]
+    #[prost(string, tag = "1")]
     pub field: ::prost::alloc::string::String,
-    #[prost(string, optional, tag="2")]
+    #[prost(string, optional, tag = "2")]
     pub signal: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Collect
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Collect {
-    #[prost(string, repeated, tag="1")]
+    #[prost(string, repeated, tag = "1")]
     pub fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(enumeration="SortOrder", repeated, tag="2")]
+    #[prost(enumeration = "SortOrder", repeated, tag = "2")]
     pub order: ::prost::alloc::vec::Vec<i32>,
 }
 /// Bin
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Bin {
-    #[prost(string, tag="1")]
+    #[prost(string, tag = "1")]
     pub field: ::prost::alloc::string::String,
-    #[prost(message, optional, tag="2")]
+    #[prost(message, optional, tag = "2")]
     pub extent: ::core::option::Option<super::expression::Expression>,
-    #[prost(string, optional, tag="3")]
+    #[prost(string, optional, tag = "3")]
     pub signal: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag="4")]
+    #[prost(string, optional, tag = "4")]
     pub alias_0: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag="5")]
+    #[prost(string, optional, tag = "5")]
     pub alias_1: ::core::option::Option<::prost::alloc::string::String>,
     /// A value in the binned domain at which to anchor the bins The bin boundaries will be shifted,
     /// if necessary, to ensure that a boundary aligns with the anchor value.
-    #[prost(double, optional, tag="6")]
+    #[prost(double, optional, tag = "6")]
     pub anchor: ::core::option::Option<f64>,
     /// The maximum number of bins allowed
-    #[prost(double, tag="7")]
+    #[prost(double, tag = "7")]
     pub maxbins: f64,
     /// The number base to use for automatic bin selection (e.g. base 10)
-    #[prost(double, tag="8")]
+    #[prost(double, tag = "8")]
     pub base: f64,
     /// An exact step size to use between bins. Overrides other options.
-    #[prost(double, optional, tag="9")]
+    #[prost(double, optional, tag = "9")]
     pub step: ::core::option::Option<f64>,
     /// A list of allowable step sizes to choose from
-    #[prost(double, repeated, tag="10")]
+    #[prost(double, repeated, tag = "10")]
     pub steps: ::prost::alloc::vec::Vec<f64>,
     /// The value span over which to generate bin boundaries. Defaults to the exact extent of the data
-    #[prost(message, optional, tag="11")]
+    #[prost(message, optional, tag = "11")]
     pub span: ::core::option::Option<super::expression::Expression>,
     /// A minimum distance between adjacent bins
-    #[prost(double, tag="12")]
+    #[prost(double, tag = "12")]
     pub minstep: f64,
     /// Scale factors indicating the allowed subdivisions. The defualt value is vec![5.0, 2.0],
     /// which indicates that for base 10 numbers, the method may consider dividing bin sizes by 5 and/or 2.
-    #[prost(double, repeated, tag="13")]
+    #[prost(double, repeated, tag = "13")]
     pub divide: ::prost::alloc::vec::Vec<f64>,
     /// If true, attempt to make the bin boundaries use human-friendly boundaries
     /// (e.g. whole numbers, multiples of 10, etc.)
-    #[prost(bool, tag="14")]
+    #[prost(bool, tag = "14")]
     pub nice: bool,
 }
 /// Aggregate
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Aggregate {
-    #[prost(string, repeated, tag="1")]
+    #[prost(string, repeated, tag = "1")]
     pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag="2")]
+    #[prost(string, repeated, tag = "2")]
     pub fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag="3")]
+    #[prost(string, repeated, tag = "3")]
     pub aliases: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(enumeration="AggregateOp", repeated, tag="4")]
+    #[prost(enumeration = "AggregateOp", repeated, tag = "4")]
     pub ops: ::prost::alloc::vec::Vec<i32>,
 }
 /// JoinAggregate
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct JoinAggregate {
-    #[prost(string, repeated, tag="1")]
+    #[prost(string, repeated, tag = "1")]
     pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag="2")]
+    #[prost(string, repeated, tag = "2")]
     pub fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(enumeration="AggregateOp", repeated, tag="3")]
+    #[prost(enumeration = "AggregateOp", repeated, tag = "3")]
     pub ops: ::prost::alloc::vec::Vec<i32>,
-    #[prost(string, repeated, tag="4")]
+    #[prost(string, repeated, tag = "4")]
     pub aliases: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// TimeUnit
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TimeUnit {
-    #[prost(string, tag="1")]
+    #[prost(string, tag = "1")]
     pub field: ::prost::alloc::string::String,
-    #[prost(enumeration="TimeUnitUnit", repeated, tag="2")]
+    #[prost(enumeration = "TimeUnitUnit", repeated, tag = "2")]
     pub units: ::prost::alloc::vec::Vec<i32>,
-    #[prost(string, optional, tag="3")]
+    #[prost(string, optional, tag = "3")]
     pub signal: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag="4")]
+    #[prost(string, optional, tag = "4")]
     pub alias_0: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag="5")]
+    #[prost(string, optional, tag = "5")]
     pub alias_1: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(enumeration="TimeUnitTimeZone", optional, tag="6")]
+    #[prost(enumeration = "TimeUnitTimeZone", optional, tag = "6")]
     pub timezone: ::core::option::Option<i32>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct WindowTransformOp {
-    #[prost(oneof="window_transform_op::Op", tags="1, 2")]
+    #[prost(oneof = "window_transform_op::Op", tags = "1, 2")]
     pub op: ::core::option::Option<window_transform_op::Op>,
 }
 /// Nested message and enum types in `WindowTransformOp`.
 pub mod window_transform_op {
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Op {
-        #[prost(enumeration="super::AggregateOp", tag="1")]
+        #[prost(enumeration = "super::AggregateOp", tag = "1")]
         AggregateOp(i32),
-        #[prost(enumeration="super::WindowOp", tag="2")]
+        #[prost(enumeration = "super::WindowOp", tag = "2")]
         WindowOp(i32),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Window {
-    #[prost(enumeration="SortOrder", repeated, tag="1")]
+    #[prost(enumeration = "SortOrder", repeated, tag = "1")]
     pub sort: ::prost::alloc::vec::Vec<i32>,
-    #[prost(string, repeated, tag="2")]
+    #[prost(string, repeated, tag = "2")]
     pub sort_fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag="3")]
+    #[prost(string, repeated, tag = "3")]
     pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(message, repeated, tag="4")]
+    #[prost(message, repeated, tag = "4")]
     pub ops: ::prost::alloc::vec::Vec<WindowTransformOp>,
-    #[prost(string, repeated, tag="5")]
+    #[prost(string, repeated, tag = "5")]
     pub fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(double, repeated, tag="6")]
+    #[prost(double, repeated, tag = "6")]
     pub params: ::prost::alloc::vec::Vec<f64>,
-    #[prost(string, repeated, tag="7")]
+    #[prost(string, repeated, tag = "7")]
     pub aliases: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(message, optional, tag="8")]
+    #[prost(message, optional, tag = "8")]
     pub frame: ::core::option::Option<WindowFrame>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct WindowFrame {
-    #[prost(int64, optional, tag="1")]
+    #[prost(int64, optional, tag = "1")]
     pub start: ::core::option::Option<i64>,
-    #[prost(int64, optional, tag="2")]
+    #[prost(int64, optional, tag = "2")]
     pub end: ::core::option::Option<i64>,
 }
 /// Project
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Project {
-    #[prost(string, repeated, tag="1")]
+    #[prost(string, repeated, tag = "1")]
     pub fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// Stack
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Stack {
-    #[prost(string, tag="1")]
+    #[prost(string, tag = "1")]
     pub field: ::prost::alloc::string::String,
-    #[prost(enumeration="StackOffset", tag="2")]
+    #[prost(enumeration = "StackOffset", tag = "2")]
     pub offset: i32,
-    #[prost(enumeration="SortOrder", repeated, tag="3")]
+    #[prost(enumeration = "SortOrder", repeated, tag = "3")]
     pub sort: ::prost::alloc::vec::Vec<i32>,
-    #[prost(string, repeated, tag="4")]
+    #[prost(string, repeated, tag = "4")]
     pub sort_fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag="5")]
+    #[prost(string, repeated, tag = "5")]
     pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, optional, tag="6")]
+    #[prost(string, optional, tag = "6")]
     pub alias_0: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag="7")]
+    #[prost(string, optional, tag = "7")]
     pub alias_1: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Impute
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Impute {
-    #[prost(string, tag="1")]
+    #[prost(string, tag = "1")]
     pub field: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
+    #[prost(string, tag = "2")]
     pub key: ::prost::alloc::string::String,
-    #[prost(enumeration="ImputeMethod", tag="3")]
+    #[prost(enumeration = "ImputeMethod", tag = "3")]
     pub method: i32,
-    #[prost(string, repeated, tag="4")]
+    #[prost(string, repeated, tag = "4")]
     pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, optional, tag="5")]
+    #[prost(string, optional, tag = "5")]
     pub value_json: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Pivot
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Pivot {
-    #[prost(string, tag="1")]
+    #[prost(string, tag = "1")]
     pub field: ::prost::alloc::string::String,
-    #[prost(string, tag="2")]
+    #[prost(string, tag = "2")]
     pub value: ::prost::alloc::string::String,
-    #[prost(string, repeated, tag="3")]
+    #[prost(string, repeated, tag = "3")]
     pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag="4")]
+    #[prost(int32, optional, tag = "4")]
     pub limit: ::core::option::Option<i32>,
-    #[prost(enumeration="AggregateOp", optional, tag="5")]
+    #[prost(enumeration = "AggregateOp", optional, tag = "5")]
     pub op: ::core::option::Option<i32>,
 }
 /// Identifier
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Identifier {
-    #[prost(string, tag="1")]
+    #[prost(string, tag = "1")]
     pub r#as: ::prost::alloc::string::String,
 }
 /// Top-level transform
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transform {
-    #[prost(oneof="transform::TransformKind", tags="1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14")]
+    #[prost(
+        oneof = "transform::TransformKind",
+        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14"
+    )]
     pub transform_kind: ::core::option::Option<transform::TransformKind>,
 }
 /// Nested message and enum types in `Transform`.
 pub mod transform {
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum TransformKind {
-        #[prost(message, tag="1")]
+        #[prost(message, tag = "1")]
         Filter(super::Filter),
-        #[prost(message, tag="2")]
+        #[prost(message, tag = "2")]
         Extent(super::Extent),
-        #[prost(message, tag="3")]
+        #[prost(message, tag = "3")]
         Formula(super::Formula),
-        #[prost(message, tag="4")]
+        #[prost(message, tag = "4")]
         Bin(super::Bin),
-        #[prost(message, tag="5")]
+        #[prost(message, tag = "5")]
         Aggregate(super::Aggregate),
-        #[prost(message, tag="6")]
+        #[prost(message, tag = "6")]
         Collect(super::Collect),
-        #[prost(message, tag="7")]
+        #[prost(message, tag = "7")]
         Timeunit(super::TimeUnit),
-        #[prost(message, tag="8")]
+        #[prost(message, tag = "8")]
         Joinaggregate(super::JoinAggregate),
-        #[prost(message, tag="9")]
+        #[prost(message, tag = "9")]
         Window(super::Window),
-        #[prost(message, tag="10")]
+        #[prost(message, tag = "10")]
         Project(super::Project),
-        #[prost(message, tag="11")]
+        #[prost(message, tag = "11")]
         Stack(super::Stack),
-        #[prost(message, tag="12")]
+        #[prost(message, tag = "12")]
         Impute(super::Impute),
-        #[prost(message, tag="13")]
+        #[prost(message, tag = "13")]
         Pivot(super::Pivot),
-        #[prost(message, tag="14")]
+        #[prost(message, tag = "14")]
         Identifier(super::Identifier),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TransformPipeline {
-    #[prost(message, repeated, tag="1")]
+    #[prost(message, repeated, tag = "1")]
     pub transforms: ::prost::alloc::vec::Vec<Transform>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -261,6 +284,18 @@ pub struct TransformPipeline {
 pub enum SortOrder {
     Descending = 0,
     Ascending = 1,
+}
+impl SortOrder {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            SortOrder::Descending => "Descending",
+            SortOrder::Ascending => "Ascending",
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -289,6 +324,39 @@ pub enum AggregateOp {
     Argmax = 21,
     Values = 22,
 }
+impl AggregateOp {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            AggregateOp::Count => "Count",
+            AggregateOp::Valid => "Valid",
+            AggregateOp::Missing => "Missing",
+            AggregateOp::Distinct => "Distinct",
+            AggregateOp::Sum => "Sum",
+            AggregateOp::Product => "Product",
+            AggregateOp::Mean => "Mean",
+            AggregateOp::Average => "Average",
+            AggregateOp::Variance => "Variance",
+            AggregateOp::Variancep => "Variancep",
+            AggregateOp::Stdev => "Stdev",
+            AggregateOp::Stdevp => "Stdevp",
+            AggregateOp::Stderr => "Stderr",
+            AggregateOp::Median => "Median",
+            AggregateOp::Q1 => "Q1",
+            AggregateOp::Q3 => "Q3",
+            AggregateOp::Ci0 => "Ci0",
+            AggregateOp::Ci1 => "Ci1",
+            AggregateOp::Min => "Min",
+            AggregateOp::Max => "Max",
+            AggregateOp::Argmin => "Argmin",
+            AggregateOp::Argmax => "Argmax",
+            AggregateOp::Values => "Values",
+        }
+    }
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum TimeUnitUnit {
@@ -304,11 +372,44 @@ pub enum TimeUnitUnit {
     Seconds = 9,
     Milliseconds = 10,
 }
+impl TimeUnitUnit {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            TimeUnitUnit::Year => "Year",
+            TimeUnitUnit::Quarter => "Quarter",
+            TimeUnitUnit::Month => "Month",
+            TimeUnitUnit::Date => "Date",
+            TimeUnitUnit::Week => "Week",
+            TimeUnitUnit::Day => "Day",
+            TimeUnitUnit::DayOfYear => "DayOfYear",
+            TimeUnitUnit::Hours => "Hours",
+            TimeUnitUnit::Minutes => "Minutes",
+            TimeUnitUnit::Seconds => "Seconds",
+            TimeUnitUnit::Milliseconds => "Milliseconds",
+        }
+    }
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum TimeUnitTimeZone {
     Local = 0,
     Utc = 1,
+}
+impl TimeUnitTimeZone {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            TimeUnitTimeZone::Local => "Local",
+            TimeUnitTimeZone::Utc => "Utc",
+        }
+    }
 }
 /// Window
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -328,12 +429,48 @@ pub enum WindowOp {
     PrevValue = 11,
     NextValue = 12,
 }
+impl WindowOp {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            WindowOp::RowNumber => "RowNumber",
+            WindowOp::Rank => "Rank",
+            WindowOp::DenseRank => "DenseRank",
+            WindowOp::PercentileRank => "PercentileRank",
+            WindowOp::CumeDist => "CumeDist",
+            WindowOp::NTile => "NTile",
+            WindowOp::Lag => "Lag",
+            WindowOp::Lead => "Lead",
+            WindowOp::FirstValue => "FirstValue",
+            WindowOp::LastValue => "LastValue",
+            WindowOp::NthValue => "NthValue",
+            WindowOp::PrevValue => "PrevValue",
+            WindowOp::NextValue => "NextValue",
+        }
+    }
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum StackOffset {
     Zero = 0,
     Center = 1,
     Normalize = 2,
+}
+impl StackOffset {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            StackOffset::Zero => "Zero",
+            StackOffset::Center => "Center",
+            StackOffset::Normalize => "Normalize",
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -343,4 +480,19 @@ pub enum ImputeMethod {
     ImputeMedian = 2,
     ImputeMax = 3,
     ImputeMin = 4,
+}
+impl ImputeMethod {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            ImputeMethod::ImputeValue => "ImputeValue",
+            ImputeMethod::ImputeMean => "ImputeMean",
+            ImputeMethod::ImputeMedian => "ImputeMedian",
+            ImputeMethod::ImputeMax => "ImputeMax",
+            ImputeMethod::ImputeMin => "ImputeMin",
+        }
+    }
 }

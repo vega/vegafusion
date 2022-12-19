@@ -13,7 +13,7 @@ use std::collections::{HashMap, HashSet};
 
 use vegafusion_core::error::Result;
 
-use datafusion::logical_plan::Expr;
+use datafusion::logical_expr::Expr;
 
 use std::sync::Arc;
 use vegafusion_core::data::scalar::DATETIME_PREFIX;
@@ -175,8 +175,8 @@ fn assert_scalars_almost_equals(
         }
         (_, _) => {
             // Convert TimestampMillisecond to Int64 for comparison
-            let lhs = timestamp_to_int(lhs);
-            let rhs = timestamp_to_int(rhs);
+            let lhs = normalize_scalar(lhs);
+            let rhs = normalize_scalar(rhs);
 
             if lhs == rhs || lhs.is_null() && rhs.is_null() {
                 // Equal
@@ -205,6 +205,17 @@ fn assert_scalars_almost_equals(
                 assert_eq!(lhs, rhs, "Row {}", index)
             }
         }
+    }
+}
+
+pub fn normalize_scalar(scalar: &ScalarValue) -> ScalarValue {
+    flip_negative_zero(timestamp_to_int(scalar))
+}
+
+fn flip_negative_zero(scalar: ScalarValue) -> ScalarValue {
+    match scalar {
+        ScalarValue::Float64(Some(v)) if v.abs() == 0.0 => ScalarValue::Float64(Some(0.0)),
+        _ => scalar,
     }
 }
 

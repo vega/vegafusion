@@ -6,7 +6,10 @@ use sqlgen::ast::{
     UnaryOperator as SqlUnaryOperator, WindowSpec as SqlWindowSpec,
 };
 
-use datafusion_expr::{AggregateFunction, BuiltinScalarFunction, Expr, Operator, WindowFunction};
+use datafusion_expr::expr::{BinaryExpr, Case, Cast};
+use datafusion_expr::{
+    AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator, WindowFunction,
+};
 
 use crate::sql::compile::function_arg::ToSqlFunctionArg;
 use crate::sql::compile::order::ToSqlOrderByExpr;
@@ -35,7 +38,7 @@ impl ToSqlExpr for Expr {
                 "ScalarVariable cannot be converted to SQL",
             )),
             Expr::Literal(value) => Ok(value.to_sql()?),
-            Expr::BinaryExpr { left, op, right } => {
+            Expr::BinaryExpr(BinaryExpr { left, op, right }) => {
                 let sql_op = match op {
                     Operator::Eq => SqlBinaryOperator::Eq,
                     Operator::NotEq => SqlBinaryOperator::NotEq,
@@ -92,22 +95,22 @@ impl ToSqlExpr for Expr {
             Expr::GetIndexedField { .. } => Err(VegaFusionError::internal(
                 "GetIndexedField cannot be converted to SQL",
             )),
-            Expr::Between {
+            Expr::Between(Between {
                 expr,
                 negated,
                 low,
                 high,
-            } => Ok(SqlExpr::Between {
+            }) => Ok(SqlExpr::Between {
                 expr: Box::new(expr.to_sql()?),
                 negated: *negated,
                 low: Box::new(low.to_sql()?),
                 high: Box::new(high.to_sql()?),
             }),
-            Expr::Case {
+            Expr::Case(Case {
                 expr,
                 when_then_expr,
                 else_expr,
-            } => {
+            }) => {
                 let (conditions, results): (Vec<Box<Expr>>, Vec<Box<Expr>>) =
                     when_then_expr.iter().cloned().unzip();
 
@@ -137,7 +140,7 @@ impl ToSqlExpr for Expr {
                     else_result,
                 })
             }
-            Expr::Cast { expr, data_type } => {
+            Expr::Cast(Cast { expr, data_type }) => {
                 let data_type = data_type.to_sql()?;
                 Ok(SqlExpr::Cast {
                     expr: Box::new(expr.to_sql()?),
@@ -227,6 +230,9 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::RegexpMatch => "regexp_match",
                     BuiltinScalarFunction::Struct => "struct",
                     BuiltinScalarFunction::ArrowTypeof => "arrow_typeof",
+                    BuiltinScalarFunction::CurrentDate => "current_date",
+                    BuiltinScalarFunction::CurrentTime => "current_time",
+                    BuiltinScalarFunction::Uuid => "uuid",
                 };
                 let ident = Ident {
                     value: value.to_string(),
@@ -449,7 +455,8 @@ impl ToSqlExpr for Expr {
 mod tests {
     use super::ToSqlExpr;
     use crate::expression::escape::flat_col;
-    use datafusion_expr::{lit, BuiltinScalarFunction, Expr};
+    use datafusion_expr::expr::Cast;
+    use datafusion_expr::{lit, Between, BuiltinScalarFunction, Expr};
     use sqlgen::dialect::DialectDisplay;
     use vegafusion_core::arrow::datatypes::DataType;
 
@@ -490,10 +497,10 @@ mod tests {
 
     #[test]
     pub fn test4() {
-        let df_expr = Expr::Cast {
+        let df_expr = Expr::Cast(Cast {
             expr: Box::new(lit(2.8)),
             data_type: DataType::Int64,
-        } + lit(4);
+        }) + lit(4);
 
         let sql_expr = df_expr.to_sql().unwrap();
         println!("{:?}", sql_expr);
@@ -503,12 +510,12 @@ mod tests {
 
     #[test]
     pub fn test5() {
-        let df_expr = Expr::Between {
+        let df_expr = Expr::Between(Between {
             expr: Box::new(flat_col("A")),
             negated: false,
             low: Box::new(lit(0)),
             high: Box::new(lit(10)),
-        }
+        })
         .or(flat_col("B"));
 
         let sql_expr = df_expr.to_sql().unwrap();

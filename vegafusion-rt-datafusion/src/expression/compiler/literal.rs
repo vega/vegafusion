@@ -6,7 +6,7 @@
  * Please consult the license documentation provided alongside
  * this program the details of the active license.
  */
-use datafusion::logical_plan::{lit, Expr};
+use datafusion::logical_expr::{lit, Expr};
 use datafusion::scalar::ScalarValue;
 use vegafusion_core::proto::gen::expression::{literal, Literal};
 

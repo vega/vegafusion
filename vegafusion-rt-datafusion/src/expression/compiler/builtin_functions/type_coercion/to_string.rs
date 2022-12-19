@@ -8,7 +8,8 @@
  */
 use crate::expression::compiler::utils::cast_to;
 use datafusion::arrow::datatypes::DataType;
-use datafusion::logical_plan::{DFSchema, Expr};
+use datafusion::common::DFSchema;
+use datafusion::logical_expr::Expr;
 use vegafusion_core::error::{Result, VegaFusionError};
 
 pub fn to_string_transform(args: &[Expr], schema: &DFSchema) -> Result<Expr> {

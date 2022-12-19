@@ -9,7 +9,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion::logical_plan::{avg, count, count_distinct, lit, max, min, sum, Expr};
+use datafusion::logical_expr::{avg, count, count_distinct, lit, max, min, sum, Expr};
 use std::collections::HashMap;
 
 use crate::expression::compiler::utils::to_numeric;
@@ -17,6 +17,7 @@ use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion::common::{DFSchema, ScalarValue};
+use datafusion_expr::expr::Cast;
 use datafusion_expr::{aggregate_function, BuiltInWindowFunction, WindowFunction};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
@@ -132,7 +133,7 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
         let agg_expr = make_aggr_expr(col_name, &op, schema)?;
 
         // Apply alias
-        let agg_expr = agg_expr.alias(&alias);
+        let agg_expr = agg_expr.alias(alias);
 
         agg_exprs.push(agg_expr)
     }
@@ -204,17 +205,17 @@ pub fn make_aggr_expr(
             filter: None,
         },
         AggregateOp::Valid => {
-            let valid = Expr::Cast {
+            let valid = Expr::Cast(Cast {
                 expr: Box::new(Expr::IsNotNull(Box::new(column))),
                 data_type: DataType::Int64,
-            };
+            });
             sum(valid)
         }
         AggregateOp::Missing => {
-            let missing = Expr::Cast {
+            let missing = Expr::Cast(Cast {
                 expr: Box::new(Expr::IsNull(Box::new(column))),
                 data_type: DataType::Int64,
-            };
+            });
             sum(missing)
         }
         AggregateOp::Distinct => count_distinct(column),

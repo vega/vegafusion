@@ -7,6 +7,7 @@
  * this program the details of the active license.
  */
 use crate::arrow::{
+    compute::concat_batches,
     datatypes::{DataType, SchemaRef},
     json,
     record_batch::RecordBatch,
@@ -93,7 +94,7 @@ impl VegaFusionTable {
         if let Some(batch) = self.batches.get(0) {
             schema = batch.schema()
         }
-        RecordBatch::concat(&schema, &self.batches)
+        concat_batches(&schema, &self.batches)
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
 

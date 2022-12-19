@@ -24,6 +24,7 @@ use vegafusion_core::proto::gen::tasks::Variable;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_rt_datafusion::data::dataset::VegaFusionDataset;
+use vegafusion_rt_datafusion::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
 static INIT: Once = Once::new();
 
@@ -80,6 +81,8 @@ impl PyTaskGraphRuntime {
         if let Some(worker_threads) = worker_threads {
             tokio_runtime_builder.worker_threads(worker_threads.max(1) as usize);
         }
+
+        tokio_runtime_builder.thread_stack_size(TOKIO_THREAD_STACK_SIZE);
 
         // Build tokio runtime
         let tokio_runtime = tokio_runtime_builder

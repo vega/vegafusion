@@ -10,11 +10,13 @@ use crate::expression::compiler::utils::{
     cast_to, is_float_datatype, is_integer_datatype, is_numeric_datatype, is_string_datatype,
     ExprHelpers,
 };
-use datafusion::logical_plan::{ceil, DFSchema, ExprSchemable};
-use datafusion::logical_plan::{lit, Expr};
+use datafusion::logical_expr::{ceil, lit, Expr, ExprSchemable};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
+use datafusion::common::DFSchema;
+use datafusion_expr::expr::Case;
+use datafusion_expr::Between;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
@@ -203,24 +205,24 @@ impl FieldSpec {
 
                         // Don't assume elements are in ascending order
                         // Compute min and max values with Case expression
-                        let low = Expr::Case {
+                        let low = Expr::Case(Case {
                             expr: None,
                             when_then_expr: vec![(
                                 Box::new(first.clone().lt_eq(second.clone())),
                                 Box::new(first.clone()),
                             )],
                             else_expr: Some(Box::new(second.clone())),
-                        }
+                        })
                         .eval_to_scalar()?;
 
-                        let high = Expr::Case {
+                        let high = Expr::Case(Case {
                             expr: None,
                             when_then_expr: vec![(
                                 Box::new(first.clone().lt_eq(second.clone())),
                                 Box::new(second),
                             )],
                             else_expr: Some(Box::new(first)),
-                        }
+                        })
                         .eval_to_scalar()?;
 
                         (lit(low), lit(high))
@@ -249,12 +251,12 @@ impl FieldSpec {
                 let high = cast_to(high, &field_dtype, schema)?;
 
                 match self.typ {
-                    SelectionType::RangeInc => Expr::Between {
+                    SelectionType::RangeInc => Expr::Between(Between {
                         expr: Box::new(field_col),
                         negated: false,
                         low: Box::new(low),
                         high: Box::new(high),
-                    },
+                    }),
                     SelectionType::RangeExc => low.lt(field_col.clone()).and(field_col.lt(high)),
                     SelectionType::RangeLe => low.lt(field_col.clone()).and(field_col.lt_eq(high)),
                     SelectionType::RangeRe => low.lt_eq(field_col.clone()).and(field_col.lt(high)),

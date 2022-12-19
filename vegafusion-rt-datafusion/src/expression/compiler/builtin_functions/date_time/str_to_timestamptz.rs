@@ -94,18 +94,17 @@ pub fn parse_datetime(
     // Try plain dates
     if let Ok(date) = NaiveDate::parse_from_str(date_str, r#"%Y-%m-%d"#) {
         // UTC midnight to follow JavaScript convention
-        return Some(chrono::Utc.from_utc_date(&date).and_hms_milli(0, 0, 0, 0));
+        let datetime = date.and_hms_opt(0, 0, 0).expect("Invalid date");
+        return Some(chrono::Utc.from_utc_datetime(&datetime));
     } else {
         for strf_item in &*ALL_STRF_DATE_ITEMS {
             let mut parsed = Parsed::new();
             parse(&mut parsed, date_str, strf_item.clone()).ok();
             if let Ok(date) = parsed.to_naive_date() {
                 // Local midnight to follow JavaScript convention
+                let datetime = date.and_hms_opt(0, 0, 0).expect("Invalid date");
                 let default_input_tz = (*default_input_tz)?;
-                let datetime = default_input_tz
-                    .from_local_date(&date)
-                    .and_hms_milli_opt(0, 0, 0, 0)
-                    .earliest()?;
+                let datetime = default_input_tz.from_local_datetime(&datetime).earliest()?;
                 return Some(datetime.with_timezone(&chrono::Utc));
             }
         }
@@ -227,14 +226,16 @@ pub fn parse_datetime_fallback(
 
     let offset = if timezone_tokens[0].is_empty() {
         if iso8601_date && !has_time {
-            FixedOffset::east(0)
+            FixedOffset::east_opt(0).expect("FixedOffset::east out of bounds")
         } else {
             // Treat date as in local timezone
             let local_tz = (*default_input_tz)?;
 
             // No timezone specified, build NaiveDateTime
-            let naive_date = NaiveDate::from_ymd(year, month, day);
-            let naive_time = NaiveTime::from_hms_milli(hour, minute, second, milliseconds);
+            let naive_date =
+                NaiveDate::from_ymd_opt(year, month, day).expect("invalid or out-of-range date");
+            let naive_time = NaiveTime::from_hms_milli_opt(hour, minute, second, milliseconds)
+                .expect("invalid or out-of-range date");
             let naive_datetime = NaiveDateTime::new(naive_date, naive_time);
 
             local_tz
@@ -248,16 +249,18 @@ pub fn parse_datetime_fallback(
         let time_offset_seconds = timezone_hours * 3600 + timezone_minutes * 60;
 
         if timezone_sign == '-' {
-            FixedOffset::west(time_offset_seconds)
+            FixedOffset::west_opt(time_offset_seconds).expect("FixedOffset::west out of bounds")
         } else {
-            FixedOffset::east(time_offset_seconds)
+            FixedOffset::east_opt(time_offset_seconds).expect("FixedOffset::east out of bounds")
         }
     };
 
     let parsed = offset
-        .ymd(year, month, day)
-        .and_hms_milli(hour, minute, second, milliseconds)
+        .with_ymd_and_hms(year, month, day, hour, minute, second)
+        .earliest()?
+        .with_nanosecond(milliseconds * 1_000_000)?
         .with_timezone(&chrono::Utc);
+
     Some(parsed)
 }
 

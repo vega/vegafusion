@@ -7,7 +7,8 @@
  * this program the details of the active license.
  */
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion::logical_plan::{DFSchema, Expr};
+use datafusion::common::DFSchema;
+use datafusion::logical_expr::Expr;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::Expression;

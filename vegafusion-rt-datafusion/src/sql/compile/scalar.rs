@@ -92,6 +92,9 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::LargeBinary(_) => Err(VegaFusionError::internal(
                 "LargeBinary cannot be converted to SQL",
             )),
+            ScalarValue::FixedSizeBinary(_, _) => Err(VegaFusionError::internal(
+                "FixedSizeBinary cannot be converted to SQL",
+            )),
             ScalarValue::List(args, _) => {
                 let function_ident = Ident {
                     value: "make_list".to_string(),
@@ -152,8 +155,17 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::Decimal128(_, _, _) => Err(VegaFusionError::internal(
                 "Decimal128 cannot be converted to SQL",
             )),
-            ScalarValue::Time64(_) => Err(VegaFusionError::internal(
-                "Time64 cannot be converted to SQL",
+            ScalarValue::Time32Second(_) => Err(VegaFusionError::internal(
+                "Time32Second cannot be converted to SQL",
+            )),
+            ScalarValue::Time32Millisecond(_) => Err(VegaFusionError::internal(
+                "Time32Millisecond cannot be converted to SQL",
+            )),
+            ScalarValue::Time64Microsecond(_) => Err(VegaFusionError::internal(
+                "Time64Microsecond cannot be converted to SQL",
+            )),
+            ScalarValue::Time64Nanosecond(_) => Err(VegaFusionError::internal(
+                "Time64Nanosecond cannot be converted to SQL",
             )),
         }
     }

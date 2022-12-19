@@ -1,9 +1,11 @@
 use lazy_static::lazy_static;
 use tokio::runtime::Runtime;
+use vegafusion_rt_datafusion::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
 lazy_static! {
     static ref TOKIO_RUNTIME: Runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
+        .thread_stack_size(TOKIO_THREAD_STACK_SIZE)
         .build()
         .unwrap();
 }
