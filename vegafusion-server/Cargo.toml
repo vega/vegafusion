@@ -41,3 +41,6 @@ features = [ "tls",]
 [dependencies.clap]
 version = "3.2.22"
 features = [ "derive",]
+
+[build-dependencies.protobuf-src]
+version = "1.1.0"

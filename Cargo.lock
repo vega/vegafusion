@@ -3939,6 +3939,7 @@ dependencies = [
  "predicates",
  "prost",
  "prost-build",
+ "protobuf-src",
  "regex",
  "serde_json",
  "tokio",
