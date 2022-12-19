@@ -857,8 +857,10 @@ def test_pre_transform_datasets():
     assert len(warnings) == 0
     assert len(datasets) == 1
 
+    result = datasets[0]
+    result = result.sort_values(["menu_item"], axis=0).reset_index(drop=True)
     expected = pd.DataFrame({"menu_item": [0, 1, 2], "__count": [n, 2 * n, 3 * n]})
-    pd.testing.assert_frame_equal(datasets[0], expected)
+    pd.testing.assert_frame_equal(result, expected)
 
 
 def test_pre_transform_planner_warning1():
