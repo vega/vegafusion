@@ -43,6 +43,10 @@ jobs:
         run: |
           sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
         if: ${{ runner.os == 'Linux' }}
+      - name: Install protoc on Window
+        run: |
+          choco install --yes protoc
+        if: ${{ runner.os == 'Windows' }}
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -91,6 +95,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
+      - name: Install protoc on Window
+        run: |
+          choco install --yes protoc
+        if: ${{ runner.os == 'Windows' }}
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -135,6 +143,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
+      - name: Install protoc on Window
+        run: |
+          choco install --yes protoc
+        if: ${{ runner.os == 'Windows' }}
       - name: Install nightly Rust toolchain
         uses: actions-rs/toolchain@v1
         with:

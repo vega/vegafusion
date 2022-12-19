@@ -10,6 +10,7 @@ extern crate prost_build;
 
 fn main() {
     // Setup protoc environment variable
+    #[cfg(target_family = "unix")]
     std::env::set_var("PROTOC", protobuf_src::protoc());
 
     let mut prost_config = prost_build::Config::new();
