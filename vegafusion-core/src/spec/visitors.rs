@@ -413,6 +413,14 @@ impl<'a> InputVarsChartVisitor<'a> {
 
             if let Some(MarkFacetSpec { data, .. }) = &from.facet {
                 let data_var = Variable::new_data(data);
+                // A facet data reference does not have access to datasets defined in the same scope,
+                // so drop the final scope entry to simulate the reference being one level above
+                let scope = if scope.len() > 0 {
+                    &scope[..scope.len() - 1]
+                } else {
+                    scope
+                };
+
                 let resolved = self.task_scope.resolve_scope(&data_var, scope)?;
                 self.input_vars.insert((data_var, resolved.scope));
             }
