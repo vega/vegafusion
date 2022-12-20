@@ -50,6 +50,13 @@ use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+
+lazy_static! {
+    pub static ref REQWEST_CLIENT: ClientWithMiddleware = make_request_client();
+}
+
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
     values: &[TaskValue],
@@ -510,7 +517,9 @@ async fn read_csv(url: String, parse: &Option<Parse>) -> Result<Arc<DataFrame>> 
 
     if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
-        let body = reqwest::get(url.clone())
+        let body = REQWEST_CLIENT
+            .get(url.clone())
+            .send()
             .await
             .external(&format!("Failed to get URL data from {}", url))?
             .text()
@@ -600,7 +609,9 @@ async fn read_json(url: &str, batch_size: usize) -> Result<Arc<DataFrame>> {
     // Read to json Value from local file or url.
     let value: serde_json::Value = if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
-        let body = reqwest::get(url)
+        let body = REQWEST_CLIENT
+            .get(url)
+            .send()
             .await
             .external(&format!("Failed to get URL data from {}", url))?
             .text()
@@ -629,7 +640,9 @@ async fn read_arrow(url: &str) -> Result<Arc<DataFrame>> {
     // Read to json Value from local file or url.
     let buffer = if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
-        reqwest::get(url)
+        REQWEST_CLIENT
+            .get(url)
+            .send()
             .await
             .external(&format!("Failed to get URL data from {}", url))?
             .bytes()
@@ -675,4 +688,12 @@ async fn read_arrow(url: &str) -> Result<Arc<DataFrame>> {
     };
 
     VegaFusionTable::try_new(schema, batches)?.to_dataframe()
+}
+
+pub fn make_request_client() -> ClientWithMiddleware {
+    // Retry up to 3 times with increasing intervals between attempts.
+    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
+    ClientBuilder::new(reqwest::Client::new())
+        .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+        .build()
 }
