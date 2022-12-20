@@ -1026,6 +1026,7 @@ mod test_image_comparison_agg {
             AggregateOpSpec::Variancep,
             AggregateOpSpec::Stdev,
             AggregateOpSpec::Stdevp,
+            AggregateOpSpec::Median,
         )]
         agg: AggregateOpSpec,
 

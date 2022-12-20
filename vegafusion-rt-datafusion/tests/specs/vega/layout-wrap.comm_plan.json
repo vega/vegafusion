@@ -14,6 +14,11 @@
       "namespace": "data",
       "name": "barley_xscale_domain_yield",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "barley_yscale_domain_variety",
+      "scope": []
     }
   ],
   "client_to_server": []

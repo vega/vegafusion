@@ -12,7 +12,17 @@
     },
     {
       "namespace": "data",
+      "name": "barley_gscale_domain_site",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "barley_xscale_domain_yield",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "barley_yscale_domain_variety_0",
       "scope": []
     }
   ],

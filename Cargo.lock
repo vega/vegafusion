@@ -959,7 +959,7 @@ dependencies = [
 [[package]]
 name = "datafusion"
 version = "15.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f#9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6#45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6"
 dependencies = [
  "ahash 0.8.0",
  "arrow",
@@ -1005,7 +1005,7 @@ dependencies = [
 [[package]]
 name = "datafusion-common"
 version = "15.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f#9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6#45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6"
 dependencies = [
  "arrow",
  "chrono",
@@ -1018,7 +1018,7 @@ dependencies = [
 [[package]]
 name = "datafusion-expr"
 version = "15.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f#9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6#45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6"
 dependencies = [
  "ahash 0.8.0",
  "arrow",
@@ -1030,7 +1030,7 @@ dependencies = [
 [[package]]
 name = "datafusion-optimizer"
 version = "15.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f#9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6#45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1045,7 +1045,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-expr"
 version = "15.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f#9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6#45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6"
 dependencies = [
  "ahash 0.8.0",
  "arrow",
@@ -1074,7 +1074,7 @@ dependencies = [
 [[package]]
 name = "datafusion-row"
 version = "15.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f#9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6#45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6"
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -1085,7 +1085,7 @@ dependencies = [
 [[package]]
 name = "datafusion-sql"
 version = "15.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f#9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6#45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6"
 dependencies = [
  "arrow-schema",
  "datafusion-common",
@@ -2042,6 +2042,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a60c7ce501c71e03a9c9c0d35b861413ae925bd979cc7a4e30d060069aaac8d"
 
 [[package]]
+name = "mime_guess"
+version = "2.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4192263c238a5f0d0c6bfd21f336a313a4ce1c450542449ca191bb657b4642ef"
+dependencies = [
+ "mime",
+ "unicase",
+]
+
+[[package]]
 name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2854,6 +2864,7 @@ dependencies = [
  "lazy_static",
  "log",
  "mime",
+ "mime_guess",
  "percent-encoding",
  "pin-project-lite",
  "rustls",
@@ -2870,6 +2881,52 @@ dependencies = [
  "web-sys",
  "webpki-roots",
  "winreg",
+]
+
+[[package]]
+name = "reqwest-middleware"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a1c03e9011a8c59716ad13115550469e081e2e9892656b0ba6a47c907921894"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "http",
+ "reqwest",
+ "serde",
+ "task-local-extensions",
+ "thiserror",
+]
+
+[[package]]
+name = "reqwest-retry"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db161043fcfae3bdf30768bb1fa833853cd55ddf2411b1acb03e0c72bf86a9ea"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "futures",
+ "http",
+ "hyper",
+ "reqwest",
+ "reqwest-middleware",
+ "retry-policies",
+ "task-local-extensions",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "retry-policies"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e09bbcb5003282bcb688f0bae741b278e9c7e8f378f561522c9806c58e075d9b"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "rand",
 ]
 
 [[package]]
@@ -3349,6 +3406,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7fa7e55043acb85fca6b3c01485a2eeb6b69c5d21002e273c79e465f43b7ac1"
 
 [[package]]
+name = "task-local-extensions"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4167afbec18ae012de40f8cf1b9bf48420abb390678c34821caa07d924941cc4"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
 name = "tempfile"
 version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3764,6 +3830,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dcf81ac59edc17cc8697ff311e8f5ef2d99fcbd9817b34cec66f90b6c3dfd987"
 
 [[package]]
+name = "unicase"
+version = "2.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50f37be617794602aabbeee0be4f259dc1778fabe05e2d67ee8f79326d5cb4f6"
+dependencies = [
+ "version_check",
+]
+
+[[package]]
 name = "unicode-bidi"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3916,6 +3991,8 @@ dependencies = [
  "prost-types",
  "regex",
  "reqwest",
+ "reqwest-middleware",
+ "reqwest-retry",
  "rgb",
  "rstest",
  "serde",
