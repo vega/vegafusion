@@ -37,8 +37,10 @@ default_features = false
 features = [ "ipc", "json"]
 
 [dependencies.datafusion-common]
-git = "https://github.com/apache/arrow-datafusion.git"
-rev = "9bee14ebd39dacbb66a9b1f34cd6494bc6a6be3f"
+# Use custom branch that is version 15.0.0 with median
+# fix cherry picked
+git = "https://github.com/jonmmease/arrow-datafusion.git"
+rev = "45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6"
 
 [dependencies.pyo3]
 version = "0.17.1"
