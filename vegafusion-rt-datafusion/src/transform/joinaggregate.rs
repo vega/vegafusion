@@ -8,6 +8,7 @@
  */
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
+use std::collections::HashSet;
 
 use datafusion::logical_expr::Expr;
 
@@ -16,6 +17,7 @@ use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
 use crate::transform::aggregate::make_aggr_expr;
 use async_trait::async_trait;
+use datafusion::common::Column;
 use datafusion_expr::{BuiltInWindowFunction, WindowFunction};
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
@@ -65,9 +67,21 @@ impl TransformTrait for JoinAggregate {
         }
 
         // Build csv str for new columns
+        let inner_name = format!("{}_inner", dataframe.parent_name());
+        let new_col_names = new_col_exprs
+            .iter()
+            .map(|col| col.canonical_name())
+            .collect::<HashSet<_>>();
         let new_col_strs = new_col_exprs
             .iter()
-            .map(|col| Ok(col.to_sql_select()?.sql(dataframe.dialect())?))
+            .map(|col| {
+                let col = Expr::Column(Column {
+                    relation: Some(inner_name.to_string()),
+                    name: col.canonical_name(),
+                })
+                .alias(col.canonical_name());
+                Ok(col.to_sql_select()?.sql(dataframe.dialect())?)
+            })
             .collect::<Result<Vec<_>>>()?;
         let new_col_csv = new_col_strs.join(", ");
 
@@ -75,8 +89,15 @@ impl TransformTrait for JoinAggregate {
         let input_col_exprs = schema
             .fields()
             .iter()
-            .map(|field| flat_col(field.name()))
+            .filter_map(|field| {
+                if new_col_names.contains(field.name()) {
+                    None
+                } else {
+                    Some(flat_col(field.name()))
+                }
+            })
             .collect::<Vec<_>>();
+
         let input_col_strs = input_col_exprs
             .iter()
             .map(|c| Ok(c.to_sql_select()?.sql(dataframe.dialect())?))
@@ -110,20 +131,21 @@ impl TransformTrait for JoinAggregate {
             dataframe.chain_query_str(&format!(
                 "select {input_col_csv}, {new_col_csv} \
                 from (select *, {row_number_str} from {parent}) \
-                CROSS JOIN (select {aggr_csv} from {parent}) as __inner \
+                CROSS JOIN (select {aggr_csv} from {parent}) as {inner_name} \
                 ORDER BY __row_number",
                 aggr_csv = aggr_csv,
                 parent = dataframe.parent_name(),
                 input_col_csv = input_col_csv,
                 row_number_str = row_number_str,
                 new_col_csv = new_col_csv,
+                inner_name = inner_name,
             ))?
         } else {
             let group_by_csv = sql_group_expr_strs.join(", ");
             dataframe.chain_query_str(&format!(
                 "select {input_col_csv}, {new_col_csv} \
                 from (select *, {row_number_str} from {parent}) \
-                LEFT OUTER JOIN (select {aggr_csv}, {group_by_csv} from {parent} group by {group_by_csv}) as __inner USING ({group_by_csv}) \
+                LEFT OUTER JOIN (select {aggr_csv}, {group_by_csv} from {parent} group by {group_by_csv}) as {inner_name} USING ({group_by_csv}) \
                 ORDER BY __row_number",
                 aggr_csv = aggr_csv,
                 parent = dataframe.parent_name(),
@@ -131,6 +153,7 @@ impl TransformTrait for JoinAggregate {
                 row_number_str = row_number_str,
                 new_col_csv = new_col_csv,
                 group_by_csv = group_by_csv,
+                inner_name = inner_name,
             ))?
         };
 

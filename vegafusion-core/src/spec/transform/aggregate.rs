@@ -100,6 +100,7 @@ impl TransformSpecTrait for AggregateTransformSpec {
                     | Variancep
                     | Stdev
                     | Stdevp
+                    | Median
             ) {
                 // Unsupported aggregation op
                 return false;

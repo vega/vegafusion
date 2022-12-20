@@ -18,6 +18,7 @@ use util::equality::TablesEqualConfig;
 use rstest::rstest;
 use vegafusion_core::spec::transform::aggregate::{AggregateOpSpec, AggregateTransformSpec};
 use vegafusion_core::spec::transform::bin::{BinExtent, BinTransformSpec};
+use vegafusion_core::spec::transform::filter::FilterTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_core::spec::values::{Field, SignalExpressionSpec};
 
@@ -36,6 +37,7 @@ mod test_aggregate_single {
         case(AggregateOpSpec::Average),
         case(AggregateOpSpec::Min),
         case(AggregateOpSpec::Max),
+        case(AggregateOpSpec::Median),
     )]
     fn test(op: AggregateOpSpec) {
         let dataset = vega_json_dataset("penguins");
@@ -84,6 +86,7 @@ mod test_aggregate_multi {
         case(AggregateOpSpec::Average, AggregateOpSpec::Mean),
         case(AggregateOpSpec::Min, AggregateOpSpec::Average),
         case(AggregateOpSpec::Max, AggregateOpSpec::Min),
+        case(AggregateOpSpec::Median, AggregateOpSpec::Average),
     )]
     fn test(op1: AggregateOpSpec, op2: AggregateOpSpec) {
         let dataset = vega_json_dataset("penguins");

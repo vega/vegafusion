@@ -180,6 +180,12 @@ pub fn make_aggr_expr(
         AggregateOp::Min => min(numeric_column()),
         AggregateOp::Max => max(numeric_column()),
         AggregateOp::Sum => sum(numeric_column()),
+        AggregateOp::Median => Expr::AggregateFunction {
+            fun: aggregate_function::AggregateFunction::Median,
+            distinct: false,
+            args: vec![numeric_column()],
+            filter: None,
+        },
         AggregateOp::Variance => Expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Variance,
             distinct: false,

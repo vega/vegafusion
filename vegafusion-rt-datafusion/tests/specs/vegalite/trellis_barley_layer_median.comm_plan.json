@@ -2,7 +2,32 @@
   "server_to_client": [
     {
       "namespace": "data",
+      "name": "data_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_2_trellis_barley_color_domain_year",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "source_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_trellis_barley_y_domain_variety",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "trellis_barley_row_domain",
       "scope": []
     }
   ],
