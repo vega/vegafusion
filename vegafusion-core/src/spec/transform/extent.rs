@@ -48,4 +48,13 @@ impl TransformSpecTrait for ExtentTransformSpec {
             TransformColumns::Unknown
         }
     }
+
+    fn local_datetime_columns_produced(
+        &self,
+        input_local_datetime_columns: &[String],
+    ) -> Vec<String> {
+        // Keep input local datetime columns as extent passes through all input columns
+        // and doesn't create an columns
+        Vec::from(input_local_datetime_columns)
+    }
 }

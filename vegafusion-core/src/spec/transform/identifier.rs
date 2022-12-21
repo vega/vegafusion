@@ -39,4 +39,13 @@ impl TransformSpecTrait for IdentifierTransformSpec {
         let produced = ColumnUsage::from(self.as_.as_str());
         TransformColumns::PassThrough { usage, produced }
     }
+
+    fn local_datetime_columns_produced(
+        &self,
+        input_local_datetime_columns: &[String],
+    ) -> Vec<String> {
+        // Keep input local datetime columns as identifier passes through all input columns
+        // and doesn't create an columns
+        Vec::from(input_local_datetime_columns)
+    }
 }

@@ -69,6 +69,22 @@ pub enum TimeUnitUnitSpec {
     Milliseconds,
 }
 
+impl TimeUnitTransformSpec {
+    pub fn normalize_as(&self) -> (String, String) {
+        let as0 = self
+            .as_
+            .clone()
+            .and_then(|as_| as_.get(0).cloned())
+            .unwrap_or_else(|| "unit0".to_string());
+        let as1 = self
+            .as_
+            .clone()
+            .and_then(|as_| as_.get(1).cloned())
+            .unwrap_or_else(|| "unit1".to_string());
+        (as0, as1)
+    }
+}
+
 impl TransformSpecTrait for TimeUnitTransformSpec {
     fn supported(&self) -> bool {
         let unsupported = self.units.is_none()
@@ -92,19 +108,10 @@ impl TransformSpecTrait for TimeUnitTransformSpec {
     ) -> TransformColumns {
         if let Some(datum_var) = datum_var {
             // Compute produced columns
-            let bin_start = self
-                .as_
-                .clone()
-                .and_then(|as_| as_.get(0).cloned())
-                .unwrap_or_else(|| "unit0".to_string());
+            let (bin_start, bin_end) = self.normalize_as();
             let mut produced_cols = vec![bin_start];
 
             if self.interval.unwrap_or(true) {
-                let bin_end = self
-                    .as_
-                    .clone()
-                    .and_then(|as_| as_.get(1).cloned())
-                    .unwrap_or_else(|| "unit1".to_string());
                 produced_cols.push(bin_end)
             }
 
@@ -119,5 +126,22 @@ impl TransformSpecTrait for TimeUnitTransformSpec {
         } else {
             TransformColumns::Unknown
         }
+    }
+
+    fn local_datetime_columns_produced(
+        &self,
+        input_local_datetime_columns: &[String],
+    ) -> Vec<String> {
+        // Keep input local datetime columns as timeunit passes through all input columns
+        let mut output_local_datetime_columns = Vec::from(input_local_datetime_columns);
+
+        // Determine whether timeunit will create local datetime columns
+        if matches!(self.timezone, None | Some(TimeUnitTimeZoneSpec::Local)) {
+            let (bin_start, bin_end) = self.normalize_as();
+            output_local_datetime_columns.push(bin_start);
+            output_local_datetime_columns.push(bin_end);
+        }
+
+        output_local_datetime_columns
     }
 }

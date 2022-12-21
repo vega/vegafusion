@@ -66,4 +66,13 @@ impl TransformSpecTrait for LookupTransformSpec {
             TransformColumns::Unknown
         }
     }
+
+    fn local_datetime_columns_produced(
+        &self,
+        input_local_datetime_columns: &[String],
+    ) -> Vec<String> {
+        // Keep input local datetime columns as lookup passes through all input columns,
+        // Note: lookup may introduce additional datetime columns that we're not capturing here
+        Vec::from(input_local_datetime_columns)
+    }
 }

@@ -175,4 +175,13 @@ impl TransformSpecTrait for WindowTransformSpec {
             TransformColumns::Unknown
         }
     }
+
+    fn local_datetime_columns_produced(
+        &self,
+        input_local_datetime_columns: &[String],
+    ) -> Vec<String> {
+        // Keep input local datetime columns as window passes through all input columns
+        // and doesn't create any local datetime columns
+        Vec::from(input_local_datetime_columns)
+    }
 }

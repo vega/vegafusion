@@ -165,4 +165,22 @@ impl TransformSpecTrait for AggregateTransformSpec {
             TransformColumns::Unknown
         }
     }
+
+    fn local_datetime_columns_produced(
+        &self,
+        input_local_datetime_columns: &[String],
+    ) -> Vec<String> {
+        // Keep input local datetime columns that are used as grouping fields
+        self.groupby
+            .iter()
+            .filter_map(|groupby_field| {
+                let groupby_field_name = groupby_field.field();
+                if input_local_datetime_columns.contains(&groupby_field_name) {
+                    Some(groupby_field_name)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+    }
 }

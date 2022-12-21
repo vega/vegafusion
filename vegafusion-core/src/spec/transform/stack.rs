@@ -88,4 +88,13 @@ impl TransformSpecTrait for StackTransformSpec {
             TransformColumns::Unknown
         }
     }
+
+    fn local_datetime_columns_produced(
+        &self,
+        input_local_datetime_columns: &[String],
+    ) -> Vec<String> {
+        // Keep input local datetime columns as stack passes through all input columns and will
+        // never create a local datetime column.
+        Vec::from(input_local_datetime_columns)
+    }
 }

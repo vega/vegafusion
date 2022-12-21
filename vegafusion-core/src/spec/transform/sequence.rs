@@ -16,7 +16,7 @@ use crate::error::Result;
 use crate::spec::values::NumberOrSignalSpec;
 use crate::task_graph::task::InputVariable;
 
-/// Struct that serializes to Vega spec for the lookup transform.
+/// Struct that serializes to Vega spec for the sequence transform.
 /// This is currently only needed to report the proper input dependencies
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SequenceTransformSpec {

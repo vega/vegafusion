@@ -89,6 +89,7 @@ fn to_timestamptz_expr(arg: &Expr, schema: &DFSchema, default_input_tz: &str) ->
             fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
             args: vec![arg.clone(), lit(default_input_tz)],
         },
+        DataType::Null => arg.clone(),
         dtype if is_numeric_datatype(&dtype) => Expr::ScalarUDF {
             fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
             args: vec![
@@ -151,6 +152,10 @@ pub fn make_time_format_udf() -> ScalarUDF {
                 "Expected output_tz to be a scalar".to_string(),
             ));
         };
+
+        if matches!(data_array.data_type(), DataType::Null) {
+            return Ok(ColumnarValue::Array(data_array));
+        }
 
         let data_array = to_timestamp_ms(&data_array)?;
 

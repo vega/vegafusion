@@ -193,6 +193,13 @@ pub trait TransformSpecTrait {
     ) -> TransformColumns {
         TransformColumns::Unknown
     }
+
+    fn local_datetime_columns_produced(
+        &self,
+        _input_local_datetime_columns: &[String],
+    ) -> Vec<String> {
+        Vec::new()
+    }
 }
 
 pub enum TransformColumns {

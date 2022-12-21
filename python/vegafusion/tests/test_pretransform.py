@@ -909,8 +909,11 @@ def test_date32_pre_transform_dataset():
         spec, ["data_0"], "America/New_York", default_input_tz="UTC", inline_datasets=dict(dates=dates_df)
     )
 
+    # Timestamps are always in UTC, so we're checking that they would convert to midnight local time
     assert list(output_ds.date_col) == [
-        "2022-01-01T00:00:00.000", "2022-01-02T00:00:00.000", "2022-01-03T00:00:00.000"
+        pd.Timestamp('2022-01-01 05:00:00'),
+        pd.Timestamp('2022-01-02 05:00:00'),
+        pd.Timestamp('2022-01-03 05:00:00')
     ]
 
 
@@ -965,7 +968,7 @@ def test_nat_values():
 
     dataset = datasets[0]
     assert dataset.to_dict("records")[0] == {
-        'NULL_TEST': '2011-03-01T00:00:00.000',
+        'NULL_TEST': pd.Timestamp('2011-03-01 00:00:00'),
         'ORDER_DATE': Timestamp('2011-03-01 00:00:00'),
         'SALES': 457.568,
         'SALES_end': 457.568,

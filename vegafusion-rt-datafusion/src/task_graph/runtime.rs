@@ -233,6 +233,7 @@ impl TaskGraphRuntime {
             &PlannerConfig {
                 stringify_local_datetimes: true,
                 extract_inline_data: true,
+                allow_client_to_server_comms: false,
                 ..Default::default()
             },
         )?;
@@ -508,10 +509,11 @@ impl TaskGraphRuntime {
         let plan = SpecPlan::try_new(
             &spec,
             &PlannerConfig {
-                stringify_local_datetimes: true,
+                stringify_local_datetimes: false,
                 extract_inline_data: true,
                 split_domain_data: false,
                 projection_pushdown: false,
+                allow_client_to_server_comms: true,
                 ..Default::default()
             },
         )?;

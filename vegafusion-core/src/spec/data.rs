@@ -7,8 +7,14 @@
  * this program the details of the active license.
  */
 
+use crate::error::Result;
+use crate::planning::plan::PlannerConfig;
+use crate::proto::gen::tasks::Variable;
+use crate::spec::chart::ChartSpec;
 use crate::spec::transform::TransformSpec;
 use crate::spec::values::StringOrSignalSpec;
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 use itertools::sorted;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -51,7 +57,12 @@ impl DataSpec {
         sorted(signals).into_iter().collect()
     }
 
-    pub fn supported(&self, extract_inline_data: bool) -> DependencyNodeSupported {
+    pub fn supported(
+        &self,
+        planner_config: &PlannerConfig,
+        task_scope: &TaskScope,
+        scope: &[u32],
+    ) -> DependencyNodeSupported {
         if let Some(Some(format_type)) = self.format.as_ref().map(|fmt| fmt.type_.clone()) {
             if !matches!(format_type.as_str(), "csv" | "tsv" | "arrow" | "json") {
                 // We don't know how to read the data, so full node is unsupported
@@ -61,7 +72,7 @@ impl DataSpec {
 
         // Check if inline values array is supported
         if let Some(values) = &self.values {
-            if !extract_inline_data {
+            if !planner_config.extract_inline_data {
                 return DependencyNodeSupported::Unsupported;
             }
             if !matches!(values, Value::Array(_)) {
@@ -69,18 +80,85 @@ impl DataSpec {
             }
         }
 
-        let all_supported = self.transform.iter().all(|tx| tx.supported());
+        let all_supported = self
+            .transform
+            .iter()
+            .all(|tx| supported_and_allowed(tx, planner_config, task_scope, scope));
         if all_supported {
             DependencyNodeSupported::Supported
         } else if self.url.is_some() {
             DependencyNodeSupported::PartiallySupported
         } else {
             match self.transform.get(0) {
-                Some(tx) if tx.supported() => DependencyNodeSupported::PartiallySupported,
+                Some(tx) if supported_and_allowed(tx, planner_config, task_scope, scope) => {
+                    DependencyNodeSupported::PartiallySupported
+                }
                 _ => DependencyNodeSupported::Unsupported,
             }
         }
     }
+
+    pub fn local_datetime_columns_produced(
+        &self,
+        chart_spec: &ChartSpec,
+        task_scope: &TaskScope,
+        usage_scope: &[u32],
+    ) -> Result<Vec<String>> {
+        // Initialize output_local_datetime_columns
+        let mut output_local_datetime_columns = if let Some(source) = &self.source {
+            // We have a parent dataset, so init output_local_datetime_columns to be those
+            // local datetime columns produced by the parent
+            let source_var = Variable::new_data(source);
+            let resolved = task_scope.resolve_scope(&source_var, usage_scope)?;
+            let source_data = chart_spec.get_nested_data(resolved.scope.as_slice(), source)?;
+            source_data.local_datetime_columns_produced(
+                chart_spec,
+                task_scope,
+                resolved.scope.as_slice(),
+            )?
+        } else {
+            // No parent dataset, so input local datetime columns is empty
+            Default::default()
+        };
+
+        // Add any fields that are parsed as local datetimes
+        if let Some(DataFormatParseSpec::Object(parse)) =
+            self.format.as_ref().and_then(|format| format.parse.clone())
+        {
+            for (field, format) in parse {
+                if format == "date" {
+                    output_local_datetime_columns.push(field.clone())
+                }
+            }
+        }
+
+        // Propagate output_local_datetime_columns through transforms
+        for tx in &self.transform {
+            output_local_datetime_columns =
+                tx.local_datetime_columns_produced(output_local_datetime_columns.as_slice())
+        }
+
+        Ok(output_local_datetime_columns)
+    }
+}
+
+pub fn supported_and_allowed(
+    tx: &TransformSpec,
+    planner_config: &PlannerConfig,
+    task_scope: &TaskScope,
+    scope: &[u32],
+) -> bool {
+    let input_vars = tx.input_vars().unwrap_or_default();
+    for input_var in &input_vars {
+        if let Ok(resolved) = task_scope.resolve_scope(&input_var.var, scope) {
+            let scoped_var: ScopedVariable = (resolved.var, resolved.scope);
+            if planner_config.client_only_vars.contains(&scoped_var) {
+                // Transform requires a variable that may only live on the client
+                return false;
+            }
+        }
+    }
+    tx.supported()
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq)]

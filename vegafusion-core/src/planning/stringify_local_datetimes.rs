@@ -19,6 +19,7 @@ use crate::spec::transform::TransformSpec;
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use itertools::sorted;
+use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 
 /// This planning phase converts select datetime columns from the default millisecond UTC
@@ -50,8 +51,10 @@ pub fn stringify_local_datetimes(
         .filter(|var| var.0.namespace == VariableNamespace::Data as i32)
         .collect();
 
-    let mut visitor =
-        CollectCandidateDatasetMapping::new(client_scope.clone(), server_to_client_datasets);
+    let mut visitor = CollectCandidateDatasetMapping::new(
+        client_scope.clone(),
+        server_to_client_datasets.clone(),
+    );
     client_spec.walk(&mut visitor)?;
     let candidate_dataset_mapping = visitor.candidate_dataset_mapping;
 
@@ -62,6 +65,14 @@ pub fn stringify_local_datetimes(
         candidate_dataset_mapping,
     );
     client_spec.walk(&mut visitor)?;
+
+    // Collect fields that are produced in datasets
+    let mut visitor = CollectLocalTimeDataFieldsVisitor::try_new(
+        visitor.local_datetime_fields,
+        &server_to_client_datasets,
+        server_spec,
+    )?;
+    server_spec.walk(&mut visitor)?;
     let local_datetime_fields = visitor.local_datetime_fields;
 
     // Add formula transforms to server spec
@@ -285,6 +296,52 @@ fn get_local_datetime_fields(
         }
     } else {
         Default::default()
+    }
+}
+
+/// Visitor to collect local datetime columns produced by datasets
+struct CollectLocalTimeDataFieldsVisitor<'a> {
+    pub local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
+    pub server_to_client_datasets: &'a HashSet<ScopedVariable>,
+    pub chart_spec: &'a ChartSpec,
+    pub task_scope: TaskScope,
+}
+
+impl<'a> CollectLocalTimeDataFieldsVisitor<'a> {
+    pub fn try_new(
+        local_datetime_fields: HashMap<ScopedVariable, HashSet<String>>,
+        server_to_client_datasets: &'a HashSet<ScopedVariable>,
+        chart_spec: &'a ChartSpec,
+    ) -> Result<Self> {
+        Ok(Self {
+            local_datetime_fields,
+            server_to_client_datasets,
+            chart_spec,
+            task_scope: chart_spec.to_task_scope()?,
+        })
+    }
+}
+
+impl<'a> ChartVisitor for CollectLocalTimeDataFieldsVisitor<'a> {
+    fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
+        // Add local datetime columns produced by the dataset.
+        // Note: This isn't quite complete, for derived datasets input_local_datetime_columns
+        //       should be computed from the parent dataset, but we won't be able to do this
+        //       in a visitor
+        let local_columns =
+            data.local_datetime_columns_produced(self.chart_spec, &self.task_scope, scope)?;
+        let dataset_var: ScopedVariable = (Variable::new_data(&data.name), Vec::from(scope));
+        if self.server_to_client_datasets.contains(&dataset_var) {
+            match self.local_datetime_fields.entry(dataset_var) {
+                Entry::Occupied(mut v) => {
+                    v.get_mut().extend(local_columns);
+                }
+                Entry::Vacant(v) => {
+                    v.insert(local_columns.into_iter().collect());
+                }
+            }
+        }
+        Ok(())
     }
 }
 
