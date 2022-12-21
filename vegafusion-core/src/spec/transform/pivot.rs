@@ -60,7 +60,7 @@ impl TransformSpecTrait for PivotTransformSpec {
             .unwrap_or_default()
             .iter()
             .filter_map(|groupby_field| {
-                if input_local_datetime_columns.contains(&groupby_field) {
+                if input_local_datetime_columns.contains(groupby_field) {
                     Some(groupby_field.clone())
                 } else {
                     None

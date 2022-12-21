@@ -70,7 +70,7 @@ pub fn stringify_local_datetimes(
     let mut visitor = CollectLocalTimeDataFieldsVisitor::try_new(
         visitor.local_datetime_fields,
         &server_to_client_datasets,
-        &server_spec,
+        server_spec,
     )?;
     server_spec.walk(&mut visitor)?;
     let local_datetime_fields = visitor.local_datetime_fields;
@@ -329,7 +329,7 @@ impl<'a> ChartVisitor for CollectLocalTimeDataFieldsVisitor<'a> {
         //       should be computed from the parent dataset, but we won't be able to do this
         //       in a visitor
         let local_columns =
-            data.local_datetime_columns_produced(&self.chart_spec, &self.task_scope, scope)?;
+            data.local_datetime_columns_produced(self.chart_spec, &self.task_scope, scope)?;
         let dataset_var: ScopedVariable = (Variable::new_data(&data.name), Vec::from(scope));
         if self.server_to_client_datasets.contains(&dataset_var) {
             match self.local_datetime_fields.entry(dataset_var) {

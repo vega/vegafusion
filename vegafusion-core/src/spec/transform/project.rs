@@ -63,7 +63,7 @@ impl TransformSpecTrait for ProjectTransformSpec {
         self.fields
             .iter()
             .filter_map(|project_field| {
-                if input_local_datetime_columns.contains(&project_field) {
+                if input_local_datetime_columns.contains(project_field) {
                     Some(project_field.clone())
                 } else {
                     None
