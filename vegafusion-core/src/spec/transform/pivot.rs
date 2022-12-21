@@ -49,4 +49,23 @@ impl TransformSpecTrait for PivotTransformSpec {
             TransformColumns::Unknown
         }
     }
+
+    fn local_datetime_columns_produced(
+        &self,
+        input_local_datetime_columns: &[String],
+    ) -> Vec<String> {
+        // Keep input local datetime columns that are used as grouping fields
+        self.groupby
+            .clone()
+            .unwrap_or_default()
+            .iter()
+            .filter_map(|groupby_field| {
+                if input_local_datetime_columns.contains(&groupby_field) {
+                    Some(groupby_field.clone())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+    }
 }

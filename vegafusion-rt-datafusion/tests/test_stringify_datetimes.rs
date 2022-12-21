@@ -336,6 +336,50 @@ mod test_stringify_datetimes {
             }
         }
     }
+
+    #[tokio::test]
+    async fn test_pre_transform_stringify_datetimes_in_upstream_dataset() {
+        // Load spec
+        let spec_path = format!(
+            "{}/tests/specs/pre_transform/interactive_average.vg.json",
+            crate_dir()
+        );
+        let spec_str = fs::read_to_string(spec_path).unwrap();
+
+        // Initialize task graph runtime
+        let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
+
+        let pre_tx_result = runtime
+            .pre_transform_spec(&spec_str, "UTC", &None, None, Default::default())
+            .await
+            .unwrap();
+        let pre_tx_result = pre_tx_result.result.unwrap();
+
+        match pre_tx_result {
+            pre_transform_spec_result::Result::Response(response) => {
+                let spec: ChartSpec = serde_json::from_str(&response.spec).unwrap();
+                println!("{}", serde_json::to_string_pretty(&spec).unwrap());
+
+                assert_eq!(&spec.data[1].name, "source_0");
+
+                let data = spec.data[1].values.as_ref().unwrap();
+                let values = data.as_array().expect("Expected array");
+                let first = values[0].as_object().expect("Expected object");
+
+                // Check year_date
+                let month_date = first
+                    .get("month_date")
+                    .expect("Expected month_date column")
+                    .as_str()
+                    .expect("Expected month_date value to be a string")
+                    .to_string();
+                assert_eq!(month_date, "2012-01-01T00:00:00.000");
+            }
+            pre_transform_spec_result::Result::Error(err) => {
+                panic!("Pre Transform Error: {:?}", err)
+            }
+        }
+    }
 }
 
 fn crate_dir() -> String {

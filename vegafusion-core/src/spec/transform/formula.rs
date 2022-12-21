@@ -65,4 +65,21 @@ impl TransformSpecTrait for FormulaTransformSpec {
             TransformColumns::Unknown
         }
     }
+
+    fn local_datetime_columns_produced(
+        &self,
+        input_local_datetime_columns: &[String],
+    ) -> Vec<String> {
+        // Keep input local datetime columns as formula passes through all input columns
+        let mut output_local_datetime_columns = Vec::from(input_local_datetime_columns);
+
+        // Try to determine whether formula expression will generate a local datetime column.
+        // We don't have full type info so this isn't exact, but we can capture the most common
+        // local datetime expressions.
+        if self.expr.starts_with("toDate") || self.expr.starts_with("datetime") {
+            output_local_datetime_columns.push(self.as_.clone());
+        }
+
+        output_local_datetime_columns
+    }
 }

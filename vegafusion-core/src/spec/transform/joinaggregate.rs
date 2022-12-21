@@ -104,4 +104,13 @@ impl TransformSpecTrait for JoinAggregateTransformSpec {
             TransformColumns::Unknown
         }
     }
+
+    fn local_datetime_columns_produced(
+        &self,
+        input_local_datetime_columns: &[String],
+    ) -> Vec<String> {
+        // Keep input local datetime columns as joinaggregate passes through all input columns,
+        // and the new columns created by joinaggregate will never be local datetimes
+        Vec::from(input_local_datetime_columns)
+    }
 }

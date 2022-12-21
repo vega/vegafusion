@@ -54,4 +54,21 @@ impl TransformSpecTrait for ProjectTransformSpec {
             TransformColumns::Unknown
         }
     }
+
+    fn local_datetime_columns_produced(
+        &self,
+        input_local_datetime_columns: &[String],
+    ) -> Vec<String> {
+        // Keep input local datetime columns that are used as projection fields
+        self.fields
+            .iter()
+            .filter_map(|project_field| {
+                if input_local_datetime_columns.contains(&project_field) {
+                    Some(project_field.clone())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+    }
 }

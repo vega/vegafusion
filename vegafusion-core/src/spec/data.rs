@@ -81,6 +81,68 @@ impl DataSpec {
             }
         }
     }
+
+    pub fn local_datetime_columns_produced(
+        &self,
+        chart_spec: &ChartSpec,
+        task_scope: &TaskScope,
+        usage_scope: &[u32],
+    ) -> Result<Vec<String>> {
+        // Initialize output_local_datetime_columns
+        let mut output_local_datetime_columns = if let Some(source) = &self.source {
+            // We have a parent dataset, so init output_local_datetime_columns to be those
+            // local datetime columns produced by the parent
+            let source_var = Variable::new_data(source);
+            let resolved = task_scope.resolve_scope(&source_var, usage_scope)?;
+            let source_data = chart_spec.get_nested_data(resolved.scope.as_slice(), source)?;
+            source_data.local_datetime_columns_produced(
+                chart_spec,
+                task_scope,
+                resolved.scope.as_slice(),
+            )?
+        } else {
+            // No parent dataset, so input local datetime columns is empty
+            Default::default()
+        };
+
+        // Add any fields that are parsed as local datetimes
+        if let Some(DataFormatParseSpec::Object(parse)) =
+            self.format.as_ref().and_then(|format| format.parse.clone())
+        {
+            for (field, format) in parse {
+                if format == "date" {
+                    output_local_datetime_columns.push(field.clone())
+                }
+            }
+        }
+
+        // Propagate output_local_datetime_columns through transforms
+        for tx in &self.transform {
+            output_local_datetime_columns =
+                tx.local_datetime_columns_produced(output_local_datetime_columns.as_slice())
+        }
+
+        Ok(output_local_datetime_columns)
+    }
+}
+
+pub fn supported_and_allowed(
+    tx: &TransformSpec,
+    planner_config: &PlannerConfig,
+    task_scope: &TaskScope,
+    scope: &[u32],
+) -> bool {
+    let input_vars = tx.input_vars().unwrap_or_default();
+    for input_var in &input_vars {
+        if let Ok(resolved) = task_scope.resolve_scope(&input_var.var, scope) {
+            let scoped_var: ScopedVariable = (resolved.var, resolved.scope);
+            if planner_config.client_only_vars.contains(&scoped_var) {
+                // Transform requires a variable that may only live on the client
+                return false;
+            }
+        }
+    }
+    tx.supported()
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq)]
