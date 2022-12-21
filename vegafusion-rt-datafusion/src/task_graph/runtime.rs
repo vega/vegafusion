@@ -513,6 +513,7 @@ impl TaskGraphRuntime {
                 extract_inline_data: true,
                 split_domain_data: false,
                 projection_pushdown: false,
+                allow_client_to_server_comms: true,
                 ..Default::default()
             },
         )?;
