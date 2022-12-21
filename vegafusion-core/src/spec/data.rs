@@ -7,8 +7,14 @@
  * this program the details of the active license.
  */
 
+use crate::error::Result;
+use crate::planning::plan::PlannerConfig;
+use crate::proto::gen::tasks::Variable;
+use crate::spec::chart::ChartSpec;
 use crate::spec::transform::TransformSpec;
 use crate::spec::values::StringOrSignalSpec;
+use crate::task_graph::graph::ScopedVariable;
+use crate::task_graph::scope::TaskScope;
 use itertools::sorted;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -51,7 +57,12 @@ impl DataSpec {
         sorted(signals).into_iter().collect()
     }
 
-    pub fn supported(&self, extract_inline_data: bool) -> DependencyNodeSupported {
+    pub fn supported(
+        &self,
+        planner_config: &PlannerConfig,
+        task_scope: &TaskScope,
+        scope: &[u32],
+    ) -> DependencyNodeSupported {
         if let Some(Some(format_type)) = self.format.as_ref().map(|fmt| fmt.type_.clone()) {
             if !matches!(format_type.as_str(), "csv" | "tsv" | "arrow" | "json") {
                 // We don't know how to read the data, so full node is unsupported
@@ -61,7 +72,7 @@ impl DataSpec {
 
         // Check if inline values array is supported
         if let Some(values) = &self.values {
-            if !extract_inline_data {
+            if !planner_config.extract_inline_data {
                 return DependencyNodeSupported::Unsupported;
             }
             if !matches!(values, Value::Array(_)) {
@@ -69,14 +80,19 @@ impl DataSpec {
             }
         }
 
-        let all_supported = self.transform.iter().all(|tx| tx.supported());
+        let all_supported = self
+            .transform
+            .iter()
+            .all(|tx| supported_and_allowed(tx, planner_config, task_scope, scope));
         if all_supported {
             DependencyNodeSupported::Supported
         } else if self.url.is_some() {
             DependencyNodeSupported::PartiallySupported
         } else {
             match self.transform.get(0) {
-                Some(tx) if tx.supported() => DependencyNodeSupported::PartiallySupported,
+                Some(tx) if supported_and_allowed(tx, planner_config, task_scope, scope) => {
+                    DependencyNodeSupported::PartiallySupported
+                }
                 _ => DependencyNodeSupported::Unsupported,
             }
         }

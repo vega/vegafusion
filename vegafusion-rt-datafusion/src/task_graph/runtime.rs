@@ -233,6 +233,7 @@ impl TaskGraphRuntime {
             &PlannerConfig {
                 stringify_local_datetimes: true,
                 extract_inline_data: true,
+                allow_client_to_server_comms: false,
                 ..Default::default()
             },
         )?;

@@ -135,12 +135,13 @@ pub fn build_dependency_graph(
     chart_spec: &ChartSpec,
     config: &PlannerConfig,
 ) -> Result<DiGraph<(ScopedVariable, DependencyNodeSupported), ()>> {
+    let task_scope = chart_spec.to_task_scope()?;
+
     // Initialize graph with nodes
-    let mut nodes_visitor = AddDependencyNodesVisitor::new(config.extract_inline_data);
+    let mut nodes_visitor = AddDependencyNodesVisitor::new(config, &task_scope);
     chart_spec.walk(&mut nodes_visitor)?;
 
     // Add dependency edges
-    let task_scope = chart_spec.to_task_scope()?;
     let mut edges_visitor = AddDependencyEdgesVisitor::new(
         &mut nodes_visitor.dependency_graph,
         &nodes_visitor.node_indexes,
@@ -152,15 +153,16 @@ pub fn build_dependency_graph(
 }
 
 /// Visitor to initialize directed graph with nodes for each dataset (no edges yet)
-#[derive(Debug, Default)]
-pub struct AddDependencyNodesVisitor {
+#[derive(Debug)]
+pub struct AddDependencyNodesVisitor<'a> {
     pub dependency_graph: DiGraph<(ScopedVariable, DependencyNodeSupported), ()>,
     pub node_indexes: HashMap<ScopedVariable, NodeIndex>,
-    pub extract_inline_data: bool,
+    planner_config: &'a PlannerConfig,
+    task_scope: &'a TaskScope,
 }
 
-impl AddDependencyNodesVisitor {
-    pub fn new(extract_inline_data: bool) -> Self {
+impl<'a> AddDependencyNodesVisitor<'a> {
+    pub fn new(planner_config: &'a PlannerConfig, task_scope: &'a TaskScope) -> Self {
         let mut dependency_graph = DiGraph::new();
         let mut node_indexes = HashMap::new();
 
@@ -175,16 +177,17 @@ impl AddDependencyNodesVisitor {
         Self {
             dependency_graph,
             node_indexes,
-            extract_inline_data,
+            planner_config,
+            task_scope,
         }
     }
 }
 
-impl ChartVisitor for AddDependencyNodesVisitor {
+impl<'a> ChartVisitor for AddDependencyNodesVisitor<'a> {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         // Add scoped variable for dataset as node
         let scoped_var = (Variable::new_data(&data.name), Vec::from(scope));
-        let data_suported = data.supported(self.extract_inline_data);
+        let data_suported = data.supported(self.planner_config, self.task_scope, scope);
         let node_index = self
             .dependency_graph
             .add_node((scoped_var.clone(), data_suported.clone()));

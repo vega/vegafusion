@@ -10,7 +10,7 @@ use crate::error::Result;
 use crate::planning::dependency_graph::{get_supported_data_variables, scoped_var_for_input_var};
 use crate::proto::gen::tasks::Variable;
 use crate::spec::chart::{ChartSpec, MutChartVisitor};
-use crate::spec::data::{DataSpec, DependencyNodeSupported};
+use crate::spec::data::{supported_and_allowed, DataSpec, DependencyNodeSupported};
 use crate::spec::mark::MarkSpec;
 
 use crate::spec::signal::SignalSpec;
@@ -29,7 +29,7 @@ pub fn extract_server_data(
     let supported_vars = get_supported_data_variables(client_spec, config)?;
 
     let mut extract_server_visitor =
-        ExtractServerDependenciesVisitor::new(supported_vars, task_scope);
+        ExtractServerDependenciesVisitor::new(supported_vars, task_scope, config);
     client_spec.walk_mut(&mut extract_server_visitor)?;
 
     Ok(extract_server_visitor.server_spec)
@@ -40,12 +40,14 @@ pub struct ExtractServerDependenciesVisitor<'a> {
     pub server_spec: ChartSpec,
     supported_vars: HashMap<ScopedVariable, DependencyNodeSupported>,
     task_scope: &'a mut TaskScope,
+    planner_config: &'a PlannerConfig,
 }
 
 impl<'a> ExtractServerDependenciesVisitor<'a> {
     pub fn new(
         supported_vars: HashMap<ScopedVariable, DependencyNodeSupported>,
         task_scope: &'a mut TaskScope,
+        planner_config: &'a PlannerConfig,
     ) -> Self {
         let server_spec: ChartSpec = ChartSpec {
             schema: "https://vega.github.io/schema/vega/v5.json".into(),
@@ -55,6 +57,7 @@ impl<'a> ExtractServerDependenciesVisitor<'a> {
             server_spec,
             supported_vars,
             task_scope,
+            planner_config,
         }
     }
 }
@@ -74,7 +77,7 @@ impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
                 let mut pipeline_vars = HashSet::new();
                 let mut num_supported = 0;
                 'outer: for (i, tx) in data.transform.iter().enumerate() {
-                    if tx.supported() {
+                    if supported_and_allowed(tx, self.planner_config, self.task_scope, scope) {
                         if let Ok(input_vars) = tx.input_vars() {
                             for input_var in input_vars {
                                 if let Ok(scoped_source_var) =
