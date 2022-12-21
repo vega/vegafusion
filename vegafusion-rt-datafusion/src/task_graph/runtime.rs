@@ -509,7 +509,7 @@ impl TaskGraphRuntime {
         let plan = SpecPlan::try_new(
             &spec,
             &PlannerConfig {
-                stringify_local_datetimes: true,
+                stringify_local_datetimes: false,
                 extract_inline_data: true,
                 split_domain_data: false,
                 projection_pushdown: false,
