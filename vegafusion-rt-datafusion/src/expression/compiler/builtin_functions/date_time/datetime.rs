@@ -196,12 +196,6 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
             let hours = args[3].as_any().downcast_ref::<Int64Array>().unwrap();
             let minutes = args[4].as_any().downcast_ref::<Int64Array>().unwrap();
             let seconds = args[5].as_any().downcast_ref::<Int64Array>().unwrap();
-            println!(
-                "args[6].data_type(): {}, {:?}, {:?}",
-                args[6].data_type(),
-                args[6],
-                args[6].as_any().downcast_ref::<Int64Array>()
-            );
             let millis = args[6].as_any().downcast_ref::<Int64Array>().unwrap();
 
             let num_rows = years.len();
