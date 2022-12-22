@@ -15,6 +15,7 @@ mod tests {
     use vegafusion_core::data::table::VegaFusionTable;
     use vegafusion_core::error::VegaFusionError;
     use vegafusion_core::proto::gen::tasks::Variable;
+    use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_rt_datafusion::data::dataset::VegaFusionDataset;
     use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
     use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
@@ -24,13 +25,14 @@ mod tests {
         // Load spec
         let spec_path = format!("{}/tests/specs/vegalite/histogram.vg.json", crate_dir());
         let spec_str = fs::read_to_string(spec_path).unwrap();
+        let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
         let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
 
         let (values, warnings) = runtime
             .pre_transform_values(
-                &spec_str,
+                &spec,
                 &[(Variable::new_data("source_0"), vec![])],
                 "UTC",
                 &None,
@@ -69,6 +71,7 @@ mod tests {
         // Load spec
         let spec_path = format!("{}/tests/specs/vegalite/area_density.vg.json", crate_dir());
         let spec_str = fs::read_to_string(spec_path).unwrap();
+        let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
         let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
@@ -76,7 +79,7 @@ mod tests {
         // Check existent but unsupported dataset name
         let result = runtime
             .pre_transform_values(
-                &spec_str,
+                &spec,
                 &[(Variable::new_data("source_0"), vec![])],
                 "UTC",
                 &None,
@@ -97,7 +100,7 @@ mod tests {
         // Check non-existent dataset name
         let result = runtime
             .pre_transform_values(
-                &spec_str,
+                &spec,
                 &[(Variable::new_data("bogus_0"), vec![])],
                 "UTC",
                 &None,
@@ -120,6 +123,7 @@ mod tests {
             crate_dir()
         );
         let spec_str = fs::read_to_string(spec_path).unwrap();
+        let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
         let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
@@ -138,7 +142,7 @@ mod tests {
 
         let (values, warnings) = runtime
             .pre_transform_values(
-                &spec_str,
+                &spec,
                 &[(Variable::new_data("source_0"), vec![])],
                 "UTC",
                 &None,
@@ -174,13 +178,14 @@ mod tests {
             crate_dir()
         );
         let spec_str = fs::read_to_string(spec_path).unwrap();
+        let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
         let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
 
         let (values, warnings) = runtime
             .pre_transform_values(
-                &spec_str,
+                &spec,
                 &[(Variable::new_data("data_3"), vec![])],
                 "UTC",
                 &None,
@@ -217,13 +222,14 @@ mod tests {
             crate_dir()
         );
         let spec_str = fs::read_to_string(spec_path).unwrap();
+        let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
         let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
 
         let (values, warnings) = runtime
             .pre_transform_values(
-                &spec_str,
+                &spec,
                 &[
                     (Variable::new_data("click_selected"), vec![]),
                     (Variable::new_data("drag_selected"), vec![]),

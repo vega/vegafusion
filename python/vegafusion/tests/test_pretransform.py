@@ -5,7 +5,7 @@ import json
 from datetime import date
 
 def order_items_spec():
-    return r"""
+    return json.loads(r"""
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
   "background": "white",
@@ -76,11 +76,11 @@ def order_items_spec():
     }
   ]
 }
-"""
+""")
 
 
 def movies_histogram_spec(agg="count"):
-    return """
+    return json.loads("""
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
   "background": "white",
@@ -207,11 +207,11 @@ def movies_histogram_spec(agg="count"):
       "zindex": 0
     }
   ]
-}"""
+}""")
 
 
 def standalone_aggregate_spec(agg="count"):
-    return """
+    return json.loads("""
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
   "data": [
@@ -489,11 +489,11 @@ def standalone_aggregate_spec(agg="count"):
     "warnings": []
   }
 }    
-    """
+    """)
 
 
 def date_column_spec():
-    return r"""
+    return json.loads(r"""
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
   "description": "A scatterplot showing horsepower and miles per gallons for various cars.",
@@ -545,11 +545,11 @@ def date_column_spec():
     }
   ]
 }
-"""
+""")
 
 
 def period_in_col_name_spec():
-    return r"""
+    return json.loads(r"""
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
   "background": "white",
@@ -667,11 +667,11 @@ def period_in_col_name_spec():
     }
   ]
 } 
-    """
+    """)
 
 
 def nat_bar_spec():
-    return r"""
+    return json.loads(r"""
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
   "background": "white",
@@ -796,7 +796,7 @@ def nat_bar_spec():
     "axis": {"domain": false}
   }
 }
-    """
+    """)
 
 
 def test_pre_transform_multi_partition():
@@ -809,7 +809,7 @@ def test_pre_transform_multi_partition():
     new_spec, warnings = vf.runtime.pre_transform_spec(vega_spec, "UTC", inline_datasets={
         "order_items": order_items,
     })
-    new_spec = json.loads(new_spec)
+
     assert new_spec["data"][1] == dict(
         name="data_0",
         values=[
@@ -830,7 +830,7 @@ def test_pre_transform_cache_cleared():
         new_spec, warnings = vf.runtime.pre_transform_spec(vega_spec, "UTC", inline_datasets={
             "order_items": order_items,
         })
-        new_spec = json.loads(new_spec)
+
         assert new_spec["data"][1] == dict(
             name="data_0",
             values=[
