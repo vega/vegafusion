@@ -2,7 +2,6 @@
 mod tests {
     use crate::crate_dir;
     use std::fs;
-    use vegafusion_core::proto::gen::services::pre_transform_spec_result;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_core::spec::transform::TransformSpec;
     use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
@@ -20,7 +19,7 @@ mod tests {
         // Initialize task graph runtime
         let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
 
-        let (chart_spec, warnings) = runtime
+        let (chart_spec, _warnings) = runtime
             .pre_transform_spec(&spec, "UTC", &None, None, Default::default())
             .await
             .unwrap();
