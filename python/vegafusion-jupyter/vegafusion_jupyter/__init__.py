@@ -38,6 +38,20 @@ def enable_widget(
     )
 
 
+def enable_mime():
+    """
+    Enable the VegaFusion data transformer and renderer so that all Charts
+    are displayed using VegaFusion.
+
+    This isn't necessary in order to use the VegaFusionWidget directly
+    """
+    # Import vegafusion.transformer so that vegafusion-inline transform
+    # will be registered
+    import vegafusion.transformer
+    alt.renderers.enable('vegafusion-mime',)
+    alt.data_transformers.enable('vegafusion-inline')
+
+
 def disable():
     """
     Disable the VegaFusion data transformer and renderer so that Charts

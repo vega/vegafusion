@@ -5,7 +5,7 @@
 # Please consult the license documentation provided alongside
 # this program the details of the active license.
 from .runtime import runtime
-from .transformer import to_feather
+from .transformer import to_feather, get_inline_datasets_for_spec
 from ._version import __version__
 
 # Import subpackages
