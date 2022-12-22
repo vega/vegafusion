@@ -80,7 +80,7 @@ class VegaFusionRuntime:
         Evaluate supported transforms in an input Vega specification and produce a new
         specification with pre-transformed datasets included inline.
 
-        :param spec: A Vega specification
+        :param spec: A Vega specification dict or JSON string
         :param local_tz: Name of timezone to be considered local. E.g. 'America/New_York'.
             This can be computed for the local system using the tzlocal package and the
             tzlocal.get_localzone_name() function.
@@ -117,7 +117,6 @@ class VegaFusionRuntime:
                 row_limit=row_limit,
                 inline_datasets=inline_dataset_bytes
             )
-            warnings = json.loads(warnings)
             return new_spec, warnings
 
     def pre_transform_datasets(self, spec, datasets, local_tz, default_input_tz=None, inline_datasets=None):
@@ -125,7 +124,7 @@ class VegaFusionRuntime:
         Extract the fully evaluated form of the requested datasets from a Vega specification
         as pandas DataFrames.
 
-        :param spec: A Vega specification
+        :param spec: A Vega specification dict or JSON string
         :param datasets: A list with elements that are either:
           - The name of a top-level dataset as a string
           - A two-element tuple where the first element is the name of a dataset as a string
@@ -176,7 +175,6 @@ class VegaFusionRuntime:
             # Deserialize values to Arrow tables
             datasets = [pa.ipc.deserialize_pandas(value) for value in values]
 
-            warnings = json.loads(warnings)
             return datasets, warnings
 
     @property

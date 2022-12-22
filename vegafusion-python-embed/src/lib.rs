@@ -15,12 +15,13 @@ use tokio::runtime::Runtime;
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
-use vegafusion_core::proto::gen::services::pre_transform_spec_result;
 use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
 
 use env_logger::{Builder, Target};
+use pythonize::depythonize;
 use serde::{Deserialize, Serialize};
 use vegafusion_core::proto::gen::tasks::Variable;
+use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_rt_datafusion::data::dataset::VegaFusionDataset;
@@ -104,15 +105,16 @@ impl PyTaskGraphRuntime {
 
     pub fn pre_transform_spec(
         &self,
-        spec: String,
+        spec: PyObject,
         local_tz: String,
         default_input_tz: Option<String>,
         row_limit: Option<u32>,
         inline_datasets: &PyDict,
-    ) -> PyResult<(String, String)> {
+    ) -> PyResult<(PyObject, PyObject)> {
         let inline_datasets = deserialize_inline_datasets(inline_datasets)?;
+        let spec = parse_json_spec(spec)?;
 
-        let response = self
+        let (spec, warnings) = self
             .tokio_runtime
             .block_on(self.runtime.pre_transform_spec(
                 &spec,
@@ -122,54 +124,52 @@ impl PyTaskGraphRuntime {
                 inline_datasets,
             ))?;
 
-        match response.result.unwrap() {
-            pre_transform_spec_result::Result::Error(err) => {
-                Err(PyValueError::new_err(format!("{:?}", err)))
-            }
-            pre_transform_spec_result::Result::Response(response) => {
-                let warnings: Vec<_> = response.warnings.iter().map(|warning| {
-                    match warning.warning_type.as_ref().unwrap() {
-                        WarningType::RowLimit(_) => {
-                            PreTransformSpecWarning {
-                                typ: "RowLimitExceeded".to_string(),
-                                message: "Some datasets in resulting Vega specification have been truncated to the provided row limit".to_string()
-                            }
-                        }
-                        WarningType::BrokenInteractivity(_) => {
-                            PreTransformSpecWarning {
-                                typ: "BrokenInteractivity".to_string(),
-                                message: "Some interactive features may have been broken in the resulting Vega specification".to_string()
-                            }
-                        }
-                        WarningType::Unsupported(_) => {
-                            PreTransformSpecWarning {
-                                typ: "Unsupported".to_string(),
-                                message: "Unable to pre-transform any datasets in the Vega specification".to_string()
-                            }
-                        }
-                        WarningType::Planner(warning) => {
-                            PreTransformSpecWarning {
-                                typ: "Planner".to_string(),
-                                message: warning.message.clone()
-                            }
-                        }
+        let warnings: Vec<_> = warnings.iter().map(|warning| {
+            match warning.warning_type.as_ref().unwrap() {
+                WarningType::RowLimit(_) => {
+                    PreTransformSpecWarning {
+                        typ: "RowLimitExceeded".to_string(),
+                        message: "Some datasets in resulting Vega specification have been truncated to the provided row limit".to_string()
                     }
-                }).collect();
-
-                Ok((response.spec, serde_json::to_string(&warnings).unwrap()))
+                }
+                WarningType::BrokenInteractivity(_) => {
+                    PreTransformSpecWarning {
+                        typ: "BrokenInteractivity".to_string(),
+                        message: "Some interactive features may have been broken in the resulting Vega specification".to_string()
+                    }
+                }
+                WarningType::Unsupported(_) => {
+                    PreTransformSpecWarning {
+                        typ: "Unsupported".to_string(),
+                        message: "Unable to pre-transform any datasets in the Vega specification".to_string()
+                    }
+                }
+                WarningType::Planner(warning) => {
+                    PreTransformSpecWarning {
+                        typ: "Planner".to_string(),
+                        message: warning.message.clone()
+                    }
+                }
             }
-        }
+        }).collect();
+
+        Python::with_gil(|py| -> PyResult<(PyObject, PyObject)> {
+            let py_spec = pythonize::pythonize(py, &spec)?;
+            let py_warnings = pythonize::pythonize(py, &warnings)?;
+            Ok((py_spec, py_warnings))
+        })
     }
 
     pub fn pre_transform_datasets(
         &self,
-        spec: String,
+        spec: PyObject,
         variables: Vec<(String, Vec<u32>)>,
         local_tz: String,
         default_input_tz: Option<String>,
         inline_datasets: &PyDict,
-    ) -> PyResult<(PyObject, String)> {
+    ) -> PyResult<(PyObject, PyObject)> {
         let inline_datasets = deserialize_inline_datasets(inline_datasets)?;
+        let spec = parse_json_spec(spec)?;
 
         // Build variables
         let variables: Vec<ScopedVariable> = variables
@@ -201,8 +201,8 @@ impl PyTaskGraphRuntime {
             })
             .collect();
 
-        let response_list: PyObject = Python::with_gil(|py| -> PyResult<PyObject> {
-            let response_list = PyList::empty(py);
+        Python::with_gil(|py| -> PyResult<(PyObject, PyObject)> {
+            let py_response_list = PyList::empty(py);
             for value in values {
                 let bytes: PyObject = if let TaskValue::Table(table) = value {
                     PyBytes::new(py, table.to_ipc_bytes()?.as_slice()).into()
@@ -211,12 +211,12 @@ impl PyTaskGraphRuntime {
                         "Unexpected value type",
                     )));
                 };
-                response_list.append(bytes)?;
+                py_response_list.append(bytes)?;
             }
-            Ok(response_list.into())
-        })?;
 
-        Ok((response_list, serde_json::to_string(&warnings).unwrap()))
+            let py_warnings = pythonize::pythonize(py, &warnings)?;
+            Ok((py_response_list.into(), py_warnings))
+        })
     }
 
     pub fn clear_cache(&self) {
@@ -247,6 +247,31 @@ impl PyTaskGraphRuntime {
 fn vegafusion_embed(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyTaskGraphRuntime>()?;
     Ok(())
+}
+
+/// Helper function to parse an input Python string or dict as a ChartSpec
+fn parse_json_spec(chart_spec: PyObject) -> PyResult<ChartSpec> {
+    Python::with_gil(|py| -> PyResult<ChartSpec> {
+        if let Ok(chart_spec) = chart_spec.extract::<&str>(py) {
+            match serde_json::from_str::<ChartSpec>(chart_spec) {
+                Ok(chart_spec) => Ok(chart_spec),
+                Err(err) => Err(PyValueError::new_err(format!(
+                    "Failed to parse chart_spec string as Vega: {}",
+                    err
+                ))),
+            }
+        } else if let Ok(chart_spec) = chart_spec.cast_as::<PyDict>(py) {
+            match depythonize(chart_spec) {
+                Ok(chart_spec) => Ok(chart_spec),
+                Err(err) => Err(PyValueError::new_err(format!(
+                    "Failed to parse chart_spec dict as Vega: {}",
+                    err
+                ))),
+            }
+        } else {
+            Err(PyValueError::new_err("chart_spec must be a string or dict"))
+        }
+    })
 }
 
 #[cfg(test)]

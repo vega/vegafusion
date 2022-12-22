@@ -7,10 +7,9 @@ def test_input_utc():
     (pre_transformed, warnings) = vf.runtime.pre_transform_spec(
         input_spec(), "UTC", "UTC", inline_datasets={"seattle_weather": load_dataset()}
     )
-    pre_transformed_json = json.loads(pre_transformed)
-    print(json.dumps(pre_transformed_json, indent=2))
-    expected_json = json.loads(expected_spec())
-    assert pre_transformed_json == expected_json
+    print(json.dumps(pre_transformed, indent=2))
+    expected = expected_spec()
+    assert pre_transformed == expected
 
 
 def load_dataset():
@@ -160,7 +159,7 @@ def input_spec():
 """
 
 def expected_spec():
-    return r"""
+    return json.loads(r"""
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
   "data": [
@@ -762,4 +761,4 @@ def expected_spec():
   "padding": 5,
   "background": "white"
 }
-    """
+    """)

@@ -202,34 +202,41 @@ impl TaskGraphRuntime {
             .collect::<Result<HashMap<_, _>>>()?;
 
         // Parse spec
-        let spec_string = request.spec;
+        let spec: ChartSpec = serde_json::from_str(&request.spec)?;
         let local_tz = request.local_tz;
         let output_tz = request.output_tz;
 
-        self.pre_transform_spec(
-            &spec_string,
-            &local_tz,
-            &output_tz,
-            row_limit,
-            inline_datasets,
-        )
-        .await
+        let (transformed_spec, warnings) = self
+            .pre_transform_spec(&spec, &local_tz, &output_tz, row_limit, inline_datasets)
+            .await?;
+
+        // Build result
+        let response = PreTransformSpecResult {
+            result: Some(pre_transform_spec_result::Result::Response(
+                PreTransformSpecResponse {
+                    spec: serde_json::to_string(&transformed_spec)
+                        .expect("Failed to convert chart spec to string"),
+                    warnings,
+                },
+            )),
+        };
+
+        Ok(response)
     }
 
     pub async fn pre_transform_spec(
         &self,
-        spec: &str,
+        spec: &ChartSpec,
         local_tz: &str,
         default_input_tz: &Option<String>,
         row_limit: Option<u32>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
-    ) -> Result<PreTransformSpecResult> {
-        let input_spec: ChartSpec =
-            serde_json::from_str(spec).with_context(|| "Failed to parse spec".to_string())?;
+    ) -> Result<(ChartSpec, Vec<PreTransformSpecWarning>)> {
+        let input_spec = spec;
 
         // Create spec plan
         let plan = SpecPlan::try_new(
-            &input_spec,
+            spec,
             &PlannerConfig {
                 stringify_local_datetimes: true,
                 extract_inline_data: true,
@@ -382,18 +389,7 @@ impl TaskGraphRuntime {
             });
         }
 
-        // Build result
-        let response = PreTransformSpecResult {
-            result: Some(pre_transform_spec_result::Result::Response(
-                PreTransformSpecResponse {
-                    spec: serde_json::to_string(&spec)
-                        .expect("Failed to convert chart spec to string"),
-                    warnings,
-                },
-            )),
-        };
-
-        Ok(response)
+        Ok((spec, warnings))
     }
 
     pub async fn pre_transform_values_request(
@@ -426,12 +422,13 @@ impl TaskGraphRuntime {
 
         // Parse spec
         let spec_string = request.spec;
+        let spec: ChartSpec = serde_json::from_str(&spec_string)?;
         let local_tz = request.local_tz;
         let default_input_tz = request.default_input_tz;
 
         let (values, warnings) = self
             .pre_transform_values(
-                &spec_string,
+                &spec,
                 variables.as_slice(),
                 &local_tz,
                 &default_input_tz,
@@ -467,15 +464,12 @@ impl TaskGraphRuntime {
 
     pub async fn pre_transform_values(
         &self,
-        spec: &str,
+        spec: &ChartSpec,
         variables: &[ScopedVariable],
         local_tz: &str,
         default_input_tz: &Option<String>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
     ) -> Result<(Vec<TaskValue>, Vec<PreTransformValuesWarning>)> {
-        let spec: ChartSpec =
-            serde_json::from_str(spec).with_context(|| "Failed to parse spec".to_string())?;
-
         // Check that requested variables exist
         for var in variables {
             let scope = var.1.as_slice();
@@ -507,7 +501,7 @@ impl TaskGraphRuntime {
 
         // Create spec plan
         let plan = SpecPlan::try_new(
-            &spec,
+            spec,
             &PlannerConfig {
                 stringify_local_datetimes: false,
                 extract_inline_data: true,
