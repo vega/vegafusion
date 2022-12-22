@@ -58,7 +58,7 @@ vf.enable()
 ```
 
 ```python
-assert(alt.renderers.active == "vegafusion-jupyter")
+assert(alt.renderers.active == "vegafusion-widget")
 assert(alt.data_transformers.active == 'vegafusion-feather')
 ```
 """
@@ -76,7 +76,7 @@ alt.data_transformers.enable("default");
 ```
 
 ```python
-assert(alt.renderers.active == "vegafusion-jupyter")
+assert(alt.renderers.active == "vegafusion-widget")
 assert(alt.data_transformers.active == 'default')
 ```
 """

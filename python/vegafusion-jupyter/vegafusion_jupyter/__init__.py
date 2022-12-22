@@ -11,7 +11,8 @@ from . import widget
 from .widget import VegaFusionWidget
 from ._version import __version__
 
-def enable(
+
+def enable_widget(
         download_source_link=None,
         debounce_wait=30,
         debounce_max_wait=60,
@@ -27,7 +28,7 @@ def enable(
     # will be registered
     import vegafusion.transformer
     alt.renderers.enable(
-        'vegafusion-jupyter',
+        'vegafusion-widget',
         debounce_wait=debounce_wait,
         debounce_max_wait=debounce_max_wait,
         download_source_link=download_source_link,
