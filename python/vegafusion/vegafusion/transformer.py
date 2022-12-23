@@ -174,7 +174,8 @@ def get_inline_dataset_names(vega_spec):
             name = url[len(DATASET_PREFIX):]
             table_names.add(name)
 
-    # TODO: handle recursive datasets
+    for mark in vega_spec.get("marks", []):
+        table_names.update(get_inline_dataset_names(mark))
 
     return table_names
 
