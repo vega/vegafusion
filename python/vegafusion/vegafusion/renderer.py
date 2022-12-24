@@ -1,8 +1,9 @@
 import altair as alt
+from altair.utils.html import spec_to_html
 from . import transformer, runtime, local_tz
 
 
-def vegafusion_mime_renderer(spec):
+def vegafusion_mime_renderer(spec, mimetype="html"):
     import vl_convert as vlc
     vega_spec = vlc.vegalite_to_vega(spec)
     inline_datasets = transformer.get_inline_datasets_for_spec(vega_spec)
@@ -11,7 +12,29 @@ def vegafusion_mime_renderer(spec):
         local_tz.get_local_tz(),
         inline_datasets=inline_datasets
     )
-    return {"application/vnd.vega.v5+json": tx_vega_spec}
+
+    if mimetype == "vega":
+        return {"application/vnd.vega.v5+json": tx_vega_spec}
+    elif mimetype == "html":
+        html = spec_to_html(
+            tx_vega_spec,
+            mode="vega",
+            vega_version="5",
+            vegalite_version="4.17.0",
+            vegaembed_version="6",
+            fullhtml=False,
+            output_div="altair-viz-{}",
+            template="universal",
+        )
+        return {"text/html": html}
+    elif mimetype == "svg":
+        svg = vlc.vega_to_svg(tx_vega_spec)
+        return {"image/svg+xml": svg}
+    elif mimetype == "png":
+        png = vlc.vega_to_png(tx_vega_spec)
+        return {"image/png": png}
+    else:
+        raise ValueError(f"Unsupported mimetype: {mimetype}")
 
 
 alt.renderers.register('vegafusion-mime', vegafusion_mime_renderer)

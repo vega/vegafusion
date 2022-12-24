@@ -24,16 +24,22 @@ except ImportError:
     pass
 
 
-def enable_mime():
+def enable_mime(mimetype="html"):
     """
     Enable the VegaFusion data transformer and renderer so that all Charts
     are displayed using VegaFusion.
 
     This isn't necessary in order to use the VegaFusionWidget directly
+
+    :param mimetype: Mime type. One of:
+        - "html" (default)
+        - "vega"
+        - "svg"
+        - "png": Note: the PNG renderer can be quite slow for charts with lots of marks
     """
     # Import vegafusion.transformer so that vegafusion-inline transform
     # will be registered
-    alt.renderers.enable('vegafusion-mime',)
+    alt.renderers.enable('vegafusion-mime', mimetype=mimetype)
     alt.data_transformers.enable('vegafusion-inline')
 
 
