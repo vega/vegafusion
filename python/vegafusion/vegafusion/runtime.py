@@ -119,7 +119,7 @@ class VegaFusionRuntime:
             )
             return new_spec, warnings
 
-    def pre_transform_datasets(self, spec, datasets, local_tz, default_input_tz=None, inline_datasets=None):
+    def pre_transform_datasets(self, spec, datasets, local_tz, default_input_tz=None, row_limit=None, inline_datasets=None):
         """
         Extract the fully evaluated form of the requested datasets from a Vega specification
         as pandas DataFrames.
@@ -134,6 +134,9 @@ class VegaFusionRuntime:
             tzlocal.get_localzone_name() function.
         :param default_input_tz: Name of timezone (e.g. 'America/New_York') that naive datetime
             strings should be interpreted in. Defaults to `local_tz`.
+        :param row_limit: Maximum number of dataset rows to include in the returned
+            datasets. If exceeded, datasets will be truncated to this number of rows
+            and a RowLimitExceeded warning will be included in the resulting warnings list
         :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
             Tables. Inline datasets may be referenced by the input specification using
             the following url syntax 'vegafusion+dataset://{dataset_name}'.
@@ -169,6 +172,7 @@ class VegaFusionRuntime:
                 pre_tx_vars,
                 local_tz=local_tz,
                 default_input_tz=default_input_tz,
+                row_limit=row_limit,
                 inline_datasets=inline_dataset_bytes
             )
 

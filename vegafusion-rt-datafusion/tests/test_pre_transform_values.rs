@@ -14,6 +14,7 @@ mod tests {
     use std::fs;
     use vegafusion_core::data::table::VegaFusionTable;
     use vegafusion_core::error::VegaFusionError;
+    use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType;
     use vegafusion_core::proto::gen::tasks::Variable;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_rt_datafusion::data::dataset::VegaFusionDataset;
@@ -36,6 +37,7 @@ mod tests {
                 &[(Variable::new_data("source_0"), vec![])],
                 "UTC",
                 &None,
+                None,
                 Default::default(),
             )
             .await
@@ -67,6 +69,53 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_pre_transform_dataset_with_row_limit() {
+        // Load spec
+        let spec_path = format!("{}/tests/specs/vegalite/histogram.vg.json", crate_dir());
+        let spec_str = fs::read_to_string(spec_path).unwrap();
+        let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
+
+        // Initialize task graph runtime
+        let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
+
+        let (values, warnings) = runtime
+            .pre_transform_values(
+                &spec,
+                &[(Variable::new_data("source_0"), vec![])],
+                "UTC",
+                &None,
+                Some(3),
+                Default::default(),
+            )
+            .await
+            .unwrap();
+
+        // Check there are no warnings
+        assert_eq!(warnings.len(), 1);
+        if let Some(WarningType::RowLimit(row_limit)) = &warnings[0].warning_type {
+            assert_eq!(row_limit.datasets.len(), 1);
+            assert_eq!(row_limit.datasets[0].name, "source_0");
+        } else {
+            panic!("Unexpected warning type")
+        }
+
+        // Check single returned dataset
+        assert_eq!(values.len(), 1);
+
+        let dataset = values[0].as_table().cloned().unwrap();
+
+        let expected = "\
++----------------------------+--------------------------------+---------+
+| bin_maxbins_10_IMDB Rating | bin_maxbins_10_IMDB Rating_end | __count |
++----------------------------+--------------------------------+---------+
+| 6                          | 7                              | 985     |
+| 3                          | 4                              | 100     |
+| 7                          | 8                              | 741     |
++----------------------------+--------------------------------+---------+";
+        assert_eq!(dataset.pretty_format(None).unwrap(), expected);
+    }
+
+    #[tokio::test]
     async fn test_pre_transform_validate() {
         // Load spec
         let spec_path = format!("{}/tests/specs/vegalite/area_density.vg.json", crate_dir());
@@ -83,6 +132,7 @@ mod tests {
                 &[(Variable::new_data("source_0"), vec![])],
                 "UTC",
                 &None,
+                None,
                 Default::default(),
             )
             .await;
@@ -104,6 +154,7 @@ mod tests {
                 &[(Variable::new_data("bogus_0"), vec![])],
                 "UTC",
                 &None,
+                None,
                 Default::default(),
             )
             .await;
@@ -146,6 +197,7 @@ mod tests {
                 &[(Variable::new_data("source_0"), vec![])],
                 "UTC",
                 &None,
+                None,
                 inline_datasets,
             )
             .await
@@ -189,6 +241,7 @@ mod tests {
                 &[(Variable::new_data("data_3"), vec![])],
                 "UTC",
                 &None,
+                None,
                 Default::default(),
             )
             .await
@@ -236,6 +289,7 @@ mod tests {
                 ],
                 "UTC",
                 &None,
+                None,
                 Default::default(),
             )
             .await
