@@ -34,15 +34,13 @@ def eval_transforms(chart: Chart, row_limit=None):
     if chart.mark == Undefined:
         chart = chart.mark_point()
 
-    # Drop row and col encoding channels
-    chart.encoding.row = Undefined
-    chart.encoding.column = Undefined
-
     with data_transformers.enable("vegafusion-inline"):
         vega_spec = vlc.vegalite_to_vega(chart.to_json(validate=False), vl_version="4.17")
         inline_datasets = get_inline_datasets_for_spec(vega_spec)
 
     dataset = get_dataset_for_magic_mark(vega_spec)
+    if dataset is None:
+        raise ValueError("Failed to identify mark for Altair chart")
 
     (data,), warnings = runtime.pre_transform_datasets(
         vega_spec,
@@ -68,7 +66,15 @@ def transformed_dtypes(chart: Chart):
 
 def get_dataset_for_magic_mark(vega_spec):
     for mark in vega_spec.get("marks", []):
-        if mark.get("name", "").startswith(MAGIC_MARK_NAME):
-            return mark["from"]["data"]
+        if mark.get("name", "") == f"{MAGIC_MARK_NAME}_marks":
+            return mark.get("from", {}).get("data", None)
 
-    raise ValueError("Magic mark not found")
+        elif mark.get("name", "") == f"{MAGIC_MARK_NAME}_cell":
+            return mark.get("from", {}).get("facet", None).get("data", None)
+
+        elif mark.get("type", "") == "group":
+            dataset = get_dataset_for_magic_mark(mark)
+            if dataset is not None:
+                return dataset
+
+    return None
