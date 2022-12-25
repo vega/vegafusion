@@ -5,12 +5,13 @@ from altair.utils.schemapi import Undefined
 MAGIC_MARK_NAME = "_vf_mark"
 
 
-def eval_transforms(chart: Chart):
+def eval_transforms(chart: Chart, row_limit=None):
     """
     Evaluate the transform associated with a Chart and return the transformed
     data as a DataFrame
 
     :param chart: altair.vegalite.v4.api.Chart object
+    :param row_limit: Maximum number of rows to return. None (default) for unlimited
     :return: pandas DataFrame of transformed data
     """
     import vl_convert as vlc
@@ -47,10 +48,22 @@ def eval_transforms(chart: Chart):
         vega_spec,
         [dataset],
         get_local_tz(),
+        row_limit=row_limit,
         inline_datasets=inline_datasets
     )
 
     return data
+
+
+def transformed_dtypes(chart: Chart):
+    """
+    Get the dtypes of the Chart's transformed data
+
+    :param chart: altair.vegalite.v4.api.Chart object
+    :return: pandas Series of the dtypes of the transformed data
+    """
+    df = eval_transforms(chart, row_limit=1)
+    return df.dtypes
 
 
 def get_dataset_for_magic_mark(vega_spec):
