@@ -24,6 +24,13 @@ except ImportError:
     pass
 
 
+def altair_vl_version():
+    from altair.vegalite.v4 import SCHEMA_VERSION
+    # Compute VlConvert's vl_version string (of the form 'v5_2')
+    # from SCHEMA_VERSION (of the form 'v5.2.0')
+    return "_".join(SCHEMA_VERSION.split(".")[:2])
+
+
 def enable_mime(mimetype="html"):
     """
     Enable the VegaFusion data transformer and renderer so that all Charts

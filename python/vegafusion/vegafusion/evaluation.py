@@ -15,8 +15,7 @@ def eval_transforms(chart: Chart, row_limit=None):
     :return: pandas DataFrame of transformed data
     """
     import vl_convert as vlc
-    from . import runtime, get_local_tz
-    from . import get_inline_datasets_for_spec
+    from . import runtime, get_local_tz, get_inline_datasets_for_spec, altair_vl_version
 
     if not isinstance(chart, Chart):
         raise ValueError(
@@ -35,7 +34,7 @@ def eval_transforms(chart: Chart, row_limit=None):
         chart = chart.mark_point()
 
     with data_transformers.enable("vegafusion-inline"):
-        vega_spec = vlc.vegalite_to_vega(chart.to_json(validate=False), vl_version="4.17")
+        vega_spec = vlc.vegalite_to_vega(chart.to_json(validate=False), vl_version=altair_vl_version())
         inline_datasets = get_inline_datasets_for_spec(vega_spec)
 
     dataset = get_dataset_for_magic_mark(vega_spec)

@@ -5,7 +5,8 @@ from . import transformer, runtime, local_tz
 
 def vegafusion_mime_renderer(spec, mimetype="html"):
     import vl_convert as vlc
-    vega_spec = vlc.vegalite_to_vega(spec)
+    from . import altair_vl_version
+    vega_spec = vlc.vegalite_to_vega(spec, vl_version=altair_vl_version())
     inline_datasets = transformer.get_inline_datasets_for_spec(vega_spec)
     tx_vega_spec, warnings = runtime.pre_transform_spec(
         vega_spec,
