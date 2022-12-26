@@ -6,7 +6,7 @@ def get_local_tz():
     Get the named local timezone that the VegaFusion mimetype renderer
     will use for calculations.
 
-    Defaults to the kernel's local timezone as determined by vl-convert
+    Defaults to the kernel's local timezone as determined by vl-convert.
 
     Has no effect on VegaFusionWidget, which always uses the
     browser's local timezone
@@ -15,8 +15,15 @@ def get_local_tz():
     """
     if __tz_config["local_tz"] is None:
         # Fall back to getting local_tz from vl-convert if not set
-        import vl_convert as vlc
-        __tz_config["local_tz"] = vlc.get_local_tz()
+        try:
+            import vl_convert as vlc
+            __tz_config["local_tz"] = vlc.get_local_tz()
+        except ImportError:
+            raise ImportError(
+                "vl-convert is not installed and so the local system timezone cannot be determined.\n"
+                "Either install the vl-convert-python package or set the local timezone manually using\n"
+                "the vegafusion.set_local_tz function"
+            )
 
     return __tz_config["local_tz"]
 
