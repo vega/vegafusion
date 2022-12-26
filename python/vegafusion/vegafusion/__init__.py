@@ -9,6 +9,7 @@ from .transformer import to_feather, get_inline_datasets_for_spec
 from .local_tz import set_local_tz, get_local_tz
 from .evaluation import eval_transforms, transformed_dtypes
 from . import renderer
+from .compilers import vegalite_compilers
 import altair as alt
 
 from ._version import __version__
@@ -24,11 +25,22 @@ except ImportError:
     pass
 
 
-def altair_vl_version():
+def altair_vl_version(vl_convert=False):
+    """
+    Get Altair's preferred Vega-Lite version
+
+    :param vl_convert: If True, return a version string compatible with vl_convert
+        (e.g. v4_17 rather than 4.17.0)
+    :return: str with Vega-Lite version
+    """
     from altair.vegalite.v4 import SCHEMA_VERSION
-    # Compute VlConvert's vl_version string (of the form 'v5_2')
-    # from SCHEMA_VERSION (of the form 'v5.2.0')
-    return "_".join(SCHEMA_VERSION.split(".")[:2])
+    if vl_convert:
+        # Compute VlConvert's vl_version string (of the form 'v5_2')
+        # from SCHEMA_VERSION (of the form 'v5.2.0')
+        return "_".join(SCHEMA_VERSION.split(".")[:2])
+    else:
+        # Return full version without leading v
+        return SCHEMA_VERSION.rstrip("v")
 
 
 def enable_mime(mimetype="html", embed_options=None):

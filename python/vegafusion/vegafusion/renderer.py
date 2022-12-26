@@ -1,12 +1,10 @@
 import altair as alt
 from altair.utils.html import spec_to_html
-from . import transformer, runtime, local_tz
 
 
 def vegafusion_mime_renderer(spec, mimetype="html", embed_options=None):
-    import vl_convert as vlc
-    from . import altair_vl_version
-    vega_spec = vlc.vegalite_to_vega(spec, vl_version=altair_vl_version())
+    from . import transformer, runtime, local_tz, vegalite_compilers, altair_vl_version
+    vega_spec = vegalite_compilers.get()(spec)
 
     # Remove background if non-default theme is active
     # Not sure why this is needed, but otherwise dark theme will end up with a
@@ -36,7 +34,7 @@ def vegafusion_mime_renderer(spec, mimetype="html", embed_options=None):
             tx_vega_spec,
             mode="vega",
             vega_version="5",
-            vegalite_version="4.17.0",
+            vegalite_version=altair_vl_version(),
             vegaembed_version="6",
             fullhtml=False,
             output_div="altair-viz-{}",
@@ -45,9 +43,11 @@ def vegafusion_mime_renderer(spec, mimetype="html", embed_options=None):
         )
         return {"text/html": html}
     elif mimetype == "svg":
+        import vl_convert as vlc
         svg = vlc.vega_to_svg(tx_vega_spec)
         return {"image/svg+xml": svg}
     elif mimetype == "png":
+        import vl_convert as vlc
         png = vlc.vega_to_png(tx_vega_spec)
         return {"image/png": png}
     else:
