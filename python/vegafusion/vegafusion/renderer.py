@@ -15,13 +15,14 @@ def vegafusion_mime_renderer(spec, mimetype="html", embed_options=None):
     )
 
     # Handle default embed options
-    embed_options = embed_options if embed_options is not None else {"mode": "vega"}
+    embed_options = embed_options or {}
+    embed_options = dict({"mode": "vega"}, **embed_options)
 
     if mimetype == "vega":
         vega_mimetype = "application/vnd.vega.v5+json"
         return (
             {vega_mimetype: tx_vega_spec},
-            {vega_mimetype: embed_options}
+            {vega_mimetype: {"embed_options": embed_options}}
         )
     elif mimetype == "html":
         html = spec_to_html(
