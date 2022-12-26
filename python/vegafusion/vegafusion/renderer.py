@@ -3,7 +3,7 @@ from altair.utils.html import spec_to_html
 from . import transformer, runtime, local_tz
 
 
-def vegafusion_mime_renderer(spec, mimetype="html"):
+def vegafusion_mime_renderer(spec, mimetype="html", embed_options=None):
     import vl_convert as vlc
     from . import altair_vl_version
     vega_spec = vlc.vegalite_to_vega(spec, vl_version=altair_vl_version())
@@ -14,8 +14,15 @@ def vegafusion_mime_renderer(spec, mimetype="html"):
         inline_datasets=inline_datasets
     )
 
+    # Handle default embed options
+    embed_options = embed_options if embed_options is not None else {"mode": "vega"}
+
     if mimetype == "vega":
-        return {"application/vnd.vega.v5+json": tx_vega_spec}
+        vega_mimetype = "application/vnd.vega.v5+json"
+        return (
+            {vega_mimetype: tx_vega_spec},
+            {vega_mimetype: embed_options}
+        )
     elif mimetype == "html":
         html = spec_to_html(
             tx_vega_spec,
@@ -26,6 +33,7 @@ def vegafusion_mime_renderer(spec, mimetype="html"):
             fullhtml=False,
             output_div="altair-viz-{}",
             template="universal",
+            embed_options=embed_options
         )
         return {"text/html": html}
     elif mimetype == "svg":

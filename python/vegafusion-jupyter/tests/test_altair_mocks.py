@@ -85,7 +85,7 @@ vegafusion_mime_markdown_template = r"""
 ```python
 import altair as alt
 import vegafusion as vf
-vf.enable_mime(mimetype="html")
+vf.enable_mime(mimetype="html", embed_options={'actions': False})
 ```
 
 ```python

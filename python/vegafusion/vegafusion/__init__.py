@@ -31,7 +31,7 @@ def altair_vl_version():
     return "_".join(SCHEMA_VERSION.split(".")[:2])
 
 
-def enable_mime(mimetype="html"):
+def enable_mime(mimetype="html", embed_options=None):
     """
     Enable the VegaFusion data transformer and renderer so that all Charts
     are displayed using VegaFusion.
@@ -43,10 +43,13 @@ def enable_mime(mimetype="html"):
         - "vega"
         - "svg"
         - "png": Note: the PNG renderer can be quite slow for charts with lots of marks
+    :param embed_options: dict (optional)
+        Dictionary of options to pass to the vega-embed. Default
+        entry is {'mode': 'vega'}.
     """
     # Import vegafusion.transformer so that vegafusion-inline transform
     # will be registered
-    alt.renderers.enable('vegafusion-mime', mimetype=mimetype)
+    alt.renderers.enable('vegafusion-mime', mimetype=mimetype, embed_options=embed_options)
     alt.data_transformers.enable('vegafusion-inline')
 
 
