@@ -57,6 +57,7 @@ impl Default for PlannerConfig {
     }
 }
 
+#[derive(Debug)]
 pub struct SpecPlan {
     pub server_spec: ChartSpec,
     pub client_spec: ChartSpec,
