@@ -7,13 +7,13 @@
  * this program the details of the active license.
  */
 use crate::expression::parser::parse;
+use crate::planning::plan::PlannerConfig;
 use crate::spec::data::DependencyNodeSupported;
 use crate::spec::values::StringOrStringList;
+use crate::task_graph::scope::TaskScope;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::planning::plan::PlannerConfig;
-use crate::task_graph::scope::TaskScope;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SignalSpec {
@@ -52,7 +52,7 @@ impl SignalSpec {
                         if let Ok(resolved) = task_scope.resolve_scope(&input_var.var, scope) {
                             let resolved_var = (resolved.var, resolved.scope);
                             if planner_config.client_only_vars.contains(&resolved_var) {
-                                return DependencyNodeSupported::Unsupported
+                                return DependencyNodeSupported::Unsupported;
                             }
                         }
                     }

@@ -210,9 +210,10 @@ impl<'a> ChartVisitor for AddDependencyNodesVisitor<'a> {
     fn visit_signal(&mut self, signal: &SignalSpec, scope: &[u32]) -> Result<()> {
         // Add scoped variable for signal as node
         let scoped_var = (Variable::new_signal(&signal.name), Vec::from(scope));
-        let node_index = self
-            .dependency_graph
-            .add_node((scoped_var.clone(), signal.supported(self.planner_config, self.task_scope, scope)));
+        let node_index = self.dependency_graph.add_node((
+            scoped_var.clone(),
+            signal.supported(self.planner_config, self.task_scope, scope),
+        ));
         self.node_indexes.insert(scoped_var, node_index);
         Ok(())
     }

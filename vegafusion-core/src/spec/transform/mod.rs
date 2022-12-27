@@ -28,6 +28,7 @@ use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransfor
 
 use crate::error::Result;
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::planning::plan::PlannerConfig;
 use crate::spec::transform::aggregate::AggregateTransformSpec;
 use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
@@ -48,7 +49,6 @@ use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use crate::planning::plan::PlannerConfig;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
