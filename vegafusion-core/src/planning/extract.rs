@@ -159,13 +159,17 @@ impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
                     server_group.data.push(server_data);
                 }
 
-                // Clear everything except name from client spec
-                data.format = None;
-                data.source = None;
-                data.values = None;
-                data.transform = Vec::new();
-                data.on = None;
-                data.url = None;
+                if data.is_selection_store() {
+                    // Don' clear inline values from client for _store datasets
+                } else {
+                    // Clear everything except name from client spec
+                    data.format = None;
+                    data.source = None;
+                    data.values = None;
+                    data.transform = Vec::new();
+                    data.on = None;
+                    data.url = None;
+                }
             }
             _ => {
                 // Nothing to do

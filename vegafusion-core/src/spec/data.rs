@@ -98,6 +98,13 @@ impl DataSpec {
         }
     }
 
+    pub fn is_selection_store(&self) -> bool {
+        self.name.ends_with("_store")
+            && self.url.is_none()
+            && self.source.is_none()
+            && self.transform.is_empty()
+    }
+
     pub fn local_datetime_columns_produced(
         &self,
         chart_spec: &ChartSpec,
