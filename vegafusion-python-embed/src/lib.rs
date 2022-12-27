@@ -166,6 +166,7 @@ impl PyTaskGraphRuntime {
         variables: Vec<(String, Vec<u32>)>,
         local_tz: String,
         default_input_tz: Option<String>,
+        row_limit: Option<u32>,
         inline_datasets: &PyDict,
     ) -> PyResult<(PyObject, PyObject)> {
         let inline_datasets = deserialize_inline_datasets(inline_datasets)?;
@@ -188,6 +189,7 @@ impl PyTaskGraphRuntime {
                 &variables,
                 &local_tz,
                 &default_input_tz,
+                row_limit,
                 inline_datasets,
             ))?;
 
@@ -198,6 +200,10 @@ impl PyTaskGraphRuntime {
                     typ: "Planner".to_string(),
                     message: planner_warning.message.clone(),
                 },
+                ValueWarningType::RowLimit(_) => PreTransformSpecWarning {
+                    typ: "RowLimitExceeded".to_string(),
+                    message: "Some datasets in resulting Vega specification have been truncated to the provided row limit".to_string()
+                }
             })
             .collect();
 

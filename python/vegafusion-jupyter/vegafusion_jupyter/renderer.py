@@ -20,5 +20,4 @@ def vegafusion_renderer(spec, **widget_options):
     display(widget)
     return {'text/plain': ""}
 
-
-alt.renderers.register('vegafusion-jupyter', vegafusion_renderer)
+alt.renderers.register('vegafusion-widget', vegafusion_renderer)

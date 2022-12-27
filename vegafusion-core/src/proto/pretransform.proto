@@ -49,6 +49,7 @@ message PreTransformVariable {
 message PreTransformValuesOpts {
   repeated PreTransformVariable variables = 1;
   repeated PreTransformInlineDataset inline_datasets = 2;
+  optional uint32 row_limit = 3;
 }
 
 message PreTransformValuesRequest {
@@ -65,7 +66,8 @@ message PreTransformValuesResponse {
 
 message PreTransformValuesWarning {
   oneof warning_type {
-    PlannerWarning planner = 1;
+    PreTransformRowLimitWarning row_limit = 1;
+    PlannerWarning planner = 2;
   }
 }
 

@@ -46,11 +46,11 @@ assert(alt.data_transformers.active == 'default')
 ```
 """
 
-vegafusion_feather_markdown_template = r"""
+vegafusion_widget_feather_markdown_template = r"""
 ```python
 import altair as alt
-import vegafusion_jupyter as vf
-vf.enable()
+import vegafusion as vf
+vf.enable_widget()
 ```
 
 ```python
@@ -58,16 +58,16 @@ vf.enable()
 ```
 
 ```python
-assert(alt.renderers.active == "vegafusion-jupyter")
+assert(alt.renderers.active == "vegafusion-widget")
 assert(alt.data_transformers.active == 'vegafusion-feather')
 ```
 """
 
-vegafusion_default_markdown_template = r"""
+vegafusion_widget_default_markdown_template = r"""
 ```python
 import altair as alt
-import vegafusion_jupyter as vf
-vf.enable()
+import vegafusion as vf
+vf.enable_widget()
 alt.data_transformers.enable("default");
 ```
 
@@ -76,11 +76,27 @@ alt.data_transformers.enable("default");
 ```
 
 ```python
-assert(alt.renderers.active == "vegafusion-jupyter")
+assert(alt.renderers.active == "vegafusion-widget")
 assert(alt.data_transformers.active == 'default')
 ```
 """
 
+vegafusion_mime_markdown_template = r"""
+```python
+import altair as alt
+import vegafusion as vf
+vf.enable_mime(mimetype="html", embed_options={'actions': False})
+```
+
+```python
+{code}
+```
+
+```python
+assert(alt.renderers.active == "vegafusion-mime")
+assert(alt.data_transformers.active == 'vegafusion-inline')
+```
+"""
 
 def setup_module(module):
     """ setup any state specific to the execution of the given module."""
@@ -265,13 +281,15 @@ def test_altair_mock(mock_name, img_tolerance, delay):
 
     mock_code = mock_path.read_text()
     altair_markdown = altair_markdown_template.replace("{code}", mock_code)
-    vegafusion_arrow_markdown = vegafusion_feather_markdown_template.replace("{code}", mock_code)
-    vegafusion_default_markdown = vegafusion_default_markdown_template.replace("{code}", mock_code)
+    vegafusion_arrow_markdown = vegafusion_widget_feather_markdown_template.replace("{code}", mock_code)
+    vegafusion_default_markdown = vegafusion_widget_default_markdown_template.replace("{code}", mock_code)
+    vegafusion_mime_markdown = vegafusion_mime_markdown_template.replace("{code}", mock_code)
 
     # Use jupytext to convert markdown to an ipynb file
     altair_notebook = jupytext.read(io.StringIO(altair_markdown), fmt="markdown")
     vegafusion_arrow_notebook = jupytext.read(io.StringIO(vegafusion_arrow_markdown), fmt="markdown")
     vegafusion_default_notebook = jupytext.read(io.StringIO(vegafusion_default_markdown), fmt="markdown")
+    vegafusion_mime_notebook = jupytext.read(io.StringIO(vegafusion_mime_markdown), fmt="markdown")
 
     # Create selenium Chrome instance
     chrome_opts = webdriver.ChromeOptions()
@@ -296,25 +314,37 @@ def test_altair_mock(mock_name, img_tolerance, delay):
             chrome_driver, vegafusion_arrow_notebook, name + "_vegafusion_feather", actions, delay
         )
         vegafusion_default_imgs = export_image_sequence(
-            chrome_driver, vegafusion_default_notebook, name + "_vegafusion", actions, delay
+            chrome_driver, vegafusion_default_notebook, name + "_vegafusion_widget", actions, delay
+        )
+        vegafusion_mime_imgs = export_image_sequence(
+            chrome_driver, vegafusion_mime_notebook, name + "_vegafusion_mime", actions, delay
         )
 
         for i in range(len(altair_imgs)):
             altair_img = altair_imgs[i]
             vegafusion_arrow_img = vegafusion_arrow_imgs[i]
             vegafusion_default_img = vegafusion_default_imgs[i]
+            vegafusion_mime_img = vegafusion_mime_imgs[i]
 
             assert altair_img.shape == vegafusion_arrow_img.shape, "Size mismatch with Arrow data transformer"
             assert altair_img.shape == vegafusion_default_img.shape, "Size mismatch with default data transformer"
+            assert altair_img.shape == vegafusion_mime_img.shape, "Size mismatch with mime renderer"
 
             similarity_arrow_value = ssim(altair_img, vegafusion_arrow_img, channel_axis=2)
             similarity_default_value = ssim(altair_img, vegafusion_default_img, channel_axis=2)
+            similarity_mime_value = ssim(altair_img, vegafusion_mime_img, channel_axis=2)
 
             print(f"({i}) similarity_arrow_value={similarity_arrow_value}")
             print(f"({i}) similarity_default_value={similarity_default_value}")
+            print(f"({i}) similarity_mime_value={similarity_mime_value}")
 
             assert similarity_arrow_value >= img_tolerance, f"Similarity failed with Arrow data transformer on image {i}"
             assert similarity_default_value >= img_tolerance, f"Similarity failed with default data transformer on image {i}"
+
+            # Allow slightly more image tolerance for mime renderer as floating point differences may
+            # be introduced by pre-transform process
+            mime_image_tolerance = img_tolerance * 0.99
+            assert similarity_mime_value >= mime_image_tolerance, f"Similarity failed with mime renderer on image {i}"
 
     finally:
         voila_proc.kill()

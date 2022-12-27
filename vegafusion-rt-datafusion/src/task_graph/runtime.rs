@@ -244,6 +244,9 @@ impl TaskGraphRuntime {
                 ..Default::default()
             },
         )?;
+        // println!("pre transform client_spec: {}", serde_json::to_string_pretty(&plan.client_spec).unwrap());
+        // println!("pre transform server_spec: {}", serde_json::to_string_pretty(&plan.server_spec).unwrap());
+        // println!("pre transform comm plan: {:#?}", plan.comm_plan);
 
         // Extract inline dataset fingerprints
         let dataset_fingerprints = inline_datasets
@@ -396,6 +399,9 @@ impl TaskGraphRuntime {
         &self,
         request: PreTransformValuesRequest,
     ) -> Result<PreTransformValuesResult> {
+        // Extract row limit
+        let row_limit = request.opts.as_ref().and_then(|opts| opts.row_limit);
+
         // Extract and deserialize inline datasets
         let inline_pretransform_datasets = request
             .opts
@@ -432,6 +438,7 @@ impl TaskGraphRuntime {
                 variables.as_slice(),
                 &local_tz,
                 &default_input_tz,
+                row_limit,
                 inline_datasets,
             )
             .await?;
@@ -468,6 +475,7 @@ impl TaskGraphRuntime {
         variables: &[ScopedVariable],
         local_tz: &str,
         default_input_tz: &Option<String>,
+        row_limit: Option<u32>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
     ) -> Result<(Vec<TaskValue>, Vec<PreTransformValuesWarning>)> {
         // Check that requested variables exist
@@ -562,6 +570,25 @@ impl TaskGraphRuntime {
                     inline_datasets.clone(),
                 )
                 .await?;
+
+            // Apply row_limit
+            let value = if let (Some(row_limit), TaskValue::Table(table)) = (row_limit, &value) {
+                if table.num_rows() > row_limit as usize {
+                    warnings.push(PreTransformValuesWarning {
+                        warning_type: Some(ValuesWarningType::RowLimit(
+                            PreTransformRowLimitWarning {
+                                datasets: vec![var.0.clone()],
+                            },
+                        )),
+                    });
+                    TaskValue::Table(table.head(row_limit as usize))
+                } else {
+                    value
+                }
+            } else {
+                value
+            };
+
             values.push(value);
         }
 

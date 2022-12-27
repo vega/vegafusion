@@ -60,7 +60,7 @@ class VegaFusionWidget(DOMWidget):
             else:
                 data_transformer_opts = dict()
 
-            with alt.renderers.enable("vegafusion-jupyter"):
+            with alt.renderers.enable("vegafusion-widget"):
                 with alt.data_transformers.enable("vegafusion-feather", **data_transformer_opts):
                     # Temporarily enable the vegafusion renderer and transformer so
                     # that we use them even if they are not enabled globally
@@ -73,7 +73,7 @@ class VegaFusionWidget(DOMWidget):
             kwargs["spec"] = json.dumps(kwargs["spec"], indent=2)
 
         # If vegafusion renderer is already enabled, use the configured debounce options as the default
-        if alt.renderers.active == "vegafusion-jupyter":
+        if alt.renderers.active == "vegafusion-widget":
             # Use configured debounce options, if any
             renderer_opts = alt.renderers.options
             for opt in ["debounce_wait", "debounce_max_wait", "download_source_link"]:

@@ -28,6 +28,7 @@ use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransfor
 
 use crate::error::Result;
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::planning::plan::PlannerConfig;
 use crate::spec::transform::aggregate::AggregateTransformSpec;
 use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
@@ -174,6 +175,25 @@ impl Deref for TransformSpec {
 pub trait TransformSpecTrait {
     fn supported(&self) -> bool {
         true
+    }
+
+    fn supported_and_allowed(
+        &self,
+        planner_config: &PlannerConfig,
+        task_scope: &TaskScope,
+        scope: &[u32],
+    ) -> bool {
+        let input_vars = self.input_vars().unwrap_or_default();
+        for input_var in &input_vars {
+            if let Ok(resolved) = task_scope.resolve_scope(&input_var.var, scope) {
+                let scoped_var: ScopedVariable = (resolved.var, resolved.scope);
+                if planner_config.client_only_vars.contains(&scoped_var) {
+                    // Transform requires a variable that may only live on the client
+                    return false;
+                }
+            }
+        }
+        self.supported()
     }
 
     fn output_signals(&self) -> Vec<String> {

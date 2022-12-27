@@ -11,10 +11,12 @@ import os
 import pathlib
 from hashlib import sha1
 from tempfile import NamedTemporaryFile
-
+import uuid
 import altair as alt
 import pandas as pd
+from weakref import WeakValueDictionary
 
+DATASET_PREFIX = "vegafusion+dataset://"
 
 def to_arrow_table(data):
     """
@@ -158,4 +160,45 @@ def feather_transformer(data, data_dir="_vegafusion_data"):
         return {"url": path.as_posix()}
 
 
+def get_inline_dataset_names(vega_spec):
+    """
+    Get set of the inline datasets names in the provided spec
+
+    :param vega_spec: Vega spec
+    :return: set of inline dataset names
+    """
+    table_names = set()
+    for data in vega_spec.get("data", []):
+        url = data.get("url", "")
+        if url.startswith(DATASET_PREFIX):
+            name = url[len(DATASET_PREFIX):]
+            table_names.add(name)
+
+    for mark in vega_spec.get("marks", []):
+        table_names.update(get_inline_dataset_names(mark))
+
+    return table_names
+
+
+__inline_tables = WeakValueDictionary()
+
+
+def get_inline_dataset_table(table_name):
+    return __inline_tables.pop(table_name)
+
+
+def get_inline_datasets_for_spec(vega_spec):
+    table_names = get_inline_dataset_names(vega_spec)
+    return {
+        table_name: get_inline_dataset_table(table_name) for table_name in table_names
+    }
+
+
+def inline_data_transformer(data):
+    table_name = f"table-{uuid.uuid4()}"
+    __inline_tables[table_name] = data
+    return {"url": DATASET_PREFIX + table_name}
+
+
 alt.data_transformers.register("vegafusion-feather", feather_transformer)
+alt.data_transformers.register("vegafusion-inline", inline_data_transformer)

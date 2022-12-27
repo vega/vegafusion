@@ -341,6 +341,7 @@ jobs:
           python -m pip install vegafusion_python*${{ matrix.options[4] }}*${{ matrix.options[3] }}*.whl
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_jupyter*.whl
+          python -m pip install vl-convert-python
       - name: Test vegafusion
         working-directory: python/vegafusion/
         run: pytest

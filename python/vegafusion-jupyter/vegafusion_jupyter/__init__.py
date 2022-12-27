@@ -11,6 +11,7 @@ from . import widget
 from .widget import VegaFusionWidget
 from ._version import __version__
 
+
 def enable(
         download_source_link=None,
         debounce_wait=30,
@@ -27,7 +28,7 @@ def enable(
     # will be registered
     import vegafusion.transformer
     alt.renderers.enable(
-        'vegafusion-jupyter',
+        'vegafusion-widget',
         debounce_wait=debounce_wait,
         debounce_max_wait=debounce_max_wait,
         download_source_link=download_source_link,
@@ -39,7 +40,7 @@ def enable(
 
 def disable():
     """
-    Disable the VegaFusion data transformer and renderer so that Charts
+    Disable the VegaFusion data transformers and renderers so that Charts
     are not displayed using VegaFusion
 
     Equivalent to
@@ -52,8 +53,8 @@ def disable():
 
     This does not affect the behavior of VegaFusionWidget
     """
-    alt.renderers.enable('default')
-    alt.data_transformers.enable('default')
+    from vegafusion import disable
+    disable()
 
 
 def _jupyter_labextension_paths():

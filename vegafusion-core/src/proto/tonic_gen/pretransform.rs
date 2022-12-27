@@ -79,6 +79,8 @@ pub struct PreTransformValuesOpts {
     pub variables: ::prost::alloc::vec::Vec<PreTransformVariable>,
     #[prost(message, repeated, tag = "2")]
     pub inline_datasets: ::prost::alloc::vec::Vec<PreTransformInlineDataset>,
+    #[prost(uint32, optional, tag = "3")]
+    pub row_limit: ::core::option::Option<u32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -103,7 +105,7 @@ pub struct PreTransformValuesResponse {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformValuesWarning {
-    #[prost(oneof = "pre_transform_values_warning::WarningType", tags = "1")]
+    #[prost(oneof = "pre_transform_values_warning::WarningType", tags = "1, 2")]
     pub warning_type: ::core::option::Option<pre_transform_values_warning::WarningType>,
 }
 /// Nested message and enum types in `PreTransformValuesWarning`.
@@ -112,6 +114,8 @@ pub mod pre_transform_values_warning {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum WarningType {
         #[prost(message, tag = "1")]
+        RowLimit(super::PreTransformRowLimitWarning),
+        #[prost(message, tag = "2")]
         Planner(super::PlannerWarning),
     }
 }

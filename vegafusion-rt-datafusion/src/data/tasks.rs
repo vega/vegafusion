@@ -53,10 +53,6 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 
-lazy_static! {
-    pub static ref REQWEST_CLIENT: ClientWithMiddleware = make_request_client();
-}
-
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
     values: &[TaskValue],
@@ -517,7 +513,7 @@ async fn read_csv(url: String, parse: &Option<Parse>) -> Result<Arc<DataFrame>> 
 
     if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
-        let body = REQWEST_CLIENT
+        let body = make_request_client()
             .get(url.clone())
             .send()
             .await
@@ -609,7 +605,7 @@ async fn read_json(url: &str, batch_size: usize) -> Result<Arc<DataFrame>> {
     // Read to json Value from local file or url.
     let value: serde_json::Value = if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
-        let body = REQWEST_CLIENT
+        let body = make_request_client()
             .get(url)
             .send()
             .await
@@ -640,7 +636,7 @@ async fn read_arrow(url: &str) -> Result<Arc<DataFrame>> {
     // Read to json Value from local file or url.
     let buffer = if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
-        REQWEST_CLIENT
+        make_request_client()
             .get(url)
             .send()
             .await

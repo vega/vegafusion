@@ -10,7 +10,7 @@ use crate::error::Result;
 use crate::planning::dependency_graph::{get_supported_data_variables, scoped_var_for_input_var};
 use crate::proto::gen::tasks::Variable;
 use crate::spec::chart::{ChartSpec, MutChartVisitor};
-use crate::spec::data::{supported_and_allowed, DataSpec, DependencyNodeSupported};
+use crate::spec::data::{DataSpec, DependencyNodeSupported};
 use crate::spec::mark::MarkSpec;
 
 use crate::spec::signal::SignalSpec;
@@ -77,7 +77,7 @@ impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
                 let mut pipeline_vars = HashSet::new();
                 let mut num_supported = 0;
                 'outer: for (i, tx) in data.transform.iter().enumerate() {
-                    if supported_and_allowed(tx, self.planner_config, self.task_scope, scope) {
+                    if tx.supported_and_allowed(self.planner_config, self.task_scope, scope) {
                         if let Ok(input_vars) = tx.input_vars() {
                             for input_var in input_vars {
                                 if let Ok(scoped_source_var) =
@@ -159,13 +159,17 @@ impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
                     server_group.data.push(server_data);
                 }
 
-                // Clear everything except name from client spec
-                data.format = None;
-                data.source = None;
-                data.values = None;
-                data.transform = Vec::new();
-                data.on = None;
-                data.url = None;
+                if data.is_selection_store() {
+                    // Don' clear inline values from client for _store datasets
+                } else {
+                    // Clear everything except name from client spec
+                    data.format = None;
+                    data.source = None;
+                    data.values = None;
+                    data.transform = Vec::new();
+                    data.on = None;
+                    data.url = None;
+                }
             }
             _ => {
                 // Nothing to do
