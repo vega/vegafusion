@@ -70,6 +70,12 @@ impl DataSpec {
             }
         }
 
+        // _store datasets are always unsupported because they should be updated
+        // by the client
+        if self.name.ends_with("_store") {
+            return DependencyNodeSupported::Unsupported
+        }
+
         // Check if inline values array is supported
         if let Some(values) = &self.values {
             if !planner_config.extract_inline_data {
