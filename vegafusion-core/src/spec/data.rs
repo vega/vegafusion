@@ -13,7 +13,6 @@ use crate::proto::gen::tasks::Variable;
 use crate::spec::chart::ChartSpec;
 use crate::spec::transform::TransformSpec;
 use crate::spec::values::StringOrSignalSpec;
-use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use itertools::sorted;
 use serde::{Deserialize, Serialize};
@@ -83,14 +82,14 @@ impl DataSpec {
         let all_supported = self
             .transform
             .iter()
-            .all(|tx| supported_and_allowed(tx, planner_config, task_scope, scope));
+            .all(|tx| tx.supported_and_allowed(planner_config, task_scope, scope));
         if all_supported {
             DependencyNodeSupported::Supported
         } else if self.url.is_some() {
             DependencyNodeSupported::PartiallySupported
         } else {
             match self.transform.get(0) {
-                Some(tx) if supported_and_allowed(tx, planner_config, task_scope, scope) => {
+                Some(tx) if tx.supported_and_allowed(planner_config, task_scope, scope) => {
                     DependencyNodeSupported::PartiallySupported
                 }
                 _ => DependencyNodeSupported::Unsupported,
@@ -147,25 +146,6 @@ impl DataSpec {
 
         Ok(output_local_datetime_columns)
     }
-}
-
-pub fn supported_and_allowed(
-    tx: &TransformSpec,
-    planner_config: &PlannerConfig,
-    task_scope: &TaskScope,
-    scope: &[u32],
-) -> bool {
-    let input_vars = tx.input_vars().unwrap_or_default();
-    for input_var in &input_vars {
-        if let Ok(resolved) = task_scope.resolve_scope(&input_var.var, scope) {
-            let scoped_var: ScopedVariable = (resolved.var, resolved.scope);
-            if planner_config.client_only_vars.contains(&scoped_var) {
-                // Transform requires a variable that may only live on the client
-                return false;
-            }
-        }
-    }
-    tx.supported()
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq)]

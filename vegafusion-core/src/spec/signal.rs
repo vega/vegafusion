@@ -12,6 +12,8 @@ use crate::spec::values::StringOrStringList;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use crate::planning::plan::PlannerConfig;
+use crate::task_graph::scope::TaskScope;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SignalSpec {
@@ -34,12 +36,26 @@ pub struct SignalSpec {
 }
 
 impl SignalSpec {
-    pub fn supported(&self) -> DependencyNodeSupported {
+    pub fn supported(
+        &self,
+        planner_config: &PlannerConfig,
+        task_scope: &TaskScope,
+        scope: &[u32],
+    ) -> DependencyNodeSupported {
         if self.value.is_some() {
             return DependencyNodeSupported::Supported;
         } else if let Some(expr) = &self.update {
             if self.on.is_empty() {
                 if let Ok(expression) = parse(expr) {
+                    // Check if signal has direct dependency on client-only variable
+                    for input_var in expression.input_vars() {
+                        if let Ok(resolved) = task_scope.resolve_scope(&input_var.var, scope) {
+                            let resolved_var = (resolved.var, resolved.scope);
+                            if planner_config.client_only_vars.contains(&resolved_var) {
+                                return DependencyNodeSupported::Unsupported
+                            }
+                        }
+                    }
                     if expression.is_supported() {
                         return DependencyNodeSupported::Supported;
                     }

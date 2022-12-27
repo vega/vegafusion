@@ -212,7 +212,7 @@ impl<'a> ChartVisitor for AddDependencyNodesVisitor<'a> {
         let scoped_var = (Variable::new_signal(&signal.name), Vec::from(scope));
         let node_index = self
             .dependency_graph
-            .add_node((scoped_var.clone(), signal.supported()));
+            .add_node((scoped_var.clone(), signal.supported(self.planner_config, self.task_scope, scope)));
         self.node_indexes.insert(scoped_var, node_index);
         Ok(())
     }

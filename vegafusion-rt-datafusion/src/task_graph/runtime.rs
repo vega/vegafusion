@@ -244,6 +244,9 @@ impl TaskGraphRuntime {
                 ..Default::default()
             },
         )?;
+        // println!("pre transform client_spec: {}", serde_json::to_string_pretty(&plan.client_spec).unwrap());
+        // println!("pre transform server_spec: {}", serde_json::to_string_pretty(&plan.server_spec).unwrap());
+        // println!("pre transform comm plan: {:#?}", plan.comm_plan);
 
         // Extract inline dataset fingerprints
         let dataset_fingerprints = inline_datasets
