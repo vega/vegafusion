@@ -1,0 +1,41 @@
+{
+  "server_to_client": [
+    {
+      "name": "data_0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_0_concat_0_y_domain_age",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_1",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_1_concat_2_y_domain_age",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "source_0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "source_0_concat_1_y_domain_age",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": [
+    {
+      "name": "year_store",
+      "namespace": "data",
+      "scope": []
+    }
+  ]
+}

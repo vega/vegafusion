@@ -1,0 +1,388 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "data": [
+    {
+      "name": "year_store",
+      "values": [
+        {
+          "unit": "concat_0",
+          "fields": [{"type": "E", "field": "year"}],
+          "values": [2000]
+        }
+      ]
+    },
+    {
+      "name": "source_0",
+      "url": "https://cdn.jsdelivr.net/npm/vega-datasets@v1.29.0/data/population.json",
+      "format": {"type": "json"},
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "!length(data(\"year_store\")) || vlSelectionTest(\"year_store\", datum)"
+        },
+        {
+          "type": "formula",
+          "expr": "if((datum.sex === 1),'Male','Female')",
+          "as": "gender"
+        }
+      ]
+    },
+    {
+      "name": "data_0",
+      "source": "source_0",
+      "transform": [
+        {"type": "filter", "expr": "(datum.gender === 'Female')"},
+        {
+          "type": "aggregate",
+          "groupby": ["age", "gender"],
+          "ops": ["sum"],
+          "fields": ["people"],
+          "as": ["sum_people"]
+        },
+        {
+          "type": "stack",
+          "groupby": ["age"],
+          "field": "sum_people",
+          "sort": {"field": ["gender"], "order": ["ascending"]},
+          "as": ["sum_people_start", "sum_people_end"],
+          "offset": "zero"
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"sum_people\"]) && isFinite(+datum[\"sum_people\"])"
+        }
+      ]
+    },
+    {
+      "name": "data_1",
+      "source": "source_0",
+      "transform": [
+        {"type": "filter", "expr": "(datum.gender === 'Male')"},
+        {
+          "type": "aggregate",
+          "groupby": ["age", "gender"],
+          "ops": ["sum"],
+          "fields": ["people"],
+          "as": ["sum_people"]
+        },
+        {
+          "type": "stack",
+          "groupby": ["age"],
+          "field": "sum_people",
+          "sort": {"field": ["gender"], "order": ["ascending"]},
+          "as": ["sum_people_start", "sum_people_end"],
+          "offset": "zero"
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"sum_people\"]) && isFinite(+datum[\"sum_people\"])"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {"name": "concat_0_width", "value": 250},
+    {"name": "concat_0_y_step", "value": 20},
+    {
+      "name": "concat_0_height",
+      "update": "bandspace(domain('concat_0_y').length, 0.1, 0.05) * concat_0_y_step"
+    },
+    {"name": "concat_1_width", "value": 20},
+    {"name": "concat_1_y_step", "value": 20},
+    {
+      "name": "concat_1_height",
+      "update": "bandspace(domain('concat_1_y').length, 1, 0.5) * concat_1_y_step"
+    },
+    {"name": "concat_2_width", "value": 250},
+    {"name": "concat_2_y_step", "value": 20},
+    {
+      "name": "concat_2_height",
+      "update": "bandspace(domain('concat_2_y').length, 0.1, 0.05) * concat_2_y_step"
+    },
+    {
+      "name": "unit",
+      "value": {},
+      "on": [
+        {"events": "mousemove", "update": "isTuple(group()) ? group() : unit"}
+      ]
+    },
+    {
+      "name": "year_year",
+      "init": "2000",
+      "bind": {"input": "range", "max": 2000, "min": 1850, "step": 10}
+    },
+    {
+      "name": "year",
+      "update": "vlSelectionResolve(\"year_store\", \"union\", true, true)"
+    }
+  ],
+  "layout": {"padding": 5, "bounds": "full", "align": "each"},
+  "marks": [
+    {
+      "type": "group",
+      "name": "concat_0_group",
+      "title": {"text": "Female", "frame": "group"},
+      "style": "cell",
+      "encode": {
+        "update": {
+          "width": {"signal": "concat_0_width"},
+          "height": {"signal": "concat_0_height"}
+        }
+      },
+      "signals": [
+        {
+          "name": "year_tuple",
+          "update": "year_year !== null ? {fields: year_tuple_fields, values: [year_year]} : null"
+        },
+        {
+          "name": "year_tuple_fields",
+          "value": [{"type": "E", "field": "year"}]
+        },
+        {
+          "name": "year_modify",
+          "on": [
+            {
+              "events": {"signal": "year_tuple"},
+              "update": "modify(\"year_store\", year_tuple, true)"
+            }
+          ]
+        }
+      ],
+      "marks": [
+        {
+          "name": "concat_0_marks",
+          "type": "rect",
+          "style": ["bar"],
+          "interactive": true,
+          "from": {"data": "data_0"},
+          "encode": {
+            "update": {
+              "fill": {"scale": "color", "field": "gender"},
+              "ariaRoleDescription": {"value": "bar"},
+              "description": {
+                "signal": "\"population: \" + (format(datum[\"sum_people\"], \"\")) + \"; age: \" + (isValid(datum[\"age\"]) ? datum[\"age\"] : \"\"+datum[\"age\"]) + \"; gender: \" + (isValid(datum[\"gender\"]) ? datum[\"gender\"] : \"\"+datum[\"gender\"])"
+              },
+              "x": {"scale": "concat_0_x", "field": "sum_people_end"},
+              "x2": {"scale": "concat_0_x", "field": "sum_people_start"},
+              "y": {"scale": "concat_0_y", "field": "age"},
+              "height": {"signal": "max(0.25, bandwidth('concat_0_y'))"}
+            }
+          }
+        }
+      ],
+      "axes": [
+        {
+          "scale": "concat_0_x",
+          "orient": "bottom",
+          "gridScale": "concat_0_y",
+          "grid": true,
+          "tickCount": {"signal": "ceil(concat_0_width/40)"},
+          "domain": false,
+          "labels": false,
+          "aria": false,
+          "maxExtent": 0,
+          "minExtent": 0,
+          "ticks": false,
+          "zindex": 0
+        },
+        {
+          "scale": "concat_0_x",
+          "orient": "bottom",
+          "grid": false,
+          "title": "population",
+          "labelFlush": true,
+          "labelOverlap": true,
+          "tickCount": {"signal": "ceil(concat_0_width/40)"},
+          "zindex": 0
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "name": "concat_1_group",
+      "style": "cell",
+      "encode": {
+        "update": {
+          "width": {"signal": "concat_1_width"},
+          "height": {"signal": "concat_1_height"}
+        }
+      },
+      "signals": [
+        {
+          "name": "year_tuple",
+          "update": "year_year !== null ? {fields: year_tuple_fields, values: [year_year]} : null"
+        },
+        {
+          "name": "year_tuple_fields",
+          "value": [{"type": "E", "field": "year"}]
+        },
+        {
+          "name": "year_modify",
+          "on": [
+            {
+              "events": {"signal": "year_tuple"},
+              "update": "modify(\"year_store\", year_tuple, true)"
+            }
+          ]
+        }
+      ],
+      "marks": [
+        {
+          "name": "concat_1_marks",
+          "type": "text",
+          "style": ["text"],
+          "interactive": true,
+          "from": {"data": "source_0"},
+          "encode": {
+            "update": {
+              "fill": {"value": "black"},
+              "description": {
+                "signal": "\"age: \" + (isValid(datum[\"age\"]) ? datum[\"age\"] : \"\"+datum[\"age\"])"
+              },
+              "x": {"signal": "concat_1_width", "mult": 0.5},
+              "y": {"scale": "concat_1_y", "field": "age"},
+              "text": {"signal": "format(datum[\"age\"], \"\")"},
+              "align": {"value": "center"},
+              "baseline": {"value": "middle"}
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "name": "concat_2_group",
+      "title": {"text": "Male", "frame": "group"},
+      "style": "cell",
+      "encode": {
+        "update": {
+          "width": {"signal": "concat_2_width"},
+          "height": {"signal": "concat_2_height"}
+        }
+      },
+      "signals": [
+        {
+          "name": "year_tuple",
+          "update": "year_year !== null ? {fields: year_tuple_fields, values: [year_year]} : null"
+        },
+        {
+          "name": "year_tuple_fields",
+          "value": [{"type": "E", "field": "year"}]
+        },
+        {
+          "name": "year_modify",
+          "on": [
+            {
+              "events": {"signal": "year_tuple"},
+              "update": "modify(\"year_store\", year_tuple, true)"
+            }
+          ]
+        }
+      ],
+      "marks": [
+        {
+          "name": "concat_2_marks",
+          "type": "rect",
+          "style": ["bar"],
+          "interactive": true,
+          "from": {"data": "data_1"},
+          "encode": {
+            "update": {
+              "fill": {"scale": "color", "field": "gender"},
+              "ariaRoleDescription": {"value": "bar"},
+              "description": {
+                "signal": "\"population: \" + (format(datum[\"sum_people\"], \"\")) + \"; age: \" + (isValid(datum[\"age\"]) ? datum[\"age\"] : \"\"+datum[\"age\"]) + \"; gender: \" + (isValid(datum[\"gender\"]) ? datum[\"gender\"] : \"\"+datum[\"gender\"])"
+              },
+              "x": {"scale": "concat_2_x", "field": "sum_people_end"},
+              "x2": {"scale": "concat_2_x", "field": "sum_people_start"},
+              "y": {"scale": "concat_2_y", "field": "age"},
+              "height": {"signal": "max(0.25, bandwidth('concat_2_y'))"}
+            }
+          }
+        }
+      ],
+      "axes": [
+        {
+          "scale": "concat_2_x",
+          "orient": "bottom",
+          "gridScale": "concat_2_y",
+          "grid": true,
+          "tickCount": {"signal": "ceil(concat_2_width/40)"},
+          "domain": false,
+          "labels": false,
+          "aria": false,
+          "maxExtent": 0,
+          "minExtent": 0,
+          "ticks": false,
+          "zindex": 0
+        },
+        {
+          "scale": "concat_2_x",
+          "orient": "bottom",
+          "grid": false,
+          "title": "population",
+          "labelFlush": true,
+          "labelOverlap": true,
+          "tickCount": {"signal": "ceil(concat_2_width/40)"},
+          "zindex": 0
+        }
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": ["Male", "Female"],
+      "range": ["#1f77b4", "#e377c2"]
+    },
+    {
+      "name": "concat_0_x",
+      "type": "linear",
+      "domain": {
+        "data": "data_0",
+        "fields": ["sum_people_start", "sum_people_end"]
+      },
+      "range": [0, {"signal": "concat_0_width"}],
+      "reverse": true,
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "concat_0_y",
+      "type": "band",
+      "domain": {"data": "data_0", "field": "age", "sort": true},
+      "range": {"step": {"signal": "concat_0_y_step"}},
+      "paddingInner": 0.1,
+      "paddingOuter": 0.05
+    },
+    {
+      "name": "concat_1_y",
+      "type": "point",
+      "domain": {"data": "source_0", "field": "age", "sort": true},
+      "range": {"step": {"signal": "concat_1_y_step"}},
+      "padding": 0.5
+    },
+    {
+      "name": "concat_2_x",
+      "type": "linear",
+      "domain": {
+        "data": "data_1",
+        "fields": ["sum_people_start", "sum_people_end"]
+      },
+      "range": [0, {"signal": "concat_2_width"}],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "concat_2_y",
+      "type": "band",
+      "domain": {"data": "data_1", "field": "age", "sort": true},
+      "range": {"step": {"signal": "concat_2_y_step"}},
+      "paddingInner": 0.1,
+      "paddingOuter": 0.05
+    }
+  ]
+}
