@@ -342,7 +342,7 @@ jobs:
       - name: Download vegafusion-jupyter wheel
         uses: actions/download-artifact@v2
         with:
-          name: vegafusion-python-embed-wheels
+          name: vegafusion-jupyter-packages
           path: target/wheels/
       - name: install wheels
         working-directory: target/wheels/
