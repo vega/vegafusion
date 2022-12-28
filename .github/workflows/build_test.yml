@@ -322,13 +322,9 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: True
-      - name: Build wheels
-        uses: messense/maturin-action@v1
-        with:
-          maturin-version: 0.12.20
-          command: develop
-          rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml
+      - name: Build vegafusion-python-embed in development mode
+        run: |
+          maturin develop --release
       - name: Install Chrome
         uses: browser-actions/setup-chrome@latest
         with:
