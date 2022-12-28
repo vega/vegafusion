@@ -7,6 +7,7 @@
 from .runtime import runtime
 from .transformer import to_feather, get_inline_datasets_for_spec
 from .local_tz import set_local_tz, get_local_tz
+from .evaluation import eval_transforms
 from . import renderer
 from .compilers import vegalite_compilers
 import altair as alt
