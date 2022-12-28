@@ -165,7 +165,7 @@ jobs:
           command: build
           manylinux: 2014
           rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip -i python3.10 -i python3.9 -i python3.8 -i python3.7
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip -i python3.11 -i python3.10 -i python3.9 -i python3.8 -i python3.7
       - name: Download Apple Silicon toolchain
         if: ${{ matrix.options[1] == 'osx-arm64' }}
         run: |
@@ -177,7 +177,7 @@ jobs:
           maturin-version: 0.12.20
           command: build
           rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin -i python3.10 -i python3.9 -i python3.8 -i python3.7
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin -i python3.11 -i python3.10 -i python3.9 -i python3.8 -i python3.7
       - name: Remove unwanted universal
         if: ${{ runner.os == 'macOS' }}
         run: |
