@@ -1,3 +1,5 @@
+import json
+
 from altair import data_transformers
 from altair.vegalite.v4.api import Chart
 from altair.utils.schemapi import Undefined
@@ -52,17 +54,38 @@ def eval_transforms(chart: Chart, row_limit=None):
     return data
 
 
-def get_dataset_for_magic_mark(vega_spec):
+def get_facet_mapping(vega_spec):
+    facet_mapping = {}
     for mark in vega_spec.get("marks", []):
-        if mark.get("name", "") == f"{MAGIC_MARK_NAME}_marks":
-            return mark.get("from", {}).get("data", None)
+        if mark.get("type", None) == "group":
+            facet = mark.get("from", {}).get("facet", None)
+            if facet is not None:
+                facet_name = facet.get("name", None)
+                facet_data = facet.get("data", None)
+                if facet_name is not None and facet_data is not None:
+                    facet_mapping[facet_name] = facet_data
+
+    return facet_mapping
+
+
+def get_dataset_for_magic_mark(vega_spec):
+    facet_mapping = get_facet_mapping(vega_spec)
+    data_name = None
+    for mark in vega_spec.get("marks", []):
+        name = mark.get("name", "")
+        if name.startswith(MAGIC_MARK_NAME) and name.endswith("_marks"):
+            data_name = mark.get("from", {}).get("data", None)
 
         elif mark.get("name", "") == f"{MAGIC_MARK_NAME}_cell":
-            return mark.get("from", {}).get("facet", None).get("data", None)
+            data_name = mark.get("from", {}).get("facet", None).get("data", None)
 
         elif mark.get("type", "") == "group":
             dataset = get_dataset_for_magic_mark(mark)
             if dataset is not None:
-                return dataset
+                data_name = dataset
 
-    return None
+    if data_name is not None:
+        return facet_mapping.get(data_name, data_name)
+    else:
+        return None
+
