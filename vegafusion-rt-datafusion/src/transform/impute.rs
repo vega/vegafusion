@@ -8,6 +8,7 @@ use async_trait::async_trait;
 use datafusion::common::ScalarValue;
 use datafusion_expr::expr::Cast;
 use datafusion_expr::{lit, when, BuiltInWindowFunction, Expr, WindowFunction};
+use itertools::Itertools;
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
@@ -38,9 +39,15 @@ impl TransformTrait for Impute {
             ScalarValue::from_json(&json_value)?
         };
 
-        let dataframe = match self.groupby.len() {
+        let unique_groupby = self
+            .groupby
+            .clone()
+            .into_iter()
+            .unique()
+            .collect::<Vec<_>>();
+        let dataframe = match unique_groupby.len() {
             0 => zero_groupby_sql(self, dataframe, value)?,
-            1 => single_groupby_sql(self, dataframe, value)?,
+            1 => single_groupby_sql(self, dataframe, value, &unique_groupby[0])?,
             _ => {
                 return Err(VegaFusionError::internal(
                     "Expected zero or one groupby columns to impute",
@@ -86,6 +93,7 @@ fn single_groupby_sql(
     tx: &Impute,
     dataframe: Arc<SqlDataFrame>,
     value: ScalarValue,
+    groupby: &str,
 ) -> Result<Arc<SqlDataFrame>> {
     // Save off names of columns in the original input DataFrame
     let original_columns: Vec<_> = dataframe
@@ -97,14 +105,10 @@ fn single_groupby_sql(
 
     // First step is to build up a new DataFrame that contains the all possible combinations
     // of the `key` and `groupby` columns
-
-    // We're only supporting a single groupby column for now
-    let groupby = tx.groupby.get(0).unwrap().clone();
-
     let key_col = unescaped_col(&tx.key);
     let key_col_str = key_col.to_sql_select()?.sql(dataframe.dialect())?;
 
-    let group_col = unescaped_col(&groupby);
+    let group_col = unescaped_col(groupby);
     let group_col_str = group_col.to_sql_select()?.sql(dataframe.dialect())?;
 
     // Build row number expr to apply to input table

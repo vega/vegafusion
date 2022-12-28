@@ -3,6 +3,7 @@ use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::spec::values::Field;
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -50,11 +51,18 @@ pub enum ImputeMethodSpec {
 
 impl TransformSpecTrait for ImputeTransformSpec {
     fn supported(&self) -> bool {
+        let num_unique_groupby = self
+            .groupby
+            .clone()
+            .unwrap_or_default()
+            .iter()
+            .unique()
+            .count();
         self.field.as_().is_none()
             && self.key.as_().is_none()
             && self.keyvals.is_none()
             && self.method() == ImputeMethodSpec::Value
-            && self.groupby().len() <= 1
+            && num_unique_groupby <= 1
             && self.value.is_some()
     }
 
