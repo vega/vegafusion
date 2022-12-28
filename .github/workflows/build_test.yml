@@ -347,6 +347,7 @@ jobs:
       - name: install wheels
         working-directory: target/wheels/
         run: |
+          ls -la
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_jupyter*.whl
           python -m pip install vl-convert-python
