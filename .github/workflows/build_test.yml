@@ -306,6 +306,13 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
+      - name: Create conda test environment
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          activate-environment: vegafusion_dev
+          miniforge-version: latest
+          environment-file: python/vegafusion-jupyter/conda-${{ matrix.options[1] }}-${{ matrix.options[4] }}.lock
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -322,13 +329,6 @@ jobs:
           command: develop
           rust-toolchain: stable
           args: --release -m vegafusion-python-embed/Cargo.toml
-      - name: Create conda test environment
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          auto-update-conda: true
-          activate-environment: vegafusion_dev
-          miniforge-version: latest
-          environment-file: python/vegafusion-jupyter/conda-${{ matrix.options[1] }}-${{ matrix.options[4] }}.lock
       - name: Install Chrome
         uses: browser-actions/setup-chrome@latest
         with:
