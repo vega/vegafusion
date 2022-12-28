@@ -86,11 +86,11 @@ altair_mocks_dir = here / "altair_mocks"
         ("simple/strip_chart", 400, ["Name", "Cylinders", "Origin"]),
     ]
 )
-def test_eval_transforms_for_mock(mock_name, expected_len, expected_cols):
+def test_transformed_data_for_mock(mock_name, expected_len, expected_cols):
     mock_path = altair_mocks_dir / mock_name / "mock.py"
     mock_src = mock_path.read_text("utf8")
     chart = eval_block(mock_src)
-    df = vf.eval_transforms(chart)
+    df = vf.transformed_data(chart)
 
     # Check that a DataFrame was returned
     assert isinstance(df, pd.DataFrame)

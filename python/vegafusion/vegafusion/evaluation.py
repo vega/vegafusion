@@ -7,7 +7,7 @@ from altair.utils.schemapi import Undefined
 MAGIC_MARK_NAME = "_vf_mark"
 
 
-def eval_transforms(chart: Chart, row_limit=None):
+def transformed_data(chart: Chart, row_limit=None):
     """
     Evaluate the transform associated with a Chart and return the transformed
     data as a DataFrame
@@ -21,7 +21,7 @@ def eval_transforms(chart: Chart, row_limit=None):
 
     if not isinstance(chart, Chart):
         raise ValueError(
-            "eval_transforms accepts an instance of "
+            "transformed_data accepts an instance of "
             "altair.vegalite.v4.api.Chart\n"
             f"Received value of type: {type(chart)}"
         )
