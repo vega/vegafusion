@@ -288,8 +288,8 @@ jobs:
             python/vegafusion-jupyter/dist/*.whl
             python/vegafusion-jupyter/dist/*.tar.gz
 
-  test-vegafusion-jupyter:
-    needs: [ build-vegafusion-python-embed, build-vegafusion-jupyter-package ]
+  test-vegafusion-python:
+    needs: [ build-vegafusion-wheel, build-vegafusion-jupyter-package ]
     strategy:
       matrix:
         options: [
@@ -306,6 +306,22 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Build wheels
+        uses: messense/maturin-action@v1
+        with:
+          maturin-version: 0.12.20
+          command: develop
+          rust-toolchain: stable
+          args: --release -m vegafusion-python-embed/Cargo.toml
       - name: Create conda test environment
         uses: conda-incubator/setup-miniconda@v2
         with:
@@ -325,11 +341,6 @@ jobs:
         with:
           name: vegafusion-wheel
           path: target/wheels/
-      - name: Download vegafusion-python-embed wheel
-        uses: actions/download-artifact@v2
-        with:
-          name: vegafusion-jupyter-packages
-          path: target/wheels/
       - name: Download vegafusion-jupyter wheel
         uses: actions/download-artifact@v2
         with:
@@ -338,7 +349,6 @@ jobs:
       - name: install wheels
         working-directory: target/wheels/
         run: |
-          python -m pip install vegafusion_python*${{ matrix.options[4] }}*${{ matrix.options[3] }}*.whl
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_jupyter*.whl
           python -m pip install vl-convert-python
