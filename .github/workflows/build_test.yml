@@ -133,20 +133,21 @@ jobs:
             vegafusion-server-*
 
   build-vegafusion-python-embed:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.options[0] }}
     strategy:
       matrix:
-        os:
-         - ubuntu-latest
-         - windows-2022
-         - macos-11
+        options:
+         - [ubuntu-latest, linux-64]
+         - [windows-2022, win-64]
+         - [macos-11, osx-64]
+         - [macos-11, osx-arm64]
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
       - name: Install protoc on Window
+        if: ${{ runner.os == 'Windows' }}
         run: |
           choco install --yes protoc
-        if: ${{ runner.os == 'Windows' }}
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -157,6 +158,7 @@ jobs:
         with:
           cache-on-failure: True
       - name: Build wheels
+        if: ${{ matrix.options[1] != 'osx-arm64' }}
         uses: messense/maturin-action@v1
         with:
           maturin-version: 0.12.20
@@ -165,11 +167,11 @@ jobs:
           rust-toolchain: stable
           args: --release -m vegafusion-python-embed/Cargo.toml --strip -i python3.10 -i python3.9 -i python3.8 -i python3.7
       - name: Download Apple Silicon toolchain
-        if: ${{ runner.os == 'macOS' }}
+        if: ${{ matrix.options[1] == 'osx-arm64' }}
         run: |
           rustup target add aarch64-apple-darwin
       - name: Build Apple Silicon wheels
-        if: ${{ runner.os == 'macOS' }}
+        if: ${{ matrix.options[1] == 'osx-arm64' }}
         uses: messense/maturin-action@v1
         with:
           maturin-version: 0.12.20
