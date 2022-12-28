@@ -192,6 +192,7 @@ jobs:
             target/wheels/*cp38*.whl
             target/wheels/*cp39*.whl
             target/wheels/*cp310*.whl
+            target/wheels/*cp311*.whl
 
   build-vegafusion-wasm:
     runs-on: ubuntu-latest
