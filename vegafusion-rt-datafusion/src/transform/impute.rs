@@ -108,7 +108,7 @@ fn single_groupby_sql(
     let key_col = unescaped_col(&tx.key);
     let key_col_str = key_col.to_sql_select()?.sql(dataframe.dialect())?;
 
-    let group_col = unescaped_col(&groupby);
+    let group_col = unescaped_col(groupby);
     let group_col_str = group_col.to_sql_select()?.sql(dataframe.dialect())?;
 
     // Build row number expr to apply to input table

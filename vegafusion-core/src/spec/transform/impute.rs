@@ -57,8 +57,7 @@ impl TransformSpecTrait for ImputeTransformSpec {
             .unwrap_or_default()
             .iter()
             .unique()
-            .collect::<Vec<_>>()
-            .len();
+            .count();
         self.field.as_().is_none()
             && self.key.as_().is_none()
             && self.keyvals.is_none()
