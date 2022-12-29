@@ -95,7 +95,7 @@ setup_args = dict(
         'vegafusion',
     ],
     extras_require={
-        'embed': ["vegafusion-python-embed"],
+        'embed': ["vegafusion-python-embed", "vl-convert-python"],
     },
     entry_points = {
     },
