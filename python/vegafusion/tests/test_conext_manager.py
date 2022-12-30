@@ -2,7 +2,7 @@ import altair as alt
 import vegafusion as vf
 
 
-def test_enabler_context_manager():
+def test_mime_enabler_context_manager():
     alt.data_transformers.enable("json")
     alt.renderers.enable("mimetype")
 
@@ -31,4 +31,4 @@ def test_enabler_context_manager():
     ctx = vf.enable_mime()
     assert alt.data_transformers.active == "vegafusion-inline"
     assert alt.renderers.active == "vegafusion-mime"
-    assert repr(ctx) == "vegafusion.enable_mime(mimetype='html', embed_options=None)"
+    assert repr(ctx) == "vegafusion.enable_mime(mimetype='vega', embed_options=None)"

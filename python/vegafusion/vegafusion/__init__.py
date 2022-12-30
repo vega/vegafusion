@@ -45,7 +45,7 @@ def altair_vl_version(vl_convert=False):
         return SCHEMA_VERSION.rstrip("v")
 
 
-def enable_mime(mimetype="html", embed_options=None):
+def enable_mime(mimetype="vega", embed_options=None):
     """
     Enable the VegaFusion data transformer and renderer so that all Charts
     are displayed using VegaFusion.
@@ -53,8 +53,10 @@ def enable_mime(mimetype="html", embed_options=None):
     This isn't necessary in order to use the VegaFusionWidget directly
 
     :param mimetype: Mime type. One of:
-        - "html" (default)
-        - "vega"
+        - "vega" (default)
+        - "html"
+        - "html-colab" or "colab"
+        - "html-kaggle" or "kaggle
         - "svg"
         - "png": Note: the PNG renderer can be quite slow for charts with lots of marks
     :param embed_options: dict (optional)
