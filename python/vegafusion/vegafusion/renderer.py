@@ -42,6 +42,31 @@ def vegafusion_mime_renderer(spec, mimetype="vega", embed_options=None):
             embed_options=embed_options
         )
         return {"text/html": html}
+    elif mimetype == "html-colab" or mimetype == "colab":
+        html = spec_to_html(
+            tx_vega_spec,
+            mode="vega",
+            vega_version="5",
+            vegalite_version=altair_vl_version(),
+            vegaembed_version="6",
+            fullhtml=True,
+            requirejs=False,
+            output_div="altair-viz",
+            embed_options=embed_options
+        )
+        return {"text/html": html}
+    elif mimetype == "html-kaggle" or mimetype == "kaggle":
+        html = spec_to_html(
+            tx_vega_spec,
+            mode="vega",
+            vega_version="5",
+            vegalite_version=altair_vl_version(),
+            vegaembed_version="6",
+            fullhtml=False,
+            requirejs=True,
+            embed_options=embed_options
+        )
+        return {"text/html": html}
     elif mimetype == "svg":
         import vl_convert as vlc
         svg = vlc.vega_to_svg(tx_vega_spec)
