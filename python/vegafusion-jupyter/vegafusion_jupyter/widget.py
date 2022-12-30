@@ -42,6 +42,7 @@ class VegaFusionWidget(DOMWidget):
 
     def __init__(self, *args, **kwargs):
         # Make sure transformer and renderer and registered
+        import vegafusion as vf
         import vegafusion.transformer
         import vegafusion_jupyter.renderer
 
@@ -60,11 +61,11 @@ class VegaFusionWidget(DOMWidget):
             else:
                 data_transformer_opts = dict()
 
-            with alt.renderers.enable("vegafusion-widget"):
-                with alt.data_transformers.enable("vegafusion-feather", **data_transformer_opts):
-                    # Temporarily enable the vegafusion renderer and transformer so
-                    # that we use them even if they are not enabled globally
-                    spec = spec.to_dict()
+            with vf.enable_widget(**data_transformer_opts):
+                # Temporarily enable the vegafusion renderer and transformer so
+                # that we use them even if they are not enabled globally
+                spec = spec.to_dict()
+
             # Set spec as a dict, which will be converted to string below
             kwargs["spec"] = spec
 

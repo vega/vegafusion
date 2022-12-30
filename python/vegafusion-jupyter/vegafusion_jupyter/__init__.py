@@ -6,6 +6,8 @@
 # this program the details of the active license.
 
 import altair as alt
+
+from vegafusion import RendererTransformerEnabler
 from . import renderer
 from . import widget
 from .widget import VegaFusionWidget
@@ -27,14 +29,17 @@ def enable(
     # Import vegafusion.transformer so that vegafusion-feather transform
     # will be registered
     import vegafusion.transformer
-    alt.renderers.enable(
-        'vegafusion-widget',
-        debounce_wait=debounce_wait,
-        debounce_max_wait=debounce_max_wait,
-        download_source_link=download_source_link,
-    )
-    alt.data_transformers.enable(
-        'vegafusion-feather', data_dir=data_dir
+    return RendererTransformerEnabler(
+        renderer_ctx=alt.renderers.enable(
+            'vegafusion-widget',
+            debounce_wait=debounce_wait,
+            debounce_max_wait=debounce_max_wait,
+            download_source_link=download_source_link,
+        ),
+        data_transformer_ctx=alt.data_transformers.enable(
+            'vegafusion-feather', data_dir=data_dir
+        ),
+        repr_str=f"vegafusion.enable_widget()"
     )
 
 
