@@ -2,7 +2,7 @@ import altair as alt
 from altair.utils.html import spec_to_html
 
 
-def vegafusion_mime_renderer(spec, mimetype="html", embed_options=None):
+def vegafusion_mime_renderer(spec, mimetype="vega", embed_options=None):
     from . import transformer, runtime, local_tz, vegalite_compilers, altair_vl_version
     vega_spec = vegalite_compilers.get()(spec)
 

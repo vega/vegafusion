@@ -45,7 +45,7 @@ def altair_vl_version(vl_convert=False):
         return SCHEMA_VERSION.rstrip("v")
 
 
-def enable_mime(mimetype="html", embed_options=None):
+def enable_mime(mimetype="vega", embed_options=None):
     """
     Enable the VegaFusion data transformer and renderer so that all Charts
     are displayed using VegaFusion.
