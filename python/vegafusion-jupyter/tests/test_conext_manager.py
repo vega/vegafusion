@@ -2,7 +2,7 @@ import altair as alt
 import vegafusion as vf
 
 
-def test_enabler_context_manager():
+def test_widget_enabler_context_manager():
     alt.data_transformers.enable("json")
     alt.renderers.enable("mimetype")
 
@@ -22,7 +22,7 @@ def test_enabler_context_manager():
     assert repr(ctx) == "vegafusion.enable_widget()"
 
 
-def test_enabler_context_manager_preserves_options():
+def test_widget_enabler_context_manager_preserves_options():
     # No options
     with vf.enable_widget():
         assert alt.data_transformers.active == "vegafusion-feather"
