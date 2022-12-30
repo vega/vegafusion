@@ -13,6 +13,8 @@ from .compilers import vegalite_compilers
 import altair as alt
 
 from ._version import __version__
+from .utils import RendererTransformerEnabler
+
 # Import optional subpackages
 try:
     import vegafusion.jupyter
@@ -59,10 +61,13 @@ def enable_mime(mimetype="html", embed_options=None):
         Dictionary of options to pass to the vega-embed. Default
         entry is {'mode': 'vega'}.
     """
-    # Import vegafusion.transformer so that vegafusion-inline transform
-    # will be registered
-    alt.renderers.enable('vegafusion-mime', mimetype=mimetype, embed_options=embed_options)
-    alt.data_transformers.enable('vegafusion-inline')
+    return RendererTransformerEnabler(
+        renderer_ctx=alt.renderers.enable(
+            'vegafusion-mime', mimetype=mimetype, embed_options=embed_options
+        ),
+        data_transformer_ctx=alt.data_transformers.enable('vegafusion-inline'),
+        repr_str=f"vegafusion.enable_mime(mimetype={repr(mimetype)}, embed_options={repr(embed_options)})"
+    )
 
 
 def enable_widget(
@@ -72,7 +77,7 @@ def enable_widget(
     data_dir="_vegafusion_data"
 ):
     from vegafusion.jupyter import enable
-    enable(
+    return enable(
         download_source_link=download_source_link,
         debounce_wait=debounce_wait,
         debounce_max_wait=debounce_max_wait,
@@ -95,5 +100,8 @@ def disable():
 
     This does not affect the behavior of VegaFusionWidget
     """
-    alt.renderers.enable('default')
-    alt.data_transformers.enable('default')
+    return RendererTransformerEnabler(
+        renderer_ctx=alt.renderers.enable('default'),
+        data_transformer_ctx=alt.data_transformers.enable('default'),
+        repr_str="vegafusion.disable()"
+    )
