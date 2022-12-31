@@ -4,7 +4,7 @@ path = "src/main.rs"
 
 [package]
 name = "vegafusion-server"
-version = "0.11.0-rc10"
+version = "0.11.0-rc11"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
@@ -42,5 +42,5 @@ features = [ "tls",]
 version = "3.2.22"
 features = [ "derive",]
 
-[target.'cfg(target_family = "unix")'.build-dependencies]
+[target."cfg(target_family = \"unix\")".build-dependencies]
 protobuf-src = "1.1.0"

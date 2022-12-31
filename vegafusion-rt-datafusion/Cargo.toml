@@ -6,7 +6,7 @@ harness = false
 name = "vegafusion-rt-datafusion"
 license = "AGPL-3.0-or-later"
 edition = "2021"
-version = "0.11.0-rc10"
+version = "0.11.0-rc11"
 
 [features]
 pyarrow = [ "vegafusion-core/pyarrow",]
@@ -34,7 +34,6 @@ deterministic-hash = "1.0.1"
 log = "0.4.17"
 env_logger = "0.9.0"
 ordered-float = "3.4.0"
-uuid = { version = "^1.2", features = ["v4"] }
 lock_api = "^0.4.8"
 reqwest-retry = "0.2.1"
 reqwest-middleware = "0.2.0"
@@ -48,6 +47,10 @@ base64 = "0.13.0"
 dssim = "3.1.0"
 rgb = "0.8.32"
 lodepng = "3.6.1"
+
+[dependencies.uuid]
+version = "^1.2"
+features = [ "v4",]
 
 [dependencies.sqlgen]
 git = "https://github.com/vegafusion/sqlgen-rs.git"

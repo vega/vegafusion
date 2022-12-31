@@ -2,7 +2,7 @@
 name = "vegafusion-core"
 license = "AGPL-3.0-or-later"
 edition = "2021"
-version = "0.11.0-rc10"
+version = "0.11.0-rc11"
 
 [features]
 tonic_support = [ "tonic", "tonic-build",]
@@ -20,7 +20,7 @@ ordered-float = "^2.10.0"
 petgraph = "0.6.0"
 deterministic-hash = "1.0.1"
 chrono = "0.4.23"
-num-complex = "0.4.2"  # Needed by arrow?
+num-complex = "0.4.2"
 
 [dependencies.sqlgen]
 git = "https://github.com/vegafusion/sqlgen-rs.git"
@@ -34,11 +34,9 @@ features = [ "preserve_order",]
 [dependencies.arrow]
 version = "28.0.0"
 default_features = false
-features = [ "ipc", "json"]
+features = [ "ipc", "json",]
 
 [dependencies.datafusion-common]
-# Use custom branch that is version 15.0.0 with median
-# fix cherry picked
 git = "https://github.com/jonmmease/arrow-datafusion.git"
 rev = "45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6"
 
@@ -61,5 +59,5 @@ version = "0.11.4"
 version = "0.8.4"
 optional = true
 
-[target.'cfg(target_family = "unix")'.build-dependencies]
+[target."cfg(target_family = \"unix\")".build-dependencies]
 protobuf-src = "1.1.0"
