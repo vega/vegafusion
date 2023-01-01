@@ -232,7 +232,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     // Numeric functions built into DataFusion with names that match Vega.
     // Cast arguments to Float64
     for fun_name in &[
-        "abs", "acos", "asin", "atan", "ceil", "cos", "exp", "floor", "round", "sqrt", "tan",
+        "abs", "acos", "asin", "atan", "ceil", "cos", "exp", "floor", "round", "sin", "sqrt", "tan",
     ] {
         let function = BuiltinScalarFunction::from_str(fun_name).unwrap();
         callables.insert(
