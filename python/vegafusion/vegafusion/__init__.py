@@ -55,8 +55,6 @@ def enable_mime(mimetype="vega", embed_options=None):
     :param mimetype: Mime type. One of:
         - "vega" (default)
         - "html"
-        - "html-colab" or "colab"
-        - "html-kaggle" or "kaggle
         - "svg"
         - "png": Note: the PNG renderer can be quite slow for charts with lots of marks
     :param embed_options: dict (optional)
