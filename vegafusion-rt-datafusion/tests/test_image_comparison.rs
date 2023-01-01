@@ -136,7 +136,8 @@ mod test_custom_specs {
         case("custom/full_bin_histogram_selection", 0.001, false),
         case("custom/datetime_scatter", 0.001, false),
         case("custom/stack_divide_by_zero_error", 0.001, false),
-        case("custom/casestudy-us_population_pyramid_over_time", 0.001, true)
+        case("custom/casestudy-us_population_pyramid_over_time", 0.001, true),
+        case("custom/sin_cos", 0.001, true),
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64, extract_inline_values: bool) {
         println!("spec_name: {}", spec_name);
