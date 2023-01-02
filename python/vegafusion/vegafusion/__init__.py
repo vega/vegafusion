@@ -79,11 +79,23 @@ def enable_mime(mimetype="html", row_limit=10000, embed_options=None):
 
 
 def enable_widget(
-    download_source_link=None,
     debounce_wait=30,
     debounce_max_wait=60,
-    data_dir="_vegafusion_data"
+    data_dir="_vegafusion_data",
+    download_source_link=None,
 ):
+    """
+    Enable the VegaFusion widget renderer so that all charts are displayed
+    using VegaFusion.
+
+    This isn't necessary in order to use the VegaFusionWidget directly
+
+    :param debounce_wait: Debounce wait period for interactions (milliseconds)
+    :param debounce_max_wait: Max debounce wait for interactions (milliseconds)
+    :param download_source_link: URL of notebooks source code for inclusion
+        in dropdown menu
+    :param data_dir: Path that temporary feather files will be written to
+    """
     from vegafusion.jupyter import enable
     return enable(
         download_source_link=download_source_link,
