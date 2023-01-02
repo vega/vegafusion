@@ -31,4 +31,4 @@ def test_mime_enabler_context_manager():
     ctx = vf.enable_mime()
     assert alt.data_transformers.active == "vegafusion-inline"
     assert alt.renderers.active == "vegafusion-mime"
-    assert repr(ctx) == "vegafusion.enable_mime(mimetype='vega', embed_options=None)"
+    assert repr(ctx) == "vegafusion.enable_mime(mimetype='vega', row_limit=10000, embed_options=None)"
