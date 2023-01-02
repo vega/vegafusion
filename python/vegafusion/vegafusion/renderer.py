@@ -14,7 +14,7 @@ class RowLimitError(ValueError):
         )
 
 
-def vegafusion_mime_renderer(spec, mimetype="vega", row_limit=None, embed_options=None):
+def vegafusion_mime_renderer(spec, mimetype="html", row_limit=None, embed_options=None):
     from . import transformer, runtime, local_tz, vegalite_compilers, altair_vl_version
     vega_spec = vegalite_compilers.get()(spec)
 
