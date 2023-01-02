@@ -46,7 +46,7 @@ def altair_vl_version(vl_convert=False):
         return SCHEMA_VERSION.rstrip("v")
 
 
-def enable_mime(mimetype="vega", row_limit=10000, embed_options=None):
+def enable_mime(mimetype="html", row_limit=10000, embed_options=None):
     """
     Enable the VegaFusion data transformer and renderer so that all Charts
     are displayed using VegaFusion.
@@ -54,10 +54,10 @@ def enable_mime(mimetype="vega", row_limit=10000, embed_options=None):
     This isn't necessary in order to use the VegaFusionWidget directly
 
     :param mimetype: Mime type. One of:
-        - "vega" (default)
-        - "html"
+        - "html" (default)
+        - "vega"
         - "svg"
-        - "png": Note: the PNG renderer can be quite slow for charts with lots of marks
+        - "png": Note, the PNG renderer can be quite slow for charts with lots of marks
     :param row_limit: Maximum number of rows (after transforms are applied) that may be
         included in the Vega specifications that will be displayed. An error will
         be raised if the limit is exceeded. None for unlimited.
