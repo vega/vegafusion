@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import pytz
 import pytest
 from altair.utils.execeval import eval_block
 import vegafusion as vf
@@ -97,6 +98,11 @@ def test_transformed_data_for_mock(mock_name, expected_len, expected_cols):
 
     # Check that the expected columns are present
     assert set(expected_cols).issubset(set(df.columns))
+
+    # Check that datetime columns have UTC timezone
+    for dtype in df.dtypes.values:
+        if dtype.kind == "M":
+            assert dtype.tz == pytz.timezone(vf.get_local_tz())
 
     # Check expected length
     assert len(df) == expected_len

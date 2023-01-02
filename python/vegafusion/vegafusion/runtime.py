@@ -147,6 +147,7 @@ class VegaFusionRuntime:
                    key indicating the warning type, and a 'message' key containing
                    a description of the warning.
         """
+        from . import get_local_tz
         if self._grpc_channel:
             raise ValueError("pre_transform_datasets not yet supported over gRPC")
         else:
@@ -178,6 +179,12 @@ class VegaFusionRuntime:
 
             # Deserialize values to Arrow tables
             datasets = [pa.ipc.deserialize_pandas(value) for value in values]
+
+            # Localize datetime columns to UTC
+            for df in datasets:
+                for name, dtype in df.dtypes.items():
+                    if dtype.kind == "M":
+                        df[name] = df[name].dt.tz_localize("UTC").dt.tz_convert(get_local_tz())
 
             return datasets, warnings
 
