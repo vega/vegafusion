@@ -21,14 +21,14 @@ def test_mime_enabler_context_manager():
     assert alt.renderers.active == "default"
     assert repr(ctx) == "vegafusion.disable()"
 
-    with vf.enable_mime():
+    with vf.enable():
         assert alt.data_transformers.active == "vegafusion-inline"
         assert alt.renderers.active == "vegafusion-mime"
 
     assert alt.data_transformers.active == "default"
     assert alt.renderers.active == "default"
 
-    ctx = vf.enable_mime()
+    ctx = vf.enable()
     assert alt.data_transformers.active == "vegafusion-inline"
     assert alt.renderers.active == "vegafusion-mime"
-    assert repr(ctx) == "vegafusion.enable_mime(mimetype='html', row_limit=10000, embed_options=None)"
+    assert repr(ctx) == "vegafusion.enable(mimetype='html', row_limit=10000, embed_options=None)"

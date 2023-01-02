@@ -46,12 +46,10 @@ def altair_vl_version(vl_convert=False):
         return SCHEMA_VERSION.rstrip("v")
 
 
-def enable_mime(mimetype="html", row_limit=10000, embed_options=None):
+def enable(mimetype="html", row_limit=10000, embed_options=None):
     """
-    Enable the VegaFusion data transformer and renderer so that all Charts
+    Enable the VegaFusion mime renderer so that all Altair charts
     are displayed using VegaFusion.
-
-    This isn't necessary in order to use the VegaFusionWidget directly
 
     :param mimetype: Mime type. One of:
         - "html" (default)
@@ -71,7 +69,7 @@ def enable_mime(mimetype="html", row_limit=10000, embed_options=None):
         ),
         data_transformer_ctx=alt.data_transformers.enable('vegafusion-inline'),
         repr_str=(
-            "vegafusion.enable_mime("
+            "vegafusion.enable("
             f"mimetype={repr(mimetype)}, row_limit={row_limit}, embed_options={repr(embed_options)}"
             ")"
         )
