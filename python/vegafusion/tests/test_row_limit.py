@@ -14,11 +14,11 @@ def test_row_limit():
 
     # Dataset has 406 rows (before filtering out nulls) and this chart is not aggregated.
     # Limit of 500 rows should be fine
-    with vf.enable_mime(row_limit=500):
+    with vf.enable(row_limit=500):
         chart._repr_mimebundle_()
 
     # Limit of 300 rows should raise RowLimitError
-    with vf.enable_mime(row_limit=300):
+    with vf.enable(row_limit=300):
         with pytest.raises(vf.RowLimitError):
             chart._repr_mimebundle_()
 
@@ -28,5 +28,5 @@ def test_row_limit():
         alt.Y("Miles_per_Gallon", bin=True),
         alt.Size("count()")
     )
-    with vf.enable_mime(row_limit=50):
+    with vf.enable(row_limit=50):
         chart._repr_mimebundle_()
