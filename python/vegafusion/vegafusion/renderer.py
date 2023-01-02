@@ -2,7 +2,19 @@ import altair as alt
 from altair.utils.html import spec_to_html
 
 
-def vegafusion_mime_renderer(spec, mimetype="vega", embed_options=None):
+class RowLimitError(ValueError):
+    def __init__(self, row_limit):
+        self.row_limit = row_limit
+
+    def __str__(self):
+        return (
+            f"Limit of {self.row_limit} rows was exceeded.\n"
+            "Either introduce an aggregation to reduce the number of rows sent to the client or\n"
+            "increase the row_limit argument to the vegafusion.enable_mime() function"
+        )
+
+
+def vegafusion_mime_renderer(spec, mimetype="vega", row_limit=None, embed_options=None):
     from . import transformer, runtime, local_tz, vegalite_compilers, altair_vl_version
     vega_spec = vegalite_compilers.get()(spec)
 
@@ -16,8 +28,13 @@ def vegafusion_mime_renderer(spec, mimetype="vega", embed_options=None):
     tx_vega_spec, warnings = runtime.pre_transform_spec(
         vega_spec,
         local_tz.get_local_tz(),
+        row_limit=row_limit,
         inline_datasets=inline_datasets
     )
+
+    for warning in warnings:
+        if warning.get("type", "") == "RowLimitExceeded":
+            raise RowLimitError(row_limit)
 
     # Handle default embed options
     embed_options = embed_options or {}

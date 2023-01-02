@@ -6,6 +6,7 @@
 # this program the details of the active license.
 from .runtime import runtime
 from .transformer import to_feather, get_inline_datasets_for_spec
+from .renderer import RowLimitError
 from .local_tz import set_local_tz, get_local_tz
 from .evaluation import transformed_data
 from . import renderer
@@ -45,7 +46,7 @@ def altair_vl_version(vl_convert=False):
         return SCHEMA_VERSION.rstrip("v")
 
 
-def enable_mime(mimetype="vega", embed_options=None):
+def enable_mime(mimetype="vega", row_limit=10000, embed_options=None):
     """
     Enable the VegaFusion data transformer and renderer so that all Charts
     are displayed using VegaFusion.
@@ -57,16 +58,23 @@ def enable_mime(mimetype="vega", embed_options=None):
         - "html"
         - "svg"
         - "png": Note: the PNG renderer can be quite slow for charts with lots of marks
+    :param row_limit: Maximum number of rows (after transforms are applied) that may be
+        included in the Vega specifications that will be displayed. An error will
+        be raised if the limit is exceeded. None for unlimited.
     :param embed_options: dict (optional)
         Dictionary of options to pass to the vega-embed. Default
         entry is {'mode': 'vega'}.
     """
     return RendererTransformerEnabler(
         renderer_ctx=alt.renderers.enable(
-            'vegafusion-mime', mimetype=mimetype, embed_options=embed_options
+            'vegafusion-mime', mimetype=mimetype, row_limit=row_limit, embed_options=embed_options
         ),
         data_transformer_ctx=alt.data_transformers.enable('vegafusion-inline'),
-        repr_str=f"vegafusion.enable_mime(mimetype={repr(mimetype)}, embed_options={repr(embed_options)})"
+        repr_str=(
+            "vegafusion.enable_mime("
+            f"mimetype={repr(mimetype)}, row_limit={row_limit}, embed_options={repr(embed_options)}"
+            ")"
+        )
     )
 
 
