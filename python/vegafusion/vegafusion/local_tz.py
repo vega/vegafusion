@@ -17,7 +17,7 @@ def get_local_tz():
         # Fall back to getting local_tz from vl-convert if not set
         try:
             import vl_convert as vlc
-            __tz_config["local_tz"] = vlc.get_local_tz()
+            __tz_config["local_tz"] = vlc.get_local_tz() or "UTC"
         except ImportError:
             raise ImportError(
                 "vl-convert is not installed and so the local system timezone cannot be determined.\n"
