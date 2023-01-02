@@ -10,7 +10,7 @@ class RowLimitError(ValueError):
         return (
             f"Limit of {self.row_limit} rows was exceeded.\n"
             "Either introduce an aggregation to reduce the number of rows sent to the client or\n"
-            "increase the row_limit argument to the vegafusion.enable_mime() function"
+            "increase the row_limit argument to the vegafusion.enable() function"
         )
 
 
