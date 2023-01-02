@@ -909,11 +909,11 @@ def test_date32_pre_transform_dataset():
         spec, ["data_0"], "America/New_York", default_input_tz="UTC", inline_datasets=dict(dates=dates_df)
     )
 
-    # Timestamps are always in UTC, so we're checking that they would convert to midnight local time
+    # Timestamps are in the local timezone, so they should be midnight local time
     assert list(output_ds.date_col) == [
-        pd.Timestamp('2022-01-01 05:00:00'),
-        pd.Timestamp('2022-01-02 05:00:00'),
-        pd.Timestamp('2022-01-03 05:00:00')
+        pd.Timestamp('2022-01-01 00:00:00-0500', tz='America/New_York'),
+        pd.Timestamp('2022-01-02 00:00:00-0500', tz='America/New_York'),
+        pd.Timestamp('2022-01-03 00:00:00-0500', tz='America/New_York')
     ]
 
 
@@ -934,27 +934,27 @@ def test_nat_values():
     dataframe = pd.DataFrame([
         {'ORDER_DATE': date(2011, 3, 1),
          'SALES': 457.568,
-         'NULL_TEST': Timestamp('2011-03-01 00:00:00')},
+         'NULL_TEST': Timestamp('2011-03-01 00:00:00+0000', tz="UTC")},
         {'ORDER_DATE': date(2011, 3, 1),
          'SALES': 376.509,
-         'NULL_TEST': Timestamp('2011-03-01 00:00:00')},
+         'NULL_TEST': Timestamp('2011-03-01 00:00:00+0000', tz="UTC")},
         {'ORDER_DATE': date(2011, 3, 1),
          'SALES': 362.25,
-         'NULL_TEST': Timestamp('2011-03-01 00:00:00')},
+         'NULL_TEST': Timestamp('2011-03-01 00:00:00+0000', tz="UTC")},
         {'ORDER_DATE': date(2011, 3, 1),
          'SALES': 129.552,
-         'NULL_TEST': Timestamp('2011-03-01 00:00:00')},
+         'NULL_TEST': Timestamp('2011-03-01 00:00:00+0000', tz="UTC")},
         {'ORDER_DATE': date(2011, 3, 1), 'SALES': 18.84, 'NULL_TEST': NaT},
         {'ORDER_DATE': date(2011, 4, 1),
          'SALES': 66.96,
-         'NULL_TEST': Timestamp('2011-04-01 00:00:00')},
+         'NULL_TEST': Timestamp('2011-04-01 00:00:00+0000', tz="UTC")},
         {'ORDER_DATE': date(2011, 4, 1), 'SALES': 6.24, 'NULL_TEST': NaT},
         {'ORDER_DATE': date(2011, 6, 1),
          'SALES': 881.93,
-         'NULL_TEST': Timestamp('2011-06-01 00:00:00')},
+         'NULL_TEST': Timestamp('2011-06-01 00:00:00+0000', tz="UTC")},
         {'ORDER_DATE': date(2011, 6, 1),
          'SALES': 166.72,
-         'NULL_TEST': Timestamp('2011-06-01 00:00:00')},
+         'NULL_TEST': Timestamp('2011-06-01 00:00:00+0000', tz="UTC")},
         {'ORDER_DATE': date(2011, 6, 1), 'SALES': 25.92, 'NULL_TEST': NaT}
     ])
 
@@ -968,8 +968,8 @@ def test_nat_values():
 
     dataset = datasets[0]
     assert dataset.to_dict("records")[0] == {
-        'NULL_TEST': pd.Timestamp('2011-03-01 00:00:00'),
-        'ORDER_DATE': Timestamp('2011-03-01 00:00:00'),
+        'NULL_TEST': pd.Timestamp('2011-03-01 00:00:00+0000', tz="UTC"),
+        'ORDER_DATE': Timestamp('2011-03-01 00:00:00+0000', tz="UTC"),
         'SALES': 457.568,
         'SALES_end': 457.568,
         'SALES_start': 0.0,

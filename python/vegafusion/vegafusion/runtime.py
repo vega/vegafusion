@@ -179,6 +179,12 @@ class VegaFusionRuntime:
             # Deserialize values to Arrow tables
             datasets = [pa.ipc.deserialize_pandas(value) for value in values]
 
+            # Localize datetime columns to UTC
+            for df in datasets:
+                for name, dtype in df.dtypes.items():
+                    if dtype.kind == "M":
+                        df[name] = df[name].dt.tz_localize("UTC").dt.tz_convert(local_tz)
+
             return datasets, warnings
 
     @property
