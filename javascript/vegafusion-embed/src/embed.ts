@@ -134,34 +134,6 @@ function buildMenu(receiver: MsgReceiver, download_source_link: string | undefin
     aboutLink.title = about_href;
     ctrl.append(aboutLink);
 
-    // Add License
-    const licenseLink = document.createElement('a');
-    const licence_href = 'https://www.gnu.org/licenses/agpl-3.0.en.html';
-    licenseLink.text = "AGPLv3 License";
-    licenseLink.href = licence_href;
-    licenseLink.target = '_blank';
-    licenseLink.title = licence_href;
-    ctrl.append(licenseLink);
-
-    // Add source message
-    if (download_source_link) {
-        const sourceItem = document.createElement('a');
-        sourceItem.text = 'Download Source';
-        sourceItem.href = download_source_link;
-        sourceItem.target = '_blank';
-        sourceItem.title = download_source_link;
-        ctrl.append(sourceItem);
-    } else {
-        const sourceItem = document.createElement('p');
-        sourceItem.classList.add('source-msg');
-        sourceItem.textContent =
-            "VegaFusion's AGPLv3 license requires " +
-            "the author to provide this application's " +
-            'source code upon request';
-        sourceItem.title = '';
-        ctrl.append(sourceItem);
-    }
-
     return details;
 }
 
