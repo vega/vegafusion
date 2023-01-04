@@ -50,7 +50,7 @@ vegafusion_widget_feather_markdown_template = r"""
 ```python
 import altair as alt
 import vegafusion as vf
-vf.enable_widget()
+vf.enable_widget();
 ```
 
 ```python
@@ -85,7 +85,7 @@ vegafusion_mime_markdown_template = r"""
 ```python
 import altair as alt
 import vegafusion as vf
-vf.enable(mimetype="html", embed_options={'actions': False})
+vf.enable(mimetype="html", embed_options={'actions': False});
 ```
 
 ```python
