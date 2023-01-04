@@ -12,9 +12,12 @@
 // (https://github.com/vega/vega-embed) which is released
 // under the BSD-3-Clause License: https://github.com/vega/vega-embed/blob/next/LICENSE
 
-import {DOMWidgetModel, DOMWidgetView, ISerializers,} from '@jupyter-widgets/base';
-import {MODULE_NAME, MODULE_VERSION} from './version';
-
+import {
+  DOMWidgetModel,
+  DOMWidgetView,
+  ISerializers,
+} from '@jupyter-widgets/base';
+import { MODULE_NAME, MODULE_VERSION } from './version';
 
 export class VegaFusionModel extends DOMWidgetModel {
   defaults() {
@@ -63,15 +66,15 @@ export class VegaFusionModel extends DOMWidgetModel {
 }
 
 export class VegaFusionView extends DOMWidgetView {
-  vegafusion_handle: import("vegafusion-embed").MsgReceiver;
-  embedVegaFusion: typeof import("vegafusion-embed").embedVegaFusion;
-  vegalite_compile: typeof import("vega-lite").compile;
+  vegafusion_handle: import('vegafusion-embed').MsgReceiver;
+  embedVegaFusion: typeof import('vegafusion-embed').embedVegaFusion;
+  vegalite_compile: typeof import('vega-lite').compile;
 
   async render() {
-    const { embedVegaFusion } = await import("vegafusion-embed");
+    const { embedVegaFusion } = await import('vegafusion-embed');
     this.embedVegaFusion = embedVegaFusion;
 
-    const { compile } = await import("vega-lite");
+    const { compile } = await import('vega-lite');
     this.vegalite_compile = compile;
 
     this.value_changed();
@@ -81,10 +84,10 @@ export class VegaFusionView extends DOMWidgetView {
     this.model.on('change:debounce_max_wait', this.value_changed, this);
     this.model.on('change:download_source_link', this.value_changed, this);
     this.model.on('change:_response_msg', () => {
-      const msgBytes: DataView = this.model.get("_response_msg");
+      const msgBytes: DataView = this.model.get('_response_msg');
       if (msgBytes !== null) {
-        if (this.model.get("verbose")) {
-          console.log("VegaFusion(js): Received response");
+        if (this.model.get('verbose')) {
+          console.log('VegaFusion(js): Received response');
           console.log(msgBytes.buffer);
         }
         const bytes = new Uint8Array(msgBytes.buffer);
@@ -94,45 +97,51 @@ export class VegaFusionView extends DOMWidgetView {
   }
 
   value_changed() {
-    let spec = this.model.get('spec');
+    const spec = this.model.get('spec');
     if (spec !== null) {
-      let parsed = JSON.parse(spec);
+      const parsed = JSON.parse(spec);
       let vega_spec_json;
-      if (parsed["$schema"].endsWith("schema/vega/v5.json")) {
-        vega_spec_json = spec
+      if (parsed['$schema'].endsWith('schema/vega/v5.json')) {
+        vega_spec_json = spec;
       } else {
         // Assume we have a Vega-Lite spec, compile to vega
-        let vega_spec = this.vegalite_compile(parsed);
+        const vega_spec = this.vegalite_compile(parsed);
         vega_spec_json = JSON.stringify(vega_spec.spec, null, 2);
       }
 
-      let config = {
-        verbose: this.model.get("verbose") || false,
-        debounce_wait: this.model.get("debounce_wait") || 30,
-        debounce_max_wait: this.model.get("debounce_max_wait"),
-        download_source_link: this.model.get('download_source_link')
+      const config = {
+        verbose: this.model.get('verbose') || false,
+        debounce_wait: this.model.get('debounce_wait') || 30,
+        debounce_max_wait: this.model.get('debounce_max_wait'),
+        download_source_link: this.model.get('download_source_link'),
       };
 
       // this.vegafusion_handle = this.embedVegaFusion(
       this.vegafusion_handle = this.embedVegaFusion(
-          this.el,
-          vega_spec_json,
-          (request: Uint8Array) => {
-            if (this.model.get("verbose")) {
-              console.log("VegaFusion(js): Send request");
-            }
+        this.el,
+        vega_spec_json,
+        (request: Uint8Array) => {
+          if (this.model.get('verbose')) {
+            console.log('VegaFusion(js): Send request');
+          }
 
-            this.model.set("_request_msg", new DataView(request.buffer));
-            this.touch();
-            this.model.set("_request_msg", {});
-          },
-          config
+          this.model.set('_request_msg', new DataView(request.buffer));
+          this.touch();
+          this.model.set('_request_msg', {});
+        },
+        config
       );
 
       // Update vega spec properties
       this.model.set('full_vega_spec', vega_spec_json);
-      this.model.set('client_vega_spec', this.vegafusion_handle.client_spec_json());
-      this.model.set('server_vega_spec', this.vegafusion_handle.server_spec_json());
+      this.model.set(
+        'client_vega_spec',
+        this.vegafusion_handle.client_spec_json()
+      );
+      this.model.set(
+        'server_vega_spec',
+        this.vegafusion_handle.server_spec_json()
+      );
       this.model.set('comm_plan', this.vegafusion_handle.comm_plan_json());
 
       this.touch();
