@@ -12,12 +12,11 @@
 // (https://github.com/vega/vega-embed) which is released
 // under the BSD-3-Clause License: https://github.com/vega/vega-embed/blob/next/LICENSE
 
-import {
-  DOMWidgetModel,
-  DOMWidgetView,
-  ISerializers,
-} from '@jupyter-widgets/base';
-import { MODULE_NAME, MODULE_VERSION } from './version';
+import {DOMWidgetModel, DOMWidgetView, ISerializers,} from '@jupyter-widgets/base';
+import * as vegaThemes from 'vega-themes';
+import {mergeConfig} from 'vega';
+import {TopLevelSpec, Config} from 'vega-lite';
+import {MODULE_NAME, MODULE_VERSION} from './version';
 
 export class VegaFusionModel extends DOMWidgetModel {
   defaults() {
@@ -69,6 +68,7 @@ export class VegaFusionView extends DOMWidgetView {
   vegafusion_handle: import('vegafusion-embed').MsgReceiver;
   embedVegaFusion: typeof import('vegafusion-embed').embedVegaFusion;
   vegalite_compile: typeof import('vega-lite').compile;
+  vegaThemes: Record<string, Config>;
 
   async render() {
     const { embedVegaFusion } = await import('vegafusion-embed');
@@ -76,6 +76,7 @@ export class VegaFusionView extends DOMWidgetView {
 
     const { compile } = await import('vega-lite');
     this.vegalite_compile = compile;
+    this.vegaThemes = Object.assign({}, vegaThemes) as Record<string, Config>;
 
     this.value_changed();
     this.model.on('change:spec', this.value_changed, this);
@@ -99,9 +100,26 @@ export class VegaFusionView extends DOMWidgetView {
   value_changed() {
     const spec = this.model.get('spec');
     if (spec !== null) {
-      const parsed = JSON.parse(spec);
+      const parsed = JSON.parse(spec) as TopLevelSpec;
+
+      // Apply Vega embed theme
+      const usermeta = parsed.usermeta ?? {};
+      const embedOptions = (usermeta.embedOptions ?? {}) as Record<
+        string,
+        string
+      >;
+      const usermetaTheme = embedOptions.theme as string | null;
+      // eslint-disable-next-line eqeqeq
+      if (usermetaTheme != null) {
+        const themeConfig = this.vegaThemes[usermetaTheme];
+        // eslint-disable-next-line eqeqeq
+        if (themeConfig != null) {
+          parsed['config'] = mergeConfig(parsed.config ?? {}, themeConfig);
+        }
+      }
+
       let vega_spec_json;
-      if (parsed['$schema'].endsWith('schema/vega/v5.json')) {
+      if ((parsed['$schema'] ?? '').endsWith('schema/vega/v5.json')) {
         vega_spec_json = spec;
       } else {
         // Assume we have a Vega-Lite spec, compile to vega
