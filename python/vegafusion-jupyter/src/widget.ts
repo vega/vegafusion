@@ -36,7 +36,6 @@ export class VegaFusionModel extends DOMWidgetModel {
       verbose: null,
       debounce_wait: 30,
       debounce_max_wait: 60,
-      download_source_link: null,
       _request_msg: null,
       _response_msg: null,
     };
@@ -83,7 +82,6 @@ export class VegaFusionView extends DOMWidgetView {
     this.model.on('change:verbose', this.value_changed, this);
     this.model.on('change:debounce_wait', this.value_changed, this);
     this.model.on('change:debounce_max_wait', this.value_changed, this);
-    this.model.on('change:download_source_link', this.value_changed, this);
     this.model.on('change:_response_msg', () => {
       const msgBytes: DataView = this.model.get('_response_msg');
       if (msgBytes !== null) {
@@ -131,7 +129,6 @@ export class VegaFusionView extends DOMWidgetView {
         verbose: this.model.get('verbose') || false,
         debounce_wait: this.model.get('debounce_wait') || 30,
         debounce_max_wait: this.model.get('debounce_max_wait'),
-        download_source_link: this.model.get('download_source_link'),
       };
 
       // this.vegafusion_handle = this.embedVegaFusion(

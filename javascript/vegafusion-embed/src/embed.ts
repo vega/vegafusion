@@ -23,11 +23,10 @@ export interface EmbedConfig {
     verbose: boolean;
     debounce_wait: number;
     debounce_max_wait: number | undefined;
-    download_source_link: string | undefined;
 }
 
 const defaultEmbedConfig: EmbedConfig = {
-    verbose: false, debounce_wait: 30, debounce_max_wait: 60, download_source_link: undefined
+    verbose: false, debounce_wait: 30, debounce_max_wait: 60
 }
 
 export function embedVegaFusion(
@@ -65,7 +64,7 @@ export function embedVegaFusion(
 
     // Element that holds the dropdown menu
     let menuElement = document.createElement("div");
-    menuElement.appendChild(buildMenu(receiver, undefined));
+    menuElement.appendChild(buildMenu(receiver));
 
     // Add children to top-level element
     element.appendChild(containerElement);
@@ -76,7 +75,7 @@ export function embedVegaFusion(
     return receiver
 }
 
-function buildMenu(receiver: MsgReceiver, download_source_link: string | undefined): Element {
+function buildMenu(receiver: MsgReceiver): Element {
     const details = document.createElement('details');
     details.title = I18N.CLICK_TO_VIEW_ACTIONS;
 
