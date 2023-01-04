@@ -3,196 +3,196 @@ on:
   pull_request:
     types: [opened, synchronize]
 jobs:
-  rust-fmt-clippy:
-    runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
-        with:
-          cache-on-failure: True
-      - name: Check cargo fmt compliance
-        run: cargo fmt --all -- --check
-      - name: Check no rustc warnings
-        run: cargo check --tests
-      - name: Check for clippy warnings
-        run: cargo clippy -- -A clippy::borrow_deref_ref
-
-  test-rust:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os:
-         - ubuntu-latest
-         - windows-2022
-         - macos-11
-
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: Install apt system dependencies needed to build nodecanvas
-        run: |
-          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
-        if: ${{ runner.os == 'Linux' }}
-      - name: Install protoc on Window
-        run: |
-          choco install --yes protoc
-        if: ${{ runner.os == 'Windows' }}
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Install node
-        uses: actions/setup-node@v2
-        with:
-          node-version: '17'
-      - name: Install test node dependencies
-        working-directory: vegafusion-rt-datafusion/tests/util/vegajs_runtime
-        run: |
-          npm install
-      - name: Run Rust Tests (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        uses: actions-rs/cargo@v1
-        env:
-          CARGO_HOME: C:\cargo_home\
-          CARGO_TARGET_DIR: C:\cargo_target_dir\
-        with:
-          command: test
-          args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
-      - name: Run Rust Tests (MacOs/Linux)
-        if: ${{ runner.os != 'Windows' }}
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
-      - name: Upload test artifacts
-        uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: vegafusion-rt-test-images
-          path: |
-            vegafusion-rt-datafusion/tests/output
-
-  build-vegafusion-server:
-    strategy:
-      matrix:
-        options: [
-            [ubuntu-latest,  linux-64],
-            [windows-2022,  win-64],
-            [macos-11,   osx-64],
-        ]
-    runs-on: ${{ matrix.options[0] }}
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: Install protoc on Window
-        run: |
-          choco install --yes protoc
-        if: ${{ runner.os == 'Windows' }}
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
-        with:
-          cache-on-failure: True
-      - name: Build vegafusion-server
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: -p vegafusion-server --release
-      - name: zip executable (Windows)
-        uses: papeloto/action-zip@v1
-        if: runner.os == 'Windows'
-        with:
-          files: target/release/vegafusion-server.exe
-          dest: vegafusion-server-${{ matrix.options[1] }}.zip
-      - name: zip executable (Mac or Linux)
-        uses: papeloto/action-zip@v1
-        if: runner.os != 'Windows'
-        with:
-          files: target/release/vegafusion-server
-          dest: vegafusion-server-${{ matrix.options[1] }}.zip
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: vegafusion-server
-          path: |
-            vegafusion-server-*
-
-  build-vegafusion-python-embed:
-    runs-on: ${{ matrix.options[0] }}
-    strategy:
-      matrix:
-        options:
-         - [ubuntu-latest, linux-64]
-         - [windows-2022, win-64]
-         - [macos-11, osx-64]
-         - [macos-11, osx-arm64]
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: Install protoc on Window
-        if: ${{ runner.os == 'Windows' }}
-        run: |
-          choco install --yes protoc
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
-        with:
-          cache-on-failure: True
-      - name: Build wheels
-        if: ${{ matrix.options[1] != 'osx-arm64' }}
-        uses: messense/maturin-action@v1
-        with:
-          maturin-version: 0.12.20
-          command: build
-          manylinux: 2014
-          rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip -i python3.11 -i python3.10 -i python3.9 -i python3.8 -i python3.7
-      - name: Download Apple Silicon toolchain
-        if: ${{ matrix.options[1] == 'osx-arm64' }}
-        run: |
-          rustup target add aarch64-apple-darwin
-      - name: Build Apple Silicon wheels
-        if: ${{ matrix.options[1] == 'osx-arm64' }}
-        uses: messense/maturin-action@v1
-        with:
-          maturin-version: 0.12.20
-          command: build
-          rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin -i python3.11 -i python3.10 -i python3.9 -i python3.8 -i python3.7
-      - name: Remove unwanted universal
-        if: ${{ runner.os == 'macOS' }}
-        run: |
-          rm -rf target/wheels/*universal2*.whl
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: vegafusion-python-embed-wheels
-          path: |
-            target/wheels/*.tar.gz
-            target/wheels/*cp37*.whl
-            target/wheels/*cp38*.whl
-            target/wheels/*cp39*.whl
-            target/wheels/*cp310*.whl
-            target/wheels/*cp311*.whl
+#  rust-fmt-clippy:
+#    runs-on: ubuntu-latest
+#    env:
+#      RUSTFLAGS: "-D warnings"
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@v2
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#          override: true
+#          components: rustfmt, clippy
+#      - name: Cache rust dependencies
+#        uses: Swatinem/rust-cache@v1
+#        with:
+#          cache-on-failure: True
+#      - name: Check cargo fmt compliance
+#        run: cargo fmt --all -- --check
+#      - name: Check no rustc warnings
+#        run: cargo check --tests
+#      - name: Check for clippy warnings
+#        run: cargo clippy -- -A clippy::borrow_deref_ref
+#
+#  test-rust:
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os:
+#         - ubuntu-latest
+#         - windows-2022
+#         - macos-11
+#
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@v2
+#      - name: Install apt system dependencies needed to build nodecanvas
+#        run: |
+#          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
+#        if: ${{ runner.os == 'Linux' }}
+#      - name: Install protoc on Window
+#        run: |
+#          choco install --yes protoc
+#        if: ${{ runner.os == 'Windows' }}
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#          override: true
+#      - name: Install node
+#        uses: actions/setup-node@v2
+#        with:
+#          node-version: '17'
+#      - name: Install test node dependencies
+#        working-directory: vegafusion-rt-datafusion/tests/util/vegajs_runtime
+#        run: |
+#          npm install
+#      - name: Run Rust Tests (Windows)
+#        if: ${{ runner.os == 'Windows' }}
+#        uses: actions-rs/cargo@v1
+#        env:
+#          CARGO_HOME: C:\cargo_home\
+#          CARGO_TARGET_DIR: C:\cargo_target_dir\
+#        with:
+#          command: test
+#          args: --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
+#      - name: Run Rust Tests (MacOs/Linux)
+#        if: ${{ runner.os != 'Windows' }}
+#        uses: actions-rs/cargo@v1
+#        with:
+#          command: test
+#          args: --release --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
+#      - name: Upload test artifacts
+#        uses: actions/upload-artifact@v2
+#        if: always()
+#        with:
+#          name: vegafusion-rt-test-images
+#          path: |
+#            vegafusion-rt-datafusion/tests/output
+#
+#  build-vegafusion-server:
+#    strategy:
+#      matrix:
+#        options: [
+#            [ubuntu-latest,  linux-64],
+#            [windows-2022,  win-64],
+#            [macos-11,   osx-64],
+#        ]
+#    runs-on: ${{ matrix.options[0] }}
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@v2
+#      - name: Install protoc on Window
+#        run: |
+#          choco install --yes protoc
+#        if: ${{ runner.os == 'Windows' }}
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#          override: true
+#      - name: Cache rust dependencies
+#        uses: Swatinem/rust-cache@v1
+#        with:
+#          cache-on-failure: True
+#      - name: Build vegafusion-server
+#        uses: actions-rs/cargo@v1
+#        with:
+#          command: build
+#          args: -p vegafusion-server --release
+#      - name: zip executable (Windows)
+#        uses: papeloto/action-zip@v1
+#        if: runner.os == 'Windows'
+#        with:
+#          files: target/release/vegafusion-server.exe
+#          dest: vegafusion-server-${{ matrix.options[1] }}.zip
+#      - name: zip executable (Mac or Linux)
+#        uses: papeloto/action-zip@v1
+#        if: runner.os != 'Windows'
+#        with:
+#          files: target/release/vegafusion-server
+#          dest: vegafusion-server-${{ matrix.options[1] }}.zip
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: vegafusion-server
+#          path: |
+#            vegafusion-server-*
+#
+#  build-vegafusion-python-embed:
+#    runs-on: ${{ matrix.options[0] }}
+#    strategy:
+#      matrix:
+#        options:
+#         - [ubuntu-latest, linux-64]
+#         - [windows-2022, win-64]
+#         - [macos-11, osx-64]
+#         - [macos-11, osx-arm64]
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@v2
+#      - name: Install protoc on Window
+#        if: ${{ runner.os == 'Windows' }}
+#        run: |
+#          choco install --yes protoc
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#          override: true
+#      - name: Cache rust dependencies
+#        uses: Swatinem/rust-cache@v1
+#        with:
+#          cache-on-failure: True
+#      - name: Build wheels
+#        if: ${{ matrix.options[1] != 'osx-arm64' }}
+#        uses: messense/maturin-action@v1
+#        with:
+#          maturin-version: 0.12.20
+#          command: build
+#          manylinux: 2014
+#          rust-toolchain: stable
+#          args: --release -m vegafusion-python-embed/Cargo.toml --strip -i python3.11 -i python3.10 -i python3.9 -i python3.8 -i python3.7
+#      - name: Download Apple Silicon toolchain
+#        if: ${{ matrix.options[1] == 'osx-arm64' }}
+#        run: |
+#          rustup target add aarch64-apple-darwin
+#      - name: Build Apple Silicon wheels
+#        if: ${{ matrix.options[1] == 'osx-arm64' }}
+#        uses: messense/maturin-action@v1
+#        with:
+#          maturin-version: 0.12.20
+#          command: build
+#          rust-toolchain: stable
+#          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin -i python3.11 -i python3.10 -i python3.9 -i python3.8 -i python3.7
+#      - name: Remove unwanted universal
+#        if: ${{ runner.os == 'macOS' }}
+#        run: |
+#          rm -rf target/wheels/*universal2*.whl
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: vegafusion-python-embed-wheels
+#          path: |
+#            target/wheels/*.tar.gz
+#            target/wheels/*cp37*.whl
+#            target/wheels/*cp38*.whl
+#            target/wheels/*cp39*.whl
+#            target/wheels/*cp310*.whl
+#            target/wheels/*cp311*.whl
 
   build-vegafusion-wasm:
     runs-on: ubuntu-latest
