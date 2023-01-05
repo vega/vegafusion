@@ -1,11 +1,3 @@
-/*
- * VegaFusion
- * Copyright (C) 2022 VegaFusion Technologies LLC
- *
- * This program is distributed under multiple licenses.
- * Please consult the license documentation provided alongside
- * this program the details of the active license.
- */
 use crate::error::Result;
 use crate::planning::dependency_graph::{get_supported_data_variables, scoped_var_for_input_var};
 use crate::proto::gen::tasks::Variable;

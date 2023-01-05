@@ -1,11 +1,3 @@
-/*
- * VegaFusion
- * Copyright (C) 2022 VegaFusion Technologies LLC
- *
- * This program is distributed under multiple licenses.
- * Please consult the license documentation provided alongside
- * this program the details of the active license.
- */
 use datafusion::arrow::array::{ArrayRef, BooleanArray, Float32Array, Float64Array};
 use datafusion::arrow::compute::no_simd_compare_op_scalar;
 use datafusion::arrow::datatypes::DataType;
