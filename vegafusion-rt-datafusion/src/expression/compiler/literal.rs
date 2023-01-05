@@ -1,11 +1,3 @@
-/*
- * VegaFusion
- * Copyright (C) 2022 VegaFusion Technologies LLC
- *
- * This program is distributed under multiple licenses.
- * Please consult the license documentation provided alongside
- * this program the details of the active license.
- */
 use datafusion::logical_expr::{lit, Expr};
 use datafusion::scalar::ScalarValue;
 use vegafusion_core::proto::gen::expression::{literal, Literal};

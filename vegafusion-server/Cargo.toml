@@ -6,7 +6,7 @@ path = "src/main.rs"
 name = "vegafusion-server"
 version = "1.0.0-rc1"
 edition = "2021"
-license = "AGPL-3.0-or-later"
+license = "BSD-3-Clause"
 
 [dependencies]
 prost = "0.11.3"

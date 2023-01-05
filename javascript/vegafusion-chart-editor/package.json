@@ -21,7 +21,7 @@
     "webpack"
   ],
   "author": "Jon Mease <jonmmease@gmail.com>",
-  "license": "AGPL3",
+  "license": "BSD-3-Clause",
   "bugs": {
     "url": "https://github.com/rustwasm/create-wasm-app/issues"
   },
@@ -36,7 +36,8 @@
     "vega": "^5.22.1",
     "vega-lite": "^4.17.0",
     "vega-tooltip": "^0.27.0",
-    "vegafusion-embed": "../vegafusion-embed"
+    "vegafusion-embed": "../vegafusion-embed",
+    "vegafusion-wasm": "../../vegafusion-wasm/pkg"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^10.0.0",

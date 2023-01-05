@@ -1,12 +1,3 @@
-/*
- * VegaFusion
- * Copyright (C) 2022 VegaFusion Technologies LLC
- *
- * This program is distributed under multiple licenses.
- * Please consult the license documentation provided alongside
- * this program the details of the active license.
- */
-
 use tonic::{transport::Server, Request, Response, Status};
 use vegafusion_core::error::{ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{

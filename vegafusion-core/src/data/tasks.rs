@@ -1,11 +1,3 @@
-/*
- * VegaFusion
- * Copyright (C) 2022 VegaFusion Technologies LLC
- *
- * This program is distributed under multiple licenses.
- * Please consult the license documentation provided alongside
- * this program the details of the active license.
- */
 use crate::proto::gen::tasks::data_url_task::Url;
 use crate::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask, SignalTask, Variable};
 use crate::task_graph::task::{InputVariable, TaskDependencies};

@@ -1,11 +1,3 @@
-/*
- * VegaFusion
- * Copyright (C) 2022 VegaFusion Technologies LLC
- *
- * This program is distributed under multiple licenses.
- * Please consult the license documentation provided alongside
- * this program the details of the active license.
- */
 use crate::expression::compiler::utils::{is_numeric_datatype, is_string_datatype};
 use datafusion::arrow::array::{
     new_null_array, Array, ArrayRef, Float64Array, Int32Array, StringArray,

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# Copyright (c) VegaFusion Technologies LLC.
 import pytest
 
 from ipykernel.comm import Comm

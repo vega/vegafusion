@@ -1,11 +1,3 @@
-/*
- * VegaFusion
- * Copyright (C) 2022 VegaFusion Technologies LLC
- *
- * This program is distributed under multiple licenses.
- * Please consult the license documentation provided alongside
- * this program the details of the active license.
- */
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::arrow::array::{
     Array, ArrayDataBuilder, ArrayRef, BooleanBufferBuilder, Int32Array, ListArray,
