@@ -1,4 +1,3 @@
-
 use datafusion::common::DFSchema;
 
 use datafusion_expr::Expr;
