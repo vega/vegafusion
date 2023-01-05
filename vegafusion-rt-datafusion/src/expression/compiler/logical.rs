@@ -1,11 +1,3 @@
-/*
- * VegaFusion
- * Copyright (C) 2022 VegaFusion Technologies LLC
- *
- * This program is distributed under multiple licenses.
- * Please consult the license documentation provided alongside
- * this program the details of the active license.
- */
 use crate::expression::compiler::utils::{cast_to, data_type, is_numeric_datatype, to_boolean};
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion::arrow::datatypes::DataType;

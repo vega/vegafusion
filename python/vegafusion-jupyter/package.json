@@ -22,7 +22,7 @@
   },
   "license": "AGPL-3.0-or-later",
   "author": {
-    "name": "VegaFusion Technologies LLC",
+    "name": "Jon Mease",
     "email": "jon@vegafusion.io"
   },
   "main": "lib/index.js",

@@ -1,11 +1,3 @@
-/*
- * VegaFusion
- * Copyright (C) 2022 VegaFusion Technologies LLC
- *
- * This program is distributed under multiple licenses.
- * Please consult the license documentation provided alongside
- * this program the details of the active license.
- */
 use vegafusion_core::planning::extract::extract_server_data;
 use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig, Variable};
 use vegafusion_core::spec::chart::ChartSpec;

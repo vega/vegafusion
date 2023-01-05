@@ -69,7 +69,7 @@ setup_args = dict(
     scripts         = glob(pjoin('scripts', '*')),
     cmdclass        = cmdclass,
     packages        = find_packages(".", exclude=["tests"]),
-    author          = 'VegaFusion Technologies LLC',
+    author          = 'Jon Mease',
     author_email    = 'jon@vegafusion.io',
     url             = 'https://github.com/jonmmease/vegafusion',
     license         = 'AGPL-3.0-or-later',

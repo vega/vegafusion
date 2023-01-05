@@ -1,28 +1,3 @@
-/*
- * VegaFusion
- * Copyright (C) 2022 VegaFusion Technologies LLC
- *
- * This program is distributed under multiple licenses.
- * Please consult the license documentation provided alongside
- * this program the details of the active license.
- */
-// use std::sync::Arc;
-// use vegafusion_core::data::scalar::ScalarValue;
-// use vegafusion_core::expression::parser::parse;
-// use vegafusion_core::proto::gen::tasks::data_url_task::Url;
-// use vegafusion_core::proto::gen::tasks::{
-//     DataSourceTask, DataUrlTask, NodeValueIndex, Task, TaskGraph, Variable,
-// };
-// use vegafusion_core::proto::gen::transforms::transform::TransformKind;
-// use vegafusion_core::proto::gen::transforms::{
-//     Collect, Extent, SortOrder, Transform, TransformPipeline,
-// };
-// use vegafusion_core::spec::chart::ChartSpec;
-// use vegafusion_core::task_graph::scope::TaskScope;
-// use vegafusion_core::task_graph::task_value::TaskValue;
-// use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
-//
-
 use assert_cmd::prelude::*;
 use std::time::Duration;
 use vegafusion_core::data::scalar::ScalarValueHelpers;

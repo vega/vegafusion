@@ -1,11 +1,3 @@
-/*
- * VegaFusion
- * Copyright (C) 2022 VegaFusion Technologies LLC
- *
- * This program is distributed under multiple licenses.
- * Please consult the license documentation provided alongside
- * this program the details of the active license.
- */
 use crate::data::scalar::{ScalarValue, ScalarValueHelpers};
 use crate::data::table::VegaFusionTable;
 use crate::error::{Result, ResultWithContext, VegaFusionError};

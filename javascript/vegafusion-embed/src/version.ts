@@ -1,12 +1,3 @@
-/*
- * VegaFusion
- * Copyright (C) 2022 VegaFusion Technologies LLC
- *
- * This program is distributed under multiple licenses.
- * Please consult the license documentation provided alongside
- * this program the details of the active license.
- */
-
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 // eslint-disable-next-line @typescript-eslint/no-var-requires

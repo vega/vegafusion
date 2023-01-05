@@ -1,11 +1,3 @@
-/*
- * VegaFusion
- * Copyright (C) 2022 VegaFusion Technologies LLC
- *
- * This program is distributed under multiple licenses.
- * Please consult the license documentation provided alongside
- * this program the details of the active license.
- */
 use crate::expression::compiler::array::array_constructor_udf;
 use crate::expression::compiler::builtin_functions::array::indexof::make_indexof_udf;
 use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
