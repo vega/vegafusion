@@ -6,7 +6,7 @@ harness = false
 name = "vegafusion-rt-datafusion"
 license = "AGPL-3.0-or-later"
 edition = "2021"
-version = "0.11.0-rc12"
+version = "1.0.0-rc1"
 
 [features]
 pyarrow = [ "vegafusion-core/pyarrow",]

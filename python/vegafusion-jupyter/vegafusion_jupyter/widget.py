@@ -34,7 +34,6 @@ class VegaFusionWidget(DOMWidget):
     verbose = Bool(False).tag(sync=True)
     debounce_wait = Float(30, allow_none=False).tag(sync=True)
     debounce_max_wait = Float(60, allow_none=True).tag(sync=True)
-    download_source_link = Unicode(None, allow_none=True).tag(sync=True)
 
     # Message transport properties
     _request_msg = CBytes(allow_none=True, read_only=True).tag(sync=True)
@@ -77,7 +76,7 @@ class VegaFusionWidget(DOMWidget):
         if alt.renderers.active == "vegafusion-widget":
             # Use configured debounce options, if any
             renderer_opts = alt.renderers.options
-            for opt in ["debounce_wait", "debounce_max_wait", "download_source_link"]:
+            for opt in ["debounce_wait", "debounce_max_wait"]:
                 if opt in renderer_opts:
                     kwargs.setdefault(opt, renderer_opts[opt])
 

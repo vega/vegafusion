@@ -23,11 +23,10 @@ export interface EmbedConfig {
     verbose: boolean;
     debounce_wait: number;
     debounce_max_wait: number | undefined;
-    download_source_link: string | undefined;
 }
 
 const defaultEmbedConfig: EmbedConfig = {
-    verbose: false, debounce_wait: 30, debounce_max_wait: 60, download_source_link: undefined
+    verbose: false, debounce_wait: 30, debounce_max_wait: 60
 }
 
 export function embedVegaFusion(
@@ -65,7 +64,7 @@ export function embedVegaFusion(
 
     // Element that holds the dropdown menu
     let menuElement = document.createElement("div");
-    menuElement.appendChild(buildMenu(receiver, undefined));
+    menuElement.appendChild(buildMenu(receiver));
 
     // Add children to top-level element
     element.appendChild(containerElement);
@@ -76,7 +75,7 @@ export function embedVegaFusion(
     return receiver
 }
 
-function buildMenu(receiver: MsgReceiver, download_source_link: string | undefined): Element {
+function buildMenu(receiver: MsgReceiver): Element {
     const details = document.createElement('details');
     details.title = I18N.CLICK_TO_VIEW_ACTIONS;
 
@@ -133,34 +132,6 @@ function buildMenu(receiver: MsgReceiver, download_source_link: string | undefin
     aboutLink.target = '_blank';
     aboutLink.title = about_href;
     ctrl.append(aboutLink);
-
-    // Add License
-    const licenseLink = document.createElement('a');
-    const licence_href = 'https://www.gnu.org/licenses/agpl-3.0.en.html';
-    licenseLink.text = "AGPLv3 License";
-    licenseLink.href = licence_href;
-    licenseLink.target = '_blank';
-    licenseLink.title = licence_href;
-    ctrl.append(licenseLink);
-
-    // Add source message
-    if (download_source_link) {
-        const sourceItem = document.createElement('a');
-        sourceItem.text = 'Download Source';
-        sourceItem.href = download_source_link;
-        sourceItem.target = '_blank';
-        sourceItem.title = download_source_link;
-        ctrl.append(sourceItem);
-    } else {
-        const sourceItem = document.createElement('p');
-        sourceItem.classList.add('source-msg');
-        sourceItem.textContent =
-            "VegaFusion's AGPLv3 license requires " +
-            "the author to provide this application's " +
-            'source code upon request';
-        sourceItem.title = '';
-        ctrl.append(sourceItem);
-    }
 
     return details;
 }
