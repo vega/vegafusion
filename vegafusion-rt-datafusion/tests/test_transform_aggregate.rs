@@ -16,14 +16,14 @@ use vegafusion_core::spec::values::{Field, SignalExpressionSpec};
 
 mod test_aggregate_single {
     use crate::*;
+    use crate::util::check::eval_vegafusion_transforms;
 
     #[rstest(
         op,
         case(AggregateOpSpec::Count),
         case(AggregateOpSpec::Valid),
         case(AggregateOpSpec::Missing),
-        // Vega counts null as distinct category but DataFusion does not
-        // case(AggregateOpSpec::Distinct),
+        case(AggregateOpSpec::Distinct),
         case(AggregateOpSpec::Sum),
         case(AggregateOpSpec::Mean),
         case(AggregateOpSpec::Average),
@@ -36,7 +36,7 @@ mod test_aggregate_single {
         let aggregate_spec = AggregateTransformSpec {
             groupby: vec![Field::String("Species".to_string())],
             fields: Some(vec![Some(Field::String("Beak Depth (mm)".to_string()))]),
-            ops: Some(vec![op]),
+            ops: Some(vec![op.clone()]),
             as_: None,
             cross: None,
             drop: None,
@@ -48,31 +48,40 @@ mod test_aggregate_single {
         let comp_config = Default::default();
 
         // Order of grouped rows is not defined, so set row_order to false
-        let eq_config = TablesEqualConfig {
-            row_order: false,
-            ..Default::default()
-        };
+        if matches!(op, AggregateOpSpec::Distinct) {
+            // Vega counts null as distinct category but DataFusion does not.
+            // Just make sure it doesn't crash
+            eval_vegafusion_transforms(
+                &dataset,
+                transform_specs.as_slice(),
+                &comp_config,
+            );
+        } else {
+            let eq_config = TablesEqualConfig {
+                row_order: false,
+                ..Default::default()
+            };
 
-        check_transform_evaluation(
-            &dataset,
-            transform_specs.as_slice(),
-            &comp_config,
-            &eq_config,
-        );
+            check_transform_evaluation(
+                &dataset,
+                transform_specs.as_slice(),
+                &comp_config,
+                &eq_config,
+            );
+        }
     }
 }
 
 mod test_aggregate_multi {
     use crate::*;
+    use crate::util::check::eval_vegafusion_transforms;
 
     #[rstest(
         op1, op2,
-        // DataFusion error when two copies of Count(lit(0)) are included
-        // case(AggregateOpSpec::Count, AggregateOpSpec::Count),
+        case(AggregateOpSpec::Count, AggregateOpSpec::Count),
         case(AggregateOpSpec::Valid, AggregateOpSpec::Missing),
         case(AggregateOpSpec::Missing, AggregateOpSpec::Valid),
-        // Vega counts null as distinct category but DataFusion does not
-        // case(AggregateOpSpec::Distinct),
+        case(AggregateOpSpec::Distinct, AggregateOpSpec::Valid),
         case(AggregateOpSpec::Sum, AggregateOpSpec::Max),
         case(AggregateOpSpec::Mean, AggregateOpSpec::Sum),
         case(AggregateOpSpec::Average, AggregateOpSpec::Mean),
@@ -92,7 +101,7 @@ mod test_aggregate_multi {
                 Some(Field::String("Beak Depth (mm)".to_string())),
                 Some(Field::String("Flipper Length (mm)".to_string())),
             ]),
-            ops: Some(vec![op1, op2]),
+            ops: Some(vec![op1.clone(), op2.clone()]),
             as_: None,
             cross: None,
             drop: None,
@@ -103,18 +112,28 @@ mod test_aggregate_multi {
 
         let comp_config = Default::default();
 
-        // Order of grouped rows is not defined, so set row_order to false
-        let eq_config = TablesEqualConfig {
-            row_order: false,
-            ..Default::default()
-        };
+        if matches!(op1, AggregateOpSpec::Distinct) || matches!(op2, AggregateOpSpec::Distinct) {
+            // Vega counts null as distinct category but DataFusion does not
+            eval_vegafusion_transforms(
+                &dataset,
+                transform_specs.as_slice(),
+                &comp_config,
+            );
+        } else {
+            // Order of grouped rows is not defined, so set row_order to false
+            let eq_config = TablesEqualConfig {
+                row_order: false,
+                ..Default::default()
+            };
 
-        check_transform_evaluation(
-            &dataset,
-            transform_specs.as_slice(),
-            &comp_config,
-            &eq_config,
-        );
+            check_transform_evaluation(
+                &dataset,
+                transform_specs.as_slice(),
+                &comp_config,
+                &eq_config,
+            );
+        }
+
     }
 }
 

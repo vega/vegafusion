@@ -96,6 +96,23 @@ pub fn check_transform_evaluation(
     // );
     // println!("expected signals: {:?}", expected_signals);
 
+    let (result_data, result_signals) = eval_vegafusion_transforms(data, transform_specs, &compilation_config);
+
+    // println!(
+    //     "result data\n{}",
+    //     result_data.pretty_format(Some(500)).unwrap()
+    // );
+    // println!("result signals: {:?}", result_signals);
+
+    assert_tables_equal(&result_data, &expected_data, equality_config);
+    assert_signals_almost_equal(result_signals, expected_signals, equality_config.tolerance);
+}
+
+pub fn eval_vegafusion_transforms(
+    data: &VegaFusionTable,
+    transform_specs: &[TransformSpec],
+    compilation_config: &CompilationConfig
+) -> (VegaFusionTable, Vec<ScalarValue>) {
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
     let sql_df = (*TOKIO_RUNTIME).block_on(data.to_sql_dataframe()).unwrap();
 
@@ -107,13 +124,5 @@ pub fn check_transform_evaluation(
         .map(|v| v.as_scalar().map(|v| v.clone()))
         .collect::<Result<Vec<ScalarValue>>>()
         .unwrap();
-
-    // println!(
-    //     "result data\n{}",
-    //     result_data.pretty_format(Some(500)).unwrap()
-    // );
-    // println!("result signals: {:?}", result_signals);
-
-    assert_tables_equal(&result_data, &expected_data, equality_config);
-    assert_signals_almost_equal(result_signals, expected_signals, equality_config.tolerance);
+    (result_data, result_signals)
 }
