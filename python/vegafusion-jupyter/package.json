@@ -20,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/vegafusion/vegafusion/issues"
   },
-  "license": "AGPL-3.0-or-later",
+  "license": "BSD-3-Clause",
   "author": {
     "name": "Jon Mease",
     "email": "jon@vegafusion.io"
