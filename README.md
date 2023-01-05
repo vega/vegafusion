@@ -9,7 +9,7 @@ The core VegaFusion algorithms are implemented in Rust. Python integration is pr
 See the documentation at https://vegafusion.io
 
 ## Project Status
-VegaFusion is a young project, but it is already fairly well tested. The integration test suite includes image comparisons with over 600 specifications from the Vega, Vega-Lite, and Altair galleries.
+VegaFusion is a young project, but it is already fairly well tested and used in production at Hex. The integration test suite includes image comparisons with over 600 specifications from the Vega, Vega-Lite, and Altair galleries.
 
 ## Quickstart 1: Overcome `MaxRowsError` with VegaFusion
 The VegaFusion mime renderer can be used to overcome the Altair [`MaxRowsError`](https://altair-viz.github.io/user_guide/faq.html#maxrowserror-how-can-i-plot-large-datasets) by performing data-intensive aggregations on the server and pruning unused columns from the source dataset.  First install the `vegafusion` Python package with the `embed` extras enabled
@@ -168,10 +168,10 @@ For datasets of a few thousand rows or fewer, this architecture results in extre
 ## DataFusion integration
 [Apache Arrow DataFusion](https://github.com/apache/arrow-datafusion) is an SQL compatible query engine that integrates with the Rust implementation of Apache Arrow.  VegaFusion uses DataFusion to implement many of the Vega transforms, and it compiles the Vega expression language directly into the DataFusion expression language.  In addition to being quite fast, a particularly powerful characteristic of DataFusion is that it provides many interfaces that can be extended with custom Rust logic.  For example, VegaFusion defines many custom UDFs that are designed to implement the precise semantics of the Vega expression language and the Vega expression functions.
 
-# License and Copyright
-VegaFusion is released under the [AGPLv3 license](https://www.gnu.org/licenses/agpl-3.0.en.html).  This is a copy-left license in the GPL family of licenses. As with all [OSI approved licenses](https://opensource.org/licenses/alphabetical), there are no restrictions on what code licensed under AGPLv3 can be used for. However, the requirements for what must be shared publicly are greater than for licenses that are more commonly used in the Python ecosystem like [Apache-2](https://opensource.org/licenses/Apache-2.0), [MIT](https://opensource.org/licenses/MIT), and [BSD-3](https://opensource.org/licenses/BSD-3-Clause).
+# License
+As of version 1.0, VegaFusion is licensed under the [BSD-3](https://opensource.org/licenses/BSD-3-Clause) license. This is the same license used by Vega, Vega-Lite, and Altair.
 
-The VegaFusion copyright is owned by _VegaFusion Technologies LLC_, and contributors are asked to sign a Contributor License Agreement (based on the Oracle CLA) that grants the company the non-exclusive right to re-license the contribution in the future.
+Prior versions were released under the [AGPLv3 license](https://www.gnu.org/licenses/agpl-3.0.en.html).
 
 # About the Name
 There are two meanings behind the name "VegaFusion"
