@@ -92,10 +92,13 @@ setup_args = dict(
     install_requires = [
         'ipywidgets>=7.0.0,<9',
         'altair>=4.2.0',
-        'vegafusion',
+        'vegafusion>=1.0.0rc1',
     ],
     extras_require={
-        'embed': ["vegafusion-python-embed", "vl-convert-python"],
+        'embed': [
+            "vegafusion-python-embed>=1.0.0rc1",
+            "vl-convert-python>=0.7.0"
+        ],
     },
     entry_points = {
     },
