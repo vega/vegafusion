@@ -96,7 +96,8 @@ pub fn check_transform_evaluation(
     // );
     // println!("expected signals: {:?}", expected_signals);
 
-    let (result_data, result_signals) = eval_vegafusion_transforms(data, transform_specs, &compilation_config);
+    let (result_data, result_signals) =
+        eval_vegafusion_transforms(data, transform_specs, &compilation_config);
 
     // println!(
     //     "result data\n{}",
@@ -111,7 +112,7 @@ pub fn check_transform_evaluation(
 pub fn eval_vegafusion_transforms(
     data: &VegaFusionTable,
     transform_specs: &[TransformSpec],
-    compilation_config: &CompilationConfig
+    compilation_config: &CompilationConfig,
 ) -> (VegaFusionTable, Vec<ScalarValue>) {
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
     let sql_df = (*TOKIO_RUNTIME).block_on(data.to_sql_dataframe()).unwrap();

@@ -15,8 +15,8 @@ use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_core::spec::values::{Field, SignalExpressionSpec};
 
 mod test_aggregate_single {
-    use crate::*;
     use crate::util::check::eval_vegafusion_transforms;
+    use crate::*;
 
     #[rstest(
         op,
@@ -29,7 +29,7 @@ mod test_aggregate_single {
         case(AggregateOpSpec::Average),
         case(AggregateOpSpec::Min),
         case(AggregateOpSpec::Max),
-        case(AggregateOpSpec::Median),
+        case(AggregateOpSpec::Median)
     )]
     fn test(op: AggregateOpSpec) {
         let dataset = vega_json_dataset("penguins");
@@ -51,11 +51,7 @@ mod test_aggregate_single {
         if matches!(op, AggregateOpSpec::Distinct) {
             // Vega counts null as distinct category but DataFusion does not.
             // Just make sure it doesn't crash
-            eval_vegafusion_transforms(
-                &dataset,
-                transform_specs.as_slice(),
-                &comp_config,
-            );
+            eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &comp_config);
         } else {
             let eq_config = TablesEqualConfig {
                 row_order: false,
@@ -73,11 +69,12 @@ mod test_aggregate_single {
 }
 
 mod test_aggregate_multi {
-    use crate::*;
     use crate::util::check::eval_vegafusion_transforms;
+    use crate::*;
 
     #[rstest(
-        op1, op2,
+        op1,
+        op2,
         case(AggregateOpSpec::Count, AggregateOpSpec::Count),
         case(AggregateOpSpec::Valid, AggregateOpSpec::Missing),
         case(AggregateOpSpec::Missing, AggregateOpSpec::Valid),
@@ -87,7 +84,7 @@ mod test_aggregate_multi {
         case(AggregateOpSpec::Average, AggregateOpSpec::Mean),
         case(AggregateOpSpec::Min, AggregateOpSpec::Average),
         case(AggregateOpSpec::Max, AggregateOpSpec::Min),
-        case(AggregateOpSpec::Median, AggregateOpSpec::Average),
+        case(AggregateOpSpec::Median, AggregateOpSpec::Average)
     )]
     fn test(op1: AggregateOpSpec, op2: AggregateOpSpec) {
         let dataset = vega_json_dataset("penguins");
@@ -114,11 +111,7 @@ mod test_aggregate_multi {
 
         if matches!(op1, AggregateOpSpec::Distinct) || matches!(op2, AggregateOpSpec::Distinct) {
             // Vega counts null as distinct category but DataFusion does not
-            eval_vegafusion_transforms(
-                &dataset,
-                transform_specs.as_slice(),
-                &comp_config,
-            );
+            eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &comp_config);
         } else {
             // Order of grouped rows is not defined, so set row_order to false
             let eq_config = TablesEqualConfig {
@@ -133,7 +126,6 @@ mod test_aggregate_multi {
                 &eq_config,
             );
         }
-
     }
 }
 
@@ -238,30 +230,33 @@ fn test_aggregate_overwrite() {
     );
 }
 
-
 mod test_aggregate_with_nulls {
+    use crate::util::check::eval_vegafusion_transforms;
+    use crate::*;
     use serde_json::json;
     use vegafusion_core::data::table::VegaFusionTable;
-    use crate::*;
-    use crate::util::check::eval_vegafusion_transforms;
 
     #[rstest(
-    op,
-    case(AggregateOpSpec::Count),
-    case(AggregateOpSpec::Valid),
-    case(AggregateOpSpec::Missing),
-    case(AggregateOpSpec::Distinct),
+        op,
+        case(AggregateOpSpec::Count),
+        case(AggregateOpSpec::Valid),
+        case(AggregateOpSpec::Missing),
+        case(AggregateOpSpec::Distinct)
     )]
     fn test(op: AggregateOpSpec) {
-        let dataset = VegaFusionTable::from_json(&json!(
-            [
-                {"SHIP": "A", "NULL_ORDER_IDS": null},
-                {"SHIP": "B", "NULL_ORDER_IDS": "CA-2011-168312"},
-                {"SHIP": "C", "NULL_ORDER_IDS": "CA-2011-131009"},
-                {"SHIP": "D", "NULL_ORDER_IDS": "CA-2011-131009"},
-                {"SHIP": "E", "NULL_ORDER_IDS": "CA-2011-131009"}
-            ]
-        ), 1024).unwrap();
+        let dataset = VegaFusionTable::from_json(
+            &json!(
+                [
+                    {"SHIP": "A", "NULL_ORDER_IDS": null},
+                    {"SHIP": "B", "NULL_ORDER_IDS": "CA-2011-168312"},
+                    {"SHIP": "C", "NULL_ORDER_IDS": "CA-2011-131009"},
+                    {"SHIP": "D", "NULL_ORDER_IDS": "CA-2011-131009"},
+                    {"SHIP": "E", "NULL_ORDER_IDS": "CA-2011-131009"}
+                ]
+            ),
+            1024,
+        )
+        .unwrap();
 
         let aggregate_spec = AggregateTransformSpec {
             groupby: vec![Field::String("SHIP".to_string())],
@@ -281,11 +276,7 @@ mod test_aggregate_with_nulls {
         if matches!(op, AggregateOpSpec::Distinct) {
             // Vega counts null as distinct category but DataFusion does not.
             // Just make sure it doesn't crash
-            eval_vegafusion_transforms(
-                &dataset,
-                transform_specs.as_slice(),
-                &comp_config,
-            );
+            eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &comp_config);
         } else {
             let eq_config = TablesEqualConfig {
                 row_order: false,
