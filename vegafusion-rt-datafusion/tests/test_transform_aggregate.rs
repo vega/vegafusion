@@ -237,3 +237,67 @@ fn test_aggregate_overwrite() {
         &eq_config,
     );
 }
+
+
+mod test_aggregate_with_nulls {
+    use serde_json::json;
+    use vegafusion_core::data::table::VegaFusionTable;
+    use crate::*;
+    use crate::util::check::eval_vegafusion_transforms;
+
+    #[rstest(
+    op,
+    case(AggregateOpSpec::Count),
+    case(AggregateOpSpec::Valid),
+    case(AggregateOpSpec::Missing),
+    case(AggregateOpSpec::Distinct),
+    )]
+    fn test(op: AggregateOpSpec) {
+        let dataset = VegaFusionTable::from_json(&json!(
+            [
+                {"SHIP": "A", "NULL_ORDER_IDS": null},
+                {"SHIP": "B", "NULL_ORDER_IDS": "CA-2011-168312"},
+                {"SHIP": "C", "NULL_ORDER_IDS": "CA-2011-131009"},
+                {"SHIP": "D", "NULL_ORDER_IDS": "CA-2011-131009"},
+                {"SHIP": "E", "NULL_ORDER_IDS": "CA-2011-131009"}
+            ]
+        ), 1024).unwrap();
+
+        let aggregate_spec = AggregateTransformSpec {
+            groupby: vec![Field::String("SHIP".to_string())],
+            fields: Some(vec![Some(Field::String("NULL_ORDER_IDS".to_string()))]),
+            ops: Some(vec![op.clone()]),
+            as_: None,
+            cross: None,
+            drop: None,
+            key: None,
+            extra: Default::default(),
+        };
+        let transform_specs = vec![TransformSpec::Aggregate(aggregate_spec)];
+
+        let comp_config = Default::default();
+
+        // Order of grouped rows is not defined, so set row_order to false
+        if matches!(op, AggregateOpSpec::Distinct) {
+            // Vega counts null as distinct category but DataFusion does not.
+            // Just make sure it doesn't crash
+            eval_vegafusion_transforms(
+                &dataset,
+                transform_specs.as_slice(),
+                &comp_config,
+            );
+        } else {
+            let eq_config = TablesEqualConfig {
+                row_order: false,
+                ..Default::default()
+            };
+
+            check_transform_evaluation(
+                &dataset,
+                transform_specs.as_slice(),
+                &comp_config,
+                &eq_config,
+            );
+        }
+    }
+}
