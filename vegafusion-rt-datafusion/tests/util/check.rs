@@ -96,17 +96,8 @@ pub fn check_transform_evaluation(
     // );
     // println!("expected signals: {:?}", expected_signals);
 
-    let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
-    let sql_df = (*TOKIO_RUNTIME).block_on(data.to_sql_dataframe()).unwrap();
-
-    let (result_data, result_signals) = TOKIO_RUNTIME
-        .block_on(pipeline.eval_sql(sql_df, &compilation_config))
-        .unwrap();
-    let result_signals = result_signals
-        .into_iter()
-        .map(|v| v.as_scalar().map(|v| v.clone()))
-        .collect::<Result<Vec<ScalarValue>>>()
-        .unwrap();
+    let (result_data, result_signals) =
+        eval_vegafusion_transforms(data, transform_specs, &compilation_config);
 
     // println!(
     //     "result data\n{}",
@@ -116,4 +107,23 @@ pub fn check_transform_evaluation(
 
     assert_tables_equal(&result_data, &expected_data, equality_config);
     assert_signals_almost_equal(result_signals, expected_signals, equality_config.tolerance);
+}
+
+pub fn eval_vegafusion_transforms(
+    data: &VegaFusionTable,
+    transform_specs: &[TransformSpec],
+    compilation_config: &CompilationConfig,
+) -> (VegaFusionTable, Vec<ScalarValue>) {
+    let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
+    let sql_df = (*TOKIO_RUNTIME).block_on(data.to_sql_dataframe()).unwrap();
+
+    let (result_data, result_signals) = TOKIO_RUNTIME
+        .block_on(pipeline.eval_sql(sql_df, compilation_config))
+        .unwrap();
+    let result_signals = result_signals
+        .into_iter()
+        .map(|v| v.as_scalar().map(|v| v.clone()))
+        .collect::<Result<Vec<ScalarValue>>>()
+        .unwrap();
+    (result_data, result_signals)
 }

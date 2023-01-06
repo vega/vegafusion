@@ -12,3 +12,20 @@ members = [
 ## Tell `rustc` to use highest performance optimization and perform Link Time Optimization
 opt-level = 3
 # lto = true
+
+[patch.crates-io]
+
+# Arrow 28.0 with backports
+arrow = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
+arrow-cast = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
+arrow-ipc = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
+arrow-data = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
+arrow-buffer = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
+arrow-schema = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
+arrow-array = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
+arrow-select = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
+
+# DataFusion 15.0 with backports
+datafusion = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6"}
+datafusion-common = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6"}
+datafusion-expr = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6"}

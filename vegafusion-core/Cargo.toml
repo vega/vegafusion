@@ -37,8 +37,7 @@ default_features = false
 features = [ "ipc", "json",]
 
 [dependencies.datafusion-common]
-git = "https://github.com/jonmmease/arrow-datafusion.git"
-rev = "45214e5ff61c5603d696f5a2bc8c297e4bd6b7b6"
+version = "~15.0.0"
 
 [dependencies.pyo3]
 version = "0.17.1"

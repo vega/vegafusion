@@ -15,6 +15,7 @@ use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_core::spec::values::{Field, SignalExpressionSpec};
 
 mod test_aggregate_single {
+    use crate::util::check::eval_vegafusion_transforms;
     use crate::*;
 
     #[rstest(
@@ -22,21 +23,20 @@ mod test_aggregate_single {
         case(AggregateOpSpec::Count),
         case(AggregateOpSpec::Valid),
         case(AggregateOpSpec::Missing),
-        // Vega counts null as distinct category but DataFusion does not
-        // case(AggregateOpSpec::Distinct),
+        case(AggregateOpSpec::Distinct),
         case(AggregateOpSpec::Sum),
         case(AggregateOpSpec::Mean),
         case(AggregateOpSpec::Average),
         case(AggregateOpSpec::Min),
         case(AggregateOpSpec::Max),
-        case(AggregateOpSpec::Median),
+        case(AggregateOpSpec::Median)
     )]
     fn test(op: AggregateOpSpec) {
         let dataset = vega_json_dataset("penguins");
         let aggregate_spec = AggregateTransformSpec {
             groupby: vec![Field::String("Species".to_string())],
             fields: Some(vec![Some(Field::String("Beak Depth (mm)".to_string()))]),
-            ops: Some(vec![op]),
+            ops: Some(vec![op.clone()]),
             as_: None,
             cross: None,
             drop: None,
@@ -48,37 +48,43 @@ mod test_aggregate_single {
         let comp_config = Default::default();
 
         // Order of grouped rows is not defined, so set row_order to false
-        let eq_config = TablesEqualConfig {
-            row_order: false,
-            ..Default::default()
-        };
+        if matches!(op, AggregateOpSpec::Distinct) {
+            // Vega counts null as distinct category but DataFusion does not.
+            // Just make sure it doesn't crash
+            eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &comp_config);
+        } else {
+            let eq_config = TablesEqualConfig {
+                row_order: false,
+                ..Default::default()
+            };
 
-        check_transform_evaluation(
-            &dataset,
-            transform_specs.as_slice(),
-            &comp_config,
-            &eq_config,
-        );
+            check_transform_evaluation(
+                &dataset,
+                transform_specs.as_slice(),
+                &comp_config,
+                &eq_config,
+            );
+        }
     }
 }
 
 mod test_aggregate_multi {
+    use crate::util::check::eval_vegafusion_transforms;
     use crate::*;
 
     #[rstest(
-        op1, op2,
-        // DataFusion error when two copies of Count(lit(0)) are included
-        // case(AggregateOpSpec::Count, AggregateOpSpec::Count),
+        op1,
+        op2,
+        case(AggregateOpSpec::Count, AggregateOpSpec::Count),
         case(AggregateOpSpec::Valid, AggregateOpSpec::Missing),
         case(AggregateOpSpec::Missing, AggregateOpSpec::Valid),
-        // Vega counts null as distinct category but DataFusion does not
-        // case(AggregateOpSpec::Distinct),
+        case(AggregateOpSpec::Distinct, AggregateOpSpec::Valid),
         case(AggregateOpSpec::Sum, AggregateOpSpec::Max),
         case(AggregateOpSpec::Mean, AggregateOpSpec::Sum),
         case(AggregateOpSpec::Average, AggregateOpSpec::Mean),
         case(AggregateOpSpec::Min, AggregateOpSpec::Average),
         case(AggregateOpSpec::Max, AggregateOpSpec::Min),
-        case(AggregateOpSpec::Median, AggregateOpSpec::Average),
+        case(AggregateOpSpec::Median, AggregateOpSpec::Average)
     )]
     fn test(op1: AggregateOpSpec, op2: AggregateOpSpec) {
         let dataset = vega_json_dataset("penguins");
@@ -92,7 +98,7 @@ mod test_aggregate_multi {
                 Some(Field::String("Beak Depth (mm)".to_string())),
                 Some(Field::String("Flipper Length (mm)".to_string())),
             ]),
-            ops: Some(vec![op1, op2]),
+            ops: Some(vec![op1.clone(), op2.clone()]),
             as_: None,
             cross: None,
             drop: None,
@@ -103,18 +109,23 @@ mod test_aggregate_multi {
 
         let comp_config = Default::default();
 
-        // Order of grouped rows is not defined, so set row_order to false
-        let eq_config = TablesEqualConfig {
-            row_order: false,
-            ..Default::default()
-        };
+        if matches!(op1, AggregateOpSpec::Distinct) || matches!(op2, AggregateOpSpec::Distinct) {
+            // Vega counts null as distinct category but DataFusion does not
+            eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &comp_config);
+        } else {
+            // Order of grouped rows is not defined, so set row_order to false
+            let eq_config = TablesEqualConfig {
+                row_order: false,
+                ..Default::default()
+            };
 
-        check_transform_evaluation(
-            &dataset,
-            transform_specs.as_slice(),
-            &comp_config,
-            &eq_config,
-        );
+            check_transform_evaluation(
+                &dataset,
+                transform_specs.as_slice(),
+                &comp_config,
+                &eq_config,
+            );
+        }
     }
 }
 
@@ -217,4 +228,67 @@ fn test_aggregate_overwrite() {
         &comp_config,
         &eq_config,
     );
+}
+
+mod test_aggregate_with_nulls {
+    use crate::util::check::eval_vegafusion_transforms;
+    use crate::*;
+    use serde_json::json;
+    use vegafusion_core::data::table::VegaFusionTable;
+
+    #[rstest(
+        op,
+        case(AggregateOpSpec::Count),
+        case(AggregateOpSpec::Valid),
+        case(AggregateOpSpec::Missing),
+        case(AggregateOpSpec::Distinct)
+    )]
+    fn test(op: AggregateOpSpec) {
+        let dataset = VegaFusionTable::from_json(
+            &json!(
+                [
+                    {"SHIP": "A", "NULL_ORDER_IDS": null},
+                    {"SHIP": "B", "NULL_ORDER_IDS": "CA-2011-168312"},
+                    {"SHIP": "C", "NULL_ORDER_IDS": "CA-2011-131009"},
+                    {"SHIP": "D", "NULL_ORDER_IDS": "CA-2011-131009"},
+                    {"SHIP": "E", "NULL_ORDER_IDS": "CA-2011-131009"}
+                ]
+            ),
+            1024,
+        )
+        .unwrap();
+
+        let aggregate_spec = AggregateTransformSpec {
+            groupby: vec![Field::String("SHIP".to_string())],
+            fields: Some(vec![Some(Field::String("NULL_ORDER_IDS".to_string()))]),
+            ops: Some(vec![op.clone()]),
+            as_: None,
+            cross: None,
+            drop: None,
+            key: None,
+            extra: Default::default(),
+        };
+        let transform_specs = vec![TransformSpec::Aggregate(aggregate_spec)];
+
+        let comp_config = Default::default();
+
+        // Order of grouped rows is not defined, so set row_order to false
+        if matches!(op, AggregateOpSpec::Distinct) {
+            // Vega counts null as distinct category but DataFusion does not.
+            // Just make sure it doesn't crash
+            eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &comp_config);
+        } else {
+            let eq_config = TablesEqualConfig {
+                row_order: false,
+                ..Default::default()
+            };
+
+            check_transform_evaluation(
+                &dataset,
+                transform_specs.as_slice(),
+                &comp_config,
+                &eq_config,
+            );
+        }
+    }
 }
