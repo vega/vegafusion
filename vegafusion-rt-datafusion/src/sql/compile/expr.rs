@@ -3,13 +3,17 @@ use crate::sql::compile::scalar::ToSqlScalar;
 use sqlgen::ast::{
     BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction,
     FunctionArg as SqlFunctionArg, Ident, ObjectName as SqlObjectName, ObjectName,
-    UnaryOperator as SqlUnaryOperator, WindowSpec as SqlWindowSpec,
+    UnaryOperator as SqlUnaryOperator, WindowFrame as SqlWindowFrame,
+    WindowFrameBound as SqlWindowBound, WindowFrameUnits as SqlWindowFrameUnits,
+    WindowSpec as SqlWindowSpec,
 };
 
 use datafusion_expr::expr::{BinaryExpr, Case, Cast};
 use datafusion_expr::{
-    AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator, WindowFunction,
+    AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator, WindowFrame,
+    WindowFrameBound, WindowFrameUnits, WindowFunction,
 };
+use vegafusion_core::data::scalar::ScalarValueHelpers;
 
 use crate::sql::compile::function_arg::ToSqlFunctionArg;
 use crate::sql::compile::order::ToSqlOrderByExpr;
@@ -341,17 +345,29 @@ impl ToSqlExpr for Expr {
                     .map(|arg| arg.to_sql_order())
                     .collect::<Result<Vec<_>>>()?;
 
-                if window_frame.is_some() {
-                    return Err(VegaFusionError::internal(
-                        "Window frame is not yet supported",
-                    ));
-                }
+                let sql_window_frame = match window_frame {
+                    None => None,
+                    Some(window_frame) => {
+                        let end_bound = compile_window_frame_bound(&window_frame.end_bound)?;
+                        let start_bound = compile_window_frame_bound(&window_frame.start_bound)?;
+                        let units = match window_frame.units {
+                            WindowFrameUnits::Rows => SqlWindowFrameUnits::Rows,
+                            WindowFrameUnits::Range => SqlWindowFrameUnits::Range,
+                            WindowFrameUnits::Groups => SqlWindowFrameUnits::Groups,
+                        };
+                        Some(SqlWindowFrame {
+                            units,
+                            start_bound,
+                            end_bound: Some(end_bound),
+                        })
+                    }
+                };
 
                 // Process over
                 let over = SqlWindowSpec {
                     partition_by,
                     order_by,
-                    window_frame: None,
+                    window_frame: sql_window_frame,
                 };
 
                 let sql_fun = SqlFunction {
@@ -449,6 +465,24 @@ impl ToSqlExpr for Expr {
             )),
         }
     }
+}
+
+fn compile_window_frame_bound(bound: &WindowFrameBound) -> Result<SqlWindowBound> {
+    Ok(match bound {
+        WindowFrameBound::Preceding(v) => {
+            match v.to_f64() {
+                Ok(v) => SqlWindowBound::Preceding(Some(v.max(0.0) as u64)),
+                Err(_) => SqlWindowBound::Preceding(None),
+            }
+        }
+        WindowFrameBound::CurrentRow => SqlWindowBound::CurrentRow,
+        WindowFrameBound::Following(v) => {
+            match v.to_f64() {
+                Ok(v) => SqlWindowBound::Following(Some(v.max(0.0) as u64)),
+                Err(_) => SqlWindowBound::Following(None),
+            }
+        }
+    })
 }
 
 #[cfg(test)]
