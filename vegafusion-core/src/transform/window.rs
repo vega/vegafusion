@@ -14,7 +14,7 @@ impl Window {
         let frame = transform.frame.as_ref().map(|f| {
             let frame: Vec<_> = f
                 .iter()
-                .map(|_v| match f.get(0).unwrap() {
+                .map(|v| match v {
                     Value::Number(n) => n.as_i64(),
                     _ => None,
                 })
