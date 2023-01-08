@@ -26,6 +26,6 @@ arrow-array = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162
 arrow-select = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
 
 # DataFusion 15.0 with backports
-datafusion = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "0d63c68a2ab5aae34281d51c39f6b082f3279e10"}
-datafusion-common = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "0d63c68a2ab5aae34281d51c39f6b082f3279e10"}
-datafusion-expr = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "0d63c68a2ab5aae34281d51c39f6b082f3279e10"}
+datafusion = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "36c386188e5affd2360bf05767563f64fb6311fb"}
+datafusion-common = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "36c386188e5affd2360bf05767563f64fb6311fb"}
+datafusion-expr = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "36c386188e5affd2360bf05767563f64fb6311fb"}
