@@ -5,17 +5,17 @@ use async_trait::async_trait;
 use datafusion::logical_expr::Expr;
 use datafusion::prelude::lit;
 use std::sync::Arc;
+use datafusion::common::ScalarValue;
 use vegafusion_core::error::Result;
-use vegafusion_core::proto::gen::transforms::{
-    window_transform_op, AggregateOp, SortOrder, Window, WindowOp,
-};
+use vegafusion_core::proto::gen::transforms::{window_transform_op, AggregateOp, SortOrder, Window, WindowOp, WindowFrame};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::expression::compiler::utils::to_numeric;
 use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
 use datafusion::physical_plan::aggregates;
-use datafusion_expr::{BuiltInWindowFunction, WindowFunction};
+use datafusion_expr::{BuiltInWindowFunction, window_frame, WindowFrameBound, WindowFrameUnits, WindowFunction};
+use vegafusion_core::proto::gen::transforms::AggregateOp::{Variance, Variancep};
 
 #[async_trait]
 impl TransformTrait for Window {
@@ -69,6 +69,32 @@ impl TransformTrait for Window {
             .map(|group| unescaped_col(group))
             .collect();
 
+        let (start_bound, end_bound) = match &self.frame {
+            None => (
+                // Unbounded preceding
+                WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
+
+                // Current row
+                WindowFrameBound::CurrentRow,
+            ),
+            Some(frame) => {
+                (
+                    WindowFrameBound::Preceding(
+                        ScalarValue::UInt64(frame.start.map(|v| (v.abs()) as u64))
+                    ),
+                    WindowFrameBound::Following(
+                        ScalarValue::UInt64(frame.end.map(|v| v as u64))
+                    ),
+                )
+            }
+        };
+
+        let window_frame = window_frame::WindowFrame {
+            units: WindowFrameUnits::Rows,
+            start_bound,
+            end_bound,
+        };
+
         let window_exprs: Vec<_> = self
             .ops
             .iter()
@@ -94,6 +120,10 @@ impl TransformTrait for Window {
                             Mean | Average => (aggregates::AggregateFunction::Avg, numeric_field()),
                             Min => (aggregates::AggregateFunction::Min, numeric_field()),
                             Max => (aggregates::AggregateFunction::Max, numeric_field()),
+                            Variance => (aggregates::AggregateFunction::Variance, numeric_field()),
+                            Variancep => (aggregates::AggregateFunction::VariancePop, numeric_field()),
+                            Stdev => (aggregates::AggregateFunction::Stddev, numeric_field()),
+                            Stdevp => (aggregates::AggregateFunction::StddevPop, numeric_field()),
                             // ArrayAgg only available on master right now
                             // Values => (aggregates::AggregateFunction::ArrayAgg, unescaped_col(field)),
                             _ => {
@@ -134,7 +164,7 @@ impl TransformTrait for Window {
                     args,
                     partition_by: partition_by.clone(),
                     order_by: order_by.clone(),
-                    window_frame: None,
+                    window_frame: Some(window_frame.clone()),
                 };
 
                 if let Some(alias) = self.aliases.get(i) {

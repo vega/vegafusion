@@ -277,29 +277,7 @@ impl ToSqlExpr for Expr {
                 distinct,
                 filter: _,
             } => {
-                let value = match fun {
-                    AggregateFunction::Min => "min",
-                    AggregateFunction::Max => "max",
-                    AggregateFunction::Count => "count",
-                    AggregateFunction::Avg => "avg",
-                    AggregateFunction::Sum => "sum",
-                    AggregateFunction::Median => "median",
-                    AggregateFunction::ApproxDistinct => "approx_distinct",
-                    AggregateFunction::ArrayAgg => "array_agg",
-                    AggregateFunction::Variance => "var",
-                    AggregateFunction::VariancePop => "var_pop",
-                    AggregateFunction::Stddev => "stddev",
-                    AggregateFunction::StddevPop => "stddev_pop",
-                    AggregateFunction::Covariance => "covar",
-                    AggregateFunction::CovariancePop => "covar_pop",
-                    AggregateFunction::Correlation => "corr",
-                    AggregateFunction::ApproxPercentileCont => "approx_percentile_cont",
-                    AggregateFunction::ApproxPercentileContWithWeight => {
-                        "approx_percentile_cont_with_weight"
-                    }
-                    AggregateFunction::ApproxMedian => "approx_median",
-                    AggregateFunction::Grouping => "grouping",
-                };
+                let value = aggr_fn_to_name(fun);
                 let ident = Ident {
                     value: value.to_ascii_lowercase(),
                     quote_style: None,
@@ -325,7 +303,9 @@ impl ToSqlExpr for Expr {
             } => {
                 // Extract function name
                 let name_str = match fun {
-                    WindowFunction::AggregateFunction(agg) => agg.to_string(),
+                    WindowFunction::AggregateFunction(agg) => {
+                        aggr_fn_to_name(agg).to_string()
+                    },
                     WindowFunction::BuiltInWindowFunction(win_fn) => win_fn.to_string(),
                 };
 
@@ -466,6 +446,34 @@ impl ToSqlExpr for Expr {
         }
     }
 }
+
+fn aggr_fn_to_name(fun: &AggregateFunction) -> &str {
+    let value = match fun {
+        AggregateFunction::Min => "min",
+        AggregateFunction::Max => "max",
+        AggregateFunction::Count => "count",
+        AggregateFunction::Avg => "avg",
+        AggregateFunction::Sum => "sum",
+        AggregateFunction::Median => "median",
+        AggregateFunction::ApproxDistinct => "approx_distinct",
+        AggregateFunction::ArrayAgg => "array_agg",
+        AggregateFunction::Variance => "var",
+        AggregateFunction::VariancePop => "var_pop",
+        AggregateFunction::Stddev => "stddev",
+        AggregateFunction::StddevPop => "stddev_pop",
+        AggregateFunction::Covariance => "covar",
+        AggregateFunction::CovariancePop => "covar_pop",
+        AggregateFunction::Correlation => "corr",
+        AggregateFunction::ApproxPercentileCont => "approx_percentile_cont",
+        AggregateFunction::ApproxPercentileContWithWeight => {
+            "approx_percentile_cont_with_weight"
+        }
+        AggregateFunction::ApproxMedian => "approx_median",
+        AggregateFunction::Grouping => "grouping",
+    };
+    value
+}
+
 
 fn compile_window_frame_bound(bound: &WindowFrameBound) -> Result<SqlWindowBound> {
     Ok(match bound {
