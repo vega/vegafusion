@@ -14,6 +14,7 @@ use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 use vegafusion_rt_datafusion::expression::compiler::utils::is_numeric_datatype;
 use vegafusion_rt_datafusion::expression::escape::flat_col;
 use vegafusion_rt_datafusion::transform::utils::DataFrameUtils;
+use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
 
 #[derive(Debug, Clone)]
 pub struct TablesEqualConfig {
@@ -81,8 +82,9 @@ pub fn assert_tables_equal(
             }))
             .collect();
 
-        let lhs_df = lhs.to_dataframe().unwrap();
-        let rhs_df = rhs.to_dataframe().unwrap();
+
+        let lhs_df = TOKIO_RUNTIME.block_on(lhs.to_dataframe()).unwrap();
+        let rhs_df = TOKIO_RUNTIME.block_on(rhs.to_dataframe()).unwrap();
 
         let lhs_rb = lhs_df
             .sort(sort_exprs.clone())

@@ -33,6 +33,7 @@ impl TransformTrait for Collect {
 
         let result = dataframe
             .sort(sort_exprs, None)
+            .await
             .with_context(|| "Collect transform failed".to_string())?;
         Ok((result, Default::default()))
     }

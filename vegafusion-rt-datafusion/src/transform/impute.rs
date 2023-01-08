@@ -47,8 +47,8 @@ impl TransformTrait for Impute {
             .unique()
             .collect::<Vec<_>>();
         let dataframe = match unique_groupby.len() {
-            0 => zero_groupby_sql(self, dataframe, value)?,
-            1 => single_groupby_sql(self, dataframe, value, &unique_groupby[0])?,
+            0 => zero_groupby_sql(self, dataframe, value).await?,
+            1 => single_groupby_sql(self, dataframe, value, &unique_groupby[0]).await?,
             _ => {
                 return Err(VegaFusionError::internal(
                     "Expected zero or one groupby columns to impute",
@@ -60,7 +60,7 @@ impl TransformTrait for Impute {
     }
 }
 
-fn zero_groupby_sql(
+async fn zero_groupby_sql(
     tx: &Impute,
     dataframe: Arc<SqlDataFrame>,
     value: ScalarValue,
@@ -87,10 +87,10 @@ fn zero_groupby_sql(
         })
         .collect();
 
-    dataframe.select(select_columns)
+    dataframe.select(select_columns).await
 }
 
-fn single_groupby_sql(
+async fn single_groupby_sql(
     tx: &Impute,
     dataframe: Arc<SqlDataFrame>,
     value: ScalarValue,
@@ -175,7 +175,7 @@ fn single_groupby_sql(
         row_number_expr_str = row_number_expr_str,
         order_by_expr_str = order_by_expr_str,
         parent = dataframe.parent_name(),
-    ))?;
+    )).await?;
 
     Ok(dataframe)
 }

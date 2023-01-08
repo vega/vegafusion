@@ -113,7 +113,7 @@ impl TaskCall for DataUrlTask {
                     VegaFusionDataset::Table { table, .. } => table.to_sql_dataframe().await?,
                     VegaFusionDataset::SqlDataFrame(sql_df) => sql_df.clone(),
                 };
-                let sql_df = process_datetimes(&parse, sql_df, &config.tz_config)?;
+                let sql_df = process_datetimes(&parse, sql_df, &config.tz_config).await?;
                 return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await;
             } else {
                 return Err(VegaFusionError::internal(format!(
@@ -137,12 +137,12 @@ impl TaskCall for DataUrlTask {
         // Construct SqlDataFrame
         let ctx = make_session_context();
         ctx.register_table("tbl", Arc::new(df))?;
-        let sql_conn = DataFusionConnection::new(Arc::new(ctx), vec!["tbl".to_string()]);
+        let sql_conn = DataFusionConnection::new(Arc::new(ctx));
 
         let sql_df = Arc::new(SqlDataFrame::try_new(Arc::new(sql_conn), "tbl").await?);
 
         // Process datetime columns
-        let sql_df = process_datetimes(&parse, sql_df, &config.tz_config)?;
+        let sql_df = process_datetimes(&parse, sql_df, &config.tz_config).await?;
 
         eval_sql_df(sql_df, &self.pipeline, &config).await
     }
@@ -266,7 +266,7 @@ fn check_builtin_dataset(url: String) -> String {
     }
 }
 
-fn process_datetimes(
+async fn process_datetimes(
     parse: &Option<Parse>,
     sql_df: Arc<SqlDataFrame>,
     tz_config: &Option<RuntimeTzConfig>,
@@ -327,7 +327,7 @@ fn process_datetimes(
                         })
                         .collect();
                     columns.push(date_expr.alias(&spec.name));
-                    df = df.select(columns)?
+                    df = df.select(columns).await?
                 }
             }
         }
@@ -399,7 +399,7 @@ fn process_datetimes(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    df.select(selection)
+    df.select(selection).await
 }
 
 #[async_trait]
@@ -432,7 +432,7 @@ impl TaskCall for DataValuesTask {
 
             // Process datetime columns
             let sql_df = values_table.to_sql_dataframe().await?;
-            let sql_df = process_datetimes(&parse, sql_df, &config.tz_config)?;
+            let sql_df = process_datetimes(&parse, sql_df, &config.tz_config).await?;
 
             let (table, output_values) = pipeline.eval_sql(sql_df, &config).await?;
 
@@ -440,7 +440,7 @@ impl TaskCall for DataValuesTask {
         } else {
             // No transforms
             let values_df = values_table.to_sql_dataframe().await?;
-            let values_df = process_datetimes(&parse, values_df, tz_config)?;
+            let values_df = process_datetimes(&parse, values_df, tz_config).await?;
             (values_df.collect().await?, Vec::new())
         };
 
@@ -531,7 +531,7 @@ async fn read_csv(url: String, parse: &Option<Parse>) -> Result<DataFrame> {
         // Load through VegaFusionTable so that temp file can be deleted
         let df = ctx.read_csv(path, csv_opts).await.unwrap();
         let table = VegaFusionTable::from_dataframe(df).await.unwrap();
-        let df = table.to_dataframe().unwrap();
+        let df = table.to_dataframe().await.unwrap();
         Ok(df)
     } else {
         let schema = build_csv_schema(&csv_opts, &url, parse).await?;
@@ -621,7 +621,7 @@ async fn read_json(url: &str, batch_size: usize) -> Result<DataFrame> {
         serde_json::from_str(&json_str)?
     };
 
-    VegaFusionTable::from_json(&value, batch_size)?.to_dataframe()
+    VegaFusionTable::from_json(&value, batch_size)?.to_dataframe().await
 }
 
 async fn read_arrow(url: &str) -> Result<DataFrame> {
@@ -675,7 +675,7 @@ async fn read_arrow(url: &str) -> Result<DataFrame> {
         )));
     };
 
-    VegaFusionTable::try_new(schema, batches)?.to_dataframe()
+    VegaFusionTable::try_new(schema, batches)?.to_dataframe().await
 }
 
 pub fn make_request_client() -> ClientWithMiddleware {

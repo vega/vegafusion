@@ -51,7 +51,7 @@ impl TransformTrait for Window {
                 asc: true,
                 nulls_first: true,
             }));
-            dataframe.select(vec![Expr::Wildcard, row_number_expr])?
+            dataframe.select(vec![Expr::Wildcard, row_number_expr]).await?
         } else {
             dataframe
         };
@@ -172,7 +172,7 @@ impl TransformTrait for Window {
         // This will exclude the __row_number column if it was added above.
         selections.extend(window_exprs);
 
-        let dataframe = dataframe.select(selections)?;
+        let dataframe = dataframe.select(selections).await?;
 
         Ok((dataframe, Vec::new()))
     }

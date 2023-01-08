@@ -123,7 +123,7 @@ impl TransformTrait for JoinAggregate {
                 row_number_str = row_number_str,
                 new_col_csv = new_col_csv,
                 inner_name = inner_name,
-            ))?
+            )).await?
         } else {
             let group_by_csv = sql_group_expr_strs.join(", ");
             dataframe.chain_query_str(&format!(
@@ -138,7 +138,7 @@ impl TransformTrait for JoinAggregate {
                 new_col_csv = new_col_csv,
                 group_by_csv = group_by_csv,
                 inner_name = inner_name,
-            ))?
+            )).await?
         };
 
         Ok((dataframe, Vec::new()))

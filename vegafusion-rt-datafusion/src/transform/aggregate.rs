@@ -37,13 +37,13 @@ impl TransformTrait for Aggregate {
             // Add min(__row_number) aggregation that we can sort by later
             agg_exprs.push(min(flat_col("__row_number")).alias("__min_row_number"));
 
-            dataframe.select(vec![Expr::Wildcard, row_number_expr])?
+            dataframe.select(vec![Expr::Wildcard, row_number_expr]).await?
         } else {
             dataframe
         };
 
         // Perform aggregation
-        let mut grouped_dataframe = dataframe.aggregate(group_exprs, agg_exprs)?;
+        let mut grouped_dataframe = dataframe.aggregate(group_exprs, agg_exprs).await?;
 
         // Maybe sort by min row number
         if !self.groupby.is_empty() {
@@ -53,11 +53,11 @@ impl TransformTrait for Aggregate {
                 asc: true,
                 nulls_first: false,
             })];
-            grouped_dataframe = grouped_dataframe.sort(sort_exprs, None)?;
+            grouped_dataframe = grouped_dataframe.sort(sort_exprs, None).await?;
         }
 
         // Make final projection
-        let grouped_dataframe = grouped_dataframe.select(projections)?;
+        let grouped_dataframe = grouped_dataframe.select(projections).await?;
 
         Ok((grouped_dataframe, Vec::new()))
     }

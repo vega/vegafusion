@@ -44,7 +44,7 @@ impl TransformTrait for Pivot {
                     }
                 })
                 .collect::<Result<Vec<_>>>()?;
-            dataframe.select(select_exprs)?
+            dataframe.select(select_exprs).await?
         } else if !is_string_datatype(&pivot_dtype) {
             // Column type is not string, so cast values to strings
             let select_exprs: Vec<_> = dataframe
@@ -64,7 +64,7 @@ impl TransformTrait for Pivot {
                     }
                 })
                 .collect::<Result<Vec<_>>>()?;
-            dataframe.select(select_exprs)?
+            dataframe.select(select_exprs).await?
         } else {
             // Column type is string
             dataframe
@@ -82,7 +82,7 @@ async fn extract_sorted_pivot_values(
     tx: &Pivot,
     dataframe: &SqlDataFrame,
 ) -> Result<Vec<String>> {
-    let agg_query = dataframe.aggregate(vec![unescaped_col(&tx.field)], vec![])?;
+    let agg_query = dataframe.aggregate(vec![unescaped_col(&tx.field)], vec![]).await?;
 
     let limit = match tx.limit {
         None | Some(0) => None,
@@ -99,7 +99,7 @@ async fn extract_sorted_pivot_values(
             nulls_first: false,
         })],
         limit,
-    )?;
+    ).await?;
 
     let pivot_result = sorted_query.collect().await?;
     let pivot_batch = pivot_result.to_record_batch()?;
@@ -188,10 +188,10 @@ async fn pivot_without_grouping(
         ));
     }
 
-    let dataframe_joined = dataframe.chain_query_str(&query_str)?;
+    let dataframe_joined = dataframe.chain_query_str(&query_str).await?;
 
     // Perform final selection
-    let selected = dataframe_joined.select(final_selections)?;
+    let selected = dataframe_joined.select(final_selections).await?;
 
     Ok((selected, Vec::new()))
 }
@@ -208,7 +208,7 @@ async fn pivot_with_grouping(
 
     // Add row_index column that we can sort by later
     let row_number_expr = make_row_number_expr();
-    let dataframe = dataframe.select(vec![Expr::Wildcard, row_number_expr])?;
+    let dataframe = dataframe.select(vec![Expr::Wildcard, row_number_expr]).await?;
 
     // Process aggregate operation
     let agg_op: AggregateOp = tx
@@ -234,7 +234,7 @@ async fn pivot_with_grouping(
     let grouped_dataframe = dataframe.aggregate(
         groupby_cols,
         vec![min(flat_col("__row_number")).alias("__min_row_number")],
-    )?;
+    ).await?;
 
     // Save off parent table names
     let dataframe_parent_name = dataframe.parent_name();
@@ -301,8 +301,8 @@ async fn pivot_with_grouping(
     query_str.push_str("ORDER BY __min_row_number");
 
     // Perform query and apply final selections
-    let dataframe_joined = grouped_dataframe.chain_query_str(&query_str)?;
-    let selected = dataframe_joined.select(final_selections)?;
+    let dataframe_joined = grouped_dataframe.chain_query_str(&query_str).await?;
+    let selected = dataframe_joined.select(final_selections).await?;
 
     Ok((selected, Vec::new()))
 }

@@ -58,7 +58,7 @@ impl TransformTrait for Stack {
         // Add row number column for sorting
         let row_number_expr = make_row_number_expr();
 
-        let dataframe = dataframe.select(vec![Expr::Wildcard, row_number_expr])?;
+        let dataframe = dataframe.select(vec![Expr::Wildcard, row_number_expr]).await?;
 
         // Process according to offset
         let offset = StackOffset::from_i32(self.offset).expect("Failed to convert stack offset");
@@ -70,7 +70,7 @@ impl TransformTrait for Stack {
                 &alias0,
                 &alias1,
                 order_by.as_slice(),
-            )?,
+            ).await?,
             StackOffset::Normalize => eval_normalize_center_offset(
                 self,
                 dataframe,
@@ -79,7 +79,7 @@ impl TransformTrait for Stack {
                 &alias1,
                 order_by.as_slice(),
                 &offset,
-            )?,
+            ).await?,
             StackOffset::Center => eval_normalize_center_offset(
                 self,
                 dataframe,
@@ -88,14 +88,14 @@ impl TransformTrait for Stack {
                 &alias1,
                 order_by.as_slice(),
                 &offset,
-            )?,
+            ).await?,
         };
 
         Ok((dataframe, Default::default()))
     }
 }
 
-fn eval_normalize_center_offset(
+async fn eval_normalize_center_offset(
     stack: &Stack,
     dataframe: Arc<SqlDataFrame>,
     input_fields: &[String],
@@ -118,7 +118,7 @@ fn eval_normalize_center_offset(
     let numeric_field = abs(numeric_field);
 
     let stack_col_name = "__stack";
-    let dataframe = dataframe.select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)])?;
+    let dataframe = dataframe.select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)]).await?;
 
     let total_agg = Expr::AggregateFunction(expr::AggregateFunction {
         fun: AggregateFunction::Sum,
@@ -136,7 +136,7 @@ fn eval_normalize_center_offset(
             "SELECT * from {parent} CROSS JOIN (SELECT {total_agg_str} from {parent})",
             parent = dataframe.parent_name(),
             total_agg_str = total_agg_str,
-        ))?
+        )).await?
     } else {
         let partition_by_strs = partition_by
             .iter()
@@ -149,7 +149,7 @@ fn eval_normalize_center_offset(
             parent = dataframe.parent_name(),
             partition_by_csv = partition_by_csv,
             total_agg_str = total_agg_str,
-        ))?
+        )).await?
     };
 
     // Build window function to compute cumulative sum of stack column
@@ -168,7 +168,7 @@ fn eval_normalize_center_offset(
     .alias(alias1);
 
     // Perform selection to add new field value
-    let dataframe = dataframe.select(vec![Expr::Wildcard, window_expr])?;
+    let dataframe = dataframe.select(vec![Expr::Wildcard, window_expr]).await?;
 
     // Restore original order
     let dataframe = dataframe.sort(
@@ -178,7 +178,7 @@ fn eval_normalize_center_offset(
             nulls_first: false,
         })],
         None,
-    )?;
+    ).await?;
 
     // Build final_selection
     let mut final_selection: Vec<_> = input_fields
@@ -202,7 +202,7 @@ fn eval_normalize_center_offset(
                 "SELECT * from {parent} CROSS JOIN (SELECT {max_total_str} from {parent})",
                 parent = dataframe.parent_name(),
                 max_total_str = max_total_str,
-            ))?;
+            )).await?;
 
             let first = flat_col("__max_total").sub(flat_col("__total")).div(lit(2));
             let first_col = flat_col(alias1).add(first);
@@ -237,11 +237,11 @@ fn eval_normalize_center_offset(
         _ => return Err(VegaFusionError::internal("Unexpected stack offset")),
     };
 
-    let dataframe = dataframe.select(final_selection.clone())?;
+    let dataframe = dataframe.select(final_selection.clone()).await?;
     Ok(dataframe)
 }
 
-fn eval_zero_offset(
+async fn eval_zero_offset(
     stack: &Stack,
     dataframe: Arc<SqlDataFrame>,
     input_fields: &[String],
@@ -290,7 +290,7 @@ fn eval_zero_offset(
         parent = dataframe.parent_name(),
         window_expr_str = window_expr_str,
         numeric_field = numeric_field.to_sql()?.sql(dataframe.dialect())?
-    ))?;
+    )).await?;
 
     // Restore original order
     let dataframe = dataframe.sort(
@@ -300,7 +300,7 @@ fn eval_zero_offset(
             nulls_first: false,
         })],
         None,
-    )?;
+    ).await?;
 
     // Build final selection
     let mut final_selection: Vec<_> = input_fields
@@ -319,6 +319,6 @@ fn eval_zero_offset(
     final_selection.push(alias0_col);
     final_selection.push(flat_col(alias1));
 
-    let dataframe = dataframe.select(final_selection.clone())?;
+    let dataframe = dataframe.select(final_selection.clone()).await?;
     Ok(dataframe)
 }

@@ -19,7 +19,7 @@ impl TransformTrait for Identifier {
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
         // Add row number column with the desired name
         let row_number_expr = make_row_number_expr().alias(&self.r#as);
-        let result = dataframe.select(vec![Expr::Wildcard, row_number_expr])?;
+        let result = dataframe.select(vec![Expr::Wildcard, row_number_expr]).await?;
 
         Ok((result, Default::default()))
     }

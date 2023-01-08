@@ -4,8 +4,6 @@ use datafusion::prelude::SessionContext;
 use log::Level;
 use std::collections::HashMap;
 use std::sync::Arc;
-use datafusion::sql::planner::ContextProvider;
-use datafusion::sql::TableReference;
 
 use sqlgen::dialect::Dialect;
 use vegafusion_core::arrow::datatypes::Schema;
@@ -15,15 +13,13 @@ use vegafusion_core::data::table::VegaFusionTable;
 pub struct DataFusionConnection {
     dialect: Dialect,
     ctx: Arc<SessionContext>,
-    table_names: Vec<String>,
 }
 
 impl DataFusionConnection {
-    pub fn new(ctx: Arc<SessionContext>, table_names: Vec<String>) -> Self {
+    pub fn new(ctx: Arc<SessionContext>) -> Self {
         Self {
             dialect: make_datafusion_dialect(),
             ctx,
-            table_names
         }
     }
 }
@@ -83,16 +79,20 @@ impl SqlConnection for DataFusionConnection {
     }
 
     async fn tables(&self) -> vegafusion_core::error::Result<HashMap<String, Schema>> {
-        let state = self.ctx.as_ref().state().clone();
-        self.table_names
-            .iter()
-            .map(|name| {
-                let table_ref = TableReference::Bare { table: name.as_str() };
-                let table = state.get_table_provider(table_ref)?;
-                let schema = table.schema().as_ref().clone();
-                Ok((name.clone(), schema))
-            })
-            .collect::<vegafusion_core::error::Result<HashMap<_, _>>>()
+        let catalog_names = self.ctx.catalog_names();
+        let first_catalog_name = catalog_names.get(0).unwrap();
+        let catalog = self.ctx.catalog(first_catalog_name).unwrap();
+
+        let schema_provider_names = catalog.schema_names();
+        let first_schema_provider_name = schema_provider_names.get(0).unwrap();
+        let schema_provider = catalog.schema(first_schema_provider_name).unwrap();
+
+        let mut tables: HashMap<String, Schema> = HashMap::new();
+        for table_name in schema_provider.table_names() {
+            let schema = schema_provider.table(&table_name).await.unwrap().schema();
+            tables.insert(table_name, schema.as_ref().clone());
+        }
+        Ok(tables)
     }
 
     fn dialect(&self) -> &Dialect {

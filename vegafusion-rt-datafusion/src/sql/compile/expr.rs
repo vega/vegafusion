@@ -58,8 +58,6 @@ impl ToSqlExpr for Expr {
                     Operator::Modulo => SqlBinaryOperator::Modulo,
                     Operator::And => SqlBinaryOperator::And,
                     Operator::Or => SqlBinaryOperator::Or,
-                    Operator::Like => SqlBinaryOperator::Like,
-                    Operator::NotLike => SqlBinaryOperator::NotLike,
                     Operator::IsDistinctFrom => {
                         return Err(VegaFusionError::internal(
                             "IsDistinctFrom cannot be converted to SQL".to_string(),
@@ -80,8 +78,6 @@ impl ToSqlExpr for Expr {
                     Operator::StringConcat => SqlBinaryOperator::StringConcat,
                     Operator::BitwiseShiftRight => SqlBinaryOperator::PGBitwiseShiftRight,
                     Operator::BitwiseShiftLeft => SqlBinaryOperator::PGBitwiseShiftLeft,
-                    Operator::ILike => SqlBinaryOperator::ILike,
-                    Operator::NotILike => SqlBinaryOperator::NotILike,
                 };
                 Ok(SqlExpr::Nested(Box::new(SqlExpr::BinaryOp {
                     left: Box::new(left.to_sql()?),

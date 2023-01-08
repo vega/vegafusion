@@ -433,7 +433,7 @@ impl TransformTrait for TimeUnit {
             .collect();
         select_exprs.push(timeunit_start_value);
 
-        let dataframe = dataframe.select(select_exprs)?;
+        let dataframe = dataframe.select(select_exprs).await?;
 
         // Add timeunit end value to the dataframe
         let timeunit_end_alias = if let Some(alias_1) = &self.alias_1 {
@@ -501,7 +501,7 @@ impl TransformTrait for TimeUnit {
             "SELECT {select_csv} from {parent}",
             select_csv = select_csv,
             parent = dataframe.parent_name()
-        ))?;
+        )).await?;
 
         Ok((dataframe, Vec::new()))
     }

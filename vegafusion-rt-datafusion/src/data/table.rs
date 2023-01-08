@@ -18,7 +18,7 @@ pub trait VegaFusionTableUtils {
     async fn from_dataframe(value: DataFrame) -> Result<VegaFusionTable>;
     fn pretty_format(&self, max_rows: Option<usize>) -> Result<String>;
     fn to_memtable(&self) -> MemTable;
-    fn to_dataframe(&self) -> Result<DataFrame>;
+    async fn to_dataframe(&self) -> Result<DataFrame>;
     async fn to_sql_dataframe(&self) -> Result<Arc<SqlDataFrame>>;
 }
 
@@ -68,20 +68,19 @@ impl VegaFusionTableUtils for VegaFusionTable {
         })
     }
 
-    fn to_dataframe(&self) -> Result<DataFrame> {
+    async fn to_dataframe(&self) -> Result<DataFrame> {
         let ctx = SessionContext::new();
         let provider = self.to_memtable();
         ctx.register_table("df", Arc::new(provider)).unwrap();
         ctx.table("df")
+            .await
             .with_context(|| "Failed to create DataFrame".to_string())
     }
 
     async fn to_sql_dataframe(&self) -> Result<Arc<SqlDataFrame>> {
         let ctx = make_session_context();
         ctx.register_table("tbl", Arc::new(self.to_memtable()))?;
-        let sql_conn = DataFusionConnection::new(
-            Arc::new(ctx), vec!["tbl".to_string()]
-        );
+        let sql_conn = DataFusionConnection::new(Arc::new(ctx));
         Ok(Arc::new(
             SqlDataFrame::try_new(Arc::new(sql_conn), "tbl").await?,
         ))

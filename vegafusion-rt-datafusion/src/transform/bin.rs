@@ -52,7 +52,7 @@ impl TransformTrait for Bin {
         let bin_index =
             floor((numeric_field.clone().sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
                 .alias(bin_index_name);
-        let sql_df = sql_df.select(vec![Expr::Wildcard, bin_index])?;
+        let sql_df = sql_df.select(vec![Expr::Wildcard, bin_index]).await?;
 
         // Add column with bin start
         let bin_start = (flat_col(bin_index_name).mul(lit(step))).add(lit(start));
@@ -92,7 +92,7 @@ impl TransformTrait for Bin {
             .collect::<Vec<_>>();
         select_exprs.push(bin_start);
 
-        let sql_df = sql_df.select(select_exprs)?;
+        let sql_df = sql_df.select(select_exprs).await?;
 
         // Add bin end column
         let bin_end_name = self.alias_1.clone().unwrap_or_else(|| "bin1".to_string());
@@ -114,7 +114,7 @@ impl TransformTrait for Bin {
         select_exprs.push(flat_col(&bin_start_name));
         select_exprs.push(bin_end);
 
-        let sql_df = sql_df.select(select_exprs)?;
+        let sql_df = sql_df.select(select_exprs).await?;
 
         Ok((sql_df, output_value.into_iter().collect()))
     }
