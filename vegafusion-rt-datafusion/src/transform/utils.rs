@@ -9,14 +9,14 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 #[async_trait]
 pub trait DataFrameUtils {
-    fn block_eval(&self) -> Result<Vec<RecordBatch>>;
-    fn block_flat_eval(&self) -> Result<RecordBatch>;
-    async fn collect_flat(&self) -> Result<RecordBatch>;
+    fn block_eval(self) -> Result<Vec<RecordBatch>>;
+    fn block_flat_eval(self) -> Result<RecordBatch>;
+    async fn collect_flat(self) -> Result<RecordBatch>;
 }
 
 #[async_trait]
-impl DataFrameUtils for Arc<DataFrame> {
-    fn block_eval(&self) -> Result<Vec<RecordBatch>> {
+impl DataFrameUtils for DataFrame {
+    fn block_eval(self) -> Result<Vec<RecordBatch>> {
         // Not partitioned (this is faster sometimes?)
         let res = TOKIO_RUNTIME
             .block_on(self.collect())
@@ -24,7 +24,7 @@ impl DataFrameUtils for Arc<DataFrame> {
         Ok(res)
     }
 
-    fn block_flat_eval(&self) -> Result<RecordBatch> {
+    fn block_flat_eval(self) -> Result<RecordBatch> {
         let mut arrow_schema = Arc::new(self.schema().into()) as SchemaRef;
         let batches = self.block_eval()?;
         if let Some(batch) = batches.get(0) {
@@ -34,7 +34,7 @@ impl DataFrameUtils for Arc<DataFrame> {
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
 
-    async fn collect_flat(&self) -> Result<RecordBatch> {
+    async fn collect_flat(self) -> Result<RecordBatch> {
         let mut arrow_schema = Arc::new(self.schema().into()) as SchemaRef;
         let batches = self.collect().await?;
         if let Some(batch) = batches.get(0) {

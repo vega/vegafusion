@@ -2,7 +2,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
-use datafusion::logical_expr::Expr;
+use datafusion::logical_expr::{Expr, expr};
 use datafusion::prelude::lit;
 use std::sync::Arc;
 use datafusion::common::ScalarValue;
@@ -28,11 +28,11 @@ impl TransformTrait for Window {
             .sort_fields
             .iter()
             .zip(&self.sort)
-            .map(|(field, order)| Expr::Sort {
+            .map(|(field, order)| Expr::Sort (expr::Sort {
                 expr: Box::new(unescaped_col(field)),
                 asc: *order == SortOrder::Ascending as i32,
                 nulls_first: *order == SortOrder::Ascending as i32,
-            })
+            }))
             .collect();
 
         let mut selections: Vec<_> = dataframe
@@ -46,11 +46,11 @@ impl TransformTrait for Window {
             //  If no order by fields provided, use the row number
             let row_number_expr = make_row_number_expr();
 
-            order_by.push(Expr::Sort {
+            order_by.push(Expr::Sort (expr::Sort {
                 expr: Box::new(flat_col("__row_number")),
                 asc: true,
                 nulls_first: true,
-            });
+            }));
             dataframe.select(vec![Expr::Wildcard, row_number_expr])?
         } else {
             dataframe
@@ -152,13 +152,13 @@ impl TransformTrait for Window {
                     }
                 };
 
-                let window_expr = Expr::WindowFunction {
+                let window_expr = Expr::WindowFunction (expr::WindowFunction {
                     fun: window_fn,
                     args,
                     partition_by: partition_by.clone(),
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
-                };
+                });
 
                 if let Some(alias) = self.aliases.get(i) {
                     window_expr.alias(alias)

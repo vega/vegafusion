@@ -136,8 +136,8 @@ impl TaskCall for DataUrlTask {
 
         // Construct SqlDataFrame
         let ctx = make_session_context();
-        ctx.register_table("tbl", df)?;
-        let sql_conn = DataFusionConnection::new(Arc::new(ctx));
+        ctx.register_table("tbl", Arc::new(df))?;
+        let sql_conn = DataFusionConnection::new(Arc::new(ctx), vec!["tbl".to_string()]);
 
         let sql_df = Arc::new(SqlDataFrame::try_new(Arc::new(sql_conn), "tbl").await?);
 
@@ -491,7 +491,7 @@ impl TaskCall for DataSourceTask {
     }
 }
 
-async fn read_csv(url: String, parse: &Option<Parse>) -> Result<Arc<DataFrame>> {
+async fn read_csv(url: String, parse: &Option<Parse>) -> Result<DataFrame> {
     // Build base CSV options
     let csv_opts = if url.ends_with(".tsv") {
         CsvReadOptions::new()
@@ -593,7 +593,7 @@ async fn build_csv_schema(
     Ok(SchemaRef::new(Schema::new(new_fields)))
 }
 
-async fn read_json(url: &str, batch_size: usize) -> Result<Arc<DataFrame>> {
+async fn read_json(url: &str, batch_size: usize) -> Result<DataFrame> {
     // Read to json Value from local file or url.
     let value: serde_json::Value = if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
@@ -624,7 +624,7 @@ async fn read_json(url: &str, batch_size: usize) -> Result<Arc<DataFrame>> {
     VegaFusionTable::from_json(&value, batch_size)?.to_dataframe()
 }
 
-async fn read_arrow(url: &str) -> Result<Arc<DataFrame>> {
+async fn read_arrow(url: &str) -> Result<DataFrame> {
     // Read to json Value from local file or url.
     let buffer = if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text

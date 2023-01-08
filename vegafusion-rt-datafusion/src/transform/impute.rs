@@ -7,7 +7,7 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::common::ScalarValue;
 use datafusion_expr::expr::Cast;
-use datafusion_expr::{lit, when, Expr};
+use datafusion_expr::{lit, when, Expr, expr};
 use itertools::Itertools;
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
@@ -117,11 +117,11 @@ fn single_groupby_sql(
     let row_number_expr_str = row_number_expr.to_sql_select()?.sql(dataframe.dialect())?;
 
     // Build order by
-    let order_by_expr = Expr::Sort {
+    let order_by_expr = Expr::Sort(expr::Sort {
         expr: Box::new(flat_col("__row_number")),
         asc: true,
         nulls_first: false,
-    };
+    });
     let order_by_expr_str = order_by_expr.to_sql_order()?.sql(dataframe.dialect())?;
 
     // Build final selection

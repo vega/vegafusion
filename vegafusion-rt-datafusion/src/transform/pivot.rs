@@ -9,7 +9,7 @@ use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::Column;
-use datafusion_expr::{coalesce, col, lit, min, when, Expr};
+use datafusion_expr::{coalesce, col, lit, min, when, Expr, expr::Sort};
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::StringArray;
@@ -80,7 +80,7 @@ impl TransformTrait for Pivot {
 
 async fn extract_sorted_pivot_values(
     tx: &Pivot,
-    dataframe: &Arc<SqlDataFrame>,
+    dataframe: &SqlDataFrame,
 ) -> Result<Vec<String>> {
     let agg_query = dataframe.aggregate(vec![unescaped_col(&tx.field)], vec![])?;
 
@@ -90,14 +90,14 @@ async fn extract_sorted_pivot_values(
     };
 
     let sorted_query = agg_query.sort(
-        vec![Expr::Sort {
+        vec![Expr::Sort (Sort {
             expr: Box::new(Expr::Column(Column {
                 relation: Some(agg_query.parent_name()),
                 name: tx.field.clone(),
             })),
             asc: true,
             nulls_first: false,
-        }],
+        })],
         limit,
     )?;
 

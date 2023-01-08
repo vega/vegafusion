@@ -6,7 +6,7 @@ use crate::sql::dataframe::SqlDataFrame;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::physical_plan::aggregates;
-use datafusion_expr::{abs, lit, max, when, AggregateFunction, Expr, WindowFunction, WindowFrame, WindowFrameUnits, WindowFrameBound};
+use datafusion_expr::{abs, lit, max, when, expr, AggregateFunction, Expr, WindowFunction, WindowFrame, WindowFrameUnits, WindowFrameBound};
 use sqlgen::dialect::DialectDisplay;
 
 use crate::expression::escape::{flat_col, unescaped_col};
@@ -42,18 +42,18 @@ impl TransformTrait for Stack {
             .sort_fields
             .iter()
             .zip(&self.sort)
-            .map(|(field, order)| Expr::Sort {
+            .map(|(field, order)| Expr::Sort (expr::Sort {
                 expr: Box::new(unescaped_col(field)),
                 asc: *order == SortOrder::Ascending as i32,
                 nulls_first: *order == SortOrder::Ascending as i32,
-            })
+            }))
             .collect();
 
-        order_by.push(Expr::Sort {
+        order_by.push(Expr::Sort (expr::Sort{
             expr: Box::new(flat_col("__row_number")),
             asc: true,
             nulls_first: true,
-        });
+        }));
 
         // Add row number column for sorting
         let row_number_expr = make_row_number_expr();
@@ -120,12 +120,12 @@ fn eval_normalize_center_offset(
     let stack_col_name = "__stack";
     let dataframe = dataframe.select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)])?;
 
-    let total_agg = Expr::AggregateFunction {
+    let total_agg = Expr::AggregateFunction(expr::AggregateFunction {
         fun: AggregateFunction::Sum,
         args: vec![flat_col(stack_col_name)],
         distinct: false,
         filter: None,
-    }
+    })
     .alias("__total");
 
     let total_agg_str = total_agg.to_sql_select()?.sql(dataframe.dialect())?;
@@ -154,7 +154,7 @@ fn eval_normalize_center_offset(
 
     // Build window function to compute cumulative sum of stack column
     let fun = WindowFunction::AggregateFunction(aggregates::AggregateFunction::Sum);
-    let window_expr = Expr::WindowFunction {
+    let window_expr = Expr::WindowFunction (expr::WindowFunction{
         fun,
         args: vec![flat_col(stack_col_name)],
         partition_by,
@@ -164,7 +164,7 @@ fn eval_normalize_center_offset(
             start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
             end_bound: WindowFrameBound::CurrentRow
         },
-    }
+    })
     .alias(alias1);
 
     // Perform selection to add new field value
@@ -172,11 +172,11 @@ fn eval_normalize_center_offset(
 
     // Restore original order
     let dataframe = dataframe.sort(
-        vec![Expr::Sort {
+        vec![Expr::Sort (expr::Sort {
             expr: Box::new(flat_col("__row_number")),
             asc: true,
             nulls_first: false,
-        }],
+        })],
         None,
     )?;
 
@@ -265,7 +265,7 @@ fn eval_zero_offset(
         when(unescaped_col(&stack.field).is_not_null(), numeric_field).otherwise(lit(0))?;
 
     // Build window function to compute stacked value
-    let window_expr = Expr::WindowFunction {
+    let window_expr = Expr::WindowFunction(expr::WindowFunction {
         fun,
         args: vec![numeric_field.clone()],
         partition_by,
@@ -275,7 +275,7 @@ fn eval_zero_offset(
             start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
             end_bound: WindowFrameBound::CurrentRow
         },
-    }
+    })
     .alias(alias1);
 
     let window_expr_str = window_expr.to_sql_select()?.sql(dataframe.dialect())?;
@@ -294,11 +294,11 @@ fn eval_zero_offset(
 
     // Restore original order
     let dataframe = dataframe.sort(
-        vec![Expr::Sort {
+        vec![Expr::Sort (expr::Sort{
             expr: Box::new(flat_col("__row_number")),
             asc: true,
             nulls_first: false,
-        }],
+        })],
         None,
     )?;
 

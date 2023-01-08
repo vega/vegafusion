@@ -447,7 +447,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
 }
 
 pub fn make_session_context() -> SessionContext {
-    let mut ctx = SessionContext::new();
+    let ctx = SessionContext::new();
 
     // isNan
     ctx.register_udf(make_is_nan_udf());

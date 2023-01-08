@@ -110,6 +110,7 @@ impl SqlDataFrame {
         // Now convert to string in the DataFusion dialect for schema inference
         let query_str = combined_query.sql(&self.dialect)?;
         // println!("datafusion: {}", query_str);
+
         let logical_plan = self.session_context.create_logical_plan(&query_str)?;
         // println!("logical_plan: {:?}", logical_plan);
         let new_schema: Schema = logical_plan.schema().as_ref().into();

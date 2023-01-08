@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 
 use vegafusion_core::error::Result;
 
-use datafusion::logical_expr::Expr;
+use datafusion::logical_expr::{Expr, expr};
 
 use std::sync::Arc;
 use vegafusion_core::data::scalar::DATETIME_PREFIX;
@@ -74,11 +74,11 @@ pub fn assert_tables_equal(
             .schema
             .fields()
             .iter()
-            .map(|f| Expr::Sort {
+            .map(|f| Expr::Sort (expr::Sort{
                 expr: Box::new(flat_col(f.name())),
                 asc: false,
                 nulls_first: false,
-            })
+            }))
             .collect();
 
         let lhs_df = lhs.to_dataframe().unwrap();

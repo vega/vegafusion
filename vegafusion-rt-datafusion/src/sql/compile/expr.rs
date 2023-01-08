@@ -12,6 +12,7 @@ use datafusion_expr::expr::{BinaryExpr, Case, Cast};
 use datafusion_expr::{
     AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator,
     WindowFrameBound, WindowFrameUnits, WindowFunction,
+    expr,
 };
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 
@@ -79,6 +80,8 @@ impl ToSqlExpr for Expr {
                     Operator::StringConcat => SqlBinaryOperator::StringConcat,
                     Operator::BitwiseShiftRight => SqlBinaryOperator::PGBitwiseShiftRight,
                     Operator::BitwiseShiftLeft => SqlBinaryOperator::PGBitwiseShiftLeft,
+                    Operator::ILike => SqlBinaryOperator::ILike,
+                    Operator::NotILike => SqlBinaryOperator::NotILike,
                 };
                 Ok(SqlExpr::Nested(Box::new(SqlExpr::BinaryOp {
                     left: Box::new(left.to_sql()?),
@@ -151,7 +154,7 @@ impl ToSqlExpr for Expr {
                     data_type,
                 })
             }
-            Expr::TryCast { expr, data_type } => {
+            Expr::TryCast ( expr::TryCast { expr, data_type }) => {
                 let data_type = data_type.to_sql()?;
                 Ok(SqlExpr::TryCast {
                     expr: Box::new(expr.to_sql()?),
@@ -271,12 +274,12 @@ impl ToSqlExpr for Expr {
                     distinct: false,
                 }))
             }
-            Expr::AggregateFunction {
+            Expr::AggregateFunction (expr::AggregateFunction{
                 fun,
                 args,
                 distinct,
                 filter: _,
-            } => {
+            }) => {
                 let value = aggr_fn_to_name(fun);
                 let ident = Ident {
                     value: value.to_ascii_lowercase(),
@@ -294,19 +297,22 @@ impl ToSqlExpr for Expr {
                     distinct: *distinct,
                 }))
             }
-            Expr::WindowFunction {
+            Expr::WindowFunction (expr::WindowFunction{
                 fun,
                 args,
                 partition_by,
                 order_by,
                 window_frame,
-            } => {
+            }) => {
                 // Extract function name
                 let name_str = match fun {
                     WindowFunction::AggregateFunction(agg) => {
                         aggr_fn_to_name(agg).to_string()
                     },
                     WindowFunction::BuiltInWindowFunction(win_fn) => win_fn.to_string(),
+                    WindowFunction::AggregateUDF(udf) => {
+                        udf.name.clone()
+                    }
                 };
 
                 // Process args
@@ -455,6 +461,9 @@ impl ToSqlExpr for Expr {
             )),
             Expr::SimilarTo { .. } => Err(VegaFusionError::internal(
                 "SimilarTo cannot be converted to SQL",
+            )),
+            Expr::Placeholder { .. } => Err(VegaFusionError::internal(
+                "Placeholder cannot be converted to SQL",
             )),
         }
     }
