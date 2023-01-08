@@ -547,7 +547,7 @@ async fn build_csv_schema(
 ) -> Result<SchemaRef> {
     let ctx = SessionContext::new();
     let table_path = ListingTableUrl::parse(uri.into().as_str())?;
-    let target_partitions = ctx.copied_config().target_partitions;
+    let target_partitions = ctx.copied_config().target_partitions();
     let listing_options = csv_opts.to_listing_options(target_partitions);
     let inferred_schema = listing_options
         .infer_schema(&ctx.state(), &table_path)

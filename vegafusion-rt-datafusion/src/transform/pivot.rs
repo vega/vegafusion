@@ -4,12 +4,12 @@ use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::compile::expr::ToSqlExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
-use crate::transform::aggregate::make_aggr_expr;
+use crate::transform::aggregate::{make_aggr_expr, make_row_number_expr};
 use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::Column;
-use datafusion_expr::{coalesce, col, lit, min, when, BuiltInWindowFunction, Expr, WindowFunction};
+use datafusion_expr::{coalesce, col, lit, min, when, Expr};
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::StringArray;
@@ -207,14 +207,7 @@ async fn pivot_with_grouping(
     }
 
     // Add row_index column that we can sort by later
-    let row_number_expr = Expr::WindowFunction {
-        fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
-        args: Vec::new(),
-        partition_by: Vec::new(),
-        order_by: Vec::new(),
-        window_frame: None,
-    }
-    .alias("__row_number");
+    let row_number_expr = make_row_number_expr();
     let dataframe = dataframe.select(vec![Expr::Wildcard, row_number_expr])?;
 
     // Process aggregate operation

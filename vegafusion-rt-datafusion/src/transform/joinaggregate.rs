@@ -7,10 +7,9 @@ use datafusion::logical_expr::Expr;
 use crate::sql::compile::expr::ToSqlExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
-use crate::transform::aggregate::make_aggr_expr;
+use crate::transform::aggregate::{make_aggr_expr, make_row_number_expr};
 use async_trait::async_trait;
 use datafusion::common::Column;
-use datafusion_expr::{BuiltInWindowFunction, WindowFunction};
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
 
@@ -97,14 +96,7 @@ impl TransformTrait for JoinAggregate {
         let input_col_csv = input_col_strs.join(", ");
 
         // Build row_number select expression
-        let row_number_expr = Expr::WindowFunction {
-            fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
-            args: Vec::new(),
-            partition_by: Vec::new(),
-            order_by: Vec::new(),
-            window_frame: None,
-        }
-        .alias("__row_number");
+        let row_number_expr = make_row_number_expr();
         let row_number_str = row_number_expr.to_sql_select()?.sql(dataframe.dialect())?;
 
         // Perform join aggregation

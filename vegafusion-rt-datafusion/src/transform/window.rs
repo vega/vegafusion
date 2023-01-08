@@ -7,7 +7,7 @@ use datafusion::prelude::lit;
 use std::sync::Arc;
 use datafusion::common::ScalarValue;
 use vegafusion_core::error::Result;
-use vegafusion_core::proto::gen::transforms::{window_transform_op, AggregateOp, SortOrder, Window, WindowOp, WindowFrame};
+use vegafusion_core::proto::gen::transforms::{window_transform_op, AggregateOp, SortOrder, Window, WindowOp};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::expression::compiler::utils::to_numeric;
@@ -15,7 +15,7 @@ use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
 use datafusion::physical_plan::aggregates;
 use datafusion_expr::{BuiltInWindowFunction, window_frame, WindowFrameBound, WindowFrameUnits, WindowFunction};
-use vegafusion_core::proto::gen::transforms::AggregateOp::{Variance, Variancep};
+use crate::transform::aggregate::make_row_number_expr;
 
 #[async_trait]
 impl TransformTrait for Window {
@@ -44,14 +44,7 @@ impl TransformTrait for Window {
 
         let dataframe = if order_by.is_empty() {
             //  If no order by fields provided, use the row number
-            let row_number_expr = Expr::WindowFunction {
-                fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
-                args: Vec::new(),
-                partition_by: Vec::new(),
-                order_by: Vec::new(),
-                window_frame: None,
-            }
-            .alias("__row_number");
+            let row_number_expr = make_row_number_expr();
 
             order_by.push(Expr::Sort {
                 expr: Box::new(flat_col("__row_number")),
@@ -164,7 +157,7 @@ impl TransformTrait for Window {
                     args,
                     partition_by: partition_by.clone(),
                     order_by: order_by.clone(),
-                    window_frame: Some(window_frame.clone()),
+                    window_frame: window_frame.clone(),
                 };
 
                 if let Some(alias) = self.aliases.get(i) {

@@ -7,7 +7,7 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::common::ScalarValue;
 use datafusion_expr::expr::Cast;
-use datafusion_expr::{lit, when, BuiltInWindowFunction, Expr, WindowFunction};
+use datafusion_expr::{lit, when, Expr};
 use itertools::Itertools;
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
@@ -16,6 +16,7 @@ use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Impute;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use crate::transform::aggregate::make_row_number_expr;
 
 #[async_trait]
 impl TransformTrait for Impute {
@@ -112,14 +113,7 @@ fn single_groupby_sql(
     let group_col_str = group_col.to_sql_select()?.sql(dataframe.dialect())?;
 
     // Build row number expr to apply to input table
-    let row_number_expr = Expr::WindowFunction {
-        fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
-        args: Vec::new(),
-        partition_by: Vec::new(),
-        order_by: Vec::new(),
-        window_frame: None,
-    }
-    .alias("__row_number");
+    let row_number_expr = make_row_number_expr();
     let row_number_expr_str = row_number_expr.to_sql_select()?.sql(dataframe.dialect())?;
 
     // Build order by

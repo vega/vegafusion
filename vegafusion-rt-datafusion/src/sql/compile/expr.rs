@@ -10,7 +10,7 @@ use sqlgen::ast::{
 
 use datafusion_expr::expr::{BinaryExpr, Case, Cast};
 use datafusion_expr::{
-    AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator, WindowFrame,
+    AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator,
     WindowFrameBound, WindowFrameUnits, WindowFunction,
 };
 use vegafusion_core::data::scalar::ScalarValueHelpers;
@@ -325,23 +325,36 @@ impl ToSqlExpr for Expr {
                     .map(|arg| arg.to_sql_order())
                     .collect::<Result<Vec<_>>>()?;
 
-                let sql_window_frame = match window_frame {
-                    None => None,
-                    Some(window_frame) => {
-                        let end_bound = compile_window_frame_bound(&window_frame.end_bound)?;
-                        let start_bound = compile_window_frame_bound(&window_frame.start_bound)?;
-                        let units = match window_frame.units {
-                            WindowFrameUnits::Rows => SqlWindowFrameUnits::Rows,
-                            WindowFrameUnits::Range => SqlWindowFrameUnits::Range,
-                            WindowFrameUnits::Groups => SqlWindowFrameUnits::Groups,
-                        };
-                        Some(SqlWindowFrame {
-                            units,
-                            start_bound,
-                            end_bound: Some(end_bound),
-                        })
-                    }
+                let end_bound = compile_window_frame_bound(&window_frame.end_bound)?;
+                let start_bound = compile_window_frame_bound(&window_frame.start_bound)?;
+                let units = match window_frame.units {
+                    WindowFrameUnits::Rows => SqlWindowFrameUnits::Rows,
+                    WindowFrameUnits::Range => SqlWindowFrameUnits::Range,
+                    WindowFrameUnits::Groups => SqlWindowFrameUnits::Groups,
                 };
+                let sql_window_frame = Some(SqlWindowFrame {
+                    units,
+                    start_bound,
+                    end_bound: Some(end_bound),
+                });
+
+                // let sql_window_frame = match window_frame {
+                //     None => None,
+                //     Some(window_frame) => {
+                //         let end_bound = compile_window_frame_bound(&window_frame.end_bound)?;
+                //         let start_bound = compile_window_frame_bound(&window_frame.start_bound)?;
+                //         let units = match window_frame.units {
+                //             WindowFrameUnits::Rows => SqlWindowFrameUnits::Rows,
+                //             WindowFrameUnits::Range => SqlWindowFrameUnits::Range,
+                //             WindowFrameUnits::Groups => SqlWindowFrameUnits::Groups,
+                //         };
+                //         Some(SqlWindowFrame {
+                //             units,
+                //             start_bound,
+                //             end_bound: Some(end_bound),
+                //         })
+                //     }
+                // };
 
                 // Process over
                 let over = SqlWindowSpec {

@@ -6,17 +6,17 @@ use crate::sql::dataframe::SqlDataFrame;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::physical_plan::aggregates;
-use datafusion_expr::{
-    abs, lit, max, when, AggregateFunction, BuiltInWindowFunction, Expr, WindowFunction,
-};
+use datafusion_expr::{abs, lit, max, when, AggregateFunction, Expr, WindowFunction, WindowFrame, WindowFrameUnits, WindowFrameBound};
 use sqlgen::dialect::DialectDisplay;
 
 use crate::expression::escape::{flat_col, unescaped_col};
 use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
+use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{SortOrder, Stack, StackOffset};
 use vegafusion_core::task_graph::task_value::TaskValue;
+use crate::transform::aggregate::make_row_number_expr;
 
 #[async_trait]
 impl TransformTrait for Stack {
@@ -56,14 +56,7 @@ impl TransformTrait for Stack {
         });
 
         // Add row number column for sorting
-        let row_number_expr = Expr::WindowFunction {
-            fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
-            args: Vec::new(),
-            partition_by: Vec::new(),
-            order_by: Vec::new(),
-            window_frame: None,
-        }
-        .alias("__row_number");
+        let row_number_expr = make_row_number_expr();
 
         let dataframe = dataframe.select(vec![Expr::Wildcard, row_number_expr])?;
 
@@ -166,7 +159,11 @@ fn eval_normalize_center_offset(
         args: vec![flat_col(stack_col_name)],
         partition_by,
         order_by: Vec::from(order_by),
-        window_frame: None,
+        window_frame: WindowFrame {
+            units: WindowFrameUnits::Rows,
+            start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
+            end_bound: WindowFrameBound::CurrentRow
+        },
     }
     .alias(alias1);
 
@@ -273,7 +270,11 @@ fn eval_zero_offset(
         args: vec![numeric_field.clone()],
         partition_by,
         order_by: Vec::from(order_by),
-        window_frame: None,
+        window_frame: WindowFrame {
+            units: WindowFrameUnits::Rows,
+            start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
+            end_bound: WindowFrameBound::CurrentRow
+        },
     }
     .alias(alias1);
 

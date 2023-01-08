@@ -10,7 +10,7 @@ use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion::common::{DFSchema, ScalarValue};
 use datafusion_expr::expr::Cast;
-use datafusion_expr::{aggregate_function, BuiltInWindowFunction, WindowFunction};
+use datafusion_expr::{aggregate_function, BuiltInWindowFunction, WindowFrame, WindowFrameBound, WindowFrameUnits, WindowFunction};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, VegaFusionError};
@@ -32,14 +32,7 @@ impl TransformTrait for Aggregate {
         // Add __row_number column if groupby columns is not empty
         let dataframe = if !self.groupby.is_empty() {
             //  Add row_number column that we can sort by
-            let row_number_expr = Expr::WindowFunction {
-                fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
-                args: Vec::new(),
-                partition_by: Vec::new(),
-                order_by: Vec::new(),
-                window_frame: None,
-            }
-            .alias("__row_number");
+            let row_number_expr = make_row_number_expr();
 
             // Add min(__row_number) aggregation that we can sort by later
             agg_exprs.push(min(flat_col("__row_number")).alias("__min_row_number"));
@@ -69,6 +62,23 @@ impl TransformTrait for Aggregate {
         Ok((grouped_dataframe, Vec::new()))
     }
 }
+
+
+pub fn make_row_number_expr() -> Expr {
+    Expr::WindowFunction {
+        fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
+        args: Vec::new(),
+        partition_by: Vec::new(),
+        order_by: Vec::new(),
+        window_frame: WindowFrame {
+            units: WindowFrameUnits::Rows,
+            start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
+            end_bound: WindowFrameBound::CurrentRow
+        },
+    }
+        .alias("__row_number")
+}
+
 
 fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr>, Vec<Expr>)> {
     // DataFusion does not allow repeated (field, op) combinations in an aggregate expression,
