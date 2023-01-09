@@ -15,17 +15,17 @@ opt-level = 3
 
 [patch.crates-io]
 
-## Arrow 28.0 with backports
-#arrow = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
-#arrow-cast = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
-#arrow-ipc = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
-#arrow-data = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
-#arrow-buffer = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
-#arrow-schema = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
-#arrow-array = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
-#arrow-select = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "b7a162a8818aa6ded704edec5d7423ee4645e9e2"}
+# Arrow 29.0 with backports
+arrow = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "59a5289b3603db08433e5309eed488a0abbf5d0d"}
+arrow-cast = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "59a5289b3603db08433e5309eed488a0abbf5d0d"}
+arrow-ipc = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "59a5289b3603db08433e5309eed488a0abbf5d0d"}
+arrow-data = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "59a5289b3603db08433e5309eed488a0abbf5d0d"}
+arrow-buffer = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "59a5289b3603db08433e5309eed488a0abbf5d0d"}
+arrow-schema = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "59a5289b3603db08433e5309eed488a0abbf5d0d"}
+arrow-array = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "59a5289b3603db08433e5309eed488a0abbf5d0d"}
+arrow-select = { git = "https://github.com/jonmmease/arrow-rs.git", rev = "59a5289b3603db08433e5309eed488a0abbf5d0d"}
 
-# DataFusion 15.0 with backports
-datafusion = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "169b5228800f991be913b10ffdfd161e2cbc7baf"}
-datafusion-common = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "169b5228800f991be913b10ffdfd161e2cbc7baf"}
-datafusion-expr = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "169b5228800f991be913b10ffdfd161e2cbc7baf"}
+# DataFusion 16.0 with backports
+datafusion = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "1d8c71a4703d27564c1a2bd60b164769f33fbe8f"}
+datafusion-common = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "1d8c71a4703d27564c1a2bd60b164769f33fbe8f"}
+datafusion-expr = { git = "https://github.com/jonmmease/arrow-datafusion.git", rev = "1d8c71a4703d27564c1a2bd60b164769f33fbe8f"}

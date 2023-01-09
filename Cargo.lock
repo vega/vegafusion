@@ -86,8 +86,7 @@ checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
 [[package]]
 name = "arrow"
 version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fe17dc0113da7e2eaeaedbd304d347aa8ea64916d225b79a5c3f3b6b5d8da4c"
+source = "git+https://github.com/jonmmease/arrow-rs.git?rev=59a5289b3603db08433e5309eed488a0abbf5d0d#59a5289b3603db08433e5309eed488a0abbf5d0d"
 dependencies = [
  "ahash 0.8.0",
  "arrow-array",
@@ -115,8 +114,7 @@ dependencies = [
 [[package]]
 name = "arrow-array"
 version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9452131e027aec3276e43449162af084db611c42ef875e54d231e6580bc6254"
+source = "git+https://github.com/jonmmease/arrow-rs.git?rev=59a5289b3603db08433e5309eed488a0abbf5d0d#59a5289b3603db08433e5309eed488a0abbf5d0d"
 dependencies = [
  "ahash 0.8.0",
  "arrow-buffer",
@@ -131,8 +129,7 @@ dependencies = [
 [[package]]
 name = "arrow-buffer"
 version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a301001e8ed7da638a12fa579ac5f3f154c44c0655f2ca6ed0f8586b418a779"
+source = "git+https://github.com/jonmmease/arrow-rs.git?rev=59a5289b3603db08433e5309eed488a0abbf5d0d#59a5289b3603db08433e5309eed488a0abbf5d0d"
 dependencies = [
  "half 2.1.0",
  "num",
@@ -141,8 +138,7 @@ dependencies = [
 [[package]]
 name = "arrow-cast"
 version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "048c91d067f2eb8cc327f086773e5b0f0d7714780807fc4db09366584e23bac8"
+source = "git+https://github.com/jonmmease/arrow-rs.git?rev=59a5289b3603db08433e5309eed488a0abbf5d0d#59a5289b3603db08433e5309eed488a0abbf5d0d"
 dependencies = [
  "arrow-array",
  "arrow-buffer",
@@ -157,8 +153,7 @@ dependencies = [
 [[package]]
 name = "arrow-csv"
 version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed914cd0006a3bb9cac8136b3098ac7796ad26b82362f00d4f2e7c1a54684b86"
+source = "git+https://github.com/jonmmease/arrow-rs.git?rev=59a5289b3603db08433e5309eed488a0abbf5d0d#59a5289b3603db08433e5309eed488a0abbf5d0d"
 dependencies = [
  "arrow-array",
  "arrow-buffer",
@@ -175,8 +170,7 @@ dependencies = [
 [[package]]
 name = "arrow-data"
 version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e59619d9d102e4e6b22087b2bd60c07df76fcb68683620841718f6bc8e8f02cb"
+source = "git+https://github.com/jonmmease/arrow-rs.git?rev=59a5289b3603db08433e5309eed488a0abbf5d0d#59a5289b3603db08433e5309eed488a0abbf5d0d"
 dependencies = [
  "arrow-buffer",
  "arrow-schema",
@@ -187,8 +181,7 @@ dependencies = [
 [[package]]
 name = "arrow-ipc"
 version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb7ad6d2fa06a1cebdaa213c59fc953b9230e560d8374aba133b572b864ec55e"
+source = "git+https://github.com/jonmmease/arrow-rs.git?rev=59a5289b3603db08433e5309eed488a0abbf5d0d#59a5289b3603db08433e5309eed488a0abbf5d0d"
 dependencies = [
  "arrow-array",
  "arrow-buffer",
@@ -201,8 +194,7 @@ dependencies = [
 [[package]]
 name = "arrow-json"
 version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e22efab3ad70336057660c5e5f2b72e2417e3444c27cb42dc477d678ddd6979"
+source = "git+https://github.com/jonmmease/arrow-rs.git?rev=59a5289b3603db08433e5309eed488a0abbf5d0d#59a5289b3603db08433e5309eed488a0abbf5d0d"
 dependencies = [
  "arrow-array",
  "arrow-buffer",
@@ -219,8 +211,7 @@ dependencies = [
 [[package]]
 name = "arrow-ord"
 version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e23b623332804a65ad11e7732c351896dcb132c19f8e25d99fdb13b00aae5206"
+source = "git+https://github.com/jonmmease/arrow-rs.git?rev=59a5289b3603db08433e5309eed488a0abbf5d0d#59a5289b3603db08433e5309eed488a0abbf5d0d"
 dependencies = [
  "arrow-array",
  "arrow-buffer",
@@ -233,14 +224,12 @@ dependencies = [
 [[package]]
 name = "arrow-schema"
 version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69ef17c144f1253b9864f5a3e8f4c6f1e436bdd52394855d5942f132f776b64e"
+source = "git+https://github.com/jonmmease/arrow-rs.git?rev=59a5289b3603db08433e5309eed488a0abbf5d0d#59a5289b3603db08433e5309eed488a0abbf5d0d"
 
 [[package]]
 name = "arrow-select"
 version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2accaf218ff107e3df0ee8f1e09b092249a1cc741c4377858a1470fd27d7096"
+source = "git+https://github.com/jonmmease/arrow-rs.git?rev=59a5289b3603db08433e5309eed488a0abbf5d0d#59a5289b3603db08433e5309eed488a0abbf5d0d"
 dependencies = [
  "arrow-array",
  "arrow-buffer",
@@ -252,14 +241,12 @@ dependencies = [
 [[package]]
 name = "arrow-string"
 version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4a0954f9e1f45b04815ddacbde72899bf3c03a08fa6c0375f42178c4a01a510"
+source = "git+https://github.com/jonmmease/arrow-rs.git?rev=59a5289b3603db08433e5309eed488a0abbf5d0d#59a5289b3603db08433e5309eed488a0abbf5d0d"
 dependencies = [
  "arrow-array",
  "arrow-buffer",
  "arrow-data",
  "arrow-schema",
- "arrow-select",
  "regex",
  "regex-syntax",
 ]
@@ -951,8 +938,8 @@ dependencies = [
 
 [[package]]
 name = "datafusion"
-version = "15.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=169b5228800f991be913b10ffdfd161e2cbc7baf#169b5228800f991be913b10ffdfd161e2cbc7baf"
+version = "16.0.0"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=1d8c71a4703d27564c1a2bd60b164769f33fbe8f#1d8c71a4703d27564c1a2bd60b164769f33fbe8f"
 dependencies = [
  "ahash 0.8.0",
  "arrow",
@@ -997,8 +984,8 @@ dependencies = [
 
 [[package]]
 name = "datafusion-common"
-version = "15.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=169b5228800f991be913b10ffdfd161e2cbc7baf#169b5228800f991be913b10ffdfd161e2cbc7baf"
+version = "16.0.0"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=1d8c71a4703d27564c1a2bd60b164769f33fbe8f#1d8c71a4703d27564c1a2bd60b164769f33fbe8f"
 dependencies = [
  "arrow",
  "chrono",
@@ -1011,8 +998,8 @@ dependencies = [
 
 [[package]]
 name = "datafusion-expr"
-version = "15.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=169b5228800f991be913b10ffdfd161e2cbc7baf#169b5228800f991be913b10ffdfd161e2cbc7baf"
+version = "16.0.0"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=1d8c71a4703d27564c1a2bd60b164769f33fbe8f#1d8c71a4703d27564c1a2bd60b164769f33fbe8f"
 dependencies = [
  "ahash 0.8.0",
  "arrow",
@@ -1023,8 +1010,8 @@ dependencies = [
 
 [[package]]
 name = "datafusion-optimizer"
-version = "15.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=169b5228800f991be913b10ffdfd161e2cbc7baf#169b5228800f991be913b10ffdfd161e2cbc7baf"
+version = "16.0.0"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=1d8c71a4703d27564c1a2bd60b164769f33fbe8f#1d8c71a4703d27564c1a2bd60b164769f33fbe8f"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1039,8 +1026,8 @@ dependencies = [
 
 [[package]]
 name = "datafusion-physical-expr"
-version = "15.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=169b5228800f991be913b10ffdfd161e2cbc7baf#169b5228800f991be913b10ffdfd161e2cbc7baf"
+version = "16.0.0"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=1d8c71a4703d27564c1a2bd60b164769f33fbe8f#1d8c71a4703d27564c1a2bd60b164769f33fbe8f"
 dependencies = [
  "ahash 0.8.0",
  "arrow",
@@ -1069,8 +1056,8 @@ dependencies = [
 
 [[package]]
 name = "datafusion-row"
-version = "15.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=169b5228800f991be913b10ffdfd161e2cbc7baf#169b5228800f991be913b10ffdfd161e2cbc7baf"
+version = "16.0.0"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=1d8c71a4703d27564c1a2bd60b164769f33fbe8f#1d8c71a4703d27564c1a2bd60b164769f33fbe8f"
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -1080,8 +1067,8 @@ dependencies = [
 
 [[package]]
 name = "datafusion-sql"
-version = "15.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=169b5228800f991be913b10ffdfd161e2cbc7baf#169b5228800f991be913b10ffdfd161e2cbc7baf"
+version = "16.0.0"
+source = "git+https://github.com/jonmmease/arrow-datafusion.git?rev=1d8c71a4703d27564c1a2bd60b164769f33fbe8f#1d8c71a4703d27564c1a2bd60b164769f33fbe8f"
 dependencies = [
  "arrow-schema",
  "datafusion-common",

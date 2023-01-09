@@ -37,7 +37,7 @@ default_features = false
 features = [ "ipc", "json",]
 
 [dependencies.datafusion-common]
-version = "~15.0.0"
+version = "~16.0.0"
 
 [dependencies.pyo3]
 version = "0.17.1"
