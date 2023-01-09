@@ -273,13 +273,13 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
 
     let signature = Signature::exact(
         vec![
-            DataType::Int64, // year
-            DataType::Int64, // month
-            DataType::Int64, // date
-            DataType::Int64, // hour
-            DataType::Int64, // minute
-            DataType::Int64, // second
-            DataType::Int64, // millisecond
+            DataType::Float64, // year
+            DataType::Float64, // month
+            DataType::Float64, // date
+            DataType::Float64, // hour
+            DataType::Float64, // minute
+            DataType::Float64, // second
+            DataType::Float64, // millisecond
             DataType::Utf8,  // time zone
         ],
         Volatility::Immutable,
