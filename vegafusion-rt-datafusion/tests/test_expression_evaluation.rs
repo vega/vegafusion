@@ -433,7 +433,6 @@ mod test_date_parts {
         case("utcmilliseconds(datetime(utc(87, 3, 10, 7, 35, 10, 87)))"),
         case("utcmilliseconds(utc(87, 3, 10, 7, 35, 10, 87))"),
         case("utcmilliseconds(datetime(87, 3, 10, 7, 35, 10, 87))")
-
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())

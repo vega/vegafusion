@@ -10,9 +10,8 @@ use sqlgen::ast::{
 
 use datafusion_expr::expr::{BinaryExpr, Case, Cast};
 use datafusion_expr::{
-    AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator,
-    WindowFrameBound, WindowFrameUnits, WindowFunction,
-    expr,
+    expr, AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator, WindowFrameBound,
+    WindowFrameUnits, WindowFunction,
 };
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 
@@ -29,9 +28,10 @@ impl ToSqlExpr for Expr {
         match self {
             Expr::Alias(_, _) => {
                 // Alias expressions need to be handled at a higher level
-                Err(VegaFusionError::internal(
-                    format!("Alias cannot be converted to SQL: {:?}", self),
-                ))
+                Err(VegaFusionError::internal(format!(
+                    "Alias cannot be converted to SQL: {:?}",
+                    self
+                )))
             }
             Expr::Column(col) => Ok(match &col.relation {
                 Some(relation) => {
@@ -150,7 +150,7 @@ impl ToSqlExpr for Expr {
                     data_type,
                 })
             }
-            Expr::TryCast ( expr::TryCast { expr, data_type }) => {
+            Expr::TryCast(expr::TryCast { expr, data_type }) => {
                 let data_type = data_type.to_sql()?;
                 Ok(SqlExpr::TryCast {
                     expr: Box::new(expr.to_sql()?),
@@ -270,7 +270,7 @@ impl ToSqlExpr for Expr {
                     distinct: false,
                 }))
             }
-            Expr::AggregateFunction (expr::AggregateFunction{
+            Expr::AggregateFunction(expr::AggregateFunction {
                 fun,
                 args,
                 distinct,
@@ -293,7 +293,7 @@ impl ToSqlExpr for Expr {
                     distinct: *distinct,
                 }))
             }
-            Expr::WindowFunction (expr::WindowFunction{
+            Expr::WindowFunction(expr::WindowFunction {
                 fun,
                 args,
                 partition_by,
@@ -302,13 +302,9 @@ impl ToSqlExpr for Expr {
             }) => {
                 // Extract function name
                 let name_str = match fun {
-                    WindowFunction::AggregateFunction(agg) => {
-                        aggr_fn_to_name(agg).to_string()
-                    },
+                    WindowFunction::AggregateFunction(agg) => aggr_fn_to_name(agg).to_string(),
                     WindowFunction::BuiltInWindowFunction(win_fn) => win_fn.to_string(),
-                    WindowFunction::AggregateUDF(udf) => {
-                        udf.name.clone()
-                    }
+                    WindowFunction::AggregateUDF(udf) => udf.name.clone(),
                 };
 
                 // Process args
@@ -483,31 +479,24 @@ fn aggr_fn_to_name(fun: &AggregateFunction) -> &str {
         AggregateFunction::CovariancePop => "covar_pop",
         AggregateFunction::Correlation => "corr",
         AggregateFunction::ApproxPercentileCont => "approx_percentile_cont",
-        AggregateFunction::ApproxPercentileContWithWeight => {
-            "approx_percentile_cont_with_weight"
-        }
+        AggregateFunction::ApproxPercentileContWithWeight => "approx_percentile_cont_with_weight",
         AggregateFunction::ApproxMedian => "approx_median",
         AggregateFunction::Grouping => "grouping",
     };
     value
 }
 
-
 fn compile_window_frame_bound(bound: &WindowFrameBound) -> Result<SqlWindowBound> {
     Ok(match bound {
-        WindowFrameBound::Preceding(v) => {
-            match v.to_f64() {
-                Ok(v) => SqlWindowBound::Preceding(Some(v.max(0.0) as u64)),
-                Err(_) => SqlWindowBound::Preceding(None),
-            }
-        }
+        WindowFrameBound::Preceding(v) => match v.to_f64() {
+            Ok(v) => SqlWindowBound::Preceding(Some(v.max(0.0) as u64)),
+            Err(_) => SqlWindowBound::Preceding(None),
+        },
         WindowFrameBound::CurrentRow => SqlWindowBound::CurrentRow,
-        WindowFrameBound::Following(v) => {
-            match v.to_f64() {
-                Ok(v) => SqlWindowBound::Following(Some(v.max(0.0) as u64)),
-                Err(_) => SqlWindowBound::Following(None),
-            }
-        }
+        WindowFrameBound::Following(v) => match v.to_f64() {
+            Ok(v) => SqlWindowBound::Following(Some(v.max(0.0) as u64)),
+            Err(_) => SqlWindowBound::Following(None),
+        },
     })
 }
 

@@ -112,18 +112,20 @@ impl TransformTrait for JoinAggregate {
         let aggr_csv = sql_aggr_expr_strs.join(", ");
 
         let dataframe = if sql_group_expr_strs.is_empty() {
-            dataframe.chain_query_str(&format!(
-                "select {input_col_csv}, {new_col_csv} \
+            dataframe
+                .chain_query_str(&format!(
+                    "select {input_col_csv}, {new_col_csv} \
                 from (select *, {row_number_str} from {parent}) \
                 CROSS JOIN (select {aggr_csv} from {parent}) as {inner_name} \
                 ORDER BY __row_number",
-                aggr_csv = aggr_csv,
-                parent = dataframe.parent_name(),
-                input_col_csv = input_col_csv,
-                row_number_str = row_number_str,
-                new_col_csv = new_col_csv,
-                inner_name = inner_name,
-            )).await?
+                    aggr_csv = aggr_csv,
+                    parent = dataframe.parent_name(),
+                    input_col_csv = input_col_csv,
+                    row_number_str = row_number_str,
+                    new_col_csv = new_col_csv,
+                    inner_name = inner_name,
+                ))
+                .await?
         } else {
             let group_by_csv = sql_group_expr_strs.join(", ");
             dataframe.chain_query_str(&format!(

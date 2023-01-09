@@ -1,5 +1,5 @@
 use crate::sql::compile::expr::ToSqlExpr;
-use datafusion_expr::{Expr, expr::Sort};
+use datafusion_expr::{expr::Sort, Expr};
 use sqlgen::ast::OrderByExpr as SqlOrderByExpr;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
@@ -10,7 +10,7 @@ pub trait ToSqlOrderByExpr {
 impl ToSqlOrderByExpr for Expr {
     fn to_sql_order(&self) -> Result<SqlOrderByExpr> {
         match self {
-            Expr::Sort (Sort{
+            Expr::Sort(Sort {
                 expr,
                 asc,
                 nulls_first,
@@ -35,7 +35,7 @@ impl ToSqlOrderByExpr for Expr {
 mod tests {
 
     use crate::expression::escape::flat_col;
-    use datafusion_expr::{Expr, expr};
+    use datafusion_expr::{expr, Expr};
     use sqlgen::dialect::DialectDisplay;
 
     use crate::sql::compile::order::ToSqlOrderByExpr;

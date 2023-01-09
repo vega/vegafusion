@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 
 use vegafusion_core::error::Result;
 
-use datafusion::logical_expr::{Expr, expr};
+use datafusion::logical_expr::{expr, Expr};
 
 use std::sync::Arc;
 use vegafusion_core::data::scalar::DATETIME_PREFIX;
@@ -13,8 +13,8 @@ use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 use vegafusion_rt_datafusion::expression::compiler::utils::is_numeric_datatype;
 use vegafusion_rt_datafusion::expression::escape::flat_col;
-use vegafusion_rt_datafusion::transform::utils::DataFrameUtils;
 use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
+use vegafusion_rt_datafusion::transform::utils::DataFrameUtils;
 
 #[derive(Debug, Clone)]
 pub struct TablesEqualConfig {
@@ -75,13 +75,14 @@ pub fn assert_tables_equal(
             .schema
             .fields()
             .iter()
-            .map(|f| Expr::Sort (expr::Sort{
-                expr: Box::new(flat_col(f.name())),
-                asc: false,
-                nulls_first: false,
-            }))
+            .map(|f| {
+                Expr::Sort(expr::Sort {
+                    expr: Box::new(flat_col(f.name())),
+                    asc: false,
+                    nulls_first: false,
+                })
+            })
             .collect();
-
 
         let lhs_df = TOKIO_RUNTIME.block_on(lhs.to_dataframe()).unwrap();
         let rhs_df = TOKIO_RUNTIME.block_on(rhs.to_dataframe()).unwrap();

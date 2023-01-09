@@ -2,7 +2,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
-use datafusion::common::{DataFusionError, DFSchema};
+use datafusion::common::{DFSchema, DataFusionError};
 use std::collections::HashSet;
 use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
@@ -18,11 +18,17 @@ use crate::expression::compiler::builtin_functions::date_time::timestamp_to_time
 use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 use crate::sql::compile::expr::ToSqlExpr;
 
+use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
+use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use crate::expression::escape::{flat_col, unescaped_col};
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
 use datafusion_expr::expr::Cast;
-use datafusion_expr::{floor, lit, BuiltinScalarFunction, ColumnarValue, Expr, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature, TypeSignature, Volatility, ExprSchemable};
+use datafusion_expr::{
+    floor, lit, BuiltinScalarFunction, ColumnarValue, Expr, ExprSchemable, ReturnTypeFunction,
+    ScalarFunctionImplementation, ScalarUDF, Signature, TypeSignature, Volatility,
+};
 use itertools::Itertools;
 use sqlgen::dialect::DialectDisplay;
 use std::str::FromStr;
@@ -30,9 +36,6 @@ use vegafusion_core::arrow::array::{ArrayRef, Int64Array, TimestampMillisecondAr
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::temporal_conversions::date64_to_datetime;
 use vegafusion_core::data::scalar::ScalarValue;
-use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 
 // Implementation of timeunit start using the SQL DATE_TRUNC function
 fn timeunit_date_trunc(
@@ -213,19 +216,21 @@ fn to_timestamp_col(field: &str, schema: &DFSchema, default_input_tz: &String) -
     let field_col = unescaped_col(field);
     Ok(match field_col.get_type(schema)? {
         DataType::Timestamp(_, _) => field_col.clone(),
-        DataType::Utf8 => {
-            Expr::ScalarUDF {
-                fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
-                args: vec![field_col.clone(), lit(default_input_tz)],
-            }
+        DataType::Utf8 => Expr::ScalarUDF {
+            fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+            args: vec![field_col.clone(), lit(default_input_tz)],
         },
         dtype if is_numeric_datatype(&dtype) => Expr::ScalarUDF {
             fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
-            args: vec![cast_to(field_col.clone(), &DataType::Int64, schema)?, lit("UTC")],
+            args: vec![
+                cast_to(field_col.clone(), &DataType::Int64, schema)?,
+                lit("UTC"),
+            ],
         },
         dtype => {
             return Err(VegaFusionError::compilation(format!(
-                "Invalid data type for timeunit transform: {:?}", dtype
+                "Invalid data type for timeunit transform: {:?}",
+                dtype
             )))
         }
     })
@@ -236,7 +241,7 @@ fn timeunit_weekday(
     field: &str,
     schema: &DFSchema,
     default_input_tz: &String,
-    local_tz: &Option<String>
+    local_tz: &Option<String>,
 ) -> Result<(Expr, String)> {
     let field_col = to_timestamp_col(field, schema, default_input_tz)?;
 
@@ -415,29 +420,71 @@ impl TransformTrait for TimeUnit {
 
         // Add timeunit start
         let (timeunit_start_value, interval_str) = match *units_vec.as_slice() {
-            [TimeUnitUnit::Year] => timeunit_date_trunc(&self.field, TimeUnitUnit::Year, &schema, &default_input_tz, &local_tz)?,
-            [TimeUnitUnit::Year, TimeUnitUnit::Quarter] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Quarter, &schema, &default_input_tz, &local_tz)?
-            }
-            [TimeUnitUnit::Year, TimeUnitUnit::Month] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Month, &schema, &default_input_tz, &local_tz)?
-            }
-            [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Date, &schema, &default_input_tz, &local_tz)?
-            }
-            [TimeUnitUnit::Year, TimeUnitUnit::DayOfYear] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Date, &schema, &default_input_tz, &local_tz)?
-            }
+            [TimeUnitUnit::Year] => timeunit_date_trunc(
+                &self.field,
+                TimeUnitUnit::Year,
+                &schema,
+                &default_input_tz,
+                &local_tz,
+            )?,
+            [TimeUnitUnit::Year, TimeUnitUnit::Quarter] => timeunit_date_trunc(
+                &self.field,
+                TimeUnitUnit::Quarter,
+                &schema,
+                &default_input_tz,
+                &local_tz,
+            )?,
+            [TimeUnitUnit::Year, TimeUnitUnit::Month] => timeunit_date_trunc(
+                &self.field,
+                TimeUnitUnit::Month,
+                &schema,
+                &default_input_tz,
+                &local_tz,
+            )?,
+            [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date] => timeunit_date_trunc(
+                &self.field,
+                TimeUnitUnit::Date,
+                &schema,
+                &default_input_tz,
+                &local_tz,
+            )?,
+            [TimeUnitUnit::Year, TimeUnitUnit::DayOfYear] => timeunit_date_trunc(
+                &self.field,
+                TimeUnitUnit::Date,
+                &schema,
+                &default_input_tz,
+                &local_tz,
+            )?,
             [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Hours, &schema, &default_input_tz, &local_tz)?
+                timeunit_date_trunc(
+                    &self.field,
+                    TimeUnitUnit::Hours,
+                    &schema,
+                    &default_input_tz,
+                    &local_tz,
+                )?
             }
             [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Minutes, &schema, &default_input_tz, &local_tz)?
+                timeunit_date_trunc(
+                    &self.field,
+                    TimeUnitUnit::Minutes,
+                    &schema,
+                    &default_input_tz,
+                    &local_tz,
+                )?
             }
             [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes, TimeUnitUnit::Seconds] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Seconds, &schema, &default_input_tz, &local_tz)?
+                timeunit_date_trunc(
+                    &self.field,
+                    TimeUnitUnit::Seconds,
+                    &schema,
+                    &default_input_tz,
+                    &local_tz,
+                )?
             }
-            [TimeUnitUnit::Day] => timeunit_weekday(&self.field, &schema, &default_input_tz, &local_tz)?,
+            [TimeUnitUnit::Day] => {
+                timeunit_weekday(&self.field, &schema, &default_input_tz, &local_tz)?
+            }
             _ => {
                 // Check if timeunit can be handled by make_timestamptz
                 let units_set = units_vec.iter().cloned().collect::<HashSet<_>>();
@@ -453,10 +500,22 @@ impl TransformTrait for TimeUnit {
                 .into_iter()
                 .collect::<HashSet<_>>();
                 if units_set.is_subset(&date_part_units) {
-                    timeunit_date_part(&self.field, &units_set, &schema, &default_input_tz, &local_tz)?
+                    timeunit_date_part(
+                        &self.field,
+                        &units_set,
+                        &schema,
+                        &default_input_tz,
+                        &local_tz,
+                    )?
                 } else {
                     // Fallback to custom UDF
-                    timeunit_custom_udf(&self.field, &units_set, &schema, &default_input_tz, &local_tz)?
+                    timeunit_custom_udf(
+                        &self.field,
+                        &units_set,
+                        &schema,
+                        &default_input_tz,
+                        &local_tz,
+                    )?
                 }
             }
         };
@@ -542,11 +601,13 @@ impl TransformTrait for TimeUnit {
         }
         let select_csv = select_strs.join(", ");
 
-        let dataframe = dataframe.chain_query_str(&format!(
-            "SELECT {select_csv} from {parent}",
-            select_csv = select_csv,
-            parent = dataframe.parent_name()
-        )).await?;
+        let dataframe = dataframe
+            .chain_query_str(&format!(
+                "SELECT {select_csv} from {parent}",
+                select_csv = select_csv,
+                parent = dataframe.parent_name()
+            ))
+            .await?;
 
         Ok((dataframe, Vec::new()))
     }

@@ -10,7 +10,10 @@ use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion::common::{DFSchema, ScalarValue};
 use datafusion_expr::expr;
-use datafusion_expr::{aggregate_function, BuiltInWindowFunction, WindowFrame, WindowFrameBound, WindowFrameUnits, WindowFunction};
+use datafusion_expr::{
+    aggregate_function, BuiltInWindowFunction, WindowFrame, WindowFrameBound, WindowFrameUnits,
+    WindowFunction,
+};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, VegaFusionError};
@@ -37,7 +40,9 @@ impl TransformTrait for Aggregate {
             // Add min(__row_number) aggregation that we can sort by later
             agg_exprs.push(min(flat_col("__row_number")).alias("__min_row_number"));
 
-            dataframe.select(vec![Expr::Wildcard, row_number_expr]).await?
+            dataframe
+                .select(vec![Expr::Wildcard, row_number_expr])
+                .await?
         } else {
             dataframe
         };
@@ -48,7 +53,7 @@ impl TransformTrait for Aggregate {
         // Maybe sort by min row number
         if !self.groupby.is_empty() {
             // Sort groups according to the lowest row number of a value in that group
-            let sort_exprs = vec![Expr::Sort (expr::Sort{
+            let sort_exprs = vec![Expr::Sort(expr::Sort {
                 expr: Box::new(flat_col("__min_row_number")),
                 asc: true,
                 nulls_first: false,
@@ -63,9 +68,8 @@ impl TransformTrait for Aggregate {
     }
 }
 
-
 pub fn make_row_number_expr() -> Expr {
-    Expr::WindowFunction (expr::WindowFunction {
+    Expr::WindowFunction(expr::WindowFunction {
         fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
         args: Vec::new(),
         partition_by: Vec::new(),
@@ -73,12 +77,11 @@ pub fn make_row_number_expr() -> Expr {
         window_frame: WindowFrame {
             units: WindowFrameUnits::Rows,
             start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
-            end_bound: WindowFrameBound::CurrentRow
+            end_bound: WindowFrameBound::CurrentRow,
         },
     })
-        .alias("__row_number")
+    .alias("__row_number")
 }
-
 
 fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr>, Vec<Expr>)> {
     // DataFusion does not allow repeated (field, op) combinations in an aggregate expression,
@@ -182,31 +185,31 @@ pub fn make_aggr_expr(
         AggregateOp::Min => min(numeric_column()),
         AggregateOp::Max => max(numeric_column()),
         AggregateOp::Sum => sum(numeric_column()),
-        AggregateOp::Median => Expr::AggregateFunction (expr::AggregateFunction {
+        AggregateOp::Median => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Median,
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
         }),
-        AggregateOp::Variance => Expr::AggregateFunction (expr::AggregateFunction{
+        AggregateOp::Variance => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Variance,
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
         }),
-        AggregateOp::Variancep => Expr::AggregateFunction (expr::AggregateFunction{
+        AggregateOp::Variancep => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::VariancePop,
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
         }),
-        AggregateOp::Stdev => Expr::AggregateFunction (expr::AggregateFunction {
+        AggregateOp::Stdev => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Stddev,
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
         }),
-        AggregateOp::Stdevp => Expr::AggregateFunction (expr::AggregateFunction{
+        AggregateOp::Stdevp => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::StddevPop,
             distinct: false,
             args: vec![numeric_column()],

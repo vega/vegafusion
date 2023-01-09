@@ -3,11 +3,12 @@ use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::compile::order::ToSqlOrderByExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
+use crate::transform::aggregate::make_row_number_expr;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::common::ScalarValue;
 use datafusion_expr::expr::Cast;
-use datafusion_expr::{lit, when, Expr, expr};
+use datafusion_expr::{expr, lit, when, Expr};
 use itertools::Itertools;
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
@@ -16,7 +17,6 @@ use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Impute;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use crate::transform::aggregate::make_row_number_expr;
 
 #[async_trait]
 impl TransformTrait for Impute {

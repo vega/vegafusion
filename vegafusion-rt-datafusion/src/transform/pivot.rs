@@ -9,7 +9,7 @@ use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::Column;
-use datafusion_expr::{coalesce, col, lit, min, when, Expr, expr::Sort};
+use datafusion_expr::{coalesce, col, expr::Sort, lit, min, when, Expr};
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::StringArray;
@@ -78,28 +78,29 @@ impl TransformTrait for Pivot {
     }
 }
 
-async fn extract_sorted_pivot_values(
-    tx: &Pivot,
-    dataframe: &SqlDataFrame,
-) -> Result<Vec<String>> {
-    let agg_query = dataframe.aggregate(vec![unescaped_col(&tx.field)], vec![]).await?;
+async fn extract_sorted_pivot_values(tx: &Pivot, dataframe: &SqlDataFrame) -> Result<Vec<String>> {
+    let agg_query = dataframe
+        .aggregate(vec![unescaped_col(&tx.field)], vec![])
+        .await?;
 
     let limit = match tx.limit {
         None | Some(0) => None,
         Some(i) => Some(i),
     };
 
-    let sorted_query = agg_query.sort(
-        vec![Expr::Sort (Sort {
-            expr: Box::new(Expr::Column(Column {
-                relation: Some(agg_query.parent_name()),
-                name: tx.field.clone(),
-            })),
-            asc: true,
-            nulls_first: false,
-        })],
-        limit,
-    ).await?;
+    let sorted_query = agg_query
+        .sort(
+            vec![Expr::Sort(Sort {
+                expr: Box::new(Expr::Column(Column {
+                    relation: Some(agg_query.parent_name()),
+                    name: tx.field.clone(),
+                })),
+                asc: true,
+                nulls_first: false,
+            })],
+            limit,
+        )
+        .await?;
 
     let pivot_result = sorted_query.collect().await?;
     let pivot_batch = pivot_result.to_record_batch()?;
@@ -208,7 +209,9 @@ async fn pivot_with_grouping(
 
     // Add row_index column that we can sort by later
     let row_number_expr = make_row_number_expr();
-    let dataframe = dataframe.select(vec![Expr::Wildcard, row_number_expr]).await?;
+    let dataframe = dataframe
+        .select(vec![Expr::Wildcard, row_number_expr])
+        .await?;
 
     // Process aggregate operation
     let agg_op: AggregateOp = tx
@@ -231,10 +234,12 @@ async fn pivot_with_grouping(
         .map(|col| col.to_sql().unwrap().sql(dialect).unwrap())
         .collect();
     let groupby_csv = groupby_strs.join(", ");
-    let grouped_dataframe = dataframe.aggregate(
-        groupby_cols,
-        vec![min(flat_col("__row_number")).alias("__min_row_number")],
-    ).await?;
+    let grouped_dataframe = dataframe
+        .aggregate(
+            groupby_cols,
+            vec![min(flat_col("__row_number")).alias("__min_row_number")],
+        )
+        .await?;
 
     // Save off parent table names
     let dataframe_parent_name = dataframe.parent_name();

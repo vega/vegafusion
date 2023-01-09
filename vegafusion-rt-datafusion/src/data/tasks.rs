@@ -621,7 +621,9 @@ async fn read_json(url: &str, batch_size: usize) -> Result<DataFrame> {
         serde_json::from_str(&json_str)?
     };
 
-    VegaFusionTable::from_json(&value, batch_size)?.to_dataframe().await
+    VegaFusionTable::from_json(&value, batch_size)?
+        .to_dataframe()
+        .await
 }
 
 async fn read_arrow(url: &str) -> Result<DataFrame> {
@@ -675,7 +677,9 @@ async fn read_arrow(url: &str) -> Result<DataFrame> {
         )));
     };
 
-    VegaFusionTable::try_new(schema, batches)?.to_dataframe().await
+    VegaFusionTable::try_new(schema, batches)?
+        .to_dataframe()
+        .await
 }
 
 pub fn make_request_client() -> ClientWithMiddleware {

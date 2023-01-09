@@ -3,7 +3,10 @@ use crate::transform::TransformTrait;
 
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
-use datafusion_expr::{BuiltInWindowFunction, Expr, expr, WindowFrame, WindowFrameBound, WindowFrameUnits, WindowFunction};
+use datafusion_expr::{
+    expr, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound, WindowFrameUnits,
+    WindowFunction,
+};
 use std::sync::Arc;
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::Result;
@@ -18,7 +21,7 @@ impl TransformTrait for Identifier {
         _config: &CompilationConfig,
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
         // Add row number column with the desired name
-        let row_number_expr = Expr::WindowFunction (expr::WindowFunction {
+        let row_number_expr = Expr::WindowFunction(expr::WindowFunction {
             fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
             args: Vec::new(),
             partition_by: Vec::new(),
@@ -26,11 +29,14 @@ impl TransformTrait for Identifier {
             window_frame: WindowFrame {
                 units: WindowFrameUnits::Rows,
                 start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
-                end_bound: WindowFrameBound::CurrentRow
+                end_bound: WindowFrameBound::CurrentRow,
             },
-        }).alias(&self.r#as);
+        })
+        .alias(&self.r#as);
 
-        let result = dataframe.select(vec![Expr::Wildcard, row_number_expr]).await?;
+        let result = dataframe
+            .select(vec![Expr::Wildcard, row_number_expr])
+            .await?;
 
         Ok((result, Default::default()))
     }

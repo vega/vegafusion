@@ -280,7 +280,7 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
             DataType::Float64, // minute
             DataType::Float64, // second
             DataType::Float64, // millisecond
-            DataType::Utf8,  // time zone
+            DataType::Utf8,    // time zone
         ],
         Volatility::Immutable,
     );

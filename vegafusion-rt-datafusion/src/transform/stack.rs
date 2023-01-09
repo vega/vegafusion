@@ -6,17 +6,20 @@ use crate::sql::dataframe::SqlDataFrame;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::physical_plan::aggregates;
-use datafusion_expr::{abs, lit, max, when, expr, AggregateFunction, Expr, WindowFunction, WindowFrame, WindowFrameUnits, WindowFrameBound};
+use datafusion_expr::{
+    abs, expr, lit, max, when, AggregateFunction, Expr, WindowFrame, WindowFrameBound,
+    WindowFrameUnits, WindowFunction,
+};
 use sqlgen::dialect::DialectDisplay;
 
 use crate::expression::escape::{flat_col, unescaped_col};
+use crate::transform::aggregate::make_row_number_expr;
 use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{SortOrder, Stack, StackOffset};
 use vegafusion_core::task_graph::task_value::TaskValue;
-use crate::transform::aggregate::make_row_number_expr;
 
 #[async_trait]
 impl TransformTrait for Stack {
@@ -42,14 +45,16 @@ impl TransformTrait for Stack {
             .sort_fields
             .iter()
             .zip(&self.sort)
-            .map(|(field, order)| Expr::Sort (expr::Sort {
-                expr: Box::new(unescaped_col(field)),
-                asc: *order == SortOrder::Ascending as i32,
-                nulls_first: *order == SortOrder::Ascending as i32,
-            }))
+            .map(|(field, order)| {
+                Expr::Sort(expr::Sort {
+                    expr: Box::new(unescaped_col(field)),
+                    asc: *order == SortOrder::Ascending as i32,
+                    nulls_first: *order == SortOrder::Ascending as i32,
+                })
+            })
             .collect();
 
-        order_by.push(Expr::Sort (expr::Sort{
+        order_by.push(Expr::Sort(expr::Sort {
             expr: Box::new(flat_col("__row_number")),
             asc: true,
             nulls_first: true,
@@ -58,37 +63,48 @@ impl TransformTrait for Stack {
         // Add row number column for sorting
         let row_number_expr = make_row_number_expr();
 
-        let dataframe = dataframe.select(vec![Expr::Wildcard, row_number_expr]).await?;
+        let dataframe = dataframe
+            .select(vec![Expr::Wildcard, row_number_expr])
+            .await?;
 
         // Process according to offset
         let offset = StackOffset::from_i32(self.offset).expect("Failed to convert stack offset");
         let dataframe = match offset {
-            StackOffset::Zero => eval_zero_offset(
-                self,
-                dataframe,
-                input_fields.as_slice(),
-                &alias0,
-                &alias1,
-                order_by.as_slice(),
-            ).await?,
-            StackOffset::Normalize => eval_normalize_center_offset(
-                self,
-                dataframe,
-                input_fields.as_slice(),
-                &alias0,
-                &alias1,
-                order_by.as_slice(),
-                &offset,
-            ).await?,
-            StackOffset::Center => eval_normalize_center_offset(
-                self,
-                dataframe,
-                input_fields.as_slice(),
-                &alias0,
-                &alias1,
-                order_by.as_slice(),
-                &offset,
-            ).await?,
+            StackOffset::Zero => {
+                eval_zero_offset(
+                    self,
+                    dataframe,
+                    input_fields.as_slice(),
+                    &alias0,
+                    &alias1,
+                    order_by.as_slice(),
+                )
+                .await?
+            }
+            StackOffset::Normalize => {
+                eval_normalize_center_offset(
+                    self,
+                    dataframe,
+                    input_fields.as_slice(),
+                    &alias0,
+                    &alias1,
+                    order_by.as_slice(),
+                    &offset,
+                )
+                .await?
+            }
+            StackOffset::Center => {
+                eval_normalize_center_offset(
+                    self,
+                    dataframe,
+                    input_fields.as_slice(),
+                    &alias0,
+                    &alias1,
+                    order_by.as_slice(),
+                    &offset,
+                )
+                .await?
+            }
         };
 
         Ok((dataframe, Default::default()))
@@ -118,7 +134,9 @@ async fn eval_normalize_center_offset(
     let numeric_field = abs(numeric_field);
 
     let stack_col_name = "__stack";
-    let dataframe = dataframe.select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)]).await?;
+    let dataframe = dataframe
+        .select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)])
+        .await?;
 
     let total_agg = Expr::AggregateFunction(expr::AggregateFunction {
         fun: AggregateFunction::Sum,
@@ -132,11 +150,13 @@ async fn eval_normalize_center_offset(
 
     // Add __total column with total or total per partition
     let dataframe = if partition_by.is_empty() {
-        dataframe.chain_query_str(&format!(
-            "SELECT * from {parent} CROSS JOIN (SELECT {total_agg_str} from {parent})",
-            parent = dataframe.parent_name(),
-            total_agg_str = total_agg_str,
-        )).await?
+        dataframe
+            .chain_query_str(&format!(
+                "SELECT * from {parent} CROSS JOIN (SELECT {total_agg_str} from {parent})",
+                parent = dataframe.parent_name(),
+                total_agg_str = total_agg_str,
+            ))
+            .await?
     } else {
         let partition_by_strs = partition_by
             .iter()
@@ -154,7 +174,7 @@ async fn eval_normalize_center_offset(
 
     // Build window function to compute cumulative sum of stack column
     let fun = WindowFunction::AggregateFunction(aggregates::AggregateFunction::Sum);
-    let window_expr = Expr::WindowFunction (expr::WindowFunction{
+    let window_expr = Expr::WindowFunction(expr::WindowFunction {
         fun,
         args: vec![flat_col(stack_col_name)],
         partition_by,
@@ -162,7 +182,7 @@ async fn eval_normalize_center_offset(
         window_frame: WindowFrame {
             units: WindowFrameUnits::Rows,
             start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
-            end_bound: WindowFrameBound::CurrentRow
+            end_bound: WindowFrameBound::CurrentRow,
         },
     })
     .alias(alias1);
@@ -188,11 +208,13 @@ async fn eval_normalize_center_offset(
             let max_total = max(flat_col("__total")).alias("__max_total");
             let max_total_str = max_total.to_sql_select()?.sql(dataframe.dialect())?;
 
-            let dataframe = dataframe.chain_query_str(&format!(
-                "SELECT * from {parent} CROSS JOIN (SELECT {max_total_str} from {parent})",
-                parent = dataframe.parent_name(),
-                max_total_str = max_total_str,
-            )).await?;
+            let dataframe = dataframe
+                .chain_query_str(&format!(
+                    "SELECT * from {parent} CROSS JOIN (SELECT {max_total_str} from {parent})",
+                    parent = dataframe.parent_name(),
+                    max_total_str = max_total_str,
+                ))
+                .await?;
 
             let first = flat_col("__max_total").sub(flat_col("__total")).div(lit(2));
             let first_col = flat_col(alias1).add(first);
@@ -228,14 +250,16 @@ async fn eval_normalize_center_offset(
     };
 
     // Restore original order
-    let dataframe = dataframe.sort(
-        vec![Expr::Sort (expr::Sort {
-            expr: Box::new(flat_col("__row_number")),
-            asc: true,
-            nulls_first: false,
-        })],
-        None,
-    ).await?;
+    let dataframe = dataframe
+        .sort(
+            vec![Expr::Sort(expr::Sort {
+                expr: Box::new(flat_col("__row_number")),
+                asc: true,
+                nulls_first: false,
+            })],
+            None,
+        )
+        .await?;
 
     let dataframe = dataframe.select(final_selection.clone()).await?;
     Ok(dataframe)
@@ -273,7 +297,7 @@ async fn eval_zero_offset(
         window_frame: WindowFrame {
             units: WindowFrameUnits::Rows,
             start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
-            end_bound: WindowFrameBound::CurrentRow
+            end_bound: WindowFrameBound::CurrentRow,
         },
     })
     .alias(alias1);
@@ -284,23 +308,27 @@ async fn eval_zero_offset(
     // then union the results. This is required to make sure stacks do not overlap. Negative
     // values stack in the negative direction and positive values stack in the positive
     // direction.
-    let dataframe = dataframe.chain_query_str(&format!(
-        "(SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} >= 0) UNION ALL \
+    let dataframe = dataframe
+        .chain_query_str(&format!(
+            "(SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} >= 0) UNION ALL \
         (SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} < 0)",
-        parent = dataframe.parent_name(),
-        window_expr_str = window_expr_str,
-        numeric_field = numeric_field.to_sql()?.sql(dataframe.dialect())?
-    )).await?;
+            parent = dataframe.parent_name(),
+            window_expr_str = window_expr_str,
+            numeric_field = numeric_field.to_sql()?.sql(dataframe.dialect())?
+        ))
+        .await?;
 
     // Restore original order
-    let dataframe = dataframe.sort(
-        vec![Expr::Sort (expr::Sort{
-            expr: Box::new(flat_col("__row_number")),
-            asc: true,
-            nulls_first: false,
-        })],
-        None,
-    ).await?;
+    let dataframe = dataframe
+        .sort(
+            vec![Expr::Sort(expr::Sort {
+                expr: Box::new(flat_col("__row_number")),
+                asc: true,
+                nulls_first: false,
+            })],
+            None,
+        )
+        .await?;
 
     // Build final selection
     let mut final_selection: Vec<_> = input_fields

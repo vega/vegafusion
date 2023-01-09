@@ -111,7 +111,11 @@ impl SqlDataFrame {
         let query_str = combined_query.sql(&self.dialect)?;
         // println!("datafusion: {}", query_str);
 
-        let logical_plan = self.session_context.state().create_logical_plan(&query_str).await?;
+        let logical_plan = self
+            .session_context
+            .state()
+            .create_logical_plan(&query_str)
+            .await?;
 
         // println!("logical_plan: {:?}", logical_plan);
         let new_schema: Schema = logical_plan.schema().as_ref().into();
@@ -160,7 +164,11 @@ impl SqlDataFrame {
         self.chain_query(query).await
     }
 
-    pub async fn aggregate(&self, group_expr: Vec<DfExpr>, aggr_expr: Vec<DfExpr>) -> Result<Arc<Self>> {
+    pub async fn aggregate(
+        &self,
+        group_expr: Vec<DfExpr>,
+        aggr_expr: Vec<DfExpr>,
+    ) -> Result<Arc<Self>> {
         let sql_group_expr_strs = group_expr
             .iter()
             .map(|expr| Ok(expr.to_sql()?.sql(&self.dialect)?))
