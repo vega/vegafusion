@@ -12,7 +12,7 @@
       "transform": [
         {
           "type": "formula",
-          "expr": "if(datum.site === 'University Farm', 0, if(datum.site === 'Grand Rapids', 1, 2))",
+          "expr": "if(datum.site === 'University Farm', '0', if(datum.site === 'Grand Rapids', '1', datum.site))",
           "as": "siteOrder"
         },
         {
