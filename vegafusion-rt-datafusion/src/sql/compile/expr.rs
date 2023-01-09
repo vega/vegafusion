@@ -30,7 +30,7 @@ impl ToSqlExpr for Expr {
             Expr::Alias(_, _) => {
                 // Alias expressions need to be handled at a higher level
                 Err(VegaFusionError::internal(
-                    "Alias cannot be converted to SQL",
+                    format!("Alias cannot be converted to SQL: {:?}", self),
                 ))
             }
             Expr::Column(col) => Ok(match &col.relation {
