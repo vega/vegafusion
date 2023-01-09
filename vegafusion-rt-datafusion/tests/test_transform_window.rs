@@ -9,7 +9,6 @@ use util::equality::TablesEqualConfig;
 use rstest::rstest;
 use vegafusion_core::spec::transform::aggregate::AggregateOpSpec;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_core::spec::values::Field;
 
 mod test_window_single {
     use crate::*;
