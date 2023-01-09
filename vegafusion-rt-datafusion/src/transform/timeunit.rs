@@ -2,7 +2,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
-use datafusion::common::DataFusionError;
+use datafusion::common::{DataFusionError, DFSchema};
 use std::collections::HashSet;
 use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
@@ -22,10 +22,7 @@ use crate::expression::compiler::builtin_functions::date_time::process_input_dat
 use crate::expression::escape::{flat_col, unescaped_col};
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
 use datafusion_expr::expr::Cast;
-use datafusion_expr::{
-    floor, lit, BuiltinScalarFunction, ColumnarValue, Expr, ReturnTypeFunction,
-    ScalarFunctionImplementation, ScalarUDF, Signature, TypeSignature, Volatility,
-};
+use datafusion_expr::{floor, lit, BuiltinScalarFunction, ColumnarValue, Expr, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature, TypeSignature, Volatility, ExprSchemable};
 use itertools::Itertools;
 use sqlgen::dialect::DialectDisplay;
 use std::str::FromStr;
@@ -33,12 +30,17 @@ use vegafusion_core::arrow::array::{ArrayRef, Int64Array, TimestampMillisecondAr
 use vegafusion_core::arrow::compute::unary;
 use vegafusion_core::arrow::temporal_conversions::date64_to_datetime;
 use vegafusion_core::data::scalar::ScalarValue;
+use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 
 // Implementation of timeunit start using the SQL DATE_TRUNC function
 fn timeunit_date_trunc(
     field: &str,
     smallest_unit: TimeUnitUnit,
-    tz_str: &Option<String>,
+    schema: &DFSchema,
+    default_input_tz: &String,
+    local_tz: &Option<String>,
 ) -> Result<(Expr, String)> {
     let (part_str, interval_str) = match smallest_unit {
         TimeUnitUnit::Year => ("year".to_string(), "1 YEAR".to_string()),
@@ -56,10 +58,13 @@ fn timeunit_date_trunc(
         }
     };
 
-    let start_expr = if let Some(tz_str) = tz_str {
+    // Convert field column to timestamp
+    let field_col = to_timestamp_col(field, schema, default_input_tz)?;
+
+    let start_expr = if let Some(tz_str) = local_tz {
         let local_field = Expr::ScalarUDF {
             fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
-            args: vec![unescaped_col(field), lit(tz_str.clone())],
+            args: vec![field_col, lit(tz_str.clone())],
         };
 
         let local_start_expr = Expr::ScalarFunction {
@@ -75,7 +80,7 @@ fn timeunit_date_trunc(
         // UTC, no timezone conversion needed
         Expr::ScalarFunction {
             fun: BuiltinScalarFunction::DateTrunc,
-            args: vec![lit(part_str), unescaped_col(field)],
+            args: vec![lit(part_str), field_col],
         }
     };
 
@@ -86,7 +91,9 @@ fn timeunit_date_trunc(
 fn timeunit_date_part(
     field: &str,
     units_set: &HashSet<TimeUnitUnit>,
-    tz_str: &Option<String>,
+    schema: &DFSchema,
+    default_input_tz: &String,
+    local_tz: &Option<String>,
 ) -> Result<(Expr, String)> {
     // Initialize default arguments to make_timestamptz
     let mut make_timestamptz_args = vec![
@@ -97,20 +104,23 @@ fn timeunit_date_part(
         lit(0),    // 4 minute
         lit(0),    // 5 second
         lit(0),    // 6 millisecond
-        lit(tz_str.clone().unwrap_or_else(|| "UTC".to_string())),
+        lit(local_tz.clone().unwrap_or_else(|| "UTC".to_string())),
     ];
 
     // Initialize interval string, this will be overwritten with the smallest specified unit
     let mut interval_str = "1 YEAR".to_string();
 
+    // Convert field column to timestamp
+    let field_col = to_timestamp_col(field, schema, default_input_tz)?;
+
     // Compute input timestamp expression based on timezone
-    let inner = if let Some(tz_str) = tz_str {
+    let inner = if let Some(tz_str) = local_tz {
         Expr::ScalarUDF {
             fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
-            args: vec![unescaped_col(field), lit(tz_str.clone())],
+            args: vec![field_col, lit(tz_str.clone())],
         }
     } else {
-        unescaped_col(field)
+        field_col
     };
 
     // Year
@@ -199,16 +209,45 @@ fn timeunit_date_part(
     Ok((start_expr, interval_str))
 }
 
+fn to_timestamp_col(field: &str, schema: &DFSchema, default_input_tz: &String) -> Result<Expr> {
+    let field_col = unescaped_col(field);
+    Ok(match field_col.get_type(schema)? {
+        DataType::Timestamp(_, _) => field_col.clone(),
+        DataType::Utf8 => {
+            Expr::ScalarUDF {
+                fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+                args: vec![field_col.clone(), lit(default_input_tz)],
+            }
+        },
+        dtype if is_numeric_datatype(&dtype) => Expr::ScalarUDF {
+            fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
+            args: vec![cast_to(field_col.clone(), &DataType::Int64, schema)?, lit("UTC")],
+        },
+        dtype => {
+            return Err(VegaFusionError::compilation(format!(
+                "Invalid data type for timeunit transform: {:?}", dtype
+            )))
+        }
+    })
+}
+
 // timeunit transform for 'day' unit (day of the week)
-fn timeunit_weekday(field: &str, tz_str: &Option<String>) -> Result<(Expr, String)> {
+fn timeunit_weekday(
+    field: &str,
+    schema: &DFSchema,
+    default_input_tz: &String,
+    local_tz: &Option<String>
+) -> Result<(Expr, String)> {
+    let field_col = to_timestamp_col(field, schema, default_input_tz)?;
+
     // Compute input timestamp expression based on timezone
-    let inner = if let Some(tz_str) = tz_str {
+    let inner = if let Some(tz_str) = local_tz {
         Expr::ScalarUDF {
             fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
-            args: vec![unescaped_col(field), lit(tz_str.clone())],
+            args: vec![field_col, lit(tz_str.clone())],
         }
     } else {
-        unescaped_col(field)
+        field_col
     };
 
     // Use DATE_PART to extract the weekday
@@ -231,7 +270,7 @@ fn timeunit_weekday(field: &str, tz_str: &Option<String>) -> Result<(Expr, Strin
         lit(0),    // 4 minute
         lit(0),    // 5 second
         lit(0),    // 6 millisecond
-        lit(tz_str.clone().unwrap_or_else(|| "UTC".to_string())),
+        lit(local_tz.clone().unwrap_or_else(|| "UTC".to_string())),
     ];
 
     // Construct expression to make timestamp from components
@@ -247,7 +286,9 @@ fn timeunit_weekday(field: &str, tz_str: &Option<String>) -> Result<(Expr, Strin
 fn timeunit_custom_udf(
     field: &str,
     units_set: &HashSet<TimeUnitUnit>,
-    tz_str: &Option<String>,
+    schema: &DFSchema,
+    default_input_tz: &String,
+    local_tz: &Option<String>,
 ) -> Result<(Expr, String)> {
     let units_mask = vec![
         units_set.contains(&TimeUnitUnit::Year),         // 0
@@ -265,14 +306,16 @@ fn timeunit_custom_udf(
 
     let timeunit_start_udf = &TIMEUNIT_START_UDF;
 
-    let tz_str = tz_str
+    let local_tz = local_tz
         .as_ref()
         .map(|tz| tz.to_string())
         .unwrap_or_else(|| "UTC".to_string());
 
+    let field_col = to_timestamp_col(field, schema, default_input_tz)?;
+
     let timeunit_start_value = timeunit_start_udf.call(vec![
-        unescaped_col(field),
-        lit(tz_str),
+        field_col,
+        lit(local_tz),
         lit(units_mask[0]),
         lit(units_mask[1]),
         lit(units_mask[2]),
@@ -342,17 +385,19 @@ impl TransformTrait for TimeUnit {
         dataframe: Arc<SqlDataFrame>,
         config: &CompilationConfig,
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+        let tz_config = config
+            .tz_config
+            .with_context(|| "No local timezone info provided".to_string())?;
+
         let local_tz = if self.timezone != Some(TimeUnitTimeZone::Utc as i32) {
-            Some(
-                config
-                    .tz_config
-                    .with_context(|| "No local timezone info provided".to_string())?
-                    .local_tz,
-            )
+            Some(tz_config.local_tz)
         } else {
             None
         };
-        let tz_str = local_tz.map(|tz| tz.to_string());
+
+        let local_tz = local_tz.map(|tz| tz.to_string());
+        let schema = dataframe.schema_df();
+        let default_input_tz = tz_config.default_input_tz.to_string();
 
         // Compute Apply alias
         let timeunit_start_alias = if let Some(alias_0) = &self.alias_0 {
@@ -370,29 +415,29 @@ impl TransformTrait for TimeUnit {
 
         // Add timeunit start
         let (timeunit_start_value, interval_str) = match *units_vec.as_slice() {
-            [TimeUnitUnit::Year] => timeunit_date_trunc(&self.field, TimeUnitUnit::Year, &tz_str)?,
+            [TimeUnitUnit::Year] => timeunit_date_trunc(&self.field, TimeUnitUnit::Year, &schema, &default_input_tz, &local_tz)?,
             [TimeUnitUnit::Year, TimeUnitUnit::Quarter] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Quarter, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Quarter, &schema, &default_input_tz, &local_tz)?
             }
             [TimeUnitUnit::Year, TimeUnitUnit::Month] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Month, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Month, &schema, &default_input_tz, &local_tz)?
             }
             [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Date, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Date, &schema, &default_input_tz, &local_tz)?
             }
             [TimeUnitUnit::Year, TimeUnitUnit::DayOfYear] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Date, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Date, &schema, &default_input_tz, &local_tz)?
             }
             [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Hours, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Hours, &schema, &default_input_tz, &local_tz)?
             }
             [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Minutes, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Minutes, &schema, &default_input_tz, &local_tz)?
             }
             [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes, TimeUnitUnit::Seconds] => {
-                timeunit_date_trunc(&self.field, TimeUnitUnit::Seconds, &tz_str)?
+                timeunit_date_trunc(&self.field, TimeUnitUnit::Seconds, &schema, &default_input_tz, &local_tz)?
             }
-            [TimeUnitUnit::Day] => timeunit_weekday(&self.field, &tz_str)?,
+            [TimeUnitUnit::Day] => timeunit_weekday(&self.field, &schema, &default_input_tz, &local_tz)?,
             _ => {
                 // Check if timeunit can be handled by make_timestamptz
                 let units_set = units_vec.iter().cloned().collect::<HashSet<_>>();
@@ -408,10 +453,10 @@ impl TransformTrait for TimeUnit {
                 .into_iter()
                 .collect::<HashSet<_>>();
                 if units_set.is_subset(&date_part_units) {
-                    timeunit_date_part(&self.field, &units_set, &tz_str)?
+                    timeunit_date_part(&self.field, &units_set, &schema, &default_input_tz, &local_tz)?
                 } else {
                     // Fallback to custom UDF
-                    timeunit_custom_udf(&self.field, &units_set, &tz_str)?
+                    timeunit_custom_udf(&self.field, &units_set, &schema, &default_input_tz, &local_tz)?
                 }
             }
         };
@@ -462,7 +507,7 @@ impl TransformTrait for TimeUnit {
             })
             .collect();
 
-        if let Some(tz_str) = tz_str {
+        if let Some(tz_str) = local_tz {
             // Apply offset in UTC
             select_strs.push(format!(
                 "timestamp_to_timestamptz(timestamptz_to_timestamp({start}, '{tz}') + INTERVAL '{interval}', '{tz}') as {end}",
