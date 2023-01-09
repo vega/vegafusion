@@ -141,6 +141,9 @@ impl Window {
             .map(|param| param.as_f64().unwrap_or(f64::NAN))
             .collect();
 
+        // Ignore peers
+        let ignore_peers = Some(transform.ignore_peers.unwrap_or(false));
+
         Ok(Self {
             sort,
             sort_fields,
@@ -150,6 +153,7 @@ impl Window {
             params,
             aliases,
             frame,
+            ignore_peers,
         })
     }
 }

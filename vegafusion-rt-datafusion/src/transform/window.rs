@@ -82,8 +82,14 @@ impl TransformTrait for Window {
             }
         };
 
+        let ignore_peers = self.ignore_peers.unwrap_or(false);
+
         let window_frame = window_frame::WindowFrame {
-            units: WindowFrameUnits::Rows,
+            units: if ignore_peers {
+                WindowFrameUnits::Rows
+            } else {
+                WindowFrameUnits::Groups
+            },
             start_bound,
             end_bound,
         };

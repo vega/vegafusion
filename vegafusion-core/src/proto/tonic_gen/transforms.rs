@@ -156,6 +156,8 @@ pub struct Window {
     pub aliases: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(message, optional, tag = "8")]
     pub frame: ::core::option::Option<WindowFrame>,
+    #[prost(bool, optional, tag = "9")]
+    pub ignore_peers: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
