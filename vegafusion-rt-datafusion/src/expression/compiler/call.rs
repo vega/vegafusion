@@ -38,11 +38,11 @@ use crate::expression::compiler::builtin_functions::date_time::date_format::{
     time_format_fn, utc_format_fn, FORMAT_TIMESTAMP_UDF,
 };
 use crate::expression::compiler::builtin_functions::date_time::date_parts::{
-    DATE_TRANSFORM, DAYOFYEAR_TRANSFORM, DAY_TRANSFORM, HOUR_TRANSFORM, MINUTE_TRANSFORM,
-    MONTH_TRANSFORM, QUARTER_TRANSFORM, SECOND_TRANSFORM, UTCDATE_TRANSFORM,
-    UTCDAYOFYEAR_TRANSFORM, UTCDAY_TRANSFORM, UTCHOUR_TRANSFORM, UTCMINUTE_TRANSFORM,
-    UTCMONTH_TRANSFORM, UTCQUARTER_TRANSFORM, UTCSECOND_TRANSFORM, UTCYEAR_TRANSFORM,
-    YEAR_TRANSFORM,
+    DATE_TRANSFORM, DAYOFYEAR_TRANSFORM, DAY_TRANSFORM, HOUR_TRANSFORM, MILLISECOND_TRANSFORM,
+    MINUTE_TRANSFORM, MONTH_TRANSFORM, QUARTER_TRANSFORM, SECOND_TRANSFORM, UTCDATE_TRANSFORM,
+    UTCDAYOFYEAR_TRANSFORM, UTCDAY_TRANSFORM, UTCHOUR_TRANSFORM, UTCMILLISECOND_TRANSFORM,
+    UTCMINUTE_TRANSFORM, UTCMONTH_TRANSFORM, UTCQUARTER_TRANSFORM, UTCSECOND_TRANSFORM,
+    UTCYEAR_TRANSFORM, YEAR_TRANSFORM,
 };
 use crate::expression::compiler::builtin_functions::date_time::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
@@ -338,10 +338,10 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         "seconds".to_string(),
         VegaFusionCallable::LocalTransform(SECOND_TRANSFORM.deref().clone()),
     );
-    // callables.insert(
-    //     "milliseconds".to_string(),
-    //     VegaFusionCallable::LocalTransform(MILLISECONDS_TRANSFORM.deref().clone()),
-    // );
+    callables.insert(
+        "milliseconds".to_string(),
+        VegaFusionCallable::LocalTransform(MILLISECOND_TRANSFORM.deref().clone()),
+    );
 
     // UTC
     callables.insert(
@@ -380,10 +380,10 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         "utcseconds".to_string(),
         VegaFusionCallable::UtcTransform(UTCSECOND_TRANSFORM.deref().clone()),
     );
-    // callables.insert(
-    //     "utcmilliseconds".to_string(),
-    //     VegaFusionCallable::UtcTransform(UTCMILLISECOND_TRANSFORM.deref().clone()),
-    // );
+    callables.insert(
+        "utcmilliseconds".to_string(),
+        VegaFusionCallable::UtcTransform(UTCMILLISECOND_TRANSFORM.deref().clone()),
+    );
 
     // date time
     callables.insert(

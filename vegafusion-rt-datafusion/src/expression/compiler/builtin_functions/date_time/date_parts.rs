@@ -7,11 +7,11 @@ use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion::arrow::datatypes::DataType;
 use datafusion::common::DFSchema;
 use datafusion::logical_expr::Expr;
-use datafusion_expr::{lit, BuiltinScalarFunction, ExprSchemable};
+use datafusion_expr::{floor, lit, BuiltinScalarFunction, ExprSchemable};
 use std::sync::Arc;
 use vegafusion_core::error::{Result, VegaFusionError};
 
-pub fn make_local_datepart_transform(part: &str, offset: Option<i32>) -> TzTransformFn {
+pub fn make_local_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -> TzTransformFn {
     let part = part.to_string();
     let local_datepart_transform = move |tz_config: &RuntimeTzConfig,
                                          args: &[Expr],
@@ -30,8 +30,8 @@ pub fn make_local_datepart_transform(part: &str, offset: Option<i32>) -> TzTrans
             args: vec![lit(part.clone()), timestamp],
         };
 
-        if let Some(offset) = offset {
-            expr = expr + lit(offset);
+        if let Some(tx) = tx {
+            expr = tx(expr)
         }
 
         Ok(expr)
@@ -39,7 +39,7 @@ pub fn make_local_datepart_transform(part: &str, offset: Option<i32>) -> TzTrans
     Arc::new(local_datepart_transform)
 }
 
-pub fn make_utc_datepart_transform(part: &str, offset: Option<i32>) -> TzTransformFn {
+pub fn make_utc_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -> TzTransformFn {
     let part = part.to_string();
     let utc_datepart_transform = move |tz_config: &RuntimeTzConfig,
                                        args: &[Expr],
@@ -53,8 +53,8 @@ pub fn make_utc_datepart_transform(part: &str, offset: Option<i32>) -> TzTransfo
             args: udf_args,
         };
 
-        if let Some(offset) = offset {
-            expr = expr + lit(offset)
+        if let Some(tx) = tx {
+            expr = tx(expr)
         }
 
         Ok(expr)
@@ -102,7 +102,9 @@ lazy_static! {
     pub static ref QUARTER_TRANSFORM: TzTransformFn =
         make_local_datepart_transform("quarter", None);
     pub static ref MONTH_TRANSFORM: TzTransformFn =
-        make_local_datepart_transform("month", Some(-1));
+        make_local_datepart_transform(
+            "month", Some(|expr| expr - lit(1.0))
+        );
     pub static ref DAYOFYEAR_TRANSFORM: TzTransformFn =
         make_local_datepart_transform("doy", None);
     pub static ref DATE_TRANSFORM: TzTransformFn =
@@ -114,7 +116,13 @@ lazy_static! {
     pub static ref MINUTE_TRANSFORM: TzTransformFn =
         make_local_datepart_transform("minute", None);
     pub static ref SECOND_TRANSFORM: TzTransformFn =
-        make_local_datepart_transform("second", None);
+        make_local_datepart_transform(
+            "second", Some(|expr| floor(expr))
+        );
+    pub static ref MILLISECOND_TRANSFORM: TzTransformFn =
+        make_local_datepart_transform(
+            "millisecond",  Some(|expr| expr.modulus(lit(1000.0)))
+        );
 
     // UTC Transforms
     pub static ref UTCYEAR_TRANSFORM: TzTransformFn =
@@ -122,7 +130,9 @@ lazy_static! {
     pub static ref UTCQUARTER_TRANSFORM: TzTransformFn =
         make_utc_datepart_transform("quarter", None);
     pub static ref UTCMONTH_TRANSFORM: TzTransformFn =
-        make_utc_datepart_transform("month", Some(-1));
+        make_utc_datepart_transform(
+            "month", Some(|expr| expr - lit(1.0))
+        );
     pub static ref UTCDAYOFYEAR_TRANSFORM: TzTransformFn =
         make_utc_datepart_transform("doy", None);
     pub static ref UTCDATE_TRANSFORM: TzTransformFn =
@@ -134,5 +144,11 @@ lazy_static! {
     pub static ref UTCMINUTE_TRANSFORM: TzTransformFn =
         make_utc_datepart_transform("minute", None);
     pub static ref UTCSECOND_TRANSFORM: TzTransformFn =
-        make_utc_datepart_transform("second", None);
+        make_utc_datepart_transform(
+            "second", Some(|expr| floor(expr))
+        );
+    pub static ref UTCMILLISECOND_TRANSFORM: TzTransformFn =
+        make_utc_datepart_transform(
+            "millisecond", Some(|expr| expr.modulus(lit(1000.0)))
+        );
 }
