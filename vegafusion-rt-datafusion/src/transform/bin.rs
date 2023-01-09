@@ -74,7 +74,7 @@ impl TransformTrait for Bin {
                 abs(numeric_field.sub(lit(last_stop))).lt(eps),
                 lit(*bin_starts.last().unwrap()),
             )
-            .when(flat_col(bin_index_name).gt_eq(lit(n as f64)), inf)
+            .when(flat_col(bin_index_name).gt_eq(lit(n)), inf)
             .otherwise(bin_start)?
             .alias(&bin_start_name);
 
