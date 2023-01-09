@@ -170,16 +170,6 @@ async fn eval_normalize_center_offset(
     // Perform selection to add new field value
     let dataframe = dataframe.select(vec![Expr::Wildcard, window_expr]).await?;
 
-    // Restore original order
-    let dataframe = dataframe.sort(
-        vec![Expr::Sort (expr::Sort {
-            expr: Box::new(flat_col("__row_number")),
-            asc: true,
-            nulls_first: false,
-        })],
-        None,
-    ).await?;
-
     // Build final_selection
     let mut final_selection: Vec<_> = input_fields
         .iter()
@@ -236,6 +226,16 @@ async fn eval_normalize_center_offset(
         }
         _ => return Err(VegaFusionError::internal("Unexpected stack offset")),
     };
+
+    // Restore original order
+    let dataframe = dataframe.sort(
+        vec![Expr::Sort (expr::Sort {
+            expr: Box::new(flat_col("__row_number")),
+            asc: true,
+            nulls_first: false,
+        })],
+        None,
+    ).await?;
 
     let dataframe = dataframe.select(final_selection.clone()).await?;
     Ok(dataframe)
