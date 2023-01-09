@@ -18,6 +18,7 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::TimestampMillisecondBuilder;
+use vegafusion_core::arrow::compute::cast;
 use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
@@ -182,13 +183,26 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
             };
 
             // To int64 arrays
-            let years = args[0].as_any().downcast_ref::<Int64Array>().unwrap();
-            let months = args[1].as_any().downcast_ref::<Int64Array>().unwrap();
-            let days = args[2].as_any().downcast_ref::<Int64Array>().unwrap();
-            let hours = args[3].as_any().downcast_ref::<Int64Array>().unwrap();
-            let minutes = args[4].as_any().downcast_ref::<Int64Array>().unwrap();
-            let seconds = args[5].as_any().downcast_ref::<Int64Array>().unwrap();
-            let millis = args[6].as_any().downcast_ref::<Int64Array>().unwrap();
+            let years = cast(&args[0], &DataType::Int64).unwrap();
+            let years = years.as_any().downcast_ref::<Int64Array>().unwrap();
+
+            let months = cast(&args[1], &DataType::Int64).unwrap();
+            let months = months.as_any().downcast_ref::<Int64Array>().unwrap();
+
+            let days = cast(&args[2], &DataType::Int64).unwrap();
+            let days = days.as_any().downcast_ref::<Int64Array>().unwrap();
+
+            let hours = cast(&args[3], &DataType::Int64).unwrap();
+            let hours = hours.as_any().downcast_ref::<Int64Array>().unwrap();
+
+            let minutes = cast(&args[4], &DataType::Int64).unwrap();
+            let minutes = minutes.as_any().downcast_ref::<Int64Array>().unwrap();
+
+            let seconds = cast(&args[5], &DataType::Int64).unwrap();
+            let seconds = seconds.as_any().downcast_ref::<Int64Array>().unwrap();
+
+            let millis = cast(&args[6], &DataType::Int64).unwrap();
+            let millis = millis.as_any().downcast_ref::<Int64Array>().unwrap();
 
             let num_rows = years.len();
             let mut datetime_builder = TimestampMillisecondBuilder::new();

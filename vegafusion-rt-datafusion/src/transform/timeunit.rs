@@ -129,7 +129,7 @@ fn timeunit_date_part(
             fun: BuiltinScalarFunction::DatePart,
             args: vec![lit("month"), inner.clone()],
         }
-        .sub(lit(1));
+        .sub(lit(1.0));
 
         make_timestamptz_args[1] = Expr::Cast(Cast {
             expr: Box::new(floor(month.div(lit(3))).mul(lit(3))),
@@ -145,7 +145,7 @@ fn timeunit_date_part(
             fun: BuiltinScalarFunction::DatePart,
             args: vec![lit("month"), inner.clone()],
         }
-        .sub(lit(1));
+        .sub(lit(1.0));
 
         interval_str = "1 MONTH".to_string();
     }
