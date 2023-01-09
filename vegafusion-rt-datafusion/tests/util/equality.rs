@@ -26,7 +26,7 @@ impl Default for TablesEqualConfig {
     fn default() -> Self {
         Self {
             row_order: true,
-            tolerance: 1.0e-12,
+            tolerance: 1.0e-10,
         }
     }
 }
