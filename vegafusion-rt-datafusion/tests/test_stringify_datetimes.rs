@@ -255,8 +255,8 @@ mod test_stringify_datetimes {
 
     /// This test checks that we're able to identify local timestamp column usage inside facet
     /// definitions
-    #[tokio::test]
-    async fn test_local_datetime_facet_usage() {
+    #[test]
+    fn test_local_datetime_facet_usage() {
         let local_tz = "UTC";
         let default_input_tz = "America/New_York";
         let expected_year_date = "2000-01-01T00:00:00.000";
@@ -272,15 +272,14 @@ mod test_stringify_datetimes {
         // Initialize task graph runtime
         let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
 
-        let (spec, _warnings) = runtime
-            .pre_transform_spec(
+        let (spec, _warnings) = TOKIO_RUNTIME
+            .block_on(runtime.pre_transform_spec(
                 &spec,
                 local_tz,
                 &Some(default_input_tz.to_string()),
                 None,
                 Default::default(),
-            )
-            .await
+            ))
             .unwrap();
 
         println!("{}", serde_json::to_string_pretty(&spec).unwrap());
