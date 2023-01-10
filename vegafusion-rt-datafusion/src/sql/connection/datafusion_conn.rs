@@ -79,29 +79,20 @@ impl SqlConnection for DataFusionConnection {
     }
 
     async fn tables(&self) -> vegafusion_core::error::Result<HashMap<String, Schema>> {
-        let state = self.ctx.as_ref().state.clone();
-        let state = state.read();
-        let catalog_names = state.catalog_list.catalog_names();
+        let catalog_names = self.ctx.catalog_names();
         let first_catalog_name = catalog_names.get(0).unwrap();
-        let catalog = state.catalog_list.catalog(first_catalog_name).unwrap();
+        let catalog = self.ctx.catalog(first_catalog_name).unwrap();
 
         let schema_provider_names = catalog.schema_names();
         let first_schema_provider_name = schema_provider_names.get(0).unwrap();
         let schema_provider = catalog.schema(first_schema_provider_name).unwrap();
 
-        Ok(schema_provider
-            .table_names()
-            .iter()
-            .map(|name| {
-                let schema = schema_provider
-                    .table(name)
-                    .unwrap()
-                    .schema()
-                    .as_ref()
-                    .clone();
-                (name.clone(), schema)
-            })
-            .collect())
+        let mut tables: HashMap<String, Schema> = HashMap::new();
+        for table_name in schema_provider.table_names() {
+            let schema = schema_provider.table(&table_name).await.unwrap().schema();
+            tables.insert(table_name, schema.as_ref().clone());
+        }
+        Ok(tables)
     }
 
     fn dialect(&self) -> &Dialect {

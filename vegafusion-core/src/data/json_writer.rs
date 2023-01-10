@@ -929,7 +929,7 @@ mod tests {
             Field::new(
                 "c1",
                 DataType::Struct(vec![
-                    Field::new("c11", DataType::Int32, false),
+                    Field::new("c11", DataType::Int32, true),
                     Field::new(
                         "c12",
                         DataType::Struct(vec![Field::new("c121", DataType::Utf8, false)]),
@@ -943,7 +943,7 @@ mod tests {
 
         let c1 = StructArray::from(vec![
             (
-                Field::new("c11", DataType::Int32, false),
+                Field::new("c11", DataType::Int32, true),
                 Arc::new(Int32Array::from(vec![Some(1), None, Some(5)])) as ArrayRef,
             ),
             (
@@ -1085,7 +1085,7 @@ mod tests {
             DataType::List(Box::new(Field::new(
                 "s",
                 DataType::Struct(vec![
-                    Field::new("c11", DataType::Int32, false),
+                    Field::new("c11", DataType::Int32, true),
                     Field::new(
                         "c12",
                         DataType::Struct(vec![Field::new("c121", DataType::Utf8, false)]),
@@ -1101,7 +1101,7 @@ mod tests {
 
         let struct_values = StructArray::from(vec![
             (
-                Field::new("c11", DataType::Int32, false),
+                Field::new("c11", DataType::Int32, true),
                 Arc::new(Int32Array::from(vec![Some(1), None, Some(5)])) as ArrayRef,
             ),
             (

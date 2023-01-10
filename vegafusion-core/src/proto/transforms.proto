@@ -177,6 +177,7 @@ message Window {
   repeated double params = 6;
   repeated string aliases = 7;
   optional WindowFrame frame = 8;
+  optional bool ignore_peers = 9;
 }
 
 message WindowFrame {

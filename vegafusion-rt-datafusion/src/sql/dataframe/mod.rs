@@ -89,13 +89,13 @@ impl SqlDataFrame {
         query_chain_to_cte(self.ctes.as_slice(), &self.prefix)
     }
 
-    pub fn chain_query_str(&self, query: &str) -> Result<Arc<Self>> {
+    pub async fn chain_query_str(&self, query: &str) -> Result<Arc<Self>> {
         // println!("chain_query_str: {}", query);
         let query_ast = Parser::parse_sql_query(query)?;
-        self.chain_query(query_ast)
+        self.chain_query(query_ast).await
     }
 
-    pub fn chain_query(&self, query: Query) -> Result<Arc<Self>> {
+    pub async fn chain_query(&self, query: Query) -> Result<Arc<Self>> {
         let mut new_ctes = self.ctes.clone();
         new_ctes.push(query);
 
@@ -110,7 +110,13 @@ impl SqlDataFrame {
         // Now convert to string in the DataFusion dialect for schema inference
         let query_str = combined_query.sql(&self.dialect)?;
         // println!("datafusion: {}", query_str);
-        let logical_plan = self.session_context.create_logical_plan(&query_str)?;
+
+        let logical_plan = self
+            .session_context
+            .state()
+            .create_logical_plan(&query_str)
+            .await?;
+
         // println!("logical_plan: {:?}", logical_plan);
         let new_schema: Schema = logical_plan.schema().as_ref().into();
 
@@ -129,7 +135,7 @@ impl SqlDataFrame {
         self.conn.fetch_query(&query_string, &self.schema).await
     }
 
-    pub fn sort(&self, expr: Vec<DfExpr>, limit: Option<i32>) -> Result<Arc<Self>> {
+    pub async fn sort(&self, expr: Vec<DfExpr>, limit: Option<i32>) -> Result<Arc<Self>> {
         let mut query = self.make_select_star();
         let sql_exprs = expr
             .iter()
@@ -139,10 +145,10 @@ impl SqlDataFrame {
         if let Some(limit) = limit {
             query.limit = Some(lit(limit).to_sql().unwrap())
         }
-        self.chain_query(query)
+        self.chain_query(query).await
     }
 
-    pub fn select(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
+    pub async fn select(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
         let sql_expr_strs = expr
             .iter()
             .map(|expr| Ok(expr.to_sql_select()?.sql(&self.dialect)?))
@@ -155,10 +161,14 @@ impl SqlDataFrame {
             parent = self.parent_name()
         ))?;
 
-        self.chain_query(query)
+        self.chain_query(query).await
     }
 
-    pub fn aggregate(&self, group_expr: Vec<DfExpr>, aggr_expr: Vec<DfExpr>) -> Result<Arc<Self>> {
+    pub async fn aggregate(
+        &self,
+        group_expr: Vec<DfExpr>,
+        aggr_expr: Vec<DfExpr>,
+    ) -> Result<Arc<Self>> {
         let sql_group_expr_strs = group_expr
             .iter()
             .map(|expr| Ok(expr.to_sql()?.sql(&self.dialect)?))
@@ -189,10 +199,10 @@ impl SqlDataFrame {
             ))?
         };
 
-        self.chain_query(query)
+        self.chain_query(query).await
     }
 
-    pub fn filter(&self, predicate: Expr) -> Result<Arc<Self>> {
+    pub async fn filter(&self, predicate: Expr) -> Result<Arc<Self>> {
         let sql_predicate = predicate.to_sql()?;
 
         let query = Parser::parse_sql_query(&format!(
@@ -202,10 +212,11 @@ impl SqlDataFrame {
         ))?;
 
         self.chain_query(query)
+            .await
             .with_context(|| format!("unsupported filter expression: {}", predicate))
     }
 
-    pub fn limit(&self, limit: i32) -> Result<Arc<Self>> {
+    pub async fn limit(&self, limit: i32) -> Result<Arc<Self>> {
         let query = Parser::parse_sql_query(&format!(
             "select * from {parent} LIMIT {limit}",
             parent = self.parent_name(),
@@ -213,6 +224,7 @@ impl SqlDataFrame {
         ))?;
 
         self.chain_query(query)
+            .await
             .with_context(|| "unsupported limit query".to_string())
     }
 

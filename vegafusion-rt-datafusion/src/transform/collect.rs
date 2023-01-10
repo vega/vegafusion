@@ -1,7 +1,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion::logical_expr::Expr;
+use datafusion::logical_expr::{expr, Expr};
 
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
@@ -24,15 +24,18 @@ impl TransformTrait for Collect {
             .clone()
             .into_iter()
             .zip(&self.order)
-            .map(|(field, order)| Expr::Sort {
-                expr: Box::new(unescaped_col(&field)),
-                asc: *order == SortOrder::Ascending as i32,
-                nulls_first: *order == SortOrder::Ascending as i32,
+            .map(|(field, order)| {
+                Expr::Sort(expr::Sort {
+                    expr: Box::new(unescaped_col(&field)),
+                    asc: *order == SortOrder::Ascending as i32,
+                    nulls_first: *order == SortOrder::Ascending as i32,
+                })
             })
             .collect();
 
         let result = dataframe
             .sort(sort_exprs, None)
+            .await
             .with_context(|| "Collect transform failed".to_string())?;
         Ok((result, Default::default()))
     }
