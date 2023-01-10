@@ -63,6 +63,7 @@ impl TransformSpecTrait for ImputeTransformSpec {
             && self.keyvals.is_none()
             && self.method() == ImputeMethodSpec::Value
             && num_unique_groupby <= 1
+            && self.value.is_some()
     }
 
     fn transform_columns(
