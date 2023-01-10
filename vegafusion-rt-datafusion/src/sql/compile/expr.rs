@@ -336,24 +336,6 @@ impl ToSqlExpr for Expr {
                     end_bound: Some(end_bound),
                 });
 
-                // let sql_window_frame = match window_frame {
-                //     None => None,
-                //     Some(window_frame) => {
-                //         let end_bound = compile_window_frame_bound(&window_frame.end_bound)?;
-                //         let start_bound = compile_window_frame_bound(&window_frame.start_bound)?;
-                //         let units = match window_frame.units {
-                //             WindowFrameUnits::Rows => SqlWindowFrameUnits::Rows,
-                //             WindowFrameUnits::Range => SqlWindowFrameUnits::Range,
-                //             WindowFrameUnits::Groups => SqlWindowFrameUnits::Groups,
-                //         };
-                //         Some(SqlWindowFrame {
-                //             units,
-                //             start_bound,
-                //             end_bound: Some(end_bound),
-                //         })
-                //     }
-                // };
-
                 // Process over
                 let over = SqlWindowSpec {
                     partition_by,
