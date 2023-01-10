@@ -121,7 +121,8 @@ mod test_impute {
                   "as": "b"
                 }
             ]
-        )).unwrap();
+        ))
+        .unwrap();
 
         let comp_config = Default::default();
         let eq_config = TablesEqualConfig {

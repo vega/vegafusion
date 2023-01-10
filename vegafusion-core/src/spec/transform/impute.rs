@@ -27,7 +27,7 @@ pub struct ImputeTransformSpec {
     pub groupby: Option<Vec<Field>>,
 
     // Default to zero but serialize even if null
-    #[serde(default="default_value")]
+    #[serde(default = "default_value")]
     pub value: Option<Value>,
 
     #[serde(flatten)]

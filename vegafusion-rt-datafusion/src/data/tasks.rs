@@ -30,7 +30,7 @@ use crate::expression::escape::flat_col;
 use crate::sql::connection::datafusion_conn::DataFusionConnection;
 use crate::sql::dataframe::SqlDataFrame;
 use crate::task_graph::timezone::RuntimeTzConfig;
-use crate::transform::pipeline::TransformPipelineUtils;
+use crate::transform::pipeline::{remove_order_col, TransformPipelineUtils};
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
@@ -112,11 +112,11 @@ impl TaskCall for DataUrlTask {
                 let sql_df = match inline_dataset {
                     VegaFusionDataset::Table { table, .. } => {
                         table.clone().with_ordering()?.to_sql_dataframe().await?
-                    },
+                    }
                     VegaFusionDataset::SqlDataFrame(sql_df) => {
                         // TODO: if no ordering column present, create with a window expression
                         sql_df.clone()
-                    },
+                    }
                 };
                 let sql_df = process_datetimes(&parse, sql_df, &config.tz_config).await?;
                 return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await;
@@ -167,7 +167,8 @@ async fn eval_sql_df(
         let pipeline = pipeline.as_ref().unwrap();
         pipeline.eval_sql(sql_df, config).await?
     } else {
-        // No transforms
+        // No transforms, just remove any ordering column
+        let sql_df = remove_order_col(sql_df).await?;
         (sql_df.collect().await?, Vec::new())
     };
 
