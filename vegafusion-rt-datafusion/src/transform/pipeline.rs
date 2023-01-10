@@ -5,11 +5,14 @@ use itertools::Itertools;
 use std::collections::HashMap;
 
 use std::sync::Arc;
-use vegafusion_core::error::Result;
+use vegafusion_core::error::{Result, VegaFusionError};
 
+use crate::expression::escape::flat_col;
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
+use datafusion_expr::{expr, Expr};
 use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::data::ORDER_COL;
 use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -34,6 +37,13 @@ impl TransformPipelineUtils for TransformPipeline {
         let mut result_sql_df = sql_df;
         let mut result_outputs: HashMap<Variable, TaskValue> = Default::default();
         let mut config = config.clone();
+
+        if result_sql_df.schema().column_with_name(ORDER_COL).is_none() {
+            return Err(VegaFusionError::internal(format!(
+                "DataFrame input to eval_sql does not have the expected {} ordering column",
+                ORDER_COL
+            )));
+        }
 
         // Helper function to add variable value to config
         let add_output_var_to_config =
@@ -62,6 +72,12 @@ impl TransformPipelineUtils for TransformPipeline {
 
             result_sql_df = tx_result.0;
 
+            if result_sql_df.schema().column_with_name(ORDER_COL).is_none() {
+                return Err(VegaFusionError::internal(
+                    format!("DataFrame output of transform does not have the expected {} ordering column: {:?}", ORDER_COL, tx)
+                ));
+            }
+
             // Collect output variables
             for (var, val) in tx.output_vars().iter().zip(tx_result.1) {
                 result_outputs.insert(var.clone(), val.clone());
@@ -71,6 +87,28 @@ impl TransformPipelineUtils for TransformPipeline {
                 add_output_var_to_config(&mut config, var, val)?;
             }
         }
+
+        // Sort by ordering column at the end
+        result_sql_df = result_sql_df
+            .sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(flat_col(ORDER_COL)),
+                    asc: true,
+                    nulls_first: false,
+                })],
+                None,
+            )
+            .await?;
+
+        // Remove ordering column
+        let selection = result_sql_df.schema().fields.iter().filter_map(|field| {
+            if field.name() == ORDER_COL {
+                None
+            } else {
+                Some(flat_col(field.name()))
+            }
+        }).collect::<Vec<_>>();
+        result_sql_df = result_sql_df.select(selection).await?;
 
         let table = result_sql_df.collect().await?;
 

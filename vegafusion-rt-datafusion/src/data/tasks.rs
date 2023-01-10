@@ -416,6 +416,9 @@ impl TaskCall for DataValuesTask {
             return Ok((TaskValue::Table(values_table), Default::default()));
         }
 
+        // Add ordering column
+        let values_table = values_table.with_ordering()?;
+
         // Get parse format for date processing
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
 
@@ -468,6 +471,9 @@ impl TaskCall for DataSourceTask {
                 self.source, input_vars
             )
         });
+
+        // Add ordering column
+        let source_table = source_table.with_ordering()?;
 
         // Apply transforms (if any)
         let (transformed_table, output_values) = if self
@@ -531,12 +537,18 @@ async fn read_csv(url: String, parse: &Option<Parse>) -> Result<DataFrame> {
         // Load through VegaFusionTable so that temp file can be deleted
         let df = ctx.read_csv(path, csv_opts).await.unwrap();
         let table = VegaFusionTable::from_dataframe(df).await.unwrap();
+        let table = table.with_ordering()?;
         let df = table.to_dataframe().await.unwrap();
         Ok(df)
     } else {
         let schema = build_csv_schema(&csv_opts, &url, parse).await?;
         let csv_opts = csv_opts.schema(&schema);
-        Ok(ctx.read_csv(url, csv_opts).await?)
+
+        let df = ctx.read_csv(url, csv_opts).await.unwrap();
+        let table = VegaFusionTable::from_dataframe(df).await.unwrap();
+        let table = table.with_ordering()?;
+        let df = table.to_dataframe().await.unwrap();
+        Ok(df)
     }
 }
 
@@ -622,6 +634,7 @@ async fn read_json(url: &str, batch_size: usize) -> Result<DataFrame> {
     };
 
     VegaFusionTable::from_json(&value, batch_size)?
+        .with_ordering()?
         .to_dataframe()
         .await
 }
@@ -678,6 +691,7 @@ async fn read_arrow(url: &str) -> Result<DataFrame> {
     };
 
     VegaFusionTable::try_new(schema, batches)?
+        .with_ordering()?
         .to_dataframe()
         .await
 }

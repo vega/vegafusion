@@ -10,6 +10,7 @@ use datafusion::logical_expr::{expr, Expr};
 use std::sync::Arc;
 use vegafusion_core::data::scalar::DATETIME_PREFIX;
 use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::data::ORDER_COL;
 use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
 use vegafusion_rt_datafusion::expression::compiler::utils::is_numeric_datatype;
 use vegafusion_rt_datafusion::expression::escape::flat_col;
@@ -36,18 +37,30 @@ pub fn assert_tables_equal(
     rhs: &VegaFusionTable,
     config: &TablesEqualConfig,
 ) {
-    // Check column names
+    // Check column names (filtering out order col)
     let lhs_columns: HashSet<_> = lhs
         .schema
         .fields()
         .iter()
-        .map(|f| f.name().clone())
+        .filter_map(|f| {
+            if f.name() == ORDER_COL {
+                None
+            } else {
+                Some(f.name().clone())
+            }
+        })
         .collect();
     let rhs_columns: HashSet<_> = rhs
         .schema
         .fields()
         .iter()
-        .map(|f| f.name().clone())
+        .filter_map(|f| {
+            if f.name() == ORDER_COL {
+                None
+            } else {
+                Some(f.name().clone())
+            }
+        })
         .collect();
     assert_eq!(
         lhs_columns, rhs_columns,
@@ -70,17 +83,21 @@ pub fn assert_tables_equal(
         let rhs_rb = rhs.to_record_batch().unwrap();
         (lhs_rb, rhs_rb)
     } else {
-        // Sort by all columns
+        // Sort by all columns except ORDER_COL
         let sort_exprs: Vec<_> = lhs
             .schema
             .fields()
             .iter()
-            .map(|f| {
-                Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col(f.name())),
-                    asc: false,
-                    nulls_first: false,
-                })
+            .filter_map(|f| {
+                if f.name() == ORDER_COL {
+                    None
+                } else {
+                    Some(Expr::Sort(expr::Sort {
+                        expr: Box::new(flat_col(f.name())),
+                        asc: false,
+                        nulls_first: false,
+                    }))
+                }
             })
             .collect();
 
@@ -144,13 +161,25 @@ fn assert_scalars_almost_equals(
             let lhs_map: HashMap<_, _> = lhs_fields
                 .iter()
                 .zip(lhs_vals.iter())
-                .map(|(field, val)| (field.name().clone(), val.clone()))
+                .filter_map(|(field, val)| {
+                    if field.name() == ORDER_COL {
+                        None
+                    } else {
+                        Some((field.name().clone(), val.clone()))
+                    }
+                })
                 .collect();
 
             let rhs_map: HashMap<_, _> = rhs_fields
                 .iter()
                 .zip(rhs_vals.iter())
-                .map(|(field, val)| (field.name().clone(), val.clone()))
+                .filter_map(|(field, val)| {
+                    if field.name() == ORDER_COL {
+                        None
+                    } else {
+                        Some((field.name().clone(), val.clone()))
+                    }
+                })
                 .collect();
 
             // Check column names

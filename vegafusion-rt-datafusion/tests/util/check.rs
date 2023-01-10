@@ -114,6 +114,8 @@ pub fn eval_vegafusion_transforms(
     transform_specs: &[TransformSpec],
     compilation_config: &CompilationConfig,
 ) -> (VegaFusionTable, Vec<ScalarValue>) {
+    // add ordering column
+    let data = data.clone().with_ordering().unwrap();
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
     let sql_df = (*TOKIO_RUNTIME).block_on(data.to_sql_dataframe()).unwrap();
 

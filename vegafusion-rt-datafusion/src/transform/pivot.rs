@@ -4,7 +4,7 @@ use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::compile::expr::ToSqlExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
-use crate::transform::aggregate::{make_aggr_expr, make_row_number_expr};
+use crate::transform::aggregate::make_aggr_expr;
 use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
@@ -14,6 +14,7 @@ use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::StringArray;
 use vegafusion_core::arrow::datatypes::DataType;
+use vegafusion_core::data::ORDER_COL;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{AggregateOp, Pivot};
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -168,6 +169,9 @@ async fn pivot_without_grouping(
         final_selections.push(select_expr)
     }
 
+    // Query will result in a single row, so add a constant valued ORDER_COL
+    final_selections.insert(0, lit(0u32).alias(ORDER_COL));
+
     // Build final query
     let final_selection_strs: Vec<_> = final_selections
         .iter()
@@ -207,12 +211,6 @@ async fn pivot_with_grouping(
         return Err(VegaFusionError::internal("Unexpected empty pivot dataset"));
     }
 
-    // Add row_index column that we can sort by later
-    let row_number_expr = make_row_number_expr();
-    let dataframe = dataframe
-        .select(vec![Expr::Wildcard, row_number_expr])
-        .await?;
-
     // Process aggregate operation
     let agg_op: AggregateOp = tx
         .op
@@ -234,10 +232,11 @@ async fn pivot_with_grouping(
         .map(|col| col.to_sql().unwrap().sql(dialect).unwrap())
         .collect();
     let groupby_csv = groupby_strs.join(", ");
+
     let grouped_dataframe = dataframe
         .aggregate(
             groupby_cols,
-            vec![min(flat_col("__row_number")).alias("__min_row_number")],
+            vec![min(flat_col(ORDER_COL)).alias(ORDER_COL)],
         )
         .await?;
 
@@ -247,6 +246,7 @@ async fn pivot_with_grouping(
 
     // Initialize vector of final selections
     let mut final_selections: Vec<_> = tx.groupby.iter().map(|c| unescaped_col(c)).collect();
+    final_selections.insert(0, flat_col(ORDER_COL));
 
     // Initialize empty query string
     let mut query_str = String::new();
@@ -301,9 +301,6 @@ async fn pivot_with_grouping(
             parent_name = grouped_parent_name
         ),
     );
-
-    // Append ordering
-    query_str.push_str("ORDER BY __min_row_number");
 
     // Perform query and apply final selections
     let dataframe_joined = grouped_dataframe.chain_query_str(&query_str).await?;

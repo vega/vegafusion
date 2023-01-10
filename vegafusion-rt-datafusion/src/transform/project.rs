@@ -10,6 +10,7 @@ use vegafusion_core::proto::gen::transforms::Project;
 use crate::expression::escape::flat_col;
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
+use vegafusion_core::data::ORDER_COL;
 use vegafusion_core::expression::escape::unescape_field;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -30,7 +31,7 @@ impl TransformTrait for Project {
 
         // Keep all of the project columns that are present in the dataframe.
         // Skip projection fields that are not found
-        let select_fields: Vec<_> = self
+        let mut select_fields: Vec<_> = self
             .fields
             .iter()
             .filter_map(|field| {
@@ -42,6 +43,9 @@ impl TransformTrait for Project {
                 }
             })
             .collect();
+
+        // Always keep ordering column
+        select_fields.insert(0, ORDER_COL.to_string());
 
         let select_col_exprs: Vec<_> = select_fields.iter().map(|f| flat_col(f)).collect();
         let result = dataframe.select(select_col_exprs).await?;

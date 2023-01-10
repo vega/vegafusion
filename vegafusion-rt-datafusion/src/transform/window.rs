@@ -15,11 +15,11 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 use crate::expression::compiler::utils::to_numeric;
 use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
-use crate::transform::aggregate::make_row_number_expr;
 use datafusion::physical_plan::aggregates;
 use datafusion_expr::{
     window_frame, BuiltInWindowFunction, WindowFrameBound, WindowFrameUnits, WindowFunction,
 };
+use vegafusion_core::data::ORDER_COL;
 
 #[async_trait]
 impl TransformTrait for Window {
@@ -48,21 +48,12 @@ impl TransformTrait for Window {
             .map(|f| flat_col(f.field().name()))
             .collect();
 
-        let dataframe = if order_by.is_empty() {
-            //  If no order by fields provided, use the row number
-            let row_number_expr = make_row_number_expr();
-
-            order_by.push(Expr::Sort(expr::Sort {
-                expr: Box::new(flat_col("__row_number")),
-                asc: true,
-                nulls_first: true,
-            }));
-            dataframe
-                .select(vec![Expr::Wildcard, row_number_expr])
-                .await?
-        } else {
-            dataframe
-        };
+        // Order by input row ordering last
+        order_by.push(Expr::Sort(expr::Sort {
+            expr: Box::new(flat_col(ORDER_COL)),
+            asc: true,
+            nulls_first: true,
+        }));
 
         let partition_by: Vec<_> = self
             .groupby
@@ -180,7 +171,6 @@ impl TransformTrait for Window {
             .collect();
 
         // Add window expressions to original selections
-        // This will exclude the __row_number column if it was added above.
         selections.extend(window_exprs);
 
         let dataframe = dataframe.select(selections).await?;
