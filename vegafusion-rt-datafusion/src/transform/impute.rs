@@ -213,8 +213,8 @@ async fn single_groupby_sql(
         .collect::<Vec<_>>();
     selections.insert(0, order_col);
 
-    Ok(dataframe
+    dataframe
         .select(selections)
         .await
-        .with_context(|| "Impute transform failed".to_string())?)
+        .with_context(|| "Impute transform failed".to_string())
 }
