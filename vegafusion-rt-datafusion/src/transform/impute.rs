@@ -26,13 +26,19 @@ impl TransformTrait for Impute {
         _config: &CompilationConfig,
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
         // Create ScalarValue used to fill in null values
-        let json_value: serde_json::Value =
-            serde_json::from_str(self.value_json.as_ref().unwrap())?;
+        let json_value: serde_json::Value = serde_json::from_str(
+            &self
+                .value_json
+                .clone()
+                .unwrap_or_else(|| "null".to_string()),
+        )?;
 
         // JSON numbers are always interpreted as floats, but if the value is an integer we'd
         // like the fill value to be an integer as well to avoid converting an integer input
         // column to floats
-        let value = if json_value.is_i64() {
+        let value = if json_value.is_null() {
+            ScalarValue::Float64(None)
+        } else if json_value.is_i64() {
             ScalarValue::from(json_value.as_i64().unwrap())
         } else if json_value.is_f64() && json_value.as_f64().unwrap().fract() == 0.0 {
             ScalarValue::from(json_value.as_f64().unwrap() as i64)
