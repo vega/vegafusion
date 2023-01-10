@@ -48,12 +48,14 @@ impl TransformTrait for Window {
             .map(|f| flat_col(f.field().name()))
             .collect();
 
-        // Order by input row ordering last
-        order_by.push(Expr::Sort(expr::Sort {
-            expr: Box::new(flat_col(ORDER_COL)),
-            asc: true,
-            nulls_first: true,
-        }));
+        if order_by.is_empty() {
+            // Order by input row if no ordering specified
+            order_by.push(Expr::Sort(expr::Sort {
+                expr: Box::new(flat_col(ORDER_COL)),
+                asc: true,
+                nulls_first: true,
+            }));
+        };
 
         let partition_by: Vec<_> = self
             .groupby
