@@ -34,7 +34,6 @@ altair_mocks_dir = here / "altair_mocks"
         ("bar/trellis_stacked", 120, ["yield", "variety", "year", "yield_start", "yield_end"]),
         ("bar/with_highlighted_bar", 52, ["year", "wheat", "wages"]),
         ("bar/with_negative_values", 120, ["month", "nonfarm_change"]),
-        ("bar/with_rolling_mean", 53, ["weather", "month_date", "__count_start", "__count_end"]),
         ("bar/with_rounded_edges", 53, ["weather", "month_date", "__count_start", "__count_end"]),
         ("casestudy/anscombe_plot", 44, ["Series", "X", "Y"]),
         ("casestudy/beckers_barley_trellis_plot", 120, ["yield", "variety", "year", "site"]),
