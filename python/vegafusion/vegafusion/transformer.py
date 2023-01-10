@@ -67,8 +67,9 @@ def to_arrow_table(data):
                 except IndexError:
                     pass
 
-    # Convert DataFrame to table
-    table = pa.Table.from_pandas(data)
+    # Convert DataFrame to table. Keep index only if named
+    preserve_index = bool([name for name in getattr(data.index, "names", []) if name])
+    table = pa.Table.from_pandas(data, preserve_index=preserve_index)
 
     return table
 
