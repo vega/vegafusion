@@ -110,8 +110,13 @@ impl TaskCall for DataUrlTask {
             let inline_name = inline_name.trim().to_string();
             if let Some(inline_dataset) = inline_datasets.get(&inline_name) {
                 let sql_df = match inline_dataset {
-                    VegaFusionDataset::Table { table, .. } => table.to_sql_dataframe().await?,
-                    VegaFusionDataset::SqlDataFrame(sql_df) => sql_df.clone(),
+                    VegaFusionDataset::Table { table, .. } => {
+                        table.clone().with_ordering()?.to_sql_dataframe().await?
+                    },
+                    VegaFusionDataset::SqlDataFrame(sql_df) => {
+                        // TODO: if no ordering column present, create with a window expression
+                        sql_df.clone()
+                    },
                 };
                 let sql_df = process_datetimes(&parse, sql_df, &config.tz_config).await?;
                 return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await;
