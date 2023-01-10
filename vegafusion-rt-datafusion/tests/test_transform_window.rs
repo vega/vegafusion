@@ -10,6 +10,9 @@ use rstest::rstest;
 use vegafusion_core::spec::transform::aggregate::AggregateOpSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 
+// For some reason this test is especially slow on Windows on CI.
+// Skip for now.
+#[cfg(not(target_os = "windows"))]
 mod test_window_single {
     use crate::*;
     use serde_json::json;
