@@ -144,7 +144,7 @@ impl SqlConnection for SqLiteConnection {
                 let col = field.get(1).unwrap().as_str().to_string();
                 let typ = field.get(2).unwrap().as_str().to_string();
                 let df_type = sqlite_to_arrow_dtype(&typ)?;
-                fields.push(Field::new(&col, df_type, true));
+                fields.push(Field::new(col, df_type, true));
             }
 
             let schema = Schema::new(fields);

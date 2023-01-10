@@ -2,7 +2,8 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
-use datafusion::logical_expr::Expr;
+use datafusion::common::ScalarValue;
+use datafusion::logical_expr::{expr, Expr};
 use datafusion::prelude::lit;
 use std::sync::Arc;
 use vegafusion_core::error::Result;
@@ -14,8 +15,11 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 use crate::expression::compiler::utils::to_numeric;
 use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
+use crate::transform::aggregate::make_row_number_expr;
 use datafusion::physical_plan::aggregates;
-use datafusion_expr::{BuiltInWindowFunction, WindowFunction};
+use datafusion_expr::{
+    window_frame, BuiltInWindowFunction, WindowFrameBound, WindowFrameUnits, WindowFunction,
+};
 
 #[async_trait]
 impl TransformTrait for Window {
@@ -28,10 +32,12 @@ impl TransformTrait for Window {
             .sort_fields
             .iter()
             .zip(&self.sort)
-            .map(|(field, order)| Expr::Sort {
-                expr: Box::new(unescaped_col(field)),
-                asc: *order == SortOrder::Ascending as i32,
-                nulls_first: *order == SortOrder::Ascending as i32,
+            .map(|(field, order)| {
+                Expr::Sort(expr::Sort {
+                    expr: Box::new(unescaped_col(field)),
+                    asc: *order == SortOrder::Ascending as i32,
+                    nulls_first: *order == SortOrder::Ascending as i32,
+                })
             })
             .collect();
 
@@ -44,21 +50,16 @@ impl TransformTrait for Window {
 
         let dataframe = if order_by.is_empty() {
             //  If no order by fields provided, use the row number
-            let row_number_expr = Expr::WindowFunction {
-                fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
-                args: Vec::new(),
-                partition_by: Vec::new(),
-                order_by: Vec::new(),
-                window_frame: None,
-            }
-            .alias("__row_number");
+            let row_number_expr = make_row_number_expr();
 
-            order_by.push(Expr::Sort {
+            order_by.push(Expr::Sort(expr::Sort {
                 expr: Box::new(flat_col("__row_number")),
                 asc: true,
                 nulls_first: true,
-            });
-            dataframe.select(vec![Expr::Wildcard, row_number_expr])?
+            }));
+            dataframe
+                .select(vec![Expr::Wildcard, row_number_expr])
+                .await?
         } else {
             dataframe
         };
@@ -68,6 +69,33 @@ impl TransformTrait for Window {
             .iter()
             .map(|group| unescaped_col(group))
             .collect();
+
+        let (start_bound, end_bound) = match &self.frame {
+            None => (
+                // Unbounded preceding
+                WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
+                // Current row
+                WindowFrameBound::CurrentRow,
+            ),
+            Some(frame) => (
+                WindowFrameBound::Preceding(ScalarValue::UInt64(
+                    frame.start.map(|v| (v.unsigned_abs())),
+                )),
+                WindowFrameBound::Following(ScalarValue::UInt64(frame.end.map(|v| v as u64))),
+            ),
+        };
+
+        let ignore_peers = self.ignore_peers.unwrap_or(false);
+
+        let window_frame = window_frame::WindowFrame {
+            units: if ignore_peers {
+                WindowFrameUnits::Rows
+            } else {
+                WindowFrameUnits::Groups
+            },
+            start_bound,
+            end_bound,
+        };
 
         let window_exprs: Vec<_> = self
             .ops
@@ -94,6 +122,12 @@ impl TransformTrait for Window {
                             Mean | Average => (aggregates::AggregateFunction::Avg, numeric_field()),
                             Min => (aggregates::AggregateFunction::Min, numeric_field()),
                             Max => (aggregates::AggregateFunction::Max, numeric_field()),
+                            Variance => (aggregates::AggregateFunction::Variance, numeric_field()),
+                            Variancep => {
+                                (aggregates::AggregateFunction::VariancePop, numeric_field())
+                            }
+                            Stdev => (aggregates::AggregateFunction::Stddev, numeric_field()),
+                            Stdevp => (aggregates::AggregateFunction::StddevPop, numeric_field()),
                             // ArrayAgg only available on master right now
                             // Values => (aggregates::AggregateFunction::ArrayAgg, unescaped_col(field)),
                             _ => {
@@ -129,13 +163,13 @@ impl TransformTrait for Window {
                     }
                 };
 
-                let window_expr = Expr::WindowFunction {
+                let window_expr = Expr::WindowFunction(expr::WindowFunction {
                     fun: window_fn,
                     args,
                     partition_by: partition_by.clone(),
                     order_by: order_by.clone(),
-                    window_frame: None,
-                };
+                    window_frame: window_frame.clone(),
+                });
 
                 if let Some(alias) = self.aliases.get(i) {
                     window_expr.alias(alias)
@@ -149,7 +183,7 @@ impl TransformTrait for Window {
         // This will exclude the __row_number column if it was added above.
         selections.extend(window_exprs);
 
-        let dataframe = dataframe.select(selections)?;
+        let dataframe = dataframe.select(selections).await?;
 
         Ok((dataframe, Vec::new()))
     }

@@ -3,11 +3,12 @@ use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::compile::order::ToSqlOrderByExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
+use crate::transform::aggregate::make_row_number_expr;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::common::ScalarValue;
 use datafusion_expr::expr::Cast;
-use datafusion_expr::{lit, when, BuiltInWindowFunction, Expr, WindowFunction};
+use datafusion_expr::{expr, lit, when, Expr};
 use itertools::Itertools;
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
@@ -46,8 +47,8 @@ impl TransformTrait for Impute {
             .unique()
             .collect::<Vec<_>>();
         let dataframe = match unique_groupby.len() {
-            0 => zero_groupby_sql(self, dataframe, value)?,
-            1 => single_groupby_sql(self, dataframe, value, &unique_groupby[0])?,
+            0 => zero_groupby_sql(self, dataframe, value).await?,
+            1 => single_groupby_sql(self, dataframe, value, &unique_groupby[0]).await?,
             _ => {
                 return Err(VegaFusionError::internal(
                     "Expected zero or one groupby columns to impute",
@@ -59,7 +60,7 @@ impl TransformTrait for Impute {
     }
 }
 
-fn zero_groupby_sql(
+async fn zero_groupby_sql(
     tx: &Impute,
     dataframe: Arc<SqlDataFrame>,
     value: ScalarValue,
@@ -86,10 +87,10 @@ fn zero_groupby_sql(
         })
         .collect();
 
-    dataframe.select(select_columns)
+    dataframe.select(select_columns).await
 }
 
-fn single_groupby_sql(
+async fn single_groupby_sql(
     tx: &Impute,
     dataframe: Arc<SqlDataFrame>,
     value: ScalarValue,
@@ -112,22 +113,15 @@ fn single_groupby_sql(
     let group_col_str = group_col.to_sql_select()?.sql(dataframe.dialect())?;
 
     // Build row number expr to apply to input table
-    let row_number_expr = Expr::WindowFunction {
-        fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
-        args: Vec::new(),
-        partition_by: Vec::new(),
-        order_by: Vec::new(),
-        window_frame: None,
-    }
-    .alias("__row_number");
+    let row_number_expr = make_row_number_expr();
     let row_number_expr_str = row_number_expr.to_sql_select()?.sql(dataframe.dialect())?;
 
     // Build order by
-    let order_by_expr = Expr::Sort {
+    let order_by_expr = Expr::Sort(expr::Sort {
         expr: Box::new(flat_col("__row_number")),
         asc: true,
         nulls_first: false,
-    };
+    });
     let order_by_expr_str = order_by_expr.to_sql_order()?.sql(dataframe.dialect())?;
 
     // Build final selection
@@ -181,7 +175,7 @@ fn single_groupby_sql(
         row_number_expr_str = row_number_expr_str,
         order_by_expr_str = order_by_expr_str,
         parent = dataframe.parent_name(),
-    ))?;
+    )).await?;
 
     Ok(dataframe)
 }

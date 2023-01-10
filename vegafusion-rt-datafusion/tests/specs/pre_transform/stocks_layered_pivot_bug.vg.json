@@ -197,6 +197,10 @@
             "sum_price_end"
           ],
           "offset": "zero"
+        },
+        {
+          "type": "collect",
+          "sort": {"field":  "year_date"}
         }
       ]
     },

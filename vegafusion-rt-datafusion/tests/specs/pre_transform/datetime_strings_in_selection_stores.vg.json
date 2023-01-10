@@ -35,6 +35,10 @@
         {
           "type": "filter",
           "expr": "(isDate(datum[\"yearmonth_date\"]) || (isValid(datum[\"yearmonth_date\"]) && isFinite(+datum[\"yearmonth_date\"])))"
+        },
+        {
+          "type": "collect",
+          "sort": {"field": "yearmonth_date"}
         }
       ]
     },

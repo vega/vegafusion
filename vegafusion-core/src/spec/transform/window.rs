@@ -86,7 +86,20 @@ impl TransformSpecTrait for WindowTransformSpec {
         for op in &self.ops {
             match op {
                 WindowTransformOpSpec::Aggregate(op) => {
-                    if !matches!(op, Count | Sum | Mean | Average | Min | Max | Values) {
+                    if !matches!(
+                        op,
+                        Count
+                            | Sum
+                            | Mean
+                            | Average
+                            | Min
+                            | Max
+                            | Values
+                            | Variance
+                            | Variancep
+                            | Stdev
+                            | Stdevp
+                    ) {
                         // Unsupported aggregation op
                         return false;
                     }
@@ -107,14 +120,6 @@ impl TransformSpecTrait for WindowTransformSpec {
                     }
                 }
             }
-        }
-
-        // Custom window frames are not yet supported in DataFusion
-        // https://github.com/apache/arrow-datafusion/issues/361
-        // Until they are supported, the default frame is equivalent to [null, 0]. Fortunately,
-        // this is the default in vega as well.
-        if self.frame.is_some() && self.frame.as_ref().unwrap() != &[Value::Null, Value::from(0)] {
-            return false;
         }
 
         true

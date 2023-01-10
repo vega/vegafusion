@@ -9,8 +9,11 @@ use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion::common::{DFSchema, ScalarValue};
-use datafusion_expr::expr::Cast;
-use datafusion_expr::{aggregate_function, BuiltInWindowFunction, WindowFunction};
+use datafusion_expr::expr;
+use datafusion_expr::{
+    aggregate_function, BuiltInWindowFunction, WindowFrame, WindowFrameBound, WindowFrameUnits,
+    WindowFunction,
+};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, VegaFusionError};
@@ -32,42 +35,52 @@ impl TransformTrait for Aggregate {
         // Add __row_number column if groupby columns is not empty
         let dataframe = if !self.groupby.is_empty() {
             //  Add row_number column that we can sort by
-            let row_number_expr = Expr::WindowFunction {
-                fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
-                args: Vec::new(),
-                partition_by: Vec::new(),
-                order_by: Vec::new(),
-                window_frame: None,
-            }
-            .alias("__row_number");
+            let row_number_expr = make_row_number_expr();
 
             // Add min(__row_number) aggregation that we can sort by later
             agg_exprs.push(min(flat_col("__row_number")).alias("__min_row_number"));
 
-            dataframe.select(vec![Expr::Wildcard, row_number_expr])?
+            dataframe
+                .select(vec![Expr::Wildcard, row_number_expr])
+                .await?
         } else {
             dataframe
         };
 
         // Perform aggregation
-        let mut grouped_dataframe = dataframe.aggregate(group_exprs, agg_exprs)?;
+        let mut grouped_dataframe = dataframe.aggregate(group_exprs, agg_exprs).await?;
 
         // Maybe sort by min row number
         if !self.groupby.is_empty() {
             // Sort groups according to the lowest row number of a value in that group
-            let sort_exprs = vec![Expr::Sort {
+            let sort_exprs = vec![Expr::Sort(expr::Sort {
                 expr: Box::new(flat_col("__min_row_number")),
                 asc: true,
                 nulls_first: false,
-            }];
-            grouped_dataframe = grouped_dataframe.sort(sort_exprs, None)?;
+            })];
+            grouped_dataframe = grouped_dataframe.sort(sort_exprs, None).await?;
         }
 
         // Make final projection
-        let grouped_dataframe = grouped_dataframe.select(projections)?;
+        let grouped_dataframe = grouped_dataframe.select(projections).await?;
 
         Ok((grouped_dataframe, Vec::new()))
     }
+}
+
+pub fn make_row_number_expr() -> Expr {
+    Expr::WindowFunction(expr::WindowFunction {
+        fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
+        args: Vec::new(),
+        partition_by: Vec::new(),
+        order_by: Vec::new(),
+        window_frame: WindowFrame {
+            units: WindowFrameUnits::Rows,
+            start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
+            end_bound: WindowFrameBound::CurrentRow,
+        },
+    })
+    .alias("__row_number")
 }
 
 fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr>, Vec<Expr>)> {
@@ -172,45 +185,45 @@ pub fn make_aggr_expr(
         AggregateOp::Min => min(numeric_column()),
         AggregateOp::Max => max(numeric_column()),
         AggregateOp::Sum => sum(numeric_column()),
-        AggregateOp::Median => Expr::AggregateFunction {
+        AggregateOp::Median => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Median,
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
-        },
-        AggregateOp::Variance => Expr::AggregateFunction {
+        }),
+        AggregateOp::Variance => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Variance,
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
-        },
-        AggregateOp::Variancep => Expr::AggregateFunction {
+        }),
+        AggregateOp::Variancep => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::VariancePop,
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
-        },
-        AggregateOp::Stdev => Expr::AggregateFunction {
+        }),
+        AggregateOp::Stdev => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Stddev,
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
-        },
-        AggregateOp::Stdevp => Expr::AggregateFunction {
+        }),
+        AggregateOp::Stdevp => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::StddevPop,
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
-        },
+        }),
         AggregateOp::Valid => {
-            let valid = Expr::Cast(Cast {
+            let valid = Expr::Cast(expr::Cast {
                 expr: Box::new(Expr::IsNotNull(Box::new(column))),
                 data_type: DataType::Int64,
             });
             sum(valid)
         }
         AggregateOp::Missing => {
-            let missing = Expr::Cast(Cast {
+            let missing = Expr::Cast(expr::Cast {
                 expr: Box::new(Expr::IsNull(Box::new(column))),
                 data_type: DataType::Int64,
             });
