@@ -215,17 +215,14 @@ fn timeunit_date_part(
 fn to_timestamp_col(field: &str, schema: &DFSchema, default_input_tz: &String) -> Result<Expr> {
     let field_col = unescaped_col(field);
     Ok(match field_col.get_type(schema)? {
-        DataType::Timestamp(_, _) => field_col.clone(),
+        DataType::Timestamp(_, _) => field_col,
         DataType::Utf8 => Expr::ScalarUDF {
             fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
-            args: vec![field_col.clone(), lit(default_input_tz)],
+            args: vec![field_col, lit(default_input_tz)],
         },
         dtype if is_numeric_datatype(&dtype) => Expr::ScalarUDF {
             fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
-            args: vec![
-                cast_to(field_col.clone(), &DataType::Int64, schema)?,
-                lit("UTC"),
-            ],
+            args: vec![cast_to(field_col, &DataType::Int64, schema)?, lit("UTC")],
         },
         dtype => {
             return Err(VegaFusionError::compilation(format!(

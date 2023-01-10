@@ -117,7 +117,7 @@ lazy_static! {
         make_local_datepart_transform("minute", None);
     pub static ref SECOND_TRANSFORM: TzTransformFn =
         make_local_datepart_transform(
-            "second", Some(|expr| floor(expr))
+            "second", Some(floor)
         );
     pub static ref MILLISECOND_TRANSFORM: TzTransformFn =
         make_local_datepart_transform(
@@ -145,7 +145,7 @@ lazy_static! {
         make_utc_datepart_transform("minute", None);
     pub static ref UTCSECOND_TRANSFORM: TzTransformFn =
         make_utc_datepart_transform(
-            "second", Some(|expr| floor(expr))
+            "second", Some(floor)
         );
     pub static ref UTCMILLISECOND_TRANSFORM: TzTransformFn =
         make_utc_datepart_transform(

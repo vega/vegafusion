@@ -79,7 +79,7 @@ impl TransformTrait for Window {
             ),
             Some(frame) => (
                 WindowFrameBound::Preceding(ScalarValue::UInt64(
-                    frame.start.map(|v| (v.abs()) as u64),
+                    frame.start.map(|v| (v.unsigned_abs())),
                 )),
                 WindowFrameBound::Following(ScalarValue::UInt64(frame.end.map(|v| v as u64))),
             ),

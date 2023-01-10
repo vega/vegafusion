@@ -462,7 +462,7 @@ impl ToSqlExpr for Expr {
 }
 
 fn aggr_fn_to_name(fun: &AggregateFunction) -> &str {
-    let value = match fun {
+    match fun {
         AggregateFunction::Min => "min",
         AggregateFunction::Max => "max",
         AggregateFunction::Count => "count",
@@ -482,8 +482,7 @@ fn aggr_fn_to_name(fun: &AggregateFunction) -> &str {
         AggregateFunction::ApproxPercentileContWithWeight => "approx_percentile_cont_with_weight",
         AggregateFunction::ApproxMedian => "approx_median",
         AggregateFunction::Grouping => "grouping",
-    };
-    value
+    }
 }
 
 fn compile_window_frame_bound(bound: &WindowFrameBound) -> Result<SqlWindowBound> {
