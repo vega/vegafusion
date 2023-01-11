@@ -2,7 +2,6 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
-use crate::transform::aggregate::make_row_number_expr;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::common::ScalarValue;
@@ -121,10 +120,6 @@ async fn single_groupby_sql(
     let group_col = unescaped_col(groupby);
     let group_col_str = group_col.to_sql_select()?.sql(dataframe.dialect())?;
 
-    // Build row number expr to apply to input table
-    let row_number_expr = make_row_number_expr();
-    let row_number_expr_str = row_number_expr.to_sql_select()?.sql(dataframe.dialect())?;
-
     // Build final selection
     // Finally, select all of the original DataFrame columns, filling in missing values
     // of the `field` columns
@@ -168,11 +163,10 @@ async fn single_groupby_sql(
     let dataframe = dataframe.chain_query_str(&format!(
         "SELECT {select_column_csv} from (SELECT DISTINCT {key} from {parent} WHERE {key} IS NOT NULL) AS _key \
          CROSS JOIN (SELECT DISTINCT {group} from {parent} WHERE {group} IS NOT NULL) AS _group  \
-         LEFT OUTER JOIN (SELECT *, {row_number_expr_str} from {parent}) AS _inner USING ({key}, {group})",
+         LEFT OUTER JOIN (SELECT * from {parent}) AS _inner USING ({key}, {group})",
         select_column_csv = select_column_csv,
         key = key_col_str,
         group = group_col_str,
-        row_number_expr_str = row_number_expr_str,
         parent = dataframe.parent_name(),
     )).await?;
 
