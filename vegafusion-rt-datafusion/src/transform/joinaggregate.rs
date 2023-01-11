@@ -7,7 +7,7 @@ use datafusion::logical_expr::Expr;
 use crate::sql::compile::expr::ToSqlExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
-use crate::transform::aggregate::{make_aggr_expr, make_row_number_expr};
+use crate::transform::aggregate::make_aggr_expr;
 use async_trait::async_trait;
 use datafusion::common::Column;
 use sqlgen::dialect::DialectDisplay;
@@ -95,10 +95,6 @@ impl TransformTrait for JoinAggregate {
             .collect::<Result<Vec<_>>>()?;
         let input_col_csv = input_col_strs.join(", ");
 
-        // Build row_number select expression
-        let row_number_expr = make_row_number_expr();
-        let row_number_str = row_number_expr.to_sql_select()?.sql(dataframe.dialect())?;
-
         // Perform join aggregation
         let sql_group_expr_strs = group_exprs
             .iter()
@@ -115,13 +111,11 @@ impl TransformTrait for JoinAggregate {
             dataframe
                 .chain_query_str(&format!(
                     "select {input_col_csv}, {new_col_csv} \
-                from (select *, {row_number_str} from {parent}) \
-                CROSS JOIN (select {aggr_csv} from {parent}) as {inner_name} \
-                ORDER BY __row_number",
+                from {parent} \
+                CROSS JOIN (select {aggr_csv} from {parent}) as {inner_name}",
                     aggr_csv = aggr_csv,
                     parent = dataframe.parent_name(),
                     input_col_csv = input_col_csv,
-                    row_number_str = row_number_str,
                     new_col_csv = new_col_csv,
                     inner_name = inner_name,
                 ))
@@ -130,13 +124,11 @@ impl TransformTrait for JoinAggregate {
             let group_by_csv = sql_group_expr_strs.join(", ");
             dataframe.chain_query_str(&format!(
                 "select {input_col_csv}, {new_col_csv} \
-                from (select *, {row_number_str} from {parent}) \
-                LEFT OUTER JOIN (select {aggr_csv}, {group_by_csv} from {parent} group by {group_by_csv}) as {inner_name} USING ({group_by_csv}) \
-                ORDER BY __row_number",
+                from {parent} \
+                LEFT OUTER JOIN (select {aggr_csv}, {group_by_csv} from {parent} group by {group_by_csv}) as {inner_name} USING ({group_by_csv})",
                 aggr_csv = aggr_csv,
                 parent = dataframe.parent_name(),
                 input_col_csv = input_col_csv,
-                row_number_str = row_number_str,
                 new_col_csv = new_col_csv,
                 group_by_csv = group_by_csv,
                 inner_name = inner_name,
