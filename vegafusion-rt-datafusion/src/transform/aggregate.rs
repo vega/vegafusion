@@ -9,11 +9,8 @@ use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion::common::{DFSchema, ScalarValue};
+use datafusion_expr::aggregate_function;
 use datafusion_expr::expr;
-use datafusion_expr::{
-    aggregate_function, BuiltInWindowFunction, WindowFrame, WindowFrameBound, WindowFrameUnits,
-    WindowFunction,
-};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::ORDER_COL;

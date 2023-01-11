@@ -163,7 +163,8 @@ async fn single_groupby_sql(
     let dataframe = dataframe.chain_query_str(&format!(
         "SELECT {select_column_csv} from (SELECT DISTINCT {key} from {parent} WHERE {key} IS NOT NULL) AS _key \
          CROSS JOIN (SELECT DISTINCT {group} from {parent} WHERE {group} IS NOT NULL) AS _group  \
-         LEFT OUTER JOIN (SELECT * from {parent}) AS _inner USING ({key}, {group})",
+         LEFT OUTER JOIN {parent} \
+         USING ({key}, {group})",
         select_column_csv = select_column_csv,
         key = key_col_str,
         group = group_col_str,
