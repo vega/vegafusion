@@ -46,21 +46,6 @@ impl TransformTrait for Aggregate {
     }
 }
 
-pub fn make_row_number_expr() -> Expr {
-    Expr::WindowFunction(expr::WindowFunction {
-        fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
-        args: Vec::new(),
-        partition_by: Vec::new(),
-        order_by: Vec::new(),
-        window_frame: WindowFrame {
-            units: WindowFrameUnits::Rows,
-            start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
-            end_bound: WindowFrameBound::CurrentRow,
-        },
-    })
-    .alias("__row_number")
-}
-
 fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr>, Vec<Expr>)> {
     // DataFusion does not allow repeated (field, op) combinations in an aggregate expression,
     // so if there are duplicates we need to use a projection after the aggregation to alias
