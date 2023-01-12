@@ -13,10 +13,10 @@ use datafusion_expr::{
 use sqlgen::dialect::DialectDisplay;
 
 use crate::expression::escape::{flat_col, unescaped_col};
-use crate::transform::aggregate::make_row_number_expr;
 use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
 use vegafusion_core::data::scalar::ScalarValue;
+use vegafusion_core::data::ORDER_COL;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{SortOrder, Stack, StackOffset};
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -40,7 +40,6 @@ impl TransformTrait for Stack {
             .collect();
 
         // Build order by vector
-        // Order by row number last (and only if no explicit ordering provided)
         let mut order_by: Vec<_> = self
             .sort_fields
             .iter()
@@ -54,18 +53,12 @@ impl TransformTrait for Stack {
             })
             .collect();
 
+        // Order by input row ordering last
         order_by.push(Expr::Sort(expr::Sort {
-            expr: Box::new(flat_col("__row_number")),
+            expr: Box::new(flat_col(ORDER_COL)),
             asc: true,
             nulls_first: true,
         }));
-
-        // Add row number column for sorting
-        let row_number_expr = make_row_number_expr();
-
-        let dataframe = dataframe
-            .select(vec![Expr::Wildcard, row_number_expr])
-            .await?;
 
         // Process according to offset
         let offset = StackOffset::from_i32(self.offset).expect("Failed to convert stack offset");
@@ -249,18 +242,6 @@ async fn eval_normalize_center_offset(
         _ => return Err(VegaFusionError::internal("Unexpected stack offset")),
     };
 
-    // Restore original order
-    let dataframe = dataframe
-        .sort(
-            vec![Expr::Sort(expr::Sort {
-                expr: Box::new(flat_col("__row_number")),
-                asc: true,
-                nulls_first: false,
-            })],
-            None,
-        )
-        .await?;
-
     let dataframe = dataframe.select(final_selection.clone()).await?;
     Ok(dataframe)
 }
@@ -316,18 +297,6 @@ async fn eval_zero_offset(
             window_expr_str = window_expr_str,
             numeric_field = numeric_field.to_sql()?.sql(dataframe.dialect())?
         ))
-        .await?;
-
-    // Restore original order
-    let dataframe = dataframe
-        .sort(
-            vec![Expr::Sort(expr::Sort {
-                expr: Box::new(flat_col("__row_number")),
-                asc: true,
-                nulls_first: false,
-            })],
-            None,
-        )
         .await?;
 
     // Build final selection

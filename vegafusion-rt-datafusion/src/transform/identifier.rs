@@ -1,6 +1,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
+use crate::expression::escape::flat_col;
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion_expr::{
@@ -9,6 +10,7 @@ use datafusion_expr::{
 };
 use std::sync::Arc;
 use vegafusion_core::data::scalar::ScalarValue;
+use vegafusion_core::data::ORDER_COL;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Identifier;
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -20,12 +22,16 @@ impl TransformTrait for Identifier {
         dataframe: Arc<SqlDataFrame>,
         _config: &CompilationConfig,
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
-        // Add row number column with the desired name
+        // Add row number column with the desired name, sorted by the input order column
         let row_number_expr = Expr::WindowFunction(expr::WindowFunction {
             fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
             args: Vec::new(),
             partition_by: Vec::new(),
-            order_by: Vec::new(),
+            order_by: vec![Expr::Sort(expr::Sort {
+                expr: Box::new(flat_col(ORDER_COL)),
+                asc: true,
+                nulls_first: false,
+            })],
             window_frame: WindowFrame {
                 units: WindowFrameUnits::Rows,
                 start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),

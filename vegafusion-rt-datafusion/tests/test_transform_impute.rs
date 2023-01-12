@@ -90,4 +90,51 @@ mod test_impute {
             &eq_config,
         );
     }
+
+    #[test]
+    fn test_one_groupby_window_frame() {
+        let dataset = simple_dataset();
+
+        let transform_specs: Vec<TransformSpec> = serde_json::from_value(json!(
+            [
+                {"type": "formula", "expr": "toNumber(datum[\"a\"])", "as": "a"},
+                {
+                  "type": "impute",
+                  "field": "b",
+                  "key": "a",
+                  "method": "value",
+                  "groupby": ["c"],
+                  "value": null
+                },
+                {
+                  "type": "window",
+                  "as": ["imputed_b_value"],
+                  "ops": ["mean"],
+                  "fields": ["b"],
+                  "frame": [-2, 2],
+                  "ignorePeers": false,
+                  "groupby": ["c"]
+                },
+                {
+                  "type": "formula",
+                  "expr": "datum.b === null ? datum.imputed_b_value : datum.b",
+                  "as": "b"
+                }
+            ]
+        ))
+        .unwrap();
+
+        let comp_config = Default::default();
+        let eq_config = TablesEqualConfig {
+            row_order: true,
+            ..Default::default()
+        };
+
+        check_transform_evaluation(
+            &dataset,
+            transform_specs.as_slice(),
+            &comp_config,
+            &eq_config,
+        );
+    }
 }

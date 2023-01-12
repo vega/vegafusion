@@ -1,20 +1,22 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::escape::{flat_col, unescaped_col};
-use crate::sql::compile::order::ToSqlOrderByExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
-use crate::transform::aggregate::make_row_number_expr;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::common::ScalarValue;
 use datafusion_expr::expr::Cast;
-use datafusion_expr::{expr, lit, when, Expr};
+use datafusion_expr::{
+    expr, lit, when, window_function, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound,
+    WindowFrameUnits,
+};
 use itertools::Itertools;
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::data::ORDER_COL;
+use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Impute;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -26,13 +28,19 @@ impl TransformTrait for Impute {
         _config: &CompilationConfig,
     ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
         // Create ScalarValue used to fill in null values
-        let json_value: serde_json::Value =
-            serde_json::from_str(self.value_json.as_ref().unwrap())?;
+        let json_value: serde_json::Value = serde_json::from_str(
+            &self
+                .value_json
+                .clone()
+                .unwrap_or_else(|| "null".to_string()),
+        )?;
 
         // JSON numbers are always interpreted as floats, but if the value is an integer we'd
         // like the fill value to be an integer as well to avoid converting an integer input
         // column to floats
-        let value = if json_value.is_i64() {
+        let value = if json_value.is_null() {
+            ScalarValue::Float64(None)
+        } else if json_value.is_i64() {
             ScalarValue::from(json_value.as_i64().unwrap())
         } else if json_value.is_f64() && json_value.as_f64().unwrap().fract() == 0.0 {
             ScalarValue::from(json_value.as_f64().unwrap() as i64)
@@ -112,18 +120,6 @@ async fn single_groupby_sql(
     let group_col = unescaped_col(groupby);
     let group_col_str = group_col.to_sql_select()?.sql(dataframe.dialect())?;
 
-    // Build row number expr to apply to input table
-    let row_number_expr = make_row_number_expr();
-    let row_number_expr_str = row_number_expr.to_sql_select()?.sql(dataframe.dialect())?;
-
-    // Build order by
-    let order_by_expr = Expr::Sort(expr::Sort {
-        expr: Box::new(flat_col("__row_number")),
-        asc: true,
-        nulls_first: false,
-    });
-    let order_by_expr_str = order_by_expr.to_sql_order()?.sql(dataframe.dialect())?;
-
     // Build final selection
     // Finally, select all of the original DataFrame columns, filling in missing values
     // of the `field` columns
@@ -167,15 +163,53 @@ async fn single_groupby_sql(
     let dataframe = dataframe.chain_query_str(&format!(
         "SELECT {select_column_csv} from (SELECT DISTINCT {key} from {parent} WHERE {key} IS NOT NULL) AS _key \
          CROSS JOIN (SELECT DISTINCT {group} from {parent} WHERE {group} IS NOT NULL) AS _group  \
-         LEFT OUTER JOIN (SELECT *, {row_number_expr_str} from {parent}) AS _inner USING ({key}, {group}) \
-         ORDER BY {order_by_expr_str}",
+         LEFT OUTER JOIN {parent} \
+         USING ({key}, {group})",
         select_column_csv = select_column_csv,
         key = key_col_str,
         group = group_col_str,
-        row_number_expr_str = row_number_expr_str,
-        order_by_expr_str = order_by_expr_str,
         parent = dataframe.parent_name(),
     )).await?;
 
-    Ok(dataframe)
+    // Override ordering column since null values may have been introduced in the query above.
+    // Match input ordering with imputed rows (those will null ordering column) pushed
+    // to the end.
+    let order_col = Expr::WindowFunction(expr::WindowFunction {
+        fun: window_function::WindowFunction::BuiltInWindowFunction(
+            BuiltInWindowFunction::RowNumber,
+        ),
+        args: vec![],
+        partition_by: vec![],
+        order_by: vec![Expr::Sort(expr::Sort {
+            expr: Box::new(flat_col(ORDER_COL)),
+            asc: true,
+            nulls_first: false,
+        })],
+        window_frame: WindowFrame {
+            units: WindowFrameUnits::Rows,
+            start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
+            end_bound: WindowFrameBound::CurrentRow,
+        },
+    })
+    .alias(ORDER_COL);
+
+    // Build vector of selections
+    let mut selections = dataframe
+        .schema()
+        .fields
+        .iter()
+        .filter_map(|field| {
+            if field.name() == ORDER_COL {
+                None
+            } else {
+                Some(flat_col(field.name()))
+            }
+        })
+        .collect::<Vec<_>>();
+    selections.insert(0, order_col);
+
+    dataframe
+        .select(selections)
+        .await
+        .with_context(|| "Impute transform failed".to_string())
 }

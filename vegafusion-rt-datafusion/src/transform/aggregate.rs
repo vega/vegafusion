@@ -9,13 +9,11 @@ use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion::common::{DFSchema, ScalarValue};
+use datafusion_expr::aggregate_function;
 use datafusion_expr::expr;
-use datafusion_expr::{
-    aggregate_function, BuiltInWindowFunction, WindowFrame, WindowFrameBound, WindowFrameUnits,
-    WindowFunction,
-};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
+use vegafusion_core::data::ORDER_COL;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::expression::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
@@ -32,55 +30,17 @@ impl TransformTrait for Aggregate {
         let group_exprs: Vec<_> = self.groupby.iter().map(|c| unescaped_col(c)).collect();
         let (mut agg_exprs, projections) = get_agg_and_proj_exprs(self, &dataframe.schema_df())?;
 
-        // Add __row_number column if groupby columns is not empty
-        let dataframe = if !self.groupby.is_empty() {
-            //  Add row_number column that we can sort by
-            let row_number_expr = make_row_number_expr();
-
-            // Add min(__row_number) aggregation that we can sort by later
-            agg_exprs.push(min(flat_col("__row_number")).alias("__min_row_number"));
-
-            dataframe
-                .select(vec![Expr::Wildcard, row_number_expr])
-                .await?
-        } else {
-            dataframe
-        };
+        // Append ordering column to aggregations
+        agg_exprs.push(min(flat_col(ORDER_COL)).alias(ORDER_COL));
 
         // Perform aggregation
-        let mut grouped_dataframe = dataframe.aggregate(group_exprs, agg_exprs).await?;
-
-        // Maybe sort by min row number
-        if !self.groupby.is_empty() {
-            // Sort groups according to the lowest row number of a value in that group
-            let sort_exprs = vec![Expr::Sort(expr::Sort {
-                expr: Box::new(flat_col("__min_row_number")),
-                asc: true,
-                nulls_first: false,
-            })];
-            grouped_dataframe = grouped_dataframe.sort(sort_exprs, None).await?;
-        }
+        let grouped_dataframe = dataframe.aggregate(group_exprs, agg_exprs).await?;
 
         // Make final projection
         let grouped_dataframe = grouped_dataframe.select(projections).await?;
 
         Ok((grouped_dataframe, Vec::new()))
     }
-}
-
-pub fn make_row_number_expr() -> Expr {
-    Expr::WindowFunction(expr::WindowFunction {
-        fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
-        args: Vec::new(),
-        partition_by: Vec::new(),
-        order_by: Vec::new(),
-        window_frame: WindowFrame {
-            units: WindowFrameUnits::Rows,
-            start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
-            end_bound: WindowFrameBound::CurrentRow,
-        },
-    })
-    .alias("__row_number")
 }
 
 fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr>, Vec<Expr>)> {
@@ -91,6 +51,9 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
 
     // Initialize vec of final projections with the grouping fields
     let mut projections: Vec<_> = tx.groupby.iter().map(|f| unescaped_col(f)).collect();
+
+    // Prepend ORDER_COL
+    projections.insert(0, flat_col(ORDER_COL));
 
     for (i, (field, op_code)) in tx.fields.iter().zip(tx.ops.iter()).enumerate() {
         let op = AggregateOp::from_i32(*op_code).unwrap();

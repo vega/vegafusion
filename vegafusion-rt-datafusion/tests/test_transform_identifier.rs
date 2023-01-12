@@ -9,7 +9,7 @@ use vegafusion_core::spec::transform::identifier::IdentifierTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 
 #[test]
-fn test_formula_valid() {
+fn test_identifier() {
     let dataset = vega_json_dataset("penguins");
     let tx_spec = IdentifierTransformSpec {
         as_: "id".to_string(),

@@ -84,7 +84,7 @@ mod test_window_single {
         let comp_config = Default::default();
 
         let eq_config = TablesEqualConfig {
-            row_order: false,
+            row_order: true,
             ..Default::default()
         };
 

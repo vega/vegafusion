@@ -19,8 +19,9 @@ use super::scalar::ScalarValue;
 use crate::arrow::array::ArrayRef;
 use crate::data::json_writer::record_batches_to_json_rows;
 
-use arrow::array::StructArray;
-use arrow::datatypes::Field;
+use crate::data::{ORDER_COL, ORDER_COL_DTYPE};
+use arrow::array::{StructArray, UInt32Array};
+use arrow::datatypes::{Field, Schema};
 use arrow::json::reader::DecoderOptions;
 use serde_json::{json, Value};
 
@@ -75,6 +76,50 @@ impl VegaFusionTable {
             schema: self.schema.clone(),
             batches: head_batches,
         }
+    }
+
+    pub fn with_ordering(self) -> Result<Self> {
+        // Build new schema with leading ORDER_COL
+        let mut new_fields = self.schema.fields.clone();
+        let mut start_idx = 0;
+        let leading_field = new_fields
+            .get(0)
+            .expect("VegaFusionTable must have at least one column");
+        let has_order_col = if leading_field.name() == ORDER_COL {
+            // There is already a leading ORDER_COL, remove it and replace below
+            new_fields.remove(0);
+            true
+        } else {
+            // We need to add a new leading field for the ORDER_COL
+            false
+        };
+        new_fields.insert(0, Field::new(ORDER_COL, ORDER_COL_DTYPE, false));
+
+        let new_schema = Arc::new(Schema::new(new_fields)) as SchemaRef;
+
+        let new_batches = self
+            .batches
+            .into_iter()
+            .map(|batch| {
+                let order_array = Arc::new(UInt32Array::from_iter_values(
+                    start_idx..(start_idx + batch.num_rows() as u32),
+                )) as ArrayRef;
+
+                let mut new_columns = Vec::from(batch.columns());
+
+                if has_order_col {
+                    new_columns[0] = order_array;
+                } else {
+                    new_columns.insert(0, order_array);
+                }
+
+                start_idx += batch.num_rows() as u32;
+
+                Ok(RecordBatch::try_new(new_schema.clone(), new_columns)?)
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        Self::try_new(new_schema, new_batches)
     }
 
     pub fn batches(&self) -> &Vec<RecordBatch> {
@@ -233,5 +278,55 @@ impl From<RecordBatch> for VegaFusionTable {
 impl Hash for VegaFusionTable {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.to_ipc_bytes().unwrap().hash(state)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::data::table::VegaFusionTable;
+    use serde_json::json;
+
+    #[test]
+    fn test_with_ordering() {
+        let table1 = VegaFusionTable::from_json(
+            &json!([
+                {"a": 1, "b": "A"},
+                {"a": 2, "b": "BB"},
+                {"a": 10, "b": "CCC"},
+                {"a": 20, "b": "DDDD"},
+            ]),
+            2,
+        )
+        .unwrap();
+        assert_eq!(table1.batches.len(), 2);
+
+        let table2 = VegaFusionTable::from_json(
+            &json!([
+                {"_vf_order": 10u32, "a": 1, "b": "A"},
+                {"_vf_order": 9u32, "a": 2, "b": "BB"},
+                {"_vf_order": 8u32, "a": 10, "b": "CCC"},
+                {"_vf_order": 7u32, "a": 20, "b": "DDDD"},
+            ]),
+            2,
+        )
+        .unwrap();
+        assert_eq!(table2.batches.len(), 2);
+
+        let expected_json = json!([
+            {"_vf_order": 0u32, "a": 1, "b": "A"},
+            {"_vf_order": 1u32, "a": 2, "b": "BB"},
+            {"_vf_order": 2u32, "a": 10, "b": "CCC"},
+            {"_vf_order": 3u32, "a": 20, "b": "DDDD"},
+        ]);
+
+        // Add ordering column to table without one
+        let result_table1 = table1.with_ordering().unwrap();
+        assert_eq!(result_table1.batches.len(), 2);
+        assert_eq!(result_table1.to_json().unwrap(), expected_json);
+
+        // Override prior ordering column
+        let result_table2 = table2.with_ordering().unwrap();
+        assert_eq!(result_table2.batches.len(), 2);
+        assert_eq!(result_table2.to_json().unwrap(), expected_json);
     }
 }
