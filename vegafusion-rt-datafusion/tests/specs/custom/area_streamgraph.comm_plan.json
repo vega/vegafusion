@@ -1,0 +1,15 @@
+{
+  "server_to_client": [
+    {
+      "name": "source_0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "source_0_color_domain_series",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

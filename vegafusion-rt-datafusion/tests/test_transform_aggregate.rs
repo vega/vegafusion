@@ -54,7 +54,7 @@ mod test_aggregate_single {
             eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &comp_config);
         } else {
             let eq_config = TablesEqualConfig {
-                row_order: false,
+                row_order: true,
                 ..Default::default()
             };
 
@@ -115,7 +115,7 @@ mod test_aggregate_multi {
         } else {
             // Order of grouped rows is not defined, so set row_order to false
             let eq_config = TablesEqualConfig {
-                row_order: false,
+                row_order: true,
                 ..Default::default()
             };
 
@@ -175,7 +175,7 @@ fn test_bin_aggregate() {
 
     let comp_config = Default::default();
     let eq_config = TablesEqualConfig {
-        row_order: false,
+        row_order: true,
         ..Default::default()
     };
 
@@ -218,7 +218,7 @@ fn test_aggregate_overwrite() {
 
     // Order of grouped rows is not defined, so set row_order to false
     let eq_config = TablesEqualConfig {
-        row_order: false,
+        row_order: true,
         ..Default::default()
     };
 
@@ -279,7 +279,7 @@ mod test_aggregate_with_nulls {
             eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &comp_config);
         } else {
             let eq_config = TablesEqualConfig {
-                row_order: false,
+                row_order: true,
                 ..Default::default()
             };
 

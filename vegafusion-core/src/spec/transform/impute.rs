@@ -8,6 +8,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
+fn default_value() -> Option<Value> {
+    Some(Value::Number(serde_json::Number::from(0)))
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ImputeTransformSpec {
     pub field: Field,
@@ -22,7 +26,8 @@ pub struct ImputeTransformSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub groupby: Option<Vec<Field>>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    // Default to zero but serialize even if null
+    #[serde(default = "default_value")]
     pub value: Option<Value>,
 
     #[serde(flatten)]
@@ -63,7 +68,6 @@ impl TransformSpecTrait for ImputeTransformSpec {
             && self.keyvals.is_none()
             && self.method() == ImputeMethodSpec::Value
             && num_unique_groupby <= 1
-            && self.value.is_some()
     }
 
     fn transform_columns(
