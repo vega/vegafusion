@@ -3,6 +3,7 @@ pub mod bin;
 pub mod collect;
 pub mod extent;
 pub mod filter;
+pub mod fold;
 pub mod formula;
 pub mod identifier;
 pub mod impute;
@@ -24,6 +25,7 @@ use crate::planning::plan::PlannerConfig;
 use crate::spec::transform::aggregate::AggregateTransformSpec;
 use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
+use crate::spec::transform::fold::FoldTransformSpec;
 use crate::spec::transform::formula::FormulaTransformSpec;
 use crate::spec::transform::identifier::IdentifierTransformSpec;
 use crate::spec::transform::impute::ImputeTransformSpec;
@@ -59,6 +61,7 @@ pub enum TransformSpec {
     Impute(ImputeTransformSpec),
     Pivot(PivotTransformSpec),
     Identifier(IdentifierTransformSpec),
+    Fold(FoldTransformSpec),
 
     // Unsupported
     CountPattern(CountpatternTransformSpec),
@@ -68,7 +71,6 @@ pub enum TransformSpec {
     Density(DensityTransformSpec),
     DotBin(DotbinTransformSpec),
     Flatten(FlattenTransformSpec),
-    Fold(FoldTransformSpec),
     Force(ForceTransformSpec),
     GeoJson(GeojsonTransformSpec),
     GeoPath(GeopathTransformSpec),

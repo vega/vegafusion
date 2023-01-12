@@ -230,13 +230,22 @@ pub struct Identifier {
     #[prost(string, tag = "1")]
     pub r#as: ::prost::alloc::string::String,
 }
+/// Fold
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Fold {
+    #[prost(string, repeated, tag = "1")]
+    pub fields: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "2")]
+    pub r#as: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
 /// Top-level transform
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transform {
     #[prost(
         oneof = "transform::TransformKind",
-        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14"
+        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15"
     )]
     pub transform_kind: ::core::option::Option<transform::TransformKind>,
 }
@@ -273,6 +282,8 @@ pub mod transform {
         Pivot(super::Pivot),
         #[prost(message, tag = "14")]
         Identifier(super::Identifier),
+        #[prost(message, tag = "15")]
+        Fold(super::Fold),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]

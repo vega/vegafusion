@@ -238,6 +238,12 @@ message Identifier {
   string as = 1;
 }
 
+// Fold
+message Fold {
+  repeated string fields = 1;
+  repeated string as = 2;
+}
+
 // Top-level transform
 message Transform {
   oneof transform_kind {
@@ -255,6 +261,7 @@ message Transform {
     Impute impute = 12;
     Pivot pivot = 13;
     Identifier identifier = 14;
+    Fold fold = 15;
   }
 }
 
