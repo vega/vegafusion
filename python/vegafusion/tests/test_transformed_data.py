@@ -73,6 +73,7 @@ altair_mocks_dir = here / "altair_mocks"
         ("other/multiple_marks", 560, ["symbol", "date", "price"]),
         ("other/stem_and_leaf", 100, ["samples", "stem", "leaf", "position"]),
         ("other/wilkinson_dot_plot", 21, ["data", "id"]),
+        ("other/ridgeline_plot", 108, ["Month", "mean_temp", "value"]),
         ("scatter/binned", 64, ["__count", "bin_maxbins_10_Rotten_Tomatoes_Rating_end"]),
         ("scatter/bubble_plot", 392, ["Name", "Cylinders", "Origin"]),
         ("scatter/connected", 55, ["side", "year", "miles", "gas"]),

@@ -18,12 +18,12 @@ mod test_impute {
         VegaFusionTable::from_json(
             &json!([
                 {"a": 0, "b": 28, "c": 0, "d": -1},
-                {"a": 0, "b": 91, "c": 1, "d": -2},
-                {"a": 1, "b": 43, "c": 0, "d": -3},
-                {"a": 1, "b": 55, "c": 1, "d": -4},
-                {"a": 3, "b": 19, "c": 0, "d": -7},
-                {"a": 2, "b": 81, "c": 0, "d": -5},
-                {"a": 2, "b": 53, "c": 1, "d": -6},
+                {"a": 0, "b": 91, "c": 1, "d": -1},
+                {"a": 1, "b": 43, "c": 0, "d": -2},
+                {"a": 1, "b": 55, "c": 1, "d": -2},
+                {"a": 3, "b": 19, "c": 0, "d": -3},
+                {"a": 2, "b": 81, "c": 0, "d": -3},
+                {"a": 2, "b": 53, "c": 1, "d": -4},
 
             ]),
             1024,
@@ -46,6 +46,35 @@ mod test_impute {
         };
 
         let transform_specs = vec![TransformSpec::Impute(impute_spec)];
+
+        let comp_config = Default::default();
+        let eq_config = TablesEqualConfig {
+            row_order: true,
+            ..Default::default()
+        };
+
+        check_transform_evaluation(
+            &dataset,
+            transform_specs.as_slice(),
+            &comp_config,
+            &eq_config,
+        );
+    }
+
+    #[test]
+    fn test_two_groupby() {
+        let dataset = simple_dataset();
+
+        let transform_specs: Vec<TransformSpec> = serde_json::from_value(json!([
+            {
+                "type": "impute",
+                "field": "a",
+                "key": "b",
+                "groupby": ["c", "d"],
+                "value": -1
+            },
+        ]))
+        .unwrap();
 
         let comp_config = Default::default();
         let eq_config = TablesEqualConfig {
