@@ -64,6 +64,7 @@ altair_mocks_dir = here / "altair_mocks"
         ("line/slope_graph", 12, ["site", "year", "median_yield"]),
         ("line/step_chart", 68, ["symbol", "date", "price"]),
         ("line/with_cumsum", 52, ["year", "wheat", "cumulative_wheat"]),
+        ("line/with_generator", 256, ["x", "sin", "cos", "key", "value"]),
         ("line/with_logarithmic_scale", 15, ["year", "sum_people"]),
         ("line/with_points", 100, ["x", "f(x)"]),
         ("other/beckers_barley_wrapped_facet", 120, ["variety", "site", "median_yield"]),
