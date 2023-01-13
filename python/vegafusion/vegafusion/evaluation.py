@@ -1,7 +1,7 @@
 import json
 
 from altair import data_transformers
-from altair.vegalite.v4.api import Chart
+from altair.vegalite.v4.api import Chart, FacetChart
 from altair.utils.schemapi import Undefined
 
 MAGIC_MARK_NAME = "_vf_mark"
@@ -19,10 +19,10 @@ def transformed_data(chart: Chart, row_limit=None):
 
     from . import runtime, get_local_tz, get_inline_datasets_for_spec, vegalite_compilers
 
-    if not isinstance(chart, Chart):
+    if not isinstance(chart, (Chart, FacetChart)):
         raise ValueError(
             "transformed_data accepts an instance of "
-            "altair.vegalite.v4.api.Chart\n"
+            "Chart or FacetChart\n"
             f"Received value of type: {type(chart)}"
         )
 
@@ -31,9 +31,10 @@ def transformed_data(chart: Chart, row_limit=None):
     chart = chart.copy(deep=False)
     chart.name = MAGIC_MARK_NAME
 
-    # Add dummy mark if None specified
-    if chart.mark == Undefined:
-        chart = chart.mark_point()
+    if isinstance(chart, Chart):
+        # Add dummy mark if None specified
+        if chart.mark == Undefined:
+            chart = chart.mark_point()
 
     with data_transformers.enable("vegafusion-inline"):
         vega_spec = vegalite_compilers.get()(chart.to_json(validate=False))

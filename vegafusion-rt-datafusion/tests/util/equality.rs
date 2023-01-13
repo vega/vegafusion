@@ -17,6 +17,8 @@ use vegafusion_rt_datafusion::expression::escape::flat_col;
 use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
 use vegafusion_rt_datafusion::transform::utils::DataFrameUtils;
 
+const DROP_COLS: &[&str] = &[ORDER_COL, "_impute"];
+
 #[derive(Debug, Clone)]
 pub struct TablesEqualConfig {
     pub row_order: bool,
@@ -48,7 +50,7 @@ pub fn assert_tables_equal(
         .fields()
         .iter()
         .filter_map(|f| {
-            if f.name() == ORDER_COL {
+            if DROP_COLS.contains(&f.name().as_str()) {
                 None
             } else {
                 Some(f.name().clone())
@@ -60,7 +62,7 @@ pub fn assert_tables_equal(
         .fields()
         .iter()
         .filter_map(|f| {
-            if f.name() == ORDER_COL {
+            if DROP_COLS.contains(&f.name().as_str()) {
                 None
             } else {
                 Some(f.name().clone())
@@ -166,11 +168,11 @@ fn assert_scalars_almost_equals(
             let lhs_map: HashMap<_, _> = lhs_fields
                 .iter()
                 .zip(lhs_vals.iter())
-                .filter_map(|(field, val)| {
-                    if field.name() == ORDER_COL {
+                .filter_map(|(f, val)| {
+                    if DROP_COLS.contains(&f.name().as_str()) {
                         None
                     } else {
-                        Some((field.name().clone(), val.clone()))
+                        Some((f.name().clone(), val.clone()))
                     }
                 })
                 .collect();
@@ -178,11 +180,11 @@ fn assert_scalars_almost_equals(
             let rhs_map: HashMap<_, _> = rhs_fields
                 .iter()
                 .zip(rhs_vals.iter())
-                .filter_map(|(field, val)| {
-                    if field.name() == ORDER_COL {
+                .filter_map(|(f, val)| {
+                    if DROP_COLS.contains(&f.name().as_str()) {
                         None
                     } else {
-                        Some((field.name().clone(), val.clone()))
+                        Some((f.name().clone(), val.clone()))
                     }
                 })
                 .collect();

@@ -5,7 +5,6 @@ use crate::sql::dataframe::SqlDataFrame;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::common::ScalarValue;
-use datafusion_expr::expr::Cast;
 use datafusion_expr::{
     expr, lit, when, window_function, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound,
     WindowFrameUnits,
@@ -13,10 +12,9 @@ use datafusion_expr::{
 use itertools::Itertools;
 use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
-use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::ORDER_COL;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Impute;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -55,20 +53,15 @@ impl TransformTrait for Impute {
             .unique()
             .collect::<Vec<_>>();
         let dataframe = match unique_groupby.len() {
-            0 => zero_groupby_sql(self, dataframe, value).await?,
-            1 => single_groupby_sql(self, dataframe, value, &unique_groupby[0]).await?,
-            _ => {
-                return Err(VegaFusionError::internal(
-                    "Expected zero or one groupby columns to impute",
-                ))
-            }
+            0 => impute_without_groupby(self, dataframe, value).await?,
+            _ => impute_with_groupby(self, dataframe, value, unique_groupby.as_slice()).await?,
         };
 
         Ok((dataframe, Vec::new()))
     }
 }
 
-async fn zero_groupby_sql(
+async fn impute_without_groupby(
     tx: &Impute,
     dataframe: Arc<SqlDataFrame>,
     value: ScalarValue,
@@ -98,11 +91,11 @@ async fn zero_groupby_sql(
     dataframe.select(select_columns).await
 }
 
-async fn single_groupby_sql(
+async fn impute_with_groupby(
     tx: &Impute,
     dataframe: Arc<SqlDataFrame>,
     value: ScalarValue,
-    groupby: &str,
+    groupby: &[String],
 ) -> Result<Arc<SqlDataFrame>> {
     // Save off names of columns in the original input DataFrame
     let original_columns: Vec<_> = dataframe
@@ -117,13 +110,17 @@ async fn single_groupby_sql(
     let key_col = unescaped_col(&tx.key);
     let key_col_str = key_col.to_sql_select()?.sql(dataframe.dialect())?;
 
-    let group_col = unescaped_col(groupby);
-    let group_col_str = group_col.to_sql_select()?.sql(dataframe.dialect())?;
+    let group_cols = groupby.iter().map(|c| unescaped_col(c)).collect::<Vec<_>>();
+    let group_col_strs = group_cols
+        .iter()
+        .map(|c| Ok(c.to_sql_select()?.sql(dataframe.dialect())?))
+        .collect::<Result<Vec<_>>>()?;
+    let group_cols_csv = group_col_strs.join(", ");
 
     // Build final selection
     // Finally, select all of the original DataFrame columns, filling in missing values
     // of the `field` columns
-    let mut select_columns: Vec<_> = original_columns
+    let select_columns: Vec<_> = original_columns
         .iter()
         .map(|col_name| {
             if col_name == &tx.field {
@@ -140,19 +137,6 @@ async fn single_groupby_sql(
         })
         .collect();
 
-    // Add undocumented "_impute" column that Vega adds
-    select_columns.push(
-        when(
-            unescaped_col(&tx.field).is_not_null(),
-            Expr::Cast(Cast {
-                expr: Box::new(Expr::Literal(ScalarValue::Boolean(None))),
-                data_type: DataType::Boolean,
-            }),
-        )
-        .otherwise(lit(true))
-        .unwrap()
-        .alias("_impute"),
-    );
     let select_column_strs = select_columns
         .iter()
         .map(|c| Ok(c.to_sql_select()?.sql(dataframe.dialect())?))
@@ -160,16 +144,24 @@ async fn single_groupby_sql(
 
     let select_column_csv = select_column_strs.join(", ");
 
-    let dataframe = dataframe.chain_query_str(&format!(
-        "SELECT {select_column_csv} from (SELECT DISTINCT {key} from {parent} WHERE {key} IS NOT NULL) AS _key \
-         CROSS JOIN (SELECT DISTINCT {group} from {parent} WHERE {group} IS NOT NULL) AS _group  \
+    let mut using_strs = vec![key_col_str.clone()];
+    using_strs.extend(group_col_strs.clone());
+    let using_csv = using_strs.join(", ");
+
+    let sql = format!(
+        "SELECT {select_column_csv}, {ORDER_COL}_key, {ORDER_COL}_groups \
+         FROM (SELECT {key}, min({ORDER_COL}) as {ORDER_COL}_key from {parent} WHERE {key} IS NOT NULL GROUP BY {key}) AS _key \
+         CROSS JOIN (SELECT {group_cols_csv}, min({ORDER_COL}) as {ORDER_COL}_groups from {parent} GROUP BY {group_cols_csv}) as _groups \
          LEFT OUTER JOIN {parent} \
-         USING ({key}, {group})",
+         USING ({using_csv})",
         select_column_csv = select_column_csv,
+        group_cols_csv = group_cols_csv,
         key = key_col_str,
-        group = group_col_str,
+        using_csv = using_csv,
+        ORDER_COL = ORDER_COL,
         parent = dataframe.parent_name(),
-    )).await?;
+    );
+    let dataframe = dataframe.chain_query_str(&sql).await?;
 
     // Override ordering column since null values may have been introduced in the query above.
     // Match input ordering with imputed rows (those will null ordering column) pushed
@@ -180,11 +172,26 @@ async fn single_groupby_sql(
         ),
         args: vec![],
         partition_by: vec![],
-        order_by: vec![Expr::Sort(expr::Sort {
-            expr: Box::new(flat_col(ORDER_COL)),
-            asc: true,
-            nulls_first: false,
-        })],
+        order_by: vec![
+            // Sort first by the original row order, pushing imputed rows to the end
+            Expr::Sort(expr::Sort {
+                expr: Box::new(flat_col(ORDER_COL)),
+                asc: true,
+                nulls_first: false,
+            }),
+            // Sort imputed rows by first row that resides group
+            // then by first row that matches a key
+            Expr::Sort(expr::Sort {
+                expr: Box::new(flat_col(&format!("{}_groups", ORDER_COL))),
+                asc: true,
+                nulls_first: false,
+            }),
+            Expr::Sort(expr::Sort {
+                expr: Box::new(flat_col(&format!("{}_key", ORDER_COL))),
+                asc: true,
+                nulls_first: false,
+            }),
+        ],
         window_frame: WindowFrame {
             units: WindowFrameUnits::Rows,
             start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
@@ -199,7 +206,7 @@ async fn single_groupby_sql(
         .fields
         .iter()
         .filter_map(|field| {
-            if field.name() == ORDER_COL {
+            if field.name().starts_with(ORDER_COL) {
                 None
             } else {
                 Some(flat_col(field.name()))

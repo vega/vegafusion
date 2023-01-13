@@ -77,6 +77,7 @@ altair_mocks_dir = here / "altair_mocks"
         ("other/wilkinson_dot_plot", 21, ["data", "id"]),
         ("other/parallel_coordinates", 600, ["sepalWidth", "index", "key", "value"]),
         ("other/normed_parallel_coordinates", 600, ["sepalWidth", "minmax_value", "mid"]),
+        ("other/ridgeline_plot", 108, ["Month", "mean_temp", "value"]),
         ("scatter/binned", 64, ["__count", "bin_maxbins_10_Rotten_Tomatoes_Rating_end"]),
         ("scatter/bubble_plot", 392, ["Name", "Cylinders", "Origin"]),
         ("scatter/connected", 55, ["side", "year", "miles", "gas"]),
