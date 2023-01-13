@@ -28,7 +28,6 @@ unsupported_transforms!(
     DensityTransformSpec,
     DotbinTransformSpec,
     FlattenTransformSpec,
-    FoldTransformSpec,
     ForceTransformSpec,
     GeojsonTransformSpec,
     GeopathTransformSpec,

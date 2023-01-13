@@ -10,7 +10,7 @@ use vegafusion_core::error::{Result, VegaFusionError};
 use crate::expression::escape::flat_col;
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
-use datafusion_expr::{expr, Expr};
+use datafusion_expr::{expr, lit, Expr};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::data::ORDER_COL;
 use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
@@ -116,7 +116,7 @@ impl TransformPipelineUtils for TransformPipeline {
 }
 
 pub async fn remove_order_col(result_sql_df: Arc<SqlDataFrame>) -> Result<Arc<SqlDataFrame>> {
-    let selection = result_sql_df
+    let mut selection = result_sql_df
         .schema()
         .fields
         .iter()
@@ -128,5 +128,11 @@ pub async fn remove_order_col(result_sql_df: Arc<SqlDataFrame>) -> Result<Arc<Sq
             }
         })
         .collect::<Vec<_>>();
+
+    // Add arbitrary column so that SELECT succeeds
+    if selection.is_empty() {
+        selection.push(lit(0).alias("_empty"))
+    }
+
     result_sql_df.select(selection).await
 }

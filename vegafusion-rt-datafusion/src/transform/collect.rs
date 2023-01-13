@@ -30,12 +30,16 @@ impl TransformTrait for Collect {
             .clone()
             .into_iter()
             .zip(&self.order)
-            .map(|(field, order)| {
-                Expr::Sort(expr::Sort {
-                    expr: Box::new(unescaped_col(&field)),
-                    asc: *order == SortOrder::Ascending as i32,
-                    nulls_first: *order == SortOrder::Ascending as i32,
-                })
+            .filter_map(|(field, order)| {
+                if dataframe.schema().column_with_name(&field).is_some() {
+                    Some(Expr::Sort(expr::Sort {
+                        expr: Box::new(unescaped_col(&field)),
+                        asc: *order == SortOrder::Ascending as i32,
+                        nulls_first: *order == SortOrder::Ascending as i32,
+                    }))
+                } else {
+                    None
+                }
             })
             .collect();
 

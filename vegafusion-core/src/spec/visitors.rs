@@ -20,7 +20,6 @@ use crate::spec::values::{SignalExpressionSpec, StringOrSignalSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_value::TaskValue;
-use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::ops::Deref;
@@ -201,7 +200,7 @@ impl<'a> ChartVisitor for MakeTasksVisitor<'a> {
                 Some(values) => VegaFusionTable::from_json(values, 1024)?,
                 None => {
                     // Treat as empty values array
-                    VegaFusionTable::from_json(&Value::Array(Vec::new()), 1)?
+                    VegaFusionTable::empty_with_ordering()
                 }
             };
 

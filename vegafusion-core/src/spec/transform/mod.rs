@@ -3,6 +3,7 @@ pub mod bin;
 pub mod collect;
 pub mod extent;
 pub mod filter;
+pub mod fold;
 pub mod formula;
 pub mod identifier;
 pub mod impute;
@@ -24,6 +25,7 @@ use crate::planning::plan::PlannerConfig;
 use crate::spec::transform::aggregate::AggregateTransformSpec;
 use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
+use crate::spec::transform::fold::FoldTransformSpec;
 use crate::spec::transform::formula::FormulaTransformSpec;
 use crate::spec::transform::identifier::IdentifierTransformSpec;
 use crate::spec::transform::impute::ImputeTransformSpec;
@@ -59,6 +61,8 @@ pub enum TransformSpec {
     Impute(ImputeTransformSpec),
     Pivot(PivotTransformSpec),
     Identifier(IdentifierTransformSpec),
+    Fold(FoldTransformSpec),
+    Sequence(SequenceTransformSpec),
 
     // Unsupported
     CountPattern(CountpatternTransformSpec),
@@ -68,7 +72,6 @@ pub enum TransformSpec {
     Density(DensityTransformSpec),
     DotBin(DotbinTransformSpec),
     Flatten(FlattenTransformSpec),
-    Fold(FoldTransformSpec),
     Force(ForceTransformSpec),
     GeoJson(GeojsonTransformSpec),
     GeoPath(GeopathTransformSpec),
@@ -91,7 +94,6 @@ pub enum TransformSpec {
     Regression(RegressionTransformSpec),
     ResolveFilter(ResolvefilterTransformSpec),
     Sample(SampleTransformSpec),
-    Sequence(SequenceTransformSpec),
     Stratify(StratifyTransformSpec),
     Tree(TreeTransformSpec),
     TreeLinks(TreelinksTransformSpec),
@@ -116,10 +118,10 @@ impl Deref for TransformSpec {
             TransformSpec::Stack(t) => t,
             TransformSpec::Impute(t) => t,
             TransformSpec::Pivot(t) => t,
+            TransformSpec::Sequence(t) => t,
 
             // Supported for dependency determination, not implementation
             TransformSpec::Lookup(t) => t,
-            TransformSpec::Sequence(t) => t,
 
             // Unsupported
             TransformSpec::CountPattern(t) => t,
