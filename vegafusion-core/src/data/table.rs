@@ -78,10 +78,23 @@ impl VegaFusionTable {
         }
     }
 
+    pub fn empty_with_ordering() -> Self {
+        // Return empty table with single ORDER_COL column
+        let empty_record_batch = RecordBatch::new_empty(Arc::new(Schema::new(vec![Field::new(
+            ORDER_COL,
+            DataType::UInt64,
+            false,
+        )])));
+        VegaFusionTable::from(empty_record_batch)
+    }
+
     pub fn with_ordering(self) -> Result<Self> {
         // Build new schema with leading ORDER_COL
         let mut new_fields = self.schema.fields.clone();
         let mut start_idx = 0;
+        if new_fields.is_empty() {
+            return Ok(Self::empty_with_ordering());
+        }
         let leading_field = new_fields
             .get(0)
             .expect("VegaFusionTable must have at least one column");

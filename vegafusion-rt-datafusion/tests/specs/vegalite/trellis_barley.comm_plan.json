@@ -24,6 +24,11 @@
       "namespace": "data",
       "name": "trellis_barley_facet_domain",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "trellis_barley_facet_domain_row",
+      "scope": []
     }
   ],
   "client_to_server": []

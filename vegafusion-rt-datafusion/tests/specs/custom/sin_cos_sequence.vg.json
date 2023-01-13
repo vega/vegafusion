@@ -1,19 +1,18 @@
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
-  "description": "Plots two functions using a generated sequence.",
   "background": "white",
   "padding": 5,
-  "width": 300,
-  "height": 150,
+  "width": 400,
+  "height": 300,
   "style": "cell",
   "data": [
     {
       "name": "source_0",
       "transform": [
         {"type": "sequence", "start": 0, "stop": 12.71, "step": 0.1, "as": "x"},
-        {"type": "formula", "expr": "sin(datum.x)", "as": "sin(x)"},
-        {"type": "formula", "expr": "cos(datum.x)", "as": "cos(x)"},
-        {"type": "fold", "fields": ["sin(x)", "cos(x)"], "as": ["key", "value"]}
+        {"type": "formula", "expr": "sin(datum.x)", "as": "sin"},
+        {"type": "formula", "expr": "cos(datum.x)", "as": "cos"},
+        {"type": "fold", "fields": ["sin", "cos"], "as": ["key", "value"]}
       ]
     }
   ],
@@ -131,5 +130,5 @@
       "zindex": 0
     }
   ],
-  "legends": [{"stroke": "color", "symbolType": "stroke"}]
+  "legends": [{"stroke": "color", "symbolType": "stroke", "title": "key"}]
 }

@@ -10,7 +10,7 @@
     {
       "name": "source_0",
       "transform": [
-        {"type": "sequence", "start": 0, "stop": 12.7, "step": 0.1, "as": "x"},
+        {"type": "sequence", "start": 0, "stop": 12.71, "step": 0.1, "as": "x"},
         {"type": "formula", "expr": "sin(datum.x)", "as": "sin(x)"}
       ]
     }
