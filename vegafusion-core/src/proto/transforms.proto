@@ -244,6 +244,14 @@ message Fold {
   repeated string as = 2;
 }
 
+// Sequence
+message Sequence {
+  expression.Expression start = 1;
+  expression.Expression stop = 2;
+  optional expression.Expression step = 3;
+  optional string as = 4;
+}
+
 // Top-level transform
 message Transform {
   oneof transform_kind {
@@ -262,6 +270,7 @@ message Transform {
     Pivot pivot = 13;
     Identifier identifier = 14;
     Fold fold = 15;
+    Sequence sequence = 16;
   }
 }
 

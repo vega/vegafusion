@@ -239,13 +239,26 @@ pub struct Fold {
     #[prost(string, repeated, tag = "2")]
     pub r#as: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
+/// Sequence
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Sequence {
+    #[prost(message, optional, tag = "1")]
+    pub start: ::core::option::Option<super::expression::Expression>,
+    #[prost(message, optional, tag = "2")]
+    pub stop: ::core::option::Option<super::expression::Expression>,
+    #[prost(message, optional, tag = "3")]
+    pub step: ::core::option::Option<super::expression::Expression>,
+    #[prost(string, optional, tag = "4")]
+    pub r#as: ::core::option::Option<::prost::alloc::string::String>,
+}
 /// Top-level transform
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transform {
     #[prost(
         oneof = "transform::TransformKind",
-        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15"
+        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16"
     )]
     pub transform_kind: ::core::option::Option<transform::TransformKind>,
 }
@@ -284,6 +297,8 @@ pub mod transform {
         Identifier(super::Identifier),
         #[prost(message, tag = "15")]
         Fold(super::Fold),
+        #[prost(message, tag = "16")]
+        Sequence(super::Sequence),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]

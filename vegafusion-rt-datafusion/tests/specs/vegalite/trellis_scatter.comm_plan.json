@@ -7,6 +7,11 @@
     },
     {
       "namespace": "data",
+      "name": "facet_domain_row",
+      "scope": []
+    },
+    {
+      "namespace": "data",
       "name": "source_0",
       "scope": []
     },

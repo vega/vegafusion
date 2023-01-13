@@ -19,6 +19,11 @@
       "namespace": "data",
       "name": "barley_yscale_domain_variety",
       "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "footers",
+      "scope": []
     }
   ],
   "client_to_server": []

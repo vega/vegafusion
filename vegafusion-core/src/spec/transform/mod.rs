@@ -62,6 +62,7 @@ pub enum TransformSpec {
     Pivot(PivotTransformSpec),
     Identifier(IdentifierTransformSpec),
     Fold(FoldTransformSpec),
+    Sequence(SequenceTransformSpec),
 
     // Unsupported
     CountPattern(CountpatternTransformSpec),
@@ -93,7 +94,6 @@ pub enum TransformSpec {
     Regression(RegressionTransformSpec),
     ResolveFilter(ResolvefilterTransformSpec),
     Sample(SampleTransformSpec),
-    Sequence(SequenceTransformSpec),
     Stratify(StratifyTransformSpec),
     Tree(TreeTransformSpec),
     TreeLinks(TreelinksTransformSpec),
@@ -118,10 +118,10 @@ impl Deref for TransformSpec {
             TransformSpec::Stack(t) => t,
             TransformSpec::Impute(t) => t,
             TransformSpec::Pivot(t) => t,
+            TransformSpec::Sequence(t) => t,
 
             // Supported for dependency determination, not implementation
             TransformSpec::Lookup(t) => t,
-            TransformSpec::Sequence(t) => t,
 
             // Unsupported
             TransformSpec::CountPattern(t) => t,

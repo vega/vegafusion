@@ -37,6 +37,11 @@ pub fn assert_tables_equal(
     rhs: &VegaFusionTable,
     config: &TablesEqualConfig,
 ) {
+    if lhs.num_rows() == 0 && rhs.num_rows() == 0 {
+        // Tables are both empty, don't try to compare schema
+        return;
+    }
+
     // Check column names (filtering out order col)
     let lhs_columns: HashSet<_> = lhs
         .schema

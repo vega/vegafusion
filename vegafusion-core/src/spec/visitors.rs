@@ -201,7 +201,7 @@ impl<'a> ChartVisitor for MakeTasksVisitor<'a> {
                 Some(values) => VegaFusionTable::from_json(values, 1024)?,
                 None => {
                     // Treat as empty values array
-                    VegaFusionTable::from_json(&Value::Array(Vec::new()), 1)?
+                    VegaFusionTable::empty_with_ordering()
                 }
             };
 

@@ -5,11 +5,9 @@ mod util;
 #[cfg(test)]
 mod test_fold {
     use crate::util::check::check_transform_evaluation;
-    use crate::util::datasets::vega_json_dataset;
     use rstest::rstest;
     use serde_json::json;
     use vegafusion_core::data::table::VegaFusionTable;
-    use vegafusion_core::spec::transform::project::ProjectTransformSpec;
     use vegafusion_core::spec::transform::TransformSpec;
 
     fn simple_medals_dataset() -> VegaFusionTable {

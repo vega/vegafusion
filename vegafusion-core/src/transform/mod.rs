@@ -3,7 +3,7 @@ use crate::proto::gen::tasks::Variable;
 use crate::proto::gen::transforms::transform::TransformKind;
 use crate::proto::gen::transforms::{
     Aggregate, Bin, Collect, Extent, Filter, Fold, Formula, Identifier, Impute, Pivot, Project,
-    Stack, TimeUnit,
+    Sequence, Stack, TimeUnit,
 };
 use crate::proto::gen::transforms::{JoinAggregate, Transform, Window};
 use crate::spec::transform::TransformSpec;
@@ -23,6 +23,7 @@ pub mod joinaggregate;
 pub mod pipeline;
 pub mod pivot;
 pub mod project;
+pub mod sequence;
 pub mod stack;
 pub mod timeunit;
 pub mod window;
@@ -49,6 +50,7 @@ impl TryFrom<&TransformSpec> for TransformKind {
             TransformSpec::Pivot(tx_spec) => Self::Pivot(Pivot::try_new(tx_spec)?),
             TransformSpec::Identifier(tx_spec) => Self::Identifier(Identifier::try_new(tx_spec)?),
             TransformSpec::Fold(tx_spec) => Self::Fold(Fold::try_new(tx_spec)?),
+            TransformSpec::Sequence(tx_spec) => Self::Sequence(Sequence::try_new(tx_spec)?),
             _ => {
                 return Err(VegaFusionError::parse(format!(
                     "Unsupported transform: {:?}",
@@ -87,6 +89,7 @@ impl TransformKind {
             TransformKind::Pivot(tx) => tx,
             TransformKind::Identifier(tx) => tx,
             TransformKind::Fold(tx) => tx,
+            TransformKind::Sequence(tx) => tx,
         }
     }
 }
