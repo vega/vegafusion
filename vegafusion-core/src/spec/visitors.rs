@@ -20,7 +20,6 @@ use crate::spec::values::{SignalExpressionSpec, StringOrSignalSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_value::TaskValue;
-use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::ops::Deref;
