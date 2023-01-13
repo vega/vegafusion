@@ -85,7 +85,7 @@ impl VegaFusionTable {
             DataType::UInt64,
             false,
         )])));
-        return VegaFusionTable::from(empty_record_batch);
+        VegaFusionTable::from(empty_record_batch)
     }
 
     pub fn with_ordering(self) -> Result<Self> {

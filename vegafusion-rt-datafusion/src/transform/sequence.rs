@@ -37,30 +37,24 @@ impl TransformTrait for Sequence {
             let step_expr = compile(step_signal, config, None)?;
             let step_scalar = step_expr.eval_to_scalar()?;
             step_scalar.to_f64()?
+        } else if stop >= start {
+            1.0
         } else {
-            if stop >= start {
-                1.0
-            } else {
-                -1.0
-            }
+            -1.0
         };
 
         let capacity = ((stop - start).abs() / step.abs()).ceil() as usize;
         let mut data_builder = Float64Array::builder(capacity);
         let mut val = start;
-        if start <= stop {
-            if step > 0.0 {
-                while val < stop {
-                    data_builder.append_value(val);
-                    val += step;
-                }
+        if start <= stop && step > 0.0 {
+            while val < stop {
+                data_builder.append_value(val);
+                val += step;
             }
-        } else {
-            if step < 0.0 {
-                while val > stop {
-                    data_builder.append_value(val);
-                    val += step;
-                }
+        } else if step < 0.0 {
+            while val > stop {
+                data_builder.append_value(val);
+                val += step;
             }
         }
         let data_array = Arc::new(data_builder.finish()) as ArrayRef;
