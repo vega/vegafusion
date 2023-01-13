@@ -2,7 +2,7 @@
 
 import altair as alt
 
-source = alt.sequence(start=0, stop=12.7, step=0.1, as_='x')
+source = alt.sequence(start=0, stop=12.71, step=0.1, as_='x')
 
 alt.Chart(source).mark_line().transform_calculate(
     sin='sin(datum.x)',
