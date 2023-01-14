@@ -22,6 +22,7 @@ wasm-bindgen-test = "0.3.13"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
+version = "1.0.0-rc1"
 
 [dependencies.serde]
 version = "1.0.137"
