@@ -91,7 +91,7 @@ impl TransformTrait for Fold {
             })
             .collect::<Result<Vec<_>>>()?;
 
-        let union_subquery = subqueries.join(" UNION ");
+        let union_subquery = subqueries.join(" UNION ALL ");
         let union_subquery_name = "_union";
 
         let mut selections = input_selection.clone();
