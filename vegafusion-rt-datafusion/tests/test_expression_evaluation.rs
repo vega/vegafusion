@@ -212,7 +212,8 @@ mod test_member_access {
         case("[1, 2, 3][1]"),
         case("({foo: {bar: 10}}).foo"),
         case("({foo: {bar: 10}}).foo.bar"),
-        case("({foo: {bar: 10}})['foo']['bar']")
+        case("({foo: {bar: 10}})['foo']['bar']"),
+        case("{'a': [1, 2]}['a'][length({'a': [1, 2]}['a']) - 1.0]")
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
