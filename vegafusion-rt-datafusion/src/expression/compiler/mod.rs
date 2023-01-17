@@ -700,7 +700,7 @@ mod test_compile {
         println!("expr: {:?}", result_expr);
 
         let result_value = result_expr.eval_to_scalar().unwrap();
-        let expected = ScalarValue::from(3);
+        let expected = ScalarValue::from(3.0);
 
         println!("value: {:?}", result_value);
         assert_eq!(result_value, expected);
@@ -713,7 +713,7 @@ mod test_compile {
         println!("expr: {:?}", result_expr);
 
         let result_value = result_expr.eval_to_scalar().unwrap();
-        let expected = ScalarValue::from(3);
+        let expected = ScalarValue::from(3.0);
 
         println!("value: {:?}", result_value);
         assert_eq!(result_value, expected);

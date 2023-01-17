@@ -2,7 +2,7 @@
 name = "vegafusion-core"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "1.0.0-rc1"
+version = "1.0.0-rc2"
 
 [features]
 tonic_support = [ "tonic", "tonic-build",]
