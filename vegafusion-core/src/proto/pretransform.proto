@@ -7,6 +7,7 @@ import "tasks.proto";
 message PreTransformSpecOpts {
   optional uint32 row_limit = 1;
   repeated PreTransformInlineDataset inline_datasets = 2;
+  bool preserve_interactivity = 3;
 }
 
 message PreTransformSpecRequest {

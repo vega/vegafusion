@@ -176,14 +176,17 @@ impl TaskGraphRuntime {
         &self,
         request: PreTransformSpecRequest,
     ) -> Result<PreTransformSpecResult> {
-        // Get row limit
-        let row_limit = request.opts.as_ref().and_then(|opts| opts.row_limit);
-
-        // Extract and deserialize inline datasets
-        let inline_pretransform_datasets = request
-            .opts
-            .map(|opts| opts.inline_datasets)
-            .unwrap_or_default();
+        // Extract options
+        let (row_limit, preserve_interactivity, inline_pretransform_datasets) =
+            if let Some(opts) = request.opts {
+                (
+                    opts.row_limit,
+                    opts.preserve_interactivity,
+                    opts.inline_datasets,
+                )
+            } else {
+                (None, true, Default::default())
+            };
 
         let inline_datasets = inline_pretransform_datasets
             .iter()
@@ -199,7 +202,14 @@ impl TaskGraphRuntime {
         let output_tz = request.output_tz;
 
         let (transformed_spec, warnings) = self
-            .pre_transform_spec(&spec, &local_tz, &output_tz, row_limit, inline_datasets)
+            .pre_transform_spec(
+                &spec,
+                &local_tz,
+                &output_tz,
+                row_limit,
+                preserve_interactivity,
+                inline_datasets,
+            )
             .await?;
 
         // Build result
@@ -222,6 +232,7 @@ impl TaskGraphRuntime {
         local_tz: &str,
         default_input_tz: &Option<String>,
         row_limit: Option<u32>,
+        preserve_interactivity: bool,
         inline_datasets: HashMap<String, VegaFusionDataset>,
     ) -> Result<(ChartSpec, Vec<PreTransformSpecWarning>)> {
         let input_spec = spec;
@@ -232,7 +243,7 @@ impl TaskGraphRuntime {
             &PlannerConfig {
                 stringify_local_datetimes: true,
                 extract_inline_data: true,
-                allow_client_to_server_comms: false,
+                allow_client_to_server_comms: !preserve_interactivity,
                 ..Default::default()
             },
         )?;
