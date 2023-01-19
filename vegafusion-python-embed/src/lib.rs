@@ -101,10 +101,12 @@ impl PyTaskGraphRuntime {
         local_tz: String,
         default_input_tz: Option<String>,
         row_limit: Option<u32>,
+        preserve_interactivity: Option<bool>,
         inline_datasets: &PyDict,
     ) -> PyResult<(PyObject, PyObject)> {
         let inline_datasets = deserialize_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
+        let preserve_interactivity = preserve_interactivity.unwrap_or(false);
 
         let (spec, warnings) = self
             .tokio_runtime
@@ -113,6 +115,7 @@ impl PyTaskGraphRuntime {
                 &local_tz,
                 &default_input_tz,
                 row_limit,
+                preserve_interactivity,
                 inline_datasets,
             ))?;
 
