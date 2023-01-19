@@ -1176,6 +1176,7 @@ mod test_pre_transform_inline {
         let opts = PreTransformSpecOpts {
             row_limit: None,
             inline_datasets,
+            preserve_interactivity: true,
         };
         let request = PreTransformSpecRequest {
             spec: serde_json::to_string(&inline_spec).unwrap(),
@@ -1327,6 +1328,7 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
     let opts = PreTransformSpecOpts {
         row_limit: None,
         inline_datasets: vec![],
+        preserve_interactivity: true,
     };
     let request = PreTransformSpecRequest {
         spec: serde_json::to_string(&full_spec).unwrap(),
