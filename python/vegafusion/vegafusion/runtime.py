@@ -75,7 +75,15 @@ class VegaFusionRuntime:
             inline_dataset_bytes[name] = table_bytes
         return inline_dataset_bytes
 
-    def pre_transform_spec(self, spec, local_tz, default_input_tz=None, row_limit=None, inline_datasets=None):
+    def pre_transform_spec(
+        self,
+        spec,
+        local_tz,
+        default_input_tz=None,
+        row_limit=None,
+        preserve_interactivity=True,
+        inline_datasets=None
+    ):
         """
         Evaluate supported transforms in an input Vega specification and produce a new
         specification with pre-transformed datasets included inline.
@@ -89,6 +97,11 @@ class VegaFusionRuntime:
         :param row_limit: Maximum number of dataset rows to include in the returned
             specification. If exceeded, datasets will be truncated to this number of rows
             and a RowLimitExceeded warning will be included in the resulting warnings list
+        :param preserve_interactivity: If True (default) then the interactive behavior of
+            the chart will pre preserved. This requires that all the data that participates
+            in interactions be included in the resulting spec rather than being pre-transformed.
+            If False, then all possible data transformations are applied even if they break
+            the original interactive behavior of the chart.
         :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
             Tables. Inline datasets may be referenced by the input specification using
             the following url syntax 'vegafusion+dataset://{dataset_name}'.
@@ -115,6 +128,7 @@ class VegaFusionRuntime:
                 local_tz=local_tz,
                 default_input_tz=default_input_tz,
                 row_limit=row_limit,
+                preserve_interactivity=preserve_interactivity,
                 inline_datasets=inline_dataset_bytes
             )
             return new_spec, warnings

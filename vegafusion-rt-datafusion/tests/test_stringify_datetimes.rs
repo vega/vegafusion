@@ -87,6 +87,7 @@ mod test_stringify_datetimes {
                 &local_tz,
                 &Some(default_input_tz.to_string()),
                 None,
+                true,
                 Default::default(),
             )
             .await
@@ -138,6 +139,7 @@ mod test_stringify_datetimes {
                 &local_tz,
                 &Some(default_input_tz),
                 None,
+                true,
                 Default::default(),
             )
             .await
@@ -217,6 +219,7 @@ mod test_stringify_datetimes {
                 local_tz,
                 &Some(default_input_tz.to_string()),
                 None,
+                true,
                 Default::default(),
             )
             .await
@@ -278,6 +281,7 @@ mod test_stringify_datetimes {
                 local_tz,
                 &Some(default_input_tz.to_string()),
                 None,
+                true,
                 Default::default(),
             ))
             .unwrap();
@@ -314,7 +318,7 @@ mod test_stringify_datetimes {
         let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
 
         let (spec, _warnings) = runtime
-            .pre_transform_spec(&spec, "UTC", &None, None, Default::default())
+            .pre_transform_spec(&spec, "UTC", &None, None, true, Default::default())
             .await
             .unwrap();
 
