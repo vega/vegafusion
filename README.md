@@ -3,7 +3,7 @@ VegaFusion provides serverside acceleration for the [Vega](https://vega.github.i
 
 The core VegaFusion algorithms are implemented in Rust. Python integration is provided using [PyO3](https://pyo3.rs/v0.15.1/) and JavaScript integration is provided using [wasm-bindgen](https://github.com/rustwasm/wasm-bindgen).
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/vegafusion/demos/HEAD?labpath=notebooks)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/hex-inc/vegafusion-demos/HEAD?labpath=notebooks)
 
 ## Documentation
 See the documentation at https://vegafusion.io

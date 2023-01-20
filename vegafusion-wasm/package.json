@@ -13,9 +13,9 @@
     "Vega-Lite",
     "visualization"
   ],
-  "homepage": "https://github.com/vegafusion/vegafusion",
+  "homepage": "https://github.com/hex-inc/vegafusion",
   "bugs": {
-    "url": "https://github.com/vegafusion/vegafusion/issues"
+    "url": "https://github.com/hex-inc/vegafusion/issues"
   },
   "files": [
     "vegafusion_wasm_bg.wasm",
