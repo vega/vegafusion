@@ -78,7 +78,25 @@ def bump_version(version):
         cgf_path = cfg_dir / "setup.cfg"
         parser = configparser.ConfigParser()
         parser.read_string(cgf_path.read_text())
+
+        # Set package version
         parser.set("metadata", "version", version)
+
+        # Check for embed dependencies
+        if parser.has_option("options.extras_require", "embed"):
+            deps = parser.get("options.extras_require", "embed").split("\n")
+            new_deps = []
+            for dep in deps:
+                if dep.strip().startswith("vegafusion-python-embed"):
+                    new_deps.append(f"vegafusion-python-embed=={version}")
+                elif dep.strip().startswith("vegafusion"):
+                    new_deps.append(f"vegafusion=={version}")
+                else:
+                    new_deps.append(dep)
+
+            deps_str = "\n".join(new_deps)
+            parser.set("options.extras_require", "embed", deps_str)
+
         with cgf_path.open("wt") as f:
             parser.write(f)
         print(f"Updated version in {cgf_path}")

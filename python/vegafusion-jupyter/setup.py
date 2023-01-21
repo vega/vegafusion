@@ -92,11 +92,11 @@ setup_args = dict(
     install_requires = [
         'ipywidgets>=7.0.0,<9',
         'altair>=4.2.0',
-        'vegafusion>=1.0.0rc1',
+        f'vegafusion=={version}',  # [vegafusion VERSION]
     ],
     extras_require={
         'embed': [
-            "vegafusion-python-embed>=1.0.0rc1",
+            f"vegafusion-python-embed=={version}",
             "vl-convert-python>=0.7.0"
         ],
     },
