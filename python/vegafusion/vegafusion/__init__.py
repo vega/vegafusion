@@ -36,7 +36,13 @@ def altair_vl_version(vl_convert=False):
         (e.g. v4_17 rather than 4.17.0)
     :return: str with Vega-Lite version
     """
-    from altair.vegalite.v4 import SCHEMA_VERSION
+    try:
+        # Altair 5
+        from altair.vegalite.v5 import SCHEMA_VERSION
+    except ImportError:
+        # Altair 4
+        from altair.vegalite.v4 import SCHEMA_VERSION
+
     if vl_convert:
         # Compute VlConvert's vl_version string (of the form 'v5_2')
         # from SCHEMA_VERSION (of the form 'v5.2.0')

@@ -1,8 +1,14 @@
 import json
 
 from altair import data_transformers
-from altair.vegalite.v4.api import Chart, FacetChart
 from altair.utils.schemapi import Undefined
+
+try:
+    # Altair 5 imports
+    from altair.vegalite.v5.api import Chart, FacetChart
+except ImportError:
+    # Altair 4 imports
+    from altair.vegalite.v4.api import Chart, FacetChart
 
 MAGIC_MARK_NAME = "_vf_mark"
 
@@ -12,7 +18,7 @@ def transformed_data(chart: Chart, row_limit=None):
     Evaluate the transform associated with a Chart and return the transformed
     data as a DataFrame
 
-    :param chart: altair.vegalite.v4.api.Chart object
+    :param chart: altair Chart object
     :param row_limit: Maximum number of rows to return. None (default) for unlimited
     :return: pandas DataFrame of transformed data
     """
