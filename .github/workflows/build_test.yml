@@ -23,9 +23,9 @@ jobs:
       - name: Check cargo fmt compliance
         run: cargo fmt --all -- --check
       - name: Check no rustc warnings
-        run: cargo check --tests
+        run: cargo check --tests --features=protobuf-src
       - name: Check for clippy warnings
-        run: cargo clippy -- -A clippy::borrow_deref_ref
+        run: cargo clippy --features=protobuf-src -- -A clippy::borrow_deref_ref
 
   test-rust:
     runs-on: ${{ matrix.os }}
@@ -108,11 +108,18 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: True
-      - name: Build vegafusion-server
+      - name: Build vegafusion-server (Windows)
         uses: actions-rs/cargo@v1
+        if: ${{ runner.os == 'Windows' }}
         with:
           command: build
           args: -p vegafusion-server --release
+      - name: Build vegafusion-server (non-Windows)
+        uses: actions-rs/cargo@v1
+        if: ${{ runner.os != 'Windows' }}
+        with:
+          command: build
+          args: -p vegafusion-server --release --features=protobuf-src
       - name: zip executable (Windows)
         uses: papeloto/action-zip@v1
         if: runner.os == 'Windows'
