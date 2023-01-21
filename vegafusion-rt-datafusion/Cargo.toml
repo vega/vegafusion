@@ -10,6 +10,7 @@ version = "1.0.0"
 
 [features]
 pyarrow = [ "vegafusion-core/pyarrow",]
+protobuf-src = [ "vegafusion-core/protobuf-src", ]
 
 [dependencies]
 regex = "^1.5.5"
