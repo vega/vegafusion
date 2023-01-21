@@ -3878,7 +3878,7 @@ checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
 name = "vegafusion-core"
-version = "1.0.0-rc3"
+version = "1.0.0"
 dependencies = [
  "arrow",
  "bytes",
@@ -3906,7 +3906,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-python-embed"
-version = "1.0.0-rc3"
+version = "1.0.0"
 dependencies = [
  "deterministic-hash",
  "env_logger",
@@ -3922,7 +3922,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-rt-datafusion"
-version = "1.0.0-rc3"
+version = "1.0.0"
 dependencies = [
  "async-lock",
  "async-recursion",
@@ -3970,7 +3970,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-server"
-version = "1.0.0-rc3"
+version = "1.0.0"
 dependencies = [
  "assert_cmd",
  "clap 3.2.22",
@@ -3991,7 +3991,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-wasm"
-version = "1.0.0-rc3"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "console_error_panic_hook",
