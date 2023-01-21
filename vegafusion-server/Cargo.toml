@@ -4,7 +4,7 @@ path = "src/main.rs"
 
 [package]
 name = "vegafusion-server"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 license = "BSD-3-Clause"
 
@@ -26,11 +26,11 @@ prost-build = "0.11.4"
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = [ "tonic_support",]
-version = "1.0.0"
+version = "1.0.1"
 
 [dependencies.vegafusion-rt-datafusion]
 path = "../vegafusion-rt-datafusion"
-version = "1.0.0"
+version = "1.0.1"
 
 [dependencies.tokio]
 version = "1.18.1"

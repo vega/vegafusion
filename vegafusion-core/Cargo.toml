@@ -2,7 +2,7 @@
 name = "vegafusion-core"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "1.0.0"
+version = "1.0.1"
 
 [features]
 tonic_support = [ "tonic", "tonic-build",]
@@ -63,4 +63,3 @@ optional = true
 [build-dependencies.protobuf-src]
 protobuf-src = "1.1.0"
 optional = true
-

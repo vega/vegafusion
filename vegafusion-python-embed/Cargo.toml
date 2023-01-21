@@ -2,14 +2,14 @@
 name = "vegafusion-python-embed"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "1.0.0"
+version = "1.0.1"
 
 [lib]
 name = "vegafusion_embed"
 crate-type = [ "cdylib",]
 
 [features]
-protobuf-src = [ "vegafusion-core/protobuf-src", ]
+protobuf-src = [ "vegafusion-core/protobuf-src",]
 
 [dependencies]
 log = "0.4.17"
@@ -29,12 +29,12 @@ version = "1.0.79"
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = [ "pyo3",]
-version = "1.0.0"
+version = "1.0.1"
 
 [dependencies.vegafusion-rt-datafusion]
 path = "../vegafusion-rt-datafusion"
 features = [ "pyarrow",]
-version = "1.0.0"
+version = "1.0.1"
 
 [dependencies.tokio]
 version = "1.18.1"
