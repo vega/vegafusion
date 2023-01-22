@@ -343,7 +343,7 @@ jobs:
           cache-on-failure: True
       - name: Build vegafusion-python-embed in development mode
         run: |
-          maturin develop --release -m vegafusion-python-embed/Cargo.toml
+          maturin develop --release --features=protobuf-src -m vegafusion-python-embed/Cargo.toml
       - name: Install Chrome
         uses: browser-actions/setup-chrome@latest
         with:
