@@ -1,14 +1,7 @@
 import json
 
-from altair import data_transformers
+from altair import data_transformers, Chart, FacetChart
 from altair.utils.schemapi import Undefined
-
-try:
-    # Altair 5 imports
-    from altair.vegalite.v5.api import Chart, FacetChart
-except ImportError:
-    # Altair 4 imports
-    from altair.vegalite.v4.api import Chart, FacetChart
 
 MAGIC_MARK_NAME = "_vf_mark"
 
