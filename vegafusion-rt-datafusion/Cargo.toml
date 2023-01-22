@@ -6,10 +6,11 @@ harness = false
 name = "vegafusion-rt-datafusion"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "1.0.0"
+version = "1.0.1"
 
 [features]
 pyarrow = [ "vegafusion-core/pyarrow",]
+protobuf-src = [ "vegafusion-core/protobuf-src",]
 
 [dependencies]
 regex = "^1.5.5"
@@ -67,7 +68,7 @@ features = [ "bundled",]
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = [ "sqlgen",]
-version = "1.0.0"
+version = "1.0.1"
 
 [dependencies.serde]
 version = "1.0.137"
@@ -75,9 +76,13 @@ features = [ "derive",]
 
 [dependencies.datafusion]
 version = "~16.0.0"
+git = "https://github.com/jonmmease/arrow-datafusion.git"
+rev = "e3f156f4acc51fc45a7aa6a99085b091f539d5fa"
 
 [dependencies.datafusion-expr]
 version = "~16.0.0"
+git = "https://github.com/jonmmease/arrow-datafusion.git"
+rev = "e3f156f4acc51fc45a7aa6a99085b091f539d5fa"
 
 [dependencies.tokio]
 version = "1.18.1"

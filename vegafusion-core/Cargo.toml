@@ -2,7 +2,7 @@
 name = "vegafusion-core"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "1.0.0"
+version = "1.0.1"
 
 [features]
 tonic_support = [ "tonic", "tonic-build",]
@@ -38,6 +38,8 @@ features = [ "ipc", "json",]
 
 [dependencies.datafusion-common]
 version = "~16.0.0"
+git = "https://github.com/jonmmease/arrow-datafusion.git"
+rev = "e3f156f4acc51fc45a7aa6a99085b091f539d5fa"
 
 [dependencies.pyo3]
 version = "0.17.1"
@@ -58,5 +60,6 @@ version = "0.11.4"
 version = "0.8.4"
 optional = true
 
-[target."cfg(target_family = \"unix\")".build-dependencies]
-protobuf-src = "1.1.0"
+[build-dependencies.protobuf-src]
+version = "1.1.0"
+optional = true
