@@ -181,7 +181,7 @@ jobs:
         if: ${{ matrix.options[1] != 'osx-arm64' && runner.os != 'Windows'}}
         uses: messense/maturin-action@v1
         with:
-          maturin-version: 0.12.20
+          maturin-version: 0.13.6
           command: build
           manylinux: 2014
           rust-toolchain: stable
@@ -190,7 +190,7 @@ jobs:
         if: ${{ matrix.options[1] == 'osx-arm64' }}
         uses: messense/maturin-action@v1
         with:
-          maturin-version: 0.12.20
+          maturin-version: 0.13.6
           command: build
           rust-toolchain: stable
           args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip --target aarch64-apple-darwin -i python3.11 -i python3.10 -i python3.9 -i python3.8 -i python3.7
@@ -224,7 +224,7 @@ jobs:
       - name: Build package
         working-directory: vegafusion-wasm/
         run: |
-          npm run build
+          npm run build:protobuf-src
           wasm-pack pack
       - name: Upload artifacts
         uses: actions/upload-artifact@v2

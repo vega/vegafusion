@@ -29,6 +29,7 @@
   "sideEffects": false,
   "scripts": {
     "build": "wasm-pack build --release && cp package.json pkg/",
+    "build:protobuf-src": "wasm-pack build --release --features=protobuf-src && cp package.json pkg/",
     "build-web": "wasm-pack build --release --target web -d pkg-web/ && cp package.json pkg-web/",
     "publish": "wasm-pack publish",
     "prerelease-publish": "wasm-pack publish --tag next"

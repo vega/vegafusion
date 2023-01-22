@@ -8,6 +8,7 @@ crate-type = [ "cdylib", "rlib",]
 
 [features]
 default = [ "console_error_panic_hook",]
+protobuf-src = [ "vegafusion-core/protobuf-src",]
 
 [dependencies]
 serde_json = "1.0.81"
