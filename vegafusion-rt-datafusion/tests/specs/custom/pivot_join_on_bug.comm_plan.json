@@ -1,0 +1,50 @@
+{
+  "server_to_client": [
+    {
+      "name": "data_1",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_1_layer_0_layer_0_color_domain_CALC_NAME_0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_1_x_domain_yearmonthdate_SESSION_DATE_0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_2",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_2_layer_0_layer_0_color_domain_CALC_NAME_1",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_2_x_domain_yearmonthdate_SESSION_DATE_1",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_3",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_3_x_domain_yearmonthdate_SESSION_DATE_2",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_4",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}
