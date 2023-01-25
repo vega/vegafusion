@@ -1,16 +1,13 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{cast_to, data_type, is_string_datatype};
 use crate::expression::escape::{flat_col, unescaped_col};
-use crate::sql::compile::expr::ToSqlExpr;
-use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
-use crate::transform::aggregate::{make_agg_expr_for_col_expr, make_aggr_expr_for_named_col};
+use crate::transform::aggregate::make_agg_expr_for_col_expr;
 use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::Column;
 use datafusion_expr::{coalesce, expr::Sort, lit, min, when, Expr};
-use sqlgen::dialect::DialectDisplay;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::StringArray;
 use vegafusion_core::arrow::datatypes::DataType;
@@ -20,7 +17,6 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::expression::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::{AggregateOp, Pivot};
 use vegafusion_core::task_graph::task_value::TaskValue;
-
 
 /// NULL_PLACEHOLDER_NAME is used for sorting to match Vega, where null always comes first for
 /// limit sorting
@@ -45,9 +41,12 @@ impl TransformTrait for Pivot {
                 .fields
                 .iter()
                 .map(|field| {
-                    if field.name() == &unescape_field(&self.field)  {
+                    if field.name() == &unescape_field(&self.field) {
                         Ok(when(unescaped_col(&self.field).eq(lit(true)), lit("true"))
-                            .when(unescaped_col(&self.field).is_null(), lit(NULL_PLACEHOLDER_NAME))
+                            .when(
+                                unescaped_col(&self.field).is_null(),
+                                lit(NULL_PLACEHOLDER_NAME),
+                            )
                             .otherwise(lit("false"))
                             .expect("Failed to construct Case expression")
                             .alias(&self.field))
@@ -64,14 +63,17 @@ impl TransformTrait for Pivot {
                 .fields
                 .iter()
                 .map(|field| {
-                    if field.name() == &unescape_field(&self.field)  {
-                        Ok(when(unescaped_col(&self.field).is_null(), lit(NULL_PLACEHOLDER_NAME))
-                            .otherwise(cast_to(
-                                unescaped_col(&self.field),
-                                &DataType::Utf8,
-                                &dataframe.schema_df(),
-                            )?)?
-                            .alias(&self.field))
+                    if field.name() == &unescape_field(&self.field) {
+                        Ok(when(
+                            unescaped_col(&self.field).is_null(),
+                            lit(NULL_PLACEHOLDER_NAME),
+                        )
+                        .otherwise(cast_to(
+                            unescaped_col(&self.field),
+                            &DataType::Utf8,
+                            &dataframe.schema_df(),
+                        )?)?
+                        .alias(&self.field))
                     } else {
                         Ok(flat_col(field.name()))
                     }
@@ -86,8 +88,10 @@ impl TransformTrait for Pivot {
                 .iter()
                 .map(|field| {
                     if field.name() == &unescape_field(&self.field) {
-                        Ok(coalesce(vec![unescaped_col(&self.field), lit(NULL_PLACEHOLDER_NAME)])
-                            .alias(&self.field))
+                        Ok(
+                            coalesce(vec![unescaped_col(&self.field), lit(NULL_PLACEHOLDER_NAME)])
+                                .alias(&self.field),
+                        )
                     } else {
                         Ok(flat_col(field.name()))
                     }

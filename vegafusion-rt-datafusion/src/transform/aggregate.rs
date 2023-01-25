@@ -135,7 +135,11 @@ pub fn make_aggr_expr_for_named_col(
     make_agg_expr_for_col_expr(column, op, schema)
 }
 
-pub fn make_agg_expr_for_col_expr(column: Expr, op: &AggregateOp, schema: &DFSchema) -> Result<Expr> {
+pub fn make_agg_expr_for_col_expr(
+    column: Expr,
+    op: &AggregateOp,
+    schema: &DFSchema,
+) -> Result<Expr> {
     let numeric_column = || {
         to_numeric(column.clone(), schema).unwrap_or_else(|err| {
             panic!(

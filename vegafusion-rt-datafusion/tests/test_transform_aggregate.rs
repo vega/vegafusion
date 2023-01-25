@@ -15,7 +15,6 @@ use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_core::spec::values::{Field, SignalExpressionSpec};
 
 mod test_aggregate_single {
-    use crate::util::check::eval_vegafusion_transforms;
     use crate::*;
 
     #[rstest(
@@ -62,7 +61,6 @@ mod test_aggregate_single {
 }
 
 mod test_aggregate_multi {
-    use crate::util::check::eval_vegafusion_transforms;
     use crate::*;
 
     #[rstest(
@@ -218,7 +216,6 @@ fn test_aggregate_overwrite() {
 }
 
 mod test_aggregate_with_nulls {
-    use crate::util::check::eval_vegafusion_transforms;
     use crate::*;
     use serde_json::json;
     use vegafusion_core::data::table::VegaFusionTable;
