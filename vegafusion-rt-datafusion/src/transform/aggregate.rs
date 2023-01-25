@@ -97,7 +97,7 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
     for ((col_name, op_code), alias) in agg_aliases {
         let op = AggregateOp::from_i32(op_code).unwrap();
 
-        let agg_expr = make_aggr_expr(col_name, &op, schema)?;
+        let agg_expr = make_aggr_expr_for_named_col(col_name, &op, schema)?;
 
         // Apply alias
         let agg_expr = agg_expr.alias(alias);
@@ -107,7 +107,7 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
     Ok((agg_exprs, projections))
 }
 
-pub fn make_aggr_expr(
+pub fn make_aggr_expr_for_named_col(
     col_name: Option<String>,
     op: &AggregateOp,
     schema: &DFSchema,
@@ -132,6 +132,10 @@ pub fn make_aggr_expr(
         lit(0i32)
     };
 
+    make_agg_expr_for_col_expr(column, op, schema)
+}
+
+pub fn make_agg_expr_for_col_expr(column: Expr, op: &AggregateOp, schema: &DFSchema) -> Result<Expr> {
     let numeric_column = || {
         to_numeric(column.clone(), schema).unwrap_or_else(|err| {
             panic!(
