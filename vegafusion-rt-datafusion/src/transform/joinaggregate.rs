@@ -7,7 +7,7 @@ use datafusion::logical_expr::Expr;
 use crate::sql::compile::expr::ToSqlExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::dataframe::SqlDataFrame;
-use crate::transform::aggregate::make_aggr_expr;
+use crate::transform::aggregate::make_aggr_expr_for_named_col;
 use async_trait::async_trait;
 use datafusion::common::Column;
 use sqlgen::dialect::DialectDisplay;
@@ -46,9 +46,9 @@ impl TransformTrait for JoinAggregate {
 
             let agg_expr = if matches!(op, AggregateOp::Count) {
                 // In Vega, the provided column is always ignored if op is 'count'.
-                make_aggr_expr(None, &op, &schema)?
+                make_aggr_expr_for_named_col(None, &op, &schema)?
             } else {
-                make_aggr_expr(Some(field.clone()), &op, &schema)?
+                make_aggr_expr_for_named_col(Some(field.clone()), &op, &schema)?
             };
 
             // Apply alias

@@ -9,8 +9,7 @@ use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion::common::{DFSchema, ScalarValue};
-use datafusion_expr::aggregate_function;
-use datafusion_expr::expr;
+use datafusion_expr::{aggregate_function, expr};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::ORDER_COL;
@@ -98,7 +97,7 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
     for ((col_name, op_code), alias) in agg_aliases {
         let op = AggregateOp::from_i32(op_code).unwrap();
 
-        let agg_expr = make_aggr_expr(col_name, &op, schema)?;
+        let agg_expr = make_aggr_expr_for_named_col(col_name, &op, schema)?;
 
         // Apply alias
         let agg_expr = agg_expr.alias(alias);
@@ -108,7 +107,7 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
     Ok((agg_exprs, projections))
 }
 
-pub fn make_aggr_expr(
+pub fn make_aggr_expr_for_named_col(
     col_name: Option<String>,
     op: &AggregateOp,
     schema: &DFSchema,
@@ -133,6 +132,14 @@ pub fn make_aggr_expr(
         lit(0i32)
     };
 
+    make_agg_expr_for_col_expr(column, op, schema)
+}
+
+pub fn make_agg_expr_for_col_expr(
+    column: Expr,
+    op: &AggregateOp,
+    schema: &DFSchema,
+) -> Result<Expr> {
     let numeric_column = || {
         to_numeric(column.clone(), schema).unwrap_or_else(|err| {
             panic!(
@@ -192,7 +199,14 @@ pub fn make_aggr_expr(
             });
             sum(missing)
         }
-        AggregateOp::Distinct => count_distinct(column),
+        AggregateOp::Distinct => {
+            // Vega counts null as a distinct category but SQL does not
+            let missing = Expr::Cast(expr::Cast {
+                expr: Box::new(Expr::IsNull(Box::new(column.clone()))),
+                data_type: DataType::Int64,
+            });
+            count_distinct(column) + max(missing)
+        }
         _ => {
             return Err(VegaFusionError::specification(format!(
                 "Unsupported aggregation op: {:?}",

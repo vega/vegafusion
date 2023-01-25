@@ -17,6 +17,7 @@ fn medals() -> VegaFusionTable {
             {"country": "Canada", "type": "gold", "count": 11, "is_gold": true},
             {"country": "Canada", "type": "silver", "count": 8, "is_gold": false},
             {"country": "Canada", "type": "bronze", "count": 10, "is_gold": false},
+            {"country": "Canada", "type": null, "count": 5, "is_gold": null},
         ]),
         1024,
     )
@@ -45,7 +46,8 @@ mod test_pivot_with_group {
         case(Some(AggregateOpSpec::Max), None),
         case(Some(AggregateOpSpec::Max), Some(10)),
         case(Some(AggregateOpSpec::Min), None),
-        case(Some(AggregateOpSpec::Min), Some(0))
+        case(Some(AggregateOpSpec::Min), Some(0)),
+        case(Some(AggregateOpSpec::Distinct), None)
     )]
     fn test(op: Option<AggregateOpSpec>, limit: Option<i32>) {
         let dataset = medals();
@@ -94,7 +96,8 @@ mod test_pivot_no_group {
         case(Some(AggregateOpSpec::Max), None),
         case(Some(AggregateOpSpec::Max), Some(10)),
         case(Some(AggregateOpSpec::Min), None),
-        case(Some(AggregateOpSpec::Min), Some(0))
+        case(Some(AggregateOpSpec::Min), Some(0)),
+        case(Some(AggregateOpSpec::Distinct), None)
     )]
     fn test(op: Option<AggregateOpSpec>, limit: Option<i32>) {
         let dataset = medals();
@@ -143,7 +146,8 @@ mod test_pivot_no_group_boolean {
         case(Some(AggregateOpSpec::Max), None),
         case(Some(AggregateOpSpec::Max), Some(10)),
         case(Some(AggregateOpSpec::Min), None),
-        case(Some(AggregateOpSpec::Min), Some(0))
+        case(Some(AggregateOpSpec::Min), Some(0)),
+        case(Some(AggregateOpSpec::Distinct), None)
     )]
     fn test(op: Option<AggregateOpSpec>, limit: Option<i32>) {
         let dataset = medals();

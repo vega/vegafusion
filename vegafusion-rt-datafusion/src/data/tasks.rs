@@ -141,7 +141,7 @@ impl TaskCall for DataUrlTask {
 
         // Construct SqlDataFrame
         let ctx = make_session_context();
-        ctx.register_table("tbl", Arc::new(df))?;
+        ctx.register_table("tbl", df.into_view())?;
         let sql_conn = DataFusionConnection::new(Arc::new(ctx));
 
         let sql_df = Arc::new(SqlDataFrame::try_new(Arc::new(sql_conn), "tbl").await?);
