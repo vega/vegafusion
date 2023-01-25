@@ -47,24 +47,17 @@ mod test_aggregate_single {
 
         let comp_config = Default::default();
 
-        // Order of grouped rows is not defined, so set row_order to false
-        if matches!(op, AggregateOpSpec::Distinct) {
-            // Vega counts null as distinct category but DataFusion does not.
-            // Just make sure it doesn't crash
-            eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &comp_config);
-        } else {
-            let eq_config = TablesEqualConfig {
-                row_order: true,
-                ..Default::default()
-            };
+        let eq_config = TablesEqualConfig {
+            row_order: true,
+            ..Default::default()
+        };
 
-            check_transform_evaluation(
-                &dataset,
-                transform_specs.as_slice(),
-                &comp_config,
-                &eq_config,
-            );
-        }
+        check_transform_evaluation(
+            &dataset,
+            transform_specs.as_slice(),
+            &comp_config,
+            &eq_config,
+        );
     }
 }
 
@@ -109,23 +102,17 @@ mod test_aggregate_multi {
 
         let comp_config = Default::default();
 
-        if matches!(op1, AggregateOpSpec::Distinct) || matches!(op2, AggregateOpSpec::Distinct) {
-            // Vega counts null as distinct category but DataFusion does not
-            eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &comp_config);
-        } else {
-            // Order of grouped rows is not defined, so set row_order to false
-            let eq_config = TablesEqualConfig {
-                row_order: true,
-                ..Default::default()
-            };
+        let eq_config = TablesEqualConfig {
+            row_order: true,
+            ..Default::default()
+        };
 
-            check_transform_evaluation(
-                &dataset,
-                transform_specs.as_slice(),
-                &comp_config,
-                &eq_config,
-            );
-        }
+        check_transform_evaluation(
+            &dataset,
+            transform_specs.as_slice(),
+            &comp_config,
+            &eq_config,
+        );
     }
 }
 
@@ -272,23 +259,16 @@ mod test_aggregate_with_nulls {
 
         let comp_config = Default::default();
 
-        // Order of grouped rows is not defined, so set row_order to false
-        if matches!(op, AggregateOpSpec::Distinct) {
-            // Vega counts null as distinct category but DataFusion does not.
-            // Just make sure it doesn't crash
-            eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &comp_config);
-        } else {
-            let eq_config = TablesEqualConfig {
-                row_order: true,
-                ..Default::default()
-            };
+        let eq_config = TablesEqualConfig {
+            row_order: true,
+            ..Default::default()
+        };
 
-            check_transform_evaluation(
-                &dataset,
-                transform_specs.as_slice(),
-                &comp_config,
-                &eq_config,
-            );
-        }
+        check_transform_evaluation(
+            &dataset,
+            transform_specs.as_slice(),
+            &comp_config,
+            &eq_config,
+        );
     }
 }

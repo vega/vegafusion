@@ -18,17 +18,16 @@ mod test_joinaggregate_zero {
     use vegafusion_core::spec::transform::joinaggregate::JoinAggregateTransformSpec;
 
     #[rstest(
-    op,
-    case(AggregateOpSpec::Count),
-    case(AggregateOpSpec::Valid),
-    case(AggregateOpSpec::Missing),
-    // Vega counts null as distinct category but DataFusion does not
-    // case(AggregateOpSpec::Distinct),
-    case(AggregateOpSpec::Sum),
-    case(AggregateOpSpec::Mean),
-    case(AggregateOpSpec::Average),
-    case(AggregateOpSpec::Min),
-    case(AggregateOpSpec::Max),
+        op,
+        case(AggregateOpSpec::Count),
+        case(AggregateOpSpec::Valid),
+        case(AggregateOpSpec::Missing),
+        case(AggregateOpSpec::Distinct),
+        case(AggregateOpSpec::Sum),
+        case(AggregateOpSpec::Mean),
+        case(AggregateOpSpec::Average),
+        case(AggregateOpSpec::Min),
+        case(AggregateOpSpec::Max)
     )]
     fn test(op: AggregateOpSpec) {
         let dataset = vega_json_dataset("penguins");
@@ -67,13 +66,12 @@ mod test_joinaggregate_single {
         case(AggregateOpSpec::Count),
         case(AggregateOpSpec::Valid),
         case(AggregateOpSpec::Missing),
-        // Vega counts null as distinct category but DataFusion does not
-        // case(AggregateOpSpec::Distinct),
+        case(AggregateOpSpec::Distinct),
         case(AggregateOpSpec::Sum),
         case(AggregateOpSpec::Mean),
         case(AggregateOpSpec::Average),
         case(AggregateOpSpec::Min),
-        case(AggregateOpSpec::Max),
+        case(AggregateOpSpec::Max)
     )]
     fn test(op: AggregateOpSpec) {
         let dataset = vega_json_dataset("penguins");
@@ -109,17 +107,17 @@ mod test_joinaggregate_multi {
     use vegafusion_core::spec::transform::joinaggregate::JoinAggregateTransformSpec;
 
     #[rstest(
-        op1, op2,
+        op1,
+        op2,
         case(AggregateOpSpec::Count, AggregateOpSpec::Count),
         case(AggregateOpSpec::Valid, AggregateOpSpec::Missing),
         case(AggregateOpSpec::Missing, AggregateOpSpec::Valid),
-        // Vega counts null as distinct category but DataFusion does not
-        // case(AggregateOpSpec::Distinct),
+        case(AggregateOpSpec::Distinct, AggregateOpSpec::Mean),
         case(AggregateOpSpec::Sum, AggregateOpSpec::Max),
         case(AggregateOpSpec::Mean, AggregateOpSpec::Sum),
         case(AggregateOpSpec::Average, AggregateOpSpec::Mean),
         case(AggregateOpSpec::Min, AggregateOpSpec::Average),
-        case(AggregateOpSpec::Max, AggregateOpSpec::Min),
+        case(AggregateOpSpec::Max, AggregateOpSpec::Min)
     )]
     fn test(op1: AggregateOpSpec, op2: AggregateOpSpec) {
         let dataset = vega_json_dataset("penguins");

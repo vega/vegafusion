@@ -9,8 +9,7 @@ use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::SqlDataFrame;
 use async_trait::async_trait;
 use datafusion::common::{DFSchema, ScalarValue};
-use datafusion_expr::aggregate_function;
-use datafusion_expr::expr;
+use datafusion_expr::{aggregate_function, expr};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::ORDER_COL;
@@ -192,7 +191,14 @@ pub fn make_aggr_expr(
             });
             sum(missing)
         }
-        AggregateOp::Distinct => count_distinct(column),
+        AggregateOp::Distinct => {
+            // Vega counts null as a distinct category but SQL does not
+            let missing = Expr::Cast(expr::Cast {
+                expr: Box::new(Expr::IsNull(Box::new(column.clone()))),
+                data_type: DataType::Int64,
+            });
+            count_distinct(column) + max(missing)
+        }
         _ => {
             return Err(VegaFusionError::specification(format!(
                 "Unsupported aggregation op: {:?}",
