@@ -5,8 +5,8 @@ use crate::sql::connection::SqlConnection;
 use datafusion::common::{Column, DFSchema};
 use datafusion::prelude::{Expr as DfExpr, SessionContext};
 use datafusion_expr::{
-    expr, lit, window_function, BuiltInWindowFunction, BuiltinScalarFunction, Expr, WindowFrame,
-    WindowFrameBound, WindowFrameUnits,
+    abs, expr, lit, max, when, window_function, AggregateFunction, BuiltInWindowFunction,
+    BuiltinScalarFunction, Expr, WindowFrame, WindowFrameBound, WindowFrameUnits, WindowFunction,
 };
 use sqlgen::ast::Ident;
 use sqlgen::ast::{Cte, With};
@@ -16,14 +16,17 @@ use sqlgen::parser::Parser;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
 
+use crate::expression::compiler::utils::to_numeric;
 use crate::expression::escape::flat_col;
 use crate::sql::connection::datafusion_conn::make_datafusion_dialect;
 use std::hash::{Hash, Hasher};
+use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::spec::transform::stack::StackOffsetSpec;
 
 #[derive(Clone)]
 pub struct SqlDataFrame {
@@ -440,6 +443,212 @@ impl SqlDataFrame {
             dataframe.select(selections).await
         } else {
             Ok(dataframe)
+        }
+    }
+
+    pub async fn stack(
+        &self,
+        field: &str,
+        orderby: Vec<Expr>,
+        groupby: &[String],
+        start_field: &str,
+        stop_field: &str,
+        mode: StackOffsetSpec,
+    ) -> Result<Arc<Self>> {
+        // Save off input columns
+        let input_fields: Vec<_> = self
+            .schema()
+            .fields()
+            .iter()
+            .map(|f| f.name().clone())
+            .collect();
+
+        // Build partitioning column expressions
+        let partition_by: Vec<_> = groupby.iter().map(|group| flat_col(group)).collect();
+
+        let numeric_field = Expr::ScalarFunction {
+            fun: BuiltinScalarFunction::Coalesce,
+            args: vec![to_numeric(flat_col(field), &self.schema_df())?, lit(0)],
+        };
+
+        if let StackOffsetSpec::Zero = mode {
+            // Build window expression
+            let fun = WindowFunction::AggregateFunction(AggregateFunction::Sum);
+
+            // Build window function to compute stacked value
+            let window_expr = Expr::WindowFunction(expr::WindowFunction {
+                fun,
+                args: vec![numeric_field.clone()],
+                partition_by,
+                order_by: Vec::from(orderby),
+                window_frame: WindowFrame {
+                    units: WindowFrameUnits::Rows,
+                    start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
+                    end_bound: WindowFrameBound::CurrentRow,
+                },
+            })
+            .alias(stop_field);
+
+            let window_expr_str = window_expr.to_sql_select()?.sql(self.dialect())?;
+
+            // For offset zero, we need to evaluate positive and negative field values separately,
+            // then union the results. This is required to make sure stacks do not overlap. Negative
+            // values stack in the negative direction and positive values stack in the positive
+            // direction.
+            let dataframe = self
+                .chain_query_str(&format!(
+                    "(SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} >= 0) UNION ALL \
+                    (SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} < 0)",
+                    parent = self.parent_name(),
+                    window_expr_str = window_expr_str,
+                    numeric_field = numeric_field.to_sql()?.sql(self.dialect())?
+                ))
+                .await?;
+
+            // Build final selection
+            let mut final_selection: Vec<_> = input_fields
+                .iter()
+                .filter_map(|field| {
+                    if field == start_field || field == stop_field {
+                        None
+                    } else {
+                        Some(flat_col(field))
+                    }
+                })
+                .collect();
+
+            // Compute start column by adding numeric field to stop column
+            let start_col = flat_col(stop_field).sub(numeric_field).alias(start_field);
+            final_selection.push(start_col);
+            final_selection.push(flat_col(stop_field));
+
+            Ok(dataframe.select(final_selection.clone()).await?)
+        } else {
+            // Center or Normalized stack modes
+
+            // take absolute value of numeric field
+            let numeric_field = abs(numeric_field);
+
+            // Create __stack column with numeric field
+            let stack_col_name = "__stack";
+            let dataframe = self
+                .select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)])
+                .await?;
+
+            // Create aggregate for total of stack value
+            let total_agg = Expr::AggregateFunction(expr::AggregateFunction {
+                fun: AggregateFunction::Sum,
+                args: vec![flat_col(stack_col_name)],
+                distinct: false,
+                filter: None,
+            })
+            .alias("__total");
+            let total_agg_str = total_agg.to_sql_select()?.sql(dataframe.dialect())?;
+
+            // Add __total column with total or total per partition
+            let dataframe = if partition_by.is_empty() {
+                dataframe
+                    .chain_query_str(&format!(
+                        "SELECT * from {parent} CROSS JOIN (SELECT {total_agg_str} from {parent})",
+                        parent = dataframe.parent_name(),
+                        total_agg_str = total_agg_str,
+                    ))
+                    .await?
+            } else {
+                let partition_by_strs = partition_by
+                    .iter()
+                    .map(|p| Ok(p.to_sql()?.sql(self.dialect())?))
+                    .collect::<Result<Vec<_>>>()?;
+                let partition_by_csv = partition_by_strs.join(", ");
+
+                dataframe.chain_query_str(&format!(
+                    "SELECT * FROM {parent} INNER JOIN \
+                    (SELECT {partition_by_csv}, {total_agg_str} from {parent} GROUP BY {partition_by_csv}) as __inner \
+                    USING ({partition_by_csv})",
+                    parent = dataframe.parent_name(),
+                    partition_by_csv = partition_by_csv,
+                    total_agg_str = total_agg_str,
+                )).await?
+            };
+
+            // Build window function to compute cumulative sum of stack column
+            let fun = WindowFunction::AggregateFunction(AggregateFunction::Sum);
+            let window_expr = Expr::WindowFunction(expr::WindowFunction {
+                fun,
+                args: vec![flat_col(stack_col_name)],
+                partition_by,
+                order_by: Vec::from(orderby),
+                window_frame: WindowFrame {
+                    units: WindowFrameUnits::Rows,
+                    start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
+                    end_bound: WindowFrameBound::CurrentRow,
+                },
+            })
+            .alias(stop_field);
+
+            // Perform selection to add new field value
+            let dataframe = dataframe.select(vec![Expr::Wildcard, window_expr]).await?;
+
+            // Build final_selection
+            let mut final_selection: Vec<_> = input_fields
+                .iter()
+                .filter_map(|field| {
+                    if field == start_field || field == stop_field {
+                        None
+                    } else {
+                        Some(flat_col(field))
+                    }
+                })
+                .collect();
+
+            // Now compute stop_field column by adding numeric field to start_field
+            let dataframe = match mode {
+                StackOffsetSpec::Center => {
+                    let max_total = max(flat_col("__total")).alias("__max_total");
+                    let max_total_str = max_total.to_sql_select()?.sql(dataframe.dialect())?;
+
+                    let dataframe = dataframe
+                        .chain_query_str(&format!(
+                            "SELECT * from {parent} CROSS JOIN (SELECT {max_total_str} from {parent})",
+                            parent = dataframe.parent_name(),
+                            max_total_str = max_total_str,
+                        ))
+                        .await?;
+
+                    let first = flat_col("__max_total").sub(flat_col("__total")).div(lit(2));
+                    let first_col = flat_col(stop_field).add(first);
+                    let stop_col = first_col.clone().alias(stop_field);
+                    let start_col = first_col.sub(flat_col(stack_col_name)).alias(start_field);
+                    final_selection.push(start_col);
+                    final_selection.push(stop_col);
+
+                    dataframe
+                }
+                StackOffsetSpec::Normalize => {
+                    let total_zero = flat_col("__total").eq(lit(0.0));
+
+                    let start_col = when(total_zero.clone(), lit(0.0))
+                        .otherwise(
+                            flat_col(stop_field)
+                                .sub(flat_col(stack_col_name))
+                                .div(flat_col("__total")),
+                        )?
+                        .alias(start_field);
+
+                    final_selection.push(start_col);
+
+                    let stop_col = when(total_zero, lit(0.0))
+                        .otherwise(flat_col(stop_field).div(flat_col("__total")))?
+                        .alias(stop_field);
+
+                    final_selection.push(stop_col);
+
+                    dataframe
+                }
+                _ => return Err(VegaFusionError::internal("Unexpected stack mode")),
+            };
+
+            Ok(dataframe.select(final_selection.clone()).await?)
         }
     }
 
