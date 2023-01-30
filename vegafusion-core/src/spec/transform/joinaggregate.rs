@@ -1,4 +1,5 @@
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::expression::escape::unescape_field;
 use crate::spec::transform::aggregate::AggregateOpSpec;
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::spec::values::Field;
@@ -84,10 +85,10 @@ impl TransformSpecTrait for JoinAggregateTransformSpec {
                 .clone()
                 .unwrap_or_default()
                 .iter()
-                .map(|field| field.field())
+                .map(|field| unescape_field(&field.field()))
                 .collect();
             for field in self.fields.iter().flatten() {
-                usage_cols.push(field.field())
+                usage_cols.push(unescape_field(&field.field()))
             }
             let col_usage = ColumnUsage::from(usage_cols.as_slice());
             let usage = DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage);

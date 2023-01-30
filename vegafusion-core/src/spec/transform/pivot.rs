@@ -1,4 +1,5 @@
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::expression::escape::unescape_field;
 use crate::spec::transform::aggregate::AggregateOpSpec;
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::task_graph::graph::ScopedVariable;
@@ -39,9 +40,15 @@ impl TransformSpecTrait for PivotTransformSpec {
             let produced = ColumnUsage::Unknown;
 
             // Compute used columns (groupby, value, and pivot)
-            let mut usage_cols: Vec<_> = self.groupby.clone().unwrap_or_default();
-            usage_cols.push(self.field.clone());
-            usage_cols.push(self.value.clone());
+            let mut usage_cols: Vec<_> = self
+                .groupby
+                .clone()
+                .unwrap_or_default()
+                .iter()
+                .map(|f| unescape_field(f))
+                .collect();
+            usage_cols.push(unescape_field(&self.field.clone()));
+            usage_cols.push(unescape_field(&self.value.clone()));
             let col_usage = ColumnUsage::from(usage_cols.as_slice());
             let usage = DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage);
             TransformColumns::Overwrite { usage, produced }

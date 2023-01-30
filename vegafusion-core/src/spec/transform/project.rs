@@ -5,6 +5,7 @@ use std::collections::HashMap;
 
 use crate::error::Result;
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::expression::escape::unescape_field;
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task::InputVariable;
@@ -35,7 +36,8 @@ impl TransformSpecTrait for ProjectTransformSpec {
         _vl_selection_fields: &VlSelectionFields,
     ) -> TransformColumns {
         if let Some(datum_var) = datum_var {
-            let col_usage = ColumnUsage::from(self.fields.as_slice());
+            let unescaped_fields: Vec<_> = self.fields.iter().map(|f| unescape_field(f)).collect();
+            let col_usage = ColumnUsage::from(unescaped_fields.as_slice());
             let usage =
                 DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage.clone());
             TransformColumns::Overwrite {

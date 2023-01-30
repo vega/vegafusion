@@ -1,4 +1,5 @@
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::expression::escape::unescape_field;
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
@@ -110,8 +111,7 @@ impl TransformSpecTrait for TimeUnitTransformSpec {
             let produced = ColumnUsage::from(produced_cols.as_slice());
 
             // Compute used columns
-            let field = self.field.clone();
-            let col_usage = ColumnUsage::empty().with_column(&field);
+            let col_usage = ColumnUsage::empty().with_column(&unescape_field(&self.field));
             let usage = DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage);
 
             TransformColumns::PassThrough { usage, produced }

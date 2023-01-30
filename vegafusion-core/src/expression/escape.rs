@@ -1,20 +1,19 @@
 pub fn escape_field(col: &str) -> String {
-    // Escape single quote with backslash
-    let col = col.replace('\'', "\\'");
-
-    // Escape double quote with backslash
-    col.replace('\"', "\\\"")
+    // Escape single quote, double quote, period, and brackets with a backslash
+    col.replace('\'', "\\'")
+        .replace('\"', "\\\"")
+        .replace('.', "\\.")
+        .replace('[', "\\[")
+        .replace(']', "\\]")
 }
 
 pub fn unescape_field(col: &str) -> String {
-    // Unescape backslash single quote
-    let col = col.replace("\\'", "'");
-
-    // Unescape backslash double quote
-    let col = col.replace("\\\"", "\"");
-
-    //  Unescape backslash period
-    col.replace("\\.", ".")
+    // Unescape single quote, double quote, period, and brackets
+    col.replace("\\'", "'")
+        .replace("\\\"", "\"")
+        .replace("\\.", ".")
+        .replace("\\[", "[")
+        .replace("\\]", "]")
 }
 
 #[cfg(test)]
@@ -25,7 +24,7 @@ mod tests {
     fn test_escape() {
         let col = "'foo'_._\"bar\"";
         let escaped = escape_field(col);
-        assert_eq!(escaped, r#"\'foo\'_._\"bar\""#)
+        assert_eq!(escaped, r#"\'foo\'_\._\"bar\""#)
     }
 
     #[test]
