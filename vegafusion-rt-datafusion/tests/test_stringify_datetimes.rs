@@ -96,7 +96,7 @@ mod test_stringify_datetimes {
         let data = spec.data[0].values.as_ref().unwrap();
         let values = data.as_array().expect("Expected array");
         let first = values[0].as_object().expect("Expected object");
-        println!("{:?}", first);
+        println!("{first:?}");
 
         // Check hours_time
         let hours_time = first

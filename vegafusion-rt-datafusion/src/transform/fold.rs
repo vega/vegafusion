@@ -42,7 +42,7 @@ impl TransformTrait for Fold {
                 .cloned()
                 .unwrap_or_else(|| "value".to_string()),
         );
-        let field_order_col = format!("{}_field", ORDER_COL);
+        let field_order_col = format!("{ORDER_COL}_field");
 
         // Build selection that includes all input fields that aren't shadowed by key/value cols
         let input_selection = dataframe
@@ -105,12 +105,8 @@ impl TransformTrait for Fold {
             .collect::<Result<Vec<_>>>()?;
         let selection_csv = selection_strs.join(", ");
 
-        let sql = format!(
-            "SELECT {selection_csv} FROM ({union_subquery}) as {union_subquery_name}",
-            selection_csv = selection_csv,
-            union_subquery = union_subquery,
-            union_subquery_name = union_subquery_name
-        );
+        let sql =
+            format!("SELECT {selection_csv} FROM ({union_subquery}) as {union_subquery_name}");
         let dataframe = dataframe.chain_query_str(&sql).await?;
 
         // Add new ordering column, ordering by:

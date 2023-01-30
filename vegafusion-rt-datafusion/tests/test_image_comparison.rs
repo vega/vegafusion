@@ -135,7 +135,7 @@ mod test_custom_specs {
         case("custom/special_chars_bar", 0.001, true)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64, extract_inline_values: bool) {
-        println!("spec_name: {}", spec_name);
+        println!("spec_name: {spec_name}");
         TOKIO_RUNTIME.block_on(check_spec_sequence_from_files(
             spec_name,
             tolerance,
@@ -328,7 +328,7 @@ mod test_vega_specs {
         // case("vega/window", 0.001),
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
-        println!("spec_name: {}", spec_name);
+        println!("spec_name: {spec_name}");
         TOKIO_RUNTIME.block_on(check_spec_sequence_from_files(spec_name, tolerance, false));
         TOKIO_RUNTIME.block_on(check_pre_transform_spec_from_files(spec_name, tolerance));
     }
@@ -901,7 +901,7 @@ mod test_vegalite_specs {
         case("vegalite/window_top_k", 0.001),
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64) {
-        println!("spec_name: {}", spec_name);
+        println!("spec_name: {spec_name}");
         TOKIO_RUNTIME.block_on(check_spec_sequence_from_files(spec_name, tolerance, false));
         TOKIO_RUNTIME.block_on(check_pre_transform_spec_from_files(spec_name, tolerance));
     }
@@ -986,7 +986,7 @@ mod test_image_comparison_timeunit {
             .unwrap()
             .trim_matches('"')
             .to_string();
-        let output_name = format!("{}_timeunit_{}_{}", spec_name, units_str, timezone_str);
+        let output_name = format!("{spec_name}_timeunit_{units_str}_{timezone_str}");
 
         TOKIO_RUNTIME.block_on(check_spec_sequence(
             full_spec,
@@ -1058,7 +1058,7 @@ mod test_image_comparison_agg {
         }
 
         // Build name for saved images
-        let output_name = format!("{}_agg_{:?}", spec_name, agg);
+        let output_name = format!("{spec_name}_agg_{agg:?}");
 
         TOKIO_RUNTIME.block_on(check_spec_sequence(
             full_spec,
@@ -1101,7 +1101,7 @@ mod test_image_comparison_window {
 
         #[values("custom/cumulative_running_window")] spec_name: &str,
     ) {
-        println!("op: {}", op_name);
+        println!("op: {op_name}");
         // Load spec
         let mut full_spec = load_spec(spec_name);
 
@@ -1122,14 +1122,14 @@ mod test_image_comparison_window {
 
         if let TransformSpec::Window(window_tx) = window_tx {
             let op: WindowTransformOpSpec =
-                serde_json::from_str(&format!("\"{}\"", op_name)).unwrap();
+                serde_json::from_str(&format!("\"{op_name}\"")).unwrap();
             window_tx.ops = vec![op];
         } else {
             panic!("Unexpected transform")
         }
 
         // Build name for saved images
-        let output_name = format!("{}_{}", spec_name, op_name);
+        let output_name = format!("{spec_name}_{op_name}");
 
         TOKIO_RUNTIME.block_on(check_spec_sequence(
             full_spec,
@@ -1227,7 +1227,7 @@ mod test_pre_transform_inline {
 
         let (difference, diff_img) = full_image.compare(&pre_transformed_image).unwrap();
         if difference > 0.001 {
-            println!("difference: {}", difference);
+            println!("difference: {difference}");
             if let Some(diff_img) = diff_img {
                 let diff_path = format!(
                     "{}/tests/output/{}_pretransform_diff.png",
@@ -1235,10 +1235,7 @@ mod test_pre_transform_inline {
                     png_name
                 );
                 fs::write(&diff_path, diff_img).unwrap();
-                panic!(
-                    "Found difference in exported images.\nDiff written to {}",
-                    diff_path
-                )
+                panic!("Found difference in exported images.\nDiff written to {diff_path}")
             }
         }
     }
@@ -1379,7 +1376,7 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
 
     let (difference, diff_img) = full_image.compare(&pre_transformed_image).unwrap();
     if difference > tolerance {
-        println!("difference: {}", difference);
+        println!("difference: {difference}");
         if let Some(diff_img) = diff_img {
             let diff_path = format!(
                 "{}/tests/output/{}_pretransform_diff.png",
@@ -1387,10 +1384,7 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
                 png_name
             );
             fs::write(&diff_path, diff_img).unwrap();
-            panic!(
-                "Found difference in exported images.\nDiff written to {}",
-                diff_path
-            )
+            panic!("Found difference in exported images.\nDiff written to {diff_path}")
         }
     }
 }
@@ -1598,14 +1592,11 @@ async fn check_spec_sequence(
 
         let (difference, diff_img) = full_img.compare(&server_img).unwrap();
         if difference > tolerance {
-            println!("difference: {}", difference);
+            println!("difference: {difference}");
             if let Some(diff_img) = diff_img {
                 let diff_path = format!("{}/tests/output/{}_diff{}.png", crate_dir(), png_name, i);
                 fs::write(&diff_path, diff_img).unwrap();
-                panic!(
-                    "Found difference in exported images.\nDiff written to {}",
-                    diff_path
-                )
+                panic!("Found difference in exported images.\nDiff written to {diff_path}")
             }
         }
     }

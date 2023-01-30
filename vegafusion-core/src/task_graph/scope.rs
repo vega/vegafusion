@@ -30,7 +30,7 @@ impl TaskScope {
             child = child
                 .children
                 .get(*index as usize)
-                .with_context(|| format!("No group with scope {:?} found", scope))?;
+                .with_context(|| format!("No group with scope {scope:?} found"))?;
         }
         Ok(child)
     }
@@ -41,7 +41,7 @@ impl TaskScope {
             child = child
                 .children
                 .get_mut(*index as usize)
-                .with_context(|| format!("No group with scope {:?} found", scope))?;
+                .with_context(|| format!("No group with scope {scope:?} found"))?;
         }
         Ok(child)
     }
@@ -77,7 +77,7 @@ impl TaskScope {
         child
             .output_var_defs
             .remove(&Variable::new_signal(signal))
-            .with_context(|| format!("No data signal named: {}", signal))
+            .with_context(|| format!("No data signal named: {signal}"))
     }
 
     pub fn resolve_scope(&self, variable: &Variable, usage_scope: &[u32]) -> Result<Resolved> {
@@ -123,8 +123,7 @@ impl TaskScope {
 
         // Didn't find it
         Err(VegaFusionError::internal(format!(
-            "Failed to resolve variable {:?} used in scope {:?}",
-            variable, usage_scope
+            "Failed to resolve variable {variable:?} used in scope {usage_scope:?}"
         )))
     }
 }

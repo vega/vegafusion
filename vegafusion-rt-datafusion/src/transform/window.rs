@@ -102,9 +102,7 @@ impl TransformTrait for Window {
 
                         let numeric_field = || {
                             to_numeric(unescaped_col(field), &dataframe.schema_df()).unwrap_or_else(
-                                |_| {
-                                    panic!("Failed to convert field {} to numeric data type", field)
-                                },
+                                |_| panic!("Failed to convert field {field} to numeric data type"),
                             )
                         };
 
@@ -124,7 +122,7 @@ impl TransformTrait for Window {
                             // ArrayAgg only available on master right now
                             // Values => (aggregates::AggregateFunction::ArrayAgg, unescaped_col(field)),
                             _ => {
-                                panic!("Unsupported window aggregate: {:?}", op)
+                                panic!("Unsupported window aggregate: {op:?}")
                             }
                         };
                         (WindowFunction::AggregateFunction(agg_fn), vec![arg])
@@ -149,7 +147,7 @@ impl TransformTrait for Window {
                                 (BuiltInWindowFunction::LastValue, vec![unescaped_col(field)])
                             }
                             _ => {
-                                panic!("Unsupported window function: {:?}", op)
+                                panic!("Unsupported window function: {op:?}")
                             }
                         };
                         (WindowFunction::BuiltInWindowFunction(window_fn), args)

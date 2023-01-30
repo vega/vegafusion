@@ -28,8 +28,7 @@ pub fn get_supported_data_variables(
         Ok(v) => v,
         Err(err) => {
             return Err(VegaFusionError::internal(format!(
-                "Failed to sort datasets topologically: {:?}",
-                err
+                "Failed to sort datasets topologically: {err:?}"
             )))
         }
     };
@@ -287,7 +286,7 @@ impl<'a> ChartVisitor for AddDependencyEdgesVisitor<'a> {
         let node_index = self
             .node_indexes
             .get(&scoped_var)
-            .with_context(|| format!("Missing data node: {:?}", scoped_var))?;
+            .with_context(|| format!("Missing data node: {scoped_var:?}"))?;
 
         let mut scoped_source_vars = Vec::new();
 
@@ -325,7 +324,7 @@ impl<'a> ChartVisitor for AddDependencyEdgesVisitor<'a> {
             let source_node_index = self
                 .node_indexes
                 .get(&scoped_source_var)
-                .with_context(|| format!("Missing data node: {:?}", scoped_source_var))?;
+                .with_context(|| format!("Missing data node: {scoped_source_var:?}"))?;
 
             // Add directed edge
             self.dependency_graph
@@ -343,7 +342,7 @@ impl<'a> ChartVisitor for AddDependencyEdgesVisitor<'a> {
         let node_index = self
             .node_indexes
             .get(&scoped_var)
-            .with_context(|| format!("Missing signal node: {:?}", scoped_var))?;
+            .with_context(|| format!("Missing signal node: {scoped_var:?}"))?;
 
         let mut input_vars: Vec<InputVariable> = Vec::new();
 
@@ -368,7 +367,7 @@ impl<'a> ChartVisitor for AddDependencyEdgesVisitor<'a> {
             let source_node_index = self
                 .node_indexes
                 .get(&scoped_source_var)
-                .with_context(|| format!("Missing data node: {:?}", scoped_source_var))?;
+                .with_context(|| format!("Missing data node: {scoped_source_var:?}"))?;
 
             // Add directed edge
             self.dependency_graph

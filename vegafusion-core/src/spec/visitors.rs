@@ -169,7 +169,7 @@ impl<'a> ChartVisitor for MakeTasksVisitor<'a> {
                 if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
                     let inline_name = inline_name.trim().to_string();
                     if let Some(fingerprint) = self.dataset_fingerprints.get(&inline_name) {
-                        proto_url = Url::String(format!("{}#{}", url, fingerprint));
+                        proto_url = Url::String(format!("{url}#{fingerprint}"));
                     }
                 }
             }
@@ -236,8 +236,7 @@ impl<'a> ChartVisitor for MakeTasksVisitor<'a> {
             Task::new_signal(signal_var, scope, expression, &self.tz_config)
         } else {
             return Err(VegaFusionError::internal(format!(
-                "Signal must have an initial value or an update expression: {:#?}",
-                signal
+                "Signal must have an initial value or an update expression: {signal:#?}"
             )));
         };
 

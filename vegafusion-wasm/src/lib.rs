@@ -223,7 +223,7 @@ impl MsgReceiver {
                         )
                         .unwrap();
                         if verbose {
-                            log(&format!("VegaFusion(wasm): Sending signal {}", name));
+                            log(&format!("VegaFusion(wasm): Sending signal {name}"));
                             log(&serde_json::to_string_pretty(&val).unwrap());
                         }
 
@@ -267,7 +267,7 @@ impl MsgReceiver {
                         )
                         .unwrap();
                         if verbose {
-                            log(&format!("VegaFusion(wasm): Sending data {}", name));
+                            log(&format!("VegaFusion(wasm): Sending data {name}"));
                             log(&serde_json::to_string_pretty(&val).unwrap());
                         }
 

@@ -71,7 +71,7 @@ impl NodeJsRuntime {
         // Set abort_on_empty to true because some versions of the node repl display a welcome
         // message, and some do not.
         let welcome_message = this.read_output();
-        println!("Initialized node: {}\n", welcome_message);
+        println!("Initialized node: {welcome_message}\n");
 
         this.execute_statement(
             "util = require('util'); util.inspect.replDefaults.maxStringLength = Infinity;",
@@ -81,7 +81,7 @@ impl NodeJsRuntime {
         let str_result = this
             .execute_statement("VegaUtils = require('./vegajsRuntime.js')")
             .unwrap();
-        println!("VegaUtils require output: {}", str_result);
+        println!("VegaUtils require output: {str_result}");
 
         Ok(this)
     }
@@ -216,8 +216,7 @@ impl VegaJsRuntime {
         let json_str = Self::clean_json_string(json_str);
         match serde_json::from_str(&json_str) {
             Err(_err) => Err(VegaFusionError::internal(format!(
-                "Failed to parse result as json:\n{}",
-                json_str
+                "Failed to parse result as json:\n{json_str}"
             ))),
             Ok(result) => Ok(result),
         }
@@ -380,10 +379,10 @@ impl VegaJsRuntime {
             .expect("export single failed");
 
         let result_str = fs::read_to_string(result_tmppath)
-            .with_context(|| format!("Failed to read {}", result_tmppath))?;
+            .with_context(|| format!("Failed to read {result_tmppath}"))?;
 
         let result_img: ExportImage = serde_json::from_str(&result_str)
-            .with_context(|| format!("Failed to parse as JSON: {}", result_str))?;
+            .with_context(|| format!("Failed to parse as JSON: {result_str}"))?;
 
         Ok(result_img)
     }
@@ -422,11 +421,11 @@ impl VegaJsRuntime {
         )).unwrap();
 
         if _res_out != "undefined" {
-            println!("nodejs command output: {}", _res_out);
+            println!("nodejs command output: {_res_out}");
         }
 
         let result_str = fs::read_to_string(result_tmppath)
-            .with_context(|| format!("Failed to read {}", result_tmppath))?;
+            .with_context(|| format!("Failed to read {result_tmppath}"))?;
 
         let result_img: Vec<(ExportImage, Vec<WatchValue>)> =
             serde_json::from_str(&result_str).unwrap();
@@ -458,7 +457,7 @@ impl ExportImage {
                 path.push_str(".svg");
                 fs::write(&path, svg)
             }
-            .with_context(|| format!("Failed to write svg image to {}", path))?,
+            .with_context(|| format!("Failed to write svg image to {path}"))?,
             ExportImage::Png(png_b64) => {
                 let png_bytes = base64::decode(png_b64)
                     .external("Failed to decdode base64 encoded png image")?;
@@ -468,7 +467,7 @@ impl ExportImage {
                     path.push_str(".png");
                     fs::write(&path, png_bytes)
                 }
-                .with_context(|| format!("Failed to write png image to {}", path))?
+                .with_context(|| format!("Failed to write png image to {path}"))?
             }
         };
 

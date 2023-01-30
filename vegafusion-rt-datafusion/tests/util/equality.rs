@@ -71,8 +71,7 @@ pub fn assert_tables_equal(
         .collect();
     assert_eq!(
         lhs_columns, rhs_columns,
-        "Columns mismatch\nlhs: {:?}\n, rhs: {:?}",
-        lhs_columns, rhs_columns,
+        "Columns mismatch\nlhs: {lhs_columns:?}\n, rhs: {rhs_columns:?}",
     );
 
     // Check number of rows
@@ -149,7 +148,7 @@ fn numeric_to_f64(s: &ScalarValue) -> f64 {
         ScalarValue::UInt16(Some(v)) => *v as f64,
         ScalarValue::UInt32(Some(v)) => *v as f64,
         ScalarValue::UInt64(Some(v)) => *v as f64,
-        _ => panic!("Non-numeric value: {:?}", s),
+        _ => panic!("Non-numeric value: {s:?}"),
     }
 }
 
@@ -195,8 +194,7 @@ fn assert_scalars_almost_equals(
 
             assert_eq!(
                 lhs_names, rhs_names,
-                "Struct fields mismatch\nlhs: {:?}\n, rhs: {:?}",
-                lhs_names, rhs_names,
+                "Struct fields mismatch\nlhs: {lhs_names:?}\n, rhs: {rhs_names:?}",
             );
 
             for (key, lhs_val) in lhs_map.iter() {
@@ -223,17 +221,12 @@ fn assert_scalars_almost_equals(
                     let rhs = numeric_to_f64(&rhs);
                     assert!(
                         (lhs - rhs).abs() <= tol,
-                        "{} and {} are not equal to within tolerance {}, row {}, coloumn {}",
-                        lhs,
-                        rhs,
-                        tol,
-                        index,
-                        name
+                        "{lhs} and {rhs} are not equal to within tolerance {tol}, row {index}, coloumn {name}"
                     )
                 }
             } else {
                 // This will fail
-                assert_eq!(lhs, rhs, "Row {}", index)
+                assert_eq!(lhs, rhs, "Row {index}")
             }
         }
     }

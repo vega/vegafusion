@@ -38,7 +38,7 @@ pub fn compile_member(
         // e.g. foo[val]
         let compiled_property = compile(node.property(), config, Some(schema))?;
         let evaluated_property = compiled_property.eval_to_scalar().with_context(
-            || format!("VegaFusion does not support the use of datum expressions in object member access: {}", node)
+            || format!("VegaFusion does not support the use of datum expressions in object member access: {node}")
         )?;
         let prop_str = evaluated_property.to_string();
         if is_numeric_datatype(&evaluated_property.get_datatype()) {
@@ -108,8 +108,7 @@ pub fn compile_member(
                     }
                 } else {
                     return Err(VegaFusionError::compilation(format!(
-                        "Non-numeric element index: {}",
-                        property_string
+                        "Non-numeric element index: {property_string}"
                     )));
                 }
             } else if matches!(dtype, DataType::List(_) | DataType::FixedSizeList(_, _)) {
@@ -120,8 +119,7 @@ pub fn compile_member(
                     }
                 } else {
                     return Err(VegaFusionError::compilation(format!(
-                        "Non-numeric element index: {}",
-                        property_string
+                        "Non-numeric element index: {property_string}"
                     )));
                 }
             } else {
@@ -147,8 +145,7 @@ pub fn make_get_object_member_udf(
             Some((field_index, field)) => (field_index, field.data_type().clone()),
             None => {
                 return Err(VegaFusionError::compilation(format!(
-                    "No object property named {}",
-                    property_name
+                    "No object property named {property_name}"
                 )))
             }
         }
@@ -171,7 +168,7 @@ pub fn make_get_object_member_udf(
         Arc::new(move |_dtype: &[DataType]| Ok(Arc::new(field_type.clone())));
 
     Ok(ScalarUDF::new(
-        &format!("get[{}]", property_name),
+        &format!("get[{property_name}]"),
         &Signature::exact(vec![object_type.clone()], Volatility::Immutable),
         &return_type,
         &get,
@@ -245,15 +242,14 @@ pub fn make_get_element_udf(index: i32) -> ScalarUDF {
             DataType::List(field) => field.data_type().clone(),
             dtype => {
                 return Err(DataFusionError::Internal(format!(
-                    "Unsupported datatype for get index {:?}",
-                    dtype
+                    "Unsupported datatype for get index {dtype:?}"
                 )))
             }
         };
         Ok(Arc::new(new_dtype))
     });
     ScalarUDF::new(
-        &format!("get[{}]", index),
+        &format!("get[{index}]"),
         &Signature::any(1, Volatility::Immutable),
         &return_type,
         &get_fn,

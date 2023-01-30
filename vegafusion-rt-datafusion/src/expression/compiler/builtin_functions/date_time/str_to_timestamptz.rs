@@ -348,7 +348,7 @@ pub fn make_str_to_timestamptz() -> ScalarUDF {
             ));
         };
         let tz = chrono_tz::Tz::from_str(&tz_str).map_err(|_err| {
-            DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
+            DataFusionError::Internal(format!("Failed to parse {tz_str} as a timezone"))
         })?;
 
         let str_array = str_array.as_any().downcast_ref::<StringArray>().unwrap();
@@ -382,31 +382,31 @@ fn test_parse_datetime() {
     let utc = Some(chrono_tz::Tz::UTC);
     let res = parse_datetime("2020-05-16T09:30:00+05:00", &utc).unwrap();
     let utc_res = res.with_timezone(&Utc);
-    println!("res: {}", res);
-    println!("utc_res: {}", utc_res);
+    println!("res: {res}");
+    println!("utc_res: {utc_res}");
 
     let res = parse_datetime("2020-05-16T09:30:00", &utc).unwrap();
     let utc_res = res.with_timezone(&Utc);
-    println!("res: {}", res);
-    println!("utc_res: {}", utc_res);
+    println!("res: {res}");
+    println!("utc_res: {utc_res}");
 
     let res = parse_datetime("2020-05-16T09:30:00", &local_tz).unwrap();
     let utc_res = res.with_timezone(&Utc);
-    println!("res: {}", res);
-    println!("utc_res: {}", utc_res);
+    println!("res: {res}");
+    println!("utc_res: {utc_res}");
 
     let res = parse_datetime("2001/02/05 06:20", &local_tz).unwrap();
     let utc_res = res.with_timezone(&Utc);
-    println!("res: {}", res);
-    println!("utc_res: {}", utc_res);
+    println!("res: {res}");
+    println!("utc_res: {utc_res}");
 
     let res = parse_datetime("2001/02/05 06:20", &utc).unwrap();
     let utc_res = res.with_timezone(&Utc);
-    println!("res: {}", res);
-    println!("utc_res: {}", utc_res);
+    println!("res: {res}");
+    println!("utc_res: {utc_res}");
 
     let res = parse_datetime("2000-01-01T08:00:00.000Z", &utc).unwrap();
     let utc_res = res.with_timezone(&Utc);
-    println!("res: {}", res);
-    println!("utc_res: {}", utc_res);
+    println!("res: {res}");
+    println!("utc_res: {utc_res}");
 }

@@ -35,7 +35,7 @@ impl SqlDataFrame {
         let schema = tables
             .get(table)
             .cloned()
-            .with_context(|| format!("Connection has no table named {}", table))?;
+            .with_context(|| format!("Connection has no table named {table}"))?;
         // Should quote column names
         let columns: Vec<_> = schema
             .fields()
@@ -44,10 +44,10 @@ impl SqlDataFrame {
             .collect();
         let select_items = columns.join(", ");
 
-        let query = Parser::parse_sql_query(&format!("select {} from {}", select_items, table))?;
+        let query = Parser::parse_sql_query(&format!("select {select_items} from {table}"))?;
 
         Ok(Self {
-            prefix: format!("{}_", table),
+            prefix: format!("{table}_"),
             ctes: vec![query],
             schema: Arc::new(schema.clone()),
             session_context: Arc::new(conn.session_context().await?),
@@ -213,7 +213,7 @@ impl SqlDataFrame {
 
         self.chain_query(query)
             .await
-            .with_context(|| format!("unsupported filter expression: {}", predicate))
+            .with_context(|| format!("unsupported filter expression: {predicate}"))
     }
 
     pub async fn limit(&self, limit: i32) -> Result<Arc<Self>> {
@@ -238,7 +238,7 @@ impl SqlDataFrame {
 }
 
 fn cte_name_for_index(prefix: &str, index: usize) -> String {
-    format!("{}{}", prefix, index)
+    format!("{prefix}{index}")
 }
 
 fn parent_cte_name_for_index(prefix: &str, index: usize) -> String {

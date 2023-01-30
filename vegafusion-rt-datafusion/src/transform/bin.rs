@@ -164,8 +164,7 @@ pub fn calculate_bin_params(
     let [min_, max_] = extent;
     if min_ > max_ {
         return Err(VegaFusionError::specification(format!(
-            "extent[1] must be greater than extent[0]: Received {:?}",
-            extent
+            "extent[1] must be greater than extent[0]: Received {extent:?}"
         )));
     }
 

@@ -29,8 +29,7 @@ impl SqLiteConnection {
         // pool
         let pool = SqlitePool::connect(uri).await.map_err(|err| {
             VegaFusionError::internal(format!(
-                "Failed to connect to sqlite database at {}: {:?}",
-                uri, err
+                "Failed to connect to sqlite database at {uri}: {err:?}"
             ))
         })?;
 
@@ -50,13 +49,13 @@ impl SqlConnection for SqLiteConnection {
     }
 
     async fn fetch_query(&self, query: &str, schema: &Schema) -> Result<VegaFusionTable> {
-        println!("sqlite: {}", query);
+        println!("sqlite: {query}");
 
         // Should fetch batches of partition size instead of fetching all
         let recs = sqlx::query(query)
             .fetch_all(self.pool.as_ref())
             .await
-            .unwrap_or_else(|err| panic!("Failed to fetch result for query: {}\n{:?}", query, err));
+            .unwrap_or_else(|err| panic!("Failed to fetch result for query: {query}\n{err:?}"));
 
         // iterate over columns according to schema
         // Loop over columns
@@ -103,7 +102,7 @@ impl SqlConnection for SqLiteConnection {
                 }
                 DataType::Null => Arc::new(NullArray::new(recs.len())) as ArrayRef,
                 dtype => {
-                    panic!("Unsupported schema type {:?}", dtype)
+                    panic!("Unsupported schema type {dtype:?}")
                 }
             };
             columns.push(array)
@@ -176,8 +175,7 @@ fn sqlite_to_arrow_dtype(sql_type: &str) -> Result<DataType> {
         "REAL" => Ok(DataType::Float64),
         "TEXT" => Ok(DataType::Utf8),
         _ => Err(VegaFusionError::internal(format!(
-            "Unsupported sql type: {}",
-            sql_type
+            "Unsupported sql type: {sql_type}"
         ))),
     }
 }

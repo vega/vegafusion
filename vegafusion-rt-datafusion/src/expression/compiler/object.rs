@@ -60,7 +60,7 @@ pub fn make_object_constructor_udf(keys: &[String], value_types: &[DataType]) ->
     let name_csv: Vec<_> = keys
         .iter()
         .zip(value_types)
-        .map(|(k, dtype)| format!("{}: {}", k, dtype))
+        .map(|(k, dtype)| format!("{k}: {dtype}"))
         .collect();
 
     ScalarUDF::new(

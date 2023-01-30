@@ -40,8 +40,7 @@ impl TransformPipelineUtils for TransformPipeline {
 
         if result_sql_df.schema().column_with_name(ORDER_COL).is_none() {
             return Err(VegaFusionError::internal(format!(
-                "DataFrame input to eval_sql does not have the expected {} ordering column",
-                ORDER_COL
+                "DataFrame input to eval_sql does not have the expected {ORDER_COL} ordering column"
             )));
         }
 
@@ -74,7 +73,7 @@ impl TransformPipelineUtils for TransformPipeline {
 
             if result_sql_df.schema().column_with_name(ORDER_COL).is_none() {
                 return Err(VegaFusionError::internal(
-                    format!("DataFrame output of transform does not have the expected {} ordering column: {:?}", ORDER_COL, tx)
+                    format!("DataFrame output of transform does not have the expected {ORDER_COL} ordering column: {tx:?}")
                 ));
             }
 

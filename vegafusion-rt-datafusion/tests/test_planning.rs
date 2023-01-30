@@ -41,16 +41,16 @@ async fn test_extract_server_data() {
         .collect();
 
     let client_to_server: Vec<_> = client_updates.intersection(&server_inputs).collect();
-    println!("client_to_server: {:?}", client_to_server);
+    println!("client_to_server: {client_to_server:?}");
 
     let server_to_client: Vec<_> = server_updates.intersection(&client_inputs).collect();
-    println!("server_to_client: {:?}", server_to_client);
+    println!("server_to_client: {server_to_client:?}");
 
     let server_stubs: Vec<_> = server_inputs.difference(&server_defs).collect();
-    println!("server_stubs: {:?}", server_stubs);
+    println!("server_stubs: {server_stubs:?}");
 
     let client_stubs: Vec<_> = client_inputs.difference(&client_defs).collect();
-    println!("client_stubs: {:?}", client_stubs);
+    println!("client_stubs: {client_stubs:?}");
 
     let tasks = server_spec
         .to_tasks(&tz_config, &Default::default())
@@ -101,7 +101,7 @@ async fn test_extract_stitch_data() {
         extract_server_data(&mut spec, &mut task_scope, &Default::default()).unwrap();
     let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
 
-    println!("{:#?}", comm_plan);
+    println!("{comm_plan:#?}");
 
     println!(
         "client spec:\n{}",
@@ -120,7 +120,7 @@ async fn try_extract_split_server_data() {
         extract_server_data(&mut spec, &mut task_scope, &Default::default()).unwrap();
     let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
 
-    println!("{:#?}", comm_plan);
+    println!("{comm_plan:#?}");
 
     println!(
         "server spec:\n{}\n\n",

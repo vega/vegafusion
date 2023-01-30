@@ -53,8 +53,7 @@ impl TryFrom<&TransformSpec> for TransformKind {
             TransformSpec::Sequence(tx_spec) => Self::Sequence(Sequence::try_new(tx_spec)?),
             _ => {
                 return Err(VegaFusionError::parse(format!(
-                    "Unsupported transform: {:?}",
-                    value
+                    "Unsupported transform: {value:?}"
                 )))
             }
         })

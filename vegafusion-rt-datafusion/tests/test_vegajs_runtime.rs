@@ -40,7 +40,7 @@ fn test_vegajs_parse() {
         .unwrap();
     let expected = expected_estree.to_proto();
 
-    println!("value: {}", parsed);
+    println!("value: {parsed}");
     assert_eq!(parsed, expected);
 }
 
@@ -50,7 +50,7 @@ fn test_vegajs_evaluate_scalar() {
     let result = vegajs_runtime
         .eval_scalar_expression("20 + 300", &Default::default())
         .unwrap();
-    println!("result: {}", result);
+    println!("result: {result}");
     assert_eq!(result, ScalarValue::from(320.0));
 }
 
@@ -69,7 +69,7 @@ fn test_vegajs_evaluate_scalar_scope() {
     let result = vegajs_runtime
         .eval_scalar_expression("20 + a", &config)
         .unwrap();
-    println!("result: {}", result);
+    println!("result: {result}");
     assert_eq!(result, ScalarValue::from(143.0));
 }
 
@@ -77,7 +77,7 @@ fn test_vegajs_evaluate_scalar_scope() {
 fn try_local_timezone() {
     let vegajs_runtime = vegajs_runtime();
     let tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
-    println!("tz: {}", tz)
+    println!("tz: {tz}")
 }
 
 #[test]
@@ -120,7 +120,7 @@ fn test_evaluate_filter_transform() {
         .unwrap();
 
     println!("{}\n", result_data.pretty_format(None).unwrap());
-    println!("{:#?}\n", result_signals);
+    println!("{result_signals:#?}\n");
 
     // Check extent signal
     assert_eq!(
@@ -153,10 +153,7 @@ fn test_export_single_image() {
         .display()
         .to_string();
 
-    let spec_path = format!(
-        "{}/tests/specs/custom/lets_make_a_bar_chart.json",
-        crate_dir
-    );
+    let spec_path = format!("{crate_dir}/tests/specs/custom/lets_make_a_bar_chart.json");
     let spec_str = fs::read_to_string(spec_path).expect("Failed to read spec");
     let chart_spec: ChartSpec =
         serde_json::from_str(&spec_str).expect("Failed to parse JSON as chart");
@@ -167,7 +164,7 @@ fn test_export_single_image() {
         .expect("Failed to export single spec");
 
     res.save(
-        &format!("{}/tests/output/lets_make_a_bar_chart.png", crate_dir),
+        &format!("{crate_dir}/tests/output/lets_make_a_bar_chart.png"),
         false,
     )
     .expect("Failed to save image");
@@ -178,15 +175,12 @@ fn try_export_sequence_helper_crossfilter() {
     let crate_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .display()
         .to_string();
-    let spec_path = format!(
-        "{}/tests/specs/custom/flights_crossfilter_a.vg.json",
-        crate_dir
-    );
+    let spec_path = format!("{crate_dir}/tests/specs/custom/flights_crossfilter_a.vg.json");
 
     let spec_str = fs::read_to_string(spec_path).unwrap();
     let chart_spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
-    println!("{:?}", chart_spec);
+    println!("{chart_spec:?}");
 
     let init = Vec::new();
     let updates: Vec<ExportUpdateBatch> = vec![
@@ -241,7 +235,7 @@ fn try_export_sequence_helper_crossfilter() {
         println!("watch: {}", serde_json::to_string(&batch).unwrap());
         match export_image {
             ExportImage::Svg(svg_str) => {
-                let spec_path = format!("{}/tests/output/seq_res{}.svg", crate_dir, i);
+                let spec_path = format!("{crate_dir}/tests/output/seq_res{i}.svg");
                 fs::write(spec_path, svg_str).expect("Failed to write temp file");
             }
             ExportImage::Png(_) => {}

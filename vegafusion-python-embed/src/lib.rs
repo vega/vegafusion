@@ -257,16 +257,14 @@ fn parse_json_spec(chart_spec: PyObject) -> PyResult<ChartSpec> {
             match serde_json::from_str::<ChartSpec>(chart_spec) {
                 Ok(chart_spec) => Ok(chart_spec),
                 Err(err) => Err(PyValueError::new_err(format!(
-                    "Failed to parse chart_spec string as Vega: {}",
-                    err
+                    "Failed to parse chart_spec string as Vega: {err}"
                 ))),
             }
         } else if let Ok(chart_spec) = chart_spec.cast_as::<PyDict>(py) {
             match depythonize(chart_spec) {
                 Ok(chart_spec) => Ok(chart_spec),
                 Err(err) => Err(PyValueError::new_err(format!(
-                    "Failed to parse chart_spec dict as Vega: {}",
-                    err
+                    "Failed to parse chart_spec dict as Vega: {err}"
                 ))),
             }
         } else {

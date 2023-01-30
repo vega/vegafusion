@@ -122,8 +122,7 @@ impl TaskCall for DataUrlTask {
                 return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await;
             } else {
                 return Err(VegaFusionError::internal(format!(
-                    "No inline dataset named {}",
-                    inline_name
+                    "No inline dataset named {inline_name}"
                 )));
             }
         } else if url.ends_with(".csv") || url.ends_with(".tsv") {
@@ -134,8 +133,7 @@ impl TaskCall for DataUrlTask {
             read_arrow(&url).await?
         } else {
             return Err(VegaFusionError::internal(format!(
-                "Invalid url file extension {}",
-                url
+                "Invalid url file extension {url}"
             )));
         };
 
@@ -263,7 +261,7 @@ fn check_builtin_dataset(url: String) -> String {
     if let Some(dataset) = url.strip_prefix("data/") {
         let path = std::path::Path::new(&url);
         if !path.exists() && BUILT_IN_DATASETS.contains(dataset) {
-            format!("{}@{}/data/{}", DATASET_CDN_BASE, DATASET_TAG, dataset)
+            format!("{DATASET_CDN_BASE}@{DATASET_TAG}/data/{dataset}")
         } else {
             url
         }
@@ -521,7 +519,7 @@ async fn read_csv(url: String, parse: &Option<Parse>) -> Result<DataFrame> {
             .get(url.clone())
             .send()
             .await
-            .external(&format!("Failed to get URL data from {}", url))?
+            .external(&format!("Failed to get URL data from {url}"))?
             .text()
             .await
             .external("Failed to convert URL data to text")?;
@@ -533,7 +531,7 @@ async fn read_csv(url: String, parse: &Option<Parse>) -> Result<DataFrame> {
 
         {
             let mut file = File::create(filepath.clone()).unwrap();
-            writeln!(file, "{}", body).unwrap();
+            writeln!(file, "{body}").unwrap();
         }
 
         let path = tempdir.path().to_str().unwrap();
@@ -619,7 +617,7 @@ async fn read_json(url: &str, batch_size: usize) -> Result<DataFrame> {
             .get(url)
             .send()
             .await
-            .external(&format!("Failed to get URL data from {}", url))?
+            .external(&format!("Failed to get URL data from {url}"))?
             .text()
             .await
             .external("Failed to convert URL data to text")?;
@@ -629,7 +627,7 @@ async fn read_json(url: &str, batch_size: usize) -> Result<DataFrame> {
         // Assume local file
         let mut file = tokio::fs::File::open(url)
             .await
-            .external(format!("Failed to open as local file: {}", url))?;
+            .external(format!("Failed to open as local file: {url}"))?;
 
         let mut json_str = String::new();
         file.read_to_string(&mut json_str)
@@ -653,7 +651,7 @@ async fn read_arrow(url: &str) -> Result<DataFrame> {
             .get(url)
             .send()
             .await
-            .external(&format!("Failed to get URL data from {}", url))?
+            .external(&format!("Failed to get URL data from {url}"))?
             .bytes()
             .await
             .external("Failed to convert URL data to text")?
@@ -661,7 +659,7 @@ async fn read_arrow(url: &str) -> Result<DataFrame> {
         // Assume local file
         let mut file = tokio::fs::File::open(url)
             .await
-            .external(format!("Failed to open as local file: {}", url))?;
+            .external(format!("Failed to open as local file: {url}"))?;
 
         let mut buffer: Vec<u8> = Vec::new();
         file.read_to_end(&mut buffer)
@@ -691,8 +689,7 @@ async fn read_arrow(url: &str) -> Result<DataFrame> {
     } else {
         let _f = FileReader::try_new(reader, None).unwrap();
         return Err(VegaFusionError::parse(format!(
-            "Failed to read arrow file at {}",
-            url
+            "Failed to read arrow file at {url}"
         )));
     };
 
