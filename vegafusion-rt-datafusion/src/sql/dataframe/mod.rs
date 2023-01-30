@@ -4,7 +4,10 @@ use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::connection::SqlConnection;
 use datafusion::common::DFSchema;
 use datafusion::prelude::{Expr as DfExpr, SessionContext};
-use datafusion_expr::{lit, Expr};
+use datafusion_expr::{
+    expr, lit, window_function, BuiltInWindowFunction, BuiltinScalarFunction, Expr, WindowFrame,
+    WindowFrameBound, WindowFrameUnits,
+};
 use sqlgen::ast::Ident;
 use sqlgen::ast::{Cte, With};
 use sqlgen::ast::{Query, TableAlias};
@@ -12,10 +15,12 @@ use sqlgen::dialect::{Dialect, DialectDisplay};
 use sqlgen::parser::Parser;
 use std::collections::hash_map::DefaultHasher;
 
+use crate::expression::escape::flat_col;
 use crate::sql::connection::datafusion_conn::make_datafusion_dialect;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
+use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
@@ -226,6 +231,175 @@ impl SqlDataFrame {
         self.chain_query(query)
             .await
             .with_context(|| "unsupported limit query".to_string())
+    }
+
+    pub async fn impute(
+        &self,
+        field: &str,
+        value: ScalarValue,
+        key: &str,
+        groupby: &[String],
+        order_field: Option<&str>,
+    ) -> Result<Arc<Self>> {
+        if groupby.is_empty() {
+            // Value replacement for field with no groupby fields specified is equivalent to replacing
+            // null values of that column with the fill value
+            let select_columns: Vec<_> = self
+                .schema()
+                .fields()
+                .iter()
+                .map(|f| {
+                    let col_name = f.name();
+                    if col_name == field {
+                        Expr::ScalarFunction {
+                            fun: BuiltinScalarFunction::Coalesce,
+                            args: vec![flat_col(field), lit(value.clone())],
+                        }
+                        .alias(col_name)
+                    } else {
+                        flat_col(col_name)
+                    }
+                })
+                .collect();
+
+            self.select(select_columns).await
+        } else {
+            // Save off names of columns in the original input DataFrame
+            let original_columns: Vec<_> = self
+                .schema()
+                .fields()
+                .iter()
+                .map(|field| field.name().clone())
+                .collect();
+
+            // First step is to build up a new DataFrame that contains the all possible combinations
+            // of the `key` and `groupby` columns
+            let key_col = flat_col(key);
+            let key_col_str = key_col.to_sql_select()?.sql(self.dialect())?;
+
+            let group_cols = groupby.iter().map(|c| flat_col(c)).collect::<Vec<_>>();
+            let group_col_strs = group_cols
+                .iter()
+                .map(|c| Ok(c.to_sql_select()?.sql(self.dialect())?))
+                .collect::<Result<Vec<_>>>()?;
+            let group_cols_csv = group_col_strs.join(", ");
+
+            // Build final selection
+            // Finally, select all of the original DataFrame columns, filling in missing values
+            // of the `field` columns
+            let select_columns: Vec<_> = original_columns
+                .iter()
+                .map(|col_name| {
+                    if col_name == field {
+                        Expr::ScalarFunction {
+                            fun: BuiltinScalarFunction::Coalesce,
+                            args: vec![flat_col(field), lit(value.clone())],
+                        }
+                        .alias(col_name)
+                    } else {
+                        flat_col(col_name)
+                    }
+                })
+                .collect();
+
+            let select_column_strs = select_columns
+                .iter()
+                .map(|c| Ok(c.to_sql_select()?.sql(self.dialect())?))
+                .collect::<Result<Vec<_>>>()?;
+
+            let select_column_csv = select_column_strs.join(", ");
+
+            let mut using_strs = vec![key_col_str.clone()];
+            using_strs.extend(group_col_strs.clone());
+            let using_csv = using_strs.join(", ");
+
+            if let Some(order_field) = order_field {
+                // Query with ordering column
+                let sql = format!(
+                    "SELECT {select_column_csv}, {order_field}_key, {order_field}_groups \
+                     FROM (SELECT {key}, min({order_field}) as {order_field}_key from {parent} WHERE {key} IS NOT NULL GROUP BY {key}) AS _key \
+                     CROSS JOIN (SELECT {group_cols_csv}, min({order_field}) as {order_field}_groups from {parent} GROUP BY {group_cols_csv}) as _groups \
+                     LEFT OUTER JOIN {parent} \
+                     USING ({using_csv})",
+                    select_column_csv = select_column_csv,
+                    group_cols_csv = group_cols_csv,
+                    key = key_col_str,
+                    using_csv = using_csv,
+                    order_field = order_field,
+                    parent = self.parent_name(),
+                );
+                let dataframe = self.chain_query_str(&sql).await?;
+
+                // Override ordering column since null values may have been introduced in the query above.
+                // Match input ordering with imputed rows (those will null ordering column) pushed
+                // to the end.
+                let order_col = Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                        BuiltInWindowFunction::RowNumber,
+                    ),
+                    args: vec![],
+                    partition_by: vec![],
+                    order_by: vec![
+                        // Sort first by the original row order, pushing imputed rows to the end
+                        Expr::Sort(expr::Sort {
+                            expr: Box::new(flat_col(order_field)),
+                            asc: true,
+                            nulls_first: false,
+                        }),
+                        // Sort imputed rows by first row that resides group
+                        // then by first row that matches a key
+                        Expr::Sort(expr::Sort {
+                            expr: Box::new(flat_col(&format!("{order_field}_groups"))),
+                            asc: true,
+                            nulls_first: false,
+                        }),
+                        Expr::Sort(expr::Sort {
+                            expr: Box::new(flat_col(&format!("{order_field}_key"))),
+                            asc: true,
+                            nulls_first: false,
+                        }),
+                    ],
+                    window_frame: WindowFrame {
+                        units: WindowFrameUnits::Rows,
+                        start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
+                        end_bound: WindowFrameBound::CurrentRow,
+                    },
+                })
+                .alias(order_field);
+
+                // Build vector of selections
+                let mut selections = dataframe
+                    .schema()
+                    .fields
+                    .iter()
+                    .filter_map(|field| {
+                        if field.name().starts_with(order_field) {
+                            None
+                        } else {
+                            Some(flat_col(field.name()))
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                selections.insert(0, order_col);
+
+                dataframe.select(selections).await
+            } else {
+                // Impute query without ordering column
+                let sql = format!(
+                    "SELECT {select_column_csv}  \
+                     FROM (SELECT {key} from {parent} WHERE {key} IS NOT NULL GROUP BY {key}) AS _key \
+                     CROSS JOIN (SELECT {group_cols_csv} from {parent} GROUP BY {group_cols_csv}) as _groups \
+                     LEFT OUTER JOIN {parent} \
+                     USING ({using_csv})",
+                    select_column_csv = select_column_csv,
+                    group_cols_csv = group_cols_csv,
+                    key = key_col_str,
+                    using_csv = using_csv,
+                    parent = self.parent_name(),
+                );
+                self.chain_query_str(&sql).await
+            }
+        }
     }
 
     fn make_select_star(&self) -> Query {
