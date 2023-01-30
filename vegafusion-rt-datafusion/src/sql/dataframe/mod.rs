@@ -98,13 +98,13 @@ impl SqlDataFrame {
         query_chain_to_cte(self.ctes.as_slice(), &self.prefix)
     }
 
-    pub async fn chain_query_str(&self, query: &str) -> Result<Arc<Self>> {
+    async fn chain_query_str(&self, query: &str) -> Result<Arc<Self>> {
         // println!("chain_query_str: {}", query);
         let query_ast = Parser::parse_sql_query(query)?;
         self.chain_query(query_ast).await
     }
 
-    pub async fn chain_query(&self, query: Query) -> Result<Arc<Self>> {
+    async fn chain_query(&self, query: Query) -> Result<Arc<Self>> {
         let mut new_ctes = self.ctes.clone();
         new_ctes.push(query);
 
