@@ -2,7 +2,7 @@ use crate::sql::compile::expr::ToSqlExpr;
 use crate::sql::compile::order::ToSqlOrderByExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::connection::SqlConnection;
-use datafusion::common::DFSchema;
+use datafusion::common::{Column, DFSchema};
 use datafusion::prelude::{Expr as DfExpr, SessionContext};
 use datafusion_expr::{
     expr, lit, window_function, BuiltInWindowFunction, BuiltinScalarFunction, Expr, WindowFrame,
@@ -14,6 +14,7 @@ use sqlgen::ast::{Query, TableAlias};
 use sqlgen::dialect::{Dialect, DialectDisplay};
 use sqlgen::parser::Parser;
 use std::collections::hash_map::DefaultHasher;
+use std::collections::HashSet;
 
 use crate::expression::escape::flat_col;
 use crate::sql::connection::datafusion_conn::make_datafusion_dialect;
@@ -205,6 +206,93 @@ impl SqlDataFrame {
         };
 
         self.chain_query(query).await
+    }
+
+    pub async fn joinaggregate(
+        &self,
+        group_expr: Vec<DfExpr>,
+        aggr_expr: Vec<DfExpr>,
+    ) -> Result<Arc<Self>> {
+        let schema = self.schema_df();
+        let dialect = self.dialect();
+
+        // Build csv str for new columns
+        let inner_name = format!("{}_inner", self.parent_name());
+        let new_col_names = aggr_expr
+            .iter()
+            .map(|col| Ok(col.display_name()?))
+            .collect::<Result<HashSet<_>>>()?;
+
+        let new_col_strs = aggr_expr
+            .iter()
+            .map(|col| {
+                let col = Expr::Column(Column {
+                    relation: Some(inner_name.to_string()),
+                    name: col.display_name()?,
+                })
+                .alias(col.display_name()?);
+                Ok(col.to_sql_select()?.sql(dialect)?)
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let new_col_csv = new_col_strs.join(", ");
+
+        // Build csv str of input columns
+        let input_col_exprs = schema
+            .fields()
+            .iter()
+            .filter_map(|field| {
+                if new_col_names.contains(field.name()) {
+                    None
+                } else {
+                    Some(flat_col(field.name()))
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let input_col_strs = input_col_exprs
+            .iter()
+            .map(|c| Ok(c.to_sql_select()?.sql(dialect)?))
+            .collect::<Result<Vec<_>>>()?;
+        let input_col_csv = input_col_strs.join(", ");
+
+        // Perform join aggregation
+        let sql_group_expr_strs = group_expr
+            .iter()
+            .map(|expr| Ok(expr.to_sql()?.sql(dialect)?))
+            .collect::<Result<Vec<_>>>()?;
+
+        let sql_aggr_expr_strs = aggr_expr
+            .iter()
+            .map(|expr| Ok(expr.to_sql_select()?.sql(dialect)?))
+            .collect::<Result<Vec<_>>>()?;
+        let aggr_csv = sql_aggr_expr_strs.join(", ");
+
+        if sql_group_expr_strs.is_empty() {
+            self.chain_query_str(&format!(
+                "select {input_col_csv}, {new_col_csv} \
+                from {parent} \
+                CROSS JOIN (select {aggr_csv} from {parent}) as {inner_name}",
+                aggr_csv = aggr_csv,
+                parent = self.parent_name(),
+                input_col_csv = input_col_csv,
+                new_col_csv = new_col_csv,
+                inner_name = inner_name,
+            ))
+            .await
+        } else {
+            let group_by_csv = sql_group_expr_strs.join(", ");
+            self.chain_query_str(&format!(
+                "select {input_col_csv}, {new_col_csv} \
+                from {parent} \
+                LEFT OUTER JOIN (select {aggr_csv}, {group_by_csv} from {parent} group by {group_by_csv}) as {inner_name} USING ({group_by_csv})",
+                aggr_csv = aggr_csv,
+                parent = self.parent_name(),
+                input_col_csv = input_col_csv,
+                new_col_csv = new_col_csv,
+                group_by_csv = group_by_csv,
+                inner_name = inner_name,
+            )).await
+        }
     }
 
     pub async fn filter(&self, predicate: Expr) -> Result<Arc<Self>> {
