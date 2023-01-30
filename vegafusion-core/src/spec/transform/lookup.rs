@@ -5,6 +5,7 @@ use std::collections::HashMap;
 
 use crate::error::Result;
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::expression::escape::unescape_field;
 
 use crate::proto::gen::tasks::Variable;
 use crate::spec::values::Field;
@@ -46,7 +47,11 @@ impl TransformSpecTrait for LookupTransformSpec {
         if let Some(datum_var) = datum_var {
             // For lookup, we can tell which field(s) are needed, but we don't currently
             // attempt to determine the output fields
-            let fields: Vec<_> = self.fields.iter().map(|field| field.field()).collect();
+            let fields: Vec<_> = self
+                .fields
+                .iter()
+                .map(|field| unescape_field(&field.field()))
+                .collect();
             let usage = DatasetsColumnUsage::empty()
                 .with_column_usage(datum_var, ColumnUsage::from(fields.as_slice()));
 

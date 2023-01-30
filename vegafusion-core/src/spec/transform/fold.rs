@@ -1,4 +1,5 @@
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::expression::escape::unescape_field;
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::spec::values::Field;
 use crate::task_graph::graph::ScopedVariable;
@@ -46,12 +47,12 @@ impl TransformSpecTrait for FoldTransformSpec {
             let produced = ColumnUsage::from(self.as_().as_slice());
 
             // Uses fields columns
-            let fields = self
+            let unescaped_fields = self
                 .fields
                 .iter()
-                .map(|field| field.field())
+                .map(|field| unescape_field(&field.field()))
                 .collect::<Vec<_>>();
-            let col_usage = ColumnUsage::from(fields.as_slice());
+            let col_usage = ColumnUsage::from(unescaped_fields.as_slice());
             let usage = DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage);
 
             // All input columns are passed through as well

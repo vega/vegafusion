@@ -1,4 +1,5 @@
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::expression::escape::unescape_field;
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::spec::values::{CompareSpec, Field};
 use crate::task_graph::graph::ScopedVariable;
@@ -57,17 +58,26 @@ impl TransformSpecTrait for StackTransformSpec {
     ) -> TransformColumns {
         if let Some(datum_var) = datum_var {
             // Init column usage with field
-            let mut col_usage = ColumnUsage::from(self.field.field().as_str());
+            let mut col_usage = ColumnUsage::from(unescape_field(&self.field.field()).as_str());
 
             // Add groupby usage
             if let Some(groupby) = self.groupby.as_ref() {
-                let groupby: Vec<_> = groupby.iter().map(|field| field.field()).collect();
+                let groupby: Vec<_> = groupby
+                    .iter()
+                    .map(|field| unescape_field(&field.field()))
+                    .collect();
                 col_usage = col_usage.union(&ColumnUsage::from(groupby.as_slice()));
             }
 
             // Add sort usage
             if let Some(compares) = self.sort.as_ref() {
-                col_usage = col_usage.union(&ColumnUsage::from(compares.field.to_vec().as_slice()));
+                let unescaped_sort_fields: Vec<_> = compares
+                    .field
+                    .to_vec()
+                    .iter()
+                    .map(|f| unescape_field(f))
+                    .collect();
+                col_usage = col_usage.union(&ColumnUsage::from(unescaped_sort_fields.as_slice()));
             }
 
             // Build produced

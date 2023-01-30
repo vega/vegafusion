@@ -2,6 +2,7 @@ use crate::error::Result;
 use crate::expression::parser::parse;
 
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::expression::escape::unescape_field;
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::spec::values::{Field, SignalExpressionSpec};
 use crate::task_graph::graph::ScopedVariable;
@@ -134,7 +135,7 @@ impl TransformSpecTrait for BinTransformSpec {
             let produced = ColumnUsage::from(vec![bin_start, bin_end].as_slice());
 
             // Compute used columns
-            let field = self.field.field();
+            let field = unescape_field(&self.field.field());
             let col_usage = ColumnUsage::empty().with_column(&field);
             let usage = DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage);
 
