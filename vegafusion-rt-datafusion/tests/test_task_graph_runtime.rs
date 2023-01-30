@@ -88,7 +88,7 @@ async fn try_it() {
         .await
         .unwrap();
 
-    println!("result: {:?}", result);
+    println!("result: {result:?}");
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -134,8 +134,8 @@ async fn try_it_from_spec() {
     let task_scope = chart.to_task_scope().unwrap();
     let tasks = chart.to_tasks(&tz_config, &Default::default()).unwrap();
 
-    println!("task_scope: {:?}", task_scope);
-    println!("tasks: {:?}", tasks);
+    println!("task_scope: {task_scope:?}");
+    println!("tasks: {tasks:?}");
 
     let graph = Arc::new(TaskGraph::new(tasks, &task_scope).unwrap());
 
@@ -144,5 +144,5 @@ async fn try_it_from_spec() {
         .get_node_value(graph, &NodeValueIndex::new(2, Some(0)), Default::default())
         .await
         .unwrap();
-    println!("result: {:?}", result);
+    println!("result: {result:?}");
 }

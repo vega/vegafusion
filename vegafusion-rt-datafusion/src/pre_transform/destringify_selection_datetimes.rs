@@ -53,14 +53,14 @@ impl MutChartVisitor for DestringifySelectionDatetimesVisitor {
                                     .enumerate()
                                     .map(|(i, is_date_str)| {
                                         if *is_date_str {
-                                            format!("toDate(datum.values[0][{}])", i)
+                                            format!("toDate(datum.values[0][{i}])")
                                         } else {
-                                            format!("datum.values[0][{}]", i)
+                                            format!("datum.values[0][{i}]")
                                         }
                                     })
                                     .collect();
                                 let exprs_csv = exprs.join(", ");
-                                let formula_expr = format!("[[{}]]", exprs_csv);
+                                let formula_expr = format!("[[{exprs_csv}]]");
                                 data.transform
                                     .push(TransformSpec::Formula(FormulaTransformSpec {
                                         expr: formula_expr,
@@ -85,14 +85,14 @@ impl MutChartVisitor for DestringifySelectionDatetimesVisitor {
                                     .enumerate()
                                     .map(|(i, is_date_str)| {
                                         if *is_date_str {
-                                            format!("toDate(datum.values[{}])", i)
+                                            format!("toDate(datum.values[{i}])")
                                         } else {
-                                            format!("datum.values[{}]", i)
+                                            format!("datum.values[{i}]")
                                         }
                                     })
                                     .collect();
                                 let exprs_csv = exprs.join(", ");
-                                let formula_expr = format!("[{}]", exprs_csv);
+                                let formula_expr = format!("[{exprs_csv}]");
                                 data.transform
                                     .push(TransformSpec::Formula(FormulaTransformSpec {
                                         expr: formula_expr,

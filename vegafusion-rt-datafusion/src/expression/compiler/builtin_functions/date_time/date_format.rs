@@ -91,8 +91,7 @@ fn to_timestamptz_expr(arg: &Expr, schema: &DFSchema, default_input_tz: &str) ->
         },
         dtype => {
             return Err(VegaFusionError::internal(format!(
-                "Invalid argument type to timeFormat function: {:?}",
-                dtype
+                "Invalid argument type to timeFormat function: {dtype:?}"
             )))
         }
     })

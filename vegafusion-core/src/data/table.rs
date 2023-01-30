@@ -246,8 +246,7 @@ impl VegaFusionTable {
             }
         } else {
             Err(VegaFusionError::internal(format!(
-                "Expected JSON array, not: {}",
-                value
+                "Expected JSON array, not: {value}"
             )))
         }
     }

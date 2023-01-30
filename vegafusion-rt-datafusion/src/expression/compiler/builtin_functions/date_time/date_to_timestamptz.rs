@@ -29,7 +29,7 @@ pub fn make_date_to_timestamptz() -> ScalarUDF {
             ));
         };
         let tz = chrono_tz::Tz::from_str(&tz_str).map_err(|_err| {
-            DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
+            DataFusionError::Internal(format!("Failed to parse {tz_str} as a timezone"))
         })?;
 
         let s_per_day = 60 * 60 * 24_i64;

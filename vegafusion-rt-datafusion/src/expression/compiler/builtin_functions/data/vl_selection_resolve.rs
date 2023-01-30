@@ -27,8 +27,7 @@ pub fn parse_args(args: &[Expression]) -> Result<Op> {
     let n = args.len();
     if !(0..=1).contains(&n) {
         return Err(VegaFusionError::internal(format!(
-            "vlSelectionResolve requires 1 or 2 arguments. Received {}",
-            n
+            "vlSelectionResolve requires 1 or 2 arguments. Received {n}"
         )));
     }
 
@@ -45,7 +44,7 @@ pub fn parse_args(args: &[Expression]) -> Result<Op> {
             _ => {
                 return Err(VegaFusionError::internal(format!(
                     "The second argument to vlSelectionResolve, if provided, must be either 'union' or 'intersect'. \
-                    Received {}", arg1
+                    Received {arg1}"
                 )))
             }
         }
@@ -104,8 +103,7 @@ pub fn vl_selection_resolve_fn(
                         }
                         v => {
                             return Err(VegaFusionError::internal(format!(
-                                "values must be a two-element array. Found {}",
-                                v
+                                "values must be a two-element array. Found {v}"
                             )))
                         }
                     }

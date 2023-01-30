@@ -10,7 +10,7 @@ impl Display for Key {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Key::Literal(v) => write!(f, "{}", v.value.as_ref().unwrap()),
-            Key::Identifier(v) => write!(f, "{}", v),
+            Key::Identifier(v) => write!(f, "{v}"),
         }
     }
 }
@@ -92,6 +92,6 @@ impl Display for ObjectExpression {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let property_strings: Vec<String> = self.properties.iter().map(|p| p.to_string()).collect();
         let property_csv = property_strings.join(", ");
-        write!(f, "{{{}}}", property_csv)
+        write!(f, "{{{property_csv}}}")
     }
 }

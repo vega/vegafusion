@@ -53,7 +53,7 @@ impl Deref for Expression {
 impl Display for Expression {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let expr = self.deref();
-        write!(f, "{}", expr)
+        write!(f, "{expr}")
     }
 }
 

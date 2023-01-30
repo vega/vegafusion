@@ -110,7 +110,7 @@ async fn main() -> Result<(), VegaFusionError> {
     // Handle memory
     let memory_limit = if let Some(memory_limit) = &args.memory_limit {
         let memory_limit = parse_memory_string(memory_limit)?;
-        println!("Cache memory limit: {} bytes", memory_limit);
+        println!("Cache memory limit: {memory_limit} bytes");
         Some(memory_limit)
     } else {
         println!("No cache memory limit");
@@ -146,8 +146,7 @@ fn parse_memory_string(memory_limit: &str) -> Result<usize, VegaFusionError> {
             Ok(total)
         }
         None => Err(VegaFusionError::parse(format!(
-            "Unable to parse memory limit: {}",
-            memory_limit
+            "Unable to parse memory limit: {memory_limit}"
         ))),
     }
 }
@@ -160,11 +159,11 @@ async fn grpc_server(
     let addr = address
         .parse()
         .ok()
-        .with_context(|| format!("Failed to parse address: {}", address))?;
+        .with_context(|| format!("Failed to parse address: {address}"))?;
     let server = TonicVegaFusionRuntimeServer::new(VegaFusionRuntimeGrpc::new(runtime));
 
     if web {
-        println!("Starting gRPC + gRPC-Web server on {}", address);
+        println!("Starting gRPC + gRPC-Web server on {address}");
         let server = tonic_web::enable(server);
         Server::builder()
             .accept_http1(true)
@@ -172,7 +171,7 @@ async fn grpc_server(
             .serve(addr)
             .await?;
     } else {
-        println!("Starting gRPC server on {}", address);
+        println!("Starting gRPC server on {address}");
         Server::builder().add_service(server).serve(addr).await?;
     }
 

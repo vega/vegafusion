@@ -17,15 +17,15 @@ impl Display for ArrayExpression {
         for element in self.elements.iter() {
             let arg_binding_power = element.binding_power().0;
             let element_string = if arg_binding_power > internal_binding_power {
-                format!("{}", element)
+                format!("{element}")
             } else {
                 // e.g. the argument is a comma infix operation, so it must be wrapped in parens
-                format!("({})", element)
+                format!("({element})")
             };
             element_strings.push(element_string)
         }
 
         let elements_string = element_strings.join(", ");
-        write!(f, "[{}]", elements_string)
+        write!(f, "[{elements_string}]")
     }
 }

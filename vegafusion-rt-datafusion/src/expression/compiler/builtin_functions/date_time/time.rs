@@ -55,8 +55,7 @@ pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema) ->
         }
         dtype => {
             return Err(VegaFusionError::internal(format!(
-                "Invalid argument type to time function: {:?}",
-                dtype
+                "Invalid argument type to time function: {dtype:?}"
             )))
         }
     };

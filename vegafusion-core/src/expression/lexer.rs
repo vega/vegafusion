@@ -41,10 +41,10 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Token::Null => write!(f, "null"),
-            Token::Bool { value: v, .. } => write!(f, "{}", v),
-            Token::Number { value: v, .. } => write!(f, "{}", v),
-            Token::String { value: v, .. } => write!(f, "\"{}\"", v),
-            Token::Identifier { value: v } => write!(f, "{}", v),
+            Token::Bool { value: v, .. } => write!(f, "{v}"),
+            Token::Number { value: v, .. } => write!(f, "{v}"),
+            Token::String { value: v, .. } => write!(f, "\"{v}\""),
+            Token::Identifier { value: v } => write!(f, "{v}"),
             Token::Percent => write!(f, "%"),
             Token::Asterisk => write!(f, "*"),
             Token::CloseCurly => write!(f, "}}"),
@@ -198,8 +198,7 @@ pub fn tokenize_single_token(data: &str) -> Result<(Token, usize)> {
         c if c.is_alphabetic() || c == '_' => tokenize_ident(data)?,
         other => {
             return Err(VegaFusionError::parse(format!(
-                "Invalid character: {}",
-                other
+                "Invalid character: {other}"
             )))
         }
     };
@@ -218,8 +217,7 @@ fn tokenize_plus(data: &str) -> Result<(Token, usize)> {
         }
         _ => {
             return Err(VegaFusionError::parse(format!(
-                "Invalid number of consecutive + characters: {}",
-                taken
+                "Invalid number of consecutive + characters: {taken}"
             )))
         }
     };
@@ -238,8 +236,7 @@ fn tokenize_minus(data: &str) -> Result<(Token, usize)> {
         }
         _ => {
             return Err(VegaFusionError::parse(format!(
-                "Invalid number of consecutive - characters: {}",
-                taken
+                "Invalid number of consecutive - characters: {taken}"
             )))
         }
     };
@@ -255,8 +252,7 @@ fn tokenize_single_char_operator(data: &str, ch: char, token: Token) -> Result<(
         c if c == ch.to_string() => token,
         _ => {
             return Err(VegaFusionError::parse(format!(
-                "Invalid number of consecutive {} characters: {}",
-                ch, taken
+                "Invalid number of consecutive {ch} characters: {taken}"
             )))
         }
     };
@@ -271,8 +267,7 @@ fn tokenize_logical_or(data: &str) -> Result<(Token, usize)> {
         "||" => Token::LogicalOr,
         _ => {
             return Err(VegaFusionError::parse(format!(
-                "Invalid number of consecutive | characters: {}",
-                taken
+                "Invalid number of consecutive | characters: {taken}"
             )))
         }
     };
@@ -287,8 +282,7 @@ fn tokenize_logical_and(data: &str) -> Result<(Token, usize)> {
         "&&" => Token::LogicalAnd,
         _ => {
             return Err(VegaFusionError::parse(format!(
-                "Invalid number of consecutive & characters: {}",
-                taken
+                "Invalid number of consecutive & characters: {taken}"
             )))
         }
     };
@@ -338,12 +332,7 @@ fn tokenize_comparison_operators(data: &str) -> Result<(Token, usize)> {
         "!" => Token::Exclamation,
         "!=" => Token::ExclamationEquals,
         "!==" => Token::ExclamationDoubleEquals,
-        _ => {
-            return Err(VegaFusionError::parse(format!(
-                "Invalid operator: {}",
-                taken
-            )))
-        }
+        _ => return Err(VegaFusionError::parse(format!("Invalid operator: {taken}"))),
     };
     Ok((token, taken.len()))
 }
@@ -561,73 +550,73 @@ mod test_tokenizers {
     #[test]
     fn try_tokenize() {
         let res = tokenize(" { } ").unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(" + ").unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(" -() ").unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(" * ").unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(" || && ").unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
     }
 
     #[test]
     fn try_tokenizer_unicode_str() {
         let res = tokenize(r#" "Hello, world" "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(r#" 'Hello, world \xAE \u2665 \u{1F602}' "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
     }
 
     #[test]
     fn try_tokenize_dot_or_number() {
         let res = tokenize(r#" 23.500 "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(r#" .500 "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(r#" 5. "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(r#" 500 "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(r#" 5e7 "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(r#" 5e-7 "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(r#" 5e+7 "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(r#" 5.e7 "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(r#" 5.e+7 "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(r#" .3e-7 "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(r#" .3e-007 "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         // Don't get confused when no digit is present
         let res = tokenize(r#" .e23 "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize(r#" 'asdf'.e "#).unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
 
         let res = tokenize("  foo*.345 ").unwrap();
-        println!("tokenized: {:?}", res);
+        println!("tokenized: {res:?}");
     }
 }

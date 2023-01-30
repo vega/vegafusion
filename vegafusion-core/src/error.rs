@@ -19,7 +19,7 @@ pub struct ErrorContext {
 impl std::fmt::Display for ErrorContext {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         for (i, context) in self.contexts.iter().enumerate() {
-            writeln!(f, "    Context[{}]: {}", i, context)?;
+            writeln!(f, "    Context[{i}]: {context}")?;
         }
         Ok(())
     }

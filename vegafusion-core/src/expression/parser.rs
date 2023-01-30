@@ -15,8 +15,7 @@ pub fn parse(expr: &str) -> Result<Expression> {
     if !tokens.is_empty() {
         let (token, start, _) = &tokens[0];
         return Err(VegaFusionError::parse(format!(
-            "Unexpected token {} at position {} in expression: {}",
-            token, start, expr
+            "Unexpected token {token} at position {start} in expression: {expr}"
         )));
     }
 
@@ -53,16 +52,12 @@ fn perform_parse(
         parse_object(tokens, start, full_expr)
     } else {
         Err(VegaFusionError::parse(format!(
-            "Unexpected token: {}",
-            lhs_token
+            "Unexpected token: {lhs_token}"
         )))
     };
 
     let mut lhs = lhs_result.with_context(|| {
-        format!(
-            "Failed to parse form starting at position {} in expression: {}",
-            start, full_expr
-        )
+        format!("Failed to parse form starting at position {start} in expression: {full_expr}")
     })?;
 
     // pop tokens and add to lhs expression
@@ -127,16 +122,12 @@ fn perform_parse(
             }
         } else {
             Err(VegaFusionError::parse(format!(
-                "Unexpected token '{}'",
-                token
+                "Unexpected token '{token}'"
             )))
         };
 
         lhs = expr_result.with_context(|| {
-            format!(
-                "Failed to parse form starting at position {} in expression: {}",
-                start, full_expr
-            )
+            format!("Failed to parse form starting at position {start} in expression: {full_expr}")
         })?;
     }
 
@@ -149,15 +140,13 @@ pub fn expect_token(
 ) -> Result<(Token, usize, usize)> {
     if tokens.is_empty() {
         return Err(VegaFusionError::parse(format!(
-            "Expected {}, reached end of expression",
-            expected
+            "Expected {expected}, reached end of expression"
         )));
     }
     let (token, start, end) = tokens[0].clone();
     if token != expected {
         return Err(VegaFusionError::parse(format!(
-            "Expected {}, received {}",
-            expected, token
+            "Expected {expected}, received {token}"
         )));
     }
     tokens.remove(0);
@@ -191,8 +180,7 @@ pub fn parse_atom(token: &Token, start: usize, end: usize) -> Result<Expression>
         Token::Identifier { value } => Expr::from(Identifier::new(value)),
         _ => {
             return Err(VegaFusionError::parse(format!(
-                "Token not an atom: {}",
-                token
+                "Token not an atom: {token}"
             )))
         }
     };
@@ -536,10 +524,10 @@ mod test_parse {
     #[test]
     fn test_parse_atom() {
         let node = parse("23.500000").unwrap();
-        assert_eq!(format!("{}", node), "23.5");
+        assert_eq!(format!("{node}"), "23.5");
 
         let node = parse("\"hello\"").unwrap();
-        assert_eq!(format!("{}", node), "\"hello\"");
+        assert_eq!(format!("{node}"), "\"hello\"");
     }
 
     #[test]

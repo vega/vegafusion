@@ -16,8 +16,7 @@ pub fn vega_json_dataset(name: &str) -> VegaFusionTable {
 
     // Fetch dataset from vega-datasets repository
     let body = reqwest::blocking::get(format!(
-        "https://raw.githubusercontent.com/vega/vega-datasets/master/data/{}.json",
-        name
+        "https://raw.githubusercontent.com/vega/vega-datasets/master/data/{name}.json"
     ))
     .unwrap()
     .text()
@@ -37,8 +36,7 @@ pub async fn vega_json_dataset_async(name: &str) -> VegaFusionTable {
     // Fetch dataset from vega-datasets repository
     let body = REQWEST_CLIENT
         .get(format!(
-            "https://raw.githubusercontent.com/vega/vega-datasets/master/data/{}.json",
-            name
+            "https://raw.githubusercontent.com/vega/vega-datasets/master/data/{name}.json"
         ))
         .send()
         .await

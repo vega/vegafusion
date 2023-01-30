@@ -126,7 +126,7 @@ impl MarkSpec {
             .iter()
             .filter(|m| m.type_ == "group")
             .nth(group_index as usize)
-            .with_context(|| format!("No group with index {}", group_index))
+            .with_context(|| format!("No group with index {group_index}"))
     }
 
     pub fn get_group_mut(&mut self, group_index: u32) -> Result<&mut MarkSpec> {
@@ -134,7 +134,7 @@ impl MarkSpec {
             .iter_mut()
             .filter(|m| m.type_ == "group")
             .nth(group_index as usize)
-            .with_context(|| format!("No group with index {}", group_index))
+            .with_context(|| format!("No group with index {group_index}"))
     }
 
     pub fn get_nested_group_mut(&mut self, path: &[u32]) -> Result<&mut MarkSpec> {

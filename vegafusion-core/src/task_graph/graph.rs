@@ -72,8 +72,7 @@ impl TaskGraph {
         let toposorted: Vec<NodeIndex> = match toposort(&graph, None) {
             Err(err) => {
                 return Err(VegaFusionError::internal(format!(
-                    "failed to sort dependency graph topologically: {:?}",
-                    err
+                    "failed to sort dependency graph topologically: {err:?}"
                 )))
             }
             Ok(toposorted) => toposorted,
@@ -334,7 +333,7 @@ impl TaskGraph {
         let node = self
             .nodes
             .get(node_index)
-            .with_context(|| format!("Node index {} out of bounds", node_index))?;
+            .with_context(|| format!("Node index {node_index} out of bounds"))?;
         Ok(node
             .incoming
             .iter()
@@ -346,7 +345,7 @@ impl TaskGraph {
         let node = self
             .nodes
             .get(node_index)
-            .with_context(|| format!("Node index {} out of bounds", node_index))?;
+            .with_context(|| format!("Node index {node_index} out of bounds"))?;
         Ok(node
             .incoming
             .iter()
@@ -358,7 +357,7 @@ impl TaskGraph {
         let node = self
             .nodes
             .get(node_index)
-            .with_context(|| format!("Node index {} out of bounds", node_index))?;
+            .with_context(|| format!("Node index {node_index} out of bounds"))?;
         Ok(node
             .outgoing
             .iter()
@@ -370,7 +369,7 @@ impl TaskGraph {
         let node = self
             .nodes
             .get(node_index)
-            .with_context(|| format!("Node index {} out of bounds", node_index))?;
+            .with_context(|| format!("Node index {node_index} out of bounds"))?;
         Ok(node
             .outgoing
             .iter()
@@ -381,7 +380,7 @@ impl TaskGraph {
     pub fn node(&self, node_index: usize) -> Result<&TaskNode> {
         self.nodes
             .get(node_index)
-            .with_context(|| format!("Node index {} out of bounds", node_index))
+            .with_context(|| format!("Node index {node_index} out of bounds"))
     }
 }
 

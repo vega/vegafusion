@@ -32,7 +32,7 @@ pub fn check_parsing(expr_str: &str) {
     let mut result = parse(expr_str).unwrap();
     result.clear_spans();
 
-    assert_eq!(result, expected, " left: {}\nright: {}\n", result, expected);
+    assert_eq!(result, expected, " left: {result}\nright: {expected}\n");
 }
 
 pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
@@ -64,8 +64,8 @@ pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
     let result = ScalarValue::from_json(&result.to_json().unwrap()).unwrap();
     let result = normalize_scalar(&result);
 
-    println!("{:?}", result);
-    assert_eq!(result, expected, " left: {}\nright: {}\n", result, expected);
+    println!("{result:?}");
+    assert_eq!(result, expected, " left: {result}\nright: {expected}\n");
 }
 
 pub fn check_transform_evaluation(

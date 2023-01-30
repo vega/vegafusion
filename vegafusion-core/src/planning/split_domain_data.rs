@@ -233,7 +233,7 @@ impl<'a> SplitScaleDomainVisitor<'a> {
                         {
                             "type": "formula",
                             "as": field_name,
-                            "expr": format!("+datum['{}']", field_name)
+                            "expr": format!("+datum['{field_name}']")
                         }, {
                             "type": "aggregate",
                             "fields": [field_name, field_name],
@@ -337,7 +337,7 @@ impl<'a> SplitScaleDomainVisitor<'a> {
                         }, {
                             "type": "formula",
                             "as": "sort_field",
-                            "expr": format!("datum['{}']", field_name)
+                            "expr": format!("datum['{field_name}']")
                         }
                     ]
                }

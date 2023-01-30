@@ -20,10 +20,10 @@ impl Display for CallExpression {
         for arg in self.arguments.iter() {
             let arg_binding_power = arg.binding_power().0;
             let arg_string = if arg_binding_power > internal_binding_power {
-                format!("{}", arg)
+                format!("{arg}")
             } else {
                 // e.g. the argument is a comma infix operation, so it must be wrapped in parens
-                format!("({})", arg)
+                format!("({arg})")
             };
             arg_strings.push(arg_string)
         }
