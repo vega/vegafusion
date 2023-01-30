@@ -1,20 +1,19 @@
 pub fn escape_field(col: &str) -> String {
-    // Escape single quote with backslash
-    let col = col.replace('\'', "\\'");
-
-    // Escape double quote with backslash
-    col.replace('\"', "\\\"")
+    // Escape single quote, double quote, period, and brackets with a backslash
+    col.replace('\'', "\\'")
+        .replace('\"', "\\\"")
+        .replace('.', "\\.")
+        .replace('[', "\\[")
+        .replace(']', "\\]")
 }
 
 pub fn unescape_field(col: &str) -> String {
-    // Unescape backslash single quote
-    let col = col.replace("\\'", "'");
-
-    // Unescape backslash double quote
-    let col = col.replace("\\\"", "\"");
-
-    //  Unescape backslash period
-    col.replace("\\.", ".")
+    // Unescape single quote, double quote, period, and brackets
+    col.replace("\\'", "'")
+        .replace("\\\"", "\"")
+        .replace("\\.", ".")
+        .replace("\\[", "[")
+        .replace("\\]", "]")
 }
 
 #[cfg(test)]
