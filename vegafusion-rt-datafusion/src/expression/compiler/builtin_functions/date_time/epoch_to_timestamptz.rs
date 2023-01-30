@@ -30,7 +30,7 @@ pub fn make_epoch_to_timestamptz() -> ScalarUDF {
             ));
         };
         let tz = chrono_tz::Tz::from_str(&tz_str).map_err(|_err| {
-            DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
+            DataFusionError::Internal(format!("Failed to parse {tz_str} as a timezone"))
         })?;
 
         let timestamp_millis = cast(

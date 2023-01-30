@@ -29,7 +29,7 @@ fn make_brush_r(ranges: &Vec<Vec<(&str, &str, [f64; 2])>>, typ: &str) -> VegaFus
         }
 
         rows.push(json!({
-            "unit": format!("unit{}", i),
+            "unit": format!("unit{i}"),
             "fields": Value::Array(field_elements),
             "values": Value::Array(value_elements),
         }));
@@ -48,7 +48,7 @@ fn make_brush_e_single(field: &str, values: &[f64]) -> VegaFusionTable {
         let value_element = json!(*val);
 
         rows.push(json!({
-            "unit": format!("unit{}", i),
+            "unit": format!("unit{i}"),
             "fields": Value::Array(vec![field_element]),
             "values": Value::Array(vec![value_element]),
         }));
@@ -74,7 +74,7 @@ fn make_brush_e_str(ranges: &Vec<Vec<(&str, &str, Vec<&str>)>>) -> VegaFusionTab
         }
 
         rows.push(json!({
-            "unit": format!("unit{}", i),
+            "unit": format!("unit{i}"),
             "fields": Value::Array(field_elements),
             "values": Value::Array(value_elements),
         }));
@@ -160,11 +160,11 @@ mod test_vl_selection_test_r {
     )]
     fn test(brush_data: Vec<Vec<(&str, &str, [f64; 2])>>, typ: &str, op: &str) {
         let brush = make_brush_r(&brush_data, typ);
-        let test_expr = format!("vlSelectionTest('brush', datum, '{}')", op);
-        println!("{}", test_expr);
+        let test_expr = format!("vlSelectionTest('brush', datum, '{op}')");
+        println!("{test_expr}");
         check_vl_selection_test(&test_expr, brush.clone(), &datum());
 
-        let resolve_expr = format!("vlSelectionResolve('brush', '{}')", op);
+        let resolve_expr = format!("vlSelectionResolve('brush', '{op}')");
         check_vl_selection_resolve(&resolve_expr, brush);
     }
 
@@ -181,10 +181,10 @@ mod test_vl_selection_test_e_single {
     )]
     fn test(points: &[f64], op: &str) {
         let brush = make_brush_e_single("__vgsid__", points);
-        let expr = format!("vlSelectionTest('brush', datum, '{}')", op);
+        let expr = format!("vlSelectionTest('brush', datum, '{op}')");
         check_vl_selection_test(&expr, brush.clone(), &datum());
 
-        let resolve_expr = format!("vlSelectionResolve('brush', '{}')", op);
+        let resolve_expr = format!("vlSelectionResolve('brush', '{op}')");
         check_vl_selection_resolve(&resolve_expr, brush);
     }
 
@@ -206,10 +206,10 @@ mod test_vl_selection_test_e_multi {
     )]
     fn test(brush_data: Vec<Vec<(&str, &str, Vec<&str>)>>, op: &str) {
         let brush = make_brush_e_str(&brush_data);
-        let expr = format!("vlSelectionTest('brush', datum, '{}')", op);
+        let expr = format!("vlSelectionTest('brush', datum, '{op}')");
         check_vl_selection_test(&expr, brush.clone(), &datum());
 
-        let resolve_expr = format!("vlSelectionResolve('brush', '{}')", op);
+        let resolve_expr = format!("vlSelectionResolve('brush', '{op}')");
         check_vl_selection_resolve(&resolve_expr, brush);
     }
 

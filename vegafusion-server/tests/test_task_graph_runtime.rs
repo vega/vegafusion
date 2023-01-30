@@ -78,11 +78,11 @@ async fn try_it_from_spec() {
     let query_result = response.into_inner();
     match query_result.response.unwrap() {
         Response::Error(error) => {
-            panic!("Error: {:?}", error)
+            panic!("Error: {error:?}")
         }
         Response::TaskGraphValues(values_response) => {
             let response_values = values_response.deserialize().unwrap();
-            println!("Result: {:#?}", response_values);
+            println!("Result: {response_values:#?}");
             assert_eq!(response_values.len(), 1);
             let (var, scope, value) = &response_values[0];
 

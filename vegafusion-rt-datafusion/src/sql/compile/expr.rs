@@ -29,8 +29,7 @@ impl ToSqlExpr for Expr {
             Expr::Alias(_, _) => {
                 // Alias expressions need to be handled at a higher level
                 Err(VegaFusionError::internal(format!(
-                    "Alias cannot be converted to SQL: {:?}",
-                    self
+                    "Alias cannot be converted to SQL: {self:?}"
                 )))
             }
             Expr::Column(col) => Ok(match &col.relation {
@@ -494,7 +493,7 @@ mod tests {
     pub fn test1() {
         let df_expr = Expr::Negative(Box::new(flat_col("A"))) + lit(12);
         let sql_expr = df_expr.to_sql().unwrap();
-        println!("{:?}", sql_expr);
+        println!("{sql_expr:?}");
         let sql_str = sql_expr.sql(&Default::default()).unwrap();
         assert_eq!(sql_str, "((- A) + 12)".to_string());
     }
@@ -507,7 +506,7 @@ mod tests {
         } + flat_col("B");
 
         let sql_expr = df_expr.to_sql().unwrap();
-        println!("{:?}", sql_expr);
+        println!("{sql_expr:?}");
         let sql_str = sql_expr.sql(&Default::default()).unwrap();
         assert_eq!(sql_str, "(sin(1.2) + B)".to_string());
     }
@@ -520,7 +519,7 @@ mod tests {
         };
 
         let sql_expr = df_expr.to_sql().unwrap();
-        println!("{:?}", sql_expr);
+        println!("{sql_expr:?}");
         let sql_str = sql_expr.sql(&Default::default()).unwrap();
         assert_eq!(sql_str, "upper('foo')".to_string());
     }
@@ -533,7 +532,7 @@ mod tests {
         }) + lit(4);
 
         let sql_expr = df_expr.to_sql().unwrap();
-        println!("{:?}", sql_expr);
+        println!("{sql_expr:?}");
         let sql_str = sql_expr.sql(&Default::default()).unwrap();
         assert_eq!(sql_str, "(CAST(2.8 AS BIGINT) + 4)".to_string());
     }
@@ -549,7 +548,7 @@ mod tests {
         .or(flat_col("B"));
 
         let sql_expr = df_expr.to_sql().unwrap();
-        println!("{:?}", sql_expr);
+        println!("{sql_expr:?}");
         let sql_str = sql_expr.sql(&Default::default()).unwrap();
         assert_eq!(sql_str, "(A BETWEEN 0 AND 10 OR B)".to_string());
     }

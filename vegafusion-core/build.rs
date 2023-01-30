@@ -7,7 +7,7 @@ fn main() {
 
     let mut prost_config = prost_build::Config::new();
     let outdir = concat!(env!("CARGO_MANIFEST_DIR"), "/src/proto/prost_gen");
-    println!("outdir: {}", outdir);
+    println!("outdir: {outdir}");
     let prost_config = prost_config.out_dir(outdir);
 
     prost_config
@@ -33,7 +33,7 @@ fn main() {
 fn gen_tonic() {
     let builder = tonic_build::configure();
     let outdir = concat!(env!("CARGO_MANIFEST_DIR"), "/src/proto/tonic_gen");
-    println!("outdir: {}", outdir);
+    println!("outdir: {outdir}");
     let builder = builder.out_dir(outdir);
 
     builder

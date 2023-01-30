@@ -29,7 +29,7 @@ pub fn make_timestamp_to_timestamptz() -> ScalarUDF {
             ));
         };
         let tz = chrono_tz::Tz::from_str(&tz_str).map_err(|_err| {
-            DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
+            DataFusionError::Internal(format!("Failed to parse {tz_str} as a timezone"))
         })?;
 
         // Normalize input to integer array of milliseconds
@@ -94,9 +94,7 @@ pub fn convert_timezone(
                             naive_local_datetime.with_hour(hour + 1).unwrap();
                         tz.from_local_datetime(&new_naive_local_datetime)
                             .earliest()
-                            .unwrap_or_else(|| {
-                                panic!("Failed to convert {:?}", naive_local_datetime)
-                            })
+                            .unwrap_or_else(|| panic!("Failed to convert {naive_local_datetime:?}"))
                     };
 
                     // Get timestamp millis (in UTC)
@@ -124,8 +122,7 @@ pub fn to_timestamp_ms(array: &ArrayRef) -> Result<ArrayRef, DataFusionError> {
             &DataType::Timestamp(TimeUnit::Millisecond, None),
         )?),
         dtype => Err(DataFusionError::Internal(format!(
-            "Unexpected datatime in to_timestamp_ms: {:?}",
-            dtype
+            "Unexpected datatime in to_timestamp_ms: {dtype:?}"
         ))),
     }
 }

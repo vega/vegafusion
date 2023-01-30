@@ -19,7 +19,7 @@ pub fn is_date_fn(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
         let arg = args[0].clone();
         let dtype = arg
             .get_type(schema)
-            .with_context(|| format!("Failed to infer type of expression: {:?}", arg))?;
+            .with_context(|| format!("Failed to infer type of expression: {arg:?}"))?;
 
         Ok(match dtype {
             DataType::Timestamp(_, _) => lit(true),

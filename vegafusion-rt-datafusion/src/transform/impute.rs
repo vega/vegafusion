@@ -182,12 +182,12 @@ async fn impute_with_groupby(
             // Sort imputed rows by first row that resides group
             // then by first row that matches a key
             Expr::Sort(expr::Sort {
-                expr: Box::new(flat_col(&format!("{}_groups", ORDER_COL))),
+                expr: Box::new(flat_col(&format!("{ORDER_COL}_groups"))),
                 asc: true,
                 nulls_first: false,
             }),
             Expr::Sort(expr::Sort {
-                expr: Box::new(flat_col(&format!("{}_key", ORDER_COL))),
+                expr: Box::new(flat_col(&format!("{ORDER_COL}_key"))),
                 asc: true,
                 nulls_first: false,
             }),

@@ -275,7 +275,7 @@ impl TaskGraphRuntime {
         for var in &plan.comm_plan.server_to_client {
             let node_index = task_graph_mapping
                 .get(var)
-                .unwrap_or_else(|| panic!("Failed to lookup variable '{:?}'", var));
+                .unwrap_or_else(|| panic!("Failed to lookup variable '{var:?}'"));
             let value = self
                 .get_node_value(
                     Arc::new(task_graph.clone()),
@@ -560,9 +560,8 @@ impl TaskGraphRuntime {
                 node_index
             } else {
                 return Err(VegaFusionError::pre_transform(format!(
-                    "Requested variable {:?}\n requires transforms or signal \
-                        expressions that are not yet supported",
-                    var
+                    "Requested variable {var:?}\n requires transforms or signal \
+                        expressions that are not yet supported"
                 )));
             };
 

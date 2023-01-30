@@ -49,8 +49,7 @@ impl FromStr for Op {
             "intersect" => Self::Intersect,
             _ => {
                 return Err(VegaFusionError::internal(format!(
-                    "Invalid vlSelection operation: {}",
-                    s
+                    "Invalid vlSelection operation: {s}"
                 )))
             }
         })
@@ -92,8 +91,7 @@ impl FromStr for SelectionType {
             "R-RE" => Self::RangeRe,
             _ => {
                 return Err(VegaFusionError::internal(format!(
-                    "Invalid selection type: {}",
-                    s
+                    "Invalid selection type: {s}"
                 )))
             }
         })
@@ -221,8 +219,7 @@ impl FieldSpec {
                     }
                     v => {
                         return Err(VegaFusionError::internal(format!(
-                            "values must be a two-element array. Found {}",
-                            v
+                            "values must be a two-element array. Found {v}"
                         )))
                     }
                 };
@@ -456,8 +453,7 @@ fn parse_args(args: &[Expression]) -> Result<Op> {
     let n = args.len();
     if !(1..=2).contains(&n) {
         return Err(VegaFusionError::internal(format!(
-            "vlSelectionTest requires 2 or 3 arguments. Received {}",
-            n
+            "vlSelectionTest requires 2 or 3 arguments. Received {n}"
         )));
     }
 
@@ -469,8 +465,7 @@ fn parse_args(args: &[Expression]) -> Result<Op> {
         }
         arg => {
             return Err(VegaFusionError::internal(format!(
-                "The second argument to vlSelectionTest must be datum. Received {:?}",
-                arg
+                "The second argument to vlSelectionTest must be datum. Received {arg:?}"
             )))
         }
     }
@@ -488,7 +483,7 @@ fn parse_args(args: &[Expression]) -> Result<Op> {
             _ => {
                 return Err(VegaFusionError::internal(format!(
                     "The third argument to vlSelectionTest, if provided, must be either 'union' or 'intersect'. \
-                    Received {}", arg1
+                    Received {arg1}"
                 )))
             }
         }

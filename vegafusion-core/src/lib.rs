@@ -31,10 +31,10 @@ mod tests {
         // Unwrap is safe, since we have reserved sufficient capacity in the vector.
         lit.encode(&mut buf).unwrap();
 
-        println!("literal: {:?}", lit);
-        println!("encoded: {:?}", buf);
+        println!("literal: {lit:?}");
+        println!("encoded: {buf:?}");
 
         let decoded = expression::Literal::decode(&mut Cursor::new(&buf));
-        println!("decoded: {:?}", decoded);
+        println!("decoded: {decoded:?}");
     }
 }

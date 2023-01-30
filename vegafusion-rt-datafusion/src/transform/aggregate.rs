@@ -64,8 +64,7 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
             match field.as_str() {
                 "" => {
                     return Err(VegaFusionError::specification(format!(
-                        "Null field is not allowed for {:?} op",
-                        op
+                        "Null field is not allowed for {op:?} op"
                     )))
                 }
                 column => Some(column.to_string()),
@@ -142,10 +141,7 @@ pub fn make_agg_expr_for_col_expr(
 ) -> Result<Expr> {
     let numeric_column = || {
         to_numeric(column.clone(), schema).unwrap_or_else(|err| {
-            panic!(
-                "Failed to convert column {:?} to numeric data type: {:?}",
-                column, err
-            )
+            panic!("Failed to convert column {column:?} to numeric data type: {err:?}")
         })
     };
 
@@ -209,8 +205,7 @@ pub fn make_agg_expr_for_col_expr(
         }
         _ => {
             return Err(VegaFusionError::specification(format!(
-                "Unsupported aggregation op: {:?}",
-                op
+                "Unsupported aggregation op: {op:?}"
             )))
         }
     };

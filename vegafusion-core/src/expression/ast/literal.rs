@@ -8,13 +8,13 @@ impl Display for literal::Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Value::Boolean(v) => {
-                write!(f, "{}", v)
+                write!(f, "{v}")
             }
             Value::Number(v) => {
-                write!(f, "{}", v)
+                write!(f, "{v}")
             }
             Value::String(v) => {
-                write!(f, "\"{}\"", v)
+                write!(f, "\"{v}\"")
             }
             Value::Null(_v) => {
                 write!(f, "null")
@@ -52,7 +52,7 @@ impl ExpressionTrait for Literal {}
 impl Display for Literal {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Some(value) = &self.value {
-            write!(f, "{}", value)
+            write!(f, "{value}")
         } else {
             write!(f, "None")
         }

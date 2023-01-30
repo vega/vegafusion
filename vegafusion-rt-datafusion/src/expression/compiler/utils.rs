@@ -76,10 +76,7 @@ pub fn is_string_datatype(dtype: &DataType) -> bool {
 /// get datatype for expression
 pub fn data_type(value: &Expr, schema: &DFSchema) -> Result<DataType> {
     value.get_type(schema).with_context(|| {
-        format!(
-            "Failed to infer datatype of expression: {:?}\nschema: {:?}",
-            value, schema
-        )
+        format!("Failed to infer datatype of expression: {value:?}\nschema: {schema:?}")
     })
 }
 
@@ -178,7 +175,7 @@ impl ExprHelpers for Expr {
     fn columns(&self) -> Result<HashSet<Column>> {
         let mut columns: HashSet<Column> = HashSet::new();
         expr_to_columns(self, &mut columns)
-            .with_context(|| format!("Failed to collect columns from expression: {:?}", self))?;
+            .with_context(|| format!("Failed to collect columns from expression: {self:?}"))?;
         Ok(columns)
     }
 
@@ -188,14 +185,13 @@ impl ExprHelpers for Expr {
 
         PLANNER
             .create_physical_expr(self, schema, &physical_schema, &SESSION_STATE)
-            .with_context(|| format!("Failed to create PhysicalExpr from {:?}", self))
+            .with_context(|| format!("Failed to create PhysicalExpr from {self:?}"))
     }
 
     fn eval_to_scalar(&self) -> Result<ScalarValue> {
         if !self.columns()?.is_empty() {
             return Err(VegaFusionError::compilation(format!(
-                "Cannot eval_to_scalar for Expr with column references: {:?}",
-                self
+                "Cannot eval_to_scalar for Expr with column references: {self:?}"
             )));
         }
 
@@ -203,21 +199,19 @@ impl ExprHelpers for Expr {
 
         let col_result = physical_expr
             .evaluate(&UNIT_RECORD_BATCH)
-            .with_context(|| format!("Failed to evaluate expression: {:?}", self))?;
+            .with_context(|| format!("Failed to evaluate expression: {self:?}"))?;
 
         match col_result {
             ColumnarValue::Scalar(scalar) => Ok(scalar),
             ColumnarValue::Array(array) => {
                 if array.len() != 1 {
                     return Err(VegaFusionError::compilation(format!(
-                        "Unexpected non-scalar array result when evaluate expr: {:?}",
-                        self
+                        "Unexpected non-scalar array result when evaluate expr: {self:?}"
                     )));
                 }
                 ScalarValue::try_from_array(&array, 0).with_context(|| {
                     format!(
-                        "Failed to convert scalar array result to ScalarValue in expr: {:?}",
-                        self
+                        "Failed to convert scalar array result to ScalarValue in expr: {self:?}"
                     )
                 })
             }
@@ -231,7 +225,7 @@ impl ExprHelpers for Expr {
 
         let col_result = physical_expr
             .evaluate(record_batch)
-            .with_context(|| format!("Failed to evaluate expression: {:?}", self))?;
+            .with_context(|| format!("Failed to evaluate expression: {self:?}"))?;
 
         let col_result = if let ColumnarValue::Scalar(scalar) = col_result {
             // Convert scalar to array with length matching record batch

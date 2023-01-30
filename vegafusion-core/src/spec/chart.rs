@@ -148,7 +148,7 @@ impl ChartSpec {
             .iter()
             .filter(|m| m.type_ == "group")
             .nth(group_index as usize)
-            .with_context(|| format!("No group with index {}", group_index))
+            .with_context(|| format!("No group with index {group_index}"))
     }
 
     pub fn get_nested_group(&self, path: &[u32]) -> Result<&MarkSpec> {
@@ -169,7 +169,7 @@ impl ChartSpec {
             .iter_mut()
             .filter(|m| m.type_ == "group")
             .nth(group_index as usize)
-            .with_context(|| format!("No group with index {}", group_index))
+            .with_context(|| format!("No group with index {group_index}"))
     }
 
     pub fn get_nested_group_mut(&mut self, path: &[u32]) -> Result<&mut MarkSpec> {
@@ -193,7 +193,7 @@ impl ChartSpec {
         signals
             .iter()
             .find(|s| s.name == name)
-            .with_context(|| format!("No signal named {} found at path {:?}", name, path))
+            .with_context(|| format!("No signal named {name} found at path {path:?}"))
     }
 
     pub fn get_nested_signal_mut(&mut self, path: &[u32], name: &str) -> Result<&mut SignalSpec> {
@@ -206,7 +206,7 @@ impl ChartSpec {
         signals
             .iter_mut()
             .find(|s| s.name == name)
-            .with_context(|| format!("No signal named {} found at path {:?}", name, path))
+            .with_context(|| format!("No signal named {name} found at path {path:?}"))
     }
 
     pub fn get_nested_data(&self, path: &[u32], name: &str) -> Result<&DataSpec> {
@@ -219,7 +219,7 @@ impl ChartSpec {
         datasets
             .iter()
             .find(|s| s.name == name)
-            .with_context(|| format!("No data named {} found at path {:?}", name, path))
+            .with_context(|| format!("No data named {name} found at path {path:?}"))
     }
 
     pub fn get_nested_data_mut(&mut self, path: &[u32], name: &str) -> Result<&mut DataSpec> {
@@ -232,7 +232,7 @@ impl ChartSpec {
         signals
             .iter_mut()
             .find(|s| s.name == name)
-            .with_context(|| format!("No data named {} found at path {:?}", name, path))
+            .with_context(|| format!("No data named {name} found at path {path:?}"))
     }
 
     pub fn add_nested_signal(

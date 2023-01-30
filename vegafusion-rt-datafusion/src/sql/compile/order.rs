@@ -16,10 +16,7 @@ impl ToSqlOrderByExpr for Expr {
                 nulls_first,
             }) => Ok(SqlOrderByExpr {
                 expr: expr.to_sql().with_context(|| {
-                    format!(
-                        "Expression cannot be used as order by expression: {:?}",
-                        expr
-                    )
+                    format!("Expression cannot be used as order by expression: {expr:?}")
                 })?,
                 asc: Some(*asc),
                 nulls_first: Some(*nulls_first),

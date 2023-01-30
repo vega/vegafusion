@@ -392,7 +392,7 @@ mod test_cache {
         // assert_eq!(cache.num_values().await, 1);
         // assert_eq!(cache.num_initializers().await, 0);
 
-        println!("values: {:?}", values);
-        println!("next_value: {:?}", next_value);
+        println!("values: {values:?}");
+        println!("next_value: {next_value:?}");
     }
 }

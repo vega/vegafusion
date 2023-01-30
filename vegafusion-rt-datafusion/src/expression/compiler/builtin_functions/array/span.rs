@@ -38,15 +38,12 @@ pub fn make_span_udf() -> ScalarUDF {
                                 }
                             }
                             _ => {
-                                panic!(
-                                    "Unexpected element type for span function: {}",
-                                    element_type
-                                )
+                                panic!("Unexpected element type for span function: {element_type}")
                             }
                         }
                     }
                     _ => {
-                        panic!("Unexpected type passed to span: {}", value)
+                        panic!("Unexpected type passed to span: {value}")
                     }
                 }
             }

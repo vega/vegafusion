@@ -38,3 +38,5 @@ _vegafusion_data
 /vegafusion-server/examples/chart_editor/node_modules/
 /vegafusion-rt-datafusion/tests/data/
 /scratch/
+.DS_Store
+__pycache__

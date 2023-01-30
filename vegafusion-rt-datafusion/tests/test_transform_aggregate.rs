@@ -35,7 +35,7 @@ mod test_aggregate_single {
         let aggregate_spec = AggregateTransformSpec {
             groupby: vec![Field::String("Species".to_string())],
             fields: Some(vec![Some(Field::String("Beak Depth (mm)".to_string()))]),
-            ops: Some(vec![op.clone()]),
+            ops: Some(vec![op]),
             as_: None,
             cross: None,
             drop: None,
@@ -89,7 +89,7 @@ mod test_aggregate_multi {
                 Some(Field::String("Beak Depth (mm)".to_string())),
                 Some(Field::String("Flipper Length (mm)".to_string())),
             ]),
-            ops: Some(vec![op1.clone(), op2.clone()]),
+            ops: Some(vec![op1, op2]),
             as_: None,
             cross: None,
             drop: None,
@@ -245,7 +245,7 @@ mod test_aggregate_with_nulls {
         let aggregate_spec = AggregateTransformSpec {
             groupby: vec![Field::String("SHIP".to_string())],
             fields: Some(vec![Some(Field::String("NULL_ORDER_IDS".to_string()))]),
-            ops: Some(vec![op.clone()]),
+            ops: Some(vec![op]),
             as_: None,
             cross: None,
             drop: None,

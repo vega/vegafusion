@@ -157,8 +157,7 @@ impl ScalarValueHelpers for ScalarValue {
             ScalarValue::UInt64(Some(e)) => *e as f64,
             _ => {
                 return Err(VegaFusionError::internal(format!(
-                    "Cannot convert {} to f64",
-                    self
+                    "Cannot convert {self} to f64"
                 )))
             }
         })
@@ -171,8 +170,7 @@ impl ScalarValueHelpers for ScalarValue {
             }
         }
         Err(VegaFusionError::internal(format!(
-            "Cannot convert {} to [f64; 2]",
-            self
+            "Cannot convert {self} to [f64; 2]"
         )))
     }
 
@@ -182,8 +180,7 @@ impl ScalarValueHelpers for ScalarValue {
             ScalarValue::LargeUtf8(Some(value)) => value.clone(),
             _ => {
                 return Err(VegaFusionError::internal(format!(
-                    "Cannot convert {} to String",
-                    self
+                    "Cannot convert {self} to String"
                 )))
             }
         })

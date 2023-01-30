@@ -31,7 +31,7 @@ pub fn to_date_transform(
     let arg = args[0].clone();
     let dtype = arg
         .get_type(schema)
-        .with_context(|| format!("Failed to infer type of expression: {:?}", arg))?;
+        .with_context(|| format!("Failed to infer type of expression: {arg:?}"))?;
 
     if is_string_datatype(&dtype) {
         let default_input_tz = if args.len() == 2 {
@@ -43,9 +43,7 @@ pub fn to_date_transform(
                 } else {
                     chrono_tz::Tz::from_str(input_tz_str)
                         .ok()
-                        .with_context(|| {
-                            format!("Failed to parse {} as a timezone", input_tz_str)
-                        })?
+                        .with_context(|| format!("Failed to parse {input_tz_str} as a timezone"))?
                 }
             } else {
                 return Err(VegaFusionError::parse(
@@ -80,7 +78,7 @@ pub fn datetime_transform_fn(
         let mut arg = args[0].clone();
         let dtype = arg
             .get_type(schema)
-            .with_context(|| format!("Failed to infer type of expression: {:?}", arg))?;
+            .with_context(|| format!("Failed to infer type of expression: {arg:?}"))?;
 
         if is_string_datatype(&dtype) {
             let default_input_tz_str = tz_config.default_input_tz.to_string();
@@ -159,7 +157,7 @@ pub fn make_datetime_components_udf() -> ScalarUDF {
             };
 
             let input_tz = chrono_tz::Tz::from_str(&tz_str).map_err(|_err| {
-                DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
+                DataFusionError::Internal(format!("Failed to parse {tz_str} as a timezone"))
             })?;
 
             // first, identify if any of the arguments is an Array. If yes, store its `len`,

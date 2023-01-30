@@ -20,9 +20,9 @@ impl ToSqlScalar for ScalarValue {
                 v.map(|v| {
                     let repr = if !v.is_finite() {
                         // Wrap inf, -inf, and nan in single quotes
-                        format!("'{}'", v)
+                        format!("'{v}'")
                     } else if v.fract() == 0.0 {
-                        format!("{:.1}", v)
+                        format!("{v:.1}")
                     } else {
                         v.to_string()
                     };
@@ -34,9 +34,9 @@ impl ToSqlScalar for ScalarValue {
                 v.map(|v| {
                     let repr = if !v.is_finite() {
                         // Wrap inf, -inf, and nan in single quotes
-                        format!("'{}'", v)
+                        format!("'{v}'")
                     } else if v.fract() == 0.0 {
-                        format!("{:.1}", v)
+                        format!("{v:.1}")
                     } else {
                         v.to_string()
                     };

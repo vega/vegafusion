@@ -81,8 +81,7 @@ fn extract_timestamp_arg(
             },
             dtype => {
                 return Err(VegaFusionError::compilation(format!(
-                    "Invalid data type for {} function: {:?}",
-                    part, dtype
+                    "Invalid data type for {part} function: {dtype:?}"
                 )))
             }
         })

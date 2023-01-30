@@ -55,8 +55,7 @@ fn timeunit_date_trunc(
         TimeUnitUnit::Seconds => ("second".to_string(), "1 SECOND".to_string()),
         _ => {
             return Err(VegaFusionError::internal(format!(
-                "Unsupported date trunc unit: {:?}",
-                smallest_unit
+                "Unsupported date trunc unit: {smallest_unit:?}"
             )))
         }
     };
@@ -226,8 +225,7 @@ fn to_timestamp_col(field: &str, schema: &DFSchema, default_input_tz: &String) -
         },
         dtype => {
             return Err(VegaFusionError::compilation(format!(
-                "Invalid data type for timeunit transform: {:?}",
-                dtype
+                "Invalid data type for timeunit transform: {dtype:?}"
             )))
         }
     })
@@ -634,7 +632,7 @@ fn unpack_timeunit_udf_args(
     };
 
     let tz = chrono_tz::Tz::from_str(&tz_str).map_err(|_err| {
-        DataFusionError::Internal(format!("Failed to parse {} as a timezone", tz_str))
+        DataFusionError::Internal(format!("Failed to parse {tz_str} as a timezone"))
     })?;
 
     let timestamp = columns[0].clone().into_array(1);
