@@ -1,9 +1,10 @@
 use crate::sql::compile::data_type::ToSqlDataType;
 use crate::sql::compile::scalar::ToSqlScalar;
+use datafusion::common::ScalarValue;
 use sqlgen::ast::{
     BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction,
     FunctionArg as SqlFunctionArg, Ident, ObjectName as SqlObjectName, ObjectName,
-    UnaryOperator as SqlUnaryOperator, WindowFrame as SqlWindowFrame,
+    UnaryOperator as SqlUnaryOperator, Value as SqlValue, WindowFrame as SqlWindowFrame,
     WindowFrameBound as SqlWindowBound, WindowFrameUnits as SqlWindowFrameUnits,
     WindowSpec as SqlWindowSpec,
 };
@@ -253,21 +254,64 @@ impl ToSqlExpr for Expr {
                 }))
             }
             Expr::ScalarUDF { fun, args } => {
-                let ident = Ident {
-                    value: fun.name.clone(),
-                    quote_style: None,
-                };
-                let args = args
-                    .iter()
-                    .map(|expr| Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?)))
-                    .collect::<Result<Vec<_>>>()?;
+                if fun.name == "date_add" {
+                    // Convert date_add function to interval arithmetic
+                    if args.len() != 3 {
+                        return Err(VegaFusionError::sql_not_supported(
+                            "date_add requires exactly 3 arguments",
+                        ));
+                    }
 
-                Ok(SqlExpr::Function(SqlFunction {
-                    name: SqlObjectName(vec![ident]),
-                    args,
-                    over: None,
-                    distinct: false,
-                }))
+                    let date_part = if let Expr::Literal(ScalarValue::Utf8(Some(part))) = &args[0] {
+                        part.clone()
+                    } else {
+                        return Err(VegaFusionError::sql_not_supported(
+                            "First arg to date_add must be a string literal",
+                        ));
+                    };
+
+                    let num = if let Expr::Literal(ScalarValue::Int32(Some(num))) = &args[1] {
+                        *num
+                    } else {
+                        return Err(VegaFusionError::sql_not_supported(
+                            "Second arg to date_add must be a string integer",
+                        ));
+                    };
+
+                    let interval_string = format!("{num} {date_part}");
+                    let interval = SqlExpr::Value(SqlValue::Interval {
+                        value: Box::new(SqlExpr::Value(SqlValue::SingleQuotedString(
+                            interval_string,
+                        ))),
+                        leading_field: None,
+                        leading_precision: None,
+                        last_field: None,
+                        fractional_seconds_precision: None,
+                    });
+
+                    Ok(SqlExpr::BinaryOp {
+                        left: Box::new(args[2].to_sql()?),
+                        op: SqlBinaryOperator::Plus,
+                        right: Box::new(interval),
+                    })
+                } else {
+                    // Pass through function to dialect
+                    let ident = Ident {
+                        value: fun.name.clone(),
+                        quote_style: None,
+                    };
+                    let args = args
+                        .iter()
+                        .map(|expr| Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?)))
+                        .collect::<Result<Vec<_>>>()?;
+
+                    Ok(SqlExpr::Function(SqlFunction {
+                        name: SqlObjectName(vec![ident]),
+                        args,
+                        over: None,
+                        distinct: false,
+                    }))
+                }
             }
             Expr::AggregateFunction(expr::AggregateFunction {
                 fun,
