@@ -8,7 +8,7 @@ use vegafusion_core::proto::gen::transforms::Formula;
 
 use crate::expression::compiler::utils::VfSimplifyInfo;
 use crate::expression::escape::flat_col;
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion::optimizer::simplify_expressions::ExprSimplifier;
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -17,17 +17,17 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Formula {
     async fn eval(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let formula_expr = compile(
             self.expr.as_ref().unwrap(),
             config,
-            Some(&dataframe.schema_df()),
+            Some(&dataframe.schema_df()?),
         )?;
 
         // Simplify expression prior to evaluation
-        let simplifier = ExprSimplifier::new(VfSimplifyInfo::from(dataframe.schema_df()));
+        let simplifier = ExprSimplifier::new(VfSimplifyInfo::from(dataframe.schema_df()?));
         let formula_expr = simplifier.simplify(formula_expr)?;
 
         // Rename with alias

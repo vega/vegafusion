@@ -1,6 +1,6 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::escape::{flat_col, unescaped_col};
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion_expr::{expr, Expr};
@@ -16,9 +16,9 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Stack {
     async fn eval(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let start_field = self.alias_0.clone().expect("alias0 expected");
         let stop_field = self.alias_1.clone().expect("alias1 expected");
 

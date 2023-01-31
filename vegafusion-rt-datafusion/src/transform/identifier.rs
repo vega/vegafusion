@@ -2,7 +2,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
 use crate::expression::escape::flat_col;
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion_expr::{
     expr, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound, WindowFrameUnits,
@@ -19,9 +19,9 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Identifier {
     async fn eval(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         // Add row number column with the desired name, sorted by the input order column
         let row_number_expr = Expr::WindowFunction(expr::WindowFunction {
             fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),

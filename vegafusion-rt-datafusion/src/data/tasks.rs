@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use datafusion::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use datafusion::arrow::ipc::reader::{FileReader, StreamReader};
 use datafusion::arrow::record_batch::RecordBatch;
-use datafusion::dataframe::DataFrame;
+use datafusion::dataframe::DataFrame as DfDataFrame;
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::execution::options::CsvReadOptions;
 use datafusion::logical_expr::Expr;
@@ -28,7 +28,7 @@ use crate::expression::compiler::builtin_functions::date_time::timestamp_to_time
 use crate::expression::compiler::call::make_session_context;
 use crate::expression::escape::flat_col;
 use crate::sql::connection::datafusion_conn::DataFusionConnection;
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::{DataFrame, SqlDataFrame};
 use crate::task_graph::timezone::RuntimeTzConfig;
 use crate::transform::pipeline::{remove_order_col, TransformPipelineUtils};
 use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
@@ -152,7 +152,7 @@ impl TaskCall for DataUrlTask {
 }
 
 async fn eval_sql_df(
-    sql_df: Arc<SqlDataFrame>,
+    sql_df: Arc<dyn DataFrame>,
     pipeline: &Option<TransformPipeline>,
     config: &CompilationConfig,
 ) -> Result<(TaskValue, Vec<TaskValue>)> {
@@ -272,9 +272,9 @@ fn check_builtin_dataset(url: String) -> String {
 
 async fn process_datetimes(
     parse: &Option<Parse>,
-    sql_df: Arc<SqlDataFrame>,
+    sql_df: Arc<dyn DataFrame>,
     tz_config: &Option<RuntimeTzConfig>,
-) -> Result<Arc<SqlDataFrame>> {
+) -> Result<Arc<dyn DataFrame>> {
     // Perform specialized date parsing
     let mut date_fields: Vec<String> = Vec::new();
     let mut df = sql_df;
@@ -282,7 +282,7 @@ async fn process_datetimes(
         for spec in &formats.specs {
             let datatype = &spec.datatype;
             if datatype.starts_with("date") || datatype.starts_with("utc") {
-                let schema = df.schema_df();
+                let schema = df.schema_df()?;
                 if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
@@ -501,7 +501,7 @@ impl TaskCall for DataSourceTask {
     }
 }
 
-async fn read_csv(url: String, parse: &Option<Parse>) -> Result<DataFrame> {
+async fn read_csv(url: String, parse: &Option<Parse>) -> Result<DfDataFrame> {
     // Build base CSV options
     let csv_opts = if url.ends_with(".tsv") {
         CsvReadOptions::new()
@@ -609,7 +609,7 @@ async fn build_csv_schema(
     Ok(SchemaRef::new(Schema::new(new_fields)))
 }
 
-async fn read_json(url: &str, batch_size: usize) -> Result<DataFrame> {
+async fn read_json(url: &str, batch_size: usize) -> Result<DfDataFrame> {
     // Read to json Value from local file or url.
     let value: serde_json::Value = if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
@@ -643,7 +643,7 @@ async fn read_json(url: &str, batch_size: usize) -> Result<DataFrame> {
         .await
 }
 
-async fn read_arrow(url: &str) -> Result<DataFrame> {
+async fn read_arrow(url: &str) -> Result<DfDataFrame> {
     // Read to json Value from local file or url.
     let buffer = if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text

@@ -3,7 +3,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
 use crate::expression::compiler::utils::ExprHelpers;
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion::arrow::array::{ArrayRef, Float64Array};
 use datafusion::arrow::datatypes::{Field, Schema, SchemaRef};
@@ -22,9 +22,9 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Sequence {
     async fn eval(
         &self,
-        _dataframe: Arc<SqlDataFrame>,
+        _dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let start_expr = compile(self.start.as_ref().unwrap(), config, None)?;
         let start_scalar = start_expr.eval_to_scalar()?;
         let start = start_scalar.to_f64()?;

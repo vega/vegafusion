@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use datafusion::logical_expr::lit;
 
 use crate::expression::escape::{flat_col, unescaped_col};
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use datafusion::common::DFSchema;
 use datafusion::scalar::ScalarValue;
 use datafusion_expr::expr::Cast;
@@ -25,10 +25,10 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Bin {
     async fn eval(
         &self,
-        sql_df: Arc<SqlDataFrame>,
+        sql_df: Arc<dyn DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
-        let schema = sql_df.schema_df();
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+        let schema = sql_df.schema_df()?;
 
         // Compute binning solution
         let params = calculate_bin_params(self, &schema, config)?;
@@ -45,7 +45,7 @@ impl TransformTrait for Bin {
         // Compute output signal value
         let output_value = compute_output_value(self, start, stop, step);
 
-        let numeric_field = to_numeric(unescaped_col(&self.field), &sql_df.schema_df())?;
+        let numeric_field = to_numeric(unescaped_col(&self.field), &sql_df.schema_df()?)?;
 
         // Add column with bin index
         let bin_index_name = "__bin_index";

@@ -1,5 +1,5 @@
 use crate::expression::compiler::config::CompilationConfig;
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use crate::transform::aggregate::make_aggr_expr_for_named_col;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
@@ -15,11 +15,11 @@ use vegafusion_core::transform::aggregate::op_name;
 impl TransformTrait for JoinAggregate {
     async fn eval(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let group_exprs: Vec<_> = self.groupby.iter().map(|c| unescaped_col(c)).collect();
-        let schema = dataframe.schema_df();
+        let schema = dataframe.schema_df()?;
 
         let mut agg_exprs = Vec::new();
         let mut new_col_exprs = Vec::new();

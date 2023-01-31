@@ -19,7 +19,7 @@ use crate::expression::compiler::builtin_functions::date_time::timestamp_to_time
 use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use crate::expression::escape::{flat_col, unescaped_col};
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
 use datafusion_expr::expr::Cast;
 use datafusion_expr::{
@@ -378,9 +378,9 @@ fn timeunit_custom_udf(
 impl TransformTrait for TimeUnit {
     async fn eval(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let tz_config = config
             .tz_config
             .with_context(|| "No local timezone info provided".to_string())?;
@@ -392,7 +392,7 @@ impl TransformTrait for TimeUnit {
         };
 
         let local_tz = local_tz.map(|tz| tz.to_string());
-        let schema = dataframe.schema_df();
+        let schema = dataframe.schema_df()?;
         let default_input_tz = tz_config.default_input_tz.to_string();
 
         // Compute Apply alias
@@ -515,7 +515,7 @@ impl TransformTrait for TimeUnit {
 
         // Add timeunit start value to the dataframe
         let mut select_exprs: Vec<_> = dataframe
-            .schema_df()
+            .schema_df()?
             .fields()
             .iter()
             .filter_map(|field| {
@@ -565,7 +565,7 @@ impl TransformTrait for TimeUnit {
         .alias(&timeunit_end_alias);
 
         let mut select_exprs: Vec<_> = dataframe
-            .schema_df()
+            .schema_df()?
             .fields()
             .iter()
             .filter_map(|field| {

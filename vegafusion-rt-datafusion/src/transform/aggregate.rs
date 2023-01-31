@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use crate::expression::compiler::utils::to_numeric;
 use crate::expression::escape::{flat_col, unescaped_col};
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion::common::{DFSchema, ScalarValue};
 use datafusion_expr::{aggregate_function, expr};
@@ -23,11 +23,11 @@ use vegafusion_core::transform::aggregate::op_name;
 impl TransformTrait for Aggregate {
     async fn eval(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let group_exprs: Vec<_> = self.groupby.iter().map(|c| unescaped_col(c)).collect();
-        let (mut agg_exprs, projections) = get_agg_and_proj_exprs(self, &dataframe.schema_df())?;
+        let (mut agg_exprs, projections) = get_agg_and_proj_exprs(self, &dataframe.schema_df()?)?;
 
         // Append ordering column to aggregations
         agg_exprs.push(min(flat_col(ORDER_COL)).alias(ORDER_COL));

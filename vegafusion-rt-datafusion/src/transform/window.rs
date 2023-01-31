@@ -14,7 +14,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::expression::compiler::utils::to_numeric;
 use crate::expression::escape::{flat_col, unescaped_col};
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use datafusion::physical_plan::aggregates;
 use datafusion_expr::{
     window_frame, BuiltInWindowFunction, WindowFrameBound, WindowFrameUnits, WindowFunction,
@@ -25,9 +25,9 @@ use vegafusion_core::data::ORDER_COL;
 impl TransformTrait for Window {
     async fn eval(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let mut order_by: Vec<_> = self
             .sort_fields
             .iter()
@@ -42,7 +42,7 @@ impl TransformTrait for Window {
             .collect();
 
         let mut selections: Vec<_> = dataframe
-            .schema_df()
+            .schema_df()?
             .fields()
             .iter()
             .map(|f| flat_col(f.field().name()))
@@ -90,6 +90,7 @@ impl TransformTrait for Window {
             end_bound,
         };
 
+        let schema_df = dataframe.schema_df()?;
         let window_exprs: Vec<_> = self
             .ops
             .iter()
@@ -101,9 +102,9 @@ impl TransformTrait for Window {
                         let op = AggregateOp::from_i32(*op).unwrap();
 
                         let numeric_field = || {
-                            to_numeric(unescaped_col(field), &dataframe.schema_df()).unwrap_or_else(
-                                |_| panic!("Failed to convert field {field} to numeric data type"),
-                            )
+                            to_numeric(unescaped_col(field), &schema_df).unwrap_or_else(|_| {
+                                panic!("Failed to convert field {field} to numeric data type")
+                            })
                         };
 
                         use AggregateOp::*;

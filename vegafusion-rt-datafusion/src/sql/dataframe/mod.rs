@@ -3,7 +3,7 @@ use crate::sql::compile::order::ToSqlOrderByExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
 use crate::sql::connection::SqlConnection;
 use datafusion::common::{Column, DFSchema};
-use datafusion::prelude::{Expr as DfExpr, SessionContext};
+use datafusion::prelude::Expr as DfExpr;
 use datafusion_expr::{
     abs, expr, lit, max, min, when, window_function, AggregateFunction, BuiltInWindowFunction,
     BuiltinScalarFunction, Expr, ExprSchemable, WindowFrame, WindowFrameBound, WindowFrameUnits,
@@ -14,12 +14,14 @@ use sqlgen::ast::{Cte, With};
 use sqlgen::ast::{Query, TableAlias};
 use sqlgen::dialect::{Dialect, DialectDisplay};
 use sqlgen::parser::Parser;
+use std::any::Any;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
 
 use crate::expression::compiler::utils::to_numeric;
 use crate::expression::escape::flat_col;
 use crate::sql::connection::datafusion_conn::make_datafusion_dialect;
+use async_trait::async_trait;
 use datafusion::arrow::datatypes::Field;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Sub};
@@ -30,120 +32,113 @@ use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::spec::transform::stack::StackOffsetSpec;
 
+#[async_trait]
+pub trait DataFrame: Send + Sync + 'static {
+    fn as_any(&self) -> &dyn Any;
+
+    fn schema(&self) -> Schema;
+
+    fn schema_df(&self) -> Result<DFSchema> {
+        Ok(DFSchema::try_from(self.schema())?)
+    }
+
+    async fn collect(&self) -> Result<VegaFusionTable>;
+
+    async fn sort(&self, _expr: Vec<DfExpr>, _limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+        Err(VegaFusionError::sql_not_supported("sort not supported"))
+    }
+
+    async fn select(&self, _expr: Vec<DfExpr>) -> Result<Arc<dyn DataFrame>> {
+        Err(VegaFusionError::sql_not_supported("select not supported"))
+    }
+
+    async fn aggregate(
+        &self,
+        _group_expr: Vec<DfExpr>,
+        _aggr_expr: Vec<DfExpr>,
+    ) -> Result<Arc<dyn DataFrame>> {
+        Err(VegaFusionError::sql_not_supported(
+            "aggregate not supported",
+        ))
+    }
+
+    async fn joinaggregate(
+        &self,
+        _group_expr: Vec<DfExpr>,
+        _aggr_expr: Vec<DfExpr>,
+    ) -> Result<Arc<dyn DataFrame>> {
+        Err(VegaFusionError::sql_not_supported(
+            "joinaggregate not supported",
+        ))
+    }
+
+    async fn filter(&self, _predicate: Expr) -> Result<Arc<dyn DataFrame>> {
+        Err(VegaFusionError::sql_not_supported("filter not supported"))
+    }
+
+    async fn limit(&self, _limit: i32) -> Result<Arc<dyn DataFrame>> {
+        Err(VegaFusionError::sql_not_supported("limit not supported"))
+    }
+
+    async fn fold(
+        &self,
+        _fields: &[String],
+        _value_col: &str,
+        _key_col: &str,
+        _order_field: Option<&str>,
+    ) -> Result<Arc<dyn DataFrame>> {
+        Err(VegaFusionError::sql_not_supported("fold not supported"))
+    }
+
+    async fn stack(
+        &self,
+        _field: &str,
+        _orderby: Vec<Expr>,
+        _groupby: &[String],
+        _start_field: &str,
+        _stop_field: &str,
+        _mode: StackOffsetSpec,
+    ) -> Result<Arc<dyn DataFrame>> {
+        Err(VegaFusionError::sql_not_supported("stack not supported"))
+    }
+
+    async fn impute(
+        &self,
+        _field: &str,
+        _value: ScalarValue,
+        _key: &str,
+        _groupby: &[String],
+        _order_field: Option<&str>,
+    ) -> Result<Arc<dyn DataFrame>> {
+        Err(VegaFusionError::sql_not_supported("impute not supported"))
+    }
+}
+
 #[derive(Clone)]
 pub struct SqlDataFrame {
     prefix: String,
     schema: SchemaRef,
     ctes: Vec<Query>,
     conn: Arc<dyn SqlConnection>,
-    session_context: Arc<SessionContext>,
     dialect: Arc<Dialect>,
 }
 
-impl SqlDataFrame {
-    pub async fn try_new(conn: Arc<dyn SqlConnection>, table: &str) -> Result<Self> {
-        let tables = conn.tables().await?;
-        let schema = tables
-            .get(table)
-            .cloned()
-            .with_context(|| format!("Connection has no table named {table}"))?;
-        // Should quote column names
-        let columns: Vec<_> = schema
-            .fields()
-            .iter()
-            .map(|f| format!("\"{}\"", f.name()))
-            .collect();
-        let select_items = columns.join(", ");
-
-        let query = Parser::parse_sql_query(&format!("select {select_items} from {table}"))?;
-
-        Ok(Self {
-            prefix: format!("{table}_"),
-            ctes: vec![query],
-            schema: Arc::new(schema.clone()),
-            session_context: Arc::new(conn.session_context().await?),
-            conn,
-            dialect: Arc::new(make_datafusion_dialect()),
-        })
+#[async_trait]
+impl DataFrame for SqlDataFrame {
+    fn as_any(&self) -> &dyn Any {
+        self as &dyn Any
     }
 
-    pub fn schema(&self) -> Schema {
+    fn schema(&self) -> Schema {
         self.schema.as_ref().clone()
     }
 
-    pub fn schema_df(&self) -> DFSchema {
-        DFSchema::try_from(self.schema.as_ref().clone()).unwrap()
-    }
-
-    pub fn dialect(&self) -> &Dialect {
-        &self.dialect
-    }
-
-    pub fn fingerprint(&self) -> u64 {
-        let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
-
-        // Add connection id in hash
-        self.conn.id().hash(&mut hasher);
-
-        // Add query to hash
-        let query_str = self.as_query().sql(self.conn.dialect()).unwrap();
-        query_str.hash(&mut hasher);
-
-        hasher.finish()
-    }
-
-    pub fn parent_name(&self) -> String {
-        parent_cte_name_for_index(&self.prefix, self.ctes.len())
-    }
-
-    pub fn as_query(&self) -> Query {
-        query_chain_to_cte(self.ctes.as_slice(), &self.prefix)
-    }
-
-    async fn chain_query_str(&self, query: &str, new_schema: Schema) -> Result<Arc<Self>> {
-        // println!("chain_query_str: {}", query);
-        let query_ast = Parser::parse_sql_query(query)?;
-        self.chain_query(query_ast, new_schema).await
-    }
-
-    async fn chain_query(&self, query: Query, new_schema: Schema) -> Result<Arc<Self>> {
-        let mut new_ctes = self.ctes.clone();
-        new_ctes.push(query);
-
-        Ok(Arc::new(SqlDataFrame {
-            prefix: self.prefix.clone(),
-            schema: Arc::new(new_schema),
-            ctes: new_ctes,
-            conn: self.conn.clone(),
-            session_context: self.session_context.clone(),
-            dialect: self.dialect.clone(),
-        }))
-    }
-
-    fn make_new_schema_from_exprs(&self, exprs: &[Expr]) -> Result<Schema> {
-        let mut fields: Vec<Field> = Vec::new();
-        for expr in exprs {
-            if let Expr::Wildcard = expr {
-                // Add field for each input schema field
-                fields.extend(self.schema.fields().clone())
-            } else {
-                // Add field for expression
-                let dtype = expr.get_type(&self.schema_df())?;
-                let name = expr.display_name()?;
-                fields.push(Field::new(name, dtype, true));
-            }
-        }
-
-        let new_schema = Schema::new(fields);
-        Ok(new_schema)
-    }
-
-    pub async fn collect(&self) -> Result<VegaFusionTable> {
+    async fn collect(&self) -> Result<VegaFusionTable> {
         let query_string = self.as_query().sql(self.conn.dialect())?;
         self.conn.fetch_query(&query_string, &self.schema).await
     }
 
-    pub async fn sort(&self, expr: Vec<DfExpr>, limit: Option<i32>) -> Result<Arc<Self>> {
+    async fn sort(&self, expr: Vec<DfExpr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
         let mut query = self.make_select_star();
         let sql_exprs = expr
             .iter()
@@ -156,7 +151,7 @@ impl SqlDataFrame {
         self.chain_query(query, self.schema.as_ref().clone()).await
     }
 
-    pub async fn select(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
+    async fn select(&self, expr: Vec<DfExpr>) -> Result<Arc<dyn DataFrame>> {
         let sql_expr_strs = expr
             .iter()
             .map(|expr| Ok(expr.to_sql_select()?.sql(&self.dialect)?))
@@ -170,16 +165,16 @@ impl SqlDataFrame {
         ))?;
 
         // Build new schema
-        let new_schema = self.make_new_schema_from_exprs(expr.as_slice())?;
+        let new_schema = make_new_schema_from_exprs(self.schema.as_ref(), expr.as_slice())?;
 
         self.chain_query(query, new_schema).await
     }
 
-    pub async fn aggregate(
+    async fn aggregate(
         &self,
         group_expr: Vec<DfExpr>,
         aggr_expr: Vec<DfExpr>,
-    ) -> Result<Arc<Self>> {
+    ) -> Result<Arc<dyn DataFrame>> {
         // Add group exprs to aggregates for SQL query
         let mut all_aggr_expr = aggr_expr.clone();
         all_aggr_expr.extend(group_expr.clone());
@@ -213,16 +208,17 @@ impl SqlDataFrame {
         };
 
         // Build new schema from aggregate expressions
-        let new_schema = self.make_new_schema_from_exprs(all_aggr_expr.as_slice())?;
+        let new_schema =
+            make_new_schema_from_exprs(self.schema.as_ref(), all_aggr_expr.as_slice())?;
         self.chain_query(query, new_schema).await
     }
 
-    pub async fn joinaggregate(
+    async fn joinaggregate(
         &self,
         group_expr: Vec<DfExpr>,
         aggr_expr: Vec<DfExpr>,
-    ) -> Result<Arc<Self>> {
-        let schema = self.schema_df();
+    ) -> Result<Arc<dyn DataFrame>> {
+        let schema = self.schema_df()?;
         let dialect = self.dialect();
 
         // Build csv str for new columns
@@ -279,7 +275,8 @@ impl SqlDataFrame {
         // Build new schema
         let mut new_schema_exprs = input_col_exprs.clone();
         new_schema_exprs.extend(aggr_expr.clone());
-        let new_schema = self.make_new_schema_from_exprs(new_schema_exprs.as_slice())?;
+        let new_schema =
+            make_new_schema_from_exprs(self.schema.as_ref(), new_schema_exprs.as_slice())?;
 
         if sql_group_expr_strs.is_empty() {
             self.chain_query_str(
@@ -315,7 +312,7 @@ impl SqlDataFrame {
         }
     }
 
-    pub async fn filter(&self, predicate: Expr) -> Result<Arc<Self>> {
+    async fn filter(&self, predicate: Expr) -> Result<Arc<dyn DataFrame>> {
         let sql_predicate = predicate.to_sql()?;
 
         let query = Parser::parse_sql_query(&format!(
@@ -329,7 +326,7 @@ impl SqlDataFrame {
             .with_context(|| format!("unsupported filter expression: {predicate}"))
     }
 
-    pub async fn limit(&self, limit: i32) -> Result<Arc<Self>> {
+    async fn limit(&self, limit: i32) -> Result<Arc<dyn DataFrame>> {
         let query = Parser::parse_sql_query(&format!(
             "select * from {parent} LIMIT {limit}",
             parent = self.parent_name(),
@@ -341,13 +338,13 @@ impl SqlDataFrame {
             .with_context(|| "unsupported limit query".to_string())
     }
 
-    pub async fn fold(
+    async fn fold(
         &self,
         fields: &[String],
         value_col: &str,
         key_col: &str,
         order_field: Option<&str>,
-    ) -> Result<Arc<Self>> {
+    ) -> Result<Arc<dyn DataFrame>> {
         let dialect = self.dialect();
 
         // Build selection that includes all input fields that aren't shadowed by key/value cols
@@ -426,7 +423,8 @@ impl SqlDataFrame {
         let sql =
             format!("SELECT {selection_csv} FROM ({union_subquery}) as {union_subquery_name}");
 
-        let new_schmea = self.make_new_schema_from_exprs(subquery_exprs[0].as_slice())?;
+        let new_schmea =
+            make_new_schema_from_exprs(self.schema.as_ref(), subquery_exprs[0].as_slice())?;
         let dataframe = self.chain_query_str(&sql, new_schmea).await?;
 
         if let Some(order_field) = order_field {
@@ -471,7 +469,7 @@ impl SqlDataFrame {
         }
     }
 
-    pub async fn stack(
+    async fn stack(
         &self,
         field: &str,
         orderby: Vec<Expr>,
@@ -479,7 +477,7 @@ impl SqlDataFrame {
         start_field: &str,
         stop_field: &str,
         mode: StackOffsetSpec,
-    ) -> Result<Arc<Self>> {
+    ) -> Result<Arc<dyn DataFrame>> {
         // Save off input columns
         let input_fields: Vec<_> = self
             .schema()
@@ -488,12 +486,14 @@ impl SqlDataFrame {
             .map(|f| f.name().clone())
             .collect();
 
+        let dialect = self.dialect();
+
         // Build partitioning column expressions
         let partition_by: Vec<_> = groupby.iter().map(|group| flat_col(group)).collect();
 
         let numeric_field = Expr::ScalarFunction {
             fun: BuiltinScalarFunction::Coalesce,
-            args: vec![to_numeric(flat_col(field), &self.schema_df())?, lit(0)],
+            args: vec![to_numeric(flat_col(field), &self.schema_df()?)?, lit(0)],
         };
 
         if let StackOffsetSpec::Zero = mode {
@@ -521,16 +521,17 @@ impl SqlDataFrame {
             // values stack in the negative direction and positive values stack in the positive
             // direction.
             let schema_exprs = vec![Expr::Wildcard, window_expr.clone()];
-            let new_schema = self.make_new_schema_from_exprs(schema_exprs.as_slice())?;
+            let new_schema =
+                make_new_schema_from_exprs(self.schema.as_ref(), schema_exprs.as_slice())?;
 
             let dataframe = self
                 .chain_query_str(&format!(
-                                    "(SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} >= 0) UNION ALL \
+                    "(SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} >= 0) UNION ALL \
                                     (SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} < 0)",
-                                    parent = self.parent_name(),
-                                    window_expr_str = window_expr_str,
-                                    numeric_field = numeric_field.to_sql()?.sql(self.dialect())?
-                                ),
+                    parent = self.parent_name(),
+                    window_expr_str = window_expr_str,
+                    numeric_field = numeric_field.to_sql()?.sql(self.dialect())?
+                ),
                                  new_schema)
                 .await?;
 
@@ -564,6 +565,12 @@ impl SqlDataFrame {
                 .select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)])
                 .await?;
 
+            let dataframe = dataframe
+                .as_any()
+                .downcast_ref::<SqlDataFrame>()
+                .unwrap()
+                .clone();
+
             // Create aggregate for total of stack value
             let total_agg = Expr::AggregateFunction(expr::AggregateFunction {
                 fun: AggregateFunction::Sum,
@@ -572,11 +579,12 @@ impl SqlDataFrame {
                 filter: None,
             })
             .alias("__total");
-            let total_agg_str = total_agg.to_sql_select()?.sql(dataframe.dialect())?;
+            let total_agg_str = total_agg.to_sql_select()?.sql(&dialect)?;
 
             // Add __total column with total or total per partition
             let schema_exprs = vec![Expr::Wildcard, total_agg.clone()];
-            let new_schema = dataframe.make_new_schema_from_exprs(schema_exprs.as_slice())?;
+            let new_schema =
+                make_new_schema_from_exprs(&dataframe.schema(), schema_exprs.as_slice())?;
 
             let dataframe = if partition_by.is_empty() {
                 dataframe
@@ -642,18 +650,23 @@ impl SqlDataFrame {
             let dataframe = match mode {
                 StackOffsetSpec::Center => {
                     let max_total = max(flat_col("__total")).alias("__max_total");
-                    let max_total_str = max_total.to_sql_select()?.sql(dataframe.dialect())?;
+                    let max_total_str = max_total.to_sql_select()?.sql(&dialect)?;
 
                     // Compute new schema
                     let schema_exprs = vec![Expr::Wildcard, max_total.clone()];
                     let new_schema =
-                        dataframe.make_new_schema_from_exprs(schema_exprs.as_slice())?;
+                        make_new_schema_from_exprs(&dataframe.schema(), schema_exprs.as_slice())?;
 
-                    let dataframe = dataframe
+                    let sqldataframe = dataframe
+                        .as_any()
+                        .downcast_ref::<SqlDataFrame>()
+                        .unwrap()
+                        .clone();
+                    let dataframe = sqldataframe
                         .chain_query_str(
                             &format!(
                                 "SELECT * from {parent} CROSS JOIN (SELECT {max_total_str} from {parent})",
-                                parent = dataframe.parent_name(),
+                                parent = sqldataframe.parent_name(),
                                 max_total_str = max_total_str,
                             ),
                             new_schema
@@ -696,14 +709,14 @@ impl SqlDataFrame {
         }
     }
 
-    pub async fn impute(
+    async fn impute(
         &self,
         field: &str,
         value: ScalarValue,
         key: &str,
         groupby: &[String],
         order_field: Option<&str>,
-    ) -> Result<Arc<Self>> {
+    ) -> Result<Arc<dyn DataFrame>> {
         if groupby.is_empty() {
             // Value replacement for field with no groupby fields specified is equivalent to replacing
             // null values of that column with the fill value
@@ -797,7 +810,8 @@ impl SqlDataFrame {
                     min(flat_col(order_field)).alias(format!("{order_field}_key")),
                     min(flat_col(order_field)).alias(format!("{order_field}_groups")),
                 ]);
-                let new_schema = self.make_new_schema_from_exprs(schema_exprs.as_slice())?;
+                let new_schema =
+                    make_new_schema_from_exprs(self.schema.as_ref(), schema_exprs.as_slice())?;
                 let dataframe = self.chain_query_str(&sql, new_schema).await?;
 
                 // Override ordering column since null values may have been introduced in the query above.
@@ -867,10 +881,82 @@ impl SqlDataFrame {
                     using_csv = using_csv,
                     parent = self.parent_name(),
                 );
-                let new_schema = self.make_new_schema_from_exprs(select_columns.as_slice())?;
+                let new_schema =
+                    make_new_schema_from_exprs(self.schema.as_ref(), select_columns.as_slice())?;
                 self.chain_query_str(&sql, new_schema).await
             }
         }
+    }
+}
+
+impl SqlDataFrame {
+    pub async fn try_new(conn: Arc<dyn SqlConnection>, table: &str) -> Result<Self> {
+        let tables = conn.tables().await?;
+        let schema = tables
+            .get(table)
+            .cloned()
+            .with_context(|| format!("Connection has no table named {table}"))?;
+        // Should quote column names
+        let columns: Vec<_> = schema
+            .fields()
+            .iter()
+            .map(|f| format!("\"{}\"", f.name()))
+            .collect();
+        let select_items = columns.join(", ");
+
+        let query = Parser::parse_sql_query(&format!("select {select_items} from {table}"))?;
+
+        Ok(Self {
+            prefix: format!("{table}_"),
+            ctes: vec![query],
+            schema: Arc::new(schema.clone()),
+            conn,
+            dialect: Arc::new(make_datafusion_dialect()),
+        })
+    }
+
+    pub fn dialect(&self) -> &Dialect {
+        &self.dialect
+    }
+
+    pub fn fingerprint(&self) -> u64 {
+        let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
+
+        // Add connection id in hash
+        self.conn.id().hash(&mut hasher);
+
+        // Add query to hash
+        let query_str = self.as_query().sql(self.conn.dialect()).unwrap();
+        query_str.hash(&mut hasher);
+
+        hasher.finish()
+    }
+
+    pub fn parent_name(&self) -> String {
+        parent_cte_name_for_index(&self.prefix, self.ctes.len())
+    }
+
+    pub fn as_query(&self) -> Query {
+        query_chain_to_cte(self.ctes.as_slice(), &self.prefix)
+    }
+
+    async fn chain_query_str(&self, query: &str, new_schema: Schema) -> Result<Arc<dyn DataFrame>> {
+        // println!("chain_query_str: {}", query);
+        let query_ast = Parser::parse_sql_query(query)?;
+        self.chain_query(query_ast, new_schema).await
+    }
+
+    async fn chain_query(&self, query: Query, new_schema: Schema) -> Result<Arc<dyn DataFrame>> {
+        let mut new_ctes = self.ctes.clone();
+        new_ctes.push(query);
+
+        Ok(Arc::new(SqlDataFrame {
+            prefix: self.prefix.clone(),
+            schema: Arc::new(new_schema),
+            ctes: new_ctes,
+            conn: self.conn.clone(),
+            dialect: self.dialect.clone(),
+        }))
     }
 
     fn make_select_star(&self) -> Query {
@@ -880,6 +966,25 @@ impl SqlDataFrame {
         ))
         .unwrap()
     }
+}
+
+fn make_new_schema_from_exprs(schema: &Schema, exprs: &[Expr]) -> Result<Schema> {
+    let mut fields: Vec<Field> = Vec::new();
+    for expr in exprs {
+        if let Expr::Wildcard = expr {
+            // Add field for each input schema field
+            fields.extend(schema.fields().clone())
+        } else {
+            // Add field for expression
+            let schema_df = DFSchema::try_from(schema.clone())?;
+            let dtype = expr.get_type(&schema_df)?;
+            let name = expr.display_name()?;
+            fields.push(Field::new(name, dtype, true));
+        }
+    }
+
+    let new_schema = Schema::new(fields);
+    Ok(new_schema)
 }
 
 fn cte_name_for_index(prefix: &str, index: usize) -> String {

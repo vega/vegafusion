@@ -8,7 +8,7 @@ use std::sync::Arc;
 use vegafusion_core::error::{Result, VegaFusionError};
 
 use crate::expression::escape::flat_col;
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion_expr::{expr, lit, Expr};
 use vegafusion_core::data::table::VegaFusionTable;
@@ -22,7 +22,7 @@ use vegafusion_core::transform::TransformDependencies;
 pub trait TransformPipelineUtils {
     async fn eval_sql(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
     ) -> Result<(VegaFusionTable, Vec<TaskValue>)>;
 }
@@ -31,7 +31,7 @@ pub trait TransformPipelineUtils {
 impl TransformPipelineUtils for TransformPipeline {
     async fn eval_sql(
         &self,
-        sql_df: Arc<SqlDataFrame>,
+        sql_df: Arc<dyn DataFrame>,
         config: &CompilationConfig,
     ) -> Result<(VegaFusionTable, Vec<TaskValue>)> {
         let mut result_sql_df = sql_df;
@@ -114,7 +114,7 @@ impl TransformPipelineUtils for TransformPipeline {
     }
 }
 
-pub async fn remove_order_col(result_sql_df: Arc<SqlDataFrame>) -> Result<Arc<SqlDataFrame>> {
+pub async fn remove_order_col(result_sql_df: Arc<dyn DataFrame>) -> Result<Arc<dyn DataFrame>> {
     let mut selection = result_sql_df
         .schema()
         .fields

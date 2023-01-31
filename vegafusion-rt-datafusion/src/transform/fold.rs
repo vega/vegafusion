@@ -1,7 +1,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use std::sync::Arc;
 use vegafusion_core::data::ORDER_COL;
@@ -14,9 +14,9 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Fold {
     async fn eval(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let field_cols: Vec<_> = self.fields.iter().map(|f| unescape_field(f)).collect();
         let key_col = unescape_field(
             &self

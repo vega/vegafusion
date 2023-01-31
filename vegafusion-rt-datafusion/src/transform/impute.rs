@@ -1,5 +1,5 @@
 use crate::expression::compiler::config::CompilationConfig;
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::common::ScalarValue;
@@ -16,9 +16,9 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Impute {
     async fn eval(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         // Create ScalarValue used to fill in null values
         let json_value: serde_json::Value = serde_json::from_str(
             &self
