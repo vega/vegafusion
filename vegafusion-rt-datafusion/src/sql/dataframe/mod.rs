@@ -5,8 +5,9 @@ use crate::sql::connection::SqlConnection;
 use datafusion::common::{Column, DFSchema};
 use datafusion::prelude::{Expr as DfExpr, SessionContext};
 use datafusion_expr::{
-    abs, expr, lit, max, when, window_function, AggregateFunction, BuiltInWindowFunction,
-    BuiltinScalarFunction, Expr, WindowFrame, WindowFrameBound, WindowFrameUnits, WindowFunction,
+    abs, expr, lit, max, min, when, window_function, AggregateFunction, BuiltInWindowFunction,
+    BuiltinScalarFunction, Expr, ExprSchemable, WindowFrame, WindowFrameBound, WindowFrameUnits,
+    WindowFunction,
 };
 use sqlgen::ast::Ident;
 use sqlgen::ast::{Cte, With};
@@ -19,6 +20,7 @@ use std::collections::HashSet;
 use crate::expression::compiler::utils::to_numeric;
 use crate::expression::escape::flat_col;
 use crate::sql::connection::datafusion_conn::make_datafusion_dialect;
+use datafusion::arrow::datatypes::Field;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
@@ -98,36 +100,15 @@ impl SqlDataFrame {
         query_chain_to_cte(self.ctes.as_slice(), &self.prefix)
     }
 
-    async fn chain_query_str(&self, query: &str) -> Result<Arc<Self>> {
+    async fn chain_query_str(&self, query: &str, new_schema: Schema) -> Result<Arc<Self>> {
         // println!("chain_query_str: {}", query);
         let query_ast = Parser::parse_sql_query(query)?;
-        self.chain_query(query_ast).await
+        self.chain_query(query_ast, new_schema).await
     }
 
-    async fn chain_query(&self, query: Query) -> Result<Arc<Self>> {
+    async fn chain_query(&self, query: Query, new_schema: Schema) -> Result<Arc<Self>> {
         let mut new_ctes = self.ctes.clone();
         new_ctes.push(query);
-
-        let combined_query = query_chain_to_cte(new_ctes.as_slice(), &self.prefix);
-
-        // First, convert the combined query to a string using the connection's dialect to make
-        // sure that it is supported by the connection
-        combined_query
-            .sql(self.conn.dialect())
-            .map_err(|err| VegaFusionError::sql_not_supported(err.to_string()))?;
-
-        // Now convert to string in the DataFusion dialect for schema inference
-        let query_str = combined_query.sql(&self.dialect)?;
-        // println!("datafusion: {}", query_str);
-
-        let logical_plan = self
-            .session_context
-            .state()
-            .create_logical_plan(&query_str)
-            .await?;
-
-        // println!("logical_plan: {:?}", logical_plan);
-        let new_schema: Schema = logical_plan.schema().as_ref().into();
 
         Ok(Arc::new(SqlDataFrame {
             prefix: self.prefix.clone(),
@@ -137,6 +118,24 @@ impl SqlDataFrame {
             session_context: self.session_context.clone(),
             dialect: self.dialect.clone(),
         }))
+    }
+
+    fn make_new_schema_from_exprs(&self, exprs: &[Expr]) -> Result<Schema> {
+        let mut fields: Vec<Field> = Vec::new();
+        for expr in exprs {
+            if let Expr::Wildcard = expr {
+                // Add field for each input schema field
+                fields.extend(self.schema.fields().clone())
+            } else {
+                // Add field for expression
+                let dtype = expr.get_type(&self.schema_df())?;
+                let name = expr.display_name()?;
+                fields.push(Field::new(name, dtype, true));
+            }
+        }
+
+        let new_schema = Schema::new(fields);
+        Ok(new_schema)
     }
 
     pub async fn collect(&self) -> Result<VegaFusionTable> {
@@ -154,7 +153,7 @@ impl SqlDataFrame {
         if let Some(limit) = limit {
             query.limit = Some(lit(limit).to_sql().unwrap())
         }
-        self.chain_query(query).await
+        self.chain_query(query, self.schema.as_ref().clone()).await
     }
 
     pub async fn select(&self, expr: Vec<DfExpr>) -> Result<Arc<Self>> {
@@ -170,7 +169,10 @@ impl SqlDataFrame {
             parent = self.parent_name()
         ))?;
 
-        self.chain_query(query).await
+        // Build new schema
+        let new_schema = self.make_new_schema_from_exprs(expr.as_slice())?;
+
+        self.chain_query(query, new_schema).await
     }
 
     pub async fn aggregate(
@@ -178,18 +180,20 @@ impl SqlDataFrame {
         group_expr: Vec<DfExpr>,
         aggr_expr: Vec<DfExpr>,
     ) -> Result<Arc<Self>> {
+        // Add group exprs to aggregates for SQL query
+        let mut all_aggr_expr = aggr_expr.clone();
+        all_aggr_expr.extend(group_expr.clone());
+
         let sql_group_expr_strs = group_expr
             .iter()
             .map(|expr| Ok(expr.to_sql()?.sql(&self.dialect)?))
             .collect::<Result<Vec<_>>>()?;
 
-        let mut sql_aggr_expr_strs = aggr_expr
+        let sql_aggr_expr_strs = all_aggr_expr
             .iter()
             .map(|expr| Ok(expr.to_sql_select()?.sql(&self.dialect)?))
             .collect::<Result<Vec<_>>>()?;
 
-        // Add group exprs to selection
-        sql_aggr_expr_strs.extend(sql_group_expr_strs.clone());
         let aggr_csv = sql_aggr_expr_strs.join(", ");
 
         let query = if sql_group_expr_strs.is_empty() {
@@ -208,7 +212,9 @@ impl SqlDataFrame {
             ))?
         };
 
-        self.chain_query(query).await
+        // Build new schema from aggregate expressions
+        let new_schema = self.make_new_schema_from_exprs(all_aggr_expr.as_slice())?;
+        self.chain_query(query, new_schema).await
     }
 
     pub async fn joinaggregate(
@@ -270,31 +276,42 @@ impl SqlDataFrame {
             .collect::<Result<Vec<_>>>()?;
         let aggr_csv = sql_aggr_expr_strs.join(", ");
 
+        // Build new schema
+        let mut new_schema_exprs = input_col_exprs.clone();
+        new_schema_exprs.extend(aggr_expr.clone());
+        let new_schema = self.make_new_schema_from_exprs(new_schema_exprs.as_slice())?;
+
         if sql_group_expr_strs.is_empty() {
-            self.chain_query_str(&format!(
-                "select {input_col_csv}, {new_col_csv} \
-                from {parent} \
-                CROSS JOIN (select {aggr_csv} from {parent}) as {inner_name}",
-                aggr_csv = aggr_csv,
-                parent = self.parent_name(),
-                input_col_csv = input_col_csv,
-                new_col_csv = new_col_csv,
-                inner_name = inner_name,
-            ))
+            self.chain_query_str(
+                &format!(
+                    "select {input_col_csv}, {new_col_csv} \
+                    from {parent} \
+                    CROSS JOIN (select {aggr_csv} from {parent}) as {inner_name}",
+                    aggr_csv = aggr_csv,
+                    parent = self.parent_name(),
+                    input_col_csv = input_col_csv,
+                    new_col_csv = new_col_csv,
+                    inner_name = inner_name,
+                ),
+                new_schema,
+            )
             .await
         } else {
             let group_by_csv = sql_group_expr_strs.join(", ");
-            self.chain_query_str(&format!(
-                "select {input_col_csv}, {new_col_csv} \
-                from {parent} \
-                LEFT OUTER JOIN (select {aggr_csv}, {group_by_csv} from {parent} group by {group_by_csv}) as {inner_name} USING ({group_by_csv})",
-                aggr_csv = aggr_csv,
-                parent = self.parent_name(),
-                input_col_csv = input_col_csv,
-                new_col_csv = new_col_csv,
-                group_by_csv = group_by_csv,
-                inner_name = inner_name,
-            )).await
+            self.chain_query_str(
+                &format!(
+                    "select {input_col_csv}, {new_col_csv} \
+                    from {parent} \
+                    LEFT OUTER JOIN (select {aggr_csv}, {group_by_csv} from {parent} group by {group_by_csv}) as {inner_name} USING ({group_by_csv})",
+                    aggr_csv = aggr_csv,
+                    parent = self.parent_name(),
+                    input_col_csv = input_col_csv,
+                    new_col_csv = new_col_csv,
+                    group_by_csv = group_by_csv,
+                    inner_name = inner_name,
+                ),
+                new_schema
+            ).await
         }
     }
 
@@ -307,7 +324,7 @@ impl SqlDataFrame {
             sql_predicate = sql_predicate.sql(&self.dialect)?,
         ))?;
 
-        self.chain_query(query)
+        self.chain_query(query, self.schema.as_ref().clone())
             .await
             .with_context(|| format!("unsupported filter expression: {predicate}"))
     }
@@ -319,7 +336,7 @@ impl SqlDataFrame {
             limit = limit
         ))?;
 
-        self.chain_query(query)
+        self.chain_query(query, self.schema.as_ref().clone())
             .await
             .with_context(|| "unsupported limit query".to_string())
     }
@@ -348,7 +365,7 @@ impl SqlDataFrame {
             .collect::<Vec<_>>();
 
         // Build query per field
-        let subqueries = fields
+        let subquery_exprs = fields
             .iter()
             .enumerate()
             .map(|(i, field)| {
@@ -367,7 +384,13 @@ impl SqlDataFrame {
                     let field_order_col = format!("{order_field}_field");
                     subquery_selection.push(lit(i as u32).alias(field_order_col.clone()));
                 }
+                Ok(subquery_selection)
+            })
+            .collect::<Result<Vec<_>>>()?;
 
+        let subqueries = subquery_exprs
+            .iter()
+            .map(|subquery_selection| {
                 // Create selection CSV for subquery
                 let selection_strs = subquery_selection
                     .iter()
@@ -402,7 +425,9 @@ impl SqlDataFrame {
 
         let sql =
             format!("SELECT {selection_csv} FROM ({union_subquery}) as {union_subquery_name}");
-        let dataframe = self.chain_query_str(&sql).await?;
+
+        let new_schmea = self.make_new_schema_from_exprs(subquery_exprs[0].as_slice())?;
+        let dataframe = self.chain_query_str(&sql, new_schmea).await?;
 
         if let Some(order_field) = order_field {
             // Add new ordering column, ordering by:
@@ -495,14 +520,18 @@ impl SqlDataFrame {
             // then union the results. This is required to make sure stacks do not overlap. Negative
             // values stack in the negative direction and positive values stack in the positive
             // direction.
+            let schema_exprs = vec![Expr::Wildcard, window_expr.clone()];
+            let new_schema = self.make_new_schema_from_exprs(schema_exprs.as_slice())?;
+
             let dataframe = self
                 .chain_query_str(&format!(
-                    "(SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} >= 0) UNION ALL \
-                    (SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} < 0)",
-                    parent = self.parent_name(),
-                    window_expr_str = window_expr_str,
-                    numeric_field = numeric_field.to_sql()?.sql(self.dialect())?
-                ))
+                                    "(SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} >= 0) UNION ALL \
+                                    (SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} < 0)",
+                                    parent = self.parent_name(),
+                                    window_expr_str = window_expr_str,
+                                    numeric_field = numeric_field.to_sql()?.sql(self.dialect())?
+                                ),
+                                 new_schema)
                 .await?;
 
             // Build final selection
@@ -546,14 +575,19 @@ impl SqlDataFrame {
             let total_agg_str = total_agg.to_sql_select()?.sql(dataframe.dialect())?;
 
             // Add __total column with total or total per partition
+            let schema_exprs = vec![Expr::Wildcard, total_agg.clone()];
+            let new_schema = dataframe.make_new_schema_from_exprs(schema_exprs.as_slice())?;
+
             let dataframe = if partition_by.is_empty() {
                 dataframe
-                    .chain_query_str(&format!(
-                        "SELECT * from {parent} CROSS JOIN (SELECT {total_agg_str} from {parent})",
-                        parent = dataframe.parent_name(),
-                        total_agg_str = total_agg_str,
-                    ))
-                    .await?
+                    .chain_query_str(
+                        &format!(
+                            "SELECT * from {parent} CROSS JOIN (SELECT {total_agg_str} from {parent})",
+                            parent = dataframe.parent_name(),
+                            total_agg_str = total_agg_str,
+                        ),
+                        new_schema
+                    ).await?
             } else {
                 let partition_by_strs = partition_by
                     .iter()
@@ -561,14 +595,17 @@ impl SqlDataFrame {
                     .collect::<Result<Vec<_>>>()?;
                 let partition_by_csv = partition_by_strs.join(", ");
 
-                dataframe.chain_query_str(&format!(
-                    "SELECT * FROM {parent} INNER JOIN \
-                    (SELECT {partition_by_csv}, {total_agg_str} from {parent} GROUP BY {partition_by_csv}) as __inner \
-                    USING ({partition_by_csv})",
-                    parent = dataframe.parent_name(),
-                    partition_by_csv = partition_by_csv,
-                    total_agg_str = total_agg_str,
-                )).await?
+                dataframe.chain_query_str(
+                    &format!(
+                        "SELECT * FROM {parent} INNER JOIN \
+                        (SELECT {partition_by_csv}, {total_agg_str} from {parent} GROUP BY {partition_by_csv}) as __inner \
+                        USING ({partition_by_csv})",
+                        parent = dataframe.parent_name(),
+                        partition_by_csv = partition_by_csv,
+                        total_agg_str = total_agg_str,
+                    ),
+                    new_schema
+                ).await?
             };
 
             // Build window function to compute cumulative sum of stack column
@@ -607,13 +644,20 @@ impl SqlDataFrame {
                     let max_total = max(flat_col("__total")).alias("__max_total");
                     let max_total_str = max_total.to_sql_select()?.sql(dataframe.dialect())?;
 
+                    // Compute new schema
+                    let schema_exprs = vec![Expr::Wildcard, max_total.clone()];
+                    let new_schema =
+                        dataframe.make_new_schema_from_exprs(schema_exprs.as_slice())?;
+
                     let dataframe = dataframe
-                        .chain_query_str(&format!(
-                            "SELECT * from {parent} CROSS JOIN (SELECT {max_total_str} from {parent})",
-                            parent = dataframe.parent_name(),
-                            max_total_str = max_total_str,
-                        ))
-                        .await?;
+                        .chain_query_str(
+                            &format!(
+                                "SELECT * from {parent} CROSS JOIN (SELECT {max_total_str} from {parent})",
+                                parent = dataframe.parent_name(),
+                                max_total_str = max_total_str,
+                            ),
+                            new_schema
+                        ).await?;
 
                     let first = flat_col("__max_total").sub(flat_col("__total")).div(lit(2));
                     let first_col = flat_col(stop_field).add(first);
@@ -747,7 +791,14 @@ impl SqlDataFrame {
                     order_field = order_field,
                     parent = self.parent_name(),
                 );
-                let dataframe = self.chain_query_str(&sql).await?;
+
+                let mut schema_exprs = select_columns.clone();
+                schema_exprs.extend(vec![
+                    min(flat_col(order_field)).alias(format!("{order_field}_key")),
+                    min(flat_col(order_field)).alias(format!("{order_field}_groups")),
+                ]);
+                let new_schema = self.make_new_schema_from_exprs(schema_exprs.as_slice())?;
+                let dataframe = self.chain_query_str(&sql, new_schema).await?;
 
                 // Override ordering column since null values may have been introduced in the query above.
                 // Match input ordering with imputed rows (those will null ordering column) pushed
@@ -816,7 +867,8 @@ impl SqlDataFrame {
                     using_csv = using_csv,
                     parent = self.parent_name(),
                 );
-                self.chain_query_str(&sql).await
+                let new_schema = self.make_new_schema_from_exprs(select_columns.as_slice())?;
+                self.chain_query_str(&sql, new_schema).await
             }
         }
     }

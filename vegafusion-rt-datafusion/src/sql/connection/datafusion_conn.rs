@@ -5,9 +5,12 @@ use log::Level;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::expression::compiler::utils::cast_to;
+use crate::expression::escape::flat_col;
 use sqlgen::dialect::Dialect;
 use vegafusion_core::arrow::datatypes::Schema;
 use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_core::error::Result;
 
 #[derive(Clone)]
 pub struct DataFusionConnection {
@@ -63,13 +66,34 @@ impl SqlConnection for DataFusionConnection {
         "datafusion".to_string()
     }
 
-    async fn fetch_query(
-        &self,
-        query: &str,
-        _schema: &Schema,
-    ) -> vegafusion_core::error::Result<VegaFusionTable> {
+    async fn fetch_query(&self, query: &str, schema: &Schema) -> Result<VegaFusionTable> {
         info!("{}", query);
         let df = self.ctx.sql(query).await?;
+
+        let result_fields: Vec<_> = df
+            .schema()
+            .fields()
+            .iter()
+            .map(|f| f.field().clone().with_nullable(true))
+            .collect();
+        let expected_fields: Vec<_> = schema
+            .fields
+            .iter()
+            .map(|f| f.clone().with_nullable(true))
+            .collect();
+        let df = if result_fields == expected_fields {
+            df
+        } else {
+            // Coerce dataframe columns to match expected schema
+            let selections = expected_fields
+                .iter()
+                .map(|f| {
+                    Ok(cast_to(flat_col(f.name()), f.data_type(), df.schema())?.alias(f.name()))
+                })
+                .collect::<Result<Vec<_>>>()?;
+            df.select(selections)?
+        };
+
         let res = VegaFusionTable::from_dataframe(df).await?;
         if log_enabled!(Level::Debug) {
             debug!("\n{}", res.pretty_format(Some(5)).unwrap());
@@ -78,7 +102,7 @@ impl SqlConnection for DataFusionConnection {
         Ok(res)
     }
 
-    async fn tables(&self) -> vegafusion_core::error::Result<HashMap<String, Schema>> {
+    async fn tables(&self) -> Result<HashMap<String, Schema>> {
         let catalog_names = self.ctx.catalog_names();
         let first_catalog_name = catalog_names.get(0).unwrap();
         let catalog = self.ctx.catalog(first_catalog_name).unwrap();

@@ -125,8 +125,6 @@ pub fn make_aggr_expr_for_named_col(
         } else {
             flat_col(&col_name)
         }
-    } else if matches!(op, AggregateOp::Count) {
-        Expr::Wildcard
     } else {
         lit(0i32)
     };
