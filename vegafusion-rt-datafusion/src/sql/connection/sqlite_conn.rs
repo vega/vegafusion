@@ -1,4 +1,4 @@
-use crate::sql::connection::SqlConnection;
+use crate::sql::connection::{Connection, SqlConnection};
 use async_trait::async_trait;
 use regex::Regex;
 use sqlgen::dialect::Dialect;
@@ -42,12 +42,50 @@ impl SqLiteConnection {
 }
 
 #[async_trait]
-impl SqlConnection for SqLiteConnection {
+impl Connection for SqLiteConnection {
     fn id(&self) -> String {
         // Maybe add file modification time to id to automatically detect database changes
         self.uri.clone()
     }
 
+    async fn tables(&self) -> Result<HashMap<String, Schema>> {
+        let recs = sqlx::query(
+            r#"
+            SELECT name, sql FROM sqlite_schema
+            WHERE type='table'
+            ORDER BY name;
+        "#,
+        )
+        .fetch_all(self.pool.clone().as_ref())
+        .await
+        .map_err(|_err| VegaFusionError::internal("Failed to query sqlite schema"))?;
+
+        let re_pair = Regex::new(r#"("[\w\s]+"\s*\w+,?)"#).unwrap();
+        let re_field = Regex::new(r#""([\w\s]+)" (\w+),?"#).unwrap();
+
+        let mut schemas: HashMap<String, Schema> = HashMap::new();
+        for rec in recs {
+            let mut fields = Vec::new();
+            let table_name: &str = rec.get(0);
+            let create_str: &str = rec.get(1);
+
+            for v in re_pair.find_iter(create_str) {
+                let field = re_field.captures(v.as_str()).unwrap();
+                let col = field.get(1).unwrap().as_str().to_string();
+                let typ = field.get(2).unwrap().as_str().to_string();
+                let df_type = sqlite_to_arrow_dtype(&typ)?;
+                fields.push(Field::new(col, df_type, true));
+            }
+
+            let schema = Schema::new(fields);
+            schemas.insert(table_name.to_string(), schema);
+        }
+        Ok(schemas)
+    }
+}
+
+#[async_trait]
+impl SqlConnection for SqLiteConnection {
     async fn fetch_query(&self, query: &str, schema: &Schema) -> Result<VegaFusionTable> {
         println!("sqlite: {query}");
 
@@ -117,43 +155,12 @@ impl SqlConnection for SqLiteConnection {
         Ok(table)
     }
 
-    async fn tables(&self) -> Result<HashMap<String, Schema>> {
-        let recs = sqlx::query(
-            r#"
-            SELECT name, sql FROM sqlite_schema
-            WHERE type='table'
-            ORDER BY name;
-        "#,
-        )
-        .fetch_all(self.pool.clone().as_ref())
-        .await
-        .map_err(|_err| VegaFusionError::internal("Failed to query sqlite schema"))?;
-
-        let re_pair = Regex::new(r#"("[\w\s]+"\s*\w+,?)"#).unwrap();
-        let re_field = Regex::new(r#""([\w\s]+)" (\w+),?"#).unwrap();
-
-        let mut schemas: HashMap<String, Schema> = HashMap::new();
-        for rec in recs {
-            let mut fields = Vec::new();
-            let table_name: &str = rec.get(0);
-            let create_str: &str = rec.get(1);
-
-            for v in re_pair.find_iter(create_str) {
-                let field = re_field.captures(v.as_str()).unwrap();
-                let col = field.get(1).unwrap().as_str().to_string();
-                let typ = field.get(2).unwrap().as_str().to_string();
-                let df_type = sqlite_to_arrow_dtype(&typ)?;
-                fields.push(Field::new(col, df_type, true));
-            }
-
-            let schema = Schema::new(fields);
-            schemas.insert(table_name.to_string(), schema);
-        }
-        Ok(schemas)
-    }
-
     fn dialect(&self) -> &Dialect {
         &self.dialect
+    }
+
+    fn to_connection(&self) -> Arc<dyn Connection> {
+        Arc::new(self.clone())
     }
 }
 

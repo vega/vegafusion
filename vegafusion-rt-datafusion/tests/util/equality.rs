@@ -3,19 +3,18 @@ use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::scalar::ScalarValue;
 use std::collections::{HashMap, HashSet};
 
-use vegafusion_core::error::Result;
-
 use datafusion::logical_expr::{expr, Expr};
-
 use std::sync::Arc;
 use vegafusion_core::data::scalar::DATETIME_PREFIX;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::data::ORDER_COL;
-use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
+use vegafusion_core::error::Result;
+use vegafusion_rt_datafusion::expression::compiler::call::make_session_context;
 use vegafusion_rt_datafusion::expression::compiler::utils::is_numeric_datatype;
 use vegafusion_rt_datafusion::expression::escape::flat_col;
+use vegafusion_rt_datafusion::sql::connection::datafusion_conn::DataFusionConnection;
+use vegafusion_rt_datafusion::sql::connection::Connection;
 use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
-use vegafusion_rt_datafusion::transform::utils::DataFrameUtils;
 
 const DROP_COLS: &[&str] = &[ORDER_COL, "_impute"];
 
@@ -83,6 +82,9 @@ pub fn assert_tables_equal(
         rhs.num_rows()
     );
 
+    let ctx = make_session_context();
+    let conn = Arc::new(DataFusionConnection::new(Arc::new(ctx)));
+
     // Flatten to single record batch
     let (lhs_rb, rhs_rb) = if config.row_order {
         let lhs_rb = lhs.to_record_batch().unwrap();
@@ -107,15 +109,33 @@ pub fn assert_tables_equal(
             })
             .collect();
 
-        let lhs_df = TOKIO_RUNTIME.block_on(lhs.to_dataframe()).unwrap();
-        let rhs_df = TOKIO_RUNTIME.block_on(rhs.to_dataframe()).unwrap();
-
-        let lhs_rb = lhs_df
-            .sort(sort_exprs.clone())
-            .unwrap()
-            .block_flat_eval()
+        let lhs_df = TOKIO_RUNTIME
+            .block_on(conn.scan_arrow(lhs.clone()))
             .unwrap();
-        let rhs_rb = rhs_df.sort(sort_exprs).unwrap().block_flat_eval().unwrap();
+        let rhs_df = TOKIO_RUNTIME
+            .block_on(conn.scan_arrow(rhs.clone()))
+            .unwrap();
+
+        let lhs_rb = TOKIO_RUNTIME.block_on(async {
+            lhs_df
+                .sort(sort_exprs.clone(), None)
+                .await
+                .unwrap()
+                .collect_flat()
+                .await
+                .unwrap()
+        });
+
+        let rhs_rb = TOKIO_RUNTIME.block_on(async {
+            rhs_df
+                .sort(sort_exprs.clone(), None)
+                .await
+                .unwrap()
+                .collect_flat()
+                .await
+                .unwrap()
+        });
+
         (lhs_rb, rhs_rb)
     };
 

@@ -1,7 +1,7 @@
 use crate::sql::compile::expr::ToSqlExpr;
 use crate::sql::compile::order::ToSqlOrderByExpr;
 use crate::sql::compile::select::ToSqlSelectItem;
-use crate::sql::connection::SqlConnection;
+use crate::sql::connection::{Connection, SqlConnection};
 use datafusion::common::{Column, DFSchema};
 use datafusion::prelude::Expr as DfExpr;
 use datafusion_expr::{
@@ -26,7 +26,9 @@ use datafusion::arrow::datatypes::Field;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
+use vegafusion_core::arrow::compute::concat_batches;
 use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
+use vegafusion_core::arrow::record_batch::RecordBatch;
 use vegafusion_core::data::scalar::ScalarValue;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -42,7 +44,21 @@ pub trait DataFrame: Send + Sync + 'static {
         Ok(DFSchema::try_from(self.schema())?)
     }
 
+    fn connection(&self) -> Arc<dyn Connection>;
+
+    fn fingerprint(&self) -> u64;
+
     async fn collect(&self) -> Result<VegaFusionTable>;
+
+    async fn collect_flat(&self) -> Result<RecordBatch> {
+        let mut arrow_schema = Arc::new(self.schema().into()) as SchemaRef;
+        let table = self.collect().await?;
+        if let Some(batch) = table.batches.get(0) {
+            arrow_schema = batch.schema()
+        }
+        concat_batches(&arrow_schema, table.batches.as_slice())
+            .with_context(|| String::from("Failed to concatenate RecordBatches"))
+    }
 
     async fn sort(&self, _expr: Vec<DfExpr>, _limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("sort not supported"))
@@ -131,6 +147,23 @@ impl DataFrame for SqlDataFrame {
 
     fn schema(&self) -> Schema {
         self.schema.as_ref().clone()
+    }
+
+    fn connection(&self) -> Arc<dyn Connection> {
+        self.conn.to_connection()
+    }
+
+    fn fingerprint(&self) -> u64 {
+        let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
+
+        // Add connection id in hash
+        self.conn.id().hash(&mut hasher);
+
+        // Add query to hash
+        let query_str = self.as_query().sql(self.conn.dialect()).unwrap();
+        query_str.hash(&mut hasher);
+
+        hasher.finish()
     }
 
     async fn collect(&self) -> Result<VegaFusionTable> {
@@ -917,19 +950,6 @@ impl SqlDataFrame {
 
     pub fn dialect(&self) -> &Dialect {
         &self.dialect
-    }
-
-    pub fn fingerprint(&self) -> u64 {
-        let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
-
-        // Add connection id in hash
-        self.conn.id().hash(&mut hasher);
-
-        // Add query to hash
-        let query_str = self.as_query().sql(self.conn.dialect()).unwrap();
-        query_str.hash(&mut hasher);
-
-        hasher.finish()
     }
 
     pub fn parent_name(&self) -> String {

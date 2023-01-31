@@ -6,6 +6,7 @@ use datafusion::scalar::ScalarValue;
 use std::str::FromStr;
 
 use std::convert::TryFrom;
+use std::sync::Arc;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 
 use vegafusion_core::data::table::VegaFusionTable;
@@ -13,10 +14,12 @@ use vegafusion_core::error::Result;
 use vegafusion_core::expression::parser::parse;
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
+use vegafusion_rt_datafusion::expression::compiler::call::make_session_context;
 use vegafusion_rt_datafusion::expression::compiler::compile;
 use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
 use vegafusion_rt_datafusion::expression::compiler::utils::ExprHelpers;
+use vegafusion_rt_datafusion::sql::connection::datafusion_conn::DataFusionConnection;
+use vegafusion_rt_datafusion::sql::connection::Connection;
 use vegafusion_rt_datafusion::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
 use vegafusion_rt_datafusion::transform::pipeline::TransformPipelineUtils;
@@ -114,10 +117,13 @@ pub fn eval_vegafusion_transforms(
     transform_specs: &[TransformSpec],
     compilation_config: &CompilationConfig,
 ) -> (VegaFusionTable, Vec<ScalarValue>) {
+    let ctx = make_session_context();
+    let conn = Arc::new(DataFusionConnection::new(Arc::new(ctx))) as Arc<dyn Connection>;
+
     // add ordering column
     let data = data.clone().with_ordering().unwrap();
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
-    let sql_df = (*TOKIO_RUNTIME).block_on(data.to_sql_dataframe()).unwrap();
+    let sql_df = (*TOKIO_RUNTIME).block_on(conn.scan_arrow(data)).unwrap();
 
     let (result_data, result_signals) = TOKIO_RUNTIME
         .block_on(pipeline.eval_sql(sql_df, compilation_config))
