@@ -510,10 +510,10 @@ fn compile_window_frame_bound(
 mod tests {
     use super::ToSqlExpr;
     use crate::expression::escape::flat_col;
+    use crate::sql::connection::datafusion_conn::make_datafusion_dialect;
     use datafusion_expr::expr::Cast;
     use datafusion_expr::{lit, Between, BuiltinScalarFunction, Expr};
     use vegafusion_core::arrow::datatypes::DataType;
-    use crate::sql::connection::datafusion_conn::make_datafusion_dialect;
 
     #[test]
     pub fn test1() {
