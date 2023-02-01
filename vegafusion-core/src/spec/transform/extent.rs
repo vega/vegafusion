@@ -1,4 +1,5 @@
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::expression::escape::unescape_field;
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
@@ -30,8 +31,10 @@ impl TransformSpecTrait for ExtentTransformSpec {
         _vl_selection_fields: &VlSelectionFields,
     ) -> TransformColumns {
         if let Some(datum_var) = datum_var {
-            let usage = DatasetsColumnUsage::empty()
-                .with_column_usage(datum_var, ColumnUsage::empty().with_column(&self.field));
+            let usage = DatasetsColumnUsage::empty().with_column_usage(
+                datum_var,
+                ColumnUsage::empty().with_column(&unescape_field(&self.field)),
+            );
             TransformColumns::PassThrough {
                 usage,
                 produced: ColumnUsage::empty(),

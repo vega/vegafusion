@@ -1,0 +1,15 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "data_3",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "specialchars",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

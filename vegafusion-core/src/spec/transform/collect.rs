@@ -1,4 +1,5 @@
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::expression::escape::unescape_field;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -25,7 +26,14 @@ impl TransformSpecTrait for CollectTransformSpec {
         _vl_selection_fields: &VlSelectionFields,
     ) -> TransformColumns {
         if let Some(datum_var) = datum_var {
-            let col_usage = ColumnUsage::from(self.sort.field.to_vec().as_slice());
+            let unescaped_sort_fields = self
+                .sort
+                .field
+                .to_vec()
+                .iter()
+                .map(|f| unescape_field(f))
+                .collect::<Vec<_>>();
+            let col_usage = ColumnUsage::from(unescaped_sort_fields.as_slice());
             let usage = DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage);
             TransformColumns::PassThrough {
                 usage,

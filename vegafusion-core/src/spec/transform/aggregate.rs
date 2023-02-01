@@ -1,4 +1,5 @@
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::expression::escape::unescape_field;
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::spec::values::Field;
 use crate::task_graph::graph::ScopedVariable;
@@ -140,7 +141,11 @@ impl TransformSpecTrait for AggregateTransformSpec {
             };
 
             // Compute used columns (both groupby and fields)
-            let mut usage_cols: Vec<_> = self.groupby.iter().map(|field| field.field()).collect();
+            let mut usage_cols: Vec<_> = self
+                .groupby
+                .iter()
+                .map(|field| unescape_field(&field.field()))
+                .collect();
             for field in self
                 .fields
                 .clone()
@@ -148,7 +153,7 @@ impl TransformSpecTrait for AggregateTransformSpec {
                 .into_iter()
                 .flatten()
             {
-                usage_cols.push(field.field())
+                usage_cols.push(unescape_field(&field.field()))
             }
             let col_usage = ColumnUsage::from(usage_cols.as_slice());
             let usage = DatasetsColumnUsage::empty().with_column_usage(datum_var, col_usage);

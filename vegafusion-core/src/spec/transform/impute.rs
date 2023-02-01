@@ -1,4 +1,5 @@
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
+use crate::expression::escape::unescape_field;
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::spec::values::Field;
 use crate::task_graph::graph::ScopedVariable;
@@ -70,14 +71,17 @@ impl TransformSpecTrait for ImputeTransformSpec {
     ) -> TransformColumns {
         if let Some(datum_var) = datum_var {
             // Init column usage with field
-            let mut col_usage = ColumnUsage::from(self.field.field().as_str());
+            let mut col_usage = ColumnUsage::from(unescape_field(&self.field.field()).as_str());
 
             // Add key
-            col_usage = col_usage.with_column(self.key.field().as_str());
+            col_usage = col_usage.with_column(&unescape_field(&self.key.field()));
 
             // Add groupby usage
             if let Some(groupby) = self.groupby.as_ref() {
-                let groupby: Vec<_> = groupby.iter().map(|field| field.field()).collect();
+                let groupby: Vec<_> = groupby
+                    .iter()
+                    .map(|field| unescape_field(&field.field()))
+                    .collect();
                 col_usage = col_usage.union(&ColumnUsage::from(groupby.as_slice()));
             }
 
