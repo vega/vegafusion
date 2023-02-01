@@ -107,7 +107,7 @@ impl TaskCall for DataUrlTask {
             if let Some(inline_dataset) = inline_datasets.get(&inline_name) {
                 let sql_df = match inline_dataset {
                     VegaFusionDataset::Table { table, .. } => {
-                        conn.scan_arrow(table.clone()).await?
+                        conn.scan_arrow(table.clone().with_ordering()?).await?
                     }
                     VegaFusionDataset::DataFrame(df) => {
                         // TODO: if no ordering column present, create with a window expression
