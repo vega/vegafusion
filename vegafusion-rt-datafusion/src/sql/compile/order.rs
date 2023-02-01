@@ -1,21 +1,22 @@
 use crate::sql::compile::expr::ToSqlExpr;
+use crate::sql::dialect::Dialect;
 use datafusion_expr::{expr::Sort, Expr};
-use sqlgen::ast::OrderByExpr as SqlOrderByExpr;
+use sqlparser::ast::OrderByExpr as SqlOrderByExpr;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 
 pub trait ToSqlOrderByExpr {
-    fn to_sql_order(&self) -> Result<SqlOrderByExpr>;
+    fn to_sql_order(&self, dialect: &Dialect) -> Result<SqlOrderByExpr>;
 }
 
 impl ToSqlOrderByExpr for Expr {
-    fn to_sql_order(&self) -> Result<SqlOrderByExpr> {
+    fn to_sql_order(&self, dialect: &Dialect) -> Result<SqlOrderByExpr> {
         match self {
             Expr::Sort(Sort {
                 expr,
                 asc,
                 nulls_first,
             }) => Ok(SqlOrderByExpr {
-                expr: expr.to_sql().with_context(|| {
+                expr: expr.to_sql(dialect).with_context(|| {
                     format!("Expression cannot be used as order by expression: {expr:?}")
                 })?,
                 asc: Some(*asc),
@@ -32,15 +33,13 @@ impl ToSqlOrderByExpr for Expr {
 mod tests {
 
     use crate::expression::escape::flat_col;
-    use datafusion_expr::{expr, Expr};
-    use sqlgen::dialect::DialectDisplay;
-
     use crate::sql::compile::order::ToSqlOrderByExpr;
+    use datafusion_expr::{expr, Expr};
 
     #[test]
     pub fn test_non_sort_expr() {
         let sort_expr = flat_col("a");
-        sort_expr.to_sql_order().unwrap_err();
+        sort_expr.to_sql_order(&Default::default()).unwrap_err();
     }
 
     #[test]
@@ -51,8 +50,8 @@ mod tests {
             nulls_first: false,
         });
 
-        let sort_sql = sort_expr.to_sql_order().unwrap();
-        let sql_str = sort_sql.sql(&Default::default()).unwrap();
-        assert_eq!(sql_str, "a DESC NULLS LAST".to_string());
+        let sort_sql = sort_expr.to_sql_order(&Default::default()).unwrap();
+        let sql_str = sort_sql.to_string();
+        assert_eq!(sql_str, r#""a" DESC NULLS LAST"#.to_string());
     }
 }

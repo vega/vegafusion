@@ -15,57 +15,28 @@ use crate::expression::compiler::call::make_session_context;
 use crate::expression::compiler::utils::cast_to;
 use crate::expression::escape::flat_col;
 use crate::sql::dataframe::{DataFrame, SqlDataFrame};
-use sqlgen::dialect::Dialect;
+use crate::sql::dialect::Dialect;
 use vegafusion_core::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError};
 
 #[derive(Clone)]
 pub struct DataFusionConnection {
-    dialect: Dialect,
+    dialect: Arc<Dialect>,
     ctx: Arc<SessionContext>,
 }
 
 impl DataFusionConnection {
     pub fn new(ctx: Arc<SessionContext>) -> Self {
         Self {
-            dialect: make_datafusion_dialect(),
+            dialect: Arc::new(make_datafusion_dialect()),
             ctx,
         }
     }
 }
 
 pub fn make_datafusion_dialect() -> Dialect {
-    let mut dialect = Dialect::datafusion();
-    let functions = &mut dialect.functions;
-
-    functions.insert("isnan".to_string());
-    functions.insert("isfinite".to_string());
-
-    // datetime
-    functions.insert("date_to_timestamptz".to_string());
-    functions.insert("timestamp_to_timestamptz".to_string());
-    functions.insert("timestamptz_to_timestamp".to_string());
-    functions.insert("epoch_ms_to_timestamptz".to_string());
-    functions.insert("str_to_timestamptz".to_string());
-    functions.insert("make_timestamptz".to_string());
-    functions.insert("timestamptz_to_epoch_ms".to_string());
-
-    // timeunit
-    functions.insert("vega_timeunit".to_string());
-
-    // timeformat
-    functions.insert("format_timestamp".to_string());
-
-    // math
-    functions.insert("pow".to_string());
-
-    // list
-    functions.insert("make_list".to_string());
-    functions.insert("len".to_string());
-    functions.insert("indexof".to_string());
-
-    dialect
+    Dialect::datafusion()
 }
 
 #[async_trait::async_trait]

@@ -1,31 +1,31 @@
 use crate::sql::compile::data_type::ToSqlDataType;
 use crate::sql::compile::scalar::ToSqlScalar;
-use datafusion::common::ScalarValue;
-use sqlgen::ast::{
+use sqlparser::ast::{
     BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction,
-    FunctionArg as SqlFunctionArg, Ident, ObjectName as SqlObjectName, ObjectName,
-    UnaryOperator as SqlUnaryOperator, Value as SqlValue, WindowFrame as SqlWindowFrame,
+    FunctionArg as SqlFunctionArg, FunctionArg, Ident, ObjectName as SqlObjectName, ObjectName,
+    UnaryOperator as SqlUnaryOperator, WindowFrame as SqlWindowFrame,
     WindowFrameBound as SqlWindowBound, WindowFrameUnits as SqlWindowFrameUnits,
     WindowSpec as SqlWindowSpec,
 };
 
 use datafusion_expr::expr::{BinaryExpr, Case, Cast};
 use datafusion_expr::{
-    expr, AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator, WindowFrameBound,
+    expr, lit, AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator, WindowFrameBound,
     WindowFrameUnits, WindowFunction,
 };
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 
 use crate::sql::compile::function_arg::ToSqlFunctionArg;
 use crate::sql::compile::order::ToSqlOrderByExpr;
+use crate::sql::dialect::Dialect;
 use vegafusion_core::error::{Result, VegaFusionError};
 
 pub trait ToSqlExpr {
-    fn to_sql(&self) -> Result<SqlExpr>;
+    fn to_sql(&self, dialect: &Dialect) -> Result<SqlExpr>;
 }
 
 impl ToSqlExpr for Expr {
-    fn to_sql(&self) -> Result<SqlExpr> {
+    fn to_sql(&self, dialect: &Dialect) -> Result<SqlExpr> {
         match self {
             Expr::Alias(_, _) => {
                 // Alias expressions need to be handled at a higher level
@@ -34,15 +34,16 @@ impl ToSqlExpr for Expr {
                 )))
             }
             Expr::Column(col) => Ok(match &col.relation {
-                Some(relation) => {
-                    SqlExpr::CompoundIdentifier(vec![Ident::new(relation), Ident::new(&col.name)])
-                }
-                None => SqlExpr::Identifier(Ident::new(&col.name)),
+                Some(relation) => SqlExpr::CompoundIdentifier(vec![
+                    Ident::with_quote(dialect.quote_style, relation),
+                    Ident::with_quote(dialect.quote_style, &col.name),
+                ]),
+                None => SqlExpr::Identifier(Ident::with_quote(dialect.quote_style, &col.name)),
             }),
             Expr::ScalarVariable(_, _) => Err(VegaFusionError::internal(
                 "ScalarVariable cannot be converted to SQL",
             )),
-            Expr::Literal(value) => Ok(value.to_sql()?),
+            Expr::Literal(value) => Ok(value.to_sql(dialect)?),
             Expr::BinaryExpr(BinaryExpr { left, op, right }) => {
                 let sql_op = match op {
                     Operator::Eq => SqlBinaryOperator::Eq,
@@ -80,20 +81,20 @@ impl ToSqlExpr for Expr {
                     Operator::BitwiseShiftLeft => SqlBinaryOperator::PGBitwiseShiftLeft,
                 };
                 Ok(SqlExpr::Nested(Box::new(SqlExpr::BinaryOp {
-                    left: Box::new(left.to_sql()?),
+                    left: Box::new(left.to_sql(dialect)?),
                     op: sql_op,
-                    right: Box::new(right.to_sql()?),
+                    right: Box::new(right.to_sql(dialect)?),
                 })))
             }
             Expr::Not(expr) => Ok(SqlExpr::Nested(Box::new(SqlExpr::UnaryOp {
                 op: SqlUnaryOperator::Not,
-                expr: Box::new(expr.to_sql()?),
+                expr: Box::new(expr.to_sql(dialect)?),
             }))),
-            Expr::IsNotNull(expr) => Ok(SqlExpr::IsNotNull(Box::new(expr.to_sql()?))),
-            Expr::IsNull(expr) => Ok(SqlExpr::IsNull(Box::new(expr.to_sql()?))),
+            Expr::IsNotNull(expr) => Ok(SqlExpr::IsNotNull(Box::new(expr.to_sql(dialect)?))),
+            Expr::IsNull(expr) => Ok(SqlExpr::IsNull(Box::new(expr.to_sql(dialect)?))),
             Expr::Negative(expr) => Ok(SqlExpr::Nested(Box::new(SqlExpr::UnaryOp {
                 op: SqlUnaryOperator::Minus,
-                expr: Box::new(expr.to_sql()?),
+                expr: Box::new(expr.to_sql(dialect)?),
             }))),
             Expr::GetIndexedField { .. } => Err(VegaFusionError::internal(
                 "GetIndexedField cannot be converted to SQL",
@@ -104,10 +105,10 @@ impl ToSqlExpr for Expr {
                 low,
                 high,
             }) => Ok(SqlExpr::Between {
-                expr: Box::new(expr.to_sql()?),
+                expr: Box::new(expr.to_sql(dialect)?),
                 negated: *negated,
-                low: Box::new(low.to_sql()?),
-                high: Box::new(high.to_sql()?),
+                low: Box::new(low.to_sql(dialect)?),
+                high: Box::new(high.to_sql(dialect)?),
             }),
             Expr::Case(Case {
                 expr,
@@ -119,22 +120,22 @@ impl ToSqlExpr for Expr {
 
                 let conditions = conditions
                     .iter()
-                    .map(|expr| expr.to_sql())
+                    .map(|expr| expr.to_sql(dialect))
                     .collect::<Result<Vec<_>>>()?;
                 let results = results
                     .iter()
-                    .map(|expr| expr.to_sql())
+                    .map(|expr| expr.to_sql(dialect))
                     .collect::<Result<Vec<_>>>()?;
 
                 let else_result = if let Some(else_expr) = &else_expr {
-                    Some(Box::new(else_expr.to_sql()?))
+                    Some(Box::new(else_expr.to_sql(dialect)?))
                 } else {
                     None
                 };
 
                 Ok(SqlExpr::Case {
                     operand: if let Some(expr) = &expr {
-                        Some(Box::new(expr.to_sql()?))
+                        Some(Box::new(expr.to_sql(dialect)?))
                     } else {
                         None
                     },
@@ -144,16 +145,16 @@ impl ToSqlExpr for Expr {
                 })
             }
             Expr::Cast(Cast { expr, data_type }) => {
-                let data_type = data_type.to_sql()?;
+                let data_type = data_type.to_sql(dialect)?;
                 Ok(SqlExpr::Cast {
-                    expr: Box::new(expr.to_sql()?),
+                    expr: Box::new(expr.to_sql(dialect)?),
                     data_type,
                 })
             }
             Expr::TryCast(expr::TryCast { expr, data_type }) => {
-                let data_type = data_type.to_sql()?;
+                let data_type = data_type.to_sql(dialect)?;
                 Ok(SqlExpr::TryCast {
-                    expr: Box::new(expr.to_sql()?),
+                    expr: Box::new(expr.to_sql(dialect)?),
                     data_type,
                 })
             }
@@ -162,7 +163,7 @@ impl ToSqlExpr for Expr {
                 Err(VegaFusionError::internal("Sort cannot be converted to SQL"))
             }
             Expr::ScalarFunction { fun, args } => {
-                let value = match fun {
+                let fun_name = match fun {
                     BuiltinScalarFunction::Abs => "abs",
                     BuiltinScalarFunction::Acos => "acos",
                     BuiltinScalarFunction::Asin => "asin",
@@ -237,105 +238,23 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::CurrentTime => "current_time",
                     BuiltinScalarFunction::Uuid => "uuid",
                 };
-                let ident = Ident {
-                    value: value.to_string(),
-                    quote_style: None,
-                };
-                let args = args
-                    .iter()
-                    .map(|expr| Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?)))
-                    .collect::<Result<Vec<_>>>()?;
-
-                Ok(SqlExpr::Function(SqlFunction {
-                    name: SqlObjectName(vec![ident]),
-                    args,
-                    over: None,
-                    distinct: false,
-                }))
+                translate_scalar_function(fun_name, args, dialect)
             }
-            Expr::ScalarUDF { fun, args } => {
-                if fun.name == "date_add" {
-                    // Convert date_add function to interval arithmetic
-                    if args.len() != 3 {
-                        return Err(VegaFusionError::sql_not_supported(
-                            "date_add requires exactly 3 arguments",
-                        ));
-                    }
-
-                    let date_part = if let Expr::Literal(ScalarValue::Utf8(Some(part))) = &args[0] {
-                        part.clone()
-                    } else {
-                        return Err(VegaFusionError::sql_not_supported(
-                            "First arg to date_add must be a string literal",
-                        ));
-                    };
-
-                    let num = if let Expr::Literal(ScalarValue::Int32(Some(num))) = &args[1] {
-                        *num
-                    } else {
-                        return Err(VegaFusionError::sql_not_supported(
-                            "Second arg to date_add must be a string integer",
-                        ));
-                    };
-
-                    let interval_string = format!("{num} {date_part}");
-                    let interval = SqlExpr::Value(SqlValue::Interval {
-                        value: Box::new(SqlExpr::Value(SqlValue::SingleQuotedString(
-                            interval_string,
-                        ))),
-                        leading_field: None,
-                        leading_precision: None,
-                        last_field: None,
-                        fractional_seconds_precision: None,
-                    });
-
-                    Ok(SqlExpr::BinaryOp {
-                        left: Box::new(args[2].to_sql()?),
-                        op: SqlBinaryOperator::Plus,
-                        right: Box::new(interval),
-                    })
-                } else {
-                    // Pass through function to dialect
-                    let ident = Ident {
-                        value: fun.name.clone(),
-                        quote_style: None,
-                    };
-                    let args = args
-                        .iter()
-                        .map(|expr| Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?)))
-                        .collect::<Result<Vec<_>>>()?;
-
-                    Ok(SqlExpr::Function(SqlFunction {
-                        name: SqlObjectName(vec![ident]),
-                        args,
-                        over: None,
-                        distinct: false,
-                    }))
-                }
-            }
+            Expr::ScalarUDF { fun, args } => translate_scalar_function(&fun.name, args, dialect),
             Expr::AggregateFunction(expr::AggregateFunction {
                 fun,
                 args,
                 distinct,
                 filter: _,
             }) => {
-                let value = aggr_fn_to_name(fun);
-                let ident = Ident {
-                    value: value.to_ascii_lowercase(),
-                    quote_style: None,
-                };
-                let args = args
-                    .iter()
-                    .map(|expr| Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?)))
-                    .collect::<Result<Vec<_>>>()?;
-
-                Ok(SqlExpr::Function(SqlFunction {
-                    name: SqlObjectName(vec![ident]),
-                    args,
-                    over: None,
-                    distinct: *distinct,
-                }))
+                let fun_name = aggr_fn_to_name(fun);
+                translate_aggregate_function(fun_name, args, *distinct, dialect)
             }
+            Expr::AggregateUDF {
+                fun,
+                args,
+                filter: _,
+            } => translate_aggregate_function(&fun.name, args, false, dialect),
             Expr::WindowFunction(expr::WindowFunction {
                 fun,
                 args,
@@ -344,80 +263,68 @@ impl ToSqlExpr for Expr {
                 window_frame,
             }) => {
                 // Extract function name
-                let name_str = match fun {
+                let fun_name = match fun {
                     WindowFunction::AggregateFunction(agg) => aggr_fn_to_name(agg).to_string(),
                     WindowFunction::BuiltInWindowFunction(win_fn) => win_fn.to_string(),
                     WindowFunction::AggregateUDF(udf) => udf.name.clone(),
-                };
+                }
+                .to_ascii_lowercase();
 
-                // Process args
-                let args = args
-                    .iter()
-                    .map(|arg| Ok(SqlFunctionArg::Unnamed(arg.to_sql_function_arg()?)))
-                    .collect::<Result<Vec<_>>>()?;
+                if dialect.aggregate_functions.contains(&fun_name)
+                    || dialect.window_functions.contains(&fun_name)
+                {
+                    // Process args
+                    let args = translate_function_args(args, dialect)?;
 
-                let partition_by = partition_by
-                    .iter()
-                    .map(|arg| arg.to_sql())
-                    .collect::<Result<Vec<_>>>()?;
+                    let partition_by = partition_by
+                        .iter()
+                        .map(|arg| arg.to_sql(dialect))
+                        .collect::<Result<Vec<_>>>()?;
 
-                let order_by = order_by
-                    .iter()
-                    .map(|arg| arg.to_sql_order())
-                    .collect::<Result<Vec<_>>>()?;
+                    let order_by = order_by
+                        .iter()
+                        .map(|arg| arg.to_sql_order(dialect))
+                        .collect::<Result<Vec<_>>>()?;
 
-                let end_bound = compile_window_frame_bound(&window_frame.end_bound)?;
-                let start_bound = compile_window_frame_bound(&window_frame.start_bound)?;
-                let units = match window_frame.units {
-                    WindowFrameUnits::Rows => SqlWindowFrameUnits::Rows,
-                    WindowFrameUnits::Range => SqlWindowFrameUnits::Range,
-                    WindowFrameUnits::Groups => SqlWindowFrameUnits::Groups,
-                };
-                let sql_window_frame = Some(SqlWindowFrame {
-                    units,
-                    start_bound,
-                    end_bound: Some(end_bound),
-                });
+                    let end_bound = compile_window_frame_bound(&window_frame.end_bound, dialect)?;
+                    let start_bound =
+                        compile_window_frame_bound(&window_frame.start_bound, dialect)?;
+                    let units = match window_frame.units {
+                        WindowFrameUnits::Rows => SqlWindowFrameUnits::Rows,
+                        WindowFrameUnits::Range => SqlWindowFrameUnits::Range,
+                        WindowFrameUnits::Groups => SqlWindowFrameUnits::Groups,
+                    };
+                    let sql_window_frame = Some(SqlWindowFrame {
+                        units,
+                        start_bound,
+                        end_bound: Some(end_bound),
+                    });
 
-                // Process over
-                let over = SqlWindowSpec {
-                    partition_by,
-                    order_by,
-                    window_frame: sql_window_frame,
-                };
+                    // Process over
+                    let over = SqlWindowSpec {
+                        partition_by,
+                        order_by,
+                        window_frame: sql_window_frame,
+                    };
 
-                let sql_fun = SqlFunction {
-                    name: ObjectName(vec![Ident {
-                        value: name_str,
-                        quote_style: None,
-                    }]),
-                    args,
-                    over: Some(over),
-                    distinct: false,
-                };
+                    let sql_fun = SqlFunction {
+                        name: ObjectName(vec![Ident {
+                            value: fun_name,
+                            quote_style: None,
+                        }]),
+                        args,
+                        over: Some(over),
+                        distinct: false,
+                        special: false,
+                    };
 
-                Ok(SqlExpr::Function(sql_fun))
-            }
-            Expr::AggregateUDF {
-                fun,
-                args,
-                filter: _,
-            } => {
-                let ident = Ident {
-                    value: fun.name.clone(),
-                    quote_style: None,
-                };
-                let args = args
-                    .iter()
-                    .map(|expr| Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg()?)))
-                    .collect::<Result<Vec<_>>>()?;
-
-                Ok(SqlExpr::Function(SqlFunction {
-                    name: SqlObjectName(vec![ident]),
-                    args,
-                    over: None,
-                    distinct: false,
-                }))
+                    Ok(SqlExpr::Function(sql_fun))
+                } else {
+                    // Unsupported
+                    return Err(VegaFusionError::sql_not_supported(format!(
+                        "Dialect does not support the '{fun_name}' window function"
+                    )));
+                }
             }
             Expr::IsTrue(_) => Err(VegaFusionError::internal(
                 "IsTrue cannot be converted to SQL",
@@ -442,10 +349,10 @@ impl ToSqlExpr for Expr {
                 list,
                 negated,
             } => {
-                let sql_expr = expr.to_sql()?;
+                let sql_expr = expr.to_sql(dialect)?;
                 let sql_list = list
                     .iter()
-                    .map(|expr| expr.to_sql())
+                    .map(|expr| expr.to_sql(dialect))
                     .collect::<Result<Vec<_>>>()?;
 
                 Ok(SqlExpr::InList {
@@ -486,6 +393,74 @@ impl ToSqlExpr for Expr {
     }
 }
 
+fn translate_scalar_function(
+    fun_name: &str,
+    args: &Vec<Expr>,
+    dialect: &Dialect,
+) -> Result<SqlExpr> {
+    if dialect.scalar_functions.contains(fun_name) {
+        // Function is directly supported by dialect
+        let ident = Ident {
+            value: fun_name.to_string(),
+            quote_style: None,
+        };
+        let args = translate_function_args(args, dialect)?;
+
+        Ok(SqlExpr::Function(SqlFunction {
+            name: SqlObjectName(vec![ident]),
+            args,
+            over: None,
+            distinct: false,
+            special: false,
+        }))
+    } else if let Some(transformer) = dialect.scalar_transformers.get(fun_name) {
+        // Supported through AST transformation
+        transformer.transform(args, dialect)
+    } else {
+        // Unsupported
+        return Err(VegaFusionError::sql_not_supported(format!(
+            "Dialect does not support the '{fun_name}' scalar function"
+        )));
+    }
+}
+
+fn translate_aggregate_function(
+    fun_name: &str,
+    args: &Vec<Expr>,
+    distinct: bool,
+    dialect: &Dialect,
+) -> Result<SqlExpr> {
+    if dialect.aggregate_functions.contains(fun_name) {
+        let ident = Ident {
+            value: fun_name.to_ascii_lowercase(),
+            quote_style: None,
+        };
+        let args = translate_function_args(args, dialect)?;
+
+        Ok(SqlExpr::Function(SqlFunction {
+            name: SqlObjectName(vec![ident]),
+            args,
+            over: None,
+            distinct,
+            special: false,
+        }))
+    } else if let Some(transformer) = dialect.aggregate_transformers.get(fun_name) {
+        // Supported through AST transformation
+        transformer.transform(args, dialect)
+    } else {
+        // Unsupported
+        return Err(VegaFusionError::sql_not_supported(format!(
+            "Dialect does not support the '{fun_name}' aggregate function"
+        )));
+    }
+}
+
+fn translate_function_args(args: &Vec<Expr>, dialect: &Dialect) -> Result<Vec<FunctionArg>> {
+    args.iter()
+        .map(|expr| Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg(dialect)?)))
+        .collect::<Result<Vec<_>>>()
+}
+
 fn aggr_fn_to_name(fun: &AggregateFunction) -> &str {
     match fun {
         AggregateFunction::Min => "min",
@@ -510,15 +485,22 @@ fn aggr_fn_to_name(fun: &AggregateFunction) -> &str {
     }
 }
 
-fn compile_window_frame_bound(bound: &WindowFrameBound) -> Result<SqlWindowBound> {
+fn compile_window_frame_bound(
+    bound: &WindowFrameBound,
+    dialect: &Dialect,
+) -> Result<SqlWindowBound> {
     Ok(match bound {
         WindowFrameBound::Preceding(v) => match v.to_f64() {
-            Ok(v) => SqlWindowBound::Preceding(Some(v.max(0.0) as u64)),
+            Ok(v) => {
+                SqlWindowBound::Preceding(Some(Box::new(lit(v.max(0.0) as u64).to_sql(dialect)?)))
+            }
             Err(_) => SqlWindowBound::Preceding(None),
         },
         WindowFrameBound::CurrentRow => SqlWindowBound::CurrentRow,
         WindowFrameBound::Following(v) => match v.to_f64() {
-            Ok(v) => SqlWindowBound::Following(Some(v.max(0.0) as u64)),
+            Ok(v) => {
+                SqlWindowBound::Following(Some(Box::new(lit(v.max(0.0) as u64).to_sql(dialect)?)))
+            }
             Err(_) => SqlWindowBound::Following(None),
         },
     })
@@ -530,16 +512,16 @@ mod tests {
     use crate::expression::escape::flat_col;
     use datafusion_expr::expr::Cast;
     use datafusion_expr::{lit, Between, BuiltinScalarFunction, Expr};
-    use sqlgen::dialect::DialectDisplay;
     use vegafusion_core::arrow::datatypes::DataType;
+    use crate::sql::connection::datafusion_conn::make_datafusion_dialect;
 
     #[test]
     pub fn test1() {
         let df_expr = Expr::Negative(Box::new(flat_col("A"))) + lit(12);
-        let sql_expr = df_expr.to_sql().unwrap();
+        let sql_expr = df_expr.to_sql(&Default::default()).unwrap();
         println!("{sql_expr:?}");
-        let sql_str = sql_expr.sql(&Default::default()).unwrap();
-        assert_eq!(sql_str, "((- A) + 12)".to_string());
+        let sql_str = sql_expr.to_string();
+        assert_eq!(sql_str, r#"((-"A") + 12)"#.to_string());
     }
 
     #[test]
@@ -549,10 +531,10 @@ mod tests {
             args: vec![lit(1.2)],
         } + flat_col("B");
 
-        let sql_expr = df_expr.to_sql().unwrap();
+        let sql_expr = df_expr.to_sql(&make_datafusion_dialect()).unwrap();
         println!("{sql_expr:?}");
-        let sql_str = sql_expr.sql(&Default::default()).unwrap();
-        assert_eq!(sql_str, "(sin(1.2) + B)".to_string());
+        let sql_str = sql_expr.to_string();
+        assert_eq!(sql_str, r#"(sin(1.2) + "B")"#.to_string());
     }
 
     #[test]
@@ -562,9 +544,9 @@ mod tests {
             args: vec![lit("foo")],
         };
 
-        let sql_expr = df_expr.to_sql().unwrap();
+        let sql_expr = df_expr.to_sql(&make_datafusion_dialect()).unwrap();
         println!("{sql_expr:?}");
-        let sql_str = sql_expr.sql(&Default::default()).unwrap();
+        let sql_str = sql_expr.to_string();
         assert_eq!(sql_str, "upper('foo')".to_string());
     }
 
@@ -575,9 +557,9 @@ mod tests {
             data_type: DataType::Int64,
         }) + lit(4);
 
-        let sql_expr = df_expr.to_sql().unwrap();
+        let sql_expr = df_expr.to_sql(&Default::default()).unwrap();
         println!("{sql_expr:?}");
-        let sql_str = sql_expr.sql(&Default::default()).unwrap();
+        let sql_str = sql_expr.to_string();
         assert_eq!(sql_str, "(CAST(2.8 AS BIGINT) + 4)".to_string());
     }
 
@@ -591,9 +573,9 @@ mod tests {
         })
         .or(flat_col("B"));
 
-        let sql_expr = df_expr.to_sql().unwrap();
+        let sql_expr = df_expr.to_sql(&Default::default()).unwrap();
         println!("{sql_expr:?}");
-        let sql_str = sql_expr.sql(&Default::default()).unwrap();
-        assert_eq!(sql_str, "(A BETWEEN 0 AND 10 OR B)".to_string());
+        let sql_str = sql_expr.to_string();
+        assert_eq!(sql_str, r#"("A" BETWEEN 0 AND 10 OR "B")"#.to_string());
     }
 }

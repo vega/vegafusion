@@ -1,11 +1,11 @@
 use crate::sql::connection::{Connection, SqlConnection};
 use async_trait::async_trait;
 use regex::Regex;
-use sqlgen::dialect::Dialect;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Row, SqlitePool};
 use std::collections::HashMap;
 
+use crate::sql::dialect::Dialect;
 use std::sync::Arc;
 use vegafusion_core::arrow::array::{
     ArrayRef, Float32Array, Float64Array, Int32Array, Int64Array, NullArray, StringArray,
@@ -36,7 +36,7 @@ impl SqLiteConnection {
         Ok(Self {
             uri: uri.to_string(),
             pool: Arc::new(pool),
-            dialect: Dialect::sqlite(),
+            dialect: Dialect::default(),
         })
     }
 }

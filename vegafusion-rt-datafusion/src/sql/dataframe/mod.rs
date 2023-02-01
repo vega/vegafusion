@@ -9,20 +9,22 @@ use datafusion_expr::{
     BuiltinScalarFunction, Expr, ExprSchemable, WindowFrame, WindowFrameBound, WindowFrameUnits,
     WindowFunction,
 };
-use sqlgen::ast::Ident;
-use sqlgen::ast::{Cte, With};
-use sqlgen::ast::{Query, TableAlias};
-use sqlgen::dialect::{Dialect, DialectDisplay};
-use sqlgen::parser::Parser;
+use sqlparser::{
+    ast::{Cte, Ident, Query, TableAlias, With},
+    parser::Parser,
+};
+
 use std::any::Any;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
 
 use crate::expression::compiler::utils::to_numeric;
 use crate::expression::escape::flat_col;
-use crate::sql::connection::datafusion_conn::make_datafusion_dialect;
+use crate::sql::dialect::Dialect;
 use async_trait::async_trait;
 use datafusion::arrow::datatypes::Field;
+use sqlparser::ast::Statement;
+use sqlparser::dialect::GenericDialect;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
@@ -136,7 +138,6 @@ pub struct SqlDataFrame {
     schema: SchemaRef,
     ctes: Vec<Query>,
     conn: Arc<dyn SqlConnection>,
-    dialect: Arc<Dialect>,
 }
 
 #[async_trait]
@@ -160,14 +161,14 @@ impl DataFrame for SqlDataFrame {
         self.conn.id().hash(&mut hasher);
 
         // Add query to hash
-        let query_str = self.as_query().sql(self.conn.dialect()).unwrap();
+        let query_str = self.as_query().to_string();
         query_str.hash(&mut hasher);
 
         hasher.finish()
     }
 
     async fn collect(&self) -> Result<VegaFusionTable> {
-        let query_string = self.as_query().sql(self.conn.dialect())?;
+        let query_string = self.as_query().to_string();
         self.conn.fetch_query(&query_string, &self.schema).await
     }
 
@@ -175,11 +176,11 @@ impl DataFrame for SqlDataFrame {
         let mut query = self.make_select_star();
         let sql_exprs = expr
             .iter()
-            .map(|expr| expr.to_sql_order())
+            .map(|expr| expr.to_sql_order(self.dialect()))
             .collect::<Result<Vec<_>>>()?;
         query.order_by = sql_exprs;
         if let Some(limit) = limit {
-            query.limit = Some(lit(limit).to_sql().unwrap())
+            query.limit = Some(lit(limit).to_sql(self.dialect()).unwrap())
         }
         self.chain_query(query, self.schema.as_ref().clone()).await
     }
@@ -187,11 +188,11 @@ impl DataFrame for SqlDataFrame {
     async fn select(&self, expr: Vec<DfExpr>) -> Result<Arc<dyn DataFrame>> {
         let sql_expr_strs = expr
             .iter()
-            .map(|expr| Ok(expr.to_sql_select()?.sql(&self.dialect)?))
+            .map(|expr| Ok(expr.to_sql_select(self.dialect())?.to_string()))
             .collect::<Result<Vec<_>>>()?;
 
         let select_csv = sql_expr_strs.join(", ");
-        let query = Parser::parse_sql_query(&format!(
+        let query = parse_sql_query(&format!(
             "select {select_csv} from {parent}",
             select_csv = select_csv,
             parent = self.parent_name()
@@ -214,25 +215,25 @@ impl DataFrame for SqlDataFrame {
 
         let sql_group_expr_strs = group_expr
             .iter()
-            .map(|expr| Ok(expr.to_sql()?.sql(&self.dialect)?))
+            .map(|expr| Ok(expr.to_sql(self.dialect())?.to_string()))
             .collect::<Result<Vec<_>>>()?;
 
         let sql_aggr_expr_strs = all_aggr_expr
             .iter()
-            .map(|expr| Ok(expr.to_sql_select()?.sql(&self.dialect)?))
+            .map(|expr| Ok(expr.to_sql_select(self.dialect())?.to_string()))
             .collect::<Result<Vec<_>>>()?;
 
         let aggr_csv = sql_aggr_expr_strs.join(", ");
 
         let query = if sql_group_expr_strs.is_empty() {
-            Parser::parse_sql_query(&format!(
+            parse_sql_query(&format!(
                 "select {aggr_csv} from {parent}",
                 aggr_csv = aggr_csv,
                 parent = self.parent_name(),
             ))?
         } else {
             let group_by_csv = sql_group_expr_strs.join(", ");
-            Parser::parse_sql_query(&format!(
+            parse_sql_query(&format!(
                 "select {aggr_csv} from {parent} group by {group_by_csv}",
                 aggr_csv = aggr_csv,
                 parent = self.parent_name(),
@@ -252,7 +253,7 @@ impl DataFrame for SqlDataFrame {
         aggr_expr: Vec<DfExpr>,
     ) -> Result<Arc<dyn DataFrame>> {
         let schema = self.schema_df()?;
-        let dialect = self.dialect();
+        // let dialect = self.dialect();
 
         // Build csv str for new columns
         let inner_name = format!("{}_inner", self.parent_name());
@@ -269,7 +270,7 @@ impl DataFrame for SqlDataFrame {
                     name: col.display_name()?,
                 })
                 .alias(col.display_name()?);
-                Ok(col.to_sql_select()?.sql(dialect)?)
+                Ok(col.to_sql_select(self.dialect())?.to_string())
             })
             .collect::<Result<Vec<_>>>()?;
         let new_col_csv = new_col_strs.join(", ");
@@ -289,19 +290,19 @@ impl DataFrame for SqlDataFrame {
 
         let input_col_strs = input_col_exprs
             .iter()
-            .map(|c| Ok(c.to_sql_select()?.sql(dialect)?))
+            .map(|c| Ok(c.to_sql_select(self.dialect())?.to_string()))
             .collect::<Result<Vec<_>>>()?;
         let input_col_csv = input_col_strs.join(", ");
 
         // Perform join aggregation
         let sql_group_expr_strs = group_expr
             .iter()
-            .map(|expr| Ok(expr.to_sql()?.sql(dialect)?))
+            .map(|expr| Ok(expr.to_sql(self.dialect())?.to_string()))
             .collect::<Result<Vec<_>>>()?;
 
         let sql_aggr_expr_strs = aggr_expr
             .iter()
-            .map(|expr| Ok(expr.to_sql_select()?.sql(dialect)?))
+            .map(|expr| Ok(expr.to_sql_select(self.dialect())?.to_string()))
             .collect::<Result<Vec<_>>>()?;
         let aggr_csv = sql_aggr_expr_strs.join(", ");
 
@@ -346,12 +347,12 @@ impl DataFrame for SqlDataFrame {
     }
 
     async fn filter(&self, predicate: Expr) -> Result<Arc<dyn DataFrame>> {
-        let sql_predicate = predicate.to_sql()?;
+        let sql_predicate = predicate.to_sql(self.dialect())?;
 
-        let query = Parser::parse_sql_query(&format!(
+        let query = parse_sql_query(&format!(
             "select * from {parent} where {sql_predicate}",
             parent = self.parent_name(),
-            sql_predicate = sql_predicate.sql(&self.dialect)?,
+            sql_predicate = sql_predicate.to_string(),
         ))?;
 
         self.chain_query(query, self.schema.as_ref().clone())
@@ -360,7 +361,7 @@ impl DataFrame for SqlDataFrame {
     }
 
     async fn limit(&self, limit: i32) -> Result<Arc<dyn DataFrame>> {
-        let query = Parser::parse_sql_query(&format!(
+        let query = parse_sql_query(&format!(
             "select * from {parent} LIMIT {limit}",
             parent = self.parent_name(),
             limit = limit
@@ -378,7 +379,7 @@ impl DataFrame for SqlDataFrame {
         key_col: &str,
         order_field: Option<&str>,
     ) -> Result<Arc<dyn DataFrame>> {
-        let dialect = self.dialect();
+        // let dialect = self.dialect();
 
         // Build selection that includes all input fields that aren't shadowed by key/value cols
         let input_selection = self
@@ -424,7 +425,7 @@ impl DataFrame for SqlDataFrame {
                 // Create selection CSV for subquery
                 let selection_strs = subquery_selection
                     .iter()
-                    .map(|sel| Ok(sel.to_sql_select()?.sql(dialect)?))
+                    .map(|sel| Ok(sel.to_sql_select(self.dialect())?.to_string()))
                     .collect::<Result<Vec<_>>>()?;
                 let selection_csv = selection_strs.join(", ");
 
@@ -449,7 +450,7 @@ impl DataFrame for SqlDataFrame {
 
         let selection_strs = selections
             .iter()
-            .map(|sel| Ok(sel.to_sql_select()?.sql(dialect)?))
+            .map(|sel| Ok(sel.to_sql_select(self.dialect())?.to_string()))
             .collect::<Result<Vec<_>>>()?;
         let selection_csv = selection_strs.join(", ");
 
@@ -519,7 +520,7 @@ impl DataFrame for SqlDataFrame {
             .map(|f| f.name().clone())
             .collect();
 
-        let dialect = self.dialect();
+        // let dialect = self.dialect();
 
         // Build partitioning column expressions
         let partition_by: Vec<_> = groupby.iter().map(|group| flat_col(group)).collect();
@@ -547,7 +548,7 @@ impl DataFrame for SqlDataFrame {
             })
             .alias(stop_field);
 
-            let window_expr_str = window_expr.to_sql_select()?.sql(self.dialect())?;
+            let window_expr_str = window_expr.to_sql_select(self.dialect())?.to_string();
 
             // For offset zero, we need to evaluate positive and negative field values separately,
             // then union the results. This is required to make sure stacks do not overlap. Negative
@@ -563,7 +564,7 @@ impl DataFrame for SqlDataFrame {
                                     (SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} < 0)",
                     parent = self.parent_name(),
                     window_expr_str = window_expr_str,
-                    numeric_field = numeric_field.to_sql()?.sql(self.dialect())?
+                    numeric_field = numeric_field.to_sql(self.dialect())?.to_string()
                 ),
                                  new_schema)
                 .await?;
@@ -612,7 +613,7 @@ impl DataFrame for SqlDataFrame {
                 filter: None,
             })
             .alias("__total");
-            let total_agg_str = total_agg.to_sql_select()?.sql(&dialect)?;
+            let total_agg_str = total_agg.to_sql_select(self.dialect())?.to_string();
 
             // Add __total column with total or total per partition
             let schema_exprs = vec![Expr::Wildcard, total_agg.clone()];
@@ -632,7 +633,7 @@ impl DataFrame for SqlDataFrame {
             } else {
                 let partition_by_strs = partition_by
                     .iter()
-                    .map(|p| Ok(p.to_sql()?.sql(self.dialect())?))
+                    .map(|p| Ok(p.to_sql(self.dialect())?.to_string()))
                     .collect::<Result<Vec<_>>>()?;
                 let partition_by_csv = partition_by_strs.join(", ");
 
@@ -683,7 +684,7 @@ impl DataFrame for SqlDataFrame {
             let dataframe = match mode {
                 StackOffsetSpec::Center => {
                     let max_total = max(flat_col("__total")).alias("__max_total");
-                    let max_total_str = max_total.to_sql_select()?.sql(&dialect)?;
+                    let max_total_str = max_total.to_sql_select(self.dialect())?.to_string();
 
                     // Compute new schema
                     let schema_exprs = vec![Expr::Wildcard, max_total.clone()];
@@ -784,12 +785,12 @@ impl DataFrame for SqlDataFrame {
             // First step is to build up a new DataFrame that contains the all possible combinations
             // of the `key` and `groupby` columns
             let key_col = flat_col(key);
-            let key_col_str = key_col.to_sql_select()?.sql(self.dialect())?;
+            let key_col_str = key_col.to_sql_select(self.dialect())?.to_string();
 
             let group_cols = groupby.iter().map(|c| flat_col(c)).collect::<Vec<_>>();
             let group_col_strs = group_cols
                 .iter()
-                .map(|c| Ok(c.to_sql_select()?.sql(self.dialect())?))
+                .map(|c| Ok(c.to_sql_select(self.dialect())?.to_string()))
                 .collect::<Result<Vec<_>>>()?;
             let group_cols_csv = group_col_strs.join(", ");
 
@@ -813,7 +814,7 @@ impl DataFrame for SqlDataFrame {
 
             let select_column_strs = select_columns
                 .iter()
-                .map(|c| Ok(c.to_sql_select()?.sql(self.dialect())?))
+                .map(|c| Ok(c.to_sql_select(self.dialect())?.to_string()))
                 .collect::<Result<Vec<_>>>()?;
 
             let select_column_csv = select_column_strs.join(", ");
@@ -937,19 +938,18 @@ impl SqlDataFrame {
             .collect();
         let select_items = columns.join(", ");
 
-        let query = Parser::parse_sql_query(&format!("select {select_items} from {table}"))?;
+        let query = parse_sql_query(&format!("select {select_items} from {table}"))?;
 
         Ok(Self {
             prefix: format!("{table}_"),
             ctes: vec![query],
             schema: Arc::new(schema.clone()),
             conn,
-            dialect: Arc::new(make_datafusion_dialect()),
         })
     }
 
     pub fn dialect(&self) -> &Dialect {
-        &self.dialect
+        &self.conn.dialect()
     }
 
     pub fn parent_name(&self) -> String {
@@ -962,7 +962,7 @@ impl SqlDataFrame {
 
     async fn chain_query_str(&self, query: &str, new_schema: Schema) -> Result<Arc<dyn DataFrame>> {
         // println!("chain_query_str: {}", query);
-        let query_ast = Parser::parse_sql_query(query)?;
+        let query_ast = parse_sql_query(query)?;
         self.chain_query(query_ast, new_schema).await
     }
 
@@ -975,12 +975,12 @@ impl SqlDataFrame {
             schema: Arc::new(new_schema),
             ctes: new_ctes,
             conn: self.conn.clone(),
-            dialect: self.dialect.clone(),
+            // dialect: self.dialect.clone(),
         }))
     }
 
     fn make_select_star(&self) -> Query {
-        Parser::parse_sql_query(&format!(
+        parse_sql_query(&format!(
             "select * from {parent}",
             parent = self.parent_name()
         ))
@@ -1030,7 +1030,7 @@ fn query_chain_to_cte(queries: &[Query], prefix: &str) -> Query {
                     },
                     columns: vec![],
                 },
-                query: query.clone(),
+                query: Box::new(query.clone()),
                 from: None,
             }
         })
@@ -1048,4 +1048,19 @@ fn query_chain_to_cte(queries: &[Query], prefix: &str) -> Query {
     };
 
     final_query
+}
+
+fn parse_sql_query(query: &str) -> Result<Query> {
+    let dialect = GenericDialect::default();
+    let statements: Vec<Statement> = Parser::parse_sql(&dialect, query)?;
+    if let Some(statement) = statements.get(0) {
+        if let Statement::Query(box_query) = statement {
+            let query: &Query = box_query.as_ref();
+            Ok(query.clone())
+        } else {
+            Err(VegaFusionError::internal("Parser result was not a query"))
+        }
+    } else {
+        Err(VegaFusionError::internal("Parser result empty"))
+    }
 }

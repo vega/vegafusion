@@ -1,16 +1,17 @@
+use crate::sql::dialect::Dialect;
 use datafusion::scalar::ScalarValue;
-use sqlgen::ast::{
+use sqlparser::ast::{
     Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr,
     Ident, ObjectName as SqlObjectName, Value as SqlValue,
 };
 use vegafusion_core::error::{Result, VegaFusionError};
 
 pub trait ToSqlScalar {
-    fn to_sql(&self) -> Result<SqlExpr>;
+    fn to_sql(&self, dialect: &Dialect) -> Result<SqlExpr>;
 }
 
 impl ToSqlScalar for ScalarValue {
-    fn to_sql(&self) -> Result<SqlExpr> {
+    fn to_sql(&self, dialect: &Dialect) -> Result<SqlExpr> {
         match self {
             ScalarValue::Null => Ok(SqlExpr::Value(SqlValue::Null)),
             ScalarValue::Boolean(v) => Ok(SqlExpr::Value(
@@ -107,7 +108,7 @@ impl ToSqlScalar for ScalarValue {
                     .iter()
                     .map(|expr| {
                         Ok(SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(
-                            expr.to_sql()?,
+                            expr.to_sql(dialect)?,
                         )))
                     })
                     .collect::<Result<Vec<_>>>()?;
@@ -117,6 +118,7 @@ impl ToSqlScalar for ScalarValue {
                     args,
                     over: None,
                     distinct: false,
+                    special: false,
                 }))
             }
             ScalarValue::Date32(_) => Err(VegaFusionError::internal(

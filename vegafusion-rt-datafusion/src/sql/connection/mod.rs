@@ -2,8 +2,8 @@ pub mod datafusion_conn;
 pub mod sqlite_conn;
 
 use crate::sql::dataframe::DataFrame;
+use crate::sql::dialect::Dialect;
 use async_trait::async_trait;
-use sqlgen::dialect::Dialect;
 use std::collections::HashMap;
 use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::Schema;
