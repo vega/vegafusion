@@ -248,13 +248,13 @@ impl ToSqlExpr for Expr {
                 filter: _,
             }) => {
                 let fun_name = aggr_fn_to_name(fun);
-                translate_aggregate_function(fun_name, args, *distinct, dialect)
+                translate_aggregate_function(fun_name, args.as_slice(), *distinct, dialect)
             }
             Expr::AggregateUDF {
                 fun,
                 args,
                 filter: _,
-            } => translate_aggregate_function(&fun.name, args, false, dialect),
+            } => translate_aggregate_function(&fun.name, args.as_slice(), false, dialect),
             Expr::WindowFunction(expr::WindowFunction {
                 fun,
                 args,
@@ -274,7 +274,7 @@ impl ToSqlExpr for Expr {
                     || dialect.window_functions.contains(&fun_name)
                 {
                     // Process args
-                    let args = translate_function_args(args, dialect)?;
+                    let args = translate_function_args(args.as_slice(), dialect)?;
 
                     let partition_by = partition_by
                         .iter()
@@ -393,11 +393,7 @@ impl ToSqlExpr for Expr {
     }
 }
 
-fn translate_scalar_function(
-    fun_name: &str,
-    args: &Vec<Expr>,
-    dialect: &Dialect,
-) -> Result<SqlExpr> {
+fn translate_scalar_function(fun_name: &str, args: &[Expr], dialect: &Dialect) -> Result<SqlExpr> {
     if dialect.scalar_functions.contains(fun_name) {
         // Function is directly supported by dialect
         let ident = Ident {
@@ -426,7 +422,7 @@ fn translate_scalar_function(
 
 fn translate_aggregate_function(
     fun_name: &str,
-    args: &Vec<Expr>,
+    args: &[Expr],
     distinct: bool,
     dialect: &Dialect,
 ) -> Result<SqlExpr> {
@@ -455,7 +451,7 @@ fn translate_aggregate_function(
     }
 }
 
-fn translate_function_args(args: &Vec<Expr>, dialect: &Dialect) -> Result<Vec<FunctionArg>> {
+fn translate_function_args(args: &[Expr], dialect: &Dialect) -> Result<Vec<FunctionArg>> {
     args.iter()
         .map(|expr| Ok(SqlFunctionArg::Unnamed(expr.to_sql_function_arg(dialect)?)))
         .collect::<Result<Vec<_>>>()

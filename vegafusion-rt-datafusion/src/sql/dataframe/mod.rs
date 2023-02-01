@@ -53,7 +53,7 @@ pub trait DataFrame: Send + Sync + 'static {
     async fn collect(&self) -> Result<VegaFusionTable>;
 
     async fn collect_flat(&self) -> Result<RecordBatch> {
-        let mut arrow_schema = Arc::new(self.schema().into()) as SchemaRef;
+        let mut arrow_schema = Arc::new(self.schema()) as SchemaRef;
         let table = self.collect().await?;
         if let Some(batch) = table.batches.get(0) {
             arrow_schema = batch.schema()
@@ -352,7 +352,7 @@ impl DataFrame for SqlDataFrame {
         let query = parse_sql_query(&format!(
             "select * from {parent} where {sql_predicate}",
             parent = self.parent_name(),
-            sql_predicate = sql_predicate.to_string(),
+            sql_predicate = sql_predicate,
         ))?;
 
         self.chain_query(query, self.schema.as_ref().clone())
@@ -387,7 +387,7 @@ impl DataFrame for SqlDataFrame {
             .fields()
             .iter()
             .filter_map(|f| {
-                if f.name() == &key_col || f.name() == &value_col {
+                if f.name() == key_col || f.name() == value_col {
                     None
                 } else {
                     Some(flat_col(f.name()))
@@ -402,18 +402,18 @@ impl DataFrame for SqlDataFrame {
             .map(|(i, field)| {
                 // Clone input selection and add key/val cols to it
                 let mut subquery_selection = input_selection.clone();
-                subquery_selection.push(lit(field).alias(key_col.clone()));
+                subquery_selection.push(lit(field).alias(key_col));
                 if self.schema().column_with_name(field).is_some() {
                     // Field exists as a column in the parent table
-                    subquery_selection.push(flat_col(field).alias(value_col.clone()));
+                    subquery_selection.push(flat_col(field).alias(value_col));
                 } else {
                     // Field does not exist in parent table, fill in NULL instead
-                    subquery_selection.push(lit(ScalarValue::Null).alias(value_col.clone()));
+                    subquery_selection.push(lit(ScalarValue::Null).alias(value_col));
                 }
 
                 if let Some(order_field) = order_field {
                     let field_order_col = format!("{order_field}_field");
-                    subquery_selection.push(lit(i as u32).alias(field_order_col.clone()));
+                    subquery_selection.push(lit(i as u32).alias(field_order_col));
                 }
                 Ok(subquery_selection)
             })
@@ -441,8 +441,8 @@ impl DataFrame for SqlDataFrame {
         let union_subquery_name = "_union";
 
         let mut selections = input_selection.clone();
-        selections.push(flat_col(&key_col));
-        selections.push(flat_col(&value_col));
+        selections.push(flat_col(key_col));
+        selections.push(flat_col(value_col));
         if let Some(order_field) = order_field {
             let field_order_col = format!("{order_field}_field");
             selections.push(flat_col(&field_order_col));
@@ -494,8 +494,8 @@ impl DataFrame for SqlDataFrame {
 
             // Build output selections
             let mut selections = input_selection.clone();
-            selections.push(flat_col(&key_col));
-            selections.push(flat_col(&value_col));
+            selections.push(flat_col(key_col));
+            selections.push(flat_col(value_col));
             selections[0] = order_col;
             dataframe.select(selections).await
         } else {
@@ -539,7 +539,7 @@ impl DataFrame for SqlDataFrame {
                 fun,
                 args: vec![numeric_field.clone()],
                 partition_by,
-                order_by: Vec::from(orderby),
+                order_by: orderby,
                 window_frame: WindowFrame {
                     units: WindowFrameUnits::Rows,
                     start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
@@ -656,7 +656,7 @@ impl DataFrame for SqlDataFrame {
                 fun,
                 args: vec![flat_col(stack_col_name)],
                 partition_by,
-                order_by: Vec::from(orderby),
+                order_by: orderby,
                 window_frame: WindowFrame {
                     units: WindowFrameUnits::Rows,
                     start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
@@ -943,13 +943,13 @@ impl SqlDataFrame {
         Ok(Self {
             prefix: format!("{table}_"),
             ctes: vec![query],
-            schema: Arc::new(schema.clone()),
+            schema: Arc::new(schema),
             conn,
         })
     }
 
     pub fn dialect(&self) -> &Dialect {
-        &self.conn.dialect()
+        self.conn.dialect()
     }
 
     pub fn parent_name(&self) -> String {

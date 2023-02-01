@@ -11,7 +11,7 @@ pub trait ToSqlScalar {
 }
 
 impl ToSqlScalar for ScalarValue {
-    fn to_sql(&self, dialect: &Dialect) -> Result<SqlExpr> {
+    fn to_sql(&self, _dialect: &Dialect) -> Result<SqlExpr> {
         match self {
             ScalarValue::Null => Ok(SqlExpr::Value(SqlValue::Null)),
             ScalarValue::Boolean(v) => Ok(SqlExpr::Value(
@@ -108,7 +108,7 @@ impl ToSqlScalar for ScalarValue {
                     .iter()
                     .map(|expr| {
                         Ok(SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(
-                            expr.to_sql(dialect)?,
+                            expr.to_sql(_dialect)?,
                         )))
                     })
                     .collect::<Result<Vec<_>>>()?;

@@ -112,7 +112,7 @@ impl Connection for DataFusionConnection {
         if url.starts_with("http://") || url.starts_with("https://") {
             // Perform get request to collect file contents as text
             let body = make_request_client()
-                .get(url.clone())
+                .get(url)
                 .send()
                 .await
                 .external(&format!("Failed to get URL data from {url}"))?
