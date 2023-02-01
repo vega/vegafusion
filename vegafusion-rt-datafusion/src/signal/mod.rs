@@ -4,8 +4,10 @@ use crate::expression::compiler::utils::ExprHelpers;
 use crate::task_graph::task::TaskCall;
 use async_trait::async_trait;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::data::dataset::VegaFusionDataset;
+use crate::sql::connection::Connection;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::tasks::SignalTask;
@@ -19,6 +21,7 @@ impl TaskCall for SignalTask {
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
         _inline_datasets: HashMap<String, VegaFusionDataset>,
+        _conn: Arc<dyn Connection>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         let config = build_compilation_config(&self.input_vars(), values, tz_config);
         let expression = self.expr.as_ref().unwrap();

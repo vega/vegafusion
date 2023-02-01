@@ -21,9 +21,7 @@ use crate::data::dataset::VegaFusionDataset;
 use crate::expression::compiler::builtin_functions::date_time::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::call::make_session_context;
 use crate::expression::escape::flat_col;
-use crate::sql::connection::datafusion_conn::DataFusionConnection;
 use crate::sql::dataframe::DataFrame;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use crate::transform::pipeline::{remove_order_col, TransformPipelineUtils};
@@ -79,6 +77,7 @@ impl TaskCall for DataUrlTask {
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
+        conn: Arc<dyn Connection>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Build compilation config for url signal (if any) and transforms (if any)
         let config = build_compilation_config(&self.input_vars(), values, tz_config);
@@ -102,9 +101,6 @@ impl TaskCall for DataUrlTask {
 
         // Load data from URL
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
-
-        let ctx = make_session_context();
-        let conn = Arc::new(DataFusionConnection::new(Arc::new(ctx))) as Arc<dyn Connection>;
 
         let df = if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
             let inline_name = inline_name.trim().to_string();
@@ -406,15 +402,13 @@ impl TaskCall for DataValuesTask {
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
         _inline_datasets: HashMap<String, VegaFusionDataset>,
+        conn: Arc<dyn Connection>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Deserialize data into table
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
         if values_table.schema.fields.is_empty() {
             return Ok((TaskValue::Table(values_table), Default::default()));
         }
-
-        let ctx = make_session_context();
-        let conn = Arc::new(DataFusionConnection::new(Arc::new(ctx))) as Arc<dyn Connection>;
 
         // Add ordering column
         let values_table = values_table.with_ordering()?;
@@ -460,10 +454,8 @@ impl TaskCall for DataSourceTask {
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
         _inline_datasets: HashMap<String, VegaFusionDataset>,
+        conn: Arc<dyn Connection>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
-        let ctx = make_session_context();
-        let conn = Arc::new(DataFusionConnection::new(Arc::new(ctx))) as Arc<dyn Connection>;
-
         let input_vars = self.input_vars();
         let mut config = build_compilation_config(&input_vars, values, tz_config);
 
