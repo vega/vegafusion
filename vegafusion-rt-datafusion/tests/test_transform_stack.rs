@@ -16,7 +16,7 @@ use vegafusion_core::spec::values::{
 };
 
 #[cfg(test)]
-mod test_stack {
+mod test_stack_no_group {
     use super::*;
     use vegafusion_core::spec::transform::stack::StackOffsetSpec;
 

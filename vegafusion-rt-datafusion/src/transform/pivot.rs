@@ -1,12 +1,11 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{cast_to, data_type, is_string_datatype};
 use crate::expression::escape::{flat_col, unescaped_col};
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use crate::transform::aggregate::make_agg_expr_for_col_expr;
 use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::prelude::Column;
 use datafusion_expr::{coalesce, expr::Sort, lit, min, when, Expr};
 use std::sync::Arc;
 use vegafusion_core::arrow::array::StringArray;
@@ -29,11 +28,11 @@ const NULL_NAME: &str = "null";
 impl TransformTrait for Pivot {
     async fn eval(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         // Make sure the pivot column is a string
-        let pivot_dtype = data_type(&unescaped_col(&self.field), &dataframe.schema_df())?;
+        let pivot_dtype = data_type(&unescaped_col(&self.field), &dataframe.schema_df()?)?;
         let dataframe = if matches!(pivot_dtype, DataType::Boolean) {
             // Boolean column type. For consistency with vega, replace 0 with "false" and 1 with "true"
             let select_exprs: Vec<_> = dataframe
@@ -71,7 +70,7 @@ impl TransformTrait for Pivot {
                         .otherwise(cast_to(
                             unescaped_col(&self.field),
                             &DataType::Utf8,
-                            &dataframe.schema_df(),
+                            &dataframe.schema_df()?,
                         )?)?
                         .alias(&self.field))
                     } else {
@@ -104,7 +103,10 @@ impl TransformTrait for Pivot {
     }
 }
 
-async fn extract_sorted_pivot_values(tx: &Pivot, dataframe: &SqlDataFrame) -> Result<Vec<String>> {
+async fn extract_sorted_pivot_values(
+    tx: &Pivot,
+    dataframe: Arc<dyn DataFrame>,
+) -> Result<Vec<String>> {
     let agg_query = dataframe
         .aggregate(vec![unescaped_col(&tx.field)], vec![])
         .await?;
@@ -117,10 +119,7 @@ async fn extract_sorted_pivot_values(tx: &Pivot, dataframe: &SqlDataFrame) -> Re
     let sorted_query = agg_query
         .sort(
             vec![Expr::Sort(Sort {
-                expr: Box::new(Expr::Column(Column {
-                    relation: Some(agg_query.parent_name()),
-                    name: tx.field.clone(),
-                })),
+                expr: Box::new(unescaped_col(&tx.field)),
                 asc: true,
                 nulls_first: false,
             })],
@@ -144,9 +143,9 @@ async fn extract_sorted_pivot_values(tx: &Pivot, dataframe: &SqlDataFrame) -> Re
 
 async fn pivot_case(
     tx: &Pivot,
-    dataframe: Arc<SqlDataFrame>,
-) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
-    let pivot_vec = extract_sorted_pivot_values(tx, &dataframe).await?;
+    dataframe: Arc<dyn DataFrame>,
+) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    let pivot_vec = extract_sorted_pivot_values(tx, dataframe.clone()).await?;
 
     if pivot_vec.is_empty() {
         return Err(VegaFusionError::internal("Unexpected empty pivot dataset"));
@@ -167,7 +166,7 @@ async fn pivot_case(
         let value_expr = unescaped_col(tx.value.as_str());
         let agg_col = when(predicate_expr, value_expr).otherwise(lit(ScalarValue::Null))?;
 
-        let agg_expr = make_agg_expr_for_col_expr(agg_col, &agg_op, &dataframe.schema_df())?;
+        let agg_expr = make_agg_expr_for_col_expr(agg_col, &agg_op, &dataframe.schema_df()?)?;
 
         // Replace null with zero for certain aggregates
         let agg_expr = if fill_zero {

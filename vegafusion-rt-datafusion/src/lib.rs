@@ -3,6 +3,7 @@ extern crate lazy_static;
 
 #[macro_use]
 extern crate log;
+extern crate core;
 
 pub mod data;
 pub mod expression;

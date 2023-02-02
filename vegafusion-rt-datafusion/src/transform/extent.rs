@@ -1,6 +1,6 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::to_numeric;
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
@@ -22,11 +22,11 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Extent {
     async fn eval(
         &self,
-        sql_df: Arc<SqlDataFrame>,
+        sql_df: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let output_values = if self.signal.is_some() {
-            let (min_expr, max_expr) = min_max_exprs(self.field.as_str(), &sql_df.schema_df())?;
+            let (min_expr, max_expr) = min_max_exprs(self.field.as_str(), &sql_df.schema_df()?)?;
 
             let extent_df = sql_df
                 .aggregate(Vec::new(), vec![min_expr, max_expr])

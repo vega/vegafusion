@@ -33,10 +33,23 @@ pub struct VegaFusionTable {
 
 impl VegaFusionTable {
     pub fn try_new(schema: SchemaRef, partitions: Vec<RecordBatch>) -> Result<Self> {
-        if partitions
+        // Make all columns nullable
+        let schema_fields: Vec<_> = schema
+            .fields
             .iter()
-            .all(|batches| schema.contains(&batches.schema()))
-        {
+            .map(|f| f.clone().with_nullable(true))
+            .collect();
+        let schema = Arc::new(Schema::new(schema_fields));
+        if partitions.iter().all(|batches| {
+            let batch_schema_fields = batches
+                .schema()
+                .fields
+                .iter()
+                .map(|f| f.clone().with_nullable(true))
+                .collect();
+            let batch_schema = Arc::new(Schema::new(batch_schema_fields));
+            schema.contains(&batch_schema)
+        }) {
             Ok(Self {
                 schema,
                 batches: partitions,

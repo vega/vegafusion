@@ -3191,14 +3191,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sqlgen"
-version = "0.1.0"
-source = "git+https://github.com/vegafusion/sqlgen-rs.git?rev=e5ac9609dfffbf98af1fd8f2bc8a07216451bb51#e5ac9609dfffbf98af1fd8f2bc8a07216451bb51"
-dependencies = [
- "log",
-]
-
-[[package]]
 name = "sqlparser"
 version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3898,7 +3890,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "sqlgen",
+ "sqlparser",
  "thiserror",
  "tonic",
  "tonic-build",
@@ -3959,7 +3951,7 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
- "sqlgen",
+ "sqlparser",
  "sqlx",
  "tempfile",
  "test-case",

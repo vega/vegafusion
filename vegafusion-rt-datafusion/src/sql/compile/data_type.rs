@@ -1,13 +1,14 @@
-use sqlgen::ast::DataType as SqlDataType;
+use crate::sql::dialect::Dialect;
+use sqlparser::ast::DataType as SqlDataType;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, VegaFusionError};
 
 pub trait ToSqlDataType {
-    fn to_sql(&self) -> Result<SqlDataType>;
+    fn to_sql(&self, dialect: &Dialect) -> Result<SqlDataType>;
 }
 
 impl ToSqlDataType for DataType {
-    fn to_sql(&self) -> Result<SqlDataType> {
+    fn to_sql(&self, _dialect: &Dialect) -> Result<SqlDataType> {
         match self {
             DataType::Null => {
                 // No Null available here

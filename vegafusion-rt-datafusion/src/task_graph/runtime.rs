@@ -4,7 +4,10 @@ use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFus
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::data::dataset::VegaFusionDataset;
+use crate::expression::compiler::call::make_session_context;
 use crate::pre_transform::destringify_selection_datetimes::destringify_selection_datetimes;
+use crate::sql::connection::datafusion_conn::DataFusionConnection;
+use crate::sql::connection::Connection;
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -44,12 +47,16 @@ type CacheValue = (TaskValue, Vec<TaskValue>);
 #[derive(Clone)]
 pub struct TaskGraphRuntime {
     pub cache: VegaFusionCache,
+    pub conn: Arc<dyn Connection>,
 }
 
 impl TaskGraphRuntime {
     pub fn new(capacity: Option<usize>, memory_limit: Option<usize>) -> Self {
+        let ctx = make_session_context();
+        let conn = Arc::new(DataFusionConnection::new(Arc::new(ctx))) as Arc<dyn Connection>;
         Self {
             cache: VegaFusionCache::new(capacity, memory_limit),
+            conn,
         }
     }
 
@@ -66,6 +73,7 @@ impl TaskGraphRuntime {
             node_value_index.node_index as usize,
             self.cache.clone(),
             inline_datasets,
+            self.conn.clone(),
         ))
         .catch_unwind()
         .await;
@@ -608,6 +616,7 @@ async fn get_or_compute_node_value(
     node_index: usize,
     cache: VegaFusionCache,
     inline_datasets: HashMap<String, VegaFusionDataset>,
+    conn: Arc<dyn Connection>,
 ) -> Result<CacheValue> {
     // Get the cache key for requested node
     let node = task_graph.node(node_index).unwrap();
@@ -639,6 +648,7 @@ async fn get_or_compute_node_value(
                     input_node_index,
                     cloned_cache.clone(),
                     inline_datasets.clone(),
+                    conn.clone(),
                 )));
             }
 
@@ -665,7 +675,8 @@ async fn get_or_compute_node_value(
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            task.eval(&input_values, &tz_config, inline_datasets).await
+            task.eval(&input_values, &tz_config, inline_datasets, conn)
+                .await
         };
 
         // get or construct from cache

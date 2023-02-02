@@ -82,13 +82,15 @@ fn to_timestamptz_expr(arg: &Expr, schema: &DFSchema, default_input_tz: &str) ->
             args: vec![arg.clone(), lit(default_input_tz)],
         },
         DataType::Null => arg.clone(),
-        dtype if is_numeric_datatype(&dtype) => Expr::ScalarUDF {
-            fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
-            args: vec![
-                cast_to(arg.clone(), &DataType::Int64, schema)?,
-                lit(default_input_tz),
-            ],
-        },
+        dtype if is_numeric_datatype(&dtype) || matches!(dtype, DataType::Boolean) => {
+            Expr::ScalarUDF {
+                fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
+                args: vec![
+                    cast_to(arg.clone(), &DataType::Int64, schema)?,
+                    lit(default_input_tz),
+                ],
+            }
+        }
         dtype => {
             return Err(VegaFusionError::internal(format!(
                 "Invalid argument type to timeFormat function: {dtype:?}"

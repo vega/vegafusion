@@ -63,9 +63,9 @@ pub enum VegaFusionError {
     #[error("Serde JSON Error: {0}\n{1}")]
     SerdeJsonError(serde_json::Error, ErrorContext),
 
-    #[cfg(feature = "sqlgen")]
-    #[error("SqlGen Error: {0}\n{1}")]
-    SqlParseError(sqlgen::parser::SqlGenError, ErrorContext),
+    #[cfg(feature = "sqlparser")]
+    #[error("SqlParser Error: {0}\n{1}")]
+    SqlParserError(sqlparser::parser::ParserError, ErrorContext),
 }
 
 impl VegaFusionError {
@@ -125,10 +125,10 @@ impl VegaFusionError {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::SerdeJsonError(err, context)
             }
-            #[cfg(feature = "sqlgen")]
-            SqlParseError(err, mut context) => {
+            #[cfg(feature = "sqlparser")]
+            SqlParserError(err, mut context) => {
                 context.contexts.push(context_fn().into());
-                VegaFusionError::SqlParseError(err, context)
+                VegaFusionError::SqlParserError(err, context)
             }
         }
     }
@@ -198,9 +198,9 @@ impl VegaFusionError {
             SerdeJsonError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
-            #[cfg(feature = "sqlgen")]
-            SqlParseError(err, context) => {
-                VegaFusionError::SqlParseError(err.clone(), context.clone())
+            #[cfg(feature = "sqlparser")]
+            SqlParserError(err, context) => {
+                VegaFusionError::SqlParserError(err.clone(), context.clone())
             }
         }
     }
@@ -281,10 +281,10 @@ impl From<serde_json::Error> for VegaFusionError {
     }
 }
 
-#[cfg(feature = "sqlgen")]
-impl From<sqlgen::parser::SqlGenError> for VegaFusionError {
-    fn from(err: sqlgen::parser::SqlGenError) -> Self {
-        Self::SqlParseError(err, Default::default())
+#[cfg(feature = "sqlparser")]
+impl From<sqlparser::parser::ParserError> for VegaFusionError {
+    fn from(err: sqlparser::parser::ParserError) -> Self {
+        Self::SqlParserError(err, Default::default())
     }
 }
 

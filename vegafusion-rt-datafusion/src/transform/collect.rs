@@ -8,7 +8,7 @@ use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::{Collect, SortOrder};
 
 use crate::expression::escape::{flat_col, unescaped_col};
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion::common::ScalarValue;
 use datafusion_expr::{
@@ -21,9 +21,9 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Collect {
     async fn eval(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         // Build vector of sort expressions
         let sort_exprs: Vec<_> = self
             .fields

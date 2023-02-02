@@ -3,7 +3,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
 use crate::expression::compiler::utils::ExprHelpers;
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion::arrow::array::{ArrayRef, Float64Array};
 use datafusion::arrow::datatypes::{Field, Schema, SchemaRef};
@@ -12,8 +12,6 @@ use std::sync::Arc;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::data::scalar::ScalarValueHelpers;
 use vegafusion_core::data::table::VegaFusionTable;
-
-use crate::data::table::VegaFusionTableUtils;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Sequence;
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -22,9 +20,9 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Sequence {
     async fn eval(
         &self,
-        _dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let start_expr = compile(self.start.as_ref().unwrap(), config, None)?;
         let start_scalar = start_expr.eval_to_scalar()?;
         let start = start_scalar.to_f64()?;
@@ -32,6 +30,9 @@ impl TransformTrait for Sequence {
         let stop_expr = compile(self.stop.as_ref().unwrap(), config, None)?;
         let stop_scalar = stop_expr.eval_to_scalar()?;
         let stop = stop_scalar.to_f64()?;
+
+        // Use input DataFrame's connection to create the new dataset
+        let conn = dataframe.connection();
 
         let step = if let Some(step_signal) = &self.step {
             let step_expr = compile(step_signal, config, None)?;
@@ -66,7 +67,7 @@ impl TransformTrait for Sequence {
         )])) as SchemaRef;
         let data_batch = RecordBatch::try_new(data_schema, vec![data_array])?;
         let data_table = VegaFusionTable::from(data_batch);
-        let result = data_table.with_ordering()?.to_sql_dataframe().await?;
+        let result = conn.scan_arrow(data_table.with_ordering()?).await?;
 
         Ok((result, Default::default()))
     }

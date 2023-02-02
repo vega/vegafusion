@@ -10,19 +10,16 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
-use crate::sql::dataframe::SqlDataFrame;
-
+use crate::expression::compiler::builtin_functions::date_time::date_add::DATE_ADD_UDF;
 use crate::expression::compiler::builtin_functions::date_time::datetime::MAKE_TIMESTAMPTZ;
-
-use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
-use crate::sql::compile::expr::ToSqlExpr;
-
 use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
 use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
+use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use crate::expression::escape::{flat_col, unescaped_col};
+use crate::sql::dataframe::DataFrame;
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
 use datafusion_expr::expr::Cast;
 use datafusion_expr::{
@@ -30,7 +27,6 @@ use datafusion_expr::{
     ScalarFunctionImplementation, ScalarUDF, Signature, TypeSignature, Volatility,
 };
 use itertools::Itertools;
-use sqlgen::dialect::DialectDisplay;
 use std::str::FromStr;
 use vegafusion_core::arrow::array::{ArrayRef, Int64Array, TimestampMillisecondArray};
 use vegafusion_core::arrow::compute::unary;
@@ -44,15 +40,15 @@ fn timeunit_date_trunc(
     schema: &DFSchema,
     default_input_tz: &String,
     local_tz: &Option<String>,
-) -> Result<(Expr, String)> {
-    let (part_str, interval_str) = match smallest_unit {
-        TimeUnitUnit::Year => ("year".to_string(), "1 YEAR".to_string()),
-        TimeUnitUnit::Quarter => ("quarter".to_string(), "3 MONTH".to_string()),
-        TimeUnitUnit::Month => ("month".to_string(), "1 MONTH".to_string()),
-        TimeUnitUnit::Date => ("day".to_string(), "1 DAY".to_string()),
-        TimeUnitUnit::Hours => ("hour".to_string(), "1 HOUR".to_string()),
-        TimeUnitUnit::Minutes => ("minute".to_string(), "1 MINUTE".to_string()),
-        TimeUnitUnit::Seconds => ("second".to_string(), "1 SECOND".to_string()),
+) -> Result<(Expr, (i32, String))> {
+    let (part_str, interval) = match smallest_unit {
+        TimeUnitUnit::Year => ("year".to_string(), (1, "YEAR".to_string())),
+        TimeUnitUnit::Quarter => ("quarter".to_string(), (3, "MONTH".to_string())),
+        TimeUnitUnit::Month => ("month".to_string(), (1, "MONTH".to_string())),
+        TimeUnitUnit::Date => ("day".to_string(), (1, "DAY".to_string())),
+        TimeUnitUnit::Hours => ("hour".to_string(), (1, "HOUR".to_string())),
+        TimeUnitUnit::Minutes => ("minute".to_string(), (1, "MINUTE".to_string())),
+        TimeUnitUnit::Seconds => ("second".to_string(), (1, "SECOND".to_string())),
         _ => {
             return Err(VegaFusionError::internal(format!(
                 "Unsupported date trunc unit: {smallest_unit:?}"
@@ -86,7 +82,7 @@ fn timeunit_date_trunc(
         }
     };
 
-    Ok((start_expr, interval_str))
+    Ok((start_expr, interval))
 }
 
 // Implementation of timeunit start using MAKE_TIMESTAMPTZ and the SQL DATE_PART function
@@ -96,7 +92,7 @@ fn timeunit_date_part(
     schema: &DFSchema,
     default_input_tz: &String,
     local_tz: &Option<String>,
-) -> Result<(Expr, String)> {
+) -> Result<(Expr, (i32, String))> {
     // Initialize default arguments to make_timestamptz
     let mut make_timestamptz_args = vec![
         lit(2012), // 0 year
@@ -110,7 +106,7 @@ fn timeunit_date_part(
     ];
 
     // Initialize interval string, this will be overwritten with the smallest specified unit
-    let mut interval_str = "1 YEAR".to_string();
+    let mut interval = (1, "YEAR".to_string());
 
     // Convert field column to timestamp
     let field_col = to_timestamp_col(field, schema, default_input_tz)?;
@@ -132,7 +128,7 @@ fn timeunit_date_part(
             args: vec![lit("year"), inner.clone()],
         };
 
-        interval_str = "1 YEAR".to_string();
+        interval = (1, "YEAR".to_string());
     }
 
     // Quarter
@@ -148,7 +144,7 @@ fn timeunit_date_part(
             data_type: DataType::Int64,
         });
 
-        interval_str = "3 MONTH".to_string();
+        interval = (3, "MONTH".to_string());
     }
 
     // Month
@@ -159,7 +155,7 @@ fn timeunit_date_part(
         }
         .sub(lit(1.0));
 
-        interval_str = "1 MONTH".to_string();
+        interval = (1, "MONTH".to_string());
     }
 
     // Date
@@ -169,7 +165,7 @@ fn timeunit_date_part(
             args: vec![lit("day"), inner.clone()],
         };
 
-        interval_str = "1 DAY".to_string();
+        interval = (1, "DAY".to_string());
     }
 
     // Hour
@@ -179,7 +175,7 @@ fn timeunit_date_part(
             args: vec![lit("hour"), inner.clone()],
         };
 
-        interval_str = "1 HOUR".to_string();
+        interval = (1, "HOUR".to_string());
     }
 
     // Minute
@@ -189,7 +185,7 @@ fn timeunit_date_part(
             args: vec![lit("minute"), inner.clone()],
         };
 
-        interval_str = "1 MINUTE".to_string();
+        interval = (1, "MINUTE".to_string());
     }
 
     // Second
@@ -199,7 +195,7 @@ fn timeunit_date_part(
             args: vec![lit("second"), inner],
         };
 
-        interval_str = "1 SECOND".to_string();
+        interval = (1, "SECOND".to_string());
     }
 
     // Construct expression to make timestamp from components
@@ -208,7 +204,7 @@ fn timeunit_date_part(
         args: make_timestamptz_args,
     };
 
-    Ok((start_expr, interval_str))
+    Ok((start_expr, interval))
 }
 
 fn to_timestamp_col(field: &str, schema: &DFSchema, default_input_tz: &String) -> Result<Expr> {
@@ -237,7 +233,7 @@ fn timeunit_weekday(
     schema: &DFSchema,
     default_input_tz: &String,
     local_tz: &Option<String>,
-) -> Result<(Expr, String)> {
+) -> Result<(Expr, (i32, String))> {
     let field_col = to_timestamp_col(field, schema, default_input_tz)?;
 
     // Compute input timestamp expression based on timezone
@@ -279,7 +275,7 @@ fn timeunit_weekday(
         args: make_timestamptz_args,
     };
 
-    Ok((start_expr, "1 DAY".to_string()))
+    Ok((start_expr, (1, "DAY".to_string())))
 }
 
 // Fallback implementation of timeunit that uses a custom DataFusion UDF
@@ -289,7 +285,7 @@ fn timeunit_custom_udf(
     schema: &DFSchema,
     default_input_tz: &String,
     local_tz: &Option<String>,
-) -> Result<(Expr, String)> {
+) -> Result<(Expr, (i32, String))> {
     let units_mask = vec![
         units_set.contains(&TimeUnitUnit::Year),         // 0
         units_set.contains(&TimeUnitUnit::Quarter),      // 1
@@ -330,26 +326,26 @@ fn timeunit_custom_udf(
     ]);
 
     // Initialize interval string, this will be overwritten with the smallest specified unit
-    let mut interval_str = "".to_string();
+    let mut interval = (1, "YEAR".to_string());
 
     // Year
     if units_set.contains(&TimeUnitUnit::Year) {
-        interval_str = "1 YEAR".to_string();
+        interval = (1, "YEAR".to_string());
     }
 
     // Quarter
     if units_set.contains(&TimeUnitUnit::Quarter) {
-        interval_str = "3 MONTH".to_string();
+        interval = (3, "MONTH".to_string());
     }
 
     // Month
     if units_set.contains(&TimeUnitUnit::Month) {
-        interval_str = "1 MONTH".to_string();
+        interval = (1, "MONTH".to_string());
     }
 
     // Week
     if units_set.contains(&TimeUnitUnit::Week) {
-        interval_str = "1 WEEK".to_string();
+        interval = (1, "WEEK".to_string());
     }
 
     // Day
@@ -357,34 +353,34 @@ fn timeunit_custom_udf(
         || units_set.contains(&TimeUnitUnit::DayOfYear)
         || units_set.contains(&TimeUnitUnit::Day)
     {
-        interval_str = "1 DAY".to_string();
+        interval = (1, "DAY".to_string());
     }
 
     // Hour
     if units_set.contains(&TimeUnitUnit::Hours) {
-        interval_str = "1 HOUR".to_string();
+        interval = (1, "HOUR".to_string());
     }
 
     // Minute
     if units_set.contains(&TimeUnitUnit::Minutes) {
-        interval_str = "1 MINUTE".to_string();
+        interval = (1, "MINUTE".to_string());
     }
 
     // Second
     if units_set.contains(&TimeUnitUnit::Seconds) {
-        interval_str = "1 SECOND".to_string();
+        interval = (1, "SECOND".to_string());
     }
 
-    Ok((timeunit_start_value, interval_str))
+    Ok((timeunit_start_value, interval))
 }
 
 #[async_trait]
 impl TransformTrait for TimeUnit {
     async fn eval(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         let tz_config = config
             .tz_config
             .with_context(|| "No local timezone info provided".to_string())?;
@@ -396,7 +392,7 @@ impl TransformTrait for TimeUnit {
         };
 
         let local_tz = local_tz.map(|tz| tz.to_string());
-        let schema = dataframe.schema_df();
+        let schema = dataframe.schema_df()?;
         let default_input_tz = tz_config.default_input_tz.to_string();
 
         // Compute Apply alias
@@ -414,7 +410,7 @@ impl TransformTrait for TimeUnit {
             .collect::<Vec<TimeUnitUnit>>();
 
         // Add timeunit start
-        let (timeunit_start_value, interval_str) = match *units_vec.as_slice() {
+        let (timeunit_start_expr, interval) = match *units_vec.as_slice() {
             [TimeUnitUnit::Year] => timeunit_date_trunc(
                 &self.field,
                 TimeUnitUnit::Year,
@@ -515,11 +511,11 @@ impl TransformTrait for TimeUnit {
             }
         };
 
-        let timeunit_start_value = timeunit_start_value.alias(&timeunit_start_alias);
+        let timeunit_start_expr = timeunit_start_expr.alias(&timeunit_start_alias);
 
         // Add timeunit start value to the dataframe
         let mut select_exprs: Vec<_> = dataframe
-            .schema_df()
+            .schema_df()?
             .fields()
             .iter()
             .filter_map(|field| {
@@ -530,7 +526,7 @@ impl TransformTrait for TimeUnit {
                 }
             })
             .collect();
-        select_exprs.push(timeunit_start_value);
+        select_exprs.push(timeunit_start_expr);
 
         let dataframe = dataframe.select(select_exprs).await?;
 
@@ -540,69 +536,48 @@ impl TransformTrait for TimeUnit {
         } else {
             "unit1".to_string()
         };
-        let dialect = dataframe.dialect();
-        let mut select_strs: Vec<_> = dataframe
-            .schema()
+
+        let timeunit_end_expr = if let Some(tz_str) = local_tz {
+            let ts = Expr::ScalarUDF {
+                fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
+                args: vec![flat_col(&timeunit_start_alias), lit(&tz_str)],
+            };
+
+            let ts_shifted = Expr::ScalarUDF {
+                fun: Arc::new((*DATE_ADD_UDF).clone()),
+                args: vec![lit(&interval.1), lit(interval.0), ts],
+            };
+
+            Expr::ScalarUDF {
+                fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
+                args: vec![ts_shifted, lit(&tz_str)],
+            }
+        } else {
+            Expr::ScalarUDF {
+                fun: Arc::new((*DATE_ADD_UDF).clone()),
+                args: vec![
+                    lit(&interval.1),
+                    lit(interval.0),
+                    flat_col(&timeunit_start_alias),
+                ],
+            }
+        }
+        .alias(&timeunit_end_alias);
+
+        let mut select_exprs: Vec<_> = dataframe
+            .schema_df()?
             .fields()
             .iter()
             .filter_map(|field| {
                 if field.name() != &timeunit_end_alias {
-                    // Convert column name to string with dialect's rules for quoting
-                    Some(
-                        flat_col(field.name().as_str())
-                            .to_sql()
-                            .unwrap()
-                            .sql(dialect)
-                            .unwrap(),
-                    )
+                    Some(flat_col(field.name()))
                 } else {
                     None
                 }
             })
             .collect();
-
-        if let Some(tz_str) = local_tz {
-            // Apply offset in UTC
-            select_strs.push(format!(
-                "timestamp_to_timestamptz(timestamptz_to_timestamp({start}, '{tz}') + INTERVAL '{interval}', '{tz}') as {end}",
-                start=flat_col(&timeunit_start_alias)
-                    .to_sql()
-                    .unwrap()
-                    .sql(dialect)
-                    .unwrap(),
-                interval=interval_str,
-                end=flat_col(&timeunit_end_alias)
-                    .to_sql()
-                    .unwrap()
-                    .sql(dialect)
-                    .unwrap(),
-                tz=tz_str
-            ));
-        } else {
-            select_strs.push(format!(
-                "{start} + INTERVAL '{interval}' as {end}",
-                start = flat_col(&timeunit_start_alias)
-                    .to_sql()
-                    .unwrap()
-                    .sql(dialect)
-                    .unwrap(),
-                interval = interval_str,
-                end = flat_col(&timeunit_end_alias)
-                    .to_sql()
-                    .unwrap()
-                    .sql(dialect)
-                    .unwrap(),
-            ));
-        }
-        let select_csv = select_strs.join(", ");
-
-        let dataframe = dataframe
-            .chain_query_str(&format!(
-                "SELECT {select_csv} from {parent}",
-                select_csv = select_csv,
-                parent = dataframe.parent_name()
-            ))
-            .await?;
+        select_exprs.push(timeunit_end_expr);
+        let dataframe = dataframe.select(select_exprs).await?;
 
         Ok((dataframe, Vec::new()))
     }

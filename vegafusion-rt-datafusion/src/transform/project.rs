@@ -8,7 +8,7 @@ use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Project;
 
 use crate::expression::escape::flat_col;
-use crate::sql::dataframe::SqlDataFrame;
+use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use vegafusion_core::data::ORDER_COL;
 use vegafusion_core::expression::escape::unescape_field;
@@ -18,9 +18,9 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 impl TransformTrait for Project {
     async fn eval(
         &self,
-        dataframe: Arc<SqlDataFrame>,
+        dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<SqlDataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         // Collect all dataframe fields into a HashSet for fast membership test
         let all_fields: HashSet<_> = dataframe
             .schema()
