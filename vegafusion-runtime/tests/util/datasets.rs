@@ -1,7 +1,7 @@
 use reqwest_middleware::ClientWithMiddleware;
 use serde_json::Value;
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_rt_datafusion::data::tasks::make_request_client;
+use vegafusion_runtime::data::tasks::make_request_client;
 
 lazy_static! {
     pub static ref REQWEST_CLIENT: ClientWithMiddleware = make_request_client();

@@ -59,7 +59,7 @@ Note: The `npm` command is included in the `nodejs` conda-forge package installe
 
 From the repository root:
 ```bash
-cd vegafusion-rt-datafusion/tests/util/vegajs_runtime/
+cd vegafusion-runtime/tests/util/vegajs_runtime/
 npm install
 ```
 

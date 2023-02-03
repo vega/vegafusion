@@ -26,8 +26,8 @@ use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
-use vegafusion_rt_datafusion::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
+use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
+use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
 lazy_static! {
     static ref TOKIO_RUNTIME: Runtime = tokio::runtime::Builder::new_multi_thread()

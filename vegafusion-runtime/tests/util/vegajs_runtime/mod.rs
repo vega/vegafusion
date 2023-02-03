@@ -26,7 +26,7 @@ use vegafusion_core::proto::gen::expression::Expression;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 
-use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
+use vegafusion_runtime::expression::compiler::config::CompilationConfig;
 
 lazy_static! {
     static ref UNDEFINED_RE: Regex = Regex::new(r"\bundefined\b").unwrap();

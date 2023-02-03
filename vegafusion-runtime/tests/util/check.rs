@@ -14,15 +14,15 @@ use vegafusion_core::error::Result;
 use vegafusion_core::expression::parser::parse;
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_rt_datafusion::expression::compiler::call::make_session_context;
-use vegafusion_rt_datafusion::expression::compiler::compile;
-use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
-use vegafusion_rt_datafusion::expression::compiler::utils::ExprHelpers;
-use vegafusion_rt_datafusion::sql::connection::datafusion_conn::DataFusionConnection;
-use vegafusion_rt_datafusion::sql::connection::Connection;
-use vegafusion_rt_datafusion::task_graph::timezone::RuntimeTzConfig;
-use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
-use vegafusion_rt_datafusion::transform::pipeline::TransformPipelineUtils;
+use vegafusion_runtime::expression::compiler::call::make_session_context;
+use vegafusion_runtime::expression::compiler::compile;
+use vegafusion_runtime::expression::compiler::config::CompilationConfig;
+use vegafusion_runtime::expression::compiler::utils::ExprHelpers;
+use vegafusion_runtime::sql::connection::datafusion_conn::DataFusionConnection;
+use vegafusion_runtime::sql::connection::Connection;
+use vegafusion_runtime::task_graph::timezone::RuntimeTzConfig;
+use vegafusion_runtime::tokio_runtime::TOKIO_RUNTIME;
+use vegafusion_runtime::transform::pipeline::TransformPipelineUtils;
 
 pub fn check_expr_supported(expr_str: &str) {
     let expr = parse(expr_str).unwrap();

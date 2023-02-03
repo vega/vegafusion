@@ -12,7 +12,7 @@ use vegafusion_core::proto::gen::transforms::{
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::scope::TaskScope;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
+use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn try_it() {

@@ -7,7 +7,7 @@ use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{
 use vegafusion_core::proto::gen::services::{
     PreTransformSpecResult, PreTransformValuesResult, QueryRequest, QueryResult,
 };
-use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
+use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
 
 use clap::Parser;
 use regex::Regex;

@@ -3,7 +3,7 @@ name = "spec_benchmarks"
 harness = false
 
 [package]
-name = "vegafusion-rt-datafusion"
+name = "vegafusion-runtime"
 license = "BSD-3-Clause"
 edition = "2021"
 version = "1.0.3"

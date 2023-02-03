@@ -6,7 +6,7 @@ use vegafusion_core::proto::gen::services::{QueryRequest, QueryResult};
 use vegafusion_core::proto::gen::tasks::{TaskGraph, TaskGraphValueRequest, TzConfig, Variable};
 use vegafusion_core::spec::chart::ChartSpec;
 
-use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
+use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
 
 fn crate_dir() -> String {
     std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -144,7 +144,7 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use vegafusion_core::task_graph::graph::ScopedVariable;
-use vegafusion_rt_datafusion::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
+use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
 fn make_tokio_runtime() -> tokio::runtime::Runtime {
     tokio::runtime::Builder::new_multi_thread()

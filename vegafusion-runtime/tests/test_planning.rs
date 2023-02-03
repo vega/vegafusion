@@ -1,7 +1,7 @@
 use vegafusion_core::planning::extract::extract_server_data;
 use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig, Variable};
 use vegafusion_core::spec::chart::ChartSpec;
-use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
+use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
 
 use std::collections::HashSet;
 use std::sync::Arc;

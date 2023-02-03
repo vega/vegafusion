@@ -18,8 +18,8 @@ use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::spec::transform::extent::ExtentTransformSpec;
 use vegafusion_core::spec::transform::filter::FilterTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
-use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
+use vegafusion_runtime::data::table::VegaFusionTableUtils;
+use vegafusion_runtime::expression::compiler::config::CompilationConfig;
 
 #[test]
 fn test_vegajs_parse() {

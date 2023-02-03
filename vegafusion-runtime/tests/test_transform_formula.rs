@@ -7,7 +7,7 @@ use util::check::check_transform_evaluation;
 use util::datasets::vega_json_dataset;
 use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
+use vegafusion_runtime::expression::compiler::config::CompilationConfig;
 
 #[test]
 fn test_formula_valid() {

@@ -3922,11 +3922,11 @@ dependencies = [
  "serde_json",
  "tokio",
  "vegafusion-core",
- "vegafusion-rt-datafusion",
+ "vegafusion-runtime",
 ]
 
 [[package]]
-name = "vegafusion-rt-datafusion"
+name = "vegafusion-runtime"
 version = "1.0.3"
 dependencies = [
  "async-lock",
@@ -3991,7 +3991,7 @@ dependencies = [
  "tonic-build",
  "tonic-web",
  "vegafusion-core",
- "vegafusion-rt-datafusion",
+ "vegafusion-runtime",
 ]
 
 [[package]]

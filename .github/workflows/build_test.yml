@@ -57,7 +57,7 @@ jobs:
         with:
           node-version: '17'
       - name: Install test node dependencies
-        working-directory: vegafusion-rt-datafusion/tests/util/vegajs_runtime
+        working-directory: vegafusion-runtime/tests/util/vegajs_runtime
         run: |
           npm install
       - name: Run Rust Tests (Windows)
@@ -81,7 +81,7 @@ jobs:
         with:
           name: vegafusion-rt-test-images
           path: |
-            vegafusion-rt-datafusion/tests/output
+            vegafusion-runtime/tests/output
 
   build-vegafusion-server:
     strategy:

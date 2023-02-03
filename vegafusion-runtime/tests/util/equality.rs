@@ -9,12 +9,12 @@ use vegafusion_core::data::scalar::DATETIME_PREFIX;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::data::ORDER_COL;
 use vegafusion_core::error::Result;
-use vegafusion_rt_datafusion::expression::compiler::call::make_session_context;
-use vegafusion_rt_datafusion::expression::compiler::utils::is_numeric_datatype;
-use vegafusion_rt_datafusion::expression::escape::flat_col;
-use vegafusion_rt_datafusion::sql::connection::datafusion_conn::DataFusionConnection;
-use vegafusion_rt_datafusion::sql::connection::Connection;
-use vegafusion_rt_datafusion::tokio_runtime::TOKIO_RUNTIME;
+use vegafusion_runtime::expression::compiler::call::make_session_context;
+use vegafusion_runtime::expression::compiler::utils::is_numeric_datatype;
+use vegafusion_runtime::expression::escape::flat_col;
+use vegafusion_runtime::sql::connection::datafusion_conn::DataFusionConnection;
+use vegafusion_runtime::sql::connection::Connection;
+use vegafusion_runtime::tokio_runtime::TOKIO_RUNTIME;
 
 const DROP_COLS: &[&str] = &[ORDER_COL, "_impute"];
 

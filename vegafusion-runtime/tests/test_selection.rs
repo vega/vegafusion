@@ -9,8 +9,8 @@ use util::check::check_transform_evaluation;
 use vegafusion_core::data::table::VegaFusionTable;
 use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
-use vegafusion_rt_datafusion::task_graph::timezone::RuntimeTzConfig;
+use vegafusion_runtime::expression::compiler::config::CompilationConfig;
+use vegafusion_runtime::task_graph::timezone::RuntimeTzConfig;
 
 fn make_brush_r(ranges: &Vec<Vec<(&str, &str, [f64; 2])>>, typ: &str) -> VegaFusionTable {
     let mut rows: Vec<Value> = Vec::new();

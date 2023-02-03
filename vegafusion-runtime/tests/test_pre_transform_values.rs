@@ -9,9 +9,9 @@ mod tests {
     use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType;
     use vegafusion_core::proto::gen::tasks::Variable;
     use vegafusion_core::spec::chart::ChartSpec;
-    use vegafusion_rt_datafusion::data::dataset::VegaFusionDataset;
-    use vegafusion_rt_datafusion::data::table::VegaFusionTableUtils;
-    use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
+    use vegafusion_runtime::data::dataset::VegaFusionDataset;
+    use vegafusion_runtime::data::table::VegaFusionTableUtils;
+    use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
 
     #[tokio::test]
     async fn test_pre_transform_dataset() {

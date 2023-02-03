@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 use tokio::runtime::Runtime;
-use vegafusion_rt_datafusion::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
+use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
 lazy_static! {
     static ref TOKIO_RUNTIME: Runtime = tokio::runtime::Builder::new_multi_thread()
@@ -16,7 +16,7 @@ mod test_stringify_datetimes {
     use rstest::rstest;
     use std::fs;
     use vegafusion_core::spec::chart::ChartSpec;
-    use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
+    use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
 
     #[rstest(
         local_tz,

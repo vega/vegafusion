@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 use util::check::check_scalar_evaluation;
 use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_rt_datafusion::expression::compiler::config::CompilationConfig;
+use vegafusion_runtime::expression::compiler::config::CompilationConfig;
 
 fn scope_a() -> HashMap<String, ScalarValue> {
     vec![

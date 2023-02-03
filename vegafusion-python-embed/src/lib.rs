@@ -7,7 +7,7 @@ use tokio::runtime::Runtime;
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
-use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
+use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
 
 use env_logger::{Builder, Target};
 use pythonize::depythonize;
@@ -16,8 +16,8 @@ use vegafusion_core::proto::gen::tasks::Variable;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_rt_datafusion::data::dataset::VegaFusionDataset;
-use vegafusion_rt_datafusion::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
+use vegafusion_runtime::data::dataset::VegaFusionDataset;
+use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
 static INIT: Once = Once::new();
 

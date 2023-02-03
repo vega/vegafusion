@@ -4,7 +4,7 @@ mod tests {
     use std::fs;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_core::spec::transform::TransformSpec;
-    use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
+    use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
 
     #[tokio::test]
     async fn test_destringify_selection_datasets() {

@@ -17,7 +17,7 @@ def bump_version(version):
     cargo_packages = [
         "vegafusion-common",
         "vegafusion-core",
-        "vegafusion-rt-datafusion",
+        "vegafusion-runtime",
         "vegafusion-python-embed",
         "vegafusion-server",
         "vegafusion-wasm"
