@@ -58,6 +58,7 @@ pub enum VegaFusionError {
     #[error("IO Error: {0}\n{1}")]
     IOError(std::io::Error, ErrorContext),
 
+    #[cfg(feature = "serde_json")]
     #[error("Serde JSON Error: {0}\n{1}")]
     SerdeJsonError(serde_json::Error, ErrorContext),
 
@@ -119,6 +120,7 @@ impl VegaFusionError {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::IOError(err, context)
             }
+            #[cfg(feature = "serde_json")]
             SerdeJsonError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::SerdeJsonError(err, context)
@@ -193,6 +195,7 @@ impl VegaFusionError {
             IOError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
+            #[cfg(feature = "serde_json")]
             SerdeJsonError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
@@ -273,6 +276,7 @@ impl From<std::io::Error> for VegaFusionError {
     }
 }
 
+#[cfg(feature = "serde_json")]
 impl From<serde_json::Error> for VegaFusionError {
     fn from(err: serde_json::Error) -> Self {
         Self::SerdeJsonError(err, Default::default())

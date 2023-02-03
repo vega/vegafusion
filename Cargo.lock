@@ -3075,9 +3075,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.81"
+version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b7ce2b32a1aed03c558dc61a5cd328f15aff2dbc17daad8fb8af04d2100e15c"
+checksum = "877c235533714907a8c2464236f5c4b2a17262ef1bd71f38f35ea592c8da6883"
 dependencies = [
  "indexmap",
  "itoa 1.0.1",
@@ -3869,6 +3869,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
+name = "vegafusion-common"
+version = "1.0.3"
+dependencies = [
+ "arrow",
+ "datafusion-common",
+ "pyo3",
+ "serde_json",
+ "sqlparser",
+ "thiserror",
+]
+
+[[package]]
 name = "vegafusion-core"
 version = "1.0.3"
 dependencies = [
@@ -3894,6 +3906,7 @@ dependencies = [
  "thiserror",
  "tonic",
  "tonic-build",
+ "vegafusion-common",
 ]
 
 [[package]]

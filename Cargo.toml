@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
+    "vegafusion-common",
     "vegafusion-core",
     "vegafusion-rt-datafusion",
     "vegafusion-python-embed",
