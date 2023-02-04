@@ -2,7 +2,7 @@
 extern crate lazy_static;
 mod util;
 use serde_json::json;
-use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_common::data::table::VegaFusionTable;
 
 fn medals() -> VegaFusionTable {
     VegaFusionTable::from_json(

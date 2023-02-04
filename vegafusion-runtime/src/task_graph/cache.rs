@@ -359,8 +359,8 @@ impl VegaFusionCache {
 mod test_cache {
     use crate::task_graph::cache::{NodeValue, VegaFusionCache};
     use tokio::time::Duration;
-    use vegafusion_core::data::scalar::ScalarValue;
-    use vegafusion_core::error::Result;
+    use vegafusion_common::data::scalar::ScalarValue;
+    use vegafusion_common::error::Result;
     use vegafusion_core::task_graph::task_value::TaskValue;
 
     async fn make_value(value: ScalarValue) -> Result<NodeValue> {

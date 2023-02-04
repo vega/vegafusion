@@ -57,23 +57,20 @@ pub fn compile(
 #[cfg(test)]
 mod test_compile {
 
-    use crate::expression::compiler::array::array_constructor_udf;
     use crate::expression::compiler::compile;
     use crate::expression::compiler::config::CompilationConfig;
     use crate::expression::compiler::object::make_object_constructor_udf;
     use crate::expression::compiler::utils::ExprHelpers;
     use vegafusion_core::expression::parser::parse;
 
+    use crate::task_graph::timezone::RuntimeTzConfig;
     use datafusion::arrow::record_batch::RecordBatch;
     use datafusion::arrow::{
         array::{ArrayRef, Float64Array, StructArray},
         datatypes::{DataType, Field, Schema},
     };
-    use datafusion::logical_expr::{Expr, Operator};
-
-    use crate::expression::escape::flat_col;
-    use crate::task_graph::timezone::RuntimeTzConfig;
     use datafusion::common::DFSchema;
+    use datafusion::logical_expr::{Expr, Operator};
     use datafusion::physical_plan::ColumnarValue;
     use datafusion::prelude::{concat, lit};
     use datafusion::scalar::ScalarValue;
@@ -81,7 +78,10 @@ mod test_compile {
     use datafusion_expr::BuiltinScalarFunction;
     use std::collections::HashMap;
     use std::convert::TryFrom;
+    use std::ops::Deref;
     use std::sync::Arc;
+    use vegafusion_common::column::flat_col;
+    use vegafusion_datafusion_udfs::udfs::array::constructor::ARRAY_CONSTRUCTOR_UDF;
 
     // use vegafusion_client::expression::parser::parse;
 
@@ -400,7 +400,7 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
         let expected_expr = Expr::ScalarUDF {
-            fun: Arc::new(array_constructor_udf()),
+            fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
             args: vec![lit(1.0), lit(2.0), lit(3.0)],
         };
         println!("expr: {result_expr:?}");
@@ -428,7 +428,7 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
         let expected_expr = Expr::ScalarUDF {
-            fun: Arc::new(array_constructor_udf()),
+            fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
             args: vec![],
         };
         println!("expr: {result_expr:?}");
@@ -452,18 +452,18 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
         let expected_expr = Expr::ScalarUDF {
-            fun: Arc::new(array_constructor_udf()),
+            fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
             args: vec![
                 Expr::ScalarUDF {
-                    fun: Arc::new(array_constructor_udf()),
+                    fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
                     args: vec![lit(1.0), lit(2.0)],
                 },
                 Expr::ScalarUDF {
-                    fun: Arc::new(array_constructor_udf()),
+                    fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
                     args: vec![lit(3.0), lit(4.0)],
                 },
                 Expr::ScalarUDF {
-                    fun: Arc::new(array_constructor_udf()),
+                    fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
                     args: vec![lit(5.0), lit(6.0)],
                 },
             ],

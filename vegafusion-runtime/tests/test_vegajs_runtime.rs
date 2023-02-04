@@ -9,8 +9,8 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::fs;
 
-use vegafusion_core::arrow::datatypes::{DataType, Field};
-use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_common::arrow::datatypes::{DataType, Field};
+use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::planning::watch::{
     ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace, Watch, WatchNamespace,
 };
@@ -18,7 +18,6 @@ use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::spec::transform::extent::ExtentTransformSpec;
 use vegafusion_core::spec::transform::filter::FilterTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_runtime::data::table::VegaFusionTableUtils;
 use vegafusion_runtime::expression::compiler::config::CompilationConfig;
 
 #[test]

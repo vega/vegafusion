@@ -6,7 +6,7 @@ use crate::util::check::check_scalar_evaluation;
 use rstest::*;
 use serde_json::{json, Value};
 use util::check::check_transform_evaluation;
-use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_runtime::expression::compiler::config::CompilationConfig;

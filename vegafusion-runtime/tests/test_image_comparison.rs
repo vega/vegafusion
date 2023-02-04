@@ -12,8 +12,8 @@ use std::convert::TryFrom;
 use std::fs;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
-use vegafusion_core::data::scalar::ScalarValueHelpers;
-use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_common::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::table::VegaFusionTable;
 
 use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 

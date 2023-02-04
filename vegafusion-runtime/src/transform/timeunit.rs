@@ -12,9 +12,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use datafusion_expr::expr::Cast;
-use datafusion_expr::{
-    floor, lit, BuiltinScalarFunction, Expr, ExprSchemable
-};
+use datafusion_expr::{floor, lit, BuiltinScalarFunction, Expr, ExprSchemable};
 use itertools::Itertools;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_dataframe::dataframe::DataFrame;

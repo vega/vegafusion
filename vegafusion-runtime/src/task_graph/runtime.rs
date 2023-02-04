@@ -39,7 +39,7 @@ use vegafusion_core::proto::gen::tasks::{
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_dataframe::connection::Connection;
-use vegafusion_sql::connection::datafusion_conn::{DataFusionConnection, make_datafusion_context};
+use vegafusion_sql::connection::datafusion_conn::{make_datafusion_context, DataFusionConnection};
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 

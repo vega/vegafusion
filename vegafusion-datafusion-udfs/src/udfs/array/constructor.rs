@@ -1,7 +1,9 @@
+use datafusion_physical_expr::functions::make_scalar_function;
 use std::sync::Arc;
 use std::vec;
-use datafusion_physical_expr::functions::make_scalar_function;
-use vegafusion_common::arrow::array::{Array, ArrayDataBuilder, ArrayRef, BooleanBufferBuilder, Int32Array, ListArray};
+use vegafusion_common::arrow::array::{
+    Array, ArrayDataBuilder, ArrayRef, BooleanBufferBuilder, Int32Array, ListArray,
+};
 use vegafusion_common::arrow::datatypes::{DataType, Field, Float64Type};
 use vegafusion_common::datafusion_expr::{ReturnTypeFunction, ScalarUDF, Signature, Volatility};
 
@@ -46,7 +48,7 @@ pub fn make_array_constructor_udf() -> ScalarUDF {
             &indices_builder.finish(),
             Default::default(),
         )
-            .unwrap();
+        .unwrap();
         let offsets = offsets_builder.finish();
 
         // Build ListArray data

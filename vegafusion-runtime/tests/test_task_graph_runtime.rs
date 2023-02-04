@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use vegafusion_core::data::scalar::ScalarValue;
+use vegafusion_common::data::scalar::ScalarValue;
 use vegafusion_core::expression::parser::parse;
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::proto::gen::tasks::{

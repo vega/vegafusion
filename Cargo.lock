@@ -4025,6 +4025,7 @@ name = "vegafusion-common"
 version = "1.0.3"
 dependencies = [
  "arrow",
+ "chrono",
  "datafusion-common",
  "datafusion-expr",
  "pyo3",

@@ -19,9 +19,9 @@ pub mod window;
 
 use crate::expression::compiler::config::CompilationConfig;
 
+use async_trait::async_trait;
 use std::sync::Arc;
 use vegafusion_core::error::Result;
-use async_trait::async_trait;
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::proto::gen::transforms::Transform;
 use vegafusion_core::task_graph::task_value::TaskValue;

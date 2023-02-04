@@ -1,14 +1,16 @@
+use crate::udfs::datetime::process_input_datetime;
+use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
 use std::str::FromStr;
 use std::sync::Arc;
-use chrono::{Datelike, DateTime, NaiveDate, NaiveDateTime, Timelike, TimeZone, Utc, Weekday};
 use vegafusion_common::arrow::array::{ArrayRef, Int64Array, TimestampMillisecondArray};
 use vegafusion_common::arrow::compute::unary;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_common::arrow::temporal_conversions::date64_to_datetime;
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
-use vegafusion_common::datafusion_expr::{ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature, TypeSignature, Volatility};
-use crate::udfs::datetime::process_input_datetime;
-
+use vegafusion_common::datafusion_expr::{
+    ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
+    TypeSignature, Volatility,
+};
 
 fn extract_bool(value: &ColumnarValue) -> std::result::Result<bool, DataFusionError> {
     if let ColumnarValue::Scalar(scalar) = value {
@@ -23,7 +25,6 @@ fn extract_bool(value: &ColumnarValue) -> std::result::Result<bool, DataFusionEr
         Err(DataFusionError::Internal("unexpected argument".to_string()))
     }
 }
-
 
 fn unpack_timeunit_udf_args(
     columns: &[ColumnarValue],
@@ -206,7 +207,7 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
         } else {
             NaiveDate::from_isoywd_opt(dt_value.year(), 2, weekday)
         }
-            .expect("invalid or out-of-range datetime");
+        .expect("invalid or out-of-range datetime");
 
         let new_datetime = NaiveDateTime::new(new_date, dt_value.time());
         dt_value = in_tz.from_local_datetime(&new_datetime).earliest().unwrap();
@@ -234,12 +235,8 @@ fn make_timeunit_start_udf() -> ScalarUDF {
         Ok(ColumnarValue::Array(Arc::new(result_array) as ArrayRef))
     });
 
-    let return_type: ReturnTypeFunction = Arc::new(move |_datatypes| {
-        Ok(Arc::new(DataType::Timestamp(
-            TimeUnit::Millisecond,
-            None,
-        )))
-    });
+    let return_type: ReturnTypeFunction =
+        Arc::new(move |_datatypes| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
 
     let make_sig = |timestamp_dtype: DataType| -> TypeSignature {
         TypeSignature::Exact(vec![

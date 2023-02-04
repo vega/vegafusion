@@ -13,7 +13,7 @@ use vegafusion_common::error::Result;
 use vegafusion_dataframe::connection::Connection;
 use vegafusion_runtime::expression::compiler::utils::is_numeric_datatype;
 use vegafusion_runtime::tokio_runtime::TOKIO_RUNTIME;
-use vegafusion_sql::connection::datafusion_conn::{DataFusionConnection, make_datafusion_context};
+use vegafusion_sql::connection::datafusion_conn::{make_datafusion_context, DataFusionConnection};
 
 const DROP_COLS: &[&str] = &[ORDER_COL, "_impute"];
 

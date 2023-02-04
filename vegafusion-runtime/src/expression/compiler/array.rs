@@ -7,7 +7,6 @@ use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ArrayExpression;
 use vegafusion_datafusion_udfs::udfs::array::constructor::ARRAY_CONSTRUCTOR_UDF;
 
-
 pub fn compile_array(
     node: &ArrayExpression,
     config: &CompilationConfig,

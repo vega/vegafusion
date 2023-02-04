@@ -9,7 +9,7 @@ mod test_impute {
     use crate::check_transform_evaluation;
     use crate::util::equality::TablesEqualConfig;
     use serde_json::json;
-    use vegafusion_core::data::table::VegaFusionTable;
+    use vegafusion_common::data::table::VegaFusionTable;
     use vegafusion_core::spec::transform::impute::{ImputeMethodSpec, ImputeTransformSpec};
     use vegafusion_core::spec::transform::TransformSpec;
     use vegafusion_core::spec::values::Field;

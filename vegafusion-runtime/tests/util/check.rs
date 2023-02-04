@@ -21,7 +21,7 @@ use vegafusion_runtime::expression::compiler::utils::ExprHelpers;
 use vegafusion_runtime::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_runtime::tokio_runtime::TOKIO_RUNTIME;
 use vegafusion_runtime::transform::pipeline::TransformPipelineUtils;
-use vegafusion_sql::connection::datafusion_conn::{DataFusionConnection, make_datafusion_context};
+use vegafusion_sql::connection::datafusion_conn::{make_datafusion_context, DataFusionConnection};
 
 pub fn check_expr_supported(expr_str: &str) {
     let expr = parse(expr_str).unwrap();

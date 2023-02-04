@@ -7,7 +7,7 @@ mod test_fold {
     use crate::util::check::check_transform_evaluation;
     use rstest::rstest;
     use serde_json::json;
-    use vegafusion_core::data::table::VegaFusionTable;
+    use vegafusion_common::data::table::VegaFusionTable;
     use vegafusion_core::spec::transform::TransformSpec;
 
     fn simple_medals_dataset() -> VegaFusionTable {

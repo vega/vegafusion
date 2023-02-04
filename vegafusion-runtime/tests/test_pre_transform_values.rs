@@ -4,13 +4,12 @@ mod tests {
     use serde_json::json;
     use std::collections::HashMap;
     use std::fs;
-    use vegafusion_core::data::table::VegaFusionTable;
-    use vegafusion_core::error::VegaFusionError;
+    use vegafusion_common::data::table::VegaFusionTable;
+    use vegafusion_common::error::VegaFusionError;
     use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType;
     use vegafusion_core::proto::gen::tasks::Variable;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_runtime::data::dataset::VegaFusionDataset;
-    use vegafusion_runtime::data::table::VegaFusionTableUtils;
     use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
 
     #[tokio::test]

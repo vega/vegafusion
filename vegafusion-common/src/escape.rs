@@ -18,7 +18,7 @@ pub fn unescape_field(col: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::expression::escape::{escape_field, unescape_field};
+    use crate::escape::{escape_field, unescape_field};
 
     #[test]
     fn test_escape() {

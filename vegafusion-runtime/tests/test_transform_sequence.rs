@@ -10,8 +10,8 @@ mod test_sequence {
     use rstest::rstest;
     use serde_json::json;
     use std::sync::Arc;
-    use vegafusion_core::arrow::datatypes::DataType;
-    use vegafusion_core::data::table::VegaFusionTable;
+    use vegafusion_common::arrow::datatypes::DataType;
+    use vegafusion_common::data::table::VegaFusionTable;
     use vegafusion_core::spec::transform::TransformSpec;
 
     #[rstest(

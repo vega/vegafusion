@@ -4,13 +4,13 @@ use crate::transform::TransformTrait;
 use itertools::Itertools;
 use std::collections::HashMap;
 
-use std::sync::Arc;
-use vegafusion_common::error::{Result, VegaFusionError};
 use async_trait::async_trait;
 use datafusion_expr::{expr, lit, Expr};
+use std::sync::Arc;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::data::ORDER_COL;
+use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task_value::TaskValue;
