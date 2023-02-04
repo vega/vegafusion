@@ -35,7 +35,6 @@ deterministic-hash = "1.0.1"
 log = "0.4.17"
 env_logger = "0.9.0"
 ordered-float = "3.4.0"
-lock_api = "^0.4.8"
 reqwest-retry = "0.2.1"
 reqwest-middleware = "0.2.0"
 
@@ -55,10 +54,6 @@ features = [ "v4",]
 
 [dependencies.sqlparser]
 version = "0.30.0"
-
-[dependencies.libsqlite3-sys]
-version = "0.24.1"
-features = [ "bundled",]
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
