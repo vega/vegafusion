@@ -36,6 +36,11 @@ path = "../vegafusion-runtime"
 features = [ "pyarrow",]
 version = "1.0.3"
 
+[dependencies.vegafusion-sql]
+path = "../vegafusion-sql"
+version = "1.0.3"
+features = ["datafusion-conn"]
+
 [dependencies.tokio]
 version = "1.18.1"
 features = [ "macros", "rt-multi-thread",]

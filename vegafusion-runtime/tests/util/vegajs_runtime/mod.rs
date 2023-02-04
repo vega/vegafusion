@@ -5,16 +5,16 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
+use self::super::estree_expression::ESTreeExpression;
+use itertools::Itertools;
 use std::io::{Read, Write};
 use std::ops::Deref;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::{fs, thread};
-use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
-use self::super::estree_expression::ESTreeExpression;
-use itertools::Itertools;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 
 use vegafusion_core::planning::watch::{ExportUpdateBatch, Watch, WatchNamespace, WatchValue};
 use vegafusion_core::proto::gen::expression::Expression;

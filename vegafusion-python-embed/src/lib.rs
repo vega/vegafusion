@@ -2,7 +2,7 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyString};
 use std::collections::HashMap;
-use std::sync::Once;
+use std::sync::{Arc, Once};
 use tokio::runtime::Runtime;
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
@@ -18,6 +18,7 @@ use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_runtime::data::dataset::VegaFusionDataset;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
+use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
 static INIT: Once = Once::new();
 
@@ -83,7 +84,11 @@ impl PyTaskGraphRuntime {
             .external("Failed to create Tokio thread pool")?;
 
         Ok(Self {
-            runtime: TaskGraphRuntime::new(max_capacity, memory_limit),
+            runtime: TaskGraphRuntime::new(
+                Arc::new(DataFusionConnection::default()),
+                max_capacity,
+                memory_limit,
+            ),
             tokio_runtime,
         })
     }

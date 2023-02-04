@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync::Arc;
 use vegafusion_core::planning::plan::SpecPlan;
 use vegafusion_core::planning::watch::ExportUpdateBatch;
 use vegafusion_core::proto::gen::services::query_request::Request;
@@ -57,7 +58,7 @@ async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> Q
     let task_graph_mapping = task_graph.build_mapping();
 
     // Initialize task graph runtime
-    let runtime = TaskGraphRuntime::new(Some(64), None);
+    let runtime = TaskGraphRuntime::new(Arc::new(DataFusionConnection::default()), Some(64), None);
 
     let node_index = task_graph_mapping.get(var).unwrap();
 
@@ -104,7 +105,7 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
     let task_graph_mapping = task_graph.build_mapping();
 
     // Initialize task graph runtime
-    let runtime = TaskGraphRuntime::new(Some(64), None);
+    let runtime = TaskGraphRuntime::new(Arc::new(DataFusionConnection::default()), Some(64), None);
 
     // Get initial values
     let mut query_indices = Vec::new();
@@ -145,6 +146,7 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
 use criterion::{criterion_group, criterion_main, Criterion};
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
+use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
 fn make_tokio_runtime() -> tokio::runtime::Runtime {
     tokio::runtime::Builder::new_multi_thread()

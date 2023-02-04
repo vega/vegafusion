@@ -4100,6 +4100,7 @@ dependencies = [
  "tokio",
  "vegafusion-core",
  "vegafusion-runtime",
+ "vegafusion-sql",
 ]
 
 [[package]]
@@ -4176,6 +4177,7 @@ dependencies = [
  "vegafusion-common",
  "vegafusion-core",
  "vegafusion-runtime",
+ "vegafusion-sql",
 ]
 
 [[package]]

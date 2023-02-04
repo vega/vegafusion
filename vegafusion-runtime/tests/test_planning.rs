@@ -8,6 +8,7 @@ use std::sync::Arc;
 use vegafusion_core::planning::split_domain_data::split_domain_data;
 
 use vegafusion_core::planning::stitch::stitch_specs;
+use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_extract_server_data() {
@@ -59,7 +60,11 @@ async fn test_extract_server_data() {
     let mapping = graph.build_mapping();
     // println!("{:#?}", mapping);
 
-    let graph_runtime = TaskGraphRuntime::new(Some(20), Some(1024_i32.pow(3) as usize));
+    let graph_runtime = TaskGraphRuntime::new(
+        Arc::new(DataFusionConnection::default()),
+        Some(20),
+        Some(1024_i32.pow(3) as usize),
+    );
     let _data_3 = graph_runtime
         .get_node_value(
             graph.clone(),

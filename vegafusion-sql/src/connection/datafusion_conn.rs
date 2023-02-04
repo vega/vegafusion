@@ -51,6 +51,12 @@ impl DataFusionConnection {
     }
 }
 
+impl Default for DataFusionConnection {
+    fn default() -> Self {
+        DataFusionConnection::new(Arc::new(make_datafusion_context()))
+    }
+}
+
 pub fn make_datafusion_dialect() -> Dialect {
     Dialect::datafusion()
 }

@@ -4,6 +4,7 @@ mod tests {
     use serde_json::json;
     use std::collections::HashMap;
     use std::fs;
+    use std::sync::Arc;
     use vegafusion_common::data::table::VegaFusionTable;
     use vegafusion_common::error::VegaFusionError;
     use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType;
@@ -11,6 +12,7 @@ mod tests {
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_runtime::data::dataset::VegaFusionDataset;
     use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
+    use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
     #[tokio::test]
     async fn test_pre_transform_dataset() {
@@ -20,7 +22,11 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
+        let runtime = TaskGraphRuntime::new(
+            Arc::new(DataFusionConnection::default()),
+            Some(16),
+            Some(1024_i32.pow(3) as usize),
+        );
 
         let (values, warnings) = runtime
             .pre_transform_values(
@@ -67,7 +73,11 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
+        let runtime = TaskGraphRuntime::new(
+            Arc::new(DataFusionConnection::default()),
+            Some(16),
+            Some(1024_i32.pow(3) as usize),
+        );
 
         let (values, warnings) = runtime
             .pre_transform_values(
@@ -114,7 +124,11 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
+        let runtime = TaskGraphRuntime::new(
+            Arc::new(DataFusionConnection::default()),
+            Some(16),
+            Some(1024_i32.pow(3) as usize),
+        );
 
         // Check existent but unsupported dataset name
         let result = runtime
@@ -168,7 +182,11 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
+        let runtime = TaskGraphRuntime::new(
+            Arc::new(DataFusionConnection::default()),
+            Some(16),
+            Some(1024_i32.pow(3) as usize),
+        );
 
         let source_0 = VegaFusionTable::from_json(
             &json!([{"normal": 1, "a.b": 2}, {"normal": 1, "a.b": 4}]),
@@ -224,7 +242,11 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
+        let runtime = TaskGraphRuntime::new(
+            Arc::new(DataFusionConnection::default()),
+            Some(16),
+            Some(1024_i32.pow(3) as usize),
+        );
 
         let (values, warnings) = runtime
             .pre_transform_values(
@@ -269,7 +291,11 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(Some(16), Some(1024_i32.pow(3) as usize));
+        let runtime = TaskGraphRuntime::new(
+            Arc::new(DataFusionConnection::default()),
+            Some(16),
+            Some(1024_i32.pow(3) as usize),
+        );
 
         let (values, warnings) = runtime
             .pre_transform_values(

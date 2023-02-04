@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use tonic::{transport::Server, Request, Response, Status};
 use vegafusion_core::error::{ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{
@@ -14,6 +15,7 @@ use regex::Regex;
 use vegafusion_core::proto::gen::pretransform::{
     PreTransformSpecRequest, PreTransformValuesRequest,
 };
+use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
 #[derive(Clone)]
 pub struct VegaFusionRuntimeGrpc {
@@ -117,7 +119,11 @@ async fn main() -> Result<(), VegaFusionError> {
         None
     };
 
-    let tg_runtime = TaskGraphRuntime::new(Some(args.capacity), memory_limit);
+    let tg_runtime = TaskGraphRuntime::new(
+        Arc::new(DataFusionConnection::default()),
+        Some(args.capacity),
+        memory_limit,
+    );
 
     grpc_server(grpc_address, tg_runtime.clone(), args.web)
         .await
