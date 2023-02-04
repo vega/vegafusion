@@ -5,6 +5,7 @@ edition = "2021"
 
 [features]
 datafusion-conn = [ "datafusion", "tempfile", "reqwest", "reqwest-retry", "reqwest-middleware", "vegafusion-datafusion-udfs"]
+sqlite-conn = ["sqlx", "sqlx/sqlite", "regex", "vegafusion-common/prettyprint"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
@@ -64,4 +65,13 @@ optional = true
 
 [dependencies.reqwest-middleware]
 version = "0.2.0"
+optional = true
+
+[dependencies.sqlx]
+version = "0.6.1"
+features = [ "runtime-tokio-rustls", "macros",]
+optional = true
+
+[dependencies.regex]
+version = "^1.5.5"
 optional = true

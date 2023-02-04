@@ -1,20 +1,22 @@
-use crate::sql::connection::{Connection, SqlConnection};
 use async_trait::async_trait;
 use regex::Regex;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Row, SqlitePool};
 use std::collections::HashMap;
 
-use crate::sql::dialect::Dialect;
-use std::sync::Arc;
-use vegafusion_core::arrow::array::{
+use crate::dialect::Dialect;
+use arrow::array::{
     ArrayRef, Float32Array, Float64Array, Int32Array, Int64Array, NullArray, StringArray,
     UInt32Array, UInt64Array,
 };
-use vegafusion_core::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
-use vegafusion_core::arrow::record_batch::RecordBatch;
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, VegaFusionError};
+use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
+use arrow::record_batch::RecordBatch;
+use std::sync::Arc;
+use vegafusion_common::data::table::VegaFusionTable;
+
+use crate::connection::SqlConnection;
+use vegafusion_common::error::{Result, VegaFusionError};
+use vegafusion_dataframe::connection::Connection;
 
 #[derive(Clone, Debug)]
 pub struct SqLiteConnection {
