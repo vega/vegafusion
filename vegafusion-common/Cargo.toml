@@ -5,7 +5,7 @@ edition = "2021"
 
 [features]
 pyarrow = [ "pyo3" ]
-json = ["serde_json", "arrow/arrow-json"]
+json = ["serde_json", "arrow/json"]
 prettyprint = ["arrow/prettyprint"]
 
 [dependencies]

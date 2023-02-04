@@ -4209,6 +4209,7 @@ dependencies = [
  "prost-types",
  "serde",
  "serde_json",
+ "vegafusion-common",
  "vegafusion-core",
  "wasm-bindgen",
  "wasm-bindgen-futures",
