@@ -1,16 +1,9 @@
 use crate::expression::compiler::array::array_constructor_udf;
-use crate::expression::compiler::builtin_functions::array::indexof::make_indexof_udf;
-use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
-use crate::expression::compiler::builtin_functions::array::span::make_span_udf;
 use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
 use crate::expression::compiler::builtin_functions::date_time::datetime::{
-    datetime_transform_fn, make_datetime_components_fn, to_date_transform, MAKE_TIMESTAMPTZ,
+    datetime_transform_fn, make_datetime_components_fn, to_date_transform,
 };
-use crate::expression::compiler::builtin_functions::math::isfinite::{
-    is_finite_fn, make_is_finite_udf,
-};
-use crate::expression::compiler::builtin_functions::math::isnan::make_is_nan_udf;
-use crate::expression::compiler::builtin_functions::math::pow::{make_pow_udf, POW_UDF};
+
 use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_valid_fn;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
@@ -25,17 +18,31 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
 };
+use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
+use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
+use vegafusion_datafusion_udfs::udfs::array::span::SPAN_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::datetime_components::MAKE_TIMESTAMPTZ;
+use vegafusion_datafusion_udfs::udfs::datetime::datetime_format::FORMAT_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_epoch::TIMESTAMPTZ_TO_EPOCH_MS;
+use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::math::isfinite::ISFINITE_UDF;
+use vegafusion_datafusion_udfs::udfs::math::isnan::ISNAN_UDF;
+use vegafusion_datafusion_udfs::udfs::math::pow::POW_UDF;
 
 use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
 use crate::expression::compiler::builtin_functions::date_time::date_format::{
-    time_format_fn, utc_format_fn, FORMAT_TIMESTAMP_UDF,
+    time_format_fn, utc_format_fn,
 };
 use crate::expression::compiler::builtin_functions::date_time::date_parts::{
     DATE_TRANSFORM, DAYOFYEAR_TRANSFORM, DAY_TRANSFORM, HOUR_TRANSFORM, MILLISECOND_TRANSFORM,
@@ -44,14 +51,8 @@ use crate::expression::compiler::builtin_functions::date_time::date_parts::{
     UTCMINUTE_TRANSFORM, UTCMONTH_TRANSFORM, UTCQUARTER_TRANSFORM, UTCSECOND_TRANSFORM,
     UTCYEAR_TRANSFORM, YEAR_TRANSFORM,
 };
-use crate::expression::compiler::builtin_functions::date_time::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::builtin_functions::date_time::time::{
-    time_fn, TIMESTAMPTZ_TO_EPOCH_MS,
-};
-use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
+use crate::expression::compiler::builtin_functions::date_time::time::time_fn;
+use crate::expression::compiler::builtin_functions::math::isfinite::is_finite_fn;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
@@ -249,7 +250,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "pow".to_string(),
         VegaFusionCallable::ScalarUDF {
-            udf: make_pow_udf(),
+            udf: POW_UDF.deref().clone(),
             cast: Some(DataType::Float64),
         },
     );
@@ -257,7 +258,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "isNaN".to_string(),
         VegaFusionCallable::ScalarUDF {
-            udf: make_is_nan_udf(),
+            udf: ISNAN_UDF.deref().clone(),
             cast: None,
         },
     );
@@ -280,7 +281,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "length".to_string(),
         VegaFusionCallable::ScalarUDF {
-            udf: make_length_udf(),
+            udf: LENGTH_UDF.deref().clone(),
             cast: None,
         },
     );
@@ -288,7 +289,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "span".to_string(),
         VegaFusionCallable::ScalarUDF {
-            udf: make_span_udf(),
+            udf: SPAN_UDF.deref().clone(),
             cast: None,
         },
     );
@@ -296,7 +297,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "indexof".to_string(),
         VegaFusionCallable::ScalarUDF {
-            udf: make_indexof_udf(),
+            udf: INDEXOF_UDF.deref().clone(),
             cast: None,
         },
     );
@@ -450,10 +451,10 @@ pub fn make_session_context() -> SessionContext {
     let ctx = SessionContext::new();
 
     // isNan
-    ctx.register_udf(make_is_nan_udf());
+    ctx.register_udf((*ISNAN_UDF).clone());
 
     // isFinite
-    ctx.register_udf(make_is_finite_udf());
+    ctx.register_udf((*ISFINITE_UDF).clone());
 
     // datetime
     ctx.register_udf((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone());
@@ -475,8 +476,8 @@ pub fn make_session_context() -> SessionContext {
 
     // list
     ctx.register_udf(array_constructor_udf());
-    ctx.register_udf(make_length_udf());
-    ctx.register_udf(make_indexof_udf());
+    ctx.register_udf((*LENGTH_UDF).clone());
+    ctx.register_udf((*INDEXOF_UDF).clone());
 
     ctx
 }

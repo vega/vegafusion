@@ -1,11 +1,11 @@
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
-use crate::expression::escape::unescape_field;
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use vegafusion_common::escape::unescape_field;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TimeUnitTransformSpec {

@@ -1,20 +1,14 @@
+use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
 
-use datafusion::arrow::datatypes::{DataType, TimeUnit};
-use datafusion::logical_expr::Expr;
-
-use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
-use datafusion::arrow::compute::cast;
+use datafusion::arrow::datatypes::DataType;
 use datafusion::common::DFSchema;
-use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion_expr::{
-    lit, ColumnarValue, ExprSchemable, ReturnTypeFunction, ScalarFunctionImplementation, Signature,
-    Volatility,
-};
+use datafusion::logical_expr::Expr;
+use datafusion_expr::{lit, ExprSchemable};
 use std::sync::Arc;
-use vegafusion_core::data::scalar::ScalarValue;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_common::error::{Result, VegaFusionError};
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_epoch::TIMESTAMPTZ_TO_EPOCH_MS;
 
 pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema) -> Result<Expr> {
     // Validate number of arguments
@@ -61,41 +55,4 @@ pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema) ->
     };
 
     Ok(expr)
-}
-
-pub fn make_timestamptz_to_epoch_ms() -> ScalarUDF {
-    let time_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
-        // [0] data array
-        let data_array = match &args[0] {
-            ColumnarValue::Array(array) => array.clone(),
-            ColumnarValue::Scalar(scalar) => scalar.to_array(),
-        };
-
-        // cast timestamp millis to Int64
-        let result_array = cast(&data_array, &DataType::Int64)?;
-
-        // maybe back to scalar
-        if result_array.len() != 1 {
-            Ok(ColumnarValue::Array(result_array))
-        } else {
-            ScalarValue::try_from_array(&result_array, 0).map(ColumnarValue::Scalar)
-        }
-    });
-
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
-    let signature: Signature = Signature::exact(
-        vec![DataType::Timestamp(TimeUnit::Millisecond, None)],
-        Volatility::Immutable,
-    );
-
-    ScalarUDF::new(
-        "timestamptz_to_epoch_ms",
-        &signature,
-        &return_type,
-        &time_fn,
-    )
-}
-
-lazy_static! {
-    pub static ref TIMESTAMPTZ_TO_EPOCH_MS: ScalarUDF = make_timestamptz_to_epoch_ms();
 }

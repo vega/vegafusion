@@ -1,9 +1,6 @@
-use crate::data::table::VegaFusionTable;
-use crate::error::Result;
 use crate::expression::column_usage::{
     ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
 };
-use crate::expression::escape::{escape_field, unescape_field};
 use crate::expression::parser::parse;
 use crate::planning::dependency_graph::build_dependency_graph;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
@@ -18,9 +15,12 @@ use crate::spec::transform::project::ProjectTransformSpec;
 use crate::spec::transform::{TransformColumns, TransformSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
-use arrow::array::StringArray;
 use itertools::sorted;
 use petgraph::algo::toposort;
+use vegafusion_common::arrow::array::StringArray;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::Result;
+use vegafusion_common::escape::{escape_field, unescape_field};
 
 /// This planning phase attempts to identify the precise subset of columns that are required
 /// of each dataset. If this can be determined for a particular dataset, then a projection

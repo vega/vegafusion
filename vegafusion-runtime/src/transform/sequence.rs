@@ -9,10 +9,10 @@ use datafusion::arrow::array::{ArrayRef, Float64Array};
 use datafusion::arrow::datatypes::{Field, Schema, SchemaRef};
 use datafusion::arrow::record_batch::RecordBatch;
 use std::sync::Arc;
-use vegafusion_core::arrow::datatypes::DataType;
-use vegafusion_core::data::scalar::ScalarValueHelpers;
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::Result;
+use vegafusion_common::arrow::datatypes::DataType;
+use vegafusion_common::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::Result;
 use vegafusion_core::proto::gen::transforms::Sequence;
 use vegafusion_core::task_graph::task_value::TaskValue;
 

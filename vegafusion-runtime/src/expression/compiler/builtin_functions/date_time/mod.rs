@@ -4,22 +4,16 @@ Functions for working with date-time values.
 
 See: https://vega.github.io/vega/docs/expressions/#datetime-functions
 */
-pub mod date_add;
 pub mod date_format;
 pub mod date_parts;
-pub mod date_to_timestamptz;
 pub mod datetime;
-pub mod epoch_to_timestamptz;
-pub mod str_to_timestamptz;
 pub mod time;
-pub mod timestamp_to_timestamptz;
-pub mod timestamptz_to_timestamp;
 
-use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::datetime_strs_to_timestamp_millis;
 use datafusion::arrow::array::{ArrayRef, Date32Array, Int64Array, StringArray};
 use datafusion::arrow::compute::{cast, unary};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use std::sync::Arc;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::datetime_strs_to_timestamp_millis;
 
 pub fn process_input_datetime(arg: &ArrayRef, default_input_tz: &chrono_tz::Tz) -> ArrayRef {
     match arg.data_type() {

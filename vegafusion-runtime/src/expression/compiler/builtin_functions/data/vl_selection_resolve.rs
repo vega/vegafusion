@@ -6,10 +6,12 @@ use itertools::Itertools;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::str::FromStr;
-use vegafusion_core::arrow::datatypes::Field;
-use vegafusion_core::data::scalar::ScalarValueHelpers;
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, VegaFusionError};
+
+use vegafusion_common::arrow::datatypes::Field;
+use vegafusion_common::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::{Result, VegaFusionError};
+
 use vegafusion_core::proto::gen::expression::literal::Value;
 
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::{

@@ -13,13 +13,13 @@ use vegafusion_core::proto::gen::transforms::{
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::expression::compiler::utils::to_numeric;
-use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::DataFrame;
 use datafusion::physical_plan::aggregates;
 use datafusion_expr::{
     window_frame, BuiltInWindowFunction, WindowFrameBound, WindowFrameUnits, WindowFunction,
 };
-use vegafusion_core::data::ORDER_COL;
+use vegafusion_common::column::{flat_col, unescaped_col};
+use vegafusion_common::data::ORDER_COL;
 
 #[async_trait]
 impl TransformTrait for Window {

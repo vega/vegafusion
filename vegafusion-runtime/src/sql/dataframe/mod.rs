@@ -19,7 +19,6 @@ use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
 
 use crate::expression::compiler::utils::to_numeric;
-use crate::expression::escape::flat_col;
 use crate::sql::dialect::Dialect;
 use async_trait::async_trait;
 use datafusion::arrow::datatypes::Field;
@@ -28,12 +27,13 @@ use sqlparser::dialect::GenericDialect;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
-use vegafusion_core::arrow::compute::concat_batches;
-use vegafusion_core::arrow::datatypes::{Schema, SchemaRef};
-use vegafusion_core::arrow::record_batch::RecordBatch;
-use vegafusion_core::data::scalar::ScalarValue;
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_common::arrow::compute::concat_batches;
+use vegafusion_common::arrow::datatypes::{Schema, SchemaRef};
+use vegafusion_common::arrow::record_batch::RecordBatch;
+use vegafusion_common::column::flat_col;
+use vegafusion_common::data::scalar::ScalarValue;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::spec::transform::stack::StackOffsetSpec;
 
 #[async_trait]

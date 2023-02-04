@@ -7,14 +7,14 @@ use std::collections::HashMap;
 
 use crate::sql::dialect::Dialect;
 use std::sync::Arc;
+use vegafusion_common::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
+use vegafusion_common::arrow::record_batch::RecordBatch;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_core::arrow::array::{
     ArrayRef, Float32Array, Float64Array, Int32Array, Int64Array, NullArray, StringArray,
     UInt32Array, UInt64Array,
 };
-use vegafusion_core::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
-use vegafusion_core::arrow::record_batch::RecordBatch;
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, VegaFusionError};
 
 #[derive(Clone, Debug)]
 pub struct SqLiteConnection {

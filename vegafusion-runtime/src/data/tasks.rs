@@ -1,4 +1,3 @@
-use crate::expression::compiler::builtin_functions::date_time::datetime::MAKE_TIMESTAMPTZ;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{is_integer_datatype, is_string_datatype, ExprHelpers};
@@ -18,16 +17,13 @@ use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 
 use crate::data::dataset::VegaFusionDataset;
-use crate::expression::compiler::builtin_functions::date_time::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
-use crate::expression::escape::flat_col;
 use crate::sql::dataframe::DataFrame;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use crate::transform::pipeline::{remove_order_col, TransformPipelineUtils};
-use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
+
+use vegafusion_common::data::scalar::{ScalarValue, ScalarValueHelpers};
+use vegafusion_common::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
+
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::proto::gen::tasks::scan_url_format;
 use vegafusion_core::proto::gen::tasks::scan_url_format::Parse;
@@ -39,6 +35,12 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 use crate::sql::connection::{Connection, CsvReadOptions};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+use vegafusion_common::column::flat_col;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_datafusion_udfs::udfs::datetime::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::datetime_components::MAKE_TIMESTAMPTZ;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],

@@ -6,9 +6,9 @@ use crate::sql::dialect::Dialect;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
-use vegafusion_core::arrow::datatypes::Schema;
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_common::arrow::datatypes::Schema;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::{Result, VegaFusionError};
 
 /// Options that control the reading of CSV files.
 /// Simplification of CsvReadOptions from DataFusion

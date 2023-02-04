@@ -1,6 +1,3 @@
-use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 use crate::expression::compiler::call::TzTransformFn;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -10,6 +7,9 @@ use datafusion::logical_expr::Expr;
 use datafusion_expr::{floor, lit, BuiltinScalarFunction, ExprSchemable};
 use std::sync::Arc;
 use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 
 pub fn make_local_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -> TzTransformFn {
     let part = part.to_string();

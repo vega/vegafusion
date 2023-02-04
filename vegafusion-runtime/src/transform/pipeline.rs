@@ -5,14 +5,14 @@ use itertools::Itertools;
 use std::collections::HashMap;
 
 use std::sync::Arc;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_common::error::{Result, VegaFusionError};
 
-use crate::expression::escape::flat_col;
 use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion_expr::{expr, lit, Expr};
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::data::ORDER_COL;
+use vegafusion_common::column::flat_col;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::data::ORDER_COL;
 use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task_value::TaskValue;

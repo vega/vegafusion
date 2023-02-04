@@ -1,4 +1,3 @@
-use crate::data::table::VegaFusionTableUtils;
 use crate::sql::connection::{Connection, CsvReadOptions, SqlConnection};
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::datasource::MemTable;
@@ -13,12 +12,12 @@ use std::sync::Arc;
 use crate::data::tasks::make_request_client;
 use crate::expression::compiler::call::make_session_context;
 use crate::expression::compiler::utils::cast_to;
-use crate::expression::escape::flat_col;
 use crate::sql::dataframe::{DataFrame, SqlDataFrame};
 use crate::sql::dialect::Dialect;
-use vegafusion_core::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::{Result, ResultWithContext, ToExternalError};
+use vegafusion_common::arrow::datatypes::{DataType, Field, Schema, SchemaRef};
+use vegafusion_common::column::flat_col;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::{Result, ResultWithContext, ToExternalError};
 
 #[derive(Clone)]
 pub struct DataFusionConnection {

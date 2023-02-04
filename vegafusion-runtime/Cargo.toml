@@ -64,9 +64,18 @@ features = [ "runtime-tokio-rustls", "sqlite", "macros",]
 version = "0.24.1"
 features = [ "bundled",]
 
+[dependencies.vegafusion-common]
+path = "../vegafusion-common"
+features = ["json", "sqlparser", "prettyprint"]
+version = "1.0.3"
+
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = ["sqlparser"]
+version = "1.0.3"
+
+[dependencies.vegafusion-datafusion-udfs]
+path = "../vegafusion-datafusion-udfs"
 version = "1.0.3"
 
 [dependencies.serde]

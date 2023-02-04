@@ -13,7 +13,7 @@ use datafusion_expr::{
     expr, lit, AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator, WindowFrameBound,
     WindowFrameUnits, WindowFunction,
 };
-use vegafusion_core::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::scalar::ScalarValueHelpers;
 
 use crate::sql::compile::function_arg::ToSqlFunctionArg;
 use crate::sql::compile::order::ToSqlOrderByExpr;

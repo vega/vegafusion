@@ -10,15 +10,9 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
-use crate::expression::compiler::builtin_functions::date_time::date_add::DATE_ADD_UDF;
-use crate::expression::compiler::builtin_functions::date_time::datetime::MAKE_TIMESTAMPTZ;
-use crate::expression::compiler::builtin_functions::date_time::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use crate::expression::compiler::builtin_functions::date_time::process_input_datetime;
-use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::builtin_functions::date_time::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
-use crate::expression::compiler::builtin_functions::date_time::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
-use crate::expression::escape::{flat_col, unescaped_col};
+
 use crate::sql::dataframe::DataFrame;
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
 use datafusion_expr::expr::Cast;
@@ -28,10 +22,17 @@ use datafusion_expr::{
 };
 use itertools::Itertools;
 use std::str::FromStr;
-use vegafusion_core::arrow::array::{ArrayRef, Int64Array, TimestampMillisecondArray};
-use vegafusion_core::arrow::compute::unary;
-use vegafusion_core::arrow::temporal_conversions::date64_to_datetime;
-use vegafusion_core::data::scalar::ScalarValue;
+use vegafusion_common::arrow::array::{ArrayRef, Int64Array, TimestampMillisecondArray};
+use vegafusion_common::arrow::compute::unary;
+use vegafusion_common::arrow::temporal_conversions::date64_to_datetime;
+use vegafusion_common::column::{flat_col, unescaped_col};
+use vegafusion_common::data::scalar::ScalarValue;
+use vegafusion_datafusion_udfs::udfs::datetime::date_add::DATE_ADD_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::datetime_components::MAKE_TIMESTAMPTZ;
+use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
 
 // Implementation of timeunit start using the SQL DATE_TRUNC function
 fn timeunit_date_trunc(

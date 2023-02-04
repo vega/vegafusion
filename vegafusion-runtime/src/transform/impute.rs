@@ -5,10 +5,10 @@ use async_trait::async_trait;
 use datafusion::common::ScalarValue;
 use itertools::Itertools;
 use std::sync::Arc;
-use vegafusion_core::data::scalar::ScalarValueHelpers;
-use vegafusion_core::data::ORDER_COL;
-use vegafusion_core::error::{Result, ResultWithContext};
-use vegafusion_core::expression::escape::unescape_field;
+use vegafusion_common::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::ORDER_COL;
+use vegafusion_common::error::{Result, ResultWithContext};
+use vegafusion_common::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::Impute;
 use vegafusion_core::task_graph::task_value::TaskValue;
 

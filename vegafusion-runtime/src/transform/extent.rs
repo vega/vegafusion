@@ -8,13 +8,13 @@ use datafusion::arrow::datatypes::Field;
 
 use datafusion::common::DFSchema;
 
-use crate::expression::escape::unescaped_col;
 use datafusion::logical_expr::{max, min};
 use datafusion::scalar::ScalarValue;
 use datafusion_expr::Expr;
 use std::sync::Arc;
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::Result;
+use vegafusion_common::column::unescaped_col;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::Result;
 use vegafusion_core::proto::gen::transforms::Extent;
 use vegafusion_core::task_graph::task_value::TaskValue;
 

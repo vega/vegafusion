@@ -1,6 +1,5 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{cast_to, data_type, is_string_datatype};
-use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::DataFrame;
 use crate::transform::aggregate::make_agg_expr_for_col_expr;
 use crate::transform::utils::RecordBatchUtils;
@@ -8,12 +7,13 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion_expr::{coalesce, expr::Sort, lit, min, when, Expr};
 use std::sync::Arc;
-use vegafusion_core::arrow::array::StringArray;
-use vegafusion_core::arrow::datatypes::DataType;
-use vegafusion_core::data::scalar::ScalarValue;
-use vegafusion_core::data::ORDER_COL;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-use vegafusion_core::expression::escape::unescape_field;
+use vegafusion_common::arrow::array::StringArray;
+use vegafusion_common::arrow::datatypes::DataType;
+use vegafusion_common::column::{flat_col, unescaped_col};
+use vegafusion_common::data::scalar::ScalarValue;
+use vegafusion_common::data::ORDER_COL;
+use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_common::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::{AggregateOp, Pivot};
 use vegafusion_core::task_graph::task_value::TaskValue;
 

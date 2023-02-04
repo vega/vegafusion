@@ -17,8 +17,8 @@ use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFus
 // use vega_fusion::spec::transform::TransformSpec;
 use self::super::estree_expression::ESTreeExpression;
 use itertools::Itertools;
-use vegafusion_core::data::scalar::ScalarValueHelpers;
-use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_common::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::table::VegaFusionTable;
 
 use vegafusion_core::planning::watch::{ExportUpdateBatch, Watch, WatchNamespace, WatchValue};
 use vegafusion_core::proto::gen::expression::Expression;

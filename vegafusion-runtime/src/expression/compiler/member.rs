@@ -1,4 +1,3 @@
-use crate::expression::compiler::builtin_functions::array::length::make_length_udf;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{data_type, is_numeric_datatype, ExprHelpers};
@@ -7,6 +6,7 @@ use datafusion::arrow::array::{
 };
 use datafusion::arrow::compute::{cast, kernels};
 use datafusion::arrow::datatypes::DataType;
+use datafusion::common::DFSchema;
 use datafusion::error::DataFusionError;
 use datafusion::logical_expr::Expr;
 use datafusion::physical_plan::functions::make_scalar_function;
@@ -14,16 +14,16 @@ use datafusion::physical_plan::udf::ScalarUDF;
 use datafusion::physical_plan::ColumnarValue;
 use datafusion::prelude::lit;
 use datafusion::scalar::ScalarValue;
-
-use crate::expression::escape::flat_col;
-use datafusion::common::DFSchema;
 use datafusion_expr::{
     BuiltinScalarFunction, ReturnTypeFunction, ScalarFunctionImplementation, Signature, Volatility,
 };
 use std::convert::TryFrom;
+use std::ops::Deref;
 use std::sync::Arc;
+use vegafusion_common::column::flat_col;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{Identifier, MemberExpression};
+use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
 
 pub fn compile_member(
     node: &MemberExpression,
@@ -96,7 +96,7 @@ pub fn compile_member(
                 // Special case to treat foo.length as length(foo) when foo is not an object
                 // make_length()
                 Expr::ScalarUDF {
-                    fun: Arc::new(make_length_udf()),
+                    fun: Arc::new(LENGTH_UDF.deref().clone()),
                     args: vec![compiled_object],
                 }
             } else if matches!(dtype, DataType::Utf8 | DataType::LargeUtf8) {

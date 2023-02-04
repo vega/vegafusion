@@ -5,16 +5,16 @@ use datafusion::logical_expr::{avg, count, count_distinct, lit, max, min, sum, E
 use std::collections::HashMap;
 
 use crate::expression::compiler::utils::to_numeric;
-use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion::common::{DFSchema, ScalarValue};
 use datafusion_expr::{aggregate_function, expr};
 use std::sync::Arc;
+use vegafusion_common::column::{flat_col, unescaped_col};
+use vegafusion_common::data::ORDER_COL;
+use vegafusion_common::escape::unescape_field;
 use vegafusion_core::arrow::datatypes::DataType;
-use vegafusion_core::data::ORDER_COL;
 use vegafusion_core::error::{Result, VegaFusionError};
-use vegafusion_core::expression::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::aggregate::op_name;

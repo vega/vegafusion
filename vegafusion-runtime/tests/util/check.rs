@@ -7,10 +7,10 @@ use std::str::FromStr;
 
 use std::convert::TryFrom;
 use std::sync::Arc;
-use vegafusion_core::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::Result;
 
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::error::Result;
 use vegafusion_core::expression::parser::parse;
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::spec::transform::TransformSpec;

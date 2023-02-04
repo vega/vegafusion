@@ -6,26 +6,25 @@ use datafusion::logical_expr::{ceil, lit, Expr, ExprSchemable};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
+use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion::common::DFSchema;
 use datafusion_expr::expr::Case;
 use datafusion_expr::Between;
 use std::str::FromStr;
 use std::sync::Arc;
-use vegafusion_core::arrow::datatypes::{DataType, TimeUnit};
-use vegafusion_core::data::scalar::ScalarValue;
-use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
+use vegafusion_common::column::flat_col;
+use vegafusion_common::data::scalar::ScalarValue;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::proto::gen::expression::literal::Value;
 use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
-
-use crate::expression::compiler::builtin_functions::date_time::str_to_timestamptz::{
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::{
     parse_datetime, STR_TO_TIMESTAMPTZ_UDF,
 };
-use crate::expression::compiler::builtin_functions::date_time::time::TIMESTAMPTZ_TO_EPOCH_MS;
-use crate::expression::escape::flat_col;
-use crate::task_graph::timezone::RuntimeTzConfig;
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::proto::gen::expression::literal::Value;
+use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_epoch::TIMESTAMPTZ_TO_EPOCH_MS;
 
 /// Op
 #[derive(Debug, Clone)]

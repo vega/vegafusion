@@ -4,9 +4,9 @@ use crate::transform::TransformTrait;
 use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use std::sync::Arc;
-use vegafusion_core::data::ORDER_COL;
-use vegafusion_core::error::Result;
-use vegafusion_core::expression::escape::unescape_field;
+use vegafusion_common::data::ORDER_COL;
+use vegafusion_common::error::Result;
+use vegafusion_common::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::Fold;
 use vegafusion_core::task_graph::task_value::TaskValue;
 

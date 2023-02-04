@@ -1,6 +1,3 @@
-use crate::data::scalar::{ScalarValue, ScalarValueHelpers};
-use crate::data::table::VegaFusionTable;
-use crate::error::{Result, VegaFusionError};
 use crate::expression::parser::parse;
 use crate::proto::gen::tasks::data_url_task::Url;
 use crate::proto::gen::tasks::{
@@ -20,9 +17,13 @@ use crate::spec::values::{SignalExpressionSpec, StringOrSignalSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_value::TaskValue;
+use datafusion_common::ScalarValue;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::ops::Deref;
+use vegafusion_common::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::{Result, VegaFusionError};
 
 #[derive(Clone, Debug, Default)]
 pub struct MakeTaskScopeVisitor {

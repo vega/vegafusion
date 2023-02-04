@@ -9,7 +9,8 @@ pub mod spec;
 pub mod task_graph;
 pub mod transform;
 pub mod variable;
-pub use arrow;
+
+pub use vegafusion_common::arrow;
 pub use vegafusion_common::error;
 
 #[cfg(test)]

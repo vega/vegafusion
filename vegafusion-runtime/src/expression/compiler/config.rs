@@ -3,7 +3,7 @@ use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion::scalar::ScalarValue;
 use num_traits::float::FloatConst;
 use std::collections::HashMap;
-use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_common::data::table::VegaFusionTable;
 
 #[derive(Clone)]
 pub struct CompilationConfig {

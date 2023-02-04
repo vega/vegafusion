@@ -4,8 +4,8 @@ use crate::transform::aggregate::make_aggr_expr_for_named_col;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use std::sync::Arc;
+use vegafusion_common::column::{flat_col, unescaped_col};
 
-use crate::expression::escape::{flat_col, unescaped_col};
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::{AggregateOp, JoinAggregate};
 use vegafusion_core::task_graph::task_value::TaskValue;

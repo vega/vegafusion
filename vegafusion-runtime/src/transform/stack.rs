@@ -1,13 +1,13 @@
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::DataFrame;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion_expr::{expr, Expr};
 use std::sync::Arc;
-use vegafusion_core::data::ORDER_COL;
-use vegafusion_core::error::Result;
-use vegafusion_core::expression::escape::unescape_field;
+use vegafusion_common::column::{flat_col, unescaped_col};
+use vegafusion_common::data::ORDER_COL;
+use vegafusion_common::error::Result;
+use vegafusion_common::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::{SortOrder, Stack, StackOffset};
 use vegafusion_core::spec::transform::stack::StackOffsetSpec;
 use vegafusion_core::task_graph::task_value::TaskValue;

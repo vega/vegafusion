@@ -4,8 +4,8 @@ use sqlparser::ast::{BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Value
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::sync::Arc;
-use vegafusion_core::data::scalar::ScalarValue;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_common::data::scalar::ScalarValue;
+use vegafusion_common::error::{Result, VegaFusionError};
 
 #[derive(Clone, Debug)]
 pub struct Dialect {

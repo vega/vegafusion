@@ -1,12 +1,13 @@
-use crate::data::scalar::{ScalarValue, ScalarValueHelpers};
-use crate::data::table::VegaFusionTable;
-use crate::error::{Result, ResultWithContext, VegaFusionError};
 use crate::proto::gen::tasks::task_value::Data;
 use crate::proto::gen::tasks::{TaskGraphValueResponse, TaskValue as ProtoTaskValue, Variable};
 use crate::task_graph::memory::{inner_size_of_scalar, inner_size_of_table};
-use arrow::record_batch::RecordBatch;
+use datafusion_common::ScalarValue;
 use serde_json::Value;
 use std::convert::TryFrom;
+use vegafusion_common::arrow::record_batch::RecordBatch;
+use vegafusion_common::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 
 #[derive(Debug, Clone)]
 pub enum TaskValue {

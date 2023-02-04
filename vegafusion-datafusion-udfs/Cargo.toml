@@ -1,0 +1,22 @@
+[package]
+name = "vegafusion-datafusion-udfs"
+version = "1.0.3"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ordered-float = "3.4.0"
+lazy_static = "^1.4.0"
+chrono = "0.4.23"
+chrono-tz = "0.8.1"
+regex = "^1.5.5"
+
+[dependencies.vegafusion-common]
+path = "../vegafusion-common"
+version = "1.0.3"
+
+[dependencies.datafusion-physical-expr]
+version = "~16.1.0"
+git = "https://github.com/jonmmease/arrow-datafusion.git"
+rev = "1e6438de31219b284df9b83f25ca36ddb1184f22"

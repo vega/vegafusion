@@ -1,7 +1,6 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use crate::expression::escape::flat_col;
 use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion_expr::{
@@ -9,9 +8,10 @@ use datafusion_expr::{
     WindowFunction,
 };
 use std::sync::Arc;
-use vegafusion_core::data::scalar::ScalarValue;
-use vegafusion_core::data::ORDER_COL;
-use vegafusion_core::error::Result;
+use vegafusion_common::column::flat_col;
+use vegafusion_common::data::scalar::ScalarValue;
+use vegafusion_common::data::ORDER_COL;
+use vegafusion_common::error::Result;
 use vegafusion_core::proto::gen::transforms::Identifier;
 use vegafusion_core::task_graph::task_value::TaskValue;
 

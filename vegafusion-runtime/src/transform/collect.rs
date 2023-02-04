@@ -7,14 +7,14 @@ use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::{Collect, SortOrder};
 
-use crate::expression::escape::{flat_col, unescaped_col};
 use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion::common::ScalarValue;
 use datafusion_expr::{
     window_function, BuiltInWindowFunction, WindowFrame, WindowFrameBound, WindowFrameUnits,
 };
-use vegafusion_core::data::ORDER_COL;
+use vegafusion_common::column::{flat_col, unescaped_col};
+use vegafusion_common::data::ORDER_COL;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]

@@ -1,5 +1,3 @@
-use crate::error::Result;
-use crate::expression::escape::escape_field;
 use crate::proto::gen::tasks::Variable;
 use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::DataSpec;
@@ -12,6 +10,8 @@ use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use itertools::Itertools;
 use std::collections::HashMap;
+use vegafusion_common::error::Result;
+use vegafusion_common::escape::escape_field;
 
 /// This optimization extracts the intensive data processing from scale.domain.data specifications
 /// into dedicated datasets. Domain calculations can't be entirely evaluated on the server, but

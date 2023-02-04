@@ -5,13 +5,13 @@ use std::collections::{HashMap, HashSet};
 
 use datafusion::logical_expr::{expr, Expr};
 use std::sync::Arc;
-use vegafusion_core::data::scalar::DATETIME_PREFIX;
-use vegafusion_core::data::table::VegaFusionTable;
-use vegafusion_core::data::ORDER_COL;
-use vegafusion_core::error::Result;
+use vegafusion_common::column::flat_col;
+use vegafusion_common::data::scalar::DATETIME_PREFIX;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::data::ORDER_COL;
+use vegafusion_common::error::Result;
 use vegafusion_runtime::expression::compiler::call::make_session_context;
 use vegafusion_runtime::expression::compiler::utils::is_numeric_datatype;
-use vegafusion_runtime::expression::escape::flat_col;
 use vegafusion_runtime::sql::connection::datafusion_conn::DataFusionConnection;
 use vegafusion_runtime::sql::connection::Connection;
 use vegafusion_runtime::tokio_runtime::TOKIO_RUNTIME;
