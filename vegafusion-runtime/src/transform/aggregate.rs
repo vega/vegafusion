@@ -5,7 +5,6 @@ use datafusion::logical_expr::{avg, count, count_distinct, lit, max, min, sum, E
 use std::collections::HashMap;
 
 use crate::expression::compiler::utils::to_numeric;
-use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion::common::{DFSchema, ScalarValue};
 use datafusion_expr::{aggregate_function, expr};
@@ -18,6 +17,7 @@ use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::aggregate::op_name;
+use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 impl TransformTrait for Aggregate {

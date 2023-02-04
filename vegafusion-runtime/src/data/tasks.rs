@@ -17,7 +17,6 @@ use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 
 use crate::data::dataset::VegaFusionDataset;
-use crate::sql::dataframe::DataFrame;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use crate::transform::pipeline::{remove_order_col, TransformPipelineUtils};
 
@@ -32,11 +31,13 @@ use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
-use crate::sql::connection::{Connection, CsvReadOptions};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_dataframe::connection::Connection;
+use vegafusion_dataframe::csv::CsvReadOptions;
+use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udfs::datetime::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::datetime_components::MAKE_TIMESTAMPTZ;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;

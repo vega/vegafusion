@@ -10,11 +10,10 @@ use vegafusion_common::data::scalar::DATETIME_PREFIX;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::error::Result;
-use vegafusion_runtime::expression::compiler::call::make_session_context;
+use vegafusion_dataframe::connection::Connection;
 use vegafusion_runtime::expression::compiler::utils::is_numeric_datatype;
-use vegafusion_runtime::sql::connection::datafusion_conn::DataFusionConnection;
-use vegafusion_runtime::sql::connection::Connection;
 use vegafusion_runtime::tokio_runtime::TOKIO_RUNTIME;
+use vegafusion_sql::connection::datafusion_conn::{DataFusionConnection, make_datafusion_context};
 
 const DROP_COLS: &[&str] = &[ORDER_COL, "_impute"];
 
@@ -82,7 +81,7 @@ pub fn assert_tables_equal(
         rhs.num_rows()
     );
 
-    let ctx = make_session_context();
+    let ctx = make_datafusion_context();
     let conn = Arc::new(DataFusionConnection::new(Arc::new(ctx)));
 
     // Flatten to single record batch

@@ -1,5 +1,4 @@
 use crate::expression::compiler::config::CompilationConfig;
-use crate::sql::dataframe::DataFrame;
 use crate::transform::TransformTrait;
 
 use async_trait::async_trait;
@@ -11,6 +10,7 @@ use vegafusion_common::escape::unescape_field;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Project;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 impl TransformTrait for Project {

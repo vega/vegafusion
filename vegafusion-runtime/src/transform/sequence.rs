@@ -3,7 +3,6 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
 use crate::expression::compiler::utils::ExprHelpers;
-use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion::arrow::array::{ArrayRef, Float64Array};
 use datafusion::arrow::datatypes::{Field, Schema, SchemaRef};
@@ -15,6 +14,7 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::Result;
 use vegafusion_core::proto::gen::transforms::Sequence;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 impl TransformTrait for Sequence {

@@ -7,11 +7,11 @@ use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Formula;
 
 use crate::expression::compiler::utils::VfSimplifyInfo;
-use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion::optimizer::simplify_expressions::ExprSimplifier;
 use vegafusion_common::column::flat_col;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 impl TransformTrait for Formula {

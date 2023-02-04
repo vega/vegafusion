@@ -1,6 +1,5 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{cast_to, data_type, is_string_datatype};
-use crate::sql::dataframe::DataFrame;
 use crate::transform::aggregate::make_agg_expr_for_col_expr;
 use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
@@ -16,6 +15,7 @@ use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_common::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::{AggregateOp, Pivot};
 use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_dataframe::dataframe::DataFrame;
 
 /// NULL_PLACEHOLDER_NAME is used for sorting to match Vega, where null always comes first for
 /// limit sorting

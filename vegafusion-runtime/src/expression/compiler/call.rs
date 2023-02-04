@@ -1,4 +1,3 @@
-use crate::expression::compiler::array::array_constructor_udf;
 use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
 use crate::expression::compiler::builtin_functions::date_time::datetime::{
     datetime_transform_fn, make_datetime_components_fn, to_date_transform,
@@ -12,7 +11,6 @@ use datafusion::arrow::datatypes::DataType;
 use datafusion::common::DFSchema;
 use datafusion::logical_expr::Expr;
 use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion::prelude::SessionContext;
 use datafusion_expr::BuiltinScalarFunction;
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -26,15 +24,6 @@ use vegafusion_core::proto::gen::expression::{
 use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
 use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
 use vegafusion_datafusion_udfs::udfs::array::span::SPAN_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::datetime_components::MAKE_TIMESTAMPTZ;
-use vegafusion_datafusion_udfs::udfs::datetime::datetime_format::FORMAT_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_epoch::TIMESTAMPTZ_TO_EPOCH_MS;
-use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::math::isfinite::ISFINITE_UDF;
 use vegafusion_datafusion_udfs::udfs::math::isnan::ISNAN_UDF;
 use vegafusion_datafusion_udfs::udfs::math::pow::POW_UDF;
 
@@ -58,7 +47,6 @@ use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::t
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_string::to_string_transform;
 use crate::task_graph::timezone::RuntimeTzConfig;
-use crate::transform::timeunit::TIMEUNIT_START_UDF;
 
 pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>;
 pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
@@ -445,39 +433,4 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     );
 
     callables
-}
-
-pub fn make_session_context() -> SessionContext {
-    let ctx = SessionContext::new();
-
-    // isNan
-    ctx.register_udf((*ISNAN_UDF).clone());
-
-    // isFinite
-    ctx.register_udf((*ISFINITE_UDF).clone());
-
-    // datetime
-    ctx.register_udf((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone());
-    ctx.register_udf((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone());
-    ctx.register_udf((*DATE_TO_TIMESTAMPTZ_UDF).clone());
-    ctx.register_udf((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone());
-    ctx.register_udf((*STR_TO_TIMESTAMPTZ_UDF).clone());
-    ctx.register_udf((*MAKE_TIMESTAMPTZ).clone());
-    ctx.register_udf((*TIMESTAMPTZ_TO_EPOCH_MS).clone());
-
-    // timeunit
-    ctx.register_udf((*TIMEUNIT_START_UDF).clone());
-
-    // timeformat
-    ctx.register_udf((*FORMAT_TIMESTAMP_UDF).clone());
-
-    // math
-    ctx.register_udf((*POW_UDF).clone());
-
-    // list
-    ctx.register_udf(array_constructor_udf());
-    ctx.register_udf((*LENGTH_UDF).clone());
-    ctx.register_udf((*INDEXOF_UDF).clone());
-
-    ctx
 }

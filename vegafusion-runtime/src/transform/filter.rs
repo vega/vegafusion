@@ -3,7 +3,6 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
 use crate::expression::compiler::utils::{to_boolean, VfSimplifyInfo};
-use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion::optimizer::simplify_expressions::ExprSimplifier;
 use std::sync::Arc;
@@ -11,6 +10,7 @@ use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Filter;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 impl TransformTrait for Filter {

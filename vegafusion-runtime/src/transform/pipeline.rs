@@ -6,8 +6,6 @@ use std::collections::HashMap;
 
 use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
-
-use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use datafusion_expr::{expr, lit, Expr};
 use vegafusion_common::column::flat_col;
@@ -17,6 +15,7 @@ use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::TransformDependencies;
+use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 pub trait TransformPipelineUtils {

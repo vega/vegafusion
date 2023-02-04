@@ -6,7 +6,6 @@ use async_trait::async_trait;
 
 use datafusion::logical_expr::lit;
 
-use crate::sql::dataframe::DataFrame;
 use datafusion::common::DFSchema;
 use datafusion::scalar::ScalarValue;
 use datafusion_expr::expr::Cast;
@@ -20,6 +19,7 @@ use vegafusion_core::arrow::datatypes::{DataType, Field};
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Bin;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 impl TransformTrait for Bin {

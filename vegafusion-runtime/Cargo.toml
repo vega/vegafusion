@@ -78,6 +78,15 @@ version = "1.0.3"
 path = "../vegafusion-datafusion-udfs"
 version = "1.0.3"
 
+[dependencies.vegafusion-dataframe]
+path = "../vegafusion-dataframe"
+version = "1.0.3"
+
+[dependencies.vegafusion-sql]
+path = "../vegafusion-sql"
+version = "1.0.3"
+features = ["datafusion-conn"]
+
 [dependencies.serde]
 version = "1.0.137"
 features = [ "derive",]

@@ -1,5 +1,4 @@
 use crate::expression::compiler::config::CompilationConfig;
-use crate::sql::dataframe::DataFrame;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion_expr::{expr, Expr};
@@ -9,8 +8,8 @@ use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::error::Result;
 use vegafusion_common::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::{SortOrder, Stack, StackOffset};
-use vegafusion_core::spec::transform::stack::StackOffsetSpec;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_dataframe::dataframe::{DataFrame, StackMode};
 
 #[async_trait]
 impl TransformTrait for Stack {
@@ -48,9 +47,9 @@ impl TransformTrait for Stack {
 
         let offset = StackOffset::from_i32(self.offset).expect("Failed to convert stack offset");
         let mode = match offset {
-            StackOffset::Zero => StackOffsetSpec::Zero,
-            StackOffset::Normalize => StackOffsetSpec::Normalize,
-            StackOffset::Center => StackOffsetSpec::Center,
+            StackOffset::Zero => StackMode::Zero,
+            StackOffset::Normalize => StackMode::Normalize,
+            StackOffset::Center => StackMode::Center,
         };
 
         let result = dataframe

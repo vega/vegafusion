@@ -2,9 +2,8 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use vegafusion_common::data::table::VegaFusionTable;
-
-use crate::sql::dataframe::DataFrame;
 use vegafusion_core::error::Result;
+use vegafusion_dataframe::dataframe::DataFrame;
 
 #[derive(Clone)]
 pub enum VegaFusionDataset {

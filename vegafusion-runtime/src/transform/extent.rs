@@ -1,6 +1,5 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::to_numeric;
-use crate::sql::dataframe::DataFrame;
 use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
@@ -17,6 +16,7 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::Result;
 use vegafusion_core::proto::gen::transforms::Extent;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 impl TransformTrait for Extent {

@@ -4148,7 +4148,9 @@ dependencies = [
  "uuid",
  "vegafusion-common",
  "vegafusion-core",
+ "vegafusion-dataframe",
  "vegafusion-datafusion-udfs",
+ "vegafusion-sql",
 ]
 
 [[package]]
@@ -4168,6 +4170,7 @@ dependencies = [
  "tonic",
  "tonic-build",
  "tonic-web",
+ "vegafusion-common",
  "vegafusion-core",
  "vegafusion-runtime",
 ]
@@ -4190,6 +4193,7 @@ dependencies = [
  "tempfile",
  "vegafusion-common",
  "vegafusion-dataframe",
+ "vegafusion-datafusion-udfs",
 ]
 
 [[package]]

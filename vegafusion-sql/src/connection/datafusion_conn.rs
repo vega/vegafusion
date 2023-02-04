@@ -20,6 +20,21 @@ use vegafusion_common::error::{Result, ResultWithContext, ToExternalError};
 use vegafusion_dataframe::connection::Connection;
 use vegafusion_dataframe::csv::CsvReadOptions;
 use vegafusion_dataframe::dataframe::DataFrame;
+use vegafusion_datafusion_udfs::udfs::array::constructor::ARRAY_CONSTRUCTOR_UDF;
+use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
+use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::datetime_components::MAKE_TIMESTAMPTZ;
+use vegafusion_datafusion_udfs::udfs::datetime::datetime_format::FORMAT_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_epoch::TIMESTAMPTZ_TO_EPOCH_MS;
+use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
+use vegafusion_datafusion_udfs::udfs::math::isfinite::ISFINITE_UDF;
+use vegafusion_datafusion_udfs::udfs::math::isnan::ISNAN_UDF;
+use vegafusion_datafusion_udfs::udfs::math::pow::POW_UDF;
 
 #[derive(Clone)]
 pub struct DataFusionConnection {
@@ -90,8 +105,7 @@ impl Connection for DataFusionConnection {
         })?;
 
         // Create a fresh context because we don't want to override tables in self.ctx
-        // let ctx = make_session_context();
-        let ctx = SessionContext::new();
+        let ctx = make_datafusion_context();
 
         // Register memtable with context
         ctx.register_table("tbl", Arc::new(mem_table))?;
@@ -260,4 +274,39 @@ pub fn make_request_client() -> ClientWithMiddleware {
     ClientBuilder::new(reqwest::Client::new())
         .with(RetryTransientMiddleware::new_with_policy(retry_policy))
         .build()
+}
+
+pub fn make_datafusion_context() -> SessionContext {
+    let ctx = SessionContext::new();
+
+    // isNan
+    ctx.register_udf((*ISNAN_UDF).clone());
+
+    // isFinite
+    ctx.register_udf((*ISFINITE_UDF).clone());
+
+    // datetime
+    ctx.register_udf((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone());
+    ctx.register_udf((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone());
+    ctx.register_udf((*DATE_TO_TIMESTAMPTZ_UDF).clone());
+    ctx.register_udf((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone());
+    ctx.register_udf((*STR_TO_TIMESTAMPTZ_UDF).clone());
+    ctx.register_udf((*MAKE_TIMESTAMPTZ).clone());
+    ctx.register_udf((*TIMESTAMPTZ_TO_EPOCH_MS).clone());
+
+    // timeunit
+    ctx.register_udf((*TIMEUNIT_START_UDF).clone());
+
+    // timeformat
+    ctx.register_udf((*FORMAT_TIMESTAMP_UDF).clone());
+
+    // math
+    ctx.register_udf((*POW_UDF).clone());
+
+    // list
+    ctx.register_udf((*ARRAY_CONSTRUCTOR_UDF).clone());
+    ctx.register_udf((*LENGTH_UDF).clone());
+    ctx.register_udf((*INDEXOF_UDF).clone());
+
+    ctx
 }

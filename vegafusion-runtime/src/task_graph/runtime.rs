@@ -4,10 +4,7 @@ use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFus
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::data::dataset::VegaFusionDataset;
-use crate::expression::compiler::call::make_session_context;
 use crate::pre_transform::destringify_selection_datetimes::destringify_selection_datetimes;
-use crate::sql::connection::datafusion_conn::DataFusionConnection;
-use crate::sql::connection::Connection;
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -41,6 +38,8 @@ use vegafusion_core::proto::gen::tasks::{
 };
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
+use vegafusion_dataframe::connection::Connection;
+use vegafusion_sql::connection::datafusion_conn::{DataFusionConnection, make_datafusion_context};
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -52,7 +51,7 @@ pub struct TaskGraphRuntime {
 
 impl TaskGraphRuntime {
     pub fn new(capacity: Option<usize>, memory_limit: Option<usize>) -> Self {
-        let ctx = make_session_context();
+        let ctx = make_datafusion_context();
         let conn = Arc::new(DataFusionConnection::new(Arc::new(ctx))) as Arc<dyn Connection>;
         Self {
             cache: VegaFusionCache::new(capacity, memory_limit),

@@ -21,13 +21,12 @@ use crate::expression::compiler::config::CompilationConfig;
 
 use std::sync::Arc;
 use vegafusion_core::error::Result;
-
-use crate::sql::dataframe::DataFrame;
 use async_trait::async_trait;
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::proto::gen::transforms::Transform;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::TransformDependencies;
+use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 pub trait TransformTrait: TransformDependencies {

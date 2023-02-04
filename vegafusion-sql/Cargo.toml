@@ -4,7 +4,7 @@ version = "1.0.3"
 edition = "2021"
 
 [features]
-datafusion-conn = [ "datafusion", "tempfile", "reqwest-retry", "reqwest-middleware" ]
+datafusion-conn = [ "datafusion", "tempfile", "reqwest", "reqwest-retry", "reqwest-middleware", "vegafusion-datafusion-udfs"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
@@ -23,6 +23,11 @@ features = ["sqlparser"]
 [dependencies.vegafusion-dataframe]
 path = "../vegafusion-dataframe"
 version = "1.0.3"
+
+[dependencies.vegafusion-datafusion-udfs]
+path = "../vegafusion-datafusion-udfs"
+version = "1.0.3"
+optional = true
 
 [dependencies.arrow]
 version = "29.0.0"

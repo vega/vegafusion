@@ -7,12 +7,12 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::data::dataset::VegaFusionDataset;
-use crate::sql::connection::Connection;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::tasks::SignalTask;
 use vegafusion_core::task_graph::task::TaskDependencies;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_dataframe::connection::Connection;
 
 #[async_trait]
 impl TaskCall for SignalTask {
