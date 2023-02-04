@@ -1,10 +1,10 @@
-use datafusion::arrow::array::{ArrayRef, StructArray};
-use datafusion::arrow::record_batch::RecordBatch;
-use datafusion::scalar::ScalarValue;
 use std::collections::{HashMap, HashSet};
 
-use datafusion::logical_expr::{expr, Expr};
+use datafusion_common::ScalarValue;
+use datafusion_expr::{expr, Expr};
 use std::sync::Arc;
+use vegafusion_common::arrow::array::{ArrayRef, StructArray};
+use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::scalar::DATETIME_PREFIX;
 use vegafusion_common::data::table::VegaFusionTable;

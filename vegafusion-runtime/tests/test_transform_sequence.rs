@@ -5,12 +5,11 @@ mod util;
 #[cfg(test)]
 mod test_sequence {
     use crate::util::check::check_transform_evaluation;
-    use datafusion::arrow::datatypes::{Field, Schema};
-    use datafusion::arrow::record_batch::RecordBatch;
     use rstest::rstest;
     use serde_json::json;
     use std::sync::Arc;
-    use vegafusion_common::arrow::datatypes::DataType;
+    use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
+    use vegafusion_common::arrow::record_batch::RecordBatch;
     use vegafusion_common::data::table::VegaFusionTable;
     use vegafusion_core::spec::transform::TransformSpec;
 

@@ -2,9 +2,8 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
-use datafusion::common::ScalarValue;
-use datafusion::logical_expr::{expr, Expr};
-use datafusion::prelude::lit;
+use datafusion_common::ScalarValue;
+use datafusion_expr::{aggregate_function, expr, lit, Expr};
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::{
@@ -13,7 +12,6 @@ use vegafusion_core::proto::gen::transforms::{
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::expression::compiler::utils::to_numeric;
-use datafusion::physical_plan::aggregates;
 use datafusion_expr::{
     window_frame, BuiltInWindowFunction, WindowFrameBound, WindowFrameUnits, WindowFunction,
 };
@@ -109,17 +107,29 @@ impl TransformTrait for Window {
 
                         use AggregateOp::*;
                         let (agg_fn, arg) = match op {
-                            Count => (aggregates::AggregateFunction::Count, lit(true)),
-                            Sum => (aggregates::AggregateFunction::Sum, numeric_field()),
-                            Mean | Average => (aggregates::AggregateFunction::Avg, numeric_field()),
-                            Min => (aggregates::AggregateFunction::Min, numeric_field()),
-                            Max => (aggregates::AggregateFunction::Max, numeric_field()),
-                            Variance => (aggregates::AggregateFunction::Variance, numeric_field()),
-                            Variancep => {
-                                (aggregates::AggregateFunction::VariancePop, numeric_field())
+                            Count => (aggregate_function::AggregateFunction::Count, lit(true)),
+                            Sum => (aggregate_function::AggregateFunction::Sum, numeric_field()),
+                            Mean | Average => {
+                                (aggregate_function::AggregateFunction::Avg, numeric_field())
                             }
-                            Stdev => (aggregates::AggregateFunction::Stddev, numeric_field()),
-                            Stdevp => (aggregates::AggregateFunction::StddevPop, numeric_field()),
+                            Min => (aggregate_function::AggregateFunction::Min, numeric_field()),
+                            Max => (aggregate_function::AggregateFunction::Max, numeric_field()),
+                            Variance => (
+                                aggregate_function::AggregateFunction::Variance,
+                                numeric_field(),
+                            ),
+                            Variancep => (
+                                aggregate_function::AggregateFunction::VariancePop,
+                                numeric_field(),
+                            ),
+                            Stdev => (
+                                aggregate_function::AggregateFunction::Stddev,
+                                numeric_field(),
+                            ),
+                            Stdevp => (
+                                aggregate_function::AggregateFunction::StddevPop,
+                                numeric_field(),
+                            ),
                             // ArrayAgg only available on master right now
                             // Values => (aggregates::AggregateFunction::ArrayAgg, unescaped_col(field)),
                             _ => {

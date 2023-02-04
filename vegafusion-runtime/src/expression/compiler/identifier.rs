@@ -1,5 +1,5 @@
 use crate::expression::compiler::config::CompilationConfig;
-use datafusion::logical_expr::{lit, Expr};
+use datafusion_expr::{lit, Expr};
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::expression::Identifier;
 

@@ -1,5 +1,5 @@
-use datafusion::logical_expr::{lit, Expr};
-use datafusion::scalar::ScalarValue;
+use datafusion_expr::{lit, Expr};
+use vegafusion_common::datafusion_common::ScalarValue;
 use vegafusion_core::proto::gen::expression::{literal, Literal};
 
 pub fn compile_literal(node: &Literal) -> Expr {

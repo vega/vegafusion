@@ -3,14 +3,11 @@ use crate::expression::compiler::utils::to_numeric;
 use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::arrow::datatypes::Field;
 
-use datafusion::common::DFSchema;
-
-use datafusion::logical_expr::{max, min};
-use datafusion::scalar::ScalarValue;
-use datafusion_expr::Expr;
+use datafusion_common::{DFSchema, ScalarValue};
+use datafusion_expr::{max, min, Expr};
 use std::sync::Arc;
+use vegafusion_common::arrow::datatypes::Field;
 use vegafusion_common::column::unescaped_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::Result;

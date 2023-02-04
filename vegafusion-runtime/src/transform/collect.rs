@@ -1,14 +1,14 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion::logical_expr::{expr, Expr};
+use datafusion_expr::{expr, Expr};
 
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::{Collect, SortOrder};
 
 use async_trait::async_trait;
-use datafusion::common::ScalarValue;
+use datafusion_common::scalar::ScalarValue;
 use datafusion_expr::{
     window_function, BuiltInWindowFunction, WindowFrame, WindowFrameBound, WindowFrameUnits,
 };

@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod util;
-use datafusion::scalar::ScalarValue;
+use datafusion_common::ScalarValue;
 use rstest::rstest;
 use serde_json::json;
 use std::collections::HashMap;

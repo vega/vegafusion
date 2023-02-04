@@ -1,4 +1,4 @@
-use datafusion::scalar::ScalarValue;
+use datafusion_common::ScalarValue;
 use dssim::{Dssim, DssimImage};
 use regex::Regex;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -10,11 +10,7 @@ use std::ops::Deref;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::{fs, thread};
-// use vega_fusion::data::table::VegaFusionTable;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
-// use vega_fusion::expression::compiler::config::CompilationConfig;
-// use vega_fusion::expression::compiler::utils::ScalarValueHelpers;
-// use vega_fusion::spec::transform::TransformSpec;
 use self::super::estree_expression::ESTreeExpression;
 use itertools::Itertools;
 use vegafusion_common::data::scalar::ScalarValueHelpers;

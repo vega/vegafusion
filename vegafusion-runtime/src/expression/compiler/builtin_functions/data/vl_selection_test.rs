@@ -2,20 +2,20 @@ use crate::expression::compiler::utils::{
     cast_to, is_float_datatype, is_integer_datatype, is_numeric_datatype, is_string_datatype,
     ExprHelpers,
 };
-use datafusion::logical_expr::{ceil, lit, Expr, ExprSchemable};
+
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion::common::DFSchema;
 use datafusion_expr::expr::Case;
-use datafusion_expr::Between;
+use datafusion_expr::{ceil, lit, Between, Expr, ExprSchemable};
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::scalar::ScalarValue;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::literal::Value;
 use vegafusion_core::proto::gen::{

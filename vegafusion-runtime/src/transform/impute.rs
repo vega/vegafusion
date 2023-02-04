@@ -2,7 +2,7 @@ use crate::expression::compiler::config::CompilationConfig;
 
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::common::ScalarValue;
+use datafusion_common::ScalarValue;
 use itertools::Itertools;
 use std::sync::Arc;
 use vegafusion_common::data::scalar::ScalarValueHelpers;

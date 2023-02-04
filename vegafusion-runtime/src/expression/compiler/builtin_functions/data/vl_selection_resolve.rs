@@ -1,15 +1,13 @@
-use datafusion::arrow::datatypes::DataType;
-use datafusion::common::DFSchema;
-use datafusion::logical_expr::{lit, Expr};
-use datafusion::scalar::ScalarValue;
+use datafusion_expr::{lit, Expr};
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::str::FromStr;
 
-use vegafusion_common::arrow::datatypes::Field;
+use vegafusion_common::arrow::datatypes::{DataType, Field};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_common::error::{Result, VegaFusionError};
 
 use vegafusion_core::proto::gen::expression::literal::Value;

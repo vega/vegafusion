@@ -1,6 +1,5 @@
-use datafusion::common::DFSchema;
-
 use datafusion_expr::Expr;
+use vegafusion_common::datafusion_common::DFSchema;
 
 use vegafusion_core::error::{Result, VegaFusionError};
 

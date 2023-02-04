@@ -4,13 +4,8 @@ use crate::expression::compiler::utils::{is_integer_datatype, is_string_datatype
 use crate::task_graph::task::TaskCall;
 
 use async_trait::async_trait;
-use datafusion::arrow::datatypes::{DataType, Field, Schema};
-use datafusion::arrow::ipc::reader::{FileReader, StreamReader};
-use datafusion::arrow::record_batch::RecordBatch;
 
-use datafusion::logical_expr::Expr;
-
-use datafusion_expr::lit;
+use datafusion_expr::{lit, Expr};
 use std::collections::{HashMap, HashSet};
 
 use std::sync::Arc;
@@ -33,6 +28,9 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
+use vegafusion_common::arrow::ipc::reader::{FileReader, StreamReader};
+use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_dataframe::connection::Connection;

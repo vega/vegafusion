@@ -1,14 +1,12 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
-use datafusion::arrow::array::{ArrayRef, StructArray};
-use datafusion::arrow::datatypes::{DataType, Field};
-use datafusion::common::DFSchema;
-use datafusion::logical_expr::{Expr, ExprSchemable};
-use datafusion::physical_plan::functions::make_scalar_function;
-use datafusion::physical_plan::udf::ScalarUDF;
-use datafusion_expr::{ReturnTypeFunction, Signature, Volatility};
+
+use datafusion_expr::{Expr, ExprSchemable};
 use std::sync::Arc;
+use vegafusion_common::arrow::datatypes::DataType;
+use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ObjectExpression;
+use vegafusion_datafusion_udfs::udfs::object::make_object_constructor_udf;
 
 pub fn compile_object(
     node: &ObjectExpression,
@@ -32,41 +30,4 @@ pub fn compile_object(
         fun: Arc::new(udf),
         args: values,
     })
-}
-
-pub fn make_object_constructor_udf(keys: &[String], value_types: &[DataType]) -> ScalarUDF {
-    // Build fields vector
-    let fields: Vec<_> = keys
-        .iter()
-        .zip(value_types.iter())
-        .map(|(k, dtype)| Field::new(k, dtype.clone(), false))
-        .collect();
-
-    let struct_dtype = DataType::Struct(fields.clone());
-
-    let object_constructor = move |args: &[ArrayRef]| {
-        let pairs: Vec<_> = fields
-            .iter()
-            .zip(args.iter())
-            .map(|(f, v)| (f.clone(), v.clone()))
-            .collect();
-        Ok(Arc::new(StructArray::from(pairs)) as ArrayRef)
-    };
-
-    let object_constructor = make_scalar_function(object_constructor);
-
-    let return_type: ReturnTypeFunction = Arc::new(move |_args| Ok(Arc::new(struct_dtype.clone())));
-
-    let name_csv: Vec<_> = keys
-        .iter()
-        .zip(value_types)
-        .map(|(k, dtype)| format!("{k}: {dtype}"))
-        .collect();
-
-    ScalarUDF::new(
-        &format!("object{{{}}}", name_csv.join(",")),
-        &Signature::any(keys.len(), Volatility::Immutable),
-        &return_type,
-        &object_constructor,
-    )
 }

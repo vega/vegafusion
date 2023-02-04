@@ -1,8 +1,8 @@
 use crate::expression::compiler::utils::{cast_to, is_string_datatype, to_boolean};
 use crate::expression::compiler::{compile, config::CompilationConfig};
-use datafusion::common::DFSchema;
-use datafusion::logical_expr::{Expr, ExprSchemable};
 use datafusion_expr::expr::Case;
+use datafusion_expr::{Expr, ExprSchemable};
+use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ConditionalExpression;

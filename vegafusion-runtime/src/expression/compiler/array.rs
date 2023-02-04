@@ -1,8 +1,8 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
-use datafusion::common::DFSchema;
-use datafusion::logical_expr::Expr;
+use datafusion_expr::Expr;
 use std::ops::Deref;
 use std::sync::Arc;
+use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ArrayExpression;
 use vegafusion_datafusion_udfs::udfs::array::constructor::ARRAY_CONSTRUCTOR_UDF;

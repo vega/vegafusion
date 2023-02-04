@@ -4,10 +4,10 @@ use crate::expression::compiler::utils::{to_numeric, ExprHelpers};
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
-use datafusion::logical_expr::lit;
+use datafusion_expr::lit;
 
-use datafusion::common::DFSchema;
-use datafusion::scalar::ScalarValue;
+use datafusion_common::scalar::ScalarValue;
+use datafusion_common::DFSchema;
 use datafusion_expr::expr::Cast;
 use datafusion_expr::{abs, floor, when, Expr};
 use float_cmp::approx_eq;

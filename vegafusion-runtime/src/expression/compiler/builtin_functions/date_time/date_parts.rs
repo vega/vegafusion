@@ -1,11 +1,10 @@
 use crate::expression::compiler::call::TzTransformFn;
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion::arrow::datatypes::DataType;
-use datafusion::common::DFSchema;
-use datafusion::logical_expr::Expr;
-use datafusion_expr::{floor, lit, BuiltinScalarFunction, ExprSchemable};
+use datafusion_expr::{floor, lit, BuiltinScalarFunction, Expr, ExprSchemable};
 use std::sync::Arc;
+use vegafusion_common::arrow::datatypes::DataType;
+use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;

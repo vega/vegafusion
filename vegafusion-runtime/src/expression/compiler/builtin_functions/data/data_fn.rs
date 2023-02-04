@@ -1,7 +1,7 @@
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion::common::DFSchema;
-use datafusion::logical_expr::Expr;
+use datafusion_expr::Expr;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::Expression;
 

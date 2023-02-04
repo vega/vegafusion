@@ -1,11 +1,11 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion::arrow::datatypes::DataType;
-use datafusion::common::DFSchema;
+use datafusion_common::DFSchema;
 use std::collections::HashSet;
 use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
+use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
 use vegafusion_core::task_graph::task_value::TaskValue;

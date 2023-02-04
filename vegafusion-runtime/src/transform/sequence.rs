@@ -4,11 +4,11 @@ use crate::transform::TransformTrait;
 
 use crate::expression::compiler::utils::ExprHelpers;
 use async_trait::async_trait;
-use datafusion::arrow::array::{ArrayRef, Float64Array};
-use datafusion::arrow::datatypes::{Field, Schema, SchemaRef};
-use datafusion::arrow::record_batch::RecordBatch;
 use std::sync::Arc;
+use vegafusion_common::arrow::array::{ArrayRef, Float64Array};
 use vegafusion_common::arrow::datatypes::DataType;
+use vegafusion_common::arrow::datatypes::{Field, Schema, SchemaRef};
+use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::Result;

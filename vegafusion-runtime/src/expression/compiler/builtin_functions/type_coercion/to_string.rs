@@ -1,7 +1,7 @@
 use crate::expression::compiler::utils::cast_to;
-use datafusion::arrow::datatypes::DataType;
-use datafusion::common::DFSchema;
-use datafusion::logical_expr::Expr;
+use datafusion_expr::Expr;
+use vegafusion_common::arrow::datatypes::DataType;
+use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::{Result, VegaFusionError};
 
 pub fn to_string_transform(args: &[Expr], schema: &DFSchema) -> Result<Expr> {

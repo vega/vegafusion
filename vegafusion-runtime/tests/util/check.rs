@@ -2,9 +2,9 @@ use crate::util::equality::{
     assert_signals_almost_equal, assert_tables_equal, normalize_scalar, TablesEqualConfig,
 };
 use crate::util::vegajs_runtime::vegajs_runtime;
-use datafusion::scalar::ScalarValue;
 use std::str::FromStr;
 
+use datafusion_common::ScalarValue;
 use std::convert::TryFrom;
 use std::sync::Arc;
 use vegafusion_common::data::scalar::ScalarValueHelpers;

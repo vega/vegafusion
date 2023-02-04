@@ -1,16 +1,16 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion::logical_expr::{avg, count, count_distinct, lit, max, min, sum, Expr};
+use datafusion_expr::{avg, count, count_distinct, lit, max, min, sum, Expr};
 use std::collections::HashMap;
 
 use crate::expression::compiler::utils::to_numeric;
 use async_trait::async_trait;
-use datafusion::common::{DFSchema, ScalarValue};
 use datafusion_expr::{aggregate_function, expr};
 use std::sync::Arc;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
+use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_common::escape::unescape_field;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, VegaFusionError};

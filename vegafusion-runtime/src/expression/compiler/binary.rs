@@ -3,9 +3,9 @@ use crate::expression::compiler::utils::{
     to_string,
 };
 use crate::expression::compiler::{compile, config::CompilationConfig};
-use datafusion::common::DFSchema;
-use datafusion::logical_expr::{concat, lit, Expr, Operator};
 use datafusion_expr::expr::BinaryExpr;
+use datafusion_expr::{concat, lit, Expr, Operator};
+use vegafusion_common::datafusion_common::DFSchema;
 
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::Result;

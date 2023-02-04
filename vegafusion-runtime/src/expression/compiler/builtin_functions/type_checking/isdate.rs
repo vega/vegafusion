@@ -1,7 +1,5 @@
-use datafusion::common::DFSchema;
-use datafusion::logical_expr::{Expr, ExprSchemable};
-
-use datafusion::prelude::lit;
+use datafusion_expr::{lit, Expr, ExprSchemable};
+use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 

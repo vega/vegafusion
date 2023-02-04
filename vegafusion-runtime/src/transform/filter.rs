@@ -4,7 +4,7 @@ use crate::transform::TransformTrait;
 
 use crate::expression::compiler::utils::{to_boolean, VfSimplifyInfo};
 use async_trait::async_trait;
-use datafusion::optimizer::simplify_expressions::ExprSimplifier;
+use datafusion_optimizer::simplify_expressions::ExprSimplifier;
 use std::sync::Arc;
 
 use vegafusion_core::error::Result;

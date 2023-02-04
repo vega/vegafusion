@@ -5,7 +5,7 @@ mod util;
 use std::sync::Once;
 
 use crate::util::vegajs_runtime::{vegajs_runtime, ExportImageFormat};
-use datafusion::scalar::ScalarValue;
+use datafusion_common::ScalarValue;
 use rstest::rstest;
 use std::collections::HashMap;
 use std::convert::TryFrom;

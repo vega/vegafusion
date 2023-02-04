@@ -4,7 +4,7 @@ extern crate lazy_static;
 mod util;
 use crate::util::vegajs_runtime::{vegajs_runtime, ExportImage, ExportImageFormat};
 
-use datafusion::scalar::ScalarValue;
+use datafusion_common::ScalarValue;
 use serde_json::json;
 use std::collections::HashMap;
 use std::fs;

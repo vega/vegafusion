@@ -91,12 +91,22 @@ features = ["datafusion-conn"]
 version = "1.0.137"
 features = [ "derive",]
 
-[dependencies.datafusion]
+[dependencies.datafusion-common]
 version = "~16.1.0"
 git = "https://github.com/jonmmease/arrow-datafusion.git"
 rev = "1e6438de31219b284df9b83f25ca36ddb1184f22"
 
 [dependencies.datafusion-expr]
+version = "~16.1.0"
+git = "https://github.com/jonmmease/arrow-datafusion.git"
+rev = "1e6438de31219b284df9b83f25ca36ddb1184f22"
+
+[dependencies.datafusion-physical-expr]
+version = "~16.1.0"
+git = "https://github.com/jonmmease/arrow-datafusion.git"
+rev = "1e6438de31219b284df9b83f25ca36ddb1184f22"
+
+[dependencies.datafusion-optimizer]
 version = "~16.1.0"
 git = "https://github.com/jonmmease/arrow-datafusion.git"
 rev = "1e6438de31219b284df9b83f25ca36ddb1184f22"

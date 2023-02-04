@@ -8,7 +8,7 @@ use vegafusion_core::proto::gen::transforms::Formula;
 
 use crate::expression::compiler::utils::VfSimplifyInfo;
 use async_trait::async_trait;
-use datafusion::optimizer::simplify_expressions::ExprSimplifier;
+use datafusion_optimizer::simplify_expressions::ExprSimplifier;
 use vegafusion_common::column::flat_col;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_dataframe::dataframe::DataFrame;
