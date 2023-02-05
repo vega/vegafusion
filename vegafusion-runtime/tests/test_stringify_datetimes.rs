@@ -17,7 +17,7 @@ mod test_stringify_datetimes {
     use std::fs;
     use std::sync::Arc;
     use vegafusion_core::spec::chart::ChartSpec;
-    use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
+    use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
     #[rstest(
@@ -80,7 +80,7 @@ mod test_stringify_datetimes {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(
+        let runtime = VegaFusionRuntime::new(
             Arc::new(DataFusionConnection::default()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
@@ -134,7 +134,7 @@ mod test_stringify_datetimes {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(
+        let runtime = VegaFusionRuntime::new(
             Arc::new(DataFusionConnection::default()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
@@ -221,7 +221,7 @@ mod test_stringify_datetimes {
         let spec_str = fs::read_to_string(spec_path).unwrap();
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(
+        let runtime = VegaFusionRuntime::new(
             Arc::new(DataFusionConnection::default()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
@@ -287,7 +287,7 @@ mod test_stringify_datetimes {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(
+        let runtime = VegaFusionRuntime::new(
             Arc::new(DataFusionConnection::default()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
@@ -333,7 +333,7 @@ mod test_stringify_datetimes {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(
+        let runtime = VegaFusionRuntime::new(
             Arc::new(DataFusionConnection::default()),
             Some(16),
             Some(1024_i32.pow(3) as usize),

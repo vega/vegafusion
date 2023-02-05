@@ -12,7 +12,7 @@ use vegafusion_core::proto::gen::transforms::{
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::scope::TaskScope;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
+use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
 #[tokio::test(flavor = "multi_thread")]
@@ -81,7 +81,7 @@ async fn try_it() {
     ];
 
     let graph = Arc::new(TaskGraph::new(tasks, &task_scope).unwrap());
-    let graph_runtime = TaskGraphRuntime::new(
+    let graph_runtime = VegaFusionRuntime::new(
         Arc::new(DataFusionConnection::default()),
         Some(20),
         Some(1024_i32.pow(3) as usize),
@@ -143,7 +143,7 @@ async fn try_it_from_spec() {
 
     let graph = Arc::new(TaskGraph::new(tasks, &task_scope).unwrap());
 
-    let graph_runtime = TaskGraphRuntime::new(
+    let graph_runtime = VegaFusionRuntime::new(
         Arc::new(DataFusionConnection::default()),
         Some(20),
         Some(1024_i32.pow(3) as usize),

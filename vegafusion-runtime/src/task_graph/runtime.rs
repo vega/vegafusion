@@ -43,12 +43,12 @@ use vegafusion_dataframe::connection::Connection;
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
 #[derive(Clone)]
-pub struct TaskGraphRuntime {
+pub struct VegaFusionRuntime {
     pub cache: VegaFusionCache,
     pub conn: Arc<dyn Connection>,
 }
 
-impl TaskGraphRuntime {
+impl VegaFusionRuntime {
     pub fn new(
         conn: Arc<dyn Connection>,
         capacity: Option<usize>,

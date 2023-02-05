@@ -7,7 +7,7 @@ use vegafusion_core::proto::gen::services::{QueryRequest, QueryResult};
 use vegafusion_core::proto::gen::tasks::{TaskGraph, TaskGraphValueRequest, TzConfig, Variable};
 use vegafusion_core::spec::chart::ChartSpec;
 
-use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
+use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 fn crate_dir() -> String {
     std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -58,7 +58,7 @@ async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> Q
     let task_graph_mapping = task_graph.build_mapping();
 
     // Initialize task graph runtime
-    let runtime = TaskGraphRuntime::new(Arc::new(DataFusionConnection::default()), Some(64), None);
+    let runtime = VegaFusionRuntime::new(Arc::new(DataFusionConnection::default()), Some(64), None);
 
     let node_index = task_graph_mapping.get(var).unwrap();
 
@@ -105,7 +105,7 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
     let task_graph_mapping = task_graph.build_mapping();
 
     // Initialize task graph runtime
-    let runtime = TaskGraphRuntime::new(Arc::new(DataFusionConnection::default()), Some(64), None);
+    let runtime = VegaFusionRuntime::new(Arc::new(DataFusionConnection::default()), Some(64), None);
 
     // Get initial values
     let mut query_indices = Vec::new();

@@ -7,7 +7,7 @@ use tokio::runtime::Runtime;
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
-use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
+use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 use env_logger::{Builder, Target};
 use pythonize::depythonize;
@@ -39,8 +39,8 @@ struct PreTransformSpecWarning {
 }
 
 #[pyclass]
-struct PyTaskGraphRuntime {
-    runtime: TaskGraphRuntime,
+struct PyVegaFusionRuntime {
+    runtime: VegaFusionRuntime,
     tokio_runtime: Runtime,
 }
 
@@ -60,7 +60,7 @@ fn deserialize_inline_datasets(
 }
 
 #[pymethods]
-impl PyTaskGraphRuntime {
+impl PyVegaFusionRuntime {
     #[new]
     pub fn new(
         max_capacity: Option<usize>,
@@ -84,7 +84,7 @@ impl PyTaskGraphRuntime {
             .external("Failed to create Tokio thread pool")?;
 
         Ok(Self {
-            runtime: TaskGraphRuntime::new(
+            runtime: VegaFusionRuntime::new(
                 Arc::new(DataFusionConnection::default()),
                 max_capacity,
                 memory_limit,
@@ -251,7 +251,7 @@ impl PyTaskGraphRuntime {
 /// import the module.
 #[pymodule]
 fn vegafusion_embed(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyTaskGraphRuntime>()?;
+    m.add_class::<PyVegaFusionRuntime>()?;
     Ok(())
 }
 

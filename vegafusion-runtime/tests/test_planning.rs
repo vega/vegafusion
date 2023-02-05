@@ -1,7 +1,7 @@
 use vegafusion_core::planning::extract::extract_server_data;
 use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig, Variable};
 use vegafusion_core::spec::chart::ChartSpec;
-use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
+use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -60,7 +60,7 @@ async fn test_extract_server_data() {
     let mapping = graph.build_mapping();
     // println!("{:#?}", mapping);
 
-    let graph_runtime = TaskGraphRuntime::new(
+    let graph_runtime = VegaFusionRuntime::new(
         Arc::new(DataFusionConnection::default()),
         Some(20),
         Some(1024_i32.pow(3) as usize),

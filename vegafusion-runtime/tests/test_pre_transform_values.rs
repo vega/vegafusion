@@ -11,7 +11,7 @@ mod tests {
     use vegafusion_core::proto::gen::tasks::Variable;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_runtime::data::dataset::VegaFusionDataset;
-    use vegafusion_runtime::task_graph::runtime::TaskGraphRuntime;
+    use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
     #[tokio::test]
@@ -22,7 +22,7 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(
+        let runtime = VegaFusionRuntime::new(
             Arc::new(DataFusionConnection::default()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
@@ -73,7 +73,7 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(
+        let runtime = VegaFusionRuntime::new(
             Arc::new(DataFusionConnection::default()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
@@ -124,7 +124,7 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(
+        let runtime = VegaFusionRuntime::new(
             Arc::new(DataFusionConnection::default()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
@@ -182,7 +182,7 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(
+        let runtime = VegaFusionRuntime::new(
             Arc::new(DataFusionConnection::default()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
@@ -242,7 +242,7 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(
+        let runtime = VegaFusionRuntime::new(
             Arc::new(DataFusionConnection::default()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
@@ -291,7 +291,7 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = TaskGraphRuntime::new(
+        let runtime = VegaFusionRuntime::new(
             Arc::new(DataFusionConnection::default()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
