@@ -32,7 +32,7 @@ impl TransformTrait for Filter {
         let simplifier = ExprSimplifier::new(VfSimplifyInfo::from(dataframe.schema_df()?));
         let simplified_expr = simplifier.simplify(filter_expr)?;
 
-        let result = dataframe.filter(simplified_expr).await?;
+        let result = dataframe.filter(simplified_expr)?;
 
         Ok((result, Default::default()))
     }

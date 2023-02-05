@@ -67,7 +67,7 @@ impl DataFrame for SqlDataFrame {
         self.conn.fetch_query(&query_string, &self.schema).await
     }
 
-    async fn sort(&self, expr: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+    fn sort(&self, expr: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
         let mut query = self.make_select_star();
         let sql_exprs = expr
             .iter()
@@ -77,10 +77,10 @@ impl DataFrame for SqlDataFrame {
         if let Some(limit) = limit {
             query.limit = Some(lit(limit).to_sql(self.dialect()).unwrap())
         }
-        self.chain_query(query, self.schema.as_ref().clone()).await
+        self.chain_query(query, self.schema.as_ref().clone())
     }
 
-    async fn select(&self, expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
+    fn select(&self, expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
         let sql_expr_strs = expr
             .iter()
             .map(|expr| Ok(expr.to_sql_select(self.dialect())?.to_string()))
@@ -96,14 +96,10 @@ impl DataFrame for SqlDataFrame {
         // Build new schema
         let new_schema = make_new_schema_from_exprs(self.schema.as_ref(), expr.as_slice())?;
 
-        self.chain_query(query, new_schema).await
+        self.chain_query(query, new_schema)
     }
 
-    async fn aggregate(
-        &self,
-        group_expr: Vec<Expr>,
-        aggr_expr: Vec<Expr>,
-    ) -> Result<Arc<dyn DataFrame>> {
+    fn aggregate(&self, group_expr: Vec<Expr>, aggr_expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
         // Add group exprs to aggregates for SQL query
         let mut all_aggr_expr = aggr_expr.clone();
         all_aggr_expr.extend(group_expr.clone());
@@ -139,10 +135,10 @@ impl DataFrame for SqlDataFrame {
         // Build new schema from aggregate expressions
         let new_schema =
             make_new_schema_from_exprs(self.schema.as_ref(), all_aggr_expr.as_slice())?;
-        self.chain_query(query, new_schema).await
+        self.chain_query(query, new_schema)
     }
 
-    async fn joinaggregate(
+    fn joinaggregate(
         &self,
         group_expr: Vec<Expr>,
         aggr_expr: Vec<Expr>,
@@ -221,7 +217,6 @@ impl DataFrame for SqlDataFrame {
                 ),
                 new_schema,
             )
-            .await
         } else {
             let group_by_csv = sql_group_expr_strs.join(", ");
             self.chain_query_str(
@@ -237,11 +232,11 @@ impl DataFrame for SqlDataFrame {
                     inner_name = inner_name,
                 ),
                 new_schema
-            ).await
+            )
         }
     }
 
-    async fn filter(&self, predicate: Expr) -> Result<Arc<dyn DataFrame>> {
+    fn filter(&self, predicate: Expr) -> Result<Arc<dyn DataFrame>> {
         let sql_predicate = predicate.to_sql(self.dialect())?;
 
         let query = parse_sql_query(&format!(
@@ -251,11 +246,10 @@ impl DataFrame for SqlDataFrame {
         ))?;
 
         self.chain_query(query, self.schema.as_ref().clone())
-            .await
             .with_context(|| format!("unsupported filter expression: {predicate}"))
     }
 
-    async fn limit(&self, limit: i32) -> Result<Arc<dyn DataFrame>> {
+    fn limit(&self, limit: i32) -> Result<Arc<dyn DataFrame>> {
         let query = parse_sql_query(&format!(
             "select * from {parent} LIMIT {limit}",
             parent = self.parent_name(),
@@ -263,11 +257,10 @@ impl DataFrame for SqlDataFrame {
         ))?;
 
         self.chain_query(query, self.schema.as_ref().clone())
-            .await
             .with_context(|| "unsupported limit query".to_string())
     }
 
-    async fn fold(
+    fn fold(
         &self,
         fields: &[String],
         value_col: &str,
@@ -354,7 +347,7 @@ impl DataFrame for SqlDataFrame {
 
         let new_schmea =
             make_new_schema_from_exprs(self.schema.as_ref(), subquery_exprs[0].as_slice())?;
-        let dataframe = self.chain_query_str(&sql, new_schmea).await?;
+        let dataframe = self.chain_query_str(&sql, new_schmea)?;
 
         if let Some(order_field) = order_field {
             // Add new ordering column, ordering by:
@@ -392,13 +385,13 @@ impl DataFrame for SqlDataFrame {
             selections.push(flat_col(key_col));
             selections.push(flat_col(value_col));
             selections[0] = order_col;
-            dataframe.select(selections).await
+            dataframe.select(selections)
         } else {
             Ok(dataframe)
         }
     }
 
-    async fn stack(
+    fn stack(
         &self,
         field: &str,
         orderby: Vec<Expr>,
@@ -461,8 +454,7 @@ impl DataFrame for SqlDataFrame {
                     window_expr_str = window_expr_str,
                     numeric_field = numeric_field.to_sql(self.dialect())?.to_string()
                 ),
-                                 new_schema)
-                .await?;
+                                 new_schema)?;
 
             // Build final selection
             let mut final_selection: Vec<_> = input_fields
@@ -481,7 +473,7 @@ impl DataFrame for SqlDataFrame {
             final_selection.push(start_col);
             final_selection.push(flat_col(stop_field));
 
-            Ok(dataframe.select(final_selection.clone()).await?)
+            Ok(dataframe.select(final_selection.clone())?)
         } else {
             // Center or Normalized stack modes
 
@@ -490,9 +482,8 @@ impl DataFrame for SqlDataFrame {
 
             // Create __stack column with numeric field
             let stack_col_name = "__stack";
-            let dataframe = self
-                .select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)])
-                .await?;
+            let dataframe =
+                self.select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)])?;
 
             let dataframe = dataframe
                 .as_any()
@@ -516,15 +507,14 @@ impl DataFrame for SqlDataFrame {
                 make_new_schema_from_exprs(&dataframe.schema(), schema_exprs.as_slice())?;
 
             let dataframe = if partition_by.is_empty() {
-                dataframe
-                    .chain_query_str(
-                        &format!(
-                            "SELECT * from {parent} CROSS JOIN (SELECT {total_agg_str} from {parent})",
-                            parent = dataframe.parent_name(),
-                            total_agg_str = total_agg_str,
-                        ),
-                        new_schema
-                    ).await?
+                dataframe.chain_query_str(
+                    &format!(
+                        "SELECT * from {parent} CROSS JOIN (SELECT {total_agg_str} from {parent})",
+                        parent = dataframe.parent_name(),
+                        total_agg_str = total_agg_str,
+                    ),
+                    new_schema,
+                )?
             } else {
                 let partition_by_strs = partition_by
                     .iter()
@@ -542,7 +532,7 @@ impl DataFrame for SqlDataFrame {
                         total_agg_str = total_agg_str,
                     ),
                     new_schema
-                ).await?
+                )?
             };
 
             // Build window function to compute cumulative sum of stack column
@@ -561,7 +551,7 @@ impl DataFrame for SqlDataFrame {
             .alias(stop_field);
 
             // Perform selection to add new field value
-            let dataframe = dataframe.select(vec![Expr::Wildcard, window_expr]).await?;
+            let dataframe = dataframe.select(vec![Expr::Wildcard, window_expr])?;
 
             // Build final_selection
             let mut final_selection: Vec<_> = input_fields
@@ -599,7 +589,7 @@ impl DataFrame for SqlDataFrame {
                                 max_total_str = max_total_str,
                             ),
                             new_schema
-                        ).await?;
+                        )?;
 
                     let first = flat_col("__max_total").sub(flat_col("__total")).div(lit(2));
                     let first_col = flat_col(stop_field).add(first);
@@ -634,11 +624,11 @@ impl DataFrame for SqlDataFrame {
                 _ => return Err(VegaFusionError::internal("Unexpected stack mode")),
             };
 
-            Ok(dataframe.select(final_selection.clone()).await?)
+            Ok(dataframe.select(final_selection.clone())?)
         }
     }
 
-    async fn impute(
+    fn impute(
         &self,
         field: &str,
         value: ScalarValue,
@@ -667,7 +657,7 @@ impl DataFrame for SqlDataFrame {
                 })
                 .collect();
 
-            self.select(select_columns).await
+            self.select(select_columns)
         } else {
             // Save off names of columns in the original input DataFrame
             let original_columns: Vec<_> = self
@@ -741,7 +731,7 @@ impl DataFrame for SqlDataFrame {
                 ]);
                 let new_schema =
                     make_new_schema_from_exprs(self.schema.as_ref(), schema_exprs.as_slice())?;
-                let dataframe = self.chain_query_str(&sql, new_schema).await?;
+                let dataframe = self.chain_query_str(&sql, new_schema)?;
 
                 // Override ordering column since null values may have been introduced in the query above.
                 // Match input ordering with imputed rows (those will null ordering column) pushed
@@ -795,7 +785,7 @@ impl DataFrame for SqlDataFrame {
                     .collect::<Vec<_>>();
                 selections.insert(0, order_col);
 
-                dataframe.select(selections).await
+                dataframe.select(selections)
             } else {
                 // Impute query without ordering column
                 let sql = format!(
@@ -812,7 +802,7 @@ impl DataFrame for SqlDataFrame {
                 );
                 let new_schema =
                     make_new_schema_from_exprs(self.schema.as_ref(), select_columns.as_slice())?;
-                self.chain_query_str(&sql, new_schema).await
+                self.chain_query_str(&sql, new_schema)
             }
         }
     }
@@ -855,13 +845,13 @@ impl SqlDataFrame {
         query_chain_to_cte(self.ctes.as_slice(), &self.prefix)
     }
 
-    async fn chain_query_str(&self, query: &str, new_schema: Schema) -> Result<Arc<dyn DataFrame>> {
+    fn chain_query_str(&self, query: &str, new_schema: Schema) -> Result<Arc<dyn DataFrame>> {
         // println!("chain_query_str: {}", query);
         let query_ast = parse_sql_query(query)?;
-        self.chain_query(query_ast, new_schema).await
+        self.chain_query(query_ast, new_schema)
     }
 
-    async fn chain_query(&self, query: Query, new_schema: Schema) -> Result<Arc<dyn DataFrame>> {
+    fn chain_query(&self, query: Query, new_schema: Schema) -> Result<Arc<dyn DataFrame>> {
         let mut new_ctes = self.ctes.clone();
         new_ctes.push(query);
 

@@ -52,16 +52,14 @@ impl TransformTrait for Stack {
             StackOffset::Center => StackMode::Center,
         };
 
-        let result = dataframe
-            .stack(
-                &field,
-                order_by,
-                group_by.as_slice(),
-                &start_field,
-                &stop_field,
-                mode,
-            )
-            .await?;
+        let result = dataframe.stack(
+            &field,
+            order_by,
+            group_by.as_slice(),
+            &start_field,
+            &stop_field,
+            mode,
+        )?;
         Ok((result, Default::default()))
     }
 }

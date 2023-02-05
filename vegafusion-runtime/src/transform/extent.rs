@@ -27,7 +27,6 @@ impl TransformTrait for Extent {
 
             let extent_df = sql_df
                 .aggregate(Vec::new(), vec![min_expr, max_expr])
-                .await
                 .unwrap();
 
             // Eval to single row dataframe and extract scalar values

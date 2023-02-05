@@ -118,7 +118,6 @@ pub fn assert_tables_equal(
         let lhs_rb = TOKIO_RUNTIME.block_on(async {
             lhs_df
                 .sort(sort_exprs.clone(), None)
-                .await
                 .unwrap()
                 .collect_flat()
                 .await
@@ -128,7 +127,6 @@ pub fn assert_tables_equal(
         let rhs_rb = TOKIO_RUNTIME.block_on(async {
             rhs_df
                 .sort(sort_exprs.clone(), None)
-                .await
                 .unwrap()
                 .collect_flat()
                 .await

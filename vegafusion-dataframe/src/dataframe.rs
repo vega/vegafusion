@@ -36,15 +36,15 @@ pub trait DataFrame: Send + Sync + 'static {
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
 
-    async fn sort(&self, _expr: Vec<Expr>, _limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+    fn sort(&self, _expr: Vec<Expr>, _limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("sort not supported"))
     }
 
-    async fn select(&self, _expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
+    fn select(&self, _expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("select not supported"))
     }
 
-    async fn aggregate(
+    fn aggregate(
         &self,
         _group_expr: Vec<Expr>,
         _aggr_expr: Vec<Expr>,
@@ -54,7 +54,7 @@ pub trait DataFrame: Send + Sync + 'static {
         ))
     }
 
-    async fn joinaggregate(
+    fn joinaggregate(
         &self,
         _group_expr: Vec<Expr>,
         _aggr_expr: Vec<Expr>,
@@ -64,15 +64,15 @@ pub trait DataFrame: Send + Sync + 'static {
         ))
     }
 
-    async fn filter(&self, _predicate: Expr) -> Result<Arc<dyn DataFrame>> {
+    fn filter(&self, _predicate: Expr) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("filter not supported"))
     }
 
-    async fn limit(&self, _limit: i32) -> Result<Arc<dyn DataFrame>> {
+    fn limit(&self, _limit: i32) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("limit not supported"))
     }
 
-    async fn fold(
+    fn fold(
         &self,
         _fields: &[String],
         _value_col: &str,
@@ -82,7 +82,7 @@ pub trait DataFrame: Send + Sync + 'static {
         Err(VegaFusionError::sql_not_supported("fold not supported"))
     }
 
-    async fn stack(
+    fn stack(
         &self,
         _field: &str,
         _orderby: Vec<Expr>,
@@ -94,7 +94,7 @@ pub trait DataFrame: Send + Sync + 'static {
         Err(VegaFusionError::sql_not_supported("stack not supported"))
     }
 
-    async fn impute(
+    fn impute(
         &self,
         _field: &str,
         _value: ScalarValue,

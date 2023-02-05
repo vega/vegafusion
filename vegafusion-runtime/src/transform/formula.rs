@@ -51,7 +51,7 @@ impl TransformTrait for Formula {
         }
 
         // dataframe
-        let result = dataframe.select(selections).await.with_context(|| {
+        let result = dataframe.select(selections).with_context(|| {
             format!(
                 "Formula transform failed with expression: {}",
                 &self.expr.as_ref().unwrap()

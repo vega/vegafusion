@@ -156,7 +156,7 @@ async fn eval_sql_df(
         pipeline.eval_sql(sql_df, config).await?
     } else {
         // No transforms, just remove any ordering column
-        let sql_df = remove_order_col(sql_df).await?;
+        let sql_df = remove_order_col(sql_df)?;
         (sql_df.collect().await?, Vec::new())
     };
 
@@ -321,7 +321,7 @@ async fn process_datetimes(
                         })
                         .collect();
                     columns.push(date_expr.alias(&spec.name));
-                    df = df.select(columns).await?
+                    df = df.select(columns)?
                 }
             }
         }
@@ -393,7 +393,7 @@ async fn process_datetimes(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    df.select(selection).await
+    df.select(selection)
 }
 
 #[async_trait]
