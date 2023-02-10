@@ -2,12 +2,12 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyString};
 use std::collections::HashMap;
-use std::sync::Once;
+use std::sync::{Arc, Once};
 use tokio::runtime::Runtime;
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
-use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
+use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 use env_logger::{Builder, Target};
 use pythonize::depythonize;
@@ -16,8 +16,9 @@ use vegafusion_core::proto::gen::tasks::Variable;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_rt_datafusion::data::dataset::VegaFusionDataset;
-use vegafusion_rt_datafusion::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
+use vegafusion_runtime::data::dataset::VegaFusionDataset;
+use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
+use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
 static INIT: Once = Once::new();
 
@@ -38,8 +39,8 @@ struct PreTransformSpecWarning {
 }
 
 #[pyclass]
-struct PyTaskGraphRuntime {
-    runtime: TaskGraphRuntime,
+struct PyVegaFusionRuntime {
+    runtime: VegaFusionRuntime,
     tokio_runtime: Runtime,
 }
 
@@ -59,7 +60,7 @@ fn deserialize_inline_datasets(
 }
 
 #[pymethods]
-impl PyTaskGraphRuntime {
+impl PyVegaFusionRuntime {
     #[new]
     pub fn new(
         max_capacity: Option<usize>,
@@ -83,7 +84,11 @@ impl PyTaskGraphRuntime {
             .external("Failed to create Tokio thread pool")?;
 
         Ok(Self {
-            runtime: TaskGraphRuntime::new(max_capacity, memory_limit),
+            runtime: VegaFusionRuntime::new(
+                Arc::new(DataFusionConnection::default()),
+                max_capacity,
+                memory_limit,
+            ),
             tokio_runtime,
         })
     }
@@ -246,7 +251,7 @@ impl PyTaskGraphRuntime {
 /// import the module.
 #[pymodule]
 fn vegafusion_embed(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyTaskGraphRuntime>()?;
+    m.add_class::<PyVegaFusionRuntime>()?;
     Ok(())
 }
 

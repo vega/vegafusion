@@ -1,6 +1,6 @@
 use assert_cmd::prelude::*;
 use std::time::Duration;
-use vegafusion_core::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_core::proto::gen::services::query_result::Response;
 use vegafusion_core::proto::gen::services::vega_fusion_runtime_client::VegaFusionRuntimeClient;
 use vegafusion_core::proto::gen::services::{query_request, QueryRequest};

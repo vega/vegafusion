@@ -26,14 +26,23 @@ predicates = "2.1"
 tonic-build = "0.8.4"
 prost-build = "0.11.4"
 
+[dependencies.vegafusion-common]
+path = "../vegafusion-common"
+version = "1.0.3"
+
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = [ "tonic_support",]
 version = "1.0.3"
 
-[dependencies.vegafusion-rt-datafusion]
-path = "../vegafusion-rt-datafusion"
+[dependencies.vegafusion-runtime]
+path = "../vegafusion-runtime"
 version = "1.0.3"
+
+[dependencies.vegafusion-sql]
+path = "../vegafusion-sql"
+version = "1.0.3"
+features = ["datafusion-conn"]
 
 [dependencies.tokio]
 version = "1.18.1"

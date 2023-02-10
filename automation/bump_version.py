@@ -15,8 +15,12 @@ def bump_version(version):
 
     # Handle Cargo.toml files
     cargo_packages = [
+        "vegafusion-common",
         "vegafusion-core",
-        "vegafusion-rt-datafusion",
+        "vegafusion-datafusion-udfs",
+        "vegafusion-dataframe",
+        "vegafusion-sql",
+        "vegafusion-runtime",
         "vegafusion-python-embed",
         "vegafusion-server",
         "vegafusion-wasm"

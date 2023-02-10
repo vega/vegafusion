@@ -22,9 +22,9 @@ class VegaFusionRuntime:
     def embedded_runtime(self):
         if self._embedded_runtime is None:
             # Try to initialize an embedded runtime
-            from vegafusion_embed import PyTaskGraphRuntime
+            from vegafusion_embed import PyVegaFusionRuntime
 
-            self._embedded_runtime = PyTaskGraphRuntime(self.cache_capacity, self.memory_limit, self.worker_threads)
+            self._embedded_runtime = PyVegaFusionRuntime(self.cache_capacity, self.memory_limit, self.worker_threads)
         return self._embedded_runtime
 
     def grpc_connect(self, channel):

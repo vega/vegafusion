@@ -2,7 +2,6 @@
 extern crate lazy_static;
 
 pub mod data;
-pub mod error;
 pub mod expression;
 pub mod planning;
 pub mod proto;
@@ -10,7 +9,9 @@ pub mod spec;
 pub mod task_graph;
 pub mod transform;
 pub mod variable;
-pub use arrow;
+
+pub use vegafusion_common::arrow;
+pub use vegafusion_common::error;
 
 #[cfg(test)]
 mod tests {

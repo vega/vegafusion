@@ -1,8 +1,12 @@
 [workspace]
 
 members = [
+    "vegafusion-common",
     "vegafusion-core",
-    "vegafusion-rt-datafusion",
+    "vegafusion-runtime",
+    "vegafusion-dataframe",
+    "vegafusion-datafusion-udfs",
+    "vegafusion-sql",
     "vegafusion-python-embed",
     "vegafusion-wasm",
     "vegafusion-server",

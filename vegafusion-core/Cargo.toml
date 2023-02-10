@@ -6,7 +6,7 @@ version = "1.0.3"
 
 [features]
 tonic_support = [ "tonic", "tonic-build",]
-pyarrow = [ "pyo3", "arrow/pyarrow", "datafusion-common/pyarrow",]
+pyarrow = [ "pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow"]
 
 [dependencies]
 thiserror = "^1.0.29"
@@ -30,10 +30,10 @@ optional = true
 version = "1.0.81"
 features = [ "preserve_order",]
 
-[dependencies.arrow]
-version = "29.0.0"
-default_features = false
-features = [ "ipc", "json",]
+[dependencies.vegafusion-common]
+path = "../vegafusion-common"
+features = ["json", "sqlparser"]
+version = "1.0.3"
 
 [dependencies.datafusion-common]
 version = "~16.1.0"

@@ -1,6 +1,6 @@
 use prost::Message;
 
-use vegafusion_core::data::scalar::{ScalarValue, ScalarValueHelpers};
+use vegafusion_common::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_core::proto::gen::tasks::{
     NodeValueIndex, TaskGraph, TaskGraphValueRequest, TzConfig, VariableNamespace,
 };
@@ -10,7 +10,7 @@ use wasm_bindgen::prelude::*;
 use js_sys::Promise;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
-use vegafusion_core::data::table::VegaFusionTable;
+use vegafusion_common::data::table::VegaFusionTable;
 
 use vegafusion_core::planning::stitch::CommPlan;
 use vegafusion_core::planning::watch::WatchPlan;
@@ -170,7 +170,7 @@ impl MsgReceiver {
                     view.run();
                 }
                 query_result::Response::Error(error) => {
-                    log(&error.msg());
+                    log(&format!("{error:?}"));
                 }
             }
         }

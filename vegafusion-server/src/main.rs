@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use tonic::{transport::Server, Request, Response, Status};
 use vegafusion_core::error::{ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{
@@ -7,21 +8,22 @@ use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{
 use vegafusion_core::proto::gen::services::{
     PreTransformSpecResult, PreTransformValuesResult, QueryRequest, QueryResult,
 };
-use vegafusion_rt_datafusion::task_graph::runtime::TaskGraphRuntime;
+use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 use clap::Parser;
 use regex::Regex;
 use vegafusion_core::proto::gen::pretransform::{
     PreTransformSpecRequest, PreTransformValuesRequest,
 };
+use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
 #[derive(Clone)]
 pub struct VegaFusionRuntimeGrpc {
-    pub runtime: TaskGraphRuntime,
+    pub runtime: VegaFusionRuntime,
 }
 
 impl VegaFusionRuntimeGrpc {
-    pub fn new(runtime: TaskGraphRuntime) -> VegaFusionRuntimeGrpc {
+    pub fn new(runtime: VegaFusionRuntime) -> VegaFusionRuntimeGrpc {
         VegaFusionRuntimeGrpc { runtime }
     }
 }
@@ -117,7 +119,11 @@ async fn main() -> Result<(), VegaFusionError> {
         None
     };
 
-    let tg_runtime = TaskGraphRuntime::new(Some(args.capacity), memory_limit);
+    let tg_runtime = VegaFusionRuntime::new(
+        Arc::new(DataFusionConnection::default()),
+        Some(args.capacity),
+        memory_limit,
+    );
 
     grpc_server(grpc_address, tg_runtime.clone(), args.web)
         .await
@@ -153,7 +159,7 @@ fn parse_memory_string(memory_limit: &str) -> Result<usize, VegaFusionError> {
 
 async fn grpc_server(
     address: String,
-    runtime: TaskGraphRuntime,
+    runtime: VegaFusionRuntime,
     web: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let addr = address

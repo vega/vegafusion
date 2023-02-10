@@ -283,11 +283,12 @@ dependencies = [
 
 [[package]]
 name = "async-lock"
-version = "2.5.0"
+version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e97a171d191782fba31bb902b14ad94e24a68145032b7eedf871ab0bc0d077b6"
+checksum = "c8101efe8695a6c17e02911402145357e718ac92d3ff88ae8419e84b1707b685"
 dependencies = [
  "event-listener",
+ "futures-lite",
 ]
 
 [[package]]
@@ -419,6 +420,12 @@ name = "base64"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
+
+[[package]]
+name = "base64"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4a4ddaa51a5bc52a6948f74c06d20aaaddb71924eab79b8c97a8c556e942d6a"
 
 [[package]]
 name = "bitflags"
@@ -1370,6 +1377,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbf4d2a7a308fd4578637c0b17c7e1c7ba127b8f6ba00b29f717e9655d85eb68"
 
 [[package]]
+name = "futures-lite"
+version = "1.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7694489acd39452c77daa48516b894c153f192c3578d5a839b62c58099fcbf48"
+dependencies = [
+ "fastrand",
+ "futures-core",
+ "futures-io",
+ "memchr",
+ "parking",
+ "pin-project-lite",
+ "waker-fn",
+]
+
+[[package]]
 name = "futures-macro"
 version = "0.3.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2261,6 +2283,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ff7415e9ae3fff1225851df9e0d9e4e5479f947619774677a63572e55e80eff"
 
 [[package]]
+name = "parking"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "427c3892f9e783d91cc128285287e70a59e206ca452770ece88a76f7a3eddd72"
+
+[[package]]
 name = "parking_lot"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2322,7 +2350,7 @@ dependencies = [
  "arrow-ipc",
  "arrow-schema",
  "arrow-select",
- "base64",
+ "base64 0.13.0",
  "brotli",
  "bytes",
  "chrono",
@@ -2822,11 +2850,11 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.11.11"
+version = "0.11.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b75aa69a3f06bbcc66ede33af2af253c6f7a86b1ca0033f60c580a27074fbf92"
+checksum = "21eed90ec8570952d53b772ecf8f206aa1ec9a3d76b2521c56c42973f2d91ee9"
 dependencies = [
- "base64",
+ "base64 0.21.0",
  "bytes",
  "encoding_rs",
  "futures-core",
@@ -2838,10 +2866,10 @@ dependencies = [
  "hyper-rustls",
  "ipnet",
  "js-sys",
- "lazy_static",
  "log",
  "mime",
  "mime_guess",
+ "once_cell",
  "percent-encoding",
  "pin-project-lite",
  "rustls",
@@ -2979,7 +3007,7 @@ version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0864aeff53f8c05aa08d86e5ef839d3dfcf07aeba2db32f12db0ef716e87bd55"
 dependencies = [
- "base64",
+ "base64 0.13.0",
 ]
 
 [[package]]
@@ -3075,9 +3103,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.81"
+version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b7ce2b32a1aed03c558dc61a5cd328f15aff2dbc17daad8fb8af04d2100e15c"
+checksum = "877c235533714907a8c2464236f5c4b2a17262ef1bd71f38f35ea592c8da6883"
 dependencies = [
  "indexmap",
  "itoa 1.0.1",
@@ -3608,7 +3636,7 @@ dependencies = [
  "async-stream",
  "async-trait",
  "axum",
- "base64",
+ "base64 0.13.0",
  "bytes",
  "futures-core",
  "futures-util",
@@ -3652,7 +3680,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9213351ad53b0dcf1c9cf7c372a47533446b1114928a9177bedc6c551e14b7cf"
 dependencies = [
- "base64",
+ "base64 0.13.0",
  "bytes",
  "futures-core",
  "http",
@@ -3869,10 +3897,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
-name = "vegafusion-core"
+name = "vegafusion-common"
 version = "1.0.3"
 dependencies = [
  "arrow",
+ "chrono",
+ "datafusion-common",
+ "datafusion-expr",
+ "pyo3",
+ "serde_json",
+ "sqlparser",
+ "thiserror",
+]
+
+[[package]]
+name = "vegafusion-core"
+version = "1.0.3"
+dependencies = [
  "bytes",
  "chrono",
  "datafusion-common",
@@ -3894,6 +3935,31 @@ dependencies = [
  "thiserror",
  "tonic",
  "tonic-build",
+ "vegafusion-common",
+]
+
+[[package]]
+name = "vegafusion-dataframe"
+version = "1.0.3"
+dependencies = [
+ "arrow",
+ "async-trait",
+ "datafusion-common",
+ "datafusion-expr",
+ "vegafusion-common",
+]
+
+[[package]]
+name = "vegafusion-datafusion-udfs"
+version = "1.0.3"
+dependencies = [
+ "chrono",
+ "chrono-tz",
+ "datafusion-physical-expr",
+ "lazy_static",
+ "ordered-float 3.4.0",
+ "regex",
+ "vegafusion-common",
 ]
 
 [[package]]
@@ -3909,23 +3975,26 @@ dependencies = [
  "serde_json",
  "tokio",
  "vegafusion-core",
- "vegafusion-rt-datafusion",
+ "vegafusion-runtime",
+ "vegafusion-sql",
 ]
 
 [[package]]
-name = "vegafusion-rt-datafusion"
+name = "vegafusion-runtime"
 version = "1.0.3"
 dependencies = [
  "async-lock",
  "async-recursion",
  "async-trait",
- "base64",
+ "base64 0.13.0",
  "bytes",
  "chrono",
  "chrono-tz",
  "criterion",
- "datafusion",
+ "datafusion-common",
  "datafusion-expr",
+ "datafusion-optimizer",
+ "datafusion-physical-expr",
  "deterministic-hash",
  "dssim",
  "env_logger",
@@ -3934,8 +4003,6 @@ dependencies = [
  "futures-util",
  "itertools",
  "lazy_static",
- "libsqlite3-sys",
- "lock_api",
  "lodepng",
  "log",
  "lru",
@@ -3952,12 +4019,15 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlparser",
- "sqlx",
  "tempfile",
  "test-case",
  "tokio",
  "uuid",
+ "vegafusion-common",
  "vegafusion-core",
+ "vegafusion-dataframe",
+ "vegafusion-datafusion-udfs",
+ "vegafusion-sql",
 ]
 
 [[package]]
@@ -3977,8 +4047,34 @@ dependencies = [
  "tonic",
  "tonic-build",
  "tonic-web",
+ "vegafusion-common",
  "vegafusion-core",
- "vegafusion-rt-datafusion",
+ "vegafusion-runtime",
+ "vegafusion-sql",
+]
+
+[[package]]
+name = "vegafusion-sql"
+version = "1.0.3"
+dependencies = [
+ "arrow",
+ "async-trait",
+ "datafusion",
+ "datafusion-common",
+ "datafusion-expr",
+ "deterministic-hash",
+ "libsqlite3-sys",
+ "log",
+ "regex",
+ "reqwest",
+ "reqwest-middleware",
+ "reqwest-retry",
+ "sqlparser",
+ "sqlx",
+ "tempfile",
+ "vegafusion-common",
+ "vegafusion-dataframe",
+ "vegafusion-datafusion-udfs",
 ]
 
 [[package]]
@@ -3994,6 +4090,7 @@ dependencies = [
  "prost-types",
  "serde",
  "serde_json",
+ "vegafusion-common",
  "vegafusion-core",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -4016,6 +4113,12 @@ checksum = "9f200f5b12eb75f8c1ed65abd4b2db8a6e1b138a20de009dacee265a2498f3f6"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "waker-fn"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d5b2c62b4012a3e1eca5a7e077d13b3bf498c4073e33ccd58626607748ceeca"
 
 [[package]]
 name = "walkdir"
