@@ -170,7 +170,7 @@ impl MsgReceiver {
                     view.run();
                 }
                 query_result::Response::Error(error) => {
-                    log(&format!("{:?}", error));
+                    log(&format!("{error:?}"));
                 }
             }
         }

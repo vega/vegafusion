@@ -101,7 +101,7 @@ impl DataFrame for SqlDataFrame {
 
     fn aggregate(&self, group_expr: Vec<Expr>, aggr_expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
         // Add group exprs to aggregates for SQL query
-        let mut all_aggr_expr = aggr_expr.clone();
+        let mut all_aggr_expr = aggr_expr;
         all_aggr_expr.extend(group_expr.clone());
 
         let sql_group_expr_strs = group_expr
@@ -198,8 +198,8 @@ impl DataFrame for SqlDataFrame {
         let aggr_csv = sql_aggr_expr_strs.join(", ");
 
         // Build new schema
-        let mut new_schema_exprs = input_col_exprs.clone();
-        new_schema_exprs.extend(aggr_expr.clone());
+        let mut new_schema_exprs = input_col_exprs;
+        new_schema_exprs.extend(aggr_expr);
         let new_schema =
             make_new_schema_from_exprs(self.schema.as_ref(), new_schema_exprs.as_slice())?;
 
@@ -381,7 +381,7 @@ impl DataFrame for SqlDataFrame {
             .alias(order_field);
 
             // Build output selections
-            let mut selections = input_selection.clone();
+            let mut selections = input_selection;
             selections.push(flat_col(key_col));
             selections.push(flat_col(value_col));
             selections[0] = order_col;
@@ -442,7 +442,7 @@ impl DataFrame for SqlDataFrame {
             // then union the results. This is required to make sure stacks do not overlap. Negative
             // values stack in the negative direction and positive values stack in the positive
             // direction.
-            let schema_exprs = vec![Expr::Wildcard, window_expr.clone()];
+            let schema_exprs = vec![Expr::Wildcard, window_expr];
             let new_schema =
                 make_new_schema_from_exprs(self.schema.as_ref(), schema_exprs.as_slice())?;
 
@@ -502,7 +502,7 @@ impl DataFrame for SqlDataFrame {
             let total_agg_str = total_agg.to_sql_select(self.dialect())?.to_string();
 
             // Add __total column with total or total per partition
-            let schema_exprs = vec![Expr::Wildcard, total_agg.clone()];
+            let schema_exprs = vec![Expr::Wildcard, total_agg];
             let new_schema =
                 make_new_schema_from_exprs(&dataframe.schema(), schema_exprs.as_slice())?;
 
@@ -572,7 +572,7 @@ impl DataFrame for SqlDataFrame {
                     let max_total_str = max_total.to_sql_select(self.dialect())?.to_string();
 
                     // Compute new schema
-                    let schema_exprs = vec![Expr::Wildcard, max_total.clone()];
+                    let schema_exprs = vec![Expr::Wildcard, max_total];
                     let new_schema =
                         make_new_schema_from_exprs(&dataframe.schema(), schema_exprs.as_slice())?;
 
@@ -705,7 +705,7 @@ impl DataFrame for SqlDataFrame {
             let select_column_csv = select_column_strs.join(", ");
 
             let mut using_strs = vec![key_col_str.clone()];
-            using_strs.extend(group_col_strs.clone());
+            using_strs.extend(group_col_strs);
             let using_csv = using_strs.join(", ");
 
             if let Some(order_field) = order_field {
@@ -724,7 +724,7 @@ impl DataFrame for SqlDataFrame {
                     parent = self.parent_name(),
                 );
 
-                let mut schema_exprs = select_columns.clone();
+                let mut schema_exprs = select_columns;
                 schema_exprs.extend(vec![
                     min(flat_col(order_field)).alias(format!("{order_field}_key")),
                     min(flat_col(order_field)).alias(format!("{order_field}_groups")),

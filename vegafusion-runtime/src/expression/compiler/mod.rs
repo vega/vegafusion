@@ -572,7 +572,7 @@ mod test_compile {
         // let expr = parse("[datum['two'].foo * 3, datum['two'].foo]").unwrap();
         let foo_field = Field::new("foo", DataType::Float64, false);
 
-        let two_type = DataType::Struct(vec![foo_field.clone()]);
+        let two_type = DataType::Struct(vec![foo_field]);
         let two_field = Field::new("two", two_type, true);
         let schema = Schema::new(vec![two_field]);
         let schema = DFSchema::try_from(schema).unwrap();
