@@ -15,13 +15,30 @@ impl ToSqlOrderByExpr for Expr {
                 expr,
                 asc,
                 nulls_first,
-            }) => Ok(SqlOrderByExpr {
-                expr: expr.to_sql(dialect).with_context(|| {
-                    format!("Expression cannot be used as order by expression: {expr:?}")
-                })?,
-                asc: Some(*asc),
-                nulls_first: Some(*nulls_first),
-            }),
+            }) => {
+                let nulls_first = if dialect.supports_null_ordering {
+                    // Be explicit about null ordering
+                    Some(*nulls_first)
+                } else {
+                    // If null ordering is not supported, then don't specify it as long the as default
+                    // behavior matches what's specified.
+                    if *asc && *nulls_first {
+                        None
+                    } else if !*asc && !*nulls_first {
+                        None
+                    } else {
+                        return Err(VegaFusionError::sql_not_supported("Dialect does not support NULL ordering"))
+                    }
+                };
+
+                Ok(SqlOrderByExpr {
+                    expr: expr.to_sql(dialect).with_context(|| {
+                        format!("Expression cannot be used as order by expression: {expr:?}")
+                    })?,
+                    asc: Some(*asc),
+                    nulls_first,
+                })
+            },
             _ => Err(VegaFusionError::internal(
                 "Only Sort expressions may be converted to OrderByExpr AST nodes",
             )),

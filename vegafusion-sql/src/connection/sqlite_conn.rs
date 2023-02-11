@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use regex::Regex;
 use sqlx::sqlite::SqliteRow;
-use sqlx::{Row, SqlitePool};
+use sqlx::{Row, SqlitePool, ValueRef};
 use std::collections::HashMap;
 
 use crate::dialect::Dialect;
@@ -171,7 +171,14 @@ where
 {
     let values: Vec<Option<T>> = recs
         .iter()
-        .map(|row| row.try_get(field_index).ok())
+        .map(|row| {
+            let valid = row.try_get_raw(field_index).map(|v| !v.is_null()).unwrap_or(false);
+            if valid {
+                row.try_get(field_index).ok()
+            } else {
+                None
+            }
+        })
         .collect();
     values
 }

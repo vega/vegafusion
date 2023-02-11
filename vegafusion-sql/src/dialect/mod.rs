@@ -95,6 +95,9 @@ pub struct Dialect {
 
     /// Implementation mode for inline VALUES
     pub values_mode: ValuesMode,
+
+    /// Whether NULLS FIRST, NULLS LAST is supported in ORDER BY
+    pub supports_null_ordering: bool
 }
 
 impl Default for Dialect {
@@ -110,6 +113,7 @@ impl Default for Dialect {
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
                 explicit_row: false,
             },
+            supports_null_ordering: true,
         }
     }
 }
@@ -133,6 +137,7 @@ impl Dialect {
                 column_prefix: "column".to_string(),
                 base_index: 1,
             },
+            supports_null_ordering: true,
         }
     }
 
@@ -146,6 +151,7 @@ impl Dialect {
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases { explicit_row: true },
+            supports_null_ordering: false,
         }
     }
 
@@ -161,6 +167,7 @@ impl Dialect {
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
                 explicit_row: false,
             },
+            supports_null_ordering: true,
         }
     }
 
@@ -174,6 +181,7 @@ impl Dialect {
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
             values_mode: ValuesMode::SelectUnion,
+            supports_null_ordering: true,
         }
     }
 
@@ -191,6 +199,7 @@ impl Dialect {
                 column_prefix: "COLUMN".to_string(),
                 base_index: 1,
             },
+            supports_null_ordering: true,
         }
     }
 
@@ -204,6 +213,7 @@ impl Dialect {
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
             values_mode: ValuesMode::SelectUnion,
+            supports_null_ordering: true,
         }
     }
 
@@ -219,6 +229,7 @@ impl Dialect {
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
                 explicit_row: false,
             },
+            supports_null_ordering: true,
         }
     }
 
@@ -234,6 +245,7 @@ impl Dialect {
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
                 explicit_row: false,
             },
+            supports_null_ordering: true,
         }
     }
 
@@ -247,6 +259,7 @@ impl Dialect {
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
             values_mode: ValuesMode::SelectUnion,
+            supports_null_ordering: true,
         }
     }
 
@@ -262,6 +275,7 @@ impl Dialect {
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
                 explicit_row: false,
             },
+            supports_null_ordering: true,
         }
     }
 
@@ -277,6 +291,7 @@ impl Dialect {
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
                 explicit_row: false,
             },
+            supports_null_ordering: true,
         }
     }
 
@@ -428,6 +443,7 @@ impl Dialect {
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
                 explicit_row: false,
             },
+            supports_null_ordering: true,
         }
     }
 }
