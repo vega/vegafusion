@@ -2,13 +2,78 @@ use crate::compile::expr::ToSqlExpr;
 use datafusion_common::scalar::ScalarValue;
 use datafusion_expr::Expr;
 use sqlparser::ast::{BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Value as SqlValue};
+use sqlparser::dialect::{
+    BigQueryDialect, ClickHouseDialect, Dialect as SqlParserDialect, GenericDialect, MySqlDialect,
+    PostgreSqlDialect, RedshiftSqlDialect, SQLiteDialect, SnowflakeDialect,
+};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
+use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
 
 #[derive(Clone, Debug)]
+pub enum ParseDialect {
+    Athena,
+    BigQuery,
+    ClickHouse,
+    Databricks,
+    DataFusion,
+    Dremio,
+    DuckDB,
+    Generic,
+    MySql,
+    Postgres,
+    Redshift,
+    Snowflake,
+    SqLite,
+}
+
+impl ParseDialect {
+    pub fn parser_dialect(&self) -> Arc<dyn SqlParserDialect> {
+        match self {
+            ParseDialect::Athena => Arc::new(GenericDialect),
+            ParseDialect::BigQuery => Arc::new(BigQueryDialect),
+            ParseDialect::ClickHouse => Arc::new(ClickHouseDialect {}),
+            ParseDialect::Databricks => {
+                // sqlparser-rs doesn't have a Databricks dialect. Use MySql since the backtick
+                // quoted identifier syntax matches
+                Arc::new(MySqlDialect {})
+            }
+            ParseDialect::DataFusion => Arc::new(GenericDialect),
+            ParseDialect::Dremio => Arc::new(GenericDialect),
+            ParseDialect::DuckDB => Arc::new(GenericDialect),
+            ParseDialect::Generic => Arc::new(GenericDialect),
+            ParseDialect::MySql => Arc::new(MySqlDialect {}),
+            ParseDialect::Postgres => Arc::new(PostgreSqlDialect {}),
+            ParseDialect::Redshift => Arc::new(RedshiftSqlDialect {}),
+            ParseDialect::Snowflake => Arc::new(SnowflakeDialect),
+            ParseDialect::SqLite => Arc::new(SQLiteDialect {}),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum ValuesMode {
+    /// SELECT * FROM (VALUES (1, 2) (3, 4)) as _table(a, b)
+    ValuesWithSubqueryColumnAliases { explicit_row: bool },
+
+    /// SELECT column1 as a, column2 as b FROM (VALUES (1, 2) (3, 4))
+    ValuesWithSelectColumnAliases {
+        explicit_row: bool,
+        column_prefix: String,
+        base_index: usize,
+    },
+
+    /// SELECT 1 as a, 2 as b UNION ALL SELECT 3 as a, 4 as b
+    SelectUnion,
+}
+
+#[derive(Clone, Debug)]
 pub struct Dialect {
+    /// sqlparser dialect to use to parse queries
+    parse_dialect: ParseDialect,
+
     /// The starting quote if any. Valid quote characters are the single quote,
     /// double quote, backtick, and opening square bracket.
     pub quote_style: char,
@@ -27,27 +92,200 @@ pub struct Dialect {
 
     /// Aggregate function transformations
     pub aggregate_transformers: HashMap<String, Arc<dyn FunctionTransformer>>,
+
+    /// Implementation mode for inline VALUES
+    pub values_mode: ValuesMode,
 }
 
 impl Default for Dialect {
     fn default() -> Self {
         Self {
+            parse_dialect: ParseDialect::Generic,
             quote_style: '"',
             scalar_functions: Default::default(),
             aggregate_functions: Default::default(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
+            values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
+                explicit_row: false,
+            },
         }
     }
 }
 
 impl Dialect {
+    pub fn parser_dialect(&self) -> Arc<dyn SqlParserDialect> {
+        self.parse_dialect.parser_dialect()
+    }
+
+    pub fn sqlite() -> Self {
+        Self {
+            parse_dialect: ParseDialect::SqLite,
+            quote_style: '"',
+            scalar_functions: Default::default(),
+            aggregate_functions: Default::default(),
+            window_functions: Default::default(),
+            scalar_transformers: Default::default(),
+            aggregate_transformers: Default::default(),
+            values_mode: ValuesMode::ValuesWithSelectColumnAliases {
+                explicit_row: false,
+                column_prefix: "column".to_string(),
+                base_index: 1,
+            },
+        }
+    }
+
+    pub fn mysql() -> Self {
+        Self {
+            parse_dialect: ParseDialect::MySql,
+            quote_style: '`',
+            scalar_functions: Default::default(),
+            aggregate_functions: Default::default(),
+            window_functions: Default::default(),
+            scalar_transformers: Default::default(),
+            aggregate_transformers: Default::default(),
+            values_mode: ValuesMode::ValuesWithSubqueryColumnAliases { explicit_row: true },
+        }
+    }
+
+    pub fn databricks() -> Self {
+        Self {
+            parse_dialect: ParseDialect::Databricks,
+            quote_style: '`',
+            scalar_functions: Default::default(),
+            aggregate_functions: Default::default(),
+            window_functions: Default::default(),
+            scalar_transformers: Default::default(),
+            aggregate_transformers: Default::default(),
+            values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
+                explicit_row: false,
+            },
+        }
+    }
+
+    pub fn bigquery() -> Self {
+        Self {
+            parse_dialect: ParseDialect::BigQuery,
+            quote_style: '`',
+            scalar_functions: Default::default(),
+            aggregate_functions: Default::default(),
+            window_functions: Default::default(),
+            scalar_transformers: Default::default(),
+            aggregate_transformers: Default::default(),
+            values_mode: ValuesMode::SelectUnion,
+        }
+    }
+
+    pub fn snowflake() -> Self {
+        Self {
+            parse_dialect: ParseDialect::Snowflake,
+            quote_style: '"',
+            scalar_functions: Default::default(),
+            aggregate_functions: Default::default(),
+            window_functions: Default::default(),
+            scalar_transformers: Default::default(),
+            aggregate_transformers: Default::default(),
+            values_mode: ValuesMode::ValuesWithSelectColumnAliases {
+                explicit_row: false,
+                column_prefix: "COLUMN".to_string(),
+                base_index: 1,
+            },
+        }
+    }
+
+    pub fn clickhouse() -> Self {
+        Self {
+            parse_dialect: ParseDialect::ClickHouse,
+            quote_style: '"',
+            scalar_functions: Default::default(),
+            aggregate_functions: Default::default(),
+            window_functions: Default::default(),
+            scalar_transformers: Default::default(),
+            aggregate_transformers: Default::default(),
+            values_mode: ValuesMode::SelectUnion,
+        }
+    }
+
+    pub fn duckdb() -> Self {
+        Self {
+            parse_dialect: ParseDialect::DuckDB,
+            quote_style: '"',
+            scalar_functions: Default::default(),
+            aggregate_functions: Default::default(),
+            window_functions: Default::default(),
+            scalar_transformers: Default::default(),
+            aggregate_transformers: Default::default(),
+            values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
+                explicit_row: false,
+            },
+        }
+    }
+
+    pub fn postgres() -> Self {
+        Self {
+            parse_dialect: ParseDialect::Postgres,
+            quote_style: '"',
+            scalar_functions: Default::default(),
+            aggregate_functions: Default::default(),
+            window_functions: Default::default(),
+            scalar_transformers: Default::default(),
+            aggregate_transformers: Default::default(),
+            values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
+                explicit_row: false,
+            },
+        }
+    }
+
+    pub fn redshift() -> Self {
+        Self {
+            parse_dialect: ParseDialect::Redshift,
+            quote_style: '"',
+            scalar_functions: Default::default(),
+            aggregate_functions: Default::default(),
+            window_functions: Default::default(),
+            scalar_transformers: Default::default(),
+            aggregate_transformers: Default::default(),
+            values_mode: ValuesMode::SelectUnion,
+        }
+    }
+
+    pub fn dremio() -> Self {
+        Self {
+            parse_dialect: ParseDialect::Dremio,
+            quote_style: '"',
+            scalar_functions: Default::default(),
+            aggregate_functions: Default::default(),
+            window_functions: Default::default(),
+            scalar_transformers: Default::default(),
+            aggregate_transformers: Default::default(),
+            values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
+                explicit_row: false,
+            },
+        }
+    }
+
+    pub fn athena() -> Self {
+        Self {
+            parse_dialect: ParseDialect::Athena,
+            quote_style: '"',
+            scalar_functions: Default::default(),
+            aggregate_functions: Default::default(),
+            window_functions: Default::default(),
+            scalar_transformers: Default::default(),
+            aggregate_transformers: Default::default(),
+            values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
+                explicit_row: false,
+            },
+        }
+    }
+
     pub fn datafusion() -> Self {
         let mut scalar_transforms: HashMap<String, Arc<dyn FunctionTransformer>> = HashMap::new();
         scalar_transforms.insert("date_add".to_string(), Arc::new(DateAddToIntervalAddition));
 
         Self {
+            parse_dialect: ParseDialect::DataFusion,
             quote_style: '"',
             scalar_functions: vec![
                 "abs",
@@ -187,7 +425,37 @@ impl Dialect {
             .collect(),
             scalar_transformers: scalar_transforms,
             aggregate_transformers: Default::default(),
+            values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
+                explicit_row: false,
+            },
         }
+    }
+}
+
+impl FromStr for Dialect {
+    type Err = VegaFusionError;
+
+    fn from_str(s: &str) -> Result<Self> {
+        Ok(match s.to_ascii_lowercase().as_str() {
+            "athena" => Dialect::athena(),
+            "bigquery" => Dialect::bigquery(),
+            "clickhouse" => Dialect::clickhouse(),
+            "databricks" => Dialect::databricks(),
+            "datafusion" => Dialect::datafusion(),
+            "dremio" => Dialect::dremio(),
+            "duckdb" => Dialect::duckdb(),
+            "generic" | "default" => Dialect::default(),
+            "mysql" => Dialect::mysql(),
+            "postgres" => Dialect::postgres(),
+            "redshift" => Dialect::redshift(),
+            "snowflake" => Dialect::snowflake(),
+            "sqlite" => Dialect::sqlite(),
+            _ => {
+                return Err(VegaFusionError::sql_not_supported(format!(
+                    "Unsupported dialect: {s}"
+                )))
+            }
+        })
     }
 }
 

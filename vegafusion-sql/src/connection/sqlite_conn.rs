@@ -38,7 +38,7 @@ impl SqLiteConnection {
         Ok(Self {
             uri: uri.to_string(),
             pool: Arc::new(pool),
-            dialect: Dialect::default(),
+            dialect: Dialect::sqlite(),
         })
     }
 }
@@ -89,8 +89,6 @@ impl Connection for SqLiteConnection {
 #[async_trait]
 impl SqlConnection for SqLiteConnection {
     async fn fetch_query(&self, query: &str, schema: &Schema) -> Result<VegaFusionTable> {
-        println!("sqlite: {query}");
-
         // Should fetch batches of partition size instead of fetching all
         let recs = sqlx::query(query)
             .fetch_all(self.pool.as_ref())

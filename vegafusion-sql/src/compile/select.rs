@@ -15,7 +15,7 @@ impl ToSqlSelectItem for Expr {
                 expr: expr.to_sql(dialect)?,
                 alias: Ident {
                     value: alias.clone(),
-                    quote_style: Some('"'),
+                    quote_style: Some(dialect.quote_style),
                 },
             },
             Expr::Wildcard => SqlSelectItem::Wildcard(Default::default()),
