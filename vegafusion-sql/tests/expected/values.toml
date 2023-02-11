@@ -20,9 +20,6 @@ dremio = """
 duckdb = """
     SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC')) AS "_values" ("a", "b", "c")
 """
-generic = """
-    SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC')) AS "_values" ("a", "b", "c")
-"""
 mysql = """
     SELECT * FROM (VALUES ROW(1, 2, 'A'), ROW(3, 4, 'BB'), ROW(5, 6, 'CCC')) AS `_values` (`a`, `b`, `c`)
 """
