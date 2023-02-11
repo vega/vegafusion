@@ -27,7 +27,9 @@ impl ToSqlOrderByExpr for Expr {
                     } else if !*asc && !*nulls_first {
                         None
                     } else {
-                        return Err(VegaFusionError::sql_not_supported("Dialect does not support NULL ordering"))
+                        return Err(VegaFusionError::sql_not_supported(
+                            "Dialect does not support NULL ordering",
+                        ));
                     }
                 };
 
@@ -38,7 +40,7 @@ impl ToSqlOrderByExpr for Expr {
                     asc: Some(*asc),
                     nulls_first,
                 })
-            },
+            }
             _ => Err(VegaFusionError::internal(
                 "Only Sort expressions may be converted to OrderByExpr AST nodes",
             )),

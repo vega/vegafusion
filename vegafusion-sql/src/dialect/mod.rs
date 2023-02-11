@@ -1,7 +1,11 @@
 use crate::compile::expr::ToSqlExpr;
 use datafusion_common::scalar::ScalarValue;
-use datafusion_expr::Expr;
-use sqlparser::ast::{BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Value as SqlValue};
+use datafusion_expr::{Expr, Operator};
+use sqlparser::ast::{
+    BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction,
+    FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr, Ident as SqlIdent,
+    ObjectName as SqlObjectName, Value as SqlValue,
+};
 use sqlparser::dialect::{
     BigQueryDialect, ClickHouseDialect, Dialect as SqlParserDialect, GenericDialect, MySqlDialect,
     PostgreSqlDialect, RedshiftSqlDialect, SQLiteDialect, SnowflakeDialect,
@@ -78,6 +82,12 @@ pub struct Dialect {
     /// double quote, backtick, and opening square bracket.
     pub quote_style: char,
 
+    /// Supported binary operators
+    pub binary_ops: HashSet<Operator>,
+
+    /// Transforms for binary operators
+    pub binary_op_transforms: HashMap<Operator, Arc<dyn BinaryOperatorTransformer>>,
+
     /// Names of supported scalar functions that match the semantics of the DataFusion implementation
     pub scalar_functions: HashSet<String>,
 
@@ -97,7 +107,7 @@ pub struct Dialect {
     pub values_mode: ValuesMode,
 
     /// Whether NULLS FIRST, NULLS LAST is supported in ORDER BY
-    pub supports_null_ordering: bool
+    pub supports_null_ordering: bool,
 }
 
 impl Default for Dialect {
@@ -105,6 +115,8 @@ impl Default for Dialect {
         Self {
             parse_dialect: ParseDialect::Generic,
             quote_style: '"',
+            binary_ops: Default::default(),
+            binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
             aggregate_functions: Default::default(),
             window_functions: Default::default(),
@@ -124,9 +136,16 @@ impl Dialect {
     }
 
     pub fn sqlite() -> Self {
+        use Operator::*;
         Self {
             parse_dialect: ParseDialect::SqLite,
             quote_style: '"',
+            binary_ops: vec![
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
+            ]
+            .into_iter()
+            .collect(),
+            binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
             aggregate_functions: Default::default(),
             window_functions: Default::default(),
@@ -142,9 +161,16 @@ impl Dialect {
     }
 
     pub fn mysql() -> Self {
+        use Operator::*;
         Self {
             parse_dialect: ParseDialect::MySql,
             quote_style: '`',
+            binary_ops: vec![
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
+            ]
+            .into_iter()
+            .collect(),
+            binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
             aggregate_functions: Default::default(),
             window_functions: Default::default(),
@@ -156,9 +182,16 @@ impl Dialect {
     }
 
     pub fn databricks() -> Self {
+        use Operator::*;
         Self {
             parse_dialect: ParseDialect::Databricks,
             quote_style: '`',
+            binary_ops: vec![
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
+            ]
+            .into_iter()
+            .collect(),
+            binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
             aggregate_functions: Default::default(),
             window_functions: Default::default(),
@@ -172,9 +205,21 @@ impl Dialect {
     }
 
     pub fn bigquery() -> Self {
+        use Operator::*;
         Self {
             parse_dialect: ParseDialect::BigQuery,
             quote_style: '`',
+            binary_ops: vec![
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, And, Or,
+            ]
+            .into_iter()
+            .collect(),
+            binary_op_transforms: vec![(
+                Modulo,
+                Arc::new(ModulusOpToFunction) as Arc<dyn BinaryOperatorTransformer>,
+            )]
+            .into_iter()
+            .collect(),
             scalar_functions: Default::default(),
             aggregate_functions: Default::default(),
             window_functions: Default::default(),
@@ -186,9 +231,16 @@ impl Dialect {
     }
 
     pub fn snowflake() -> Self {
+        use Operator::*;
         Self {
             parse_dialect: ParseDialect::Snowflake,
             quote_style: '"',
+            binary_ops: vec![
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
+            ]
+            .into_iter()
+            .collect(),
+            binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
             aggregate_functions: Default::default(),
             window_functions: Default::default(),
@@ -204,9 +256,16 @@ impl Dialect {
     }
 
     pub fn clickhouse() -> Self {
+        use Operator::*;
         Self {
             parse_dialect: ParseDialect::ClickHouse,
             quote_style: '"',
+            binary_ops: vec![
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
+            ]
+            .into_iter()
+            .collect(),
+            binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
             aggregate_functions: Default::default(),
             window_functions: Default::default(),
@@ -218,9 +277,16 @@ impl Dialect {
     }
 
     pub fn duckdb() -> Self {
+        use Operator::*;
         Self {
             parse_dialect: ParseDialect::DuckDB,
             quote_style: '"',
+            binary_ops: vec![
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
+            ]
+            .into_iter()
+            .collect(),
+            binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
             aggregate_functions: Default::default(),
             window_functions: Default::default(),
@@ -234,9 +300,16 @@ impl Dialect {
     }
 
     pub fn postgres() -> Self {
+        use Operator::*;
         Self {
             parse_dialect: ParseDialect::Postgres,
             quote_style: '"',
+            binary_ops: vec![
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
+            ]
+            .into_iter()
+            .collect(),
+            binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
             aggregate_functions: Default::default(),
             window_functions: Default::default(),
@@ -250,9 +323,16 @@ impl Dialect {
     }
 
     pub fn redshift() -> Self {
+        use Operator::*;
         Self {
             parse_dialect: ParseDialect::Redshift,
             quote_style: '"',
+            binary_ops: vec![
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
+            ]
+            .into_iter()
+            .collect(),
+            binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
             aggregate_functions: Default::default(),
             window_functions: Default::default(),
@@ -264,9 +344,16 @@ impl Dialect {
     }
 
     pub fn dremio() -> Self {
+        use Operator::*;
         Self {
             parse_dialect: ParseDialect::Dremio,
             quote_style: '"',
+            binary_ops: vec![
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
+            ]
+            .into_iter()
+            .collect(),
+            binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
             aggregate_functions: Default::default(),
             window_functions: Default::default(),
@@ -280,9 +367,16 @@ impl Dialect {
     }
 
     pub fn athena() -> Self {
+        use Operator::*;
         Self {
             parse_dialect: ParseDialect::Athena,
             quote_style: '"',
+            binary_ops: vec![
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
+            ]
+            .into_iter()
+            .collect(),
+            binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
             aggregate_functions: Default::default(),
             window_functions: Default::default(),
@@ -296,12 +390,19 @@ impl Dialect {
     }
 
     pub fn datafusion() -> Self {
+        use Operator::*;
         let mut scalar_transforms: HashMap<String, Arc<dyn FunctionTransformer>> = HashMap::new();
         scalar_transforms.insert("date_add".to_string(), Arc::new(DateAddToIntervalAddition));
 
         Self {
             parse_dialect: ParseDialect::DataFusion,
             quote_style: '"',
+            binary_ops: vec![
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
+            ]
+            .into_iter()
+            .collect(),
+            binary_op_transforms: Default::default(),
             scalar_functions: vec![
                 "abs",
                 "acos",
@@ -472,6 +573,43 @@ impl FromStr for Dialect {
                 )))
             }
         })
+    }
+}
+
+pub trait BinaryOperatorTransformer: Debug + Send + Sync {
+    fn transform(
+        &self,
+        op: &Operator,
+        lhs: SqlExpr,
+        rhs: SqlExpr,
+        dialect: &Dialect,
+    ) -> Result<SqlExpr>;
+}
+
+#[derive(Clone, Debug)]
+struct ModulusOpToFunction;
+
+impl BinaryOperatorTransformer for ModulusOpToFunction {
+    fn transform(
+        &self,
+        _op: &Operator,
+        lhs: SqlExpr,
+        rhs: SqlExpr,
+        _dialect: &Dialect,
+    ) -> Result<SqlExpr> {
+        let arg0 = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(lhs));
+        let arg1 = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(rhs));
+
+        Ok(SqlExpr::Function(SqlFunction {
+            name: SqlObjectName(vec![SqlIdent {
+                value: "MOD".to_string(),
+                quote_style: None,
+            }]),
+            args: vec![arg0, arg1],
+            over: None,
+            distinct: false,
+            special: false,
+        }))
     }
 }
 

@@ -45,46 +45,60 @@ impl ToSqlExpr for Expr {
             )),
             Expr::Literal(value) => Ok(value.to_sql(dialect)?),
             Expr::BinaryExpr(BinaryExpr { left, op, right }) => {
-                let sql_op = match op {
-                    Operator::Eq => SqlBinaryOperator::Eq,
-                    Operator::NotEq => SqlBinaryOperator::NotEq,
-                    Operator::Lt => SqlBinaryOperator::Lt,
-                    Operator::LtEq => SqlBinaryOperator::LtEq,
-                    Operator::Gt => SqlBinaryOperator::Gt,
-                    Operator::GtEq => SqlBinaryOperator::GtEq,
-                    Operator::Plus => SqlBinaryOperator::Plus,
-                    Operator::Minus => SqlBinaryOperator::Minus,
-                    Operator::Multiply => SqlBinaryOperator::Multiply,
-                    Operator::Divide => SqlBinaryOperator::Divide,
-                    Operator::Modulo => SqlBinaryOperator::Modulo,
-                    Operator::And => SqlBinaryOperator::And,
-                    Operator::Or => SqlBinaryOperator::Or,
-                    Operator::IsDistinctFrom => {
-                        return Err(VegaFusionError::internal(
-                            "IsDistinctFrom cannot be converted to SQL".to_string(),
-                        ))
-                    }
-                    Operator::IsNotDistinctFrom => {
-                        return Err(VegaFusionError::internal(
-                            "IsNotDistinctFrom cannot be converted to SQL".to_string(),
-                        ))
-                    }
-                    Operator::RegexMatch => SqlBinaryOperator::PGRegexMatch,
-                    Operator::RegexIMatch => SqlBinaryOperator::PGRegexIMatch,
-                    Operator::RegexNotMatch => SqlBinaryOperator::PGRegexNotMatch,
-                    Operator::RegexNotIMatch => SqlBinaryOperator::PGRegexNotIMatch,
-                    Operator::BitwiseAnd => SqlBinaryOperator::BitwiseAnd,
-                    Operator::BitwiseOr => SqlBinaryOperator::BitwiseOr,
-                    Operator::BitwiseXor => SqlBinaryOperator::BitwiseXor,
-                    Operator::StringConcat => SqlBinaryOperator::StringConcat,
-                    Operator::BitwiseShiftRight => SqlBinaryOperator::PGBitwiseShiftRight,
-                    Operator::BitwiseShiftLeft => SqlBinaryOperator::PGBitwiseShiftLeft,
-                };
-                Ok(SqlExpr::Nested(Box::new(SqlExpr::BinaryOp {
-                    left: Box::new(left.to_sql(dialect)?),
-                    op: sql_op,
-                    right: Box::new(right.to_sql(dialect)?),
-                })))
+                if dialect.binary_ops.contains(op) {
+                    let sql_op = match op {
+                        Operator::Eq => SqlBinaryOperator::Eq,
+                        Operator::NotEq => SqlBinaryOperator::NotEq,
+                        Operator::Lt => SqlBinaryOperator::Lt,
+                        Operator::LtEq => SqlBinaryOperator::LtEq,
+                        Operator::Gt => SqlBinaryOperator::Gt,
+                        Operator::GtEq => SqlBinaryOperator::GtEq,
+                        Operator::Plus => SqlBinaryOperator::Plus,
+                        Operator::Minus => SqlBinaryOperator::Minus,
+                        Operator::Multiply => SqlBinaryOperator::Multiply,
+                        Operator::Divide => SqlBinaryOperator::Divide,
+                        Operator::Modulo => SqlBinaryOperator::Modulo,
+                        Operator::And => SqlBinaryOperator::And,
+                        Operator::Or => SqlBinaryOperator::Or,
+                        Operator::IsDistinctFrom => {
+                            return Err(VegaFusionError::internal(
+                                "IsDistinctFrom cannot be converted to SQL".to_string(),
+                            ))
+                        }
+                        Operator::IsNotDistinctFrom => {
+                            return Err(VegaFusionError::internal(
+                                "IsNotDistinctFrom cannot be converted to SQL".to_string(),
+                            ))
+                        }
+                        Operator::RegexMatch => SqlBinaryOperator::PGRegexMatch,
+                        Operator::RegexIMatch => SqlBinaryOperator::PGRegexIMatch,
+                        Operator::RegexNotMatch => SqlBinaryOperator::PGRegexNotMatch,
+                        Operator::RegexNotIMatch => SqlBinaryOperator::PGRegexNotIMatch,
+                        Operator::BitwiseAnd => SqlBinaryOperator::BitwiseAnd,
+                        Operator::BitwiseOr => SqlBinaryOperator::BitwiseOr,
+                        Operator::BitwiseXor => SqlBinaryOperator::BitwiseXor,
+                        Operator::StringConcat => SqlBinaryOperator::StringConcat,
+                        Operator::BitwiseShiftRight => SqlBinaryOperator::PGBitwiseShiftRight,
+                        Operator::BitwiseShiftLeft => SqlBinaryOperator::PGBitwiseShiftLeft,
+                    };
+                    Ok(SqlExpr::Nested(Box::new(SqlExpr::BinaryOp {
+                        left: Box::new(left.to_sql(dialect)?),
+                        op: sql_op,
+                        right: Box::new(right.to_sql(dialect)?),
+                    })))
+                } else if let Some(transformer) = dialect.binary_op_transforms.get(op) {
+                    transformer.transform(
+                        op,
+                        left.to_sql(dialect)?,
+                        right.to_sql(dialect)?,
+                        dialect,
+                    )
+                } else {
+                    return Err(VegaFusionError::sql_not_supported(format!(
+                        "Dialect does not support the '{:?}' operator",
+                        op
+                    )));
+                }
             }
             Expr::Not(expr) => Ok(SqlExpr::Nested(Box::new(SqlExpr::UnaryOp {
                 op: SqlUnaryOperator::Not,

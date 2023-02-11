@@ -81,8 +81,8 @@ mod test_values {
 
 #[cfg(test)]
 mod test_sort {
-    use datafusion_expr::{col, Expr, expr};
     use crate::*;
+    use datafusion_expr::{col, expr, Expr};
     use rstest::rstest;
     use serde_json::json;
     use vegafusion_common::data::table::VegaFusionTable;
@@ -91,19 +91,19 @@ mod test_sort {
     use vegafusion_sql::dataframe::SqlDataFrame;
 
     #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
+        dialect_name,
+        case("athena"),
+        case("bigquery"),
+        case("clickhouse"),
+        case("databricks"),
+        case("datafusion"),
+        case("dremio"),
+        case("duckdb"),
+        case("mysql"),
+        case("postgres"),
+        case("redshift"),
+        case("snowflake"),
+        case("sqlite")
     )]
     fn test_default_null_ordering(dialect_name: &str) {
         println!("{dialect_name}");
@@ -123,23 +123,28 @@ mod test_sort {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
 
-        let df = df.sort(vec![
-            Expr::Sort(expr::Sort {
-                expr: Box::new(col("a")),
-                asc: false,
-                nulls_first: false,
-            }),
-            Expr::Sort(expr::Sort {
-                expr: Box::new(col("c")),
-                asc: true,
-                nulls_first: true,
-            })
-        ], None).unwrap();
+        let df = df
+            .sort(
+                vec![
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: false,
+                        nulls_first: false,
+                    }),
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("c")),
+                        asc: true,
+                        nulls_first: true,
+                    }),
+                ],
+                None,
+            )
+            .unwrap();
         let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
 
         let sql = df.as_query().to_string();
@@ -187,29 +192,32 @@ mod test_sort {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
 
-        let sort_res  = df.sort(vec![
-            Expr::Sort(expr::Sort {
-                expr: Box::new(col("a")),
-                asc: false,
-                nulls_first: true,
-            }),
-            Expr::Sort(expr::Sort {
-                expr: Box::new(col("c")),
-                asc: true,
-                nulls_first: false,
-            })
-        ], None);
+        let sort_res = df.sort(
+            vec![
+                Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: false,
+                    nulls_first: true,
+                }),
+                Expr::Sort(expr::Sort {
+                    expr: Box::new(col("c")),
+                    asc: true,
+                    nulls_first: false,
+                }),
+            ],
+            None,
+        );
 
         if expected_query == "UNSUPPORTED" {
             if let Err(VegaFusionError::SqlNotSupported(..)) = sort_res {
                 // expected, return successful
                 println!("Unsupported");
-                return
+                return;
             } else {
                 panic!("Expected sort result to be an error")
             }
@@ -230,19 +238,19 @@ mod test_sort {
     }
 
     #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
+        dialect_name,
+        case("athena"),
+        case("bigquery"),
+        case("clickhouse"),
+        case("databricks"),
+        case("datafusion"),
+        case("dremio"),
+        case("duckdb"),
+        case("mysql"),
+        case("postgres"),
+        case("redshift"),
+        case("snowflake"),
+        case("sqlite")
     )]
     fn test_ordering_with_limit(dialect_name: &str) {
         println!("{dialect_name}");
@@ -262,23 +270,28 @@ mod test_sort {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
 
-        let df = df.sort(vec![
-            Expr::Sort(expr::Sort {
-                expr: Box::new(col("c")),
-                asc: true,
-                nulls_first: true,
-            }),
-            Expr::Sort(expr::Sort {
-                expr: Box::new(col("b")),
-                asc: true,
-                nulls_first: true,
-            }),
-        ], Some(4)).unwrap();
+        let df = df
+            .sort(
+                vec![
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("c")),
+                        asc: true,
+                        nulls_first: true,
+                    }),
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("b")),
+                        asc: true,
+                        nulls_first: true,
+                    }),
+                ],
+                Some(4),
+            )
+            .unwrap();
         let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
 
         let sql = df.as_query().to_string();
@@ -304,19 +317,19 @@ mod test_limit {
     use vegafusion_sql::dataframe::SqlDataFrame;
 
     #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
+        dialect_name,
+        case("athena"),
+        case("bigquery"),
+        case("clickhouse"),
+        case("databricks"),
+        case("datafusion"),
+        case("dremio"),
+        case("duckdb"),
+        case("mysql"),
+        case("postgres"),
+        case("redshift"),
+        case("snowflake"),
+        case("sqlite")
     )]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
@@ -335,10 +348,85 @@ mod test_limit {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df = df.limit(3).unwrap();
+        let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
+
+        let sql = df.as_query().to_string();
+        println!("{sql}");
+        assert_eq!(sql, expected_query);
+
+        if evaluable {
+            let table: VegaFusionTable = TOKIO_RUNTIME.block_on(df.collect()).unwrap();
+            let table_str = table.pretty_format(None).unwrap();
+            println!("{table_str}");
+            assert_eq!(table_str, expected_table);
+        }
+    }
+}
+
+#[cfg(test)]
+mod test_filter {
+    use crate::*;
+    use datafusion_expr::{col, expr, lit, Expr};
+    use rstest::rstest;
+    use serde_json::json;
+    use std::ops::Add;
+    use vegafusion_common::data::table::VegaFusionTable;
+    use vegafusion_dataframe::dataframe::DataFrame;
+    use vegafusion_sql::dataframe::SqlDataFrame;
+
+    #[rstest(
+        dialect_name,
+        case("athena"),
+        case("bigquery"),
+        case("clickhouse"),
+        case("databricks"),
+        case("datafusion"),
+        case("dremio"),
+        case("duckdb"),
+        case("mysql"),
+        case("postgres"),
+        case("redshift"),
+        case("snowflake"),
+        case("sqlite")
+    )]
+    fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (expected_query, expected_table) =
+            load_expected_query_and_result("filter", "simple_gte", dialect_name);
+
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 1, "b": 2, "c": "A"},
+                {"a": 3, "b": 4, "c": "BB"},
+                {"a": 5, "b": 6, "c": "CCC"},
+                {"a": 7, "b": 8, "c": "DDDD"},
+                {"a": 9, "b": 10, "c": "EEEEE"},
+                {"a": 11, "b": 12, "c": "FFFFFF"},
+            ]),
+            1024,
+        )
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = df
+            .filter((col("a").add(lit(2)).gt_eq(lit(9))).or(col("b").modulus(lit(4)).eq(lit(0))))
+            .unwrap();
+        let df = df
+            .sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .unwrap();
         let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
 
         let sql = df.as_query().to_string();

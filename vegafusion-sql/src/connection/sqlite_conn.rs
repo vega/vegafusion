@@ -172,7 +172,10 @@ where
     let values: Vec<Option<T>> = recs
         .iter()
         .map(|row| {
-            let valid = row.try_get_raw(field_index).map(|v| !v.is_null()).unwrap_or(false);
+            let valid = row
+                .try_get_raw(field_index)
+                .map(|v| !v.is_null())
+                .unwrap_or(false);
             if valid {
                 row.try_get(field_index).ok()
             } else {
