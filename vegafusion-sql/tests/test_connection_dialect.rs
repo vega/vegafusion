@@ -46,7 +46,7 @@ mod test_values {
         case("snowflake"),
         case("sqlite")
     )]
-    fn test(dialect_name: &str) {
+    fn test_values1(dialect_name: &str) {
         println!("{dialect_name}");
         let (expected_query, expected_table) =
             load_expected_query_and_result("values", "values1", dialect_name);
@@ -252,7 +252,7 @@ mod test_sort {
         case("snowflake"),
         case("sqlite")
     )]
-    fn test_ordering_with_limit(dialect_name: &str) {
+    fn test_order_with_limit(dialect_name: &str) {
         println!("{dialect_name}");
         let (expected_query, expected_table) =
             load_expected_query_and_result("sort", "order_with_limit", dialect_name);
@@ -331,7 +331,7 @@ mod test_limit {
         case("snowflake"),
         case("sqlite")
     )]
-    fn test(dialect_name: &str) {
+    fn test_limit1(dialect_name: &str) {
         println!("{dialect_name}");
         let (expected_query, expected_table) =
             load_expected_query_and_result("limit", "limit1", dialect_name);
@@ -393,7 +393,7 @@ mod test_filter {
         case("snowflake"),
         case("sqlite")
     )]
-    fn test(dialect_name: &str) {
+    fn test_simple_gte(dialect_name: &str) {
         println!("{dialect_name}");
         let (expected_query, expected_table) =
             load_expected_query_and_result("filter", "simple_gte", dialect_name);
@@ -421,6 +421,89 @@ mod test_filter {
             .sort(
                 vec![Expr::Sort(expr::Sort {
                     expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .unwrap();
+        let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
+
+        let sql = df.as_query().to_string();
+        println!("{sql}");
+        assert_eq!(sql, expected_query);
+
+        if evaluable {
+            let table: VegaFusionTable = TOKIO_RUNTIME.block_on(df.collect()).unwrap();
+            let table_str = table.pretty_format(None).unwrap();
+            println!("{table_str}");
+            assert_eq!(table_str, expected_table);
+        }
+    }
+}
+
+#[cfg(test)]
+mod test_aggregate {
+    use crate::*;
+    use datafusion_expr::{avg, col, count, expr, max, min, sum, Expr};
+    use rstest::rstest;
+    use serde_json::json;
+    use vegafusion_common::data::table::VegaFusionTable;
+    use vegafusion_dataframe::dataframe::DataFrame;
+    use vegafusion_sql::dataframe::SqlDataFrame;
+
+    #[rstest(
+        dialect_name,
+        case("athena"),
+        case("bigquery"),
+        case("clickhouse"),
+        case("databricks"),
+        case("datafusion"),
+        case("dremio"),
+        case("duckdb"),
+        case("mysql"),
+        case("postgres"),
+        case("redshift"),
+        case("snowflake"),
+        case("sqlite")
+    )]
+    fn test_simple_aggs(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (expected_query, expected_table) =
+            load_expected_query_and_result("aggregate", "simple_aggs", dialect_name);
+
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 1, "b": 2, "c": "A"},
+                {"a": 3, "b": 2, "c": "BB"},
+                {"a": 5, "b": 3, "c": "CCC"},
+                {"a": 7, "b": 3, "c": "DDDD"},
+                {"a": 9, "b": 3, "c": "EEEEE"},
+                {"a": 11, "b": 3, "c": "FFFFFF"},
+            ]),
+            1024,
+        )
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = df
+            .aggregate(
+                vec![col("b")],
+                vec![
+                    min(col("a")).alias("min_a"),
+                    max(col("a")).alias("max_a"),
+                    avg(col("a")).alias("avg_a"),
+                    sum(col("a")).alias("sum_a"),
+                    count(col("a")).alias("count_a"),
+                ],
+            )
+            .unwrap();
+        let df = df
+            .sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("b")),
                     asc: true,
                     nulls_first: true,
                 })],

@@ -147,7 +147,16 @@ impl Dialect {
             .collect(),
             binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
-            aggregate_functions: Default::default(),
+            aggregate_functions: vec![
+                "min",
+                "max",
+                "count",
+                "avg",
+                "sum",
+            ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
@@ -172,7 +181,21 @@ impl Dialect {
             .collect(),
             binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
-            aggregate_functions: Default::default(),
+            aggregate_functions: vec![
+                "min",
+                "max",
+                "count",
+                "avg",
+                "sum",
+
+                // "var", // Named variance
+                "var_pop",
+                "stddev",
+                "stddev_pop",
+            ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
@@ -193,7 +216,24 @@ impl Dialect {
             .collect(),
             binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
-            aggregate_functions: Default::default(),
+            aggregate_functions: vec![
+                "min",
+                "max",
+                "count",
+                "avg",
+                "sum",
+                "median",
+                // "var", // Named variance
+                "var_pop",
+                "stddev",
+                "stddev_pop",
+                // "covar",  // Nmaed covar_samp
+                "covar_pop",
+                "corr",
+            ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
@@ -221,7 +261,16 @@ impl Dialect {
             .into_iter()
             .collect(),
             scalar_functions: Default::default(),
-            aggregate_functions: Default::default(),
+            aggregate_functions: vec![
+                "min",
+                "max",
+                "count",
+                "avg",
+                "sum",
+            ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
@@ -242,7 +291,24 @@ impl Dialect {
             .collect(),
             binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
-            aggregate_functions: Default::default(),
+            aggregate_functions: vec![
+                "min",
+                "max",
+                "count",
+                "avg",
+                "sum",
+                "median",
+                // "var", // Named variance
+                "var_pop",
+                "stddev",
+                "stddev_pop",
+                // "covar",  // Nmaed covar_samp
+                "covar_pop",
+                "corr",
+            ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
@@ -267,7 +333,24 @@ impl Dialect {
             .collect(),
             binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
-            aggregate_functions: Default::default(),
+            aggregate_functions: vec![
+                "min",
+                "max",
+                "count",
+                "avg",
+                "sum",
+                "median",
+                // "var", // Named varSamp
+                // "var_pop", // Named varPop
+                // "stddev",  // Named stddevSamp
+                // "stddev_pop",    // Named stddevPop
+                // "covar",  // Named covarSamp
+                // "covar_pop",  // Named covarPop
+                "corr",
+            ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
@@ -288,7 +371,23 @@ impl Dialect {
             .collect(),
             binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
-            aggregate_functions: Default::default(),
+            aggregate_functions: vec![
+                "min",
+                "max",
+                "count",
+                "avg",
+                "sum",
+                "median",
+                // "var", // Named var_samp
+                "var_pop",
+                // "stddev",    // Named stddev_samp
+                "stddev_pop",
+                "covar_pop",
+                "corr",
+            ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
@@ -311,7 +410,23 @@ impl Dialect {
             .collect(),
             binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
-            aggregate_functions: Default::default(),
+            aggregate_functions: vec![
+                "min",
+                "max",
+                "count",
+                "avg",
+                "sum",
+                // "var", // Named var_samp
+                "var_pop",
+                "stddev",
+                "stddev_pop",
+                // "covar",  // Nmaed covar_samp
+                "covar_pop",
+                "corr",
+            ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
@@ -334,7 +449,21 @@ impl Dialect {
             .collect(),
             binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
-            aggregate_functions: Default::default(),
+            aggregate_functions: vec![
+                "min",
+                "max",
+                "count",
+                "avg",
+                "sum",
+                "median",
+                // "var", // Named var_samp
+                "var_pop",
+                // "stddev",    // Named stddev_samp
+                "stddev_pop",
+            ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
@@ -355,7 +484,23 @@ impl Dialect {
             .collect(),
             binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
-            aggregate_functions: Default::default(),
+            aggregate_functions: vec![
+                "min",
+                "max",
+                "count",
+                "avg",
+                "sum",
+                // "var", // Named var_samp
+                "var_pop",
+                // "stddev",    // Named stddev_samp
+                "stddev_pop",
+                // "covar", // Named covar_samp
+                "covar_pop",
+                "corr",
+            ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
@@ -378,7 +523,23 @@ impl Dialect {
             .collect(),
             binary_op_transforms: Default::default(),
             scalar_functions: Default::default(),
-            aggregate_functions: Default::default(),
+            aggregate_functions: vec![
+                "min",
+                "max",
+                "count",
+                "avg",
+                "sum",
+                // "var", // Named var_samp
+                "var_pop",
+                // "stddev",    // Named stddev_samp
+                "stddev_pop",
+                // "covar", // Named covar_samp
+                "covar_pop",
+                "corr",
+            ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
@@ -505,19 +666,13 @@ impl Dialect {
                 "avg",
                 "sum",
                 "median",
-                "approx_distinct",
-                "array_agg",
                 "var",
                 "var_pop",
                 "stddev",
                 "stddev_pop",
                 "covar",
                 "covar_pop",
-                "corr",
-                "approx_percentile_cont",
-                "approx_percentile_cont_with_weight",
-                "approx_median",
-                "grouping",
+                "corr"
             ]
             .iter()
             .map(|s| s.to_string())
