@@ -171,7 +171,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: Default::default(),
+            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
@@ -202,7 +202,7 @@ impl Dialect {
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: Default::default(),
+            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
             values_mode: ValuesMode::SelectUnion,
@@ -241,7 +241,7 @@ impl Dialect {
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: Default::default(),
+            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::SelectUnion,
@@ -285,7 +285,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: Default::default(),
+            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
@@ -483,7 +483,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: Default::default(),
+            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
@@ -528,7 +528,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: Default::default(),
+            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
@@ -561,7 +561,7 @@ impl Dialect {
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: Default::default(),
+            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases { explicit_row: true },
@@ -603,7 +603,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: Default::default(),
+            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
@@ -647,7 +647,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: Default::default(),
+            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::SelectUnion,
@@ -691,7 +691,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: Default::default(),
+            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSelectColumnAliases {
@@ -719,7 +719,7 @@ impl Dialect {
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: Default::default(),
+            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
             values_mode: ValuesMode::ValuesWithSelectColumnAliases {

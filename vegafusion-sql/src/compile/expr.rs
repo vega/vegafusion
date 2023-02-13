@@ -277,12 +277,15 @@ impl ToSqlExpr for Expr {
                 window_frame,
             }) => {
                 // Extract function name
-                let fun_name = match fun {
-                    WindowFunction::AggregateFunction(agg) => aggr_fn_to_name(agg).to_string(),
-                    WindowFunction::BuiltInWindowFunction(win_fn) => win_fn.to_string(),
-                    WindowFunction::AggregateUDF(udf) => udf.name.clone(),
-                }
-                .to_ascii_lowercase();
+                let (fun_name, supports_frame) = match fun {
+                    WindowFunction::AggregateFunction(agg) => {
+                        (aggr_fn_to_name(agg).to_string().to_ascii_lowercase(), true)
+                    }
+                    WindowFunction::BuiltInWindowFunction(win_fn) => {
+                        (win_fn.to_string().to_ascii_lowercase(), false)
+                    }
+                    WindowFunction::AggregateUDF(udf) => (udf.name.to_ascii_lowercase(), true),
+                };
 
                 if dialect.aggregate_functions.contains(&fun_name)
                     || dialect.window_functions.contains(&fun_name)
@@ -300,19 +303,24 @@ impl ToSqlExpr for Expr {
                         .map(|arg| arg.to_sql_order(dialect))
                         .collect::<Result<Vec<_>>>()?;
 
-                    let end_bound = compile_window_frame_bound(&window_frame.end_bound, dialect)?;
-                    let start_bound =
-                        compile_window_frame_bound(&window_frame.start_bound, dialect)?;
-                    let units = match window_frame.units {
-                        WindowFrameUnits::Rows => SqlWindowFrameUnits::Rows,
-                        WindowFrameUnits::Range => SqlWindowFrameUnits::Range,
-                        WindowFrameUnits::Groups => SqlWindowFrameUnits::Groups,
+                    let sql_window_frame = if supports_frame {
+                        let end_bound =
+                            compile_window_frame_bound(&window_frame.end_bound, dialect)?;
+                        let start_bound =
+                            compile_window_frame_bound(&window_frame.start_bound, dialect)?;
+                        let units = match window_frame.units {
+                            WindowFrameUnits::Rows => SqlWindowFrameUnits::Rows,
+                            WindowFrameUnits::Range => SqlWindowFrameUnits::Range,
+                            WindowFrameUnits::Groups => SqlWindowFrameUnits::Groups,
+                        };
+                        Some(SqlWindowFrame {
+                            units,
+                            start_bound,
+                            end_bound: Some(end_bound),
+                        })
+                    } else {
+                        None
                     };
-                    let sql_window_frame = Some(SqlWindowFrame {
-                        units,
-                        start_bound,
-                        end_bound: Some(end_bound),
-                    });
 
                     // Process over
                     let over = SqlWindowSpec {

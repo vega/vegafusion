@@ -335,7 +335,7 @@ impl DataFrame for SqlDataFrame {
                 let selection_csv = selection_strs.join(", ");
 
                 Ok(format!(
-                    "(SELECT {selection_csv} from {parent})",
+                    "SELECT {selection_csv} from {parent}",
                     selection_csv = selection_csv,
                     parent = self.parent_name()
                 ))
@@ -381,12 +381,12 @@ impl DataFrame for SqlDataFrame {
                     Expr::Sort(expr::Sort {
                         expr: Box::new(flat_col(order_field)),
                         asc: true,
-                        nulls_first: false,
+                        nulls_first: true,
                     }),
                     Expr::Sort(expr::Sort {
                         expr: Box::new(flat_col(&field_order_col)),
                         asc: true,
-                        nulls_first: false,
+                        nulls_first: true,
                     }),
                 ],
                 window_frame: WindowFrame {
