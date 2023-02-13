@@ -6,6 +6,12 @@ use std::fs;
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
+use vegafusion_common::{
+    error::Result,
+    data::table::VegaFusionTable
+};
+use vegafusion_common::error::VegaFusionError;
+use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_sql::connection::{DummySqlConnection, SqlConnection};
 use vegafusion_sql::dialect::Dialect;
 
@@ -14,6 +20,7 @@ use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
 #[cfg(feature = "sqlite-conn")]
 use vegafusion_sql::connection::sqlite_conn::SqLiteConnection;
+use vegafusion_sql::dataframe::SqlDataFrame;
 
 lazy_static! {
     pub static ref TOKIO_RUNTIME: Runtime = tokio::runtime::Builder::new_multi_thread()
@@ -22,13 +29,41 @@ lazy_static! {
         .unwrap();
 }
 
+fn check_dataframe_query(df_result: Result<Arc<dyn DataFrame>>, suite_name: &str, test_name: &str, dialect_name: &str, evaluable: bool) {
+    let (expected_query, expected_table) =
+        load_expected_query_and_result(suite_name, test_name, dialect_name);
+
+    if expected_query == "UNSUPPORTED" {
+        if let Err(VegaFusionError::SqlNotSupported(..)) = df_result {
+            // expected, return successful
+            println!("Unsupported");
+            return;
+        } else {
+            panic!("Expected sort result to be an error")
+        }
+    }
+    let df = df_result.unwrap();
+
+    let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
+
+    let sql = df.as_query().to_string();
+    println!("{sql}");
+    assert_eq!(sql, expected_query);
+
+    if evaluable {
+        let table: VegaFusionTable = TOKIO_RUNTIME.block_on(df.collect()).unwrap();
+        let table_str = table.pretty_format(None).unwrap();
+        println!("{table_str}");
+        assert_eq!(table_str, expected_table);
+    }
+}
+
 #[cfg(test)]
 mod test_values {
     use crate::*;
     use rstest::rstest;
     use serde_json::json;
     use vegafusion_common::data::table::VegaFusionTable;
-    use vegafusion_dataframe::dataframe::DataFrame;
     use vegafusion_sql::dataframe::SqlDataFrame;
 
     #[rstest(
@@ -48,9 +83,6 @@ mod test_values {
     )]
     fn test_values1(dialect_name: &str) {
         println!("{dialect_name}");
-        let (expected_query, expected_table) =
-            load_expected_query_and_result("values", "values1", dialect_name);
-
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
         let table = VegaFusionTable::from_json(
@@ -63,19 +95,8 @@ mod test_values {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
-        let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
-
-        let sql = df.as_query().to_string();
-        println!("{sql}");
-        assert_eq!(sql, expected_query);
-
-        if evaluable {
-            let table: VegaFusionTable = TOKIO_RUNTIME.block_on(df.collect()).unwrap();
-            let table_str = table.pretty_format(None).unwrap();
-            println!("{table_str}");
-            assert_eq!(table_str, expected_table);
-        }
+        let df_result = SqlDataFrame::from_values(&table, conn);
+        check_dataframe_query(df_result, "values", "values1", dialect_name, evaluable);
     }
 }
 
@@ -86,7 +107,6 @@ mod test_sort {
     use rstest::rstest;
     use serde_json::json;
     use vegafusion_common::data::table::VegaFusionTable;
-    use vegafusion_common::error::VegaFusionError;
     use vegafusion_dataframe::dataframe::DataFrame;
     use vegafusion_sql::dataframe::SqlDataFrame;
 
@@ -107,9 +127,6 @@ mod test_sort {
     )]
     fn test_default_null_ordering(dialect_name: &str) {
         println!("{dialect_name}");
-        let (expected_query, expected_table) =
-            load_expected_query_and_result("sort", "default_null_ordering", dialect_name);
-
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
         let table = VegaFusionTable::from_json(
@@ -128,7 +145,7 @@ mod test_sort {
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
 
-        let df = df
+        let df_result = df
             .sort(
                 vec![
                     Expr::Sort(expr::Sort {
@@ -143,20 +160,9 @@ mod test_sort {
                     }),
                 ],
                 None,
-            )
-            .unwrap();
-        let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
+            );
 
-        let sql = df.as_query().to_string();
-        println!("{sql}");
-        assert_eq!(sql, expected_query);
-
-        if evaluable {
-            let table: VegaFusionTable = TOKIO_RUNTIME.block_on(df.collect()).unwrap();
-            let table_str = table.pretty_format(None).unwrap();
-            println!("{table_str}");
-            assert_eq!(table_str, expected_table);
-        }
+        check_dataframe_query(df_result, "sort", "default_null_ordering", dialect_name, evaluable);
     }
 
     #[rstest(
@@ -176,9 +182,6 @@ mod test_sort {
     )]
     fn test_custom_null_ordering(dialect_name: &str) {
         println!("{dialect_name}");
-        let (expected_query, expected_table) =
-            load_expected_query_and_result("sort", "custom_null_ordering", dialect_name);
-
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
         let table = VegaFusionTable::from_json(
@@ -195,8 +198,6 @@ mod test_sort {
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
-        let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
-
         let sort_res = df.sort(
             vec![
                 Expr::Sort(expr::Sort {
@@ -213,28 +214,7 @@ mod test_sort {
             None,
         );
 
-        if expected_query == "UNSUPPORTED" {
-            if let Err(VegaFusionError::SqlNotSupported(..)) = sort_res {
-                // expected, return successful
-                println!("Unsupported");
-                return;
-            } else {
-                panic!("Expected sort result to be an error")
-            }
-        }
-        let df = sort_res.unwrap();
-        let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
-
-        let sql = df.as_query().to_string();
-        println!("{sql}");
-        assert_eq!(sql, expected_query);
-
-        if evaluable {
-            let table: VegaFusionTable = TOKIO_RUNTIME.block_on(df.collect()).unwrap();
-            let table_str = table.pretty_format(None).unwrap();
-            println!("{table_str}");
-            assert_eq!(table_str, expected_table);
-        }
+        check_dataframe_query(sort_res, "sort", "custom_null_ordering", dialect_name, evaluable);
     }
 
     #[rstest(
@@ -375,7 +355,6 @@ mod test_filter {
     use serde_json::json;
     use std::ops::Add;
     use vegafusion_common::data::table::VegaFusionTable;
-    use vegafusion_dataframe::dataframe::DataFrame;
     use vegafusion_sql::dataframe::SqlDataFrame;
 
     #[rstest(
@@ -395,8 +374,6 @@ mod test_filter {
     )]
     fn test_simple_gte(dialect_name: &str) {
         println!("{dialect_name}");
-        let (expected_query, expected_table) =
-            load_expected_query_and_result("filter", "simple_gte", dialect_name);
 
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -417,7 +394,7 @@ mod test_filter {
         let df = df
             .filter((col("a").add(lit(2)).gt_eq(lit(9))).or(col("b").modulus(lit(4)).eq(lit(0))))
             .unwrap();
-        let df = df
+        let df_result = df
             .sort(
                 vec![Expr::Sort(expr::Sort {
                     expr: Box::new(col("a")),
@@ -425,31 +402,19 @@ mod test_filter {
                     nulls_first: true,
                 })],
                 None,
-            )
-            .unwrap();
-        let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
+            );
 
-        let sql = df.as_query().to_string();
-        println!("{sql}");
-        assert_eq!(sql, expected_query);
-
-        if evaluable {
-            let table: VegaFusionTable = TOKIO_RUNTIME.block_on(df.collect()).unwrap();
-            let table_str = table.pretty_format(None).unwrap();
-            println!("{table_str}");
-            assert_eq!(table_str, expected_table);
-        }
+        check_dataframe_query(df_result, "filter", "simple_gte", dialect_name, evaluable);
     }
 }
 
 #[cfg(test)]
 mod test_aggregate {
     use crate::*;
-    use datafusion_expr::{avg, col, count, expr, max, min, sum, Expr};
+    use datafusion_expr::{avg, col, count, expr, max, min, sum, Expr, AggregateFunction};
     use rstest::rstest;
     use serde_json::json;
     use vegafusion_common::data::table::VegaFusionTable;
-    use vegafusion_dataframe::dataframe::DataFrame;
     use vegafusion_sql::dataframe::SqlDataFrame;
 
     #[rstest(
@@ -469,9 +434,6 @@ mod test_aggregate {
     )]
     fn test_simple_aggs(dialect_name: &str) {
         println!("{dialect_name}");
-        let (expected_query, expected_table) =
-            load_expected_query_and_result("aggregate", "simple_aggs", dialect_name);
-
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
         let table = VegaFusionTable::from_json(
@@ -500,7 +462,7 @@ mod test_aggregate {
                 ],
             )
             .unwrap();
-        let df = df
+        let df_result = df
             .sort(
                 vec![Expr::Sort(expr::Sort {
                     expr: Box::new(col("b")),
@@ -508,20 +470,58 @@ mod test_aggregate {
                     nulls_first: true,
                 })],
                 None,
-            )
+            );
+
+        check_dataframe_query(df_result, "aggregate", "simple_aggs", dialect_name, evaluable);
+    }
+
+    #[rstest(
+    dialect_name,
+    case("athena"),
+    case("bigquery"),
+    case("clickhouse"),
+    case("databricks"),
+    case("datafusion"),
+    case("dremio"),
+    case("duckdb"),
+    case("mysql"),
+    case("postgres"),
+    case("redshift"),
+    case("snowflake"),
+    case("sqlite")
+    )]
+    fn test_median_agg(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 1, "b": 2},
+                {"a": 3, "b": 2},
+                {"a": 5.5, "b": 3},
+                {"a": 7.5, "b": 3},
+                {"a": 100, "b": 3},
+            ]),
+            1024,
+        )
             .unwrap();
-        let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
 
-        let sql = df.as_query().to_string();
-        println!("{sql}");
-        assert_eq!(sql, expected_query);
+        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df_result = df
+            .aggregate(
+                vec![],
+                vec![
+                    count(col("a")).alias("count_a"),
+                    Expr::AggregateFunction(expr::AggregateFunction {
+                        fun: AggregateFunction::Median,
+                        args: vec![col("a")],
+                        distinct: false,
+                        filter: None,
+                    }).alias("median_a")
+                ],
+            );
 
-        if evaluable {
-            let table: VegaFusionTable = TOKIO_RUNTIME.block_on(df.collect()).unwrap();
-            let table_str = table.pretty_format(None).unwrap();
-            println!("{table_str}");
-            assert_eq!(table_str, expected_table);
-        }
+        check_dataframe_query(df_result, "aggregate", "median_agg", dialect_name, evaluable);
     }
 }
 

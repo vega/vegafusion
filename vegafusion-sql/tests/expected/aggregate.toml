@@ -79,3 +79,45 @@ result = '''
 | 5     | 11    | 8     | 32    | 4       | 3 |
 +-------+-------+-------+-------+---------+---+
 '''
+
+
+[median_agg]
+athena = "UNSUPPORTED"
+bigquery = "UNSUPPORTED"
+clickhouse = """
+WITH \
+values0 AS (SELECT 1.0 AS "a", 2 AS "b" UNION ALL SELECT 3.0 AS "a", 2 AS "b" UNION ALL SELECT 5.5 AS "a", 3 AS "b" UNION ALL SELECT 7.5 AS "a", 3 AS "b" UNION ALL SELECT 100.0 AS "a", 3 AS "b") \
+SELECT count("a") AS "count_a", median("a") AS "median_a" FROM values0
+"""
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1.0, 2), (3.0, 2), (5.5, 3), (7.5, 3), (100.0, 3)) AS `_values` (`a`, `b`)) \
+SELECT count(`a`) AS `count_a`, median(`a`) AS `median_a` FROM values0
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1.0, 2), (3.0, 2), (5.5, 3), (7.5, 3), (100.0, 3)) AS "_values" ("a", "b")) \
+SELECT count("a") AS "count_a", median("a") AS "median_a" FROM values0
+"""
+dremio = "UNSUPPORTED"
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1.0, 2), (3.0, 2), (5.5, 3), (7.5, 3), (100.0, 3)) AS "_values" ("a", "b")) \
+SELECT count("a") AS "count_a", median("a") AS "median_a" FROM values0
+"""
+mysql = "UNSUPPORTED"
+postgres = "UNSUPPORTED"
+redshift = "UNSUPPORTED"
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b" FROM (VALUES (1.0, 2), (3.0, 2), (5.5, 3), (7.5, 3), (100.0, 3))) \
+SELECT count("a") AS "count_a", median("a") AS "median_a" FROM values0
+"""
+sqlite = "UNSUPPORTED"
+result = '''
++---------+----------+
+| count_a | median_a |
++---------+----------+
+| 5       | 5.5      |
++---------+----------+
+'''

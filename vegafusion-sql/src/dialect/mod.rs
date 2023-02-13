@@ -455,7 +455,8 @@ impl Dialect {
                 "count",
                 "avg",
                 "sum",
-                "median",
+                // Median is kind of supported, but usage results in error:
+                // "One or more of the used functions must be applied on at least one user created tables"
                 // "var", // Named var_samp
                 "var_pop",
                 // "stddev",    // Named stddev_samp
