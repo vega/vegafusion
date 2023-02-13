@@ -790,14 +790,29 @@ impl DataFrame for SqlDataFrame {
                 // Override ordering column since null values may have been introduced in the query above.
                 // Match input ordering with imputed rows (those will null ordering column) pushed
                 // to the end.
-
-                let order_col = Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
-                        BuiltInWindowFunction::RowNumber,
-                    ),
-                    args: vec![],
-                    partition_by: vec![],
-                    order_by: vec![
+                let order_by = if self.dialect().supports_null_ordering {
+                    vec![
+                        // Sort first by the original row order, pushing imputed rows to the end
+                        Expr::Sort(expr::Sort {
+                            expr: Box::new(flat_col(order_field)),
+                            asc: true,
+                            nulls_first: false,
+                        }),
+                        // Sort imputed rows by first row that resides group
+                        // then by first row that matches a key
+                        Expr::Sort(expr::Sort {
+                            expr: Box::new(flat_col(&format!("{order_field}_groups"))),
+                            asc: true,
+                            nulls_first: true,
+                        }),
+                        Expr::Sort(expr::Sort {
+                            expr: Box::new(flat_col(&format!("{order_field}_key"))),
+                            asc: true,
+                            nulls_first: true,
+                        }),
+                    ]
+                } else {
+                    vec![
                         // Sort first by the original row order, pushing imputed rows to the end
                         Expr::Sort(expr::Sort {
                             expr: Box::new(is_null(flat_col(order_field))),
@@ -821,7 +836,16 @@ impl DataFrame for SqlDataFrame {
                             asc: true,
                             nulls_first: true,
                         }),
-                    ],
+                    ]
+                };
+
+                let order_col = Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                        BuiltInWindowFunction::RowNumber,
+                    ),
+                    args: vec![],
+                    partition_by: vec![],
+                    order_by,
                     window_frame: WindowFrame {
                         units: WindowFrameUnits::Rows,
                         start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),

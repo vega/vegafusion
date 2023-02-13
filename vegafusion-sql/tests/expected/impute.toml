@@ -82,7 +82,6 @@ result = '''
 +----+----+---+----+
 '''
 
-
 [unordered_one_group]
 athena = """
 WITH \
@@ -275,7 +274,6 @@ result = '''
 +---+----+---+----+
 '''
 
-
 [ordered_no_groups]
 athena = """
 WITH \
@@ -368,50 +366,56 @@ athena = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS "_values" ("_order", "a", "b", "c", "d")), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", min("_order") AS "_order_groups" FROM values0 GROUP BY "c") AS _groups LEFT JOIN values0 USING("a", "c")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
 """
 bigquery = """
 WITH \
 values0 AS (SELECT 1 AS `_order`, 0 AS `a`, 28 AS `b`, 0 AS `c`, -1 AS `d` UNION ALL SELECT 2 AS `_order`, 0 AS `a`, 91 AS `b`, 1 AS `c`, -1 AS `d` UNION ALL SELECT 3 AS `_order`, 1 AS `a`, 43 AS `b`, 0 AS `c`, -2 AS `d` UNION ALL SELECT 4 AS `_order`, NULL AS `a`, 55 AS `b`, 1 AS `c`, -2 AS `d` UNION ALL SELECT 5 AS `_order`, 3 AS `a`, 19 AS `b`, 0 AS `c`, -3 AS `d` UNION ALL SELECT 6 AS `_order`, 2 AS `a`, 81 AS `b`, 0 AS `c`, -3 AS `d` UNION ALL SELECT 7 AS `_order`, 2 AS `a`, 53 AS `b`, 1 AS `c`, -4 AS `d`), \
 values1 AS (SELECT `_order`, `a`, coalesce(`b`, -1) AS `b`, `c`, `d`, `_order_key`, `_order_groups` FROM (SELECT `a`, min(`_order`) AS `_order_key` FROM values0 WHERE `a` IS NOT NULL GROUP BY `a`) AS _key CROSS JOIN (SELECT `c`, min(`_order`) AS `_order_groups` FROM values0 GROUP BY `c`) AS _groups LEFT JOIN values0 USING(`a`, `c`)), \
-values2 AS (SELECT row_number() OVER (ORDER BY `_order` IS NULL ASC NULLS FIRST, `_order` ASC NULLS FIRST, `_order_groups` ASC NULLS FIRST, `_order_key` ASC NULLS FIRST) AS `_order`, `a`, `b`, `c`, `d` FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY `_order` ASC NULLS LAST, `_order_groups` ASC NULLS FIRST, `_order_key` ASC NULLS FIRST) AS `_order`, `a`, `b`, `c`, `d` FROM values1) \
 SELECT * FROM values2 ORDER BY `_order` ASC NULLS FIRST
+
 """
 clickhouse = """
 WITH \
 values0 AS (SELECT 1 AS "_order", 0 AS "a", 28 AS "b", 0 AS "c", -1 AS "d" UNION ALL SELECT 2 AS "_order", 0 AS "a", 91 AS "b", 1 AS "c", -1 AS "d" UNION ALL SELECT 3 AS "_order", 1 AS "a", 43 AS "b", 0 AS "c", -2 AS "d" UNION ALL SELECT 4 AS "_order", NULL AS "a", 55 AS "b", 1 AS "c", -2 AS "d" UNION ALL SELECT 5 AS "_order", 3 AS "a", 19 AS "b", 0 AS "c", -3 AS "d" UNION ALL SELECT 6 AS "_order", 2 AS "a", 81 AS "b", 0 AS "c", -3 AS "d" UNION ALL SELECT 7 AS "_order", 2 AS "a", 53 AS "b", 1 AS "c", -4 AS "d"), \
 values1 AS (SELECT "_order", "_key"."a" AS "a", coalesce("b", -1) AS "b", "_groups"."c" AS "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", min("_order") AS "_order_groups" FROM values0 GROUP BY "c") AS _groups LEFT JOIN values0 USING("a", "c")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 databricks = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS `_values` (`_order`, `a`, `b`, `c`, `d`)), \
 values1 AS (SELECT `_order`, `a`, coalesce(`b`, -1) AS `b`, `c`, `d`, `_order_key`, `_order_groups` FROM (SELECT `a`, min(`_order`) AS `_order_key` FROM values0 WHERE `a` IS NOT NULL GROUP BY `a`) AS _key CROSS JOIN (SELECT `c`, min(`_order`) AS `_order_groups` FROM values0 GROUP BY `c`) AS _groups LEFT JOIN values0 USING(`a`, `c`)), \
-values2 AS (SELECT row_number() OVER (ORDER BY `_order` IS NULL ASC NULLS FIRST, `_order` ASC NULLS FIRST, `_order_groups` ASC NULLS FIRST, `_order_key` ASC NULLS FIRST) AS `_order`, `a`, `b`, `c`, `d` FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY `_order` ASC NULLS LAST, `_order_groups` ASC NULLS FIRST, `_order_key` ASC NULLS FIRST) AS `_order`, `a`, `b`, `c`, `d` FROM values1) \
 SELECT * FROM values2 ORDER BY `_order` ASC NULLS FIRST
+
 """
 datafusion = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS "_values" ("_order", "a", "b", "c", "d")), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", min("_order") AS "_order_groups" FROM values0 GROUP BY "c") AS _groups LEFT JOIN values0 USING("a", "c")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 dremio = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS "_values" ("_order", "a", "b", "c", "d")), \
 values1 AS (SELECT "_order", "_key"."a" AS "a", coalesce("b", -1) AS "b", "_groups"."c" AS "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", min("_order") AS "_order_groups" FROM values0 GROUP BY "c") AS _groups LEFT JOIN values0 USING("a", "c")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 duckdb = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS "_values" ("_order", "a", "b", "c", "d")), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", min("_order") AS "_order_groups" FROM values0 GROUP BY "c") AS _groups LEFT JOIN values0 USING("a", "c")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 mysql = """
 WITH \
@@ -424,29 +428,33 @@ postgres = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS "_values" ("_order", "a", "b", "c", "d")), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", min("_order") AS "_order_groups" FROM values0 GROUP BY "c") AS _groups LEFT JOIN values0 USING("a", "c")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 redshift = """
 WITH \
 values0 AS (SELECT 1 AS "_order", 0 AS "a", 28 AS "b", 0 AS "c", -1 AS "d" UNION ALL SELECT 2 AS "_order", 0 AS "a", 91 AS "b", 1 AS "c", -1 AS "d" UNION ALL SELECT 3 AS "_order", 1 AS "a", 43 AS "b", 0 AS "c", -2 AS "d" UNION ALL SELECT 4 AS "_order", NULL AS "a", 55 AS "b", 1 AS "c", -2 AS "d" UNION ALL SELECT 5 AS "_order", 3 AS "a", 19 AS "b", 0 AS "c", -3 AS "d" UNION ALL SELECT 6 AS "_order", 2 AS "a", 81 AS "b", 0 AS "c", -3 AS "d" UNION ALL SELECT 7 AS "_order", 2 AS "a", 53 AS "b", 1 AS "c", -4 AS "d"), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", min("_order") AS "_order_groups" FROM values0 GROUP BY "c") AS _groups LEFT JOIN values0 USING("a", "c")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 snowflake = """
 WITH \
 values0 AS (SELECT "COLUMN1" AS "_order", "COLUMN2" AS "a", "COLUMN3" AS "b", "COLUMN4" AS "c", "COLUMN5" AS "d" FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4))), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", min("_order") AS "_order_groups" FROM values0 GROUP BY "c") AS _groups LEFT JOIN values0 USING("a", "c")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 sqlite = """
 WITH \
 values0 AS (SELECT "column1" AS "_order", "column2" AS "a", "column3" AS "b", "column4" AS "c", "column5" AS "d" FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4))), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", min("_order") AS "_order_groups" FROM values0 GROUP BY "c") AS _groups LEFT JOIN values0 USING("a", "c")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 result = '''
 +--------+---+----+---+----+
@@ -468,7 +476,7 @@ athena = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS "_values" ("_order", "a", "b", "c", "d")), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d", min("_order") AS "_order_groups" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
 
 """
@@ -476,43 +484,49 @@ bigquery = """
 WITH \
 values0 AS (SELECT 1 AS `_order`, 0 AS `a`, 28 AS `b`, 0 AS `c`, -1 AS `d` UNION ALL SELECT 2 AS `_order`, 0 AS `a`, 91 AS `b`, 1 AS `c`, -1 AS `d` UNION ALL SELECT 3 AS `_order`, 1 AS `a`, 43 AS `b`, 0 AS `c`, -2 AS `d` UNION ALL SELECT 4 AS `_order`, NULL AS `a`, 55 AS `b`, 1 AS `c`, -2 AS `d` UNION ALL SELECT 5 AS `_order`, 3 AS `a`, 19 AS `b`, 0 AS `c`, -3 AS `d` UNION ALL SELECT 6 AS `_order`, 2 AS `a`, 81 AS `b`, 0 AS `c`, -3 AS `d` UNION ALL SELECT 7 AS `_order`, 2 AS `a`, 53 AS `b`, 1 AS `c`, -4 AS `d`), \
 values1 AS (SELECT `_order`, `a`, coalesce(`b`, -1) AS `b`, `c`, `d`, `_order_key`, `_order_groups` FROM (SELECT `a`, min(`_order`) AS `_order_key` FROM values0 WHERE `a` IS NOT NULL GROUP BY `a`) AS _key CROSS JOIN (SELECT `c`, `d`, min(`_order`) AS `_order_groups` FROM values0 GROUP BY `c`, `d`) AS _groups LEFT JOIN values0 USING(`a`, `c`, `d`)), \
-values2 AS (SELECT row_number() OVER (ORDER BY `_order` IS NULL ASC NULLS FIRST, `_order` ASC NULLS FIRST, `_order_groups` ASC NULLS FIRST, `_order_key` ASC NULLS FIRST) AS `_order`, `a`, `b`, `c`, `d` FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY `_order` ASC NULLS LAST, `_order_groups` ASC NULLS FIRST, `_order_key` ASC NULLS FIRST) AS `_order`, `a`, `b`, `c`, `d` FROM values1) \
 SELECT * FROM values2 ORDER BY `_order` ASC NULLS FIRST
+
 """
 clickhouse = """
 WITH \
 values0 AS (SELECT 1 AS "_order", 0 AS "a", 28 AS "b", 0 AS "c", -1 AS "d" UNION ALL SELECT 2 AS "_order", 0 AS "a", 91 AS "b", 1 AS "c", -1 AS "d" UNION ALL SELECT 3 AS "_order", 1 AS "a", 43 AS "b", 0 AS "c", -2 AS "d" UNION ALL SELECT 4 AS "_order", NULL AS "a", 55 AS "b", 1 AS "c", -2 AS "d" UNION ALL SELECT 5 AS "_order", 3 AS "a", 19 AS "b", 0 AS "c", -3 AS "d" UNION ALL SELECT 6 AS "_order", 2 AS "a", 81 AS "b", 0 AS "c", -3 AS "d" UNION ALL SELECT 7 AS "_order", 2 AS "a", 53 AS "b", 1 AS "c", -4 AS "d"), \
 values1 AS (SELECT "_order", "_key"."a" AS "a", coalesce("b", -1) AS "b", "_groups"."c" AS "c", "_groups"."d" AS "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d", min("_order") AS "_order_groups" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 databricks = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS `_values` (`_order`, `a`, `b`, `c`, `d`)), \
 values1 AS (SELECT `_order`, `a`, coalesce(`b`, -1) AS `b`, `c`, `d`, `_order_key`, `_order_groups` FROM (SELECT `a`, min(`_order`) AS `_order_key` FROM values0 WHERE `a` IS NOT NULL GROUP BY `a`) AS _key CROSS JOIN (SELECT `c`, `d`, min(`_order`) AS `_order_groups` FROM values0 GROUP BY `c`, `d`) AS _groups LEFT JOIN values0 USING(`a`, `c`, `d`)), \
-values2 AS (SELECT row_number() OVER (ORDER BY `_order` IS NULL ASC NULLS FIRST, `_order` ASC NULLS FIRST, `_order_groups` ASC NULLS FIRST, `_order_key` ASC NULLS FIRST) AS `_order`, `a`, `b`, `c`, `d` FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY `_order` ASC NULLS LAST, `_order_groups` ASC NULLS FIRST, `_order_key` ASC NULLS FIRST) AS `_order`, `a`, `b`, `c`, `d` FROM values1) \
 SELECT * FROM values2 ORDER BY `_order` ASC NULLS FIRST
+
 """
 datafusion = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS "_values" ("_order", "a", "b", "c", "d")), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d", min("_order") AS "_order_groups" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 dremio = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS "_values" ("_order", "a", "b", "c", "d")), \
 values1 AS (SELECT "_order", "_key"."a" AS "a", coalesce("b", -1) AS "b", "_groups"."c" AS "c", "_groups"."d" AS "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d", min("_order") AS "_order_groups" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 duckdb = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS "_values" ("_order", "a", "b", "c", "d")), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d", min("_order") AS "_order_groups" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 mysql = """
 WITH \
@@ -525,29 +539,33 @@ postgres = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS "_values" ("_order", "a", "b", "c", "d")), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d", min("_order") AS "_order_groups" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 redshift = """
 WITH \
 values0 AS (SELECT 1 AS "_order", 0 AS "a", 28 AS "b", 0 AS "c", -1 AS "d" UNION ALL SELECT 2 AS "_order", 0 AS "a", 91 AS "b", 1 AS "c", -1 AS "d" UNION ALL SELECT 3 AS "_order", 1 AS "a", 43 AS "b", 0 AS "c", -2 AS "d" UNION ALL SELECT 4 AS "_order", NULL AS "a", 55 AS "b", 1 AS "c", -2 AS "d" UNION ALL SELECT 5 AS "_order", 3 AS "a", 19 AS "b", 0 AS "c", -3 AS "d" UNION ALL SELECT 6 AS "_order", 2 AS "a", 81 AS "b", 0 AS "c", -3 AS "d" UNION ALL SELECT 7 AS "_order", 2 AS "a", 53 AS "b", 1 AS "c", -4 AS "d"), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d", min("_order") AS "_order_groups" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 snowflake = """
 WITH \
 values0 AS (SELECT "COLUMN1" AS "_order", "COLUMN2" AS "a", "COLUMN3" AS "b", "COLUMN4" AS "c", "COLUMN5" AS "d" FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4))), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d", min("_order") AS "_order_groups" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 sqlite = """
 WITH \
 values0 AS (SELECT "column1" AS "_order", "column2" AS "a", "column3" AS "b", "column4" AS "c", "column5" AS "d" FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4))), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d", min("_order") AS "_order_groups" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" IS NULL ASC NULLS FIRST, "_order" ASC NULLS FIRST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+
 """
 result = '''
 +--------+---+----+---+----+
