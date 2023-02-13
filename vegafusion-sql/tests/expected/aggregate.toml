@@ -121,3 +121,75 @@ result = '''
 | 5       | 5.5      |
 +---------+----------+
 '''
+
+[variance_aggs]
+athena = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2), (3, 2), (5, 3), (7, 3), (9, 3)) AS "_values" ("a", "b")), \
+values1 AS (SELECT (round((stddev_samp("a") * 100)) / 100) AS "stddev_a", (round((stddev_pop("a") * 100)) / 100) AS "stddev_pop_a", (round((var_samp("a") * 100)) / 100) AS "var_a", (round((var_pop("a") * 100)) / 100) AS "var_pop_a", "b" FROM values0 GROUP BY "b") \
+SELECT * FROM values1 ORDER BY "b" ASC NULLS FIRST
+"""
+bigquery = "UNSUPPORTED"
+clickhouse = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b" UNION ALL SELECT 3 AS "a", 2 AS "b" UNION ALL SELECT 5 AS "a", 3 AS "b" UNION ALL SELECT 7 AS "a", 3 AS "b" UNION ALL SELECT 9 AS "a", 3 AS "b"), \
+values1 AS (SELECT (round((stddevSamp("a") * 100)) / 100) AS "stddev_a", (round((stddevPop("a") * 100)) / 100) AS "stddev_pop_a", (round((varSamp("a") * 100)) / 100) AS "var_a", (round((varPop("a") * 100)) / 100) AS "var_pop_a", "b" FROM values0 GROUP BY "b") \
+SELECT * FROM values1 ORDER BY "b" ASC NULLS FIRST
+"""
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2), (3, 2), (5, 3), (7, 3), (9, 3)) AS `_values` (`a`, `b`)), \
+values1 AS (SELECT (round((stddev_samp(`a`) * 100)) / 100) AS `stddev_a`, (round((stddev_pop(`a`) * 100)) / 100) AS `stddev_pop_a`, (round((var_samp(`a`) * 100)) / 100) AS `var_a`, (round((var_pop(`a`) * 100)) / 100) AS `var_pop_a`, `b` FROM values0 GROUP BY `b`) \
+SELECT * FROM values1 ORDER BY `b` ASC NULLS FIRST
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2), (3, 2), (5, 3), (7, 3), (9, 3)) AS "_values" ("a", "b")), \
+values1 AS (SELECT (round((stddev("a") * 100)) / 100) AS "stddev_a", (round((stddev_pop("a") * 100)) / 100) AS "stddev_pop_a", (round((var("a") * 100)) / 100) AS "var_a", (round((var_pop("a") * 100)) / 100) AS "var_pop_a", "b" FROM values0 GROUP BY "b") \
+SELECT * FROM values1 ORDER BY "b" ASC NULLS FIRST
+"""
+dremio = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2), (3, 2), (5, 3), (7, 3), (9, 3)) AS "_values" ("a", "b")), \
+values1 AS (SELECT (round((stddev_samp("a") * 100)) / 100) AS "stddev_a", (round((stddev_pop("a") * 100)) / 100) AS "stddev_pop_a", (round((var_samp("a") * 100)) / 100) AS "var_a", (round((var_pop("a") * 100)) / 100) AS "var_pop_a", "b" FROM values0 GROUP BY "b") \
+SELECT * FROM values1 ORDER BY "b" ASC NULLS FIRST
+"""
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2), (3, 2), (5, 3), (7, 3), (9, 3)) AS "_values" ("a", "b")), \
+values1 AS (SELECT (round((stddev_samp("a") * 100)) / 100) AS "stddev_a", (round((stddev_pop("a") * 100)) / 100) AS "stddev_pop_a", (round((var_samp("a") * 100)) / 100) AS "var_a", (round((var_pop("a") * 100)) / 100) AS "var_pop_a", "b" FROM values0 GROUP BY "b") \
+SELECT * FROM values1 ORDER BY "b" ASC NULLS FIRST
+"""
+mysql = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ROW(1, 2), ROW(3, 2), ROW(5, 3), ROW(7, 3), ROW(9, 3)) AS `_values` (`a`, `b`)), \
+values1 AS (SELECT (round((stddev_samp(`a`) * 100)) / 100) AS `stddev_a`, (round((stddev_pop(`a`) * 100)) / 100) AS `stddev_pop_a`, (round((var_samp(`a`) * 100)) / 100) AS `var_a`, (round((var_pop(`a`) * 100)) / 100) AS `var_pop_a`, `b` FROM values0 GROUP BY `b`) \
+SELECT * FROM values1 ORDER BY `b` ASC
+"""
+postgres = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2), (3, 2), (5, 3), (7, 3), (9, 3)) AS "_values" ("a", "b")), \
+values1 AS (SELECT (round((stddev_samp("a") * 100)) / 100) AS "stddev_a", (round((stddev_pop("a") * 100)) / 100) AS "stddev_pop_a", (round((var_samp("a") * 100)) / 100) AS "var_a", (round((var_pop("a") * 100)) / 100) AS "var_pop_a", "b" FROM values0 GROUP BY "b") \
+SELECT * FROM values1 ORDER BY "b" ASC NULLS FIRST
+"""
+redshift = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b" UNION ALL SELECT 3 AS "a", 2 AS "b" UNION ALL SELECT 5 AS "a", 3 AS "b" UNION ALL SELECT 7 AS "a", 3 AS "b" UNION ALL SELECT 9 AS "a", 3 AS "b"), \
+values1 AS (SELECT (round((stddev_samp("a") * 100)) / 100) AS "stddev_a", (round((stddev_pop("a") * 100)) / 100) AS "stddev_pop_a", (round((var_samp("a") * 100)) / 100) AS "var_a", (round((var_pop("a") * 100)) / 100) AS "var_pop_a", "b" FROM values0 GROUP BY "b") \
+SELECT * FROM values1 ORDER BY "b" ASC NULLS FIRST
+"""
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b" FROM (VALUES (1, 2), (3, 2), (5, 3), (7, 3), (9, 3))), \
+values1 AS (SELECT (round((stddev_samp("a") * 100)) / 100) AS "stddev_a", (round((stddev_pop("a") * 100)) / 100) AS "stddev_pop_a", (round((var_samp("a") * 100)) / 100) AS "var_a", (round((var_pop("a") * 100)) / 100) AS "var_pop_a", "b" FROM values0 GROUP BY "b") \
+SELECT * FROM values1 ORDER BY "b" ASC NULLS FIRST
+"""
+sqlite = "UNSUPPORTED"
+result = '''
++----------+--------------+-------+-----------+---+
+| stddev_a | stddev_pop_a | var_a | var_pop_a | b |
++----------+--------------+-------+-----------+---+
+| 1.41     | 1            | 2     | 1         | 2 |
+| 2        | 1.63         | 4     | 2.67      | 3 |
++----------+--------------+-------+-----------+---+
+'''
