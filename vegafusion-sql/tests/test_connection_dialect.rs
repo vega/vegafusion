@@ -6,11 +6,8 @@ use std::fs;
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
-use vegafusion_common::{
-    error::Result,
-    data::table::VegaFusionTable
-};
 use vegafusion_common::error::VegaFusionError;
+use vegafusion_common::{data::table::VegaFusionTable, error::Result};
 use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_sql::connection::{DummySqlConnection, SqlConnection};
 use vegafusion_sql::dialect::Dialect;
@@ -29,7 +26,13 @@ lazy_static! {
         .unwrap();
 }
 
-fn check_dataframe_query(df_result: Result<Arc<dyn DataFrame>>, suite_name: &str, test_name: &str, dialect_name: &str, evaluable: bool) {
+fn check_dataframe_query(
+    df_result: Result<Arc<dyn DataFrame>>,
+    suite_name: &str,
+    test_name: &str,
+    dialect_name: &str,
+    evaluable: bool,
+) {
     let (expected_query, expected_table) =
         load_expected_query_and_result(suite_name, test_name, dialect_name);
 
@@ -145,24 +148,29 @@ mod test_sort {
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
 
-        let df_result = df
-            .sort(
-                vec![
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: false,
-                        nulls_first: false,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(col("c")),
-                        asc: true,
-                        nulls_first: true,
-                    }),
-                ],
-                None,
-            );
+        let df_result = df.sort(
+            vec![
+                Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: false,
+                    nulls_first: false,
+                }),
+                Expr::Sort(expr::Sort {
+                    expr: Box::new(col("c")),
+                    asc: true,
+                    nulls_first: true,
+                }),
+            ],
+            None,
+        );
 
-        check_dataframe_query(df_result, "sort", "default_null_ordering", dialect_name, evaluable);
+        check_dataframe_query(
+            df_result,
+            "sort",
+            "default_null_ordering",
+            dialect_name,
+            evaluable,
+        );
     }
 
     #[rstest(
@@ -214,7 +222,13 @@ mod test_sort {
             None,
         );
 
-        check_dataframe_query(sort_res, "sort", "custom_null_ordering", dialect_name, evaluable);
+        check_dataframe_query(
+            sort_res,
+            "sort",
+            "custom_null_ordering",
+            dialect_name,
+            evaluable,
+        );
     }
 
     #[rstest(
@@ -394,15 +408,14 @@ mod test_filter {
         let df = df
             .filter((col("a").add(lit(2)).gt_eq(lit(9))).or(col("b").modulus(lit(4)).eq(lit(0))))
             .unwrap();
-        let df_result = df
-            .sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
-                    asc: true,
-                    nulls_first: true,
-                })],
-                None,
-            );
+        let df_result = df.sort(
+            vec![Expr::Sort(expr::Sort {
+                expr: Box::new(col("a")),
+                asc: true,
+                nulls_first: true,
+            })],
+            None,
+        );
 
         check_dataframe_query(df_result, "filter", "simple_gte", dialect_name, evaluable);
     }
@@ -410,11 +423,13 @@ mod test_filter {
 
 #[cfg(test)]
 mod test_aggregate {
-    use std::ops::{Div, Mul};
     use crate::*;
-    use datafusion_expr::{avg, col, count, expr, max, min, sum, Expr, AggregateFunction, lit, round};
+    use datafusion_expr::{
+        avg, col, count, expr, lit, max, min, round, sum, AggregateFunction, Expr,
+    };
     use rstest::rstest;
     use serde_json::json;
+    use std::ops::{Div, Mul};
     use vegafusion_common::data::table::VegaFusionTable;
     use vegafusion_sql::dataframe::SqlDataFrame;
 
@@ -463,33 +478,38 @@ mod test_aggregate {
                 ],
             )
             .unwrap();
-        let df_result = df
-            .sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("b")),
-                    asc: true,
-                    nulls_first: true,
-                })],
-                None,
-            );
+        let df_result = df.sort(
+            vec![Expr::Sort(expr::Sort {
+                expr: Box::new(col("b")),
+                asc: true,
+                nulls_first: true,
+            })],
+            None,
+        );
 
-        check_dataframe_query(df_result, "aggregate", "simple_aggs", dialect_name, evaluable);
+        check_dataframe_query(
+            df_result,
+            "aggregate",
+            "simple_aggs",
+            dialect_name,
+            evaluable,
+        );
     }
 
     #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
+        dialect_name,
+        case("athena"),
+        case("bigquery"),
+        case("clickhouse"),
+        case("databricks"),
+        case("datafusion"),
+        case("dremio"),
+        case("duckdb"),
+        case("mysql"),
+        case("postgres"),
+        case("redshift"),
+        case("snowflake"),
+        case("sqlite")
     )]
     fn test_median_agg(dialect_name: &str) {
         println!("{dialect_name}");
@@ -505,40 +525,46 @@ mod test_aggregate {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
-        let df_result = df
-            .aggregate(
-                vec![],
-                vec![
-                    count(col("a")).alias("count_a"),
-                    Expr::AggregateFunction(expr::AggregateFunction {
-                        fun: AggregateFunction::Median,
-                        args: vec![col("a")],
-                        distinct: false,
-                        filter: None,
-                    }).alias("median_a")
-                ],
-            );
+        let df_result = df.aggregate(
+            vec![],
+            vec![
+                count(col("a")).alias("count_a"),
+                Expr::AggregateFunction(expr::AggregateFunction {
+                    fun: AggregateFunction::Median,
+                    args: vec![col("a")],
+                    distinct: false,
+                    filter: None,
+                })
+                .alias("median_a"),
+            ],
+        );
 
-        check_dataframe_query(df_result, "aggregate", "median_agg", dialect_name, evaluable);
+        check_dataframe_query(
+            df_result,
+            "aggregate",
+            "median_agg",
+            dialect_name,
+            evaluable,
+        );
     }
 
     #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
+        dialect_name,
+        case("athena"),
+        case("bigquery"),
+        case("clickhouse"),
+        case("databricks"),
+        case("datafusion"),
+        case("dremio"),
+        case("duckdb"),
+        case("mysql"),
+        case("postgres"),
+        case("redshift"),
+        case("snowflake"),
+        case("sqlite")
     )]
     fn test_variance_aggs(dialect_name: &str) {
         println!("{dialect_name}");
@@ -554,39 +580,58 @@ mod test_aggregate {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
-        let df_result = df
-            .aggregate(
-                vec![col("b")],
-                vec![
-                    round(Expr::AggregateFunction(expr::AggregateFunction {
+        let df_result = df.aggregate(
+            vec![col("b")],
+            vec![
+                round(
+                    Expr::AggregateFunction(expr::AggregateFunction {
                         fun: AggregateFunction::Stddev,
                         args: vec![col("a")],
                         distinct: false,
                         filter: None,
-                    }).mul(lit(100))).div(lit(100)).alias("stddev_a"),
-                    round(Expr::AggregateFunction(expr::AggregateFunction {
+                    })
+                    .mul(lit(100)),
+                )
+                .div(lit(100))
+                .alias("stddev_a"),
+                round(
+                    Expr::AggregateFunction(expr::AggregateFunction {
                         fun: AggregateFunction::StddevPop,
                         args: vec![col("a")],
                         distinct: false,
                         filter: None,
-                    }).mul(lit(100))).div(lit(100)).alias("stddev_pop_a"),
-                    round(Expr::AggregateFunction(expr::AggregateFunction {
+                    })
+                    .mul(lit(100)),
+                )
+                .div(lit(100))
+                .alias("stddev_pop_a"),
+                round(
+                    Expr::AggregateFunction(expr::AggregateFunction {
                         fun: AggregateFunction::Variance,
                         args: vec![col("a")],
                         distinct: false,
                         filter: None,
-                    }).mul(lit(100))).div(lit(100)).alias("var_a"),
-                    round(Expr::AggregateFunction(expr::AggregateFunction {
+                    })
+                    .mul(lit(100)),
+                )
+                .div(lit(100))
+                .alias("var_a"),
+                round(
+                    Expr::AggregateFunction(expr::AggregateFunction {
                         fun: AggregateFunction::VariancePop,
                         args: vec![col("a")],
                         distinct: false,
                         filter: None,
-                    }).mul(lit(100))).div(lit(100)).alias("var_pop_a"),
-                ],
-            );
+                    })
+                    .mul(lit(100)),
+                )
+                .div(lit(100))
+                .alias("var_pop_a"),
+            ],
+        );
         let df_result = df_result.and_then(|df| {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
@@ -598,7 +643,13 @@ mod test_aggregate {
             )
         });
 
-        check_dataframe_query(df_result, "aggregate", "variance_aggs", dialect_name, evaluable);
+        check_dataframe_query(
+            df_result,
+            "aggregate",
+            "variance_aggs",
+            dialect_name,
+            evaluable,
+        );
     }
 }
 

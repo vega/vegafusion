@@ -1,7 +1,12 @@
 use crate::compile::expr::ToSqlExpr;
 use datafusion_common::scalar::ScalarValue;
 use datafusion_expr::{Expr, Operator};
-use sqlparser::ast::{BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction, Function, FunctionArg as SqlFunctionArg, FunctionArg, FunctionArgExpr as SqlFunctionArgExpr, FunctionArgExpr, Ident as SqlIdent, Ident, ObjectName as SqlObjectName, ObjectName, Value as SqlValue};
+use sqlparser::ast::{
+    BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction, Function,
+    FunctionArg as SqlFunctionArg, FunctionArg, FunctionArgExpr as SqlFunctionArgExpr,
+    FunctionArgExpr, Ident as SqlIdent, Ident, ObjectName as SqlObjectName, ObjectName,
+    Value as SqlValue,
+};
 use sqlparser::dialect::{
     BigQueryDialect, ClickHouseDialect, Dialect as SqlParserDialect, GenericDialect, MySqlDialect,
     PostgreSqlDialect, RedshiftSqlDialect, SQLiteDialect, SnowflakeDialect,
@@ -137,9 +142,10 @@ impl Dialect {
             ("var", RenameFunctionTransformer::new_dyn("var_samp")),
             ("stddev", RenameFunctionTransformer::new_dyn("stddev_samp")),
             ("covar", RenameFunctionTransformer::new_dyn("covar_samp")),
-        ].into_iter().map(
-            |(name, v)| (name.to_string(), v)
-        ).collect();
+        ]
+        .into_iter()
+        .map(|(name, v)| (name.to_string(), v))
+        .collect();
 
         Self {
             parse_dialect: ParseDialect::Athena,
@@ -147,15 +153,10 @@ impl Dialect {
             binary_ops: vec![
                 Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
             ]
-                .into_iter()
-                .collect(),
+            .into_iter()
+            .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec![
-                "round",
-            ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -167,9 +168,9 @@ impl Dialect {
                 "covar_pop",
                 "corr",
             ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
@@ -188,27 +189,16 @@ impl Dialect {
             binary_ops: vec![
                 Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, And, Or,
             ]
-                .into_iter()
-                .collect(),
+            .into_iter()
+            .collect(),
             binary_op_transforms: vec![(
                 Modulo,
                 Arc::new(ModulusOpToFunction) as Arc<dyn BinaryOperatorTransformer>,
             )]
-                .into_iter()
-                .collect(),
-            scalar_functions: vec![
-                "round",
-            ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
-            aggregate_functions: vec![
-                "min",
-                "max",
-                "count",
-                "avg",
-                "sum",
-            ]
+            .into_iter()
+            .collect(),
+            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            aggregate_functions: vec!["min", "max", "count", "avg", "sum"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -226,12 +216,16 @@ impl Dialect {
             ("var", RenameFunctionTransformer::new_dyn("varSamp")),
             ("var_pop", RenameFunctionTransformer::new_dyn("varPop")),
             ("stddev", RenameFunctionTransformer::new_dyn("stddevSamp")),
-            ("stddev_pop", RenameFunctionTransformer::new_dyn("stddevPop")),
+            (
+                "stddev_pop",
+                RenameFunctionTransformer::new_dyn("stddevPop"),
+            ),
             ("covar", RenameFunctionTransformer::new_dyn("covarSamp")),
             ("covar_pop", RenameFunctionTransformer::new_dyn("covarPop")),
-        ].into_iter().map(
-            |(name, v)| (name.to_string(), v)
-        ).collect();
+        ]
+        .into_iter()
+        .map(|(name, v)| (name.to_string(), v))
+        .collect();
 
         Self {
             parse_dialect: ParseDialect::ClickHouse,
@@ -239,24 +233,11 @@ impl Dialect {
             binary_ops: vec![
                 Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
             ]
-                .into_iter()
-                .collect(),
+            .into_iter()
+            .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec![
-                "round",
-            ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
-            aggregate_functions: vec![
-                "min",
-                "max",
-                "count",
-                "avg",
-                "sum",
-                "median",
-                "corr",
-            ]
+            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            aggregate_functions: vec!["min", "max", "count", "avg", "sum", "median", "corr"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -274,9 +255,10 @@ impl Dialect {
             ("var", RenameFunctionTransformer::new_dyn("var_samp")),
             ("stddev", RenameFunctionTransformer::new_dyn("stddev_samp")),
             ("covar", RenameFunctionTransformer::new_dyn("covar_samp")),
-        ].into_iter().map(
-            |(name, v)| (name.to_string(), v)
-        ).collect();
+        ]
+        .into_iter()
+        .map(|(name, v)| (name.to_string(), v))
+        .collect();
 
         Self {
             parse_dialect: ParseDialect::Databricks,
@@ -284,15 +266,10 @@ impl Dialect {
             binary_ops: vec![
                 Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
             ]
-                .into_iter()
-                .collect(),
+            .into_iter()
+            .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec![
-                "round",
-            ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -305,9 +282,9 @@ impl Dialect {
                 "covar_pop",
                 "corr",
             ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
@@ -329,8 +306,8 @@ impl Dialect {
             binary_ops: vec![
                 Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
             ]
-                .into_iter()
-                .collect(),
+            .into_iter()
+            .collect(),
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
                 "abs",
@@ -423,9 +400,9 @@ impl Dialect {
                 "len",
                 "indexof",
             ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
 
             aggregate_functions: vec![
                 "min",
@@ -440,11 +417,11 @@ impl Dialect {
                 "stddev_pop",
                 "covar",
                 "covar_pop",
-                "corr"
+                "corr",
             ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
 
             window_functions: vec![
                 "row_number",
@@ -459,9 +436,9 @@ impl Dialect {
                 "last_value",
                 "nth_value",
             ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             scalar_transformers: scalar_transforms,
             aggregate_transformers: Default::default(),
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
@@ -477,9 +454,10 @@ impl Dialect {
             ("var", RenameFunctionTransformer::new_dyn("var_samp")),
             ("stddev", RenameFunctionTransformer::new_dyn("stddev_samp")),
             ("covar", RenameFunctionTransformer::new_dyn("covar_samp")),
-        ].into_iter().map(
-            |(name, v)| (name.to_string(), v)
-        ).collect();
+        ]
+        .into_iter()
+        .map(|(name, v)| (name.to_string(), v))
+        .collect();
 
         Self {
             parse_dialect: ParseDialect::Dremio,
@@ -487,15 +465,10 @@ impl Dialect {
             binary_ops: vec![
                 Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
             ]
-                .into_iter()
-                .collect(),
+            .into_iter()
+            .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec![
-                "round",
-            ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -507,9 +480,9 @@ impl Dialect {
                 "covar_pop",
                 "corr",
             ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
@@ -525,9 +498,10 @@ impl Dialect {
         let aggregate_transformers: HashMap<String, Arc<dyn FunctionTransformer>> = vec![
             ("var", RenameFunctionTransformer::new_dyn("var_samp")),
             ("stddev", RenameFunctionTransformer::new_dyn("stddev_samp")),
-        ].into_iter().map(
-            |(name, v)| (name.to_string(), v)
-        ).collect();
+        ]
+        .into_iter()
+        .map(|(name, v)| (name.to_string(), v))
+        .collect();
 
         Self {
             parse_dialect: ParseDialect::DuckDB,
@@ -535,15 +509,10 @@ impl Dialect {
             binary_ops: vec![
                 Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
             ]
-                .into_iter()
-                .collect(),
+            .into_iter()
+            .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec![
-                "round",
-            ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -556,9 +525,9 @@ impl Dialect {
                 "covar_pop",
                 "corr",
             ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
@@ -574,33 +543,21 @@ impl Dialect {
         let aggregate_transformers: HashMap<String, Arc<dyn FunctionTransformer>> = vec![
             ("var", RenameFunctionTransformer::new_dyn("var_samp")),
             ("stddev", RenameFunctionTransformer::new_dyn("stddev_samp")),
-        ].into_iter().map(
-            |(name, v)| (name.to_string(), v)
-        ).collect();
+        ]
+        .into_iter()
+        .map(|(name, v)| (name.to_string(), v))
+        .collect();
         Self {
             parse_dialect: ParseDialect::MySql,
             quote_style: '`',
             binary_ops: vec![
                 Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
             ]
-                .into_iter()
-                .collect(),
+            .into_iter()
+            .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec![
-                "round",
-            ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
-            aggregate_functions: vec![
-                "min",
-                "max",
-                "count",
-                "avg",
-                "sum",
-                "var_pop",
-                "stddev_pop",
-            ]
+            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            aggregate_functions: vec!["min", "max", "count", "avg", "sum", "var_pop", "stddev_pop"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -618,24 +575,20 @@ impl Dialect {
             ("var", RenameFunctionTransformer::new_dyn("var_samp")),
             ("stddev", RenameFunctionTransformer::new_dyn("stddev_samp")),
             ("covar", RenameFunctionTransformer::new_dyn("covar_samp")),
-        ].into_iter().map(
-            |(name, v)| (name.to_string(), v)
-        ).collect();
+        ]
+        .into_iter()
+        .map(|(name, v)| (name.to_string(), v))
+        .collect();
         Self {
             parse_dialect: ParseDialect::Postgres,
             quote_style: '"',
             binary_ops: vec![
                 Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
             ]
-                .into_iter()
-                .collect(),
+            .into_iter()
+            .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec![
-                "round",
-            ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -647,9 +600,9 @@ impl Dialect {
                 "covar_pop",
                 "corr",
             ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
@@ -665,9 +618,10 @@ impl Dialect {
         let aggregate_transformers: HashMap<String, Arc<dyn FunctionTransformer>> = vec![
             ("var", RenameFunctionTransformer::new_dyn("var_samp")),
             ("stddev", RenameFunctionTransformer::new_dyn("stddev_samp")),
-        ].into_iter().map(
-            |(name, v)| (name.to_string(), v)
-        ).collect();
+        ]
+        .into_iter()
+        .map(|(name, v)| (name.to_string(), v))
+        .collect();
 
         Self {
             parse_dialect: ParseDialect::Redshift,
@@ -675,15 +629,10 @@ impl Dialect {
             binary_ops: vec![
                 Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
             ]
-                .into_iter()
-                .collect(),
+            .into_iter()
+            .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec![
-                "round",
-            ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -695,9 +644,9 @@ impl Dialect {
                 "var_pop",
                 "stddev_pop",
             ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
@@ -712,9 +661,10 @@ impl Dialect {
             ("var", RenameFunctionTransformer::new_dyn("var_samp")),
             ("stddev", RenameFunctionTransformer::new_dyn("stddev_samp")),
             ("covar", RenameFunctionTransformer::new_dyn("covar_samp")),
-        ].into_iter().map(
-            |(name, v)| (name.to_string(), v)
-        ).collect();
+        ]
+        .into_iter()
+        .map(|(name, v)| (name.to_string(), v))
+        .collect();
 
         Self {
             parse_dialect: ParseDialect::Snowflake,
@@ -722,15 +672,10 @@ impl Dialect {
             binary_ops: vec![
                 Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
             ]
-                .into_iter()
-                .collect(),
+            .into_iter()
+            .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec![
-                "round",
-            ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -743,9 +688,9 @@ impl Dialect {
                 "covar_pop",
                 "corr",
             ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             window_functions: Default::default(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
@@ -769,19 +714,8 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec![
-                "round",
-            ]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
-            aggregate_functions: vec![
-                "min",
-                "max",
-                "count",
-                "avg",
-                "sum",
-            ]
+            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            aggregate_functions: vec!["min", "max", "count", "avg", "sum"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -875,12 +809,20 @@ impl RenameFunctionTransformer {
 }
 impl FunctionTransformer for RenameFunctionTransformer {
     fn transform(&self, args: &[Expr], dialect: &Dialect) -> Result<SqlExpr> {
-        let sql_args = args.iter().map(|arg| {
-            Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(arg.to_sql(dialect)?)))
-        }).collect::<Result<Vec<_>>>()?;
+        let sql_args = args
+            .iter()
+            .map(|arg| {
+                Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(
+                    arg.to_sql(dialect)?,
+                )))
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(SqlExpr::Function(Function {
-            name: ObjectName(vec![Ident { value: self.0.clone(), quote_style: None }]),
+            name: ObjectName(vec![Ident {
+                value: self.0.clone(),
+                quote_style: None,
+            }]),
             args: sql_args,
             over: None,
             distinct: false,
