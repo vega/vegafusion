@@ -7,9 +7,9 @@ use arrow::datatypes::{Field, Schema, SchemaRef};
 use async_trait::async_trait;
 use datafusion_common::{Column, DFSchema, ScalarValue};
 use datafusion_expr::{
-    abs, col, expr, lit, max, min, when, window_function, AggregateFunction, BuiltInWindowFunction,
-    BuiltinScalarFunction, Expr, ExprSchemable, WindowFrame, WindowFrameBound, WindowFrameUnits,
-    WindowFunction,
+    abs, col, expr, is_null, lit, max, min, when, window_function, AggregateFunction,
+    BuiltInWindowFunction, BuiltinScalarFunction, Expr, ExprSchemable, WindowFrame,
+    WindowFrameBound, WindowFrameUnits, WindowFunction,
 };
 use sqlparser::ast::{
     Cte, Expr as SqlExpr, Ident, Query, Select, SelectItem, SetExpr, Statement, TableAlias,
@@ -714,10 +714,42 @@ impl DataFrame for SqlDataFrame {
                 })
                 .collect();
 
-            let select_column_strs = select_columns
-                .iter()
-                .map(|c| Ok(c.to_sql_select(self.dialect())?.to_string()))
-                .collect::<Result<Vec<_>>>()?;
+            let select_column_strs: Vec<_> = if self.dialect().impute_fully_qualified {
+                // Some dialects (e.g. Clickhouse) require that references to columns in nested
+                // subqueries be qualified with the subquery alias. Other dialects don't support this
+                original_columns
+                    .iter()
+                    .map(|col_name| {
+                        let expr = if col_name == field {
+                            Expr::ScalarFunction {
+                                fun: BuiltinScalarFunction::Coalesce,
+                                args: vec![flat_col(field), lit(value.clone())],
+                            }
+                            .alias(col_name)
+                        } else if col_name == key {
+                            Expr::Column(Column {
+                                relation: Some("_key".to_string()),
+                                name: col_name.clone(),
+                            })
+                            .alias(col_name)
+                        } else if groupby.contains(col_name) {
+                            Expr::Column(Column {
+                                relation: Some("_groups".to_string()),
+                                name: col_name.clone(),
+                            })
+                            .alias(col_name)
+                        } else {
+                            flat_col(col_name)
+                        };
+                        Ok(expr.to_sql_select(self.dialect())?.to_string())
+                    })
+                    .collect::<Result<Vec<_>>>()?
+            } else {
+                select_columns
+                    .iter()
+                    .map(|c| Ok(c.to_sql_select(self.dialect())?.to_string()))
+                    .collect::<Result<Vec<_>>>()?
+            };
 
             let select_column_csv = select_column_strs.join(", ");
 
@@ -728,16 +760,18 @@ impl DataFrame for SqlDataFrame {
             if let Some(order_field) = order_field {
                 // Query with ordering column
                 let sql = format!(
-                    "SELECT {select_column_csv}, {order_field}_key, {order_field}_groups \
-                     FROM (SELECT {key}, min({order_field}) as {order_field}_key from {parent} WHERE {key} IS NOT NULL GROUP BY {key}) AS _key \
-                     CROSS JOIN (SELECT {group_cols_csv}, min({order_field}) as {order_field}_groups from {parent} GROUP BY {group_cols_csv}) as _groups \
+                    "SELECT {select_column_csv}, {order_key_col}, {order_group_col} \
+                     FROM (SELECT {key}, min({order_col}) as {order_key_col} from {parent} WHERE {key} IS NOT NULL GROUP BY {key}) AS _key \
+                     CROSS JOIN (SELECT {group_cols_csv}, min({order_col}) as {order_group_col} from {parent} GROUP BY {group_cols_csv}) as _groups \
                      LEFT OUTER JOIN {parent} \
                      USING ({using_csv})",
                     select_column_csv = select_column_csv,
                     group_cols_csv = group_cols_csv,
                     key = key_col_str,
                     using_csv = using_csv,
-                    order_field = order_field,
+                    order_col = col(order_field).to_sql(self.dialect())?.to_string(),
+                    order_group_col = col(format!("{order_field}_groups")).to_sql(self.dialect())?.to_string(),
+                    order_key_col = col(format!("{order_field}_key")).to_sql(self.dialect())?.to_string(),
                     parent = self.parent_name(),
                 );
 
@@ -753,6 +787,7 @@ impl DataFrame for SqlDataFrame {
                 // Override ordering column since null values may have been introduced in the query above.
                 // Match input ordering with imputed rows (those will null ordering column) pushed
                 // to the end.
+
                 let order_col = Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::BuiltInWindowFunction(
                         BuiltInWindowFunction::RowNumber,
@@ -762,21 +797,26 @@ impl DataFrame for SqlDataFrame {
                     order_by: vec![
                         // Sort first by the original row order, pushing imputed rows to the end
                         Expr::Sort(expr::Sort {
+                            expr: Box::new(is_null(flat_col(order_field))),
+                            asc: true,
+                            nulls_first: true,
+                        }),
+                        Expr::Sort(expr::Sort {
                             expr: Box::new(flat_col(order_field)),
                             asc: true,
-                            nulls_first: false,
+                            nulls_first: true,
                         }),
                         // Sort imputed rows by first row that resides group
                         // then by first row that matches a key
                         Expr::Sort(expr::Sort {
                             expr: Box::new(flat_col(&format!("{order_field}_groups"))),
                             asc: true,
-                            nulls_first: false,
+                            nulls_first: true,
                         }),
                         Expr::Sort(expr::Sort {
                             expr: Box::new(flat_col(&format!("{order_field}_key"))),
                             asc: true,
-                            nulls_first: false,
+                            nulls_first: true,
                         }),
                     ],
                     window_frame: WindowFrame {

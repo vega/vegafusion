@@ -109,6 +109,10 @@ pub struct Dialect {
 
     /// Whether NULLS FIRST, NULLS LAST is supported in ORDER BY
     pub supports_null_ordering: bool,
+
+    /// Whether to use fully qualified table.column expressions when referencing nested queries
+    /// in impute
+    pub impute_fully_qualified: bool,
 }
 
 impl Default for Dialect {
@@ -127,6 +131,7 @@ impl Default for Dialect {
                 explicit_row: false,
             },
             supports_null_ordering: true,
+            impute_fully_qualified: false,
         }
     }
 }
@@ -156,7 +161,10 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            scalar_functions: vec!["round", "coalesce"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -178,6 +186,7 @@ impl Dialect {
                 explicit_row: false,
             },
             supports_null_ordering: true,
+            impute_fully_qualified: false,
         }
     }
 
@@ -197,7 +206,10 @@ impl Dialect {
             )]
             .into_iter()
             .collect(),
-            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            scalar_functions: vec!["round", "coalesce"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             aggregate_functions: vec!["min", "max", "count", "avg", "sum"]
                 .iter()
                 .map(|s| s.to_string())
@@ -207,6 +219,7 @@ impl Dialect {
             aggregate_transformers: Default::default(),
             values_mode: ValuesMode::SelectUnion,
             supports_null_ordering: true,
+            impute_fully_qualified: false,
         }
     }
 
@@ -236,7 +249,10 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            scalar_functions: vec!["round", "coalesce"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             aggregate_functions: vec!["min", "max", "count", "avg", "sum", "median", "corr"]
                 .iter()
                 .map(|s| s.to_string())
@@ -246,6 +262,7 @@ impl Dialect {
             aggregate_transformers,
             values_mode: ValuesMode::SelectUnion,
             supports_null_ordering: true,
+            impute_fully_qualified: true,
         }
     }
 
@@ -269,7 +286,10 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            scalar_functions: vec!["round", "coalesce"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -292,6 +312,7 @@ impl Dialect {
                 explicit_row: false,
             },
             supports_null_ordering: true,
+            impute_fully_qualified: false,
         }
     }
 
@@ -445,6 +466,7 @@ impl Dialect {
                 explicit_row: false,
             },
             supports_null_ordering: true,
+            impute_fully_qualified: false,
         }
     }
 
@@ -468,7 +490,10 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            scalar_functions: vec!["round", "coalesce"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -490,6 +515,7 @@ impl Dialect {
                 explicit_row: false,
             },
             supports_null_ordering: true,
+            impute_fully_qualified: true,
         }
     }
 
@@ -512,7 +538,10 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            scalar_functions: vec!["round", "coalesce"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -535,6 +564,7 @@ impl Dialect {
                 explicit_row: false,
             },
             supports_null_ordering: true,
+            impute_fully_qualified: false,
         }
     }
 
@@ -556,7 +586,10 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            scalar_functions: vec!["round", "coalesce"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             aggregate_functions: vec!["min", "max", "count", "avg", "sum", "var_pop", "stddev_pop"]
                 .iter()
                 .map(|s| s.to_string())
@@ -566,6 +599,7 @@ impl Dialect {
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases { explicit_row: true },
             supports_null_ordering: false,
+            impute_fully_qualified: false,
         }
     }
 
@@ -588,7 +622,10 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            scalar_functions: vec!["round", "coalesce"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -610,6 +647,7 @@ impl Dialect {
                 explicit_row: false,
             },
             supports_null_ordering: true,
+            impute_fully_qualified: false,
         }
     }
 
@@ -632,7 +670,10 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            scalar_functions: vec!["round", "coalesce"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -652,6 +693,7 @@ impl Dialect {
             aggregate_transformers,
             values_mode: ValuesMode::SelectUnion,
             supports_null_ordering: true,
+            impute_fully_qualified: false,
         }
     }
 
@@ -675,7 +717,10 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            scalar_functions: vec!["round", "coalesce"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -700,6 +745,7 @@ impl Dialect {
                 base_index: 1,
             },
             supports_null_ordering: true,
+            impute_fully_qualified: false,
         }
     }
 
@@ -714,7 +760,10 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round"].iter().map(|s| s.to_string()).collect(),
+            scalar_functions: vec!["round", "coalesce"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             aggregate_functions: vec!["min", "max", "count", "avg", "sum"]
                 .iter()
                 .map(|s| s.to_string())
@@ -728,6 +777,7 @@ impl Dialect {
                 base_index: 1,
             },
             supports_null_ordering: true,
+            impute_fully_qualified: false,
         }
     }
 }
