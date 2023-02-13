@@ -432,7 +432,7 @@ impl DataFrame for SqlDataFrame {
 
         let numeric_field = Expr::ScalarFunction {
             fun: BuiltinScalarFunction::Coalesce,
-            args: vec![to_numeric(flat_col(field), &self.schema_df()?)?, lit(0)],
+            args: vec![to_numeric(flat_col(field), &self.schema_df()?)?, lit(0.0)],
         };
 
         if let StackMode::Zero = mode {
@@ -465,8 +465,8 @@ impl DataFrame for SqlDataFrame {
 
             let dataframe = self
                 .chain_query_str(&format!(
-                    "(SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} >= 0) UNION ALL \
-                                    (SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} < 0)",
+                    "SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} >= 0 UNION ALL \
+                                    SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} < 0",
                     parent = self.parent_name(),
                     window_expr_str = window_expr_str,
                     numeric_field = numeric_field.to_sql(self.dialect())?.to_string()
@@ -553,6 +553,7 @@ impl DataFrame for SqlDataFrame {
             };
 
             // Build window function to compute cumulative sum of stack column
+            let cumulative_field = "_cumulative";
             let fun = WindowFunction::AggregateFunction(AggregateFunction::Sum);
             let window_expr = Expr::WindowFunction(expr::WindowFunction {
                 fun,
@@ -565,7 +566,7 @@ impl DataFrame for SqlDataFrame {
                     end_bound: WindowFrameBound::CurrentRow,
                 },
             })
-            .alias(stop_field);
+            .alias(cumulative_field);
 
             // Perform selection to add new field value
             let dataframe = dataframe.select(vec![Expr::Wildcard, window_expr])?;
@@ -601,15 +602,17 @@ impl DataFrame for SqlDataFrame {
                     let dataframe = sqldataframe
                         .chain_query_str(
                             &format!(
-                                "SELECT * from {parent} CROSS JOIN (SELECT {max_total_str} from {parent})",
+                                "SELECT * from {parent} CROSS JOIN (SELECT {max_total_str} from {parent}) as _cross",
                                 parent = sqldataframe.parent_name(),
                                 max_total_str = max_total_str,
                             ),
                             new_schema
                         )?;
 
-                    let first = flat_col("__max_total").sub(flat_col("__total")).div(lit(2));
-                    let first_col = flat_col(stop_field).add(first);
+                    let first = flat_col("__max_total")
+                        .sub(flat_col("__total"))
+                        .div(lit(2.0));
+                    let first_col = flat_col(cumulative_field).add(first);
                     let stop_col = first_col.clone().alias(stop_field);
                     let start_col = first_col.sub(flat_col(stack_col_name)).alias(start_field);
                     final_selection.push(start_col);
@@ -622,7 +625,7 @@ impl DataFrame for SqlDataFrame {
 
                     let start_col = when(total_zero.clone(), lit(0.0))
                         .otherwise(
-                            flat_col(stop_field)
+                            flat_col(cumulative_field)
                                 .sub(flat_col(stack_col_name))
                                 .div(flat_col("__total")),
                         )?
@@ -631,7 +634,7 @@ impl DataFrame for SqlDataFrame {
                     final_selection.push(start_col);
 
                     let stop_col = when(total_zero, lit(0.0))
-                        .otherwise(flat_col(stop_field).div(flat_col("__total")))?
+                        .otherwise(flat_col(cumulative_field).div(flat_col("__total")))?
                         .alias(stop_field);
 
                     final_selection.push(stop_col);

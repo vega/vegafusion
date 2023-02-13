@@ -161,7 +161,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round", "coalesce"]
+            scalar_functions: vec!["abs", "round", "coalesce"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -206,7 +206,7 @@ impl Dialect {
             )]
             .into_iter()
             .collect(),
-            scalar_functions: vec!["round", "coalesce"]
+            scalar_functions: vec!["abs", "round", "coalesce"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -249,7 +249,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round", "coalesce"]
+            scalar_functions: vec!["abs", "round", "coalesce"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -286,7 +286,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round", "coalesce"]
+            scalar_functions: vec!["abs", "round", "coalesce"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -490,7 +490,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round", "coalesce"]
+            scalar_functions: vec!["abs", "round", "coalesce"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -538,7 +538,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round", "coalesce"]
+            scalar_functions: vec!["abs", "round", "coalesce"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -586,7 +586,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round", "coalesce"]
+            scalar_functions: vec!["abs", "round", "coalesce"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -622,7 +622,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round", "coalesce"]
+            scalar_functions: vec!["abs", "round", "coalesce"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -670,7 +670,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round", "coalesce"]
+            scalar_functions: vec!["abs", "round", "coalesce"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -717,7 +717,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round", "coalesce"]
+            scalar_functions: vec!["abs", "round", "coalesce"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
@@ -760,7 +760,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["round", "coalesce"]
+            scalar_functions: vec!["abs", "round", "coalesce"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
