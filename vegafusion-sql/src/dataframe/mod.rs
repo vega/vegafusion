@@ -188,7 +188,7 @@ impl DataFrame for SqlDataFrame {
                     },
                     name: col.display_name()?,
                 })
-                    .alias(col.display_name()?);
+                .alias(col.display_name()?);
                 Ok(col.to_sql_select(self.dialect())?.to_string())
             })
             .collect::<Result<Vec<_>>>()?;
@@ -207,8 +207,9 @@ impl DataFrame for SqlDataFrame {
                         } else {
                             None
                         },
-                        name: field.name().clone()
-                    }).alias(field.name());
+                        name: field.name().clone(),
+                    })
+                    .alias(field.name());
                     Some(expr.to_sql_select(self.dialect()).unwrap().to_string())
                 }
             })

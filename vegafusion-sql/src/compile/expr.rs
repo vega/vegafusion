@@ -308,6 +308,18 @@ impl ToSqlExpr for Expr {
                             compile_window_frame_bound(&window_frame.end_bound, dialect)?;
                         let start_bound =
                             compile_window_frame_bound(&window_frame.start_bound, dialect)?;
+
+                        if !dialect.supports_bounded_window_frames {
+                            if !matches!(start_bound, SqlWindowBound::Preceding(None))
+                                || !matches!(end_bound, SqlWindowBound::CurrentRow)
+                            {
+                                // Found bounded window frame, which is not supported by dialect
+                                return Err(VegaFusionError::sql_not_supported(
+                                    "Dialect does not support bounded window frames",
+                                ));
+                            }
+                        }
+
                         let units = match window_frame.units {
                             WindowFrameUnits::Rows => SqlWindowFrameUnits::Rows,
                             WindowFrameUnits::Range => SqlWindowFrameUnits::Range,

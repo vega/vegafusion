@@ -117,6 +117,9 @@ pub struct Dialect {
     /// Whether to use fully qualified table.column expressions when referencing nested queries
     /// in joinaggregate queries
     pub joinaggregate_fully_qualified: bool,
+
+    /// Whether dialect supports the use of bounded window frames
+    pub supports_bounded_window_frames: bool,
 }
 
 impl Default for Dialect {
@@ -137,6 +140,7 @@ impl Default for Dialect {
             supports_null_ordering: true,
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: false,
+            supports_bounded_window_frames: true,
         }
     }
 }
@@ -193,6 +197,7 @@ impl Dialect {
             supports_null_ordering: true,
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: false,
+            supports_bounded_window_frames: true,
         }
     }
 
@@ -227,6 +232,7 @@ impl Dialect {
             supports_null_ordering: true,
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
+            supports_bounded_window_frames: true,
         }
     }
 
@@ -271,6 +277,7 @@ impl Dialect {
             supports_null_ordering: true,
             impute_fully_qualified: true,
             joinaggregate_fully_qualified: true,
+            supports_bounded_window_frames: true,
         }
     }
 
@@ -322,6 +329,7 @@ impl Dialect {
             supports_null_ordering: true,
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
+            supports_bounded_window_frames: true,
         }
     }
 
@@ -477,6 +485,7 @@ impl Dialect {
             supports_null_ordering: true,
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
+            supports_bounded_window_frames: true,
         }
     }
 
@@ -527,6 +536,7 @@ impl Dialect {
             supports_null_ordering: true,
             impute_fully_qualified: true,
             joinaggregate_fully_qualified: true,
+            supports_bounded_window_frames: false,
         }
     }
 
@@ -577,6 +587,7 @@ impl Dialect {
             supports_null_ordering: true,
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
+            supports_bounded_window_frames: true,
         }
     }
 
@@ -613,6 +624,7 @@ impl Dialect {
             supports_null_ordering: false,
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
+            supports_bounded_window_frames: true,
         }
     }
 
@@ -662,6 +674,7 @@ impl Dialect {
             supports_null_ordering: true,
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
+            supports_bounded_window_frames: true,
         }
     }
 
@@ -709,6 +722,7 @@ impl Dialect {
             supports_null_ordering: true,
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
+            supports_bounded_window_frames: true,
         }
     }
 
@@ -762,6 +776,7 @@ impl Dialect {
             supports_null_ordering: true,
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: false,
+            supports_bounded_window_frames: true,
         }
     }
 
@@ -795,6 +810,7 @@ impl Dialect {
             supports_null_ordering: true,
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
+            supports_bounded_window_frames: true,
         }
     }
 }

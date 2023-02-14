@@ -265,22 +265,21 @@ mod test_sort {
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
 
-        let df_result = df
-            .sort(
-                vec![
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(col("c")),
-                        asc: true,
-                        nulls_first: true,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(col("b")),
-                        asc: true,
-                        nulls_first: true,
-                    }),
-                ],
-                Some(4),
-            );
+        let df_result = df.sort(
+            vec![
+                Expr::Sort(expr::Sort {
+                    expr: Box::new(col("c")),
+                    asc: true,
+                    nulls_first: true,
+                }),
+                Expr::Sort(expr::Sort {
+                    expr: Box::new(col("b")),
+                    asc: true,
+                    nulls_first: true,
+                }),
+            ],
+            Some(4),
+        );
 
         check_dataframe_query(
             df_result,
@@ -334,13 +333,7 @@ mod test_limit {
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df_result = df.limit(3);
 
-        check_dataframe_query(
-            df_result,
-            "limit",
-            "limit1",
-            dialect_name,
-            evaluable,
-        );
+        check_dataframe_query(df_result, "limit", "limit1", dialect_name, evaluable);
     }
 }
 
@@ -640,7 +633,7 @@ mod test_aggregate {
 mod test_joinaggregate {
     use crate::*;
     use datafusion_expr::{
-        avg, col, count, expr, lit, max, min, round, sum, AggregateFunction, Expr,
+        avg, col, count, expr, max, min, sum, Expr,
     };
     use rstest::rstest;
     use serde_json::json;
@@ -649,19 +642,19 @@ mod test_joinaggregate {
     use vegafusion_sql::dataframe::SqlDataFrame;
 
     #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
+        dialect_name,
+        case("athena"),
+        case("bigquery"),
+        case("clickhouse"),
+        case("databricks"),
+        case("datafusion"),
+        case("dremio"),
+        case("duckdb"),
+        case("mysql"),
+        case("postgres"),
+        case("redshift"),
+        case("snowflake"),
+        case("sqlite")
     )]
     fn test_simple_aggs(dialect_name: &str) {
         println!("{dialect_name}");
@@ -678,7 +671,7 @@ mod test_joinaggregate {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df_result = df
@@ -691,14 +684,17 @@ mod test_joinaggregate {
                     sum(col("a")).alias("sum_a"),
                     count(col("a")).alias("count_a"),
                 ],
-            ).and_then(
-            |df| {
-                df.sort(vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
-                    asc: true,
-                    nulls_first: true,
-                })], None)
-        });
+            )
+            .and_then(|df| {
+                df.sort(
+                    vec![Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    })],
+                    None,
+                )
+            });
 
         check_dataframe_query(
             df_result,
@@ -709,21 +705,20 @@ mod test_joinaggregate {
         );
     }
 
-
     #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
+        dialect_name,
+        case("athena"),
+        case("bigquery"),
+        case("clickhouse"),
+        case("databricks"),
+        case("datafusion"),
+        case("dremio"),
+        case("duckdb"),
+        case("mysql"),
+        case("postgres"),
+        case("redshift"),
+        case("snowflake"),
+        case("sqlite")
     )]
     fn test_simple_aggs_no_grouping(dialect_name: &str) {
         println!("{dialect_name}");
@@ -740,7 +735,7 @@ mod test_joinaggregate {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df_result = df
@@ -753,13 +748,16 @@ mod test_joinaggregate {
                     sum(col("a")).alias("sum_a"),
                     count(col("a")).alias("count_a"),
                 ],
-            ).and_then(
-            |df| {
-                df.sort(vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
-                    asc: true,
-                    nulls_first: true,
-                })], None)
+            )
+            .and_then(|df| {
+                df.sort(
+                    vec![Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    })],
+                    None,
+                )
             });
 
         check_dataframe_query(
@@ -771,7 +769,6 @@ mod test_joinaggregate {
         );
     }
 }
-
 
 #[cfg(test)]
 mod test_fold {
@@ -1397,6 +1394,222 @@ mod test_stack {
             df_result,
             "stack",
             "mode_normalized",
+            dialect_name,
+            evaluable,
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_select_window {
+    use crate::*;
+    use datafusion_common::ScalarValue;
+    use datafusion_expr::{
+        aggregate_function, col, expr, or, window_function, AggregateFunction, Expr, WindowFrame,
+        WindowFrameBound, WindowFrameUnits,
+    };
+    use rstest::rstest;
+    use serde_json::json;
+    use vegafusion_common::data::table::VegaFusionTable;
+    use vegafusion_sql::dataframe::SqlDataFrame;
+
+    #[rstest(
+        dialect_name,
+        case("athena"),
+        case("bigquery"),
+        case("clickhouse"),
+        case("databricks"),
+        case("datafusion"),
+        case("dremio"),
+        case("duckdb"),
+        case("mysql"),
+        case("postgres"),
+        case("redshift"),
+        case("snowflake"),
+        case("sqlite")
+    )]
+    fn test_simple_aggs_unbounded(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 1, "b": 2, "c": "A"},
+                {"a": 3, "b": 4, "c": "BB"},
+                {"a": 5, "b": 6, "c": "A"},
+                {"a": 7, "b": 8, "c": "BB"},
+                {"a": 9, "b": 10, "c": "A"},
+            ]),
+            1024,
+        )
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let order_by = vec![Expr::Sort(expr::Sort {
+            expr: Box::new(col("a")),
+            asc: true,
+            nulls_first: true,
+        })];
+        let window_frame = WindowFrame {
+            units: WindowFrameUnits::Rows,
+            start_bound: WindowFrameBound::Preceding(ScalarValue::Null),
+            end_bound: WindowFrameBound::CurrentRow,
+        };
+        let df_result = df
+            .select(vec![
+                col("a"),
+                col("b"),
+                col("c"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Sum),
+                    args: vec![col("b")],
+                    partition_by: vec![],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("sum_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(
+                        AggregateFunction::Count,
+                    ),
+                    args: vec![col("b")],
+                    partition_by: vec![col("c")],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("count_part_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Avg),
+                    args: vec![col("b")],
+                    partition_by: vec![],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("cume_mean_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Min),
+                    args: vec![col("b")],
+                    partition_by: vec![col("c")],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("min_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Max),
+                    args: vec![col("b")],
+                    partition_by: vec![],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("max_b"),
+            ])
+            .and_then(|df| df.sort(order_by, None));
+
+        check_dataframe_query(
+            df_result,
+            "select_window",
+            "simple_aggs_unbounded",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[rstest(
+        dialect_name,
+        case("athena"),
+        case("bigquery"),
+        case("clickhouse"),
+        case("databricks"),
+        case("datafusion"),
+        case("dremio"),
+        case("duckdb"),
+        case("mysql"),
+        case("postgres"),
+        case("redshift"),
+        case("snowflake"),
+        case("sqlite")
+    )]
+    fn test_simple_aggs_bounded(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 1, "b": 2, "c": "A"},
+                {"a": 3, "b": 4, "c": "BB"},
+                {"a": 5, "b": 6, "c": "A"},
+                {"a": 7, "b": 8, "c": "BB"},
+                {"a": 9, "b": 10, "c": "A"},
+            ]),
+            1024,
+        )
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let order_by = vec![Expr::Sort(expr::Sort {
+            expr: Box::new(col("a")),
+            asc: true,
+            nulls_first: true,
+        })];
+        let window_frame = WindowFrame {
+            units: WindowFrameUnits::Rows,
+            start_bound: WindowFrameBound::Preceding(ScalarValue::from(1)),
+            end_bound: WindowFrameBound::CurrentRow,
+        };
+        let df_result = df
+            .select(vec![
+                col("a"),
+                col("b"),
+                col("c"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Sum),
+                    args: vec![col("b")],
+                    partition_by: vec![],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("sum_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(
+                        AggregateFunction::Count,
+                    ),
+                    args: vec![col("b")],
+                    partition_by: vec![col("c")],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("count_part_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Avg),
+                    args: vec![col("b")],
+                    partition_by: vec![],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("cume_mean_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Min),
+                    args: vec![col("b")],
+                    partition_by: vec![col("c")],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("min_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Max),
+                    args: vec![col("b")],
+                    partition_by: vec![],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("max_b"),
+            ])
+            .and_then(|df| df.sort(order_by, None));
+
+        check_dataframe_query(
+            df_result,
+            "select_window",
+            "simple_aggs_bounded",
             dialect_name,
             evaluable,
         );
