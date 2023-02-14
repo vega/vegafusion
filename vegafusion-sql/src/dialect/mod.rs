@@ -111,8 +111,12 @@ pub struct Dialect {
     pub supports_null_ordering: bool,
 
     /// Whether to use fully qualified table.column expressions when referencing nested queries
-    /// in impute
+    /// in impute queries
     pub impute_fully_qualified: bool,
+
+    /// Whether to use fully qualified table.column expressions when referencing nested queries
+    /// in joinaggregate queries
+    pub joinaggregate_fully_qualified: bool,
 }
 
 impl Default for Dialect {
@@ -132,6 +136,7 @@ impl Default for Dialect {
             },
             supports_null_ordering: true,
             impute_fully_qualified: false,
+            joinaggregate_fully_qualified: false,
         }
     }
 }
@@ -187,6 +192,7 @@ impl Dialect {
             },
             supports_null_ordering: true,
             impute_fully_qualified: false,
+            joinaggregate_fully_qualified: false,
         }
     }
 
@@ -220,6 +226,7 @@ impl Dialect {
             values_mode: ValuesMode::SelectUnion,
             supports_null_ordering: true,
             impute_fully_qualified: false,
+            joinaggregate_fully_qualified: true,
         }
     }
 
@@ -263,6 +270,7 @@ impl Dialect {
             values_mode: ValuesMode::SelectUnion,
             supports_null_ordering: true,
             impute_fully_qualified: true,
+            joinaggregate_fully_qualified: true,
         }
     }
 
@@ -313,6 +321,7 @@ impl Dialect {
             },
             supports_null_ordering: true,
             impute_fully_qualified: false,
+            joinaggregate_fully_qualified: true,
         }
     }
 
@@ -467,6 +476,7 @@ impl Dialect {
             },
             supports_null_ordering: true,
             impute_fully_qualified: false,
+            joinaggregate_fully_qualified: true,
         }
     }
 
@@ -516,6 +526,7 @@ impl Dialect {
             },
             supports_null_ordering: true,
             impute_fully_qualified: true,
+            joinaggregate_fully_qualified: true,
         }
     }
 
@@ -565,6 +576,7 @@ impl Dialect {
             },
             supports_null_ordering: true,
             impute_fully_qualified: false,
+            joinaggregate_fully_qualified: true,
         }
     }
 
@@ -600,6 +612,7 @@ impl Dialect {
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases { explicit_row: true },
             supports_null_ordering: false,
             impute_fully_qualified: false,
+            joinaggregate_fully_qualified: true,
         }
     }
 
@@ -648,6 +661,7 @@ impl Dialect {
             },
             supports_null_ordering: true,
             impute_fully_qualified: false,
+            joinaggregate_fully_qualified: true,
         }
     }
 
@@ -694,6 +708,7 @@ impl Dialect {
             values_mode: ValuesMode::SelectUnion,
             supports_null_ordering: true,
             impute_fully_qualified: false,
+            joinaggregate_fully_qualified: true,
         }
     }
 
@@ -746,6 +761,7 @@ impl Dialect {
             },
             supports_null_ordering: true,
             impute_fully_qualified: false,
+            joinaggregate_fully_qualified: false,
         }
     }
 
@@ -778,6 +794,7 @@ impl Dialect {
             },
             supports_null_ordering: true,
             impute_fully_qualified: false,
+            joinaggregate_fully_qualified: true,
         }
     }
 }

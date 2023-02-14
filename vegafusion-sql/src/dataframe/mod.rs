@@ -164,19 +164,6 @@ impl DataFrame for SqlDataFrame {
             .map(|col| Ok(col.display_name()?))
             .collect::<Result<HashSet<_>>>()?;
 
-        let new_col_strs = aggr_expr
-            .iter()
-            .map(|col| {
-                let col = Expr::Column(Column {
-                    relation: Some(inner_name.to_string()),
-                    name: col.display_name()?,
-                })
-                .alias(col.display_name()?);
-                Ok(col.to_sql_select(self.dialect())?.to_string())
-            })
-            .collect::<Result<Vec<_>>>()?;
-        let new_col_csv = new_col_strs.join(", ");
-
         // Build csv str of input columns
         let input_col_exprs = schema
             .fields()
@@ -190,10 +177,43 @@ impl DataFrame for SqlDataFrame {
             })
             .collect::<Vec<_>>();
 
-        let input_col_strs = input_col_exprs
+        let new_col_strs = aggr_expr
             .iter()
-            .map(|c| Ok(c.to_sql_select(self.dialect())?.to_string()))
+            .map(|col| {
+                let col = Expr::Column(Column {
+                    relation: if self.dialect().joinaggregate_fully_qualified {
+                        Some(inner_name.to_string())
+                    } else {
+                        None
+                    },
+                    name: col.display_name()?,
+                })
+                    .alias(col.display_name()?);
+                Ok(col.to_sql_select(self.dialect())?.to_string())
+            })
             .collect::<Result<Vec<_>>>()?;
+        let new_col_csv = new_col_strs.join(", ");
+
+        let input_col_strs = schema
+            .fields()
+            .iter()
+            .filter_map(|field| {
+                if new_col_names.contains(field.name()) {
+                    None
+                } else {
+                    let expr = Expr::Column(Column {
+                        relation: if self.dialect().joinaggregate_fully_qualified {
+                            Some(self.parent_name())
+                        } else {
+                            None
+                        },
+                        name: field.name().clone()
+                    }).alias(field.name());
+                    Some(expr.to_sql_select(self.dialect()).unwrap().to_string())
+                }
+            })
+            .collect::<Vec<_>>();
+
         let input_col_csv = input_col_strs.join(", ");
 
         // Perform join aggregation
