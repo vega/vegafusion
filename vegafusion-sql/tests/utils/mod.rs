@@ -9,6 +9,8 @@ use vegafusion_sql::dialect::Dialect;
 use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_dataframe::dataframe::DataFrame;
 
+use rstest_reuse::{self, *};
+
 #[cfg(feature = "datafusion-conn")]
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 use vegafusion_sql::dataframe::SqlDataFrame;
@@ -19,6 +21,23 @@ lazy_static! {
         .build()
         .unwrap();
 }
+
+
+#[template]
+#[rstest]
+#[case("athena")]
+#[case("bigquery")]
+#[case("clickhouse")]
+#[case("databricks")]
+#[case("datafusion")]
+#[case("dremio")]
+#[case("duckdb")]
+#[case("mysql")]
+#[case("postgres")]
+#[case("redshift")]
+#[case("snowflake")]
+#[case("sqlite")]
+pub fn dialect_names(#[case] dialect_name: &str) {}
 
 pub async fn make_connection(name: &str) -> (Arc<dyn SqlConnection>, bool) {
     #[cfg(feature = "datafusion-conn")]

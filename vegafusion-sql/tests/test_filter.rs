@@ -2,9 +2,10 @@
 extern crate lazy_static;
 
 mod utils;
-use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query};
+use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query, dialect_names};
 use datafusion_expr::{col, expr, lit, Expr};
 use rstest::rstest;
+use rstest_reuse::{self, *};
 use serde_json::json;
 use std::ops::Add;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -15,21 +16,7 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 mod test_simple_gte {
     use crate::*;
 
-    #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
 
@@ -63,4 +50,7 @@ mod test_simple_gte {
 
         check_dataframe_query(df_result, "filter", "simple_gte", dialect_name, evaluable);
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }

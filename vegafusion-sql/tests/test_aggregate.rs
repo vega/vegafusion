@@ -2,36 +2,24 @@
 extern crate lazy_static;
 
 mod utils;
-use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query};
+use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query, dialect_names};
 use datafusion_expr::{
     avg, col, count, expr, lit, max, min, round, sum, AggregateFunction, Expr,
 };
 use rstest::rstest;
+use rstest_reuse::{self, *};
 use serde_json::json;
 use std::ops::{Div, Mul};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_sql::dataframe::SqlDataFrame;
 
+
 #[cfg(test)]
 mod test_simple_aggs {
     use crate::*;
 
-    #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
-    )]
-    fn test(dialect_name: &str) {
+    #[apply(dialect_names)]
+    fn test(#[case] dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -78,27 +66,16 @@ mod test_simple_aggs {
             evaluable,
         );
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 #[cfg(test)]
 mod test_median_agg {
     use crate::*;
 
-    #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -138,27 +115,16 @@ mod test_median_agg {
             evaluable,
         );
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 #[cfg(test)]
 mod test_variance_aggs {
     use crate::*;
 
-    #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -244,4 +210,7 @@ mod test_variance_aggs {
             evaluable,
         );
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }

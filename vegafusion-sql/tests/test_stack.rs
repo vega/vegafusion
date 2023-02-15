@@ -2,9 +2,10 @@
 extern crate lazy_static;
 
 mod utils;
-use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query};
+use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query, dialect_names};
 use datafusion_expr::{col, expr, lit, round, Expr};
 use rstest::rstest;
+use rstest_reuse::{self, *};
 use serde_json::json;
 use std::ops::{Div, Mul};
 use std::sync::Arc;
@@ -71,21 +72,7 @@ fn make_stack_for_mode(df: Arc<dyn DataFrame>, mode: StackMode) -> Result<Arc<dy
 mod test_mode_zero {
     use crate::*;
 
-    #[rstest(
-        dialect_name,
-        case("athena"),
-        case("bigquery"),
-        case("clickhouse"),
-        case("databricks"),
-        case("datafusion"),
-        case("dremio"),
-        case("duckdb"),
-        case("mysql"),
-        case("postgres"),
-        case("redshift"),
-        case("snowflake"),
-        case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -94,27 +81,16 @@ mod test_mode_zero {
         let df_result = make_stack_for_mode(df, StackMode::Zero);
         check_dataframe_query(df_result, "stack", "mode_zero", dialect_name, evaluable);
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 #[cfg(test)]
 mod test_mode_center {
     use crate::*;
 
-    #[rstest(
-        dialect_name,
-        case("athena"),
-        case("bigquery"),
-        case("clickhouse"),
-        case("databricks"),
-        case("datafusion"),
-        case("dremio"),
-        case("duckdb"),
-        case("mysql"),
-        case("postgres"),
-        case("redshift"),
-        case("snowflake"),
-        case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -122,26 +98,15 @@ mod test_mode_center {
         let df_result = make_stack_for_mode(df, StackMode::Center);
         check_dataframe_query(df_result, "stack", "mode_center", dialect_name, evaluable);
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 #[cfg(test)]
 mod test_mode_normalized {
     use crate::*;
 
-    #[rstest(
-        dialect_name,
-        case("athena"),
-        case("bigquery"),
-        case("clickhouse"),
-        case("databricks"),
-        case("datafusion"),
-        case("dremio"),
-        case("duckdb"),
-        case("mysql"),
-        case("postgres"),
-        case("redshift"),
-        case("snowflake"),
-        case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -169,5 +134,8 @@ mod test_mode_normalized {
             evaluable,
         );
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 

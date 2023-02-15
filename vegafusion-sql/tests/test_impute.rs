@@ -2,10 +2,11 @@
 extern crate lazy_static;
 
 mod utils;
-use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query};
+use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query, dialect_names};
 use datafusion_common::ScalarValue;
 use datafusion_expr::{col, expr, Expr};
 use rstest::rstest;
+use rstest_reuse::{self, *};
 use serde_json::json;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_sql::dataframe::SqlDataFrame;
@@ -53,21 +54,7 @@ fn impute_data(conn: Arc<dyn SqlConnection>, ordering: bool) -> Arc<dyn DataFram
 mod test_unordered_no_groups {
     use crate::*;
 
-    #[rstest(
-        dialect_name,
-        case("athena"),
-        case("bigquery"),
-        case("clickhouse"),
-        case("databricks"),
-        case("datafusion"),
-        case("dremio"),
-        case("duckdb"),
-        case("mysql"),
-        case("postgres"),
-        case("redshift"),
-        case("snowflake"),
-    case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -102,27 +89,16 @@ mod test_unordered_no_groups {
             evaluable,
         );
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 #[cfg(test)]
 mod test_unordered_one_group {
     use crate::*;
 
-    #[rstest(
-        dialect_name,
-        case("athena"),
-        case("bigquery"),
-        case("clickhouse"),
-        case("databricks"),
-        case("datafusion"),
-        case("dremio"),
-        case("duckdb"),
-        case("mysql"),
-        case("postgres"),
-        case("redshift"),
-        case("snowflake"),
-        case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -157,6 +133,9 @@ mod test_unordered_one_group {
             evaluable,
         );
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 
@@ -164,21 +143,7 @@ mod test_unordered_one_group {
 mod test_unordered_two_groups {
     use crate::*;
 
-    #[rstest(
-        dialect_name,
-        case("athena"),
-        case("bigquery"),
-        case("clickhouse"),
-        case("databricks"),
-        case("datafusion"),
-        case("dremio"),
-        case("duckdb"),
-        case("mysql"),
-        case("postgres"),
-        case("redshift"),
-        case("snowflake"),
-        case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -229,27 +194,16 @@ mod test_unordered_two_groups {
             evaluable,
         );
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 #[cfg(test)]
 mod test_ordered_no_groups {
     use crate::*;
 
-    #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -277,27 +231,16 @@ mod test_ordered_no_groups {
             evaluable,
         );
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 #[cfg(test)]
 mod test_ordered_one_group {
     use crate::*;
 
-    #[rstest(
-        dialect_name,
-        case("athena"),
-        case("bigquery"),
-        case("clickhouse"),
-        case("databricks"),
-        case("datafusion"),
-        case("dremio"),
-        case("duckdb"),
-        case("mysql"),
-        case("postgres"),
-        case("redshift"),
-        case("snowflake"),
-        case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -331,27 +274,16 @@ mod test_ordered_one_group {
             evaluable,
         );
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 #[cfg(test)]
 mod test_ordered_two_groups {
     use crate::*;
 
-    #[rstest(
-        dialect_name,
-        case("athena"),
-        case("bigquery"),
-        case("clickhouse"),
-        case("databricks"),
-        case("datafusion"),
-        case("dremio"),
-        case("duckdb"),
-        case("mysql"),
-        case("postgres"),
-        case("redshift"),
-        case("snowflake"),
-        case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -385,4 +317,7 @@ mod test_ordered_two_groups {
             evaluable,
         );
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }

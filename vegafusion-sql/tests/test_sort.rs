@@ -2,8 +2,9 @@
 extern crate lazy_static;
 
 mod utils;
-use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query};
+use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query, dialect_names};
 use rstest::rstest;
+use rstest_reuse::{self, *};
 use datafusion_expr::{col, expr, Expr};
 use serde_json::json;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -15,21 +16,7 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 mod test_default_null_ordering {
     use crate::*;
 
-    #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -74,27 +61,16 @@ mod test_default_null_ordering {
             evaluable,
         );
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 #[cfg(test)]
 mod test_custom_null_ordering {
     use crate::*;
 
-    #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -144,21 +120,7 @@ mod test_custom_null_ordering {
 mod test_order_with_limit {
     use crate::*;
 
-    #[rstest(
-    dialect_name,
-    case("athena"),
-    case("bigquery"),
-    case("clickhouse"),
-    case("databricks"),
-    case("datafusion"),
-    case("dremio"),
-    case("duckdb"),
-    case("mysql"),
-    case("postgres"),
-    case("redshift"),
-    case("snowflake"),
-    case("sqlite")
-    )]
+    #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
