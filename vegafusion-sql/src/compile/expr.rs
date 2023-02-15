@@ -10,8 +10,8 @@ use sqlparser::ast::{
 
 use datafusion_expr::expr::{BinaryExpr, Case, Cast};
 use datafusion_expr::{
-    expr, lit, AggregateFunction, Between, BuiltinScalarFunction, Expr, Operator, WindowFrameBound,
-    WindowFrameUnits, WindowFunction,
+    expr, lit, AggregateFunction, Between, BuiltInWindowFunction, BuiltinScalarFunction, Expr,
+    Operator, WindowFrameBound, WindowFrameUnits, WindowFunction,
 };
 
 use crate::compile::function_arg::ToSqlFunctionArg;
@@ -282,7 +282,23 @@ impl ToSqlExpr for Expr {
                         (aggr_fn_to_name(agg).to_string().to_ascii_lowercase(), true)
                     }
                     WindowFunction::BuiltInWindowFunction(win_fn) => {
-                        (win_fn.to_string().to_ascii_lowercase(), false)
+                        let is_navigation_function = matches!(
+                            win_fn,
+                            BuiltInWindowFunction::FirstValue
+                                | BuiltInWindowFunction::LastValue
+                                | BuiltInWindowFunction::NthValue
+                        );
+                        let supports_frame = if is_navigation_function {
+                            // Window frames sometimes supported by navigation functions like
+                            // first_value.
+                            dialect.supports_frames_in_navigation_window_functions
+                        } else {
+                            // Window frames are not supported by numbering functions like
+                            // row_number, rank, etc.
+                            false
+                        };
+
+                        (win_fn.to_string().to_ascii_lowercase(), supports_frame)
                     }
                     WindowFunction::AggregateUDF(udf) => (udf.name.to_ascii_lowercase(), true),
                 };

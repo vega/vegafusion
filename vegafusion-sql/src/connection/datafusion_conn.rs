@@ -212,8 +212,14 @@ impl SqlConnection for DataFusionConnection {
             df.select(selections)?
         };
 
-        let schema: SchemaRef = Arc::new(df.schema().into()) as SchemaRef;
+        let df_schema = Arc::new(df.schema().into()) as SchemaRef;
         let batches = df.collect().await?;
+        let schema = if batches.is_empty() {
+            df_schema
+        } else {
+            // Use actual batch schema in case there's a discrepancy
+            batches[0].schema()
+        };
         let res = VegaFusionTable::try_new(schema, batches)?;
 
         if log_enabled!(Level::Debug) {

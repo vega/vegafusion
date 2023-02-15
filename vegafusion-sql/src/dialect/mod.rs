@@ -120,6 +120,10 @@ pub struct Dialect {
 
     /// Whether dialect supports the use of bounded window frames
     pub supports_bounded_window_frames: bool,
+
+    /// Whether dialect supports the use of explicit window frames for navigation window functions
+    /// (first_value, last_value, nth_value)
+    pub supports_frames_in_navigation_window_functions: bool,
 }
 
 impl Default for Dialect {
@@ -141,6 +145,7 @@ impl Default for Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
+            supports_frames_in_navigation_window_functions: true,
         }
     }
 }
@@ -188,7 +193,22 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
+            window_functions: vec![
+                "row_number",
+                "rank",
+                "dense_rank",
+                "percent_rank",
+                "cume_dist",
+                "ntile",
+                "lag",
+                "lead",
+                "first_value",
+                "last_value",
+                "nth_value",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
@@ -198,6 +218,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
+            supports_frames_in_navigation_window_functions: true,
         }
     }
 
@@ -225,7 +246,22 @@ impl Dialect {
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
+            window_functions: vec![
+                "row_number",
+                "rank",
+                "dense_rank",
+                "percent_rank",
+                "cume_dist",
+                "ntile",
+                "lag",
+                "lead",
+                "first_value",
+                "last_value",
+                "nth_value",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
             values_mode: ValuesMode::SelectUnion,
@@ -233,6 +269,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_frames_in_navigation_window_functions: false,
         }
     }
 
@@ -270,7 +307,17 @@ impl Dialect {
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
+            window_functions: vec![
+                "row_number",
+                "rank",
+                "dense_rank",
+                "first_value",
+                "last_value",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
+
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::SelectUnion,
@@ -278,6 +325,7 @@ impl Dialect {
             impute_fully_qualified: true,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_frames_in_navigation_window_functions: true,
         }
     }
 
@@ -320,7 +368,22 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
+            window_functions: vec![
+                "row_number",
+                "rank",
+                "dense_rank",
+                "percent_rank",
+                "cume_dist",
+                "ntile",
+                "lag",
+                "lead",
+                "first_value",
+                "last_value",
+                "nth_value",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
@@ -330,6 +393,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_frames_in_navigation_window_functions: false,
         }
     }
 
@@ -486,6 +550,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_frames_in_navigation_window_functions: true,
         }
     }
 
@@ -527,7 +592,21 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
+            window_functions: vec![
+                "row_number",
+                "rank",
+                "dense_rank",
+                "percent_rank",
+                "cume_dist",
+                "ntile",
+                "lag",
+                "lead",
+                "first_value",
+                "last_value",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
@@ -537,6 +616,7 @@ impl Dialect {
             impute_fully_qualified: true,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: false,
+            supports_frames_in_navigation_window_functions: true,
         }
     }
 
@@ -578,7 +658,22 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
+            window_functions: vec![
+                "row_number",
+                "rank",
+                "dense_rank",
+                "percent_rank",
+                "cume_dist",
+                "ntile",
+                "lag",
+                "lead",
+                "first_value",
+                "last_value",
+                "nth_value",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
@@ -588,6 +683,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_frames_in_navigation_window_functions: true,
         }
     }
 
@@ -617,7 +713,22 @@ impl Dialect {
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
+            window_functions: vec![
+                "row_number",
+                "rank",
+                "dense_rank",
+                "percent_rank",
+                "cume_dist",
+                "ntile",
+                "lag",
+                "lead",
+                "first_value",
+                "last_value",
+                "nth_value",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases { explicit_row: true },
@@ -625,6 +736,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_frames_in_navigation_window_functions: true,
         }
     }
 
@@ -665,7 +777,22 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
+            window_functions: vec![
+                "row_number",
+                "rank",
+                "dense_rank",
+                "percent_rank",
+                "cume_dist",
+                "ntile",
+                "lag",
+                "lead",
+                "first_value",
+                "last_value",
+                "nth_value",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
@@ -675,6 +802,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_frames_in_navigation_window_functions: true,
         }
     }
 
@@ -715,7 +843,22 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
+            window_functions: vec![
+                "row_number",
+                "rank",
+                "dense_rank",
+                "percent_rank",
+                "cume_dist",
+                "ntile",
+                "lag",
+                "lead",
+                "first_value",
+                "last_value",
+                "nth_value",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::SelectUnion,
@@ -723,6 +866,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_frames_in_navigation_window_functions: true,
         }
     }
 
@@ -765,7 +909,22 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
+            window_functions: vec![
+                "row_number",
+                "rank",
+                "dense_rank",
+                "percent_rank",
+                "cume_dist",
+                "ntile",
+                "lag",
+                "lead",
+                "first_value",
+                "last_value",
+                "nth_value",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSelectColumnAliases {
@@ -777,6 +936,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
+            supports_frames_in_navigation_window_functions: true,
         }
     }
 
@@ -799,7 +959,22 @@ impl Dialect {
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: vec!["row_number"].iter().map(|s| s.to_string()).collect(),
+            window_functions: vec![
+                "row_number",
+                "rank",
+                "dense_rank",
+                "percent_rank",
+                "cume_dist",
+                "ntile",
+                "lag",
+                "lead",
+                "first_value",
+                "last_value",
+                "nth_value",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             scalar_transformers: Default::default(),
             aggregate_transformers: Default::default(),
             values_mode: ValuesMode::ValuesWithSelectColumnAliases {
@@ -811,6 +986,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_frames_in_navigation_window_functions: true,
         }
     }
 }
