@@ -1,0 +1,194 @@
+[numeric_operators]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", ("a" % 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH values0 AS (SELECT 1 AS `a`, 2 AS `b` UNION ALL SELECT 3 AS `a`, 4 AS `b` UNION ALL SELECT 6 AS `a`, 6 AS `b` UNION ALL SELECT 9 AS `a`, 8 AS `b` UNION ALL SELECT 12 AS `a`, 10 AS `b`), values1 AS (SELECT `a`, `b`, (`a` + `b`) AS `add`, (`a` - `b`) AS `sub`, (`a` * `b`) AS `mul`, (`a` / 2) AS `div`, MOD(`a`, 4) AS `mod`, (`a` = `b`) AS `eq`, (`a` <> `b`) AS `neq`, (`a` > 5) AS `gt`, (`a` >= 5) AS `gte`, (`b` < 6) AS `lt`, (`b` <= 6) AS `lte`, (-`a`) AS `neg` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH values0 AS (SELECT 1 AS "a", 2 AS "b" UNION ALL SELECT 3 AS "a", 4 AS "b" UNION ALL SELECT 6 AS "a", 6 AS "b" UNION ALL SELECT 9 AS "a", 8 AS "b" UNION ALL SELECT 12 AS "a", 10 AS "b"), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", ("a" % 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10)) AS `_values` (`a`, `b`)), values1 AS (SELECT `a`, `b`, (`a` + `b`) AS `add`, (`a` - `b`) AS `sub`, (`a` * `b`) AS `mul`, (`a` / 2) AS `div`, (`a` % 4) AS `mod`, (`a` = `b`) AS `eq`, (`a` <> `b`) AS `neq`, (`a` > 5) AS `gt`, (`a` >= 5) AS `gte`, (`b` < 6) AS `lt`, (`b` <= 6) AS `lte`, (-`a`) AS `neg` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", ("a" % 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+dremio = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", ("a" % 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", ("a" % 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH values0 AS (SELECT * FROM (VALUES ROW(1, 2), ROW(3, 4), ROW(6, 6), ROW(9, 8), ROW(12, 10)) AS `_values` (`a`, `b`)), values1 AS (SELECT `a`, `b`, (`a` + `b`) AS `add`, (`a` - `b`) AS `sub`, (`a` * `b`) AS `mul`, (`a` / 2) AS `div`, (`a` % 4) AS `mod`, (`a` = `b`) AS `eq`, (`a` <> `b`) AS `neq`, (`a` > 5) AS `gt`, (`a` >= 5) AS `gte`, (`b` < 6) AS `lt`, (`b` <= 6) AS `lte`, (-`a`) AS `neg` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", ("a" % 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH values0 AS (SELECT 1 AS "a", 2 AS "b" UNION ALL SELECT 3 AS "a", 4 AS "b" UNION ALL SELECT 6 AS "a", 6 AS "b" UNION ALL SELECT 9 AS "a", 8 AS "b" UNION ALL SELECT 12 AS "a", 10 AS "b"), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", ("a" % 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b" FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10))), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", ("a" % 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+sqlite = """
+WITH values0 AS (SELECT "column1" AS "a", "column2" AS "b" FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10))), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", ("a" % 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++----+----+-----+-----+-----+-----+-----+-------+-------+-------+-------+-------+-------+-----+
+| a  | b  | add | sub | mul | div | mod | eq    | neq   | gt    | gte   | lt    | lte   | neg |
++----+----+-----+-----+-----+-----+-----+-------+-------+-------+-------+-------+-------+-----+
+| 1  | 2  | 3   | -1  | 2   | 0   | 1   | false | true  | false | false | true  | true  | -1  |
+| 3  | 4  | 7   | -1  | 12  | 1   | 3   | false | true  | false | false | true  | true  | -3  |
+| 6  | 6  | 12  | 0   | 36  | 3   | 2   | true  | false | true  | true  | false | true  | -6  |
+| 9  | 8  | 17  | 1   | 72  | 4   | 1   | false | true  | true  | true  | false | false | -9  |
+| 12 | 10 | 22  | 2   | 120 | 6   | 0   | false | true  | true  | true  | false | false | -12 |
++----+----+-----+-----+-----+-----+-----+-------+-------+-------+-------+-------+-------+-----+
+'''
+
+
+[logical_operators]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES (true, true, 1), (true, false, 2), (false, true, 3), (false, false, 4), (false, true, 5)) AS "_values" ("a", "b", "i")), values1 AS (SELECT "i", "a", "b", ("a" OR "b") AS "or", ("a" OR true) AS "or2", ("a" AND "b") AS "and", ("a" AND true) AS "and2", (NOT "a") AS "not", ("a" = "b") AS "eq", ("a" <> "b") AS "neq" FROM values0) SELECT * FROM values1 ORDER BY "i" ASC NULLS FIRST
+"""
+bigquery = """
+WITH values0 AS (SELECT true AS `a`, true AS `b`, 1 AS `i` UNION ALL SELECT true AS `a`, false AS `b`, 2 AS `i` UNION ALL SELECT false AS `a`, true AS `b`, 3 AS `i` UNION ALL SELECT false AS `a`, false AS `b`, 4 AS `i` UNION ALL SELECT false AS `a`, true AS `b`, 5 AS `i`), values1 AS (SELECT `i`, `a`, `b`, (`a` OR `b`) AS `or`, (`a` OR true) AS `or2`, (`a` AND `b`) AS `and`, (`a` AND true) AS `and2`, (NOT `a`) AS `not`, (`a` = `b`) AS `eq`, (`a` <> `b`) AS `neq` FROM values0) SELECT * FROM values1 ORDER BY `i` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH values0 AS (SELECT true AS "a", true AS "b", 1 AS "i" UNION ALL SELECT true AS "a", false AS "b", 2 AS "i" UNION ALL SELECT false AS "a", true AS "b", 3 AS "i" UNION ALL SELECT false AS "a", false AS "b", 4 AS "i" UNION ALL SELECT false AS "a", true AS "b", 5 AS "i"), values1 AS (SELECT "i", "a", "b", ("a" OR "b") AS "or", ("a" OR true) AS "or2", ("a" AND "b") AS "and", ("a" AND true) AS "and2", (NOT "a") AS "not", ("a" = "b") AS "eq", ("a" <> "b") AS "neq" FROM values0) SELECT * FROM values1 ORDER BY "i" ASC NULLS FIRST
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (true, true, 1), (true, false, 2), (false, true, 3), (false, false, 4), (false, true, 5)) AS `_values` (`a`, `b`, `i`)), values1 AS (SELECT `i`, `a`, `b`, (`a` OR `b`) AS `or`, (`a` OR true) AS `or2`, (`a` AND `b`) AS `and`, (`a` AND true) AS `and2`, (NOT `a`) AS `not`, (`a` = `b`) AS `eq`, (`a` <> `b`) AS `neq` FROM values0) SELECT * FROM values1 ORDER BY `i` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (true, true, 1), (true, false, 2), (false, true, 3), (false, false, 4), (false, true, 5)) AS "_values" ("a", "b", "i")), values1 AS (SELECT "i", "a", "b", ("a" OR "b") AS "or", ("a" OR true) AS "or2", ("a" AND "b") AS "and", ("a" AND true) AS "and2", (NOT "a") AS "not", ("a" = "b") AS "eq", ("a" <> "b") AS "neq" FROM values0) SELECT * FROM values1 ORDER BY "i" ASC NULLS FIRST
+"""
+dremio = """
+WITH values0 AS (SELECT * FROM (VALUES (true, true, 1), (true, false, 2), (false, true, 3), (false, false, 4), (false, true, 5)) AS "_values" ("a", "b", "i")), values1 AS (SELECT "i", "a", "b", ("a" OR "b") AS "or", ("a" OR true) AS "or2", ("a" AND "b") AS "and", ("a" AND true) AS "and2", (NOT "a") AS "not", ("a" = "b") AS "eq", ("a" <> "b") AS "neq" FROM values0) SELECT * FROM values1 ORDER BY "i" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (true, true, 1), (true, false, 2), (false, true, 3), (false, false, 4), (false, true, 5)) AS "_values" ("a", "b", "i")), values1 AS (SELECT "i", "a", "b", ("a" OR "b") AS "or", ("a" OR true) AS "or2", ("a" AND "b") AS "and", ("a" AND true) AS "and2", (NOT "a") AS "not", ("a" = "b") AS "eq", ("a" <> "b") AS "neq" FROM values0) SELECT * FROM values1 ORDER BY "i" ASC NULLS FIRST
+"""
+mysql = """
+WITH values0 AS (SELECT * FROM (VALUES ROW(true, true, 1), ROW(true, false, 2), ROW(false, true, 3), ROW(false, false, 4), ROW(false, true, 5)) AS `_values` (`a`, `b`, `i`)), values1 AS (SELECT `i`, `a`, `b`, (`a` OR `b`) AS `or`, (`a` OR true) AS `or2`, (`a` AND `b`) AS `and`, (`a` AND true) AS `and2`, (NOT `a`) AS `not`, (`a` = `b`) AS `eq`, (`a` <> `b`) AS `neq` FROM values0) SELECT * FROM values1 ORDER BY `i` ASC
+"""
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (true, true, 1), (true, false, 2), (false, true, 3), (false, false, 4), (false, true, 5)) AS "_values" ("a", "b", "i")), values1 AS (SELECT "i", "a", "b", ("a" OR "b") AS "or", ("a" OR true) AS "or2", ("a" AND "b") AS "and", ("a" AND true) AS "and2", (NOT "a") AS "not", ("a" = "b") AS "eq", ("a" <> "b") AS "neq" FROM values0) SELECT * FROM values1 ORDER BY "i" ASC NULLS FIRST
+"""
+redshift = """
+WITH values0 AS (SELECT true AS "a", true AS "b", 1 AS "i" UNION ALL SELECT true AS "a", false AS "b", 2 AS "i" UNION ALL SELECT false AS "a", true AS "b", 3 AS "i" UNION ALL SELECT false AS "a", false AS "b", 4 AS "i" UNION ALL SELECT false AS "a", true AS "b", 5 AS "i"), values1 AS (SELECT "i", "a", "b", ("a" OR "b") AS "or", ("a" OR true) AS "or2", ("a" AND "b") AS "and", ("a" AND true) AS "and2", (NOT "a") AS "not", ("a" = "b") AS "eq", ("a" <> "b") AS "neq" FROM values0) SELECT * FROM values1 ORDER BY "i" ASC NULLS FIRST
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "i" FROM (VALUES (true, true, 1), (true, false, 2), (false, true, 3), (false, false, 4), (false, true, 5))), values1 AS (SELECT "i", "a", "b", ("a" OR "b") AS "or", ("a" OR true) AS "or2", ("a" AND "b") AS "and", ("a" AND true) AS "and2", (NOT "a") AS "not", ("a" = "b") AS "eq", ("a" <> "b") AS "neq" FROM values0) SELECT * FROM values1 ORDER BY "i" ASC NULLS FIRST
+"""
+sqlite = """
+WITH values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "i" FROM (VALUES (true, true, 1), (true, false, 2), (false, true, 3), (false, false, 4), (false, true, 5))), values1 AS (SELECT "i", "a", "b", ("a" OR "b") AS "or", ("a" OR true) AS "or2", ("a" AND "b") AS "and", ("a" AND true) AS "and2", (NOT "a") AS "not", ("a" = "b") AS "eq", ("a" <> "b") AS "neq" FROM values0) SELECT * FROM values1 ORDER BY "i" ASC NULLS FIRST
+"""
+result = '''
++---+-------+-------+-------+------+-------+-------+-------+-------+-------+
+| i | a     | b     | or    | or2  | and   | and2  | not   | eq    | neq   |
++---+-------+-------+-------+------+-------+-------+-------+-------+-------+
+| 1 | true  | true  | true  | true | true  | true  | false | true  | false |
+| 2 | true  | false | true  | true | false | true  | false | false | true  |
+| 3 | false | true  | true  | true | false | false | true  | false | true  |
+| 4 | false | false | false | true | false | false | true  | true  | false |
+| 5 | false | true  | true  | true | false | false | true  | false | true  |
++---+-------+-------+-------+------+-------+-------+-------+-------+-------+
+'''
+
+
+[between]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", "a" BETWEEN 0 AND "b" AS "bet1", "a" NOT BETWEEN 0 AND "b" AS "nbet1" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH values0 AS (SELECT 1 AS `a`, 2 AS `b` UNION ALL SELECT 3 AS `a`, 4 AS `b` UNION ALL SELECT 6 AS `a`, 6 AS `b` UNION ALL SELECT 9 AS `a`, 8 AS `b` UNION ALL SELECT 12 AS `a`, 10 AS `b`), values1 AS (SELECT `a`, `b`, `a` BETWEEN 0 AND `b` AS `bet1`, `a` NOT BETWEEN 0 AND `b` AS `nbet1` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH values0 AS (SELECT 1 AS "a", 2 AS "b" UNION ALL SELECT 3 AS "a", 4 AS "b" UNION ALL SELECT 6 AS "a", 6 AS "b" UNION ALL SELECT 9 AS "a", 8 AS "b" UNION ALL SELECT 12 AS "a", 10 AS "b"), values1 AS (SELECT "a", "b", "a" BETWEEN 0 AND "b" AS "bet1", "a" NOT BETWEEN 0 AND "b" AS "nbet1" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10)) AS `_values` (`a`, `b`)), values1 AS (SELECT `a`, `b`, `a` BETWEEN 0 AND `b` AS `bet1`, `a` NOT BETWEEN 0 AND `b` AS `nbet1` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", "a" BETWEEN 0 AND "b" AS "bet1", "a" NOT BETWEEN 0 AND "b" AS "nbet1" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+dremio = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", "a" BETWEEN 0 AND "b" AS "bet1", "a" NOT BETWEEN 0 AND "b" AS "nbet1" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", "a" BETWEEN 0 AND "b" AS "bet1", "a" NOT BETWEEN 0 AND "b" AS "nbet1" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH values0 AS (SELECT * FROM (VALUES ROW(1, 2), ROW(3, 4), ROW(6, 6), ROW(9, 8), ROW(12, 10)) AS `_values` (`a`, `b`)), values1 AS (SELECT `a`, `b`, `a` BETWEEN 0 AND `b` AS `bet1`, `a` NOT BETWEEN 0 AND `b` AS `nbet1` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", "a" BETWEEN 0 AND "b" AS "bet1", "a" NOT BETWEEN 0 AND "b" AS "nbet1" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH values0 AS (SELECT 1 AS "a", 2 AS "b" UNION ALL SELECT 3 AS "a", 4 AS "b" UNION ALL SELECT 6 AS "a", 6 AS "b" UNION ALL SELECT 9 AS "a", 8 AS "b" UNION ALL SELECT 12 AS "a", 10 AS "b"), values1 AS (SELECT "a", "b", "a" BETWEEN 0 AND "b" AS "bet1", "a" NOT BETWEEN 0 AND "b" AS "nbet1" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b" FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10))), values1 AS (SELECT "a", "b", "a" BETWEEN 0 AND "b" AS "bet1", "a" NOT BETWEEN 0 AND "b" AS "nbet1" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+sqlite = """
+WITH values0 AS (SELECT "column1" AS "a", "column2" AS "b" FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10))), values1 AS (SELECT "a", "b", "a" BETWEEN 0 AND "b" AS "bet1", "a" NOT BETWEEN 0 AND "b" AS "nbet1" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++----+----+-------+-------+
+| a  | b  | bet1  | nbet1 |
++----+----+-------+-------+
+| 1  | 2  | true  | false |
+| 3  | 4  | true  | false |
+| 6  | 6  | true  | false |
+| 9  | 8  | false | true  |
+| 12 | 10 | false | true  |
++----+----+-------+-------+
+'''
+
+[cast_numeric]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INT) AS "u16", CAST("a" AS INT) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS DOUBLE) AS "f16", CAST("a" AS DOUBLE) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH values0 AS (SELECT '0' AS `a` UNION ALL SELECT '1' AS `a`), values1 AS (SELECT `a`, CAST(`a` AS INT) AS `i8`, CAST(`a` AS INT) AS `u8`, CAST(`a` AS INT) AS `i16`, CAST(`a` AS INT) AS `u16`, CAST(`a` AS INT) AS `i32`, CAST(`a` AS INT) AS `u32`, CAST(`a` AS INT) AS `i64`, CAST(`a` AS float64) AS `f16`, CAST(`a` AS float64) AS `f32`, CAST(`a` AS float64) AS `f64` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH values0 AS (SELECT '0' AS "a" UNION ALL SELECT '1' AS "a"), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INT) AS "u16", CAST("a" AS INT) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f16", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS `_values` (`a`)), values1 AS (SELECT `a`, CAST(`a` AS TINYINT) AS `i8`, CAST(`a` AS SMALLINT) AS `u8`, CAST(`a` AS SMALLINT) AS `i16`, CAST(`a` AS INT) AS `u16`, CAST(`a` AS INT) AS `i32`, CAST(`a` AS BIGINT) AS `u32`, CAST(`a` AS BIGINT) AS `i64`, CAST(`a` AS FLOAT) AS `f16`, CAST(`a` AS FLOAT) AS `f32`, CAST(`a` AS DOUBLE) AS `f64` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INT) AS "u16", CAST("a" AS INT) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f16", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+dremio = """
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS INT) AS "i8", CAST("a" AS INT) AS "u8", CAST("a" AS INT) AS "i16", CAST("a" AS INT) AS "u16", CAST("a" AS INT) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f16", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INT) AS "u16", CAST("a" AS INT) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f16", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH values0 AS (SELECT * FROM (VALUES ROW('0'), ROW('1')) AS `_values` (`a`)), values1 AS (SELECT `a`, CAST(`a` AS SIGNED) AS `i8`, CAST(`a` AS UNSIGNED) AS `u8`, CAST(`a` AS SIGNED) AS `i16`, CAST(`a` AS UNSIGNED) AS `u16`, CAST(`a` AS SIGNED) AS `i32`, CAST(`a` AS UNSIGNED) AS `u32`, CAST(`a` AS SIGNED) AS `i64`, CAST(`a` AS FLOAT) AS `f16`, CAST(`a` AS FLOAT) AS `f32`, CAST(`a` AS DOUBLE) AS `f64` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS SMALLINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INTEGER) AS "u16", CAST("a" AS INTEGER) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS REAL) AS "f16", CAST("a" AS REAL) AS "f32", CAST("a" AS DOUBLE PRECISION) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH values0 AS (SELECT '0' AS "a" UNION ALL SELECT '1' AS "a"), values1 AS (SELECT "a", CAST("a" AS SMALLINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INTEGER) AS "u16", CAST("a" AS INTEGER) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS REAL) AS "f16", CAST("a" AS REAL) AS "f32", CAST("a" AS DOUBLE PRECISION) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a" FROM (VALUES ('0'), ('1'))), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INTEGER) AS "u16", CAST("a" AS INTEGER) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f16", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+sqlite = """
+WITH values0 AS (SELECT "column1" AS "a" FROM (VALUES ('0'), ('1'))), values1 AS (SELECT "a", CAST("a" AS INTEGER) AS "i8", CAST("a" AS INTEGER) AS "u8", CAST("a" AS INTEGER) AS "i16", CAST("a" AS INTEGER) AS "u16", CAST("a" AS INTEGER) AS "i32", CAST("a" AS INTEGER) AS "u32", CAST("a" AS INTEGER) AS "i64", CAST("a" AS REAL) AS "f16", CAST("a" AS REAL) AS "f32", CAST("a" AS REAL) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+----+----+-----+-----+-----+-----+-----+-----+-----+-----+
+| a | i8 | u8 | i16 | u16 | i32 | u32 | i64 | f16 | f32 | f64 |
++---+----+----+-----+-----+-----+-----+-----+-----+-----+-----+
+| 0 | 0  | 0  | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   |
+| 1 | 1  | 1  | 1   | 1   | 1   | 1   | 1   | 1   | 1   | 1   |
++---+----+----+-----+-----+-----+-----+-----+-----+-----+-----+
+'''

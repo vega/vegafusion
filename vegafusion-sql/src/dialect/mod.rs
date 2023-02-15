@@ -5,7 +5,7 @@ use sqlparser::ast::{
     BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction, Function,
     FunctionArg as SqlFunctionArg, FunctionArg, FunctionArgExpr as SqlFunctionArgExpr,
     FunctionArgExpr, Ident as SqlIdent, Ident, ObjectName as SqlObjectName, ObjectName,
-    Value as SqlValue,
+    Value as SqlValue, DataType as SqlDataType,
 };
 use sqlparser::dialect::{
     BigQueryDialect, ClickHouseDialect, Dialect as SqlParserDialect, GenericDialect, MySqlDialect,
@@ -15,6 +15,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::str::FromStr;
 use std::sync::Arc;
+use arrow::datatypes::DataType;
 use vegafusion_common::error::{Result, VegaFusionError};
 
 #[derive(Clone, Debug)]
@@ -124,6 +125,9 @@ pub struct Dialect {
     /// Whether dialect supports the use of explicit window frames for navigation window functions
     /// (first_value, last_value, nth_value)
     pub supports_frames_in_navigation_window_functions: bool,
+
+    /// Mapping from Arrow DataTypes to SqlParser DataTypes for dialect
+    pub cast_datatypes: HashMap<DataType, SqlDataType>,
 }
 
 impl Default for Dialect {
@@ -146,6 +150,7 @@ impl Default for Dialect {
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            cast_datatypes: Default::default(),
         }
     }
 }
@@ -219,10 +224,27 @@ impl Dialect {
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            cast_datatypes: vec![
+                (DataType::Boolean, SqlDataType::Boolean),
+                (DataType::Int8, SqlDataType::TinyInt(None)),
+                (DataType::UInt8, SqlDataType::SmallInt(None)),
+                (DataType::Int16, SqlDataType::SmallInt(None)),
+                (DataType::UInt16, SqlDataType::Int(None)),
+                (DataType::Int32, SqlDataType::Int(None)),
+                (DataType::UInt32, SqlDataType::BigInt(None)),
+                (DataType::Int64, SqlDataType::BigInt(None)),
+                (DataType::Float16, SqlDataType::Double),
+                (DataType::Float32, SqlDataType::Double),
+                (DataType::Float64, SqlDataType::Double),
+                (DataType::Utf8, SqlDataType::Varchar(None)),
+            ].into_iter().collect()
         }
     }
 
+
     pub fn bigquery() -> Self {
+        let float64dtype = SqlDataType::Custom(ObjectName(vec!["float64".into()]), Vec::new());
+
         use Operator::*;
         Self {
             parse_dialect: ParseDialect::BigQuery,
@@ -270,6 +292,20 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: false,
+            cast_datatypes: vec![
+                (DataType::Boolean, SqlDataType::Boolean),
+                (DataType::Int8, SqlDataType::Int(None)),
+                (DataType::UInt8, SqlDataType::Int(None)),
+                (DataType::Int16, SqlDataType::Int(None)),
+                (DataType::UInt16, SqlDataType::Int(None)),
+                (DataType::Int32, SqlDataType::Int(None)),
+                (DataType::UInt32, SqlDataType::Int(None)),
+                (DataType::Int64, SqlDataType::Int(None)),
+                (DataType::Float16, float64dtype.clone()),
+                (DataType::Float32, float64dtype.clone()),
+                (DataType::Float64, float64dtype.clone()),
+                (DataType::Utf8, SqlDataType::String),
+            ].into_iter().collect()
         }
     }
 
@@ -326,6 +362,20 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            cast_datatypes: vec![
+                (DataType::Boolean, SqlDataType::Boolean),
+                (DataType::Int8, SqlDataType::TinyInt(None)),
+                (DataType::UInt8, SqlDataType::SmallInt(None)),
+                (DataType::Int16, SqlDataType::SmallInt(None)),
+                (DataType::UInt16, SqlDataType::Int(None)),
+                (DataType::Int32, SqlDataType::Int(None)),
+                (DataType::UInt32, SqlDataType::BigInt(None)),
+                (DataType::Int64, SqlDataType::BigInt(None)),
+                (DataType::Float16, SqlDataType::Float(None)),
+                (DataType::Float32, SqlDataType::Float(None)),
+                (DataType::Float64, SqlDataType::Double),
+                (DataType::Utf8, SqlDataType::String),
+            ].into_iter().collect()
         }
     }
 
@@ -394,6 +444,20 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: false,
+            cast_datatypes: vec![
+                (DataType::Boolean, SqlDataType::Boolean),
+                (DataType::Int8, SqlDataType::TinyInt(None)),
+                (DataType::UInt8, SqlDataType::SmallInt(None)),
+                (DataType::Int16, SqlDataType::SmallInt(None)),
+                (DataType::UInt16, SqlDataType::Int(None)),
+                (DataType::Int32, SqlDataType::Int(None)),
+                (DataType::UInt32, SqlDataType::BigInt(None)),
+                (DataType::Int64, SqlDataType::BigInt(None)),
+                (DataType::Float16, SqlDataType::Float(None)),
+                (DataType::Float32, SqlDataType::Float(None)),
+                (DataType::Float64, SqlDataType::Double),
+                (DataType::Utf8, SqlDataType::String),
+            ].into_iter().collect()
         }
     }
 
@@ -551,6 +615,20 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            cast_datatypes: vec![
+                (DataType::Boolean, SqlDataType::Boolean),
+                (DataType::Int8, SqlDataType::TinyInt(None)),
+                (DataType::UInt8, SqlDataType::SmallInt(None)),
+                (DataType::Int16, SqlDataType::SmallInt(None)),
+                (DataType::UInt16, SqlDataType::Int(None)),
+                (DataType::Int32, SqlDataType::Int(None)),
+                (DataType::UInt32, SqlDataType::BigInt(None)),
+                (DataType::Int64, SqlDataType::BigInt(None)),
+                (DataType::Float16, SqlDataType::Float(None)),
+                (DataType::Float32, SqlDataType::Float(None)),
+                (DataType::Float64, SqlDataType::Double),
+                (DataType::Utf8, SqlDataType::String),
+            ].into_iter().collect()
         }
     }
 
@@ -617,6 +695,20 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: false,
             supports_frames_in_navigation_window_functions: true,
+            cast_datatypes: vec![
+                (DataType::Boolean, SqlDataType::Boolean),
+                (DataType::Int8, SqlDataType::Int(None)),
+                (DataType::UInt8, SqlDataType::Int(None)),
+                (DataType::Int16, SqlDataType::Int(None)),
+                (DataType::UInt16, SqlDataType::Int(None)),
+                (DataType::Int32, SqlDataType::Int(None)),
+                (DataType::UInt32, SqlDataType::BigInt(None)),
+                (DataType::Int64, SqlDataType::BigInt(None)),
+                (DataType::Float16, SqlDataType::Float(None)),
+                (DataType::Float32, SqlDataType::Float(None)),
+                (DataType::Float64, SqlDataType::Double),
+                (DataType::Utf8, SqlDataType::Varchar(None)),
+            ].into_iter().collect()
         }
     }
 
@@ -684,6 +776,20 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            cast_datatypes: vec![
+                (DataType::Boolean, SqlDataType::Boolean),
+                (DataType::Int8, SqlDataType::TinyInt(None)),
+                (DataType::UInt8, SqlDataType::SmallInt(None)),
+                (DataType::Int16, SqlDataType::SmallInt(None)),
+                (DataType::UInt16, SqlDataType::Int(None)),
+                (DataType::Int32, SqlDataType::Int(None)),
+                (DataType::UInt32, SqlDataType::BigInt(None)),
+                (DataType::Int64, SqlDataType::BigInt(None)),
+                (DataType::Float16, SqlDataType::Float(None)),
+                (DataType::Float32, SqlDataType::Float(None)),
+                (DataType::Float64, SqlDataType::Double),
+                (DataType::Utf8, SqlDataType::Varchar(None))
+            ].into_iter().collect()
         }
     }
 
@@ -696,6 +802,9 @@ impl Dialect {
         .into_iter()
         .map(|(name, v)| (name.to_string(), v))
         .collect();
+
+        let signed = SqlDataType::Custom(ObjectName(vec!["SIGNED".into()]), Vec::new());
+        let unsigned = SqlDataType::Custom(ObjectName(vec!["UNSIGNED".into()]), Vec::new());
         Self {
             parse_dialect: ParseDialect::MySql,
             quote_style: '`',
@@ -737,6 +846,19 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            cast_datatypes: vec![
+                (DataType::Int8, signed.clone()),
+                (DataType::UInt8, unsigned.clone()),
+                (DataType::Int16, signed.clone()),
+                (DataType::UInt16, unsigned.clone()),
+                (DataType::Int32, signed.clone()),
+                (DataType::UInt32, unsigned.clone()),
+                (DataType::Int64, signed.clone()),
+                (DataType::Float16, SqlDataType::Float(None)),
+                (DataType::Float32, SqlDataType::Float(None)),
+                (DataType::Float64, SqlDataType::Double),
+                (DataType::Utf8, SqlDataType::Char(None))
+            ].into_iter().collect()
         }
     }
 
@@ -803,6 +925,20 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            cast_datatypes: vec![
+                (DataType::Boolean, SqlDataType::Boolean),
+                (DataType::Int8, SqlDataType::SmallInt(None)),
+                (DataType::UInt8, SqlDataType::SmallInt(None)),
+                (DataType::Int16, SqlDataType::SmallInt(None)),
+                (DataType::UInt16, SqlDataType::Integer(None)),
+                (DataType::Int32, SqlDataType::Integer(None)),
+                (DataType::UInt32, SqlDataType::BigInt(None)),
+                (DataType::Int64, SqlDataType::BigInt(None)),
+                (DataType::Float16, SqlDataType::Real),
+                (DataType::Float32, SqlDataType::Real),
+                (DataType::Float64, SqlDataType::DoublePrecision),
+                (DataType::Utf8, SqlDataType::Text)
+            ].into_iter().collect()
         }
     }
 
@@ -867,6 +1003,20 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            cast_datatypes: vec![
+                (DataType::Boolean, SqlDataType::Boolean),
+                (DataType::Int8, SqlDataType::SmallInt(None)),
+                (DataType::UInt8, SqlDataType::SmallInt(None)),
+                (DataType::Int16, SqlDataType::SmallInt(None)),
+                (DataType::UInt16, SqlDataType::Integer(None)),
+                (DataType::Int32, SqlDataType::Integer(None)),
+                (DataType::UInt32, SqlDataType::BigInt(None)),
+                (DataType::Int64, SqlDataType::BigInt(None)),
+                (DataType::Float16, SqlDataType::Real),
+                (DataType::Float32, SqlDataType::Real),
+                (DataType::Float64, SqlDataType::DoublePrecision),
+                (DataType::Utf8, SqlDataType::Text)
+            ].into_iter().collect()
         }
     }
 
@@ -937,6 +1087,20 @@ impl Dialect {
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            cast_datatypes: vec![
+                (DataType::Boolean, SqlDataType::Boolean),
+                (DataType::Int8, SqlDataType::TinyInt(None)),
+                (DataType::UInt8, SqlDataType::SmallInt(None)),
+                (DataType::Int16, SqlDataType::SmallInt(None)),
+                (DataType::UInt16, SqlDataType::Integer(None)),
+                (DataType::Int32, SqlDataType::Integer(None)),
+                (DataType::UInt32, SqlDataType::BigInt(None)),
+                (DataType::Int64, SqlDataType::BigInt(None)),
+                (DataType::Float16, SqlDataType::Float(None)),
+                (DataType::Float32, SqlDataType::Float(None)),
+                (DataType::Float64, SqlDataType::Double),
+                (DataType::Utf8, SqlDataType::Varchar(None))
+            ].into_iter().collect()
         }
     }
 
@@ -987,6 +1151,20 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            cast_datatypes: vec![
+                (DataType::Boolean, SqlDataType::Boolean),
+                (DataType::Int8, SqlDataType::Integer(None)),
+                (DataType::UInt8, SqlDataType::Integer(None)),
+                (DataType::Int16, SqlDataType::Integer(None)),
+                (DataType::UInt16, SqlDataType::Integer(None)),
+                (DataType::Int32, SqlDataType::Integer(None)),
+                (DataType::UInt32, SqlDataType::Integer(None)),
+                (DataType::Int64, SqlDataType::Integer(None)),
+                (DataType::Float16, SqlDataType::Real),
+                (DataType::Float32, SqlDataType::Real),
+                (DataType::Float64, SqlDataType::Real),
+                (DataType::Utf8, SqlDataType::Text)
+            ].into_iter().collect()
         }
     }
 }
