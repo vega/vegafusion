@@ -131,9 +131,15 @@ pub struct Dialect {
     /// Mapping from Arrow DataTypes to SqlParser DataTypes for dialect
     pub cast_datatypes: HashMap<DataType, SqlDataType>,
 
+    /// Cast expression transformations between particular data types
     pub cast_transformers: HashMap<(DataType, DataType), Arc<dyn CastTransformer>>,
 
+    /// Whether dialect supports null values in cast expressions
     pub cast_propagates_null: bool,
+
+    /// Whether dialect supports -inf, nan, and inf float values.
+    /// If false, non-finite values are converted to NULL
+    pub supports_non_finite_floats: bool,
 }
 
 impl Default for Dialect {
@@ -159,6 +165,7 @@ impl Default for Dialect {
             cast_datatypes: Default::default(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            supports_non_finite_floats: false,
         }
     }
 }
@@ -250,6 +257,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            supports_non_finite_floats: false,
         }
     }
 
@@ -321,6 +329,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            supports_non_finite_floats: true,
         }
     }
 
@@ -395,6 +404,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: false,
+            supports_non_finite_floats: true,
         }
     }
 
@@ -481,6 +491,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            supports_non_finite_floats: true,
         }
     }
 
@@ -661,6 +672,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             cast_propagates_null: true,
+            supports_non_finite_floats: true,
         }
     }
 
@@ -745,6 +757,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            supports_non_finite_floats: true,
         }
     }
 
@@ -830,6 +843,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            supports_non_finite_floats: true,
         }
     }
 
@@ -908,6 +922,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             cast_propagates_null: true,
+            supports_non_finite_floats: false,
         }
     }
 
@@ -992,6 +1007,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            supports_non_finite_floats: true,
         }
     }
 
@@ -1079,6 +1095,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             cast_propagates_null: false,
+            supports_non_finite_floats: true,
         }
     }
 
@@ -1167,6 +1184,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            supports_non_finite_floats: true,
         }
     }
 
@@ -1240,6 +1258,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             cast_propagates_null: true,
+            supports_non_finite_floats: false,
         }
     }
 }

@@ -240,3 +240,48 @@ result = '''
 | 1 | 1.5  | false | BB  |
 +---+------+-------+-----+
 '''
+
+[non_finite_numbers]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES (0)) AS "_values" ("a")), values1 AS (SELECT "a", NULL AS "ninf", NULL AS "nan", NULL AS "inf" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH values0 AS (SELECT 0 AS `a`), values1 AS (SELECT `a`, CAST('-inf' AS float64) AS `ninf`, CAST('NaN' AS float64) AS `nan`, CAST('inf' AS float64) AS `inf` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH values0 AS (SELECT 0 AS "a"), values1 AS (SELECT "a", CAST('-inf' AS DOUBLE) AS "ninf", CAST('NaN' AS DOUBLE) AS "nan", CAST('inf' AS DOUBLE) AS "inf" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (0)) AS `_values` (`a`)), values1 AS (SELECT `a`, CAST('-inf' AS DOUBLE) AS `ninf`, CAST('NaN' AS DOUBLE) AS `nan`, CAST('inf' AS DOUBLE) AS `inf` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (0)) AS "_values" ("a")), values1 AS (SELECT "a", CAST('-inf' AS DOUBLE) AS "ninf", CAST('NaN' AS DOUBLE) AS "nan", CAST('inf' AS DOUBLE) AS "inf" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+dremio = """
+WITH values0 AS (SELECT * FROM (VALUES (0)) AS "_values" ("a")), values1 AS (SELECT "a", CAST('-inf' AS DOUBLE) AS "ninf", CAST('NaN' AS DOUBLE) AS "nan", CAST('inf' AS DOUBLE) AS "inf" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (0)) AS "_values" ("a")), values1 AS (SELECT "a", CAST('-inf' AS DOUBLE) AS "ninf", CAST('NaN' AS DOUBLE) AS "nan", CAST('inf' AS DOUBLE) AS "inf" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH values0 AS (SELECT * FROM (VALUES ROW(0)) AS `_values` (`a`)), values1 AS (SELECT `a`, NULL AS `ninf`, NULL AS `nan`, NULL AS `inf` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (0)) AS "_values" ("a")), values1 AS (SELECT "a", CAST('-inf' AS DOUBLE PRECISION) AS "ninf", CAST('NaN' AS DOUBLE PRECISION) AS "nan", CAST('inf' AS DOUBLE PRECISION) AS "inf" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH values0 AS (SELECT 0 AS "a"), values1 AS (SELECT "a", CAST('-inf' AS DOUBLE PRECISION) AS "ninf", CAST('NaN' AS DOUBLE PRECISION) AS "nan", CAST('inf' AS DOUBLE PRECISION) AS "inf" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a" FROM (VALUES (0))), values1 AS (SELECT "a", CAST('-inf' AS DOUBLE) AS "ninf", CAST('NaN' AS DOUBLE) AS "nan", CAST('inf' AS DOUBLE) AS "inf" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+sqlite = """
+WITH values0 AS (SELECT "column1" AS "a" FROM (VALUES (0))), values1 AS (SELECT "a", NULL AS "ninf", NULL AS "nan", NULL AS "inf" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+------+-----+-----+
+| a | ninf | nan | inf |
++---+------+-----+-----+
+| 0 | -inf | NaN | inf |
++---+------+-----+-----+
+'''

@@ -1,8 +1,11 @@
 use crate::dialect::Dialect;
+use arrow::datatypes::DataType;
 use datafusion_common::scalar::ScalarValue;
+use datafusion_expr::lit;
 use sqlparser::ast::{
-    Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr,
-    Ident, ObjectName as SqlObjectName, Value as SqlValue,
+    DataType as SqlDataType, Expr as SqlExpr, Function as SqlFunction,
+    FunctionArg as SqlFunctionArg, FunctionArgExpr, Ident, ObjectName as SqlObjectName,
+    Value as SqlValue,
 };
 use vegafusion_common::error::{Result, VegaFusionError};
 
@@ -11,40 +14,76 @@ pub trait ToSqlScalar {
 }
 
 impl ToSqlScalar for ScalarValue {
-    fn to_sql(&self, _dialect: &Dialect) -> Result<SqlExpr> {
+    fn to_sql(&self, dialect: &Dialect) -> Result<SqlExpr> {
         match self {
             ScalarValue::Null => Ok(SqlExpr::Value(SqlValue::Null)),
             ScalarValue::Boolean(v) => Ok(SqlExpr::Value(
                 v.map(SqlValue::Boolean).unwrap_or(SqlValue::Null),
             )),
-            ScalarValue::Float32(v) => Ok(SqlExpr::Value(
-                v.map(|v| {
+            ScalarValue::Float32(v) => v
+                .map(|v| {
                     let repr = if !v.is_finite() {
-                        // Wrap inf, -inf, and nan in single quotes
-                        format!("'{v}'")
+                        // Wrap inf, -inf, and nan in explicit cast
+                        return if dialect.supports_non_finite_floats {
+                            let cast_dtype = if let Some(dtype) =
+                                dialect.cast_datatypes.get(&DataType::Float32)
+                            {
+                                dtype.clone()
+                            } else {
+                                return Err(VegaFusionError::sql_not_supported(
+                                    "Dialect does not support a Float32 data type",
+                                ));
+                            };
+                            Ok(SqlExpr::Cast {
+                                expr: Box::new(SqlExpr::Value(SqlValue::Number(
+                                    format!("'{v}'"),
+                                    false,
+                                ))),
+                                data_type: cast_dtype,
+                            })
+                        } else {
+                            Ok(SqlExpr::Value(SqlValue::Null))
+                        };
                     } else if v.fract() == 0.0 {
                         format!("{v:.1}")
                     } else {
                         v.to_string()
                     };
-                    SqlValue::Number(repr, false)
+                    Ok(SqlExpr::Value(SqlValue::Number(repr, false)))
                 })
-                .unwrap_or(SqlValue::Null),
-            )),
-            ScalarValue::Float64(v) => Ok(SqlExpr::Value(
-                v.map(|v| {
+                .unwrap_or(Ok(SqlExpr::Value(SqlValue::Null))),
+            ScalarValue::Float64(v) => v
+                .map(|v| {
                     let repr = if !v.is_finite() {
-                        // Wrap inf, -inf, and nan in single quotes
-                        format!("'{v}'")
+                        return if dialect.supports_non_finite_floats {
+                            // Wrap inf, -inf, and nan in explicit cast
+                            let cast_dtype = if let Some(dtype) =
+                                dialect.cast_datatypes.get(&DataType::Float64)
+                            {
+                                dtype.clone()
+                            } else {
+                                return Err(VegaFusionError::sql_not_supported(
+                                    "Dialect does not support a Float64 data type",
+                                ));
+                            };
+                            Ok(SqlExpr::Cast {
+                                expr: Box::new(SqlExpr::Value(SqlValue::Number(
+                                    format!("'{v}'"),
+                                    false,
+                                ))),
+                                data_type: cast_dtype,
+                            })
+                        } else {
+                            Ok(SqlExpr::Value(SqlValue::Null))
+                        };
                     } else if v.fract() == 0.0 {
                         format!("{v:.1}")
                     } else {
                         v.to_string()
                     };
-                    SqlValue::Number(repr, false)
+                    Ok(SqlExpr::Value(SqlValue::Number(repr, false)))
                 })
-                .unwrap_or(SqlValue::Null),
-            )),
+                .unwrap_or(Ok(SqlExpr::Value(SqlValue::Null))),
             ScalarValue::Int8(v) => Ok(SqlExpr::Value(
                 v.map(|v| SqlValue::Number(v.to_string(), false))
                     .unwrap_or(SqlValue::Null),
@@ -108,7 +147,7 @@ impl ToSqlScalar for ScalarValue {
                     .iter()
                     .map(|expr| {
                         Ok(SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(
-                            expr.to_sql(_dialect)?,
+                            expr.to_sql(dialect)?,
                         )))
                     })
                     .collect::<Result<Vec<_>>>()?;

@@ -294,3 +294,54 @@ mod test_cast_string {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
+#[cfg(test)]
+mod test_non_finite_numbers {
+    use crate::*;
+    use arrow::datatypes::DataType;
+    use datafusion_expr::{cast, col, expr, lit, Expr};
+
+    #[apply(dialect_names)]
+    fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 0},
+            ]),
+            1024,
+        )
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df_result = df
+            .select(vec![
+                col("a"),
+                lit(f64::NEG_INFINITY).alias("ninf"),
+                lit(f64::NAN).alias("nan"),
+                lit(f64::INFINITY).alias("inf"),
+            ])
+            .and_then(|df| {
+                df.sort(
+                    vec![Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    })],
+                    None,
+                )
+            });
+
+        check_dataframe_query(
+            df_result,
+            "select",
+            "non_finite_numbers",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}

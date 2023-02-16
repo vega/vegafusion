@@ -58,15 +58,8 @@ impl TransformTrait for Bin {
         let bin_start = (flat_col(bin_index_name).mul(lit(step))).add(lit(start));
         let bin_start_name = self.alias_0.clone().unwrap_or_else(|| "bin0".to_string());
 
-        // Explicitly cast (-)inf to float64 to help DataFusion with type inference
-        let inf = Expr::Cast(Cast {
-            expr: Box::new(lit(f64::INFINITY)),
-            data_type: DataType::Float64,
-        });
-        let neg_inf = Expr::Cast(Cast {
-            expr: Box::new(lit(f64::NEG_INFINITY)),
-            data_type: DataType::Float64,
-        });
+        let inf = lit(f64::INFINITY);
+        let neg_inf = lit(f64::NEG_INFINITY);
         let eps = lit(1.0e-14);
 
         let bin_start = when(flat_col(bin_index_name).lt(lit(0.0)), neg_inf)
