@@ -298,8 +298,7 @@ mod test_cast_string {
 #[cfg(test)]
 mod test_non_finite_numbers {
     use crate::*;
-    use arrow::datatypes::DataType;
-    use datafusion_expr::{cast, col, expr, lit, Expr};
+    use datafusion_expr::{col, expr, lit, Expr};
 
     #[apply(dialect_names)]
     fn test(dialect_name: &str) {
@@ -349,8 +348,7 @@ mod test_non_finite_numbers {
 #[cfg(test)]
 mod test_scalar_math_functions {
     use crate::*;
-    use arrow::datatypes::DataType;
-    use datafusion_expr::{cast, col, expr, lit, BuiltinScalarFunction, Expr};
+    use datafusion_expr::{col, expr, BuiltinScalarFunction, Expr};
 
     fn make_scalar_fn1(fun: BuiltinScalarFunction, arg: &str, alias: &str) -> Expr {
         Expr::ScalarFunction {

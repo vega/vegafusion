@@ -1,9 +1,8 @@
 use crate::dialect::Dialect;
 use arrow::datatypes::DataType;
 use datafusion_common::scalar::ScalarValue;
-use datafusion_expr::lit;
 use sqlparser::ast::{
-    DataType as SqlDataType, Expr as SqlExpr, Function as SqlFunction,
+    Expr as SqlExpr, Function as SqlFunction,
     FunctionArg as SqlFunctionArg, FunctionArgExpr, Ident, ObjectName as SqlObjectName,
     Value as SqlValue,
 };

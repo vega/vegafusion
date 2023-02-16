@@ -43,10 +43,6 @@ snowflake = """
 WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE'))) \
 SELECT * FROM values0 LIMIT 3
 """
-sqlite = """
-WITH values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE'))) \
-SELECT * FROM values0 LIMIT 3
-"""
 result = '''
 +---+---+-----+
 | a | b | c   |

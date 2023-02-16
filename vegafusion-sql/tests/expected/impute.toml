@@ -65,9 +65,6 @@ values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c", "COLUMN
 values1 AS (SELECT coalesce("a", -1) AS "a", "b", "c", "d" FROM values0) \
 SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST, "b" ASC NULLS FIRST
 """
-sqlite = """
-WITH values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "c", "column4" AS "d" FROM (VALUES (0, 28, 0, -1), (0, 91, 1, -1), (1, 43, 0, -2), (NULL, 55, 1, -2), (3, 19, 0, -3), (2, 81, 0, -3), (2, 53, 1, -4))), values1 AS (SELECT coalesce("a", -1) AS "a", "b", "c", "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST, "b" ASC NULLS FIRST
-"""
 result = '''
 +----+----+---+----+
 | a  | b  | c | d  |
@@ -146,12 +143,6 @@ SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST, "b" ASC NULLS FIRST
 snowflake = """
 WITH \
 values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c", "COLUMN4" AS "d" FROM (VALUES (0, 28, 0, -1), (0, 91, 1, -1), (1, 43, 0, -2), (NULL, 55, 1, -2), (3, 19, 0, -3), (2, 81, 0, -3), (2, 53, 1, -4))), \
-values1 AS (SELECT "a", coalesce("b", -1) AS "b", "c", "d" FROM (SELECT "a" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c" FROM values0 GROUP BY "c") AS _groups LEFT JOIN values0 USING("a", "c")) \
-SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST, "b" ASC NULLS FIRST
-"""
-sqlite = """
-WITH \
-values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "c", "column4" AS "d" FROM (VALUES (0, 28, 0, -1), (0, 91, 1, -1), (1, 43, 0, -2), (NULL, 55, 1, -2), (3, 19, 0, -3), (2, 81, 0, -3), (2, 53, 1, -4))), \
 values1 AS (SELECT "a", coalesce("b", -1) AS "b", "c", "d" FROM (SELECT "a" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c" FROM values0 GROUP BY "c") AS _groups LEFT JOIN values0 USING("a", "c")) \
 SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST, "b" ASC NULLS FIRST
 """
@@ -234,12 +225,6 @@ SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST, "b" ASC NULLS FIRST, "c" ASC
 snowflake = """
 WITH \
 values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c", "COLUMN4" AS "d" FROM (VALUES (0, 28, 0, -1), (0, 91, 1, -1), (1, 43, 0, -2), (NULL, 55, 1, -2), (3, 19, 0, -3), (2, 81, 0, -3), (2, 53, 1, -4))), \
-values1 AS (SELECT "a", coalesce("b", -1) AS "b", "c", "d" FROM (SELECT "a" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")) \
-SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST, "b" ASC NULLS FIRST, "c" ASC NULLS FIRST, "d" ASC NULLS FIRST
-"""
-sqlite = """
-WITH \
-values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "c", "column4" AS "d" FROM (VALUES (0, 28, 0, -1), (0, 91, 1, -1), (1, 43, 0, -2), (NULL, 55, 1, -2), (3, 19, 0, -3), (2, 81, 0, -3), (2, 53, 1, -4))), \
 values1 AS (SELECT "a", coalesce("b", -1) AS "b", "c", "d" FROM (SELECT "a" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")) \
 SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST, "b" ASC NULLS FIRST, "c" ASC NULLS FIRST, "d" ASC NULLS FIRST
 """
@@ -338,12 +323,6 @@ SELECT * FROM values1 ORDER BY "_order" ASC NULLS FIRST
 snowflake = """
 WITH \
 values0 AS (SELECT "COLUMN1" AS "_order", "COLUMN2" AS "a", "COLUMN3" AS "b", "COLUMN4" AS "c", "COLUMN5" AS "d" FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4))), \
-values1 AS (SELECT "_order", coalesce("a", -1) AS "a", "b", "c", "d" FROM values0) \
-SELECT * FROM values1 ORDER BY "_order" ASC NULLS FIRST
-"""
-sqlite = """
-WITH \
-values0 AS (SELECT "column1" AS "_order", "column2" AS "a", "column3" AS "b", "column4" AS "c", "column5" AS "d" FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4))), \
 values1 AS (SELECT "_order", coalesce("a", -1) AS "a", "b", "c", "d" FROM values0) \
 SELECT * FROM values1 ORDER BY "_order" ASC NULLS FIRST
 """
@@ -448,14 +427,6 @@ values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
 
 """
-sqlite = """
-WITH \
-values0 AS (SELECT "column1" AS "_order", "column2" AS "a", "column3" AS "b", "column4" AS "c", "column5" AS "d" FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4))), \
-values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", min("_order") AS "_order_groups" FROM values0 GROUP BY "c") AS _groups LEFT JOIN values0 USING("a", "c")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
-SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
-
-"""
 result = '''
 +--------+---+----+---+----+
 | _order | a | b  | c | d  |
@@ -554,14 +525,6 @@ SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
 snowflake = """
 WITH \
 values0 AS (SELECT "COLUMN1" AS "_order", "COLUMN2" AS "a", "COLUMN3" AS "b", "COLUMN4" AS "c", "COLUMN5" AS "d" FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4))), \
-values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d", min("_order") AS "_order_groups" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
-SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
-
-"""
-sqlite = """
-WITH \
-values0 AS (SELECT "column1" AS "_order", "column2" AS "a", "column3" AS "b", "column4" AS "c", "column5" AS "d" FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4))), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d", min("_order") AS "_order_groups" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")), \
 values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST

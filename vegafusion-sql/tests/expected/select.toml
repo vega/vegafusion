@@ -32,9 +32,6 @@ WITH values0 AS (SELECT 1 AS "a", 2 AS "b" UNION ALL SELECT 3 AS "a", 4 AS "b" U
 snowflake = """
 WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b" FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10))), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", ("a" % 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
-sqlite = """
-WITH values0 AS (SELECT "column1" AS "a", "column2" AS "b" FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10))), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", ("a" % 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
-"""
 result = '''
 +----+----+-----+-----+-----+-----+-----+-------+-------+-------+-------+-------+-------+-----+
 | a  | b  | add | sub | mul | div | mod | eq    | neq   | gt    | gte   | lt    | lte   | neg |
@@ -81,9 +78,6 @@ WITH values0 AS (SELECT true AS "a", true AS "b", 1 AS "i" UNION ALL SELECT true
 """
 snowflake = """
 WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "i" FROM (VALUES (true, true, 1), (true, false, 2), (false, true, 3), (false, false, 4), (false, true, 5))), values1 AS (SELECT "i", "a", "b", ("a" OR "b") AS "or", ("a" OR true) AS "or2", ("a" AND "b") AS "and", ("a" AND true) AS "and2", (NOT "a") AS "not", ("a" = "b") AS "eq", ("a" <> "b") AS "neq" FROM values0) SELECT * FROM values1 ORDER BY "i" ASC NULLS FIRST
-"""
-sqlite = """
-WITH values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "i" FROM (VALUES (true, true, 1), (true, false, 2), (false, true, 3), (false, false, 4), (false, true, 5))), values1 AS (SELECT "i", "a", "b", ("a" OR "b") AS "or", ("a" OR true) AS "or2", ("a" AND "b") AS "and", ("a" AND true) AS "and2", (NOT "a") AS "not", ("a" = "b") AS "eq", ("a" <> "b") AS "neq" FROM values0) SELECT * FROM values1 ORDER BY "i" ASC NULLS FIRST
 """
 result = '''
 +---+-------+-------+-------+------+-------+-------+-------+-------+-------+
@@ -132,9 +126,6 @@ WITH values0 AS (SELECT 1 AS "a", 2 AS "b" UNION ALL SELECT 3 AS "a", 4 AS "b" U
 snowflake = """
 WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b" FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10))), values1 AS (SELECT "a", "b", "a" BETWEEN 0 AND "b" AS "bet1", "a" NOT BETWEEN 0 AND "b" AS "nbet1" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
-sqlite = """
-WITH values0 AS (SELECT "column1" AS "a", "column2" AS "b" FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10))), values1 AS (SELECT "a", "b", "a" BETWEEN 0 AND "b" AS "bet1", "a" NOT BETWEEN 0 AND "b" AS "nbet1" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
-"""
 result = '''
 +----+----+-------+-------+
 | a  | b  | bet1  | nbet1 |
@@ -181,9 +172,6 @@ WITH values0 AS (SELECT '0' AS "a" UNION ALL SELECT '1' AS "a"), values1 AS (SEL
 snowflake = """
 WITH values0 AS (SELECT "COLUMN1" AS "a" FROM (VALUES ('0'), ('1'))), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INTEGER) AS "u16", CAST("a" AS INTEGER) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f16", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
-sqlite = """
-WITH values0 AS (SELECT "column1" AS "a" FROM (VALUES ('0'), ('1'))), values1 AS (SELECT "a", CAST("a" AS INTEGER) AS "i8", CAST("a" AS INTEGER) AS "u8", CAST("a" AS INTEGER) AS "i16", CAST("a" AS INTEGER) AS "u16", CAST("a" AS INTEGER) AS "i32", CAST("a" AS INTEGER) AS "u32", CAST("a" AS INTEGER) AS "i64", CAST("a" AS REAL) AS "f16", CAST("a" AS REAL) AS "f32", CAST("a" AS REAL) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
-"""
 result = '''
 +---+----+----+-----+-----+-----+-----+-----+-----+-----+-----+
 | a | i8 | u8 | i16 | u16 | i32 | u32 | i64 | f16 | f32 | f64 |
@@ -227,9 +215,6 @@ WITH values0 AS (SELECT 0 AS "a", true AS "c", 'A' AS "d", NULL AS "b" UNION ALL
 """
 snowflake = """
 WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "c", "COLUMN3" AS "d", "COLUMN4" AS "b" FROM (VALUES (0, true, 'A', NULL), (1, false, 'BB', 1.5), (NULL, NULL, 'CCC', 2.25))), values1 AS (SELECT CAST("a" AS VARCHAR) AS "a", CAST("b" AS VARCHAR) AS "b", CAST("c" AS VARCHAR) AS "c", CAST("d" AS VARCHAR) AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
-"""
-sqlite = """
-WITH values0 AS (SELECT "column1" AS "a", "column2" AS "c", "column3" AS "d", "column4" AS "b" FROM (VALUES (0, true, 'A', NULL), (1, false, 'BB', 1.5), (NULL, NULL, 'CCC', 2.25))), values1 AS (SELECT CAST("a" AS TEXT) AS "a", CAST("b" AS TEXT) AS "b", CASE WHEN ("c" = true) THEN 'true' WHEN ("c" = false) THEN 'false' ELSE NULL END AS "c", CAST("d" AS TEXT) AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 result = '''
 +---+------+-------+-----+
@@ -275,9 +260,6 @@ WITH values0 AS (SELECT 0 AS "a"), values1 AS (SELECT "a", CAST('-inf' AS DOUBLE
 snowflake = """
 WITH values0 AS (SELECT "COLUMN1" AS "a" FROM (VALUES (0))), values1 AS (SELECT "a", CAST('-inf' AS DOUBLE) AS "ninf", CAST('NaN' AS DOUBLE) AS "nan", CAST('inf' AS DOUBLE) AS "inf" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
-sqlite = """
-WITH values0 AS (SELECT "column1" AS "a" FROM (VALUES (0))), values1 AS (SELECT "a", NULL AS "ninf", NULL AS "nan", NULL AS "inf" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
-"""
 result = '''
 +---+------+-----+-----+
 | a | ninf | nan | inf |
@@ -319,9 +301,6 @@ WITH values0 AS (SELECT 0 AS "a", -1.8 AS "b", 0.1 AS "c" UNION ALL SELECT 1 AS 
 """
 snowflake = """
 WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (0, -1.8, 0.1), (1, -1.0, 0.2), (2, 0.0, 0.4), (3, 1.0, 0.6), (4, 1.8, 0.8), (5, NULL, NULL))), values1 AS (SELECT "a", abs("b") AS "abs", acos("c") AS "acos", asin("c") AS "asin", atan("c") AS "atan", atan2("c", "a") AS "atan2", CEIL("b") AS "ceil", cos("b") AS "cos", exp("b") AS "exp", FLOOR("b") AS "floor", ln("c") AS "ln", log(10, "c") AS "log", log(10, "c") AS "log10", log(2, "c") AS "log2", pow("b", "a") AS "power", round("b") AS "round", sin("b") AS "sin", sqrt("c") AS "sqrt", tan("b") AS "tan" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
-"""
-sqlite = """
-WITH values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "c" FROM (VALUES (0, -1.8, 0.1), (1, -1.0, 0.2), (2, 0.0, 0.4), (3, 1.0, 0.6), (4, 1.8, 0.8), (5, NULL, NULL))), values1 AS (SELECT "a", abs("b") AS "abs", acos("c") AS "acos", asin("c") AS "asin", atan("c") AS "atan", atan2("c", "a") AS "atan2", CEIL("b") AS "ceil", cos("b") AS "cos", exp("b") AS "exp", FLOOR("b") AS "floor", ln("c") AS "ln", log("c") AS "log", log10("c") AS "log10", log2("c") AS "log2", pow("b", "a") AS "power", round("b") AS "round", sin("b") AS "sin", sqrt("c") AS "sqrt", tan("b") AS "tan" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 result = '''
 +---+-----+--------------------+---------------------+---------------------+---------------------+------+---------------------+---------------------+-------+---------------------+----------------------+----------------------+---------------------+---------+-------+---------------------+---------------------+--------------------+

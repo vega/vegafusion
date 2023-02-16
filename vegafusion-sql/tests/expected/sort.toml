@@ -43,10 +43,6 @@ snowflake = """
 WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, 'CCC'), (1, 2, 'A'))) \
 SELECT * FROM values0 ORDER BY "a" DESC NULLS LAST, "c" ASC NULLS FIRST
 """
-sqlite = """
-WITH values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "c" FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, 'CCC'), (1, 2, 'A'))) \
-SELECT * FROM values0 ORDER BY "a" DESC NULLS LAST, "c" ASC NULLS FIRST
-"""
 result = '''
 +---+---+------+
 | a | b | c    |
@@ -100,10 +96,6 @@ SELECT * FROM values0 ORDER BY "a" DESC NULLS FIRST, "c" ASC NULLS LAST
 """
 snowflake = """
 WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, NULL), (1, 2, 'A'))) \
-SELECT * FROM values0 ORDER BY "a" DESC NULLS FIRST, "c" ASC NULLS LAST
-"""
-sqlite = """
-WITH values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "c" FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, NULL), (1, 2, 'A'))) \
 SELECT * FROM values0 ORDER BY "a" DESC NULLS FIRST, "c" ASC NULLS LAST
 """
 result = '''
@@ -161,10 +153,6 @@ WITH values0 AS (SELECT 1 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 2 AS "a
 """
 snowflake = """
 WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (4, 7, 'CCC'), (5, 8, 'CCC'), (6, 2, 'A'))) \
-SELECT * FROM values0 ORDER BY "c" ASC NULLS FIRST, "b" ASC NULLS FIRST LIMIT 4
-"""
-sqlite = """
-WITH values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "c" FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (4, 7, 'CCC'), (5, 8, 'CCC'), (6, 2, 'A'))) \
 SELECT * FROM values0 ORDER BY "c" ASC NULLS FIRST, "b" ASC NULLS FIRST LIMIT 4
 """
 result = '''

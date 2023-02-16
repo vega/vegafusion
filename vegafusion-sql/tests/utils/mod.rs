@@ -35,7 +35,6 @@ lazy_static! {
 #[case("postgres")]
 #[case("redshift")]
 #[case("snowflake")]
-#[case("sqlite")]
 pub fn dialect_names(#[case] dialect_name: &str) {}
 
 pub async fn make_connection(name: &str) -> (Arc<dyn SqlConnection>, bool) {

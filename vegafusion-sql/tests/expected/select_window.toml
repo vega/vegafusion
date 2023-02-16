@@ -65,12 +65,6 @@ values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VA
 values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
 SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
-sqlite = """
-WITH \
-values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A'))), \
-values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
-SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
-"""
 result = '''
 +---+----+----+-------+--------------+-------------+-------+-------+
 | a | b  | c  | sum_b | count_part_b | cume_mean_b | min_b | max_b |
@@ -146,12 +140,6 @@ values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VA
 values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
 SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
-sqlite = """
-WITH \
-values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A'))), \
-values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
-SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
-"""
 result = '''
 +---+----+----+-------+--------------+-------------+-------+-------+
 | a | b  | c  | sum_b | count_part_b | cume_mean_b | min_b | max_b |
@@ -220,11 +208,6 @@ WITH \
 values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A'))), \
 values1 AS (SELECT "a", "b", "c", row_number() OVER (ORDER BY "a" ASC NULLS FIRST) AS "row_num", rank() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "rank", dense_rank() OVER (ORDER BY "a" ASC NULLS FIRST) AS "d_rank", first_value("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "first", last_value("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "last" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
-sqlite = """
-WITH \
-values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A'))), \
-values1 AS (SELECT "a", "b", "c", row_number() OVER (ORDER BY "a" ASC NULLS FIRST) AS "row_num", rank() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "rank", dense_rank() OVER (ORDER BY "a" ASC NULLS FIRST) AS "d_rank", first_value("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "first", last_value("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "last" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
-"""
 result = '''
 +---+----+----+---------+------+--------+-------+------+
 | a | b  | c  | row_num | rank | d_rank | first | last |
@@ -291,12 +274,6 @@ SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 snowflake = """
 WITH \
 values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A'))), \
-values1 AS (SELECT "a", "b", "c", nth_value("b", 1) OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "nth1", cume_dist() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "cdist", lag("b") OVER (ORDER BY "a" ASC NULLS FIRST) AS "lag_b", lead("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "lead_b", ntile(2) OVER (ORDER BY "a" ASC NULLS FIRST) AS "ntile" FROM values0) \
-SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
-"""
-sqlite = """
-WITH \
-values0 AS (SELECT "column1" AS "a", "column2" AS "b", "column3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A'))), \
 values1 AS (SELECT "a", "b", "c", nth_value("b", 1) OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "nth1", cume_dist() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "cdist", lag("b") OVER (ORDER BY "a" ASC NULLS FIRST) AS "lag_b", lead("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "lead_b", ntile(2) OVER (ORDER BY "a" ASC NULLS FIRST) AS "ntile" FROM values0) \
 SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
