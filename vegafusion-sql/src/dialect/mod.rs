@@ -195,10 +195,13 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["abs", "round", "coalesce"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec![
+                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
+                "ln", "log2", "log10", "pow", "round", "sin", "sqrt", "tan", "random",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -229,7 +232,14 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            scalar_transformers: Default::default(),
+            scalar_transformers: vec![
+                ("log", RenameFunctionTransformer::new_dyn("log10")),
+                ("signum", RenameFunctionTransformer::new_dyn("sign")),
+                ("trunc", RenameFunctionTransformer::new_dyn("truncate")),
+            ]
+            .into_iter()
+            .map(|(name, v)| (name.to_string(), v))
+            .collect(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
                 explicit_row: false,
@@ -279,10 +289,13 @@ impl Dialect {
             )]
             .into_iter()
             .collect(),
-            scalar_functions: vec!["abs", "round", "coalesce"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec![
+                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
+                "ln", "log10", "pow", "round", "sin", "sqrt", "tan", "trunc",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             aggregate_functions: vec!["min", "max", "count", "avg", "sum"]
                 .iter()
                 .map(|s| s.to_string())
@@ -303,7 +316,15 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            scalar_transformers: Default::default(),
+            scalar_transformers: vec![
+                ("log", RenameFunctionTransformer::new_dyn("log10")),
+                ("log2", LogBaseTransformer::new_dyn(2, false)),
+                ("signum", RenameFunctionTransformer::new_dyn("sign")),
+                ("random", RenameFunctionTransformer::new_dyn("rand")),
+            ]
+            .into_iter()
+            .map(|(name, v)| (name.to_string(), v))
+            .collect(),
             aggregate_transformers: Default::default(),
             values_mode: ValuesMode::SelectUnion,
             supports_null_ordering: true,
@@ -359,10 +380,13 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["abs", "round", "coalesce"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec![
+                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
+                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "trunc",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             aggregate_functions: vec!["min", "max", "count", "avg", "sum", "median", "corr"]
                 .iter()
                 .map(|s| s.to_string())
@@ -377,8 +401,14 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-
-            scalar_transformers: Default::default(),
+            scalar_transformers: vec![
+                ("log", RenameFunctionTransformer::new_dyn("log10")),
+                ("signum", RenameFunctionTransformer::new_dyn("sign")),
+                ("random", RenameFunctionTransformer::new_dyn("rand")),
+            ]
+            .into_iter()
+            .map(|(name, v)| (name.to_string(), v))
+            .collect(),
             aggregate_transformers,
             values_mode: ValuesMode::SelectUnion,
             supports_null_ordering: true,
@@ -428,10 +458,13 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["abs", "round", "coalesce"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec![
+                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
+                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "random",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -463,7 +496,13 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            scalar_transformers: Default::default(),
+            scalar_transformers: vec![
+                ("log", RenameFunctionTransformer::new_dyn("log10")),
+                ("signum", RenameFunctionTransformer::new_dyn("sign")),
+            ]
+            .into_iter()
+            .map(|(name, v)| (name.to_string(), v))
+            .collect(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
                 explicit_row: false,
@@ -696,10 +735,13 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["abs", "round", "coalesce"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec![
+                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
+                "log10", "pow", "round", "sin", "sqrt", "tan", "random",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -729,7 +771,16 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            scalar_transformers: Default::default(),
+            scalar_transformers: vec![
+                ("ln", RenameFunctionTransformer::new_dyn("log")),
+                ("log", RenameFunctionTransformer::new_dyn("log10")),
+                ("log2", LogBaseTransformer::new_dyn(2, true)),
+                ("signum", RenameFunctionTransformer::new_dyn("sign")),
+                ("trunc", RenameFunctionTransformer::new_dyn("truncate")),
+            ]
+            .into_iter()
+            .map(|(name, v)| (name.to_string(), v))
+            .collect(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
                 explicit_row: false,
@@ -780,10 +831,16 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["abs", "round", "coalesce"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec![
+                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos",
+                // "exp",  // Not supported, transform to power(2.718281828..., v)
+                "floor", "ln", "log", "log10", "log2", "pow", "round", "sin", "sqrt", "tan",
+                // "trunc",    // Not supported, transform to case with floor/ceil
+                "random",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -815,7 +872,13 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            scalar_transformers: Default::default(),
+            scalar_transformers: vec![
+                ("exp", ExpWithPowFunctionTransformer::new_dyn()),
+                ("signum", RenameFunctionTransformer::new_dyn("sign")),
+            ]
+            .into_iter()
+            .map(|(name, v)| (name.to_string(), v))
+            .collect(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
                 explicit_row: false,
@@ -868,10 +931,13 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["abs", "round", "coalesce"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec![
+                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
+                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             aggregate_functions: vec!["min", "max", "count", "avg", "sum", "var_pop", "stddev_pop"]
                 .iter()
                 .map(|s| s.to_string())
@@ -892,7 +958,15 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            scalar_transformers: Default::default(),
+            scalar_transformers: vec![
+                ("log", RenameFunctionTransformer::new_dyn("log10")),
+                ("signum", RenameFunctionTransformer::new_dyn("sign")),
+                ("trunc", RenameFunctionTransformer::new_dyn("truncate")),
+                ("random", RenameFunctionTransformer::new_dyn("rand")),
+            ]
+            .into_iter()
+            .map(|(name, v)| (name.to_string(), v))
+            .collect(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases { explicit_row: true },
             supports_null_ordering: false,
@@ -945,10 +1019,13 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["abs", "round", "coalesce"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec![
+                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
+                "ln", "log", "pow", "round", "sin", "sqrt", "tan", "trunc", "random",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -979,7 +1056,14 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            scalar_transformers: Default::default(),
+            scalar_transformers: vec![
+                ("log10", LogBaseTransformer::new_dyn(10, true)),
+                ("log2", LogBaseTransformer::new_dyn(2, true)),
+                ("signum", RenameFunctionTransformer::new_dyn("sign")),
+            ]
+            .into_iter()
+            .map(|(name, v)| (name.to_string(), v))
+            .collect(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
                 explicit_row: false,
@@ -1030,10 +1114,13 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["abs", "round", "coalesce"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec![
+                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
+                "pow", "round", "sin", "sqrt", "tan", "trunc", "random",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -1064,7 +1151,28 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            scalar_transformers: Default::default(),
+            scalar_transformers: vec![
+                (
+                    "log2",
+                    LogBaseWithLnTransformer::new_dyn(2.0, Some(SqlDataType::DoublePrecision)),
+                ),
+                (
+                    "ln",
+                    CastArgsFunctionTransformer::new_dyn("ln", SqlDataType::DoublePrecision),
+                ),
+                (
+                    "log",
+                    CastArgsFunctionTransformer::new_dyn("log", SqlDataType::DoublePrecision),
+                ),
+                (
+                    "log10",
+                    CastArgsFunctionTransformer::new_dyn("log", SqlDataType::DoublePrecision),
+                ),
+                ("signum", RenameFunctionTransformer::new_dyn("sign")),
+            ]
+            .into_iter()
+            .map(|(name, v)| (name.to_string(), v))
+            .collect(),
             aggregate_transformers,
             values_mode: ValuesMode::SelectUnion,
             supports_null_ordering: true,
@@ -1119,10 +1227,13 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["abs", "round", "coalesce"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec![
+                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
+                "ln", "pow", "round", "sin", "sqrt", "tan", "trunc", "random",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             aggregate_functions: vec![
                 "min",
                 "max",
@@ -1154,7 +1265,15 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            scalar_transformers: Default::default(),
+            scalar_transformers: vec![
+                ("log", LogBaseTransformer::new_dyn(10, true)),
+                ("log10", LogBaseTransformer::new_dyn(10, true)),
+                ("log2", LogBaseTransformer::new_dyn(2, true)),
+                ("signum", RenameFunctionTransformer::new_dyn("sign")),
+            ]
+            .into_iter()
+            .map(|(name, v)| (name.to_string(), v))
+            .collect(),
             aggregate_transformers,
             values_mode: ValuesMode::ValuesWithSelectColumnAliases {
                 explicit_row: false,
@@ -1199,10 +1318,15 @@ impl Dialect {
             .into_iter()
             .collect(),
             binary_op_transforms: Default::default(),
-            scalar_functions: vec!["abs", "round", "coalesce"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
+            scalar_functions: vec![
+                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
+                "ln", "log", "log10", "log2", "pow", "round",
+                // "signum",  // Not supported
+                "sin", "sqrt", "tan", "trunc",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
             aggregate_functions: vec!["min", "max", "count", "avg", "sum"]
                 .iter()
                 .map(|s| s.to_string())
@@ -1332,6 +1456,21 @@ pub trait FunctionTransformer: Debug + Send + Sync {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr>;
 }
 
+fn args_to_sql_args(
+    args: &[Expr],
+    dialect: &Dialect,
+    schema: &DFSchema,
+) -> Result<Vec<SqlFunctionArg>> {
+    Ok(args
+        .iter()
+        .map(|arg| {
+            Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(
+                arg.to_sql(dialect, schema)?,
+            )))
+        })
+        .collect::<Result<Vec<_>>>()?)
+}
+
 #[derive(Clone, Debug)]
 struct RenameFunctionTransformer(pub String);
 impl RenameFunctionTransformer {
@@ -1341,15 +1480,7 @@ impl RenameFunctionTransformer {
 }
 impl FunctionTransformer for RenameFunctionTransformer {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
-        let sql_args = args
-            .iter()
-            .map(|arg| {
-                Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(
-                    arg.to_sql(dialect, schema)?,
-                )))
-            })
-            .collect::<Result<Vec<_>>>()?;
-
+        let sql_args = args_to_sql_args(args, dialect, schema)?;
         Ok(SqlExpr::Function(Function {
             name: ObjectName(vec![Ident {
                 value: self.0.clone(),
@@ -1360,6 +1491,171 @@ impl FunctionTransformer for RenameFunctionTransformer {
             distinct: false,
             special: false,
         }))
+    }
+}
+
+#[derive(Clone, Debug)]
+struct ExpWithPowFunctionTransformer;
+impl ExpWithPowFunctionTransformer {
+    pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self)
+    }
+}
+impl FunctionTransformer for ExpWithPowFunctionTransformer {
+    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
+        let mut sql_args = args_to_sql_args(args, dialect, schema)?;
+
+        // Prepend constant E
+        let e = FunctionArg::Unnamed(FunctionArgExpr::Expr(SqlExpr::Value(SqlValue::Number(
+            std::f64::consts::E.to_string(),
+            false,
+        ))));
+        sql_args.insert(0, e);
+
+        Ok(SqlExpr::Function(Function {
+            name: ObjectName(vec![Ident {
+                value: "pow".to_string(),
+                quote_style: None,
+            }]),
+            args: sql_args,
+            over: None,
+            distinct: false,
+            special: false,
+        }))
+    }
+}
+
+#[derive(Clone, Debug)]
+struct CastArgsFunctionTransformer {
+    pub name: String,
+    pub cast_dtype: SqlDataType,
+}
+impl CastArgsFunctionTransformer {
+    pub fn new_dyn(name: &str, cast_dtype: SqlDataType) -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self {
+            name: name.to_string(),
+            cast_dtype,
+        })
+    }
+}
+impl FunctionTransformer for CastArgsFunctionTransformer {
+    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
+        let sql_args = args
+            .iter()
+            .map(|arg| {
+                Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(SqlExpr::Cast {
+                    expr: Box::new(arg.to_sql(dialect, schema)?),
+                    data_type: self.cast_dtype.clone(),
+                })))
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(SqlExpr::Function(Function {
+            name: ObjectName(vec![Ident {
+                value: self.name.clone(),
+                quote_style: None,
+            }]),
+            args: sql_args,
+            over: None,
+            distinct: false,
+            special: false,
+        }))
+    }
+}
+
+#[derive(Clone, Debug)]
+struct LogBaseTransformer {
+    pub base: i32,
+    pub base_first: bool,
+}
+impl LogBaseTransformer {
+    pub fn new_dyn(base: i32, base_first: bool) -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self { base, base_first })
+    }
+}
+impl FunctionTransformer for LogBaseTransformer {
+    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
+        let mut sql_args = args_to_sql_args(args, dialect, schema)?;
+        // Append base argument
+        let base_arg = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+            SqlValue::Number(self.base.to_string(), false),
+        )));
+
+        if self.base_first {
+            sql_args.insert(0, base_arg);
+        } else {
+            sql_args.push(base_arg);
+        }
+
+        Ok(SqlExpr::Function(Function {
+            name: ObjectName(vec![Ident {
+                value: "log".to_string(),
+                quote_style: None,
+            }]),
+            args: sql_args,
+            over: None,
+            distinct: false,
+            special: false,
+        }))
+    }
+}
+
+/// Transformer that implements log(b, v) as ln(v)/ln(b)
+#[derive(Clone, Debug)]
+struct LogBaseWithLnTransformer {
+    pub base: f64,
+    pub cast_dtype: Option<SqlDataType>,
+}
+impl LogBaseWithLnTransformer {
+    pub fn new_dyn(base: f64, cast_dtype: Option<SqlDataType>) -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self { base, cast_dtype })
+    }
+}
+impl FunctionTransformer for LogBaseWithLnTransformer {
+    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
+        let sql_args = if let Some(cast_dtype) = &self.cast_dtype {
+            args.iter()
+                .map(|arg| {
+                    Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(SqlExpr::Cast {
+                        expr: Box::new(arg.to_sql(dialect, schema)?),
+                        data_type: cast_dtype.clone(),
+                    })))
+                })
+                .collect::<Result<Vec<_>>>()?
+        } else {
+            args_to_sql_args(args, dialect, schema)?
+        };
+
+        let numerator = SqlExpr::Function(Function {
+            name: ObjectName(vec![Ident {
+                value: "ln".to_string(),
+                quote_style: None,
+            }]),
+            args: sql_args,
+            over: None,
+            distinct: false,
+            special: false,
+        });
+
+        let base_arg = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+            SqlValue::Number(self.base.to_string(), false),
+        )));
+        let denominator = SqlExpr::Function(Function {
+            name: ObjectName(vec![Ident {
+                value: "ln".to_string(),
+                quote_style: None,
+            }]),
+            args: vec![base_arg],
+            over: None,
+            distinct: false,
+            special: false,
+        });
+
+        Ok(SqlExpr::BinaryOp {
+            left: Box::new(numerator),
+            op: SqlBinaryOperator::Divide,
+            right: Box::new(denominator),
+        })
     }
 }
 
