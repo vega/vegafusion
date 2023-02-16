@@ -4,10 +4,10 @@ use std::str::FromStr;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 use vegafusion_common::data::table::VegaFusionTable;
-use vegafusion_sql::connection::{DummySqlConnection, SqlConnection};
-use vegafusion_sql::dialect::Dialect;
 use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_dataframe::dataframe::DataFrame;
+use vegafusion_sql::connection::{DummySqlConnection, SqlConnection};
+use vegafusion_sql::dialect::Dialect;
 
 use rstest_reuse::{self, *};
 
@@ -21,7 +21,6 @@ lazy_static! {
         .build()
         .unwrap();
 }
-
 
 #[template]
 #[rstest]

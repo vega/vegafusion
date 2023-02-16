@@ -2,15 +2,14 @@
 extern crate lazy_static;
 
 mod utils;
-use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query, dialect_names};
+use datafusion_expr::{col, expr, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
-use datafusion_expr::{col, expr, Expr};
 use serde_json::json;
+use utils::{check_dataframe_query, dialect_names, make_connection, TOKIO_RUNTIME};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_sql::dataframe::SqlDataFrame;
-
 
 #[cfg(test)]
 mod test_default_null_ordering {
@@ -32,7 +31,7 @@ mod test_default_null_ordering {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
@@ -86,7 +85,7 @@ mod test_custom_null_ordering {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let sort_res = df.sort(
@@ -115,7 +114,6 @@ mod test_custom_null_ordering {
     }
 }
 
-
 #[cfg(test)]
 mod test_order_with_limit {
     use crate::*;
@@ -136,7 +134,7 @@ mod test_order_with_limit {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
 

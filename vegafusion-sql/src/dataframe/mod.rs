@@ -73,11 +73,15 @@ impl DataFrame for SqlDataFrame {
         let mut query = self.make_select_star();
         let sql_exprs = expr
             .iter()
-            .map(|expr| expr.to_sql_order(self.dialect()))
+            .map(|expr| expr.to_sql_order(self.dialect(), &self.schema_df()?))
             .collect::<Result<Vec<_>>>()?;
         query.order_by = sql_exprs;
         if let Some(limit) = limit {
-            query.limit = Some(lit(limit).to_sql(self.dialect()).unwrap())
+            query.limit = Some(
+                lit(limit)
+                    .to_sql(self.dialect(), &self.schema_df()?)
+                    .unwrap(),
+            )
         }
         self.chain_query(query, self.schema.as_ref().clone())
     }
@@ -85,7 +89,11 @@ impl DataFrame for SqlDataFrame {
     fn select(&self, expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
         let sql_expr_strs = expr
             .iter()
-            .map(|expr| Ok(expr.to_sql_select(self.dialect())?.to_string()))
+            .map(|expr| {
+                Ok(expr
+                    .to_sql_select(self.dialect(), &self.schema_df()?)?
+                    .to_string())
+            })
             .collect::<Result<Vec<_>>>()?;
 
         let select_csv = sql_expr_strs.join(", ");
@@ -111,12 +119,16 @@ impl DataFrame for SqlDataFrame {
 
         let sql_group_expr_strs = group_expr
             .iter()
-            .map(|expr| Ok(expr.to_sql(self.dialect())?.to_string()))
+            .map(|expr| Ok(expr.to_sql(self.dialect(), &self.schema_df()?)?.to_string()))
             .collect::<Result<Vec<_>>>()?;
 
         let sql_aggr_expr_strs = all_aggr_expr
             .iter()
-            .map(|expr| Ok(expr.to_sql_select(self.dialect())?.to_string()))
+            .map(|expr| {
+                Ok(expr
+                    .to_sql_select(self.dialect(), &self.schema_df()?)?
+                    .to_string())
+            })
             .collect::<Result<Vec<_>>>()?;
 
         let aggr_csv = sql_aggr_expr_strs.join(", ");
@@ -189,11 +201,14 @@ impl DataFrame for SqlDataFrame {
                     name: col.display_name()?,
                 })
                 .alias(col.display_name()?);
-                Ok(col.to_sql_select(self.dialect())?.to_string())
+                Ok(col
+                    .to_sql_select(self.dialect(), &self.schema_df()?)?
+                    .to_string())
             })
             .collect::<Result<Vec<_>>>()?;
         let new_col_csv = new_col_strs.join(", ");
 
+        let schema_df = self.schema_df()?;
         let input_col_strs = schema
             .fields()
             .iter()
@@ -210,7 +225,11 @@ impl DataFrame for SqlDataFrame {
                         name: field.name().clone(),
                     })
                     .alias(field.name());
-                    Some(expr.to_sql_select(self.dialect()).unwrap().to_string())
+                    Some(
+                        expr.to_sql_select(self.dialect(), &schema_df)
+                            .unwrap()
+                            .to_string(),
+                    )
                 }
             })
             .collect::<Vec<_>>();
@@ -220,12 +239,16 @@ impl DataFrame for SqlDataFrame {
         // Perform join aggregation
         let sql_group_expr_strs = group_expr
             .iter()
-            .map(|expr| Ok(expr.to_sql(self.dialect())?.to_string()))
+            .map(|expr| Ok(expr.to_sql(self.dialect(), &self.schema_df()?)?.to_string()))
             .collect::<Result<Vec<_>>>()?;
 
         let sql_aggr_expr_strs = aggr_expr
             .iter()
-            .map(|expr| Ok(expr.to_sql_select(self.dialect())?.to_string()))
+            .map(|expr| {
+                Ok(expr
+                    .to_sql_select(self.dialect(), &self.schema_df()?)?
+                    .to_string())
+            })
             .collect::<Result<Vec<_>>>()?;
         let aggr_csv = sql_aggr_expr_strs.join(", ");
 
@@ -269,7 +292,7 @@ impl DataFrame for SqlDataFrame {
     }
 
     fn filter(&self, predicate: Expr) -> Result<Arc<dyn DataFrame>> {
-        let sql_predicate = predicate.to_sql(self.dialect())?;
+        let sql_predicate = predicate.to_sql(self.dialect(), &self.schema_df()?)?;
 
         let query = parse_sql_query(
             &format!(
@@ -351,7 +374,11 @@ impl DataFrame for SqlDataFrame {
                 // Create selection CSV for subquery
                 let selection_strs = subquery_selection
                     .iter()
-                    .map(|sel| Ok(sel.to_sql_select(self.dialect())?.to_string()))
+                    .map(|sel| {
+                        Ok(sel
+                            .to_sql_select(self.dialect(), &self.schema_df()?)?
+                            .to_string())
+                    })
                     .collect::<Result<Vec<_>>>()?;
                 let selection_csv = selection_strs.join(", ");
 
@@ -376,7 +403,11 @@ impl DataFrame for SqlDataFrame {
 
         let selection_strs = selections
             .iter()
-            .map(|sel| Ok(sel.to_sql_select(self.dialect())?.to_string()))
+            .map(|sel| {
+                Ok(sel
+                    .to_sql_select(self.dialect(), &self.schema_df()?)?
+                    .to_string())
+            })
             .collect::<Result<Vec<_>>>()?;
         let selection_csv = selection_strs.join(", ");
 
@@ -474,7 +505,9 @@ impl DataFrame for SqlDataFrame {
             })
             .alias(stop_field);
 
-            let window_expr_str = window_expr.to_sql_select(self.dialect())?.to_string();
+            let window_expr_str = window_expr
+                .to_sql_select(self.dialect(), &self.schema_df()?)?
+                .to_string();
 
             // For offset zero, we need to evaluate positive and negative field values separately,
             // then union the results. This is required to make sure stacks do not overlap. Negative
@@ -490,7 +523,7 @@ impl DataFrame for SqlDataFrame {
                                     SELECT *, {window_expr_str} from {parent} WHERE {numeric_field} < 0",
                     parent = self.parent_name(),
                     window_expr_str = window_expr_str,
-                    numeric_field = numeric_field.to_sql(self.dialect())?.to_string()
+                    numeric_field = numeric_field.to_sql(self.dialect(), &self.schema_df()?)?.to_string()
                 ),
                                  new_schema)?;
 
@@ -537,7 +570,9 @@ impl DataFrame for SqlDataFrame {
                 filter: None,
             })
             .alias("__total");
-            let total_agg_str = total_agg.to_sql_select(self.dialect())?.to_string();
+            let total_agg_str = total_agg
+                .to_sql_select(self.dialect(), &self.schema_df()?)?
+                .to_string();
 
             // Add __total column with total or total per partition
             let schema_exprs = vec![Expr::Wildcard, total_agg];
@@ -556,7 +591,7 @@ impl DataFrame for SqlDataFrame {
             } else {
                 let partition_by_strs = partition_by
                     .iter()
-                    .map(|p| Ok(p.to_sql(self.dialect())?.to_string()))
+                    .map(|p| Ok(p.to_sql(self.dialect(), &self.schema_df()?)?.to_string()))
                     .collect::<Result<Vec<_>>>()?;
                 let partition_by_csv = partition_by_strs.join(", ");
 
@@ -608,7 +643,9 @@ impl DataFrame for SqlDataFrame {
             let dataframe = match mode {
                 StackMode::Center => {
                     let max_total = max(flat_col("__total")).alias("__max_total");
-                    let max_total_str = max_total.to_sql_select(self.dialect())?.to_string();
+                    let max_total_str = max_total
+                        .to_sql_select(self.dialect(), &self.schema_df()?)?
+                        .to_string();
 
                     // Compute new schema
                     let schema_exprs = vec![Expr::Wildcard, max_total];
@@ -711,12 +748,17 @@ impl DataFrame for SqlDataFrame {
             // First step is to build up a new DataFrame that contains the all possible combinations
             // of the `key` and `groupby` columns
             let key_col = flat_col(key);
-            let key_col_str = key_col.to_sql_select(self.dialect())?.to_string();
+            let key_col_str = key_col
+                .to_sql_select(self.dialect(), &self.schema_df()?)?
+                .to_string();
 
             let group_cols = groupby.iter().map(|c| flat_col(c)).collect::<Vec<_>>();
             let group_col_strs = group_cols
                 .iter()
-                .map(|c| Ok(c.to_sql_select(self.dialect())?.to_string()))
+                .map(|c| {
+                    Ok(c.to_sql_select(self.dialect(), &self.schema_df()?)?
+                        .to_string())
+                })
                 .collect::<Result<Vec<_>>>()?;
             let group_cols_csv = group_col_strs.join(", ");
 
@@ -765,13 +807,18 @@ impl DataFrame for SqlDataFrame {
                         } else {
                             flat_col(col_name)
                         };
-                        Ok(expr.to_sql_select(self.dialect())?.to_string())
+                        Ok(expr
+                            .to_sql_select(self.dialect(), &self.schema_df()?)?
+                            .to_string())
                     })
                     .collect::<Result<Vec<_>>>()?
             } else {
                 select_columns
                     .iter()
-                    .map(|c| Ok(c.to_sql_select(self.dialect())?.to_string()))
+                    .map(|c| {
+                        Ok(c.to_sql_select(self.dialect(), &self.schema_df()?)?
+                            .to_string())
+                    })
                     .collect::<Result<Vec<_>>>()?
             };
 
@@ -793,9 +840,9 @@ impl DataFrame for SqlDataFrame {
                     group_cols_csv = group_cols_csv,
                     key = key_col_str,
                     using_csv = using_csv,
-                    order_col = col(order_field).to_sql(self.dialect())?.to_string(),
-                    order_group_col = col(format!("{order_field}_groups")).to_sql(self.dialect())?.to_string(),
-                    order_key_col = col(format!("{order_field}_key")).to_sql(self.dialect())?.to_string(),
+                    order_col = col(order_field).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
+                    order_group_col = col(format!("{order_field}_groups")).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
+                    order_key_col = col(format!("{order_field}_key")).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
                     parent = self.parent_name(),
                 );
 
@@ -948,6 +995,7 @@ impl SqlDataFrame {
         let dialect = conn.dialect();
         let batch = values.to_record_batch()?;
         let schema = batch.schema();
+        let schema_df = DFSchema::try_from(schema.as_ref().clone())?;
 
         let query = match &dialect.values_mode {
             ValuesMode::SelectUnion => {
@@ -961,7 +1009,7 @@ impl SqlDataFrame {
                         let col = batch.column(c);
                         let df_value =
                             lit(ScalarValue::try_from_array(col, r)?).alias(schema.field(c).name());
-                        let sql_value = df_value.to_sql_select(dialect)?;
+                        let sql_value = df_value.to_sql_select(dialect, &schema_df)?;
                         projection.push(sql_value);
                     }
 
@@ -999,7 +1047,7 @@ impl SqlDataFrame {
                     for c in 0..batch.num_columns() {
                         let col = batch.column(c);
                         let df_value = lit(ScalarValue::try_from_array(col, r)?);
-                        let sql_value = df_value.to_sql(conn.dialect())?;
+                        let sql_value = df_value.to_sql(conn.dialect(), &schema_df)?;
                         expr_row.push(sql_value);
                     }
                     expr_rows.push(expr_row);
@@ -1032,7 +1080,7 @@ impl SqlDataFrame {
                         .map(|(i, field)| {
                             col(format!("{}{}", column_prefix, i + base_index))
                                 .alias(field.name())
-                                .to_sql_select(dialect)
+                                .to_sql_select(dialect, &schema_df)
                                 .unwrap()
                         })
                         .collect::<Vec<_>>();

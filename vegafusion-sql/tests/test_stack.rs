@@ -2,36 +2,32 @@
 extern crate lazy_static;
 
 mod utils;
-use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query, dialect_names};
 use datafusion_expr::{col, expr, lit, round, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
 use std::ops::{Div, Mul};
 use std::sync::Arc;
-use vegafusion_common::{
-    error::Result,
-    data::table::VegaFusionTable
-};
+use utils::{check_dataframe_query, dialect_names, make_connection, TOKIO_RUNTIME};
+use vegafusion_common::{data::table::VegaFusionTable, error::Result};
 use vegafusion_dataframe::dataframe::{DataFrame, StackMode};
 use vegafusion_sql::connection::SqlConnection;
 use vegafusion_sql::dataframe::SqlDataFrame;
 
-
 fn stack_data(conn: Arc<dyn SqlConnection>) -> Arc<dyn DataFrame> {
     let table = VegaFusionTable::from_json(
         &json!([
-                {"a": 1, "b": 9, "c": "A"},
-                {"a": -3, "b": 8, "c": "BB"},
-                {"a": 5, "b": 7, "c": "A"},
-                {"a": -7, "b": 6, "c": "BB"},
-                {"a": 9, "b": 5, "c": "BB"},
-                {"a": -11, "b": 4, "c": "A"},
-                {"a": 13, "b": 3, "c": "BB"},
-            ]),
+            {"a": 1, "b": 9, "c": "A"},
+            {"a": -3, "b": 8, "c": "BB"},
+            {"a": 5, "b": 7, "c": "A"},
+            {"a": -7, "b": 6, "c": "BB"},
+            {"a": 9, "b": 5, "c": "BB"},
+            {"a": -11, "b": 4, "c": "A"},
+            {"a": 13, "b": 3, "c": "BB"},
+        ]),
         1024,
     )
-        .unwrap();
+    .unwrap();
 
     SqlDataFrame::from_values(&table, conn).unwrap()
 }
@@ -49,23 +45,23 @@ fn make_stack_for_mode(df: Arc<dyn DataFrame>, mode: StackMode) -> Result<Arc<dy
         "end",
         mode,
     )
-        .and_then(|df| {
-            df.sort(
-                vec![
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(col("c")),
-                        asc: true,
-                        nulls_first: true,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(col("end")),
-                        asc: true,
-                        nulls_first: true,
-                    }),
-                ],
-                None,
-            )
-        })
+    .and_then(|df| {
+        df.sort(
+            vec![
+                Expr::Sort(expr::Sort {
+                    expr: Box::new(col("c")),
+                    asc: true,
+                    nulls_first: true,
+                }),
+                Expr::Sort(expr::Sort {
+                    expr: Box::new(col("end")),
+                    asc: true,
+                    nulls_first: true,
+                }),
+            ],
+            None,
+        )
+    })
 }
 
 #[cfg(test)]
@@ -138,4 +134,3 @@ mod test_mode_normalized {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
-

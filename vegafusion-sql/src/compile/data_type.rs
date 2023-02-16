@@ -12,9 +12,9 @@ impl ToSqlDataType for DataType {
         if let Some(sql_datatype) = dialect.cast_datatypes.get(self) {
             Ok(sql_datatype.clone())
         } else {
-            Err(VegaFusionError::sql_not_supported(
-                format!("Data type {self} not supported by dialect"))
-            )
+            Err(VegaFusionError::sql_not_supported(format!(
+                "Data type {self} not supported by dialect"
+            )))
         }
     }
 }

@@ -2,14 +2,13 @@
 extern crate lazy_static;
 
 mod utils;
-use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query, dialect_names};
 use datafusion_expr::{col, expr, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
+use utils::{check_dataframe_query, dialect_names, make_connection, TOKIO_RUNTIME};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_sql::dataframe::SqlDataFrame;
-
 
 #[cfg(test)]
 mod test_simple_fold {
@@ -27,7 +26,7 @@ mod test_simple_fold {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df_result = df
@@ -66,7 +65,6 @@ mod test_simple_fold {
     fn test_marker() {} // Help IDE detect test module
 }
 
-
 #[cfg(test)]
 mod test_ordered_fold {
     use crate::*;
@@ -83,7 +81,7 @@ mod test_ordered_fold {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df_result = df

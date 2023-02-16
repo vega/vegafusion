@@ -1,11 +1,14 @@
 use crate::compile::expr::ToSqlExpr;
+use arrow::datatypes::DataType;
 use datafusion_common::scalar::ScalarValue;
-use datafusion_expr::{Expr, Operator};
+use datafusion_common::DFSchema;
+use datafusion_expr::lit;
+use datafusion_expr::{when, Expr, Operator};
 use sqlparser::ast::{
-    BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction, Function,
-    FunctionArg as SqlFunctionArg, FunctionArg, FunctionArgExpr as SqlFunctionArgExpr,
-    FunctionArgExpr, Ident as SqlIdent, Ident, ObjectName as SqlObjectName, ObjectName,
-    Value as SqlValue, DataType as SqlDataType,
+    BinaryOperator as SqlBinaryOperator, DataType as SqlDataType, Expr as SqlExpr,
+    Function as SqlFunction, Function, FunctionArg as SqlFunctionArg, FunctionArg,
+    FunctionArgExpr as SqlFunctionArgExpr, FunctionArgExpr, Ident as SqlIdent, Ident,
+    ObjectName as SqlObjectName, ObjectName, Value as SqlValue,
 };
 use sqlparser::dialect::{
     BigQueryDialect, ClickHouseDialect, Dialect as SqlParserDialect, GenericDialect, MySqlDialect,
@@ -15,7 +18,6 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::str::FromStr;
 use std::sync::Arc;
-use arrow::datatypes::DataType;
 use vegafusion_common::error::{Result, VegaFusionError};
 
 #[derive(Clone, Debug)]
@@ -128,6 +130,10 @@ pub struct Dialect {
 
     /// Mapping from Arrow DataTypes to SqlParser DataTypes for dialect
     pub cast_datatypes: HashMap<DataType, SqlDataType>,
+
+    pub cast_transformers: HashMap<(DataType, DataType), Arc<dyn CastTransformer>>,
+
+    pub cast_propagates_null: bool,
 }
 
 impl Default for Dialect {
@@ -151,6 +157,8 @@ impl Default for Dialect {
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
             cast_datatypes: Default::default(),
+            cast_transformers: Default::default(),
+            cast_propagates_null: true,
         }
     }
 }
@@ -237,10 +245,13 @@ impl Dialect {
                 (DataType::Float32, SqlDataType::Double),
                 (DataType::Float64, SqlDataType::Double),
                 (DataType::Utf8, SqlDataType::Varchar(None)),
-            ].into_iter().collect()
+            ]
+            .into_iter()
+            .collect(),
+            cast_transformers: Default::default(),
+            cast_propagates_null: true,
         }
     }
-
 
     pub fn bigquery() -> Self {
         let float64dtype = SqlDataType::Custom(ObjectName(vec!["float64".into()]), Vec::new());
@@ -305,7 +316,11 @@ impl Dialect {
                 (DataType::Float32, float64dtype.clone()),
                 (DataType::Float64, float64dtype.clone()),
                 (DataType::Utf8, SqlDataType::String),
-            ].into_iter().collect()
+            ]
+            .into_iter()
+            .collect(),
+            cast_transformers: Default::default(),
+            cast_propagates_null: true,
         }
     }
 
@@ -374,8 +389,12 @@ impl Dialect {
                 (DataType::Float16, SqlDataType::Float(None)),
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
-                (DataType::Utf8, SqlDataType::String),
-            ].into_iter().collect()
+                (DataType::Utf8, SqlDataType::Varchar(None)),
+            ]
+            .into_iter()
+            .collect(),
+            cast_transformers: Default::default(),
+            cast_propagates_null: false,
         }
     }
 
@@ -457,7 +476,11 @@ impl Dialect {
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
                 (DataType::Utf8, SqlDataType::String),
-            ].into_iter().collect()
+            ]
+            .into_iter()
+            .collect(),
+            cast_transformers: Default::default(),
+            cast_propagates_null: true,
         }
     }
 
@@ -628,7 +651,16 @@ impl Dialect {
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
                 (DataType::Utf8, SqlDataType::String),
-            ].into_iter().collect()
+            ]
+            .into_iter()
+            .collect(),
+            cast_transformers: vec![(
+                (DataType::Boolean, DataType::Utf8),
+                BoolToStringWithCase::new_dyn(),
+            )]
+            .into_iter()
+            .collect(),
+            cast_propagates_null: true,
         }
     }
 
@@ -708,7 +740,11 @@ impl Dialect {
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
                 (DataType::Utf8, SqlDataType::Varchar(None)),
-            ].into_iter().collect()
+            ]
+            .into_iter()
+            .collect(),
+            cast_transformers: Default::default(),
+            cast_propagates_null: true,
         }
     }
 
@@ -788,8 +824,12 @@ impl Dialect {
                 (DataType::Float16, SqlDataType::Float(None)),
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
-                (DataType::Utf8, SqlDataType::Varchar(None))
-            ].into_iter().collect()
+                (DataType::Utf8, SqlDataType::Varchar(None)),
+            ]
+            .into_iter()
+            .collect(),
+            cast_transformers: Default::default(),
+            cast_propagates_null: true,
         }
     }
 
@@ -857,8 +897,17 @@ impl Dialect {
                 (DataType::Float16, SqlDataType::Float(None)),
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
-                (DataType::Utf8, SqlDataType::Char(None))
-            ].into_iter().collect()
+                (DataType::Utf8, SqlDataType::Char(None)),
+            ]
+            .into_iter()
+            .collect(),
+            cast_transformers: vec![(
+                (DataType::Boolean, DataType::Utf8),
+                BoolToStringWithCase::new_dyn(),
+            )]
+            .into_iter()
+            .collect(),
+            cast_propagates_null: true,
         }
     }
 
@@ -937,8 +986,12 @@ impl Dialect {
                 (DataType::Float16, SqlDataType::Real),
                 (DataType::Float32, SqlDataType::Real),
                 (DataType::Float64, SqlDataType::DoublePrecision),
-                (DataType::Utf8, SqlDataType::Text)
-            ].into_iter().collect()
+                (DataType::Utf8, SqlDataType::Text),
+            ]
+            .into_iter()
+            .collect(),
+            cast_transformers: Default::default(),
+            cast_propagates_null: true,
         }
     }
 
@@ -1015,8 +1068,17 @@ impl Dialect {
                 (DataType::Float16, SqlDataType::Real),
                 (DataType::Float32, SqlDataType::Real),
                 (DataType::Float64, SqlDataType::DoublePrecision),
-                (DataType::Utf8, SqlDataType::Text)
-            ].into_iter().collect()
+                (DataType::Utf8, SqlDataType::Text),
+            ]
+            .into_iter()
+            .collect(),
+            cast_transformers: vec![(
+                (DataType::Boolean, DataType::Utf8),
+                BoolToStringWithCase::new_dyn(),
+            )]
+            .into_iter()
+            .collect(),
+            cast_propagates_null: false,
         }
     }
 
@@ -1099,8 +1161,12 @@ impl Dialect {
                 (DataType::Float16, SqlDataType::Float(None)),
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
-                (DataType::Utf8, SqlDataType::Varchar(None))
-            ].into_iter().collect()
+                (DataType::Utf8, SqlDataType::Varchar(None)),
+            ]
+            .into_iter()
+            .collect(),
+            cast_transformers: Default::default(),
+            cast_propagates_null: true,
         }
     }
 
@@ -1163,8 +1229,17 @@ impl Dialect {
                 (DataType::Float16, SqlDataType::Real),
                 (DataType::Float32, SqlDataType::Real),
                 (DataType::Float64, SqlDataType::Real),
-                (DataType::Utf8, SqlDataType::Text)
-            ].into_iter().collect()
+                (DataType::Utf8, SqlDataType::Text),
+            ]
+            .into_iter()
+            .collect(),
+            cast_transformers: vec![(
+                (DataType::Boolean, DataType::Utf8),
+                BoolToStringWithCase::new_dyn(),
+            )]
+            .into_iter()
+            .collect(),
+            cast_propagates_null: true,
         }
     }
 }
@@ -1196,6 +1271,7 @@ impl FromStr for Dialect {
     }
 }
 
+// Binary operator transformers
 pub trait BinaryOperatorTransformer: Debug + Send + Sync {
     fn transform(
         &self,
@@ -1208,7 +1284,6 @@ pub trait BinaryOperatorTransformer: Debug + Send + Sync {
 
 #[derive(Clone, Debug)]
 struct ModulusOpToFunction;
-
 impl BinaryOperatorTransformer for ModulusOpToFunction {
     fn transform(
         &self,
@@ -1233,8 +1308,9 @@ impl BinaryOperatorTransformer for ModulusOpToFunction {
     }
 }
 
+// Function transformers
 pub trait FunctionTransformer: Debug + Send + Sync {
-    fn transform(&self, args: &[Expr], dialect: &Dialect) -> Result<SqlExpr>;
+    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr>;
 }
 
 #[derive(Clone, Debug)]
@@ -1245,12 +1321,12 @@ impl RenameFunctionTransformer {
     }
 }
 impl FunctionTransformer for RenameFunctionTransformer {
-    fn transform(&self, args: &[Expr], dialect: &Dialect) -> Result<SqlExpr> {
+    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
         let sql_args = args
             .iter()
             .map(|arg| {
                 Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(
-                    arg.to_sql(dialect)?,
+                    arg.to_sql(dialect, schema)?,
                 )))
             })
             .collect::<Result<Vec<_>>>()?;
@@ -1271,7 +1347,7 @@ impl FunctionTransformer for RenameFunctionTransformer {
 #[derive(Clone, Debug)]
 struct DateAddToIntervalAddition;
 impl FunctionTransformer for DateAddToIntervalAddition {
-    fn transform(&self, args: &[Expr], dialect: &Dialect) -> Result<SqlExpr> {
+    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
         // Convert date_add function to interval arithmetic
         if args.len() != 3 {
             return Err(VegaFusionError::sql_not_supported(
@@ -1307,9 +1383,30 @@ impl FunctionTransformer for DateAddToIntervalAddition {
         };
 
         Ok(SqlExpr::BinaryOp {
-            left: Box::new(args[2].to_sql(dialect)?),
+            left: Box::new(args[2].to_sql(dialect, schema)?),
             op: SqlBinaryOperator::Plus,
             right: Box::new(interval),
         })
+    }
+}
+
+// Cast transformers
+pub trait CastTransformer: Debug + Send + Sync {
+    fn transform(&self, arg: &Expr, dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr>;
+}
+
+#[derive(Debug)]
+pub struct BoolToStringWithCase;
+impl BoolToStringWithCase {
+    pub fn new_dyn() -> Arc<dyn CastTransformer> {
+        Arc::new(Self)
+    }
+}
+impl CastTransformer for BoolToStringWithCase {
+    fn transform(&self, arg: &Expr, dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
+        when(arg.clone().eq(lit(true)), lit("true"))
+            .when(arg.clone().eq(lit(false)), lit("false"))
+            .otherwise(lit(ScalarValue::Null))?
+            .to_sql(dialect, schema)
     }
 }

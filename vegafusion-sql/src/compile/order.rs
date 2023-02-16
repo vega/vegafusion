@@ -1,15 +1,16 @@
 use crate::compile::expr::ToSqlExpr;
 use crate::dialect::Dialect;
+use datafusion_common::DFSchema;
 use datafusion_expr::{expr::Sort, Expr};
 use sqlparser::ast::OrderByExpr as SqlOrderByExpr;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 
 pub trait ToSqlOrderByExpr {
-    fn to_sql_order(&self, dialect: &Dialect) -> Result<SqlOrderByExpr>;
+    fn to_sql_order(&self, dialect: &Dialect, schema: &DFSchema) -> Result<SqlOrderByExpr>;
 }
 
 impl ToSqlOrderByExpr for Expr {
-    fn to_sql_order(&self, dialect: &Dialect) -> Result<SqlOrderByExpr> {
+    fn to_sql_order(&self, dialect: &Dialect, schema: &DFSchema) -> Result<SqlOrderByExpr> {
         match self {
             Expr::Sort(Sort {
                 expr,
@@ -34,7 +35,7 @@ impl ToSqlOrderByExpr for Expr {
                 };
 
                 Ok(SqlOrderByExpr {
-                    expr: expr.to_sql(dialect).with_context(|| {
+                    expr: expr.to_sql(dialect, schema).with_context(|| {
                         format!("Expression cannot be used as order by expression: {expr:?}")
                     })?,
                     asc: Some(*asc),

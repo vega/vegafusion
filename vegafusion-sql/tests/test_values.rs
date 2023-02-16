@@ -2,13 +2,12 @@
 extern crate lazy_static;
 
 mod utils;
-use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query, dialect_names};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
+use utils::{check_dataframe_query, dialect_names, make_connection, TOKIO_RUNTIME};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_sql::dataframe::SqlDataFrame;
-
 
 #[cfg(test)]
 mod test_values1 {
@@ -27,7 +26,7 @@ mod test_values1 {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df_result = SqlDataFrame::from_values(&table, conn);
         check_dataframe_query(df_result, "values", "values1", dialect_name, evaluable);

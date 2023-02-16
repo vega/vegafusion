@@ -2,15 +2,15 @@
 extern crate lazy_static;
 
 mod utils;
-use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query, dialect_names};
 use datafusion_common::ScalarValue;
 use datafusion_expr::{
-    col, expr, lit, window_function, AggregateFunction,
-    BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound, WindowFrameUnits,
+    col, expr, lit, window_function, AggregateFunction, BuiltInWindowFunction, Expr, WindowFrame,
+    WindowFrameBound, WindowFrameUnits,
 };
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
+use utils::{check_dataframe_query, dialect_names, make_connection, TOKIO_RUNTIME};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_sql::dataframe::SqlDataFrame;
 
@@ -33,7 +33,7 @@ mod test_simple_aggs_unbounded {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
@@ -58,7 +58,7 @@ mod test_simple_aggs_unbounded {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("sum_b"),
+                .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(
                         AggregateFunction::Count,
@@ -68,7 +68,7 @@ mod test_simple_aggs_unbounded {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("count_part_b"),
+                .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Avg),
                     args: vec![col("b")],
@@ -76,7 +76,7 @@ mod test_simple_aggs_unbounded {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("cume_mean_b"),
+                .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Min),
                     args: vec![col("b")],
@@ -84,7 +84,7 @@ mod test_simple_aggs_unbounded {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("min_b"),
+                .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Max),
                     args: vec![col("b")],
@@ -92,7 +92,7 @@ mod test_simple_aggs_unbounded {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("max_b"),
+                .alias("max_b"),
             ])
             .and_then(|df| df.sort(order_by, None));
 
@@ -125,7 +125,7 @@ mod test_simple_aggs_bounded {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
@@ -150,7 +150,7 @@ mod test_simple_aggs_bounded {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("sum_b"),
+                .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(
                         AggregateFunction::Count,
@@ -160,7 +160,7 @@ mod test_simple_aggs_bounded {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("count_part_b"),
+                .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Avg),
                     args: vec![col("b")],
@@ -168,7 +168,7 @@ mod test_simple_aggs_bounded {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("cume_mean_b"),
+                .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Min),
                     args: vec![col("b")],
@@ -176,7 +176,7 @@ mod test_simple_aggs_bounded {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("min_b"),
+                .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Max),
                     args: vec![col("b")],
@@ -184,7 +184,7 @@ mod test_simple_aggs_bounded {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("max_b"),
+                .alias("max_b"),
             ])
             .and_then(|df| df.sort(order_by, None));
 
@@ -200,7 +200,6 @@ mod test_simple_aggs_bounded {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
-
 
 #[cfg(test)]
 mod test_simple_window_fns {
@@ -221,7 +220,7 @@ mod test_simple_window_fns {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
@@ -248,7 +247,7 @@ mod test_simple_window_fns {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("row_num"),
+                .alias("row_num"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::BuiltInWindowFunction(
                         BuiltInWindowFunction::Rank,
@@ -258,7 +257,7 @@ mod test_simple_window_fns {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("rank"),
+                .alias("rank"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::BuiltInWindowFunction(
                         BuiltInWindowFunction::DenseRank,
@@ -268,7 +267,7 @@ mod test_simple_window_fns {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("d_rank"),
+                .alias("d_rank"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::BuiltInWindowFunction(
                         BuiltInWindowFunction::FirstValue,
@@ -278,7 +277,7 @@ mod test_simple_window_fns {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("first"),
+                .alias("first"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::BuiltInWindowFunction(
                         BuiltInWindowFunction::LastValue,
@@ -288,7 +287,7 @@ mod test_simple_window_fns {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("last"),
+                .alias("last"),
             ])
             .and_then(|df| df.sort(order_by, None));
 
@@ -304,7 +303,6 @@ mod test_simple_window_fns {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
-
 
 #[cfg(test)]
 mod test_advanced_window_fns {
@@ -325,7 +323,7 @@ mod test_advanced_window_fns {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
@@ -352,7 +350,7 @@ mod test_advanced_window_fns {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("nth1"),
+                .alias("nth1"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::BuiltInWindowFunction(
                         BuiltInWindowFunction::CumeDist,
@@ -362,7 +360,7 @@ mod test_advanced_window_fns {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("cdist"),
+                .alias("cdist"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::BuiltInWindowFunction(
                         BuiltInWindowFunction::Lag,
@@ -372,7 +370,7 @@ mod test_advanced_window_fns {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("lag_b"),
+                .alias("lag_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::BuiltInWindowFunction(
                         BuiltInWindowFunction::Lead,
@@ -382,7 +380,7 @@ mod test_advanced_window_fns {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("lead_b"),
+                .alias("lead_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::BuiltInWindowFunction(
                         BuiltInWindowFunction::Ntile,
@@ -392,7 +390,7 @@ mod test_advanced_window_fns {
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
-                    .alias("ntile"),
+                .alias("ntile"),
             ])
             .and_then(|df| df.sort(order_by, None));
 

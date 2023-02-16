@@ -1,25 +1,26 @@
 use crate::compile::expr::ToSqlExpr;
 use crate::dialect::Dialect;
+use datafusion_common::DFSchema;
 use datafusion_expr::Expr;
 use sqlparser::ast::{Ident, SelectItem as SqlSelectItem};
 use vegafusion_common::error::Result;
 
 pub trait ToSqlSelectItem {
-    fn to_sql_select(&self, dialect: &Dialect) -> Result<SqlSelectItem>;
+    fn to_sql_select(&self, dialect: &Dialect, schema: &DFSchema) -> Result<SqlSelectItem>;
 }
 
 impl ToSqlSelectItem for Expr {
-    fn to_sql_select(&self, dialect: &Dialect) -> Result<SqlSelectItem> {
+    fn to_sql_select(&self, dialect: &Dialect, schema: &DFSchema) -> Result<SqlSelectItem> {
         Ok(match self {
             Expr::Alias(expr, alias) => SqlSelectItem::ExprWithAlias {
-                expr: expr.to_sql(dialect)?,
+                expr: expr.to_sql(dialect, schema)?,
                 alias: Ident {
                     value: alias.clone(),
                     quote_style: Some(dialect.quote_style),
                 },
             },
             Expr::Wildcard => SqlSelectItem::Wildcard(Default::default()),
-            expr => SqlSelectItem::UnnamedExpr(expr.to_sql(dialect)?),
+            expr => SqlSelectItem::UnnamedExpr(expr.to_sql(dialect, schema)?),
         })
     }
 }

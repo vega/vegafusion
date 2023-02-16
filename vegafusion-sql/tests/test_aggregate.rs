@@ -2,17 +2,14 @@
 extern crate lazy_static;
 
 mod utils;
-use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query, dialect_names};
-use datafusion_expr::{
-    avg, col, count, expr, lit, max, min, round, sum, AggregateFunction, Expr,
-};
+use datafusion_expr::{avg, col, count, expr, lit, max, min, round, sum, AggregateFunction, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
 use std::ops::{Div, Mul};
+use utils::{check_dataframe_query, dialect_names, make_connection, TOKIO_RUNTIME};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_sql::dataframe::SqlDataFrame;
-
 
 #[cfg(test)]
 mod test_simple_aggs {
@@ -34,7 +31,7 @@ mod test_simple_aggs {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df = df
@@ -90,7 +87,7 @@ mod test_median_agg {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df_result = df.aggregate(
@@ -103,7 +100,7 @@ mod test_median_agg {
                     distinct: false,
                     filter: None,
                 })
-                    .alias("median_a"),
+                .alias("median_a"),
             ],
         );
 
@@ -139,7 +136,7 @@ mod test_variance_aggs {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df_result = df.aggregate(
@@ -152,10 +149,10 @@ mod test_variance_aggs {
                         distinct: false,
                         filter: None,
                     })
-                        .mul(lit(100)),
+                    .mul(lit(100)),
                 )
-                    .div(lit(100))
-                    .alias("stddev_a"),
+                .div(lit(100))
+                .alias("stddev_a"),
                 round(
                     Expr::AggregateFunction(expr::AggregateFunction {
                         fun: AggregateFunction::StddevPop,
@@ -163,10 +160,10 @@ mod test_variance_aggs {
                         distinct: false,
                         filter: None,
                     })
-                        .mul(lit(100)),
+                    .mul(lit(100)),
                 )
-                    .div(lit(100))
-                    .alias("stddev_pop_a"),
+                .div(lit(100))
+                .alias("stddev_pop_a"),
                 round(
                     Expr::AggregateFunction(expr::AggregateFunction {
                         fun: AggregateFunction::Variance,
@@ -174,10 +171,10 @@ mod test_variance_aggs {
                         distinct: false,
                         filter: None,
                     })
-                        .mul(lit(100)),
+                    .mul(lit(100)),
                 )
-                    .div(lit(100))
-                    .alias("var_a"),
+                .div(lit(100))
+                .alias("var_a"),
                 round(
                     Expr::AggregateFunction(expr::AggregateFunction {
                         fun: AggregateFunction::VariancePop,
@@ -185,10 +182,10 @@ mod test_variance_aggs {
                         distinct: false,
                         filter: None,
                     })
-                        .mul(lit(100)),
+                    .mul(lit(100)),
                 )
-                    .div(lit(100))
-                    .alias("var_pop_a"),
+                .div(lit(100))
+                .alias("var_pop_a"),
             ],
         );
         let df_result = df_result.and_then(|df| {

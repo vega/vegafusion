@@ -2,14 +2,13 @@
 extern crate lazy_static;
 
 mod utils;
-use utils::{TOKIO_RUNTIME, make_connection, check_dataframe_query, dialect_names};
 use datafusion_expr::{avg, col, count, expr, max, min, sum, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
+use utils::{check_dataframe_query, dialect_names, make_connection, TOKIO_RUNTIME};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_sql::dataframe::SqlDataFrame;
-
 
 #[cfg(test)]
 mod test_simple_aggs {
@@ -31,7 +30,7 @@ mod test_simple_aggs {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df_result = df
@@ -89,7 +88,7 @@ mod test_simple_aggs_no_grouping {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
         let df_result = df
