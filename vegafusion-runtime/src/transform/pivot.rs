@@ -1,7 +1,6 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::{cast_to, data_type, is_string_datatype};
 use crate::transform::aggregate::make_agg_expr_for_col_expr;
-use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion_expr::{coalesce, expr::Sort, lit, min, when, Expr};
@@ -125,7 +124,9 @@ async fn extract_sorted_pivot_values(
 
     let pivot_result = sorted_query.collect().await?;
     let pivot_batch = pivot_result.to_record_batch()?;
-    let pivot_array = pivot_batch.column_by_name(&tx.field)?;
+    let pivot_array = pivot_batch
+        .column_by_name(&tx.field)
+        .with_context(|| format!("No column named {}", tx.field))?;
     let pivot_array = pivot_array
         .as_any()
         .downcast_ref::<StringArray>()
