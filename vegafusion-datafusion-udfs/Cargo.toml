@@ -17,6 +17,4 @@ path = "../vegafusion-common"
 version = "1.0.3"
 
 [dependencies.datafusion-physical-expr]
-version = "~16.1.0"
-git = "https://github.com/jonmmease/arrow-datafusion.git"
-rev = "1e6438de31219b284df9b83f25ca36ddb1184f22"
+version = "~17.0.0"

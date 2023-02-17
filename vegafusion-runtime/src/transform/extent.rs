@@ -1,6 +1,5 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::to_numeric;
-use crate::transform::utils::RecordBatchUtils;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
@@ -10,7 +9,7 @@ use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::Field;
 use vegafusion_common::column::unescaped_col;
 use vegafusion_common::data::table::VegaFusionTable;
-use vegafusion_common::error::Result;
+use vegafusion_common::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Extent;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_dataframe::dataframe::DataFrame;
@@ -50,8 +49,10 @@ fn min_max_exprs(field: &str, schema: &DFSchema) -> Result<(Expr, Expr)> {
 
 fn extract_extent_list(table: &VegaFusionTable) -> Result<TaskValue> {
     let result_rb = table.to_record_batch()?;
-    let min_val_array = result_rb.column_by_name("__min_val")?;
-    let max_val_array = result_rb.column_by_name("__max_val")?;
+    let min_val_array = result_rb.column_by_name("__min_val")
+        .with_context(|| "No column named __min_val".to_string())?;
+    let max_val_array = result_rb.column_by_name("__max_val")
+        .with_context(|| "No column named __max_val".to_string())?;
 
     let min_val_scalar = ScalarValue::try_from_array(min_val_array, 0).unwrap();
     let max_val_scalar = ScalarValue::try_from_array(max_val_array, 0).unwrap();

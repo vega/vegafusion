@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
+use datafusion::execution::options::ReadOptions;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datatypes::cast_to;
@@ -240,8 +241,7 @@ async fn build_csv_schema(
 ) -> Result<Schema> {
     let ctx = SessionContext::new();
     let table_path = ListingTableUrl::parse(uri.into().as_str())?;
-    let target_partitions = ctx.copied_config().target_partitions();
-    let listing_options = csv_opts.to_listing_options(target_partitions);
+    let listing_options = csv_opts.to_listing_options(&ctx.copied_config());
     let inferred_schema = listing_options
         .infer_schema(&ctx.state(), &table_path)
         .await?;
