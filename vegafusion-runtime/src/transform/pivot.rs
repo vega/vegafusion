@@ -124,7 +124,8 @@ async fn extract_sorted_pivot_values(
 
     let pivot_result = sorted_query.collect().await?;
     let pivot_batch = pivot_result.to_record_batch()?;
-    let pivot_array = pivot_batch.column_by_name(&tx.field)
+    let pivot_array = pivot_batch
+        .column_by_name(&tx.field)
         .with_context(|| format!("No column named {}", tx.field))?;
     let pivot_array = pivot_array
         .as_any()

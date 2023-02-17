@@ -49,9 +49,11 @@ fn min_max_exprs(field: &str, schema: &DFSchema) -> Result<(Expr, Expr)> {
 
 fn extract_extent_list(table: &VegaFusionTable) -> Result<TaskValue> {
     let result_rb = table.to_record_batch()?;
-    let min_val_array = result_rb.column_by_name("__min_val")
+    let min_val_array = result_rb
+        .column_by_name("__min_val")
         .with_context(|| "No column named __min_val".to_string())?;
-    let max_val_array = result_rb.column_by_name("__max_val")
+    let max_val_array = result_rb
+        .column_by_name("__max_val")
         .with_context(|| "No column named __max_val".to_string())?;
 
     let min_val_scalar = ScalarValue::try_from_array(min_val_array, 0).unwrap();
