@@ -19,10 +19,6 @@ datafusion = """
 WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, 'CCC'), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
 SELECT * FROM values0 ORDER BY "a" DESC NULLS LAST, "c" ASC NULLS FIRST
 """
-dremio = """
-WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, 'CCC'), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
-SELECT * FROM values0 ORDER BY "a" DESC NULLS LAST, "c" ASC NULLS FIRST
-"""
 duckdb = """
 WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, 'CCC'), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
 SELECT * FROM values0 ORDER BY "a" DESC NULLS LAST, "c" ASC NULLS FIRST
@@ -77,10 +73,6 @@ datafusion = """
 WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, NULL), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
 SELECT * FROM values0 ORDER BY "a" DESC NULLS FIRST, "c" ASC NULLS LAST
 """
-dremio = """
-WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, NULL), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
-SELECT * FROM values0 ORDER BY "a" DESC NULLS FIRST, "c" ASC NULLS LAST
-"""
 duckdb = """
 WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, NULL), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
 SELECT * FROM values0 ORDER BY "a" DESC NULLS FIRST, "c" ASC NULLS LAST
@@ -129,10 +121,6 @@ WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, '
 SELECT * FROM values0 ORDER BY `c` ASC NULLS FIRST, `b` ASC NULLS FIRST LIMIT 4
 """
 datafusion = """
-WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (4, 7, 'CCC'), (5, 8, 'CCC'), (6, 2, 'A')) AS "_values" ("a", "b", "c")) \
-SELECT * FROM values0 ORDER BY "c" ASC NULLS FIRST, "b" ASC NULLS FIRST LIMIT 4
-"""
-dremio = """
 WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (4, 7, 'CCC'), (5, 8, 'CCC'), (6, 2, 'A')) AS "_values" ("a", "b", "c")) \
 SELECT * FROM values0 ORDER BY "c" ASC NULLS FIRST, "b" ASC NULLS FIRST LIMIT 4
 """

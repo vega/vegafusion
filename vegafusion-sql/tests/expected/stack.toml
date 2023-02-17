@@ -34,13 +34,6 @@ values1 AS (SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b
 values2 AS (SELECT "a", "b", "c", ("end" - coalesce("a", 0.0)) AS "start", "end" FROM values1) \
 SELECT * FROM values2 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
 """
-dremio = """
-WITH \
-values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
-values1 AS (SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) >= 0 UNION ALL SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) < 0), \
-values2 AS (SELECT "a", "b", "c", ("end" - coalesce("a", 0.0)) AS "start", "end" FROM values1) \
-SELECT * FROM values2 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
-"""
 duckdb = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
@@ -132,16 +125,6 @@ values5 AS (SELECT `a`, `b`, `c`, ((`_cumulative` + ((`__max_total` - `__total`)
 SELECT * FROM values5 ORDER BY `c` ASC NULLS FIRST, `end` ASC NULLS FIRST
 """
 datafusion = """
-WITH \
-values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
-values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
-values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
-values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
-values4 AS (SELECT * FROM values3 CROSS JOIN (SELECT max("__total") AS "__max_total" FROM values3) AS _cross), \
-values5 AS (SELECT "a", "b", "c", (("_cumulative" + (("__max_total" - "__total") / 2.0)) - "__stack") AS "start", ("_cumulative" + (("__max_total" - "__total") / 2.0)) AS "end" FROM values4) \
-SELECT * FROM values5 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
-"""
-dremio = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
 values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
@@ -257,16 +240,6 @@ values5 AS (SELECT * FROM values4 ORDER BY `c` ASC NULLS FIRST, `end` ASC NULLS 
 SELECT `a`, `b`, `c`, (round((`start` * 100)) / 100) AS `trunc_start`, (round((`end` * 100)) / 100) AS `trunc_end` FROM values5
 """
 datafusion = """
-WITH \
-values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
-values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
-values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
-values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
-values4 AS (SELECT "a", "b", "c", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE (("_cumulative" - "__stack") / "__total") END AS "start", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE ("_cumulative" / "__total") END AS "end" FROM values3), \
-values5 AS (SELECT * FROM values4 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST) \
-SELECT "a", "b", "c", (round(("start" * 100)) / 100) AS "trunc_start", (round(("end" * 100)) / 100) AS "trunc_end" FROM values5
-"""
-dremio = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
 values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \

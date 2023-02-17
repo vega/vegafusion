@@ -437,7 +437,7 @@ mod test_is_finite {
     use arrow::array::{Float64Array, Int32Array};
     use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
     use arrow::record_batch::RecordBatch;
-    use datafusion_expr::{col, expr, lit, Expr};
+    use datafusion_expr::{col, expr, Expr};
     use std::sync::Arc;
 
     #[apply(dialect_names)]

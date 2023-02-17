@@ -2,7 +2,7 @@ use crate::compile::expr::ToSqlExpr;
 use arrow::datatypes::DataType;
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
-use datafusion_expr::{expr, ExprSchemable, lit, Subquery};
+use datafusion_expr::{ExprSchemable, lit};
 use datafusion_expr::{when, Expr, Operator};
 use sqlparser::ast::{
     BinaryOperator as SqlBinaryOperator, DataType as SqlDataType, Expr as SqlExpr,
@@ -27,7 +27,6 @@ pub enum ParseDialect {
     ClickHouse,
     Databricks,
     DataFusion,
-    Dremio,
     DuckDB,
     Generic,
     MySql,
@@ -48,7 +47,6 @@ impl ParseDialect {
                 Arc::new(MySqlDialect {})
             }
             ParseDialect::DataFusion => Arc::new(GenericDialect),
-            ParseDialect::Dremio => Arc::new(GenericDialect),
             ParseDialect::DuckDB => Arc::new(GenericDialect),
             ParseDialect::Generic => Arc::new(GenericDialect),
             ParseDialect::MySql => Arc::new(MySqlDialect {}),
@@ -718,104 +716,6 @@ impl Dialect {
         }
     }
 
-    pub fn dremio() -> Self {
-        use Operator::*;
-        let aggregate_transformers: HashMap<String, Arc<dyn FunctionTransformer>> = vec![
-            ("var", RenameFunctionTransformer::new_dyn("var_samp")),
-            ("stddev", RenameFunctionTransformer::new_dyn("stddev_samp")),
-            ("covar", RenameFunctionTransformer::new_dyn("covar_samp")),
-        ]
-        .into_iter()
-        .map(|(name, v)| (name.to_string(), v))
-        .collect();
-
-        Self {
-            parse_dialect: ParseDialect::Dremio,
-            quote_style: '"',
-            binary_ops: vec![
-                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
-            ]
-            .into_iter()
-            .collect(),
-            binary_op_transforms: Default::default(),
-            scalar_functions: vec![
-                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "log10", "pow", "round", "sin", "sqrt", "tan", "random",
-            ]
-            .iter()
-            .map(|s| s.to_string())
-            .collect(),
-            aggregate_functions: vec![
-                "min",
-                "max",
-                "count",
-                "avg",
-                "sum",
-                "var_pop",
-                "stddev_pop",
-                "covar_pop",
-                "corr",
-            ]
-            .iter()
-            .map(|s| s.to_string())
-            .collect(),
-            window_functions: vec![
-                "row_number",
-                "rank",
-                "dense_rank",
-                "percent_rank",
-                "cume_dist",
-                "ntile",
-                "lag",
-                "lead",
-                "first_value",
-                "last_value",
-            ]
-            .iter()
-            .map(|s| s.to_string())
-            .collect(),
-            scalar_transformers: vec![
-                ("ln", RenameFunctionTransformer::new_dyn("log")),
-                ("log", RenameFunctionTransformer::new_dyn("log10")),
-                ("log2", LogBaseTransformer::new_dyn(2, true)),
-                ("signum", RenameFunctionTransformer::new_dyn("sign")),
-                ("trunc", RenameFunctionTransformer::new_dyn("truncate")),
-                ("isfinite", IsFiniteWithNotInTransformer::new_dyn()),
-            ]
-            .into_iter()
-            .map(|(name, v)| (name.to_string(), v))
-            .collect(),
-            aggregate_transformers,
-            values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
-                explicit_row: false,
-            },
-            supports_null_ordering: true,
-            impute_fully_qualified: true,
-            joinaggregate_fully_qualified: true,
-            supports_bounded_window_frames: false,
-            supports_frames_in_navigation_window_functions: true,
-            cast_datatypes: vec![
-                (DataType::Boolean, SqlDataType::Boolean),
-                (DataType::Int8, SqlDataType::Int(None)),
-                (DataType::UInt8, SqlDataType::Int(None)),
-                (DataType::Int16, SqlDataType::Int(None)),
-                (DataType::UInt16, SqlDataType::Int(None)),
-                (DataType::Int32, SqlDataType::Int(None)),
-                (DataType::UInt32, SqlDataType::BigInt(None)),
-                (DataType::Int64, SqlDataType::BigInt(None)),
-                (DataType::Float16, SqlDataType::Float(None)),
-                (DataType::Float32, SqlDataType::Float(None)),
-                (DataType::Float64, SqlDataType::Double),
-                (DataType::Utf8, SqlDataType::Varchar(None)),
-            ]
-            .into_iter()
-            .collect(),
-            cast_transformers: Default::default(),
-            cast_propagates_null: true,
-            supports_non_finite_floats: true,
-        }
-    }
-
     pub fn duckdb() -> Self {
         use Operator::*;
         let aggregate_transformers: HashMap<String, Arc<dyn FunctionTransformer>> = vec![
@@ -1326,7 +1226,6 @@ impl FromStr for Dialect {
             "clickhouse" => Dialect::clickhouse(),
             "databricks" => Dialect::databricks(),
             "datafusion" => Dialect::datafusion(),
-            "dremio" => Dialect::dremio(),
             "duckdb" => Dialect::duckdb(),
             "generic" | "default" => Dialect::default(),
             "mysql" => Dialect::mysql(),

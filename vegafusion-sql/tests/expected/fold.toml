@@ -28,12 +28,6 @@ values0 AS (SELECT * FROM (VALUES ('USA', 10, 20), ('Canada', 7, 26)) AS "_value
 values1 AS (SELECT "country", "gold", "silver", "key", "value" FROM (SELECT "country", "gold", "silver", 'gold' AS "key", "gold" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'silver' AS "key", "silver" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'bogus' AS "key", NULL AS "value" FROM values0) AS _union) \
 SELECT * FROM values1 ORDER BY "country" ASC NULLS FIRST, "key" ASC NULLS FIRST
 """
-dremio = """
-WITH \
-values0 AS (SELECT * FROM (VALUES ('USA', 10, 20), ('Canada', 7, 26)) AS "_values" ("country", "gold", "silver")), \
-values1 AS (SELECT "country", "gold", "silver", "key", "value" FROM (SELECT "country", "gold", "silver", 'gold' AS "key", "gold" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'silver' AS "key", "silver" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'bogus' AS "key", NULL AS "value" FROM values0) AS _union) \
-SELECT * FROM values1 ORDER BY "country" ASC NULLS FIRST, "key" ASC NULLS FIRST
-"""
 duckdb = """
 WITH \
 values0 AS (SELECT * FROM (VALUES ('USA', 10, 20), ('Canada', 7, 26)) AS "_values" ("country", "gold", "silver")), \
@@ -114,13 +108,6 @@ values1 AS (SELECT "_order", "country", "gold", "silver", "key", "value", "_orde
 values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS FIRST, "_order_field" ASC NULLS FIRST) AS "_order", "country", "gold", "silver", "key", "value" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
 
-"""
-dremio = """
-WITH \
-values0 AS (SELECT * FROM (VALUES (1, 'USA', 10, 20), (2, 'Canada', 7, 26)) AS "_values" ("_order", "country", "gold", "silver")), \
-values1 AS (SELECT "_order", "country", "gold", "silver", "key", "value", "_order_field" FROM (SELECT "_order", "country", "gold", "silver", 'gold' AS "key", "gold" AS "value", 0 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'silver' AS "key", "silver" AS "value", 1 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'bogus' AS "key", NULL AS "value", 2 AS "_order_field" FROM values0) AS _union), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS FIRST, "_order_field" ASC NULLS FIRST) AS "_order", "country", "gold", "silver", "key", "value" FROM values1) \
-SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
 """
 duckdb = """
 WITH \

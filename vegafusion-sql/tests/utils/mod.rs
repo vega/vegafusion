@@ -29,7 +29,6 @@ lazy_static! {
 #[case("clickhouse")]
 #[case("databricks")]
 #[case("datafusion")]
-#[case("dremio")]
 #[case("duckdb")]
 #[case("mysql")]
 #[case("postgres")]

@@ -14,9 +14,6 @@ databricks = """
 datafusion = """
     SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC')) AS "_values" ("a", "b", "c")
 """
-dremio = """
-    SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC')) AS "_values" ("a", "b", "c")
-"""
 duckdb = """
     SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC')) AS "_values" ("a", "b", "c")
 """

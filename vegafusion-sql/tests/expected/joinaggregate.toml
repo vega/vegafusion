@@ -29,12 +29,6 @@ values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 
 values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 LEFT JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a", "b" FROM values0 GROUP BY "b") AS values0_inner USING("b")) \
 SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
-dremio = """
-WITH \
-values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
-values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 LEFT JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a", "b" FROM values0 GROUP BY "b") AS values0_inner USING("b")) \
-SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
-"""
 duckdb = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
@@ -104,12 +98,6 @@ values1 AS (SELECT `values0`.`a` AS `a`, `values0`.`b` AS `b`, `values0`.`c` AS 
 SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
 """
 datafusion = """
-WITH \
-values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
-values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 CROSS JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a" FROM values0) AS values0_inner) \
-SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
-"""
-dremio = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
 values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 CROSS JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a" FROM values0) AS values0_inner) \

@@ -29,12 +29,6 @@ values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 
 values1 AS (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a", "b" FROM values0 GROUP BY "b") \
 SELECT * FROM values1 ORDER BY "b" ASC NULLS FIRST
 """
-dremio = """
-WITH \
-values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
-values1 AS (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a", "b" FROM values0 GROUP BY "b") \
-SELECT * FROM values1 ORDER BY "b" ASC NULLS FIRST
-"""
 duckdb = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
@@ -93,7 +87,6 @@ WITH \
 values0 AS (SELECT * FROM (VALUES (1.0, 2), (3.0, 2), (5.5, 3), (7.5, 3), (100.0, 3)) AS "_values" ("a", "b")) \
 SELECT count("a") AS "count_a", median("a") AS "median_a" FROM values0
 """
-dremio = "UNSUPPORTED"
 duckdb = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1.0, 2), (3.0, 2), (5.5, 3), (7.5, 3), (100.0, 3)) AS "_values" ("a", "b")) \
@@ -139,12 +132,6 @@ datafusion = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 2), (3, 2), (5, 3), (7, 3), (9, 3)) AS "_values" ("a", "b")), \
 values1 AS (SELECT (round((stddev("a") * 100)) / 100) AS "stddev_a", (round((stddev_pop("a") * 100)) / 100) AS "stddev_pop_a", (round((var("a") * 100)) / 100) AS "var_a", (round((var_pop("a") * 100)) / 100) AS "var_pop_a", "b" FROM values0 GROUP BY "b") \
-SELECT * FROM values1 ORDER BY "b" ASC NULLS FIRST
-"""
-dremio = """
-WITH \
-values0 AS (SELECT * FROM (VALUES (1, 2), (3, 2), (5, 3), (7, 3), (9, 3)) AS "_values" ("a", "b")), \
-values1 AS (SELECT (round((stddev_samp("a") * 100)) / 100) AS "stddev_a", (round((stddev_pop("a") * 100)) / 100) AS "stddev_pop_a", (round((var_samp("a") * 100)) / 100) AS "var_a", (round((var_pop("a") * 100)) / 100) AS "var_pop_a", "b" FROM values0 GROUP BY "b") \
 SELECT * FROM values1 ORDER BY "b" ASC NULLS FIRST
 """
 duckdb = """
