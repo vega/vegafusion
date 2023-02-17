@@ -78,16 +78,16 @@ version = "1.0.137"
 features = [ "derive",]
 
 [dependencies.datafusion-common]
-version = "~17.0.0"
+version = "18.0.0"
 
 [dependencies.datafusion-expr]
-version = "~17.0.0"
+version = "18.0.0"
 
 [dependencies.datafusion-physical-expr]
-version = "~17.0.0"
+version = "18.0.0"
 
 [dependencies.datafusion-optimizer]
-version = "~17.0.0"
+version = "18.0.0"
 
 [dependencies.tokio]
 version = "1.18.1"

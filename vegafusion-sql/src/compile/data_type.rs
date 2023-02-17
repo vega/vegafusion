@@ -81,6 +81,9 @@ impl ToSqlDataType for DataType {
                 "Decimal256 cannot be converted to SQL",
             )),
             DataType::Map(_, _) => Err(VegaFusionError::internal("Map cannot be converted to SQL")),
+            DataType::RunEndEncoded(_, _) => Err(VegaFusionError::internal(
+                "RunEndEncoded cannot be converted to SQL",
+            )),
         }
     }
 }

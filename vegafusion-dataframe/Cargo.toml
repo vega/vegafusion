@@ -13,11 +13,11 @@ path = "../vegafusion-common"
 version = "1.0.3"
 
 [dependencies.datafusion-common]
-version = "~17.0.0"
+version = "18.0.0"
 
 [dependencies.datafusion-expr]
-version = "~17.0.0"
+version = "18.0.0"
 
 [dependencies.arrow]
-version = "31.0.0"
+version = "32.0.0"
 default_features = false
