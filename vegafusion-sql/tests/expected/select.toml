@@ -199,7 +199,7 @@ datafusion = """
 WITH values0 AS (SELECT * FROM (VALUES (0, true, 'A', NULL), (1, false, 'BB', 1.5), (NULL, NULL, 'CCC', 2.25)) AS "_values" ("a", "c", "d", "b")), values1 AS (SELECT CAST("a" AS STRING) AS "a", CAST("b" AS STRING) AS "b", CASE WHEN ("c" = true) THEN 'true' WHEN ("c" = false) THEN 'false' ELSE NULL END AS "c", CAST("d" AS STRING) AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 dremio = """
-WITH values0 AS (SELECT * FROM (VALUES (0, true, 'A', NULL), (1, false, 'BB', 1.5), (NULL, NULL, 'CCC', 2.25)) AS "_values" ("a", "c", "d", "b")), values1 AS (SELECT CAST("a" AS VARCHAR) AS "a", CAST("b" AS VARCHAR) AS "b", CAST("c" AS VARCHAR) AS "c", CAST("d" AS VARCHAR) AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+WITH values0 AS (SELECT * FROM (VALUES (0, true, 'A', NULL), (1, false, 'BB', CAST(1.5 AS DOUBLE)), (NULL, NULL, 'CCC', CAST(2.25 AS DOUBLE))) AS "_values" ("a", "c", "d", "b")), values1 AS (SELECT CAST("a" AS VARCHAR) AS "a", CAST("b" AS VARCHAR) AS "b", CAST("c" AS VARCHAR) AS "c", CAST("d" AS VARCHAR) AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 duckdb = """
 WITH values0 AS (SELECT * FROM (VALUES (0, true, 'A', NULL), (1, false, 'BB', 1.5), (NULL, NULL, 'CCC', 2.25)) AS "_values" ("a", "c", "d", "b")), values1 AS (SELECT CAST("a" AS VARCHAR) AS "a", CAST("b" AS VARCHAR) AS "b", CAST("c" AS VARCHAR) AS "c", CAST("d" AS VARCHAR) AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
@@ -313,4 +313,50 @@ result = '''
 | 4 | 1.8 | 0.6435011087932843 | 0.9272952180016123  | 0.6747409422235527  | 0.19739555984988078 | 2    | -0.2272020946930871 | 6.0496474644129465  | 1     | -0.2231435513142097 | -0.09691001300805639 | -0.09691001300805639 | -0.3219280948873623 | 10.4976 | 2     | 0.9738476308781951  | 0.8944271909999159  | -4.286261674628062 |
 | 5 |     |                    |                     |                     |                     |      |                     |                     |       |                     |                      |                      |                     |         |       |                     |                     |                    |
 +---+-----+--------------------+---------------------+---------------------+---------------------+------+---------------------+---------------------+-------+---------------------+----------------------+----------------------+---------------------+---------+-------+---------------------+---------------------+--------------------+
+'''
+
+[is_finite]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES (0, 0.0), (1, -1.5), (2, NULL), (3, NULL), (4, NULL)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", "a" IS NOT NULL AS "f1", "b" IS NOT NULL AS "f2" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH values0 AS (SELECT 0 AS `a`, 0.0 AS `b` UNION ALL SELECT 1 AS `a`, -1.5 AS `b` UNION ALL SELECT 2 AS `a`, CAST('-inf' AS float64) AS `b` UNION ALL SELECT 3 AS `a`, CAST('inf' AS float64) AS `b` UNION ALL SELECT 4 AS `a`, CAST('NaN' AS float64) AS `b`), values1 AS (SELECT `a`, `b`, CAST(`a` AS STRING) NOT IN (CAST(CAST('-inf' AS float64) AS STRING), CAST(CAST('inf' AS float64) AS STRING), CAST(CAST('NaN' AS float64) AS STRING)) AS `f1`, CAST(`b` AS STRING) NOT IN (CAST(CAST('-inf' AS float64) AS STRING), CAST(CAST('inf' AS float64) AS STRING), CAST(CAST('NaN' AS float64) AS STRING)) AS `f2` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH values0 AS (SELECT 0 AS "a", 0.0 AS "b" UNION ALL SELECT 1 AS "a", -1.5 AS "b" UNION ALL SELECT 2 AS "a", CAST('-inf' AS DOUBLE) AS "b" UNION ALL SELECT 3 AS "a", CAST('inf' AS DOUBLE) AS "b" UNION ALL SELECT 4 AS "a", CAST('NaN' AS DOUBLE) AS "b"), values1 AS (SELECT "a", "b", isFinite("a") AS "f1", isFinite("b") AS "f2" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (0, 0.0), (1, -1.5), (2, CAST('-inf' AS DOUBLE)), (3, CAST('inf' AS DOUBLE)), (4, CAST('NaN' AS DOUBLE))) AS `_values` (`a`, `b`)), values1 AS (SELECT `a`, `b`, (NOT `a` IN (CAST('-inf' AS DOUBLE), CAST('inf' AS DOUBLE), CAST('NaN' AS DOUBLE))) AS `f1`, (NOT `b` IN (CAST('-inf' AS DOUBLE), CAST('inf' AS DOUBLE), CAST('NaN' AS DOUBLE))) AS `f2` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (0, 0.0), (1, -1.5), (2, CAST('-inf' AS DOUBLE)), (3, CAST('inf' AS DOUBLE)), (4, CAST('NaN' AS DOUBLE))) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", isfinite("a") AS "f1", isfinite("b") AS "f2" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+dremio = """
+WITH values0 AS (SELECT * FROM (VALUES (0, CAST(0.0 AS DOUBLE)), (1, CAST(-1.5 AS DOUBLE)), (2, CAST('-inf' AS DOUBLE)), (3, CAST('inf' AS DOUBLE)), (4, CAST('NaN' AS DOUBLE))) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", (NOT "a" IN (CAST('-inf' AS DOUBLE), CAST('inf' AS DOUBLE), CAST('NaN' AS DOUBLE))) AS "f1", (NOT "b" IN (CAST('-inf' AS DOUBLE), CAST('inf' AS DOUBLE), CAST('NaN' AS DOUBLE))) AS "f2" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (0, 0.0), (1, -1.5), (2, CAST('-inf' AS DOUBLE)), (3, CAST('inf' AS DOUBLE)), (4, CAST('NaN' AS DOUBLE))) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", isfinite("a") AS "f1", isfinite("b") AS "f2" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH values0 AS (SELECT * FROM (VALUES ROW(0, 0.0), ROW(1, -1.5), ROW(2, NULL), ROW(3, NULL), ROW(4, NULL)) AS `_values` (`a`, `b`)), values1 AS (SELECT `a`, `b`, `a` IS NOT NULL AS `f1`, `b` IS NOT NULL AS `f2` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (0, 0.0), (1, -1.5), (2, CAST('-inf' AS DOUBLE PRECISION)), (3, CAST('inf' AS DOUBLE PRECISION)), (4, CAST('NaN' AS DOUBLE PRECISION))) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", (NOT "a" IN (CAST('-inf' AS DOUBLE PRECISION), CAST('inf' AS DOUBLE PRECISION), CAST('NaN' AS DOUBLE PRECISION))) AS "f1", (NOT "b" IN (CAST('-inf' AS DOUBLE PRECISION), CAST('inf' AS DOUBLE PRECISION), CAST('NaN' AS DOUBLE PRECISION))) AS "f2" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH values0 AS (SELECT 0 AS "a", 0.0 AS "b" UNION ALL SELECT 1 AS "a", -1.5 AS "b" UNION ALL SELECT 2 AS "a", CAST('-inf' AS DOUBLE PRECISION) AS "b" UNION ALL SELECT 3 AS "a", CAST('inf' AS DOUBLE PRECISION) AS "b" UNION ALL SELECT 4 AS "a", CAST('NaN' AS DOUBLE PRECISION) AS "b"), values1 AS (SELECT "a", "b", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS TEXT) ELSE NULL END NOT IN (CASE WHEN CAST('-inf' AS DOUBLE PRECISION) IS NOT NULL THEN CAST(CAST('-inf' AS DOUBLE PRECISION) AS TEXT) ELSE NULL END, CASE WHEN CAST('inf' AS DOUBLE PRECISION) IS NOT NULL THEN CAST(CAST('inf' AS DOUBLE PRECISION) AS TEXT) ELSE NULL END, CASE WHEN CAST('NaN' AS DOUBLE PRECISION) IS NOT NULL THEN CAST(CAST('NaN' AS DOUBLE PRECISION) AS TEXT) ELSE NULL END) AS "f1", CASE WHEN "b" IS NOT NULL THEN CAST("b" AS TEXT) ELSE NULL END NOT IN (CASE WHEN CAST('-inf' AS DOUBLE PRECISION) IS NOT NULL THEN CAST(CAST('-inf' AS DOUBLE PRECISION) AS TEXT) ELSE NULL END, CASE WHEN CAST('inf' AS DOUBLE PRECISION) IS NOT NULL THEN CAST(CAST('inf' AS DOUBLE PRECISION) AS TEXT) ELSE NULL END, CASE WHEN CAST('NaN' AS DOUBLE PRECISION) IS NOT NULL THEN CAST(CAST('NaN' AS DOUBLE PRECISION) AS TEXT) ELSE NULL END) AS "f2" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b" FROM (VALUES (0, 0.0), (1, -1.5), (2, CAST('-inf' AS DOUBLE)), (3, CAST('inf' AS DOUBLE)), (4, CAST('NaN' AS DOUBLE)))), values1 AS (SELECT "a", "b", (NOT "a" IN (CAST('-inf' AS DOUBLE), CAST('inf' AS DOUBLE), CAST('NaN' AS DOUBLE))) AS "f1", (NOT "b" IN (CAST('-inf' AS DOUBLE), CAST('inf' AS DOUBLE), CAST('NaN' AS DOUBLE))) AS "f2" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+------+------+-------+
+| a | b    | f1   | f2    |
++---+------+------+-------+
+| 0 | 0    | true | true  |
+| 1 | -1.5 | true | true  |
+| 2 | -inf | true | false |
+| 3 | inf  | true | false |
+| 4 | NaN  | true | false |
++---+------+------+-------+
 '''

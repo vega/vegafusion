@@ -73,6 +73,10 @@ rstest_reuse = "0.5.0"
 lazy_static = "^1.4.0"
 toml = "0.7.2"
 
+[dev-dependencies.vegafusion-datafusion-udfs]
+path = "../vegafusion-datafusion-udfs"
+version = "1.0.3"
+
 [dev-dependencies.vegafusion-common]
 path = "../vegafusion-common"
 version = "1.0.3"
@@ -85,3 +89,4 @@ features = [ "macros", "rt-multi-thread",]
 [dev-dependencies.serde]
 version = "1.0.137"
 features = [ "derive",]
+

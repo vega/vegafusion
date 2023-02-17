@@ -8,6 +8,7 @@ use utils::{check_dataframe_query, dialect_names, make_connection, TOKIO_RUNTIME
 
 use serde_json::json;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_datafusion_udfs::udfs::math::isfinite::ISFINITE_UDF;
 use vegafusion_sql::dataframe::SqlDataFrame;
 
 #[cfg(test)]
@@ -421,6 +422,82 @@ mod test_scalar_math_functions {
             df_result,
             "select",
             "scalar_math_functions",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
+#[cfg(test)]
+mod test_is_finite {
+    use crate::*;
+    use arrow::array::{Float64Array, Int32Array};
+    use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
+    use arrow::record_batch::RecordBatch;
+    use datafusion_expr::{col, expr, lit, Expr};
+    use std::sync::Arc;
+
+    #[apply(dialect_names)]
+    fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        // Build Record batch manually so we can include non-finite values
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("a", DataType::Int32, true),
+            Field::new("b", DataType::Float64, true),
+        ])) as SchemaRef;
+        let batch = RecordBatch::try_new(
+            schema.clone(),
+            vec![
+                Arc::new(Int32Array::from(vec![0, 1, 2, 3, 4])),
+                Arc::new(Float64Array::from(vec![
+                    0.0,
+                    -1.5,
+                    f64::NEG_INFINITY,
+                    f64::INFINITY,
+                    f64::NAN,
+                ])),
+            ],
+        )
+        .unwrap();
+        let table = VegaFusionTable::try_new(schema.clone(), vec![batch]).unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+
+        let df_result = df
+            .select(vec![
+                col("a"),
+                col("b"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(ISFINITE_UDF.clone()),
+                    args: vec![col("a")],
+                }
+                .alias("f1"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(ISFINITE_UDF.clone()),
+                    args: vec![col("b")],
+                }
+                .alias("f2"),
+            ])
+            .and_then(|df| {
+                df.sort(
+                    vec![Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    })],
+                    None,
+                )
+            });
+
+        check_dataframe_query(
+            df_result,
+            "select",
+            "is_finite",
             dialect_name,
             evaluable,
         );

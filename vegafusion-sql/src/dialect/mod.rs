@@ -2,7 +2,7 @@ use crate::compile::expr::ToSqlExpr;
 use arrow::datatypes::DataType;
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
-use datafusion_expr::lit;
+use datafusion_expr::{expr, ExprSchemable, lit, Subquery};
 use datafusion_expr::{when, Expr, Operator};
 use sqlparser::ast::{
     BinaryOperator as SqlBinaryOperator, DataType as SqlDataType, Expr as SqlExpr,
@@ -12,7 +12,7 @@ use sqlparser::ast::{
 };
 use sqlparser::dialect::{
     BigQueryDialect, ClickHouseDialect, Dialect as SqlParserDialect, GenericDialect, MySqlDialect,
-    PostgreSqlDialect, RedshiftSqlDialect, SQLiteDialect, SnowflakeDialect,
+    PostgreSqlDialect, RedshiftSqlDialect, SnowflakeDialect,
 };
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
@@ -34,7 +34,6 @@ pub enum ParseDialect {
     Postgres,
     Redshift,
     Snowflake,
-    SqLite,
 }
 
 impl ParseDialect {
@@ -56,7 +55,6 @@ impl ParseDialect {
             ParseDialect::Postgres => Arc::new(PostgreSqlDialect {}),
             ParseDialect::Redshift => Arc::new(RedshiftSqlDialect {}),
             ParseDialect::Snowflake => Arc::new(SnowflakeDialect),
-            ParseDialect::SqLite => Arc::new(SQLiteDialect {}),
         }
     }
 }
@@ -236,6 +234,7 @@ impl Dialect {
                 ("log", RenameFunctionTransformer::new_dyn("log10")),
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
                 ("trunc", RenameFunctionTransformer::new_dyn("truncate")),
+                ("isfinite", IsFiniteWithNotNullTransformer::new_dyn()),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -321,6 +320,8 @@ impl Dialect {
                 ("log2", LogBaseTransformer::new_dyn(2, false)),
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
                 ("random", RenameFunctionTransformer::new_dyn("rand")),
+                // NaNs in BigQuery aren't always equal in InList expressions so use string form
+                ("isfinite", IsFiniteWithNotInStringsTransformer::new_dyn()),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -382,7 +383,7 @@ impl Dialect {
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "trunc",
+                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "trunc"
             ]
             .iter()
             .map(|s| s.to_string())
@@ -405,6 +406,7 @@ impl Dialect {
                 ("log", RenameFunctionTransformer::new_dyn("log10")),
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
                 ("random", RenameFunctionTransformer::new_dyn("rand")),
+                ("isfinite", RenameFunctionTransformer::new_dyn("isFinite")),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -499,6 +501,7 @@ impl Dialect {
             scalar_transformers: vec![
                 ("log", RenameFunctionTransformer::new_dyn("log10")),
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
+                ("isfinite", IsFiniteWithNotInTransformer::new_dyn()),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -777,6 +780,7 @@ impl Dialect {
                 ("log2", LogBaseTransformer::new_dyn(2, true)),
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
                 ("trunc", RenameFunctionTransformer::new_dyn("truncate")),
+                ("isfinite", IsFiniteWithNotInTransformer::new_dyn()),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -833,10 +837,8 @@ impl Dialect {
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos",
-                // "exp",  // Not supported, transform to power(2.718281828..., v)
                 "floor", "ln", "log", "log10", "log2", "pow", "round", "sin", "sqrt", "tan",
-                // "trunc",    // Not supported, transform to case with floor/ceil
-                "random",
+                "random", "isfinite"
             ]
             .iter()
             .map(|s| s.to_string())
@@ -963,6 +965,7 @@ impl Dialect {
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
                 ("trunc", RenameFunctionTransformer::new_dyn("truncate")),
                 ("random", RenameFunctionTransformer::new_dyn("rand")),
+                ("isfinite", IsFiniteWithNotNullTransformer::new_dyn()),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1060,6 +1063,7 @@ impl Dialect {
                 ("log10", LogBaseTransformer::new_dyn(10, true)),
                 ("log2", LogBaseTransformer::new_dyn(2, true)),
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
+                ("isfinite", IsFiniteWithNotInTransformer::new_dyn()),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1169,6 +1173,9 @@ impl Dialect {
                     CastArgsFunctionTransformer::new_dyn("log", SqlDataType::DoublePrecision),
                 ),
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
+
+                // NaNs in redshift aren't always equal in InList expressions so use string form
+                ("isfinite", IsFiniteWithNotInStringsTransformer::new_dyn()),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1270,6 +1277,7 @@ impl Dialect {
                 ("log10", LogBaseTransformer::new_dyn(10, true)),
                 ("log2", LogBaseTransformer::new_dyn(2, true)),
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
+                ("isfinite", IsFiniteWithNotInTransformer::new_dyn()),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1306,85 +1314,6 @@ impl Dialect {
             supports_non_finite_floats: true,
         }
     }
-
-    pub fn sqlite() -> Self {
-        use Operator::*;
-        Self {
-            parse_dialect: ParseDialect::SqLite,
-            quote_style: '"',
-            binary_ops: vec![
-                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
-            ]
-            .into_iter()
-            .collect(),
-            binary_op_transforms: Default::default(),
-            scalar_functions: vec![
-                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "ln", "log", "log10", "log2", "pow", "round",
-                // "signum",  // Not supported
-                "sin", "sqrt", "tan", "trunc",
-            ]
-            .iter()
-            .map(|s| s.to_string())
-            .collect(),
-            aggregate_functions: vec!["min", "max", "count", "avg", "sum"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
-            window_functions: vec![
-                "row_number",
-                "rank",
-                "dense_rank",
-                "percent_rank",
-                "cume_dist",
-                "ntile",
-                "lag",
-                "lead",
-                "first_value",
-                "last_value",
-                "nth_value",
-            ]
-            .iter()
-            .map(|s| s.to_string())
-            .collect(),
-            scalar_transformers: Default::default(),
-            aggregate_transformers: Default::default(),
-            values_mode: ValuesMode::ValuesWithSelectColumnAliases {
-                explicit_row: false,
-                column_prefix: "column".to_string(),
-                base_index: 1,
-            },
-            supports_null_ordering: true,
-            impute_fully_qualified: false,
-            joinaggregate_fully_qualified: true,
-            supports_bounded_window_frames: true,
-            supports_frames_in_navigation_window_functions: true,
-            cast_datatypes: vec![
-                (DataType::Boolean, SqlDataType::Boolean),
-                (DataType::Int8, SqlDataType::Integer(None)),
-                (DataType::UInt8, SqlDataType::Integer(None)),
-                (DataType::Int16, SqlDataType::Integer(None)),
-                (DataType::UInt16, SqlDataType::Integer(None)),
-                (DataType::Int32, SqlDataType::Integer(None)),
-                (DataType::UInt32, SqlDataType::Integer(None)),
-                (DataType::Int64, SqlDataType::Integer(None)),
-                (DataType::Float16, SqlDataType::Real),
-                (DataType::Float32, SqlDataType::Real),
-                (DataType::Float64, SqlDataType::Real),
-                (DataType::Utf8, SqlDataType::Text),
-            ]
-            .into_iter()
-            .collect(),
-            cast_transformers: vec![(
-                (DataType::Boolean, DataType::Utf8),
-                BoolToStringWithCase::new_dyn(),
-            )]
-            .into_iter()
-            .collect(),
-            cast_propagates_null: true,
-            supports_non_finite_floats: false,
-        }
-    }
 }
 
 impl FromStr for Dialect {
@@ -1404,7 +1333,6 @@ impl FromStr for Dialect {
             "postgres" => Dialect::postgres(),
             "redshift" => Dialect::redshift(),
             "snowflake" => Dialect::snowflake(),
-            "sqlite" => Dialect::sqlite(),
             _ => {
                 return Err(VegaFusionError::sql_not_supported(format!(
                     "Unsupported dialect: {s}"
@@ -1656,6 +1584,74 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
             op: SqlBinaryOperator::Divide,
             right: Box::new(denominator),
         })
+    }
+}
+
+#[derive(Clone, Debug)]
+struct IsFiniteWithNotInTransformer;
+impl IsFiniteWithNotInTransformer {
+    pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self)
+    }
+}
+impl FunctionTransformer for IsFiniteWithNotInTransformer {
+    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
+        let isfinite_expr = Expr::InList {
+            expr: Box::new(args[0].clone()),
+            list: vec![lit(f64::NEG_INFINITY), lit(f64::INFINITY), lit(f64::NAN)],
+            negated: false,
+        }.not();
+        isfinite_expr.to_sql(dialect, schema)
+    }
+}
+
+#[derive(Clone, Debug)]
+struct IsFiniteWithNotNullTransformer;
+impl IsFiniteWithNotNullTransformer {
+    pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self)
+    }
+}
+impl FunctionTransformer for IsFiniteWithNotNullTransformer {
+    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
+        Expr::IsNotNull(Box::new(args[0].clone())).to_sql(dialect, schema)
+    }
+}
+
+#[derive(Clone, Debug)]
+struct IsFiniteWithNotInStringsTransformer;
+impl IsFiniteWithNotInStringsTransformer {
+    pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self)
+    }
+}
+impl FunctionTransformer for IsFiniteWithNotInStringsTransformer {
+    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
+        let arg_string = args[0].clone().cast_to(&DataType::Utf8, schema)?;
+        let isfinite_expr = Expr::InList {
+            expr: Box::new(arg_string),
+            list: vec![
+                lit(f64::NEG_INFINITY).cast_to(&DataType::Utf8, schema)?,
+                lit(f64::INFINITY).cast_to(&DataType::Utf8, schema)?,
+                lit(f64::NAN).cast_to(&DataType::Utf8, schema)?,
+            ],
+            negated: true,
+        };
+        isfinite_expr.to_sql(dialect, schema)
+    }
+}
+
+
+#[derive(Clone, Debug)]
+struct ConstantTransformer(SqlValue);
+impl ConstantTransformer {
+    pub fn new_dyn(v: SqlValue) -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self(v))
+    }
+}
+impl FunctionTransformer for ConstantTransformer {
+    fn transform(&self, _args: &[Expr], _dialect: &Dialect, _schema: &DFSchema) -> Result<SqlExpr> {
+        Ok(SqlExpr::Value(self.0.clone()))
     }
 }
 
