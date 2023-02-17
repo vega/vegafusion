@@ -30,24 +30,18 @@ version = "1.0.3"
 optional = true
 
 [dependencies.arrow]
-version = "29.0.0"
+version = "32.0.0"
 default_features = false
 features = ["ipc"]
 
 [dependencies.datafusion-common]
-version = "~16.1.0"
-git = "https://github.com/jonmmease/arrow-datafusion.git"
-rev = "1e6438de31219b284df9b83f25ca36ddb1184f22"
+version = "18.0.0"
 
 [dependencies.datafusion-expr]
-version = "~16.1.0"
-git = "https://github.com/jonmmease/arrow-datafusion.git"
-rev = "1e6438de31219b284df9b83f25ca36ddb1184f22"
+version = "18.0.0"
 
 [dependencies.datafusion]
-version = "~16.1.0"
-git = "https://github.com/jonmmease/arrow-datafusion.git"
-rev = "1e6438de31219b284df9b83f25ca36ddb1184f22"
+version = "18.0.0"
 optional = true
 
 [dependencies.tempfile]

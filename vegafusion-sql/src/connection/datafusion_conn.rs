@@ -4,6 +4,7 @@ use crate::dialect::Dialect;
 use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::datasource::MemTable;
+use datafusion::execution::options::ReadOptions;
 use datafusion::prelude::{CsvReadOptions as DfCsvReadOptions, SessionContext};
 use log::Level;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
@@ -246,8 +247,7 @@ async fn build_csv_schema(
 ) -> Result<Schema> {
     let ctx = SessionContext::new();
     let table_path = ListingTableUrl::parse(uri.into().as_str())?;
-    let target_partitions = ctx.copied_config().target_partitions();
-    let listing_options = csv_opts.to_listing_options(target_partitions);
+    let listing_options = csv_opts.to_listing_options(&ctx.copied_config());
     let inferred_schema = listing_options
         .infer_schema(&ctx.state(), &table_path)
         .await?;

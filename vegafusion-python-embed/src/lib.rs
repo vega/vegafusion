@@ -45,18 +45,22 @@ struct PyVegaFusionRuntime {
 }
 
 fn deserialize_inline_datasets(
-    inline_datasets: &PyDict,
+    inline_datasets: Option<&PyDict>,
 ) -> PyResult<HashMap<String, VegaFusionDataset>> {
-    inline_datasets
-        .iter()
-        .map(|(name, table_bytes)| {
-            let name = name.cast_as::<PyString>()?;
-            let ipc_bytes = table_bytes.cast_as::<PyBytes>()?;
-            let ipc_bytes = ipc_bytes.as_bytes();
-            let dataset = VegaFusionDataset::from_table_ipc_bytes(ipc_bytes)?;
-            Ok((name.to_string(), dataset))
-        })
-        .collect::<PyResult<HashMap<_, _>>>()
+    if let Some(inline_datasets) = inline_datasets {
+        inline_datasets
+            .iter()
+            .map(|(name, table_bytes)| {
+                let name = name.downcast::<PyString>()?;
+                let ipc_bytes = table_bytes.downcast::<PyBytes>()?;
+                let ipc_bytes = ipc_bytes.as_bytes();
+                let dataset = VegaFusionDataset::from_table_ipc_bytes(ipc_bytes)?;
+                Ok((name.to_string(), dataset))
+            })
+            .collect::<PyResult<HashMap<_, _>>>()
+    } else {
+        Ok(Default::default())
+    }
 }
 
 #[pymethods]
@@ -107,7 +111,7 @@ impl PyVegaFusionRuntime {
         default_input_tz: Option<String>,
         row_limit: Option<u32>,
         preserve_interactivity: Option<bool>,
-        inline_datasets: &PyDict,
+        inline_datasets: Option<&PyDict>,
     ) -> PyResult<(PyObject, PyObject)> {
         let inline_datasets = deserialize_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
@@ -167,7 +171,7 @@ impl PyVegaFusionRuntime {
         local_tz: String,
         default_input_tz: Option<String>,
         row_limit: Option<u32>,
-        inline_datasets: &PyDict,
+        inline_datasets: Option<&PyDict>,
     ) -> PyResult<(PyObject, PyObject)> {
         let inline_datasets = deserialize_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
@@ -265,7 +269,7 @@ fn parse_json_spec(chart_spec: PyObject) -> PyResult<ChartSpec> {
                     "Failed to parse chart_spec string as Vega: {err}"
                 ))),
             }
-        } else if let Ok(chart_spec) = chart_spec.cast_as::<PyDict>(py) {
+        } else if let Ok(chart_spec) = chart_spec.downcast::<PyDict>(py) {
             match depythonize(chart_spec) {
                 Ok(chart_spec) => Ok(chart_spec),
                 Err(err) => Err(PyValueError::new_err(format!(
