@@ -8,7 +8,6 @@ use datafusion_expr::lit;
 
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
-use datafusion_expr::expr::Cast;
 use datafusion_expr::{abs, floor, when, Expr};
 use float_cmp::approx_eq;
 use std::ops::{Add, Div, Mul, Sub};

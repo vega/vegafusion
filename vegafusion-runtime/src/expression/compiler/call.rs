@@ -231,15 +231,6 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         },
     );
 
-    // // Custom udfs
-    // callables.insert(
-    //     "pow".to_string(),
-    //     VegaFusionCallable::ScalarUDF {
-    //         udf: POW_UDF.deref().clone(),
-    //         cast: Some(DataType::Float64),
-    //     },
-    // );
-
     callables.insert(
         "isNaN".to_string(),
         VegaFusionCallable::ScalarUDF {

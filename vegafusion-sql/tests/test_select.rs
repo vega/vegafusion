@@ -226,7 +226,6 @@ mod test_cast_numeric {
                 cast(col("a"), DataType::Int32).alias("i32"),
                 cast(col("a"), DataType::UInt32).alias("u32"),
                 cast(col("a"), DataType::Int64).alias("i64"),
-                cast(col("a"), DataType::Float16).alias("f16"),
                 cast(col("a"), DataType::Float32).alias("f32"),
                 cast(col("a"), DataType::Float64).alias("f64"),
             ])

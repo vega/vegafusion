@@ -140,45 +140,45 @@ result = '''
 
 [cast_numeric]
 athena = """
-WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INT) AS "u16", CAST("a" AS INT) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS DOUBLE) AS "f16", CAST("a" AS DOUBLE) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INT) AS "u16", CAST("a" AS INT) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS DOUBLE) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 bigquery = """
-WITH values0 AS (SELECT '0' AS `a` UNION ALL SELECT '1' AS `a`), values1 AS (SELECT `a`, CAST(`a` AS INT) AS `i8`, CAST(`a` AS INT) AS `u8`, CAST(`a` AS INT) AS `i16`, CAST(`a` AS INT) AS `u16`, CAST(`a` AS INT) AS `i32`, CAST(`a` AS INT) AS `u32`, CAST(`a` AS INT) AS `i64`, CAST(`a` AS float64) AS `f16`, CAST(`a` AS float64) AS `f32`, CAST(`a` AS float64) AS `f64` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+WITH values0 AS (SELECT '0' AS `a` UNION ALL SELECT '1' AS `a`), values1 AS (SELECT `a`, CAST(`a` AS INT) AS `i8`, CAST(`a` AS INT) AS `u8`, CAST(`a` AS INT) AS `i16`, CAST(`a` AS INT) AS `u16`, CAST(`a` AS INT) AS `i32`, CAST(`a` AS INT) AS `u32`, CAST(`a` AS INT) AS `i64`, CAST(`a` AS float64) AS `f32`, CAST(`a` AS float64) AS `f64` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
 """
 clickhouse = """
-WITH values0 AS (SELECT '0' AS "a" UNION ALL SELECT '1' AS "a"), values1 AS (SELECT "a", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS TINYINT) ELSE NULL END AS "i8", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "u8", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "i16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS INT) ELSE NULL END AS "u16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS INT) ELSE NULL END AS "i32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS BIGINT) ELSE NULL END AS "u32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS BIGINT) ELSE NULL END AS "i64", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS FLOAT) ELSE NULL END AS "f16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS FLOAT) ELSE NULL END AS "f32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS DOUBLE) ELSE NULL END AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+WITH values0 AS (SELECT '0' AS "a" UNION ALL SELECT '1' AS "a"), values1 AS (SELECT "a", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS TINYINT) ELSE NULL END AS "i8", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "u8", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "i16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS INT) ELSE NULL END AS "u16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS INT) ELSE NULL END AS "i32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS BIGINT) ELSE NULL END AS "u32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS BIGINT) ELSE NULL END AS "i64", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS FLOAT) ELSE NULL END AS "f32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS DOUBLE) ELSE NULL END AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 databricks = """
-WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS `_values` (`a`)), values1 AS (SELECT `a`, CAST(`a` AS TINYINT) AS `i8`, CAST(`a` AS SMALLINT) AS `u8`, CAST(`a` AS SMALLINT) AS `i16`, CAST(`a` AS INT) AS `u16`, CAST(`a` AS INT) AS `i32`, CAST(`a` AS BIGINT) AS `u32`, CAST(`a` AS BIGINT) AS `i64`, CAST(`a` AS FLOAT) AS `f16`, CAST(`a` AS FLOAT) AS `f32`, CAST(`a` AS DOUBLE) AS `f64` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS `_values` (`a`)), values1 AS (SELECT `a`, CAST(`a` AS TINYINT) AS `i8`, CAST(`a` AS SMALLINT) AS `u8`, CAST(`a` AS SMALLINT) AS `i16`, CAST(`a` AS INT) AS `u16`, CAST(`a` AS INT) AS `i32`, CAST(`a` AS BIGINT) AS `u32`, CAST(`a` AS BIGINT) AS `i64`, CAST(`a` AS FLOAT) AS `f32`, CAST(`a` AS DOUBLE) AS `f64` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
 """
 datafusion = """
-WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INT) AS "u16", CAST("a" AS INT) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f16", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INT) AS "u16", CAST("a" AS INT) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 dremio = """
-WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS INT) AS "i8", CAST("a" AS INT) AS "u8", CAST("a" AS INT) AS "i16", CAST("a" AS INT) AS "u16", CAST("a" AS INT) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f16", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS INT) AS "i8", CAST("a" AS INT) AS "u8", CAST("a" AS INT) AS "i16", CAST("a" AS INT) AS "u16", CAST("a" AS INT) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 duckdb = """
-WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INT) AS "u16", CAST("a" AS INT) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f16", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INT) AS "u16", CAST("a" AS INT) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 mysql = """
-WITH values0 AS (SELECT * FROM (VALUES ROW('0'), ROW('1')) AS `_values` (`a`)), values1 AS (SELECT `a`, CAST(`a` AS SIGNED) AS `i8`, CAST(`a` AS UNSIGNED) AS `u8`, CAST(`a` AS SIGNED) AS `i16`, CAST(`a` AS UNSIGNED) AS `u16`, CAST(`a` AS SIGNED) AS `i32`, CAST(`a` AS UNSIGNED) AS `u32`, CAST(`a` AS SIGNED) AS `i64`, CAST(`a` AS FLOAT) AS `f16`, CAST(`a` AS FLOAT) AS `f32`, CAST(`a` AS DOUBLE) AS `f64` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC
+WITH values0 AS (SELECT * FROM (VALUES ROW('0'), ROW('1')) AS `_values` (`a`)), values1 AS (SELECT `a`, CAST(`a` AS SIGNED) AS `i8`, CAST(`a` AS UNSIGNED) AS `u8`, CAST(`a` AS SIGNED) AS `i16`, CAST(`a` AS UNSIGNED) AS `u16`, CAST(`a` AS SIGNED) AS `i32`, CAST(`a` AS UNSIGNED) AS `u32`, CAST(`a` AS SIGNED) AS `i64`, CAST(`a` AS FLOAT) AS `f32`, CAST(`a` AS DOUBLE) AS `f64` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC
 """
 postgres = """
-WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS SMALLINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INTEGER) AS "u16", CAST("a" AS INTEGER) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS REAL) AS "f16", CAST("a" AS REAL) AS "f32", CAST("a" AS DOUBLE PRECISION) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS SMALLINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INTEGER) AS "u16", CAST("a" AS INTEGER) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS REAL) AS "f32", CAST("a" AS DOUBLE PRECISION) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 redshift = """
-WITH values0 AS (SELECT '0' AS "a" UNION ALL SELECT '1' AS "a"), values1 AS (SELECT "a", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "i8", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "u8", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "i16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS INTEGER) ELSE NULL END AS "u16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS INTEGER) ELSE NULL END AS "i32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS BIGINT) ELSE NULL END AS "u32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS BIGINT) ELSE NULL END AS "i64", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS REAL) ELSE NULL END AS "f16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS REAL) ELSE NULL END AS "f32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS DOUBLE PRECISION) ELSE NULL END AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+WITH values0 AS (SELECT '0' AS "a" UNION ALL SELECT '1' AS "a"), values1 AS (SELECT "a", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "i8", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "u8", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "i16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS INTEGER) ELSE NULL END AS "u16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS INTEGER) ELSE NULL END AS "i32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS BIGINT) ELSE NULL END AS "u32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS BIGINT) ELSE NULL END AS "i64", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS REAL) ELSE NULL END AS "f32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS DOUBLE PRECISION) ELSE NULL END AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 snowflake = """
-WITH values0 AS (SELECT "COLUMN1" AS "a" FROM (VALUES ('0'), ('1'))), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INTEGER) AS "u16", CAST("a" AS INTEGER) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f16", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+WITH values0 AS (SELECT "COLUMN1" AS "a" FROM (VALUES ('0'), ('1'))), values1 AS (SELECT "a", CAST("a" AS TINYINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INTEGER) AS "u16", CAST("a" AS INTEGER) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS FLOAT) AS "f32", CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 result = '''
-+---+----+----+-----+-----+-----+-----+-----+-----+-----+-----+
-| a | i8 | u8 | i16 | u16 | i32 | u32 | i64 | f16 | f32 | f64 |
-+---+----+----+-----+-----+-----+-----+-----+-----+-----+-----+
-| 0 | 0  | 0  | 0   | 0   | 0   | 0   | 0   | 0   | 0   | 0   |
-| 1 | 1  | 1  | 1   | 1   | 1   | 1   | 1   | 1   | 1   | 1   |
-+---+----+----+-----+-----+-----+-----+-----+-----+-----+-----+
++---+----+----+-----+-----+-----+-----+-----+-----+-----+
+| a | i8 | u8 | i16 | u16 | i32 | u32 | i64 | f32 | f64 |
++---+----+----+-----+-----+-----+-----+-----+-----+-----+
+| 0 | 0  | 0  | 0   | 0   | 0   | 0   | 0   | 0   | 0   |
+| 1 | 1  | 1  | 1   | 1   | 1   | 1   | 1   | 1   | 1   |
++---+----+----+-----+-----+-----+-----+-----+-----+-----+
 '''
 
 
