@@ -35,7 +35,6 @@ use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_timestamp::TIMEST
 use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
 use vegafusion_datafusion_udfs::udfs::math::isfinite::ISFINITE_UDF;
 use vegafusion_datafusion_udfs::udfs::math::isnan::ISNAN_UDF;
-use vegafusion_datafusion_udfs::udfs::math::pow::POW_UDF;
 
 #[derive(Clone)]
 pub struct DataFusionConnection {
@@ -311,9 +310,6 @@ pub fn make_datafusion_context() -> SessionContext {
 
     // timeformat
     ctx.register_udf((*FORMAT_TIMESTAMP_UDF).clone());
-
-    // math
-    ctx.register_udf((*POW_UDF).clone());
 
     // list
     ctx.register_udf((*ARRAY_CONSTRUCTOR_UDF).clone());

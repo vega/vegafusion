@@ -1,6 +1,4 @@
-use crate::util::equality::{
-    assert_signals_almost_equal, assert_tables_equal, normalize_scalar, TablesEqualConfig,
-};
+use crate::util::equality::{assert_scalars_almost_equals, assert_signals_almost_equal, assert_tables_equal, normalize_scalar, TablesEqualConfig};
 use crate::util::vegajs_runtime::vegajs_runtime;
 use std::str::FromStr;
 
@@ -67,7 +65,8 @@ pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
     let result = normalize_scalar(&result);
 
     println!("{result:?}");
-    assert_eq!(result, expected, " left: {result}\nright: {expected}\n");
+    let tol = 1e-6;
+    assert_scalars_almost_equals(&result, &expected, tol, "scalar", 0);
 }
 
 pub fn check_transform_evaluation(

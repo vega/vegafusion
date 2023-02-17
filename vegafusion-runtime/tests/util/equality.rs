@@ -169,7 +169,7 @@ fn numeric_to_f64(s: &ScalarValue) -> f64 {
     }
 }
 
-fn assert_scalars_almost_equals(
+pub fn assert_scalars_almost_equals(
     lhs: &ScalarValue,
     rhs: &ScalarValue,
     tol: f64,

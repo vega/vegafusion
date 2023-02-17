@@ -23,7 +23,6 @@ use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
 use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
 use vegafusion_datafusion_udfs::udfs::array::span::SPAN_UDF;
 use vegafusion_datafusion_udfs::udfs::math::isnan::ISNAN_UDF;
-use vegafusion_datafusion_udfs::udfs::math::pow::POW_UDF;
 
 use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
@@ -211,7 +210,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     // Numeric functions built into DataFusion with names that match Vega.
     // Cast arguments to Float64
     for fun_name in &[
-        "abs", "acos", "asin", "atan", "ceil", "cos", "exp", "floor", "round", "sin", "sqrt", "tan",
+        "abs", "acos", "asin", "atan", "ceil", "cos", "exp", "floor", "round", "sin", "sqrt", "tan", "pow"
     ] {
         let function = BuiltinScalarFunction::from_str(fun_name).unwrap();
         callables.insert(
@@ -232,14 +231,14 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         },
     );
 
-    // Custom udfs
-    callables.insert(
-        "pow".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: POW_UDF.deref().clone(),
-            cast: Some(DataType::Float64),
-        },
-    );
+    // // Custom udfs
+    // callables.insert(
+    //     "pow".to_string(),
+    //     VegaFusionCallable::ScalarUDF {
+    //         udf: POW_UDF.deref().clone(),
+    //         cast: Some(DataType::Float64),
+    //     },
+    // );
 
     callables.insert(
         "isNaN".to_string(),

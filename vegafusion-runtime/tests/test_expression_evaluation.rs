@@ -262,6 +262,34 @@ mod test_object_expression {
     fn test_marker() {} // Help IDE detect test module
 }
 
+mod test_math_functions {
+    use crate::*;
+
+    #[rstest(
+        expr,
+        case("abs(-1)"),
+        case("acos(1)"),
+        case("asin(1)"),
+        case("atan(0.5)"),
+        case("ceil(1.3)"),
+        case("cos(1.57)"),
+        case("exp(1)"),
+        case("floor(1.8)"),
+        case("round(1.8)"),
+        case("sin(1.57)"),
+        case("sqrt(4)"),
+        case("tan(1)"),
+        case("log(2.718281828)"),
+        case("pow(2, 3)"),
+    )]
+    fn test(expr: &str) {
+        check_scalar_evaluation(expr, &config_a())
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
 mod test_datetime {
     use crate::*;
 
