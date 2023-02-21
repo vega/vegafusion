@@ -601,14 +601,19 @@ fn compile_window_frame_bound(
 mod tests {
     use super::ToSqlExpr;
     use crate::dialect::Dialect;
-    use arrow::datatypes::DataType;
+    use arrow::datatypes::{DataType, Schema};
+    use datafusion_common::DFSchema;
     use datafusion_expr::expr::Cast;
     use datafusion_expr::{col, lit, Between, BuiltinScalarFunction, Expr};
+
+    fn schema() -> DFSchema {
+        DFSchema::try_from(Schema::new(Vec::new())).unwrap()
+    }
 
     #[test]
     pub fn test1() {
         let df_expr = Expr::Negative(Box::new(col("A"))) + lit(12);
-        let sql_expr = df_expr.to_sql(&Default::default()).unwrap();
+        let sql_expr = df_expr.to_sql(&Dialect::datafusion(), &schema()).unwrap();
         println!("{sql_expr:?}");
         let sql_str = sql_expr.to_string();
         assert_eq!(sql_str, r#"((-"A") + 12)"#.to_string());
@@ -621,9 +626,8 @@ mod tests {
             args: vec![lit(1.2)],
         } + col("B");
 
-        let mut dialect: Dialect = Default::default();
-        dialect.scalar_functions.insert("sin".to_string());
-        let sql_expr = df_expr.to_sql(&dialect).unwrap();
+        let mut dialect: Dialect = Dialect::datafusion();
+        let sql_expr = df_expr.to_sql(&dialect, &schema()).unwrap();
         println!("{sql_expr:?}");
         let sql_str = sql_expr.to_string();
         assert_eq!(sql_str, r#"(sin(1.2) + "B")"#.to_string());
@@ -636,10 +640,8 @@ mod tests {
             args: vec![lit("foo")],
         };
 
-        let mut dialect: Dialect = Default::default();
-        dialect.scalar_functions.insert("upper".to_string());
-
-        let sql_expr = df_expr.to_sql(&dialect).unwrap();
+        let mut dialect: Dialect = Dialect::datafusion();
+        let sql_expr = df_expr.to_sql(&dialect, &schema()).unwrap();
         println!("{sql_expr:?}");
         let sql_str = sql_expr.to_string();
         assert_eq!(sql_str, "upper('foo')".to_string());
@@ -652,7 +654,7 @@ mod tests {
             data_type: DataType::Int64,
         }) + lit(4);
 
-        let sql_expr = df_expr.to_sql(&Default::default()).unwrap();
+        let sql_expr = df_expr.to_sql(&Dialect::datafusion(), &schema()).unwrap();
         println!("{sql_expr:?}");
         let sql_str = sql_expr.to_string();
         assert_eq!(sql_str, "(CAST(2.8 AS BIGINT) + 4)".to_string());
@@ -668,7 +670,7 @@ mod tests {
         })
         .or(col("B"));
 
-        let sql_expr = df_expr.to_sql(&Default::default()).unwrap();
+        let sql_expr = df_expr.to_sql(&Dialect::datafusion(), &schema()).unwrap();
         println!("{sql_expr:?}");
         let sql_str = sql_expr.to_string();
         assert_eq!(sql_str, r#"("A" BETWEEN 0 AND 10 OR "B")"#.to_string());

@@ -51,13 +51,19 @@ impl ToSqlOrderByExpr for Expr {
 
 #[cfg(test)]
 mod tests {
+    use arrow::datatypes::Schema;
+    use datafusion_common::DFSchema;
     use crate::compile::order::ToSqlOrderByExpr;
     use datafusion_expr::{col, expr, Expr};
+
+    fn schema() -> DFSchema {
+        DFSchema::try_from(Schema::new(Vec::new())).unwrap()
+    }
 
     #[test]
     pub fn test_non_sort_expr() {
         let sort_expr = col("a");
-        sort_expr.to_sql_order(&Default::default()).unwrap_err();
+        sort_expr.to_sql_order(&Default::default(), &schema()).unwrap_err();
     }
 
     #[test]
@@ -68,7 +74,7 @@ mod tests {
             nulls_first: false,
         });
 
-        let sort_sql = sort_expr.to_sql_order(&Default::default()).unwrap();
+        let sort_sql = sort_expr.to_sql_order(&Default::default(), &schema()).unwrap();
         let sql_str = sort_sql.to_string();
         assert_eq!(sql_str, r#""a" DESC NULLS LAST"#.to_string());
     }
