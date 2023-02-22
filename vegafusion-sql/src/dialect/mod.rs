@@ -1,14 +1,20 @@
 use crate::compile::expr::ToSqlExpr;
+use crate::dialect::transforms::str_to_utc_timestamp::{
+    StrToUtcTimestampClickhouseTransformer, StrToUtcTimestampMySqlTransformer,
+    StrToUtcTimestampSnowflakeTransformer, StrToUtcTimestampWithCastAndAtTimeZoneTransformer,
+    StrToUtcTimestampWithCastFunctionAtTransformer, StrToUtcTimestampWithFunctionTransformer,
+};
 use arrow::datatypes::DataType;
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
-use datafusion_expr::{ExprSchemable, lit};
+use datafusion_expr::{lit, ExprSchemable};
 use datafusion_expr::{when, Expr, Operator};
 use sqlparser::ast::{
-    BinaryOperator as SqlBinaryOperator, DataType as SqlDataType, Expr as SqlExpr,
-    Function as SqlFunction, Function, FunctionArg as SqlFunctionArg, FunctionArg,
-    FunctionArgExpr as SqlFunctionArgExpr, FunctionArgExpr, Ident as SqlIdent, Ident,
-    ObjectName as SqlObjectName, ObjectName, Value as SqlValue,
+    BinaryOperator as SqlBinaryOperator, DataType as SqlDataType,
+    DateTimeField as SqlDateTimeField, Expr as SqlExpr, Function as SqlFunction, Function,
+    FunctionArg as SqlFunctionArg, FunctionArg, FunctionArgExpr as SqlFunctionArgExpr,
+    FunctionArgExpr, Ident as SqlIdent, Ident, ObjectName as SqlObjectName, ObjectName,
+    TimezoneInfo, Value as SqlValue,
 };
 use sqlparser::dialect::{
     BigQueryDialect, ClickHouseDialect, Dialect as SqlParserDialect, GenericDialect, MySqlDialect,
@@ -964,6 +970,12 @@ impl Dialect {
                 ("log2", LogBaseTransformer::new_dyn(2, true)),
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
                 ("isfinite", IsFiniteWithNotInTransformer::new_dyn()),
+                (
+                    "str_to_utc_timestamp",
+                    StrToUtcTimestampWithCastAndAtTimeZoneTransformer::new_dyn(
+                        SqlDataType::Timestamp(None, TimezoneInfo::None),
+                    ),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1076,6 +1088,12 @@ impl Dialect {
 
                 // NaNs in redshift aren't always equal in InList expressions so use string form
                 ("isfinite", IsFiniteWithNotInStringsTransformer::new_dyn()),
+                (
+                    "str_to_utc_timestamp",
+                    StrToUtcTimestampWithCastAndAtTimeZoneTransformer::new_dyn(
+                        SqlDataType::Timestamp(None, TimezoneInfo::None),
+                    ),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1178,6 +1196,10 @@ impl Dialect {
                 ("log2", LogBaseTransformer::new_dyn(2, true)),
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
                 ("isfinite", IsFiniteWithNotInTransformer::new_dyn()),
+                (
+                    "str_to_utc_timestamp",
+                    StrToUtcTimestampSnowflakeTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1499,7 +1521,8 @@ impl FunctionTransformer for IsFiniteWithNotInTransformer {
             expr: Box::new(args[0].clone()),
             list: vec![lit(f64::NEG_INFINITY), lit(f64::INFINITY), lit(f64::NAN)],
             negated: false,
-        }.not();
+        }
+        .not();
         isfinite_expr.to_sql(dialect, schema)
     }
 }
