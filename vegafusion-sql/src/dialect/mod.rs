@@ -1,3 +1,5 @@
+pub mod transforms;
+
 use crate::compile::expr::ToSqlExpr;
 use crate::dialect::transforms::str_to_utc_timestamp::{
     StrToUtcTimestampClickhouseTransformer, StrToUtcTimestampMySqlTransformer,
@@ -25,6 +27,7 @@ use std::fmt::Debug;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
+use crate::dialect::transforms::date_part_tz::{DatePartTzClickhouseTransformer, DatePartTzWithFromUtcAndDatePartTransformer, DatePartTzMySqlTransformer, DatePartTzSnowflakeTransformer, DatePartTzWithDatePartAndAtTimezoneTransformer, DatePartTzWithExtractAndAtTimezoneTransformer};
 
 #[derive(Clone, Debug)]
 pub enum ParseDialect {
@@ -239,6 +242,15 @@ impl Dialect {
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
                 ("trunc", RenameFunctionTransformer::new_dyn("truncate")),
                 ("isfinite", IsFiniteWithNotNullTransformer::new_dyn()),
+                (
+                    "str_to_utc_timestamp",
+                    StrToUtcTimestampWithCastFunctionAtTransformer::new_dyn(
+                        SqlDataType::Timestamp(None, TimezoneInfo::None),
+                        "with_timezone",
+                        true,
+                    ),
+                ),
+                ("date_part_tz", DatePartTzWithExtractAndAtTimezoneTransformer::new_dyn(false))
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -326,6 +338,11 @@ impl Dialect {
                 ("random", RenameFunctionTransformer::new_dyn("rand")),
                 // NaNs in BigQuery aren't always equal in InList expressions so use string form
                 ("isfinite", IsFiniteWithNotInStringsTransformer::new_dyn()),
+                (
+                    "str_to_utc_timestamp",
+                    StrToUtcTimestampWithFunctionTransformer::new_dyn("timestamp"),
+                ),
+                ("date_part_tz", DatePartTzWithExtractAndAtTimezoneTransformer::new_dyn(false))
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -387,7 +404,7 @@ impl Dialect {
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "trunc"
+                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "trunc",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -411,6 +428,11 @@ impl Dialect {
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
                 ("random", RenameFunctionTransformer::new_dyn("rand")),
                 ("isfinite", RenameFunctionTransformer::new_dyn("isFinite")),
+                (
+                    "str_to_utc_timestamp",
+                    StrToUtcTimestampClickhouseTransformer::new_dyn(),
+                ),
+                ("date_part_tz", DatePartTzClickhouseTransformer::new_dyn())
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -506,6 +528,15 @@ impl Dialect {
                 ("log", RenameFunctionTransformer::new_dyn("log10")),
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
                 ("isfinite", IsFiniteWithNotInTransformer::new_dyn()),
+                (
+                    "str_to_utc_timestamp",
+                    StrToUtcTimestampWithCastFunctionAtTransformer::new_dyn(
+                        SqlDataType::Timestamp(None, TimezoneInfo::None),
+                        "to_utc_timestamp",
+                        false,
+                    ),
+                ),
+                ("date_part_tz", DatePartTzWithFromUtcAndDatePartTransformer::new_dyn())
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -545,6 +576,7 @@ impl Dialect {
         use Operator::*;
         let mut scalar_transforms: HashMap<String, Arc<dyn FunctionTransformer>> = HashMap::new();
         scalar_transforms.insert("date_add".to_string(), Arc::new(DateAddToIntervalAddition));
+        scalar_transforms.insert("date_part_tz".to_string(), DatePartTzWithFromUtcAndDatePartTransformer::new_dyn());
 
         Self {
             parse_dialect: ParseDialect::DataFusion,
@@ -742,9 +774,8 @@ impl Dialect {
             .collect(),
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
-                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos",
-                "floor", "ln", "log", "log10", "log2", "pow", "round", "sin", "sqrt", "tan",
-                "random", "isfinite"
+                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "floor", "ln",
+                "log", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "random", "isfinite",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -783,6 +814,13 @@ impl Dialect {
             scalar_transformers: vec![
                 ("exp", ExpWithPowFunctionTransformer::new_dyn()),
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
+                (
+                    "str_to_utc_timestamp",
+                    StrToUtcTimestampWithCastAndAtTimeZoneTransformer::new_dyn(
+                        SqlDataType::Timestamp(None, TimezoneInfo::None),
+                    ),
+                ),
+                ("date_part_tz", DatePartTzWithDatePartAndAtTimezoneTransformer::new_dyn(true))
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -872,6 +910,11 @@ impl Dialect {
                 ("trunc", RenameFunctionTransformer::new_dyn("truncate")),
                 ("random", RenameFunctionTransformer::new_dyn("rand")),
                 ("isfinite", IsFiniteWithNotNullTransformer::new_dyn()),
+                (
+                    "str_to_utc_timestamp",
+                    StrToUtcTimestampMySqlTransformer::new_dyn(),
+                ),
+                ("date_part_tz", DatePartTzMySqlTransformer::new_dyn())
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -976,6 +1019,7 @@ impl Dialect {
                         SqlDataType::Timestamp(None, TimezoneInfo::None),
                     ),
                 ),
+                ("date_part_tz", DatePartTzWithDatePartAndAtTimezoneTransformer::new_dyn(true))
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1085,7 +1129,6 @@ impl Dialect {
                     CastArgsFunctionTransformer::new_dyn("log", SqlDataType::DoublePrecision),
                 ),
                 ("signum", RenameFunctionTransformer::new_dyn("sign")),
-
                 // NaNs in redshift aren't always equal in InList expressions so use string form
                 ("isfinite", IsFiniteWithNotInStringsTransformer::new_dyn()),
                 (
@@ -1094,6 +1137,7 @@ impl Dialect {
                         SqlDataType::Timestamp(None, TimezoneInfo::None),
                     ),
                 ),
+                ("date_part_tz", DatePartTzWithExtractAndAtTimezoneTransformer::new_dyn(true))
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1200,6 +1244,7 @@ impl Dialect {
                     "str_to_utc_timestamp",
                     StrToUtcTimestampSnowflakeTransformer::new_dyn(),
                 ),
+                ("date_part_tz", DatePartTzSnowflakeTransformer::new_dyn())
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1563,17 +1608,47 @@ impl FunctionTransformer for IsFiniteWithNotInStringsTransformer {
     }
 }
 
-
 #[derive(Clone, Debug)]
-struct ConstantTransformer(SqlValue);
-impl ConstantTransformer {
-    pub fn new_dyn(v: SqlValue) -> Arc<dyn FunctionTransformer> {
-        Arc::new(Self(v))
+struct DatePartWithExtractTransformer;
+
+impl DatePartWithExtractTransformer {
+    pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self)
     }
 }
-impl FunctionTransformer for ConstantTransformer {
-    fn transform(&self, _args: &[Expr], _dialect: &Dialect, _schema: &DFSchema) -> Result<SqlExpr> {
-        Ok(SqlExpr::Value(self.0.clone()))
+
+impl FunctionTransformer for DatePartWithExtractTransformer {
+    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
+        if args.len() != 2 {
+            return Err(VegaFusionError::sql_not_supported(
+                "date_part requires exactly two arguments",
+            ));
+        }
+        let sql_arg0 = args[0].to_sql(dialect, schema)?;
+        let sql_arg1 = args[1].to_sql(dialect, schema)?;
+        let part = if let SqlExpr::Value(SqlValue::SingleQuotedString(part)) = sql_arg0 {
+            part
+        } else {
+            return Err(VegaFusionError::sql_not_supported(
+                "First argument to date_part must be a string literal",
+            ));
+        };
+
+        // SqlDateTimeField::f
+        let datetime_field = match part.as_str() {
+            "hour" => SqlDateTimeField::Hour,
+            "year" => SqlDateTimeField::Year,
+            _ => {
+                return Err(VegaFusionError::sql_not_supported(format!(
+                    "Date part not supported by dialect: {part}"
+                )))
+            }
+        };
+
+        Ok(SqlExpr::Extract {
+            field: datetime_field,
+            expr: Box::new(sql_arg1),
+        })
     }
 }
 
