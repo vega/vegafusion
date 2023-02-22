@@ -39,7 +39,7 @@ use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udfs::datetime::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::datetime_components::MAKE_TIMESTAMPTZ;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
@@ -340,7 +340,7 @@ async fn process_datetimes(
                         Some(tz) => {
                             // Timestamp has explicit timezone
                             Expr::ScalarUDF {
-                                fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
+                                fun: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
                                 args: vec![flat_col(field.name()), lit(tz.as_str())],
                             }
                         }
@@ -350,7 +350,7 @@ async fn process_datetimes(
                                 tz_config.with_context(|| "No local timezone info provided")?;
 
                             Expr::ScalarUDF {
-                                fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
+                                fun: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
                                 args: vec![
                                     flat_col(field.name()),
                                     lit(tz_config.default_input_tz.to_string()),
@@ -363,7 +363,7 @@ async fn process_datetimes(
                             tz_config.with_context(|| "No local timezone info provided")?;
 
                         Expr::ScalarUDF {
-                            fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
+                            fun: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
                             args: vec![
                                 flat_col(field.name()),
                                 lit(tz_config.default_input_tz.to_string()),

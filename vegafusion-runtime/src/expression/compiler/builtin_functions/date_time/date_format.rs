@@ -8,7 +8,7 @@ use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_datafusion_udfs::udfs::datetime::datetime_format::FORMAT_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
 
 pub fn time_format_fn(
     tz_config: &RuntimeTzConfig,
@@ -37,7 +37,7 @@ pub fn time_format_fn(
 
     if format_tz_str.to_ascii_lowercase() != "utc" {
         timestamptz_expr = Expr::ScalarUDF {
-            fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
+            fun: Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone()),
             args: vec![timestamptz_expr, lit(format_tz_str)],
         }
     }

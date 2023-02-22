@@ -29,9 +29,9 @@ use vegafusion_datafusion_udfs::udfs::datetime::datetime_components::MAKE_TIMEST
 use vegafusion_datafusion_udfs::udfs::datetime::datetime_format::FORMAT_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_epoch::TIMESTAMPTZ_TO_EPOCH_MS;
-use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
 use vegafusion_datafusion_udfs::udfs::math::isfinite::ISFINITE_UDF;
 use vegafusion_datafusion_udfs::udfs::math::isnan::ISNAN_UDF;
@@ -297,8 +297,8 @@ pub fn make_datafusion_context() -> SessionContext {
     ctx.register_udf((*ISFINITE_UDF).clone());
 
     // datetime
-    ctx.register_udf((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone());
-    ctx.register_udf((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone());
+    ctx.register_udf((*TO_UTC_TIMESTAMP_UDF).clone());
+    ctx.register_udf((*FROM_UTC_TIMESTAMP_UDF).clone());
     ctx.register_udf((*DATE_TO_TIMESTAMPTZ_UDF).clone());
     ctx.register_udf((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone());
     ctx.register_udf((*STR_TO_TIMESTAMPTZ_UDF).clone());

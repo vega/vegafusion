@@ -8,7 +8,7 @@ use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
 
 pub fn make_local_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -> TzTransformFn {
     let part = part.to_string();
@@ -20,7 +20,7 @@ pub fn make_local_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -
             extract_timestamp_arg(&part, args, schema, &tz_config.default_input_tz.to_string())?;
         let udf_args = vec![arg, lit(tz_config.local_tz.to_string())];
         let timestamp = Expr::ScalarUDF {
-            fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
+            fun: Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone()),
             args: udf_args,
         };
 

@@ -20,8 +20,8 @@ use vegafusion_datafusion_udfs::udfs::datetime::date_add::DATE_ADD_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::datetime_components::MAKE_TIMESTAMPTZ;
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::timestamp_to_timestamptz::TIMESTAMP_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
 
 // Implementation of timeunit start using the SQL DATE_TRUNC function
@@ -52,7 +52,7 @@ fn timeunit_date_trunc(
 
     let start_expr = if let Some(tz_str) = local_tz {
         let local_field = Expr::ScalarUDF {
-            fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
+            fun: Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone()),
             args: vec![field_col, lit(tz_str.clone())],
         };
 
@@ -62,7 +62,7 @@ fn timeunit_date_trunc(
         };
 
         Expr::ScalarUDF {
-            fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
+            fun: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
             args: vec![local_start_expr, lit(tz_str.clone())],
         }
     } else {
@@ -105,7 +105,7 @@ fn timeunit_date_part(
     // Compute input timestamp expression based on timezone
     let inner = if let Some(tz_str) = local_tz {
         Expr::ScalarUDF {
-            fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
+            fun: Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone()),
             args: vec![field_col, lit(tz_str.clone())],
         }
     } else {
@@ -230,7 +230,7 @@ fn timeunit_weekday(
     // Compute input timestamp expression based on timezone
     let inner = if let Some(tz_str) = local_tz {
         Expr::ScalarUDF {
-            fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
+            fun: Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone()),
             args: vec![field_col, lit(tz_str.clone())],
         }
     } else {
@@ -530,7 +530,7 @@ impl TransformTrait for TimeUnit {
 
         let timeunit_end_expr = if let Some(tz_str) = local_tz {
             let ts = Expr::ScalarUDF {
-                fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
+                fun: Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone()),
                 args: vec![flat_col(&timeunit_start_alias), lit(&tz_str)],
             };
 
@@ -540,7 +540,7 @@ impl TransformTrait for TimeUnit {
             };
 
             Expr::ScalarUDF {
-                fun: Arc::new((*TIMESTAMP_TO_TIMESTAMPTZ_UDF).clone()),
+                fun: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
                 args: vec![ts_shifted, lit(&tz_str)],
             }
         } else {

@@ -14,9 +14,9 @@ use vegafusion_common::{
     },
 };
 
-use crate::udfs::datetime::timestamp_to_timestamptz::to_timestamp_ms;
+use crate::udfs::datetime::to_utc_timestamp::to_timestamp_ms;
 
-fn make_timestamptz_to_timestamp_udf() -> ScalarUDF {
+fn make_from_utc_timestamp() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
         // [0] data array
         let timestamp_array = match &args[0] {
@@ -93,7 +93,7 @@ fn make_timestamptz_to_timestamp_udf() -> ScalarUDF {
     );
 
     ScalarUDF::new(
-        "timestamptz_to_timestamp",
+        "from_utc_timestamp",
         &signature,
         &return_type,
         &scalar_fn,
@@ -101,5 +101,5 @@ fn make_timestamptz_to_timestamp_udf() -> ScalarUDF {
 }
 
 lazy_static! {
-    pub static ref TIMESTAMPTZ_TO_TIMESTAMP_UDF: ScalarUDF = make_timestamptz_to_timestamp_udf();
+    pub static ref FROM_UTC_TIMESTAMP_UDF: ScalarUDF = make_from_utc_timestamp();
 }

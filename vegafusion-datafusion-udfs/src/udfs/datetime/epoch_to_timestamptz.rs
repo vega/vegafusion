@@ -1,4 +1,4 @@
-use crate::udfs::datetime::timestamp_to_timestamptz::convert_timezone;
+use crate::udfs::datetime::to_utc_timestamp::convert_timezone;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::{

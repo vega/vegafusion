@@ -1,4 +1,4 @@
-use crate::udfs::datetime::timestamp_to_timestamptz::to_timestamp_ms;
+use crate::udfs::datetime::to_utc_timestamp::to_timestamp_ms;
 use chrono::NaiveDateTime;
 use std::sync::Arc;
 use vegafusion_common::{
