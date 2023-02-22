@@ -6,8 +6,8 @@ use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::{Result, VegaFusionError};
-use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
 
 pub fn make_local_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -> TzTransformFn {
@@ -71,11 +71,11 @@ fn extract_timestamp_arg(
         Ok(match arg.get_type(schema)? {
             DataType::Timestamp(_, _) => arg.clone(),
             DataType::Utf8 => Expr::ScalarUDF {
-                fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+                fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
                 args: vec![arg.clone(), lit(default_input_tz)],
             },
             dtype if is_numeric_datatype(&dtype) => Expr::ScalarUDF {
-                fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
+                fun: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
                 args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?, lit("UTC")],
             },
             dtype => {

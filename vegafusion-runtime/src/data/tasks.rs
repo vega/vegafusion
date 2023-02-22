@@ -36,9 +36,9 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_dataframe::connection::Connection;
 use vegafusion_dataframe::csv::CsvReadOptions;
 use vegafusion_dataframe::dataframe::DataFrame;
-use vegafusion_datafusion_udfs::udfs::datetime::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::datetime_components::MAKE_TIMESTAMPTZ;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::date_to_utc_timestamp::DATE_TO_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
 
 pub fn build_compilation_config(
@@ -281,7 +281,7 @@ async fn process_datetimes(
                             .unwrap_or_else(|| "UTC".to_string());
 
                         Expr::ScalarUDF {
-                            fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+                            fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
                             args: vec![flat_col(&spec.name), lit(default_input_tz_str)],
                         }
                     } else if is_integer_datatype(dtype) {
@@ -289,7 +289,7 @@ async fn process_datetimes(
                         let tz_config =
                             tz_config.with_context(|| "No local timezone info provided")?;
                         Expr::ScalarUDF {
-                            fun: Arc::new((*MAKE_TIMESTAMPTZ).clone()),
+                            fun: Arc::new((*MAKE_UTC_TIMESTAMP).clone()),
                             args: vec![
                                 flat_col(&spec.name),                        // year
                                 lit(0),                                      // month
@@ -375,7 +375,7 @@ async fn process_datetimes(
                             tz_config.with_context(|| "No local timezone info provided")?;
 
                         Expr::ScalarUDF {
-                            fun: Arc::new((*DATE_TO_TIMESTAMPTZ_UDF).clone()),
+                            fun: Arc::new((*DATE_TO_UTC_TIMESTAMP_UDF).clone()),
                             args: vec![flat_col(field.name()), lit(tz_config.local_tz.to_string())],
                         }
                     }

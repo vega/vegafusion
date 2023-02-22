@@ -14,7 +14,7 @@ use vegafusion_common::{
     },
 };
 
-fn make_datetime_components_udf() -> ScalarUDF {
+fn make_utc_timestamp_udf() -> ScalarUDF {
     let datetime_components: ScalarFunctionImplementation =
         Arc::new(move |args: &[ColumnarValue]| {
             let tz_str = if let ColumnarValue::Scalar(tz_scalar) = &args[7] {
@@ -152,7 +152,7 @@ fn make_datetime_components_udf() -> ScalarUDF {
         Volatility::Immutable,
     );
     ScalarUDF::new(
-        "make_timestamptz",
+        "make_utc_timestamp",
         &signature,
         &return_type,
         &datetime_components,
@@ -160,5 +160,5 @@ fn make_datetime_components_udf() -> ScalarUDF {
 }
 
 lazy_static! {
-    pub static ref MAKE_TIMESTAMPTZ: ScalarUDF = make_datetime_components_udf();
+    pub static ref MAKE_UTC_TIMESTAMP: ScalarUDF = make_utc_timestamp_udf();
 }

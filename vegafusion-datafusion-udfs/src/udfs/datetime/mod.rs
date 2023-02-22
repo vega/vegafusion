@@ -1,15 +1,15 @@
 pub mod date_add;
-pub mod date_to_timestamptz;
-pub mod datetime_components;
+pub mod date_to_utc_timestamp;
+pub mod make_utc_timestamp;
 pub mod datetime_format;
-pub mod epoch_to_timestamptz;
-pub mod str_to_timestamptz;
+pub mod epoch_to_utc_timestamp;
+pub mod str_to_utc_timestamp;
 pub mod to_utc_timestamp;
-pub mod timestamptz_to_epoch;
+pub mod utc_timestamp_to_epoch;
 pub mod from_utc_timestamp;
 pub mod timeunit;
 
-use crate::udfs::datetime::str_to_timestamptz::datetime_strs_to_timestamp_millis;
+use crate::udfs::datetime::str_to_utc_timestamp::datetime_strs_to_timestamp_millis;
 use std::sync::Arc;
 use vegafusion_common::arrow::{
     array::{ArrayRef, Date32Array, Int64Array, StringArray},

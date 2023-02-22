@@ -329,7 +329,7 @@ pub fn datetime_strs_to_timestamp_millis(
     Arc::new(millis_array) as ArrayRef
 }
 
-fn make_str_to_timestamptz_udf() -> ScalarUDF {
+fn make_str_to_utc_timestamp_udf() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
         // [0] data array
         let str_array = match &args[0] {
@@ -367,11 +367,11 @@ fn make_str_to_timestamptz_udf() -> ScalarUDF {
     let signature: Signature =
         Signature::exact(vec![DataType::Utf8, DataType::Utf8], Volatility::Immutable);
 
-    ScalarUDF::new("str_to_timestamptz", &signature, &return_type, &scalar_fn)
+    ScalarUDF::new("str_to_utc_timestamp", &signature, &return_type, &scalar_fn)
 }
 
 lazy_static! {
-    pub static ref STR_TO_TIMESTAMPTZ_UDF: ScalarUDF = make_str_to_timestamptz_udf();
+    pub static ref STR_TO_UTC_TIMESTAMP_UDF: ScalarUDF = make_str_to_utc_timestamp_udf();
 }
 
 #[test]

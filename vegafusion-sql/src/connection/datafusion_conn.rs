@@ -24,13 +24,13 @@ use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udfs::array::constructor::ARRAY_CONSTRUCTOR_UDF;
 use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
 use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::date_to_timestamptz::DATE_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::datetime_components::MAKE_TIMESTAMPTZ;
+use vegafusion_datafusion_udfs::udfs::datetime::date_to_utc_timestamp::DATE_TO_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
 use vegafusion_datafusion_udfs::udfs::datetime::datetime_format::FORMAT_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_epoch::TIMESTAMPTZ_TO_EPOCH_MS;
+use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_epoch::UTC_TIMESTAMP_TO_EPOCH_MS;
 use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
 use vegafusion_datafusion_udfs::udfs::math::isfinite::ISFINITE_UDF;
@@ -299,11 +299,11 @@ pub fn make_datafusion_context() -> SessionContext {
     // datetime
     ctx.register_udf((*TO_UTC_TIMESTAMP_UDF).clone());
     ctx.register_udf((*FROM_UTC_TIMESTAMP_UDF).clone());
-    ctx.register_udf((*DATE_TO_TIMESTAMPTZ_UDF).clone());
-    ctx.register_udf((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone());
-    ctx.register_udf((*STR_TO_TIMESTAMPTZ_UDF).clone());
-    ctx.register_udf((*MAKE_TIMESTAMPTZ).clone());
-    ctx.register_udf((*TIMESTAMPTZ_TO_EPOCH_MS).clone());
+    ctx.register_udf((*DATE_TO_UTC_TIMESTAMP_UDF).clone());
+    ctx.register_udf((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone());
+    ctx.register_udf((*STR_TO_UTC_TIMESTAMP_UDF).clone());
+    ctx.register_udf((*MAKE_UTC_TIMESTAMP).clone());
+    ctx.register_udf((*UTC_TIMESTAMP_TO_EPOCH_MS).clone());
 
     // timeunit
     ctx.register_udf((*TIMEUNIT_START_UDF).clone());

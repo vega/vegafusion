@@ -14,7 +14,7 @@ use vegafusion_common::{
     },
 };
 
-fn make_epoch_to_timestamptz() -> ScalarUDF {
+fn make_epoch_to_utc_timestamp() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
         // [0] data array
         let timestamp_array = match &args[0] {
@@ -60,7 +60,7 @@ fn make_epoch_to_timestamptz() -> ScalarUDF {
         Signature::exact(vec![DataType::Int64, DataType::Utf8], Volatility::Immutable);
 
     ScalarUDF::new(
-        "epoch_ms_to_timestamptz",
+        "epoch_ms_to_utc_timestamp",
         &signature,
         &return_type,
         &scalar_fn,
@@ -68,5 +68,5 @@ fn make_epoch_to_timestamptz() -> ScalarUDF {
 }
 
 lazy_static! {
-    pub static ref EPOCH_MS_TO_TIMESTAMPTZ_UDF: ScalarUDF = make_epoch_to_timestamptz();
+    pub static ref EPOCH_MS_TO_UTC_TIMESTAMP_UDF: ScalarUDF = make_epoch_to_utc_timestamp();
 }

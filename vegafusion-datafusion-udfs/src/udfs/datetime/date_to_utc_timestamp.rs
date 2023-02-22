@@ -14,7 +14,7 @@ use vegafusion_common::{
     },
 };
 
-fn make_date_to_timestamptz() -> ScalarUDF {
+fn make_date_to_utc_timestamp() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
         // [0] data array
         let date_array = match &args[0] {
@@ -71,9 +71,9 @@ fn make_date_to_timestamptz() -> ScalarUDF {
         Volatility::Immutable,
     );
 
-    ScalarUDF::new("date_to_timestamptz", &signature, &return_type, &scalar_fn)
+    ScalarUDF::new("date_to_utc_timestamp", &signature, &return_type, &scalar_fn)
 }
 
 lazy_static! {
-    pub static ref DATE_TO_TIMESTAMPTZ_UDF: ScalarUDF = make_date_to_timestamptz();
+    pub static ref DATE_TO_UTC_TIMESTAMP_UDF: ScalarUDF = make_date_to_utc_timestamp();
 }

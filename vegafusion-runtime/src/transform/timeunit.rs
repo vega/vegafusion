@@ -17,9 +17,9 @@ use itertools::Itertools;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udfs::datetime::date_add::DATE_ADD_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::datetime_components::MAKE_TIMESTAMPTZ;
-use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
+use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
@@ -76,7 +76,7 @@ fn timeunit_date_trunc(
     Ok((start_expr, interval))
 }
 
-// Implementation of timeunit start using MAKE_TIMESTAMPTZ and the SQL DATE_PART function
+// Implementation of timeunit start using MAKE_UTC_TIMESTAMP and the SQL DATE_PART function
 fn timeunit_date_part(
     field: &str,
     units_set: &HashSet<TimeUnitUnit>,
@@ -84,7 +84,7 @@ fn timeunit_date_part(
     default_input_tz: &String,
     local_tz: &Option<String>,
 ) -> Result<(Expr, (i32, String))> {
-    // Initialize default arguments to make_timestamptz
+    // Initialize default arguments to make_utc_timestamp
     let mut make_timestamptz_args = vec![
         lit(2012), // 0 year
         lit(0),    // 1 month
@@ -191,7 +191,7 @@ fn timeunit_date_part(
 
     // Construct expression to make timestamp from components
     let start_expr = Expr::ScalarUDF {
-        fun: Arc::new((*MAKE_TIMESTAMPTZ).clone()),
+        fun: Arc::new((*MAKE_UTC_TIMESTAMP).clone()),
         args: make_timestamptz_args,
     };
 
@@ -203,11 +203,11 @@ fn to_timestamp_col(field: &str, schema: &DFSchema, default_input_tz: &String) -
     Ok(match field_col.get_type(schema)? {
         DataType::Timestamp(_, _) => field_col,
         DataType::Utf8 => Expr::ScalarUDF {
-            fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+            fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
             args: vec![field_col, lit(default_input_tz)],
         },
         dtype if is_numeric_datatype(&dtype) => Expr::ScalarUDF {
-            fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
+            fun: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
             args: vec![cast_to(field_col, &DataType::Int64, schema)?, lit("UTC")],
         },
         dtype => {
@@ -244,7 +244,7 @@ fn timeunit_weekday(
         args: vec![lit("dow"), inner],
     };
 
-    // Add one to line up with the signature of MAKE_TIMESTAMPTZ
+    // Add one to line up with the signature of MAKE_UTC_TIMESTAMP
     // where Sunday is 1 and Saturday is 7
     let weekday1 = weekday0.add(lit(1));
 
@@ -262,7 +262,7 @@ fn timeunit_weekday(
 
     // Construct expression to make timestamp from components
     let start_expr = Expr::ScalarUDF {
-        fun: Arc::new((*MAKE_TIMESTAMPTZ).clone()),
+        fun: Arc::new((*MAKE_UTC_TIMESTAMP).clone()),
         args: make_timestamptz_args,
     };
 
@@ -468,7 +468,7 @@ impl TransformTrait for TimeUnit {
                 timeunit_weekday(&self.field, &schema, &default_input_tz, &local_tz)?
             }
             _ => {
-                // Check if timeunit can be handled by make_timestamptz
+                // Check if timeunit can be handled by make_utc_timestamp
                 let units_set = units_vec.iter().cloned().collect::<HashSet<_>>();
                 let date_part_units = vec![
                     TimeUnitUnit::Year,

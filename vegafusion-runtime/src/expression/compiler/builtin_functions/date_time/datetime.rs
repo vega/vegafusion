@@ -7,9 +7,9 @@ use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-use vegafusion_datafusion_udfs::udfs::datetime::datetime_components::MAKE_TIMESTAMPTZ;
-use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
+use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 
 pub fn to_date_transform(
     tz_config: &RuntimeTzConfig,
@@ -44,12 +44,12 @@ pub fn to_date_transform(
         };
 
         Ok(Expr::ScalarUDF {
-            fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+            fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
             args: vec![arg, lit(default_input_tz.to_string())],
         })
     } else if is_numeric_datatype(&dtype) {
         Ok(Expr::ScalarUDF {
-            fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
+            fun: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
             args: vec![cast_to(arg, &DataType::Int64, schema)?, lit("UTC")],
         })
     } else {
@@ -72,7 +72,7 @@ pub fn datetime_transform_fn(
         if is_string_datatype(&dtype) {
             let default_input_tz_str = tz_config.default_input_tz.to_string();
             arg = Expr::ScalarUDF {
-                fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+                fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
                 args: vec![arg, lit(default_input_tz_str)],
             }
         }
@@ -82,7 +82,7 @@ pub fn datetime_transform_fn(
         let udf_args =
             extract_datetime_component_args(args, &tz_config.default_input_tz.to_string(), schema)?;
         Ok(Expr::ScalarUDF {
-            fun: Arc::new((*MAKE_TIMESTAMPTZ).clone()),
+            fun: Arc::new((*MAKE_UTC_TIMESTAMP).clone()),
             args: udf_args,
         })
     }
@@ -96,7 +96,7 @@ pub fn make_datetime_components_fn(
     let udf_args =
         extract_datetime_component_args(args, &tz_config.default_input_tz.to_string(), schema)?;
     Ok(Expr::ScalarUDF {
-        fun: Arc::new(MAKE_TIMESTAMPTZ.deref().clone()),
+        fun: Arc::new(MAKE_UTC_TIMESTAMP.deref().clone()),
         args: udf_args,
     })
 }
