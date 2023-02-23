@@ -11,6 +11,11 @@ use crate::dialect::transforms::date_trunc_tz::{
     DateTruncTzWithDateTruncAndAtTimezoneTransformer,
     DateTruncTzWithFromUtcAndDateTruncTransformer, DateTruncTzWithTimestampTruncTransformer,
 };
+use crate::dialect::transforms::make_utc_timestamp::{
+    MakeUtcTimestampBigQueryTransformer, MakeUtcTimestampDatabricksTransformer,
+    MakeUtcTimestampDuckDbTransformer, MakeUtcTimestampPostgresTransformer,
+    MakeUtcTimestampSnowflakeTransformer,
+};
 use crate::dialect::transforms::str_to_utc_timestamp::{
     StrToUtcTimestampClickhouseTransformer, StrToUtcTimestampMySqlTransformer,
     StrToUtcTimestampSnowflakeTransformer, StrToUtcTimestampWithCastAndAtTimeZoneTransformer,
@@ -365,6 +370,10 @@ impl Dialect {
                     "date_trunc_tz",
                     DateTruncTzWithTimestampTruncTransformer::new_dyn(),
                 ),
+                (
+                    "make_utc_timestamp",
+                    MakeUtcTimestampBigQueryTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -566,6 +575,10 @@ impl Dialect {
                 (
                     "date_trunc_tz",
                     DateTruncTzWithFromUtcAndDateTruncTransformer::new_dyn(),
+                ),
+                (
+                    "make_utc_timestamp",
+                    MakeUtcTimestampDatabricksTransformer::new_dyn(),
                 ),
             ]
             .into_iter()
@@ -865,6 +878,10 @@ impl Dialect {
                     "date_trunc_tz",
                     DateTruncTzWithDateTruncAndAtTimezoneTransformer::new_dyn(true),
                 ),
+                (
+                    "make_utc_timestamp",
+                    MakeUtcTimestampDuckDbTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1070,6 +1087,10 @@ impl Dialect {
                 (
                     "date_trunc_tz",
                     DateTruncTzWithDateTruncAndAtTimezoneTransformer::new_dyn(true),
+                ),
+                (
+                    "make_utc_timestamp",
+                    MakeUtcTimestampPostgresTransformer::new_dyn(),
                 ),
             ]
             .into_iter()
@@ -1304,6 +1325,10 @@ impl Dialect {
                 ),
                 ("date_part_tz", DatePartTzSnowflakeTransformer::new_dyn()),
                 ("date_trunc_tz", DateTruncTzSnowflakeTransformer::new_dyn()),
+                (
+                    "make_utc_timestamp",
+                    MakeUtcTimestampSnowflakeTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))

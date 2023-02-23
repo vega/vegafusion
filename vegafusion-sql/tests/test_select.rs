@@ -723,3 +723,97 @@ mod test_date_trunc_tz {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
+#[cfg(test)]
+mod test_make_timestamp_tz {
+    use crate::*;
+    use datafusion_expr::{col, expr, lit, Expr};
+    use std::sync::Arc;
+    use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
+    #[apply(dialect_names)]
+    fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 1, "Y": 2001, "M": 0, "d": 1, "h": 3, "min": 2, "s": 32, "ms": 123},
+                {"a": 2, "Y": 1984, "M": 3, "d": 12, "h": 7, "min": 0, "s": 0, "ms": 0},
+                {"a": 3, "Y": 1968, "M": 11, "d": 30, "h": 18, "min": 43, "s": 58, "ms": 18},
+                {"a": 4, "Y": null, "M": null, "d": null, "h": null, "min": null, "s": null},
+            ]),
+            1024,
+        )
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+
+        let df_result = df
+            .select(vec![
+                col("a"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(MAKE_UTC_TIMESTAMP.clone()),
+                    args: vec![
+                        col("Y"),
+                        col("M"),
+                        col("d"),
+                        col("h"),
+                        col("min"),
+                        col("s"),
+                        col("ms"),
+                        lit("UTC"),
+                    ],
+                }
+                .alias("ts_utc"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(MAKE_UTC_TIMESTAMP.clone()),
+                    args: vec![
+                        col("Y"),
+                        col("M"),
+                        col("d"),
+                        col("h"),
+                        col("min"),
+                        col("s"),
+                        col("ms"),
+                        lit("America/New_York"),
+                    ],
+                }
+                .alias("ts_nyc"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(MAKE_UTC_TIMESTAMP.clone()),
+                    args: vec![
+                        col("Y"),
+                        col("M"),
+                        col("d"),
+                        col("h"),
+                        col("min"),
+                        col("s"),
+                        col("ms"),
+                        lit("America/Los_Angeles"),
+                    ],
+                }
+                .alias("ts_la"),
+            ])
+            .and_then(|df| {
+                df.sort(
+                    vec![Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    })],
+                    None,
+                )
+            });
+
+        check_dataframe_query(
+            df_result,
+            "select",
+            "test_make_timestamp_tz",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
