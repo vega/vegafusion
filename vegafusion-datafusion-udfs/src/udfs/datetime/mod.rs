@@ -9,6 +9,7 @@ pub mod utc_timestamp_to_epoch;
 pub mod from_utc_timestamp;
 pub mod timeunit;
 pub mod date_part_tz;
+pub mod date_trunc_tz;
 
 use crate::udfs::datetime::str_to_utc_timestamp::datetime_strs_to_timestamp_millis;
 use std::sync::Arc;

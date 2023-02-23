@@ -422,3 +422,43 @@ result = '''
 | 3 |                     |                     |           |          |           |
 +---+---------------------+---------------------+-----------+----------+-----------+
 '''
+
+[test_date_trunc_tz]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '2022-01-01 12:34:56'), (1, '2022-01-02 02:30:01'), (2, '2022-01-03 01:42:21'), (3, NULL)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", with_timezone(CAST("b" AS TIMESTAMP), 'America/New_York') AT TIME ZONE 'UTC' AS "b_utc" FROM values0), values2 AS (SELECT "a", "b", "b_utc", date_trunc('day', "b_utc") AS "day_utc", date_trunc('day', "b_utc" AT TIME ZONE 'America/Los_Angeles') AT TIME ZONE 'UTC' AS "day_la", date_trunc('day', "b_utc" AT TIME ZONE 'America/New_York') AT TIME ZONE 'UTC' AS "day_nyc" FROM values1) SELECT * FROM values2 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH values0 AS (SELECT 0 AS `a`, '2022-01-01 12:34:56' AS `b` UNION ALL SELECT 1 AS `a`, '2022-01-02 02:30:01' AS `b` UNION ALL SELECT 2 AS `a`, '2022-01-03 01:42:21' AS `b` UNION ALL SELECT 3 AS `a`, NULL AS `b`), values1 AS (SELECT `a`, `b`, timestamp(`b`, 'America/New_York') AS `b_utc` FROM values0), values2 AS (SELECT `a`, `b`, `b_utc`, timestamp_trunc(`b_utc`, day, 'UTC') AS `day_utc`, timestamp_trunc(`b_utc`, day, 'America/Los_Angeles') AS `day_la`, timestamp_trunc(`b_utc`, day, 'America/New_York') AS `day_nyc` FROM values1) SELECT * FROM values2 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH values0 AS (SELECT 0 AS "a", '2022-01-01 12:34:56' AS "b" UNION ALL SELECT 1 AS "a", '2022-01-02 02:30:01' AS "b" UNION ALL SELECT 2 AS "a", '2022-01-03 01:42:21' AS "b" UNION ALL SELECT 3 AS "a", NULL AS "b"), values1 AS (SELECT "a", "b", toTimeZone(toDateTime("b", 'America/New_York'), 'UTC') AS "b_utc" FROM values0), values2 AS (SELECT "a", "b", "b_utc", toStartOfDay("b_utc", 'UTC') AS "day_utc", toTimeZone(toStartOfDay("b_utc", 'America/Los_Angeles'), 'UTC') AS "day_la", toTimeZone(toStartOfDay("b_utc", 'America/New_York'), 'UTC') AS "day_nyc" FROM values1) SELECT * FROM values2 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '2022-01-01 12:34:56'), (1, '2022-01-02 02:30:01'), (2, '2022-01-03 01:42:21'), (3, NULL)) AS `_values` (`a`, `b`)), values1 AS (SELECT `a`, `b`, to_utc_timestamp(CAST(`b` AS TIMESTAMP), 'America/New_York') AS `b_utc` FROM values0), values2 AS (SELECT `a`, `b`, `b_utc`, date_trunc('day', `b_utc`) AS `day_utc`, to_utc_timestamp(date_trunc('day', from_utc_timestamp(`b_utc`, 'America/Los_Angeles')), 'America/Los_Angeles') AS `day_la`, to_utc_timestamp(date_trunc('day', from_utc_timestamp(`b_utc`, 'America/New_York')), 'America/New_York') AS `day_nyc` FROM values1) SELECT * FROM values2 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '2022-01-01 12:34:56'), (1, '2022-01-02 02:30:01'), (2, '2022-01-03 01:42:21'), (3, NULL)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", str_to_utc_timestamp("b", 'America/New_York') AS "b_utc" FROM values0), values2 AS (SELECT "a", "b", "b_utc", date_trunc('day', "b_utc") AS "day_utc", to_utc_timestamp(date_trunc('day', from_utc_timestamp("b_utc", 'America/Los_Angeles')), 'America/Los_Angeles') AS "day_la", to_utc_timestamp(date_trunc('day', from_utc_timestamp("b_utc", 'America/New_York')), 'America/New_York') AS "day_nyc" FROM values1) SELECT * FROM values2 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '2022-01-01 12:34:56'), (1, '2022-01-02 02:30:01'), (2, '2022-01-03 01:42:21'), (3, NULL)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", CAST("b" AS TIMESTAMP) AT TIME ZONE 'America/New_York' AT TIME ZONE 'UTC' AS "b_utc" FROM values0), values2 AS (SELECT "a", "b", "b_utc", date_trunc('day', "b_utc") AS "day_utc", date_trunc('day', "b_utc" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Los_Angeles') AT TIME ZONE 'America/Los_Angeles' AT TIME ZONE 'UTC' AS "day_la", date_trunc('day', "b_utc" AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') AT TIME ZONE 'America/New_York' AT TIME ZONE 'UTC' AS "day_nyc" FROM values1) SELECT * FROM values2 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = "UNSUPPORTED"
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '2022-01-01 12:34:56'), (1, '2022-01-02 02:30:01'), (2, '2022-01-03 01:42:21'), (3, NULL)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", CAST("b" AS TIMESTAMP) AT TIME ZONE 'America/New_York' AT TIME ZONE 'UTC' AS "b_utc" FROM values0), values2 AS (SELECT "a", "b", "b_utc", date_trunc('day', "b_utc") AS "day_utc", date_trunc('day', "b_utc" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Los_Angeles') AT TIME ZONE 'America/Los_Angeles' AT TIME ZONE 'UTC' AS "day_la", date_trunc('day', "b_utc" AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') AT TIME ZONE 'America/New_York' AT TIME ZONE 'UTC' AS "day_nyc" FROM values1) SELECT * FROM values2 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH values0 AS (SELECT 0 AS "a", '2022-01-01 12:34:56' AS "b" UNION ALL SELECT 1 AS "a", '2022-01-02 02:30:01' AS "b" UNION ALL SELECT 2 AS "a", '2022-01-03 01:42:21' AS "b" UNION ALL SELECT 3 AS "a", NULL AS "b"), values1 AS (SELECT "a", "b", CAST("b" AS TIMESTAMP) AT TIME ZONE 'America/New_York' AT TIME ZONE 'UTC' AS "b_utc" FROM values0), values2 AS (SELECT "a", "b", "b_utc", date_trunc('day', "b_utc") AS "day_utc", date_trunc('day', "b_utc" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Los_Angeles') AT TIME ZONE 'America/Los_Angeles' AT TIME ZONE 'UTC' AS "day_la", date_trunc('day', "b_utc" AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') AT TIME ZONE 'America/New_York' AT TIME ZONE 'UTC' AS "day_nyc" FROM values1) SELECT * FROM values2 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b" FROM (VALUES (0, '2022-01-01 12:34:56'), (1, '2022-01-02 02:30:01'), (2, '2022-01-03 01:42:21'), (3, NULL))), values1 AS (SELECT "a", "b", convert_timezone('America/New_York', 'UTC', CAST("b" AS timestamp_ntz)) AS "b_utc" FROM values0), values2 AS (SELECT "a", "b", "b_utc", date_trunc('day', "b_utc") AS "day_utc", convert_timezone('America/Los_Angeles', 'UTC', date_trunc('day', convert_timezone('UTC', 'America/Los_Angeles', "b_utc"))) AS "day_la", convert_timezone('America/New_York', 'UTC', date_trunc('day', convert_timezone('UTC', 'America/New_York', "b_utc"))) AS "day_nyc" FROM values1) SELECT * FROM values2 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+---------------------+---------------------+---------------------+---------------------+---------------------+
+| a | b                   | b_utc               | day_utc             | day_la              | day_nyc             |
++---+---------------------+---------------------+---------------------+---------------------+---------------------+
+| 0 | 2022-01-01 12:34:56 | 2022-01-01T17:34:56 | 2022-01-01T00:00:00 | 2022-01-01T08:00:00 | 2022-01-01T05:00:00 |
+| 1 | 2022-01-02 02:30:01 | 2022-01-02T07:30:01 | 2022-01-02T00:00:00 | 2022-01-01T08:00:00 | 2022-01-02T05:00:00 |
+| 2 | 2022-01-03 01:42:21 | 2022-01-03T06:42:21 | 2022-01-03T00:00:00 | 2022-01-02T08:00:00 | 2022-01-03T05:00:00 |
+| 3 |                     |                     |                     |                     |                     |
++---+---------------------+---------------------+---------------------+---------------------+---------------------+
+'''

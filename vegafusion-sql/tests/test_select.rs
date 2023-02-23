@@ -633,3 +633,76 @@ mod test_date_part_tz {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
+#[cfg(test)]
+mod test_date_trunc_tz {
+    use std::sync::Arc;
+    use datafusion_expr::{col, Expr, expr, lit};
+    use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
+    use vegafusion_datafusion_udfs::udfs::datetime::date_trunc_tz::DATE_TRUNC_TZ_UDF;
+    use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
+    use crate::*;
+
+    #[apply(dialect_names)]
+    fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 0, "b": "2022-01-01 12:34:56"},
+                {"a": 1, "b": "2022-01-02 02:30:01"},
+                {"a": 2, "b": "2022-01-03 01:42:21"},
+                {"a": 3, "b": null},
+            ]),
+            1024,
+        )
+            .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+
+        let df_result = df.select(vec![
+            col("a"),
+            col("b"),
+            Expr::ScalarUDF {
+                fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
+                args: vec![col("b"), lit("America/New_York")]
+            }.alias("b_utc"),
+        ]).and_then(|df| {
+            df.select(vec![
+                col("a"),
+                col("b"),
+                col("b_utc"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
+                    args: vec![lit("day"), col("b_utc"), lit("UTC")]
+                }.alias("day_utc"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
+                    args: vec![lit("day"), col("b_utc"), lit("America/Los_Angeles")]
+                }.alias("day_la"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
+                    args: vec![lit("day"), col("b_utc"), lit("America/New_York")]
+                }.alias("day_nyc"),
+            ])
+        }).and_then(|df| {
+            df.sort(vec![Expr::Sort(expr::Sort {
+                expr: Box::new(col("a")),
+                asc: true,
+                nulls_first: true,
+            })], None)
+        });
+
+        check_dataframe_query(
+            df_result,
+            "select",
+            "test_date_trunc_tz",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}

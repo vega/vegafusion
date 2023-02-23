@@ -35,10 +35,10 @@ fn process_date_part_tz_args(args: &[Expr], dialect: &Dialect, schema: &DFSchema
     Ok((part, sql_arg1, time_zone))
 }
 
-fn at_time_zone_if_not_utc(arg: SqlExpr, time_zone: String, first_at_utc: bool) -> SqlExpr {
+pub fn at_time_zone_if_not_utc(arg: SqlExpr, time_zone: String, naive_timestamps: bool) -> SqlExpr {
     if time_zone == "UTC" {
         arg
-    } else if first_at_utc {
+    } else if naive_timestamps {
         SqlExpr::AtTimeZone {
             timestamp: Box::new(SqlExpr::AtTimeZone {
                 timestamp: Box::new(arg),
@@ -80,20 +80,20 @@ fn part_to_date_time_field(part: &str) -> Result<DateTimeField> {
 ///     date_part(part, ts)
 #[derive(Clone, Debug)]
 pub struct DatePartTzWithDatePartAndAtTimezoneTransformer {
-    first_at_utc: bool
+    naive_timestamps: bool
 }
 
 
 impl DatePartTzWithDatePartAndAtTimezoneTransformer {
-    pub fn new_dyn(first_at_utc: bool) -> Arc<dyn FunctionTransformer> {
-        Arc::new(Self { first_at_utc })
+    pub fn new_dyn(naive_timestamps: bool) -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self { naive_timestamps })
     }
 }
 
 impl FunctionTransformer for DatePartTzWithDatePartAndAtTimezoneTransformer {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
         let (part, sql_arg1, time_zone) = process_date_part_tz_args(args, dialect, schema)?;
-        let timestamp_in_tz = at_time_zone_if_not_utc(sql_arg1, time_zone, self.first_at_utc);
+        let timestamp_in_tz = at_time_zone_if_not_utc(sql_arg1, time_zone, self.naive_timestamps);
 
         Ok(SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![SqlIdent {
@@ -118,20 +118,20 @@ impl FunctionTransformer for DatePartTzWithDatePartAndAtTimezoneTransformer {
 ///     extract(part from ts)
 #[derive(Clone, Debug)]
 pub struct DatePartTzWithExtractAndAtTimezoneTransformer {
-    first_at_utc: bool
+    naive_timestamps: bool
 }
 
 
 impl DatePartTzWithExtractAndAtTimezoneTransformer {
-    pub fn new_dyn(first_at_utc: bool) -> Arc<dyn FunctionTransformer> {
-        Arc::new(Self { first_at_utc })
+    pub fn new_dyn(naive_timestamps: bool) -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self { naive_timestamps })
     }
 }
 
 impl FunctionTransformer for DatePartTzWithExtractAndAtTimezoneTransformer {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
         let (part, sql_arg1, time_zone) = process_date_part_tz_args(args, dialect, schema)?;
-        let timestamp_in_tz = at_time_zone_if_not_utc(sql_arg1, time_zone, self.first_at_utc);
+        let timestamp_in_tz = at_time_zone_if_not_utc(sql_arg1, time_zone, self.naive_timestamps);
 
         let field = part_to_date_time_field(&part)?;
         Ok(SqlExpr::Extract { field, expr: Box::new(timestamp_in_tz) })
