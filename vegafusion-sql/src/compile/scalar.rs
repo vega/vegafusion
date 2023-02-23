@@ -2,9 +2,8 @@ use crate::dialect::Dialect;
 use arrow::datatypes::DataType;
 use datafusion_common::scalar::ScalarValue;
 use sqlparser::ast::{
-    Expr as SqlExpr, Function as SqlFunction,
-    FunctionArg as SqlFunctionArg, FunctionArgExpr, Ident, ObjectName as SqlObjectName,
-    Value as SqlValue,
+    Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr,
+    Ident, ObjectName as SqlObjectName, Value as SqlValue,
 };
 use vegafusion_common::error::{Result, VegaFusionError};
 

@@ -1,13 +1,21 @@
 use crate::compile::expr::ToSqlExpr;
+use crate::dialect::transforms::date_part_tz::at_time_zone_if_not_utc;
 use crate::dialect::{Dialect, FunctionTransformer};
 use datafusion_common::DFSchema;
 use datafusion_expr::Expr;
-use sqlparser::ast::{Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr, ObjectName as SqlObjectName, Value as SqlValue, DataType as SqlDataType, Ident as SqlIdent, DateTimeField as SqlDateTimeField, DateTimeField};
+use sqlparser::ast::{
+    Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg,
+    FunctionArgExpr as SqlFunctionArgExpr, Ident as SqlIdent, ObjectName as SqlObjectName,
+    Value as SqlValue,
+};
 use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
-use crate::dialect::transforms::date_part_tz::at_time_zone_if_not_utc;
 
-fn process_date_trunc_tz_args(args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<(String, SqlExpr, String)> {
+fn process_date_trunc_tz_args(
+    args: &[Expr],
+    dialect: &Dialect,
+    schema: &DFSchema,
+) -> Result<(String, SqlExpr, String)> {
     if args.len() != 3 {
         return Err(VegaFusionError::sql_not_supported(
             "date_trunc_tz requires exactly three arguments",
@@ -44,7 +52,6 @@ pub struct DateTruncTzWithDateTruncAndAtTimezoneTransformer {
     naive_timestamps: bool,
 }
 
-
 impl DateTruncTzWithDateTruncAndAtTimezoneTransformer {
     pub fn new_dyn(naive_timestamps: bool) -> Arc<dyn FunctionTransformer> {
         Arc::new(Self { naive_timestamps })
@@ -54,9 +61,12 @@ impl DateTruncTzWithDateTruncAndAtTimezoneTransformer {
 impl FunctionTransformer for DateTruncTzWithDateTruncAndAtTimezoneTransformer {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
         let (part, sql_arg1, time_zone) = process_date_trunc_tz_args(args, dialect, schema)?;
-        let timestamp_in_tz = at_time_zone_if_not_utc(sql_arg1, time_zone.clone(), self.naive_timestamps);
+        let timestamp_in_tz =
+            at_time_zone_if_not_utc(sql_arg1, time_zone.clone(), self.naive_timestamps);
 
-        let part_func_arg = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(part))));
+        let part_func_arg = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+            SqlValue::SingleQuotedString(part),
+        )));
         let ts_func_arg = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(timestamp_in_tz));
         let truncated_in_tz = SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![SqlIdent {
@@ -77,28 +87,26 @@ impl FunctionTransformer for DateTruncTzWithDateTruncAndAtTimezoneTransformer {
                     timestamp: Box::new(truncated_in_tz),
                     time_zone,
                 }),
-                time_zone: "UTC".to_string()
+                time_zone: "UTC".to_string(),
             }
         } else {
             SqlExpr::AtTimeZone {
                 timestamp: Box::new(truncated_in_tz),
-                time_zone: "UTC".to_string()
+                time_zone: "UTC".to_string(),
             }
         };
         Ok(truncated_in_utc)
     }
 }
 
-
 /// Convert date_trunc_tz(part, ts, tz) ->
 ///     timestamp_trunc(ts, part, tz)
 #[derive(Clone, Debug)]
 pub struct DateTruncTzWithTimestampTruncTransformer;
 
-
 impl DateTruncTzWithTimestampTruncTransformer {
     pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
-        Arc::new(Self )
+        Arc::new(Self)
     }
 }
 
@@ -107,8 +115,14 @@ impl FunctionTransformer for DateTruncTzWithTimestampTruncTransformer {
         let (part, sql_arg1, time_zone) = process_date_trunc_tz_args(args, dialect, schema)?;
 
         let ts_func_arg = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_arg1));
-        let part_func_arg = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Identifier(SqlIdent { value: part, quote_style: None })));
-        let tz_func_arg = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(time_zone))));
+        let part_func_arg =
+            SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Identifier(SqlIdent {
+                value: part,
+                quote_style: None,
+            })));
+        let tz_func_arg = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+            SqlValue::SingleQuotedString(time_zone),
+        )));
         Ok(SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![SqlIdent {
                 value: "timestamp_trunc".to_string(),
@@ -122,12 +136,10 @@ impl FunctionTransformer for DateTruncTzWithTimestampTruncTransformer {
     }
 }
 
-
 /// Convert date_part_tz(part, ts, tz) ->
 ///     toStartOfHour(ts, tz)
 #[derive(Clone, Debug)]
 pub struct DateTruncTzClickhouseTransformer;
-
 
 impl DateTruncTzClickhouseTransformer {
     pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
@@ -142,23 +154,28 @@ impl FunctionTransformer for DateTruncTzClickhouseTransformer {
         let trunc_function = match part.to_ascii_lowercase().as_str() {
             "year" => "toStartOfYear",
             "month" => "toStartOfMonth",
-            "week" => "toStartOfWeek",  // TODO: What mode should this be
+            "week" => "toStartOfWeek", // TODO: What mode should this be
             "day" => "toStartOfDay",
             "hour" => "toStartOfHour",
             "minute" => "toStartOfMinute",
             "second" => "toStartOfSecond",
             _ => {
-                return Err(VegaFusionError::sql_not_supported(
-                    format!("Unsupported date part to date_part_tz: {part}")
-                ))
+                return Err(VegaFusionError::sql_not_supported(format!(
+                    "Unsupported date part to date_part_tz: {part}"
+                )))
             }
         };
 
         let trunc_expr = SqlExpr::Function(SqlFunction {
-            name: SqlObjectName(vec![SqlIdent { value: trunc_function.to_string(), quote_style: None }]),
+            name: SqlObjectName(vec![SqlIdent {
+                value: trunc_function.to_string(),
+                quote_style: None,
+            }]),
             args: vec![
                 SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_arg1)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(time_zone.clone())))),
+                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                    SqlValue::SingleQuotedString(time_zone.clone()),
+                ))),
             ],
             over: None,
             distinct: false,
@@ -169,10 +186,15 @@ impl FunctionTransformer for DateTruncTzClickhouseTransformer {
             trunc_expr
         } else {
             SqlExpr::Function(SqlFunction {
-                name: SqlObjectName(vec![SqlIdent { value: "toTimeZone".to_string(), quote_style: None }]),
+                name: SqlObjectName(vec![SqlIdent {
+                    value: "toTimeZone".to_string(),
+                    quote_style: None,
+                }]),
                 args: vec![
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(trunc_expr)),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString("UTC".to_string())))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString("UTC".to_string()),
+                    ))),
                 ],
                 over: None,
                 distinct: false,
@@ -184,14 +206,12 @@ impl FunctionTransformer for DateTruncTzClickhouseTransformer {
     }
 }
 
-
 /// Convert date_trunc_tz(part, ts, tz) ->
 ///     to_utc_timestamp(date_trunc(part, from_utc_timestamp(ts, tz)), tz)
 /// or if tz = 'UTC'
 ///     date_trunc(part, ts)
 #[derive(Clone, Debug)]
 pub struct DateTruncTzWithFromUtcAndDateTruncTransformer;
-
 
 impl DateTruncTzWithFromUtcAndDateTruncTransformer {
     pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
@@ -207,10 +227,15 @@ impl FunctionTransformer for DateTruncTzWithFromUtcAndDateTruncTransformer {
             sql_arg1
         } else {
             SqlExpr::Function(SqlFunction {
-                name: SqlObjectName(vec![SqlIdent { value: "from_utc_timestamp".to_string(), quote_style: None }]),
+                name: SqlObjectName(vec![SqlIdent {
+                    value: "from_utc_timestamp".to_string(),
+                    quote_style: None,
+                }]),
                 args: vec![
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_arg1)),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(time_zone.clone())))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString(time_zone.clone()),
+                    ))),
                 ],
                 over: None,
                 distinct: false,
@@ -224,7 +249,9 @@ impl FunctionTransformer for DateTruncTzWithFromUtcAndDateTruncTransformer {
                 quote_style: None,
             }]),
             args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(part)))),
+                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                    SqlValue::SingleQuotedString(part),
+                ))),
                 SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(timestamp_in_tz)),
             ],
             over: None,
@@ -236,10 +263,15 @@ impl FunctionTransformer for DateTruncTzWithFromUtcAndDateTruncTransformer {
             date_trunc_in_tz
         } else {
             SqlExpr::Function(SqlFunction {
-                name: SqlObjectName(vec![SqlIdent { value: "to_utc_timestamp".to_string(), quote_style: None }]),
+                name: SqlObjectName(vec![SqlIdent {
+                    value: "to_utc_timestamp".to_string(),
+                    quote_style: None,
+                }]),
                 args: vec![
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(date_trunc_in_tz)),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(time_zone.clone())))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString(time_zone.clone()),
+                    ))),
                 ],
                 over: None,
                 distinct: false,
@@ -250,8 +282,6 @@ impl FunctionTransformer for DateTruncTzWithFromUtcAndDateTruncTransformer {
         Ok(date_trunc_in_utc)
     }
 }
-
-
 
 #[derive(Clone, Debug)]
 pub struct DateTruncTzSnowflakeTransformer;
@@ -270,10 +300,17 @@ impl FunctionTransformer for DateTruncTzSnowflakeTransformer {
             sql_arg1
         } else {
             SqlExpr::Function(SqlFunction {
-                name: SqlObjectName(vec![SqlIdent { value: "convert_timezone".to_string(), quote_style: None }]),
+                name: SqlObjectName(vec![SqlIdent {
+                    value: "convert_timezone".to_string(),
+                    quote_style: None,
+                }]),
                 args: vec![
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString("UTC".to_string())))),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(time_zone.clone())))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString("UTC".to_string()),
+                    ))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString(time_zone.clone()),
+                    ))),
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_arg1)),
                 ],
                 over: None,
@@ -288,7 +325,9 @@ impl FunctionTransformer for DateTruncTzSnowflakeTransformer {
                 quote_style: None,
             }]),
             args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(part)))),
+                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                    SqlValue::SingleQuotedString(part),
+                ))),
                 SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(timestamp_in_tz)),
             ],
             over: None,
@@ -300,10 +339,17 @@ impl FunctionTransformer for DateTruncTzSnowflakeTransformer {
             date_trunc_in_tz
         } else {
             SqlExpr::Function(SqlFunction {
-                name: SqlObjectName(vec![SqlIdent { value: "convert_timezone".to_string(), quote_style: None }]),
+                name: SqlObjectName(vec![SqlIdent {
+                    value: "convert_timezone".to_string(),
+                    quote_style: None,
+                }]),
                 args: vec![
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(time_zone)))),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString("UTC".to_string())))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString(time_zone),
+                    ))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString("UTC".to_string()),
+                    ))),
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(date_trunc_in_tz)),
                 ],
                 over: None,

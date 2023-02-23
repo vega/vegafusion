@@ -2,12 +2,19 @@ use crate::compile::expr::ToSqlExpr;
 use crate::dialect::{Dialect, FunctionTransformer};
 use datafusion_common::DFSchema;
 use datafusion_expr::Expr;
-use sqlparser::ast::{Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr, ObjectName as SqlObjectName, Value as SqlValue, DataType as SqlDataType, Ident as SqlIdent, DateTimeField as SqlDateTimeField, DateTimeField};
+use sqlparser::ast::{
+    DateTimeField as SqlDateTimeField, DateTimeField, Expr as SqlExpr, Function as SqlFunction,
+    FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr, Ident as SqlIdent,
+    ObjectName as SqlObjectName, Value as SqlValue,
+};
 use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
 
-
-fn process_date_part_tz_args(args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<(String, SqlExpr, String)> {
+fn process_date_part_tz_args(
+    args: &[Expr],
+    dialect: &Dialect,
+    schema: &DFSchema,
+) -> Result<(String, SqlExpr, String)> {
     if args.len() != 3 {
         return Err(VegaFusionError::sql_not_supported(
             "date_part_tz requires exactly three arguments",
@@ -44,12 +51,12 @@ pub fn at_time_zone_if_not_utc(arg: SqlExpr, time_zone: String, naive_timestamps
                 timestamp: Box::new(arg),
                 time_zone: "UTC".to_string(),
             }),
-            time_zone
+            time_zone,
         }
     } else {
         SqlExpr::AtTimeZone {
             timestamp: Box::new(arg),
-            time_zone
+            time_zone,
         }
     }
 }
@@ -66,13 +73,12 @@ fn part_to_date_time_field(part: &str) -> Result<DateTimeField> {
         "second" => SqlDateTimeField::Second,
         "millisecond" => SqlDateTimeField::Millisecond,
         _ => {
-            return Err(VegaFusionError::sql_not_supported(
-                format!("Unsupported date part to date_part_tz: {part}")
-            ))
+            return Err(VegaFusionError::sql_not_supported(format!(
+                "Unsupported date part to date_part_tz: {part}"
+            )))
         }
     })
 }
-
 
 /// Convert date_part_tz(part, ts, tz) ->
 ///     date_part(part, ts AT TIME ZONE 'UTC' AT TIME ZONE tz)
@@ -80,9 +86,8 @@ fn part_to_date_time_field(part: &str) -> Result<DateTimeField> {
 ///     date_part(part, ts)
 #[derive(Clone, Debug)]
 pub struct DatePartTzWithDatePartAndAtTimezoneTransformer {
-    naive_timestamps: bool
+    naive_timestamps: bool,
 }
-
 
 impl DatePartTzWithDatePartAndAtTimezoneTransformer {
     pub fn new_dyn(naive_timestamps: bool) -> Arc<dyn FunctionTransformer> {
@@ -101,7 +106,9 @@ impl FunctionTransformer for DatePartTzWithDatePartAndAtTimezoneTransformer {
                 quote_style: None,
             }]),
             args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(part)))),
+                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                    SqlValue::SingleQuotedString(part),
+                ))),
                 SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(timestamp_in_tz)),
             ],
             over: None,
@@ -111,16 +118,14 @@ impl FunctionTransformer for DatePartTzWithDatePartAndAtTimezoneTransformer {
     }
 }
 
-
 /// Convert date_part_tz(part, ts, tz) ->
 ///     extract(part from ts AT TIME ZONE 'UTC' AT TIME ZONE tz)
 /// or if tz = 'UTC'
 ///     extract(part from ts)
 #[derive(Clone, Debug)]
 pub struct DatePartTzWithExtractAndAtTimezoneTransformer {
-    naive_timestamps: bool
+    naive_timestamps: bool,
 }
-
 
 impl DatePartTzWithExtractAndAtTimezoneTransformer {
     pub fn new_dyn(naive_timestamps: bool) -> Arc<dyn FunctionTransformer> {
@@ -134,16 +139,17 @@ impl FunctionTransformer for DatePartTzWithExtractAndAtTimezoneTransformer {
         let timestamp_in_tz = at_time_zone_if_not_utc(sql_arg1, time_zone, self.naive_timestamps);
 
         let field = part_to_date_time_field(&part)?;
-        Ok(SqlExpr::Extract { field, expr: Box::new(timestamp_in_tz) })
+        Ok(SqlExpr::Extract {
+            field,
+            expr: Box::new(timestamp_in_tz),
+        })
     }
 }
-
 
 /// Convert date_part_tz(part, ts, tz) ->
 ///     toHour(toTimeZone(ts, tz))
 #[derive(Clone, Debug)]
 pub struct DatePartTzClickhouseTransformer;
-
 
 impl DatePartTzClickhouseTransformer {
     pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
@@ -155,10 +161,15 @@ impl FunctionTransformer for DatePartTzClickhouseTransformer {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
         let (part, sql_arg1, time_zone) = process_date_part_tz_args(args, dialect, schema)?;
         let to_timezone_expr = SqlExpr::Function(SqlFunction {
-            name: SqlObjectName(vec![SqlIdent { value: "toTimeZone".to_string(), quote_style: None }]),
+            name: SqlObjectName(vec![SqlIdent {
+                value: "toTimeZone".to_string(),
+                quote_style: None,
+            }]),
             args: vec![
                 SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_arg1)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(time_zone)))),
+                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                    SqlValue::SingleQuotedString(time_zone),
+                ))),
             ],
             over: None,
             distinct: false,
@@ -168,24 +179,27 @@ impl FunctionTransformer for DatePartTzClickhouseTransformer {
         let part_function = match part.to_ascii_lowercase().as_str() {
             "year" => "toYear",
             "month" => "toMonth",
-            "week" => "toWeek",  // TODO: What mode should this be
+            "week" => "toWeek", // TODO: What mode should this be
             "day" => "toDayOfWeek",
             "date" => "toDayOfMonth",
             "hour" => "toHour",
             "minute" => "toMinute",
             "second" => "toSecond",
             _ => {
-                return Err(VegaFusionError::sql_not_supported(
-                    format!("Unsupported date part to date_part_tz: {part}")
-                ))
+                return Err(VegaFusionError::sql_not_supported(format!(
+                    "Unsupported date part to date_part_tz: {part}"
+                )))
             }
         };
 
         Ok(SqlExpr::Function(SqlFunction {
-            name: SqlObjectName(vec![SqlIdent { value: part_function.to_string(), quote_style: None }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(to_timezone_expr)),
-            ],
+            name: SqlObjectName(vec![SqlIdent {
+                value: part_function.to_string(),
+                quote_style: None,
+            }]),
+            args: vec![SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(
+                to_timezone_expr,
+            ))],
             over: None,
             distinct: false,
             special: false,
@@ -193,14 +207,12 @@ impl FunctionTransformer for DatePartTzClickhouseTransformer {
     }
 }
 
-
 /// Convert date_part_tz(part, ts, tz) ->
 ///     date_part(part, from_utc_timestamp(ts, tz))
 /// or if tz = 'UTC'
 ///     date_part(part, ts)
 #[derive(Clone, Debug)]
 pub struct DatePartTzWithFromUtcAndDatePartTransformer;
-
 
 impl DatePartTzWithFromUtcAndDatePartTransformer {
     pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
@@ -216,10 +228,15 @@ impl FunctionTransformer for DatePartTzWithFromUtcAndDatePartTransformer {
             sql_arg1
         } else {
             SqlExpr::Function(SqlFunction {
-                name: SqlObjectName(vec![SqlIdent { value: "from_utc_timestamp".to_string(), quote_style: None }]),
+                name: SqlObjectName(vec![SqlIdent {
+                    value: "from_utc_timestamp".to_string(),
+                    quote_style: None,
+                }]),
                 args: vec![
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_arg1)),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(time_zone)))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString(time_zone),
+                    ))),
                 ],
                 over: None,
                 distinct: false,
@@ -233,7 +250,9 @@ impl FunctionTransformer for DatePartTzWithFromUtcAndDatePartTransformer {
                 quote_style: None,
             }]),
             args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(part)))),
+                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                    SqlValue::SingleQuotedString(part),
+                ))),
                 SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(timestamp_in_tz)),
             ],
             over: None,
@@ -243,10 +262,8 @@ impl FunctionTransformer for DatePartTzWithFromUtcAndDatePartTransformer {
     }
 }
 
-
 #[derive(Clone, Debug)]
 pub struct DatePartTzMySqlTransformer;
-
 
 impl DatePartTzMySqlTransformer {
     pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
@@ -262,11 +279,18 @@ impl FunctionTransformer for DatePartTzMySqlTransformer {
             sql_arg1
         } else {
             SqlExpr::Function(SqlFunction {
-                name: SqlObjectName(vec![SqlIdent { value: "convert_tz".to_string(), quote_style: None }]),
+                name: SqlObjectName(vec![SqlIdent {
+                    value: "convert_tz".to_string(),
+                    quote_style: None,
+                }]),
                 args: vec![
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_arg1)),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString("UTC".to_string())))),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(time_zone)))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString("UTC".to_string()),
+                    ))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString(time_zone),
+                    ))),
                 ],
                 over: None,
                 distinct: false,
@@ -275,10 +299,12 @@ impl FunctionTransformer for DatePartTzMySqlTransformer {
         };
 
         let field = part_to_date_time_field(&part)?;
-        Ok(SqlExpr::Extract { field, expr: Box::new(timestamp_in_tz) })
+        Ok(SqlExpr::Extract {
+            field,
+            expr: Box::new(timestamp_in_tz),
+        })
     }
 }
-
 
 #[derive(Clone, Debug)]
 pub struct DatePartTzSnowflakeTransformer;
@@ -297,10 +323,17 @@ impl FunctionTransformer for DatePartTzSnowflakeTransformer {
             sql_arg1
         } else {
             SqlExpr::Function(SqlFunction {
-                name: SqlObjectName(vec![SqlIdent { value: "convert_timezone".to_string(), quote_style: None }]),
+                name: SqlObjectName(vec![SqlIdent {
+                    value: "convert_timezone".to_string(),
+                    quote_style: None,
+                }]),
                 args: vec![
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString("UTC".to_string())))),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(time_zone)))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString("UTC".to_string()),
+                    ))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString(time_zone),
+                    ))),
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_arg1)),
                 ],
                 over: None,
@@ -315,7 +348,9 @@ impl FunctionTransformer for DatePartTzSnowflakeTransformer {
                 quote_style: None,
             }]),
             args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(SqlValue::SingleQuotedString(part)))),
+                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                    SqlValue::SingleQuotedString(part),
+                ))),
                 SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(timestamp_in_tz)),
             ],
             over: None,

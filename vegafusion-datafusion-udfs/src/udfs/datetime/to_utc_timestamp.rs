@@ -60,12 +60,7 @@ fn make_to_utc_timestamp_udf() -> ScalarUDF {
     // coerce between timezones.
     let signature: Signature = Signature::any(2, Volatility::Immutable);
 
-    ScalarUDF::new(
-        "to_utc_timestamp",
-        &signature,
-        &return_type,
-        &scalar_fn,
-    )
+    ScalarUDF::new("to_utc_timestamp", &signature, &return_type, &scalar_fn)
 }
 
 pub fn convert_timezone(

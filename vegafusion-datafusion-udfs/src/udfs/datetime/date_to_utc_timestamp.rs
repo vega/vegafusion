@@ -71,7 +71,12 @@ fn make_date_to_utc_timestamp() -> ScalarUDF {
         Volatility::Immutable,
     );
 
-    ScalarUDF::new("date_to_utc_timestamp", &signature, &return_type, &scalar_fn)
+    ScalarUDF::new(
+        "date_to_utc_timestamp",
+        &signature,
+        &return_type,
+        &scalar_fn,
+    )
 }
 
 lazy_static! {

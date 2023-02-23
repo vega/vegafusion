@@ -28,11 +28,11 @@ impl ToSqlSelectItem for Expr {
 #[cfg(test)]
 mod tests {
     use crate::compile::select::ToSqlSelectItem;
-    use datafusion_expr::{col, lit, Expr};
-    use std::ops::Add;
+    use crate::dialect::Dialect;
     use arrow::datatypes::Schema;
     use datafusion_common::DFSchema;
-    use crate::dialect::Dialect;
+    use datafusion_expr::{col, lit, Expr};
+    use std::ops::Add;
 
     fn schema() -> DFSchema {
         DFSchema::try_from(Schema::new(Vec::new())).unwrap()
@@ -41,7 +41,9 @@ mod tests {
     #[test]
     pub fn test_select_wildcard() {
         let expr = Expr::Wildcard;
-        let sql_expr = expr.to_sql_select(&Dialect::datafusion(), &schema()).unwrap();
+        let sql_expr = expr
+            .to_sql_select(&Dialect::datafusion(), &schema())
+            .unwrap();
         let sql_str = sql_expr.to_string();
         assert_eq!(sql_str, "*");
     }
@@ -49,7 +51,9 @@ mod tests {
     #[test]
     pub fn test_select_unnamed_expr() {
         let expr = col("a").add(lit(23));
-        let sql_expr = expr.to_sql_select(&Dialect::datafusion(), &schema()).unwrap();
+        let sql_expr = expr
+            .to_sql_select(&Dialect::datafusion(), &schema())
+            .unwrap();
         let sql_str = sql_expr.to_string();
         assert_eq!(sql_str, "(\"a\" + 23)");
     }
@@ -57,7 +61,9 @@ mod tests {
     #[test]
     pub fn test_select_aliased_expr() {
         let expr = col("a").add(lit(23)).alias("foo");
-        let sql_expr = expr.to_sql_select(&Dialect::datafusion(), &schema()).unwrap();
+        let sql_expr = expr
+            .to_sql_select(&Dialect::datafusion(), &schema())
+            .unwrap();
         let sql_str = sql_expr.to_string();
         assert_eq!(sql_str, "(\"a\" + 23) AS \"foo\"");
     }

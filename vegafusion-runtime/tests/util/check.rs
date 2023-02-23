@@ -1,4 +1,7 @@
-use crate::util::equality::{assert_scalars_almost_equals, assert_signals_almost_equal, assert_tables_equal, normalize_scalar, TablesEqualConfig};
+use crate::util::equality::{
+    assert_scalars_almost_equals, assert_signals_almost_equal, assert_tables_equal,
+    normalize_scalar, TablesEqualConfig,
+};
 use crate::util::vegajs_runtime::vegajs_runtime;
 use std::str::FromStr;
 

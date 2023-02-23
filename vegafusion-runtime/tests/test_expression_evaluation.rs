@@ -280,7 +280,7 @@ mod test_math_functions {
         case("sqrt(4)"),
         case("tan(1)"),
         case("log(2.718281828)"),
-        case("pow(2, 3)"),
+        case("pow(2, 3)")
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())

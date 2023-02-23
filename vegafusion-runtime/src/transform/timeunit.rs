@@ -17,12 +17,12 @@ use itertools::Itertools;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udfs::datetime::date_add::DATE_ADD_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
 
 // Implementation of timeunit start using the SQL DATE_TRUNC function
 fn timeunit_date_trunc(

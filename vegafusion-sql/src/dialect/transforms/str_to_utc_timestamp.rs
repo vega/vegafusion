@@ -3,15 +3,18 @@ use crate::dialect::{Dialect, FunctionTransformer};
 use datafusion_common::DFSchema;
 use datafusion_expr::Expr;
 use sqlparser::ast::{
-    Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg,
-    FunctionArgExpr as SqlFunctionArgExpr, ObjectName as SqlObjectName, Value as SqlValue,
-    DataType as SqlDataType, Ident as SqlIdent
+    DataType as SqlDataType, Expr as SqlExpr, Function as SqlFunction,
+    FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr, Ident as SqlIdent,
+    ObjectName as SqlObjectName, Value as SqlValue,
 };
 use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
 
-
-fn process_str_to_utc_timestamp_args(args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<(SqlExpr, String)> {
+fn process_str_to_utc_timestamp_args(
+    args: &[Expr],
+    dialect: &Dialect,
+    schema: &DFSchema,
+) -> Result<(SqlExpr, String)> {
     if args.len() != 2 {
         return Err(VegaFusionError::sql_not_supported(
             "str_to_utc_timestamp requires exactly two arguments",
@@ -270,7 +273,6 @@ impl FunctionTransformer for StrToUtcTimestampMySqlTransformer {
         }
     }
 }
-
 
 /// Convert str_to_utc_timezone(ts, tz) ->
 ///     convert_timezone(tz, 'UTC', CAST(ts as timestamp_ntz))

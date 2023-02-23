@@ -12,8 +12,7 @@ fn make_date_part_tz_udf() -> ScalarUDF {
         unimplemented!("date_part_tz function is not implemented by DataFusion")
     });
 
-    let return_type: ReturnTypeFunction =
-        Arc::new(move |_| Ok(Arc::new(DataType::Int32)));
+    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int32)));
 
     let signature = Signature::exact(
         vec![

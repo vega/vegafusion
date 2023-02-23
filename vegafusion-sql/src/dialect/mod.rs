@@ -1,6 +1,16 @@
 pub mod transforms;
 
 use crate::compile::expr::ToSqlExpr;
+use crate::dialect::transforms::date_part_tz::{
+    DatePartTzClickhouseTransformer, DatePartTzMySqlTransformer, DatePartTzSnowflakeTransformer,
+    DatePartTzWithDatePartAndAtTimezoneTransformer, DatePartTzWithExtractAndAtTimezoneTransformer,
+    DatePartTzWithFromUtcAndDatePartTransformer,
+};
+use crate::dialect::transforms::date_trunc_tz::{
+    DateTruncTzClickhouseTransformer, DateTruncTzSnowflakeTransformer,
+    DateTruncTzWithDateTruncAndAtTimezoneTransformer,
+    DateTruncTzWithFromUtcAndDateTruncTransformer, DateTruncTzWithTimestampTruncTransformer,
+};
 use crate::dialect::transforms::str_to_utc_timestamp::{
     StrToUtcTimestampClickhouseTransformer, StrToUtcTimestampMySqlTransformer,
     StrToUtcTimestampSnowflakeTransformer, StrToUtcTimestampWithCastAndAtTimeZoneTransformer,
@@ -12,11 +22,10 @@ use datafusion_common::DFSchema;
 use datafusion_expr::{lit, ExprSchemable};
 use datafusion_expr::{when, Expr, Operator};
 use sqlparser::ast::{
-    BinaryOperator as SqlBinaryOperator, DataType as SqlDataType,
-    DateTimeField as SqlDateTimeField, Expr as SqlExpr, Function as SqlFunction, Function,
-    FunctionArg as SqlFunctionArg, FunctionArg, FunctionArgExpr as SqlFunctionArgExpr,
-    FunctionArgExpr, Ident as SqlIdent, Ident, ObjectName as SqlObjectName, ObjectName,
-    TimezoneInfo, Value as SqlValue,
+    BinaryOperator as SqlBinaryOperator, DataType as SqlDataType, Expr as SqlExpr,
+    Function as SqlFunction, Function, FunctionArg as SqlFunctionArg, FunctionArg,
+    FunctionArgExpr as SqlFunctionArgExpr, FunctionArgExpr, Ident as SqlIdent, Ident,
+    ObjectName as SqlObjectName, ObjectName, TimezoneInfo, Value as SqlValue,
 };
 use sqlparser::dialect::{
     BigQueryDialect, ClickHouseDialect, Dialect as SqlParserDialect, GenericDialect, MySqlDialect,
@@ -27,8 +36,6 @@ use std::fmt::Debug;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
-use crate::dialect::transforms::date_part_tz::{DatePartTzClickhouseTransformer, DatePartTzWithFromUtcAndDatePartTransformer, DatePartTzMySqlTransformer, DatePartTzSnowflakeTransformer, DatePartTzWithDatePartAndAtTimezoneTransformer, DatePartTzWithExtractAndAtTimezoneTransformer};
-use crate::dialect::transforms::date_trunc_tz::{DateTruncTzClickhouseTransformer, DateTruncTzSnowflakeTransformer, DateTruncTzWithDateTruncAndAtTimezoneTransformer, DateTruncTzWithFromUtcAndDateTruncTransformer, DateTruncTzWithTimestampTruncTransformer};
 
 #[derive(Clone, Debug)]
 pub enum ParseDialect {
@@ -251,8 +258,14 @@ impl Dialect {
                         true,
                     ),
                 ),
-                ("date_part_tz", DatePartTzWithExtractAndAtTimezoneTransformer::new_dyn(false)),
-                ("date_trunc_tz", DateTruncTzWithDateTruncAndAtTimezoneTransformer::new_dyn(false)),
+                (
+                    "date_part_tz",
+                    DatePartTzWithExtractAndAtTimezoneTransformer::new_dyn(false),
+                ),
+                (
+                    "date_trunc_tz",
+                    DateTruncTzWithDateTruncAndAtTimezoneTransformer::new_dyn(false),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -344,9 +357,14 @@ impl Dialect {
                     "str_to_utc_timestamp",
                     StrToUtcTimestampWithFunctionTransformer::new_dyn("timestamp"),
                 ),
-                ("date_part_tz", DatePartTzWithExtractAndAtTimezoneTransformer::new_dyn(false)),
-                ("date_trunc_tz", DateTruncTzWithTimestampTruncTransformer::new_dyn()),
-
+                (
+                    "date_part_tz",
+                    DatePartTzWithExtractAndAtTimezoneTransformer::new_dyn(false),
+                ),
+                (
+                    "date_trunc_tz",
+                    DateTruncTzWithTimestampTruncTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -541,8 +559,14 @@ impl Dialect {
                         false,
                     ),
                 ),
-                ("date_part_tz", DatePartTzWithFromUtcAndDatePartTransformer::new_dyn()),
-                ("date_trunc_tz", DateTruncTzWithFromUtcAndDateTruncTransformer::new_dyn()),
+                (
+                    "date_part_tz",
+                    DatePartTzWithFromUtcAndDatePartTransformer::new_dyn(),
+                ),
+                (
+                    "date_trunc_tz",
+                    DateTruncTzWithFromUtcAndDateTruncTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -582,8 +606,14 @@ impl Dialect {
         use Operator::*;
         let mut scalar_transforms: HashMap<String, Arc<dyn FunctionTransformer>> = HashMap::new();
         scalar_transforms.insert("date_add".to_string(), Arc::new(DateAddToIntervalAddition));
-        scalar_transforms.insert("date_part_tz".to_string(), DatePartTzWithFromUtcAndDatePartTransformer::new_dyn());
-        scalar_transforms.insert("date_trunc_tz".to_string(), DateTruncTzWithFromUtcAndDateTruncTransformer::new_dyn());
+        scalar_transforms.insert(
+            "date_part_tz".to_string(),
+            DatePartTzWithFromUtcAndDatePartTransformer::new_dyn(),
+        );
+        scalar_transforms.insert(
+            "date_trunc_tz".to_string(),
+            DateTruncTzWithFromUtcAndDateTruncTransformer::new_dyn(),
+        );
 
         Self {
             parse_dialect: ParseDialect::DataFusion,
@@ -827,8 +857,14 @@ impl Dialect {
                         SqlDataType::Timestamp(None, TimezoneInfo::None),
                     ),
                 ),
-                ("date_part_tz", DatePartTzWithDatePartAndAtTimezoneTransformer::new_dyn(true)),
-                ("date_trunc_tz", DateTruncTzWithDateTruncAndAtTimezoneTransformer::new_dyn(true)),
+                (
+                    "date_part_tz",
+                    DatePartTzWithDatePartAndAtTimezoneTransformer::new_dyn(true),
+                ),
+                (
+                    "date_trunc_tz",
+                    DateTruncTzWithDateTruncAndAtTimezoneTransformer::new_dyn(true),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -922,7 +958,7 @@ impl Dialect {
                     "str_to_utc_timestamp",
                     StrToUtcTimestampMySqlTransformer::new_dyn(),
                 ),
-                ("date_part_tz", DatePartTzMySqlTransformer::new_dyn())
+                ("date_part_tz", DatePartTzMySqlTransformer::new_dyn()),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1027,8 +1063,14 @@ impl Dialect {
                         SqlDataType::Timestamp(None, TimezoneInfo::None),
                     ),
                 ),
-                ("date_part_tz", DatePartTzWithDatePartAndAtTimezoneTransformer::new_dyn(true)),
-                ("date_trunc_tz", DateTruncTzWithDateTruncAndAtTimezoneTransformer::new_dyn(true)),
+                (
+                    "date_part_tz",
+                    DatePartTzWithDatePartAndAtTimezoneTransformer::new_dyn(true),
+                ),
+                (
+                    "date_trunc_tz",
+                    DateTruncTzWithDateTruncAndAtTimezoneTransformer::new_dyn(true),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1146,8 +1188,14 @@ impl Dialect {
                         SqlDataType::Timestamp(None, TimezoneInfo::None),
                     ),
                 ),
-                ("date_part_tz", DatePartTzWithExtractAndAtTimezoneTransformer::new_dyn(true)),
-                ("date_trunc_tz", DateTruncTzWithDateTruncAndAtTimezoneTransformer::new_dyn(true)),
+                (
+                    "date_part_tz",
+                    DatePartTzWithExtractAndAtTimezoneTransformer::new_dyn(true),
+                ),
+                (
+                    "date_trunc_tz",
+                    DateTruncTzWithDateTruncAndAtTimezoneTransformer::new_dyn(true),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1616,50 +1664,6 @@ impl FunctionTransformer for IsFiniteWithNotInStringsTransformer {
             negated: true,
         };
         isfinite_expr.to_sql(dialect, schema)
-    }
-}
-
-#[derive(Clone, Debug)]
-struct DatePartWithExtractTransformer;
-
-impl DatePartWithExtractTransformer {
-    pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
-        Arc::new(Self)
-    }
-}
-
-impl FunctionTransformer for DatePartWithExtractTransformer {
-    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
-        if args.len() != 2 {
-            return Err(VegaFusionError::sql_not_supported(
-                "date_part requires exactly two arguments",
-            ));
-        }
-        let sql_arg0 = args[0].to_sql(dialect, schema)?;
-        let sql_arg1 = args[1].to_sql(dialect, schema)?;
-        let part = if let SqlExpr::Value(SqlValue::SingleQuotedString(part)) = sql_arg0 {
-            part
-        } else {
-            return Err(VegaFusionError::sql_not_supported(
-                "First argument to date_part must be a string literal",
-            ));
-        };
-
-        // SqlDateTimeField::f
-        let datetime_field = match part.as_str() {
-            "hour" => SqlDateTimeField::Hour,
-            "year" => SqlDateTimeField::Year,
-            _ => {
-                return Err(VegaFusionError::sql_not_supported(format!(
-                    "Date part not supported by dialect: {part}"
-                )))
-            }
-        };
-
-        Ok(SqlExpr::Extract {
-            field: datetime_field,
-            expr: Box::new(sql_arg1),
-        })
     }
 }
 

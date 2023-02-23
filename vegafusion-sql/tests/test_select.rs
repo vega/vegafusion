@@ -494,26 +494,19 @@ mod test_is_finite {
                 )
             });
 
-        check_dataframe_query(
-            df_result,
-            "select",
-            "is_finite",
-            dialect_name,
-            evaluable,
-        );
+        check_dataframe_query(df_result, "select", "is_finite", dialect_name, evaluable);
     }
 
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
 
-
 #[cfg(test)]
 mod test_str_to_utc_timestamp {
-    use std::sync::Arc;
-    use datafusion_expr::{col, Expr, expr, lit};
-    use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
     use crate::*;
+    use datafusion_expr::{col, expr, lit, Expr};
+    use std::sync::Arc;
+    use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 
     #[apply(dialect_names)]
     fn test(dialect_name: &str) {
@@ -529,24 +522,30 @@ mod test_str_to_utc_timestamp {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
 
-        let df_result = df.select(vec![
-            col("a"),
-            col("b"),
-            Expr::ScalarUDF {
-                fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
-                args: vec![col("b"), lit("America/New_York")]
-            }.alias("b_utc"),
-        ]).and_then(|df| {
-            df.sort(vec![Expr::Sort(expr::Sort {
-                expr: Box::new(col("a")),
-                asc: true,
-                nulls_first: true,
-            })], None)
-        });
+        let df_result = df
+            .select(vec![
+                col("a"),
+                col("b"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
+                    args: vec![col("b"), lit("America/New_York")],
+                }
+                .alias("b_utc"),
+            ])
+            .and_then(|df| {
+                df.sort(
+                    vec![Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    })],
+                    None,
+                )
+            });
 
         check_dataframe_query(
             df_result,
@@ -561,14 +560,13 @@ mod test_str_to_utc_timestamp {
     fn test_marker() {} // Help IDE detect test module
 }
 
-
 #[cfg(test)]
 mod test_date_part_tz {
+    use crate::*;
+    use datafusion_expr::{col, expr, lit, Expr};
     use std::sync::Arc;
-    use datafusion_expr::{col, Expr, expr, lit};
     use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
-    use crate::*;
 
     #[apply(dialect_names)]
     fn test(dialect_name: &str) {
@@ -584,42 +582,52 @@ mod test_date_part_tz {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
 
-        let df_result = df.select(vec![
-            col("a"),
-            col("b"),
-            Expr::ScalarUDF {
-                fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
-                args: vec![col("b"), lit("America/New_York")]
-            }.alias("b_utc"),
-        ]).and_then(|df| {
-            df.select(vec![
+        let df_result = df
+            .select(vec![
                 col("a"),
                 col("b"),
-                col("b_utc"),
                 Expr::ScalarUDF {
-                    fun: Arc::new(DATE_PART_TZ_UDF.clone()),
-                    args: vec![lit("hour"), col("b_utc"), lit("UTC")]
-                }.alias("hours_utc"),
-                Expr::ScalarUDF {
-                    fun: Arc::new(DATE_PART_TZ_UDF.clone()),
-                    args: vec![lit("hour"), col("b_utc"), lit("America/Los_Angeles")]
-                }.alias("hours_la"),
-                Expr::ScalarUDF {
-                    fun: Arc::new(DATE_PART_TZ_UDF.clone()),
-                    args: vec![lit("hour"), col("b_utc"), lit("America/New_York")]
-                }.alias("hours_nyc"),
+                    fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
+                    args: vec![col("b"), lit("America/New_York")],
+                }
+                .alias("b_utc"),
             ])
-        }).and_then(|df| {
-            df.sort(vec![Expr::Sort(expr::Sort {
-                expr: Box::new(col("a")),
-                asc: true,
-                nulls_first: true,
-            })], None)
-        });
+            .and_then(|df| {
+                df.select(vec![
+                    col("a"),
+                    col("b"),
+                    col("b_utc"),
+                    Expr::ScalarUDF {
+                        fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+                        args: vec![lit("hour"), col("b_utc"), lit("UTC")],
+                    }
+                    .alias("hours_utc"),
+                    Expr::ScalarUDF {
+                        fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+                        args: vec![lit("hour"), col("b_utc"), lit("America/Los_Angeles")],
+                    }
+                    .alias("hours_la"),
+                    Expr::ScalarUDF {
+                        fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+                        args: vec![lit("hour"), col("b_utc"), lit("America/New_York")],
+                    }
+                    .alias("hours_nyc"),
+                ])
+            })
+            .and_then(|df| {
+                df.sort(
+                    vec![Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    })],
+                    None,
+                )
+            });
 
         check_dataframe_query(
             df_result,
@@ -636,12 +644,11 @@ mod test_date_part_tz {
 
 #[cfg(test)]
 mod test_date_trunc_tz {
+    use crate::*;
+    use datafusion_expr::{col, expr, lit, Expr};
     use std::sync::Arc;
-    use datafusion_expr::{col, Expr, expr, lit};
-    use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
     use vegafusion_datafusion_udfs::udfs::datetime::date_trunc_tz::DATE_TRUNC_TZ_UDF;
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
-    use crate::*;
 
     #[apply(dialect_names)]
     fn test(dialect_name: &str) {
@@ -657,42 +664,52 @@ mod test_date_trunc_tz {
             ]),
             1024,
         )
-            .unwrap();
+        .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
 
-        let df_result = df.select(vec![
-            col("a"),
-            col("b"),
-            Expr::ScalarUDF {
-                fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
-                args: vec![col("b"), lit("America/New_York")]
-            }.alias("b_utc"),
-        ]).and_then(|df| {
-            df.select(vec![
+        let df_result = df
+            .select(vec![
                 col("a"),
                 col("b"),
-                col("b_utc"),
                 Expr::ScalarUDF {
-                    fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
-                    args: vec![lit("day"), col("b_utc"), lit("UTC")]
-                }.alias("day_utc"),
-                Expr::ScalarUDF {
-                    fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
-                    args: vec![lit("day"), col("b_utc"), lit("America/Los_Angeles")]
-                }.alias("day_la"),
-                Expr::ScalarUDF {
-                    fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
-                    args: vec![lit("day"), col("b_utc"), lit("America/New_York")]
-                }.alias("day_nyc"),
+                    fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
+                    args: vec![col("b"), lit("America/New_York")],
+                }
+                .alias("b_utc"),
             ])
-        }).and_then(|df| {
-            df.sort(vec![Expr::Sort(expr::Sort {
-                expr: Box::new(col("a")),
-                asc: true,
-                nulls_first: true,
-            })], None)
-        });
+            .and_then(|df| {
+                df.select(vec![
+                    col("a"),
+                    col("b"),
+                    col("b_utc"),
+                    Expr::ScalarUDF {
+                        fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
+                        args: vec![lit("day"), col("b_utc"), lit("UTC")],
+                    }
+                    .alias("day_utc"),
+                    Expr::ScalarUDF {
+                        fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
+                        args: vec![lit("day"), col("b_utc"), lit("America/Los_Angeles")],
+                    }
+                    .alias("day_la"),
+                    Expr::ScalarUDF {
+                        fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
+                        args: vec![lit("day"), col("b_utc"), lit("America/New_York")],
+                    }
+                    .alias("day_nyc"),
+                ])
+            })
+            .and_then(|df| {
+                df.sort(
+                    vec![Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    })],
+                    None,
+                )
+            });
 
         check_dataframe_query(
             df_result,
