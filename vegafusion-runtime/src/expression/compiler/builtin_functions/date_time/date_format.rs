@@ -76,10 +76,7 @@ fn to_timestamptz_expr(arg: &Expr, schema: &DFSchema, default_input_tz: &str) ->
         dtype if is_numeric_datatype(&dtype) || matches!(dtype, DataType::Boolean) => {
             Expr::ScalarUDF {
                 fun: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
-                args: vec![
-                    cast_to(arg.clone(), &DataType::Int64, schema)?,
-                    lit(default_input_tz),
-                ],
+                args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?],
             }
         }
         dtype => {

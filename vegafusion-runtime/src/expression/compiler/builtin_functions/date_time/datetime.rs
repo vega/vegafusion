@@ -50,7 +50,7 @@ pub fn to_date_transform(
     } else if is_numeric_datatype(&dtype) {
         Ok(Expr::ScalarUDF {
             fun: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
-            args: vec![cast_to(arg, &DataType::Int64, schema)?, lit("UTC")],
+            args: vec![cast_to(arg, &DataType::Int64, schema)?],
         })
     } else {
         Ok(arg)

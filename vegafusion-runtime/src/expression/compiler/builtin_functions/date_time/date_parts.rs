@@ -76,7 +76,7 @@ fn extract_timestamp_arg(
             },
             dtype if is_numeric_datatype(&dtype) => Expr::ScalarUDF {
                 fun: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
-                args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?, lit("UTC")],
+                args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?],
             },
             dtype => {
                 return Err(VegaFusionError::compilation(format!(
