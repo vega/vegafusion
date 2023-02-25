@@ -26,6 +26,10 @@ use crate::dialect::transforms::str_to_utc_timestamp::{
     StrToUtcTimestampSnowflakeTransformer, StrToUtcTimestampWithCastAndAtTimeZoneTransformer,
     StrToUtcTimestampWithCastFunctionAtTransformer, StrToUtcTimestampWithFunctionTransformer,
 };
+use crate::dialect::transforms::utc_timestamp_to_epoch_ms::{
+    UtcTimestampToEpochMsDatabricksTransform, UtcTimestampToEpochMsDuckdbTransform,
+    UtcTimestampToEpochMsPostgresTransform, UtcTimestampToEpochMsSnowflakeTransform,
+};
 use arrow::datatypes::DataType;
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
@@ -383,6 +387,10 @@ impl Dialect {
                     "epoch_ms_to_utc_timestamp",
                     EpochMsToUtcTimestampBigQueryTransformer::new_dyn(),
                 ),
+                (
+                    "utc_timestamp_to_epoch_ms",
+                    RenameFunctionTransformer::new_dyn("unix_millis"),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -592,6 +600,10 @@ impl Dialect {
                 (
                     "epoch_ms_to_utc_timestamp",
                     EpochMsToUtcTimestampDatabricksTransformer::new_dyn(),
+                ),
+                (
+                    "utc_timestamp_to_epoch_ms",
+                    UtcTimestampToEpochMsDatabricksTransform::new_dyn(),
                 ),
             ]
             .into_iter()
@@ -899,6 +911,10 @@ impl Dialect {
                     "epoch_ms_to_utc_timestamp",
                     EpochMsToUtcTimestampDuckDbTransformer::new_dyn(),
                 ),
+                (
+                    "utc_timestamp_to_epoch_ms",
+                    UtcTimestampToEpochMsDuckdbTransform::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1112,6 +1128,10 @@ impl Dialect {
                 (
                     "epoch_ms_to_utc_timestamp",
                     EpochMsToUtcTimestampPostgresTransformer::new_dyn(),
+                ),
+                (
+                    "utc_timestamp_to_epoch_ms",
+                    UtcTimestampToEpochMsPostgresTransform::new_dyn(),
                 ),
             ]
             .into_iter()
@@ -1353,6 +1373,10 @@ impl Dialect {
                 (
                     "epoch_ms_to_utc_timestamp",
                     EpochMsToUtcTimestampSnowflakeTransformer::new_dyn(),
+                ),
+                (
+                    "utc_timestamp_to_epoch_ms",
+                    UtcTimestampToEpochMsSnowflakeTransform::new_dyn(),
                 ),
             ]
             .into_iter()

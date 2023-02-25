@@ -17,7 +17,7 @@ fn process_epoch_ms_to_utc_timestamp_args(
 ) -> Result<SqlExpr> {
     if args.len() != 1 {
         return Err(VegaFusionError::sql_not_supported(
-            "epoch_utc_timestamp requires exactly two arguments",
+            "epoch_utc_timestamp requires exactly one argument",
         ));
     }
     Ok(args[0].to_sql(dialect, schema)?)

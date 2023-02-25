@@ -821,10 +821,9 @@ mod test_make_timestamp_tz {
 #[cfg(test)]
 mod test_epoch_to_utc_timestamp {
     use crate::*;
-    use datafusion_expr::{col, expr, lit, Expr};
+    use datafusion_expr::{col, expr, Expr};
     use std::sync::Arc;
     use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
-    use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
     #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
@@ -867,6 +866,77 @@ mod test_epoch_to_utc_timestamp {
             df_result,
             "select",
             "test_epoch_to_utc_timestamp",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
+#[cfg(test)]
+mod test_utc_timestamp_to_epoch_ms {
+    use crate::*;
+    use datafusion_expr::{col, expr, Expr};
+    use std::sync::Arc;
+    use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
+    use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_epoch::UTC_TIMESTAMP_TO_EPOCH_MS;
+
+    #[apply(dialect_names)]
+    fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 1, "t": 1641058496123i64},
+                {"a": 2, "t": 1641108601321i64},
+                {"a": 3, "t": 1641192141999i64},
+                {"a": 4, "t": null},
+            ]),
+            1024,
+        )
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df_result = df
+            .select(vec![
+                col("a"),
+                col("t"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(EPOCH_MS_TO_UTC_TIMESTAMP_UDF.clone()),
+                    args: vec![col("t")],
+                }
+                .alias("t_utc"),
+            ])
+            .and_then(|df| {
+                df.select(vec![
+                    col("a"),
+                    col("t"),
+                    col("t_utc"),
+                    Expr::ScalarUDF {
+                        fun: Arc::new(UTC_TIMESTAMP_TO_EPOCH_MS.clone()),
+                        args: vec![col("t_utc")],
+                    }
+                    .alias("epoch_millis"),
+                ])
+            })
+            .and_then(|df| {
+                df.sort(
+                    vec![Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    })],
+                    None,
+                )
+            });
+
+        check_dataframe_query(
+            df_result,
+            "select",
+            "test_utc_timestamp_to_epoch_ms",
             dialect_name,
             evaluable,
         );
