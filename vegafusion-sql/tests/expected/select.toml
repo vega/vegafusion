@@ -496,3 +496,38 @@ result = '''
 | 4 |                         |                         |                         |
 +---+-------------------------+-------------------------+-------------------------+
 '''
+
+
+[test_epoch_to_utc_timestamp]
+athena = "UNSUPPORTED"
+bigquery = """
+WITH values0 AS (SELECT 1 AS `a`, 1641058496123 AS `t` UNION ALL SELECT 2 AS `a`, 1641108601321 AS `t` UNION ALL SELECT 3 AS `a`, 1641192141999 AS `t` UNION ALL SELECT 4 AS `a`, NULL AS `t`), values1 AS (SELECT `a`, `t`, timestamp_millis(`t`) AS `t_utc` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = "UNSUPPORTED"
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 1641058496123), (2, 1641108601321), (3, 1641192141999), (4, NULL)) AS `_values` (`a`, `t`)), values1 AS (SELECT `a`, `t`, dateadd(millisecond, `t` % 1000, from_unixtime(FLOOR(`t` / 1000))) AS `t_utc` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 1641058496123), (2, 1641108601321), (3, 1641192141999), (4, NULL)) AS "_values" ("a", "t")), values1 AS (SELECT "a", "t", epoch_ms_to_utc_timestamp("t") AS "t_utc" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 1641058496123), (2, 1641108601321), (3, 1641192141999), (4, NULL)) AS "_values" ("a", "t")), values1 AS (SELECT "a", "t", epoch_ms("t") AS "t_utc" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = "UNSUPPORTED"
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 1641058496123), (2, 1641108601321), (3, 1641192141999), (4, NULL)) AS "_values" ("a", "t")), values1 AS (SELECT "a", "t", to_timestamp(FLOOR("t" / 1000)) + INTERVAL '1 millisecond' * ("t" % 1000) AS "t_utc" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = "UNSUPPORTED"
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "t" FROM (VALUES (1, 1641058496123), (2, 1641108601321), (3, 1641192141999), (4, NULL))), values1 AS (SELECT "a", "t", to_timestamp_ntz("t", 3) AS "t_utc" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+---------------+-------------------------+
+| a | t             | t_utc                   |
++---+---------------+-------------------------+
+| 1 | 1641058496123 | 2022-01-01T17:34:56.123 |
+| 2 | 1641108601321 | 2022-01-02T07:30:01.321 |
+| 3 | 1641192141999 | 2022-01-03T06:42:21.999 |
+| 4 |               |                         |
++---+---------------+-------------------------+
+'''
