@@ -1,6 +1,10 @@
 pub mod transforms;
 
 use crate::compile::expr::ToSqlExpr;
+use crate::dialect::transforms::date_add_tz::{
+    DateAddTzBigQueryTransformer, DateAddTzDatabricksTransformer, DateAddTzDatafusionTransformer,
+    DateAddTzSnowflakeTransformer, DateAddTzWithAtTimeZoneIntervalTransformer,
+};
 use crate::dialect::transforms::date_part_tz::{
     DatePartTzClickhouseTransformer, DatePartTzMySqlTransformer, DatePartTzSnowflakeTransformer,
     DatePartTzWithDatePartAndAtTimezoneTransformer, DatePartTzWithExtractAndAtTimezoneTransformer,
@@ -391,6 +395,7 @@ impl Dialect {
                     "utc_timestamp_to_epoch_ms",
                     RenameFunctionTransformer::new_dyn("unix_millis"),
                 ),
+                ("date_add_tz", DateAddTzBigQueryTransformer::new_dyn()),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -605,6 +610,7 @@ impl Dialect {
                     "utc_timestamp_to_epoch_ms",
                     UtcTimestampToEpochMsDatabricksTransform::new_dyn(),
                 ),
+                ("date_add_tz", DateAddTzDatabricksTransformer::new_dyn()),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -642,16 +648,6 @@ impl Dialect {
 
     pub fn datafusion() -> Self {
         use Operator::*;
-        let mut scalar_transforms: HashMap<String, Arc<dyn FunctionTransformer>> = HashMap::new();
-        scalar_transforms.insert("date_add".to_string(), Arc::new(DateAddToIntervalAddition));
-        scalar_transforms.insert(
-            "date_part_tz".to_string(),
-            DatePartTzWithFromUtcAndDatePartTransformer::new_dyn(),
-        );
-        scalar_transforms.insert(
-            "date_trunc_tz".to_string(),
-            DateTruncTzWithFromUtcAndDateTruncTransformer::new_dyn(),
-        );
 
         Self {
             parse_dialect: ParseDialect::DataFusion,
@@ -792,7 +788,21 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            scalar_transformers: scalar_transforms,
+            scalar_transformers: vec![
+                ("date_add", DateAddToIntervalAddition::new_dyn()),
+                (
+                    "date_part_tz",
+                    DatePartTzWithFromUtcAndDatePartTransformer::new_dyn(),
+                ),
+                (
+                    "date_trunc_tz",
+                    DateTruncTzWithFromUtcAndDateTruncTransformer::new_dyn(),
+                ),
+                ("date_add_tz", DateAddTzDatafusionTransformer::new_dyn()),
+            ]
+            .into_iter()
+            .map(|(name, v)| (name.to_string(), v))
+            .collect(),
             aggregate_transformers: Default::default(),
             values_mode: ValuesMode::ValuesWithSubqueryColumnAliases {
                 explicit_row: false,
@@ -914,6 +924,10 @@ impl Dialect {
                 (
                     "utc_timestamp_to_epoch_ms",
                     UtcTimestampToEpochMsDuckdbTransform::new_dyn(),
+                ),
+                (
+                    "date_add_tz",
+                    DateAddTzWithAtTimeZoneIntervalTransformer::new_dyn(),
                 ),
             ]
             .into_iter()
@@ -1132,6 +1146,10 @@ impl Dialect {
                 (
                     "utc_timestamp_to_epoch_ms",
                     UtcTimestampToEpochMsPostgresTransform::new_dyn(),
+                ),
+                (
+                    "date_add_tz",
+                    DateAddTzWithAtTimeZoneIntervalTransformer::new_dyn(),
                 ),
             ]
             .into_iter()
@@ -1378,6 +1396,7 @@ impl Dialect {
                     "utc_timestamp_to_epoch_ms",
                     UtcTimestampToEpochMsSnowflakeTransform::new_dyn(),
                 ),
+                ("date_add_tz", DateAddTzSnowflakeTransformer::new_dyn()),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1743,6 +1762,11 @@ impl FunctionTransformer for IsFiniteWithNotInStringsTransformer {
 
 #[derive(Clone, Debug)]
 struct DateAddToIntervalAddition;
+impl DateAddToIntervalAddition {
+    pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self)
+    }
+}
 impl FunctionTransformer for DateAddToIntervalAddition {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
         // Convert date_add function to interval arithmetic

@@ -61,7 +61,7 @@ pub fn at_time_zone_if_not_utc(arg: SqlExpr, time_zone: String, naive_timestamps
     }
 }
 
-fn part_to_date_time_field(part: &str) -> Result<DateTimeField> {
+pub fn part_to_date_time_field(part: &str) -> Result<DateTimeField> {
     Ok(match part.to_ascii_lowercase().as_str() {
         "year" => SqlDateTimeField::Year,
         "month" => SqlDateTimeField::Month,

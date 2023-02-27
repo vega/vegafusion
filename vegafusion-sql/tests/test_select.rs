@@ -8,7 +8,9 @@ use utils::{check_dataframe_query, dialect_names, make_connection, TOKIO_RUNTIME
 
 use serde_json::json;
 use vegafusion_common::data::table::VegaFusionTable;
-use vegafusion_datafusion_udfs::udfs::math::isfinite::ISFINITE_UDF;
+use vegafusion_datafusion_udfs::udfs::{
+    datetime::date_add_tz::DATE_ADD_TZ_UDF, math::isfinite::ISFINITE_UDF,
+};
 use vegafusion_sql::dataframe::SqlDataFrame;
 
 #[cfg(test)]
@@ -937,6 +939,82 @@ mod test_utc_timestamp_to_epoch_ms {
             df_result,
             "select",
             "test_utc_timestamp_to_epoch_ms",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
+#[cfg(test)]
+mod test_date_add_tz {
+    use crate::*;
+    use datafusion_expr::{col, expr, lit, Expr};
+    use std::sync::Arc;
+    use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
+
+    #[apply(dialect_names)]
+    fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 0, "b": "2022-03-01 03:34:56"},
+                {"a": 1, "b": "2022-04-02 02:30:01"},
+                {"a": 2, "b": "2022-05-03 01:42:21"},
+                {"a": 3, "b": null},
+            ]),
+            1024,
+        )
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+
+        let df_result = df
+            .select(vec![
+                col("a"),
+                col("b"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
+                    args: vec![col("b"), lit("UTC")],
+                }
+                .alias("b_utc"),
+            ])
+            .and_then(|df| {
+                df.select(vec![
+                    col("a"),
+                    col("b"),
+                    col("b_utc"),
+                    Expr::ScalarUDF {
+                        fun: Arc::new(DATE_ADD_TZ_UDF.clone()),
+                        args: vec![lit("month"), lit(1), col("b_utc"), lit("UTC")],
+                    }
+                    .alias("month_utc"),
+                    Expr::ScalarUDF {
+                        fun: Arc::new(DATE_ADD_TZ_UDF.clone()),
+                        args: vec![lit("month"), lit(1), col("b_utc"), lit("America/New_York")],
+                    }
+                    .alias("month_nyc"),
+                ])
+            })
+            .and_then(|df| {
+                df.sort(
+                    vec![Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    })],
+                    None,
+                )
+            });
+
+        check_dataframe_query(
+            df_result,
+            "select",
+            "test_date_add_tz",
             dialect_name,
             evaluable,
         );
