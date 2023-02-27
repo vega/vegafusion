@@ -34,6 +34,11 @@ use crate::dialect::transforms::utc_timestamp_to_epoch_ms::{
     UtcTimestampToEpochMsDatabricksTransform, UtcTimestampToEpochMsDuckdbTransform,
     UtcTimestampToEpochMsPostgresTransform, UtcTimestampToEpochMsSnowflakeTransform,
 };
+use crate::dialect::transforms::utc_timestamp_to_str::{
+    UtcTimestampToStrBigQueryTransformer, UtcTimestampToStrDatabricksTransformer,
+    UtcTimestampToStrDatafusionTransformer, UtcTimestampToStrDuckDBTransformer,
+    UtcTimestampToStrPostgresTransformer, UtcTimestampToStrSnowflakeTransformer,
+};
 use arrow::datatypes::DataType;
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
@@ -396,6 +401,10 @@ impl Dialect {
                     RenameFunctionTransformer::new_dyn("unix_millis"),
                 ),
                 ("date_add_tz", DateAddTzBigQueryTransformer::new_dyn()),
+                (
+                    "utc_timestamp_to_str",
+                    UtcTimestampToStrBigQueryTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -611,6 +620,10 @@ impl Dialect {
                     UtcTimestampToEpochMsDatabricksTransform::new_dyn(),
                 ),
                 ("date_add_tz", DateAddTzDatabricksTransformer::new_dyn()),
+                (
+                    "utc_timestamp_to_str",
+                    UtcTimestampToStrDatabricksTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -799,6 +812,10 @@ impl Dialect {
                     DateTruncTzWithFromUtcAndDateTruncTransformer::new_dyn(),
                 ),
                 ("date_add_tz", DateAddTzDatafusionTransformer::new_dyn()),
+                (
+                    "utc_timestamp_to_str",
+                    UtcTimestampToStrDatafusionTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -928,6 +945,10 @@ impl Dialect {
                 (
                     "date_add_tz",
                     DateAddTzWithAtTimeZoneIntervalTransformer::new_dyn(),
+                ),
+                (
+                    "utc_timestamp_to_str",
+                    UtcTimestampToStrDuckDBTransformer::new_dyn(),
                 ),
             ]
             .into_iter()
@@ -1150,6 +1171,10 @@ impl Dialect {
                 (
                     "date_add_tz",
                     DateAddTzWithAtTimeZoneIntervalTransformer::new_dyn(),
+                ),
+                (
+                    "utc_timestamp_to_str",
+                    UtcTimestampToStrPostgresTransformer::new_dyn(),
                 ),
             ]
             .into_iter()
@@ -1397,6 +1422,10 @@ impl Dialect {
                     UtcTimestampToEpochMsSnowflakeTransform::new_dyn(),
                 ),
                 ("date_add_tz", DateAddTzSnowflakeTransformer::new_dyn()),
+                (
+                    "utc_timestamp_to_str",
+                    UtcTimestampToStrSnowflakeTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))

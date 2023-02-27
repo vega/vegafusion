@@ -1023,3 +1023,80 @@ mod test_date_add_tz {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
+#[cfg(test)]
+mod test_utc_timestamp_to_str {
+    use crate::*;
+    use datafusion_expr::{col, expr, lit, Expr};
+    use std::sync::Arc;
+    use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
+    use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_str::UTC_TIMESTAMP_TO_STR_UDF;
+
+    #[apply(dialect_names)]
+    fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 0, "b": "2022-03-01 03:34:56.123"},
+                {"a": 1, "b": "2022-04-02 02:30:01.321"},
+                {"a": 2, "b": "2022-05-03 01:42:21"},
+                {"a": 3, "b": null},
+            ]),
+            1024,
+        )
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+
+        let df_result = df
+            .select(vec![
+                col("a"),
+                col("b"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
+                    args: vec![col("b"), lit("UTC")],
+                }
+                .alias("b_utc"),
+            ])
+            .and_then(|df| {
+                df.select(vec![
+                    col("a"),
+                    col("b"),
+                    col("b_utc"),
+                    Expr::ScalarUDF {
+                        fun: Arc::new(UTC_TIMESTAMP_TO_STR_UDF.clone()),
+                        args: vec![col("b_utc"), lit("UTC")],
+                    }
+                    .alias("str_utc"),
+                    Expr::ScalarUDF {
+                        fun: Arc::new(UTC_TIMESTAMP_TO_STR_UDF.clone()),
+                        args: vec![col("b_utc"), lit("America/New_York")],
+                    }
+                    .alias("str_nyc"),
+                ])
+            })
+            .and_then(|df| {
+                df.sort(
+                    vec![Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    })],
+                    None,
+                )
+            });
+
+        check_dataframe_query(
+            df_result,
+            "select",
+            "test_utc_timestamp_to_str",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}

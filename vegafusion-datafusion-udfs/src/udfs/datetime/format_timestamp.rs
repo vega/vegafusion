@@ -13,7 +13,7 @@ use vegafusion_common::{
     },
 };
 
-fn make_time_format_udf() -> ScalarUDF {
+fn make_format_timestamp_udf() -> ScalarUDF {
     let time_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
         // Argument order
         // [0] data array
@@ -23,13 +23,16 @@ fn make_time_format_udf() -> ScalarUDF {
         };
 
         // [1] time format string
-        let format_str = if let ColumnarValue::Scalar(format_str) = &args[1] {
+        let d3_format_str = if let ColumnarValue::Scalar(format_str) = &args[1] {
             format_str.to_string()
         } else {
             return Err(DataFusionError::Internal(
-                "Expected output_tz to be a scalar".to_string(),
+                "Expected format string to be a scalar".to_string(),
             ));
         };
+
+        // Convert D3 format specification into chrono format specification
+        let format_str = convert_d3_format_string(&d3_format_str);
 
         if matches!(data_array.data_type(), DataType::Null) {
             return Ok(ColumnarValue::Array(data_array));
@@ -85,6 +88,16 @@ fn make_time_format_udf() -> ScalarUDF {
     ScalarUDF::new("format_timestamp", &signature, &return_type, &time_fn)
 }
 
+fn convert_d3_format_string(d3_format_str: &str) -> String {
+    // %f is microseconds in D3 but nanoseconds in chrono, this is %6f in chrono
+    let format_str = d3_format_str.replace("%f", "%6f");
+
+    // %L is milliseconds in D3, this is %3f in chrono
+    let format_str = format_str.replace("%L", "%3f");
+
+    format_str
+}
+
 lazy_static! {
-    pub static ref FORMAT_TIMESTAMP_UDF: ScalarUDF = make_time_format_udf();
+    pub static ref FORMAT_TIMESTAMP_UDF: ScalarUDF = make_format_timestamp_udf();
 }

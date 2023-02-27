@@ -600,3 +600,38 @@ result = '''
 | 3 |                     |                     |                     |                     |
 +---+---------------------+---------------------+---------------------+---------------------+
 '''
+
+
+[test_utc_timestamp_to_str]
+athena = "UNSUPPORTED"
+bigquery = """
+WITH values0 AS (SELECT 0 AS `a`, '2022-03-01 03:34:56.123' AS `b` UNION ALL SELECT 1 AS `a`, '2022-04-02 02:30:01.321' AS `b` UNION ALL SELECT 2 AS `a`, '2022-05-03 01:42:21' AS `b` UNION ALL SELECT 3 AS `a`, NULL AS `b`), values1 AS (SELECT `a`, `b`, timestamp(`b`, 'UTC') AS `b_utc` FROM values0), values2 AS (SELECT `a`, `b`, `b_utc`, format_datetime('%Y-%m-%dT%H:%M:%E3S', datetime(`b_utc`, 'UTC')) AS `str_utc`, format_datetime('%Y-%m-%dT%H:%M:%E3S', datetime(`b_utc`, 'America/New_York')) AS `str_nyc` FROM values1) SELECT * FROM values2 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = "UNSUPPORTED"
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '2022-03-01 03:34:56.123'), (1, '2022-04-02 02:30:01.321'), (2, '2022-05-03 01:42:21'), (3, NULL)) AS `_values` (`a`, `b`)), values1 AS (SELECT `a`, `b`, to_utc_timestamp(CAST(`b` AS TIMESTAMP), 'UTC') AS `b_utc` FROM values0), values2 AS (SELECT `a`, `b`, `b_utc`, replace(date_format(`b_utc`, 'y-MM-dd HH:mm:ss.SSS'), ' ', 'T') AS `str_utc`, replace(date_format(from_utc_timestamp(`b_utc`, 'America/New_York'), 'y-MM-dd HH:mm:ss.SSS'), ' ', 'T') AS `str_nyc` FROM values1) SELECT * FROM values2 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '2022-03-01 03:34:56.123'), (1, '2022-04-02 02:30:01.321'), (2, '2022-05-03 01:42:21'), (3, NULL)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", str_to_utc_timestamp("b", 'UTC') AS "b_utc" FROM values0), values2 AS (SELECT "a", "b", "b_utc", format_timestamp("b_utc", '%Y-%m-%dT%H:%M:%S.%L') AS "str_utc", format_timestamp(from_utc_timestamp("b_utc", 'America/New_York'), '%Y-%m-%dT%H:%M:%S.%L') AS "str_nyc" FROM values1) SELECT * FROM values2 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '2022-03-01 03:34:56.123'), (1, '2022-04-02 02:30:01.321'), (2, '2022-05-03 01:42:21'), (3, NULL)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", CAST("b" AS TIMESTAMP) AS "b_utc" FROM values0), values2 AS (SELECT "a", "b", "b_utc", strftime("b_utc", '%Y-%m-%dT%H:%M:%S.%g') AS "str_utc", strftime("b_utc" AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York', '%Y-%m-%dT%H:%M:%S.%g') AS "str_nyc" FROM values1) SELECT * FROM values2 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = "UNSUPPORTED"
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '2022-03-01 03:34:56.123'), (1, '2022-04-02 02:30:01.321'), (2, '2022-05-03 01:42:21'), (3, NULL)) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", CAST("b" AS TIMESTAMP) AS "b_utc" FROM values0), values2 AS (SELECT "a", "b", "b_utc", to_char("b_utc", 'YYYY-MM-DD"T"HH24:MI:SS.MS') AS "str_utc", to_char("b_utc" AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York', 'YYYY-MM-DD"T"HH24:MI:SS.MS') AS "str_nyc" FROM values1) SELECT * FROM values2 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = "UNSUPPORTED"
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b" FROM (VALUES (0, '2022-03-01 03:34:56.123'), (1, '2022-04-02 02:30:01.321'), (2, '2022-05-03 01:42:21'), (3, NULL))), values1 AS (SELECT "a", "b", CAST("b" AS timestamp_ntz) AS "b_utc" FROM values0), values2 AS (SELECT "a", "b", "b_utc", to_varchar("b_utc", 'YYYY-MM-DD"T"HH24:MI:SS.FF3') AS "str_utc", to_varchar(convert_timezone('UTC', 'America/New_York', "b_utc"), 'YYYY-MM-DD"T"HH24:MI:SS.FF3') AS "str_nyc" FROM values1) SELECT * FROM values2 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+-------------------------+-------------------------+-------------------------+-------------------------+
+| a | b                       | b_utc                   | str_utc                 | str_nyc                 |
++---+-------------------------+-------------------------+-------------------------+-------------------------+
+| 0 | 2022-03-01 03:34:56.123 | 2022-03-01T03:34:56.123 | 2022-03-01T03:34:56.123 | 2022-02-28T22:34:56.123 |
+| 1 | 2022-04-02 02:30:01.321 | 2022-04-02T02:30:01.321 | 2022-04-02T02:30:01.321 | 2022-04-01T22:30:01.321 |
+| 2 | 2022-05-03 01:42:21     | 2022-05-03T01:42:21     | 2022-05-03T01:42:21.000 | 2022-05-02T21:42:21.000 |
+| 3 |                         |                         |                         |                         |
++---+-------------------------+-------------------------+-------------------------+-------------------------+
+'''

@@ -5,8 +5,8 @@ use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_core::error::{Result, VegaFusionError};
-use vegafusion_datafusion_udfs::udfs::datetime::datetime_format::FORMAT_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::format_timestamp::FORMAT_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 
@@ -105,13 +105,5 @@ pub fn extract_format_str(args: &[Expr]) -> Result<String> {
             "the timeFormat function must have at least one argument",
         ))
     }?;
-
-    // Add compatibility adjustments from D3 to Chrono
-
-    // %f is microseconds in D3 but nanoseconds, this is %6f is chrono
-    let format_str = format_str.replace("%f", "%6f");
-
-    // %L is milliseconds in D3, this is %f3f in chrono
-    let format_str = format_str.replace("%L", "%3f");
     Ok(format_str)
 }

@@ -3,14 +3,15 @@ pub mod date_add_tz;
 pub mod date_part_tz;
 pub mod date_to_utc_timestamp;
 pub mod date_trunc_tz;
-pub mod datetime_format;
 pub mod epoch_to_utc_timestamp;
+pub mod format_timestamp;
 pub mod from_utc_timestamp;
 pub mod make_utc_timestamp;
 pub mod str_to_utc_timestamp;
 pub mod timeunit;
 pub mod to_utc_timestamp;
 pub mod utc_timestamp_to_epoch;
+pub mod utc_timestamp_to_str;
 
 use crate::udfs::datetime::str_to_utc_timestamp::datetime_strs_to_timestamp_millis;
 use std::sync::Arc;
