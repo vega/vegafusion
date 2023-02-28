@@ -24,6 +24,7 @@ use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udfs::array::constructor::ARRAY_CONSTRUCTOR_UDF;
 use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
 use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::date_to_utc_timestamp::DATE_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::format_timestamp::FORMAT_TIMESTAMP_UDF;
@@ -297,6 +298,7 @@ pub fn make_datafusion_context() -> SessionContext {
     ctx.register_udf((*ISFINITE_UDF).clone());
 
     // datetime
+    ctx.register_udf((*DATE_PART_TZ_UDF).clone());
     ctx.register_udf((*TO_UTC_TIMESTAMP_UDF).clone());
     ctx.register_udf((*FROM_UTC_TIMESTAMP_UDF).clone());
     ctx.register_udf((*DATE_TO_UTC_TIMESTAMP_UDF).clone());

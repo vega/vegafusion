@@ -17,6 +17,7 @@ use itertools::Itertools;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udfs::datetime::date_add::DATE_ADD_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
@@ -76,8 +77,8 @@ fn timeunit_date_trunc(
     Ok((start_expr, interval))
 }
 
-// Implementation of timeunit start using MAKE_UTC_TIMESTAMP and the SQL DATE_PART function
-fn timeunit_date_part(
+// Implementation of timeunit start using MAKE_UTC_TIMESTAMP and the DATE_PART_TZ function
+fn timeunit_date_part_tz(
     field: &str,
     units_set: &HashSet<TimeUnitUnit>,
     schema: &DFSchema,
@@ -103,20 +104,13 @@ fn timeunit_date_part(
     let field_col = to_timestamp_col(field, schema, default_input_tz)?;
 
     // Compute input timestamp expression based on timezone
-    let inner = if let Some(tz_str) = local_tz {
-        Expr::ScalarUDF {
-            fun: Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone()),
-            args: vec![field_col, lit(tz_str.clone())],
-        }
-    } else {
-        field_col
-    };
+    let tz_str = local_tz.clone().unwrap_or_else(|| "UTC".to_string());
 
     // Year
     if units_set.contains(&TimeUnitUnit::Year) {
-        make_timestamptz_args[0] = Expr::ScalarFunction {
-            fun: BuiltinScalarFunction::DatePart,
-            args: vec![lit("year"), inner.clone()],
+        make_timestamptz_args[0] = Expr::ScalarUDF {
+            fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+            args: vec![lit("year"), field_col.clone(), lit(&tz_str)],
         };
 
         interval = (1, "YEAR".to_string());
@@ -124,9 +118,9 @@ fn timeunit_date_part(
 
     // Quarter
     if units_set.contains(&TimeUnitUnit::Quarter) {
-        let month = Expr::ScalarFunction {
-            fun: BuiltinScalarFunction::DatePart,
-            args: vec![lit("month"), inner.clone()],
+        let month = Expr::ScalarUDF {
+            fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+            args: vec![lit("month"), field_col.clone(), lit(&tz_str)],
         }
         .sub(lit(1.0));
 
@@ -140,9 +134,9 @@ fn timeunit_date_part(
 
     // Month
     if units_set.contains(&TimeUnitUnit::Month) {
-        make_timestamptz_args[1] = Expr::ScalarFunction {
-            fun: BuiltinScalarFunction::DatePart,
-            args: vec![lit("month"), inner.clone()],
+        make_timestamptz_args[1] = Expr::ScalarUDF {
+            fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+            args: vec![lit("month"), field_col.clone(), lit(&tz_str)],
         }
         .sub(lit(1.0));
 
@@ -151,9 +145,9 @@ fn timeunit_date_part(
 
     // Date
     if units_set.contains(&TimeUnitUnit::Date) {
-        make_timestamptz_args[2] = Expr::ScalarFunction {
-            fun: BuiltinScalarFunction::DatePart,
-            args: vec![lit("day"), inner.clone()],
+        make_timestamptz_args[2] = Expr::ScalarUDF {
+            fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+            args: vec![lit("day"), field_col.clone(), lit(&tz_str)],
         };
 
         interval = (1, "DAY".to_string());
@@ -161,9 +155,9 @@ fn timeunit_date_part(
 
     // Hour
     if units_set.contains(&TimeUnitUnit::Hours) {
-        make_timestamptz_args[3] = Expr::ScalarFunction {
-            fun: BuiltinScalarFunction::DatePart,
-            args: vec![lit("hour"), inner.clone()],
+        make_timestamptz_args[3] = Expr::ScalarUDF {
+            fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+            args: vec![lit("hour"), field_col.clone(), lit(&tz_str)],
         };
 
         interval = (1, "HOUR".to_string());
@@ -171,9 +165,9 @@ fn timeunit_date_part(
 
     // Minute
     if units_set.contains(&TimeUnitUnit::Minutes) {
-        make_timestamptz_args[4] = Expr::ScalarFunction {
-            fun: BuiltinScalarFunction::DatePart,
-            args: vec![lit("minute"), inner.clone()],
+        make_timestamptz_args[4] = Expr::ScalarUDF {
+            fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+            args: vec![lit("minute"), field_col.clone(), lit(&tz_str)],
         };
 
         interval = (1, "MINUTE".to_string());
@@ -181,9 +175,9 @@ fn timeunit_date_part(
 
     // Second
     if units_set.contains(&TimeUnitUnit::Seconds) {
-        make_timestamptz_args[5] = Expr::ScalarFunction {
-            fun: BuiltinScalarFunction::DatePart,
-            args: vec![lit("second"), inner],
+        make_timestamptz_args[5] = Expr::ScalarUDF {
+            fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+            args: vec![lit("second"), field_col, lit(&tz_str)],
         };
 
         interval = (1, "SECOND".to_string());
@@ -228,20 +222,13 @@ fn timeunit_weekday(
     let field_col = to_timestamp_col(field, schema, default_input_tz)?;
 
     // Compute input timestamp expression based on timezone
-    let inner = if let Some(tz_str) = local_tz {
-        Expr::ScalarUDF {
-            fun: Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone()),
-            args: vec![field_col, lit(tz_str.clone())],
-        }
-    } else {
-        field_col
-    };
+    let tz_str = local_tz.clone().unwrap_or_else(|| "UTC".to_string());
 
-    // Use DATE_PART to extract the weekday
+    // Use DATE_PART_TZ to extract the weekday
     // where Sunday is 0 and Saturday is 6
-    let weekday0 = Expr::ScalarFunction {
-        fun: BuiltinScalarFunction::DatePart,
-        args: vec![lit("dow"), inner],
+    let weekday0 = Expr::ScalarUDF {
+        fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+        args: vec![lit("dow"), field_col, lit(&tz_str)],
     };
 
     // Add one to line up with the signature of MAKE_UTC_TIMESTAMP
@@ -482,7 +469,7 @@ impl TransformTrait for TimeUnit {
                 .into_iter()
                 .collect::<HashSet<_>>();
                 if units_set.is_subset(&date_part_units) {
-                    timeunit_date_part(
+                    timeunit_date_part_tz(
                         &self.field,
                         &units_set,
                         &schema,

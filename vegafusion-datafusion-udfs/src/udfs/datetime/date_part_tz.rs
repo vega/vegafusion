@@ -46,7 +46,7 @@ fn make_date_part_tz_udf() -> ScalarUDF {
         ])
     });
 
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int32)));
+    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Float64)));
 
     let signature = Signature::exact(
         vec![

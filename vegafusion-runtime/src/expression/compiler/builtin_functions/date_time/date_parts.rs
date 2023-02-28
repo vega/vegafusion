@@ -42,9 +42,9 @@ pub fn make_utc_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -> 
           -> Result<Expr> {
         let arg =
             extract_timestamp_arg(&part, args, schema, &tz_config.default_input_tz.to_string())?;
-        let udf_args = vec![lit(part.clone()), arg];
-        let mut expr = Expr::ScalarFunction {
-            fun: BuiltinScalarFunction::DatePart,
+        let udf_args = vec![lit(part.clone()), arg, lit("UTC")];
+        let mut expr = Expr::ScalarUDF {
+            fun: Arc::new(DATE_PART_TZ_UDF.clone()),
             args: udf_args,
         };
 
