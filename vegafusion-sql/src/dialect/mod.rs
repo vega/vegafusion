@@ -749,6 +749,7 @@ impl Dialect {
                 "isnan",
                 "isfinite",
                 "pow",
+                "date_part_tz",
                 "to_utc_timestamp",
                 "from_utc_timestamp",
                 "date_to_utc_timestamp",
@@ -803,10 +804,6 @@ impl Dialect {
             .collect(),
             scalar_transformers: vec![
                 ("date_add", DateAddToIntervalAddition::new_dyn()),
-                (
-                    "date_part_tz",
-                    DatePartTzWithFromUtcAndDatePartTransformer::new_dyn(),
-                ),
                 (
                     "date_trunc_tz",
                     DateTruncTzWithFromUtcAndDateTruncTransformer::new_dyn(),
