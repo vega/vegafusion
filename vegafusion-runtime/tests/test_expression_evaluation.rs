@@ -380,6 +380,8 @@ mod test_time_and_utc_format {
 
     #[rstest(
         expr,
+        case("timeFormat(toDate('2020-05-16T09:30:00+05:00'), '%Y-%m-%dT%H:%M:%S.%L')"),
+        case("utcFormat(toDate('2020-05-16T09:30:00+05:00'), '%Y-%m-%dT%H:%M:%S.%L')"),
         case("timeFormat(toDate('2020-05-16T09:30:00+05:00'), '%Y-%m-%d %H:%M:%S')"),
         case("utcFormat(toDate('2020-05-16T09:30:00+05:00'), '%Y-%m-%d %H:%M:%S')"),
         case("timeFormat(toDate('2020-05-16 09:30:00+05:00'))"),

@@ -36,8 +36,8 @@ use crate::dialect::transforms::utc_timestamp_to_epoch_ms::{
 };
 use crate::dialect::transforms::utc_timestamp_to_str::{
     UtcTimestampToStrBigQueryTransformer, UtcTimestampToStrDatabricksTransformer,
-    UtcTimestampToStrDatafusionTransformer, UtcTimestampToStrDuckDBTransformer,
-    UtcTimestampToStrPostgresTransformer, UtcTimestampToStrSnowflakeTransformer,
+    UtcTimestampToStrDuckDBTransformer, UtcTimestampToStrPostgresTransformer,
+    UtcTimestampToStrSnowflakeTransformer,
 };
 use arrow::datatypes::DataType;
 use datafusion_common::scalar::ScalarValue;
@@ -750,6 +750,7 @@ impl Dialect {
                 "isfinite",
                 "pow",
                 "date_part_tz",
+                "utc_timestamp_to_str",
                 "to_utc_timestamp",
                 "from_utc_timestamp",
                 "date_to_utc_timestamp",
@@ -809,10 +810,6 @@ impl Dialect {
                     DateTruncTzWithFromUtcAndDateTruncTransformer::new_dyn(),
                 ),
                 ("date_add_tz", DateAddTzDatafusionTransformer::new_dyn()),
-                (
-                    "utc_timestamp_to_str",
-                    UtcTimestampToStrDatafusionTransformer::new_dyn(),
-                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))

@@ -12,12 +12,13 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use datafusion_expr::expr::Cast;
-use datafusion_expr::{floor, lit, BuiltinScalarFunction, Expr, ExprSchemable};
+use datafusion_expr::{floor, lit, Expr, ExprSchemable};
 use itertools::Itertools;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udfs::datetime::date_add::DATE_ADD_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::date_trunc_tz::DATE_TRUNC_TZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
@@ -51,27 +52,12 @@ fn timeunit_date_trunc(
     // Convert field column to timestamp
     let field_col = to_timestamp_col(field, schema, default_input_tz)?;
 
-    let start_expr = if let Some(tz_str) = local_tz {
-        let local_field = Expr::ScalarUDF {
-            fun: Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone()),
-            args: vec![field_col, lit(tz_str.clone())],
-        };
+    // Compute input timestamp expression based on timezone
+    let tz_str = local_tz.clone().unwrap_or_else(|| "UTC".to_string());
 
-        let local_start_expr = Expr::ScalarFunction {
-            fun: BuiltinScalarFunction::DateTrunc,
-            args: vec![lit(part_str), local_field],
-        };
-
-        Expr::ScalarUDF {
-            fun: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
-            args: vec![local_start_expr, lit(tz_str.clone())],
-        }
-    } else {
-        // UTC, no timezone conversion needed
-        Expr::ScalarFunction {
-            fun: BuiltinScalarFunction::DateTrunc,
-            args: vec![lit(part_str), field_col],
-        }
+    let start_expr = Expr::ScalarUDF {
+        fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
+        args: vec![lit(part_str), field_col, lit(&tz_str)],
     };
 
     Ok((start_expr, interval))

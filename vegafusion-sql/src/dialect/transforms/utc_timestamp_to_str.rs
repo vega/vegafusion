@@ -3,9 +3,9 @@ use crate::dialect::{Dialect, FunctionTransformer};
 use datafusion_common::DFSchema;
 use datafusion_expr::Expr;
 use sqlparser::ast::{
-    DataType as SqlDataType, Expr as SqlExpr, Function as SqlFunction,
-    FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr, Ident as SqlIdent,
-    ObjectName as SqlObjectName, Value as SqlValue,
+    Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg,
+    FunctionArgExpr as SqlFunctionArgExpr, Ident as SqlIdent, ObjectName as SqlObjectName,
+    Value as SqlValue,
 };
 use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
@@ -30,61 +30,6 @@ fn process_utc_timestamp_to_str_args(
         ));
     };
     Ok((sql_arg0, time_zone))
-}
-
-/// Convert utc_timestamp_to_str(ts, tz) ->
-///     format_timestamp(from_utc_timestamp(ts, tz), "%Y-%m-%dT%H:%M:%S.%L")
-/// or if tz == 'UTC'
-///     format_timestamp(ts, "%Y-%m-%dT%H:%M:%S.%L")
-#[derive(Clone, Debug)]
-pub struct UtcTimestampToStrDatafusionTransformer;
-
-impl UtcTimestampToStrDatafusionTransformer {
-    pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
-        Arc::new(Self)
-    }
-}
-
-impl FunctionTransformer for UtcTimestampToStrDatafusionTransformer {
-    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
-        let (ts_expr, time_zone) = process_utc_timestamp_to_str_args(args, dialect, schema)?;
-
-        let ts_in_tz_expr = if time_zone == "UTC" {
-            ts_expr
-        } else {
-            SqlExpr::Function(SqlFunction {
-                name: SqlObjectName(vec![SqlIdent {
-                    value: "from_utc_timestamp".to_string(),
-                    quote_style: None,
-                }]),
-                args: vec![
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_expr)),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                        SqlValue::SingleQuotedString(time_zone),
-                    ))),
-                ],
-                over: None,
-                distinct: false,
-                special: false,
-            })
-        };
-
-        Ok(SqlExpr::Function(SqlFunction {
-            name: SqlObjectName(vec![SqlIdent {
-                value: "format_timestamp".to_string(),
-                quote_style: None,
-            }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_in_tz_expr)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                    SqlValue::SingleQuotedString("%Y-%m-%dT%H:%M:%S.%L".to_string()),
-                ))),
-            ],
-            over: None,
-            distinct: false,
-            special: false,
-        }))
-    }
 }
 
 /// Convert utc_timestamp_to_str(ts, tz) ->
