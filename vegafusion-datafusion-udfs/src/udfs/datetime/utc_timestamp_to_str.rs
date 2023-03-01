@@ -1,9 +1,11 @@
 use crate::udfs::datetime::from_utc_timestamp::from_utc_timestamp;
+use crate::udfs::datetime::to_utc_timestamp::to_timestamp_ms;
 use chrono::NaiveDateTime;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::{ArrayRef, StringArray, TimestampMillisecondArray};
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
+use vegafusion_common::datafusion_expr::TypeSignature;
 use vegafusion_common::{
     arrow::datatypes::{DataType, TimeUnit},
     datafusion_expr::{
@@ -21,6 +23,7 @@ fn make_utc_timestamp_to_str_udf() -> ScalarUDF {
             ColumnarValue::Scalar(scalar) => scalar.to_array(),
         };
 
+        let timestamp_array = to_timestamp_ms(&timestamp_array)?;
         if matches!(timestamp_array.data_type(), DataType::Null) {
             return Ok(ColumnarValue::Array(timestamp_array));
         }
@@ -75,10 +78,16 @@ fn make_utc_timestamp_to_str_udf() -> ScalarUDF {
 
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Utf8)));
 
-    let signature = Signature::exact(
+    let signature = Signature::one_of(
         vec![
-            DataType::Timestamp(TimeUnit::Millisecond, None),
-            DataType::Utf8,
+            TypeSignature::Exact(vec![
+                DataType::Timestamp(TimeUnit::Millisecond, None),
+                DataType::Utf8,
+            ]),
+            TypeSignature::Exact(vec![
+                DataType::Timestamp(TimeUnit::Nanosecond, None),
+                DataType::Utf8,
+            ]),
         ],
         Volatility::Immutable,
     );
