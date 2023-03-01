@@ -1,7 +1,7 @@
-use crate::expression::compiler::utils::{to_boolean, to_numeric};
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion_expr::Expr;
 use vegafusion_common::datafusion_common::DFSchema;
+use vegafusion_common::datatypes::{to_boolean, to_numeric};
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::{UnaryExpression, UnaryOperator};
 

@@ -1,6 +1,6 @@
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{is_integer_datatype, is_string_datatype, ExprHelpers};
+use crate::expression::compiler::utils::ExprHelpers;
 use crate::task_graph::task::TaskCall;
 
 use async_trait::async_trait;
@@ -33,6 +33,7 @@ use vegafusion_common::arrow::ipc::reader::{FileReader, StreamReader};
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
 use vegafusion_dataframe::connection::Connection;
 use vegafusion_dataframe::csv::CsvReadOptions;
 use vegafusion_dataframe::dataframe::DataFrame;

@@ -1,5 +1,4 @@
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::to_numeric;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
@@ -9,6 +8,7 @@ use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::Field;
 use vegafusion_common::column::unescaped_col;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::datatypes::to_numeric;
 use vegafusion_common::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Extent;
 use vegafusion_core::task_graph::task_value::TaskValue;

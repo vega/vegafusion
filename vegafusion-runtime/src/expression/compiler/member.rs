@@ -1,6 +1,6 @@
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{data_type, is_numeric_datatype, ExprHelpers};
+use crate::expression::compiler::utils::ExprHelpers;
 use datafusion_expr::{lit, BuiltinScalarFunction, Expr};
 use std::convert::TryFrom;
 use std::ops::Deref;
@@ -10,6 +10,7 @@ use vegafusion_common::arrow::compute::cast;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
+use vegafusion_common::datatypes::{data_type, is_numeric_datatype};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{Identifier, MemberExpression};
 use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;

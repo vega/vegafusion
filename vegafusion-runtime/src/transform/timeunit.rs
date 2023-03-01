@@ -10,11 +10,11 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
-use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use datafusion_expr::expr::Cast;
 use datafusion_expr::{floor, lit, Expr, ExprSchemable};
 use itertools::Itertools;
 use vegafusion_common::column::{flat_col, unescaped_col};
+use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
 use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udfs::datetime::date_add_tz::DATE_ADD_TZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;

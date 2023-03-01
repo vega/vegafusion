@@ -9,9 +9,9 @@ use vegafusion_common::column::flat_col;
 use vegafusion_common::data::scalar::DATETIME_PREFIX;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::data::ORDER_COL;
+use vegafusion_common::datatypes::is_numeric_datatype;
 use vegafusion_common::error::Result;
 use vegafusion_dataframe::connection::Connection;
-use vegafusion_runtime::expression::compiler::utils::is_numeric_datatype;
 use vegafusion_runtime::tokio_runtime::TOKIO_RUNTIME;
 use vegafusion_sql::connection::datafusion_conn::{make_datafusion_context, DataFusionConnection};
 

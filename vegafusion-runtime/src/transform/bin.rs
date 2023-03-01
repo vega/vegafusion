@@ -1,6 +1,6 @@
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{to_numeric, ExprHelpers};
+use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
@@ -14,6 +14,7 @@ use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
+use vegafusion_common::datatypes::to_numeric;
 use vegafusion_core::arrow::datatypes::{DataType, Field};
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Bin;

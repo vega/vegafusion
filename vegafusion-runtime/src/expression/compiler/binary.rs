@@ -1,11 +1,11 @@
-use crate::expression::compiler::utils::{
-    cast_to, data_type, is_null_literal, is_numeric_datatype, is_string_datatype, to_numeric,
-    to_string,
-};
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion_expr::expr::BinaryExpr;
 use datafusion_expr::{concat, lit, Expr, Operator};
 use vegafusion_common::datafusion_common::DFSchema;
+use vegafusion_common::datatypes::{
+    cast_to, data_type, is_null_literal, is_numeric_datatype, is_string_datatype, to_numeric,
+    to_string,
+};
 
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::Result;

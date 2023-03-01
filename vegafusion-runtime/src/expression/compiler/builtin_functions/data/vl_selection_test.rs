@@ -1,7 +1,4 @@
-use crate::expression::compiler::utils::{
-    cast_to, is_float_datatype, is_integer_datatype, is_numeric_datatype, is_string_datatype,
-    ExprHelpers,
-};
+use crate::expression::compiler::utils::ExprHelpers;
 
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -16,6 +13,9 @@ use vegafusion_common::column::flat_col;
 use vegafusion_common::data::scalar::ScalarValue;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_common::DFSchema;
+use vegafusion_common::datatypes::{
+    cast_to, is_float_datatype, is_integer_datatype, is_numeric_datatype, is_string_datatype,
+};
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::literal::Value;
 use vegafusion_core::proto::gen::{

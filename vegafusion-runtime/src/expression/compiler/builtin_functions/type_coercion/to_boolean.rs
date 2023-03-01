@@ -1,6 +1,6 @@
-use crate::expression::compiler::utils::to_boolean;
 use datafusion_expr::Expr;
 use vegafusion_common::datafusion_common::DFSchema;
+use vegafusion_common::datatypes::to_boolean;
 use vegafusion_core::error::{Result, VegaFusionError};
 
 pub fn to_boolean_transform(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
