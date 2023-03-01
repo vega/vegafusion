@@ -16,15 +16,13 @@ use datafusion_expr::{floor, lit, Expr, ExprSchemable};
 use itertools::Itertools;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_dataframe::dataframe::DataFrame;
-use vegafusion_datafusion_udfs::udfs::datetime::date_add::DATE_ADD_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::date_add_tz::DATE_ADD_TZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::date_trunc_tz::DATE_TRUNC_TZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
 
 // Implementation of timeunit start using the SQL DATE_TRUNC function
 fn timeunit_date_trunc(
@@ -501,30 +499,15 @@ impl TransformTrait for TimeUnit {
             "unit1".to_string()
         };
 
-        let timeunit_end_expr = if let Some(tz_str) = local_tz {
-            let ts = Expr::ScalarUDF {
-                fun: Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone()),
-                args: vec![flat_col(&timeunit_start_alias), lit(&tz_str)],
-            };
-
-            let ts_shifted = Expr::ScalarUDF {
-                fun: Arc::new((*DATE_ADD_UDF).clone()),
-                args: vec![lit(&interval.1), lit(interval.0), ts],
-            };
-
-            Expr::ScalarUDF {
-                fun: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
-                args: vec![ts_shifted, lit(&tz_str)],
-            }
-        } else {
-            Expr::ScalarUDF {
-                fun: Arc::new((*DATE_ADD_UDF).clone()),
-                args: vec![
-                    lit(&interval.1),
-                    lit(interval.0),
-                    flat_col(&timeunit_start_alias),
-                ],
-            }
+        let tz_str = local_tz.clone().unwrap_or_else(|| "UTC".to_string());
+        let timeunit_end_expr = Expr::ScalarUDF {
+            fun: Arc::new((*DATE_ADD_TZ_UDF).clone()),
+            args: vec![
+                lit(&interval.1),
+                lit(interval.0),
+                flat_col(&timeunit_start_alias),
+                lit(&tz_str),
+            ],
         }
         .alias(&timeunit_end_alias);
 

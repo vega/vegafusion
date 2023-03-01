@@ -804,7 +804,6 @@ impl Dialect {
             .map(|s| s.to_string())
             .collect(),
             scalar_transformers: vec![
-                ("date_add", DateAddToIntervalAddition::new_dyn()),
                 (
                     "date_trunc_tz",
                     DateTruncTzWithFromUtcAndDateTruncTransformer::new_dyn(),
@@ -1780,57 +1779,6 @@ impl FunctionTransformer for IsFiniteWithNotInStringsTransformer {
             negated: true,
         };
         isfinite_expr.to_sql(dialect, schema)
-    }
-}
-
-#[derive(Clone, Debug)]
-struct DateAddToIntervalAddition;
-impl DateAddToIntervalAddition {
-    pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
-        Arc::new(Self)
-    }
-}
-impl FunctionTransformer for DateAddToIntervalAddition {
-    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
-        // Convert date_add function to interval arithmetic
-        if args.len() != 3 {
-            return Err(VegaFusionError::sql_not_supported(
-                "date_add requires exactly 3 arguments",
-            ));
-        }
-
-        let date_part = if let Expr::Literal(ScalarValue::Utf8(Some(part))) = &args[0] {
-            part.clone()
-        } else {
-            return Err(VegaFusionError::sql_not_supported(
-                "First arg to date_add must be a string literal",
-            ));
-        };
-
-        let num = if let Expr::Literal(ScalarValue::Int32(Some(num))) = &args[1] {
-            *num
-        } else {
-            return Err(VegaFusionError::sql_not_supported(
-                "Second arg to date_add must be an integer",
-            ));
-        };
-
-        let interval_string = format!("{num} {date_part}");
-        let interval = SqlExpr::Interval {
-            value: Box::new(SqlExpr::Value(SqlValue::SingleQuotedString(
-                interval_string,
-            ))),
-            leading_field: None,
-            leading_precision: None,
-            last_field: None,
-            fractional_seconds_precision: None,
-        };
-
-        Ok(SqlExpr::BinaryOp {
-            left: Box::new(args[2].to_sql(dialect, schema)?),
-            op: SqlBinaryOperator::Plus,
-            right: Box::new(interval),
-        })
     }
 }
 
