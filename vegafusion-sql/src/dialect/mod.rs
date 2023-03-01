@@ -164,6 +164,10 @@ pub struct Dialect {
     /// (first_value, last_value, nth_value)
     pub supports_frames_in_navigation_window_functions: bool,
 
+    /// Whether dialect supports the use of explicit window frames for numbering window functions
+    /// (row_number, rank, etc)
+    pub supports_frames_in_numbering_window_functions: bool,
+
     /// Mapping from Arrow DataTypes to SqlParser DataTypes for dialect
     pub cast_datatypes: HashMap<DataType, SqlDataType>,
 
@@ -198,6 +202,7 @@ impl Default for Dialect {
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            supports_frames_in_numbering_window_functions: false,
             cast_datatypes: Default::default(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
@@ -302,6 +307,7 @@ impl Dialect {
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
                 (DataType::Boolean, SqlDataType::Boolean),
                 (DataType::Int8, SqlDataType::TinyInt(None)),
@@ -420,6 +426,7 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: false,
+            supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
                 (DataType::Boolean, SqlDataType::Boolean),
                 (DataType::Int8, SqlDataType::Int(None)),
@@ -511,6 +518,7 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
                 (DataType::Boolean, SqlDataType::Boolean),
                 (DataType::Int8, SqlDataType::TinyInt(None)),
@@ -645,6 +653,7 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: false,
+            supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
                 (DataType::Boolean, SqlDataType::Boolean),
                 (DataType::Int8, SqlDataType::TinyInt(None)),
@@ -705,7 +714,6 @@ impl Dialect {
                 "concat",
                 "substr",
                 "to_timestamp_millis",
-
                 // UDFs
                 "isnan",
                 "isfinite",
@@ -783,6 +791,7 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            supports_frames_in_numbering_window_functions: true,
             cast_datatypes: vec![
                 (DataType::Boolean, SqlDataType::Boolean),
                 (DataType::Int8, SqlDataType::TinyInt(None)),
@@ -921,6 +930,7 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
                 (DataType::Boolean, SqlDataType::Boolean),
                 (DataType::Int8, SqlDataType::TinyInt(None)),
@@ -1013,6 +1023,7 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
                 (DataType::Int8, signed.clone()),
                 (DataType::UInt8, unsigned.clone()),
@@ -1151,6 +1162,7 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
                 (DataType::Boolean, SqlDataType::Boolean),
                 (DataType::Int8, SqlDataType::SmallInt(None)),
@@ -1274,6 +1286,7 @@ impl Dialect {
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
                 (DataType::Boolean, SqlDataType::Boolean),
                 (DataType::Int8, SqlDataType::SmallInt(None)),
@@ -1407,6 +1420,7 @@ impl Dialect {
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
             supports_frames_in_navigation_window_functions: true,
+            supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
                 (DataType::Boolean, SqlDataType::Boolean),
                 (DataType::Int8, SqlDataType::TinyInt(None)),

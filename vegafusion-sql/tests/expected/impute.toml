@@ -352,9 +352,8 @@ datafusion = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS "_values" ("_order", "a", "b", "c", "d")), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", min("_order") AS "_order_groups" FROM values0 GROUP BY "c") AS _groups LEFT JOIN values0 USING("a", "c")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
-
 """
 duckdb = """
 WITH \
@@ -447,9 +446,8 @@ datafusion = """
 WITH \
 values0 AS (SELECT * FROM (VALUES (1, 0, 28, 0, -1), (2, 0, 91, 1, -1), (3, 1, 43, 0, -2), (4, NULL, 55, 1, -2), (5, 3, 19, 0, -3), (6, 2, 81, 0, -3), (7, 2, 53, 1, -4)) AS "_values" ("_order", "a", "b", "c", "d")), \
 values1 AS (SELECT "_order", "a", coalesce("b", -1) AS "b", "c", "d", "_order_key", "_order_groups" FROM (SELECT "a", min("_order") AS "_order_key" FROM values0 WHERE "a" IS NOT NULL GROUP BY "a") AS _key CROSS JOIN (SELECT "c", "d", min("_order") AS "_order_groups" FROM values0 GROUP BY "c", "d") AS _groups LEFT JOIN values0 USING("a", "c", "d")), \
-values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST) AS "_order", "a", "b", "c", "d" FROM values1) \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS LAST, "_order_groups" ASC NULLS FIRST, "_order_key" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_order", "a", "b", "c", "d" FROM values1) \
 SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
-
 """
 duckdb = """
 WITH \

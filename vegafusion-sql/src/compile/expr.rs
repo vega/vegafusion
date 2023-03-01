@@ -323,9 +323,9 @@ impl ToSqlExpr for Expr {
                             // first_value.
                             dialect.supports_frames_in_navigation_window_functions
                         } else {
-                            // Window frames are not supported by numbering functions like
+                            // Window frames sometimes supported by numbering functions like
                             // row_number, rank, etc.
-                            false
+                            dialect.supports_frames_in_numbering_window_functions
                         };
 
                         (win_fn.to_string().to_ascii_lowercase(), supports_frame)
