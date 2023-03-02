@@ -371,7 +371,7 @@ mod test_scalar_math_functions {
     #[apply(dialect_names)]
     fn test(dialect_name: &str) {
         println!("{dialect_name}");
-        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+        let (conn, _evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
         let table = VegaFusionTable::from_json(
             &json!([
