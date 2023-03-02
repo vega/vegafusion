@@ -23,9 +23,7 @@ impl ToSqlOrderByExpr for Expr {
                 } else {
                     // If null ordering is not supported, then don't specify it as long the as default
                     // behavior matches what's specified.
-                    if *asc && *nulls_first {
-                        None
-                    } else if !*asc && !*nulls_first {
+                    if (*asc && *nulls_first) || (!*asc && !*nulls_first) {
                         None
                     } else {
                         return Err(VegaFusionError::sql_not_supported(
