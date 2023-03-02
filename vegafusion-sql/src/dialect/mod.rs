@@ -238,7 +238,8 @@ impl Dialect {
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "ln", "log2", "log10", "pow", "round", "sin", "sqrt", "tan", "random",
+                "ln", "log2", "log10", "pow", "round", "sin", "sqrt", "tan", "random", "substr",
+                "concat",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -350,7 +351,7 @@ impl Dialect {
             .collect(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "ln", "log10", "pow", "round", "sin", "sqrt", "tan", "trunc",
+                "ln", "log10", "pow", "round", "sin", "sqrt", "tan", "trunc", "substr", "concat",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -477,7 +478,8 @@ impl Dialect {
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "trunc",
+                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "trunc", "substr",
+                "concat",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -563,7 +565,8 @@ impl Dialect {
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "random",
+                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "random", "substr",
+                "concat",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -710,6 +713,8 @@ impl Dialect {
                 "sqrt",
                 "tan",
                 "trunc",
+                "concat",
+                "substr",
                 "to_timestamp_millis",
                 // UDFs
                 "isnan",
@@ -837,6 +842,7 @@ impl Dialect {
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "floor", "ln",
                 "log", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "random", "isfinite",
+                "substr", "concat",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -972,7 +978,7 @@ impl Dialect {
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan",
+                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "substr", "concat",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -1067,7 +1073,8 @@ impl Dialect {
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "ln", "log", "pow", "round", "sin", "sqrt", "tan", "trunc", "random",
+                "ln", "log", "pow", "round", "sin", "sqrt", "tan", "trunc", "random", "substr",
+                "concat",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -1202,7 +1209,7 @@ impl Dialect {
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "pow", "round", "sin", "sqrt", "tan", "trunc", "random",
+                "pow", "round", "sin", "sqrt", "tan", "trunc", "random", "substr",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -1332,7 +1339,7 @@ impl Dialect {
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "ln", "pow", "round", "sin", "sqrt", "tan", "trunc", "random",
+                "ln", "pow", "round", "sin", "sqrt", "tan", "trunc", "random", "substr", "concat",
             ]
             .iter()
             .map(|s| s.to_string())

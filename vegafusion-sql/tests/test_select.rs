@@ -1100,3 +1100,65 @@ mod test_utc_timestamp_to_str {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
+#[cfg(test)]
+mod test_string_ops {
+    use crate::*;
+    use datafusion_expr::{col, expr, lit, BuiltinScalarFunction, Expr};
+
+    #[apply(dialect_names)]
+    fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 0, "b": "1234", "c": "efgh"},
+                {"a": 1, "b": "ABCD", "c": "5678"},
+                {"a": 3, "b": null},
+            ]),
+            1024,
+        )
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+
+        let df_result = df
+            .select(vec![
+                col("a"),
+                col("b"),
+                col("c"),
+                Expr::ScalarFunction {
+                    fun: BuiltinScalarFunction::Substr,
+                    args: vec![col("b"), lit(2), lit(2)],
+                }
+                .alias("b_substr"),
+                Expr::ScalarFunction {
+                    fun: BuiltinScalarFunction::Concat,
+                    args: vec![col("b"), lit(" "), col("c")],
+                }
+                .alias("bc_concat"),
+            ])
+            .and_then(|df| {
+                df.sort(
+                    vec![Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    })],
+                    None,
+                )
+            });
+
+        check_dataframe_query(
+            df_result,
+            "select",
+            "test_string_ops",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}

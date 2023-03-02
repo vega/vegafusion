@@ -635,3 +635,42 @@ result = '''
 | 3 |                         |                         |                         |                         |
 +---+-------------------------+-------------------------+-------------------------+-------------------------+
 '''
+
+[test_string_ops]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '1234', 'efgh'), (1, 'ABCD', '5678'), (3, NULL, NULL)) AS "_values" ("a", "b", "c")), values1 AS (SELECT "a", "b", "c", substr("b", 2, 2) AS "b_substr", concat("b", ' ', "c") AS "bc_concat" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH values0 AS (SELECT 0 AS `a`, '1234' AS `b`, 'efgh' AS `c` UNION ALL SELECT 1 AS `a`, 'ABCD' AS `b`, '5678' AS `c` UNION ALL SELECT 3 AS `a`, NULL AS `b`, NULL AS `c`), values1 AS (SELECT `a`, `b`, `c`, substr(`b`, 2, 2) AS `b_substr`, concat(`b`, ' ', `c`) AS `bc_concat` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH values0 AS (SELECT 0 AS "a", '1234' AS "b", 'efgh' AS "c" UNION ALL SELECT 1 AS "a", 'ABCD' AS "b", '5678' AS "c" UNION ALL SELECT 3 AS "a", NULL AS "b", NULL AS "c"), values1 AS (SELECT "a", "b", "c", substr("b", 2, 2) AS "b_substr", concat("b", ' ', "c") AS "bc_concat" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '1234', 'efgh'), (1, 'ABCD', '5678'), (3, NULL, NULL)) AS `_values` (`a`, `b`, `c`)), values1 AS (SELECT `a`, `b`, `c`, substr(`b`, 2, 2) AS `b_substr`, concat(`b`, ' ', `c`) AS `bc_concat` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '1234', 'efgh'), (1, 'ABCD', '5678'), (3, NULL, NULL)) AS "_values" ("a", "b", "c")), values1 AS (SELECT "a", "b", "c", substr("b", 2, 2) AS "b_substr", concat("b", ' ', "c") AS "bc_concat" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '1234', 'efgh'), (1, 'ABCD', '5678'), (3, NULL, NULL)) AS "_values" ("a", "b", "c")), values1 AS (SELECT "a", "b", "c", substr("b", 2, 2) AS "b_substr", concat("b", ' ', "c") AS "bc_concat" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH values0 AS (SELECT * FROM (VALUES ROW(0, '1234', 'efgh'), ROW(1, 'ABCD', '5678'), ROW(3, NULL, NULL)) AS `_values` (`a`, `b`, `c`)), values1 AS (SELECT `a`, `b`, `c`, substr(`b`, 2, 2) AS `b_substr`, concat(`b`, ' ', `c`) AS `bc_concat` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (0, '1234', 'efgh'), (1, 'ABCD', '5678'), (3, NULL, NULL)) AS "_values" ("a", "b", "c")), values1 AS (SELECT "a", "b", "c", substr("b", 2, 2) AS "b_substr", concat("b", ' ', "c") AS "bc_concat" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = "UNSUPPORTED"
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (0, '1234', 'efgh'), (1, 'ABCD', '5678'), (3, NULL, NULL))), values1 AS (SELECT "a", "b", "c", substr("b", 2, 2) AS "b_substr", concat("b", ' ', "c") AS "bc_concat" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+------+------+----------+-----------+
+| a | b    | c    | b_substr | bc_concat |
++---+------+------+----------+-----------+
+| 0 | 1234 | efgh | 23       | 1234 efgh |
+| 1 | ABCD | 5678 | BC       | ABCD 5678 |
+| 3 |      |      |          |           |
++---+------+------+----------+-----------+
+'''
