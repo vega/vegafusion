@@ -239,7 +239,7 @@ impl Dialect {
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
                 "ln", "log2", "log10", "pow", "round", "sin", "sqrt", "tan", "random", "substr",
-                "concat",
+                "concat", "upper", "lower",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -352,6 +352,7 @@ impl Dialect {
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
                 "ln", "log10", "pow", "round", "sin", "sqrt", "tan", "trunc", "substr", "concat",
+                "upper", "lower",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -479,7 +480,7 @@ impl Dialect {
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
                 "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "trunc", "substr",
-                "concat",
+                "concat", "upper", "lower",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -566,7 +567,7 @@ impl Dialect {
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
                 "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "random", "substr",
-                "concat",
+                "concat", "upper", "lower",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -715,6 +716,8 @@ impl Dialect {
                 "trunc",
                 "concat",
                 "substr",
+                "upper",
+                "lower",
                 "to_timestamp_millis",
                 // UDFs
                 "isnan",
@@ -842,7 +845,7 @@ impl Dialect {
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "floor", "ln",
                 "log", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "random", "isfinite",
-                "substr", "concat",
+                "substr", "concat", "upper", "lower",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -979,6 +982,7 @@ impl Dialect {
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
                 "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "substr", "concat",
+                "upper", "lower",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -1074,7 +1078,7 @@ impl Dialect {
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
                 "ln", "log", "pow", "round", "sin", "sqrt", "tan", "trunc", "random", "substr",
-                "concat",
+                "concat", "upper", "lower",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -1209,7 +1213,8 @@ impl Dialect {
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "pow", "round", "sin", "sqrt", "tan", "trunc", "random", "substr",
+                "pow", "round", "sin", "sqrt", "tan", "trunc", "random", "substr", "upper",
+                "lower",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -1340,6 +1345,7 @@ impl Dialect {
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
                 "ln", "pow", "round", "sin", "sqrt", "tan", "trunc", "random", "substr", "concat",
+                "upper", "lower",
             ]
             .iter()
             .map(|s| s.to_string())

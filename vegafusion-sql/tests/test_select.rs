@@ -1113,8 +1113,8 @@ mod test_string_ops {
 
         let table = VegaFusionTable::from_json(
             &json!([
-                {"a": 0, "b": "1234", "c": "efgh"},
-                {"a": 1, "b": "ABCD", "c": "5678"},
+                {"a": 0, "b": "1234", "c": "efGH"},
+                {"a": 1, "b": "abCD", "c": "5678"},
                 {"a": 3, "b": null},
             ]),
             1024,
@@ -1138,6 +1138,16 @@ mod test_string_ops {
                     args: vec![col("b"), lit(" "), col("c")],
                 }
                 .alias("bc_concat"),
+                Expr::ScalarFunction {
+                    fun: BuiltinScalarFunction::Upper,
+                    args: vec![col("b")],
+                }
+                .alias("b_upper"),
+                Expr::ScalarFunction {
+                    fun: BuiltinScalarFunction::Lower,
+                    args: vec![col("b")],
+                }
+                .alias("b_lower"),
             ])
             .and_then(|df| {
                 df.sort(
