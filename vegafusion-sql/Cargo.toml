@@ -67,11 +67,14 @@ version = "^1.5.5"
 optional = true
 
 [dev-dependencies]
-serde_json = "1.0.91"
 rstest = "0.16.0"
 rstest_reuse = "0.5.0"
 lazy_static = "^1.4.0"
 toml = "0.7.2"
+
+[dev-dependencies.serde_json]
+version = "1.0.91"
+features = [ "preserve_order",]
 
 [dev-dependencies.vegafusion-datafusion-udfs]
 path = "../vegafusion-datafusion-udfs"

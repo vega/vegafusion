@@ -27,7 +27,7 @@ version = "0.30.0"
 optional = true
 
 [dependencies.serde_json]
-version = "1.0.81"
+version = "1.0.91"
 features = [ "preserve_order",]
 
 [dependencies.vegafusion-common]
