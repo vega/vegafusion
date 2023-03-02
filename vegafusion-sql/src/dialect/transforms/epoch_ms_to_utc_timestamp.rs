@@ -20,7 +20,7 @@ fn process_epoch_ms_to_utc_timestamp_args(
             "epoch_utc_timestamp requires exactly one argument",
         ));
     }
-    Ok(args[0].to_sql(dialect, schema)?)
+    args[0].to_sql(dialect, schema)
 }
 
 /// Convert epoch_ms_to_utc_timestamp(ms) ->

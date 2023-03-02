@@ -270,7 +270,7 @@ impl FunctionTransformer for DateTruncTzWithFromUtcAndDateTruncTransformer {
                 args: vec![
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(date_trunc_in_tz)),
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                        SqlValue::SingleQuotedString(time_zone.clone()),
+                        SqlValue::SingleQuotedString(time_zone),
                     ))),
                 ],
                 over: None,

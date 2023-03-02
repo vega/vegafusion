@@ -90,7 +90,7 @@ mod test_simple_aggs_unbounded {
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
-                    window_frame: window_frame.clone(),
+                    window_frame: window_frame,
                 })
                 .alias("max_b"),
             ])
@@ -182,7 +182,7 @@ mod test_simple_aggs_bounded {
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
-                    window_frame: window_frame.clone(),
+                    window_frame: window_frame,
                 })
                 .alias("max_b"),
             ])
@@ -285,7 +285,7 @@ mod test_simple_window_fns {
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
-                    window_frame: window_frame.clone(),
+                    window_frame: window_frame,
                 })
                 .alias("last"),
             ])
@@ -388,7 +388,7 @@ mod test_advanced_window_fns {
                     args: vec![lit(2)],
                     partition_by: vec![],
                     order_by: order_by.clone(),
-                    window_frame: window_frame.clone(),
+                    window_frame: window_frame,
                 })
                 .alias("ntile"),
             ])

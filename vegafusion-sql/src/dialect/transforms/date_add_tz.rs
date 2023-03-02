@@ -35,7 +35,7 @@ fn process_date_add_tz_args(
     };
 
     let n_str = if let SqlExpr::Value(SqlValue::Number(n, _)) = sql_arg1 {
-        n.to_string()
+        n
     } else {
         return Err(VegaFusionError::sql_not_supported(
             "Second arg to date_add must be an i32 literal",
@@ -158,7 +158,7 @@ impl FunctionTransformer for DateAddTzBigQueryTransformer {
             args: vec![
                 SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(datetime_add_expr)),
                 SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                    SqlValue::SingleQuotedString(time_zone.clone()),
+                    SqlValue::SingleQuotedString(time_zone),
                 ))),
             ],
             over: None,

@@ -466,7 +466,7 @@ mod test_is_finite {
             ],
         )
         .unwrap();
-        let table = VegaFusionTable::try_new(schema.clone(), vec![batch]).unwrap();
+        let table = VegaFusionTable::try_new(schema, vec![batch]).unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn).unwrap();
 

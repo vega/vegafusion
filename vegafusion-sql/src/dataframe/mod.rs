@@ -1036,7 +1036,7 @@ impl SqlDataFrame {
                     .collect::<Vec<_>>();
                 let query_str = select_strs.join(" UNION ALL ");
 
-                parse_sql_query(&query_str, &dialect)?
+                parse_sql_query(&query_str, dialect)?
             }
             ValuesMode::ValuesWithSubqueryColumnAliases { explicit_row, .. }
             | ValuesMode::ValuesWithSelectColumnAliases { explicit_row, .. } => {
@@ -1167,7 +1167,7 @@ impl SqlDataFrame {
 
     fn chain_query_str(&self, query: &str, new_schema: Schema) -> Result<Arc<dyn DataFrame>> {
         // println!("chain_query_str: {}", query);
-        let query_ast = parse_sql_query(query, &self.dialect())?;
+        let query_ast = parse_sql_query(query, self.dialect())?;
         self.chain_query(query_ast, new_schema)
     }
 

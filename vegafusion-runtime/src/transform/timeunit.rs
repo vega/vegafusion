@@ -55,7 +55,7 @@ fn timeunit_date_trunc(
 
     let start_expr = Expr::ScalarUDF {
         fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
-        args: vec![lit(part_str), field_col, lit(&tz_str)],
+        args: vec![lit(part_str), field_col, lit(tz_str)],
     };
 
     Ok((start_expr, interval))
@@ -212,7 +212,7 @@ fn timeunit_weekday(
     // where Sunday is 0 and Saturday is 6
     let weekday0 = Expr::ScalarUDF {
         fun: Arc::new(DATE_PART_TZ_UDF.clone()),
-        args: vec![lit("dow"), field_col, lit(&tz_str)],
+        args: vec![lit("dow"), field_col, lit(tz_str)],
     };
 
     // Add one to line up with the signature of MAKE_UTC_TIMESTAMP
@@ -499,14 +499,14 @@ impl TransformTrait for TimeUnit {
             "unit1".to_string()
         };
 
-        let tz_str = local_tz.clone().unwrap_or_else(|| "UTC".to_string());
+        let tz_str = local_tz.unwrap_or_else(|| "UTC".to_string());
         let timeunit_end_expr = Expr::ScalarUDF {
             fun: Arc::new((*DATE_ADD_TZ_UDF).clone()),
             args: vec![
                 lit(&interval.1),
                 lit(interval.0),
                 flat_col(&timeunit_start_alias),
-                lit(&tz_str),
+                lit(tz_str),
             ],
         }
         .alias(&timeunit_end_alias);

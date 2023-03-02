@@ -440,7 +440,7 @@ impl Dialect {
                 (DataType::Int64, SqlDataType::Int(None)),
                 (DataType::Float16, float64dtype.clone()),
                 (DataType::Float32, float64dtype.clone()),
-                (DataType::Float64, float64dtype.clone()),
+                (DataType::Float64, float64dtype),
                 (DataType::Utf8, SqlDataType::String),
             ]
             .into_iter()
@@ -1036,8 +1036,8 @@ impl Dialect {
                 (DataType::Int16, signed.clone()),
                 (DataType::UInt16, unsigned.clone()),
                 (DataType::Int32, signed.clone()),
-                (DataType::UInt32, unsigned.clone()),
-                (DataType::Int64, signed.clone()),
+                (DataType::UInt32, unsigned),
+                (DataType::Int64, signed),
                 (DataType::Float16, SqlDataType::Float(None)),
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
@@ -1525,14 +1525,13 @@ fn args_to_sql_args(
     dialect: &Dialect,
     schema: &DFSchema,
 ) -> Result<Vec<SqlFunctionArg>> {
-    Ok(args
-        .iter()
+    args.iter()
         .map(|arg| {
             Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(
                 arg.to_sql(dialect, schema)?,
             )))
         })
-        .collect::<Result<Vec<_>>>()?)
+        .collect::<Result<Vec<_>>>()
 }
 
 #[derive(Clone, Debug)]

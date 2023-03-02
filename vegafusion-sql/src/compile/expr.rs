@@ -96,8 +96,7 @@ impl ToSqlExpr for Expr {
                     )
                 } else {
                     return Err(VegaFusionError::sql_not_supported(format!(
-                        "Dialect does not support the '{:?}' operator",
-                        op
+                        "Dialect does not support the '{op:?}' operator"
                     )));
                 }
             }
@@ -355,15 +354,14 @@ impl ToSqlExpr for Expr {
                         let start_bound =
                             compile_window_frame_bound(&window_frame.start_bound, dialect, schema)?;
 
-                        if !dialect.supports_bounded_window_frames {
-                            if !matches!(start_bound, SqlWindowBound::Preceding(None))
-                                || !matches!(end_bound, SqlWindowBound::CurrentRow)
-                            {
-                                // Found bounded window frame, which is not supported by dialect
-                                return Err(VegaFusionError::sql_not_supported(
-                                    "Dialect does not support bounded window frames",
-                                ));
-                            }
+                        if !dialect.supports_bounded_window_frames
+                            && (!matches!(start_bound, SqlWindowBound::Preceding(None))
+                                || !matches!(end_bound, SqlWindowBound::CurrentRow))
+                        {
+                            // Found bounded window frame, which is not supported by dialect
+                            return Err(VegaFusionError::sql_not_supported(
+                                "Dialect does not support bounded window frames",
+                            ));
                         }
 
                         let units = match window_frame.units {
@@ -626,7 +624,7 @@ mod tests {
             args: vec![lit(1.2)],
         } + col("B");
 
-        let mut dialect: Dialect = Dialect::datafusion();
+        let dialect: Dialect = Dialect::datafusion();
         let sql_expr = df_expr.to_sql(&dialect, &schema()).unwrap();
         println!("{sql_expr:?}");
         let sql_str = sql_expr.to_string();
@@ -640,7 +638,7 @@ mod tests {
             args: vec![lit("foo")],
         };
 
-        let mut dialect: Dialect = Dialect::datafusion();
+        let dialect: Dialect = Dialect::datafusion();
         let sql_expr = df_expr.to_sql(&dialect, &schema()).unwrap();
         println!("{sql_expr:?}");
         let sql_str = sql_expr.to_string();

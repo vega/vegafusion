@@ -20,7 +20,7 @@ fn process_utc_timestamp_to_epoch_ms_args(
             "utc_timestamp_to_epoch_ms requires exactly one argument",
         ));
     }
-    Ok(args[0].to_sql(dialect, schema)?)
+    args[0].to_sql(dialect, schema)
 }
 
 /// Convert utc_timestamp_to_epoch_ms(ts) ->
@@ -65,7 +65,7 @@ impl FunctionTransformer for UtcTimestampToEpochMsDatabricksTransform {
                 SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
                     SqlValue::SingleQuotedString("second".to_string()),
                 ))),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_expr.clone())),
+                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_expr)),
             ],
             over: None,
             distinct: false,
@@ -133,7 +133,7 @@ impl FunctionTransformer for UtcTimestampToEpochMsDuckdbTransform {
                 SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
                     SqlValue::SingleQuotedString("millisecond".to_string()),
                 ))),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_expr.clone())),
+                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_expr)),
             ],
             over: None,
             distinct: false,

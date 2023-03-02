@@ -93,9 +93,7 @@ fn convert_d3_format_string(d3_format_str: &str) -> String {
     let format_str = d3_format_str.replace("%f", "%6f");
 
     // %L is milliseconds in D3, this is %3f in chrono
-    let format_str = format_str.replace("%L", "%3f");
-
-    format_str
+    format_str.replace("%L", "%3f")
 }
 
 lazy_static! {
