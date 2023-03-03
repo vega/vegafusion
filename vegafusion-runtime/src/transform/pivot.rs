@@ -1,5 +1,4 @@
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{cast_to, data_type, is_string_datatype};
 use crate::transform::aggregate::make_agg_expr_for_col_expr;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
@@ -10,6 +9,7 @@ use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::scalar::ScalarValue;
 use vegafusion_common::data::ORDER_COL;
+use vegafusion_common::datatypes::{cast_to, data_type, is_string_datatype};
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_common::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::{AggregateOp, Pivot};

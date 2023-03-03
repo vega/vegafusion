@@ -1,7 +1,9 @@
 use chrono::TimeZone;
 use chrono::{NaiveDateTime, Timelike};
+use chrono_tz::Tz;
 use std::str::FromStr;
 use std::sync::Arc;
+use vegafusion_common::arrow::array::Array;
 use vegafusion_common::{
     arrow::{
         array::{ArrayRef, TimestampMillisecondArray},
@@ -15,7 +17,7 @@ use vegafusion_common::{
     },
 };
 
-fn make_timestamp_to_timestamptz_udf() -> ScalarUDF {
+fn make_to_utc_timestamp_udf() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
         // [0] data array
         let timestamp_array = match &args[0] {
@@ -35,20 +37,13 @@ fn make_timestamp_to_timestamptz_udf() -> ScalarUDF {
             DataFusionError::Internal(format!("Failed to parse {tz_str} as a timezone"))
         })?;
 
-        // Normalize input to integer array of milliseconds
-        let timestamp_array = to_timestamp_ms(&timestamp_array)?;
-        let timestamp_millis = timestamp_array
-            .as_any()
-            .downcast_ref::<TimestampMillisecondArray>()
-            .unwrap();
-        let timestamp_array = convert_timezone(timestamp_millis, tz);
-        let timestamp_array = Arc::new(timestamp_array) as ArrayRef;
+        let result_array = to_utc_timestamp(timestamp_array, tz)?;
 
         // maybe back to scalar
-        if timestamp_array.len() != 1 {
-            Ok(ColumnarValue::Array(timestamp_array))
+        if result_array.len() != 1 {
+            Ok(ColumnarValue::Array(result_array))
         } else {
-            ScalarValue::try_from_array(&timestamp_array, 0).map(ColumnarValue::Scalar)
+            ScalarValue::try_from_array(&result_array, 0).map(ColumnarValue::Scalar)
         }
     });
 
@@ -60,20 +55,18 @@ fn make_timestamp_to_timestamptz_udf() -> ScalarUDF {
     // coerce between timezones.
     let signature: Signature = Signature::any(2, Volatility::Immutable);
 
-    ScalarUDF::new(
-        "timestamp_to_timestamptz",
-        &signature,
-        &return_type,
-        &scalar_fn,
-    )
+    ScalarUDF::new("to_utc_timestamp", &signature, &return_type, &scalar_fn)
 }
 
-pub fn convert_timezone(
-    millis_array: &TimestampMillisecondArray,
-    tz: chrono_tz::Tz,
-) -> TimestampMillisecondArray {
-    TimestampMillisecondArray::from(
-        millis_array
+pub fn to_utc_timestamp(timestamp_array: ArrayRef, tz: Tz) -> Result<ArrayRef, DataFusionError> {
+    // Normalize input to integer array of milliseconds
+    let timestamp_array = to_timestamp_ms(&timestamp_array)?;
+    let timestamp_millis = timestamp_array
+        .as_any()
+        .downcast_ref::<TimestampMillisecondArray>()
+        .unwrap();
+    let timestamp_array = TimestampMillisecondArray::from(
+        timestamp_millis
             .iter()
             .map(|v| {
                 v.map(|v| {
@@ -105,7 +98,9 @@ pub fn convert_timezone(
                 })
             })
             .collect::<Vec<Option<_>>>(),
-    )
+    );
+
+    Ok(Arc::new(timestamp_array) as ArrayRef)
 }
 
 pub fn to_timestamp_ms(array: &ArrayRef) -> Result<ArrayRef, DataFusionError> {
@@ -131,5 +126,5 @@ pub fn to_timestamp_ms(array: &ArrayRef) -> Result<ArrayRef, DataFusionError> {
 }
 
 lazy_static! {
-    pub static ref TIMESTAMP_TO_TIMESTAMPTZ_UDF: ScalarUDF = make_timestamp_to_timestamptz_udf();
+    pub static ref TO_UTC_TIMESTAMP_UDF: ScalarUDF = make_to_utc_timestamp_udf();
 }

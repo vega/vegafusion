@@ -5,7 +5,6 @@ edition = "2021"
 
 [features]
 datafusion-conn = [ "datafusion", "tempfile", "reqwest", "reqwest-retry", "reqwest-middleware", "vegafusion-datafusion-udfs"]
-sqlite-conn = ["sqlx", "sqlx/sqlite", "regex", "vegafusion-common/prettyprint", "libsqlite3-sys"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
@@ -63,16 +62,34 @@ optional = true
 version = "0.2.0"
 optional = true
 
-[dependencies.sqlx]
-version = "0.6.1"
-features = [ "runtime-tokio-rustls", "macros",]
-optional = true
-
 [dependencies.regex]
 version = "^1.5.5"
 optional = true
 
-[dependencies.libsqlite3-sys]
-version = "0.24.1"
-features = [ "bundled",]
-optional = true
+[dev-dependencies]
+rstest = "0.16.0"
+rstest_reuse = "0.5.0"
+lazy_static = "^1.4.0"
+toml = "0.7.2"
+
+[dev-dependencies.serde_json]
+version = "1.0.91"
+features = [ "preserve_order",]
+
+[dev-dependencies.vegafusion-datafusion-udfs]
+path = "../vegafusion-datafusion-udfs"
+version = "1.0.3"
+
+[dev-dependencies.vegafusion-common]
+path = "../vegafusion-common"
+version = "1.0.3"
+features = ["sqlparser", "json", "prettyprint"]
+
+[dev-dependencies.tokio]
+version = "1.18.1"
+features = [ "macros", "rt-multi-thread",]
+
+[dev-dependencies.serde]
+version = "1.0.137"
+features = [ "derive",]
+

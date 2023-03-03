@@ -1,12 +1,12 @@
-use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion_expr::{lit, Expr, ExprSchemable};
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::DFSchema;
+use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
 use vegafusion_common::error::{Result, VegaFusionError};
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_epoch::TIMESTAMPTZ_TO_EPOCH_MS;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_epoch::UTC_TIMESTAMP_TO_EPOCH_MS;
 
 pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema) -> Result<Expr> {
     // Validate number of arguments
@@ -23,16 +23,16 @@ pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema) ->
     // Dispatch handling on data type
     let expr = match arg.get_type(schema)? {
         DataType::Timestamp(_, _) => Expr::ScalarUDF {
-            fun: Arc::new((*TIMESTAMPTZ_TO_EPOCH_MS).clone()),
+            fun: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
             args: vec![arg.clone()],
         },
         DataType::Utf8 => {
             let mut udf_args = vec![lit(tz_config.default_input_tz.to_string())];
             udf_args.extend(Vec::from(args));
             Expr::ScalarUDF {
-                fun: Arc::new((*TIMESTAMPTZ_TO_EPOCH_MS).clone()),
+                fun: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
                 args: vec![Expr::ScalarUDF {
-                    fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+                    fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
                     args: vec![arg.clone(), lit(tz_config.default_input_tz.to_string())],
                 }],
             }

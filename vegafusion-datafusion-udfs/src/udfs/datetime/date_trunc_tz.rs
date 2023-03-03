@@ -7,9 +7,9 @@ use vegafusion_common::{
     },
 };
 
-fn make_date_add_udf() -> ScalarUDF {
+fn make_date_trunc_tz_udf() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |_args: &[ColumnarValue]| {
-        unimplemented!("date_add function is not implemented by DataFusion")
+        unimplemented!("date_trunc_tz function is not implemented by DataFusion")
     });
 
     let return_type: ReturnTypeFunction =
@@ -17,16 +17,16 @@ fn make_date_add_udf() -> ScalarUDF {
 
     let signature = Signature::exact(
         vec![
-            DataType::Utf8,
-            DataType::Int32,
+            DataType::Utf8, // part
             DataType::Timestamp(TimeUnit::Millisecond, None),
+            DataType::Utf8, // timezone
         ],
         Volatility::Immutable,
     );
 
-    ScalarUDF::new("date_add", &signature, &return_type, &scalar_fn)
+    ScalarUDF::new("date_trunc_tz", &signature, &return_type, &scalar_fn)
 }
 
 lazy_static! {
-    pub static ref DATE_ADD_UDF: ScalarUDF = make_date_add_udf();
+    pub static ref DATE_TRUNC_TZ_UDF: ScalarUDF = make_date_trunc_tz_udf();
 }

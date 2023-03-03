@@ -5,7 +5,7 @@ use vegafusion_core::spec::chart::{ChartSpec, MutChartVisitor};
 use vegafusion_core::spec::data::DataSpec;
 use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::parse_datetime;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::parse_datetime;
 
 /// Post pre-transform transformation that detects the use of datetime strings in
 /// Vega-Lite style selection "_store" datasets, and adds a transform to convert

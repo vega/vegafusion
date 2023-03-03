@@ -1,6 +1,6 @@
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::{to_numeric, ExprHelpers};
+use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
@@ -8,13 +8,13 @@ use datafusion_expr::lit;
 
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
-use datafusion_expr::expr::Cast;
 use datafusion_expr::{abs, floor, when, Expr};
 use float_cmp::approx_eq;
 use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
+use vegafusion_common::datatypes::to_numeric;
 use vegafusion_core::arrow::datatypes::{DataType, Field};
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Bin;
@@ -58,15 +58,8 @@ impl TransformTrait for Bin {
         let bin_start = (flat_col(bin_index_name).mul(lit(step))).add(lit(start));
         let bin_start_name = self.alias_0.clone().unwrap_or_else(|| "bin0".to_string());
 
-        // Explicitly cast (-)inf to float64 to help DataFusion with type inference
-        let inf = Expr::Cast(Cast {
-            expr: Box::new(lit(f64::INFINITY)),
-            data_type: DataType::Float64,
-        });
-        let neg_inf = Expr::Cast(Cast {
-            expr: Box::new(lit(f64::NEG_INFINITY)),
-            data_type: DataType::Float64,
-        });
+        let inf = lit(f64::INFINITY);
+        let neg_inf = lit(f64::NEG_INFINITY);
         let eps = lit(1.0e-14);
 
         let bin_start = when(flat_col(bin_index_name).lt(lit(0.0)), neg_inf)

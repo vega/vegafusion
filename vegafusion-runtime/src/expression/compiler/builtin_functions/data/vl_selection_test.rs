@@ -1,7 +1,4 @@
-use crate::expression::compiler::utils::{
-    cast_to, is_float_datatype, is_integer_datatype, is_numeric_datatype, is_string_datatype,
-    ExprHelpers,
-};
+use crate::expression::compiler::utils::ExprHelpers;
 
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -16,15 +13,18 @@ use vegafusion_common::column::flat_col;
 use vegafusion_common::data::scalar::ScalarValue;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_common::DFSchema;
+use vegafusion_common::datatypes::{
+    cast_to, is_float_datatype, is_integer_datatype, is_numeric_datatype, is_string_datatype,
+};
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::literal::Value;
 use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::{
-    parse_datetime, STR_TO_TIMESTAMPTZ_UDF,
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::{
+    parse_datetime, STR_TO_UTC_TIMESTAMP_UDF,
 };
-use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_epoch::TIMESTAMPTZ_TO_EPOCH_MS;
+use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_epoch::UTC_TIMESTAMP_TO_EPOCH_MS;
 
 /// Op
 #[derive(Debug, Clone)]
@@ -132,7 +132,7 @@ impl FieldSpec {
             DataType::Timestamp(TimeUnit::Millisecond, _)
         ) {
             Expr::ScalarUDF {
-                fun: Arc::new((*TIMESTAMPTZ_TO_EPOCH_MS).clone()),
+                fun: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
                 args: vec![field_col],
             }
         } else {
@@ -270,11 +270,11 @@ impl FieldSpec {
                     && is_numeric_datatype(field_type) =>
             {
                 let timestamp_expr = Expr::ScalarUDF {
-                    fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+                    fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
                     args: vec![lit(s), lit(default_input_tz)],
                 };
                 let ms_expr = Expr::ScalarUDF {
-                    fun: Arc::new((*TIMESTAMPTZ_TO_EPOCH_MS).clone()),
+                    fun: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
                     args: vec![timestamp_expr],
                 };
                 cast_to(ms_expr, field_type, schema)

@@ -1,0 +1,71 @@
+[simple_gte]
+athena = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE'), (11, 12, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT * FROM values0 WHERE ((("a" + 2) >= 9) OR (("b" % 4) = 0))) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH \
+values0 AS (SELECT 1 AS `a`, 2 AS `b`, 'A' AS `c` UNION ALL SELECT 3 AS `a`, 4 AS `b`, 'BB' AS `c` UNION ALL SELECT 5 AS `a`, 6 AS `b`, 'CCC' AS `c` UNION ALL SELECT 7 AS `a`, 8 AS `b`, 'DDDD' AS `c` UNION ALL SELECT 9 AS `a`, 10 AS `b`, 'EEEEE' AS `c` UNION ALL SELECT 11 AS `a`, 12 AS `b`, 'FFFFFF' AS `c`), \
+values1 AS (SELECT * FROM values0 WHERE (((`a` + 2) >= 9) OR (MOD(`b`, 4) = 0))) \
+SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 6 AS "b", 'CCC' AS "c" UNION ALL SELECT 7 AS "a", 8 AS "b", 'DDDD' AS "c" UNION ALL SELECT 9 AS "a", 10 AS "b", 'EEEEE' AS "c" UNION ALL SELECT 11 AS "a", 12 AS "b", 'FFFFFF' AS "c"), \
+values1 AS (SELECT * FROM values0 WHERE ((("a" + 2) >= 9) OR (("b" % 4) = 0))) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE'), (11, 12, 'FFFFFF')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT * FROM values0 WHERE (((`a` + 2) >= 9) OR ((`b` % 4) = 0))) \
+SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE'), (11, 12, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT * FROM values0 WHERE ((("a" + 2) >= 9) OR (("b" % 4) = 0))) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE'), (11, 12, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT * FROM values0 WHERE ((("a" + 2) >= 9) OR (("b" % 4) = 0))) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ROW(1, 2, 'A'), ROW(3, 4, 'BB'), ROW(5, 6, 'CCC'), ROW(7, 8, 'DDDD'), ROW(9, 10, 'EEEEE'), ROW(11, 12, 'FFFFFF')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT * FROM values0 WHERE (((`a` + 2) >= 9) OR ((`b` % 4) = 0))) \
+SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE'), (11, 12, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT * FROM values0 WHERE ((("a" + 2) >= 9) OR (("b" % 4) = 0))) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 6 AS "b", 'CCC' AS "c" UNION ALL SELECT 7 AS "a", 8 AS "b", 'DDDD' AS "c" UNION ALL SELECT 9 AS "a", 10 AS "b", 'EEEEE' AS "c" UNION ALL SELECT 11 AS "a", 12 AS "b", 'FFFFFF' AS "c"), \
+values1 AS (SELECT * FROM values0 WHERE ((("a" + 2) >= 9) OR (("b" % 4) = 0))) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE'), (11, 12, 'FFFFFF'))), \
+values1 AS (SELECT * FROM values0 WHERE ((("a" + 2) >= 9) OR (("b" % 4) = 0))) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++----+----+--------+
+| a  | b  | c      |
++----+----+--------+
+| 3  | 4  | BB     |
+| 7  | 8  | DDDD   |
+| 9  | 10 | EEEEE  |
+| 11 | 12 | FFFFFF |
++----+----+--------+
+'''

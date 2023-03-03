@@ -1,0 +1,155 @@
+[default_null_ordering]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, 'CCC'), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS LAST, "c" ASC NULLS FIRST
+"""
+bigquery = """
+WITH values0 AS (SELECT 1 AS `a`, 4 AS `b`, 'BB' AS `c` UNION ALL SELECT 2 AS `a`, 6 AS `b`, 'DDDD' AS `c` UNION ALL SELECT NULL AS `a`, 5 AS `b`, 'BB' AS `c` UNION ALL SELECT 2 AS `a`, 7 AS `b`, 'CCC' AS `c` UNION ALL SELECT 1 AS `a`, 8 AS `b`, 'CCC' AS `c` UNION ALL SELECT 1 AS `a`, 2 AS `b`, 'A' AS `c`) \
+SELECT * FROM values0 ORDER BY `a` DESC NULLS LAST, `c` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH values0 AS (SELECT 1 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 2 AS "a", 6 AS "b", 'DDDD' AS "c" UNION ALL SELECT NULL AS "a", 5 AS "b", 'BB' AS "c" UNION ALL SELECT 2 AS "a", 7 AS "b", 'CCC' AS "c" UNION ALL SELECT 1 AS "a", 8 AS "b", 'CCC' AS "c" UNION ALL SELECT 1 AS "a", 2 AS "b", 'A' AS "c") \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS LAST, "c" ASC NULLS FIRST
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, 'CCC'), (1, 2, 'A')) AS `_values` (`a`, `b`, `c`)) \
+SELECT * FROM values0 ORDER BY `a` DESC NULLS LAST, `c` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, 'CCC'), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS LAST, "c" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, 'CCC'), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS LAST, "c" ASC NULLS FIRST
+"""
+mysql = """
+WITH values0 AS (SELECT * FROM (VALUES ROW(1, 4, 'BB'), ROW(2, 6, 'DDDD'), ROW(NULL, 5, 'BB'), ROW(2, 7, 'CCC'), ROW(1, 8, 'CCC'), ROW(1, 2, 'A')) AS `_values` (`a`, `b`, `c`)) \
+SELECT * FROM values0 ORDER BY `a` DESC, `c` ASC
+"""
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, 'CCC'), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS LAST, "c" ASC NULLS FIRST
+"""
+redshift = """
+WITH values0 AS (SELECT 1 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 2 AS "a", 6 AS "b", 'DDDD' AS "c" UNION ALL SELECT NULL AS "a", 5 AS "b", 'BB' AS "c" UNION ALL SELECT 2 AS "a", 7 AS "b", 'CCC' AS "c" UNION ALL SELECT 1 AS "a", 8 AS "b", 'CCC' AS "c" UNION ALL SELECT 1 AS "a", 2 AS "b", 'A' AS "c") \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS LAST, "c" ASC NULLS FIRST
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, 'CCC'), (1, 2, 'A'))) \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS LAST, "c" ASC NULLS FIRST
+"""
+result = '''
++---+---+------+
+| a | b | c    |
++---+---+------+
+| 2 | 7 | CCC  |
+| 2 | 6 | DDDD |
+| 1 | 2 | A    |
+| 1 | 4 | BB   |
+| 1 | 8 | CCC  |
+|   | 5 | BB   |
++---+---+------+
+'''
+
+[custom_null_ordering]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, NULL), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS FIRST, "c" ASC NULLS LAST
+"""
+bigquery = """
+WITH values0 AS (SELECT 1 AS `a`, 4 AS `b`, 'BB' AS `c` UNION ALL SELECT 2 AS `a`, 6 AS `b`, 'DDDD' AS `c` UNION ALL SELECT NULL AS `a`, 5 AS `b`, 'BB' AS `c` UNION ALL SELECT 2 AS `a`, 7 AS `b`, 'CCC' AS `c` UNION ALL SELECT 1 AS `a`, 8 AS `b`, NULL AS `c` UNION ALL SELECT 1 AS `a`, 2 AS `b`, 'A' AS `c`) \
+SELECT * FROM values0 ORDER BY `a` DESC NULLS FIRST, `c` ASC NULLS LAST
+"""
+clickhouse = """
+WITH values0 AS (SELECT 1 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 2 AS "a", 6 AS "b", 'DDDD' AS "c" UNION ALL SELECT NULL AS "a", 5 AS "b", 'BB' AS "c" UNION ALL SELECT 2 AS "a", 7 AS "b", 'CCC' AS "c" UNION ALL SELECT 1 AS "a", 8 AS "b", NULL AS "c" UNION ALL SELECT 1 AS "a", 2 AS "b", 'A' AS "c") \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS FIRST, "c" ASC NULLS LAST
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, NULL), (1, 2, 'A')) AS `_values` (`a`, `b`, `c`)) \
+SELECT * FROM values0 ORDER BY `a` DESC NULLS FIRST, `c` ASC NULLS LAST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, NULL), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS FIRST, "c" ASC NULLS LAST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, NULL), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS FIRST, "c" ASC NULLS LAST
+"""
+mysql = "UNSUPPORTED"
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, NULL), (1, 2, 'A')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS FIRST, "c" ASC NULLS LAST
+"""
+redshift = """
+WITH values0 AS (SELECT 1 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 2 AS "a", 6 AS "b", 'DDDD' AS "c" UNION ALL SELECT NULL AS "a", 5 AS "b", 'BB' AS "c" UNION ALL SELECT 2 AS "a", 7 AS "b", 'CCC' AS "c" UNION ALL SELECT 1 AS "a", 8 AS "b", NULL AS "c" UNION ALL SELECT 1 AS "a", 2 AS "b", 'A' AS "c") \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS FIRST, "c" ASC NULLS LAST
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (2, 7, 'CCC'), (1, 8, NULL), (1, 2, 'A'))) \
+SELECT * FROM values0 ORDER BY "a" DESC NULLS FIRST, "c" ASC NULLS LAST
+"""
+result = '''
++---+---+------+
+| a | b | c    |
++---+---+------+
+|   | 5 | BB   |
+| 2 | 7 | CCC  |
+| 2 | 6 | DDDD |
+| 1 | 2 | A    |
+| 1 | 4 | BB   |
+| 1 | 8 |      |
++---+---+------+
+'''
+
+[order_with_limit]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (4, 7, 'CCC'), (5, 8, 'CCC'), (6, 2, 'A')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 ORDER BY "c" ASC NULLS FIRST, "b" ASC NULLS FIRST LIMIT 4
+"""
+bigquery = """
+WITH values0 AS (SELECT 1 AS `a`, 4 AS `b`, 'BB' AS `c` UNION ALL SELECT 2 AS `a`, 6 AS `b`, 'DDDD' AS `c` UNION ALL SELECT NULL AS `a`, 5 AS `b`, 'BB' AS `c` UNION ALL SELECT 4 AS `a`, 7 AS `b`, 'CCC' AS `c` UNION ALL SELECT 5 AS `a`, 8 AS `b`, 'CCC' AS `c` UNION ALL SELECT 6 AS `a`, 2 AS `b`, 'A' AS `c`) \
+SELECT * FROM values0 ORDER BY `c` ASC NULLS FIRST, `b` ASC NULLS FIRST LIMIT 4
+"""
+clickhouse = """
+WITH values0 AS (SELECT 1 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 2 AS "a", 6 AS "b", 'DDDD' AS "c" UNION ALL SELECT NULL AS "a", 5 AS "b", 'BB' AS "c" UNION ALL SELECT 4 AS "a", 7 AS "b", 'CCC' AS "c" UNION ALL SELECT 5 AS "a", 8 AS "b", 'CCC' AS "c" UNION ALL SELECT 6 AS "a", 2 AS "b", 'A' AS "c") \
+SELECT * FROM values0 ORDER BY "c" ASC NULLS FIRST, "b" ASC NULLS FIRST LIMIT 4
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (4, 7, 'CCC'), (5, 8, 'CCC'), (6, 2, 'A')) AS `_values` (`a`, `b`, `c`)) \
+SELECT * FROM values0 ORDER BY `c` ASC NULLS FIRST, `b` ASC NULLS FIRST LIMIT 4
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (4, 7, 'CCC'), (5, 8, 'CCC'), (6, 2, 'A')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 ORDER BY "c" ASC NULLS FIRST, "b" ASC NULLS FIRST LIMIT 4
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (4, 7, 'CCC'), (5, 8, 'CCC'), (6, 2, 'A')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 ORDER BY "c" ASC NULLS FIRST, "b" ASC NULLS FIRST LIMIT 4
+"""
+mysql = """
+WITH values0 AS (SELECT * FROM (VALUES ROW(1, 4, 'BB'), ROW(2, 6, 'DDDD'), ROW(NULL, 5, 'BB'), ROW(4, 7, 'CCC'), ROW(5, 8, 'CCC'), ROW(6, 2, 'A')) AS `_values` (`a`, `b`, `c`)) \
+SELECT * FROM values0 ORDER BY `c` ASC, `b` ASC LIMIT 4
+"""
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (4, 7, 'CCC'), (5, 8, 'CCC'), (6, 2, 'A')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 ORDER BY "c" ASC NULLS FIRST, "b" ASC NULLS FIRST LIMIT 4
+"""
+redshift = """
+WITH values0 AS (SELECT 1 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 2 AS "a", 6 AS "b", 'DDDD' AS "c" UNION ALL SELECT NULL AS "a", 5 AS "b", 'BB' AS "c" UNION ALL SELECT 4 AS "a", 7 AS "b", 'CCC' AS "c" UNION ALL SELECT 5 AS "a", 8 AS "b", 'CCC' AS "c" UNION ALL SELECT 6 AS "a", 2 AS "b", 'A' AS "c") SELECT * FROM values0 ORDER BY "c" ASC NULLS FIRST, "b" ASC NULLS FIRST LIMIT 4
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 4, 'BB'), (2, 6, 'DDDD'), (NULL, 5, 'BB'), (4, 7, 'CCC'), (5, 8, 'CCC'), (6, 2, 'A'))) \
+SELECT * FROM values0 ORDER BY "c" ASC NULLS FIRST, "b" ASC NULLS FIRST LIMIT 4
+"""
+result = '''
++---+---+-----+
+| a | b | c   |
++---+---+-----+
+| 6 | 2 | A   |
+| 1 | 4 | BB  |
+|   | 5 | BB  |
+| 4 | 7 | CCC |
++---+---+-----+
+'''

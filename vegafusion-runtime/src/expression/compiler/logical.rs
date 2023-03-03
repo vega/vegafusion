@@ -1,9 +1,9 @@
-use crate::expression::compiler::utils::{cast_to, data_type, is_numeric_datatype, to_boolean};
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion_expr::expr::{BinaryExpr, Case};
 use datafusion_expr::{Expr, Operator};
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::DFSchema;
+use vegafusion_common::datatypes::{cast_to, data_type, is_numeric_datatype, to_boolean};
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::{LogicalExpression, LogicalOperator};
 

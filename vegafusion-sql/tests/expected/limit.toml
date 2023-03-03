@@ -1,0 +1,50 @@
+[limit1]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 LIMIT 3
+"""
+bigquery = """
+WITH values0 AS (SELECT 1 AS `a`, 2 AS `b`, 'A' AS `c` UNION ALL SELECT 3 AS `a`, 4 AS `b`, 'BB' AS `c` UNION ALL SELECT 5 AS `a`, 6 AS `b`, 'CCC' AS `c` UNION ALL SELECT 7 AS `a`, 8 AS `b`, 'DDDD' AS `c` UNION ALL SELECT 9 AS `a`, 10 AS `b`, 'EEEEE' AS `c`) \
+SELECT * FROM values0 LIMIT 3
+"""
+clickhouse = """
+WITH values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 6 AS "b", 'CCC' AS "c" UNION ALL SELECT 7 AS "a", 8 AS "b", 'DDDD' AS "c" UNION ALL SELECT 9 AS "a", 10 AS "b", 'EEEEE' AS "c") \
+SELECT * FROM values0 LIMIT 3
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE')) AS `_values` (`a`, `b`, `c`)) \
+SELECT * FROM values0 LIMIT 3
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 LIMIT 3
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 LIMIT 3
+"""
+mysql = """
+WITH values0 AS (SELECT * FROM (VALUES ROW(1, 2, 'A'), ROW(3, 4, 'BB'), ROW(5, 6, 'CCC'), ROW(7, 8, 'DDDD'), ROW(9, 10, 'EEEEE')) AS `_values` (`a`, `b`, `c`)) \
+SELECT * FROM values0 LIMIT 3
+"""
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE')) AS "_values" ("a", "b", "c")) \
+SELECT * FROM values0 LIMIT 3
+"""
+redshift = """
+WITH values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 6 AS "b", 'CCC' AS "c" UNION ALL SELECT 7 AS "a", 8 AS "b", 'DDDD' AS "c" UNION ALL SELECT 9 AS "a", 10 AS "b", 'EEEEE' AS "c") \
+SELECT * FROM values0 LIMIT 3
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE'))) \
+SELECT * FROM values0 LIMIT 3
+"""
+result = '''
++---+---+-----+
+| a | b | c   |
++---+---+-----+
+| 1 | 2 | A   |
+| 3 | 4 | BB  |
+| 5 | 6 | CCC |
++---+---+-----+
+'''

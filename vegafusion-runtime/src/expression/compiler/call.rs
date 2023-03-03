@@ -6,7 +6,6 @@ use crate::expression::compiler::builtin_functions::date_time::datetime::{
 use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_valid_fn;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use crate::expression::compiler::utils::cast_to;
 use datafusion_expr::{BuiltinScalarFunction, Expr, ScalarUDF};
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -15,6 +14,7 @@ use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_common::DFSchema;
+use vegafusion_common::datatypes::cast_to;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
@@ -23,7 +23,6 @@ use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
 use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
 use vegafusion_datafusion_udfs::udfs::array::span::SPAN_UDF;
 use vegafusion_datafusion_udfs::udfs::math::isnan::ISNAN_UDF;
-use vegafusion_datafusion_udfs::udfs::math::pow::POW_UDF;
 
 use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
@@ -211,7 +210,8 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     // Numeric functions built into DataFusion with names that match Vega.
     // Cast arguments to Float64
     for fun_name in &[
-        "abs", "acos", "asin", "atan", "ceil", "cos", "exp", "floor", "round", "sin", "sqrt", "tan",
+        "abs", "acos", "asin", "atan", "ceil", "cos", "exp", "floor", "round", "sin", "sqrt",
+        "tan", "pow",
     ] {
         let function = BuiltinScalarFunction::from_str(fun_name).unwrap();
         callables.insert(
@@ -228,15 +228,6 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
         "log".to_string(),
         VegaFusionCallable::BuiltinScalarFunction {
             function: BuiltinScalarFunction::Ln,
-            cast: Some(DataType::Float64),
-        },
-    );
-
-    // Custom udfs
-    callables.insert(
-        "pow".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: POW_UDF.deref().clone(),
             cast: Some(DataType::Float64),
         },
     );

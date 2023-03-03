@@ -1,0 +1,40 @@
+[values1]
+athena = """
+    SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC')) AS "_values" ("a", "b", "c")
+"""
+bigquery = """
+    SELECT 1 AS `a`, 2 AS `b`, 'A' AS `c` UNION ALL SELECT 3 AS `a`, 4 AS `b`, 'BB' AS `c` UNION ALL SELECT 5 AS `a`, 6 AS `b`, 'CCC' AS `c`
+"""
+clickhouse = """
+    SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 6 AS "b", 'CCC' AS "c"
+"""
+databricks = """
+    SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC')) AS `_values` (`a`, `b`, `c`)
+"""
+datafusion = """
+    SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC')) AS "_values" ("a", "b", "c")
+"""
+duckdb = """
+    SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC')) AS "_values" ("a", "b", "c")
+"""
+mysql = """
+    SELECT * FROM (VALUES ROW(1, 2, 'A'), ROW(3, 4, 'BB'), ROW(5, 6, 'CCC')) AS `_values` (`a`, `b`, `c`)
+"""
+postgres = """
+    SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC')) AS "_values" ("a", "b", "c")
+"""
+redshift = """
+    SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 6 AS "b", 'CCC' AS "c"
+"""
+snowflake = """
+    SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'))
+"""
+result = '''
++---+---+-----+
+| a | b | c   |
++---+---+-----+
+| 1 | 2 | A   |
+| 3 | 4 | BB  |
+| 5 | 6 | CCC |
++---+---+-----+
+'''

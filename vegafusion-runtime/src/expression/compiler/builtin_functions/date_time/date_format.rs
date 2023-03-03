@@ -1,14 +1,15 @@
-use crate::expression::compiler::utils::{cast_to, is_numeric_datatype};
 use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion_expr::{lit, Expr, ExprSchemable};
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
+use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
 use vegafusion_core::error::{Result, VegaFusionError};
-use vegafusion_datafusion_udfs::udfs::datetime::datetime_format::FORMAT_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_timestamptz::EPOCH_MS_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_timestamptz::STR_TO_TIMESTAMPTZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::timestamptz_to_timestamp::TIMESTAMPTZ_TO_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::format_timestamp::FORMAT_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_str::UTC_TIMESTAMP_TO_STR_UDF;
 
 pub fn time_format_fn(
     tz_config: &RuntimeTzConfig,
@@ -35,19 +36,30 @@ pub fn time_format_fn(
     let mut timestamptz_expr =
         to_timestamptz_expr(&args[0], schema, &tz_config.default_input_tz.to_string())?;
 
-    if format_tz_str.to_ascii_lowercase() != "utc" {
-        timestamptz_expr = Expr::ScalarUDF {
-            fun: Arc::new((*TIMESTAMPTZ_TO_TIMESTAMP_UDF).clone()),
-            args: vec![timestamptz_expr, lit(format_tz_str)],
+    if format_str == "%Y-%m-%dT%H:%M:%S.%L" {
+        // Special case for ISO-8601 format with milliseconds. The UTC_TIMESTAMP_TO_STR_UDF
+        // is compatible with more SQL dialects, so we want to use it if possible
+        let udf_args = vec![timestamptz_expr, lit(&format_tz_str)];
+        Ok(Expr::ScalarUDF {
+            fun: Arc::new((*UTC_TIMESTAMP_TO_STR_UDF).clone()),
+            args: udf_args,
+        })
+    } else {
+        // General case
+        if format_tz_str.to_ascii_lowercase() != "utc" {
+            timestamptz_expr = Expr::ScalarUDF {
+                fun: Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone()),
+                args: vec![timestamptz_expr, lit(format_tz_str)],
+            }
         }
+
+        let udf_args = vec![timestamptz_expr, lit(format_str)];
+
+        Ok(Expr::ScalarUDF {
+            fun: Arc::new((*FORMAT_TIMESTAMP_UDF).clone()),
+            args: udf_args,
+        })
     }
-
-    let udf_args = vec![timestamptz_expr, lit(format_str)];
-
-    Ok(Expr::ScalarUDF {
-        fun: Arc::new((*FORMAT_TIMESTAMP_UDF).clone()),
-        args: udf_args,
-    })
 }
 
 pub fn utc_format_fn(
@@ -58,28 +70,37 @@ pub fn utc_format_fn(
     let format_str = extract_format_str(args)?;
     let timestamptz_expr =
         to_timestamptz_expr(&args[0], schema, &tz_config.default_input_tz.to_string())?;
-    let udf_args = vec![timestamptz_expr, lit(format_str)];
-    Ok(Expr::ScalarUDF {
-        fun: Arc::new((*FORMAT_TIMESTAMP_UDF).clone()),
-        args: udf_args,
-    })
+
+    if format_str == "%Y-%m-%dT%H:%M:%S.%L" {
+        // Special case for ISO-8601 format with milliseconds. The UTC_TIMESTAMP_TO_STR_UDF
+        // is compatible with more SQL dialects, so we want to use it if possible
+        let udf_args = vec![timestamptz_expr, lit("UTC")];
+        Ok(Expr::ScalarUDF {
+            fun: Arc::new((*UTC_TIMESTAMP_TO_STR_UDF).clone()),
+            args: udf_args,
+        })
+    } else {
+        // General case
+        let udf_args = vec![timestamptz_expr, lit(format_str)];
+        Ok(Expr::ScalarUDF {
+            fun: Arc::new((*FORMAT_TIMESTAMP_UDF).clone()),
+            args: udf_args,
+        })
+    }
 }
 
 fn to_timestamptz_expr(arg: &Expr, schema: &DFSchema, default_input_tz: &str) -> Result<Expr> {
     Ok(match arg.get_type(schema)? {
         DataType::Timestamp(_, _) => arg.clone(),
         DataType::Utf8 => Expr::ScalarUDF {
-            fun: Arc::new((*STR_TO_TIMESTAMPTZ_UDF).clone()),
+            fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
             args: vec![arg.clone(), lit(default_input_tz)],
         },
         DataType::Null => arg.clone(),
         dtype if is_numeric_datatype(&dtype) || matches!(dtype, DataType::Boolean) => {
             Expr::ScalarUDF {
-                fun: Arc::new((*EPOCH_MS_TO_TIMESTAMPTZ_UDF).clone()),
-                args: vec![
-                    cast_to(arg.clone(), &DataType::Int64, schema)?,
-                    lit(default_input_tz),
-                ],
+                fun: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
+                args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?],
             }
         }
         dtype => {
@@ -108,13 +129,5 @@ pub fn extract_format_str(args: &[Expr]) -> Result<String> {
             "the timeFormat function must have at least one argument",
         ))
     }?;
-
-    // Add compatibility adjustments from D3 to Chrono
-
-    // %f is microseconds in D3 but nanoseconds, this is %6f is chrono
-    let format_str = format_str.replace("%f", "%6f");
-
-    // %L is milliseconds in D3, this is %f3f in chrono
-    let format_str = format_str.replace("%L", "%3f");
     Ok(format_str)
 }

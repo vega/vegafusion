@@ -27,7 +27,7 @@ pub fn is_finite_fn(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
                 }
             }
             _ => {
-                // Non-numeric types cannot be non-finite
+                // Non-float types cannot be non-finite
                 lit(true)
             }
         })

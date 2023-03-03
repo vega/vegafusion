@@ -1,0 +1,314 @@
+[mode_zero]
+athena = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) >= 0 UNION ALL SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) < 0), \
+values2 AS (SELECT "a", "b", "c", ("end" - coalesce("a", 0.0)) AS "start", "end" FROM values1) \
+SELECT * FROM values2 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+bigquery = """
+WITH \
+values0 AS (SELECT 1 AS `a`, 9 AS `b`, 'A' AS `c` UNION ALL SELECT -3 AS `a`, 8 AS `b`, 'BB' AS `c` UNION ALL SELECT 5 AS `a`, 7 AS `b`, 'A' AS `c` UNION ALL SELECT -7 AS `a`, 6 AS `b`, 'BB' AS `c` UNION ALL SELECT 9 AS `a`, 5 AS `b`, 'BB' AS `c` UNION ALL SELECT -11 AS `a`, 4 AS `b`, 'A' AS `c` UNION ALL SELECT 13 AS `a`, 3 AS `b`, 'BB' AS `c`), \
+values1 AS (SELECT *, sum(coalesce(`a`, 0.0)) OVER (PARTITION BY `c` ORDER BY `b` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `end` FROM values0 WHERE coalesce(`a`, 0.0) >= 0 UNION ALL SELECT *, sum(coalesce(`a`, 0.0)) OVER (PARTITION BY `c` ORDER BY `b` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `end` FROM values0 WHERE coalesce(`a`, 0.0) < 0), \
+values2 AS (SELECT `a`, `b`, `c`, (`end` - coalesce(`a`, 0.0)) AS `start`, `end` FROM values1) \
+SELECT * FROM values2 ORDER BY `c` ASC NULLS FIRST, `end` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH \
+values0 AS (SELECT 1 AS "a", 9 AS "b", 'A' AS "c" UNION ALL SELECT -3 AS "a", 8 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 7 AS "b", 'A' AS "c" UNION ALL SELECT -7 AS "a", 6 AS "b", 'BB' AS "c" UNION ALL SELECT 9 AS "a", 5 AS "b", 'BB' AS "c" UNION ALL SELECT -11 AS "a", 4 AS "b", 'A' AS "c" UNION ALL SELECT 13 AS "a", 3 AS "b", 'BB' AS "c"), \
+values1 AS (SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) >= 0 UNION ALL SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) < 0), \
+values2 AS (SELECT "a", "b", "c", ("end" - coalesce("a", 0.0)) AS "start", "end" FROM values1) \
+SELECT * FROM values2 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT *, sum(coalesce(`a`, 0.0)) OVER (PARTITION BY `c` ORDER BY `b` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `end` FROM values0 WHERE coalesce(`a`, 0.0) >= 0 UNION ALL SELECT *, sum(coalesce(`a`, 0.0)) OVER (PARTITION BY `c` ORDER BY `b` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `end` FROM values0 WHERE coalesce(`a`, 0.0) < 0), \
+values2 AS (SELECT `a`, `b`, `c`, (`end` - coalesce(`a`, 0.0)) AS `start`, `end` FROM values1) \
+SELECT * FROM values2 ORDER BY `c` ASC NULLS FIRST, `end` ASC NULLS FIRST
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) >= 0 UNION ALL SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) < 0), \
+values2 AS (SELECT "a", "b", "c", ("end" - coalesce("a", 0.0)) AS "start", "end" FROM values1) \
+SELECT * FROM values2 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) >= 0 UNION ALL SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) < 0), \
+values2 AS (SELECT "a", "b", "c", ("end" - coalesce("a", 0.0)) AS "start", "end" FROM values1) \
+SELECT * FROM values2 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+mysql = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ROW(1, 9, 'A'), ROW(-3, 8, 'BB'), ROW(5, 7, 'A'), ROW(-7, 6, 'BB'), ROW(9, 5, 'BB'), ROW(-11, 4, 'A'), ROW(13, 3, 'BB')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT *, sum(coalesce(`a`, 0.0)) OVER (PARTITION BY `c` ORDER BY `b` ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `end` FROM values0 WHERE coalesce(`a`, 0.0) >= 0 UNION ALL SELECT *, sum(coalesce(`a`, 0.0)) OVER (PARTITION BY `c` ORDER BY `b` ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `end` FROM values0 WHERE coalesce(`a`, 0.0) < 0), \
+values2 AS (SELECT `a`, `b`, `c`, (`end` - coalesce(`a`, 0.0)) AS `start`, `end` FROM values1) \
+SELECT * FROM values2 ORDER BY `c` ASC, `end` ASC
+"""
+postgres = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) >= 0 UNION ALL SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) < 0), \
+values2 AS (SELECT "a", "b", "c", ("end" - coalesce("a", 0.0)) AS "start", "end" FROM values1) \
+SELECT * FROM values2 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+redshift = """
+WITH \
+values0 AS (SELECT 1 AS "a", 9 AS "b", 'A' AS "c" UNION ALL SELECT -3 AS "a", 8 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 7 AS "b", 'A' AS "c" UNION ALL SELECT -7 AS "a", 6 AS "b", 'BB' AS "c" UNION ALL SELECT 9 AS "a", 5 AS "b", 'BB' AS "c" UNION ALL SELECT -11 AS "a", 4 AS "b", 'A' AS "c" UNION ALL SELECT 13 AS "a", 3 AS "b", 'BB' AS "c"), \
+values1 AS (SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) >= 0 UNION ALL SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) < 0), \
+values2 AS (SELECT "a", "b", "c", ("end" - coalesce("a", 0.0)) AS "start", "end" FROM values1) \
+SELECT * FROM values2 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB'))), \
+values1 AS (SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) >= 0 UNION ALL SELECT *, sum(coalesce("a", 0.0)) OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "end" FROM values0 WHERE coalesce("a", 0.0) < 0), \
+values2 AS (SELECT "a", "b", "c", ("end" - coalesce("a", 0.0)) AS "start", "end" FROM values1) \
+SELECT * FROM values2 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+result = '''
++-----+---+----+-------+-----+
+| a   | b | c  | start | end |
++-----+---+----+-------+-----+
+| -11 | 4 | A  | 0     | -11 |
+| 5   | 7 | A  | 0     | 5   |
+| 1   | 9 | A  | 5     | 6   |
+| -3  | 8 | BB | -7    | -10 |
+| -7  | 6 | BB | 0     | -7  |
+| 13  | 3 | BB | 0     | 13  |
+| 9   | 5 | BB | 13    | 22  |
++-----+---+----+-------+-----+
+'''
+
+[mode_center]
+athena = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT * FROM values3 CROSS JOIN (SELECT max("__total") AS "__max_total" FROM values3) AS _cross), \
+values5 AS (SELECT "a", "b", "c", (("_cumulative" + (("__max_total" - "__total") / 2.0)) - "__stack") AS "start", ("_cumulative" + (("__max_total" - "__total") / 2.0)) AS "end" FROM values4) \
+SELECT * FROM values5 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+bigquery = """
+WITH \
+values0 AS (SELECT 1 AS `a`, 9 AS `b`, 'A' AS `c` UNION ALL SELECT -3 AS `a`, 8 AS `b`, 'BB' AS `c` UNION ALL SELECT 5 AS `a`, 7 AS `b`, 'A' AS `c` UNION ALL SELECT -7 AS `a`, 6 AS `b`, 'BB' AS `c` UNION ALL SELECT 9 AS `a`, 5 AS `b`, 'BB' AS `c` UNION ALL SELECT -11 AS `a`, 4 AS `b`, 'A' AS `c` UNION ALL SELECT 13 AS `a`, 3 AS `b`, 'BB' AS `c`), \
+values1 AS (SELECT *, abs(coalesce(`a`, 0.0)) AS `__stack` FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT `c`, sum(`__stack`) AS `__total` FROM values1 GROUP BY `c`) AS __inner USING(`c`)), \
+values3 AS (SELECT *, sum(`__stack`) OVER (PARTITION BY `c` ORDER BY `b` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `_cumulative` FROM values2), \
+values4 AS (SELECT * FROM values3 CROSS JOIN (SELECT max(`__total`) AS `__max_total` FROM values3) AS _cross), \
+values5 AS (SELECT `a`, `b`, `c`, ((`_cumulative` + ((`__max_total` - `__total`) / 2.0)) - `__stack`) AS `start`, (`_cumulative` + ((`__max_total` - `__total`) / 2.0)) AS `end` FROM values4) \
+SELECT * FROM values5 ORDER BY `c` ASC NULLS FIRST, `end` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH \
+values0 AS (SELECT 1 AS "a", 9 AS "b", 'A' AS "c" UNION ALL SELECT -3 AS "a", 8 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 7 AS "b", 'A' AS "c" UNION ALL SELECT -7 AS "a", 6 AS "b", 'BB' AS "c" UNION ALL SELECT 9 AS "a", 5 AS "b", 'BB' AS "c" UNION ALL SELECT -11 AS "a", 4 AS "b", 'A' AS "c" UNION ALL SELECT 13 AS "a", 3 AS "b", 'BB' AS "c"), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT * FROM values3 CROSS JOIN (SELECT max("__total") AS "__max_total" FROM values3) AS _cross), \
+values5 AS (SELECT "a", "b", "c", (("_cumulative" + (("__max_total" - "__total") / 2.0)) - "__stack") AS "start", ("_cumulative" + (("__max_total" - "__total") / 2.0)) AS "end" FROM values4) \
+SELECT * FROM values5 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT *, abs(coalesce(`a`, 0.0)) AS `__stack` FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT `c`, sum(`__stack`) AS `__total` FROM values1 GROUP BY `c`) AS __inner USING(`c`)), \
+values3 AS (SELECT *, sum(`__stack`) OVER (PARTITION BY `c` ORDER BY `b` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `_cumulative` FROM values2), \
+values4 AS (SELECT * FROM values3 CROSS JOIN (SELECT max(`__total`) AS `__max_total` FROM values3) AS _cross), \
+values5 AS (SELECT `a`, `b`, `c`, ((`_cumulative` + ((`__max_total` - `__total`) / 2.0)) - `__stack`) AS `start`, (`_cumulative` + ((`__max_total` - `__total`) / 2.0)) AS `end` FROM values4) \
+SELECT * FROM values5 ORDER BY `c` ASC NULLS FIRST, `end` ASC NULLS FIRST
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT * FROM values3 CROSS JOIN (SELECT max("__total") AS "__max_total" FROM values3) AS _cross), \
+values5 AS (SELECT "a", "b", "c", (("_cumulative" + (("__max_total" - "__total") / 2.0)) - "__stack") AS "start", ("_cumulative" + (("__max_total" - "__total") / 2.0)) AS "end" FROM values4) \
+SELECT * FROM values5 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT * FROM values3 CROSS JOIN (SELECT max("__total") AS "__max_total" FROM values3) AS _cross), \
+values5 AS (SELECT "a", "b", "c", (("_cumulative" + (("__max_total" - "__total") / 2.0)) - "__stack") AS "start", ("_cumulative" + (("__max_total" - "__total") / 2.0)) AS "end" FROM values4) \
+SELECT * FROM values5 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+mysql = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ROW(1, 9, 'A'), ROW(-3, 8, 'BB'), ROW(5, 7, 'A'), ROW(-7, 6, 'BB'), ROW(9, 5, 'BB'), ROW(-11, 4, 'A'), ROW(13, 3, 'BB')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT *, abs(coalesce(`a`, 0.0)) AS `__stack` FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT `c`, sum(`__stack`) AS `__total` FROM values1 GROUP BY `c`) AS __inner USING(`c`)), \
+values3 AS (SELECT *, sum(`__stack`) OVER (PARTITION BY `c` ORDER BY `b` ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `_cumulative` FROM values2), \
+values4 AS (SELECT * FROM values3 CROSS JOIN (SELECT max(`__total`) AS `__max_total` FROM values3) AS _cross), \
+values5 AS (SELECT `a`, `b`, `c`, ((`_cumulative` + ((`__max_total` - `__total`) / 2.0)) - `__stack`) AS `start`, (`_cumulative` + ((`__max_total` - `__total`) / 2.0)) AS `end` FROM values4) \
+SELECT * FROM values5 ORDER BY `c` ASC, `end` ASC
+"""
+postgres = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT * FROM values3 CROSS JOIN (SELECT max("__total") AS "__max_total" FROM values3) AS _cross), \
+values5 AS (SELECT "a", "b", "c", (("_cumulative" + (("__max_total" - "__total") / 2.0)) - "__stack") AS "start", ("_cumulative" + (("__max_total" - "__total") / 2.0)) AS "end" FROM values4) \
+SELECT * FROM values5 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+redshift = """
+WITH \
+values0 AS (SELECT 1 AS "a", 9 AS "b", 'A' AS "c" UNION ALL SELECT -3 AS "a", 8 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 7 AS "b", 'A' AS "c" UNION ALL SELECT -7 AS "a", 6 AS "b", 'BB' AS "c" UNION ALL SELECT 9 AS "a", 5 AS "b", 'BB' AS "c" UNION ALL SELECT -11 AS "a", 4 AS "b", 'A' AS "c" UNION ALL SELECT 13 AS "a", 3 AS "b", 'BB' AS "c"), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT * FROM values3 CROSS JOIN (SELECT max("__total") AS "__max_total" FROM values3) AS _cross), \
+values5 AS (SELECT "a", "b", "c", (("_cumulative" + (("__max_total" - "__total") / 2.0)) - "__stack") AS "start", ("_cumulative" + (("__max_total" - "__total") / 2.0)) AS "end" FROM values4) \
+SELECT * FROM values5 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB'))), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT * FROM values3 CROSS JOIN (SELECT max("__total") AS "__max_total" FROM values3) AS _cross), \
+values5 AS (SELECT "a", "b", "c", (("_cumulative" + (("__max_total" - "__total") / 2.0)) - "__stack") AS "start", ("_cumulative" + (("__max_total" - "__total") / 2.0)) AS "end" FROM values4) \
+SELECT * FROM values5 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST
+"""
+result = '''
++-----+---+----+-------+------+
+| a   | b | c  | start | end  |
++-----+---+----+-------+------+
+| -11 | 4 | A  | 7.5   | 18.5 |
+| 5   | 7 | A  | 18.5  | 23.5 |
+| 1   | 9 | A  | 23.5  | 24.5 |
+| 13  | 3 | BB | 0     | 13   |
+| 9   | 5 | BB | 13    | 22   |
+| -7  | 6 | BB | 22    | 29   |
+| -3  | 8 | BB | 29    | 32   |
++-----+---+----+-------+------+
+'''
+
+[mode_normalized]
+athena = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT "a", "b", "c", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE (("_cumulative" - "__stack") / "__total") END AS "start", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE ("_cumulative" / "__total") END AS "end" FROM values3), \
+values5 AS (SELECT * FROM values4 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST) \
+SELECT "a", "b", "c", (round(("start" * 100)) / 100) AS "trunc_start", (round(("end" * 100)) / 100) AS "trunc_end" FROM values5
+"""
+bigquery = """
+WITH \
+values0 AS (SELECT 1 AS `a`, 9 AS `b`, 'A' AS `c` UNION ALL SELECT -3 AS `a`, 8 AS `b`, 'BB' AS `c` UNION ALL SELECT 5 AS `a`, 7 AS `b`, 'A' AS `c` UNION ALL SELECT -7 AS `a`, 6 AS `b`, 'BB' AS `c` UNION ALL SELECT 9 AS `a`, 5 AS `b`, 'BB' AS `c` UNION ALL SELECT -11 AS `a`, 4 AS `b`, 'A' AS `c` UNION ALL SELECT 13 AS `a`, 3 AS `b`, 'BB' AS `c`), \
+values1 AS (SELECT *, abs(coalesce(`a`, 0.0)) AS `__stack` FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT `c`, sum(`__stack`) AS `__total` FROM values1 GROUP BY `c`) AS __inner USING(`c`)), \
+values3 AS (SELECT *, sum(`__stack`) OVER (PARTITION BY `c` ORDER BY `b` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `_cumulative` FROM values2), \
+values4 AS (SELECT `a`, `b`, `c`, CASE WHEN (`__total` = 0.0) THEN 0.0 ELSE ((`_cumulative` - `__stack`) / `__total`) END AS `start`, CASE WHEN (`__total` = 0.0) THEN 0.0 ELSE (`_cumulative` / `__total`) END AS `end` FROM values3), \
+values5 AS (SELECT * FROM values4 ORDER BY `c` ASC NULLS FIRST, `end` ASC NULLS FIRST) \
+SELECT `a`, `b`, `c`, (round((`start` * 100)) / 100) AS `trunc_start`, (round((`end` * 100)) / 100) AS `trunc_end` FROM values5
+"""
+clickhouse = """
+WITH \
+values0 AS (SELECT 1 AS "a", 9 AS "b", 'A' AS "c" UNION ALL SELECT -3 AS "a", 8 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 7 AS "b", 'A' AS "c" UNION ALL SELECT -7 AS "a", 6 AS "b", 'BB' AS "c" UNION ALL SELECT 9 AS "a", 5 AS "b", 'BB' AS "c" UNION ALL SELECT -11 AS "a", 4 AS "b", 'A' AS "c" UNION ALL SELECT 13 AS "a", 3 AS "b", 'BB' AS "c"), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT "a", "b", "c", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE (("_cumulative" - "__stack") / "__total") END AS "start", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE ("_cumulative" / "__total") END AS "end" FROM values3), \
+values5 AS (SELECT * FROM values4 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST) \
+SELECT "a", "b", "c", (round(("start" * 100)) / 100) AS "trunc_start", (round(("end" * 100)) / 100) AS "trunc_end" FROM values5
+"""
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT *, abs(coalesce(`a`, 0.0)) AS `__stack` FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT `c`, sum(`__stack`) AS `__total` FROM values1 GROUP BY `c`) AS __inner USING(`c`)), \
+values3 AS (SELECT *, sum(`__stack`) OVER (PARTITION BY `c` ORDER BY `b` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `_cumulative` FROM values2), \
+values4 AS (SELECT `a`, `b`, `c`, CASE WHEN (`__total` = 0.0) THEN 0.0 ELSE ((`_cumulative` - `__stack`) / `__total`) END AS `start`, CASE WHEN (`__total` = 0.0) THEN 0.0 ELSE (`_cumulative` / `__total`) END AS `end` FROM values3), \
+values5 AS (SELECT * FROM values4 ORDER BY `c` ASC NULLS FIRST, `end` ASC NULLS FIRST) \
+SELECT `a`, `b`, `c`, (round((`start` * 100)) / 100) AS `trunc_start`, (round((`end` * 100)) / 100) AS `trunc_end` FROM values5
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT "a", "b", "c", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE (("_cumulative" - "__stack") / "__total") END AS "start", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE ("_cumulative" / "__total") END AS "end" FROM values3), \
+values5 AS (SELECT * FROM values4 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST) \
+SELECT "a", "b", "c", (round(("start" * 100)) / 100) AS "trunc_start", (round(("end" * 100)) / 100) AS "trunc_end" FROM values5
+"""
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT "a", "b", "c", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE (("_cumulative" - "__stack") / "__total") END AS "start", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE ("_cumulative" / "__total") END AS "end" FROM values3), \
+values5 AS (SELECT * FROM values4 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST) \
+SELECT "a", "b", "c", (round(("start" * 100)) / 100) AS "trunc_start", (round(("end" * 100)) / 100) AS "trunc_end" FROM values5
+"""
+mysql = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ROW(1, 9, 'A'), ROW(-3, 8, 'BB'), ROW(5, 7, 'A'), ROW(-7, 6, 'BB'), ROW(9, 5, 'BB'), ROW(-11, 4, 'A'), ROW(13, 3, 'BB')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT *, abs(coalesce(`a`, 0.0)) AS `__stack` FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT `c`, sum(`__stack`) AS `__total` FROM values1 GROUP BY `c`) AS __inner USING(`c`)), \
+values3 AS (SELECT *, sum(`__stack`) OVER (PARTITION BY `c` ORDER BY `b` ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `_cumulative` FROM values2), \
+values4 AS (SELECT `a`, `b`, `c`, CASE WHEN (`__total` = 0.0) THEN 0.0 ELSE ((`_cumulative` - `__stack`) / `__total`) END AS `start`, CASE WHEN (`__total` = 0.0) THEN 0.0 ELSE (`_cumulative` / `__total`) END AS `end` FROM values3), \
+values5 AS (SELECT * FROM values4 ORDER BY `c` ASC, `end` ASC) \
+SELECT `a`, `b`, `c`, (round((`start` * 100)) / 100) AS `trunc_start`, (round((`end` * 100)) / 100) AS `trunc_end` FROM values5
+"""
+postgres = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT "a", "b", "c", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE (("_cumulative" - "__stack") / "__total") END AS "start", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE ("_cumulative" / "__total") END AS "end" FROM values3), \
+values5 AS (SELECT * FROM values4 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST) \
+SELECT "a", "b", "c", (round(("start" * 100)) / 100) AS "trunc_start", (round(("end" * 100)) / 100) AS "trunc_end" FROM values5
+"""
+redshift = """
+WITH \
+values0 AS (SELECT 1 AS "a", 9 AS "b", 'A' AS "c" UNION ALL SELECT -3 AS "a", 8 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 7 AS "b", 'A' AS "c" UNION ALL SELECT -7 AS "a", 6 AS "b", 'BB' AS "c" UNION ALL SELECT 9 AS "a", 5 AS "b", 'BB' AS "c" UNION ALL SELECT -11 AS "a", 4 AS "b", 'A' AS "c" UNION ALL SELECT 13 AS "a", 3 AS "b", 'BB' AS "c"), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT "a", "b", "c", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE (("_cumulative" - "__stack") / "__total") END AS "start", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE ("_cumulative" / "__total") END AS "end" FROM values3), \
+values5 AS (SELECT * FROM values4 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST) \
+SELECT "a", "b", "c", (round(("start" * 100)) / 100) AS "trunc_start", (round(("end" * 100)) / 100) AS "trunc_end" FROM values5
+"""
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 9, 'A'), (-3, 8, 'BB'), (5, 7, 'A'), (-7, 6, 'BB'), (9, 5, 'BB'), (-11, 4, 'A'), (13, 3, 'BB'))), \
+values1 AS (SELECT *, abs(coalesce("a", 0.0)) AS "__stack" FROM values0), \
+values2 AS (SELECT * FROM values1 JOIN (SELECT "c", sum("__stack") AS "__total" FROM values1 GROUP BY "c") AS __inner USING("c")), \
+values3 AS (SELECT *, sum("__stack") OVER (PARTITION BY "c" ORDER BY "b" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_cumulative" FROM values2), \
+values4 AS (SELECT "a", "b", "c", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE (("_cumulative" - "__stack") / "__total") END AS "start", CASE WHEN ("__total" = 0.0) THEN 0.0 ELSE ("_cumulative" / "__total") END AS "end" FROM values3), \
+values5 AS (SELECT * FROM values4 ORDER BY "c" ASC NULLS FIRST, "end" ASC NULLS FIRST) \
+SELECT "a", "b", "c", (round(("start" * 100)) / 100) AS "trunc_start", (round(("end" * 100)) / 100) AS "trunc_end" FROM values5
+"""
+result = '''
++-----+---+----+-------------+-----------+
+| a   | b | c  | trunc_start | trunc_end |
++-----+---+----+-------------+-----------+
+| -11 | 4 | A  | 0           | 0.65      |
+| 5   | 7 | A  | 0.65        | 0.94      |
+| 1   | 9 | A  | 0.94        | 1         |
+| 13  | 3 | BB | 0           | 0.41      |
+| 9   | 5 | BB | 0.41        | 0.69      |
+| -7  | 6 | BB | 0.69        | 0.91      |
+| -3  | 8 | BB | 0.91        | 1         |
++-----+---+----+-------------+-----------+
+'''

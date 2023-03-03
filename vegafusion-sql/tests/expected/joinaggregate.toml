@@ -1,0 +1,147 @@
+[simple_aggs]
+athena = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a" AS "a", "b" AS "b", "c" AS "c", "min_a" AS "min_a", "max_a" AS "max_a", "avg_a" AS "avg_a", "sum_a" AS "sum_a", "count_a" AS "count_a" FROM values0 LEFT JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a", "b" FROM values0 GROUP BY "b") AS values0_inner USING("b")) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH \
+values0 AS (SELECT 1 AS `a`, 2 AS `b`, 'A' AS `c` UNION ALL SELECT 3 AS `a`, 2 AS `b`, 'BB' AS `c` UNION ALL SELECT 5 AS `a`, 3 AS `b`, 'CCC' AS `c` UNION ALL SELECT 7 AS `a`, 3 AS `b`, 'DDDD' AS `c` UNION ALL SELECT 9 AS `a`, 3 AS `b`, 'EEEEE' AS `c` UNION ALL SELECT 11 AS `a`, 3 AS `b`, 'FFFFFF' AS `c`), \
+values1 AS (SELECT `values0`.`a` AS `a`, `values0`.`b` AS `b`, `values0`.`c` AS `c`, `values0_inner`.`min_a` AS `min_a`, `values0_inner`.`max_a` AS `max_a`, `values0_inner`.`avg_a` AS `avg_a`, `values0_inner`.`sum_a` AS `sum_a`, `values0_inner`.`count_a` AS `count_a` FROM values0 LEFT JOIN (SELECT min(`a`) AS `min_a`, max(`a`) AS `max_a`, avg(`a`) AS `avg_a`, sum(`a`) AS `sum_a`, count(`a`) AS `count_a`, `b` FROM values0 GROUP BY `b`) AS values0_inner USING(`b`)) \
+SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 2 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 3 AS "b", 'CCC' AS "c" UNION ALL SELECT 7 AS "a", 3 AS "b", 'DDDD' AS "c" UNION ALL SELECT 9 AS "a", 3 AS "b", 'EEEEE' AS "c" UNION ALL SELECT 11 AS "a", 3 AS "b", 'FFFFFF' AS "c"), \
+values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 LEFT JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a", "b" FROM values0 GROUP BY "b") AS values0_inner USING("b")) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT `values0`.`a` AS `a`, `values0`.`b` AS `b`, `values0`.`c` AS `c`, `values0_inner`.`min_a` AS `min_a`, `values0_inner`.`max_a` AS `max_a`, `values0_inner`.`avg_a` AS `avg_a`, `values0_inner`.`sum_a` AS `sum_a`, `values0_inner`.`count_a` AS `count_a` FROM values0 LEFT JOIN (SELECT min(`a`) AS `min_a`, max(`a`) AS `max_a`, avg(`a`) AS `avg_a`, sum(`a`) AS `sum_a`, count(`a`) AS `count_a`, `b` FROM values0 GROUP BY `b`) AS values0_inner USING(`b`)) \
+SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 LEFT JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a", "b" FROM values0 GROUP BY "b") AS values0_inner USING("b")) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 LEFT JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a", "b" FROM values0 GROUP BY "b") AS values0_inner USING("b")) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ROW(1, 2, 'A'), ROW(3, 2, 'BB'), ROW(5, 3, 'CCC'), ROW(7, 3, 'DDDD'), ROW(9, 3, 'EEEEE'), ROW(11, 3, 'FFFFFF')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT `values0`.`a` AS `a`, `values0`.`b` AS `b`, `values0`.`c` AS `c`, `values0_inner`.`min_a` AS `min_a`, `values0_inner`.`max_a` AS `max_a`, `values0_inner`.`avg_a` AS `avg_a`, `values0_inner`.`sum_a` AS `sum_a`, `values0_inner`.`count_a` AS `count_a` FROM values0 LEFT JOIN (SELECT min(`a`) AS `min_a`, max(`a`) AS `max_a`, avg(`a`) AS `avg_a`, sum(`a`) AS `sum_a`, count(`a`) AS `count_a`, `b` FROM values0 GROUP BY `b`) AS values0_inner USING(`b`)) \
+SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 LEFT JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a", "b" FROM values0 GROUP BY "b") AS values0_inner USING("b")) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 2 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 3 AS "b", 'CCC' AS "c" UNION ALL SELECT 7 AS "a", 3 AS "b", 'DDDD' AS "c" UNION ALL SELECT 9 AS "a", 3 AS "b", 'EEEEE' AS "c" UNION ALL SELECT 11 AS "a", 3 AS "b", 'FFFFFF' AS "c"), \
+values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 LEFT JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a", "b" FROM values0 GROUP BY "b") AS values0_inner USING("b")) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF'))), \
+values1 AS (SELECT "a" AS "a", "b" AS "b", "c" AS "c", "min_a" AS "min_a", "max_a" AS "max_a", "avg_a" AS "avg_a", "sum_a" AS "sum_a", "count_a" AS "count_a" FROM values0 LEFT JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a", "b" FROM values0 GROUP BY "b") AS values0_inner USING("b")) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++----+---+--------+-------+-------+-------+-------+---------+
+| a  | b | c      | min_a | max_a | avg_a | sum_a | count_a |
++----+---+--------+-------+-------+-------+-------+---------+
+| 1  | 2 | A      | 1     | 3     | 2     | 4     | 2       |
+| 3  | 2 | BB     | 1     | 3     | 2     | 4     | 2       |
+| 5  | 3 | CCC    | 5     | 11    | 8     | 32    | 4       |
+| 7  | 3 | DDDD   | 5     | 11    | 8     | 32    | 4       |
+| 9  | 3 | EEEEE  | 5     | 11    | 8     | 32    | 4       |
+| 11 | 3 | FFFFFF | 5     | 11    | 8     | 32    | 4       |
++----+---+--------+-------+-------+-------+-------+---------+
+'''
+
+[simple_aggs_no_grouping]
+athena = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a" AS "a", "b" AS "b", "c" AS "c", "min_a" AS "min_a", "max_a" AS "max_a", "avg_a" AS "avg_a", "sum_a" AS "sum_a", "count_a" AS "count_a" FROM values0 CROSS JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a" FROM values0) AS values0_inner) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH \
+values0 AS (SELECT 1 AS `a`, 2 AS `b`, 'A' AS `c` UNION ALL SELECT 3 AS `a`, 2 AS `b`, 'BB' AS `c` UNION ALL SELECT 5 AS `a`, 3 AS `b`, 'CCC' AS `c` UNION ALL SELECT 7 AS `a`, 3 AS `b`, 'DDDD' AS `c` UNION ALL SELECT 9 AS `a`, 3 AS `b`, 'EEEEE' AS `c` UNION ALL SELECT 11 AS `a`, 3 AS `b`, 'FFFFFF' AS `c`), \
+values1 AS (SELECT `values0`.`a` AS `a`, `values0`.`b` AS `b`, `values0`.`c` AS `c`, `values0_inner`.`min_a` AS `min_a`, `values0_inner`.`max_a` AS `max_a`, `values0_inner`.`avg_a` AS `avg_a`, `values0_inner`.`sum_a` AS `sum_a`, `values0_inner`.`count_a` AS `count_a` FROM values0 CROSS JOIN (SELECT min(`a`) AS `min_a`, max(`a`) AS `max_a`, avg(`a`) AS `avg_a`, sum(`a`) AS `sum_a`, count(`a`) AS `count_a` FROM values0) AS values0_inner) \
+SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 2 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 3 AS "b", 'CCC' AS "c" UNION ALL SELECT 7 AS "a", 3 AS "b", 'DDDD' AS "c" UNION ALL SELECT 9 AS "a", 3 AS "b", 'EEEEE' AS "c" UNION ALL SELECT 11 AS "a", 3 AS "b", 'FFFFFF' AS "c"), \
+values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 CROSS JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a" FROM values0) AS values0_inner) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT `values0`.`a` AS `a`, `values0`.`b` AS `b`, `values0`.`c` AS `c`, `values0_inner`.`min_a` AS `min_a`, `values0_inner`.`max_a` AS `max_a`, `values0_inner`.`avg_a` AS `avg_a`, `values0_inner`.`sum_a` AS `sum_a`, `values0_inner`.`count_a` AS `count_a` FROM values0 CROSS JOIN (SELECT min(`a`) AS `min_a`, max(`a`) AS `max_a`, avg(`a`) AS `avg_a`, sum(`a`) AS `sum_a`, count(`a`) AS `count_a` FROM values0) AS values0_inner) \
+SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 CROSS JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a" FROM values0) AS values0_inner) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 CROSS JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a" FROM values0) AS values0_inner) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ROW(1, 2, 'A'), ROW(3, 2, 'BB'), ROW(5, 3, 'CCC'), ROW(7, 3, 'DDDD'), ROW(9, 3, 'EEEEE'), ROW(11, 3, 'FFFFFF')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT `values0`.`a` AS `a`, `values0`.`b` AS `b`, `values0`.`c` AS `c`, `values0_inner`.`min_a` AS `min_a`, `values0_inner`.`max_a` AS `max_a`, `values0_inner`.`avg_a` AS `avg_a`, `values0_inner`.`sum_a` AS `sum_a`, `values0_inner`.`count_a` AS `count_a` FROM values0 CROSS JOIN (SELECT min(`a`) AS `min_a`, max(`a`) AS `max_a`, avg(`a`) AS `avg_a`, sum(`a`) AS `sum_a`, count(`a`) AS `count_a` FROM values0) AS values0_inner) \
+SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 CROSS JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a" FROM values0) AS values0_inner) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 2 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 3 AS "b", 'CCC' AS "c" UNION ALL SELECT 7 AS "a", 3 AS "b", 'DDDD' AS "c" UNION ALL SELECT 9 AS "a", 3 AS "b", 'EEEEE' AS "c" UNION ALL SELECT 11 AS "a", 3 AS "b", 'FFFFFF' AS "c"), \
+values1 AS (SELECT "values0"."a" AS "a", "values0"."b" AS "b", "values0"."c" AS "c", "values0_inner"."min_a" AS "min_a", "values0_inner"."max_a" AS "max_a", "values0_inner"."avg_a" AS "avg_a", "values0_inner"."sum_a" AS "sum_a", "values0_inner"."count_a" AS "count_a" FROM values0 CROSS JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a" FROM values0) AS values0_inner) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 2, 'BB'), (5, 3, 'CCC'), (7, 3, 'DDDD'), (9, 3, 'EEEEE'), (11, 3, 'FFFFFF'))), \
+values1 AS (SELECT "a" AS "a", "b" AS "b", "c" AS "c", "min_a" AS "min_a", "max_a" AS "max_a", "avg_a" AS "avg_a", "sum_a" AS "sum_a", "count_a" AS "count_a" FROM values0 CROSS JOIN (SELECT min("a") AS "min_a", max("a") AS "max_a", avg("a") AS "avg_a", sum("a") AS "sum_a", count("a") AS "count_a" FROM values0) AS values0_inner) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++----+---+--------+-------+-------+-------+-------+---------+
+| a  | b | c      | min_a | max_a | avg_a | sum_a | count_a |
++----+---+--------+-------+-------+-------+-------+---------+
+| 1  | 2 | A      | 1     | 11    | 6     | 36    | 6       |
+| 3  | 2 | BB     | 1     | 11    | 6     | 36    | 6       |
+| 5  | 3 | CCC    | 1     | 11    | 6     | 36    | 6       |
+| 7  | 3 | DDDD   | 1     | 11    | 6     | 36    | 6       |
+| 9  | 3 | EEEEE  | 1     | 11    | 6     | 36    | 6       |
+| 11 | 3 | FFFFFF | 1     | 11    | 6     | 36    | 6       |
++----+---+--------+-------+-------+-------+-------+---------+
+'''

@@ -262,6 +262,34 @@ mod test_object_expression {
     fn test_marker() {} // Help IDE detect test module
 }
 
+mod test_math_functions {
+    use crate::*;
+
+    #[rstest(
+        expr,
+        case("abs(-1)"),
+        case("acos(1)"),
+        case("asin(1)"),
+        case("atan(0.5)"),
+        case("ceil(1.3)"),
+        case("cos(1.57)"),
+        case("exp(1)"),
+        case("floor(1.8)"),
+        case("round(1.8)"),
+        case("sin(1.57)"),
+        case("sqrt(4)"),
+        case("tan(1)"),
+        case("log(2.718281828)"),
+        case("pow(2, 3)")
+    )]
+    fn test(expr: &str) {
+        check_scalar_evaluation(expr, &config_a())
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
 mod test_datetime {
     use crate::*;
 
@@ -352,12 +380,14 @@ mod test_time_and_utc_format {
 
     #[rstest(
         expr,
+        case("timeFormat(toDate('2020-05-16T09:30:00+05:00'), '%Y-%m-%dT%H:%M:%S.%L')"),
+        case("utcFormat(toDate('2020-05-16T09:30:00+05:00'), '%Y-%m-%dT%H:%M:%S.%L')"),
         case("timeFormat(toDate('2020-05-16T09:30:00+05:00'), '%Y-%m-%d %H:%M:%S')"),
         case("utcFormat(toDate('2020-05-16T09:30:00+05:00'), '%Y-%m-%d %H:%M:%S')"),
         case("timeFormat(toDate('2020-05-16 09:30:00+05:00'))"),
         case("utcFormat(toDate('2020-05-16 09:30:00+05:00'))"),
-        case("timeFormat(1589603400000, '%Y-%m-%d %p %s')"),
-        case("utcFormat(1589603400000, '%Y-%m-%d %G %g')"),
+        case("timeFormat(1589603400000, '%Y-%m-%d %H:%M:%S %p')"),
+        case("utcFormat(1589603400000, '%Y-%m-%d %G %g %s')"),
         case("timeFormat(datetime(87, 3, 10, 7, 35, 10, 87), '%a %A %b %B %d %e %g')"),
         case("utcFormat(datetime(87, 3, 10, 7, 35, 10, 87), '%a %A %b %B %d %e %g')"),
         case("timeFormat(datetime(87, 3, 10, 7, 35, 10, 87), '%Y-%m-%d %H:%M:%S.%L')"),

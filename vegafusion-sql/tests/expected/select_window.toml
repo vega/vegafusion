@@ -1,0 +1,278 @@
+[simple_aggs_unbounded]
+athena = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH \
+values0 AS (SELECT 1 AS `a`, 2 AS `b`, 'A' AS `c` UNION ALL SELECT 3 AS `a`, 4 AS `b`, 'BB' AS `c` UNION ALL SELECT 5 AS `a`, 6 AS `b`, 'A' AS `c` UNION ALL SELECT 7 AS `a`, 8 AS `b`, 'BB' AS `c` UNION ALL SELECT 9 AS `a`, 10 AS `b`, 'A' AS `c`), \
+values1 AS (SELECT `a`, `b`, `c`, sum(`b`) OVER (ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `sum_b`, count(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `count_part_b`, avg(`b`) OVER (ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `cume_mean_b`, min(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `min_b`, max(`b`) OVER (ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `max_b` FROM values0) \
+SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 6 AS "b", 'A' AS "c" UNION ALL SELECT 7 AS "a", 8 AS "b", 'BB' AS "c" UNION ALL SELECT 9 AS "a", 10 AS "b", 'A' AS "c"), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT `a`, `b`, `c`, sum(`b`) OVER (ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `sum_b`, count(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `count_part_b`, avg(`b`) OVER (ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `cume_mean_b`, min(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `min_b`, max(`b`) OVER (ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `max_b` FROM values0) \
+SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ROW(1, 2, 'A'), ROW(3, 4, 'BB'), ROW(5, 6, 'A'), ROW(7, 8, 'BB'), ROW(9, 10, 'A')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT `a`, `b`, `c`, sum(`b`) OVER (ORDER BY `a` ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `sum_b`, count(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `count_part_b`, avg(`b`) OVER (ORDER BY `a` ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `cume_mean_b`, min(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `min_b`, max(`b`) OVER (ORDER BY `a` ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `max_b` FROM values0) \
+SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 6 AS "b", 'A' AS "c" UNION ALL SELECT 7 AS "a", 8 AS "b", 'BB' AS "c" UNION ALL SELECT 9 AS "a", 10 AS "b", 'A' AS "c"), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A'))), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+----+----+-------+--------------+-------------+-------+-------+
+| a | b  | c  | sum_b | count_part_b | cume_mean_b | min_b | max_b |
++---+----+----+-------+--------------+-------------+-------+-------+
+| 1 | 2  | A  | 2     | 1            | 2           | 2     | 2     |
+| 3 | 4  | BB | 6     | 1            | 3           | 4     | 4     |
+| 5 | 6  | A  | 12    | 2            | 4           | 2     | 6     |
+| 7 | 8  | BB | 20    | 2            | 5           | 4     | 8     |
+| 9 | 10 | A  | 30    | 3            | 6           | 2     | 10    |
++---+----+----+-------+--------------+-------------+-------+-------+
+'''
+
+
+[simple_aggs_bounded]
+athena = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH \
+values0 AS (SELECT 1 AS `a`, 2 AS `b`, 'A' AS `c` UNION ALL SELECT 3 AS `a`, 4 AS `b`, 'BB' AS `c` UNION ALL SELECT 5 AS `a`, 6 AS `b`, 'A' AS `c` UNION ALL SELECT 7 AS `a`, 8 AS `b`, 'BB' AS `c` UNION ALL SELECT 9 AS `a`, 10 AS `b`, 'A' AS `c`), \
+values1 AS (SELECT `a`, `b`, `c`, sum(`b`) OVER (ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `sum_b`, count(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `count_part_b`, avg(`b`) OVER (ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `cume_mean_b`, min(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `min_b`, max(`b`) OVER (ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `max_b` FROM values0) \
+SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 6 AS "b", 'A' AS "c" UNION ALL SELECT 7 AS "a", 8 AS "b", 'BB' AS "c" UNION ALL SELECT 9 AS "a", 10 AS "b", 'A' AS "c"), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT `a`, `b`, `c`, sum(`b`) OVER (ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `sum_b`, count(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `count_part_b`, avg(`b`) OVER (ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `cume_mean_b`, min(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `min_b`, max(`b`) OVER (ORDER BY `a` ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `max_b` FROM values0) \
+SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ROW(1, 2, 'A'), ROW(3, 4, 'BB'), ROW(5, 6, 'A'), ROW(7, 8, 'BB'), ROW(9, 10, 'A')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT `a`, `b`, `c`, sum(`b`) OVER (ORDER BY `a` ASC ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `sum_b`, count(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `count_part_b`, avg(`b`) OVER (ORDER BY `a` ASC ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `cume_mean_b`, min(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `min_b`, max(`b`) OVER (ORDER BY `a` ASC ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS `max_b` FROM values0) \
+SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 6 AS "b", 'A' AS "c" UNION ALL SELECT 7 AS "a", 8 AS "b", 'BB' AS "c" UNION ALL SELECT 9 AS "a", 10 AS "b", 'A' AS "c"), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A'))), \
+values1 AS (SELECT "a", "b", "c", sum("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "sum_b", count("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "count_part_b", avg("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "cume_mean_b", min("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "min_b", max("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS "max_b" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+----+----+-------+--------------+-------------+-------+-------+
+| a | b  | c  | sum_b | count_part_b | cume_mean_b | min_b | max_b |
++---+----+----+-------+--------------+-------------+-------+-------+
+| 1 | 2  | A  | 2     | 1            | 2           | 2     | 2     |
+| 3 | 4  | BB | 6     | 1            | 3           | 4     | 4     |
+| 5 | 6  | A  | 10    | 2            | 5           | 2     | 6     |
+| 7 | 8  | BB | 14    | 2            | 7           | 4     | 8     |
+| 9 | 10 | A  | 18    | 2            | 9           | 6     | 10    |
++---+----+----+-------+--------------+-------------+-------+-------+
+'''
+
+[simple_window_fns]
+athena = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", row_number() OVER (ORDER BY "a" ASC NULLS FIRST) AS "row_num", rank() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "rank", dense_rank() OVER (ORDER BY "a" ASC NULLS FIRST) AS "d_rank", first_value("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "first", last_value("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "last" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH \
+values0 AS (SELECT 1 AS `a`, 2 AS `b`, 'A' AS `c` UNION ALL SELECT 3 AS `a`, 4 AS `b`, 'BB' AS `c` UNION ALL SELECT 5 AS `a`, 6 AS `b`, 'A' AS `c` UNION ALL SELECT 7 AS `a`, 8 AS `b`, 'BB' AS `c` UNION ALL SELECT 9 AS `a`, 10 AS `b`, 'A' AS `c`), \
+values1 AS (SELECT `a`, `b`, `c`, row_number() OVER (ORDER BY `a` ASC NULLS FIRST) AS `row_num`, rank() OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST) AS `rank`, dense_rank() OVER (ORDER BY `a` ASC NULLS FIRST) AS `d_rank`, first_value(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST) AS `first`, last_value(`b`) OVER (ORDER BY `a` ASC NULLS FIRST) AS `last` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 6 AS "b", 'A' AS "c" UNION ALL SELECT 7 AS "a", 8 AS "b", 'BB' AS "c" UNION ALL SELECT 9 AS "a", 10 AS "b", 'A' AS "c"), \
+values1 AS (SELECT "a", "b", "c", row_number() OVER (ORDER BY "a" ASC NULLS FIRST) AS "row_num", rank() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "rank", dense_rank() OVER (ORDER BY "a" ASC NULLS FIRST) AS "d_rank", first_value("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "first", last_value("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "last" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT `a`, `b`, `c`, row_number() OVER (ORDER BY `a` ASC NULLS FIRST) AS `row_num`, rank() OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST) AS `rank`, dense_rank() OVER (ORDER BY `a` ASC NULLS FIRST) AS `d_rank`, first_value(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST) AS `first`, last_value(`b`) OVER (ORDER BY `a` ASC NULLS FIRST) AS `last` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", row_number() OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "row_num", rank() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "rank", dense_rank() OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "d_rank", first_value("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "first", last_value("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "last" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", row_number() OVER (ORDER BY "a" ASC NULLS FIRST) AS "row_num", rank() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "rank", dense_rank() OVER (ORDER BY "a" ASC NULLS FIRST) AS "d_rank", first_value("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "first", last_value("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "last" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ROW(1, 2, 'A'), ROW(3, 4, 'BB'), ROW(5, 6, 'A'), ROW(7, 8, 'BB'), ROW(9, 10, 'A')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT `a`, `b`, `c`, row_number() OVER (ORDER BY `a` ASC) AS `row_num`, rank() OVER (PARTITION BY `c` ORDER BY `a` ASC) AS `rank`, dense_rank() OVER (ORDER BY `a` ASC) AS `d_rank`, first_value(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `first`, last_value(`b`) OVER (ORDER BY `a` ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `last` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", row_number() OVER (ORDER BY "a" ASC NULLS FIRST) AS "row_num", rank() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "rank", dense_rank() OVER (ORDER BY "a" ASC NULLS FIRST) AS "d_rank", first_value("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "first", last_value("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "last" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 6 AS "b", 'A' AS "c" UNION ALL SELECT 7 AS "a", 8 AS "b", 'BB' AS "c" UNION ALL SELECT 9 AS "a", 10 AS "b", 'A' AS "c"), \
+values1 AS (SELECT "a", "b", "c", row_number() OVER (ORDER BY "a" ASC NULLS FIRST) AS "row_num", rank() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "rank", dense_rank() OVER (ORDER BY "a" ASC NULLS FIRST) AS "d_rank", first_value("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "first", last_value("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "last" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A'))), \
+values1 AS (SELECT "a", "b", "c", row_number() OVER (ORDER BY "a" ASC NULLS FIRST) AS "row_num", rank() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "rank", dense_rank() OVER (ORDER BY "a" ASC NULLS FIRST) AS "d_rank", first_value("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "first", last_value("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "last" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+----+----+---------+------+--------+-------+------+
+| a | b  | c  | row_num | rank | d_rank | first | last |
++---+----+----+---------+------+--------+-------+------+
+| 1 | 2  | A  | 1       | 1    | 1      | 2     | 2    |
+| 3 | 4  | BB | 2       | 1    | 2      | 4     | 4    |
+| 5 | 6  | A  | 3       | 2    | 3      | 2     | 6    |
+| 7 | 8  | BB | 4       | 2    | 4      | 4     | 8    |
+| 9 | 10 | A  | 5       | 3    | 5      | 2     | 10   |
++---+----+----+---------+------+--------+-------+------+
+'''
+
+[advanced_window_fns]
+athena = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", nth_value("b", 1) OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "nth1", cume_dist() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "cdist", lag("b") OVER (ORDER BY "a" ASC NULLS FIRST) AS "lag_b", lead("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "lead_b", ntile(2) OVER (ORDER BY "a" ASC NULLS FIRST) AS "ntile" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH \
+values0 AS (SELECT 1 AS `a`, 2 AS `b`, 'A' AS `c` UNION ALL SELECT 3 AS `a`, 4 AS `b`, 'BB' AS `c` UNION ALL SELECT 5 AS `a`, 6 AS `b`, 'A' AS `c` UNION ALL SELECT 7 AS `a`, 8 AS `b`, 'BB' AS `c` UNION ALL SELECT 9 AS `a`, 10 AS `b`, 'A' AS `c`), \
+values1 AS (SELECT `a`, `b`, `c`, nth_value(`b`, 1) OVER (ORDER BY `a` ASC NULLS FIRST) AS `nth1`, cume_dist() OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST) AS `cdist`, lag(`b`) OVER (ORDER BY `a` ASC NULLS FIRST) AS `lag_b`, lead(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST) AS `lead_b`, ntile(2) OVER (ORDER BY `a` ASC NULLS FIRST) AS `ntile` FROM values0) \
+SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = "UNSUPPORTED"
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT `a`, `b`, `c`, nth_value(`b`, 1) OVER (ORDER BY `a` ASC NULLS FIRST) AS `nth1`, cume_dist() OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST) AS `cdist`, lag(`b`) OVER (ORDER BY `a` ASC NULLS FIRST) AS `lag_b`, lead(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC NULLS FIRST) AS `lead_b`, ntile(2) OVER (ORDER BY `a` ASC NULLS FIRST) AS `ntile` FROM values0) \
+SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", nth_value("b", 1) OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "nth1", cume_dist() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cdist", lag("b") OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "lag_b", lead("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "lead_b", ntile(2) OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "ntile" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", nth_value("b", 1) OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "nth1", cume_dist() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "cdist", lag("b") OVER (ORDER BY "a" ASC NULLS FIRST) AS "lag_b", lead("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "lead_b", ntile(2) OVER (ORDER BY "a" ASC NULLS FIRST) AS "ntile" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ROW(1, 2, 'A'), ROW(3, 4, 'BB'), ROW(5, 6, 'A'), ROW(7, 8, 'BB'), ROW(9, 10, 'A')) AS `_values` (`a`, `b`, `c`)), \
+values1 AS (SELECT `a`, `b`, `c`, nth_value(`b`, 1) OVER (ORDER BY `a` ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS `nth1`, cume_dist() OVER (PARTITION BY `c` ORDER BY `a` ASC) AS `cdist`, lag(`b`) OVER (ORDER BY `a` ASC) AS `lag_b`, lead(`b`) OVER (PARTITION BY `c` ORDER BY `a` ASC) AS `lead_b`, ntile(2) OVER (ORDER BY `a` ASC) AS `ntile` FROM values0) \
+SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A')) AS "_values" ("a", "b", "c")), \
+values1 AS (SELECT "a", "b", "c", nth_value("b", 1) OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "nth1", cume_dist() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "cdist", lag("b") OVER (ORDER BY "a" ASC NULLS FIRST) AS "lag_b", lead("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "lead_b", ntile(2) OVER (ORDER BY "a" ASC NULLS FIRST) AS "ntile" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH \
+values0 AS (SELECT 1 AS "a", 2 AS "b", 'A' AS "c" UNION ALL SELECT 3 AS "a", 4 AS "b", 'BB' AS "c" UNION ALL SELECT 5 AS "a", 6 AS "b", 'A' AS "c" UNION ALL SELECT 7 AS "a", 8 AS "b", 'BB' AS "c" UNION ALL SELECT 9 AS "a", 10 AS "b", 'A' AS "c"), \
+values1 AS (SELECT "a", "b", "c", nth_value("b", 1) OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "nth1", cume_dist() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "cdist", lag("b") OVER (ORDER BY "a" ASC NULLS FIRST) AS "lag_b", lead("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "lead_b", ntile(2) OVER (ORDER BY "a" ASC NULLS FIRST) AS "ntile" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'A'), (7, 8, 'BB'), (9, 10, 'A'))), \
+values1 AS (SELECT "a", "b", "c", nth_value("b", 1) OVER (ORDER BY "a" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "nth1", cume_dist() OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "cdist", lag("b") OVER (ORDER BY "a" ASC NULLS FIRST) AS "lag_b", lead("b") OVER (PARTITION BY "c" ORDER BY "a" ASC NULLS FIRST) AS "lead_b", ntile(2) OVER (ORDER BY "a" ASC NULLS FIRST) AS "ntile" FROM values0) \
+SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+----+----+------+--------------------+-------+--------+-------+
+| a | b  | c  | nth1 | cdist              | lag_b | lead_b | ntile |
++---+----+----+------+--------------------+-------+--------+-------+
+| 1 | 2  | A  | 2    | 0.3333333333333333 |       | 6      | 1     |
+| 3 | 4  | BB | 2    | 0.5                | 2     | 8      | 1     |
+| 5 | 6  | A  | 2    | 0.6666666666666666 | 4     | 10     | 1     |
+| 7 | 8  | BB | 2    | 1                  | 6     |        | 2     |
+| 9 | 10 | A  | 2    | 1                  | 8     |        | 2     |
++---+----+----+------+--------------------+-------+--------+-------+
+'''

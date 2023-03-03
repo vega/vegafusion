@@ -1,0 +1,158 @@
+[simple_fold]
+athena = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ('USA', 10, 20), ('Canada', 7, 26)) AS "_values" ("country", "gold", "silver")), \
+values1 AS (SELECT "country", "gold", "silver", "key", "value" FROM (SELECT "country", "gold", "silver", 'gold' AS "key", "gold" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'silver' AS "key", "silver" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'bogus' AS "key", NULL AS "value" FROM values0) AS _union) \
+SELECT * FROM values1 ORDER BY "country" ASC NULLS FIRST, "key" ASC NULLS FIRST
+"""
+bigquery = """
+WITH values0 AS (SELECT 'USA' AS `country`, 10 AS `gold`, 20 AS `silver` UNION ALL SELECT 'Canada' AS `country`, 7 AS `gold`, 26 AS `silver`), \
+values1 AS (SELECT `country`, `gold`, `silver`, `key`, `value` FROM (SELECT `country`, `gold`, `silver`, 'gold' AS `key`, `gold` AS `value` FROM values0 UNION ALL SELECT `country`, `gold`, `silver`, 'silver' AS `key`, `silver` AS `value` FROM values0 UNION ALL SELECT `country`, `gold`, `silver`, 'bogus' AS `key`, NULL AS `value` FROM values0) AS _union) \
+SELECT * FROM values1 ORDER BY `country` ASC NULLS FIRST, `key` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH \
+values0 AS (SELECT 'USA' AS "country", 10 AS "gold", 20 AS "silver" UNION ALL SELECT 'Canada' AS "country", 7 AS "gold", 26 AS "silver"), \
+values1 AS (SELECT "country", "gold", "silver", "key", "value" FROM (SELECT "country", "gold", "silver", 'gold' AS "key", "gold" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'silver' AS "key", "silver" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'bogus' AS "key", NULL AS "value" FROM values0) AS _union) \
+SELECT * FROM values1 ORDER BY "country" ASC NULLS FIRST, "key" ASC NULLS FIRST
+"""
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ('USA', 10, 20), ('Canada', 7, 26)) AS `_values` (`country`, `gold`, `silver`)), \
+values1 AS (SELECT `country`, `gold`, `silver`, `key`, `value` FROM (SELECT `country`, `gold`, `silver`, 'gold' AS `key`, `gold` AS `value` FROM values0 UNION ALL SELECT `country`, `gold`, `silver`, 'silver' AS `key`, `silver` AS `value` FROM values0 UNION ALL SELECT `country`, `gold`, `silver`, 'bogus' AS `key`, NULL AS `value` FROM values0) AS _union) \
+SELECT * FROM values1 ORDER BY `country` ASC NULLS FIRST, `key` ASC NULLS FIRST
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ('USA', 10, 20), ('Canada', 7, 26)) AS "_values" ("country", "gold", "silver")), \
+values1 AS (SELECT "country", "gold", "silver", "key", "value" FROM (SELECT "country", "gold", "silver", 'gold' AS "key", "gold" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'silver' AS "key", "silver" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'bogus' AS "key", NULL AS "value" FROM values0) AS _union) \
+SELECT * FROM values1 ORDER BY "country" ASC NULLS FIRST, "key" ASC NULLS FIRST
+"""
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ('USA', 10, 20), ('Canada', 7, 26)) AS "_values" ("country", "gold", "silver")), \
+values1 AS (SELECT "country", "gold", "silver", "key", "value" FROM (SELECT "country", "gold", "silver", 'gold' AS "key", "gold" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'silver' AS "key", "silver" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'bogus' AS "key", NULL AS "value" FROM values0) AS _union) \
+SELECT * FROM values1 ORDER BY "country" ASC NULLS FIRST, "key" ASC NULLS FIRST
+"""
+mysql = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ROW('USA', 10, 20), ROW('Canada', 7, 26)) AS `_values` (`country`, `gold`, `silver`)), \
+values1 AS (SELECT `country`, `gold`, `silver`, `key`, `value` FROM (SELECT `country`, `gold`, `silver`, 'gold' AS `key`, `gold` AS `value` FROM values0 UNION ALL SELECT `country`, `gold`, `silver`, 'silver' AS `key`, `silver` AS `value` FROM values0 UNION ALL SELECT `country`, `gold`, `silver`, 'bogus' AS `key`, NULL AS `value` FROM values0) AS _union) \
+SELECT * FROM values1 ORDER BY `country` ASC, `key` ASC
+"""
+postgres = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ('USA', 10, 20), ('Canada', 7, 26)) AS "_values" ("country", "gold", "silver")), \
+values1 AS (SELECT "country", "gold", "silver", "key", "value" FROM (SELECT "country", "gold", "silver", 'gold' AS "key", "gold" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'silver' AS "key", "silver" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'bogus' AS "key", NULL AS "value" FROM values0) AS _union) \
+SELECT * FROM values1 ORDER BY "country" ASC NULLS FIRST, "key" ASC NULLS FIRST
+"""
+redshift = """
+WITH \
+values0 AS (SELECT 'USA' AS "country", 10 AS "gold", 20 AS "silver" UNION ALL SELECT 'Canada' AS "country", 7 AS "gold", 26 AS "silver"), \
+values1 AS (SELECT "country", "gold", "silver", "key", "value" FROM (SELECT "country", "gold", "silver", 'gold' AS "key", "gold" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'silver' AS "key", "silver" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'bogus' AS "key", NULL AS "value" FROM values0) AS _union) \
+SELECT * FROM values1 ORDER BY "country" ASC NULLS FIRST, "key" ASC NULLS FIRST
+"""
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "country", "COLUMN2" AS "gold", "COLUMN3" AS "silver" FROM (VALUES ('USA', 10, 20), ('Canada', 7, 26))), \
+values1 AS (SELECT "country", "gold", "silver", "key", "value" FROM (SELECT "country", "gold", "silver", 'gold' AS "key", "gold" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'silver' AS "key", "silver" AS "value" FROM values0 UNION ALL SELECT "country", "gold", "silver", 'bogus' AS "key", NULL AS "value" FROM values0) AS _union) \
+SELECT * FROM values1 ORDER BY "country" ASC NULLS FIRST, "key" ASC NULLS FIRST
+"""
+result = '''
++---------+------+--------+--------+-------+
+| country | gold | silver | key    | value |
++---------+------+--------+--------+-------+
+| Canada  | 7    | 26     | bogus  |       |
+| Canada  | 7    | 26     | gold   | 7     |
+| Canada  | 7    | 26     | silver | 26    |
+| USA     | 10   | 20     | bogus  |       |
+| USA     | 10   | 20     | gold   | 10    |
+| USA     | 10   | 20     | silver | 20    |
++---------+------+--------+--------+-------+
+'''
+
+
+[ordered_fold]
+athena = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 'USA', 10, 20), (2, 'Canada', 7, 26)) AS "_values" ("_order", "country", "gold", "silver")), \
+values1 AS (SELECT "_order", "country", "gold", "silver", "key", "value", "_order_field" FROM (SELECT "_order", "country", "gold", "silver", 'gold' AS "key", "gold" AS "value", 0 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'silver' AS "key", "silver" AS "value", 1 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'bogus' AS "key", NULL AS "value", 2 AS "_order_field" FROM values0) AS _union), \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS FIRST, "_order_field" ASC NULLS FIRST) AS "_order", "country", "gold", "silver", "key", "value" FROM values1) \
+SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+"""
+bigquery = """
+WITH \
+values0 AS (SELECT 1 AS `_order`, 'USA' AS `country`, 10 AS `gold`, 20 AS `silver` UNION ALL SELECT 2 AS `_order`, 'Canada' AS `country`, 7 AS `gold`, 26 AS `silver`), \
+values1 AS (SELECT `_order`, `country`, `gold`, `silver`, `key`, `value`, `_order_field` FROM (SELECT `_order`, `country`, `gold`, `silver`, 'gold' AS `key`, `gold` AS `value`, 0 AS `_order_field` FROM values0 UNION ALL SELECT `_order`, `country`, `gold`, `silver`, 'silver' AS `key`, `silver` AS `value`, 1 AS `_order_field` FROM values0 UNION ALL SELECT `_order`, `country`, `gold`, `silver`, 'bogus' AS `key`, NULL AS `value`, 2 AS `_order_field` FROM values0) AS _union), \
+values2 AS (SELECT row_number() OVER (ORDER BY `_order` ASC NULLS FIRST, `_order_field` ASC NULLS FIRST) AS `_order`, `country`, `gold`, `silver`, `key`, `value` FROM values1) \
+SELECT * FROM values2 ORDER BY `_order` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH \
+values0 AS (SELECT 1 AS "_order", 'USA' AS "country", 10 AS "gold", 20 AS "silver" UNION ALL SELECT 2 AS "_order", 'Canada' AS "country", 7 AS "gold", 26 AS "silver"), \
+values1 AS (SELECT "_order", "country", "gold", "silver", "key", "value", "_order_field" FROM (SELECT "_order", "country", "gold", "silver", 'gold' AS "key", "gold" AS "value", 0 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'silver' AS "key", "silver" AS "value", 1 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'bogus' AS "key", NULL AS "value", 2 AS "_order_field" FROM values0) AS _union), \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS FIRST, "_order_field" ASC NULLS FIRST) AS "_order", "country", "gold", "silver", "key", "value" FROM values1) \
+SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+"""
+databricks = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 'USA', 10, 20), (2, 'Canada', 7, 26)) AS `_values` (`_order`, `country`, `gold`, `silver`)), \
+values1 AS (SELECT `_order`, `country`, `gold`, `silver`, `key`, `value`, `_order_field` FROM (SELECT `_order`, `country`, `gold`, `silver`, 'gold' AS `key`, `gold` AS `value`, 0 AS `_order_field` FROM values0 UNION ALL SELECT `_order`, `country`, `gold`, `silver`, 'silver' AS `key`, `silver` AS `value`, 1 AS `_order_field` FROM values0 UNION ALL SELECT `_order`, `country`, `gold`, `silver`, 'bogus' AS `key`, NULL AS `value`, 2 AS `_order_field` FROM values0) AS _union), \
+values2 AS (SELECT row_number() OVER (ORDER BY `_order` ASC NULLS FIRST, `_order_field` ASC NULLS FIRST) AS `_order`, `country`, `gold`, `silver`, `key`, `value` FROM values1) \
+SELECT * FROM values2 ORDER BY `_order` ASC NULLS FIRST
+"""
+datafusion = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 'USA', 10, 20), (2, 'Canada', 7, 26)) AS "_values" ("_order", "country", "gold", "silver")), \
+values1 AS (SELECT "_order", "country", "gold", "silver", "key", "value", "_order_field" FROM (SELECT "_order", "country", "gold", "silver", 'gold' AS "key", "gold" AS "value", 0 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'silver' AS "key", "silver" AS "value", 1 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'bogus' AS "key", NULL AS "value", 2 AS "_order_field" FROM values0) AS _union), \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS FIRST, "_order_field" ASC NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "_order", "country", "gold", "silver", "key", "value" FROM values1) \
+SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+"""
+duckdb = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 'USA', 10, 20), (2, 'Canada', 7, 26)) AS "_values" ("_order", "country", "gold", "silver")), \
+values1 AS (SELECT "_order", "country", "gold", "silver", "key", "value", "_order_field" FROM (SELECT "_order", "country", "gold", "silver", 'gold' AS "key", "gold" AS "value", 0 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'silver' AS "key", "silver" AS "value", 1 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'bogus' AS "key", NULL AS "value", 2 AS "_order_field" FROM values0) AS _union), \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS FIRST, "_order_field" ASC NULLS FIRST) AS "_order", "country", "gold", "silver", "key", "value" FROM values1) \
+SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+"""
+mysql = """
+WITH \
+values0 AS (SELECT * FROM (VALUES ROW(1, 'USA', 10, 20), ROW(2, 'Canada', 7, 26)) AS `_values` (`_order`, `country`, `gold`, `silver`)), \
+values1 AS (SELECT `_order`, `country`, `gold`, `silver`, `key`, `value`, `_order_field` FROM (SELECT `_order`, `country`, `gold`, `silver`, 'gold' AS `key`, `gold` AS `value`, 0 AS `_order_field` FROM values0 UNION ALL SELECT `_order`, `country`, `gold`, `silver`, 'silver' AS `key`, `silver` AS `value`, 1 AS `_order_field` FROM values0 UNION ALL SELECT `_order`, `country`, `gold`, `silver`, 'bogus' AS `key`, NULL AS `value`, 2 AS `_order_field` FROM values0) AS _union), \
+values2 AS (SELECT row_number() OVER (ORDER BY `_order` ASC, `_order_field` ASC) AS `_order`, `country`, `gold`, `silver`, `key`, `value` FROM values1) \
+SELECT * FROM values2 ORDER BY `_order` ASC
+
+"""
+postgres = """
+WITH \
+values0 AS (SELECT * FROM (VALUES (1, 'USA', 10, 20), (2, 'Canada', 7, 26)) AS "_values" ("_order", "country", "gold", "silver")), \
+values1 AS (SELECT "_order", "country", "gold", "silver", "key", "value", "_order_field" FROM (SELECT "_order", "country", "gold", "silver", 'gold' AS "key", "gold" AS "value", 0 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'silver' AS "key", "silver" AS "value", 1 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'bogus' AS "key", NULL AS "value", 2 AS "_order_field" FROM values0) AS _union), \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS FIRST, "_order_field" ASC NULLS FIRST) AS "_order", "country", "gold", "silver", "key", "value" FROM values1) \
+SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+"""
+redshift = """
+WITH \
+values0 AS (SELECT 1 AS "_order", 'USA' AS "country", 10 AS "gold", 20 AS "silver" UNION ALL SELECT 2 AS "_order", 'Canada' AS "country", 7 AS "gold", 26 AS "silver"), \
+values1 AS (SELECT "_order", "country", "gold", "silver", "key", "value", "_order_field" FROM (SELECT "_order", "country", "gold", "silver", 'gold' AS "key", "gold" AS "value", 0 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'silver' AS "key", "silver" AS "value", 1 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'bogus' AS "key", NULL AS "value", 2 AS "_order_field" FROM values0) AS _union), \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS FIRST, "_order_field" ASC NULLS FIRST) AS "_order", "country", "gold", "silver", "key", "value" FROM values1) \
+SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+"""
+snowflake = """
+WITH \
+values0 AS (SELECT "COLUMN1" AS "_order", "COLUMN2" AS "country", "COLUMN3" AS "gold", "COLUMN4" AS "silver" FROM (VALUES (1, 'USA', 10, 20), (2, 'Canada', 7, 26))), \
+values1 AS (SELECT "_order", "country", "gold", "silver", "key", "value", "_order_field" FROM (SELECT "_order", "country", "gold", "silver", 'gold' AS "key", "gold" AS "value", 0 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'silver' AS "key", "silver" AS "value", 1 AS "_order_field" FROM values0 UNION ALL SELECT "_order", "country", "gold", "silver", 'bogus' AS "key", NULL AS "value", 2 AS "_order_field" FROM values0) AS _union), \
+values2 AS (SELECT row_number() OVER (ORDER BY "_order" ASC NULLS FIRST, "_order_field" ASC NULLS FIRST) AS "_order", "country", "gold", "silver", "key", "value" FROM values1) \
+SELECT * FROM values2 ORDER BY "_order" ASC NULLS FIRST
+"""
+result = '''
++--------+---------+------+--------+--------+-------+
+| _order | country | gold | silver | key    | value |
++--------+---------+------+--------+--------+-------+
+| 1      | USA     | 10   | 20     | gold   | 10    |
+| 2      | USA     | 10   | 20     | silver | 20    |
+| 3      | USA     | 10   | 20     | bogus  |       |
+| 4      | Canada  | 7    | 26     | gold   | 7     |
+| 5      | Canada  | 7    | 26     | silver | 26    |
+| 6      | Canada  | 7    | 26     | bogus  |       |
++--------+---------+------+--------+--------+-------+
+'''
