@@ -4,7 +4,7 @@ on:
     types: [opened, synchronize]
   push:
     branches:
-      - 'releases_**'
+      - 'release_**'
 jobs:
   rust-fmt-clippy:
     runs-on: ubuntu-latest
