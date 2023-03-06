@@ -1,0 +1,30 @@
+{
+  "server_to_client": [
+    {
+      "name": "data_1",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_2_x_domain_symbol_1",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_3",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_4",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "source_0_x_domain_symbol_0",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

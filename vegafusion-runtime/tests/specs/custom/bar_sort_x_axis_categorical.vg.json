@@ -1,0 +1,216 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 600,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {"name": "source_0", "url": "data/stocks.csv", "format": {"type": "csv"}},
+    {
+      "name": "data_0",
+      "source": "source_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["symbol"],
+          "ops": ["sum", "sum"],
+          "fields": ["price", "price"],
+          "as": ["__sum_price__", "sum_price"]
+        }
+      ]
+    },
+    {
+      "name": "data_1",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "window",
+          "params": [null],
+          "as": ["rank"],
+          "ops": ["rank"],
+          "fields": [null],
+          "sort": {"field": [], "order": []}
+        },
+        {"type": "filter", "expr": "datum.rank <= 21"}
+      ]
+    },
+    {
+      "name": "data_2",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "stack",
+          "groupby": ["symbol"],
+          "field": "__sum_price__",
+          "sort": {"field": [], "order": []},
+          "as": ["____sum_price___start__", "____sum_price___end__"],
+          "offset": "zero"
+        },
+        {
+          "type": "formula",
+          "expr": "(datum[\"____sum_price___start__\"] + datum[\"____sum_price___end__\"]) / 2",
+          "as": "__y_midpoint__"
+        }
+      ]
+    },
+    {
+      "name": "data_3",
+      "source": "data_2",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"__y_midpoint__\"]) && isFinite(+datum[\"__y_midpoint__\"])"
+        }
+      ]
+    },
+    {
+      "name": "data_4",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"sum_price\"]) && isFinite(+datum[\"sum_price\"])"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_layer_0_layer_0_marks",
+      "type": "rect",
+      "clip": true,
+      "style": ["bar"],
+      "from": {"data": "data_4"},
+      "encode": {
+        "update": {
+          "fill": {"value": "#4C78A8"},
+          "opacity": {"value": 1},
+          "tooltip": {
+            "signal": "{\"symbol\": isValid(datum[\"symbol\"]) ? datum[\"symbol\"] : \"\"+datum[\"symbol\"], \"Sum of price\": format(datum[\"sum_price\"], \"\")}"
+          },
+          "ariaRoleDescription": {"value": "bar"},
+          "description": {
+            "signal": "\"symbol: \" + (isValid(datum[\"symbol\"]) ? datum[\"symbol\"] : \"\"+datum[\"symbol\"]) + \"; Sum of price: \" + (format(datum[\"sum_price\"], \"\"))"
+          },
+          "x": {"scale": "x", "field": "symbol"},
+          "width": {"signal": "max(0.25, bandwidth('x'))"},
+          "y": {"scale": "y", "field": "sum_price"},
+          "y2": {"scale": "y", "value": 0}
+        }
+      }
+    },
+    {
+      "name": "layer_0_layer_0_layer_1_marks",
+      "type": "text",
+      "style": ["text"],
+      "from": {"data": "data_3"},
+      "encode": {
+        "update": {
+          "fill": {"value": "#ffffff"},
+          "baseline": {"value": "middle"},
+          "dx": {"value": 0},
+          "dy": {"value": 2},
+          "description": {
+            "signal": "\"symbol: \" + (isValid(datum[\"symbol\"]) ? datum[\"symbol\"] : \"\"+datum[\"symbol\"]) + \"; Sum of price: \" + (format(datum[\"__y_midpoint__\"], \"\")) + \"; __sum_price__: \" + (format(datum[\"__sum_price__\"], \"\"))"
+          },
+          "x": {"scale": "x", "field": "symbol", "band": 0.5},
+          "y": {"scale": "y", "field": "__y_midpoint__"},
+          "text": {"signal": "format(datum[\"__sum_price__\"], \"\")"},
+          "align": {"value": "center"}
+        }
+      }
+    },
+    {
+      "name": "aggregate_xAxis_spec_96334847_5fe0_430f_862f_39b667ff3048_marks",
+      "type": "rule",
+      "clip": true,
+      "style": ["rule"],
+      "from": {"data": "data_1"},
+      "encode": {"update": {}}
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "band",
+      "domain": {
+        "fields": [
+          {"data": "source_0", "field": "symbol"},
+          {"data": "data_2", "field": "symbol"}
+        ],
+        "sort": {"op": "min", "field": "symbol", "order": "descending"}
+      },
+      "range": [0, {"signal": "width"}],
+      "paddingInner": 0.1,
+      "paddingOuter": 0.05
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {
+        "fields": [
+          {"data": "data_4", "field": "sum_price"},
+          {"data": "data_3", "field": "__y_midpoint__"}
+        ]
+      },
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": true,
+      "gridScale": "y",
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": true,
+      "gridScale": "x",
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "symbol",
+      "labels": true,
+      "ticks": true,
+      "labelAlign": "right",
+      "labelAngle": 270,
+      "labelBaseline": "middle",
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "Sum of price",
+      "labels": true,
+      "ticks": true,
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
+    }
+  ],
+  "config": {"legend": {"orient": "right"}},
+  "usermeta": {"selectionConfigs": {}}
+}
