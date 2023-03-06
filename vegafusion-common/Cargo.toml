@@ -1,12 +1,12 @@
 [package]
 name = "vegafusion-common"
-version = "1.0.3"
+version = "1.0.4"
 edition = "2021"
 
 [features]
-pyarrow = [ "pyo3" ]
-json = ["serde_json", "arrow/json", "chrono"]
-prettyprint = ["arrow/prettyprint"]
+pyarrow = [ "pyo3",]
+json = [ "serde_json", "arrow/json", "chrono",]
+prettyprint = [ "arrow/prettyprint",]
 
 [dependencies]
 thiserror = "^1.0.29"
@@ -27,7 +27,7 @@ optional = true
 [dependencies.arrow]
 version = "32.0.0"
 default_features = false
-features = ["ipc"]
+features = [ "ipc",]
 
 [dependencies.datafusion-common]
 version = "18.0.0"

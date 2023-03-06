@@ -225,7 +225,9 @@ mod test_aggregate_with_nulls {
         case(AggregateOpSpec::Count),
         case(AggregateOpSpec::Valid),
         case(AggregateOpSpec::Missing),
-        case(AggregateOpSpec::Distinct)
+        case(AggregateOpSpec::Distinct),
+        case(AggregateOpSpec::Min),
+        case(AggregateOpSpec::Max)
     )]
     fn test(op: AggregateOpSpec) {
         let dataset = VegaFusionTable::from_json(
@@ -245,6 +247,63 @@ mod test_aggregate_with_nulls {
         let aggregate_spec = AggregateTransformSpec {
             groupby: vec![Field::String("SHIP".to_string())],
             fields: Some(vec![Some(Field::String("NULL_ORDER_IDS".to_string()))]),
+            ops: Some(vec![op]),
+            as_: None,
+            cross: None,
+            drop: None,
+            key: None,
+            extra: Default::default(),
+        };
+        let transform_specs = vec![TransformSpec::Aggregate(aggregate_spec)];
+
+        let comp_config = Default::default();
+
+        let eq_config = TablesEqualConfig {
+            row_order: true,
+            ..Default::default()
+        };
+
+        check_transform_evaluation(
+            &dataset,
+            transform_specs.as_slice(),
+            &comp_config,
+            &eq_config,
+        );
+    }
+}
+
+mod test_aggregate_strings {
+    use crate::*;
+    use serde_json::json;
+    use vegafusion_common::data::table::VegaFusionTable;
+
+    #[rstest(
+        op,
+        case(AggregateOpSpec::Count),
+        case(AggregateOpSpec::Valid),
+        case(AggregateOpSpec::Missing),
+        case(AggregateOpSpec::Distinct),
+        case(AggregateOpSpec::Min),
+        case(AggregateOpSpec::Max)
+    )]
+    fn test(op: AggregateOpSpec) {
+        let dataset = VegaFusionTable::from_json(
+            &json!(
+                [
+                    {"a": 1, "b": "A"},
+                    {"a": 1, "b": "BB"},
+                    {"a": 2, "b": "CCC"},
+                    {"a": 2, "b": "CCC"},
+                    {"a": 2, "b": "DDDD"}
+                ]
+            ),
+            1024,
+        )
+        .unwrap();
+
+        let aggregate_spec = AggregateTransformSpec {
+            groupby: vec![Field::String("a".to_string())],
+            fields: Some(vec![Some(Field::String("b".to_string()))]),
             ops: Some(vec![op]),
             as_: None,
             cross: None,

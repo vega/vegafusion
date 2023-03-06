@@ -1,3 +1,4 @@
+from uuid import uuid4
 import altair as alt
 from altair.utils.html import spec_to_html
 
@@ -41,6 +42,7 @@ def vegafusion_mime_renderer(spec, mimetype="html", row_limit=None, embed_option
             {vega_mimetype: {"embed_options": embed_options}}
         )
     elif mimetype == "html":
+        output_div = f"altair-viz-{uuid4().hex}"
         html = spec_to_html(
             tx_vega_spec,
             mode="vega",
@@ -48,7 +50,7 @@ def vegafusion_mime_renderer(spec, mimetype="html", row_limit=None, embed_option
             vegalite_version=altair_vl_version(),
             vegaembed_version="6",
             fullhtml=False,
-            output_div="altair-viz-{}",
+            output_div=output_div,
             template="universal",
             embed_options=embed_options
         )

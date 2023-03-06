@@ -2,11 +2,11 @@
 name = "vegafusion-core"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "1.0.3"
+version = "1.0.4"
 
 [features]
 tonic_support = [ "tonic", "tonic-build",]
-pyarrow = [ "pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow"]
+pyarrow = [ "pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow",]
 
 [dependencies]
 thiserror = "^1.0.29"
@@ -32,8 +32,8 @@ features = [ "preserve_order",]
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-features = ["json", "sqlparser"]
-version = "1.0.3"
+features = [ "json", "sqlparser",]
+version = "1.0.4"
 
 [dependencies.datafusion-common]
 version = "18.0.0"
