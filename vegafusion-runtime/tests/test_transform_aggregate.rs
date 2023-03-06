@@ -275,7 +275,7 @@ mod test_aggregate_with_nulls {
 mod test_aggregate_strings {
     use crate::*;
     use serde_json::json;
-    use vegafusion_core::data::table::VegaFusionTable;
+    use vegafusion_common::data::table::VegaFusionTable;
 
     #[rstest(
         op,
