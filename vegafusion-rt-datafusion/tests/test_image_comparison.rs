@@ -132,7 +132,8 @@ mod test_custom_specs {
         case("custom/sin_cos", 0.001, true),
         case("custom/area_streamgraph", 0.001, true),
         case("custom/pivot_join_on_bug", 0.001, true),
-        case("custom/special_chars_bar", 0.001, true)
+        case("custom/special_chars_bar", 0.001, true),
+        case("custom/bar_sort_x_axis_categorical", 0.001, true),
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64, extract_inline_values: bool) {
         println!("spec_name: {spec_name}");

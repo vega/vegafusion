@@ -148,8 +148,8 @@ pub fn make_agg_expr_for_col_expr(
     let agg_expr = match op {
         AggregateOp::Count => count(column),
         AggregateOp::Mean | AggregateOp::Average => avg(numeric_column()),
-        AggregateOp::Min => min(numeric_column()),
-        AggregateOp::Max => max(numeric_column()),
+        AggregateOp::Min => min(column),
+        AggregateOp::Max => max(column),
         AggregateOp::Sum => sum(numeric_column()),
         AggregateOp::Median => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Median,
