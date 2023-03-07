@@ -14,7 +14,7 @@ pub trait Connection: Send + Sync + 'static {
     /// Name and schema of the tables that are provided by this connection
     async fn tables(&self) -> Result<HashMap<String, Schema>>;
 
-    /// Scan a named tabel into a DataFrame
+    /// Scan a named table into a DataFrame
     async fn scan_table(&self, _name: &str) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported(
             "scan_table not supported by connection",
