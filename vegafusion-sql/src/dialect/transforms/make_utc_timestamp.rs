@@ -1,7 +1,8 @@
 use crate::compile::expr::ToSqlExpr;
 use crate::dialect::{Dialect, FunctionTransformer};
+use arrow::datatypes::DataType;
 use datafusion_common::DFSchema;
-use datafusion_expr::{lit, Expr};
+use datafusion_expr::{cast, lit, Expr};
 use sqlparser::ast::{
     BinaryOperator as SqlBinaryOperator, DateTimeField as SqlDateTimeField, Expr as SqlExpr,
     Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr,
@@ -31,7 +32,7 @@ fn process_make_utc_timestamp_args(
 ) -> Result<MakeUtcTimestampSqlArgs> {
     if args.len() != 8 {
         return Err(VegaFusionError::sql_not_supported(
-            "make_timestamp_tz requires exactly eight arguments",
+            "make_utc_timestamp requires exactly eight arguments",
         ));
     }
 
@@ -40,13 +41,13 @@ fn process_make_utc_timestamp_args(
         time_zone
     } else {
         return Err(VegaFusionError::sql_not_supported(
-            "Third argument to date_part_tz must be a string literal",
+            "Third argument to make_utc_timestamp must be a string literal",
         ));
     };
 
     let month = if add_one_to_month {
         // Add one so that month ranges from 1 to 12 instead of 0 to 11
-        args[1].clone().add(lit(1)).to_sql(dialect, schema)?
+        cast(args[1].clone().add(lit(1)), DataType::Int64).to_sql(dialect, schema)?
     } else {
         args[1].to_sql(dialect, schema)?
     };
