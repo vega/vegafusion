@@ -34,6 +34,9 @@ class SqlConnection(ABC):
     def fetch_query(self, query: str, schema: pa.Schema) -> pa.Table:
         raise NotImplementedError()
 
+    def reset_registered_datasets(self):
+        raise ValueError("Connection does not support resetting registered datasets")
+
     def unregister(self, name: str):
         raise ValueError("Connection does not support un-registration")
 

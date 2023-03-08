@@ -29,13 +29,15 @@ class DuckDbConnection(SqlConnection):
     def __init__(self, inline_datasets: Dict[str, Union[pd.DataFrame, pa.Table]] = None):
         self._table_schemas = {}
         self.conn = duckdb.connect()
-        inline_datasets = inline_datasets or {}
-        for name, tbl in inline_datasets.items():
-            self.conn.register(name, tbl)
+        self._inline_datasets = inline_datasets or {}
+        self._register_inline_datasets()
+
+    def _register_inline_datasets(self):
+        for name, tbl in self._inline_datasets.items():
             if isinstance(tbl, pd.DataFrame):
-                self._table_schemas[name] = pa.Schema.from_pandas(tbl)
+                self.register_pandas(name, tbl)
             elif isinstance(tbl, pa.Table):
-                self._table_schemas[name] = tbl.schema
+                self.register_arrow(name, tbl)
             else:
                 raise ValueError(f"Unexpected Table type: {type(tbl)}")
 
@@ -50,6 +52,14 @@ class DuckDbConnection(SqlConnection):
         # print(query)
         return self.conn.query(query).to_arrow_table(8096)
 
+    def reset_registered_datasets(self):
+        # Unregister all
+        for t in self.tables():
+            self.unregister(t)
+
+        # Re-register original
+        self._register_inline_datasets()
+
     def unregister(self, name: str):
         self.conn.unregister(name)
         self._table_schemas.pop(name, None)
@@ -60,7 +70,7 @@ class DuckDbConnection(SqlConnection):
         df = df.copy(deep=False)
         df["_vf_order"] = range(0, len(df))
         self.conn.register(name, df)
-        self._table_schemas[name] = pa.Schema.from_pandas(df.head(5))
+        self._table_schemas[name] = pa.Schema.from_pandas(df.head(100))
 
     def register_arrow(self, name: str, table: pa.Table):
         self.conn.register(name, table)

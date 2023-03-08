@@ -92,11 +92,6 @@ class VegaFusionRuntime:
 
         return inline_dataset_bytes
 
-    def _unregister_all_tables(self):
-        if self._connection is not None:
-            for name in self._connection.tables():
-                self._connection.unregister(name)
-
     def pre_transform_spec(
         self,
         spec,
@@ -156,7 +151,8 @@ class VegaFusionRuntime:
                 )
             finally:
                 # Clean up registered tables (both inline and internal temporary tables)
-                self._unregister_all_tables()
+                if self._connection is not None:
+                    self._connection.reset_registered_datasets()
 
             return new_spec, warnings
 
@@ -219,7 +215,8 @@ class VegaFusionRuntime:
                 )
             finally:
                 # Clean up registered tables (both inline and internal temporary tables)
-                self._unregister_all_tables()
+                if self._connection is not None:
+                    self._connection.reset_registered_datasets()
 
             # Deserialize values to Arrow tables
             datasets = [pa.ipc.deserialize_pandas(value) for value in values]
