@@ -58,6 +58,10 @@ pub enum VegaFusionError {
     #[error("IO Error: {0}\n{1}")]
     IOError(std::io::Error, ErrorContext),
 
+    #[cfg(feature = "pyo3")]
+    #[error("Python Error: {0}\n{1}")]
+    PythonError(pyo3::PyErr, ErrorContext),
+
     #[cfg(feature = "json")]
     #[error("Serde JSON Error: {0}\n{1}")]
     SerdeJsonError(serde_json::Error, ErrorContext),
@@ -119,6 +123,11 @@ impl VegaFusionError {
             IOError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::IOError(err, context)
+            }
+            #[cfg(feature = "pyo3")]
+            PythonError(err, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::PythonError(err, context)
             }
             #[cfg(feature = "json")]
             SerdeJsonError(err, mut context) => {
@@ -194,6 +203,10 @@ impl VegaFusionError {
             }
             IOError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
+            }
+            #[cfg(feature = "pyo3")]
+            PythonError(msg, context) => {
+                VegaFusionError::ExternalError(msg.to_string(), context.clone())
             }
             #[cfg(feature = "json")]
             SerdeJsonError(err, context) => {
@@ -273,6 +286,13 @@ impl From<ArrowError> for VegaFusionError {
 impl From<std::io::Error> for VegaFusionError {
     fn from(err: std::io::Error) -> Self {
         Self::IOError(err, Default::default())
+    }
+}
+
+#[cfg(feature = "pyo3")]
+impl From<PyErr> for VegaFusionError {
+    fn from(err: PyErr) -> Self {
+        Self::PythonError(err, Default::default())
     }
 }
 

@@ -15,6 +15,7 @@ protobuf-src = [ "vegafusion-core/protobuf-src",]
 log = "0.4.17"
 env_logger = "0.9.0"
 pythonize = "0.18.0"
+async-trait = "0.1.53"
 
 [dependencies.deterministic-hash]
 version = "1.0.1"
@@ -26,9 +27,18 @@ features = [ "derive",]
 [dependencies.serde_json]
 version = "1.0.79"
 
+[dependencies.arrow]
+version = "32.0.0"
+features = [ "pyarrow",]
+
+[dependencies.vegafusion-common]
+path = "../vegafusion-common"
+features = [ "pyo3",]
+version = "1.0.4"
+
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
-features = [ "pyo3",]
+features = [ "pyarrow",]
 version = "1.0.4"
 
 [dependencies.vegafusion-runtime]

@@ -3794,6 +3794,8 @@ dependencies = [
 name = "vegafusion-python-embed"
 version = "1.0.4"
 dependencies = [
+ "arrow",
+ "async-trait",
  "deterministic-hash",
  "env_logger",
  "log",
@@ -3802,6 +3804,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "vegafusion-common",
  "vegafusion-core",
  "vegafusion-runtime",
  "vegafusion-sql",

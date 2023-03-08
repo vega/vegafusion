@@ -8,7 +8,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::{Result, VegaFusionError};
-use vegafusion_dataframe::connection::Connection;
+
+// Use Connection publicly for the convenience of SQL connection implementors
+pub use vegafusion_dataframe::connection::Connection;
 
 #[cfg(feature = "datafusion-conn")]
 pub mod datafusion_conn;
