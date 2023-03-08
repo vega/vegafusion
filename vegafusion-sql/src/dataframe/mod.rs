@@ -978,8 +978,10 @@ impl SqlDataFrame {
             .collect();
         let select_items = columns.join(", ");
 
+        let table_ident = Ident::with_quote(conn.dialect().quote_style, table).to_string();
+
         let query = parse_sql_query(
-            &format!("select {select_items} from {table}"),
+            &format!("select {select_items} from {table_ident}"),
             conn.dialect(),
         )?;
 
