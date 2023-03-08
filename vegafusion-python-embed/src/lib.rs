@@ -11,6 +11,7 @@ use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::Warni
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
+use crate::connection::PySqlConnection;
 use env_logger::{Builder, Target};
 use pythonize::depythonize;
 use serde::{Deserialize, Serialize};
@@ -20,9 +21,8 @@ use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_runtime::data::dataset::VegaFusionDataset;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
-use vegafusion_sql::connection::Connection;
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
-use crate::connection::PySqlConnection;
+use vegafusion_sql::connection::Connection;
 
 static INIT: Once = Once::new();
 
@@ -100,11 +100,7 @@ impl PyVegaFusionRuntime {
             .external("Failed to create Tokio thread pool")?;
 
         Ok(Self {
-            runtime: VegaFusionRuntime::new(
-                conn,
-                max_capacity,
-                memory_limit,
-            ),
+            runtime: VegaFusionRuntime::new(conn, max_capacity, memory_limit),
             tokio_runtime,
         })
     }

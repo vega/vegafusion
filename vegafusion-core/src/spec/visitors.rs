@@ -18,13 +18,13 @@ use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_value::TaskValue;
 use datafusion_common::ScalarValue;
+use rand::random;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::ops::Deref;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::{Result, VegaFusionError};
-use rand::{Rng, random};
 
 #[derive(Clone, Debug, Default)]
 pub struct MakeTaskScopeVisitor {

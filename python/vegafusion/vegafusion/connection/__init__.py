@@ -1,4 +1,6 @@
 from typing import Dict, Optional
+
+import pandas as pd
 import pyarrow as pa
 
 from dataclasses import dataclass
@@ -31,6 +33,12 @@ class SqlConnection(ABC):
     @abstractmethod
     def fetch_query(self, query: str, schema: pa.Schema) -> pa.Table:
         raise NotImplementedError()
+
+    def unregister(self, name: str):
+        raise ValueError("Connection does not support un-registration")
+
+    def register_pandas(self, name: str, df: pd.DataFrame):
+        raise ValueError("Connection does not support registration of pandas datasets")
 
     def register_arrow(self, name: str, table: pa.Table):
         raise ValueError("Connection does not support registration of arrow datasets")

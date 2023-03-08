@@ -1,22 +1,19 @@
+use pyo3::prelude::*;
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
-use pyo3::prelude::*;
 
-use vegafusion_common::data::table::VegaFusionTable;
-use vegafusion_core::{
-    error::Result,
-    arrow::{
-        datatypes::Schema,
-        record_batch::RecordBatch,
-    },
-};
-use vegafusion_sql::connection::{SqlConnection, Connection};
-use vegafusion_sql::dialect::Dialect;
+use arrow::pyarrow::PyArrowConvert;
 use async_trait::async_trait;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
-use arrow::pyarrow::{PyArrowConvert};
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_core::{
+    arrow::{datatypes::Schema, record_batch::RecordBatch},
+    error::Result,
+};
+use vegafusion_sql::connection::{Connection, SqlConnection};
 use vegafusion_sql::dataframe::{DataFrame, SqlDataFrame};
+use vegafusion_sql::dialect::Dialect;
 
 #[pyclass]
 #[derive(Clone)]
@@ -35,10 +32,7 @@ impl PySqlConnection {
             Ok(Dialect::from_str(&dialect_string)?)
         })?;
 
-        Ok(Self {
-            conn,
-            dialect,
-        })
+        Ok(Self { conn, dialect })
     }
 }
 
@@ -67,15 +61,27 @@ impl Connection for PySqlConnection {
         Ok(tables)
     }
 
+    /// Scan a named table into a DataFrame
+    async fn scan_table(&self, name: &str) -> Result<Arc<dyn DataFrame>> {
+        // Build DataFrame referencing the registered table
+        Ok(Arc::new(
+            SqlDataFrame::try_new(Arc::new(self.clone()), name).await?,
+        ))
+    }
+
     /// Scan a VegaFusionTable into a DataFrame
     async fn scan_arrow(&self, table: VegaFusionTable) -> Result<Arc<dyn DataFrame>> {
+        let random_id = uuid::Uuid::new_v4().to_string().replace("-", "_");
+        let table_name = format!("arrow_{random_id}");
         Python::with_gil(|py| -> std::result::Result<_, PyErr> {
             // Convert table's record batches into Python list of pyarrow batches
             let pyarrow_module = PyModule::import(py, "pyarrow")?;
             let table_cls = pyarrow_module.getattr("Table")?;
-            let batch_objects = table.batches.iter().map(|batch| {
-                Ok(batch.to_pyarrow(py)?)
-            }).collect::<Result<Vec<_>>>()?;
+            let batch_objects = table
+                .batches
+                .iter()
+                .map(|batch| Ok(batch.to_pyarrow(py)?))
+                .collect::<Result<Vec<_>>>()?;
             let batches_list = PyList::new(py, batch_objects);
 
             // Convert table's schema into pyarrow schema
@@ -89,22 +95,20 @@ impl Connection for PySqlConnection {
             let schema_object = schema.to_pyarrow(py)?;
 
             // Build pyarrow table
-            let args = PyTuple::new(py, vec![
-                batches_list.as_ref(), schema_object.as_ref(py)
-            ]);
+            let args = PyTuple::new(py, vec![batches_list.as_ref(), schema_object.as_ref(py)]);
             let pa_table = table_cls.call_method1("from_batches", args)?;
 
             // Register table with Python connection
-            let table_name_object = "tbl".to_string().into_py(py);
-            let args = PyTuple::new(py, vec![
-                table_name_object.as_ref(py), pa_table
-            ]);
+            let table_name_object = table_name.clone().into_py(py);
+            let args = PyTuple::new(py, vec![table_name_object.as_ref(py), pa_table]);
             self.conn.call_method1(py, "register_arrow", args)?;
             Ok(())
         })?;
 
         // Build DataFrame referencing the registered table
-        Ok(Arc::new(SqlDataFrame::try_new(Arc::new(self.clone()), "tbl").await?))
+        Ok(Arc::new(
+            SqlDataFrame::try_new(Arc::new(self.clone()), &table_name).await?,
+        ))
     }
 }
 
@@ -129,9 +133,10 @@ impl SqlConnection for PySqlConnection {
             // Extract table.to_batches() as a Rust Vec<RecordBatch>
             let batches_object = table_object.call_method0(py, "to_batches")?;
             let batches_list = batches_object.downcast::<PyList>(py)?;
-            let batches = batches_list.iter().map(|batch_any| {
-                Ok(RecordBatch::from_pyarrow(batch_any)?)
-            }).collect::<Result<Vec<RecordBatch>>>()?;
+            let batches = batches_list
+                .iter()
+                .map(|batch_any| Ok(RecordBatch::from_pyarrow(batch_any)?))
+                .collect::<Result<Vec<RecordBatch>>>()?;
 
             Ok(VegaFusionTable::try_new(Arc::new(schema), batches)?)
         })?;

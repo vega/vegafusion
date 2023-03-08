@@ -26,9 +26,10 @@ def duckdb_relation_to_schema(rel: duckdb.DuckDBPyRelation) -> pa.Schema:
 
 
 class DuckDbConnection(SqlConnection):
-    def __init__(self, inline_datasets: Dict[str, Union[pd.DataFrame, pa.Table]]):
+    def __init__(self, inline_datasets: Dict[str, Union[pd.DataFrame, pa.Table]] = None):
         self._table_schemas = {}
         self.conn = duckdb.connect()
+        inline_datasets = inline_datasets or {}
         for name, tbl in inline_datasets.items():
             self.conn.register(name, tbl)
             if isinstance(tbl, pd.DataFrame):
@@ -48,6 +49,18 @@ class DuckDbConnection(SqlConnection):
     def fetch_query(self, query: str, schema: pa.Schema) -> pa.Table:
         # print(query)
         return self.conn.query(query).to_arrow_table(8096)
+
+    def unregister(self, name: str):
+        self.conn.unregister(name)
+        self._table_schemas.pop(name, None)
+
+    def register_pandas(self, name: str, df: pd.DataFrame):
+        # Add _vf_order column to avoid the more expensive operation of computing it with a
+        # ROW_NUMBER function in duckdb
+        df = df.copy(deep=False)
+        df["_vf_order"] = range(0, len(df))
+        self.conn.register(name, df)
+        self._table_schemas[name] = pa.Schema.from_pandas(df.head(5))
 
     def register_arrow(self, name: str, table: pa.Table):
         self.conn.register(name, table)

@@ -27,7 +27,7 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datatypes::to_numeric;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_dataframe::connection::Connection;
-use vegafusion_dataframe::dataframe::{StackMode};
+use vegafusion_dataframe::dataframe::StackMode;
 
 // Use DataFrame publicly for the convenience of SQL connection implementors
 pub use vegafusion_dataframe::dataframe::DataFrame;

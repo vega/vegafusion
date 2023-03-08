@@ -62,20 +62,40 @@ class VegaFusionRuntime:
             # No grpc channel, get or initialize an embedded runtime
             return self.embedded_runtime.process_request_bytes(request)
 
-    @staticmethod
-    def _serialize_inline_datasets(inline_datasets=None):
+    def _serialize_or_register_inline_datasets(self, inline_datasets=None):
         from .transformer import to_arrow_ipc_bytes, arrow_table_to_ipc_bytes
-
-        # Preprocess inline_dataset
         inline_datasets = inline_datasets or dict()
         inline_dataset_bytes = dict()
         for name, value in inline_datasets.items():
             if isinstance(value, pa.Table):
+                if self._connection is not None:
+                    try:
+                        # Try registering Arrow Table if supported
+                        self._connection.register_arrow(name, value)
+                        continue
+                    except ValueError:
+                        pass
+
                 table_bytes = arrow_table_to_ipc_bytes(value, stream=True)
+                inline_dataset_bytes[name] = table_bytes
             else:
+                if self._connection is not None:
+                    try:
+                        # Try registering DataFrame if supported
+                        self._connection.register_pandas(name, value)
+                        continue
+                    except ValueError:
+                        pass
+
                 table_bytes = to_arrow_ipc_bytes(value, stream=True)
-            inline_dataset_bytes[name] = table_bytes
+                inline_dataset_bytes[name] = table_bytes
+
         return inline_dataset_bytes
+
+    def _unregister_all_tables(self):
+        if self._connection is not None:
+            for name in self._connection.tables():
+                self._connection.unregister(name)
 
     def pre_transform_spec(
         self,
@@ -124,15 +144,20 @@ class VegaFusionRuntime:
         if self._grpc_channel:
             raise ValueError("pre_transform_spec not yet supported over gRPC")
         else:
-            inline_dataset_bytes = self._serialize_inline_datasets(inline_datasets)
-            new_spec, warnings = self.embedded_runtime.pre_transform_spec(
-                spec,
-                local_tz=local_tz,
-                default_input_tz=default_input_tz,
-                row_limit=row_limit,
-                preserve_interactivity=preserve_interactivity,
-                inline_datasets=inline_dataset_bytes
-            )
+            inline_dataset_bytes = self._serialize_or_register_inline_datasets(inline_datasets)
+            try:
+                new_spec, warnings = self.embedded_runtime.pre_transform_spec(
+                    spec,
+                    local_tz=local_tz,
+                    default_input_tz=default_input_tz,
+                    row_limit=row_limit,
+                    preserve_interactivity=preserve_interactivity,
+                    inline_datasets=inline_dataset_bytes
+                )
+            finally:
+                # Clean up registered tables (both inline and internal temporary tables)
+                self._unregister_all_tables()
+
             return new_spec, warnings
 
     def pre_transform_datasets(self, spec, datasets, local_tz, default_input_tz=None, row_limit=None, inline_datasets=None):
@@ -166,8 +191,6 @@ class VegaFusionRuntime:
         if self._grpc_channel:
             raise ValueError("pre_transform_datasets not yet supported over gRPC")
         else:
-            # Serialize inline datasets
-            inline_dataset_bytes = self._serialize_inline_datasets(inline_datasets)
 
             # Build input variables
             pre_tx_vars = []
@@ -183,14 +206,20 @@ class VegaFusionRuntime:
                 else:
                     raise ValueError(err_msg)
 
-            values, warnings = self.embedded_runtime.pre_transform_datasets(
-                spec,
-                pre_tx_vars,
-                local_tz=local_tz,
-                default_input_tz=default_input_tz,
-                row_limit=row_limit,
-                inline_datasets=inline_dataset_bytes
-            )
+            # Serialize inline datasets
+            inline_dataset_bytes = self._serialize_or_register_inline_datasets(inline_datasets)
+            try:
+                values, warnings = self.embedded_runtime.pre_transform_datasets(
+                    spec,
+                    pre_tx_vars,
+                    local_tz=local_tz,
+                    default_input_tz=default_input_tz,
+                    row_limit=row_limit,
+                    inline_datasets=inline_dataset_bytes
+                )
+            finally:
+                # Clean up registered tables (both inline and internal temporary tables)
+                self._unregister_all_tables()
 
             # Deserialize values to Arrow tables
             datasets = [pa.ipc.deserialize_pandas(value) for value in values]
