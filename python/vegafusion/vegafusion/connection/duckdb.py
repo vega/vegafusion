@@ -67,10 +67,11 @@ class DuckDbConnection(SqlConnection):
     def register_pandas(self, name: str, df: pd.DataFrame):
         # Add _vf_order column to avoid the more expensive operation of computing it with a
         # ROW_NUMBER function in duckdb
+        from ..transformer import to_arrow_table
         df = df.copy(deep=False)
         df["_vf_order"] = range(0, len(df))
         self.conn.register(name, df)
-        self._table_schemas[name] = pa.Schema.from_pandas(df.head(100))
+        self._table_schemas[name] = to_arrow_table(df.head(100)).schema
 
     def register_arrow(self, name: str, table: pa.Table):
         self.conn.register(name, table)
