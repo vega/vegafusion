@@ -79,7 +79,14 @@ impl Connection for PySqlConnection {
             let batches_list = PyList::new(py, batch_objects);
 
             // Convert table's schema into pyarrow schema
-            let schema_object = table.schema.to_pyarrow(py)?;
+            let schema = if let Some(batch) = table.batches.get(0) {
+                // Get schema from first batch if present
+                batch.schema()
+            } else {
+                table.schema.clone()
+            };
+
+            let schema_object = schema.to_pyarrow(py)?;
 
             // Build pyarrow table
             let args = PyTuple::new(py, vec![
