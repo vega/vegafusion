@@ -33,6 +33,7 @@ use vegafusion_common::arrow::ipc::reader::{FileReader, StreamReader};
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
 use vegafusion_dataframe::connection::Connection;
 use vegafusion_dataframe::csv::CsvReadOptions;
@@ -104,20 +105,22 @@ impl TaskCall for DataUrlTask {
         // Load data from URL
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
 
+        let registered_tables = conn.tables().await?;
         let df = if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
             let inline_name = inline_name.trim().to_string();
             if let Some(inline_dataset) = inline_datasets.get(&inline_name) {
-                let sql_df = match inline_dataset {
+                let df = match inline_dataset {
                     VegaFusionDataset::Table { table, .. } => {
                         conn.scan_arrow(table.clone().with_ordering()?).await?
                     }
-                    VegaFusionDataset::DataFrame(df) => {
-                        // TODO: if no ordering column present, create with a window expression
-                        df.clone()
-                    }
+                    VegaFusionDataset::DataFrame(df) => df.with_index(ORDER_COL)?,
                 };
-                let sql_df = process_datetimes(&parse, sql_df, &config.tz_config).await?;
+                let sql_df = process_datetimes(&parse, df, &config.tz_config).await?;
                 return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await;
+            } else if registered_tables.contains_key(&inline_name) {
+                let df = conn.scan_table(&inline_name).await?;
+                let df = df.with_index(ORDER_COL)?;
+                return eval_sql_df(df.clone(), &self.pipeline, &config).await;
             } else {
                 return Err(VegaFusionError::internal(format!(
                     "No inline dataset named {inline_name}"

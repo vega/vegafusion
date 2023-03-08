@@ -24,6 +24,7 @@ use std::ops::Deref;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::{Result, VegaFusionError};
+use rand::{Rng, random};
 
 #[derive(Clone, Debug, Default)]
 pub struct MakeTaskScopeVisitor {
@@ -170,6 +171,10 @@ impl<'a> ChartVisitor for MakeTasksVisitor<'a> {
                 if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
                     let inline_name = inline_name.trim().to_string();
                     if let Some(fingerprint) = self.dataset_fingerprints.get(&inline_name) {
+                        proto_url = Url::String(format!("{url}#{fingerprint}"));
+                    } else {
+                        // Unknown fingerprint, use random id to break cache
+                        let fingerprint = random::<u64>();
                         proto_url = Url::String(format!("{url}#{fingerprint}"));
                     }
                 }

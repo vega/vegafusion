@@ -21,6 +21,7 @@ petgraph = "0.6.0"
 deterministic-hash = "1.0.1"
 chrono = "0.4.23"
 num-complex = "0.4.2"
+rand = "0.8.5"
 
 [dependencies.sqlparser]
 version = "0.30.0"
