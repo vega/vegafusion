@@ -10,21 +10,23 @@ import pyarrow as pa
 
 
 class VegaFusionRuntime:
-    def __init__(self, cache_capacity, memory_limit, worker_threads):
+    def __init__(self, cache_capacity, memory_limit, worker_threads, connection=None):
         self._embedded_runtime = None
         self._grpc_channel = None
         self._grpc_query = None
         self._cache_capacity = cache_capacity
         self._memory_limit = memory_limit
         self._worker_threads = worker_threads
+        self._connection = connection
 
     @property
     def embedded_runtime(self):
         if self._embedded_runtime is None:
             # Try to initialize an embedded runtime
             from vegafusion_embed import PyVegaFusionRuntime
-
-            self._embedded_runtime = PyVegaFusionRuntime(self.cache_capacity, self.memory_limit, self.worker_threads)
+            self._embedded_runtime = PyVegaFusionRuntime(
+                self.cache_capacity, self.memory_limit, self.worker_threads, connection=self._connection
+            )
         return self._embedded_runtime
 
     def grpc_connect(self, channel):
