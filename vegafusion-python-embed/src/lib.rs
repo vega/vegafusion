@@ -78,25 +78,26 @@ impl PyVegaFusionRuntime {
     ) -> PyResult<Self> {
         initialize_logging();
 
-        let mut tokio_runtime_builder = tokio::runtime::Builder::new_multi_thread();
-        tokio_runtime_builder.enable_all();
+        let (conn, mut tokio_runtime_builder) = if let Some(pyconnection) = connection {
+            // Use Python connection and single-threaded tokio runtime (this avoids deadlocking the Python interpreter)
+            let conn = Arc::new(PySqlConnection::new(pyconnection)?) as Arc<dyn Connection>;
+            (conn, tokio::runtime::Builder::new_current_thread())
+        } else {
+            // Use DataFusion connection and multi-threaded tokio runtime
+            let conn = Arc::new(DataFusionConnection::default()) as Arc<dyn Connection>;
+            let mut builder = tokio::runtime::Builder::new_multi_thread();
+            if let Some(worker_threads) = worker_threads {
+                builder.worker_threads(worker_threads.max(1) as usize);
+            }
+            (conn, builder)
+        };
 
-        if let Some(worker_threads) = worker_threads {
-            tokio_runtime_builder.worker_threads(worker_threads.max(1) as usize);
-        }
-
-        tokio_runtime_builder.thread_stack_size(TOKIO_THREAD_STACK_SIZE);
-
-        // Build tokio runtime
+        // Build the tokio runtime
         let tokio_runtime = tokio_runtime_builder
+            .enable_all()
+            .thread_stack_size(TOKIO_THREAD_STACK_SIZE)
             .build()
             .external("Failed to create Tokio thread pool")?;
-
-        let conn: Arc<dyn Connection> = if let Some(pyconnection) = connection {
-            Arc::new(PySqlConnection::new(pyconnection)?)
-        } else {
-            Arc::new(DataFusionConnection::default())
-        };
 
         Ok(Self {
             runtime: VegaFusionRuntime::new(
