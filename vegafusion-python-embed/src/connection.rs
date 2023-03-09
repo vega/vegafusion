@@ -65,7 +65,7 @@ impl Connection for PySqlConnection {
     async fn scan_table(&self, name: &str) -> Result<Arc<dyn DataFrame>> {
         // Build DataFrame referencing the registered table
         Ok(Arc::new(
-            SqlDataFrame::try_new(Arc::new(self.clone()), name).await?,
+            SqlDataFrame::try_new(Arc::new(self.clone()), name, Default::default()).await?,
         ))
     }
 
@@ -107,7 +107,7 @@ impl Connection for PySqlConnection {
 
         // Build DataFrame referencing the registered table
         Ok(Arc::new(
-            SqlDataFrame::try_new(Arc::new(self.clone()), &table_name).await?,
+            SqlDataFrame::try_new(Arc::new(self.clone()), &table_name, Default::default()).await?,
         ))
     }
 
@@ -155,7 +155,7 @@ impl Connection for PySqlConnection {
 
         // Build DataFrame referencing the registered table
         Ok(Arc::new(
-            SqlDataFrame::try_new(Arc::new(self.clone()), &table_name).await?,
+            SqlDataFrame::try_new(Arc::new(self.clone()), &table_name, Default::default()).await?,
         ))
     }
 }

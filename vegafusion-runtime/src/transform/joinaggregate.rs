@@ -49,7 +49,7 @@ impl TransformTrait for JoinAggregate {
             agg_exprs.push(agg_expr);
         }
 
-        let result = dataframe.joinaggregate(group_exprs, agg_exprs)?;
+        let result = dataframe.joinaggregate(group_exprs, agg_exprs).await?;
         Ok((result, Vec::new()))
     }
 }

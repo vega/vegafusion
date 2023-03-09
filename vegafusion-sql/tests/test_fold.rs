@@ -15,7 +15,7 @@ mod test_simple_fold {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -28,7 +28,7 @@ mod test_simple_fold {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .fold(
                 &[
@@ -40,23 +40,28 @@ mod test_simple_fold {
                 "key",
                 None,
             )
-            .and_then(|df| {
-                df.sort(
-                    vec![
-                        Expr::Sort(expr::Sort {
-                            expr: Box::new(col("country")),
-                            asc: true,
-                            nulls_first: true,
-                        }),
-                        Expr::Sort(expr::Sort {
-                            expr: Box::new(col("key")),
-                            asc: true,
-                            nulls_first: true,
-                        }),
-                    ],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("country")),
+                        asc: true,
+                        nulls_first: true,
+                    }),
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("key")),
+                        asc: true,
+                        nulls_first: true,
+                    }),
+                ],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(df_result, "fold", "simple_fold", dialect_name, evaluable);
     }
@@ -70,7 +75,7 @@ mod test_ordered_fold {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -83,7 +88,7 @@ mod test_ordered_fold {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .fold(
                 &[
@@ -95,16 +100,21 @@ mod test_ordered_fold {
                 "key",
                 Some("_order"),
             )
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("_order")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("_order")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(df_result, "fold", "ordered_fold", dialect_name, evaluable);
     }

@@ -136,7 +136,7 @@ impl TaskCall for DataUrlTask {
 
         // Ensure there is an ordering column present
         let df = if df.schema().column_with_name(ORDER_COL).is_none() {
-            df.with_index(ORDER_COL)?
+            df.with_index(ORDER_COL).await?
         } else {
             df
         };
@@ -163,7 +163,7 @@ async fn eval_sql_df(
         pipeline.eval_sql(sql_df, config).await?
     } else {
         // No transforms, just remove any ordering column
-        let sql_df = remove_order_col(sql_df)?;
+        let sql_df = remove_order_col(sql_df).await?;
         (sql_df.collect().await?, Vec::new())
     };
 
@@ -328,7 +328,7 @@ async fn process_datetimes(
                         })
                         .collect();
                     columns.push(date_expr.alias(&spec.name));
-                    df = df.select(columns)?
+                    df = df.select(columns).await?
                 }
             }
         }
@@ -400,7 +400,7 @@ async fn process_datetimes(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    df.select(selection)
+    df.select(selection).await
 }
 
 #[async_trait]

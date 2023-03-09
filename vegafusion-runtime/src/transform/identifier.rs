@@ -40,7 +40,9 @@ impl TransformTrait for Identifier {
         })
         .alias(&self.r#as);
 
-        let result = dataframe.select(vec![Expr::Wildcard, row_number_expr])?;
+        let result = dataframe
+            .select(vec![Expr::Wildcard, row_number_expr])
+            .await?;
 
         Ok((result, Default::default()))
     }

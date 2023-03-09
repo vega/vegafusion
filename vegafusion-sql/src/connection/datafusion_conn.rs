@@ -88,7 +88,7 @@ impl Connection for DataFusionConnection {
 
     async fn scan_table(&self, name: &str) -> Result<Arc<dyn DataFrame>> {
         Ok(Arc::new(
-            SqlDataFrame::try_new(Arc::new(self.clone()), name).await?,
+            SqlDataFrame::try_new(Arc::new(self.clone()), name, Default::default()).await?,
         ))
     }
 
@@ -119,7 +119,7 @@ impl Connection for DataFusionConnection {
         ctx.register_table("tbl", Arc::new(mem_table))?;
         let sql_conn = DataFusionConnection::new(Arc::new(ctx));
         Ok(Arc::new(
-            SqlDataFrame::try_new(Arc::new(sql_conn), "tbl").await?,
+            SqlDataFrame::try_new(Arc::new(sql_conn), "tbl", Default::default()).await?,
         ))
     }
 

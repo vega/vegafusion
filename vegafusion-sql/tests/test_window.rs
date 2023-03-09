@@ -19,7 +19,7 @@ mod test_simple_aggs_unbounded {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -35,7 +35,7 @@ mod test_simple_aggs_unbounded {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
             expr: Box::new(col("a")),
             asc: true,
@@ -94,7 +94,12 @@ mod test_simple_aggs_unbounded {
                 })
                 .alias("max_b"),
             ])
-            .and_then(|df| df.sort(order_by, None));
+            .await;
+        let df_result = if let Ok(df) = df_result {
+            df.sort(order_by, None).await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -114,7 +119,7 @@ mod test_simple_aggs_unbounded_groups {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -130,7 +135,7 @@ mod test_simple_aggs_unbounded_groups {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
             expr: Box::new(col("a")),
             asc: true,
@@ -189,7 +194,13 @@ mod test_simple_aggs_unbounded_groups {
                 })
                 .alias("max_b"),
             ])
-            .and_then(|df| df.sort(order_by, None));
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(order_by, None).await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -209,7 +220,7 @@ mod test_simple_aggs_bounded {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -225,7 +236,7 @@ mod test_simple_aggs_bounded {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
             expr: Box::new(col("a")),
             asc: true,
@@ -284,7 +295,13 @@ mod test_simple_aggs_bounded {
                 })
                 .alias("max_b"),
             ])
-            .and_then(|df| df.sort(order_by, None));
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(order_by, None).await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -304,7 +321,7 @@ mod test_simple_aggs_bounded_groups {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -320,7 +337,7 @@ mod test_simple_aggs_bounded_groups {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
             expr: Box::new(col("a")),
             asc: true,
@@ -379,23 +396,28 @@ mod test_simple_aggs_bounded_groups {
                 })
                 .alias("max_b"),
             ])
-            .and_then(|df| {
-                df.sort(
-                    vec![
-                        Expr::Sort(expr::Sort {
-                            expr: Box::new(col("a")),
-                            asc: true,
-                            nulls_first: true,
-                        }),
-                        Expr::Sort(expr::Sort {
-                            expr: Box::new(col("b")),
-                            asc: true,
-                            nulls_first: true,
-                        }),
-                    ],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    }),
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("b")),
+                        asc: true,
+                        nulls_first: true,
+                    }),
+                ],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -415,7 +437,7 @@ mod test_simple_window_fns {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -431,7 +453,7 @@ mod test_simple_window_fns {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
             expr: Box::new(col("a")),
             asc: true,
@@ -498,7 +520,13 @@ mod test_simple_window_fns {
                 })
                 .alias("last"),
             ])
-            .and_then(|df| df.sort(order_by, None));
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(order_by, None).await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -518,7 +546,7 @@ mod test_advanced_window_fns {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -534,7 +562,7 @@ mod test_advanced_window_fns {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
             expr: Box::new(col("a")),
             asc: true,
@@ -601,7 +629,13 @@ mod test_advanced_window_fns {
                 })
                 .alias("ntile"),
             ])
-            .and_then(|df| df.sort(order_by, None));
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(order_by, None).await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,

@@ -46,7 +46,7 @@ impl TransformTrait for Project {
         select_fields.insert(0, ORDER_COL.to_string());
 
         let select_col_exprs: Vec<_> = select_fields.iter().map(|f| flat_col(f)).collect();
-        let result = dataframe.select(select_col_exprs)?;
+        let result = dataframe.select(select_col_exprs).await?;
         Ok((result, Default::default()))
     }
 }

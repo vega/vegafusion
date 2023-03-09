@@ -33,8 +33,9 @@ impl TransformTrait for Fold {
                 .unwrap_or_else(|| "value".to_string()),
         );
 
-        let result =
-            dataframe.fold(field_cols.as_slice(), &value_col, &key_col, Some(ORDER_COL))?;
+        let result = dataframe
+            .fold(field_cols.as_slice(), &value_col, &key_col, Some(ORDER_COL))
+            .await?;
         Ok((result, Default::default()))
     }
 }

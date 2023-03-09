@@ -20,7 +20,7 @@ mod test_numeric_operators {
     use std::ops::{Add, Div, Mul, Sub};
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -36,7 +36,7 @@ mod test_numeric_operators {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
                 col("a"),
@@ -54,16 +54,21 @@ mod test_numeric_operators {
                 col("b").lt_eq(lit(6)).alias("lte"),
                 Expr::Negative(Box::new(col("a"))).alias("neg"),
             ])
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -84,7 +89,7 @@ mod test_logical_operators {
     use datafusion_expr::{col, expr, lit, Expr};
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -100,7 +105,7 @@ mod test_logical_operators {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
                 col("i"),
@@ -114,16 +119,21 @@ mod test_logical_operators {
                 col("a").eq(col("b")).alias("eq"),
                 col("a").not_eq(col("b")).alias("neq"),
             ])
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("i")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("i")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -144,7 +154,7 @@ mod test_between {
     use datafusion_expr::{col, expr, lit, Expr};
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -160,7 +170,7 @@ mod test_between {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
                 col("a"),
@@ -180,16 +190,21 @@ mod test_between {
                 })
                 .alias("nbet1"),
             ])
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(df_result, "select", "between", dialect_name, evaluable);
     }
@@ -205,7 +220,7 @@ mod test_cast_numeric {
     use datafusion_expr::{cast, col, expr, Expr};
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -218,7 +233,7 @@ mod test_cast_numeric {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
                 col("a"),
@@ -232,16 +247,21 @@ mod test_cast_numeric {
                 cast(col("a"), DataType::Float32).alias("f32"),
                 cast(col("a"), DataType::Float64).alias("f64"),
             ])
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(df_result, "select", "cast_numeric", dialect_name, evaluable);
     }
@@ -257,7 +277,7 @@ mod test_cast_string {
     use datafusion_expr::{cast, col, expr, Expr};
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -271,7 +291,7 @@ mod test_cast_string {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
                 cast(col("a"), DataType::Utf8).alias("a"),
@@ -279,16 +299,21 @@ mod test_cast_string {
                 cast(col("c"), DataType::Utf8).alias("c"),
                 cast(col("d"), DataType::Utf8).alias("d"),
             ])
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(df_result, "select", "cast_string", dialect_name, evaluable);
     }
@@ -303,7 +328,7 @@ mod test_non_finite_numbers {
     use datafusion_expr::{col, expr, lit, Expr};
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -315,7 +340,7 @@ mod test_non_finite_numbers {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
                 col("a"),
@@ -323,16 +348,21 @@ mod test_non_finite_numbers {
                 lit(f64::NAN).alias("nan"),
                 lit(f64::INFINITY).alias("inf"),
             ])
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -369,7 +399,7 @@ mod test_scalar_math_functions {
     }
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, _evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -386,7 +416,7 @@ mod test_scalar_math_functions {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
                 col("a"),
@@ -409,16 +439,21 @@ mod test_scalar_math_functions {
                 make_scalar_fn1(BuiltinScalarFunction::Sqrt, "c", "sqrt"),
                 make_scalar_fn1(BuiltinScalarFunction::Tan, "b", "tan"),
             ])
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -443,7 +478,7 @@ mod test_is_finite {
     use std::sync::Arc;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -468,7 +503,7 @@ mod test_is_finite {
         .unwrap();
         let table = VegaFusionTable::try_new(schema, vec![batch]).unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
 
         let df_result = df
             .select(vec![
@@ -485,16 +520,21 @@ mod test_is_finite {
                 }
                 .alias("f2"),
             ])
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(df_result, "select", "is_finite", dialect_name, evaluable);
     }
@@ -511,7 +551,7 @@ mod test_str_to_utc_timestamp {
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -526,7 +566,7 @@ mod test_str_to_utc_timestamp {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
 
         let df_result = df
             .select(vec![
@@ -538,16 +578,21 @@ mod test_str_to_utc_timestamp {
                 }
                 .alias("b_utc"),
             ])
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -571,7 +616,7 @@ mod test_date_part_tz {
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -586,7 +631,7 @@ mod test_date_part_tz {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
 
         let df_result = df
             .select(vec![
@@ -598,38 +643,47 @@ mod test_date_part_tz {
                 }
                 .alias("b_utc"),
             ])
-            .and_then(|df| {
-                df.select(vec![
-                    col("a"),
-                    col("b"),
-                    col("b_utc"),
-                    Expr::ScalarUDF {
-                        fun: Arc::new(DATE_PART_TZ_UDF.clone()),
-                        args: vec![lit("hour"), col("b_utc"), lit("UTC")],
-                    }
-                    .alias("hours_utc"),
-                    Expr::ScalarUDF {
-                        fun: Arc::new(DATE_PART_TZ_UDF.clone()),
-                        args: vec![lit("hour"), col("b_utc"), lit("America/Los_Angeles")],
-                    }
-                    .alias("hours_la"),
-                    Expr::ScalarUDF {
-                        fun: Arc::new(DATE_PART_TZ_UDF.clone()),
-                        args: vec![lit("hour"), col("b_utc"), lit("America/New_York")],
-                    }
-                    .alias("hours_nyc"),
-                ])
-            })
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.select(vec![
+                col("a"),
+                col("b"),
+                col("b_utc"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+                    args: vec![lit("hour"), col("b_utc"), lit("UTC")],
+                }
+                .alias("hours_utc"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+                    args: vec![lit("hour"), col("b_utc"), lit("America/Los_Angeles")],
+                }
+                .alias("hours_la"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(DATE_PART_TZ_UDF.clone()),
+                    args: vec![lit("hour"), col("b_utc"), lit("America/New_York")],
+                }
+                .alias("hours_nyc"),
+            ])
+            .await
+        } else {
+            df_result
+        };
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -653,7 +707,7 @@ mod test_date_trunc_tz {
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -668,7 +722,7 @@ mod test_date_trunc_tz {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
 
         let df_result = df
             .select(vec![
@@ -680,38 +734,47 @@ mod test_date_trunc_tz {
                 }
                 .alias("b_utc"),
             ])
-            .and_then(|df| {
-                df.select(vec![
-                    col("a"),
-                    col("b"),
-                    col("b_utc"),
-                    Expr::ScalarUDF {
-                        fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
-                        args: vec![lit("day"), col("b_utc"), lit("UTC")],
-                    }
-                    .alias("day_utc"),
-                    Expr::ScalarUDF {
-                        fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
-                        args: vec![lit("day"), col("b_utc"), lit("America/Los_Angeles")],
-                    }
-                    .alias("day_la"),
-                    Expr::ScalarUDF {
-                        fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
-                        args: vec![lit("day"), col("b_utc"), lit("America/New_York")],
-                    }
-                    .alias("day_nyc"),
-                ])
-            })
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.select(vec![
+                col("a"),
+                col("b"),
+                col("b_utc"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
+                    args: vec![lit("day"), col("b_utc"), lit("UTC")],
+                }
+                .alias("day_utc"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
+                    args: vec![lit("day"), col("b_utc"), lit("America/Los_Angeles")],
+                }
+                .alias("day_la"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
+                    args: vec![lit("day"), col("b_utc"), lit("America/New_York")],
+                }
+                .alias("day_nyc"),
+            ])
+            .await
+        } else {
+            df_result
+        };
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -733,7 +796,7 @@ mod test_make_timestamp_tz {
     use std::sync::Arc;
     use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -748,7 +811,7 @@ mod test_make_timestamp_tz {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
 
         let df_result = df
             .select(vec![
@@ -796,16 +859,21 @@ mod test_make_timestamp_tz {
                 }
                 .alias("ts_la"),
             ])
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -827,7 +895,7 @@ mod test_epoch_to_utc_timestamp {
     use std::sync::Arc;
     use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -842,7 +910,7 @@ mod test_epoch_to_utc_timestamp {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
                 col("a"),
@@ -853,16 +921,21 @@ mod test_epoch_to_utc_timestamp {
                 }
                 .alias("t_utc"),
             ])
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -886,7 +959,7 @@ mod test_utc_timestamp_to_epoch_ms {
     use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_epoch::UTC_TIMESTAMP_TO_EPOCH_MS;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -901,7 +974,7 @@ mod test_utc_timestamp_to_epoch_ms {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
                 col("a"),
@@ -912,28 +985,37 @@ mod test_utc_timestamp_to_epoch_ms {
                 }
                 .alias("t_utc"),
             ])
-            .and_then(|df| {
-                df.select(vec![
-                    col("a"),
-                    col("t"),
-                    col("t_utc"),
-                    Expr::ScalarUDF {
-                        fun: Arc::new(UTC_TIMESTAMP_TO_EPOCH_MS.clone()),
-                        args: vec![col("t_utc")],
-                    }
-                    .alias("epoch_millis"),
-                ])
-            })
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.select(vec![
+                col("a"),
+                col("t"),
+                col("t_utc"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(UTC_TIMESTAMP_TO_EPOCH_MS.clone()),
+                    args: vec![col("t_utc")],
+                }
+                .alias("epoch_millis"),
+            ])
+            .await
+        } else {
+            df_result
+        };
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -956,7 +1038,7 @@ mod test_date_add_tz {
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -971,7 +1053,7 @@ mod test_date_add_tz {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
 
         let df_result = df
             .select(vec![
@@ -983,33 +1065,42 @@ mod test_date_add_tz {
                 }
                 .alias("b_utc"),
             ])
-            .and_then(|df| {
-                df.select(vec![
-                    col("a"),
-                    col("b"),
-                    col("b_utc"),
-                    Expr::ScalarUDF {
-                        fun: Arc::new(DATE_ADD_TZ_UDF.clone()),
-                        args: vec![lit("month"), lit(1), col("b_utc"), lit("UTC")],
-                    }
-                    .alias("month_utc"),
-                    Expr::ScalarUDF {
-                        fun: Arc::new(DATE_ADD_TZ_UDF.clone()),
-                        args: vec![lit("month"), lit(1), col("b_utc"), lit("America/New_York")],
-                    }
-                    .alias("month_nyc"),
-                ])
-            })
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.select(vec![
+                col("a"),
+                col("b"),
+                col("b_utc"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(DATE_ADD_TZ_UDF.clone()),
+                    args: vec![lit("month"), lit(1), col("b_utc"), lit("UTC")],
+                }
+                .alias("month_utc"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(DATE_ADD_TZ_UDF.clone()),
+                    args: vec![lit("month"), lit(1), col("b_utc"), lit("America/New_York")],
+                }
+                .alias("month_nyc"),
+            ])
+            .await
+        } else {
+            df_result
+        };
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -1033,7 +1124,7 @@ mod test_utc_timestamp_to_str {
     use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_str::UTC_TIMESTAMP_TO_STR_UDF;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -1048,7 +1139,7 @@ mod test_utc_timestamp_to_str {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
 
         let df_result = df
             .select(vec![
@@ -1060,33 +1151,42 @@ mod test_utc_timestamp_to_str {
                 }
                 .alias("b_utc"),
             ])
-            .and_then(|df| {
-                df.select(vec![
-                    col("a"),
-                    col("b"),
-                    col("b_utc"),
-                    Expr::ScalarUDF {
-                        fun: Arc::new(UTC_TIMESTAMP_TO_STR_UDF.clone()),
-                        args: vec![col("b_utc"), lit("UTC")],
-                    }
-                    .alias("str_utc"),
-                    Expr::ScalarUDF {
-                        fun: Arc::new(UTC_TIMESTAMP_TO_STR_UDF.clone()),
-                        args: vec![col("b_utc"), lit("America/New_York")],
-                    }
-                    .alias("str_nyc"),
-                ])
-            })
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.select(vec![
+                col("a"),
+                col("b"),
+                col("b_utc"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(UTC_TIMESTAMP_TO_STR_UDF.clone()),
+                    args: vec![col("b_utc"), lit("UTC")],
+                }
+                .alias("str_utc"),
+                Expr::ScalarUDF {
+                    fun: Arc::new(UTC_TIMESTAMP_TO_STR_UDF.clone()),
+                    args: vec![col("b_utc"), lit("America/New_York")],
+                }
+                .alias("str_nyc"),
+            ])
+            .await
+        } else {
+            df_result
+        };
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -1107,7 +1207,7 @@ mod test_string_ops {
     use datafusion_expr::{col, expr, lit, BuiltinScalarFunction, Expr};
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -1121,7 +1221,7 @@ mod test_string_ops {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
 
         let df_result = df
             .select(vec![
@@ -1149,16 +1249,21 @@ mod test_string_ops {
                 }
                 .alias("b_lower"),
             ])
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,

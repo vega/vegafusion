@@ -56,6 +56,7 @@ impl TransformTrait for Impute {
 
         let dataframe = dataframe
             .impute(&field, value, &key, groupby.as_slice(), Some(ORDER_COL))
+            .await
             .with_context(|| "Impute transform failed".to_string())?;
 
         Ok((dataframe, Vec::new()))

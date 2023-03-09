@@ -33,10 +33,10 @@ impl TransformTrait for Aggregate {
         agg_exprs.push(min(flat_col(ORDER_COL)).alias(ORDER_COL));
 
         // Perform aggregation
-        let grouped_dataframe = dataframe.aggregate(group_exprs, agg_exprs)?;
+        let grouped_dataframe = dataframe.aggregate(group_exprs, agg_exprs).await?;
 
         // Make final projection
-        let grouped_dataframe = grouped_dataframe.select(projections)?;
+        let grouped_dataframe = grouped_dataframe.select(projections).await?;
 
         Ok((grouped_dataframe, Vec::new()))
     }
