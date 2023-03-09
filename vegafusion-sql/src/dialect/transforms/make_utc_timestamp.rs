@@ -47,7 +47,7 @@ fn process_make_utc_timestamp_args(
 
     let month = if add_one_to_month {
         // Add one so that month ranges from 1 to 12 instead of 0 to 11
-        cast(args[1].clone().add(lit(1)), DataType::Int64).to_sql(dialect, schema)?
+        cast(args[1].clone().add(lit(1)), DataType::Int32).to_sql(dialect, schema)?
     } else {
         args[1].to_sql(dialect, schema)?
     };
