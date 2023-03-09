@@ -32,7 +32,7 @@ fn process_str_to_utc_timestamp_args(
     Ok((sql_arg0, time_zone))
 }
 
-/// Convert str_to_utc_timezone(ts, tz) ->
+/// Convert str_to_utc_timestamp(ts, tz) ->
 ///     CAST(ts as TIMESTAMP) AT TIME ZONE tz AT TIME ZONE 'UTC'
 /// or if tz = 'UTC'
 ///     CAST(ts as TIMESTAMP)
@@ -71,7 +71,7 @@ impl FunctionTransformer for StrToUtcTimestampWithCastAndAtTimeZoneTransformer {
     }
 }
 
-/// Convert str_to_utc_timezone(ts, tz) ->
+/// Convert str_to_utc_timestamp(ts, tz) ->
 ///     function_name(CAST(ts as TIMESTAMP), tz)
 /// or
 ///     function_name(CAST(ts as TIMESTAMP), tz) AT TIME ZONE 'UTC'
@@ -130,7 +130,7 @@ impl FunctionTransformer for StrToUtcTimestampWithCastFunctionAtTransformer {
     }
 }
 
-/// Convert str_to_utc_timezone(ts, tz) ->
+/// Convert str_to_utc_timestamp(ts, tz) ->
 ///     function_name(ts, tz)
 #[derive(Clone, Debug)]
 pub struct StrToUtcTimestampWithFunctionTransformer {
@@ -167,7 +167,7 @@ impl FunctionTransformer for StrToUtcTimestampWithFunctionTransformer {
     }
 }
 
-/// Convert str_to_utc_timezone(ts, tz) ->
+/// Convert str_to_utc_timestamp(ts, tz) ->
 ///     toTimeZone(toDateTime(ts, tz), 'UTC')
 #[derive(Clone, Debug)]
 pub struct StrToUtcTimestampClickhouseTransformer;
@@ -218,7 +218,7 @@ impl FunctionTransformer for StrToUtcTimestampClickhouseTransformer {
     }
 }
 
-/// Convert str_to_utc_timezone(ts, tz) ->
+/// Convert str_to_utc_timestamp(ts, tz) ->
 ///     convert_timezone(timestamp(ts), tz, 'UTC')
 /// or if tz = 'UTC'
 ///     timestamp(ts)
@@ -274,7 +274,7 @@ impl FunctionTransformer for StrToUtcTimestampMySqlTransformer {
     }
 }
 
-/// Convert str_to_utc_timezone(ts, tz) ->
+/// Convert str_to_utc_timestamp(ts, tz) ->
 ///     convert_timezone(tz, 'UTC', CAST(ts as timestamp_ntz))
 /// or if tz = 'UTC'
 ///     CAST(ts as timestamp_ntz)

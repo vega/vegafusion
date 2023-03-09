@@ -30,6 +30,7 @@ use crate::dialect::transforms::str_to_utc_timestamp::{
     StrToUtcTimestampSnowflakeTransformer, StrToUtcTimestampWithCastAndAtTimeZoneTransformer,
     StrToUtcTimestampWithCastFunctionAtTransformer, StrToUtcTimestampWithFunctionTransformer,
 };
+use crate::dialect::transforms::to_utc_timestamp::ToUtcTimestampWithAtTimeZoneTransformer;
 use crate::dialect::transforms::utc_timestamp_to_epoch_ms::{
     UtcTimestampToEpochMsDatabricksTransform, UtcTimestampToEpochMsDuckdbTransform,
     UtcTimestampToEpochMsPostgresTransform, UtcTimestampToEpochMsSnowflakeTransform,
@@ -922,6 +923,10 @@ impl Dialect {
                     "utc_timestamp_to_str",
                     UtcTimestampToStrDuckDBTransformer::new_dyn(),
                 ),
+                (
+                    "to_utc_timestamp",
+                    ToUtcTimestampWithAtTimeZoneTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1155,6 +1160,10 @@ impl Dialect {
                 (
                     "utc_timestamp_to_str",
                     UtcTimestampToStrPostgresTransformer::new_dyn(),
+                ),
+                (
+                    "to_utc_timestamp",
+                    ToUtcTimestampWithAtTimeZoneTransformer::new_dyn(),
                 ),
             ]
             .into_iter()
