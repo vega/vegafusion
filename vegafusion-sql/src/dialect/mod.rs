@@ -10,6 +10,7 @@ use crate::dialect::transforms::date_part_tz::{
     DatePartTzWithDatePartAndAtTimezoneTransformer, DatePartTzWithExtractAndAtTimezoneTransformer,
     DatePartTzWithFromUtcAndDatePartTransformer,
 };
+use crate::dialect::transforms::date_to_utc_timestamp::DateToUtcTimestampWithCastAndAtTimeZoneTransformer;
 use crate::dialect::transforms::date_trunc_tz::{
     DateTruncTzClickhouseTransformer, DateTruncTzSnowflakeTransformer,
     DateTruncTzWithDateTruncAndAtTimezoneTransformer,
@@ -936,6 +937,10 @@ impl Dialect {
                     "to_utc_timestamp",
                     ToUtcTimestampWithAtTimeZoneTransformer::new_dyn(),
                 ),
+                (
+                    "date_to_utc_timestamp",
+                    DateToUtcTimestampWithCastAndAtTimeZoneTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1175,6 +1180,10 @@ impl Dialect {
                 (
                     "to_utc_timestamp",
                     ToUtcTimestampWithAtTimeZoneTransformer::new_dyn(),
+                ),
+                (
+                    "date_to_utc_timestamp",
+                    DateToUtcTimestampWithCastAndAtTimeZoneTransformer::new_dyn(),
                 ),
             ]
             .into_iter()

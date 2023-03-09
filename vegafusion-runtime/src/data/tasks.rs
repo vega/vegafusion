@@ -109,18 +109,14 @@ impl TaskCall for DataUrlTask {
         let df = if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
             let inline_name = inline_name.trim().to_string();
             if let Some(inline_dataset) = inline_datasets.get(&inline_name) {
-                let df = match inline_dataset {
+                match inline_dataset {
                     VegaFusionDataset::Table { table, .. } => {
                         conn.scan_arrow(table.clone().with_ordering()?).await?
                     }
-                    VegaFusionDataset::DataFrame(df) => df.with_index(ORDER_COL)?,
-                };
-                let sql_df = process_datetimes(&parse, df, &config.tz_config).await?;
-                return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await;
+                    VegaFusionDataset::DataFrame(df) => df.clone(),
+                }
             } else if registered_tables.contains_key(&inline_name) {
-                let df = conn.scan_table(&inline_name).await?;
-                let df = df.with_index(ORDER_COL)?;
-                return eval_sql_df(df.clone(), &self.pipeline, &config).await;
+                conn.scan_table(&inline_name).await?
             } else {
                 return Err(VegaFusionError::internal(format!(
                     "No inline dataset named {inline_name}"
@@ -136,6 +132,13 @@ impl TaskCall for DataUrlTask {
             return Err(VegaFusionError::internal(format!(
                 "Invalid url file extension {url}"
             )));
+        };
+
+        // Ensure there is an ordering column present
+        let df = if df.schema().column_with_name(ORDER_COL).is_none() {
+            df.with_index(ORDER_COL)?
+        } else {
+            df
         };
 
         // Process datetime columns

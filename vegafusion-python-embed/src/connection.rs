@@ -5,14 +5,14 @@ use std::sync::Arc;
 
 use arrow::pyarrow::PyArrowConvert;
 use async_trait::async_trait;
-use pyo3::types::{PyDict, PyList, PyString, PyTuple};
+use pyo3::types::{IntoPyDict, PyDict, PyList, PyString, PyTuple};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::{
     arrow::{datatypes::Schema, record_batch::RecordBatch},
     error::Result,
 };
 use vegafusion_sql::connection::{Connection, SqlConnection};
-use vegafusion_sql::dataframe::{DataFrame, SqlDataFrame};
+use vegafusion_sql::dataframe::{CsvReadOptions, DataFrame, SqlDataFrame};
 use vegafusion_sql::dialect::Dialect;
 
 #[pyclass]
@@ -102,6 +102,54 @@ impl Connection for PySqlConnection {
             let table_name_object = table_name.clone().into_py(py);
             let args = PyTuple::new(py, vec![table_name_object.as_ref(py), pa_table]);
             self.conn.call_method1(py, "register_arrow", args)?;
+            Ok(())
+        })?;
+
+        // Build DataFrame referencing the registered table
+        Ok(Arc::new(
+            SqlDataFrame::try_new(Arc::new(self.clone()), &table_name).await?,
+        ))
+    }
+
+    async fn scan_csv(&self, path: &str, opts: CsvReadOptions) -> Result<Arc<dyn DataFrame>> {
+        let random_id = uuid::Uuid::new_v4().to_string().replace("-", "_");
+        let table_name = format!("csv_{random_id}");
+
+        Python::with_gil(|py| -> std::result::Result<_, PyErr> {
+            // Build Python CsvReadOptions
+            let vegafusion_module = PyModule::import(py, "vegafusion.connection")?;
+            let csv_opts_class = vegafusion_module.getattr("CsvReadOptions")?;
+
+            let pyschema = opts
+                .schema
+                .and_then(|schema| schema.to_pyarrow(py).ok())
+                .into_py(py);
+            let kwargs = vec![
+                ("has_header", opts.has_header.into_py(py)),
+                (
+                    "delimeter",
+                    (opts.delimiter as char).to_string().into_py(py),
+                ),
+                ("file_extension", opts.file_extension.into_py(py)),
+                ("schema", pyschema),
+            ]
+            .into_py_dict(py);
+            let args = PyTuple::empty(py);
+            let csv_opts = csv_opts_class.call(args, Some(kwargs))?;
+            // let csv_opts = csv_opts_class.call_method("__init__", args, Some(kwargs))?;
+
+            // Register table with Python connection
+            let table_name_object = table_name.clone().into_py(py);
+            let path_name_object = path.to_string().into_py(py);
+            let args = PyTuple::new(
+                py,
+                vec![
+                    table_name_object.as_ref(py),
+                    path_name_object.as_ref(py),
+                    csv_opts,
+                ],
+            );
+            self.conn.call_method1(py, "register_csv", args)?;
             Ok(())
         })?;
 

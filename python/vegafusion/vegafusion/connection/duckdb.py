@@ -8,14 +8,38 @@ import pandas as pd
 
 
 def duckdb_type_name_to_pyarrow_type(duckdb_type: str) -> pa.DataType:
-    if duckdb_type in ('VARCHAR', 'JSON'):
+    if duckdb_type in ("VARCHAR", "JSON", "CHAR"):
         return pa.string()
+    elif duckdb_type in ("REAL", "FLOAT4", "FLOAT"):
+        return pa.float32()
+    elif duckdb_type in ("DOUBLE", "FLOAT8"):
+        return pa.float64()
+    elif duckdb_type in ("TINYINT", "INT1"):
+        return pa.int8()
+    elif duckdb_type in ("SMALLINT", "INT2", "SHORT"):
+        return pa.int16()
+    elif duckdb_type in ("INTEGER", "INT4", "INT", "SIGNED"):
+        return pa.int32()
+    elif duckdb_type in ("BIGINT", "INT8", "LONG"):
+        return pa.int64()
+    elif duckdb_type == "UTINYINT":
+        return pa.uint8()
+    elif duckdb_type == "USMALLINT":
+        return pa.uint16()
+    elif duckdb_type == "UINTEGER":
+        return pa.uint32()
     elif duckdb_type == "UBIGINT":
         return pa.uint64()
     elif duckdb_type == "DOUBLE":
         return pa.float64()
+    elif duckdb_type == "BOOLEAN":
+        return pa.bool_()
+    elif duckdb_type == "DATE":
+        return pa.date32()
+    elif duckdb_type == "TIMESTAMP":
+        return pa.timestamp("ms")
     else:
-        raise ValueError(f"Unexpected type string {duckdb_type}")
+        raise ValueError(f"Unexpected DuckDB type: {duckdb_type}")
 
 
 def duckdb_relation_to_schema(rel: duckdb.DuckDBPyRelation) -> pa.Schema:
@@ -27,10 +51,15 @@ def duckdb_relation_to_schema(rel: duckdb.DuckDBPyRelation) -> pa.Schema:
 
 class DuckDbConnection(SqlConnection):
     def __init__(self, inline_datasets: Dict[str, Union[pd.DataFrame, pa.Table]] = None):
+        # Register extensions
         self._table_schemas = {}
         self.conn = duckdb.connect()
         self._inline_datasets = inline_datasets or {}
         self._register_inline_datasets()
+
+        # Load extensions
+        self.conn.load_extension("httpfs")
+        self.conn.load_extension("icu")
 
     def _register_inline_datasets(self):
         for name, tbl in self._inline_datasets.items():
