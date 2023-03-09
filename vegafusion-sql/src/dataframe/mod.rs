@@ -456,7 +456,19 @@ impl DataFrame for SqlDataFrame {
             let mut selections = input_selection;
             selections.push(flat_col(key_col));
             selections.push(flat_col(value_col));
-            selections[0] = order_col;
+
+            // Overwrite ordering column
+            let order_index = self
+                .schema
+                .fields
+                .iter()
+                .enumerate()
+                .find(|(_i, field)| field.name() == order_field)
+                .map(|(i, _)| i)
+                .unwrap();
+            selections.remove(order_index);
+            selections.insert(0, order_col);
+
             dataframe.select(selections)
         } else {
             Ok(dataframe)

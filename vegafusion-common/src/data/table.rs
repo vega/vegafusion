@@ -112,17 +112,19 @@ impl VegaFusionTable {
         if new_fields.is_empty() {
             return Ok(Self::empty_with_ordering());
         }
-        let leading_field = new_fields
-            .get(0)
-            .expect("VegaFusionTable must have at least one column");
-        let has_order_col = if leading_field.name() == ORDER_COL {
-            // There is already a leading ORDER_COL, remove it and replace below
-            new_fields.remove(0);
-            true
-        } else {
-            // We need to add a new leading field for the ORDER_COL
-            false
-        };
+
+        let order_col_index = self
+            .schema
+            .fields
+            .iter()
+            .enumerate()
+            .find(|(_i, field)| field.name() == ORDER_COL)
+            .map(|(i, _)| i);
+
+        if let Some(order_col_index) = order_col_index {
+            new_fields.remove(order_col_index);
+        }
+
         new_fields.insert(0, Field::new(ORDER_COL, ORDER_COL_DTYPE, false));
 
         let new_schema = Arc::new(Schema::new(new_fields)) as SchemaRef;
@@ -137,12 +139,11 @@ impl VegaFusionTable {
 
                 let mut new_columns = Vec::from(batch.columns());
 
-                if has_order_col {
-                    new_columns[0] = order_array;
-                } else {
-                    new_columns.insert(0, order_array);
+                if let Some(order_col_index) = order_col_index {
+                    new_columns.remove(order_col_index);
                 }
 
+                new_columns.insert(0, order_array);
                 start_idx += batch.num_rows() as u32;
 
                 Ok(RecordBatch::try_new(new_schema.clone(), new_columns)?)

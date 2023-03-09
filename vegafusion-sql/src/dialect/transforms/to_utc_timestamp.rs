@@ -3,11 +3,7 @@ use crate::dialect::{Dialect, FunctionTransformer};
 use arrow::datatypes::DataType;
 use datafusion_common::DFSchema;
 use datafusion_expr::{Expr, ExprSchemable};
-use sqlparser::ast::{
-    BinaryOperator as SqlBinaryOperator, DateTimeField as SqlDateTimeField, Expr as SqlExpr,
-    Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr,
-    Ident as SqlIdent, Ident, ObjectName as SqlObjectName, Value as SqlValue,
-};
+use sqlparser::ast::{Expr as SqlExpr, Value as SqlValue};
 use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
 
