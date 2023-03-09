@@ -161,6 +161,9 @@ pub struct Dialect {
     /// Whether dialect supports the use of bounded window frames
     pub supports_bounded_window_frames: bool,
 
+    /// Whether dialect supports the GROUPS option to window frames
+    pub supports_window_frame_groups: bool,
+
     /// Whether dialect supports the use of explicit window frames for navigation window functions
     /// (first_value, last_value, nth_value)
     pub supports_frames_in_navigation_window_functions: bool,
@@ -202,6 +205,7 @@ impl Default for Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: true,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: Default::default(),
@@ -308,6 +312,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -428,6 +433,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: false,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -521,6 +527,7 @@ impl Dialect {
             impute_fully_qualified: true,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -657,6 +664,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: false,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -795,6 +803,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: true,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: true,
             cast_datatypes: vec![
@@ -939,6 +948,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -1033,6 +1043,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -1177,6 +1188,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: true,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -1302,6 +1314,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -1437,6 +1450,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
