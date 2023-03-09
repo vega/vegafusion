@@ -29,6 +29,10 @@ class VegaFusionRuntime:
             )
         return self._embedded_runtime
 
+    def set_connection(self, connection):
+        self._connection = connection
+        self.reset()
+
     def grpc_connect(self, channel):
         """
         Connect to a VegaFusion server over gRPC using the provided gRPC channel
