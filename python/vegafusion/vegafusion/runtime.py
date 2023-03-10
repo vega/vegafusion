@@ -30,6 +30,14 @@ class VegaFusionRuntime:
         return self._embedded_runtime
 
     def set_connection(self, connection):
+        if isinstance(connection, str):
+            if connection == "datafusion":
+                # Connection of None uses DataFusion
+                connection = None
+            elif connection == "duckdb":
+                from vegafusion.connection.duckdb import DuckDbConnection
+                connection = DuckDbConnection()
+
         self._connection = connection
         self.reset()
 
