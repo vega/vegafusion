@@ -39,7 +39,6 @@ macro_rules! fallback_operation {
         match $self.$_method($($arg.clone()),*).await {
             Err(VegaFusionError::SqlNotSupported(_, _)) if !$self.fallback_conns.is_empty() => {
                 // Required SQL not supported by current connection, try next fallback connection
-                println!("Fallback!");
                 let mut fallback_conns = $self.fallback_conns.clone();
                 let conn = fallback_conns.remove(0);
                 let table = $self.collect().await?;
