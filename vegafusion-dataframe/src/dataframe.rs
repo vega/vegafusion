@@ -135,6 +135,7 @@ pub trait DataFrame: Send + Sync + 'static {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum StackMode {
     Zero,
     Center,

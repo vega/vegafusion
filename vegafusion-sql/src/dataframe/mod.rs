@@ -32,6 +32,27 @@ use vegafusion_dataframe::dataframe::StackMode;
 // Use DataFrame publicly for the convenience of SQL connection implementors
 pub use vegafusion_dataframe::{csv::CsvReadOptions, dataframe::DataFrame};
 
+/// Helper to call an inner query method (e.g. _sort) and fall back to the next
+/// fallback connection if the required SQL is not supported
+macro_rules! fallback_operation {
+    ($self:ident, $method:ident, $_method:ident, $($arg:expr),*) => {
+        match $self.$_method($($arg.clone()),*).await {
+            Err(VegaFusionError::SqlNotSupported(_, _)) if !$self.fallback_conns.is_empty() => {
+                // Required SQL not supported by current connection, try next fallback connection
+                println!("Fallback!");
+                let mut fallback_conns = $self.fallback_conns.clone();
+                let conn = fallback_conns.remove(0);
+                let table = $self.collect().await?;
+                let df = conn.scan_arrow(table).await?;
+                let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
+                let df = df.with_fallback_conns(fallback_conns);
+                df.$method($($arg),*).await
+            }
+            result => result
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct SqlDataFrame {
     pub(crate) prefix: String,
@@ -74,11 +95,11 @@ impl DataFrame for SqlDataFrame {
     }
 
     async fn sort(&self, expr: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
-        self._sort(expr, limit).await
+        fallback_operation!(self, sort, _sort, expr, limit)
     }
 
     async fn select(&self, expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
-        self._select(expr).await
+        fallback_operation!(self, select, _select, expr)
     }
 
     async fn aggregate(
@@ -86,7 +107,7 @@ impl DataFrame for SqlDataFrame {
         group_expr: Vec<Expr>,
         aggr_expr: Vec<Expr>,
     ) -> Result<Arc<dyn DataFrame>> {
-        self._aggregate(group_expr, aggr_expr).await
+        fallback_operation!(self, aggregate, _aggregate, group_expr, aggr_expr)
     }
 
     async fn joinaggregate(
@@ -94,15 +115,15 @@ impl DataFrame for SqlDataFrame {
         group_expr: Vec<Expr>,
         aggr_expr: Vec<Expr>,
     ) -> Result<Arc<dyn DataFrame>> {
-        self._joinaggregate(group_expr, aggr_expr).await
+        fallback_operation!(self, joinaggregate, _joinaggregate, group_expr, aggr_expr)
     }
 
     async fn filter(&self, predicate: Expr) -> Result<Arc<dyn DataFrame>> {
-        self._filter(predicate).await
+        fallback_operation!(self, filter, _filter, predicate)
     }
 
     async fn limit(&self, limit: i32) -> Result<Arc<dyn DataFrame>> {
-        self._limit(limit).await
+        fallback_operation!(self, limit, _limit, limit)
     }
 
     async fn fold(
@@ -112,7 +133,7 @@ impl DataFrame for SqlDataFrame {
         key_col: &str,
         order_field: Option<&str>,
     ) -> Result<Arc<dyn DataFrame>> {
-        self._fold(fields, value_col, key_col, order_field).await
+        fallback_operation!(self, fold, _fold, fields, value_col, key_col, order_field)
     }
 
     async fn stack(
@@ -124,8 +145,17 @@ impl DataFrame for SqlDataFrame {
         stop_field: &str,
         mode: StackMode,
     ) -> Result<Arc<dyn DataFrame>> {
-        self._stack(field, orderby, groupby, start_field, stop_field, mode)
-            .await
+        fallback_operation!(
+            self,
+            stack,
+            _stack,
+            field,
+            orderby,
+            groupby,
+            start_field,
+            stop_field,
+            mode
+        )
     }
 
     async fn impute(
@@ -136,7 +166,16 @@ impl DataFrame for SqlDataFrame {
         groupby: &[String],
         order_field: Option<&str>,
     ) -> Result<Arc<dyn DataFrame>> {
-        self._impute(field, value, key, groupby, order_field).await
+        fallback_operation!(
+            self,
+            impute,
+            _impute,
+            field,
+            value,
+            key,
+            groupby,
+            order_field
+        )
     }
 }
 
@@ -173,6 +212,15 @@ impl SqlDataFrame {
             conn,
             fallback_conns,
         })
+    }
+
+    fn with_fallback_conns(
+        &self,
+        fallback_conns: Vec<Arc<dyn SqlConnection>>,
+    ) -> Arc<dyn DataFrame> {
+        let mut df = self.clone();
+        df.fallback_conns = fallback_conns;
+        Arc::new(df)
     }
 
     pub fn from_values(

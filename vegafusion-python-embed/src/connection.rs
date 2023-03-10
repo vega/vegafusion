@@ -11,6 +11,7 @@ use vegafusion_core::{
     arrow::{datatypes::Schema, record_batch::RecordBatch},
     error::Result,
 };
+use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 use vegafusion_sql::connection::{Connection, SqlConnection};
 use vegafusion_sql::dataframe::{CsvReadOptions, DataFrame, SqlDataFrame};
 use vegafusion_sql::dialect::Dialect;
@@ -20,6 +21,7 @@ use vegafusion_sql::dialect::Dialect;
 pub struct PySqlConnection {
     conn: PyObject,
     dialect: Dialect,
+    fallback_conn: Arc<dyn SqlConnection>,
 }
 
 #[pymethods]
@@ -32,7 +34,15 @@ impl PySqlConnection {
             Ok(Dialect::from_str(&dialect_string)?)
         })?;
 
-        Ok(Self { conn, dialect })
+        // Create fallback DataFusion connection. This will be used when SQL is encountered
+        // that isn't supported by the main connection.
+        let fallback_conn: DataFusionConnection = Default::default();
+
+        Ok(Self {
+            conn,
+            dialect,
+            fallback_conn: Arc::new(fallback_conn),
+        })
     }
 }
 
@@ -65,7 +75,12 @@ impl Connection for PySqlConnection {
     async fn scan_table(&self, name: &str) -> Result<Arc<dyn DataFrame>> {
         // Build DataFrame referencing the registered table
         Ok(Arc::new(
-            SqlDataFrame::try_new(Arc::new(self.clone()), name, Default::default()).await?,
+            SqlDataFrame::try_new(
+                Arc::new(self.clone()),
+                name,
+                vec![self.fallback_conn.clone()],
+            )
+            .await?,
         ))
     }
 
@@ -107,7 +122,12 @@ impl Connection for PySqlConnection {
 
         // Build DataFrame referencing the registered table
         Ok(Arc::new(
-            SqlDataFrame::try_new(Arc::new(self.clone()), &table_name, Default::default()).await?,
+            SqlDataFrame::try_new(
+                Arc::new(self.clone()),
+                &table_name,
+                vec![self.fallback_conn.clone()],
+            )
+            .await?,
         ))
     }
 
@@ -155,7 +175,12 @@ impl Connection for PySqlConnection {
 
         // Build DataFrame referencing the registered table
         Ok(Arc::new(
-            SqlDataFrame::try_new(Arc::new(self.clone()), &table_name, Default::default()).await?,
+            SqlDataFrame::try_new(
+                Arc::new(self.clone()),
+                &table_name,
+                vec![self.fallback_conn.clone()],
+            )
+            .await?,
         ))
     }
 }
