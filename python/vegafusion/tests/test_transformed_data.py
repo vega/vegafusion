@@ -93,7 +93,10 @@ altair_mocks_dir = here / "altair_mocks"
         ("simple/strip_chart", 400, ["Name", "Cylinders", "Origin"]),
     ]
 )
-def test_transformed_data_for_mock(mock_name, expected_len, expected_cols):
+@pytest.mark.parametrize("connection", ["datafusion", "duckdb"])
+def test_transformed_data_for_mock(mock_name, expected_len, expected_cols, connection):
+    vf.runtime.set_connection(connection)
+
     mock_path = altair_mocks_dir / mock_name / "mock.py"
     mock_src = mock_path.read_text("utf8")
     chart = eval_block(mock_src)
@@ -105,7 +108,7 @@ def test_transformed_data_for_mock(mock_name, expected_len, expected_cols):
     # Check that the expected columns are present
     assert set(expected_cols).issubset(set(df.columns))
 
-    # Check that datetime columns have UTC timezone
+    # Check that datetime columns have local timezone
     for dtype in df.dtypes.values:
         if dtype.kind == "M":
             assert dtype.tz == pytz.timezone(vf.get_local_tz())

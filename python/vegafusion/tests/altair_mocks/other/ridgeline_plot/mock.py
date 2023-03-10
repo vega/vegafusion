@@ -3,7 +3,7 @@
 import altair as alt
 from vega_datasets import data
 
-source = data.seattle_weather.url
+source = "https://raw.githubusercontent.com/vega/vega-datasets/v1.31.1/data/seattle-weather.csv"
 
 step = 20
 overlap = 1

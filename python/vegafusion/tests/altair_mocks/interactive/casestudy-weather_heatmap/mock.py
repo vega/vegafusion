@@ -4,7 +4,7 @@ import altair as alt
 from vega_datasets import data
 
 # Since the data is more than 5,000 rows we'll import it from a URL
-source = data.seattle_temps.url
+source = "https://raw.githubusercontent.com/vega/vega-datasets/v1.31.1/data/seattle-temps.csv"
 
 alt.Chart(
     source,
