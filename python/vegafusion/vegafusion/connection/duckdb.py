@@ -57,9 +57,10 @@ class DuckDbConnection(SqlConnection):
         self._inline_datasets = inline_datasets or {}
         self._register_inline_datasets()
 
-        # Load extensions
+        # Load config/extensions
         self.conn.load_extension("httpfs")
         self.conn.load_extension("icu")
+        self.conn.execute("SET GLOBAL pandas_analyze_sample=100000")
 
     def _register_inline_datasets(self):
         for name, tbl in self._inline_datasets.items():
