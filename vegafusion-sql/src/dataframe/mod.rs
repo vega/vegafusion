@@ -189,11 +189,16 @@ impl SqlDataFrame {
             .get(table)
             .cloned()
             .with_context(|| format!("Connection has no table named {table}"))?;
-        // Should quote column names
+
         let columns: Vec<_> = schema
             .fields()
             .iter()
-            .map(|f| format!("\"{}\"", f.name()))
+            .map(|f| {
+                flat_col(f.name())
+                    .to_sql(conn.dialect(), &DFSchema::empty())
+                    .unwrap()
+                    .to_string()
+            })
             .collect();
         let select_items = columns.join(", ");
 
