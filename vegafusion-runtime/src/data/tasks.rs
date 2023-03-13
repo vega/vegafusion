@@ -251,14 +251,14 @@ lazy_static! {
     .collect();
 }
 
-const DATASET_CDN_BASE: &str = "https://cdn.jsdelivr.net/npm/vega-datasets";
-const DATASET_TAG: &str = "v2.2.0";
+const DATASET_BASE: &str = "https://raw.githubusercontent.com/vega/vega-datasets";
+const DATASET_TAG: &str = "v2.3.0";
 
 fn check_builtin_dataset(url: String) -> String {
     if let Some(dataset) = url.strip_prefix("data/") {
         let path = std::path::Path::new(&url);
         if !path.exists() && BUILT_IN_DATASETS.contains(dataset) {
-            format!("{DATASET_CDN_BASE}@{DATASET_TAG}/data/{dataset}")
+            format!("{DATASET_BASE}/{DATASET_TAG}/data/{dataset}")
         } else {
             url
         }

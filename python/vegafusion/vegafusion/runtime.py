@@ -37,6 +37,8 @@ class VegaFusionRuntime:
             elif connection == "duckdb":
                 from vegafusion.connection.duckdb import DuckDbConnection
                 connection = DuckDbConnection()
+            else:
+                raise ValueError(f"Unsupported connection name: {connection}")
 
         self._connection = connection
         self.reset()

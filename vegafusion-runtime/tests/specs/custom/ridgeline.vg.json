@@ -6,7 +6,7 @@
   "data": [
     {
       "name": "source_0",
-      "url": "https://cdn.jsdelivr.net/npm/vega-datasets@v1.29.0/data/seattle-weather.csv",
+      "url": "https://raw.githubusercontent.com/vega/vega-datasets/main/data/seattle-weather.csv",
       "format": {"type": "csv", "parse": {"Month": "date", "date": "date"}},
       "transform": [
         {
