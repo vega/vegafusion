@@ -36,7 +36,7 @@ class VegaFusionRuntime:
         Sets the connection to use to evaluate Vega data transformations.
 
         Named tables returned by the connection's `tables` method may be referenced in Vega/Altair
-        chart specifications using a special dataset URLs. For example, if the connection's `tables`
+        chart specifications using special dataset URLs. For example, if the connection's `tables`
         method returns a dictionary that includes "tableA" as a key, then this table may be
         referenced in a chart specification using the URL "vegafusion+dataset://tableA".
 
