@@ -176,6 +176,8 @@ maturin build --release --strip --target aarch64-apple-darwin
 Note: the 3.7 environment is not supported on `osx-arm64`
 ```bash
 cd python/vegafusion-jupyter/
-conda-lock -f dev-environment-3.8.yml --kind explicit -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp38.lock"
-conda-lock -f dev-environment-3.10.yml --kind explicit -p osx-64 -p osx-arm64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp310.lock"
+conda-lock --no-mamba -f dev-environment-3.8.yml --kind explicit -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp38.lock"
+conda-lock --no-mamba -f dev-environment-3.10.yml --kind explicit -p osx-64 -p osx-arm64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp310.lock"
 ```
+
+Note: the `--no-mamba` flag is due to https://github.com/conda/conda-lock/issues/381.
