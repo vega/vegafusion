@@ -350,9 +350,14 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: True
-      - name: Build vegafusion-python-embed in development mode
+      - name: Build vegafusion-python-embed in development mode (Non-windows)
         run: |
           maturin develop --release --features=protobuf-src -m vegafusion-python-embed/Cargo.toml
+        if: ${{ runner.os != 'Windows' }}
+      - name: Build vegafusion-python-embed in development mode (Windows)
+        run: |
+          maturin develop --release -m vegafusion-python-embed/Cargo.toml
+        if: ${{ runner.os == 'Windows' }}
       - name: Install Chrome
         uses: browser-actions/setup-chrome@latest
         with:
