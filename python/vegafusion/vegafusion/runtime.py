@@ -105,7 +105,7 @@ class VegaFusionRuntime:
                 if self._connection is not None:
                     try:
                         # Try registering Arrow Table if supported
-                        self._connection.register_arrow(name, value)
+                        self._connection.register_arrow(name, value, temporary=True)
                         continue
                     except ValueError:
                         pass
@@ -116,7 +116,7 @@ class VegaFusionRuntime:
                 if self._connection is not None:
                     try:
                         # Try registering DataFrame if supported
-                        self._connection.register_pandas(name, value)
+                        self._connection.register_pandas(name, value, temporary=True)
                         continue
                     except ValueError:
                         pass
@@ -184,9 +184,9 @@ class VegaFusionRuntime:
                     inline_datasets=inline_dataset_bytes
                 )
             finally:
-                # Clean up registered tables (both inline and internal temporary tables)
+                # Clean up temporary tables
                 if self._connection is not None:
-                    self._connection.reset_registered_datasets()
+                    self._connection.unregister_temporary_tables()
 
             return new_spec, warnings
 

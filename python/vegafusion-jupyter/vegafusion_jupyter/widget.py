@@ -102,6 +102,6 @@ class VegaFusionWidget(DOMWidget):
             duration = (time.time() - start) * 1000
             self._log(f"Sent response in {duration:.1f}ms ({message_len} bytes)")
 
-            # Reset temporary tables
+            # Clean up temporary tables
             if runtime._connection is not None:
-                runtime._connection.reset_registered_datasets()
+                runtime._connection.unregister_temporary_tables()

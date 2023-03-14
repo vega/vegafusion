@@ -73,56 +73,67 @@ class SqlConnection(ABC):
         """
         return True
 
-    def register_pandas(self, name: str, df: pd.DataFrame):
+    def register_pandas(self, name: str, df: pd.DataFrame, temporary: bool = False):
         """
         Register the provided pandas DataFrame as a table with the provided name
+
         :param name: Table name
         :param df: pandas DataFrame
+        :param temporary: Whether table is considered temporary,
+            and should be removed by unregister_temporary_tables
         """
         raise ValueError("Connection does not support registration of pandas datasets")
 
-    def register_arrow(self, name: str, table: pa.Table):
+    def register_arrow(self, name: str, table: pa.Table, temporary: bool = False):
         """
         Register the provided pyarrow Table as a table with the provided name
         :param name: Table name
         :param table: pyarrow Table
+        :param temporary: Whether table is considered temporary,
+            and should be removed by unregister_temporary_tables
         """
         raise ValueError("Connection does not support registration of arrow datasets")
 
-    def register_json(self, name: str, path: str):
+    def register_json(self, name: str, path: str, temporary: bool = False):
         """
         Register the JSON file at the provided path as a table with the provided name
         :param name: Table name
         :param path: Path to JSON file
+        :param temporary: Whether table is considered temporary,
+            and should be removed by unregister_temporary_tables
         """
         raise ValueError("Connection does not support registration of json datasets")
 
-    def register_csv(self, name: str, path: str, options: CsvReadOptions):
+    def register_csv(self, name: str, path: str, options: CsvReadOptions, temporary: bool = False):
         """
         Register the CSV file at the provided path as a table with the provided name
         :param name: Table name
         :param path: Path to CSV file
         :param options: CSV options
+        :param temporary: Whether table is considered temporary,
+            and should be removed by unregister_temporary_tables
         """
         raise ValueError("Connection does not support registration of csv datasets")
 
-    def register_parquet(self, name: str, path: str):
+    def register_parquet(self, name: str, path: str, temporary: bool = False):
         """
         Register the Parquet file at the provided path as a table with the provided name
         :param name: Table name
         :param path: Path to parquet file
+        :param temporary: Whether table is considered temporary,
+            and should be removed by unregister_temporary_tables
         """
         raise ValueError("Connection does not support registration of parquet datasets")
 
     def unregister(self, name: str):
         """
-        Unregister a table by name
+        Unregister a table (temporary or otherwise) by name
         :param name: Table name
         """
-        raise ValueError("Connection does not support un-registration")
+        raise ValueError("Connection does not support unregistration")
 
-    def reset_registered_datasets(self):
+    def unregister_temporary_tables(self):
         """
         Unregister all dynamically registered tables
         """
-        raise ValueError("Connection does not support resetting registered datasets")
+        raise ValueError("Connection does not support unregistering temporary tables")

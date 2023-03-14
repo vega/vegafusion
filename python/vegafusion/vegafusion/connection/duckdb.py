@@ -61,9 +61,8 @@ class DuckDbConnection(SqlConnection):
 
         self._fallback = fallback
         self._table_schemas = {}
+        self._temp_table_schemas = {}
         self.conn = duckdb.connect()
-        self._inline_datasets = inline_datasets or {}
-        self._register_inline_datasets()
 
         # Load config/extensions
         self.conn.install_extension("httpfs")
@@ -72,8 +71,8 @@ class DuckDbConnection(SqlConnection):
         self.conn.load_extension("icu")
         self.conn.execute("SET GLOBAL pandas_analyze_sample=100000")
 
-    def _register_inline_datasets(self):
-        for name, tbl in self._inline_datasets.items():
+        # Register inline_datasets
+        for name, tbl in (inline_datasets or {}).items():
             if isinstance(tbl, pd.DataFrame):
                 self.register_pandas(name, tbl)
             elif isinstance(tbl, pa.Table):
@@ -89,43 +88,42 @@ class DuckDbConnection(SqlConnection):
         return self._fallback
 
     def tables(self) -> Dict[str, pa.Schema]:
-        return dict(**self._table_schemas)
+        return dict(**self._table_schemas, **self._temp_table_schemas)
 
     def fetch_query(self, query: str, schema: pa.Schema) -> pa.Table:
         # print(query)
         return self.conn.query(query).to_arrow_table(8096)
 
-    def reset_registered_datasets(self):
-        # Unregister all
-        for t in self.tables():
-            self.unregister(t)
-
-        # Re-register original
-        self._register_inline_datasets()
-
-    def unregister(self, name: str):
-        self.conn.unregister(name)
-        self._table_schemas.pop(name, None)
-
-    def register_pandas(self, name: str, df: pd.DataFrame):
+    def register_pandas(self, name: str, df: pd.DataFrame, temporary: bool = False):
         # Add _vf_order column to avoid the more expensive operation of computing it with a
         # ROW_NUMBER function in duckdb
         from ..transformer import to_arrow_table
         df = df.copy(deep=False)
         df["_vf_order"] = range(0, len(df))
         self.conn.register(name, df)
-        self._table_schemas[name] = to_arrow_table(df.head(100)).schema
+        schema = to_arrow_table(df.head(100)).schema
+        if temporary:
+            self._temp_table_schemas[name] = schema
+        else:
+            self._table_schemas[name] = schema
 
-    def register_arrow(self, name: str, table: pa.Table):
+    def register_arrow(self, name: str, table: pa.Table, temporary: bool = False):
         self.conn.register(name, table)
-        self._table_schemas[name] = table.schema
+        if temporary:
+            self._temp_table_schemas[name] = table.schema
+        else:
+            self._table_schemas[name] = table.schema
 
-    def register_json(self, name: str, path: str):
+    def register_json(self, name: str, path: str, temporary: bool = False):
         relation = self.conn.read_json(path)
         relation.to_view(name)
-        self._table_schemas[name] = duckdb_relation_to_schema(relation)
+        schema = duckdb_relation_to_schema(relation)
+        if temporary:
+            self._temp_table_schemas[name] = schema
+        else:
+            self._table_schemas[name] = schema
 
-    def register_csv(self, name: str, path: str, options: CsvReadOptions):
+    def register_csv(self, name: str, path: str, options: CsvReadOptions, temporary: bool = False):
         # TODO: handle schema from options
         relation = self.conn.read_csv(
             path,
@@ -133,9 +131,32 @@ class DuckDbConnection(SqlConnection):
             delimiter=options.delimeter,
         )
         relation.to_view(name)
-        self._table_schemas[name] = duckdb_relation_to_schema(relation)
+        schema = duckdb_relation_to_schema(relation)
+        if temporary:
+            self._temp_table_schemas[name] = schema
+        else:
+            self._table_schemas[name] = schema
 
-    def register_parquet(self, name: str, path: str):
+    def register_parquet(self, name: str, path: str, temporary: bool = False):
         relation = self.conn.read_parquet(path)
         relation.to_view(name)
-        self._table_schemas[name] = duckdb_relation_to_schema(relation)
+        schema = duckdb_relation_to_schema(relation)
+        if temporary:
+            self._temp_table_schemas[name] = schema
+        else:
+            self._table_schemas[name] = schema
+
+    def unregister(self, name: str):
+        if name in self._table_schemas:
+            self.conn.unregister(name)
+            del self._table_schemas[name]
+        elif name in self._temp_table_schemas:
+            self.conn.unregister(name)
+            del self._temp_table_schemas[name]
+        else:
+            ValueError(f"No registered table named {name}")
+
+    def unregister_temporary_tables(self):
+        for name in list(self._temp_table_schemas):
+            self.conn.unregister(name)
+            del self._temp_table_schemas[name]

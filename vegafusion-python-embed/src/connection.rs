@@ -126,7 +126,15 @@ impl Connection for PySqlConnection {
 
             // Register table with Python connection
             let table_name_object = table_name.clone().into_py(py);
-            let args = PyTuple::new(py, vec![table_name_object.as_ref(py), pa_table]);
+            let is_temporary_object = true.into_py(py);
+            let args = PyTuple::new(
+                py,
+                vec![
+                    table_name_object.as_ref(py),
+                    pa_table,
+                    is_temporary_object.as_ref(py),
+                ],
+            );
             self.conn.call_method1(py, "register_arrow", args)?;
             Ok(())
         })?;
@@ -167,17 +175,18 @@ impl Connection for PySqlConnection {
             .into_py_dict(py);
             let args = PyTuple::empty(py);
             let csv_opts = csv_opts_class.call(args, Some(kwargs))?;
-            // let csv_opts = csv_opts_class.call_method("__init__", args, Some(kwargs))?;
 
             // Register table with Python connection
             let table_name_object = table_name.clone().into_py(py);
             let path_name_object = path.to_string().into_py(py);
+            let is_temporary_object = true.into_py(py);
             let args = PyTuple::new(
                 py,
                 vec![
                     table_name_object.as_ref(py),
                     path_name_object.as_ref(py),
                     csv_opts,
+                    is_temporary_object.as_ref(py),
                 ],
             );
             self.conn.call_method1(py, "register_csv", args)?;
