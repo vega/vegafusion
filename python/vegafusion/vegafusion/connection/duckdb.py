@@ -66,7 +66,9 @@ class DuckDbConnection(SqlConnection):
         self._register_inline_datasets()
 
         # Load config/extensions
+        self.conn.install_extension("httpfs")
         self.conn.load_extension("httpfs")
+        self.conn.install_extension("icu")
         self.conn.load_extension("icu")
         self.conn.execute("SET GLOBAL pandas_analyze_sample=100000")
 
