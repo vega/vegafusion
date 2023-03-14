@@ -97,7 +97,7 @@ impl Connection for PySqlConnection {
 
     /// Scan a VegaFusionTable into a DataFrame
     async fn scan_arrow(&self, table: VegaFusionTable) -> Result<Arc<dyn DataFrame>> {
-        let random_id = uuid::Uuid::new_v4().to_string().replace("-", "_");
+        let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
         let table_name = format!("arrow_{random_id}");
         Python::with_gil(|py| -> std::result::Result<_, PyErr> {
             // Convert table's record batches into Python list of pyarrow batches
@@ -143,7 +143,7 @@ impl Connection for PySqlConnection {
     }
 
     async fn scan_csv(&self, path: &str, opts: CsvReadOptions) -> Result<Arc<dyn DataFrame>> {
-        let random_id = uuid::Uuid::new_v4().to_string().replace("-", "_");
+        let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
         let table_name = format!("csv_{random_id}");
 
         Python::with_gil(|py| -> std::result::Result<_, PyErr> {

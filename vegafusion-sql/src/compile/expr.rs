@@ -407,9 +407,9 @@ impl ToSqlExpr for Expr {
                     Ok(SqlExpr::Function(sql_fun))
                 } else {
                     // Unsupported
-                    return Err(VegaFusionError::sql_not_supported(format!(
+                    Err(VegaFusionError::sql_not_supported(format!(
                         "Dialect does not support the '{fun_name}' window function"
-                    )));
+                    )))
                 }
             }
             Expr::IsTrue(_) => Err(VegaFusionError::internal(
