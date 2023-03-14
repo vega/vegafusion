@@ -312,11 +312,16 @@ jobs:
     strategy:
       matrix:
         options: [
-            [ubuntu-latest,  linux-64, "bash -l {0}",  manylinux2014_x86_64, cp38],
-            [ubuntu-latest,  linux-64, "bash -l {0}",  manylinux2014_x86_64, cp310],
-# TODO: Should run tests on Windows and Mac as well, but there a GitHub action issues
-#            [windows-2019,  win-64,   "pwsh",         win_amd64,            cp37],
-#            [macos-11,   osx-64,   "bash -l {0}",  macosx_10_7_x86_64,   cp37],
+            [ubuntu-latest,  linux-64, "bash -l {0}",  cp38,  "vegafusion-jupyter"],
+            [ubuntu-latest,  linux-64, "bash -l {0}",  cp38,  "vegafusion"],
+            [ubuntu-latest,  linux-64, "bash -l {0}",  cp310, "vegafusion-jupyter"],
+            [ubuntu-latest,  linux-64, "bash -l {0}",  cp310, "vegafusion"],
+            [windows-latest, win-64,   "pwsh",         cp38,  "vegafusion"],
+            [macos-latest,   osx-64,   "bash -l {0}",  cp310, "vegafusion"],
+
+# TODO: Should vegafusion-jupyter tests on Windows and Mac as well, but there a selenium+GitHub action issue
+#            [windows-latest, win-64,   "pwsh",         cp38,  "vegafusion-jupyter"],
+#            [macos-latest,   osx-64,   "bash -l {0}",  cp310, "vegafusion-jupyter"],
         ]
     runs-on: ${{ matrix.options[0] }}
     defaults:
@@ -331,7 +336,7 @@ jobs:
           auto-update-conda: true
           activate-environment: vegafusion_dev
           miniforge-version: latest
-          environment-file: python/vegafusion-jupyter/conda-${{ matrix.options[1] }}-${{ matrix.options[4] }}.lock
+          environment-file: python/vegafusion-jupyter/conda-${{ matrix.options[1] }}-${{ matrix.options[3] }}.lock
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -371,11 +376,13 @@ jobs:
       - name: Test vegafusion
         working-directory: python/vegafusion/
         run: pytest
-      - name: Test vegafusion-jupter
+        if: ${{ matrix.options[4] == 'vegafusion' }}
+      - name: Test vegafusion-jupyter
         env:
           VEGAFUSION_TEST_HEADLESS: 1
         working-directory: python/vegafusion-jupyter/tests/
         run: pytest
+        if: ${{ matrix.options[5] == 'vegafusion-jupyter' }}
       - name: Upload test artifacts
         uses: actions/upload-artifact@v2
         if: always()
