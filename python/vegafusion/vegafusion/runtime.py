@@ -7,6 +7,8 @@
 import json
 import psutil
 import pyarrow as pa
+from typing import Union
+from .connection import SqlConnection
 
 
 class VegaFusionRuntime:
@@ -29,7 +31,20 @@ class VegaFusionRuntime:
             )
         return self._embedded_runtime
 
-    def set_connection(self, connection):
+    def set_connection(self, connection: Union[str, SqlConnection] = "datafusion"):
+        """
+        Sets the connection to use to evaluate Vega data transformations.
+
+        Named tables returned by the connection's `tables` method may be referenced in Vega/Altair
+        chart specifications using a special dataset URLs. For example, if the connection's `tables`
+        method returns a dictionary that includes "tableA" as a key, then this table may be
+        referenced in a chart specification using the URL "vegafusion+dataset://tableA".
+
+        :param connection: Either a string or an instance of vegafusion.connection.SqlConnection
+            If a string, one of:
+                - "datafusion" (default)
+                - "duckdb"
+        """
         if isinstance(connection, str):
             if connection == "datafusion":
                 # Connection of None uses DataFusion
@@ -39,6 +54,11 @@ class VegaFusionRuntime:
                 connection = DuckDbConnection()
             else:
                 raise ValueError(f"Unsupported connection name: {connection}")
+        elif not isinstance(connection, SqlConnection):
+            raise ValueError(
+                "connection argument must be a string or an instance of SqlConnection\n"
+                f"Received value of type {type(connection).__name__}: {connection}"
+            )
 
         self._connection = connection
         self.reset()
