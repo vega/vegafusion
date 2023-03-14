@@ -51,7 +51,7 @@ def duckdb_relation_to_schema(rel: duckdb.DuckDBPyRelation) -> pa.Schema:
 
 
 class DuckDbConnection(SqlConnection):
-    def __init__(self, inline_datasets: Dict[str, Union[pd.DataFrame, pa.Table]] = None):
+    def __init__(self, inline_datasets: Dict[str, Union[pd.DataFrame, pa.Table]] = None, fallback: bool = True):
         # Validate duckdb version
         if LooseVersion(duckdb.__version__) < LooseVersion("0.7.0"):
             raise ImportError(
@@ -59,7 +59,7 @@ class DuckDbConnection(SqlConnection):
                 f"Found version {duckdb.__version__}"
             )
 
-        # Register extensions
+        self._fallback = fallback
         self._table_schemas = {}
         self.conn = duckdb.connect()
         self._inline_datasets = inline_datasets or {}
@@ -82,6 +82,9 @@ class DuckDbConnection(SqlConnection):
     @classmethod
     def dialect(cls) -> str:
         return "duckdb"
+
+    def fallback(self) -> bool:
+        return self._fallback
 
     def tables(self) -> Dict[str, pa.Schema]:
         return dict(**self._table_schemas)

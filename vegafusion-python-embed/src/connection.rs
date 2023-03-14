@@ -21,7 +21,7 @@ use vegafusion_sql::dialect::Dialect;
 pub struct PySqlConnection {
     conn: PyObject,
     dialect: Dialect,
-    fallback_conn: Arc<dyn SqlConnection>,
+    fallback_conn: Option<Arc<dyn SqlConnection>>,
 }
 
 #[pymethods]
@@ -34,14 +34,23 @@ impl PySqlConnection {
             Ok(Dialect::from_str(&dialect_string)?)
         })?;
 
-        // Create fallback DataFusion connection. This will be used when SQL is encountered
-        // that isn't supported by the main connection.
-        let fallback_conn: DataFusionConnection = Default::default();
+        let fallback_conn = Python::with_gil(|py| -> std::result::Result<Option<Arc<dyn SqlConnection>>, PyErr> {
+            let should_fallback_object = conn.call_method0(py, "fallback")?;
+            let should_fallback = should_fallback_object.extract::<bool>(py)?;
+            if should_fallback {
+                // Create fallback DataFusion connection. This will be used when SQL is encountered
+                // that isn't supported by the main connection.
+                let fallback_conn: DataFusionConnection = Default::default();
+                Ok(Some(Arc::new(fallback_conn)))
+            } else {
+                Ok(None)
+            }
+        })?;
 
         Ok(Self {
             conn,
             dialect,
-            fallback_conn: Arc::new(fallback_conn),
+            fallback_conn
         })
     }
 }
@@ -78,7 +87,7 @@ impl Connection for PySqlConnection {
             SqlDataFrame::try_new(
                 Arc::new(self.clone()),
                 name,
-                vec![self.fallback_conn.clone()],
+                self.fallback_conn.clone().into_iter().collect(),
             )
             .await?,
         ))
@@ -125,7 +134,7 @@ impl Connection for PySqlConnection {
             SqlDataFrame::try_new(
                 Arc::new(self.clone()),
                 &table_name,
-                vec![self.fallback_conn.clone()],
+                self.fallback_conn.clone().into_iter().collect(),
             )
             .await?,
         ))
@@ -178,7 +187,7 @@ impl Connection for PySqlConnection {
             SqlDataFrame::try_new(
                 Arc::new(self.clone()),
                 &table_name,
-                vec![self.fallback_conn.clone()],
+                self.fallback_conn.clone().into_iter().collect(),
             )
             .await?,
         ))

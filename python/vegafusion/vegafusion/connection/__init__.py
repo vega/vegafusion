@@ -34,11 +34,14 @@ class SqlConnection(ABC):
     def fetch_query(self, query: str, schema: pa.Schema) -> pa.Table:
         raise NotImplementedError()
 
-    def reset_registered_datasets(self):
-        raise ValueError("Connection does not support resetting registered datasets")
+    def fallback(self) -> bool:
+        """
+        Whether VegaFusion should fall back to the built-in DataFusion connection
+        when SQL is encountered that is not supported by this connection's SQL dialect
 
-    def unregister(self, name: str):
-        raise ValueError("Connection does not support un-registration")
+        :return: bool
+        """
+        return True
 
     def register_pandas(self, name: str, df: pd.DataFrame):
         raise ValueError("Connection does not support registration of pandas datasets")
