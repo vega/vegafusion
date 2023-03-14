@@ -90,7 +90,7 @@ def maybe_skip(category, name):
         ("custom", "ridgeline.vg.json"),
         ("custom", "interactive_average.vg.json"),
     ]:
-        # The DataFusion backend follows the Vega/JavaScrip idiosyncrasy of parsing
+        # The DataFusion backend follows the Vega/JavaScript idiosyncrasy of parsing
         # datetime strings in the local timezone unless they are of the form YYYY-MM-DD, in which
         # case they are parsed in UTC. The DuckDb connection parses all datetime strings as local
         pytest.skip("Known date parsing timezone mismatch")
