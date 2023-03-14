@@ -34,23 +34,25 @@ impl PySqlConnection {
             Ok(Dialect::from_str(&dialect_string)?)
         })?;
 
-        let fallback_conn = Python::with_gil(|py| -> std::result::Result<Option<Arc<dyn SqlConnection>>, PyErr> {
-            let should_fallback_object = conn.call_method0(py, "fallback")?;
-            let should_fallback = should_fallback_object.extract::<bool>(py)?;
-            if should_fallback {
-                // Create fallback DataFusion connection. This will be used when SQL is encountered
-                // that isn't supported by the main connection.
-                let fallback_conn: DataFusionConnection = Default::default();
-                Ok(Some(Arc::new(fallback_conn)))
-            } else {
-                Ok(None)
-            }
-        })?;
+        let fallback_conn = Python::with_gil(
+            |py| -> std::result::Result<Option<Arc<dyn SqlConnection>>, PyErr> {
+                let should_fallback_object = conn.call_method0(py, "fallback")?;
+                let should_fallback = should_fallback_object.extract::<bool>(py)?;
+                if should_fallback {
+                    // Create fallback DataFusion connection. This will be used when SQL is encountered
+                    // that isn't supported by the main connection.
+                    let fallback_conn: DataFusionConnection = Default::default();
+                    Ok(Some(Arc::new(fallback_conn)))
+                } else {
+                    Ok(None)
+                }
+            },
+        )?;
 
         Ok(Self {
             conn,
             dialect,
-            fallback_conn
+            fallback_conn,
         })
     }
 }
