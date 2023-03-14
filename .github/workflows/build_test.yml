@@ -337,6 +337,10 @@ jobs:
           activate-environment: vegafusion_dev
           miniforge-version: latest
           environment-file: python/vegafusion-jupyter/conda-${{ matrix.options[1] }}-${{ matrix.options[3] }}.lock
+      - name: Install protoc on Window
+        run: |
+          choco install --yes protoc
+        if: ${{ runner.os == 'Windows' }}
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
