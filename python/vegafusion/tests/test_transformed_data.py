@@ -11,6 +11,17 @@ here = Path(__file__).parent
 altair_mocks_dir = here / "altair_mocks"
 
 
+def get_connections():
+    connections = ["datafusion"]
+    try:
+        import duckdb
+        connections.append("duckdb")
+    except ImportError:
+        pass
+
+    return connections
+
+
 @pytest.mark.parametrize(
     "mock_name,expected_len,expected_cols", [
         ("area/cumulative_count", 3201, ["Running_Time_min", "cumulative_count"]),
@@ -93,7 +104,7 @@ altair_mocks_dir = here / "altair_mocks"
         ("simple/strip_chart", 400, ["Name", "Cylinders", "Origin"]),
     ]
 )
-@pytest.mark.parametrize("connection", ["datafusion", "duckdb"])
+@pytest.mark.parametrize("connection", get_connections())
 def test_transformed_data_for_mock(mock_name, expected_len, expected_cols, connection):
     vf.runtime.set_connection(connection)
 
