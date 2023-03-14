@@ -1,6 +1,7 @@
 from . import SqlConnection, CsvReadOptions
 
 from typing import Dict, Union
+from distutils.version import LooseVersion
 
 import duckdb
 import pyarrow as pa
@@ -51,6 +52,13 @@ def duckdb_relation_to_schema(rel: duckdb.DuckDBPyRelation) -> pa.Schema:
 
 class DuckDbConnection(SqlConnection):
     def __init__(self, inline_datasets: Dict[str, Union[pd.DataFrame, pa.Table]] = None):
+        # Validate duckdb version
+        if LooseVersion(duckdb.__version__) < LooseVersion("0.7.0"):
+            raise ImportError(
+                f"The VegaFusion DuckDB connection requires at least DuckDB version 0.7.0\n"
+                f"Found version {duckdb.__version__}"
+            )
+
         # Register extensions
         self._table_schemas = {}
         self.conn = duckdb.connect()
