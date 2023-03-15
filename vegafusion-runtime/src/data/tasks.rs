@@ -35,6 +35,7 @@ use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
+use vegafusion_core::spec::visitors::extract_inline_dataset;
 use vegafusion_dataframe::connection::Connection;
 use vegafusion_dataframe::csv::CsvReadOptions;
 use vegafusion_dataframe::dataframe::DataFrame;
@@ -106,7 +107,7 @@ impl TaskCall for DataUrlTask {
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
 
         let registered_tables = conn.tables().await?;
-        let df = if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
+        let df = if let Some(inline_name) = extract_inline_dataset(&url) {
             let inline_name = inline_name.trim().to_string();
             if let Some(inline_dataset) = inline_datasets.get(&inline_name) {
                 match inline_dataset {

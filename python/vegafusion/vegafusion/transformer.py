@@ -16,7 +16,7 @@ import pandas as pd
 import pyarrow as pa
 from weakref import WeakValueDictionary
 
-DATASET_PREFIX = "vegafusion+dataset://"
+DATASET_PREFIXES = ("vegafusion+dataset://", "table://")
 
 def to_arrow_table(data):
     """
@@ -185,9 +185,10 @@ def get_inline_dataset_names(vega_spec):
     table_names = set()
     for data in vega_spec.get("data", []):
         url = data.get("url", "")
-        if url.startswith(DATASET_PREFIX):
-            name = url[len(DATASET_PREFIX):]
-            table_names.add(name)
+        for prefix in DATASET_PREFIXES:
+            if url.startswith(prefix):
+                name = url[len(prefix):]
+                table_names.add(name)
 
     for mark in vega_spec.get("marks", []):
         table_names.update(get_inline_dataset_names(mark))
@@ -204,16 +205,21 @@ def get_inline_dataset_table(table_name):
 
 def get_inline_datasets_for_spec(vega_spec):
     table_names = get_inline_dataset_names(vega_spec)
-    return {
-        table_name: get_inline_dataset_table(table_name) for table_name in table_names
-    }
+    datasets = {}
+    for table_name in table_names:
+        try:
+            datasets[table_name] = get_inline_dataset_table(table_name)
+        except KeyError:
+            # named dataset that was provided by the user
+            pass
+    return datasets
 
 
 def inline_data_transformer(data):
     if is_dataframe_like(data):
         table_name = f"table_{uuid.uuid4()}".replace("-", "_")
         __inline_tables[table_name] = data
-        return {"url": DATASET_PREFIX + table_name}
+        return {"url": DATASET_PREFIXES[0] + table_name}
     else:
         # Use default transformer if we don't recognize data
         return alt.default_data_transformer(data)
