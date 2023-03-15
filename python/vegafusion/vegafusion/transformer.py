@@ -5,7 +5,6 @@
 # Please consult the license documentation provided alongside
 # this program the details of the active license.
 
-import datetime
 import io
 import os
 import pathlib
@@ -14,6 +13,7 @@ from tempfile import NamedTemporaryFile
 import uuid
 import altair as alt
 import pandas as pd
+import pyarrow as pa
 from weakref import WeakValueDictionary
 
 DATASET_PREFIXES = ("vegafusion+dataset://", "table://")
@@ -76,13 +76,22 @@ def to_arrow_table(data):
 
 def to_arrow_ipc_bytes(data, stream=False):
     """
-    Helper to convert a Pandas DataFrame to the Arrow IPC binary format
+    Helper to convert a DataFrame to the Arrow IPC binary format
 
-    :param data: Pandas DataFrame
+    :param data: Pandas DataFrame, pyarrow Table, or object that supports
+        the DataFrame Interchange Protocol
     :param stream: If True, write IPC Stream format. If False (default), write ipc file format.
     :return: bytes
     """
-    table = to_arrow_table(data)
+    if isinstance(data, pd.DataFrame):
+        table = to_arrow_table(data)
+    elif isinstance(data, pa.Table):
+        table = data
+    elif hasattr(data, "__dataframe__"):
+        pi = import_pyarrow_interchange()
+        table = pi.from_dataframe(data)
+    else:
+        raise ValueError(f"Unsupported input to to_arrow_ipc_bytes: {type(data)}")
     return arrow_table_to_ipc_bytes(table, stream=stream)
 
 
@@ -110,7 +119,8 @@ def to_feather(data, file):
     Helper to convert a Pandas DataFrame to a feather file that is optimized for
     use as a VegaFusion data source
 
-    :param data: Pandas DataFrame
+    :param data: Pandas DataFrame, pyarrow Table, or object that supports
+        the DataFrame Interchange Protocol
     :param file: File path string or writable file-like object
     :return: None
     """
@@ -126,10 +136,11 @@ def to_feather(data, file):
 
 def feather_transformer(data, data_dir="_vegafusion_data"):
     from vegafusion import runtime
-    if "vegafusion" not in alt.renderers.active or not isinstance(data, pd.DataFrame):
+
+    if "vegafusion" not in alt.renderers.active:
         # Use default transformer if a vegafusion renderer is not active
         return alt.default_data_transformer(data)
-    else:
+    elif is_dataframe_like(data):
         if runtime.using_grpc:
             raise ValueError(
                 "DataFrame data sources are not yet supported by the gRPC runtime"
@@ -159,6 +170,9 @@ def feather_transformer(data, data_dir="_vegafusion_data"):
             os.replace(tmp_name, path)
 
         return {"url": path.as_posix()}
+    else:
+        # Use default transformer if we don't recognize data
+        return alt.default_data_transformer(data)
 
 
 def get_inline_dataset_names(vega_spec):
@@ -202,9 +216,28 @@ def get_inline_datasets_for_spec(vega_spec):
 
 
 def inline_data_transformer(data):
-    table_name = f"table_{uuid.uuid4()}".replace("-", "_")
-    __inline_tables[table_name] = data
-    return {"url": DATASET_PREFIXES[0] + table_name}
+    if is_dataframe_like(data):
+        table_name = f"table_{uuid.uuid4()}".replace("-", "_")
+        __inline_tables[table_name] = data
+        return {"url": DATASET_PREFIXES[0] + table_name}
+    else:
+        # Use default transformer if we don't recognize data
+        return alt.default_data_transformer(data)
+
+
+def is_dataframe_like(data):
+    return isinstance(data, (pd.DataFrame, pa.Table)) or hasattr(data, "__dataframe__")
+
+
+def import_pyarrow_interchange():
+    try:
+        import pyarrow.interchange as pi
+        return pi
+    except ImportError:
+        raise ImportError(
+            "Use of the DataFrame Interchange Protocol requires at least version 11.0.0 of pyarrow\n"
+            f"Found version {pa.__version__}"
+        )
 
 
 alt.data_transformers.register("vegafusion-feather", feather_transformer)
