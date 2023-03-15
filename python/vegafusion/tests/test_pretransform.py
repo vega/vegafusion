@@ -16,7 +16,7 @@ def order_items_spec():
   "height": 200,
   "style": "cell",
   "data": [
-    {"name": "order_items", "url": "vegafusion+dataset://order_items"},
+    {"name": "order_items", "url": "table://order_items"},
     {
       "name": "data_0",
       "source": "order_items",
@@ -1006,3 +1006,37 @@ def test_pre_transform_dataset_dataframe_interface_protocol():
     result = datasets[0]
     expected = pd.DataFrame({"menu_item": [0, 1, 2], "__count": [n, 2 * n, 3 * n]})
     pd.testing.assert_frame_equal(result, expected)
+
+
+def test_pre_transform_dataset_duckdb_conn():
+    import duckdb
+
+    n = 4050
+    # Input a polars DataFrame (which follows the DataFrame Interface Protocol)
+    order_items = pd.DataFrame({
+        "menu_item": [0] * n + [1] * (2 * n) + [2] * (3 * n)
+    })
+
+    try:
+        # Create duckdb connection and register order_items with duckdb
+        conn = duckdb.connect()
+        conn.register("order_items", order_items)
+
+        # Set this as the active connection
+        vf.runtime.set_connection(conn)
+
+        # order_items includes a table://order_items data url
+        vega_spec = order_items_spec()
+        datasets, warnings = vf.runtime.pre_transform_datasets(
+            vega_spec,
+            ["data_0"],
+            "UTC",
+        )
+        assert len(warnings) == 0
+        assert len(datasets) == 1
+
+        result = datasets[0]
+        expected = pd.DataFrame({"menu_item": [0, 1, 2], "__count": [n, 2 * n, 3 * n]})
+        pd.testing.assert_frame_equal(result, expected)
+    finally:
+        vf.runtime.set_connection("datafusion")
