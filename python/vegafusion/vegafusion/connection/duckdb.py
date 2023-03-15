@@ -6,6 +6,7 @@ from distutils.version import LooseVersion
 import duckdb
 import pyarrow as pa
 import pandas as pd
+import logging
 
 
 def duckdb_type_name_to_pyarrow_type(duckdb_type: str) -> pa.DataType:
@@ -64,6 +65,8 @@ class DuckDbConnection(SqlConnection):
         self._temp_table_schemas = {}
         self.conn = duckdb.connect()
 
+        self.logger = logging.getLogger("DuckDbConnection")
+
         # Load config/extensions
         self.conn.install_extension("httpfs")
         self.conn.load_extension("httpfs")
@@ -91,7 +94,7 @@ class DuckDbConnection(SqlConnection):
         return dict(**self._table_schemas, **self._temp_table_schemas)
 
     def fetch_query(self, query: str, schema: pa.Schema) -> pa.Table:
-        # print(query)
+        self.logger.info(f"Query:\n{query}\n")
         return self.conn.query(query).to_arrow_table(8096)
 
     def register_pandas(self, name: str, df: pd.DataFrame, temporary: bool = False):
