@@ -630,9 +630,7 @@ impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
 pub fn extract_inline_dataset(url: &str) -> Option<String> {
     if let Some(s) = url.strip_prefix("vegafusion+dataset://") {
         Some(s.to_string())
-    } else if let Some(s) = url.strip_prefix("table://") {
-        Some(s.to_string())
     } else {
-        None
+        url.strip_prefix("table://").map(|s| s.to_string())
     }
 }
