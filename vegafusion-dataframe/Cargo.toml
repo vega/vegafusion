@@ -1,6 +1,6 @@
 [package]
 name = "vegafusion-dataframe"
-version = "1.0.4"
+version = "1.1.0-rc1"
 edition = "2021"
 
 [dependencies]
@@ -8,7 +8,7 @@ async-trait = "0.1.53"
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-version = "1.0.4"
+version = "1.1.0-rc1"
 
 [dependencies.datafusion-common]
 version = "18.0.0"

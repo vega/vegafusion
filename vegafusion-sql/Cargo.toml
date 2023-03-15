@@ -1,6 +1,6 @@
 [package]
 name = "vegafusion-sql"
-version = "1.0.4"
+version = "1.1.0-rc1"
 edition = "2021"
 
 [features]
@@ -17,25 +17,21 @@ rstest_reuse = "0.5.0"
 lazy_static = "^1.4.0"
 toml = "0.7.2"
 
-[dev-dependencies.async-std]
-version = "1.12.0"
-features = ["attributes"]
-
 [dependencies.sqlparser]
 version = "0.30.0"
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-version = "1.0.4"
+version = "1.1.0-rc1"
 features = [ "sqlparser",]
 
 [dependencies.vegafusion-dataframe]
 path = "../vegafusion-dataframe"
-version = "1.0.4"
+version = "1.1.0-rc1"
 
 [dependencies.vegafusion-datafusion-udfs]
 path = "../vegafusion-datafusion-udfs"
-version = "1.0.4"
+version = "1.1.0-rc1"
 optional = true
 
 [dependencies.arrow]
@@ -75,17 +71,21 @@ optional = true
 version = "^1.5.5"
 optional = true
 
+[dev-dependencies.async-std]
+version = "1.12.0"
+features = [ "attributes",]
+
 [dev-dependencies.serde_json]
 version = "1.0.91"
 features = [ "preserve_order",]
 
 [dev-dependencies.vegafusion-datafusion-udfs]
 path = "../vegafusion-datafusion-udfs"
-version = "1.0.4"
+version = "1.1.0-rc1"
 
 [dev-dependencies.vegafusion-common]
 path = "../vegafusion-common"
-version = "1.0.4"
+version = "1.1.0-rc1"
 features = [ "sqlparser", "json", "prettyprint",]
 
 [dev-dependencies.tokio]
