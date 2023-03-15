@@ -16,7 +16,7 @@ import altair as alt
 import pandas as pd
 from weakref import WeakValueDictionary
 
-DATASET_PREFIX = "vegafusion+dataset://"
+DATASET_PREFIXES = ("vegafusion+dataset://", "table://")
 
 def to_arrow_table(data):
     """
@@ -171,9 +171,10 @@ def get_inline_dataset_names(vega_spec):
     table_names = set()
     for data in vega_spec.get("data", []):
         url = data.get("url", "")
-        if url.startswith(DATASET_PREFIX):
-            name = url[len(DATASET_PREFIX):]
-            table_names.add(name)
+        for prefix in DATASET_PREFIXES:
+            if url.startswith(prefix):
+                name = url[len(prefix):]
+                table_names.add(name)
 
     for mark in vega_spec.get("marks", []):
         table_names.update(get_inline_dataset_names(mark))
@@ -198,7 +199,7 @@ def get_inline_datasets_for_spec(vega_spec):
 def inline_data_transformer(data):
     table_name = f"table_{uuid.uuid4()}".replace("-", "_")
     __inline_tables[table_name] = data
-    return {"url": DATASET_PREFIX + table_name}
+    return {"url": DATASET_PREFIXES[0] + table_name}
 
 
 alt.data_transformers.register("vegafusion-feather", feather_transformer)

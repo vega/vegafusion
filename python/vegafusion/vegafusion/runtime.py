@@ -38,7 +38,8 @@ class VegaFusionRuntime:
         Named tables returned by the connection's `tables` method may be referenced in Vega/Altair
         chart specifications using special dataset URLs. For example, if the connection's `tables`
         method returns a dictionary that includes "tableA" as a key, then this table may be
-        referenced in a chart specification using the URL "vegafusion+dataset://tableA".
+        referenced in a chart specification using the URL "table://tableA" or
+        "vegafusion+dataset://tableA".
 
         :param connection: Either a string or an instance of vegafusion.connection.SqlConnection
             If a string, one of:
@@ -155,7 +156,8 @@ class VegaFusionRuntime:
             the original interactive behavior of the chart.
         :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
             Tables. Inline datasets may be referenced by the input specification using
-            the following url syntax 'vegafusion+dataset://{dataset_name}'.
+            the following url syntax 'vegafusion+dataset://{dataset_name}' or
+            'table://{dataset_name}'.
         :return:
             Two-element tuple:
                 0. A string containing the JSON representation of a Vega specification
@@ -210,7 +212,8 @@ class VegaFusionRuntime:
             and a RowLimitExceeded warning will be included in the resulting warnings list
         :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
             Tables. Inline datasets may be referenced by the input specification using
-            the following url syntax 'vegafusion+dataset://{dataset_name}'.
+            the following url syntax 'vegafusion+dataset://{dataset_name}' or
+            'table://{dataset_name}'..
         :return:
             Two-element tuple:
                 0. List of pandas DataFrames corresponding to the input datasets list
