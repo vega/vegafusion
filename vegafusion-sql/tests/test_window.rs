@@ -19,7 +19,7 @@ mod test_simple_aggs_unbounded {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -35,7 +35,7 @@ mod test_simple_aggs_unbounded {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
             expr: Box::new(col("a")),
             asc: true,
@@ -94,7 +94,12 @@ mod test_simple_aggs_unbounded {
                 })
                 .alias("max_b"),
             ])
-            .and_then(|df| df.sort(order_by, None));
+            .await;
+        let df_result = if let Ok(df) = df_result {
+            df.sort(order_by, None).await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -104,14 +109,17 @@ mod test_simple_aggs_unbounded {
             evaluable,
         );
     }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
 }
 
 #[cfg(test)]
-mod test_simple_aggs_bounded {
+mod test_simple_aggs_unbounded_groups {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -127,7 +135,108 @@ mod test_simple_aggs_bounded {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
+        let order_by = vec![Expr::Sort(expr::Sort {
+            expr: Box::new(col("a")),
+            asc: true,
+            nulls_first: true,
+        })];
+        let window_frame = WindowFrame {
+            units: WindowFrameUnits::Groups,
+            start_bound: WindowFrameBound::Preceding(ScalarValue::Null),
+            end_bound: WindowFrameBound::CurrentRow,
+        };
+        let df_result = df
+            .select(vec![
+                col("a"),
+                col("b"),
+                col("c"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Sum),
+                    args: vec![col("b")],
+                    partition_by: vec![],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("sum_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(
+                        AggregateFunction::Count,
+                    ),
+                    args: vec![col("b")],
+                    partition_by: vec![col("c")],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("count_part_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Avg),
+                    args: vec![col("b")],
+                    partition_by: vec![],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("cume_mean_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Min),
+                    args: vec![col("b")],
+                    partition_by: vec![col("c")],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("min_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Max),
+                    args: vec![col("b")],
+                    partition_by: vec![],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame,
+                })
+                .alias("max_b"),
+            ])
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(order_by, None).await
+        } else {
+            df_result
+        };
+
+        check_dataframe_query(
+            df_result,
+            "select_window",
+            "simple_aggs_unbounded_groups",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
+#[cfg(test)]
+mod test_simple_aggs_bounded {
+    use crate::*;
+
+    #[apply(dialect_names)]
+    async fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 1, "b": 2, "c": "A"},
+                {"a": 3, "b": 4, "c": "BB"},
+                {"a": 5, "b": 6, "c": "A"},
+                {"a": 7, "b": 8, "c": "BB"},
+                {"a": 9, "b": 10, "c": "A"},
+            ]),
+            1024,
+        )
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
             expr: Box::new(col("a")),
             asc: true,
@@ -186,7 +295,13 @@ mod test_simple_aggs_bounded {
                 })
                 .alias("max_b"),
             ])
-            .and_then(|df| df.sort(order_by, None));
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(order_by, None).await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -202,11 +317,127 @@ mod test_simple_aggs_bounded {
 }
 
 #[cfg(test)]
+mod test_simple_aggs_bounded_groups {
+    use crate::*;
+
+    #[apply(dialect_names)]
+    async fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(
+            &json!([
+                {"a": 1, "b": 2, "c": "A"},
+                {"a": 1, "b": 4, "c": "BB"},
+                {"a": 5, "b": 6, "c": "A"},
+                {"a": 7, "b": 8, "c": "BB"},
+                {"a": 7, "b": 10, "c": "A"},
+            ]),
+            1024,
+        )
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
+        let order_by = vec![Expr::Sort(expr::Sort {
+            expr: Box::new(col("a")),
+            asc: true,
+            nulls_first: true,
+        })];
+        let window_frame = WindowFrame {
+            units: WindowFrameUnits::Groups,
+            start_bound: WindowFrameBound::Preceding(ScalarValue::from(1)),
+            end_bound: WindowFrameBound::CurrentRow,
+        };
+        let df_result = df
+            .select(vec![
+                col("a"),
+                col("b"),
+                col("c"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Sum),
+                    args: vec![col("b")],
+                    partition_by: vec![],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("sum_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(
+                        AggregateFunction::Count,
+                    ),
+                    args: vec![col("b")],
+                    partition_by: vec![col("c")],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("count_part_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Avg),
+                    args: vec![col("b")],
+                    partition_by: vec![],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("cume_mean_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Min),
+                    args: vec![col("b")],
+                    partition_by: vec![col("c")],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame.clone(),
+                })
+                .alias("min_b"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Max),
+                    args: vec![col("b")],
+                    partition_by: vec![],
+                    order_by: order_by.clone(),
+                    window_frame: window_frame,
+                })
+                .alias("max_b"),
+            ])
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: true,
+                        nulls_first: true,
+                    }),
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("b")),
+                        asc: true,
+                        nulls_first: true,
+                    }),
+                ],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
+
+        check_dataframe_query(
+            df_result,
+            "select_window",
+            "simple_aggs_bounded_groups",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
+#[cfg(test)]
 mod test_simple_window_fns {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -222,7 +453,7 @@ mod test_simple_window_fns {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
             expr: Box::new(col("a")),
             asc: true,
@@ -289,7 +520,13 @@ mod test_simple_window_fns {
                 })
                 .alias("last"),
             ])
-            .and_then(|df| df.sort(order_by, None));
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(order_by, None).await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -309,7 +546,7 @@ mod test_advanced_window_fns {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -325,7 +562,7 @@ mod test_advanced_window_fns {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
             expr: Box::new(col("a")),
             asc: true,
@@ -392,7 +629,13 @@ mod test_advanced_window_fns {
                 })
                 .alias("ntile"),
             ])
-            .and_then(|df| df.sort(order_by, None));
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(order_by, None).await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,

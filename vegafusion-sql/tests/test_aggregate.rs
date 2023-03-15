@@ -16,7 +16,7 @@ mod test_simple_aggs {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(#[case] dialect_name: &str) {
+    async fn test(#[case] dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -33,7 +33,7 @@ mod test_simple_aggs {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df = df
             .aggregate(
                 vec![col("b")],
@@ -45,15 +45,18 @@ mod test_simple_aggs {
                     count(col("a")).alias("count_a"),
                 ],
             )
+            .await
             .unwrap();
-        let df_result = df.sort(
-            vec![Expr::Sort(expr::Sort {
-                expr: Box::new(col("b")),
-                asc: true,
-                nulls_first: true,
-            })],
-            None,
-        );
+        let df_result = df
+            .sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("b")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await;
 
         check_dataframe_query(
             df_result,
@@ -73,7 +76,7 @@ mod test_median_agg {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -89,20 +92,22 @@ mod test_median_agg {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
-        let df_result = df.aggregate(
-            vec![],
-            vec![
-                count(col("a")).alias("count_a"),
-                Expr::AggregateFunction(expr::AggregateFunction {
-                    fun: AggregateFunction::Median,
-                    args: vec![col("a")],
-                    distinct: false,
-                    filter: None,
-                })
-                .alias("median_a"),
-            ],
-        );
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
+        let df_result = df
+            .aggregate(
+                vec![],
+                vec![
+                    count(col("a")).alias("count_a"),
+                    Expr::AggregateFunction(expr::AggregateFunction {
+                        fun: AggregateFunction::Median,
+                        args: vec![col("a")],
+                        distinct: false,
+                        filter: None,
+                    })
+                    .alias("median_a"),
+                ],
+            )
+            .await;
 
         check_dataframe_query(
             df_result,
@@ -122,7 +127,7 @@ mod test_variance_aggs {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -138,57 +143,59 @@ mod test_variance_aggs {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
-        let df_result = df.aggregate(
-            vec![col("b")],
-            vec![
-                round(
-                    Expr::AggregateFunction(expr::AggregateFunction {
-                        fun: AggregateFunction::Stddev,
-                        args: vec![col("a")],
-                        distinct: false,
-                        filter: None,
-                    })
-                    .mul(lit(100)),
-                )
-                .div(lit(100))
-                .alias("stddev_a"),
-                round(
-                    Expr::AggregateFunction(expr::AggregateFunction {
-                        fun: AggregateFunction::StddevPop,
-                        args: vec![col("a")],
-                        distinct: false,
-                        filter: None,
-                    })
-                    .mul(lit(100)),
-                )
-                .div(lit(100))
-                .alias("stddev_pop_a"),
-                round(
-                    Expr::AggregateFunction(expr::AggregateFunction {
-                        fun: AggregateFunction::Variance,
-                        args: vec![col("a")],
-                        distinct: false,
-                        filter: None,
-                    })
-                    .mul(lit(100)),
-                )
-                .div(lit(100))
-                .alias("var_a"),
-                round(
-                    Expr::AggregateFunction(expr::AggregateFunction {
-                        fun: AggregateFunction::VariancePop,
-                        args: vec![col("a")],
-                        distinct: false,
-                        filter: None,
-                    })
-                    .mul(lit(100)),
-                )
-                .div(lit(100))
-                .alias("var_pop_a"),
-            ],
-        );
-        let df_result = df_result.and_then(|df| {
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
+        let df_result = df
+            .aggregate(
+                vec![col("b")],
+                vec![
+                    round(
+                        Expr::AggregateFunction(expr::AggregateFunction {
+                            fun: AggregateFunction::Stddev,
+                            args: vec![col("a")],
+                            distinct: false,
+                            filter: None,
+                        })
+                        .mul(lit(100)),
+                    )
+                    .div(lit(100))
+                    .alias("stddev_a"),
+                    round(
+                        Expr::AggregateFunction(expr::AggregateFunction {
+                            fun: AggregateFunction::StddevPop,
+                            args: vec![col("a")],
+                            distinct: false,
+                            filter: None,
+                        })
+                        .mul(lit(100)),
+                    )
+                    .div(lit(100))
+                    .alias("stddev_pop_a"),
+                    round(
+                        Expr::AggregateFunction(expr::AggregateFunction {
+                            fun: AggregateFunction::Variance,
+                            args: vec![col("a")],
+                            distinct: false,
+                            filter: None,
+                        })
+                        .mul(lit(100)),
+                    )
+                    .div(lit(100))
+                    .alias("var_a"),
+                    round(
+                        Expr::AggregateFunction(expr::AggregateFunction {
+                            fun: AggregateFunction::VariancePop,
+                            args: vec![col("a")],
+                            distinct: false,
+                            filter: None,
+                        })
+                        .mul(lit(100)),
+                    )
+                    .div(lit(100))
+                    .alias("var_pop_a"),
+                ],
+            )
+            .await;
+        let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
                     expr: Box::new(col("b")),
@@ -197,7 +204,10 @@ mod test_variance_aggs {
                 })],
                 None,
             )
-        });
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,

@@ -1,3 +1,5 @@
+pub mod connection;
+
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyString};
@@ -9,6 +11,7 @@ use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::Warni
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
+use crate::connection::PySqlConnection;
 use env_logger::{Builder, Target};
 use pythonize::depythonize;
 use serde::{Deserialize, Serialize};
@@ -19,6 +22,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_runtime::data::dataset::VegaFusionDataset;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
+use vegafusion_sql::connection::Connection;
 
 static INIT: Once = Once::new();
 
@@ -70,29 +74,33 @@ impl PyVegaFusionRuntime {
         max_capacity: Option<usize>,
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
+        connection: Option<PyObject>,
     ) -> PyResult<Self> {
         initialize_logging();
 
-        let mut tokio_runtime_builder = tokio::runtime::Builder::new_multi_thread();
-        tokio_runtime_builder.enable_all();
+        let (conn, mut tokio_runtime_builder) = if let Some(pyconnection) = connection {
+            // Use Python connection and single-threaded tokio runtime (this avoids deadlocking the Python interpreter)
+            let conn = Arc::new(PySqlConnection::new(pyconnection)?) as Arc<dyn Connection>;
+            (conn, tokio::runtime::Builder::new_current_thread())
+        } else {
+            // Use DataFusion connection and multi-threaded tokio runtime
+            let conn = Arc::new(DataFusionConnection::default()) as Arc<dyn Connection>;
+            let mut builder = tokio::runtime::Builder::new_multi_thread();
+            if let Some(worker_threads) = worker_threads {
+                builder.worker_threads(worker_threads.max(1) as usize);
+            }
+            (conn, builder)
+        };
 
-        if let Some(worker_threads) = worker_threads {
-            tokio_runtime_builder.worker_threads(worker_threads.max(1) as usize);
-        }
-
-        tokio_runtime_builder.thread_stack_size(TOKIO_THREAD_STACK_SIZE);
-
-        // Build tokio runtime
+        // Build the tokio runtime
         let tokio_runtime = tokio_runtime_builder
+            .enable_all()
+            .thread_stack_size(TOKIO_THREAD_STACK_SIZE)
             .build()
             .external("Failed to create Tokio thread pool")?;
 
         Ok(Self {
-            runtime: VegaFusionRuntime::new(
-                Arc::new(DataFusionConnection::default()),
-                max_capacity,
-                memory_limit,
-            ),
+            runtime: VegaFusionRuntime::new(conn, max_capacity, memory_limit),
             tokio_runtime,
         })
     }
@@ -256,6 +264,7 @@ impl PyVegaFusionRuntime {
 #[pymodule]
 fn vegafusion_embed(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyVegaFusionRuntime>()?;
+    m.add_class::<PySqlConnection>()?;
     Ok(())
 }
 

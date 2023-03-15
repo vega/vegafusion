@@ -15,7 +15,7 @@ mod test_simple_aggs {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -32,7 +32,7 @@ mod test_simple_aggs {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .joinaggregate(
                 vec![col("b")],
@@ -44,16 +44,21 @@ mod test_simple_aggs {
                     count(col("a")).alias("count_a"),
                 ],
             )
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,
@@ -73,7 +78,7 @@ mod test_simple_aggs_no_grouping {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -90,7 +95,7 @@ mod test_simple_aggs_no_grouping {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .joinaggregate(
                 vec![],
@@ -102,16 +107,21 @@ mod test_simple_aggs_no_grouping {
                     count(col("a")).alias("count_a"),
                 ],
             )
-            .and_then(|df| {
-                df.sort(
-                    vec![Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
-                        asc: true,
-                        nulls_first: true,
-                    })],
-                    None,
-                )
-            });
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
 
         check_dataframe_query(
             df_result,

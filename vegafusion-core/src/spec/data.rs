@@ -44,7 +44,7 @@ impl DataSpec {
             signals.extend(tx.output_signals())
         }
 
-        sorted(signals).into_iter().collect()
+        sorted(signals).collect()
     }
 
     pub fn supported(

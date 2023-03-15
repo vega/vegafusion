@@ -28,7 +28,7 @@ mod test_values1 {
         )
         .unwrap();
 
-        let df_result = SqlDataFrame::from_values(&table, conn);
+        let df_result = SqlDataFrame::from_values(&table, conn, Default::default());
         check_dataframe_query(df_result, "values", "values1", dialect_name, evaluable);
     }
 

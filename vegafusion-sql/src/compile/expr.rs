@@ -367,7 +367,15 @@ impl ToSqlExpr for Expr {
                         let units = match window_frame.units {
                             WindowFrameUnits::Rows => SqlWindowFrameUnits::Rows,
                             WindowFrameUnits::Range => SqlWindowFrameUnits::Range,
-                            WindowFrameUnits::Groups => SqlWindowFrameUnits::Groups,
+                            WindowFrameUnits::Groups => {
+                                if dialect.supports_window_frame_groups {
+                                    SqlWindowFrameUnits::Groups
+                                } else {
+                                    return Err(VegaFusionError::sql_not_supported(
+                                        "Dialect does not support window frame GROUPS",
+                                    ));
+                                }
+                            }
                         };
                         Some(SqlWindowFrame {
                             units,
@@ -399,9 +407,9 @@ impl ToSqlExpr for Expr {
                     Ok(SqlExpr::Function(sql_fun))
                 } else {
                     // Unsupported
-                    return Err(VegaFusionError::sql_not_supported(format!(
+                    Err(VegaFusionError::sql_not_supported(format!(
                         "Dialect does not support the '{fun_name}' window function"
-                    )));
+                    )))
                 }
             }
             Expr::IsTrue(_) => Err(VegaFusionError::internal(

@@ -10,6 +10,7 @@ use crate::dialect::transforms::date_part_tz::{
     DatePartTzWithDatePartAndAtTimezoneTransformer, DatePartTzWithExtractAndAtTimezoneTransformer,
     DatePartTzWithFromUtcAndDatePartTransformer,
 };
+use crate::dialect::transforms::date_to_utc_timestamp::DateToUtcTimestampWithCastAndAtTimeZoneTransformer;
 use crate::dialect::transforms::date_trunc_tz::{
     DateTruncTzClickhouseTransformer, DateTruncTzSnowflakeTransformer,
     DateTruncTzWithDateTruncAndAtTimezoneTransformer,
@@ -30,6 +31,7 @@ use crate::dialect::transforms::str_to_utc_timestamp::{
     StrToUtcTimestampSnowflakeTransformer, StrToUtcTimestampWithCastAndAtTimeZoneTransformer,
     StrToUtcTimestampWithCastFunctionAtTransformer, StrToUtcTimestampWithFunctionTransformer,
 };
+use crate::dialect::transforms::to_utc_timestamp::ToUtcTimestampWithAtTimeZoneTransformer;
 use crate::dialect::transforms::utc_timestamp_to_epoch_ms::{
     UtcTimestampToEpochMsDatabricksTransform, UtcTimestampToEpochMsDuckdbTransform,
     UtcTimestampToEpochMsPostgresTransform, UtcTimestampToEpochMsSnowflakeTransform,
@@ -160,6 +162,9 @@ pub struct Dialect {
     /// Whether dialect supports the use of bounded window frames
     pub supports_bounded_window_frames: bool,
 
+    /// Whether dialect supports the GROUPS option to window frames
+    pub supports_window_frame_groups: bool,
+
     /// Whether dialect supports the use of explicit window frames for navigation window functions
     /// (first_value, last_value, nth_value)
     pub supports_frames_in_navigation_window_functions: bool,
@@ -201,6 +206,7 @@ impl Default for Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: true,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: Default::default(),
@@ -307,6 +313,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -427,6 +434,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: false,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -520,6 +528,7 @@ impl Dialect {
             impute_fully_qualified: true,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -656,6 +665,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: false,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -794,6 +804,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: true,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: true,
             cast_datatypes: vec![
@@ -922,6 +933,14 @@ impl Dialect {
                     "utc_timestamp_to_str",
                     UtcTimestampToStrDuckDBTransformer::new_dyn(),
                 ),
+                (
+                    "to_utc_timestamp",
+                    ToUtcTimestampWithAtTimeZoneTransformer::new_dyn(),
+                ),
+                (
+                    "date_to_utc_timestamp",
+                    DateToUtcTimestampWithCastAndAtTimeZoneTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -934,6 +953,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -1028,6 +1048,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -1156,6 +1177,14 @@ impl Dialect {
                     "utc_timestamp_to_str",
                     UtcTimestampToStrPostgresTransformer::new_dyn(),
                 ),
+                (
+                    "to_utc_timestamp",
+                    ToUtcTimestampWithAtTimeZoneTransformer::new_dyn(),
+                ),
+                (
+                    "date_to_utc_timestamp",
+                    DateToUtcTimestampWithCastAndAtTimeZoneTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1168,6 +1197,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: true,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -1293,6 +1323,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: true,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![
@@ -1428,6 +1459,7 @@ impl Dialect {
             impute_fully_qualified: false,
             joinaggregate_fully_qualified: false,
             supports_bounded_window_frames: true,
+            supports_window_frame_groups: false,
             supports_frames_in_navigation_window_functions: true,
             supports_frames_in_numbering_window_functions: false,
             cast_datatypes: vec![

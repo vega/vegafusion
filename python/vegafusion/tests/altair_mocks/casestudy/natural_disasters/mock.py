@@ -3,7 +3,7 @@
 import altair as alt
 from vega_datasets import data
 
-source = data.disasters.url
+source = "https://raw.githubusercontent.com/vega/vega-datasets/main/data/disasters.csv"
 
 alt.Chart(source).mark_circle(
     opacity=0.8,

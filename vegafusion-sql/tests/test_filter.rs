@@ -16,7 +16,7 @@ mod test_simple_gte {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
 
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
@@ -34,18 +34,21 @@ mod test_simple_gte {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df = df
             .filter((col("a").add(lit(2)).gt_eq(lit(9))).or(col("b").modulus(lit(4)).eq(lit(0))))
+            .await
             .unwrap();
-        let df_result = df.sort(
-            vec![Expr::Sort(expr::Sort {
-                expr: Box::new(col("a")),
-                asc: true,
-                nulls_first: true,
-            })],
-            None,
-        );
+        let df_result = df
+            .sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await;
 
         check_dataframe_query(df_result, "filter", "simple_gte", dialect_name, evaluable);
     }

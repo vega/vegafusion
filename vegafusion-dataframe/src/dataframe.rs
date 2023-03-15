@@ -4,7 +4,10 @@ use arrow::datatypes::{Schema, SchemaRef};
 use arrow::record_batch::RecordBatch;
 use async_trait::async_trait;
 use datafusion_common::{DFSchema, ScalarValue};
-use datafusion_expr::Expr;
+use datafusion_expr::{
+    expr, window_function, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound,
+    WindowFrameUnits,
+};
 use std::any::Any;
 use std::sync::Arc;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -36,15 +39,15 @@ pub trait DataFrame: Send + Sync + 'static {
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
 
-    fn sort(&self, _expr: Vec<Expr>, _limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+    async fn sort(&self, _expr: Vec<Expr>, _limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("sort not supported"))
     }
 
-    fn select(&self, _expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
+    async fn select(&self, _expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("select not supported"))
     }
 
-    fn aggregate(
+    async fn aggregate(
         &self,
         _group_expr: Vec<Expr>,
         _aggr_expr: Vec<Expr>,
@@ -54,7 +57,7 @@ pub trait DataFrame: Send + Sync + 'static {
         ))
     }
 
-    fn joinaggregate(
+    async fn joinaggregate(
         &self,
         _group_expr: Vec<Expr>,
         _aggr_expr: Vec<Expr>,
@@ -64,15 +67,15 @@ pub trait DataFrame: Send + Sync + 'static {
         ))
     }
 
-    fn filter(&self, _predicate: Expr) -> Result<Arc<dyn DataFrame>> {
+    async fn filter(&self, _predicate: Expr) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("filter not supported"))
     }
 
-    fn limit(&self, _limit: i32) -> Result<Arc<dyn DataFrame>> {
+    async fn limit(&self, _limit: i32) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("limit not supported"))
     }
 
-    fn fold(
+    async fn fold(
         &self,
         _fields: &[String],
         _value_col: &str,
@@ -82,7 +85,7 @@ pub trait DataFrame: Send + Sync + 'static {
         Err(VegaFusionError::sql_not_supported("fold not supported"))
     }
 
-    fn stack(
+    async fn stack(
         &self,
         _field: &str,
         _orderby: Vec<Expr>,
@@ -94,7 +97,7 @@ pub trait DataFrame: Send + Sync + 'static {
         Err(VegaFusionError::sql_not_supported("stack not supported"))
     }
 
-    fn impute(
+    async fn impute(
         &self,
         _field: &str,
         _value: ScalarValue,
@@ -104,8 +107,35 @@ pub trait DataFrame: Send + Sync + 'static {
     ) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("impute not supported"))
     }
+
+    async fn with_index(&self, index_name: &str) -> Result<Arc<dyn DataFrame>> {
+        if self.schema().column_with_name(index_name).is_some() {
+            // Column is already present, don't overwrite
+            self.select(vec![Expr::Wildcard]).await
+        } else {
+            let selections = vec![
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                        BuiltInWindowFunction::RowNumber,
+                    ),
+                    args: vec![],
+                    partition_by: vec![],
+                    order_by: vec![],
+                    window_frame: WindowFrame {
+                        units: WindowFrameUnits::Rows,
+                        start_bound: WindowFrameBound::Preceding(ScalarValue::Null),
+                        end_bound: WindowFrameBound::CurrentRow,
+                    },
+                })
+                .alias(index_name),
+                Expr::Wildcard,
+            ];
+            self.select(selections).await
+        }
+    }
 }
 
+#[derive(Debug, Clone)]
 pub enum StackMode {
     Zero,
     Center,

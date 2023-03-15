@@ -33,6 +33,7 @@ use vegafusion_common::arrow::ipc::reader::{FileReader, StreamReader};
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
 use vegafusion_dataframe::connection::Connection;
 use vegafusion_dataframe::csv::CsvReadOptions;
@@ -104,20 +105,18 @@ impl TaskCall for DataUrlTask {
         // Load data from URL
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
 
+        let registered_tables = conn.tables().await?;
         let df = if let Some(inline_name) = url.strip_prefix("vegafusion+dataset://") {
             let inline_name = inline_name.trim().to_string();
             if let Some(inline_dataset) = inline_datasets.get(&inline_name) {
-                let sql_df = match inline_dataset {
+                match inline_dataset {
                     VegaFusionDataset::Table { table, .. } => {
                         conn.scan_arrow(table.clone().with_ordering()?).await?
                     }
-                    VegaFusionDataset::DataFrame(df) => {
-                        // TODO: if no ordering column present, create with a window expression
-                        df.clone()
-                    }
-                };
-                let sql_df = process_datetimes(&parse, sql_df, &config.tz_config).await?;
-                return eval_sql_df(sql_df.clone(), &self.pipeline, &config).await;
+                    VegaFusionDataset::DataFrame(df) => df.clone(),
+                }
+            } else if registered_tables.contains_key(&inline_name) {
+                conn.scan_table(&inline_name).await?
             } else {
                 return Err(VegaFusionError::internal(format!(
                     "No inline dataset named {inline_name}"
@@ -133,6 +132,13 @@ impl TaskCall for DataUrlTask {
             return Err(VegaFusionError::internal(format!(
                 "Invalid url file extension {url}"
             )));
+        };
+
+        // Ensure there is an ordering column present
+        let df = if df.schema().column_with_name(ORDER_COL).is_none() {
+            df.with_index(ORDER_COL).await?
+        } else {
+            df
         };
 
         // Process datetime columns
@@ -157,7 +163,7 @@ async fn eval_sql_df(
         pipeline.eval_sql(sql_df, config).await?
     } else {
         // No transforms, just remove any ordering column
-        let sql_df = remove_order_col(sql_df)?;
+        let sql_df = remove_order_col(sql_df).await?;
         (sql_df.collect().await?, Vec::new())
     };
 
@@ -245,14 +251,14 @@ lazy_static! {
     .collect();
 }
 
-const DATASET_CDN_BASE: &str = "https://cdn.jsdelivr.net/npm/vega-datasets";
-const DATASET_TAG: &str = "v2.2.0";
+const DATASET_BASE: &str = "https://raw.githubusercontent.com/vega/vega-datasets";
+const DATASET_TAG: &str = "v2.3.0";
 
 fn check_builtin_dataset(url: String) -> String {
     if let Some(dataset) = url.strip_prefix("data/") {
         let path = std::path::Path::new(&url);
         if !path.exists() && BUILT_IN_DATASETS.contains(dataset) {
-            format!("{DATASET_CDN_BASE}@{DATASET_TAG}/data/{dataset}")
+            format!("{DATASET_BASE}/{DATASET_TAG}/data/{dataset}")
         } else {
             url
         }
@@ -322,7 +328,7 @@ async fn process_datetimes(
                         })
                         .collect();
                     columns.push(date_expr.alias(&spec.name));
-                    df = df.select(columns)?
+                    df = df.select(columns).await?
                 }
             }
         }
@@ -394,7 +400,7 @@ async fn process_datetimes(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    df.select(selection)
+    df.select(selection).await
 }
 
 #[async_trait]

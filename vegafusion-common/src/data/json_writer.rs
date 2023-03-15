@@ -464,8 +464,19 @@ fn set_column_for_json_rows(
                 .expect("cannot cast dictionary to underlying values");
             set_column_for_json_rows(rows, row_count, &hydrated, col_name)?;
         }
+        DataType::Decimal128(_, _) => {
+            let f64_array = arrow::compute::kernels::cast::cast(array, &DataType::Float64)?;
+            set_column_by_primitive_type::<Float64Type>(rows, row_count, &f64_array, col_name);
+        }
+        DataType::Decimal256(_, _) => {
+            let f64_array = arrow::compute::kernels::cast::cast(array, &DataType::Float64)?;
+            set_column_by_primitive_type::<Float64Type>(rows, row_count, &f64_array, col_name);
+        }
         _ => {
-            panic!("Unsupported datatype: {:#?}", array.data_type());
+            panic!(
+                "Unsupported datatype for JSON serialization: {:#?}",
+                array.data_type()
+            );
         }
     }
     Ok(())

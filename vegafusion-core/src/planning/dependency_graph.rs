@@ -45,7 +45,6 @@ pub fn get_supported_data_variables(
             // Check whether all parents are fully supported
             let all_parents_supported = data_graph
                 .edges_directed(*node_index, Incoming)
-                .into_iter()
                 .map(|edge| data_graph.node_weight(edge.source()).unwrap().0.clone())
                 .all(|parent_var| {
                     matches!(
@@ -61,7 +60,6 @@ pub fn get_supported_data_variables(
                 // but some unsupported transform dependencies
                 let all_dataset_inputs_supported = data_graph
                     .edges_directed(*node_index, Incoming)
-                    .into_iter()
                     .map(|edge| data_graph.node_weight(edge.source()).unwrap().0.clone())
                     .all(|parent_var| match parent_var.0.namespace() {
                         VariableNamespace::Data => {

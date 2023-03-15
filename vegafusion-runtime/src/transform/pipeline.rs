@@ -87,17 +87,19 @@ impl TransformPipelineUtils for TransformPipeline {
         }
 
         // Sort by ordering column at the end
-        result_sql_df = result_sql_df.sort(
-            vec![Expr::Sort(expr::Sort {
-                expr: Box::new(flat_col(ORDER_COL)),
-                asc: true,
-                nulls_first: false,
-            })],
-            None,
-        )?;
+        result_sql_df = result_sql_df
+            .sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(flat_col(ORDER_COL)),
+                    asc: true,
+                    nulls_first: false,
+                })],
+                None,
+            )
+            .await?;
 
         // Remove ordering column
-        result_sql_df = remove_order_col(result_sql_df)?;
+        result_sql_df = remove_order_col(result_sql_df).await?;
 
         let table = result_sql_df.collect().await?;
 
@@ -111,7 +113,7 @@ impl TransformPipelineUtils for TransformPipeline {
     }
 }
 
-pub fn remove_order_col(result_sql_df: Arc<dyn DataFrame>) -> Result<Arc<dyn DataFrame>> {
+pub async fn remove_order_col(result_sql_df: Arc<dyn DataFrame>) -> Result<Arc<dyn DataFrame>> {
     let mut selection = result_sql_df
         .schema()
         .fields
@@ -130,5 +132,5 @@ pub fn remove_order_col(result_sql_df: Arc<dyn DataFrame>) -> Result<Arc<dyn Dat
         selection.push(lit(0).alias("_empty"))
     }
 
-    result_sql_df.select(selection)
+    result_sql_df.select(selection).await
 }

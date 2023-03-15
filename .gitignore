@@ -40,3 +40,4 @@ _vegafusion_data
 /scratch/
 .DS_Store
 __pycache__
+/.ipynb_checkpoints/

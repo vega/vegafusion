@@ -14,7 +14,7 @@ mod test_limit1 {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -30,8 +30,8 @@ mod test_limit1 {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
-        let df_result = df.limit(3);
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
+        let df_result = df.limit(3).await;
 
         check_dataframe_query(df_result, "limit", "limit1", dialect_name, evaluable);
     }

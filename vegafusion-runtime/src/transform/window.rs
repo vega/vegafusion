@@ -184,7 +184,7 @@ impl TransformTrait for Window {
         // Add window expressions to original selections
         selections.extend(window_exprs);
 
-        let dataframe = dataframe.select(selections)?;
+        let dataframe = dataframe.select(selections).await?;
 
         Ok((dataframe, Vec::new()))
     }

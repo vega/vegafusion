@@ -23,3 +23,4 @@ dependencies:
   - click
   - toml
   - pyarrow
+  - python-duckdb >=0.7.1

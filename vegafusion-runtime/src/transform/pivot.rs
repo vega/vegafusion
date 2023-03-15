@@ -53,7 +53,7 @@ impl TransformTrait for Pivot {
                     }
                 })
                 .collect::<Result<Vec<_>>>()?;
-            dataframe.select(select_exprs)?
+            dataframe.select(select_exprs).await?
         } else if !is_string_datatype(&pivot_dtype) {
             // Column type is not string, so cast values to strings
             let select_exprs: Vec<_> = dataframe
@@ -77,7 +77,7 @@ impl TransformTrait for Pivot {
                     }
                 })
                 .collect::<Result<Vec<_>>>()?;
-            dataframe.select(select_exprs)?
+            dataframe.select(select_exprs).await?
         } else {
             // Column type is string, just replace NULL with "null"
             let select_exprs: Vec<_> = dataframe
@@ -95,7 +95,7 @@ impl TransformTrait for Pivot {
                     }
                 })
                 .collect::<Result<Vec<_>>>()?;
-            dataframe.select(select_exprs)?
+            dataframe.select(select_exprs).await?
         };
 
         pivot_case(self, dataframe).await
@@ -106,21 +106,25 @@ async fn extract_sorted_pivot_values(
     tx: &Pivot,
     dataframe: Arc<dyn DataFrame>,
 ) -> Result<Vec<String>> {
-    let agg_query = dataframe.aggregate(vec![unescaped_col(&tx.field)], vec![])?;
+    let agg_query = dataframe
+        .aggregate(vec![unescaped_col(&tx.field)], vec![])
+        .await?;
 
     let limit = match tx.limit {
         None | Some(0) => None,
         Some(i) => Some(i),
     };
 
-    let sorted_query = agg_query.sort(
-        vec![Expr::Sort(Sort {
-            expr: Box::new(unescaped_col(&tx.field)),
-            asc: true,
-            nulls_first: false,
-        })],
-        limit,
-    )?;
+    let sorted_query = agg_query
+        .sort(
+            vec![Expr::Sort(Sort {
+                expr: Box::new(unescaped_col(&tx.field)),
+                asc: true,
+                nulls_first: false,
+            })],
+            limit,
+        )
+        .await?;
 
     let pivot_result = sorted_query.collect().await?;
     let pivot_batch = pivot_result.to_record_batch()?;
@@ -189,7 +193,7 @@ async fn pivot_case(
     // Build vector of groupby expressions
     let group_expr: Vec<_> = tx.groupby.iter().map(|c| unescaped_col(c)).collect();
 
-    let pivoted = dataframe.aggregate(group_expr, agg_exprs)?;
+    let pivoted = dataframe.aggregate(group_expr, agg_exprs).await?;
     Ok((pivoted, Default::default()))
 }
 

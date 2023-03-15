@@ -52,7 +52,7 @@ impl Ord for Variable {
 // This is a bad idea in general since PartialEq and Hash must be consistent, but there's
 // not a prost option to disable deriving PartialEq, or to derive Hash. This Hash implementation
 // is simple enough that the risk of inconsistency is low.
-#[allow(clippy::derive_hash_xor_eq)]
+#[allow(clippy::derived_hash_with_manual_eq)]
 impl Hash for Variable {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.namespace.hash(state);

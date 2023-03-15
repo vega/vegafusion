@@ -3,7 +3,7 @@
 import altair as alt
 from vega_datasets import data
 
-source = data.gapminder_health_income.url
+source = "https://raw.githubusercontent.com/vega/vega-datasets/main/data/gapminder-health-income.csv"
 
 alt.Chart(source).mark_circle().encode(
     alt.X('income:Q', scale=alt.Scale(type='log')),

@@ -27,7 +27,30 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datatypes::to_numeric;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_dataframe::connection::Connection;
-use vegafusion_dataframe::dataframe::{DataFrame, StackMode};
+use vegafusion_dataframe::dataframe::StackMode;
+
+// Use DataFrame publicly for the convenience of SQL connection implementors
+pub use vegafusion_dataframe::{csv::CsvReadOptions, dataframe::DataFrame};
+
+/// Helper to call an inner query method (e.g. _sort) and fall back to the next
+/// fallback connection if the required SQL is not supported
+macro_rules! fallback_operation {
+    ($self:ident, $method:ident, $_method:ident, $($arg:expr),*) => {
+        match $self.$_method($($arg.clone()),*).await {
+            Err(VegaFusionError::SqlNotSupported(_, _)) if !$self.fallback_conns.is_empty() => {
+                // Required SQL not supported by current connection, try next fallback connection
+                let mut fallback_conns = $self.fallback_conns.clone();
+                let conn = fallback_conns.remove(0);
+                let table = $self.collect().await?;
+                let df = conn.scan_arrow(table).await?;
+                let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
+                let df = df.with_fallback_conns(fallback_conns);
+                df.$method($($arg),*).await
+            }
+            result => result
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct SqlDataFrame {
@@ -35,6 +58,7 @@ pub struct SqlDataFrame {
     pub(crate) schema: SchemaRef,
     pub(crate) ctes: Vec<Query>,
     pub(crate) conn: Arc<dyn SqlConnection>,
+    pub(crate) fallback_conns: Vec<Arc<dyn SqlConnection>>,
 }
 
 #[async_trait]
@@ -69,7 +93,347 @@ impl DataFrame for SqlDataFrame {
         self.conn.fetch_query(&query_string, &self.schema).await
     }
 
-    fn sort(&self, expr: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+    async fn sort(&self, expr: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+        fallback_operation!(self, sort, _sort, expr, limit)
+    }
+
+    async fn select(&self, expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
+        fallback_operation!(self, select, _select, expr)
+    }
+
+    async fn aggregate(
+        &self,
+        group_expr: Vec<Expr>,
+        aggr_expr: Vec<Expr>,
+    ) -> Result<Arc<dyn DataFrame>> {
+        fallback_operation!(self, aggregate, _aggregate, group_expr, aggr_expr)
+    }
+
+    async fn joinaggregate(
+        &self,
+        group_expr: Vec<Expr>,
+        aggr_expr: Vec<Expr>,
+    ) -> Result<Arc<dyn DataFrame>> {
+        fallback_operation!(self, joinaggregate, _joinaggregate, group_expr, aggr_expr)
+    }
+
+    async fn filter(&self, predicate: Expr) -> Result<Arc<dyn DataFrame>> {
+        fallback_operation!(self, filter, _filter, predicate)
+    }
+
+    async fn limit(&self, limit: i32) -> Result<Arc<dyn DataFrame>> {
+        fallback_operation!(self, limit, _limit, limit)
+    }
+
+    async fn fold(
+        &self,
+        fields: &[String],
+        value_col: &str,
+        key_col: &str,
+        order_field: Option<&str>,
+    ) -> Result<Arc<dyn DataFrame>> {
+        fallback_operation!(self, fold, _fold, fields, value_col, key_col, order_field)
+    }
+
+    async fn stack(
+        &self,
+        field: &str,
+        orderby: Vec<Expr>,
+        groupby: &[String],
+        start_field: &str,
+        stop_field: &str,
+        mode: StackMode,
+    ) -> Result<Arc<dyn DataFrame>> {
+        fallback_operation!(
+            self,
+            stack,
+            _stack,
+            field,
+            orderby,
+            groupby,
+            start_field,
+            stop_field,
+            mode
+        )
+    }
+
+    async fn impute(
+        &self,
+        field: &str,
+        value: ScalarValue,
+        key: &str,
+        groupby: &[String],
+        order_field: Option<&str>,
+    ) -> Result<Arc<dyn DataFrame>> {
+        fallback_operation!(
+            self,
+            impute,
+            _impute,
+            field,
+            value,
+            key,
+            groupby,
+            order_field
+        )
+    }
+}
+
+impl SqlDataFrame {
+    pub async fn try_new(
+        conn: Arc<dyn SqlConnection>,
+        table: &str,
+        fallback_conns: Vec<Arc<dyn SqlConnection>>,
+    ) -> Result<Self> {
+        let tables = conn.tables().await?;
+        let schema = tables
+            .get(table)
+            .cloned()
+            .with_context(|| format!("Connection has no table named {table}"))?;
+
+        let columns: Vec<_> = schema
+            .fields()
+            .iter()
+            .map(|f| {
+                flat_col(f.name())
+                    .to_sql(conn.dialect(), &DFSchema::empty())
+                    .unwrap()
+                    .to_string()
+            })
+            .collect();
+        let select_items = columns.join(", ");
+
+        let table_ident = Ident::with_quote(conn.dialect().quote_style, table).to_string();
+
+        let query = parse_sql_query(
+            &format!("select {select_items} from {table_ident}"),
+            conn.dialect(),
+        )?;
+
+        Ok(Self {
+            prefix: format!("{table}_"),
+            ctes: vec![query],
+            schema: Arc::new(schema),
+            conn,
+            fallback_conns,
+        })
+    }
+
+    fn with_fallback_conns(
+        &self,
+        fallback_conns: Vec<Arc<dyn SqlConnection>>,
+    ) -> Arc<dyn DataFrame> {
+        let mut df = self.clone();
+        df.fallback_conns = fallback_conns;
+        Arc::new(df)
+    }
+
+    pub fn from_values(
+        values: &VegaFusionTable,
+        conn: Arc<dyn SqlConnection>,
+        fallback_conns: Vec<Arc<dyn SqlConnection>>,
+    ) -> Result<Arc<dyn DataFrame>> {
+        let dialect = conn.dialect();
+        let batch = values.to_record_batch()?;
+        let schema = batch.schema();
+        let schema_df = DFSchema::try_from(schema.as_ref().clone())?;
+
+        let query = match &dialect.values_mode {
+            ValuesMode::SelectUnion => {
+                // Build query like
+                //      SELECT 1 as a, 2 as b UNION ALL SELECT 3 as a, 4 as b;
+                let mut expr_selects: Vec<Select> = Default::default();
+                for r in 0..batch.num_rows() {
+                    let mut projection: Vec<SelectItem> = Default::default();
+
+                    for c in 0..batch.num_columns() {
+                        let col = batch.column(c);
+                        let df_value =
+                            lit(ScalarValue::try_from_array(col, r)?).alias(schema.field(c).name());
+                        let sql_value = df_value.to_sql_select(dialect, &schema_df)?;
+                        projection.push(sql_value);
+                    }
+
+                    expr_selects.push(Select {
+                        distinct: false,
+                        top: None,
+                        projection,
+                        into: None,
+                        selection: None,
+                        from: Default::default(),
+                        lateral_views: Default::default(),
+                        group_by: Default::default(),
+                        cluster_by: Default::default(),
+                        distribute_by: Default::default(),
+                        sort_by: Default::default(),
+                        having: None,
+                        qualify: None,
+                    });
+                }
+
+                let select_strs = expr_selects
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect::<Vec<_>>();
+                let query_str = select_strs.join(" UNION ALL ");
+
+                parse_sql_query(&query_str, dialect)?
+            }
+            ValuesMode::ValuesWithSubqueryColumnAliases { explicit_row, .. }
+            | ValuesMode::ValuesWithSelectColumnAliases { explicit_row, .. } => {
+                // Build VALUES subquery
+                let mut expr_rows: Vec<Vec<SqlExpr>> = Default::default();
+                for r in 0..batch.num_rows() {
+                    let mut expr_row: Vec<SqlExpr> = Default::default();
+                    for c in 0..batch.num_columns() {
+                        let col = batch.column(c);
+                        let df_value = lit(ScalarValue::try_from_array(col, r)?);
+                        let sql_value = df_value.to_sql(conn.dialect(), &schema_df)?;
+                        expr_row.push(sql_value);
+                    }
+                    expr_rows.push(expr_row);
+                }
+                let values = Values {
+                    explicit_row: *explicit_row,
+                    rows: expr_rows,
+                };
+                let values_body = SetExpr::Values(values);
+                let values_subquery = Query {
+                    with: None,
+                    body: Box::new(values_body),
+                    order_by: Default::default(),
+                    limit: None,
+                    offset: None,
+                    fetch: None,
+                    locks: Default::default(),
+                };
+
+                let (projection, table_alias) = if let ValuesMode::ValuesWithSelectColumnAliases {
+                    column_prefix,
+                    base_index,
+                    ..
+                } = &dialect.values_mode
+                {
+                    let projection = schema
+                        .fields
+                        .iter()
+                        .enumerate()
+                        .map(|(i, field)| {
+                            col(format!("{}{}", column_prefix, i + base_index))
+                                .alias(field.name())
+                                .to_sql_select(dialect, &schema_df)
+                                .unwrap()
+                        })
+                        .collect::<Vec<_>>();
+
+                    (projection, None)
+                } else {
+                    let projection = vec![SelectItem::Wildcard(WildcardAdditionalOptions {
+                        opt_exclude: None,
+                        opt_except: None,
+                        opt_rename: None,
+                    })];
+
+                    let table_alias = TableAlias {
+                        name: Ident {
+                            value: "_values".to_string(),
+                            quote_style: Some(dialect.quote_style),
+                        },
+                        columns: schema
+                            .fields
+                            .iter()
+                            .map(|f| Ident {
+                                value: f.name().clone(),
+                                quote_style: Some(dialect.quote_style),
+                            })
+                            .collect(),
+                    };
+
+                    (projection, Some(table_alias))
+                };
+
+                let select_body = SetExpr::Select(Box::new(Select {
+                    distinct: false,
+                    top: None,
+                    projection,
+                    into: None,
+                    from: vec![TableWithJoins {
+                        relation: TableFactor::Derived {
+                            lateral: false,
+                            subquery: Box::new(values_subquery),
+                            alias: table_alias,
+                        },
+                        joins: Vec::new(),
+                    }],
+                    lateral_views: Default::default(),
+                    selection: None,
+                    group_by: Default::default(),
+                    cluster_by: Default::default(),
+                    distribute_by: Default::default(),
+                    sort_by: Default::default(),
+                    having: None,
+                    qualify: None,
+                }));
+                Query {
+                    with: None,
+                    body: Box::new(select_body),
+                    order_by: Default::default(),
+                    limit: None,
+                    offset: None,
+                    fetch: None,
+                    locks: Default::default(),
+                }
+            }
+        };
+
+        Ok(Arc::new(SqlDataFrame {
+            prefix: "values".to_string(),
+            schema,
+            ctes: vec![query],
+            conn,
+            fallback_conns,
+        }))
+    }
+
+    pub fn dialect(&self) -> &Dialect {
+        self.conn.dialect()
+    }
+
+    pub fn parent_name(&self) -> String {
+        parent_cte_name_for_index(&self.prefix, self.ctes.len())
+    }
+
+    pub fn as_query(&self) -> Query {
+        query_chain_to_cte(self.ctes.as_slice(), &self.prefix)
+    }
+
+    fn chain_query_str(&self, query: &str, new_schema: Schema) -> Result<Arc<dyn DataFrame>> {
+        // println!("chain_query_str: {}", query);
+        let query_ast = parse_sql_query(query, self.dialect())?;
+        self.chain_query(query_ast, new_schema)
+    }
+
+    fn chain_query(&self, query: Query, new_schema: Schema) -> Result<Arc<dyn DataFrame>> {
+        let mut new_ctes = self.ctes.clone();
+        new_ctes.push(query);
+
+        Ok(Arc::new(SqlDataFrame {
+            prefix: self.prefix.clone(),
+            schema: Arc::new(new_schema),
+            ctes: new_ctes,
+            conn: self.conn.clone(),
+            fallback_conns: self.fallback_conns.clone(),
+        }))
+    }
+
+    fn make_select_star(&self) -> Query {
+        parse_sql_query(
+            &format!("select * from {parent}", parent = self.parent_name()),
+            self.dialect(),
+        )
+        .unwrap()
+    }
+
+    async fn _sort(&self, expr: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
         let mut query = self.make_select_star();
         let sql_exprs = expr
             .iter()
@@ -86,7 +450,7 @@ impl DataFrame for SqlDataFrame {
         self.chain_query(query, self.schema.as_ref().clone())
     }
 
-    fn select(&self, expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
+    async fn _select(&self, expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
         let sql_expr_strs = expr
             .iter()
             .map(|expr| {
@@ -112,7 +476,11 @@ impl DataFrame for SqlDataFrame {
         self.chain_query(query, new_schema)
     }
 
-    fn aggregate(&self, group_expr: Vec<Expr>, aggr_expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
+    async fn _aggregate(
+        &self,
+        group_expr: Vec<Expr>,
+        aggr_expr: Vec<Expr>,
+    ) -> Result<Arc<dyn DataFrame>> {
         // Add group exprs to aggregates for SQL query
         let mut all_aggr_expr = aggr_expr;
         all_aggr_expr.extend(group_expr.clone());
@@ -161,7 +529,7 @@ impl DataFrame for SqlDataFrame {
         self.chain_query(query, new_schema)
     }
 
-    fn joinaggregate(
+    async fn _joinaggregate(
         &self,
         group_expr: Vec<Expr>,
         aggr_expr: Vec<Expr>,
@@ -291,7 +659,7 @@ impl DataFrame for SqlDataFrame {
         }
     }
 
-    fn filter(&self, predicate: Expr) -> Result<Arc<dyn DataFrame>> {
+    async fn _filter(&self, predicate: Expr) -> Result<Arc<dyn DataFrame>> {
         let sql_predicate = predicate.to_sql(self.dialect(), &self.schema_df()?)?;
 
         let query = parse_sql_query(
@@ -307,7 +675,7 @@ impl DataFrame for SqlDataFrame {
             .with_context(|| format!("unsupported filter expression: {predicate}"))
     }
 
-    fn limit(&self, limit: i32) -> Result<Arc<dyn DataFrame>> {
+    async fn _limit(&self, limit: i32) -> Result<Arc<dyn DataFrame>> {
         let query = parse_sql_query(
             &format!(
                 "select * from {parent} LIMIT {limit}",
@@ -321,7 +689,7 @@ impl DataFrame for SqlDataFrame {
             .with_context(|| "unsupported limit query".to_string())
     }
 
-    fn fold(
+    async fn _fold(
         &self,
         fields: &[String],
         value_col: &str,
@@ -453,14 +821,26 @@ impl DataFrame for SqlDataFrame {
             let mut selections = input_selection;
             selections.push(flat_col(key_col));
             selections.push(flat_col(value_col));
-            selections[0] = order_col;
-            dataframe.select(selections)
+
+            // Overwrite ordering column
+            let order_index = self
+                .schema
+                .fields
+                .iter()
+                .enumerate()
+                .find(|(_i, field)| field.name() == order_field)
+                .map(|(i, _)| i)
+                .unwrap();
+            selections.remove(order_index);
+            selections.insert(0, order_col);
+
+            dataframe.select(selections).await
         } else {
             Ok(dataframe)
         }
     }
 
-    fn stack(
+    async fn _stack(
         &self,
         field: &str,
         orderby: Vec<Expr>,
@@ -544,7 +924,7 @@ impl DataFrame for SqlDataFrame {
             final_selection.push(start_col);
             final_selection.push(flat_col(stop_field));
 
-            Ok(dataframe.select(final_selection.clone())?)
+            Ok(dataframe.select(final_selection.clone()).await?)
         } else {
             // Center or Normalized stack modes
 
@@ -553,8 +933,9 @@ impl DataFrame for SqlDataFrame {
 
             // Create __stack column with numeric field
             let stack_col_name = "__stack";
-            let dataframe =
-                self.select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)])?;
+            let dataframe = self
+                .select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)])
+                .await?;
 
             let dataframe = dataframe
                 .as_any()
@@ -625,7 +1006,7 @@ impl DataFrame for SqlDataFrame {
             .alias(cumulative_field);
 
             // Perform selection to add new field value
-            let dataframe = dataframe.select(vec![Expr::Wildcard, window_expr])?;
+            let dataframe = dataframe.select(vec![Expr::Wildcard, window_expr]).await?;
 
             // Build final_selection
             let mut final_selection: Vec<_> = input_fields
@@ -702,11 +1083,11 @@ impl DataFrame for SqlDataFrame {
                 _ => return Err(VegaFusionError::internal("Unexpected stack mode")),
             };
 
-            Ok(dataframe.select(final_selection.clone())?)
+            Ok(dataframe.select(final_selection.clone()).await?)
         }
     }
 
-    fn impute(
+    async fn _impute(
         &self,
         field: &str,
         value: ScalarValue,
@@ -735,7 +1116,7 @@ impl DataFrame for SqlDataFrame {
                 })
                 .collect();
 
-            self.select(select_columns)
+            self.select(select_columns).await
         } else {
             // Save off names of columns in the original input DataFrame
             let original_columns: Vec<_> = self
@@ -937,7 +1318,7 @@ impl DataFrame for SqlDataFrame {
                     .collect::<Vec<_>>();
                 selections.insert(0, order_col);
 
-                dataframe.select(selections)
+                dataframe.select(selections).await
             } else {
                 // Impute query without ordering column
                 let sql = format!(
@@ -957,239 +1338,6 @@ impl DataFrame for SqlDataFrame {
                 self.chain_query_str(&sql, new_schema)
             }
         }
-    }
-}
-
-impl SqlDataFrame {
-    pub async fn try_new(conn: Arc<dyn SqlConnection>, table: &str) -> Result<Self> {
-        let tables = conn.tables().await?;
-        let schema = tables
-            .get(table)
-            .cloned()
-            .with_context(|| format!("Connection has no table named {table}"))?;
-        // Should quote column names
-        let columns: Vec<_> = schema
-            .fields()
-            .iter()
-            .map(|f| format!("\"{}\"", f.name()))
-            .collect();
-        let select_items = columns.join(", ");
-
-        let query = parse_sql_query(
-            &format!("select {select_items} from {table}"),
-            conn.dialect(),
-        )?;
-
-        Ok(Self {
-            prefix: format!("{table}_"),
-            ctes: vec![query],
-            schema: Arc::new(schema),
-            conn,
-        })
-    }
-
-    pub fn from_values(
-        values: &VegaFusionTable,
-        conn: Arc<dyn SqlConnection>,
-    ) -> Result<Arc<dyn DataFrame>> {
-        let dialect = conn.dialect();
-        let batch = values.to_record_batch()?;
-        let schema = batch.schema();
-        let schema_df = DFSchema::try_from(schema.as_ref().clone())?;
-
-        let query = match &dialect.values_mode {
-            ValuesMode::SelectUnion => {
-                // Build query like
-                //      SELECT 1 as a, 2 as b UNION ALL SELECT 3 as a, 4 as b;
-                let mut expr_selects: Vec<Select> = Default::default();
-                for r in 0..batch.num_rows() {
-                    let mut projection: Vec<SelectItem> = Default::default();
-
-                    for c in 0..batch.num_columns() {
-                        let col = batch.column(c);
-                        let df_value =
-                            lit(ScalarValue::try_from_array(col, r)?).alias(schema.field(c).name());
-                        let sql_value = df_value.to_sql_select(dialect, &schema_df)?;
-                        projection.push(sql_value);
-                    }
-
-                    expr_selects.push(Select {
-                        distinct: false,
-                        top: None,
-                        projection,
-                        into: None,
-                        selection: None,
-                        from: Default::default(),
-                        lateral_views: Default::default(),
-                        group_by: Default::default(),
-                        cluster_by: Default::default(),
-                        distribute_by: Default::default(),
-                        sort_by: Default::default(),
-                        having: None,
-                        qualify: None,
-                    });
-                }
-
-                let select_strs = expr_selects
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect::<Vec<_>>();
-                let query_str = select_strs.join(" UNION ALL ");
-
-                parse_sql_query(&query_str, dialect)?
-            }
-            ValuesMode::ValuesWithSubqueryColumnAliases { explicit_row, .. }
-            | ValuesMode::ValuesWithSelectColumnAliases { explicit_row, .. } => {
-                // Build VALUES subquery
-                let mut expr_rows: Vec<Vec<SqlExpr>> = Default::default();
-                for r in 0..batch.num_rows() {
-                    let mut expr_row: Vec<SqlExpr> = Default::default();
-                    for c in 0..batch.num_columns() {
-                        let col = batch.column(c);
-                        let df_value = lit(ScalarValue::try_from_array(col, r)?);
-                        let sql_value = df_value.to_sql(conn.dialect(), &schema_df)?;
-                        expr_row.push(sql_value);
-                    }
-                    expr_rows.push(expr_row);
-                }
-                let values = Values {
-                    explicit_row: *explicit_row,
-                    rows: expr_rows,
-                };
-                let values_body = SetExpr::Values(values);
-                let values_subquery = Query {
-                    with: None,
-                    body: Box::new(values_body),
-                    order_by: Default::default(),
-                    limit: None,
-                    offset: None,
-                    fetch: None,
-                    locks: Default::default(),
-                };
-
-                let (projection, table_alias) = if let ValuesMode::ValuesWithSelectColumnAliases {
-                    column_prefix,
-                    base_index,
-                    ..
-                } = &dialect.values_mode
-                {
-                    let projection = schema
-                        .fields
-                        .iter()
-                        .enumerate()
-                        .map(|(i, field)| {
-                            col(format!("{}{}", column_prefix, i + base_index))
-                                .alias(field.name())
-                                .to_sql_select(dialect, &schema_df)
-                                .unwrap()
-                        })
-                        .collect::<Vec<_>>();
-
-                    (projection, None)
-                } else {
-                    let projection = vec![SelectItem::Wildcard(WildcardAdditionalOptions {
-                        opt_exclude: None,
-                        opt_except: None,
-                        opt_rename: None,
-                    })];
-
-                    let table_alias = TableAlias {
-                        name: Ident {
-                            value: "_values".to_string(),
-                            quote_style: Some(dialect.quote_style),
-                        },
-                        columns: schema
-                            .fields
-                            .iter()
-                            .map(|f| Ident {
-                                value: f.name().clone(),
-                                quote_style: Some(dialect.quote_style),
-                            })
-                            .collect(),
-                    };
-
-                    (projection, Some(table_alias))
-                };
-
-                let select_body = SetExpr::Select(Box::new(Select {
-                    distinct: false,
-                    top: None,
-                    projection,
-                    into: None,
-                    from: vec![TableWithJoins {
-                        relation: TableFactor::Derived {
-                            lateral: false,
-                            subquery: Box::new(values_subquery),
-                            alias: table_alias,
-                        },
-                        joins: Vec::new(),
-                    }],
-                    lateral_views: Default::default(),
-                    selection: None,
-                    group_by: Default::default(),
-                    cluster_by: Default::default(),
-                    distribute_by: Default::default(),
-                    sort_by: Default::default(),
-                    having: None,
-                    qualify: None,
-                }));
-                Query {
-                    with: None,
-                    body: Box::new(select_body),
-                    order_by: Default::default(),
-                    limit: None,
-                    offset: None,
-                    fetch: None,
-                    locks: Default::default(),
-                }
-            }
-        };
-
-        Ok(Arc::new(SqlDataFrame {
-            prefix: "values".to_string(),
-            schema,
-            ctes: vec![query],
-            conn,
-        }))
-    }
-
-    pub fn dialect(&self) -> &Dialect {
-        self.conn.dialect()
-    }
-
-    pub fn parent_name(&self) -> String {
-        parent_cte_name_for_index(&self.prefix, self.ctes.len())
-    }
-
-    pub fn as_query(&self) -> Query {
-        query_chain_to_cte(self.ctes.as_slice(), &self.prefix)
-    }
-
-    fn chain_query_str(&self, query: &str, new_schema: Schema) -> Result<Arc<dyn DataFrame>> {
-        // println!("chain_query_str: {}", query);
-        let query_ast = parse_sql_query(query, self.dialect())?;
-        self.chain_query(query_ast, new_schema)
-    }
-
-    fn chain_query(&self, query: Query, new_schema: Schema) -> Result<Arc<dyn DataFrame>> {
-        let mut new_ctes = self.ctes.clone();
-        new_ctes.push(query);
-
-        Ok(Arc::new(SqlDataFrame {
-            prefix: self.prefix.clone(),
-            schema: Arc::new(new_schema),
-            ctes: new_ctes,
-            conn: self.conn.clone(),
-            // dialect: self.dialect.clone(),
-        }))
-    }
-
-    fn make_select_star(&self) -> Query {
-        parse_sql_query(
-            &format!("select * from {parent}", parent = self.parent_name()),
-            self.dialect(),
-        )
-        .unwrap()
     }
 }
 

@@ -3,7 +3,7 @@
 import altair as alt
 from vega_datasets import data
 
-source = data.github.url
+source = "https://raw.githubusercontent.com/vega/vega-datasets/v1.31.1/data/github.csv"
 
 alt.Chart(source).mark_circle().encode(
     x='hours(time):O',

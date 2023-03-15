@@ -16,7 +16,7 @@ mod test_default_null_ordering {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -33,24 +33,26 @@ mod test_default_null_ordering {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df = df.as_any().downcast_ref::<SqlDataFrame>().unwrap();
 
-        let df_result = df.sort(
-            vec![
-                Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
-                    asc: false,
-                    nulls_first: false,
-                }),
-                Expr::Sort(expr::Sort {
-                    expr: Box::new(col("c")),
-                    asc: true,
-                    nulls_first: true,
-                }),
-            ],
-            None,
-        );
+        let df_result = df
+            .sort(
+                vec![
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: false,
+                        nulls_first: false,
+                    }),
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("c")),
+                        asc: true,
+                        nulls_first: true,
+                    }),
+                ],
+                None,
+            )
+            .await;
 
         check_dataframe_query(
             df_result,
@@ -70,7 +72,7 @@ mod test_custom_null_ordering {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -87,22 +89,24 @@ mod test_custom_null_ordering {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
-        let sort_res = df.sort(
-            vec![
-                Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
-                    asc: false,
-                    nulls_first: true,
-                }),
-                Expr::Sort(expr::Sort {
-                    expr: Box::new(col("c")),
-                    asc: true,
-                    nulls_first: false,
-                }),
-            ],
-            None,
-        );
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
+        let sort_res = df
+            .sort(
+                vec![
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("a")),
+                        asc: false,
+                        nulls_first: true,
+                    }),
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("c")),
+                        asc: true,
+                        nulls_first: false,
+                    }),
+                ],
+                None,
+            )
+            .await;
 
         check_dataframe_query(
             sort_res,
@@ -119,7 +123,7 @@ mod test_order_with_limit {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -136,23 +140,25 @@ mod test_order_with_limit {
         )
         .unwrap();
 
-        let df = SqlDataFrame::from_values(&table, conn).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
 
-        let df_result = df.sort(
-            vec![
-                Expr::Sort(expr::Sort {
-                    expr: Box::new(col("c")),
-                    asc: true,
-                    nulls_first: true,
-                }),
-                Expr::Sort(expr::Sort {
-                    expr: Box::new(col("b")),
-                    asc: true,
-                    nulls_first: true,
-                }),
-            ],
-            Some(4),
-        );
+        let df_result = df
+            .sort(
+                vec![
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("c")),
+                        asc: true,
+                        nulls_first: true,
+                    }),
+                    Expr::Sort(expr::Sort {
+                        expr: Box::new(col("b")),
+                        asc: true,
+                        nulls_first: true,
+                    }),
+                ],
+                Some(4),
+            )
+            .await;
 
         check_dataframe_query(
             df_result,

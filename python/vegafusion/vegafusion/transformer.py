@@ -196,7 +196,7 @@ def get_inline_datasets_for_spec(vega_spec):
 
 
 def inline_data_transformer(data):
-    table_name = f"table-{uuid.uuid4()}"
+    table_name = f"table_{uuid.uuid4()}".replace("-", "_")
     __inline_tables[table_name] = data
     return {"url": DATASET_PREFIX + table_name}
 

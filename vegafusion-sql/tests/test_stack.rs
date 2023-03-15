@@ -29,10 +29,13 @@ fn stack_data(conn: Arc<dyn SqlConnection>) -> Arc<dyn DataFrame> {
     )
     .unwrap();
 
-    SqlDataFrame::from_values(&table, conn).unwrap()
+    SqlDataFrame::from_values(&table, conn, Default::default()).unwrap()
 }
 
-fn make_stack_for_mode(df: Arc<dyn DataFrame>, mode: StackMode) -> Result<Arc<dyn DataFrame>> {
+async fn make_stack_for_mode(
+    df: Arc<dyn DataFrame>,
+    mode: StackMode,
+) -> Result<Arc<dyn DataFrame>> {
     df.stack(
         "a",
         vec![Expr::Sort(expr::Sort {
@@ -45,23 +48,24 @@ fn make_stack_for_mode(df: Arc<dyn DataFrame>, mode: StackMode) -> Result<Arc<dy
         "end",
         mode,
     )
-    .and_then(|df| {
-        df.sort(
-            vec![
-                Expr::Sort(expr::Sort {
-                    expr: Box::new(col("c")),
-                    asc: true,
-                    nulls_first: true,
-                }),
-                Expr::Sort(expr::Sort {
-                    expr: Box::new(col("end")),
-                    asc: true,
-                    nulls_first: true,
-                }),
-            ],
-            None,
-        )
-    })
+    .await
+    .unwrap()
+    .sort(
+        vec![
+            Expr::Sort(expr::Sort {
+                expr: Box::new(col("c")),
+                asc: true,
+                nulls_first: true,
+            }),
+            Expr::Sort(expr::Sort {
+                expr: Box::new(col("end")),
+                asc: true,
+                nulls_first: true,
+            }),
+        ],
+        None,
+    )
+    .await
 }
 
 #[cfg(test)]
@@ -69,12 +73,12 @@ mod test_mode_zero {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
         let df = stack_data(conn);
-        let df_result = make_stack_for_mode(df, StackMode::Zero);
+        let df_result = make_stack_for_mode(df, StackMode::Zero).await;
         check_dataframe_query(df_result, "stack", "mode_zero", dialect_name, evaluable);
     }
 
@@ -87,30 +91,31 @@ mod test_mode_center {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
         let df = stack_data(conn);
-        let df_result = make_stack_for_mode(df, StackMode::Center);
+        let df_result = make_stack_for_mode(df, StackMode::Center).await;
         check_dataframe_query(df_result, "stack", "mode_center", dialect_name, evaluable);
     }
 
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
 #[cfg(test)]
 mod test_mode_normalized {
     use crate::*;
 
     #[apply(dialect_names)]
-    fn test(dialect_name: &str) {
+    async fn test(dialect_name: &str) {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
         let df = stack_data(conn);
-        let df_result = make_stack_for_mode(df, StackMode::Normalize);
+        let df = make_stack_for_mode(df, StackMode::Normalize).await.unwrap();
         // Round start and end to 2 decimal places to avoid numerical precision issues when comparing results
-        let df_result = df_result.and_then(|df| {
-            df.select(vec![
+        let df_result = df
+            .select(vec![
                 col("a"),
                 col("b"),
                 col("c"),
@@ -121,7 +126,7 @@ mod test_mode_normalized {
                     .div(lit(100))
                     .alias("trunc_end"),
             ])
-        });
+            .await;
         check_dataframe_query(
             df_result,
             "stack",

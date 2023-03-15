@@ -78,6 +78,7 @@ impl TransformTrait for Collect {
 
         let result = dataframe
             .select(selections)
+            .await
             .with_context(|| "Collect transform failed".to_string())?;
         Ok((result, Default::default()))
     }
