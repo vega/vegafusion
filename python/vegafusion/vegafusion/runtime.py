@@ -10,6 +10,10 @@ import pyarrow as pa
 from typing import Union
 from .connection import SqlConnection
 
+try:
+    from duckdb import DuckDBPyConnection
+except ImportError:
+    DuckDBPyConnection = None
 
 class VegaFusionRuntime:
     def __init__(self, cache_capacity, memory_limit, worker_threads, connection=None):
@@ -31,7 +35,7 @@ class VegaFusionRuntime:
             )
         return self._embedded_runtime
 
-    def set_connection(self, connection: Union[str, SqlConnection] = "datafusion"):
+    def set_connection(self, connection: Union[str, SqlConnection, DuckDBPyConnection] = "datafusion"):
         """
         Sets the connection to use to evaluate Vega data transformations.
 
@@ -41,8 +45,10 @@ class VegaFusionRuntime:
         referenced in a chart specification using the URL "table://tableA" or
         "vegafusion+dataset://tableA".
 
-        :param connection: Either a string or an instance of vegafusion.connection.SqlConnection
-            If a string, one of:
+        :param connection: One of:
+          - An instance of vegafusion.connection.SqlConnection
+          - An instance of a duckdb connection
+          - A string, one of:
                 - "datafusion" (default)
                 - "duckdb"
         """
@@ -55,6 +61,9 @@ class VegaFusionRuntime:
                 connection = DuckDbConnection()
             else:
                 raise ValueError(f"Unsupported connection name: {connection}")
+        elif DuckDBPyConnection is not None and isinstance(connection, DuckDBPyConnection):
+            from vegafusion.connection.duckdb import DuckDbConnection
+            connection = DuckDbConnection(connection)
         elif not isinstance(connection, SqlConnection):
             raise ValueError(
                 "connection argument must be a string or an instance of SqlConnection\n"

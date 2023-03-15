@@ -52,7 +52,7 @@ def duckdb_relation_to_schema(rel: duckdb.DuckDBPyRelation) -> pa.Schema:
 
 
 class DuckDbConnection(SqlConnection):
-    def __init__(self, inline_datasets: Dict[str, Union[pd.DataFrame, pa.Table]] = None, fallback: bool = True):
+    def __init__(self, connection: duckdb.DuckDBPyConnection = None, fallback: bool = True):
         # Validate duckdb version
         if LooseVersion(duckdb.__version__) < LooseVersion("0.7.0"):
             raise ImportError(
@@ -61,9 +61,11 @@ class DuckDbConnection(SqlConnection):
             )
 
         self._fallback = fallback
-        self._table_schemas = {}
-        self._temp_table_schemas = {}
-        self.conn = duckdb.connect()
+        self._temp_tables = set()
+
+        if connection is None:
+            connection = duckdb.connect()
+        self.conn = connection
 
         self.logger = logging.getLogger("DuckDbConnection")
 
@@ -76,14 +78,9 @@ class DuckDbConnection(SqlConnection):
         # Use a less round number for pandas_analyze_sample (default is 1000)
         self.conn.execute("SET GLOBAL pandas_analyze_sample=1007")
 
-        # Register inline_datasets
-        for name, tbl in (inline_datasets or {}).items():
-            if isinstance(tbl, pd.DataFrame):
-                self.register_pandas(name, tbl)
-            elif isinstance(tbl, pa.Table):
-                self.register_arrow(name, tbl)
-            else:
-                raise ValueError(f"Unexpected Table type: {type(tbl)}")
+        self._table_schemas = dict()
+        # Call self.tables to warm the cache of table schemas
+        self.tables()
 
     @classmethod
     def dialect(cls) -> str:
@@ -93,11 +90,31 @@ class DuckDbConnection(SqlConnection):
         return self._fallback
 
     def tables(self) -> Dict[str, pa.Schema]:
-        return dict(**self._table_schemas, **self._temp_table_schemas)
+        result = {}
+        table_names = self.conn.query(
+            "select table_name from information_schema.tables"
+        ).to_df()["table_name"].tolist()
+
+        for table_name in table_names:
+            if table_name in self._table_schemas:
+                result[table_name] = self._table_schemas[table_name]
+            else:
+                rel = self.conn.query(f'select * from "{table_name}" limit 1')
+                schema = duckdb_relation_to_schema(rel)
+                self._table_schemas[table_name] = schema
+                result[table_name] = schema
+
+        return result
 
     def fetch_query(self, query: str, schema: pa.Schema) -> pa.Table:
         self.logger.info(f"Query:\n{query}\n")
         return self.conn.query(query).to_arrow_table(8096)
+
+    def _update_temp_names(self, name: str, temporary: bool):
+        if temporary:
+            self._temp_tables.add(name)
+        elif name in self._temp_tables:
+            self._temp_tables.remove(name)
 
     def register_pandas(self, name: str, df: pd.DataFrame, temporary: bool = False):
         # Add _vf_order column to avoid the more expensive operation of computing it with a
@@ -106,27 +123,20 @@ class DuckDbConnection(SqlConnection):
         df = df.copy(deep=False)
         df["_vf_order"] = range(0, len(df))
         self.conn.register(name, df)
-        schema = to_arrow_table(df.head(100)).schema
-        if temporary:
-            self._temp_table_schemas[name] = schema
-        else:
-            self._table_schemas[name] = schema
+        self._update_temp_names(name, temporary)
 
     def register_arrow(self, name: str, table: pa.Table, temporary: bool = False):
         self.conn.register(name, table)
-        if temporary:
-            self._temp_table_schemas[name] = table.schema
-        else:
-            self._table_schemas[name] = table.schema
+        self._update_temp_names(name, temporary)
+
+        # We have the exact schema, save it in _table_schemas, so it doesn't need to
+        # be constructed later
+        self._table_schemas[name] = table.schema
 
     def register_json(self, name: str, path: str, temporary: bool = False):
         relation = self.conn.read_json(path)
         relation.to_view(name)
-        schema = duckdb_relation_to_schema(relation)
-        if temporary:
-            self._temp_table_schemas[name] = schema
-        else:
-            self._table_schemas[name] = schema
+        self._update_temp_names(name, temporary)
 
     def register_csv(self, name: str, path: str, options: CsvReadOptions, temporary: bool = False):
         # TODO: handle schema from options
@@ -136,32 +146,20 @@ class DuckDbConnection(SqlConnection):
             delimiter=options.delimeter,
         )
         relation.to_view(name)
-        schema = duckdb_relation_to_schema(relation)
-        if temporary:
-            self._temp_table_schemas[name] = schema
-        else:
-            self._table_schemas[name] = schema
+        self._update_temp_names(name, temporary)
 
     def register_parquet(self, name: str, path: str, temporary: bool = False):
         relation = self.conn.read_parquet(path)
         relation.to_view(name)
-        schema = duckdb_relation_to_schema(relation)
-        if temporary:
-            self._temp_table_schemas[name] = schema
-        else:
-            self._table_schemas[name] = schema
+        self._update_temp_names(name, temporary)
 
     def unregister(self, name: str):
-        if name in self._table_schemas:
-            self.conn.unregister(name)
-            del self._table_schemas[name]
-        elif name in self._temp_table_schemas:
-            self.conn.unregister(name)
-            del self._temp_table_schemas[name]
-        else:
-            ValueError(f"No registered table named {name}")
+        self.conn.unregister(name)
+        if name in self._temp_tables:
+            self._temp_tables.remove(name)
+        self._table_schemas.pop(name, None)
 
     def unregister_temporary_tables(self):
-        for name in list(self._temp_table_schemas):
+        for name in list(self._temp_tables):
             self.conn.unregister(name)
-            del self._temp_table_schemas[name]
+            self._temp_tables.remove(name)
