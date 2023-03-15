@@ -191,9 +191,14 @@ def get_inline_dataset_table(table_name):
 
 def get_inline_datasets_for_spec(vega_spec):
     table_names = get_inline_dataset_names(vega_spec)
-    return {
-        table_name: get_inline_dataset_table(table_name) for table_name in table_names
-    }
+    datasets = {}
+    for table_name in table_names:
+        try:
+            datasets[table_name] = get_inline_dataset_table(table_name)
+        except KeyError:
+            # named dataset that was provided by the user
+            pass
+    return datasets
 
 
 def inline_data_transformer(data):
