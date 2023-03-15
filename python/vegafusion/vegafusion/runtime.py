@@ -5,10 +5,13 @@
 # Please consult the license documentation provided alongside
 # this program the details of the active license.
 import json
+
+import pandas as pd
 import psutil
 import pyarrow as pa
 from typing import Union
 from .connection import SqlConnection
+from .transformer import import_pyarrow_interchange
 
 
 class VegaFusionRuntime:
@@ -112,7 +115,7 @@ class VegaFusionRuntime:
 
                 table_bytes = arrow_table_to_ipc_bytes(value, stream=True)
                 inline_dataset_bytes[name] = table_bytes
-            else:
+            elif isinstance(value, pd.DataFrame):
                 if self._connection is not None:
                     try:
                         # Try registering DataFrame if supported
@@ -123,6 +126,21 @@ class VegaFusionRuntime:
 
                 table_bytes = to_arrow_ipc_bytes(value, stream=True)
                 inline_dataset_bytes[name] = table_bytes
+            elif hasattr(value, "__dataframe__"):
+                pi = import_pyarrow_interchange()
+                value = pi.from_dataframe(value)
+                if self._connection is not None:
+                    try:
+                        # Try registering Arrow Table if supported
+                        self._connection.register_arrow(name, value, temporary=True)
+                        continue
+                    except ValueError:
+                        pass
+
+                table_bytes = arrow_table_to_ipc_bytes(value, stream=True)
+                inline_dataset_bytes[name] = table_bytes
+            else:
+                raise ValueError(f"Unsupported DataFrame type: {type(value)}")
 
         return inline_dataset_bytes
 

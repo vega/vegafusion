@@ -1,8 +1,11 @@
 import pandas as pd
+import pytest
 from pandas import Timestamp, NaT
 import vegafusion as vf
 import json
+import polars as pl
 from datetime import date
+
 
 def order_items_spec():
     return json.loads(r"""
@@ -974,3 +977,32 @@ def test_nat_values():
         'SALES_end': 457.568,
         'SALES_start': 0.0,
     }
+
+
+def test_pre_transform_dataset_dataframe_interface_protocol():
+    try:
+        import pyarrow.interchange
+    except ImportError:
+        pytest.skip("DataFrame interface protocol requires pyarrow 11.0.0 or later")
+
+    n = 4050
+    # Input a polars DataFrame (which follows the DataFrame Interface Protocol)
+    order_items = pl.DataFrame({
+        "menu_item": [0] * n + [1] * (2 * n) + [2] * (3 * n)
+    })
+
+    vega_spec = order_items_spec()
+    datasets, warnings = vf.runtime.pre_transform_datasets(
+        vega_spec,
+        ["data_0"],
+        "UTC",
+        inline_datasets={
+            "order_items": order_items,
+        }
+    )
+    assert len(warnings) == 0
+    assert len(datasets) == 1
+
+    result = datasets[0]
+    expected = pd.DataFrame({"menu_item": [0, 1, 2], "__count": [n, 2 * n, 3 * n]})
+    pd.testing.assert_frame_equal(result, expected)
