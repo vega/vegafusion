@@ -1,6 +1,6 @@
 [package]
 name = "vegafusion-datafusion-udfs"
-version = "1.0.4"
+version = "1.1.0-rc1"
 edition = "2021"
 
 [dependencies]
@@ -12,7 +12,7 @@ regex = "^1.5.5"
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-version = "1.0.4"
+version = "1.1.0-rc1"
 
 [dependencies.datafusion-physical-expr]
 version = "18.0.0"

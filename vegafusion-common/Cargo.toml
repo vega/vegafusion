@@ -1,6 +1,6 @@
 [package]
 name = "vegafusion-common"
-version = "1.0.4"
+version = "1.1.0-rc1"
 edition = "2021"
 
 [features]
