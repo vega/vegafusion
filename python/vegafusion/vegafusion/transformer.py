@@ -140,6 +140,10 @@ def feather_transformer(data, data_dir="_vegafusion_data"):
     if "vegafusion" not in alt.renderers.active:
         # Use default transformer if a vegafusion renderer is not active
         return alt.default_data_transformer(data)
+    elif has_geo_interface(data):
+        # Use default transformer for geo interface objects
+        # (e.g. a geopandas GeoDataFrame)
+        return alt.default_data_transformer(data)
     elif is_dataframe_like(data):
         if runtime.using_grpc:
             raise ValueError(
@@ -216,7 +220,11 @@ def get_inline_datasets_for_spec(vega_spec):
 
 
 def inline_data_transformer(data):
-    if is_dataframe_like(data):
+    if has_geo_interface(data):
+        # Use default transformer for geo interface objects
+        # # (e.g. a geopandas GeoDataFrame)
+        return alt.default_data_transformer(data)
+    elif is_dataframe_like(data):
         table_name = f"table_{uuid.uuid4()}".replace("-", "_")
         __inline_tables[table_name] = data
         return {"url": DATASET_PREFIXES[0] + table_name}
@@ -227,6 +235,10 @@ def inline_data_transformer(data):
 
 def is_dataframe_like(data):
     return isinstance(data, (pd.DataFrame, pa.Table)) or hasattr(data, "__dataframe__")
+
+
+def has_geo_interface(data):
+    return hasattr(data, "__geo_interface__")
 
 
 def import_pyarrow_interchange():
