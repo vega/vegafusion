@@ -1,11 +1,13 @@
 use crate::error::{Result, VegaFusionError};
-use arrow::datatypes::{DataType, Field};
-use std::ops::Deref;
 
 pub use datafusion_common::ScalarValue;
 
 #[cfg(feature = "json")]
-use serde_json::{Map, Value};
+use {
+    arrow::datatypes::{DataType, Field},
+    serde_json::{Map, Value},
+    std::ops::Deref,
+};
 
 // Prefix for special values JSON encoded as strings
 pub const DATETIME_PREFIX: &str = "__$datetime:";
