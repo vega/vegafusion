@@ -71,4 +71,22 @@ npm publish
 ```
 
 ### Publish Rust crates
-TBD. There are still some git-based dependencies (e.g. sql-gen) that prevent publication to crates.io
+The Rust crates should be published in the following order
+
+```
+cargo publish -p vegafusion-common
+cargo publish -p vegafusion-core --no-verify
+cargo publish -p vegafusion-dataframe
+cargo publish -p vegafusion-datafusion-udfs
+cargo publish -p vegafusion-sql
+cargo publish -p vegafusion-runtime
+cargo publish -p vegafusion-server
+```
+
+Note: the `--no-verify` flag for `vegafusion-core` is due to this cargo publish error:
+```
+Source directory was modified by build.rs during cargo publish. Build scripts should not modify anything outside of OUT_DIR.
+```
+We currently write the prost files to src (mostly to make it easier for IDEs to locate them). This should be safe in our case
+as these aren't modified unless the .proto files change, but we should revisit where these files are written in the future.
+
