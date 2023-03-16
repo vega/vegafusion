@@ -55,7 +55,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v2
         with:
-          node-version: '17'
+          node-version: '17.9.0'
       - name: Install test node dependencies
         working-directory: vegafusion-runtime/tests/util/vegajs_runtime
         run: |
@@ -220,7 +220,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v2
         with:
-          node-version: '17'
+          node-version: '17.9.0'
       - name: Build package
         working-directory: vegafusion-wasm/
         run: |
