@@ -3,6 +3,7 @@ name = "vegafusion-core"
 license = "BSD-3-Clause"
 edition = "2021"
 version = "1.1.0-rc1"
+description = "Core components required by multiple VegaFusion crates, with WASM compatibility"
 
 [features]
 tonic_support = [ "tonic", "tonic-build",]

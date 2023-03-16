@@ -3,6 +3,7 @@ name = "vegafusion-python-embed"
 license = "BSD-3-Clause"
 edition = "2021"
 version = "1.1.0-rc1"
+description = "vegafusion-python-embed PyO3 Python Package"
 
 [lib]
 name = "vegafusion_embed"

@@ -4,9 +4,10 @@ path = "src/main.rs"
 
 [package]
 name = "vegafusion-server"
+license = "BSD-3-Clause"
 version = "1.1.0-rc1"
 edition = "2021"
-license = "BSD-3-Clause"
+description = "VegaFusion Server"
 
 [features]
 protobuf-src = [ "vegafusion-core/protobuf-src",]
