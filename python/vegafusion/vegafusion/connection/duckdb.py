@@ -1,3 +1,5 @@
+import warnings
+
 from . import SqlConnection, CsvReadOptions
 
 from typing import Dict, Union
@@ -65,15 +67,21 @@ class DuckDbConnection(SqlConnection):
 
         if connection is None:
             connection = duckdb.connect()
+
+            # Install and load the httpfs extension only if we are creating the duckdb connection
+            # here. If a connection was passed in, don't assume it has internet access and the
+            # ability to install extensions
+            try:
+                connection.install_extension("httpfs")
+                connection.load_extension("httpfs")
+            except (IOError, duckdb.InvalidInputException) as e:
+                warnings.warn(f"Failed to install and load the DuckDB httpfs extension:\n{e}")
+
+        # The icu extension is pre-bundled in Python, so no need to install it
+        connection.load_extension("icu")
+
         self.conn = connection
-
         self.logger = logging.getLogger("DuckDbConnection")
-
-        # Load config/extensions
-        self.conn.install_extension("httpfs")
-        self.conn.load_extension("httpfs")
-        self.conn.install_extension("icu")
-        self.conn.load_extension("icu")
 
         # Use a less round number for pandas_analyze_sample (default is 1000)
         self.conn.execute("SET GLOBAL pandas_analyze_sample=1007")
