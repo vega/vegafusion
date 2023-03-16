@@ -74,7 +74,7 @@ class DuckDbConnection(SqlConnection):
             try:
                 connection.install_extension("httpfs")
                 connection.load_extension("httpfs")
-            except (IOError, duckdb.InvalidInputException) as e:
+            except (IOError, duckdb.IOException, duckdb.InvalidInputException) as e:
                 warnings.warn(f"Failed to install and load the DuckDB httpfs extension:\n{e}")
 
         # The icu extension is pre-bundled in Python, so no need to install it
