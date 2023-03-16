@@ -1,6 +1,6 @@
 [package]
 name = "vegafusion-common"
-version = "1.1.0-rc1"
+version = "1.1.0-rc2"
 edition = "2021"
 description = "Common components required by multiple VegaFusion crates"
 license = "BSD-3-Clause"
