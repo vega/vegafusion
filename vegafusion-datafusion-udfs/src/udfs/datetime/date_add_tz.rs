@@ -21,6 +21,18 @@ fn make_date_add_tz_udf() -> ScalarUDF {
             TypeSignature::Exact(vec![
                 DataType::Utf8,
                 DataType::Int32,
+                DataType::Date32,
+                DataType::Utf8,
+            ]),
+            TypeSignature::Exact(vec![
+                DataType::Utf8,
+                DataType::Int32,
+                DataType::Date64,
+                DataType::Utf8,
+            ]),
+            TypeSignature::Exact(vec![
+                DataType::Utf8,
+                DataType::Int32,
                 DataType::Timestamp(TimeUnit::Millisecond, None),
                 DataType::Utf8,
             ]),

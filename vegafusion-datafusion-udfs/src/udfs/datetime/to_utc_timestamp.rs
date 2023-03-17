@@ -115,6 +115,10 @@ pub fn to_timestamp_ms(array: &ArrayRef) -> Result<ArrayRef, DataFusionError> {
                 )?)
             }
         }
+        DataType::Date32 => Ok(cast(
+            array,
+            &DataType::Timestamp(TimeUnit::Millisecond, None),
+        )?),
         DataType::Date64 => Ok(cast(
             array,
             &DataType::Timestamp(TimeUnit::Millisecond, None),

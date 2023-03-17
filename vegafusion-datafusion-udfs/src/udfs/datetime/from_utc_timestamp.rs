@@ -53,6 +53,8 @@ fn make_from_utc_timestamp() -> ScalarUDF {
 
     let signature: Signature = Signature::one_of(
         vec![
+            TypeSignature::Exact(vec![DataType::Date32, DataType::Utf8]),
+            TypeSignature::Exact(vec![DataType::Date64, DataType::Utf8]),
             TypeSignature::Exact(vec![
                 DataType::Timestamp(TimeUnit::Millisecond, None),
                 DataType::Utf8,

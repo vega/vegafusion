@@ -56,6 +56,16 @@ fn make_date_part_tz_udf() -> ScalarUDF {
         vec![
             TypeSignature::Exact(vec![
                 DataType::Utf8, // part
+                DataType::Date32,
+                DataType::Utf8, // timezone
+            ]),
+            TypeSignature::Exact(vec![
+                DataType::Utf8, // part
+                DataType::Date64,
+                DataType::Utf8, // timezone
+            ]),
+            TypeSignature::Exact(vec![
+                DataType::Utf8, // part
                 DataType::Timestamp(TimeUnit::Millisecond, None),
                 DataType::Utf8, // timezone
             ]),

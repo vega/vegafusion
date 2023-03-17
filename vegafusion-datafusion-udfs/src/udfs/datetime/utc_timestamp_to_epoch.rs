@@ -36,6 +36,8 @@ fn make_utc_timestamp_to_epoch_ms_udf() -> ScalarUDF {
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
     let signature = Signature::one_of(
         vec![
+            TypeSignature::Exact(vec![DataType::Date32]),
+            TypeSignature::Exact(vec![DataType::Date64]),
             TypeSignature::Exact(vec![DataType::Timestamp(TimeUnit::Millisecond, None)]),
             TypeSignature::Exact(vec![DataType::Timestamp(TimeUnit::Nanosecond, None)]),
         ],
