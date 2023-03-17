@@ -1,4 +1,6 @@
+use crate::udfs::datetime::to_utc_timestamp::to_timestamp_ms;
 use std::sync::Arc;
+use vegafusion_common::datafusion_expr::TypeSignature;
 use vegafusion_common::{
     arrow::{
         compute::cast,
@@ -18,6 +20,7 @@ fn make_utc_timestamp_to_epoch_ms_udf() -> ScalarUDF {
             ColumnarValue::Array(array) => array.clone(),
             ColumnarValue::Scalar(scalar) => scalar.to_array(),
         };
+        let data_array = to_timestamp_ms(&data_array)?;
 
         // cast timestamp millis to Int64
         let result_array = cast(&data_array, &DataType::Int64)?;
@@ -31,8 +34,11 @@ fn make_utc_timestamp_to_epoch_ms_udf() -> ScalarUDF {
     });
 
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
-    let signature: Signature = Signature::exact(
-        vec![DataType::Timestamp(TimeUnit::Millisecond, None)],
+    let signature = Signature::one_of(
+        vec![
+            TypeSignature::Exact(vec![DataType::Timestamp(TimeUnit::Millisecond, None)]),
+            TypeSignature::Exact(vec![DataType::Timestamp(TimeUnit::Nanosecond, None)]),
+        ],
         Volatility::Immutable,
     );
 

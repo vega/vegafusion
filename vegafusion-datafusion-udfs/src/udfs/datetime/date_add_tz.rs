@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use vegafusion_common::datafusion_expr::TypeSignature;
 use vegafusion_common::{
     arrow::datatypes::{DataType, TimeUnit},
     datafusion_expr::{
@@ -15,12 +16,20 @@ fn make_date_add_tz_udf() -> ScalarUDF {
     let return_type: ReturnTypeFunction =
         Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
 
-    let signature = Signature::exact(
+    let signature = Signature::one_of(
         vec![
-            DataType::Utf8,
-            DataType::Int32,
-            DataType::Timestamp(TimeUnit::Millisecond, None),
-            DataType::Utf8,
+            TypeSignature::Exact(vec![
+                DataType::Utf8,
+                DataType::Int32,
+                DataType::Timestamp(TimeUnit::Millisecond, None),
+                DataType::Utf8,
+            ]),
+            TypeSignature::Exact(vec![
+                DataType::Utf8,
+                DataType::Int32,
+                DataType::Timestamp(TimeUnit::Nanosecond, None),
+                DataType::Utf8,
+            ]),
         ],
         Volatility::Immutable,
     );
