@@ -329,6 +329,10 @@ impl Dialect {
                 (DataType::Float32, SqlDataType::Double),
                 (DataType::Float64, SqlDataType::Double),
                 (DataType::Utf8, SqlDataType::Varchar(None)),
+                (
+                    DataType::Timestamp(TimeUnit::Millisecond, None),
+                    SqlDataType::Timestamp(None, TimezoneInfo::None),
+                ),
             ]
             .into_iter()
             .collect(),
@@ -450,6 +454,10 @@ impl Dialect {
                 (DataType::Float32, float64dtype.clone()),
                 (DataType::Float64, float64dtype),
                 (DataType::Utf8, SqlDataType::String),
+                (
+                    DataType::Timestamp(TimeUnit::Millisecond, None),
+                    SqlDataType::Timestamp(None, TimezoneInfo::None),
+                ),
             ]
             .into_iter()
             .collect(),
@@ -544,6 +552,10 @@ impl Dialect {
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
                 (DataType::Utf8, SqlDataType::Varchar(None)),
+                (
+                    DataType::Timestamp(TimeUnit::Millisecond, None),
+                    SqlDataType::Timestamp(None, TimezoneInfo::None),
+                ),
             ]
             .into_iter()
             .collect(),
@@ -681,6 +693,10 @@ impl Dialect {
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
                 (DataType::Utf8, SqlDataType::String),
+                (
+                    DataType::Timestamp(TimeUnit::Millisecond, None),
+                    SqlDataType::Timestamp(None, TimezoneInfo::None),
+                ),
             ]
             .into_iter()
             .collect(),
@@ -820,6 +836,10 @@ impl Dialect {
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
                 (DataType::Utf8, SqlDataType::String),
+                (
+                    DataType::Timestamp(TimeUnit::Millisecond, None),
+                    SqlDataType::Timestamp(None, TimezoneInfo::None),
+                ),
             ]
             .into_iter()
             .collect(),
@@ -1347,6 +1367,10 @@ impl Dialect {
                 (DataType::Float32, SqlDataType::Real),
                 (DataType::Float64, SqlDataType::DoublePrecision),
                 (DataType::Utf8, SqlDataType::Text),
+                (
+                    DataType::Timestamp(TimeUnit::Millisecond, None),
+                    SqlDataType::Timestamp(None, TimezoneInfo::None),
+                ),
             ]
             .into_iter()
             .collect(),
@@ -1483,6 +1507,10 @@ impl Dialect {
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
                 (DataType::Utf8, SqlDataType::Varchar(None)),
+                (
+                    DataType::Timestamp(TimeUnit::Millisecond, None),
+                    SqlDataType::Timestamp(None, TimezoneInfo::None),
+                ),
             ]
             .into_iter()
             .collect(),
