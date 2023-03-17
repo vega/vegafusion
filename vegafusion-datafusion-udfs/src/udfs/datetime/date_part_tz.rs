@@ -3,6 +3,7 @@ use crate::udfs::datetime::to_utc_timestamp::to_timestamp_ms;
 use datafusion_physical_expr::datetime_expressions;
 use std::str::FromStr;
 use std::sync::Arc;
+use vegafusion_common::datafusion_expr::TypeSignature;
 use vegafusion_common::{
     arrow::datatypes::{DataType, TimeUnit},
     datafusion_common::DataFusionError,
@@ -11,7 +12,6 @@ use vegafusion_common::{
         Volatility,
     },
 };
-use vegafusion_common::datafusion_expr::TypeSignature;
 
 fn make_date_part_tz_udf() -> ScalarUDF {
     let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
