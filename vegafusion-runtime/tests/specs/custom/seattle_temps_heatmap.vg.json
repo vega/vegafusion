@@ -11,7 +11,7 @@
   "data": [
     {
       "name": "source_0",
-      "url": "https://cdn.jsdelivr.net/npm/vega-datasets@v1.29.0/data/seattle-temps.csv",
+      "url": "https://raw.githubusercontent.com/vega/vega-datasets/v1.31.1/data/seattle-temps.csv",
       "format": {
         "type": "csv",
         "parse": {"date": "date", "temp": "number"},
