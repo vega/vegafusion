@@ -147,12 +147,30 @@ class DuckDbConnection(SqlConnection):
         self._update_temp_names(name, temporary)
 
     def register_csv(self, name: str, path: str, options: CsvReadOptions, temporary: bool = False):
-        # TODO: handle schema from options
         relation = self.conn.read_csv(
             path,
             header=options.has_header,
             delimiter=options.delimeter,
+            all_varchar=True,
         )
+        if options.schema is not None:
+            replaces = []
+            for col_name in options.schema.names:
+                field = options.schema.field_by_name(col_name)
+                quoted_col_name = quote_column(col_name)
+                dtype = field.type
+                if dtype == pa.string():
+                    # Everything is loaded as string
+                    pass
+                elif dtype in (pa.float16(), pa.float32(), pa.float64()):
+                    replaces.append(f"{quoted_col_name}::double as {quoted_col_name}")
+                elif dtype in (pa.int8(), pa.int16(), pa.int32(), pa.int64()):
+                    replaces.append(f"{quoted_col_name}::int as {quoted_col_name}")
+
+            if replaces:
+                query = f"SELECT * REPLACE({','.join(replaces)}) from _tbl"
+                relation = relation.query("_tbl", query)
+
         relation.to_view(name)
         self._update_temp_names(name, temporary)
 
@@ -171,3 +189,7 @@ class DuckDbConnection(SqlConnection):
         for name in list(self._temp_tables):
             self.conn.unregister(name)
             self._temp_tables.remove(name)
+
+
+def quote_column(name: str):
+    return '"' + name.replace('"', '""') + '"'
