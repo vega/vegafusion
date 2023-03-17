@@ -22,7 +22,7 @@ pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema) ->
 
     // Dispatch handling on data type
     let expr = match arg.get_type(schema)? {
-        DataType::Timestamp(_, _) => Expr::ScalarUDF {
+        DataType::Timestamp(_, _) | DataType::Date32 | DataType::Date64 => Expr::ScalarUDF {
             fun: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
             args: vec![arg.clone()],
         },

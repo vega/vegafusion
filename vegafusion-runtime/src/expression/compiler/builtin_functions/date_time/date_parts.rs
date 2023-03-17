@@ -1,8 +1,8 @@
 use crate::expression::compiler::call::TzTransformFn;
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion_expr::{floor, lit, Expr, ExprSchemable};
+use datafusion_expr::{expr, floor, lit, Expr, ExprSchemable};
 use std::sync::Arc;
-use vegafusion_common::arrow::datatypes::DataType;
+use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
 use vegafusion_core::error::{Result, VegaFusionError};
@@ -64,6 +64,14 @@ fn extract_timestamp_arg(
 ) -> Result<Expr> {
     if let Some(arg) = args.get(0) {
         Ok(match arg.get_type(schema)? {
+            DataType::Date32 => Expr::Cast(expr::Cast {
+                expr: Box::new(arg.clone()),
+                data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
+            }),
+            DataType::Date64 => Expr::Cast(expr::Cast {
+                expr: Box::new(arg.clone()),
+                data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
+            }),
             DataType::Timestamp(_, _) => arg.clone(),
             DataType::Utf8 => Expr::ScalarUDF {
                 fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
