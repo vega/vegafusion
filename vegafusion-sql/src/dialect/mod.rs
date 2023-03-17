@@ -41,7 +41,7 @@ use crate::dialect::transforms::utc_timestamp_to_str::{
     UtcTimestampToStrDuckDBTransformer, UtcTimestampToStrPostgresTransformer,
     UtcTimestampToStrSnowflakeTransformer,
 };
-use arrow::datatypes::DataType;
+use arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
 use datafusion_expr::{lit, ExprSchemable};
@@ -969,6 +969,10 @@ impl Dialect {
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
                 (DataType::Utf8, SqlDataType::Varchar(None)),
+                (
+                    DataType::Timestamp(TimeUnit::Millisecond, None),
+                    SqlDataType::Timestamp(None, TimezoneInfo::None),
+                ),
             ]
             .into_iter()
             .collect(),
@@ -1213,6 +1217,10 @@ impl Dialect {
                 (DataType::Float32, SqlDataType::Real),
                 (DataType::Float64, SqlDataType::DoublePrecision),
                 (DataType::Utf8, SqlDataType::Text),
+                (
+                    DataType::Timestamp(TimeUnit::Millisecond, None),
+                    SqlDataType::Timestamp(None, TimezoneInfo::None),
+                ),
             ]
             .into_iter()
             .collect(),
