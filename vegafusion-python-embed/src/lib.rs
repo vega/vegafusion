@@ -2,7 +2,7 @@ pub mod connection;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyList, PyString};
+use pyo3::types::{PyBytes, PyDict, PyList, PyTuple};
 use std::collections::HashMap;
 use std::sync::{Arc, Once};
 use tokio::runtime::Runtime;
@@ -15,6 +15,7 @@ use crate::connection::PySqlConnection;
 use env_logger::{Builder, Target};
 use pythonize::depythonize;
 use serde::{Deserialize, Serialize};
+use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::tasks::Variable;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
@@ -48,20 +49,27 @@ struct PyVegaFusionRuntime {
     tokio_runtime: Runtime,
 }
 
-fn deserialize_inline_datasets(
+fn process_inline_datasets(
     inline_datasets: Option<&PyDict>,
 ) -> PyResult<HashMap<String, VegaFusionDataset>> {
     if let Some(inline_datasets) = inline_datasets {
-        inline_datasets
-            .iter()
-            .map(|(name, table_bytes)| {
-                let name = name.downcast::<PyString>()?;
-                let ipc_bytes = table_bytes.downcast::<PyBytes>()?;
-                let ipc_bytes = ipc_bytes.as_bytes();
-                let dataset = VegaFusionDataset::from_table_ipc_bytes(ipc_bytes)?;
-                Ok((name.to_string(), dataset))
-            })
-            .collect::<PyResult<HashMap<_, _>>>()
+        Python::with_gil(|py| -> PyResult<_> {
+            let pyarrow_module = PyModule::import(py, "builtins")?;
+            let id_fun = pyarrow_module.getattr("id")?;
+
+            inline_datasets
+                .iter()
+                .map(|(name, pyarrow_table)| {
+                    // Use object id of the pyarrow table as dataset's fingerprint
+                    let args = PyTuple::new(py, vec![pyarrow_table]);
+                    let id_object = id_fun.call(args, None)?;
+                    let id = id_object.extract::<u64>()?;
+                    let table = VegaFusionTable::from_pyarrow(py, pyarrow_table)?;
+                    let dataset = VegaFusionDataset::Table { table, hash: id };
+                    Ok((name.to_string(), dataset))
+                })
+                .collect::<PyResult<HashMap<_, _>>>()
+        })
     } else {
         Ok(Default::default())
     }
@@ -121,7 +129,7 @@ impl PyVegaFusionRuntime {
         preserve_interactivity: Option<bool>,
         inline_datasets: Option<&PyDict>,
     ) -> PyResult<(PyObject, PyObject)> {
-        let inline_datasets = deserialize_inline_datasets(inline_datasets)?;
+        let inline_datasets = process_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
         let preserve_interactivity = preserve_interactivity.unwrap_or(false);
 
@@ -181,7 +189,7 @@ impl PyVegaFusionRuntime {
         row_limit: Option<u32>,
         inline_datasets: Option<&PyDict>,
     ) -> PyResult<(PyObject, PyObject)> {
-        let inline_datasets = deserialize_inline_datasets(inline_datasets)?;
+        let inline_datasets = process_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
 
         // Build variables

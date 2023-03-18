@@ -5,12 +5,9 @@ use std::sync::Arc;
 
 use arrow::pyarrow::PyArrowConvert;
 use async_trait::async_trait;
-use pyo3::types::{IntoPyDict, PyDict, PyList, PyString, PyTuple};
+use pyo3::types::{IntoPyDict, PyDict, PyString, PyTuple};
 use vegafusion_common::data::table::VegaFusionTable;
-use vegafusion_core::{
-    arrow::{datatypes::Schema, record_batch::RecordBatch},
-    error::Result,
-};
+use vegafusion_core::{arrow::datatypes::Schema, error::Result};
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 use vegafusion_sql::connection::{Connection, SqlConnection};
 use vegafusion_sql::dataframe::{CsvReadOptions, DataFrame, SqlDataFrame};
@@ -108,41 +105,12 @@ impl Connection for PySqlConnection {
         let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
         let table_name = format!("arrow_{random_id}");
         Python::with_gil(|py| -> std::result::Result<_, PyErr> {
-            // Convert table's record batches into Python list of pyarrow batches
-            let pyarrow_module = PyModule::import(py, "pyarrow")?;
-            let table_cls = pyarrow_module.getattr("Table")?;
-            let batch_objects = table
-                .batches
-                .iter()
-                .map(|batch| Ok(batch.to_pyarrow(py)?))
-                .collect::<Result<Vec<_>>>()?;
-            let batches_list = PyList::new(py, batch_objects);
-
-            // Convert table's schema into pyarrow schema
-            let schema = if let Some(batch) = table.batches.get(0) {
-                // Get schema from first batch if present
-                batch.schema()
-            } else {
-                table.schema.clone()
-            };
-
-            let schema_object = schema.to_pyarrow(py)?;
-
-            // Build pyarrow table
-            let args = PyTuple::new(py, vec![batches_list.as_ref(), schema_object.as_ref(py)]);
-            let pa_table = table_cls.call_method1("from_batches", args)?;
+            let pa_table = table.to_pyarrow(py)?;
 
             // Register table with Python connection
             let table_name_object = table_name.clone().into_py(py);
             let is_temporary_object = true.into_py(py);
-            let args = PyTuple::new(
-                py,
-                vec![
-                    table_name_object.as_ref(py),
-                    pa_table,
-                    is_temporary_object.as_ref(py),
-                ],
-            );
+            let args = PyTuple::new(py, vec![table_name_object, pa_table, is_temporary_object]);
             self.conn.call_method1(py, "register_arrow", args)?;
             Ok(())
         })?;
@@ -219,27 +187,11 @@ impl SqlConnection for PySqlConnection {
         let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
             let query_object = PyString::new(py, query);
             let query_object = query_object.as_ref();
-
             let schema_object = schema.to_pyarrow(py)?;
             let schema_object = schema_object.as_ref(py);
             let args = PyTuple::new(py, vec![query_object, schema_object]);
-
             let table_object = self.conn.call_method(py, "fetch_query", args, None)?;
-
-            // Extract table.schema as a Rust Schema
-            let getattr_args = PyTuple::new(py, vec!["schema"]);
-            let schema_object = table_object.call_method1(py, "__getattribute__", getattr_args)?;
-            let schema = Schema::from_pyarrow(schema_object.as_ref(py))?;
-
-            // Extract table.to_batches() as a Rust Vec<RecordBatch>
-            let batches_object = table_object.call_method0(py, "to_batches")?;
-            let batches_list = batches_object.downcast::<PyList>(py)?;
-            let batches = batches_list
-                .iter()
-                .map(|batch_any| Ok(RecordBatch::from_pyarrow(batch_any)?))
-                .collect::<Result<Vec<RecordBatch>>>()?;
-
-            Ok(VegaFusionTable::try_new(Arc::new(schema), batches)?)
+            VegaFusionTable::from_pyarrow(py, table_object.as_ref(py))
         })?;
         Ok(table)
     }

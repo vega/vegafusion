@@ -11,7 +11,7 @@ import psutil
 import pyarrow as pa
 from typing import Union
 from .connection import SqlConnection
-from .transformer import import_pyarrow_interchange
+from .transformer import import_pyarrow_interchange, to_arrow_table
 
 try:
     from duckdb import DuckDBPyConnection
@@ -109,10 +109,10 @@ class VegaFusionRuntime:
             # No grpc channel, get or initialize an embedded runtime
             return self.embedded_runtime.process_request_bytes(request)
 
-    def _serialize_or_register_inline_datasets(self, inline_datasets=None):
+    def _arrowify_or_register_inline_datasets(self, inline_datasets=None):
         from .transformer import to_arrow_ipc_bytes, arrow_table_to_ipc_bytes
         inline_datasets = inline_datasets or dict()
-        inline_dataset_bytes = dict()
+        inline_arrow_datasets = dict()
         for name, value in inline_datasets.items():
             if isinstance(value, pa.Table):
                 if self._connection is not None:
@@ -123,8 +123,7 @@ class VegaFusionRuntime:
                     except ValueError:
                         pass
 
-                table_bytes = arrow_table_to_ipc_bytes(value, stream=True)
-                inline_dataset_bytes[name] = table_bytes
+                inline_arrow_datasets[name] = value
             elif isinstance(value, pd.DataFrame):
                 if self._connection is not None:
                     try:
@@ -134,8 +133,7 @@ class VegaFusionRuntime:
                     except ValueError:
                         pass
 
-                table_bytes = to_arrow_ipc_bytes(value, stream=True)
-                inline_dataset_bytes[name] = table_bytes
+                inline_arrow_datasets[name] = to_arrow_table(value)
             elif hasattr(value, "__dataframe__"):
                 pi = import_pyarrow_interchange()
                 value = pi.from_dataframe(value)
@@ -147,12 +145,11 @@ class VegaFusionRuntime:
                     except ValueError:
                         pass
 
-                table_bytes = arrow_table_to_ipc_bytes(value, stream=True)
-                inline_dataset_bytes[name] = table_bytes
+                inline_arrow_datasets[name] = value
             else:
                 raise ValueError(f"Unsupported DataFrame type: {type(value)}")
 
-        return inline_dataset_bytes
+        return inline_arrow_datasets
 
     def pre_transform_spec(
         self,
@@ -202,7 +199,7 @@ class VegaFusionRuntime:
         if self._grpc_channel:
             raise ValueError("pre_transform_spec not yet supported over gRPC")
         else:
-            inline_dataset_bytes = self._serialize_or_register_inline_datasets(inline_datasets)
+            inline_arrow_dataset = self._arrowify_or_register_inline_datasets(inline_datasets)
             try:
                 new_spec, warnings = self.embedded_runtime.pre_transform_spec(
                     spec,
@@ -210,7 +207,7 @@ class VegaFusionRuntime:
                     default_input_tz=default_input_tz,
                     row_limit=row_limit,
                     preserve_interactivity=preserve_interactivity,
-                    inline_datasets=inline_dataset_bytes
+                    inline_datasets=inline_arrow_dataset
                 )
             finally:
                 # Clean up temporary tables
@@ -267,7 +264,7 @@ class VegaFusionRuntime:
                     raise ValueError(err_msg)
 
             # Serialize inline datasets
-            inline_dataset_bytes = self._serialize_or_register_inline_datasets(inline_datasets)
+            inline_arrow_dataset = self._arrowify_or_register_inline_datasets(inline_datasets)
             try:
                 values, warnings = self.embedded_runtime.pre_transform_datasets(
                     spec,
@@ -275,7 +272,7 @@ class VegaFusionRuntime:
                     local_tz=local_tz,
                     default_input_tz=default_input_tz,
                     row_limit=row_limit,
-                    inline_datasets=inline_dataset_bytes
+                    inline_datasets=inline_arrow_dataset
                 )
             finally:
                 # Clean up registered tables (both inline and internal temporary tables)
