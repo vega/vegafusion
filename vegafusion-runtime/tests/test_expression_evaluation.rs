@@ -549,3 +549,24 @@ mod test_indexof {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
+
+mod test_span {
+    use crate::*;
+
+    #[rstest(
+        expr,
+        case("span([2, 3])"),
+        case("span([2, 3, 6])"),
+        case("span([3, 2])"),
+        case("span(null)"),
+        case("span([])"),
+        case("span(72)"),
+    )]
+    fn test(expr: &str) {
+        check_scalar_evaluation(expr, &config_a())
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
