@@ -44,10 +44,10 @@ function getWatchValues(view, watches) {
         let {namespace, name, scope} = watch;
         if (namespace === "signal") {
             let signalValue = lookupSignalOp(view, name, scope).value;
-            watch_values.push({watch: {namespace, name, scope}, value: _.clone(signalValue)});
+            watch_values.push({watch: {namespace, name, scope}, value: _.clone(signalValue) ?? null});
         } else if (namespace === "data") {
             let dataOp = lookupDataOp(view, name, scope);
-            watch_values.push({watch: {namespace, name, scope}, value: _.clone(dataOp.values.value)});
+            watch_values.push({watch: {namespace, name, scope}, value: _.clone(dataOp.values.value) ?? []});
         } else {
             throw `Invalid watch namespace: ${namespace}`
         }

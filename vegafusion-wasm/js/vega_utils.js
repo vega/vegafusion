@@ -28,7 +28,7 @@ function getNestedRuntime(view, scope) {
 function lookupSignalOp(view, name, scope) {
     // name is an array that may have leading integer group indices
     let parent_runtime = getNestedRuntime(view, scope);
-    return parent_runtime.signals[name];
+    return parent_runtime.signals[name] ?? null;
 }
 
 function dataref(view, name, scope) {
