@@ -50,25 +50,8 @@ pub fn default_schema() -> String {
 
 impl ChartSpec {
     pub fn walk(&self, visitor: &mut dyn ChartVisitor) -> Result<()> {
-        // Visit top-level chart
-        visitor.visit_chart(self)?;
-
-        // Top-level with empty scope
-        let scope: Vec<u32> = Vec::new();
-        for data in &self.data {
-            visitor.visit_data(data, &scope)?;
-        }
-        for scale in &self.scales {
-            visitor.visit_scale(scale, &scope)?;
-        }
-        for axis in &self.axes {
-            visitor.visit_axis(axis, &scope)?;
-        }
-        for signal in &self.signals {
-            visitor.visit_signal(signal, &scope)?;
-        }
-
         // Child groups
+        let scope: Vec<u32> = Vec::new();
         let mut group_index = 0;
         for mark in &self.marks {
             if mark.type_ == "group" {
@@ -84,6 +67,23 @@ impl ChartSpec {
                 visitor.visit_non_group_mark(mark, &scope)?;
             }
         }
+
+        // Top-level with empty scope
+        for data in &self.data {
+            visitor.visit_data(data, &scope)?;
+        }
+        for scale in &self.scales {
+            visitor.visit_scale(scale, &scope)?;
+        }
+        for axis in &self.axes {
+            visitor.visit_axis(axis, &scope)?;
+        }
+        for signal in &self.signals {
+            visitor.visit_signal(signal, &scope)?;
+        }
+
+        // Visit top-level chart
+        visitor.visit_chart(self)?;
 
         Ok(())
     }
