@@ -229,7 +229,7 @@
       "transform": [
         {
           "type": "formula",
-          "expr": "utchours(datum.tpep_pickup_datetime)",
+          "expr": "hours(datum.tpep_pickup_datetime)",
           "as": "pickup_hour"
         },
         {
