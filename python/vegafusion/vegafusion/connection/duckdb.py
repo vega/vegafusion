@@ -54,7 +54,7 @@ def duckdb_relation_to_schema(rel: duckdb.DuckDBPyRelation) -> pa.Schema:
 
 
 class DuckDbConnection(SqlConnection):
-    def __init__(self, connection: duckdb.DuckDBPyConnection = None, fallback: bool = True):
+    def __init__(self, connection: duckdb.DuckDBPyConnection = None, fallback: bool = True, verbose: bool = False):
         # Validate duckdb version
         if LooseVersion(duckdb.__version__) < LooseVersion("0.7.0"):
             raise ImportError(
@@ -63,6 +63,7 @@ class DuckDbConnection(SqlConnection):
             )
 
         self._fallback = fallback
+        self._verbose = verbose
         self._temp_tables = set()
 
         if connection is None:
@@ -116,6 +117,8 @@ class DuckDbConnection(SqlConnection):
 
     def fetch_query(self, query: str, schema: pa.Schema) -> pa.Table:
         self.logger.info(f"Query:\n{query}\n")
+        if self._verbose:
+            print(f"DuckDB Query:\n{query}\n")
         return self.conn.query(query).to_arrow_table(8096)
 
     def _update_temp_names(self, name: str, temporary: bool):
