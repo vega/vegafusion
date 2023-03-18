@@ -20,6 +20,9 @@ fn make_span_udf() -> ScalarUDF {
         Ok(match arg {
             ColumnarValue::Scalar(value) => {
                 match value {
+                    ScalarValue::Null => {
+                        ColumnarValue::Scalar(ScalarValue::from(0.0))
+                    }
                     ScalarValue::Float64(_) => {
                         // Span of scalar (including null) is 0
                         ColumnarValue::Scalar(ScalarValue::from(0.0))
@@ -59,6 +62,7 @@ fn make_span_udf() -> ScalarUDF {
             1,
             vec![
                 DataType::Float64, // For null
+                DataType::Null, // For null
                 DataType::List(Box::new(Field::new("item", DataType::Float64, true))),
             ],
             Volatility::Immutable,
