@@ -63,7 +63,7 @@ impl TransformTrait for Sequence {
         let data_schema = Arc::new(Schema::new(vec![Field::new(
             &col_name,
             DataType::Float64,
-            false,
+            true,
         )])) as SchemaRef;
         let data_batch = RecordBatch::try_new(data_schema, vec![data_array])?;
         let data_table = VegaFusionTable::from(data_batch);

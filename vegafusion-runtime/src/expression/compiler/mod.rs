@@ -499,7 +499,7 @@ mod test_compile {
                 &["a".to_string(), "two".to_string()],
                 &[
                     DataType::Float64,
-                    DataType::Struct(vec![Field::new("three", DataType::Float64, false)]),
+                    DataType::Struct(vec![Field::new("three", DataType::Float64, true)]),
                 ],
             )),
             args: vec![
@@ -570,7 +570,7 @@ mod test_compile {
     fn test_compile_datum_nested_member() {
         let expr = parse("datum['two'].foo * 3").unwrap();
         // let expr = parse("[datum['two'].foo * 3, datum['two'].foo]").unwrap();
-        let foo_field = Field::new("foo", DataType::Float64, false);
+        let foo_field = Field::new("foo", DataType::Float64, true);
 
         let two_type = DataType::Struct(vec![foo_field]);
         let two_field = Field::new("two", two_type, true);
