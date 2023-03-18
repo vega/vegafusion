@@ -1,6 +1,9 @@
 use crate::expression::parser::parse;
 use crate::proto::gen::tasks::data_url_task::Url;
-use crate::proto::gen::tasks::{scan_url_format, DataSourceTask, DataUrlTask, DataValuesTask, ParseFieldSpec, ParseFieldSpecs, ScanUrlFormat, Task, TzConfig, Variable, VariableNamespace};
+use crate::proto::gen::tasks::{
+    scan_url_format, DataSourceTask, DataUrlTask, DataValuesTask, ParseFieldSpec, ParseFieldSpecs,
+    ScanUrlFormat, Task, TzConfig, Variable, VariableNamespace,
+};
 use crate::proto::gen::transforms::TransformPipeline;
 use crate::spec::chart::{ChartSpec, ChartVisitor};
 use crate::spec::data::{DataFormatParseSpec, DataSpec};
@@ -347,7 +350,7 @@ impl<'a> ChartVisitor for UpdateVarsChartVisitor<'a> {
                     if v.0.name == signal.name {
                         self.update_vars
                             .insert((Variable::new_signal(&signal.name), Vec::from(scope)));
-                        break
+                        break;
                     }
                 }
             }

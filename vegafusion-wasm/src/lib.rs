@@ -223,7 +223,8 @@ impl MsgReceiver {
                         } else {
                             serde_json::from_str(
                                 &js_sys::JSON::stringify(&val).unwrap().as_string().unwrap(),
-                            ).unwrap()
+                            )
+                            .unwrap()
                         };
 
                         if verbose {

@@ -550,7 +550,6 @@ mod test_indexof {
     fn test_marker() {} // Help IDE detect test module
 }
 
-
 mod test_span {
     use crate::*;
 
@@ -561,7 +560,7 @@ mod test_span {
         case("span([3, 2])"),
         case("span(null)"),
         case("span([])"),
-        case("span(72)"),
+        case("span(72)")
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
