@@ -100,7 +100,7 @@ impl VegaFusionTable {
         let empty_record_batch = RecordBatch::new_empty(Arc::new(Schema::new(vec![Field::new(
             ORDER_COL,
             DataType::UInt64,
-            false,
+            true,
         )])));
         VegaFusionTable::from(empty_record_batch)
     }
@@ -125,7 +125,7 @@ impl VegaFusionTable {
             new_fields.remove(order_col_index);
         }
 
-        new_fields.insert(0, Field::new(ORDER_COL, ORDER_COL_DTYPE, false));
+        new_fields.insert(0, Field::new(ORDER_COL, ORDER_COL_DTYPE, true));
 
         let new_schema = Arc::new(Schema::new(new_fields)) as SchemaRef;
 

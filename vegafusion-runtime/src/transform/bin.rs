@@ -175,7 +175,9 @@ pub fn calculate_bin_params(
         let span_expr = compile(span_expression, config, Some(schema))?;
         let span_scalar = span_expr.eval_to_scalar()?;
         if let Ok(span_f64) = span_scalar.to_f64() {
-            span = span_f64;
+            if span_f64 > 0.0 {
+                span = span_f64;
+            }
         }
     }
 

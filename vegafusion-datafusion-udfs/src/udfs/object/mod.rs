@@ -9,7 +9,7 @@ pub fn make_object_constructor_udf(keys: &[String], value_types: &[DataType]) ->
     let fields: Vec<_> = keys
         .iter()
         .zip(value_types.iter())
-        .map(|(k, dtype)| Field::new(k, dtype.clone(), false))
+        .map(|(k, dtype)| Field::new(k, dtype.clone(), true))
         .collect();
 
     let struct_dtype = DataType::Struct(fields.clone());

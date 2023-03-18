@@ -218,10 +218,15 @@ impl MsgReceiver {
             match scoped_var.0.namespace() {
                 VariableNamespace::Signal => {
                     let closure = Closure::wrap(Box::new(move |name: String, val: JsValue| {
-                        let val: serde_json::Value = serde_json::from_str(
-                            &js_sys::JSON::stringify(&val).unwrap().as_string().unwrap(),
-                        )
-                        .unwrap();
+                        let val: serde_json::Value = if val.is_undefined() {
+                            serde_json::Value::Null
+                        } else {
+                            serde_json::from_str(
+                                &js_sys::JSON::stringify(&val).unwrap().as_string().unwrap(),
+                            )
+                            .unwrap()
+                        };
+
                         if verbose {
                             log(&format!("VegaFusion(wasm): Sending signal {name}"));
                             log(&serde_json::to_string_pretty(&val).unwrap());

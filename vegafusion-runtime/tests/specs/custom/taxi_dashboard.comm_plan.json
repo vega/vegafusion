@@ -1,0 +1,81 @@
+{
+  "server_to_client": [
+    {
+      "name": "concat_0_bin_extent_0_12_maxbins_20_trip_distance_bins",
+      "namespace": "signal",
+      "scope": []
+    },
+    {
+      "name": "concat_1_bin_extent_param_pickup_scales_maxbins_50_pickup_x_bins",
+      "namespace": "signal",
+      "scope": []
+    },
+    {
+      "name": "concat_1_bin_extent_param_pickup_scales_maxbins_50_pickup_y_bins",
+      "namespace": "signal",
+      "scope": []
+    },
+    {
+      "name": "_server_data_2",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_1",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_1_concat_0_y_domain___count",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_3",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_3_concat_2_color_domain_mean_tip_perc",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_3_concat_2_y_domain_pickup_hour",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": [
+    {
+      "name": "pickup_scales_pickup_x",
+      "namespace": "signal",
+      "scope": []
+    },
+    {
+      "name": "pickup_scales_pickup_y",
+      "namespace": "signal",
+      "scope": []
+    },
+    {
+      "name": "pickup_scales_store",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "selector013_store",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "selector014_store",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "selector015_store",
+      "namespace": "data",
+      "scope": []
+    }
+  ]
+}

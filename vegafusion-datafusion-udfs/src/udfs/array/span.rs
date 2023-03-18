@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::{DataType, Field};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
@@ -21,17 +20,17 @@ fn make_span_udf() -> ScalarUDF {
         Ok(match arg {
             ColumnarValue::Scalar(value) => {
                 match value {
+                    ScalarValue::Null => ColumnarValue::Scalar(ScalarValue::from(0.0)),
                     ScalarValue::Float64(_) => {
-                        ColumnarValue::Scalar(ScalarValue::try_from(&DataType::Float64).unwrap())
+                        // Span of scalar (including null) is 0
+                        ColumnarValue::Scalar(ScalarValue::from(0.0))
                     }
                     ScalarValue::List(Some(arr), element_type) => {
                         match element_type.data_type() {
                             DataType::Float64 => {
                                 if arr.is_empty() {
-                                    // Span of empty array is null
-                                    ColumnarValue::Scalar(
-                                        ScalarValue::try_from(&DataType::Float64).unwrap(),
-                                    )
+                                    // Span of empty array is 0
+                                    ColumnarValue::Scalar(ScalarValue::from(0.0))
                                 } else {
                                     let first = arr.first().unwrap().to_f64().unwrap();
                                     let last = arr.last().unwrap().to_f64().unwrap();
@@ -61,6 +60,7 @@ fn make_span_udf() -> ScalarUDF {
             1,
             vec![
                 DataType::Float64, // For null
+                DataType::Null,    // For null
                 DataType::List(Box::new(Field::new("item", DataType::Float64, true))),
             ],
             Volatility::Immutable,
