@@ -346,12 +346,10 @@ impl<'a> ChartVisitor for UpdateVarsChartVisitor<'a> {
             // Note: We rely on the fact that visit_signal is called after child groups have been
             // visited
             for v in &self.update_vars {
-                if v.0.namespace == VariableNamespace::Signal as i32 {
-                    if v.0.name == signal.name {
-                        self.update_vars
-                            .insert((Variable::new_signal(&signal.name), Vec::from(scope)));
-                        break;
-                    }
+                if v.0.namespace == VariableNamespace::Signal as i32 && v.0.name == signal.name {
+                    self.update_vars
+                        .insert((Variable::new_signal(&signal.name), Vec::from(scope)));
+                    break;
                 }
             }
         }
