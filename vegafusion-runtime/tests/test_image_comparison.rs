@@ -138,6 +138,8 @@ mod test_custom_specs {
         // Need to investigate why this test panics on Windows
         #[cfg(not(target_os = "windows"))]
         case("custom/pivot_crash", 0.001, false),
+
+        case("custom/taxi_dashboard", 0.001, true),
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64, extract_inline_values: bool) {
         println!("spec_name: {spec_name}");
@@ -1429,19 +1431,19 @@ async fn check_spec_sequence(
 
     // println!("task_scope: {:#?}", task_scope);
 
-    // println!(
-    //     "client_spec: {}",
-    //     serde_json::to_string_pretty(&spec_plan.client_spec).unwrap()
-    // );
+    println!(
+        "client_spec: {}",
+        serde_json::to_string_pretty(&spec_plan.client_spec).unwrap()
+    );
     println!(
         "server_spec: {}",
         serde_json::to_string_pretty(&spec_plan.server_spec).unwrap()
     );
-    //
-    // println!(
-    //     "comm_plan:\n---\n{}\n---",
-    //     serde_json::to_string_pretty(&WatchPlan::from(spec_plan.comm_plan.clone())).unwrap()
-    // );
+
+    println!(
+        "comm_plan:\n---\n{}\n---",
+        serde_json::to_string_pretty(&WatchPlan::from(spec_plan.comm_plan.clone())).unwrap()
+    );
 
     // Build task graph
     let tasks = spec_plan
