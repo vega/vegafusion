@@ -528,7 +528,10 @@ mod test_compile {
         ]);
 
         println!("value: {result_value:?}");
-        assert_eq!(result_value, expected_value);
+
+        // ScalarValue::from(...) creates a Field with nullable=false. We always use nullable=true,
+        // so compare string repr (which doesn't include nullable info) instead of value
+        assert_eq!(format!("{result_value:?}"), format!("{expected_value:?}"));
     }
 
     #[test]
