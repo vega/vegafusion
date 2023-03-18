@@ -1,9 +1,6 @@
 use crate::expression::parser::parse;
 use crate::proto::gen::tasks::data_url_task::Url;
-use crate::proto::gen::tasks::{
-    scan_url_format, DataSourceTask, DataUrlTask, DataValuesTask, ParseFieldSpec, ParseFieldSpecs,
-    ScanUrlFormat, Task, TzConfig, Variable,
-};
+use crate::proto::gen::tasks::{scan_url_format, DataSourceTask, DataUrlTask, DataValuesTask, ParseFieldSpec, ParseFieldSpecs, ScanUrlFormat, Task, TzConfig, Variable, VariableNamespace};
 use crate::proto::gen::transforms::TransformPipeline;
 use crate::spec::chart::{ChartSpec, ChartVisitor};
 use crate::spec::data::{DataFormatParseSpec, DataSpec};
@@ -24,7 +21,7 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::table::VegaFusionTable;
-use vegafusion_common::error::{Result, VegaFusionError};
+use vegafusion_common::error::Result;
 
 #[derive(Clone, Debug, Default)]
 pub struct MakeTaskScopeVisitor {
@@ -241,9 +238,8 @@ impl<'a> ChartVisitor for MakeTasksVisitor<'a> {
             let expression = parse(update)?;
             Task::new_signal(signal_var, scope, expression, &self.tz_config)
         } else {
-            return Err(VegaFusionError::internal(format!(
-                "Signal must have an initial value or an update expression: {signal:#?}"
-            )));
+            let value = TaskValue::Scalar(ScalarValue::Null);
+            Task::new_value(signal_var, scope, value)
         };
 
         self.tasks.push(task);
@@ -342,6 +338,19 @@ impl<'a> ChartVisitor for UpdateVarsChartVisitor<'a> {
         {
             self.update_vars
                 .insert((Variable::new_signal(&signal.name), Vec::from(scope)));
+        } else {
+            // Check for empty signal that has an update in a child signal of the same name
+            // Note: We rely on the fact that visit_signal is called after child groups have been
+            // visited
+            for v in &self.update_vars {
+                if v.0.namespace == VariableNamespace::Signal as i32 {
+                    if v.0.name == signal.name {
+                        self.update_vars
+                            .insert((Variable::new_signal(&signal.name), Vec::from(scope)));
+                        break
+                    }
+                }
+            }
         }
 
         // Check for signal expressions that have update dependencies
