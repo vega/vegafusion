@@ -382,6 +382,9 @@ jobs:
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_jupyter*.whl
           python -m pip install vl-convert-python
+      - name: Update to latest Altair 5
+        run: |
+          pip install --pre -U altair
       - name: Test vegafusion
         working-directory: python/vegafusion/
         run: pytest
