@@ -61,6 +61,8 @@ impl FunctionTransformer for ToUtcTimestampWithAtTimeZoneTransformer {
                 timestamp: Box::new(sql_arg0),
                 time_zone: "UTC".to_string(),
             }
+        } else if time_zone == "UTC" {
+            sql_arg0
         } else {
             let at_tz_expr = SqlExpr::AtTimeZone {
                 timestamp: Box::new(sql_arg0),
