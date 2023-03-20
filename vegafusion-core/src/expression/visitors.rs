@@ -212,7 +212,36 @@ impl ExpressionVisitor for CheckSupportedExprVisitor {
         if node.computed {
             let property = node.property.as_ref().unwrap();
             if property.implicit_vars().contains(&"datum".to_string()) {
+                // e.g. ([0, 1])[datum.foo]
                 self.supported = false;
+            }
+        }
+
+        if let Some(object) = &node.object {
+            if object.implicit_vars().contains(&"datum".to_string()) {
+                let object_expr = object.expr.as_ref().unwrap();
+                let property = node.property.as_ref().unwrap();
+                let property_expr = property.expr.as_ref().unwrap();
+
+                // Object of member may only contain datum if it is the literal datum identifier.
+                // datum["foo"] is ok, (datum["foo"])["bar"] is not
+                let is_datum_literal = object_expr
+                    == &Expr::Identifier(Identifier {
+                        name: "datum".to_string(),
+                    });
+
+                // ... unless the property is a number. datum["foo"][0] is ok
+                let is_number_index = matches!(
+                    property_expr,
+                    Expr::Literal(Literal {
+                        value: Some(Value::Number(_)),
+                        ..
+                    })
+                );
+
+                if !(is_datum_literal || is_number_index) {
+                    self.supported = false;
+                }
             }
         }
     }
