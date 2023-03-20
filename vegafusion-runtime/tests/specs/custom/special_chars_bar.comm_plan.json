@@ -2,12 +2,22 @@
   "server_to_client": [
     {
       "namespace": "data",
-      "name": "data_3",
+      "name": "data_1",
       "scope": []
     },
     {
       "namespace": "data",
-      "name": "specialchars",
+      "name": "data_2",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_2_y_domain___count",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "data_3",
       "scope": []
     }
   ],

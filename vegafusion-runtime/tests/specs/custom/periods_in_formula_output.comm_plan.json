@@ -1,0 +1,15 @@
+{
+  "server_to_client": [
+    {
+      "name": "data_0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_0_y_domain_sum_SALES",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}
