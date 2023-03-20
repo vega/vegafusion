@@ -280,7 +280,7 @@ class VegaFusionRuntime:
                     self._connection.unregister_temporary_tables()
 
             # Deserialize values to Arrow tables
-            datasets = [pa.ipc.deserialize_pandas(value) for value in values]
+            datasets = [value.to_pandas() for value in values]
 
             # Localize datetime columns to UTC
             for df in datasets:

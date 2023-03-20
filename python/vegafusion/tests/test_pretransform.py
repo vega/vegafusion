@@ -1040,3 +1040,81 @@ def test_pre_transform_dataset_duckdb_conn():
         pd.testing.assert_frame_equal(result, expected)
     finally:
         vf.runtime.set_connection("datafusion")
+
+
+def test_gh_268_hang():
+    """
+    Tests for hang reported in https://github.com/hex-inc/vegafusion/issues/268
+    """
+
+    movies = pd.read_json("https://raw.githubusercontent.com/vega/vega-datasets/main/data/movies.json")
+    spec = json.loads(r""" 
+    {
+      "$schema": "https://vega.github.io/schema/vega/v5.json",
+      "data": [
+        {
+          "name": "interval_intervalselection__store"
+        },
+        {
+          "name": "legend_pointselection__store"
+        },
+        {
+          "name": "pivot_hover_32f2e9aa_f08a_4fb5_aa8a_ab3f2cc94a1d_store"
+        },
+        {
+          "name": "movies_clean",
+          "url": "vegafusion+dataset://movies_clean"
+        },
+        {
+          "name": "data_0",
+          "source": "movies_clean",
+          "transform": [
+            {
+              "type": "formula",
+              "expr": "toDate(datum[\"Release Date\"])",
+              "as": "Release Date"
+            }
+          ]
+        },
+        {
+          "name": "data_2",
+          "source": "data_0",
+          "transform": [
+            {
+              "field": "Release Date",
+              "type": "timeunit",
+              "units": [
+                "year"
+              ],
+              "as": [
+                "year_Release Date",
+                "year_Release Date_end"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "data_3",
+          "source": "data_2",
+          "transform": [
+            {
+              "type": "filter",
+              "expr": "!length(data(\"interval_intervalselection__store\")) || vlSelectionTest(\"interval_intervalselection__store\", datum)"
+            },
+            {
+              "type": "filter",
+              "expr": "time('1986-11-09T18:28:05.617') <= time(datum[\"year_Release Date\"]) && time(datum[\"year_Release Date\"]) <= time('2001-09-16T22:23:39.144')"
+            },
+            {
+              "type": "filter",
+              "expr": "!length(data(\"legend_pointselection__store\")) || vlSelectionTest(\"legend_pointselection__store\", datum)"
+            }
+          ]
+        }
+      ]
+    }
+    """)
+    for i in range(20):
+        # Break cache by removing one row each iteration
+        movies_inner = movies.iloc[i:]
+        vf.runtime.pre_transform_datasets(spec, ["data_3"], "UTC", inline_datasets=dict(movies_clean=movies_inner))
