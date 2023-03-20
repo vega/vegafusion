@@ -226,14 +226,14 @@ impl PyVegaFusionRuntime {
         Python::with_gil(|py| -> PyResult<(PyObject, PyObject)> {
             let py_response_list = PyList::empty(py);
             for value in values {
-                let bytes: PyObject = if let TaskValue::Table(table) = value {
-                    PyBytes::new(py, table.to_ipc_bytes()?.as_slice()).into()
+                let pytable: PyObject = if let TaskValue::Table(table) = value {
+                    table.to_pyarrow(py)?
                 } else {
                     return Err(PyErr::from(VegaFusionError::internal(
                         "Unexpected value type",
                     )));
                 };
-                py_response_list.append(bytes)?;
+                py_response_list.append(pytable)?;
             }
 
             let py_warnings = pythonize::pythonize(py, &warnings)?;
