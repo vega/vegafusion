@@ -270,6 +270,9 @@ fn set_column_for_json_rows(
         DataType::Utf8 => {
             set_column_by_array_type!(as_string_array, col_name, rows, array, row_count);
         }
+        DataType::LargeUtf8 => {
+            set_column_by_array_type!(as_largestring_array, col_name, rows, array, row_count);
+        }
         DataType::Date32 => {
             // Write as integer UTC milliseconds
             let arr = array.as_any().downcast_ref::<Date32Array>().unwrap();
