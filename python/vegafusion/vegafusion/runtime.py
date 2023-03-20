@@ -18,6 +18,24 @@ try:
 except ImportError:
     DuckDBPyConnection = None
 
+try:
+    import polars as pl
+except ImportError:
+    pl = None
+
+
+def _all_datasets_have_type(inline_datasets, types):
+    if not inline_datasets:
+        # If there are no inline datasets, return false
+        # (we want the default pandas behavior in this case)
+        return False
+    else:
+        for dataset in inline_datasets.values():
+            if not isinstance(dataset, types):
+                return False
+        return True
+
+
 class VegaFusionRuntime:
     def __init__(self, cache_capacity, memory_limit, worker_threads, connection=None):
         self._embedded_runtime = None
@@ -279,16 +297,32 @@ class VegaFusionRuntime:
                 if self._connection is not None:
                     self._connection.unregister_temporary_tables()
 
-            # Deserialize values to Arrow tables
-            datasets = [value.to_pandas() for value in values]
+            if pl is not None and _all_datasets_have_type(inline_datasets, (pl.DataFrame, pl.LazyFrame)):
+                # Deserialize values to Polars tables
+                datasets = [pl.from_arrow(value) for value in values]
 
-            # Localize datetime columns to UTC
-            for df in datasets:
-                for name, dtype in df.dtypes.items():
-                    if dtype.kind == "M":
-                        df[name] = df[name].dt.tz_localize("UTC").dt.tz_convert(local_tz)
+                # Localize datetime columns to UTC
+                processed_datasets = []
+                for df in datasets:
+                    for name, dtype in zip(df.columns, df.dtypes):
+                        if dtype == pl.Datetime:
+                            df = df.with_columns(df[name].dt.replace_time_zone("UTC").dt.convert_time_zone(local_tz))
+                    processed_datasets.append(df)
 
-            return datasets, warnings
+                return processed_datasets, warnings
+            elif _all_datasets_have_type(inline_datasets, pa.Table):
+                return datasets, warnings
+            else:
+                # Deserialize values to pandas DataFrames
+                datasets = [value.to_pandas() for value in values]
+
+                # Localize datetime columns to UTC
+                for df in datasets:
+                    for name, dtype in df.dtypes.items():
+                        if dtype.kind == "M":
+                            df[name] = df[name].dt.tz_localize("UTC").dt.tz_convert(local_tz)
+
+                return datasets, warnings
 
     @property
     def worker_threads(self):
