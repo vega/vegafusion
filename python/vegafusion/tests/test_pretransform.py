@@ -1004,8 +1004,11 @@ def test_pre_transform_dataset_dataframe_interface_protocol():
     assert len(datasets) == 1
 
     result = datasets[0]
-    expected = pd.DataFrame({"menu_item": [0, 1, 2], "__count": [n, 2 * n, 3 * n]})
-    pd.testing.assert_frame_equal(result, expected)
+
+    # Result should be a polars DataFrame
+    assert isinstance(result, pl.DataFrame)
+    expected = pl.DataFrame({"menu_item": [0, 1, 2], "__count": [n, 2 * n, 3 * n]})
+    assert result.frame_equal(expected)
 
 
 def test_pre_transform_dataset_duckdb_conn():
