@@ -2,7 +2,7 @@ pub mod connection;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyList, PyTuple};
+use pyo3::types::{PyBytes, PyDict, PyList};
 use std::collections::HashMap;
 use std::sync::{Arc, Once};
 use tokio::runtime::Runtime;
@@ -54,18 +54,14 @@ fn process_inline_datasets(
 ) -> PyResult<HashMap<String, VegaFusionDataset>> {
     if let Some(inline_datasets) = inline_datasets {
         Python::with_gil(|py| -> PyResult<_> {
-            let pyarrow_module = PyModule::import(py, "builtins")?;
-            let id_fun = pyarrow_module.getattr("id")?;
-
             inline_datasets
                 .iter()
                 .map(|(name, pyarrow_table)| {
-                    // Use object id of the pyarrow table as dataset's fingerprint
-                    let args = PyTuple::new(py, vec![pyarrow_table]);
-                    let id_object = id_fun.call(args, None)?;
-                    let id = id_object.extract::<u64>()?;
+                    // We convert to ipc bytes for two reasons:
+                    // - It allows VegaFusionDataset to compute an accurate hash of the table
+                    // - It works around https://github.com/hex-inc/vegafusion/issues/268
                     let table = VegaFusionTable::from_pyarrow(py, pyarrow_table)?;
-                    let dataset = VegaFusionDataset::Table { table, hash: id };
+                    let dataset = VegaFusionDataset::from_table_ipc_bytes(&table.to_ipc_bytes()?)?;
                     Ok((name.to_string(), dataset))
                 })
                 .collect::<PyResult<HashMap<_, _>>>()
