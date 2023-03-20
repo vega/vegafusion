@@ -125,6 +125,22 @@ impl MsgReceiver {
         this
     }
 
+    pub fn get_signal_value(&self, name: &str, scope: &[u32]) -> JsValue {
+        get_signal_value(self.view.as_ref(), name, scope)
+    }
+
+    pub fn get_data_value(&self, name: &str, scope: &[u32]) -> JsValue {
+        get_data_value(self.view.as_ref(), name, scope)
+    }
+
+    pub fn set_signal_value(&self, name: &str, scope: &[u32], value: JsValue) {
+        set_signal_value(self.view.as_ref(), name, scope, value);
+    }
+
+    pub fn set_data_value(&self, name: &str, scope: &[u32], value: JsValue) {
+        set_data_value(self.view.as_ref(), name, scope, value);
+    }
+
     pub fn receive(&mut self, bytes: Vec<u8>) {
         // Decode message
         let response = QueryResult::decode(bytes.as_slice()).unwrap();
@@ -132,7 +148,6 @@ impl MsgReceiver {
         if let Some(response) = response.response {
             match response {
                 query_result::Response::TaskGraphValues(task_graph_vals) => {
-                    let view = self.view();
                     for (var, scope, value) in task_graph_vals
                         .deserialize()
                         .expect("Failed to deserialize response")
@@ -149,7 +164,7 @@ impl MsgReceiver {
                                 let js_value =
                                     js_sys::JSON::parse(&serde_json::to_string(&json).unwrap())
                                         .unwrap();
-                                set_signal_value(view, &var.name, scope.as_slice(), js_value);
+                                self.set_signal_value(&var.name, scope.as_slice(), js_value);
                             }
                             TaskValue::Table(value) => {
                                 let json = value.to_json().expect("Failed to serialize table");
@@ -162,11 +177,11 @@ impl MsgReceiver {
                                 let js_value =
                                     js_sys::JSON::parse(&serde_json::to_string(&json).unwrap())
                                         .unwrap();
-
-                                set_data_value(view, &var.name, scope.as_slice(), js_value);
+                                self.set_data_value(&var.name, scope.as_slice(), js_value);
                             }
                         }
                     }
+                    let view = self.view();
                     view.run();
                 }
                 query_result::Response::Error(error) => {
