@@ -125,20 +125,36 @@ impl MsgReceiver {
         this
     }
 
-    pub fn get_signal_value(&self, name: &str, scope: &[u32]) -> JsValue {
+    pub fn get_signal(&self, name: &str, scope: &[u32]) -> JsValue {
         get_signal_value(self.view.as_ref(), name, scope)
     }
 
-    pub fn get_data_value(&self, name: &str, scope: &[u32]) -> JsValue {
+    pub fn get_data(&self, name: &str, scope: &[u32]) -> JsValue {
         get_data_value(self.view.as_ref(), name, scope)
     }
 
-    pub fn set_signal_value(&self, name: &str, scope: &[u32], value: JsValue) {
+    pub fn set_signal(&self, name: &str, scope: &[u32], value: JsValue) {
         set_signal_value(self.view.as_ref(), name, scope, value);
     }
 
-    pub fn set_data_value(&self, name: &str, scope: &[u32], value: JsValue) {
+    pub fn set_data(&self, name: &str, scope: &[u32], value: JsValue) {
         set_data_value(self.view.as_ref(), name, scope, value);
+    }
+
+    pub fn get_state(&self) -> JsValue {
+        self.view.get_state()
+    }
+
+    pub fn set_state(&self, state: JsValue) {
+        self.view.set_state(state)
+    }
+
+    pub fn run(&self) {
+        self.view.run()
+    }
+
+    pub fn run_async(&self) -> Promise {
+        self.view.run_async()
     }
 
     pub fn receive(&mut self, bytes: Vec<u8>) {
@@ -164,7 +180,7 @@ impl MsgReceiver {
                                 let js_value =
                                     js_sys::JSON::parse(&serde_json::to_string(&json).unwrap())
                                         .unwrap();
-                                self.set_signal_value(&var.name, scope.as_slice(), js_value);
+                                self.set_signal(&var.name, scope.as_slice(), js_value);
                             }
                             TaskValue::Table(value) => {
                                 let json = value.to_json().expect("Failed to serialize table");
@@ -177,7 +193,7 @@ impl MsgReceiver {
                                 let js_value =
                                     js_sys::JSON::parse(&serde_json::to_string(&json).unwrap())
                                         .unwrap();
-                                self.set_data_value(&var.name, scope.as_slice(), js_value);
+                                self.set_data(&var.name, scope.as_slice(), js_value);
                             }
                         }
                     }
@@ -502,8 +518,17 @@ extern "C" {
     #[wasm_bindgen(method, js_name = "run")]
     pub fn run(this: &View);
 
+    #[wasm_bindgen(method, js_name = "runAsync")]
+    pub fn run_async(this: &View) -> Promise;
+
     #[wasm_bindgen(method, js_name = "hover")]
     pub fn hover(this: &View);
+
+    #[wasm_bindgen(method, js_name = "getState")]
+    pub fn get_state(this: &View) -> JsValue;
+
+    #[wasm_bindgen(method, js_name = "setState")]
+    pub fn set_state(this: &View, state: JsValue);
 
     #[wasm_bindgen(method, js_name = "toImageURL")]
     pub fn to_image_url(this: &View, img_type: &str, scale_factor: f64) -> Promise;
