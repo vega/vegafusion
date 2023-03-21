@@ -140,6 +140,7 @@ mod test_custom_specs {
         case("custom/pivot_crash", 0.001, false),
 
         case("custom/taxi_dashboard", 0.001, true),
+        case("custom/periods_in_formula_output", 0.001, true)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64, extract_inline_values: bool) {
         println!("spec_name: {spec_name}");

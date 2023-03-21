@@ -1,0 +1,228 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 200,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {
+      "name": "pandas_dataframe",
+      "values": [
+        {
+          "MONTH.MONTH": "2023-01-01 00:00:00",
+          "MONTH_MONTH": "2023-01-01 00:00:00",
+          "SALES": 611
+        },
+        {
+          "MONTH.MONTH": "2023-01-01 12:00:00",
+          "MONTH_MONTH": "2023-01-01 12:00:00",
+          "SALES": 399
+        },
+        {
+          "MONTH.MONTH": "2023-01-02 00:00:00",
+          "MONTH_MONTH": "2023-01-02 00:00:00",
+          "SALES": 582
+        },
+        {
+          "MONTH.MONTH": "2023-01-02 12:00:00",
+          "MONTH_MONTH": "2023-01-02 12:00:00",
+          "SALES": 76
+        },
+        {
+          "MONTH.MONTH": "2023-01-03 00:00:00",
+          "MONTH_MONTH": "2023-01-03 00:00:00",
+          "SALES": 418
+        },
+        {
+          "MONTH.MONTH": "2023-01-03 12:00:00",
+          "MONTH_MONTH": "2023-01-03 12:00:00",
+          "SALES": 688
+        },
+        {
+          "MONTH.MONTH": "2023-01-04 00:00:00",
+          "MONTH_MONTH": "2023-01-04 00:00:00",
+          "SALES": 712
+        },
+        {
+          "MONTH.MONTH": "2023-01-04 12:00:00",
+          "MONTH_MONTH": "2023-01-04 12:00:00",
+          "SALES": 621
+        },
+        {
+          "MONTH.MONTH": "2023-01-05 00:00:00",
+          "MONTH_MONTH": "2023-01-05 00:00:00",
+          "SALES": 231
+        },
+        {
+          "MONTH.MONTH": "2023-01-05 12:00:00",
+          "MONTH_MONTH": "2023-01-05 12:00:00",
+          "SALES": 280
+        },
+        {
+          "MONTH.MONTH": "2023-01-06 00:00:00",
+          "MONTH_MONTH": "2023-01-06 00:00:00",
+          "SALES": 612
+        },
+        {
+          "MONTH.MONTH": "2023-01-06 12:00:00",
+          "MONTH_MONTH": "2023-01-06 12:00:00",
+          "SALES": 995
+        },
+        {
+          "MONTH.MONTH": "2023-01-07 00:00:00",
+          "MONTH_MONTH": "2023-01-07 00:00:00",
+          "SALES": 145
+        },
+        {
+          "MONTH.MONTH": "2023-01-07 12:00:00",
+          "MONTH_MONTH": "2023-01-07 12:00:00",
+          "SALES": 846
+        }
+      ]
+    },
+    {
+      "name": "data_0",
+      "source": "pandas_dataframe",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "toDate(datum[\"MONTH.MONTH\"])",
+          "as": "MONTH.MONTH"
+        },
+        {"type": "filter", "expr": "isValid(datum[\"MONTH\\.MONTH\"])"},
+        {
+          "field": "MONTH\\.MONTH",
+          "type": "timeunit",
+          "units": ["year", "month", "date"],
+          "as": ["yearmonthdate_MONTH.MONTH", "yearmonthdate_MONTH.MONTH_end"]
+        },
+        {
+          "type": "aggregate",
+          "groupby": [
+            "yearmonthdate_MONTH\\.MONTH",
+            "yearmonthdate_MONTH\\.MONTH_end"
+          ],
+          "ops": ["sum"],
+          "fields": ["SALES"],
+          "as": ["sum_SALES"]
+        },
+        {
+          "type": "filter",
+          "expr": "(isDate(datum[\"yearmonthdate_MONTH.MONTH\"]) || (isValid(datum[\"yearmonthdate_MONTH.MONTH\"]) && isFinite(+datum[\"yearmonthdate_MONTH.MONTH\"]))) && isValid(datum[\"sum_SALES\"]) && isFinite(+datum[\"sum_SALES\"])"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_layer_0_layer_0_marks",
+      "type": "rect",
+      "clip": true,
+      "style": ["bar"],
+      "from": {"data": "data_0"},
+      "encode": {
+        "update": {
+          "fill": {"value": "#4C78A8"},
+          "opacity": {"value": 1},
+          "tooltip": {
+            "signal": "{\"MONTH\\.MONTH (year-month-date)\": timeFormat(datum[\"yearmonthdate_MONTH.MONTH\"], timeUnitSpecifier([\"year\",\"month\",\"date\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})), \"Sum of SALES\": format(datum[\"sum_SALES\"], \"\")}"
+          },
+          "ariaRoleDescription": {"value": "bar"},
+          "description": {
+            "signal": "\"MONTH.MONTH (year-month-date): \" + (timeFormat(datum[\"yearmonthdate_MONTH.MONTH\"], timeUnitSpecifier([\"year\",\"month\",\"date\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Sum of SALES: \" + (format(datum[\"sum_SALES\"], \"\")) + \"; MONTH\\.MONTH (year-month-date): \" + (timeFormat(datum[\"yearmonthdate_MONTH.MONTH\"], timeUnitSpecifier([\"year\",\"month\",\"date\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})))"
+          },
+          "x2": {
+            "scale": "x",
+            "field": "yearmonthdate_MONTH\\.MONTH",
+            "offset": 1
+          },
+          "x": {"scale": "x", "field": "yearmonthdate_MONTH\\.MONTH_end"},
+          "y": {"scale": "y", "field": "sum_SALES"},
+          "y2": {"scale": "y", "value": 0}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "time",
+      "domain": {
+        "data": "data_0",
+        "fields": [
+          "yearmonthdate_MONTH\\.MONTH",
+          "yearmonthdate_MONTH\\.MONTH_end"
+        ]
+      },
+      "range": [0, {"signal": "width"}]
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {"data": "data_0", "field": "sum_SALES"},
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": true,
+      "gridScale": "y",
+      "tickCount": {"signal": "ceil(width/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": true,
+      "gridScale": "x",
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "MONTH.MONTH (year-month-date)",
+      "labelFlush": false,
+      "labels": true,
+      "ticks": true,
+      "format": {
+        "signal": "timeUnitSpecifier([\"year\",\"month\",\"date\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"})"
+      },
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(width/40)"},
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "Sum of SALES",
+      "labelFlush": false,
+      "labels": true,
+      "ticks": true,
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
+    }
+  ],
+  "config": {"legend": {"orient": "right"}},
+  "usermeta": {"selectionConfigs": {}}
+}
