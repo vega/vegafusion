@@ -216,3 +216,74 @@ mod test_vl_selection_test_e_multi {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
+mod test_vl_selection_test_e_mixed_str_bool {
+    use crate::util::check::eval_vegafusion_transforms;
+    use crate::*;
+
+    #[test]
+    fn test() {
+        let brush_json = json!([
+            {
+              "unit": "",
+              "fields": [
+                {"field": "Major Genre", "channel": "x", "type": "E"},
+                {"field": "is_pg", "channel": "color", "type": "E"}
+              ],
+              "values": ["Adventure", true]
+            },
+            {
+              "unit": "",
+              "fields": [
+                {"field": "Major Genre", "channel": "x", "type": "E"},
+                {"field": "is_pg", "channel": "color", "type": "E"}
+              ],
+              "values": ["Comedy", false]
+            }
+        ]);
+        let brush = VegaFusionTable::from_json(&brush_json, 16).unwrap();
+
+        let dataset_json = json!([
+            {"Major Genre": "Adventure", "is_pg": true, "Title": "A"},
+            {"Major Genre": "Comedy", "is_pg": true, "Title": "B"},
+            {"Major Genre": "Documentary", "is_pg": true, "Title": "C"},
+            {"Major Genre": "Comedy", "is_pg": false, "Title": "D"},
+            {"Major Genre": "Adventure", "is_pg": true, "Title": "E"},
+        ]);
+        let dataset = VegaFusionTable::from_json(&dataset_json, 16).unwrap();
+
+        let formula_spec = FormulaTransformSpec {
+            expr: format!("vlSelectionTest('brush', datum, 'union')"),
+            as_: "it_is_selected".to_string(),
+            extra: Default::default(),
+        };
+
+        let transform_specs = vec![TransformSpec::Formula(formula_spec)];
+
+        let config = CompilationConfig {
+            data_scope: vec![("brush".to_string(), brush)].into_iter().collect(),
+            tz_config: Some(RuntimeTzConfig {
+                local_tz: chrono_tz::UTC,
+                default_input_tz: chrono_tz::UTC,
+            }),
+            ..Default::default()
+        };
+
+        let (result_data, _result_signals) =
+            eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &config);
+
+        assert_eq!(
+            result_data.pretty_format(None).unwrap(),
+            "\
++-------------+-------+-------+----------------+
+| Major Genre | is_pg | Title | it_is_selected |
++-------------+-------+-------+----------------+
+| Adventure   | true  | A     | true           |
+| Comedy      | true  | B     | false          |
+| Documentary | true  | C     | false          |
+| Comedy      | false | D     | true           |
+| Adventure   | true  | E     | true           |
++-------------+-------+-------+----------------+"
+        )
+    }
+}

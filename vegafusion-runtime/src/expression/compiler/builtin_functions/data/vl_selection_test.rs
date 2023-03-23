@@ -279,6 +279,14 @@ impl FieldSpec {
                 };
                 cast_to(ms_expr, field_type, schema)
             }
+            ScalarValue::Utf8(Some(s)) if field_type == &DataType::Boolean => {
+                // If comparing string to boolean, treat "false" and "" as false,
+                // all others as true
+                Ok(match s.as_str() {
+                    "false" | "" => lit(false),
+                    _ => lit(true),
+                })
+            }
             _ => {
                 if is_numeric_datatype(field_type) && !is_numeric_datatype(&scalar.get_datatype()) {
                     cast_to(lit(scalar), field_type, schema)
