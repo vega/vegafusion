@@ -269,7 +269,7 @@ mod test_vl_selection_test_e_mixed_str_bool {
             ..Default::default()
         };
 
-        let (result_data, result_signals) =
+        let (result_data, _result_signals) =
             eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &config);
 
         assert_eq!(
