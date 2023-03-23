@@ -157,6 +157,28 @@ impl MsgReceiver {
         self.view.run_async()
     }
 
+    pub fn add_signal_listener(&self, name: &str, scope: &[u32], handler: JsValue) {
+        add_signal_listener(
+            self.view(),
+            name,
+            scope,
+            handler,
+            self.debounce_wait,
+            self.debounce_max_wait,
+        );
+    }
+
+    pub fn add_data_listener(&self, name: &str, scope: &[u32], handler: JsValue) {
+        add_data_listener(
+            self.view(),
+            name,
+            scope,
+            handler,
+            self.debounce_wait,
+            self.debounce_max_wait,
+        );
+    }
+
     pub fn receive(&mut self, bytes: Vec<u8>) {
         // Decode message
         let response = QueryResult::decode(bytes.as_slice()).unwrap();
@@ -209,28 +231,6 @@ impl MsgReceiver {
 
     fn view(&self) -> &View {
         &self.view
-    }
-
-    fn add_signal_listener(&self, name: &str, scope: &[u32], handler: JsValue) {
-        add_signal_listener(
-            self.view(),
-            name,
-            scope,
-            handler,
-            self.debounce_wait,
-            self.debounce_max_wait,
-        );
-    }
-
-    fn add_data_listener(&self, name: &str, scope: &[u32], handler: JsValue) {
-        add_data_listener(
-            self.view(),
-            name,
-            scope,
-            handler,
-            self.debounce_wait,
-            self.debounce_max_wait,
-        );
     }
 
     fn register_callbacks(&self) {
