@@ -34,11 +34,9 @@ impl TonicVegaFusionRuntime for VegaFusionRuntimeGrpc {
         &self,
         request: Request<QueryRequest>,
     ) -> Result<Response<QueryResult>, Status> {
-        println!("grpc request...");
         let result = self.runtime.query_request(request.into_inner()).await;
         match result {
             Ok(result) => {
-                println!("  response");
                 Ok(Response::new(result))
             }
             Err(err) => Err(Status::unknown(err.to_string())),
