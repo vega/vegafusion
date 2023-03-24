@@ -139,9 +139,15 @@ jobs:
           dest: vegafusion-server-${{ matrix.options[1] }}.zip
       - name: zip executable (Mac or Linux)
         uses: papeloto/action-zip@v1
-        if: runner.os != 'Windows'
+        if: ${{ matrix.options[1] != 'osx-arm64' && runner.os != 'Windows'}}
         with:
           files: target/release/vegafusion-server
+          dest: vegafusion-server-${{ matrix.options[1] }}.zip
+      - name: zip executable (Apple silicon)
+        uses: papeloto/action-zip@v1
+        if: ${{ matrix.options[1] == 'osx-arm64'}}
+        with:
+          files: target/aarch64-apple-darwin/release/vegafusion-server
           dest: vegafusion-server-${{ matrix.options[1] }}.zip
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
