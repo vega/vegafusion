@@ -102,12 +102,11 @@ let flights_spec = {
     "$schema": "https://vega.github.io/schema/vega/v5.json",
     "background": "white",
     "padding": 5,
-    "width": 400,
     "data": [
         {"name": "brush_store"},
         {
             "name": "source_0",
-            "url": "https://raw.githubusercontent.com/vega/vega-datasets/master/data/flights-2k.json",
+            "url": "https://raw.githubusercontent.com/vega/vega-datasets/main/data/flights-2k.json",
             "format": {"type": "json", "parse": {"date": "date"}},
             "transform": [
                 {
@@ -139,7 +138,8 @@ let flights_spec = {
                         "signal": "child__column_distance_layer_0_bin_maxbins_20_distance_extent"
                     },
                     "maxbins": 20
-                }
+                },
+                {"type": "formula", "expr": "hours(datum.date)", "as": "time"}
             ]
         },
         {
@@ -147,14 +147,73 @@ let flights_spec = {
             "source": "source_0",
             "transform": [
                 {
-                    "type": "filter",
-                    "expr": "!length(data(\"brush_store\")) || vlSelectionTest(\"brush_store\", datum, \"union\")"
+                    "type": "extent",
+                    "field": "time",
+                    "signal": "child__column_time_layer_1_bin_maxbins_20_time_extent"
+                },
+                {
+                    "type": "bin",
+                    "field": "time",
+                    "as": ["bin_maxbins_20_time", "bin_maxbins_20_time_end"],
+                    "signal": "child__column_time_layer_1_bin_maxbins_20_time_bins",
+                    "extent": {
+                        "signal": "child__column_time_layer_1_bin_maxbins_20_time_extent"
+                    },
+                    "maxbins": 20
                 }
             ]
         },
         {
             "name": "data_1",
             "source": "data_0",
+            "transform": [
+                {
+                    "type": "filter",
+                    "expr": "!length(data(\"brush_store\")) || vlSelectionTest(\"brush_store\", datum)"
+                },
+                {
+                    "type": "aggregate",
+                    "groupby": ["bin_maxbins_20_time", "bin_maxbins_20_time_end"],
+                    "ops": ["count"],
+                    "fields": [null],
+                    "as": ["__count"]
+                },
+                {
+                    "type": "filter",
+                    "expr": "isValid(datum[\"bin_maxbins_20_time\"]) && isFinite(+datum[\"bin_maxbins_20_time\"])"
+                }
+            ]
+        },
+        {
+            "name": "data_2",
+            "source": "data_0",
+            "transform": [
+                {
+                    "type": "aggregate",
+                    "groupby": ["bin_maxbins_20_time", "bin_maxbins_20_time_end"],
+                    "ops": ["count"],
+                    "fields": [null],
+                    "as": ["__count"]
+                },
+                {
+                    "type": "filter",
+                    "expr": "isValid(datum[\"bin_maxbins_20_time\"]) && isFinite(+datum[\"bin_maxbins_20_time\"])"
+                }
+            ]
+        },
+        {
+            "name": "data_3",
+            "source": "source_0",
+            "transform": [
+                {
+                    "type": "filter",
+                    "expr": "!length(data(\"brush_store\")) || vlSelectionTest(\"brush_store\", datum)"
+                }
+            ]
+        },
+        {
+            "name": "data_4",
+            "source": "data_3",
             "transform": [
                 {
                     "type": "aggregate",
@@ -170,8 +229,8 @@ let flights_spec = {
             ]
         },
         {
-            "name": "data_2",
-            "source": "data_0",
+            "name": "data_5",
+            "source": "data_3",
             "transform": [
                 {
                     "type": "aggregate",
@@ -187,7 +246,7 @@ let flights_spec = {
             ]
         },
         {
-            "name": "data_3",
+            "name": "data_6",
             "source": "source_0",
             "transform": [
                 {
@@ -204,7 +263,7 @@ let flights_spec = {
             ]
         },
         {
-            "name": "data_4",
+            "name": "data_7",
             "source": "source_0",
             "transform": [
                 {
@@ -236,7 +295,7 @@ let flights_spec = {
             "update": "vlSelectionResolve(\"brush_store\", \"union\")"
         }
     ],
-    "layout": {"padding": 20, "columns": 2, "bounds": "full", "align": "all"},
+    "layout": {"padding": 20, "columns": 3, "bounds": "full", "align": "all"},
     "marks": [
         {
             "type": "group",
@@ -409,7 +468,7 @@ let flights_spec = {
                     "on": [
                         {
                             "events": {"signal": "brush_tuple"},
-                            "update": "modify(\"brush_store\", brush_tuple, {unit: \"child__column_distance_layer_0\"})"
+                            "update": "modify(\"brush_store\", brush_tuple, true)"
                         }
                     ]
                 }
@@ -425,10 +484,34 @@ let flights_spec = {
                             "fillOpacity": {"value": 0.125}
                         },
                         "update": {
-                            "x": {"signal": "brush_x[0]"},
-                            "y": {"value": 0},
-                            "x2": {"signal": "brush_x[1]"},
-                            "y2": {"field": {"group": "height"}}
+                            "x": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_distance_layer_0\"",
+                                    "signal": "brush_x[0]"
+                                },
+                                {"value": 0}
+                            ],
+                            "y": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_distance_layer_0\"",
+                                    "value": 0
+                                },
+                                {"value": 0}
+                            ],
+                            "x2": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_distance_layer_0\"",
+                                    "signal": "brush_x[1]"
+                                },
+                                {"value": 0}
+                            ],
+                            "y2": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_distance_layer_0\"",
+                                    "field": {"group": "height"}
+                                },
+                                {"value": 0}
+                            ]
                         }
                     }
                 },
@@ -437,7 +520,7 @@ let flights_spec = {
                     "type": "rect",
                     "style": ["bar"],
                     "interactive": true,
-                    "from": {"data": "data_3"},
+                    "from": {"data": "data_6"},
                     "encode": {
                         "update": {
                             "fill": {"value": "#ddd"},
@@ -445,27 +528,15 @@ let flights_spec = {
                             "description": {
                                 "signal": "\"distance (binned): \" + (!isValid(datum[\"bin_maxbins_20_distance\"]) || !isFinite(+datum[\"bin_maxbins_20_distance\"]) ? \"null\" : format(datum[\"bin_maxbins_20_distance\"], \"\") + \" – \" + format(datum[\"bin_maxbins_20_distance_end\"], \"\")) + \"; Count of Records: \" + (format(datum[\"__count\"], \"\"))"
                             },
-                            "x2": [
-                                {
-                                    "test": "!isValid(datum[\"bin_maxbins_20_distance\"]) || !isFinite(+datum[\"bin_maxbins_20_distance\"])",
-                                    "value": 0
-                                },
-                                {
-                                    "scale": "child__column_distance_x",
-                                    "field": "bin_maxbins_20_distance",
-                                    "offset": 1
-                                }
-                            ],
-                            "x": [
-                                {
-                                    "test": "!isValid(datum[\"bin_maxbins_20_distance\"]) || !isFinite(+datum[\"bin_maxbins_20_distance\"])",
-                                    "value": 0
-                                },
-                                {
-                                    "scale": "child__column_distance_x",
-                                    "field": "bin_maxbins_20_distance_end"
-                                }
-                            ],
+                            "x2": {
+                                "scale": "child__column_distance_x",
+                                "field": "bin_maxbins_20_distance",
+                                "offset": 1
+                            },
+                            "x": {
+                                "scale": "child__column_distance_x",
+                                "field": "bin_maxbins_20_distance_end"
+                            },
                             "y": {"scale": "child__column_distance_y", "field": "__count"},
                             "y2": {"scale": "child__column_distance_y", "value": 0}
                         }
@@ -476,7 +547,7 @@ let flights_spec = {
                     "type": "rect",
                     "style": ["bar"],
                     "interactive": false,
-                    "from": {"data": "data_2"},
+                    "from": {"data": "data_5"},
                     "encode": {
                         "update": {
                             "fill": {"value": "#4c78a8"},
@@ -484,27 +555,15 @@ let flights_spec = {
                             "description": {
                                 "signal": "\"distance (binned): \" + (!isValid(datum[\"bin_maxbins_20_distance\"]) || !isFinite(+datum[\"bin_maxbins_20_distance\"]) ? \"null\" : format(datum[\"bin_maxbins_20_distance\"], \"\") + \" – \" + format(datum[\"bin_maxbins_20_distance_end\"], \"\")) + \"; Count of Records: \" + (format(datum[\"__count\"], \"\"))"
                             },
-                            "x2": [
-                                {
-                                    "test": "!isValid(datum[\"bin_maxbins_20_distance\"]) || !isFinite(+datum[\"bin_maxbins_20_distance\"])",
-                                    "value": 0
-                                },
-                                {
-                                    "scale": "child__column_distance_x",
-                                    "field": "bin_maxbins_20_distance",
-                                    "offset": 1
-                                }
-                            ],
-                            "x": [
-                                {
-                                    "test": "!isValid(datum[\"bin_maxbins_20_distance\"]) || !isFinite(+datum[\"bin_maxbins_20_distance\"])",
-                                    "value": 0
-                                },
-                                {
-                                    "scale": "child__column_distance_x",
-                                    "field": "bin_maxbins_20_distance_end"
-                                }
-                            ],
+                            "x2": {
+                                "scale": "child__column_distance_x",
+                                "field": "bin_maxbins_20_distance",
+                                "offset": 1
+                            },
+                            "x": {
+                                "scale": "child__column_distance_x",
+                                "field": "bin_maxbins_20_distance_end"
+                            },
                             "y": {"scale": "child__column_distance_y", "field": "__count"},
                             "y2": {"scale": "child__column_distance_y", "value": 0}
                         }
@@ -517,10 +576,34 @@ let flights_spec = {
                     "encode": {
                         "enter": {"fill": {"value": "transparent"}},
                         "update": {
-                            "x": {"signal": "brush_x[0]"},
-                            "y": {"value": 0},
-                            "x2": {"signal": "brush_x[1]"},
-                            "y2": {"field": {"group": "height"}},
+                            "x": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_distance_layer_0\"",
+                                    "signal": "brush_x[0]"
+                                },
+                                {"value": 0}
+                            ],
+                            "y": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_distance_layer_0\"",
+                                    "value": 0
+                                },
+                                {"value": 0}
+                            ],
+                            "x2": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_distance_layer_0\"",
+                                    "signal": "brush_x[1]"
+                                },
+                                {"value": 0}
+                            ],
+                            "y2": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_distance_layer_0\"",
+                                    "field": {"group": "height"}
+                                },
+                                {"value": 0}
+                            ],
                             "stroke": [
                                 {"test": "brush_x[0] !== brush_x[1]", "value": "white"},
                                 {"value": null}
@@ -736,7 +819,7 @@ let flights_spec = {
                     "on": [
                         {
                             "events": {"signal": "brush_tuple"},
-                            "update": "modify(\"brush_store\", brush_tuple, {unit: \"child__column_delay_layer_0\"})"
+                            "update": "modify(\"brush_store\", brush_tuple, true)"
                         }
                     ]
                 }
@@ -752,10 +835,34 @@ let flights_spec = {
                             "fillOpacity": {"value": 0.125}
                         },
                         "update": {
-                            "x": {"signal": "brush_x[0]"},
-                            "y": {"value": 0},
-                            "x2": {"signal": "brush_x[1]"},
-                            "y2": {"field": {"group": "height"}}
+                            "x": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_delay_layer_0\"",
+                                    "signal": "brush_x[0]"
+                                },
+                                {"value": 0}
+                            ],
+                            "y": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_delay_layer_0\"",
+                                    "value": 0
+                                },
+                                {"value": 0}
+                            ],
+                            "x2": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_delay_layer_0\"",
+                                    "signal": "brush_x[1]"
+                                },
+                                {"value": 0}
+                            ],
+                            "y2": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_delay_layer_0\"",
+                                    "field": {"group": "height"}
+                                },
+                                {"value": 0}
+                            ]
                         }
                     }
                 },
@@ -764,7 +871,7 @@ let flights_spec = {
                     "type": "rect",
                     "style": ["bar"],
                     "interactive": true,
-                    "from": {"data": "data_4"},
+                    "from": {"data": "data_7"},
                     "encode": {
                         "update": {
                             "fill": {"value": "#ddd"},
@@ -772,27 +879,15 @@ let flights_spec = {
                             "description": {
                                 "signal": "\"delay (binned): \" + (!isValid(datum[\"bin_maxbins_20_delay\"]) || !isFinite(+datum[\"bin_maxbins_20_delay\"]) ? \"null\" : format(datum[\"bin_maxbins_20_delay\"], \"\") + \" – \" + format(datum[\"bin_maxbins_20_delay_end\"], \"\")) + \"; Count of Records: \" + (format(datum[\"__count\"], \"\"))"
                             },
-                            "x2": [
-                                {
-                                    "test": "!isValid(datum[\"bin_maxbins_20_delay\"]) || !isFinite(+datum[\"bin_maxbins_20_delay\"])",
-                                    "value": 0
-                                },
-                                {
-                                    "scale": "child__column_delay_x",
-                                    "field": "bin_maxbins_20_delay",
-                                    "offset": 1
-                                }
-                            ],
-                            "x": [
-                                {
-                                    "test": "!isValid(datum[\"bin_maxbins_20_delay\"]) || !isFinite(+datum[\"bin_maxbins_20_delay\"])",
-                                    "value": 0
-                                },
-                                {
-                                    "scale": "child__column_delay_x",
-                                    "field": "bin_maxbins_20_delay_end"
-                                }
-                            ],
+                            "x2": {
+                                "scale": "child__column_delay_x",
+                                "field": "bin_maxbins_20_delay",
+                                "offset": 1
+                            },
+                            "x": {
+                                "scale": "child__column_delay_x",
+                                "field": "bin_maxbins_20_delay_end"
+                            },
                             "y": {"scale": "child__column_delay_y", "field": "__count"},
                             "y2": {"scale": "child__column_delay_y", "value": 0}
                         }
@@ -803,7 +898,7 @@ let flights_spec = {
                     "type": "rect",
                     "style": ["bar"],
                     "interactive": false,
-                    "from": {"data": "data_1"},
+                    "from": {"data": "data_4"},
                     "encode": {
                         "update": {
                             "fill": {"value": "#4c78a8"},
@@ -811,27 +906,15 @@ let flights_spec = {
                             "description": {
                                 "signal": "\"delay (binned): \" + (!isValid(datum[\"bin_maxbins_20_delay\"]) || !isFinite(+datum[\"bin_maxbins_20_delay\"]) ? \"null\" : format(datum[\"bin_maxbins_20_delay\"], \"\") + \" – \" + format(datum[\"bin_maxbins_20_delay_end\"], \"\")) + \"; Count of Records: \" + (format(datum[\"__count\"], \"\"))"
                             },
-                            "x2": [
-                                {
-                                    "test": "!isValid(datum[\"bin_maxbins_20_delay\"]) || !isFinite(+datum[\"bin_maxbins_20_delay\"])",
-                                    "value": 0
-                                },
-                                {
-                                    "scale": "child__column_delay_x",
-                                    "field": "bin_maxbins_20_delay",
-                                    "offset": 1
-                                }
-                            ],
-                            "x": [
-                                {
-                                    "test": "!isValid(datum[\"bin_maxbins_20_delay\"]) || !isFinite(+datum[\"bin_maxbins_20_delay\"])",
-                                    "value": 0
-                                },
-                                {
-                                    "scale": "child__column_delay_x",
-                                    "field": "bin_maxbins_20_delay_end"
-                                }
-                            ],
+                            "x2": {
+                                "scale": "child__column_delay_x",
+                                "field": "bin_maxbins_20_delay",
+                                "offset": 1
+                            },
+                            "x": {
+                                "scale": "child__column_delay_x",
+                                "field": "bin_maxbins_20_delay_end"
+                            },
                             "y": {"scale": "child__column_delay_y", "field": "__count"},
                             "y2": {"scale": "child__column_delay_y", "value": 0}
                         }
@@ -844,10 +927,34 @@ let flights_spec = {
                     "encode": {
                         "enter": {"fill": {"value": "transparent"}},
                         "update": {
-                            "x": {"signal": "brush_x[0]"},
-                            "y": {"value": 0},
-                            "x2": {"signal": "brush_x[1]"},
-                            "y2": {"field": {"group": "height"}},
+                            "x": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_delay_layer_0\"",
+                                    "signal": "brush_x[0]"
+                                },
+                                {"value": 0}
+                            ],
+                            "y": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_delay_layer_0\"",
+                                    "value": 0
+                                },
+                                {"value": 0}
+                            ],
+                            "x2": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_delay_layer_0\"",
+                                    "signal": "brush_x[1]"
+                                },
+                                {"value": 0}
+                            ],
+                            "y2": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_delay_layer_0\"",
+                                    "field": {"group": "height"}
+                                },
+                                {"value": 0}
+                            ],
                             "stroke": [
                                 {"test": "brush_x[0] !== brush_x[1]", "value": "white"},
                                 {"value": null}
@@ -891,6 +998,357 @@ let flights_spec = {
                     "zindex": 0
                 }
             ]
+        },
+        {
+            "type": "group",
+            "name": "child__column_time_group",
+            "style": "cell",
+            "encode": {
+                "update": {
+                    "width": {"signal": "childWidth"},
+                    "height": {"signal": "childHeight"}
+                }
+            },
+            "signals": [
+                {
+                    "name": "brush_x",
+                    "value": [],
+                    "on": [
+                        {
+                            "events": {
+                                "source": "scope",
+                                "type": "mousedown",
+                                "filter": [
+                                    "!event.item || event.item.mark.name !== \"brush_brush\""
+                                ]
+                            },
+                            "update": "[x(unit), x(unit)]"
+                        },
+                        {
+                            "events": {
+                                "source": "window",
+                                "type": "mousemove",
+                                "consume": true,
+                                "between": [
+                                    {
+                                        "source": "scope",
+                                        "type": "mousedown",
+                                        "filter": [
+                                            "!event.item || event.item.mark.name !== \"brush_brush\""
+                                        ]
+                                    },
+                                    {"source": "window", "type": "mouseup"}
+                                ]
+                            },
+                            "update": "[brush_x[0], clamp(x(unit), 0, childWidth)]"
+                        },
+                        {
+                            "events": {"signal": "brush_scale_trigger"},
+                            "update": "[scale(\"child__column_time_x\", brush_time[0]), scale(\"child__column_time_x\", brush_time[1])]"
+                        },
+                        {
+                            "events": [{"source": "view", "type": "dblclick"}],
+                            "update": "[0, 0]"
+                        },
+                        {
+                            "events": {"signal": "brush_translate_delta"},
+                            "update": "clampRange(panLinear(brush_translate_anchor.extent_x, brush_translate_delta.x / span(brush_translate_anchor.extent_x)), 0, childWidth)"
+                        },
+                        {
+                            "events": {"signal": "brush_zoom_delta"},
+                            "update": "clampRange(zoomLinear(brush_x, brush_zoom_anchor.x, brush_zoom_delta), 0, childWidth)"
+                        }
+                    ]
+                },
+                {
+                    "name": "brush_time",
+                    "on": [
+                        {
+                            "events": {"signal": "brush_x"},
+                            "update": "brush_x[0] === brush_x[1] ? null : invert(\"child__column_time_x\", brush_x)"
+                        }
+                    ]
+                },
+                {
+                    "name": "brush_scale_trigger",
+                    "value": {},
+                    "on": [
+                        {
+                            "events": [{"scale": "child__column_time_x"}],
+                            "update": "(!isArray(brush_time) || (+invert(\"child__column_time_x\", brush_x)[0] === +brush_time[0] && +invert(\"child__column_time_x\", brush_x)[1] === +brush_time[1])) ? brush_scale_trigger : {}"
+                        }
+                    ]
+                },
+                {
+                    "name": "brush_tuple",
+                    "on": [
+                        {
+                            "events": [{"signal": "brush_time"}],
+                            "update": "brush_time ? {unit: \"child__column_time_layer_0\", fields: brush_tuple_fields, values: [brush_time]} : null"
+                        }
+                    ]
+                },
+                {
+                    "name": "brush_tuple_fields",
+                    "value": [{"field": "time", "channel": "x", "type": "R"}]
+                },
+                {
+                    "name": "brush_translate_anchor",
+                    "value": {},
+                    "on": [
+                        {
+                            "events": [
+                                {
+                                    "source": "scope",
+                                    "type": "mousedown",
+                                    "markname": "brush_brush"
+                                }
+                            ],
+                            "update": "{x: x(unit), y: y(unit), extent_x: slice(brush_x)}"
+                        }
+                    ]
+                },
+                {
+                    "name": "brush_translate_delta",
+                    "value": {},
+                    "on": [
+                        {
+                            "events": [
+                                {
+                                    "source": "window",
+                                    "type": "mousemove",
+                                    "consume": true,
+                                    "between": [
+                                        {
+                                            "source": "scope",
+                                            "type": "mousedown",
+                                            "markname": "brush_brush"
+                                        },
+                                        {"source": "window", "type": "mouseup"}
+                                    ]
+                                }
+                            ],
+                            "update": "{x: brush_translate_anchor.x - x(unit), y: brush_translate_anchor.y - y(unit)}"
+                        }
+                    ]
+                },
+                {
+                    "name": "brush_zoom_anchor",
+                    "on": [
+                        {
+                            "events": [
+                                {
+                                    "source": "scope",
+                                    "type": "wheel",
+                                    "consume": true,
+                                    "markname": "brush_brush"
+                                }
+                            ],
+                            "update": "{x: x(unit), y: y(unit)}"
+                        }
+                    ]
+                },
+                {
+                    "name": "brush_zoom_delta",
+                    "on": [
+                        {
+                            "events": [
+                                {
+                                    "source": "scope",
+                                    "type": "wheel",
+                                    "consume": true,
+                                    "markname": "brush_brush"
+                                }
+                            ],
+                            "force": true,
+                            "update": "pow(1.001, event.deltaY * pow(16, event.deltaMode))"
+                        }
+                    ]
+                },
+                {
+                    "name": "brush_modify",
+                    "on": [
+                        {
+                            "events": {"signal": "brush_tuple"},
+                            "update": "modify(\"brush_store\", brush_tuple, true)"
+                        }
+                    ]
+                }
+            ],
+            "marks": [
+                {
+                    "name": "brush_brush_bg",
+                    "type": "rect",
+                    "clip": true,
+                    "encode": {
+                        "enter": {
+                            "fill": {"value": "#333"},
+                            "fillOpacity": {"value": 0.125}
+                        },
+                        "update": {
+                            "x": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_time_layer_0\"",
+                                    "signal": "brush_x[0]"
+                                },
+                                {"value": 0}
+                            ],
+                            "y": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_time_layer_0\"",
+                                    "value": 0
+                                },
+                                {"value": 0}
+                            ],
+                            "x2": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_time_layer_0\"",
+                                    "signal": "brush_x[1]"
+                                },
+                                {"value": 0}
+                            ],
+                            "y2": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_time_layer_0\"",
+                                    "field": {"group": "height"}
+                                },
+                                {"value": 0}
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "child__column_time_layer_0_marks",
+                    "type": "rect",
+                    "style": ["bar"],
+                    "interactive": true,
+                    "from": {"data": "data_2"},
+                    "encode": {
+                        "update": {
+                            "fill": {"value": "#ddd"},
+                            "ariaRoleDescription": {"value": "bar"},
+                            "description": {
+                                "signal": "\"time (binned): \" + (!isValid(datum[\"bin_maxbins_20_time\"]) || !isFinite(+datum[\"bin_maxbins_20_time\"]) ? \"null\" : format(datum[\"bin_maxbins_20_time\"], \"\") + \" – \" + format(datum[\"bin_maxbins_20_time_end\"], \"\")) + \"; Count of Records: \" + (format(datum[\"__count\"], \"\"))"
+                            },
+                            "x2": {
+                                "scale": "child__column_time_x",
+                                "field": "bin_maxbins_20_time",
+                                "offset": 1
+                            },
+                            "x": {
+                                "scale": "child__column_time_x",
+                                "field": "bin_maxbins_20_time_end"
+                            },
+                            "y": {"scale": "child__column_time_y", "field": "__count"},
+                            "y2": {"scale": "child__column_time_y", "value": 0}
+                        }
+                    }
+                },
+                {
+                    "name": "child__column_time_layer_1_marks",
+                    "type": "rect",
+                    "style": ["bar"],
+                    "interactive": false,
+                    "from": {"data": "data_1"},
+                    "encode": {
+                        "update": {
+                            "fill": {"value": "#4c78a8"},
+                            "ariaRoleDescription": {"value": "bar"},
+                            "description": {
+                                "signal": "\"time (binned): \" + (!isValid(datum[\"bin_maxbins_20_time\"]) || !isFinite(+datum[\"bin_maxbins_20_time\"]) ? \"null\" : format(datum[\"bin_maxbins_20_time\"], \"\") + \" – \" + format(datum[\"bin_maxbins_20_time_end\"], \"\")) + \"; Count of Records: \" + (format(datum[\"__count\"], \"\"))"
+                            },
+                            "x2": {
+                                "scale": "child__column_time_x",
+                                "field": "bin_maxbins_20_time",
+                                "offset": 1
+                            },
+                            "x": {
+                                "scale": "child__column_time_x",
+                                "field": "bin_maxbins_20_time_end"
+                            },
+                            "y": {"scale": "child__column_time_y", "field": "__count"},
+                            "y2": {"scale": "child__column_time_y", "value": 0}
+                        }
+                    }
+                },
+                {
+                    "name": "brush_brush",
+                    "type": "rect",
+                    "clip": true,
+                    "encode": {
+                        "enter": {"fill": {"value": "transparent"}},
+                        "update": {
+                            "x": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_time_layer_0\"",
+                                    "signal": "brush_x[0]"
+                                },
+                                {"value": 0}
+                            ],
+                            "y": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_time_layer_0\"",
+                                    "value": 0
+                                },
+                                {"value": 0}
+                            ],
+                            "x2": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_time_layer_0\"",
+                                    "signal": "brush_x[1]"
+                                },
+                                {"value": 0}
+                            ],
+                            "y2": [
+                                {
+                                    "test": "data(\"brush_store\").length && data(\"brush_store\")[0].unit === \"child__column_time_layer_0\"",
+                                    "field": {"group": "height"}
+                                },
+                                {"value": 0}
+                            ],
+                            "stroke": [
+                                {"test": "brush_x[0] !== brush_x[1]", "value": "white"},
+                                {"value": null}
+                            ]
+                        }
+                    }
+                }
+            ],
+            "axes": [
+                {
+                    "scale": "child__column_time_y",
+                    "orient": "left",
+                    "gridScale": "child__column_time_x",
+                    "grid": true,
+                    "tickCount": {"signal": "ceil(childHeight/40)"},
+                    "domain": false,
+                    "labels": false,
+                    "aria": false,
+                    "maxExtent": 0,
+                    "minExtent": 0,
+                    "ticks": false,
+                    "zindex": 0
+                },
+                {
+                    "scale": "child__column_time_x",
+                    "orient": "bottom",
+                    "grid": false,
+                    "title": "time (binned)",
+                    "labelFlush": true,
+                    "labelOverlap": true,
+                    "tickCount": {"signal": "ceil(childWidth/10)"},
+                    "zindex": 0
+                },
+                {
+                    "scale": "child__column_time_y",
+                    "orient": "left",
+                    "grid": false,
+                    "title": "Count of Records",
+                    "labelOverlap": true,
+                    "tickCount": {"signal": "ceil(childHeight/40)"},
+                    "zindex": 0
+                }
+            ]
         }
     ],
     "scales": [
@@ -911,8 +1369,8 @@ let flights_spec = {
             "type": "linear",
             "domain": {
                 "fields": [
-                    {"data": "data_3", "field": "__count"},
-                    {"data": "data_2", "field": "__count"}
+                    {"data": "data_6", "field": "__count"},
+                    {"data": "data_5", "field": "__count"}
                 ]
             },
             "range": [{"signal": "childHeight"}, 0],
@@ -936,7 +1394,30 @@ let flights_spec = {
             "type": "linear",
             "domain": {
                 "fields": [
-                    {"data": "data_4", "field": "__count"},
+                    {"data": "data_7", "field": "__count"},
+                    {"data": "data_4", "field": "__count"}
+                ]
+            },
+            "range": [{"signal": "childHeight"}, 0],
+            "nice": true,
+            "zero": true
+        },
+        {
+            "name": "child__column_time_x",
+            "type": "linear",
+            "domain": {
+                "signal": "[child__column_time_layer_1_bin_maxbins_20_time_bins.start, child__column_time_layer_1_bin_maxbins_20_time_bins.stop]"
+            },
+            "range": [0, {"signal": "childWidth"}],
+            "bins": {"signal": "child__column_time_layer_1_bin_maxbins_20_time_bins"},
+            "zero": false
+        },
+        {
+            "name": "child__column_time_y",
+            "type": "linear",
+            "domain": {
+                "fields": [
+                    {"data": "data_2", "field": "__count"},
                     {"data": "data_1", "field": "__count"}
                 ]
             },
@@ -944,107 +1425,6 @@ let flights_spec = {
             "nice": true,
             "zero": true
         }
-    ]
-}
-
-let weather_spec = {
-    "$schema": "https://vega.github.io/schema/vega/v5.json",
-    "background": "white",
-    "padding": 5,
-    "width": 20,
-    "height": 200,
-    "style": "cell",
-    "data": [
-        {
-            "name": "source_0",
-            // "url": "https://raw.githubusercontent.com/vega/vega-datasets/master/data/seattle-weather.csv",
-            "url": "/media/jmmease/SSD2/rustDev/diorite/datasets/vega-datasets-master/data/seattle-weather.csv",
-            "format": {"type": "csv", "delimiter": ","},
-            "transform": [
-                {
-                    "type": "aggregate",
-                    "groupby": ["weather"],
-                    "ops": ["count"],
-                    "fields": [null],
-                    "as": ["__count"]
-                },
-                {
-                    "type": "stack",
-                    "groupby": [],
-                    "field": "__count",
-                    "sort": {"field": ["weather"], "order": ["descending"]},
-                    "as": ["__count_start", "__count_end"],
-                    "offset": "zero"
-                }
-            ]
-        }
-    ],
-    "marks": [
-        {
-            "name": "marks",
-            "type": "rect",
-            "style": ["bar"],
-            "from": {"data": "source_0"},
-            "encode": {
-                "update": {
-                    "fill": {"scale": "color", "field": "weather"},
-                    "ariaRoleDescription": {"value": "bar"},
-                    "description": {
-                        "signal": "\"Count of Records: \" + (format(datum[\"__count\"], \"\")) + \"; Weather type: \" + (isValid(datum[\"weather\"]) ? datum[\"weather\"] : \"\"+datum[\"weather\"])"
-                    },
-                    "xc": {"signal": "width", "mult": 0.5},
-                    "width": {"value": 18},
-                    "y": {"scale": "y", "field": "__count_end"},
-                    "y2": {"scale": "y", "field": "__count_start"}
-                }
-            }
-        }
-    ],
-    "scales": [
-        {
-            "name": "y",
-            "type": "linear",
-            "domain": {
-                "data": "source_0",
-                "fields": ["__count_start", "__count_end"]
-            },
-            "range": [{"signal": "height"}, 0],
-            "nice": true,
-            "zero": true
-        },
-        {
-            "name": "color",
-            "type": "ordinal",
-            "domain": ["sun", "fog", "drizzle", "rain", "snow"],
-            "range": ["#e7ba52", "#c7c7c7", "#aec7e8", "#1f77b4", "#9467bd"]
-        }
-    ],
-    "axes": [
-        {
-            "scale": "y",
-            "orient": "left",
-            "grid": true,
-            "tickCount": {"signal": "ceil(height/40)"},
-            "domain": false,
-            "labels": false,
-            "aria": false,
-            "maxExtent": 0,
-            "minExtent": 0,
-            "ticks": false,
-            "zindex": 0
-        },
-        {
-            "scale": "y",
-            "orient": "left",
-            "grid": false,
-            "title": "Count of Records",
-            "labelOverlap": true,
-            "tickCount": {"signal": "ceil(height/40)"},
-            "zindex": 0
-        }
-    ],
-    "legends": [
-        {"title": "Weather type", "fill": "color", "symbolType": "square"}
     ]
 }
 

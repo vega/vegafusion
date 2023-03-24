@@ -34,13 +34,9 @@ impl TonicVegaFusionRuntime for VegaFusionRuntimeGrpc {
         &self,
         request: Request<QueryRequest>,
     ) -> Result<Response<QueryResult>, Status> {
-        println!("grpc request...");
         let result = self.runtime.query_request(request.into_inner()).await;
         match result {
-            Ok(result) => {
-                println!("  response");
-                Ok(Response::new(result))
-            }
+            Ok(result) => Ok(Response::new(result)),
             Err(err) => Err(Status::unknown(err.to_string())),
         }
     }
@@ -173,7 +169,7 @@ async fn grpc_server(
         let server = tonic_web::enable(server);
         Server::builder()
             .accept_http1(true)
-            .add_service(server.into_inner())
+            .add_service(server)
             .serve(addr)
             .await?;
     } else {
