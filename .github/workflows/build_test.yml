@@ -90,6 +90,7 @@ jobs:
             [ubuntu-latest,  linux-64],
             [windows-2022,  win-64],
             [macos-11,   osx-64],
+            [macos-11,   osx-arm64],
         ]
     runs-on: ${{ matrix.options[0] }}
     steps:
@@ -108,18 +109,28 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: True
+      - name: Download Apple Silicon toolchain
+        if: ${{ matrix.options[1] == 'osx-arm64' }}
+        run: |
+          rustup target add aarch64-apple-darwin
       - name: Build vegafusion-server (Windows)
         uses: actions-rs/cargo@v1
         if: ${{ runner.os == 'Windows' }}
         with:
           command: build
           args: -p vegafusion-server --release
-      - name: Build vegafusion-server (non-Windows)
+      - name: Build vegafusion-server (Mac/Linux)
         uses: actions-rs/cargo@v1
-        if: ${{ runner.os != 'Windows' }}
+        if: ${{ matrix.options[1] != 'osx-arm64' && runner.os != 'Windows'}}
         with:
           command: build
           args: -p vegafusion-server --release --features=protobuf-src
+      - name: Build vegafusion-server (Apple Silicon)
+        uses: actions-rs/cargo@v1
+        if: ${{ matrix.options[1] == 'osx-arm64' }}
+        with:
+          command: build
+          args: -p vegafusion-server --release --target aarch64-apple-darwin --features=protobuf-src
       - name: zip executable (Windows)
         uses: papeloto/action-zip@v1
         if: runner.os == 'Windows'
