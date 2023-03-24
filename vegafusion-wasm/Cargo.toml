@@ -40,7 +40,7 @@ features = [ "derive",]
 version = "0.2.78"
 
 [dependencies.getrandom]
-version = "0.2.3"
+version = "0.2.8"
 features = [ "js",]
 
 [dependencies.chrono]
