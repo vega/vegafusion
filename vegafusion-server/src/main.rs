@@ -173,7 +173,7 @@ async fn grpc_server(
         let server = tonic_web::enable(server);
         Server::builder()
             .accept_http1(true)
-            .add_service(server.into_inner())
+            .add_service(server)
             .serve(addr)
             .await?;
     } else {

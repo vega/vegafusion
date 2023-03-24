@@ -51,6 +51,8 @@ features = [ "derive",]
 [dependencies.tonic]
 version = "0.8.3"
 optional = true
+git = "https://github.com/hyperium/tonic.git"
+rev = "b3358dc6acf11ec800571735de1e1f1e449ec96a"
 
 [build-dependencies.prost-build]
 version = "0.11.4"
