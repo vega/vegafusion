@@ -27,6 +27,11 @@ def duckdb_type_name_to_pyarrow_type(duckdb_type: str) -> pa.DataType:
         return pa.int32()
     elif duckdb_type in ("BIGINT", "INT8", "LONG"):
         return pa.int64()
+    elif duckdb_type.startswith("DECIMAL"):
+        matches = re.findall(r"\d+", duckdb_type)
+        precision = int(matches[0])
+        scale = int(matches[1])
+        return pa.decimal128(precision, scale)
     elif duckdb_type == "UTINYINT":
         return pa.uint8()
     elif duckdb_type == "USMALLINT":

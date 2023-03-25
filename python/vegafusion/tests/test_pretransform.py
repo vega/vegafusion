@@ -5,6 +5,7 @@ import vegafusion as vf
 import json
 import polars as pl
 from datetime import date
+import decimal
 
 
 def order_items_spec():
@@ -1040,6 +1041,46 @@ def test_pre_transform_dataset_duckdb_conn():
 
         result = datasets[0]
         expected = pd.DataFrame({"menu_item": [0, 1, 2], "__count": [n, 2 * n, 3 * n]})
+        pd.testing.assert_frame_equal(result, expected)
+    finally:
+        vf.runtime.set_connection("datafusion")
+
+
+def test_pre_transform_dataset_duckdb_with_decimal_conn():
+    import duckdb
+
+    n = 4050
+    # Input a polars DataFrame (which follows the DataFrame Interface Protocol)
+    order_items = pd.DataFrame({
+        "menu_item_int": [0] * n + [1] * (2 * n) + [2] * (3 * n)
+    })
+
+    try:
+        # Create duckdb connection and register order_items with duckdb
+        conn = duckdb.connect()
+        conn.register("order_items_int", order_items)
+        conn.query(
+            "SELECT menu_item_int::DECIMAL(12,2) as menu_item from order_items_int"
+        ).to_view("order_items")
+
+        # Set this as the active connection
+        vf.runtime.set_connection(conn)
+
+        # order_items includes a table://order_items data url
+        vega_spec = order_items_spec()
+        datasets, warnings = vf.runtime.pre_transform_datasets(
+            vega_spec,
+            ["data_0"],
+            "UTC",
+        )
+        assert len(warnings) == 0
+        assert len(datasets) == 1
+
+        result = datasets[0]
+        expected = pd.DataFrame({
+            "menu_item": [decimal.Decimal(0), decimal.Decimal(1), decimal.Decimal(2)],
+            "__count": [n, 2 * n, 3 * n]
+        })
         pd.testing.assert_frame_equal(result, expected)
     finally:
         vf.runtime.set_connection("datafusion")
