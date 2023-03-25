@@ -53,7 +53,6 @@ def bump_version(version):
     package_json_dirs = [
         root / "vegafusion-wasm",
         root / "javascript" / "vegafusion-embed",
-        root / "javascript" / "vegafusion-chart-editor",
         root / "python" / "vegafusion-jupyter"
     ]
     for package_json_dir in package_json_dirs:
