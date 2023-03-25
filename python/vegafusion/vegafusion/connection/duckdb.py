@@ -1,3 +1,4 @@
+import re
 import warnings
 
 from . import SqlConnection, CsvReadOptions
@@ -26,6 +27,11 @@ def duckdb_type_name_to_pyarrow_type(duckdb_type: str) -> pa.DataType:
         return pa.int32()
     elif duckdb_type in ("BIGINT", "INT8", "LONG"):
         return pa.int64()
+    elif duckdb_type.startswith("DECIMAL"):
+        matches = re.findall(r"\d+", duckdb_type)
+        precision = int(matches[0])
+        scale = int(matches[1])
+        return pa.decimal128(precision, scale)
     elif duckdb_type == "UTINYINT":
         return pa.uint8()
     elif duckdb_type == "USMALLINT":
@@ -34,14 +40,14 @@ def duckdb_type_name_to_pyarrow_type(duckdb_type: str) -> pa.DataType:
         return pa.uint32()
     elif duckdb_type == "UBIGINT":
         return pa.uint64()
-    elif duckdb_type == "DOUBLE":
-        return pa.float64()
     elif duckdb_type == "BOOLEAN":
         return pa.bool_()
     elif duckdb_type == "DATE":
         return pa.date32()
     elif duckdb_type == "TIMESTAMP":
         return pa.timestamp("ms")
+    elif duckdb_type == "TIMESTAMP WITH TIME ZONE":
+        return pa.timestamp("ms", tz="UTC")
     else:
         raise ValueError(f"Unexpected DuckDB type: {duckdb_type}")
 

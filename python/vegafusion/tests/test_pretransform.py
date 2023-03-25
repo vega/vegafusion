@@ -5,6 +5,7 @@ import vegafusion as vf
 import json
 import polars as pl
 from datetime import date
+import decimal
 
 
 def order_items_spec():
@@ -1044,6 +1045,68 @@ def test_pre_transform_dataset_duckdb_conn():
     finally:
         vf.runtime.set_connection("datafusion")
 
+
+def test_pre_transform_dataset_duckdb_with_decimal_conn():
+    import duckdb
+
+    n = 4050
+    # Input a polars DataFrame (which follows the DataFrame Interface Protocol)
+    order_items = pd.DataFrame({
+        "menu_item_int": [0] * n + [1] * (2 * n) + [2] * (3 * n)
+    })
+
+    try:
+        # Create duckdb connection and register order_items with duckdb
+        conn = duckdb.connect()
+        conn.register("order_items_int", order_items)
+        conn.query(
+            "SELECT menu_item_int::DECIMAL(12,2) as menu_item from order_items_int"
+        ).to_view("order_items")
+
+        # Set this as the active connection
+        vf.runtime.set_connection(conn)
+
+        # order_items includes a table://order_items data url
+        vega_spec = order_items_spec()
+        datasets, warnings = vf.runtime.pre_transform_datasets(
+            vega_spec,
+            ["data_0"],
+            "UTC",
+        )
+        assert len(warnings) == 0
+        assert len(datasets) == 1
+
+        result = datasets[0]
+        expected = pd.DataFrame({
+            "menu_item": [decimal.Decimal(0), decimal.Decimal(1), decimal.Decimal(2)],
+            "__count": [n, 2 * n, 3 * n]
+        })
+        pd.testing.assert_frame_equal(result, expected)
+    finally:
+        vf.runtime.set_connection("datafusion")
+
+
+def test_duckdb_timestamp_with_timezone():
+    try:
+        vf.runtime.set_connection("duckdb")
+        dates_df = pd.DataFrame({
+            "date_col": [date(2022, 1, 1), date(2022, 1, 2), date(2022, 1, 3)],
+        })
+        dates_df["date_col"] = pd.to_datetime(dates_df.date_col).dt.tz_localize("UTC")
+        spec = date_column_spec()
+
+        (output_ds,), warnings = vf.runtime.pre_transform_datasets(
+            spec, ["data_0"], "America/New_York", default_input_tz="UTC", inline_datasets=dict(dates=dates_df)
+        )
+
+        # Timestamps are in the local timezone, so they should be midnight local time
+        assert list(output_ds.date_col) == [
+            pd.Timestamp('2022-01-01 00:00:00', tz='UTC'),
+            pd.Timestamp('2022-01-02 00:00:00', tz='UTC'),
+            pd.Timestamp('2022-01-03 00:00:00', tz='UTC')
+        ]
+    finally:
+        vf.runtime.set_connection("datafusion")
 
 def test_gh_268_hang():
     """
