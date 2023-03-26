@@ -12,7 +12,7 @@ use std::fs;
 use vegafusion_common::arrow::datatypes::{DataType, Field};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::planning::watch::{
-    ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace, Watch, WatchNamespace,
+    ExportUpdateBatch, ExportUpdateJSON, ExportUpdateNamespace, Watch, WatchNamespace,
 };
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::spec::transform::extent::ExtentTransformSpec;
@@ -184,26 +184,26 @@ fn try_export_sequence_helper_crossfilter() {
     let init = Vec::new();
     let updates: Vec<ExportUpdateBatch> = vec![
         vec![
-            ExportUpdate {
+            ExportUpdateJSON {
                 namespace: ExportUpdateNamespace::Signal,
                 name: "brush_x".to_string(),
                 scope: vec![0],
                 value: json!([70, 120]),
             },
-            ExportUpdate {
+            ExportUpdateJSON {
                 namespace: ExportUpdateNamespace::Signal,
                 name: "brush_x".to_string(),
                 scope: vec![1],
                 value: json!([40, 80]),
             },
         ],
-        vec![ExportUpdate {
+        vec![ExportUpdateJSON {
             namespace: ExportUpdateNamespace::Signal,
             name: "brush_x".to_string(),
             scope: vec![0],
             value: json!([0, 0]),
         }],
-        vec![ExportUpdate {
+        vec![ExportUpdateJSON {
             namespace: ExportUpdateNamespace::Signal,
             name: "brush_x".to_string(),
             scope: vec![1],

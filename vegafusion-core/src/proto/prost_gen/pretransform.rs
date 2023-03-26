@@ -138,3 +138,56 @@ pub struct PlannerWarning {
     #[prost(string, tag = "1")]
     pub message: ::prost::alloc::string::String,
 }
+/// / Pre Transform Extract Datasets
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PreTransformExtractDataset {
+    /// Result dataset name
+    #[prost(string, tag = "1")]
+    pub name: ::prost::alloc::string::String,
+    /// Result dataset scope
+    #[prost(uint32, repeated, tag = "2")]
+    pub scope: ::prost::alloc::vec::Vec<u32>,
+    /// Serialized Arrow record batch in Arrow IPC format
+    #[prost(bytes = "vec", tag = "3")]
+    pub table: ::prost::alloc::vec::Vec<u8>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PreTransformExtractWarning {
+    #[prost(oneof = "pre_transform_extract_warning::WarningType", tags = "1")]
+    pub warning_type: ::core::option::Option<pre_transform_extract_warning::WarningType>,
+}
+/// Nested message and enum types in `PreTransformExtractWarning`.
+pub mod pre_transform_extract_warning {
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum WarningType {
+        #[prost(message, tag = "1")]
+        Planner(super::PlannerWarning),
+    }
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PreTransformExtractResponse {
+    #[prost(string, tag = "1")]
+    pub spec: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag = "2")]
+    pub datasets: ::prost::alloc::vec::Vec<PreTransformExtractDataset>,
+    #[prost(message, repeated, tag = "3")]
+    pub warnings: ::prost::alloc::vec::Vec<PreTransformExtractWarning>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PreTransformExtractRequest {
+    #[prost(string, tag = "1")]
+    pub spec: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub local_tz: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "3")]
+    pub default_input_tz: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, tag = "4")]
+    pub preserve_interactivity: bool,
+    #[prost(message, repeated, tag = "5")]
+    pub inline_datasets: ::prost::alloc::vec::Vec<PreTransformInlineDataset>,
+}

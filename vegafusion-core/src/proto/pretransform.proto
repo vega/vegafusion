@@ -83,3 +83,35 @@ message PreTransformInlineDataset {
 message PlannerWarning {
   string message = 1;
 }
+
+/// Pre Transform Extract Datasets
+message PreTransformExtractDataset {
+  // Result dataset name
+  string name = 1;
+
+  // Result dataset scope
+  repeated uint32 scope = 2;
+
+  // Serialized Arrow record batch in Arrow IPC format
+  bytes table = 3;
+}
+
+message PreTransformExtractWarning {
+  oneof warning_type {
+    PlannerWarning planner = 1;
+  }
+}
+
+message PreTransformExtractResponse {
+  string spec = 1;
+  repeated PreTransformExtractDataset datasets = 2;
+  repeated PreTransformExtractWarning warnings = 3;
+}
+
+message PreTransformExtractRequest {
+  string spec = 1;
+  string local_tz = 2;
+  optional string default_input_tz = 3;
+  bool preserve_interactivity = 4;
+  repeated PreTransformInlineDataset inline_datasets = 5;
+}

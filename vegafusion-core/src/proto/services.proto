@@ -9,6 +9,7 @@ service VegaFusionRuntime {
   rpc TaskGraphQuery(QueryRequest) returns (QueryResult) {}
   rpc PreTransformSpec(pretransform.PreTransformSpecRequest) returns (PreTransformSpecResult) {}
   rpc PreTransformValues(pretransform.PreTransformValuesRequest) returns (PreTransformValuesResult) {}
+  rpc PreTransformExtract(pretransform.PreTransformExtractRequest) returns (PreTransformExtractResult) {}
 }
 
 message QueryRequest {
@@ -35,5 +36,12 @@ message PreTransformValuesResult {
   oneof result {
     errors.Error error = 1;
     pretransform.PreTransformValuesResponse response = 2;
+  }
+}
+
+message PreTransformExtractResult {
+  oneof result {
+    errors.Error error = 1;
+    pretransform.PreTransformExtractResponse response = 2;
   }
 }

@@ -324,6 +324,66 @@ class VegaFusionRuntime:
 
                 return datasets, warnings
 
+    def pre_transform_extract(
+            self,
+            spec,
+            local_tz,
+            default_input_tz=None,
+            preserve_interactivity=True,
+            inline_datasets=None
+    ):
+        """
+        Evaluate supported transforms in an input Vega specification and produce a new
+        specification with small pre-transformed datasets (under 100 rows) included inline
+        and larger inline datasets (100 rows or more) are extracted into pyarrow tables.
+
+        :param spec: A Vega specification dict or JSON string
+        :param local_tz: Name of timezone to be considered local. E.g. 'America/New_York'.
+            This can be computed for the local system using the tzlocal package and the
+            tzlocal.get_localzone_name() function.
+        :param default_input_tz: Name of timezone (e.g. 'America/New_York') that naive datetime
+            strings should be interpreted in. Defaults to `local_tz`.
+        :param preserve_interactivity: If True (default) then the interactive behavior of
+            the chart will pre preserved. This requires that all the data that participates
+            in interactions be included in the resulting spec rather than being pre-transformed.
+            If False, then all possible data transformations are applied even if they break
+            the original interactive behavior of the chart.
+        :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
+            Tables. Inline datasets may be referenced by the input specification using
+            the following url syntax 'vegafusion+dataset://{dataset_name}' or
+            'table://{dataset_name}'.
+        :return:
+            Three-element tuple:
+                0. A dict containing the JSON representation of the pre-transformed Vega
+                   specification without pre-transformed datasets included inline
+                1. Extracted datasets as a list of three element tuples
+                    0. dataset name
+                    1. dataset scope
+                    2. pyarrow Table
+                2. A list of warnings as dictionaries. Each warning dict has a 'type'
+                   key indicating the warning type, and a 'message' key containing
+                   a description of the warning. Potential warning types include:
+                    'Planner': Planner warning
+        """
+        if self._grpc_channel:
+            raise ValueError("pre_transform_spec not yet supported over gRPC")
+        else:
+            inline_arrow_dataset = self._arrowify_or_register_inline_datasets(inline_datasets)
+            try:
+                new_spec, datasets, warnings = self.embedded_runtime.pre_transform_extract(
+                    spec,
+                    local_tz=local_tz,
+                    default_input_tz=default_input_tz,
+                    preserve_interactivity=preserve_interactivity,
+                    inline_datasets=inline_arrow_dataset
+                )
+            finally:
+                # Clean up temporary tables
+                if self._connection is not None:
+                    self._connection.unregister_temporary_tables()
+
+            return new_spec, datasets, warnings
+
     @property
     def worker_threads(self):
         return self._worker_threads

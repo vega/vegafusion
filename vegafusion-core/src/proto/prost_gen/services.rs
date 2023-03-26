@@ -64,3 +64,20 @@ pub mod pre_transform_values_result {
         Response(super::super::pretransform::PreTransformValuesResponse),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PreTransformExtractResult {
+    #[prost(oneof = "pre_transform_extract_result::Result", tags = "1, 2")]
+    pub result: ::core::option::Option<pre_transform_extract_result::Result>,
+}
+/// Nested message and enum types in `PreTransformExtractResult`.
+pub mod pre_transform_extract_result {
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Result {
+        #[prost(message, tag = "1")]
+        Error(super::super::errors::Error),
+        #[prost(message, tag = "2")]
+        Response(super::super::pretransform::PreTransformExtractResponse),
+    }
+}

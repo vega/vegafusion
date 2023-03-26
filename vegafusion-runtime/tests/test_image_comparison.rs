@@ -18,7 +18,7 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 
 use vegafusion_core::planning::watch::{
-    ExportUpdate, ExportUpdateBatch, ExportUpdateNamespace, Watch, WatchNamespace, WatchPlan,
+    ExportUpdateBatch, ExportUpdateJSON, ExportUpdateNamespace, Watch, WatchNamespace, WatchPlan,
 };
 use vegafusion_core::proto::gen::pretransform::{PreTransformSpecOpts, PreTransformSpecRequest};
 use vegafusion_core::proto::gen::services::pre_transform_spec_result;
@@ -1481,7 +1481,7 @@ async fn check_spec_sequence(
             .await
             .expect("Failed to get node value");
 
-        init.push(ExportUpdate {
+        init.push(ExportUpdateJSON {
             namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),
             name: var.0.name.clone(),
             scope: var.1.clone(),
@@ -1567,7 +1567,7 @@ async fn check_spec_sequence(
                         TaskValue::Scalar(value) => value.to_json().unwrap(),
                         TaskValue::Table(value) => value.to_json().unwrap(),
                     };
-                    ExportUpdate {
+                    ExportUpdateJSON {
                         namespace: ExportUpdateNamespace::try_from(scoped_var.0.namespace())
                             .unwrap(),
                         name: scoped_var.0.name.clone(),
