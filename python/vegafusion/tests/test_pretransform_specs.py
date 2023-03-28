@@ -4,6 +4,7 @@ import vegafusion as vf
 from vl_convert import vega_to_png
 
 from io import BytesIO
+import pyarrow as pa
 from skimage.io import imread
 from skimage.metrics import structural_similarity as ssim
 import pytest
@@ -83,3 +84,20 @@ def test_it(category, name):
     similarity = ssim(img_datafusion, img_duckdb, channel_axis=2)
     print(similarity)
     assert similarity >= 0.999, f"Similarity failed between datafusion and duckdb connections"
+
+
+def test_pretransform_extract():
+    spec_file = spec_dir / "vegalite" / "rect_binned_heatmap.vg.json"
+    spec = json.loads(spec_file.read_text("utf8"))
+
+    vf.runtime.set_connection("datafusion")
+    (transformed, datasets, warnings) = vf.runtime.pre_transform_extract(spec, "UTC")
+
+    assert len(warnings) == 0
+    assert len(datasets) == 1
+
+    (name, scope, table)= datasets[0]
+    assert name == "source_0"
+    assert scope == []
+    assert isinstance(table, pa.Table)
+    assert table.shape == (379, 5)
