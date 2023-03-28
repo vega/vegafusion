@@ -682,7 +682,7 @@ impl VegaFusionRuntime {
                         // Set inline value
                         data.values = Some(input_values);
                     } else if let TaskValue::Table(table) = export_update.value {
-                        if table.num_rows() < 100 {
+                        if table.num_rows() <= 20 {
                             // Inline small tables
                             data.values = Some(table.to_json()?);
                         } else {
