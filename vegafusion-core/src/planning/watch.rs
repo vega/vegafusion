@@ -119,15 +119,34 @@ impl TryFrom<VariableNamespace> for ExportUpdateNamespace {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct ExportUpdateArrow {
+    pub namespace: ExportUpdateNamespace,
+    pub name: String,
+    pub scope: Vec<u32>,
+    pub value: TaskValue,
+}
+
+impl ExportUpdateArrow {
+    pub fn to_json(&self) -> Result<ExportUpdateJSON> {
+        Ok(ExportUpdateJSON {
+            namespace: self.namespace.clone(),
+            name: self.name.clone(),
+            scope: self.scope.clone(),
+            value: self.value.to_json()?,
+        })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ExportUpdate {
+pub struct ExportUpdateJSON {
     pub namespace: ExportUpdateNamespace,
     pub name: String,
     pub scope: Vec<u32>,
     pub value: Value,
 }
 
-impl ExportUpdate {
+impl ExportUpdateJSON {
     pub fn to_scoped_var(&self) -> ScopedVariable {
         let namespace = match self.namespace {
             ExportUpdateNamespace::Signal => VariableNamespace::Signal as i32,
@@ -155,4 +174,4 @@ impl ExportUpdate {
     }
 }
 
-pub type ExportUpdateBatch = Vec<ExportUpdate>;
+pub type ExportUpdateBatch = Vec<ExportUpdateJSON>;

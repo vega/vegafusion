@@ -6,14 +6,15 @@ use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{
     VegaFusionRuntimeServer as TonicVegaFusionRuntimeServer,
 };
 use vegafusion_core::proto::gen::services::{
-    PreTransformSpecResult, PreTransformValuesResult, QueryRequest, QueryResult,
+    PreTransformExtractResult, PreTransformSpecResult, PreTransformValuesResult, QueryRequest,
+    QueryResult,
 };
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 use clap::Parser;
 use regex::Regex;
 use vegafusion_core::proto::gen::pretransform::{
-    PreTransformSpecRequest, PreTransformValuesRequest,
+    PreTransformExtractRequest, PreTransformSpecRequest, PreTransformValuesRequest,
 };
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
@@ -62,6 +63,20 @@ impl TonicVegaFusionRuntime for VegaFusionRuntimeGrpc {
         let result = self
             .runtime
             .pre_transform_values_request(request.into_inner())
+            .await;
+        match result {
+            Ok(result) => Ok(Response::new(result)),
+            Err(err) => Err(Status::unknown(err.to_string())),
+        }
+    }
+
+    async fn pre_transform_extract(
+        &self,
+        request: Request<PreTransformExtractRequest>,
+    ) -> Result<Response<PreTransformExtractResult>, Status> {
+        let result = self
+            .runtime
+            .pre_transform_extract_request(request.into_inner())
             .await;
         match result {
             Ok(result) => Ok(Response::new(result)),

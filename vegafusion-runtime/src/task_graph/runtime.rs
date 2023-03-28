@@ -14,23 +14,27 @@ use serde_json::Value;
 use std::convert::{TryFrom, TryInto};
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
+use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
-use vegafusion_core::planning::watch::{ExportUpdate, ExportUpdateNamespace};
+use vegafusion_core::planning::watch::{ExportUpdateArrow, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
 use vegafusion_core::proto::gen::pretransform::{
-    PlannerWarning, PreTransformSpecWarning, PreTransformValuesRequest, PreTransformValuesResponse,
-    PreTransformValuesWarning,
+    pre_transform_extract_warning, PlannerWarning,
+    PreTransformExtractDataset as ProtoPreTransformExtractDataset, PreTransformExtractRequest,
+    PreTransformExtractResponse, PreTransformExtractWarning, PreTransformSpecWarning,
+    PreTransformValuesRequest, PreTransformValuesResponse, PreTransformValuesWarning,
 };
 use vegafusion_core::proto::gen::pretransform::{
     PreTransformBrokenInteractivityWarning, PreTransformRowLimitWarning, PreTransformSpecRequest,
     PreTransformSpecResponse, PreTransformUnsupportedWarning,
 };
 use vegafusion_core::proto::gen::services::{
-    pre_transform_spec_result, pre_transform_values_result, query_request, query_result,
-    PreTransformSpecResult, PreTransformValuesResult, QueryRequest, QueryResult,
+    pre_transform_extract_result, pre_transform_spec_result, pre_transform_values_result,
+    query_request, query_result, PreTransformExtractResult, PreTransformSpecResult,
+    PreTransformValuesResult, QueryRequest, QueryResult,
 };
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse,
@@ -41,6 +45,7 @@ use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_dataframe::connection::Connection;
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
+type PreTransformExtractDataset = (String, Vec<u32>, VegaFusionTable);
 
 #[derive(Clone)]
 pub struct VegaFusionRuntime {
@@ -245,61 +250,15 @@ impl VegaFusionRuntime {
     ) -> Result<(ChartSpec, Vec<PreTransformSpecWarning>)> {
         let input_spec = spec;
 
-        // Create spec plan
-        let plan = SpecPlan::try_new(
-            spec,
-            &PlannerConfig {
-                stringify_local_datetimes: true,
-                extract_inline_data: true,
-                allow_client_to_server_comms: !preserve_interactivity,
-                ..Default::default()
-            },
-        )?;
-        // println!("pre transform client_spec: {}", serde_json::to_string_pretty(&plan.client_spec).unwrap());
-        // println!("pre transform server_spec: {}", serde_json::to_string_pretty(&plan.server_spec).unwrap());
-        // println!("pre transform comm plan: {:#?}", plan.comm_plan);
-
-        // Extract inline dataset fingerprints
-        let dataset_fingerprints = inline_datasets
-            .iter()
-            .map(|(k, ds)| (k.clone(), ds.fingerprint()))
-            .collect::<HashMap<_, _>>();
-
-        // Create task graph for server spec
-        let tz_config = TzConfig {
-            local_tz: local_tz.to_string(),
-            default_input_tz: default_input_tz.clone(),
-        };
-        let task_scope = plan.server_spec.to_task_scope().unwrap();
-        let tasks = plan
-            .server_spec
-            .to_tasks(&tz_config, &dataset_fingerprints)
-            .unwrap();
-        let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
-        let task_graph_mapping = task_graph.build_mapping();
-
-        // Gather values of server-to-client values
-        let mut init = Vec::new();
-        for var in &plan.comm_plan.server_to_client {
-            let node_index = task_graph_mapping
-                .get(var)
-                .unwrap_or_else(|| panic!("Failed to lookup variable '{var:?}'"));
-            let value = self
-                .get_node_value(
-                    Arc::new(task_graph.clone()),
-                    node_index,
-                    inline_datasets.clone(),
-                )
-                .await
-                .expect("Failed to get node value");
-
-            init.push(ExportUpdate {
-                namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),
-                name: var.0.name.clone(),
-                scope: var.1.clone(),
-                value: value.to_json().unwrap(),
-            });
-        }
+        let (plan, init) = self
+            .perform_pre_transform_spec(
+                spec,
+                local_tz,
+                default_input_tz,
+                preserve_interactivity,
+                inline_datasets,
+            )
+            .await?;
 
         // Update client spec with server values
         let mut spec = plan.client_spec.clone();
@@ -307,6 +266,7 @@ impl VegaFusionRuntime {
         for export_update in init {
             let scope = export_update.scope.clone();
             let name = export_update.name.as_str();
+            let export_update = export_update.to_json()?;
             match export_update.namespace {
                 ExportUpdateNamespace::Signal => {
                     let signal = spec.get_nested_signal_mut(&scope, name)?;
@@ -603,6 +563,225 @@ impl VegaFusionRuntime {
         }
 
         Ok((values, warnings))
+    }
+
+    pub async fn pre_transform_extract_request(
+        &self,
+        request: PreTransformExtractRequest,
+    ) -> Result<PreTransformExtractResult> {
+        // Extract and deserialize inline datasets
+        let inline_pretransform_datasets = request.inline_datasets;
+
+        let inline_datasets = inline_pretransform_datasets
+            .iter()
+            .map(|inline_dataset| {
+                let dataset = VegaFusionDataset::from_table_ipc_bytes(&inline_dataset.table)?;
+                Ok((inline_dataset.name.clone(), dataset))
+            })
+            .collect::<Result<HashMap<_, _>>>()?;
+
+        // Parse spec
+        let spec_string = request.spec;
+        let spec: ChartSpec = serde_json::from_str(&spec_string)?;
+        let local_tz = request.local_tz;
+        let default_input_tz = request.default_input_tz;
+        let preserve_interactivity = request.preserve_interactivity;
+
+        let (spec, datasets, warnings) = self
+            .pre_transform_extract(
+                &spec,
+                &local_tz,
+                &default_input_tz,
+                preserve_interactivity,
+                inline_datasets,
+            )
+            .await?;
+
+        // Build Response
+        let proto_datasets = datasets
+            .into_iter()
+            .map(|(name, scope, table)| {
+                Ok(ProtoPreTransformExtractDataset {
+                    name,
+                    scope,
+                    table: table.to_ipc_bytes()?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        let response = PreTransformExtractResponse {
+            spec: serde_json::to_string(&spec)?,
+            datasets: proto_datasets,
+            warnings,
+        };
+
+        // Build result
+        let result = PreTransformExtractResult {
+            result: Some(pre_transform_extract_result::Result::Response(response)),
+        };
+
+        Ok(result)
+    }
+
+    pub async fn pre_transform_extract(
+        &self,
+        spec: &ChartSpec,
+        local_tz: &str,
+        default_input_tz: &Option<String>,
+        preserve_interactivity: bool,
+        inline_datasets: HashMap<String, VegaFusionDataset>,
+    ) -> Result<(
+        ChartSpec,
+        Vec<PreTransformExtractDataset>,
+        Vec<PreTransformExtractWarning>,
+    )> {
+        let input_spec = spec;
+
+        let (plan, init) = self
+            .perform_pre_transform_spec(
+                spec,
+                local_tz,
+                default_input_tz,
+                preserve_interactivity,
+                inline_datasets,
+            )
+            .await?;
+
+        // Update client spec with server values
+        let mut spec = plan.client_spec.clone();
+        let mut datasets: Vec<PreTransformExtractDataset> = Vec::new();
+
+        for export_update in init {
+            let scope = export_update.scope.clone();
+            let name = export_update.name.as_str();
+            match export_update.namespace {
+                ExportUpdateNamespace::Signal => {
+                    // Always inline signal values
+                    let signal = spec.get_nested_signal_mut(&scope, name)?;
+                    signal.value = Some(export_update.value.to_json()?);
+                }
+                ExportUpdateNamespace::Data => {
+                    let data = spec.get_nested_data_mut(&scope, name)?;
+
+                    // If the input dataset includes inline values and no transforms,
+                    // copy the input JSON directly to avoid the case where round-tripping
+                    // through Arrow homogenizes mixed type arrays.
+                    // E.g. round tripping may turn [1, "two"] into ["1", "two"]
+                    let input_values =
+                        input_spec
+                            .get_nested_data(&scope, name)
+                            .ok()
+                            .and_then(|data| {
+                                if data.transform.is_empty() {
+                                    data.values.clone()
+                                } else {
+                                    None
+                                }
+                            });
+                    if let Some(input_values) = input_values {
+                        // Set inline value
+                        data.values = Some(input_values);
+                    } else if let TaskValue::Table(table) = export_update.value {
+                        if table.num_rows() <= 20 {
+                            // Inline small tables
+                            data.values = Some(table.to_json()?);
+                        } else {
+                            // Extract non-small tables
+                            datasets.push((export_update.name, export_update.scope, table));
+                        }
+                    } else {
+                        return Err(VegaFusionError::internal(
+                            "Expected Data TaskValue to be an Table",
+                        ));
+                    }
+                }
+            }
+        }
+
+        // Destringify datetime strings in selection store datasets
+        destringify_selection_datetimes(&mut spec)?;
+
+        // Build warnings
+        let mut warnings: Vec<PreTransformExtractWarning> = Vec::new();
+
+        // Add planner warnings
+        for planner_warning in &plan.warnings {
+            warnings.push(PreTransformExtractWarning {
+                warning_type: Some(pre_transform_extract_warning::WarningType::Planner(
+                    PlannerWarning {
+                        message: planner_warning.message(),
+                    },
+                )),
+            });
+        }
+
+        Ok((spec, datasets, warnings))
+    }
+
+    async fn perform_pre_transform_spec(
+        &self,
+        spec: &ChartSpec,
+        local_tz: &str,
+        default_input_tz: &Option<String>,
+        preserve_interactivity: bool,
+        inline_datasets: HashMap<String, VegaFusionDataset>,
+    ) -> Result<(SpecPlan, Vec<ExportUpdateArrow>)> {
+        // Create spec plan
+        let plan = SpecPlan::try_new(
+            spec,
+            &PlannerConfig {
+                stringify_local_datetimes: true,
+                extract_inline_data: true,
+                allow_client_to_server_comms: !preserve_interactivity,
+                ..Default::default()
+            },
+        )?;
+        // println!("pre transform client_spec: {}", serde_json::to_string_pretty(&plan.client_spec).unwrap());
+        // println!("pre transform server_spec: {}", serde_json::to_string_pretty(&plan.server_spec).unwrap());
+        // println!("pre transform comm plan: {:#?}", plan.comm_plan);
+
+        // Extract inline dataset fingerprints
+        let dataset_fingerprints = inline_datasets
+            .iter()
+            .map(|(k, ds)| (k.clone(), ds.fingerprint()))
+            .collect::<HashMap<_, _>>();
+
+        // Create task graph for server spec
+        let tz_config = TzConfig {
+            local_tz: local_tz.to_string(),
+            default_input_tz: default_input_tz.clone(),
+        };
+        let task_scope = plan.server_spec.to_task_scope().unwrap();
+        let tasks = plan
+            .server_spec
+            .to_tasks(&tz_config, &dataset_fingerprints)
+            .unwrap();
+        let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
+        let task_graph_mapping = task_graph.build_mapping();
+
+        // Gather values of server-to-client values
+        let mut init = Vec::new();
+        for var in &plan.comm_plan.server_to_client {
+            let node_index = task_graph_mapping
+                .get(var)
+                .unwrap_or_else(|| panic!("Failed to lookup variable '{var:?}'"));
+            let value = self
+                .get_node_value(
+                    Arc::new(task_graph.clone()),
+                    node_index,
+                    inline_datasets.clone(),
+                )
+                .await
+                .expect("Failed to get node value");
+
+            init.push(ExportUpdateArrow {
+                namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),
+                name: var.0.name.clone(),
+                scope: var.1.clone(),
+                value,
+            });
+        }
+        Ok((plan, init))
     }
 
     pub async fn clear_cache(&self) {

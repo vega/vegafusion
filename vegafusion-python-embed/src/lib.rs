@@ -2,11 +2,12 @@ pub mod connection;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyList};
+use pyo3::types::{PyBytes, PyDict, PyList, PyTuple};
 use std::collections::HashMap;
 use std::sync::{Arc, Once};
 use tokio::runtime::Runtime;
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
+use vegafusion_core::proto::gen::pretransform::pre_transform_extract_warning::WarningType as ExtractWarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
@@ -238,6 +239,58 @@ impl PyVegaFusionRuntime {
 
             let py_warnings = pythonize::pythonize(py, &warnings)?;
             Ok((py_response_list.into(), py_warnings))
+        })
+    }
+
+    pub fn pre_transform_extract(
+        &self,
+        spec: PyObject,
+        local_tz: String,
+        default_input_tz: Option<String>,
+        preserve_interactivity: Option<bool>,
+        inline_datasets: Option<&PyDict>,
+    ) -> PyResult<(PyObject, Vec<PyObject>, PyObject)> {
+        let inline_datasets = process_inline_datasets(inline_datasets)?;
+        let spec = parse_json_spec(spec)?;
+        let preserve_interactivity = preserve_interactivity.unwrap_or(true);
+
+        let (tx_spec, datasets, warnings) =
+            self.tokio_runtime
+                .block_on(self.runtime.pre_transform_extract(
+                    &spec,
+                    &local_tz,
+                    &default_input_tz,
+                    preserve_interactivity,
+                    inline_datasets,
+                ))?;
+
+        let warnings: Vec<_> = warnings
+            .iter()
+            .map(|warning| match warning.warning_type.as_ref().unwrap() {
+                ExtractWarningType::Planner(planner_warning) => PreTransformSpecWarning {
+                    typ: "Planner".to_string(),
+                    message: planner_warning.message.clone(),
+                },
+            })
+            .collect();
+
+        Python::with_gil(|py| {
+            let tx_spec = pythonize::pythonize(py, &tx_spec)?;
+
+            let datasets = datasets
+                .into_iter()
+                .map(|(name, scope, table)| {
+                    let name = name.into_py(py);
+                    let scope = scope.into_py(py);
+                    let table = table.to_pyarrow(py)?;
+                    let dataset: PyObject = PyTuple::new(py, &[name, scope, table]).into_py(py);
+                    Ok(dataset)
+                })
+                .collect::<PyResult<Vec<_>>>()?;
+
+            let warnings = pythonize::pythonize(py, &warnings)?;
+
+            Ok((tx_spec, datasets, warnings))
         })
     }
 
