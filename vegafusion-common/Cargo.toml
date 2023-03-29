@@ -27,15 +27,15 @@ default_features = false
 optional = true
 
 [dependencies.arrow]
-version = "33.0.0"
+version = "34.0.0"
 default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
-version = "19.0.0"
+version = "20.0.0"
 
 [dependencies.datafusion-expr]
-version = "19.0.0"
+version = "20.0.0"
 
 [dependencies.pyo3]
 version = "0.18.1"

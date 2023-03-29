@@ -77,6 +77,10 @@ impl SimplifyInfo for VfSimplifyInfo {
     fn execution_props(&self) -> &ExecutionProps {
         &self.execution_props
     }
+
+    fn get_data_type(&self, expr: &Expr) ->  std::result::Result<DataType, DataFusionError> {
+        expr.get_type(&self.schema)
+    }
 }
 
 impl From<DFSchema> for VfSimplifyInfo {
