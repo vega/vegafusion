@@ -311,7 +311,7 @@ class VegaFusionRuntime:
 
                 return processed_datasets, warnings
             elif _all_datasets_have_type(inline_datasets, pa.Table):
-                return datasets, warnings
+                return values, warnings
             else:
                 # Deserialize values to pandas DataFrames
                 datasets = [value.to_pandas() for value in values]
