@@ -5,6 +5,9 @@ import pytz
 import pytest
 from altair.utils.execeval import eval_block
 import vegafusion as vf
+from vega_datasets import data
+import polars as pl
+import altair as alt
 
 
 here = Path(__file__).parent
@@ -126,3 +129,20 @@ def test_transformed_data_for_mock(mock_name, expected_len, expected_cols, conne
 
     # Check expected length
     assert len(df) == expected_len
+
+
+def test_gh_286():
+    # https://github.com/hex-inc/vegafusion/issues/286
+    source = pl.from_pandas(data.seattle_weather())
+
+    chart = alt.Chart(source).mark_bar(
+        cornerRadiusTopLeft=3,
+        cornerRadiusTopRight=3
+    ).encode(
+        x='month(date):O',
+        y='count():Q',
+        color='weather:N'
+    )
+    transformed = vf.transformed_data(chart)
+    assert isinstance(transformed, pl.DataFrame)
+    assert len(transformed) == 53
