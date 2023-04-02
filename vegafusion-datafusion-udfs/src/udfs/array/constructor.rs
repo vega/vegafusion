@@ -13,7 +13,7 @@ pub fn make_array_constructor_udf() -> ScalarUDF {
         let num_args = args.len();
 
         // Return empty array as single row, empty array with Float64 data type
-        if num_args == 0 {
+        if num_args == 0 || num_args == 1 && args[0].data_type() == &DataType::Null {
             let empty_row = vec![Some(Vec::<Option<f64>>::new())];
             let empty = ListArray::from_iter_primitive::<Float64Type, _, _>(empty_row);
             return Ok(Arc::new(empty) as ArrayRef);
