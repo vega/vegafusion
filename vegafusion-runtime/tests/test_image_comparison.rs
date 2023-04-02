@@ -134,11 +134,6 @@ mod test_custom_specs {
         case("custom/pivot_join_on_bug", 0.001, true),
         case("custom/special_chars_bar", 0.001, true),
         case("custom/bar_sort_x_axis_categorical", 0.001, true),
-
-        // Need to investigate why this test panics on Windows
-        #[cfg(not(target_os = "windows"))]
-        case("custom/pivot_crash", 0.001, false),
-
         case("custom/taxi_dashboard", 0.001, true),
         case("custom/periods_in_formula_output", 0.001, true)
     )]

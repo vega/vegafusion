@@ -1210,6 +1210,8 @@ mod tests {
         let list_type = DataType::List(Box::new(Field::new("item", ints_struct, true)));
         let list_field = Field::new("list", list_type, true);
         let schema = Arc::new(Schema::new(vec![list_field]));
+
+        #[allow(deprecated)]
         let builder = ReaderBuilder::new().with_schema(schema).with_batch_size(64);
         let mut reader = builder.build(std::io::Cursor::new(json_content)).unwrap();
 

@@ -137,6 +137,7 @@ impl ScalarValueHelpers for ScalarValue {
                     .map(|v| v.to_json())
                     .collect::<Result<Vec<_>>>()?,
             ),
+            ScalarValue::List(None, _) => Value::Array(Vec::new()),
             ScalarValue::Struct(Some(v), fields) => {
                 let mut pairs: Map<String, Value> = Default::default();
                 for (val, field) in v.iter().zip(fields.deref()) {

@@ -257,6 +257,7 @@ impl VegaFusionTable {
                     let schema_ref = Arc::new(schema);
 
                     // read record batches
+                    #[allow(deprecated)]
                     let decoder = json::reader::Decoder::new(
                         schema_ref.clone(),
                         DecoderOptions::default().with_batch_size(batch_size),
