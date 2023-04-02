@@ -17,7 +17,11 @@ def load_test_cases():
     for category in ["vegalite", "custom"]:
         category_dir = spec_dir / category
         for file in category_dir.glob("*.vg.json"):
-            cases.append((category, file.name))
+            if file not in [
+                # Undefined aggregate column
+                "trellis_area_seattle.vg.json"
+            ]:
+                cases.append((category, file.name))
 
     return cases
 
