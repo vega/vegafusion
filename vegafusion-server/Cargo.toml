@@ -46,7 +46,7 @@ version = "1.1.2"
 features = [ "datafusion-conn",]
 
 [dependencies.tokio]
-version = "1.18.1"
+version = "1.27.0"
 features = [ "rt-multi-thread", "macros",]
 
 [dependencies.tonic-web]
