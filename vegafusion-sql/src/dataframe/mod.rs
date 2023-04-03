@@ -318,7 +318,7 @@ impl SqlDataFrame {
                         .iter()
                         .enumerate()
                         .map(|(i, field)| {
-                            col(format!("{}{}", column_prefix, i + base_index))
+                            flat_col(&format!("{}{}", column_prefix, i + base_index))
                                 .alias(field.name())
                                 .to_sql_select(dialect, &schema_df)
                                 .unwrap()
@@ -331,6 +331,7 @@ impl SqlDataFrame {
                         opt_exclude: None,
                         opt_except: None,
                         opt_rename: None,
+                        opt_replace: None,
                     })];
 
                     let table_alias = TableAlias {

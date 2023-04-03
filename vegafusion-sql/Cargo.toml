@@ -20,7 +20,7 @@ lazy_static = "^1.4.0"
 toml = "0.7.2"
 
 [dependencies.sqlparser]
-version = "0.30.0"
+version = "0.32.0"
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"

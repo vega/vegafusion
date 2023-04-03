@@ -34,13 +34,16 @@ impl ToSqlExpr for Expr {
                     "Alias cannot be converted to SQL: {self:?}"
                 )))
             }
-            Expr::Column(col) => Ok(match &col.relation {
-                Some(relation) => SqlExpr::CompoundIdentifier(vec![
-                    Ident::with_quote(dialect.quote_style, relation.to_string()),
-                    Ident::with_quote(dialect.quote_style, &col.name),
-                ]),
-                None => SqlExpr::Identifier(Ident::with_quote(dialect.quote_style, &col.name)),
-            }),
+            Expr::Column(col) => {
+                let id = match &col.relation {
+                    Some(relation) => SqlExpr::CompoundIdentifier(vec![
+                        Ident::with_quote(dialect.quote_style, relation.to_string()),
+                        Ident::with_quote(dialect.quote_style, &col.name),
+                    ]),
+                    None => SqlExpr::Identifier(Ident::with_quote(dialect.quote_style, &col.name)),
+                };
+                Ok(id)
+            },
             Expr::ScalarVariable(_, _) => Err(VegaFusionError::internal(
                 "ScalarVariable cannot be converted to SQL",
             )),
