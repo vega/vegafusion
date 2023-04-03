@@ -58,7 +58,7 @@ rev = "b3358dc6acf11ec800571735de1e1f1e449ec96a"
 version = "0.11.4"
 
 [build-dependencies.tonic-build]
-version = "0.8.4"
+version = "0.9.1"
 optional = true
 
 [build-dependencies.protobuf-src]

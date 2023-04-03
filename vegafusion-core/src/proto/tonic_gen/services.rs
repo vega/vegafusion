@@ -94,7 +94,7 @@ pub mod vega_fusion_runtime_client {
         /// Attempt to create a new client by connecting to a given endpoint.
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
         where
-            D: std::convert::TryInto<tonic::transport::Endpoint>,
+            D: TryInto<tonic::transport::Endpoint>,
             D::Error: Into<StdError>,
         {
             let conn = tonic::transport::Endpoint::new(dst)?.connect().await?;
@@ -150,10 +150,26 @@ pub mod vega_fusion_runtime_client {
             self.inner = self.inner.accept_compressed(encoding);
             self
         }
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
+        #[must_use]
+        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_decoding_message_size(limit);
+            self
+        }
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
+        #[must_use]
+        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_encoding_message_size(limit);
+            self
+        }
         pub async fn task_graph_query(
             &mut self,
             request: impl tonic::IntoRequest<super::QueryRequest>,
-        ) -> Result<tonic::Response<super::QueryResult>, tonic::Status> {
+        ) -> std::result::Result<tonic::Response<super::QueryResult>, tonic::Status> {
             self.inner
                 .ready()
                 .await
@@ -167,14 +183,20 @@ pub mod vega_fusion_runtime_client {
             let path = http::uri::PathAndQuery::from_static(
                 "/services.VegaFusionRuntime/TaskGraphQuery",
             );
-            self.inner.unary(request.into_request(), path, codec).await
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("services.VegaFusionRuntime", "TaskGraphQuery"));
+            self.inner.unary(req, path, codec).await
         }
         pub async fn pre_transform_spec(
             &mut self,
             request: impl tonic::IntoRequest<
                 super::super::pretransform::PreTransformSpecRequest,
             >,
-        ) -> Result<tonic::Response<super::PreTransformSpecResult>, tonic::Status> {
+        ) -> std::result::Result<
+            tonic::Response<super::PreTransformSpecResult>,
+            tonic::Status,
+        > {
             self.inner
                 .ready()
                 .await
@@ -188,14 +210,22 @@ pub mod vega_fusion_runtime_client {
             let path = http::uri::PathAndQuery::from_static(
                 "/services.VegaFusionRuntime/PreTransformSpec",
             );
-            self.inner.unary(request.into_request(), path, codec).await
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("services.VegaFusionRuntime", "PreTransformSpec"),
+                );
+            self.inner.unary(req, path, codec).await
         }
         pub async fn pre_transform_values(
             &mut self,
             request: impl tonic::IntoRequest<
                 super::super::pretransform::PreTransformValuesRequest,
             >,
-        ) -> Result<tonic::Response<super::PreTransformValuesResult>, tonic::Status> {
+        ) -> std::result::Result<
+            tonic::Response<super::PreTransformValuesResult>,
+            tonic::Status,
+        > {
             self.inner
                 .ready()
                 .await
@@ -209,14 +239,22 @@ pub mod vega_fusion_runtime_client {
             let path = http::uri::PathAndQuery::from_static(
                 "/services.VegaFusionRuntime/PreTransformValues",
             );
-            self.inner.unary(request.into_request(), path, codec).await
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("services.VegaFusionRuntime", "PreTransformValues"),
+                );
+            self.inner.unary(req, path, codec).await
         }
         pub async fn pre_transform_extract(
             &mut self,
             request: impl tonic::IntoRequest<
                 super::super::pretransform::PreTransformExtractRequest,
             >,
-        ) -> Result<tonic::Response<super::PreTransformExtractResult>, tonic::Status> {
+        ) -> std::result::Result<
+            tonic::Response<super::PreTransformExtractResult>,
+            tonic::Status,
+        > {
             self.inner
                 .ready()
                 .await
@@ -230,7 +268,12 @@ pub mod vega_fusion_runtime_client {
             let path = http::uri::PathAndQuery::from_static(
                 "/services.VegaFusionRuntime/PreTransformExtract",
             );
-            self.inner.unary(request.into_request(), path, codec).await
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("services.VegaFusionRuntime", "PreTransformExtract"),
+                );
+            self.inner.unary(req, path, codec).await
         }
     }
 }
@@ -244,29 +287,40 @@ pub mod vega_fusion_runtime_server {
         async fn task_graph_query(
             &self,
             request: tonic::Request<super::QueryRequest>,
-        ) -> Result<tonic::Response<super::QueryResult>, tonic::Status>;
+        ) -> std::result::Result<tonic::Response<super::QueryResult>, tonic::Status>;
         async fn pre_transform_spec(
             &self,
             request: tonic::Request<super::super::pretransform::PreTransformSpecRequest>,
-        ) -> Result<tonic::Response<super::PreTransformSpecResult>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::PreTransformSpecResult>,
+            tonic::Status,
+        >;
         async fn pre_transform_values(
             &self,
             request: tonic::Request<
                 super::super::pretransform::PreTransformValuesRequest,
             >,
-        ) -> Result<tonic::Response<super::PreTransformValuesResult>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::PreTransformValuesResult>,
+            tonic::Status,
+        >;
         async fn pre_transform_extract(
             &self,
             request: tonic::Request<
                 super::super::pretransform::PreTransformExtractRequest,
             >,
-        ) -> Result<tonic::Response<super::PreTransformExtractResult>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::PreTransformExtractResult>,
+            tonic::Status,
+        >;
     }
     #[derive(Debug)]
     pub struct VegaFusionRuntimeServer<T: VegaFusionRuntime> {
         inner: _Inner<T>,
         accept_compression_encodings: EnabledCompressionEncodings,
         send_compression_encodings: EnabledCompressionEncodings,
+        max_decoding_message_size: Option<usize>,
+        max_encoding_message_size: Option<usize>,
     }
     struct _Inner<T>(Arc<T>);
     impl<T: VegaFusionRuntime> VegaFusionRuntimeServer<T> {
@@ -279,6 +333,8 @@ pub mod vega_fusion_runtime_server {
                 inner,
                 accept_compression_encodings: Default::default(),
                 send_compression_encodings: Default::default(),
+                max_decoding_message_size: None,
+                max_encoding_message_size: None,
             }
         }
         pub fn with_interceptor<F>(
@@ -302,6 +358,22 @@ pub mod vega_fusion_runtime_server {
             self.send_compression_encodings.enable(encoding);
             self
         }
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
+        #[must_use]
+        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
+            self.max_decoding_message_size = Some(limit);
+            self
+        }
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
+        #[must_use]
+        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
+            self.max_encoding_message_size = Some(limit);
+            self
+        }
     }
     impl<T, B> tonic::codegen::Service<http::Request<B>> for VegaFusionRuntimeServer<T>
     where
@@ -315,7 +387,7 @@ pub mod vega_fusion_runtime_server {
         fn poll_ready(
             &mut self,
             _cx: &mut Context<'_>,
-        ) -> Poll<Result<(), Self::Error>> {
+        ) -> Poll<std::result::Result<(), Self::Error>> {
             Poll::Ready(Ok(()))
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
@@ -337,7 +409,7 @@ pub mod vega_fusion_runtime_server {
                             &mut self,
                             request: tonic::Request<super::QueryRequest>,
                         ) -> Self::Future {
-                            let inner = self.0.clone();
+                            let inner = Arc::clone(&self.0);
                             let fut = async move {
                                 (*inner).task_graph_query(request).await
                             };
@@ -346,6 +418,8 @@ pub mod vega_fusion_runtime_server {
                     }
                     let accept_compression_encodings = self.accept_compression_encodings;
                     let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
@@ -355,6 +429,10 @@ pub mod vega_fusion_runtime_server {
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
                             );
                         let res = grpc.unary(method, req).await;
                         Ok(res)
@@ -380,7 +458,7 @@ pub mod vega_fusion_runtime_server {
                                 super::super::pretransform::PreTransformSpecRequest,
                             >,
                         ) -> Self::Future {
-                            let inner = self.0.clone();
+                            let inner = Arc::clone(&self.0);
                             let fut = async move {
                                 (*inner).pre_transform_spec(request).await
                             };
@@ -389,6 +467,8 @@ pub mod vega_fusion_runtime_server {
                     }
                     let accept_compression_encodings = self.accept_compression_encodings;
                     let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
@@ -398,6 +478,10 @@ pub mod vega_fusion_runtime_server {
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
                             );
                         let res = grpc.unary(method, req).await;
                         Ok(res)
@@ -423,7 +507,7 @@ pub mod vega_fusion_runtime_server {
                                 super::super::pretransform::PreTransformValuesRequest,
                             >,
                         ) -> Self::Future {
-                            let inner = self.0.clone();
+                            let inner = Arc::clone(&self.0);
                             let fut = async move {
                                 (*inner).pre_transform_values(request).await
                             };
@@ -432,6 +516,8 @@ pub mod vega_fusion_runtime_server {
                     }
                     let accept_compression_encodings = self.accept_compression_encodings;
                     let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
@@ -441,6 +527,10 @@ pub mod vega_fusion_runtime_server {
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
                             );
                         let res = grpc.unary(method, req).await;
                         Ok(res)
@@ -466,7 +556,7 @@ pub mod vega_fusion_runtime_server {
                                 super::super::pretransform::PreTransformExtractRequest,
                             >,
                         ) -> Self::Future {
-                            let inner = self.0.clone();
+                            let inner = Arc::clone(&self.0);
                             let fut = async move {
                                 (*inner).pre_transform_extract(request).await
                             };
@@ -475,6 +565,8 @@ pub mod vega_fusion_runtime_server {
                     }
                     let accept_compression_encodings = self.accept_compression_encodings;
                     let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
@@ -484,6 +576,10 @@ pub mod vega_fusion_runtime_server {
                             .apply_compression_config(
                                 accept_compression_encodings,
                                 send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
                             );
                         let res = grpc.unary(method, req).await;
                         Ok(res)
@@ -512,12 +608,14 @@ pub mod vega_fusion_runtime_server {
                 inner,
                 accept_compression_encodings: self.accept_compression_encodings,
                 send_compression_encodings: self.send_compression_encodings,
+                max_decoding_message_size: self.max_decoding_message_size,
+                max_encoding_message_size: self.max_encoding_message_size,
             }
         }
     }
     impl<T: VegaFusionRuntime> Clone for _Inner<T> {
         fn clone(&self) -> Self {
-            Self(self.0.clone())
+            Self(Arc::clone(&self.0))
         }
     }
     impl<T: std::fmt::Debug> std::fmt::Debug for _Inner<T> {

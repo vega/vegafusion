@@ -24,7 +24,7 @@ assert_cmd = "2.0"
 predicates = "2.1"
 
 [build-dependencies]
-tonic-build = "0.8.4"
+tonic-build = "0.9.1"
 prost-build = "0.11.4"
 
 [dependencies.vegafusion-common]
