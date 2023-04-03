@@ -43,7 +43,7 @@ impl ToSqlExpr for Expr {
                     None => SqlExpr::Identifier(Ident::with_quote(dialect.quote_style, &col.name)),
                 };
                 Ok(id)
-            },
+            }
             Expr::ScalarVariable(_, _) => Err(VegaFusionError::internal(
                 "ScalarVariable cannot be converted to SQL",
             )),
