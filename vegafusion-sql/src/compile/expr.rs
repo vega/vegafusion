@@ -616,7 +616,8 @@ mod tests {
     use arrow::datatypes::{DataType, Schema};
     use datafusion_common::DFSchema;
     use datafusion_expr::expr::Cast;
-    use datafusion_expr::{col, lit, Between, BuiltinScalarFunction, Expr};
+    use datafusion_expr::{lit, Between, BuiltinScalarFunction, Expr};
+    use vegafusion_common::column::flat_col;
 
     fn schema() -> DFSchema {
         DFSchema::try_from(Schema::new(Vec::new())).unwrap()
@@ -624,7 +625,7 @@ mod tests {
 
     #[test]
     pub fn test1() {
-        let df_expr = Expr::Negative(Box::new(col("A"))) + lit(12);
+        let df_expr = Expr::Negative(Box::new(flat_col("A"))) + lit(12);
         let sql_expr = df_expr.to_sql(&Dialect::datafusion(), &schema()).unwrap();
         println!("{sql_expr:?}");
         let sql_str = sql_expr.to_string();
@@ -636,7 +637,7 @@ mod tests {
         let df_expr = Expr::ScalarFunction {
             fun: BuiltinScalarFunction::Sin,
             args: vec![lit(1.2)],
-        } + col("B");
+        } + flat_col("B");
 
         let dialect: Dialect = Dialect::datafusion();
         let sql_expr = df_expr.to_sql(&dialect, &schema()).unwrap();
@@ -675,12 +676,12 @@ mod tests {
     #[test]
     pub fn test5() {
         let df_expr = Expr::Between(Between {
-            expr: Box::new(col("A")),
+            expr: Box::new(flat_col("A")),
             negated: false,
             low: Box::new(lit(0)),
             high: Box::new(lit(10)),
         })
-        .or(col("B"));
+        .or(flat_col("B"));
 
         let sql_expr = df_expr.to_sql(&Dialect::datafusion(), &schema()).unwrap();
         println!("{sql_expr:?}");

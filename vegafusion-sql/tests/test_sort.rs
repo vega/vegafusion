@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{col, expr, Expr};
+use datafusion_expr::{expr, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -14,6 +14,7 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 #[cfg(test)]
 mod test_default_null_ordering {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -40,12 +41,12 @@ mod test_default_null_ordering {
             .sort(
                 vec![
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
+                        expr: Box::new(flat_col("a")),
                         asc: false,
                         nulls_first: false,
                     }),
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("c")),
+                        expr: Box::new(flat_col("c")),
                         asc: true,
                         nulls_first: true,
                     }),
@@ -70,6 +71,7 @@ mod test_default_null_ordering {
 #[cfg(test)]
 mod test_custom_null_ordering {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -94,12 +96,12 @@ mod test_custom_null_ordering {
             .sort(
                 vec![
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
+                        expr: Box::new(flat_col("a")),
                         asc: false,
                         nulls_first: true,
                     }),
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("c")),
+                        expr: Box::new(flat_col("c")),
                         asc: true,
                         nulls_first: false,
                     }),
@@ -121,6 +123,7 @@ mod test_custom_null_ordering {
 #[cfg(test)]
 mod test_order_with_limit {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -146,12 +149,12 @@ mod test_order_with_limit {
             .sort(
                 vec![
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("c")),
+                        expr: Box::new(flat_col("c")),
                         asc: true,
                         nulls_first: true,
                     }),
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("b")),
+                        expr: Box::new(flat_col("b")),
                         asc: true,
                         nulls_first: true,
                     }),

@@ -7,7 +7,7 @@ use arrow::datatypes::{Field, Schema, SchemaRef};
 use async_trait::async_trait;
 use datafusion_common::{Column, DFSchema, OwnedTableReference, ScalarValue};
 use datafusion_expr::{
-    abs, col, expr, is_null, lit, max, min, when, window_function, AggregateFunction,
+    abs, expr, is_null, lit, max, min, when, window_function, AggregateFunction,
     BuiltInWindowFunction, BuiltinScalarFunction, Expr, ExprSchemable, WindowFrame,
     WindowFrameBound, WindowFrameUnits, WindowFunction,
 };
@@ -1222,9 +1222,9 @@ impl SqlDataFrame {
                     group_cols_csv = group_cols_csv,
                     key = key_col_str,
                     using_csv = using_csv,
-                    order_col = col(order_field).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
-                    order_group_col = col(format!("{order_field}_groups")).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
-                    order_key_col = col(format!("{order_field}_key")).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
+                    order_col = flat_col(order_field).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
+                    order_group_col = flat_col(&format!("{order_field}_groups")).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
+                    order_key_col = flat_col(&format!("{order_field}_key")).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
                     parent = self.parent_name(),
                 );
 

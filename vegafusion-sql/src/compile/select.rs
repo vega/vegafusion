@@ -31,8 +31,9 @@ mod tests {
     use crate::dialect::Dialect;
     use arrow::datatypes::Schema;
     use datafusion_common::DFSchema;
-    use datafusion_expr::{col, lit, Expr};
+    use datafusion_expr::{lit, Expr};
     use std::ops::Add;
+    use vegafusion_common::column::flat_col;
 
     fn schema() -> DFSchema {
         DFSchema::try_from(Schema::new(Vec::new())).unwrap()
@@ -50,7 +51,7 @@ mod tests {
 
     #[test]
     pub fn test_select_unnamed_expr() {
-        let expr = col("a").add(lit(23));
+        let expr = flat_col("a").add(lit(23));
         let sql_expr = expr
             .to_sql_select(&Dialect::datafusion(), &schema())
             .unwrap();
@@ -60,7 +61,7 @@ mod tests {
 
     #[test]
     pub fn test_select_aliased_expr() {
-        let expr = col("a").add(lit(23)).alias("foo");
+        let expr = flat_col("a").add(lit(23)).alias("foo");
         let sql_expr = expr
             .to_sql_select(&Dialect::datafusion(), &schema())
             .unwrap();
