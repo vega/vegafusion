@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{col, expr, Expr};
+use datafusion_expr::{expr, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -13,6 +13,7 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 #[cfg(test)]
 mod test_simple_fold {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -46,12 +47,12 @@ mod test_simple_fold {
             df.sort(
                 vec![
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("country")),
+                        expr: Box::new(flat_col("country")),
                         asc: true,
                         nulls_first: true,
                     }),
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("key")),
+                        expr: Box::new(flat_col("key")),
                         asc: true,
                         nulls_first: true,
                     }),
@@ -73,6 +74,7 @@ mod test_simple_fold {
 #[cfg(test)]
 mod test_ordered_fold {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -105,7 +107,7 @@ mod test_ordered_fold {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("_order")),
+                    expr: Box::new(flat_col("_order")),
                     asc: true,
                     nulls_first: true,
                 })],

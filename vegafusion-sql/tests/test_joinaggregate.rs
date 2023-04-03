@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{avg, col, count, expr, max, min, sum, Expr};
+use datafusion_expr::{avg, count, expr, max, min, sum, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -13,6 +13,7 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 #[cfg(test)]
 mod test_simple_aggs {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -35,13 +36,13 @@ mod test_simple_aggs {
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .joinaggregate(
-                vec![col("b")],
+                vec![flat_col("b")],
                 vec![
-                    min(col("a")).alias("min_a"),
-                    max(col("a")).alias("max_a"),
-                    avg(col("a")).alias("avg_a"),
-                    sum(col("a")).alias("sum_a"),
-                    count(col("a")).alias("count_a"),
+                    min(flat_col("a")).alias("min_a"),
+                    max(flat_col("a")).alias("max_a"),
+                    avg(flat_col("a")).alias("avg_a"),
+                    sum(flat_col("a")).alias("sum_a"),
+                    count(flat_col("a")).alias("count_a"),
                 ],
             )
             .await;
@@ -49,7 +50,7 @@ mod test_simple_aggs {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -76,6 +77,7 @@ mod test_simple_aggs {
 #[cfg(test)]
 mod test_simple_aggs_no_grouping {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -100,11 +102,11 @@ mod test_simple_aggs_no_grouping {
             .joinaggregate(
                 vec![],
                 vec![
-                    min(col("a")).alias("min_a"),
-                    max(col("a")).alias("max_a"),
-                    avg(col("a")).alias("avg_a"),
-                    sum(col("a")).alias("sum_a"),
-                    count(col("a")).alias("count_a"),
+                    min(flat_col("a")).alias("min_a"),
+                    max(flat_col("a")).alias("max_a"),
+                    avg(flat_col("a")).alias("avg_a"),
+                    sum(flat_col("a")).alias("sum_a"),
+                    count(flat_col("a")).alias("count_a"),
                 ],
             )
             .await;
@@ -112,7 +114,7 @@ mod test_simple_aggs_no_grouping {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],

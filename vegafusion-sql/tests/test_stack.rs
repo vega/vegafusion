@@ -2,13 +2,14 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{col, expr, lit, round, Expr};
+use datafusion_expr::{expr, lit, round, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
 use std::ops::{Div, Mul};
 use std::sync::Arc;
 use utils::{check_dataframe_query, dialect_names, make_connection, TOKIO_RUNTIME};
+use vegafusion_common::column::flat_col;
 use vegafusion_common::{data::table::VegaFusionTable, error::Result};
 use vegafusion_dataframe::dataframe::{DataFrame, StackMode};
 use vegafusion_sql::connection::SqlConnection;
@@ -39,7 +40,7 @@ async fn make_stack_for_mode(
     df.stack(
         "a",
         vec![Expr::Sort(expr::Sort {
-            expr: Box::new(col("b")),
+            expr: Box::new(flat_col("b")),
             asc: true,
             nulls_first: true,
         })],
@@ -53,12 +54,12 @@ async fn make_stack_for_mode(
     .sort(
         vec![
             Expr::Sort(expr::Sort {
-                expr: Box::new(col("c")),
+                expr: Box::new(flat_col("c")),
                 asc: true,
                 nulls_first: true,
             }),
             Expr::Sort(expr::Sort {
-                expr: Box::new(col("end")),
+                expr: Box::new(flat_col("end")),
                 asc: true,
                 nulls_first: true,
             }),
@@ -116,13 +117,13 @@ mod test_mode_normalized {
         // Round start and end to 2 decimal places to avoid numerical precision issues when comparing results
         let df_result = df
             .select(vec![
-                col("a"),
-                col("b"),
-                col("c"),
-                round(col("start").mul(lit(100)))
+                flat_col("a"),
+                flat_col("b"),
+                flat_col("c"),
+                round(flat_col("start").mul(lit(100)))
                     .div(lit(100))
                     .alias("trunc_start"),
-                round(col("end").mul(lit(100)))
+                round(flat_col("end").mul(lit(100)))
                     .div(lit(100))
                     .alias("trunc_end"),
             ])

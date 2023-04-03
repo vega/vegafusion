@@ -270,4 +270,13 @@ impl VariableNamespace {
             VariableNamespace::Scale => "Scale",
         }
     }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "Signal" => Some(Self::Signal),
+            "Data" => Some(Self::Data),
+            "Scale" => Some(Self::Scale),
+            _ => None,
+        }
+    }
 }

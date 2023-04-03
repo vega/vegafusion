@@ -455,6 +455,7 @@ impl ExportImage {
             }
             .with_context(|| format!("Failed to write svg image to {path}"))?,
             ExportImage::Png(png_b64) => {
+                #[allow(deprecated)]
                 let png_bytes = base64::decode(png_b64)
                     .external("Failed to decdode base64 encoded png image")?;
                 if !add_ext || path.ends_with(".png") {

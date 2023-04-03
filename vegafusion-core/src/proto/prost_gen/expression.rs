@@ -188,6 +188,15 @@ impl UnaryOperator {
             UnaryOperator::Not => "Not",
         }
     }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "Pos" => Some(Self::Pos),
+            "Neg" => Some(Self::Neg),
+            "Not" => Some(Self::Not),
+            _ => None,
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -204,6 +213,14 @@ impl LogicalOperator {
         match self {
             LogicalOperator::Or => "Or",
             LogicalOperator::And => "And",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "Or" => Some(Self::Or),
+            "And" => Some(Self::And),
+            _ => None,
         }
     }
 }
@@ -244,6 +261,25 @@ impl BinaryOperator {
             BinaryOperator::Mult => "Mult",
             BinaryOperator::Div => "Div",
             BinaryOperator::Mod => "Mod",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "Equals" => Some(Self::Equals),
+            "NotEquals" => Some(Self::NotEquals),
+            "StrictEquals" => Some(Self::StrictEquals),
+            "NotStrictEquals" => Some(Self::NotStrictEquals),
+            "LessThan" => Some(Self::LessThan),
+            "LessThanEqual" => Some(Self::LessThanEqual),
+            "GreaterThan" => Some(Self::GreaterThan),
+            "GreaterThanEqual" => Some(Self::GreaterThanEqual),
+            "Plus" => Some(Self::Plus),
+            "Minus" => Some(Self::Minus),
+            "Mult" => Some(Self::Mult),
+            "Div" => Some(Self::Div),
+            "Mod" => Some(Self::Mod),
+            _ => None,
         }
     }
 }

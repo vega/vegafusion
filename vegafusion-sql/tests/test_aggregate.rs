@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{avg, col, count, expr, lit, max, min, round, sum, AggregateFunction, Expr};
+use datafusion_expr::{avg, count, expr, lit, max, min, round, sum, AggregateFunction, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -14,6 +14,7 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 #[cfg(test)]
 mod test_simple_aggs {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(#[case] dialect_name: &str) {
@@ -36,13 +37,13 @@ mod test_simple_aggs {
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df = df
             .aggregate(
-                vec![col("b")],
+                vec![flat_col("b")],
                 vec![
-                    min(col("a")).alias("min_a"),
-                    max(col("a")).alias("max_a"),
-                    avg(col("a")).alias("avg_a"),
-                    sum(col("a")).alias("sum_a"),
-                    count(col("a")).alias("count_a"),
+                    min(flat_col("a")).alias("min_a"),
+                    max(flat_col("a")).alias("max_a"),
+                    avg(flat_col("a")).alias("avg_a"),
+                    sum(flat_col("a")).alias("sum_a"),
+                    count(flat_col("a")).alias("count_a"),
                 ],
             )
             .await
@@ -50,7 +51,7 @@ mod test_simple_aggs {
         let df_result = df
             .sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("b")),
+                    expr: Box::new(flat_col("b")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -74,6 +75,7 @@ mod test_simple_aggs {
 #[cfg(test)]
 mod test_median_agg {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -97,10 +99,10 @@ mod test_median_agg {
             .aggregate(
                 vec![],
                 vec![
-                    count(col("a")).alias("count_a"),
+                    count(flat_col("a")).alias("count_a"),
                     Expr::AggregateFunction(expr::AggregateFunction {
                         fun: AggregateFunction::Median,
-                        args: vec![col("a")],
+                        args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
                     })
@@ -125,6 +127,7 @@ mod test_median_agg {
 #[cfg(test)]
 mod test_variance_aggs {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -146,12 +149,12 @@ mod test_variance_aggs {
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .aggregate(
-                vec![col("b")],
+                vec![flat_col("b")],
                 vec![
                     round(
                         Expr::AggregateFunction(expr::AggregateFunction {
                             fun: AggregateFunction::Stddev,
-                            args: vec![col("a")],
+                            args: vec![flat_col("a")],
                             distinct: false,
                             filter: None,
                         })
@@ -162,7 +165,7 @@ mod test_variance_aggs {
                     round(
                         Expr::AggregateFunction(expr::AggregateFunction {
                             fun: AggregateFunction::StddevPop,
-                            args: vec![col("a")],
+                            args: vec![flat_col("a")],
                             distinct: false,
                             filter: None,
                         })
@@ -173,7 +176,7 @@ mod test_variance_aggs {
                     round(
                         Expr::AggregateFunction(expr::AggregateFunction {
                             fun: AggregateFunction::Variance,
-                            args: vec![col("a")],
+                            args: vec![flat_col("a")],
                             distinct: false,
                             filter: None,
                         })
@@ -184,7 +187,7 @@ mod test_variance_aggs {
                     round(
                         Expr::AggregateFunction(expr::AggregateFunction {
                             fun: AggregateFunction::VariancePop,
-                            args: vec![col("a")],
+                            args: vec![flat_col("a")],
                             distinct: false,
                             filter: None,
                         })
@@ -198,7 +201,7 @@ mod test_variance_aggs {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("b")),
+                    expr: Box::new(flat_col("b")),
                     asc: true,
                     nulls_first: true,
                 })],

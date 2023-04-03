@@ -324,6 +324,14 @@ impl SortOrder {
             SortOrder::Ascending => "Ascending",
         }
     }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "Descending" => Some(Self::Descending),
+            "Ascending" => Some(Self::Ascending),
+            _ => None,
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -384,6 +392,35 @@ impl AggregateOp {
             AggregateOp::Values => "Values",
         }
     }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "Count" => Some(Self::Count),
+            "Valid" => Some(Self::Valid),
+            "Missing" => Some(Self::Missing),
+            "Distinct" => Some(Self::Distinct),
+            "Sum" => Some(Self::Sum),
+            "Product" => Some(Self::Product),
+            "Mean" => Some(Self::Mean),
+            "Average" => Some(Self::Average),
+            "Variance" => Some(Self::Variance),
+            "Variancep" => Some(Self::Variancep),
+            "Stdev" => Some(Self::Stdev),
+            "Stdevp" => Some(Self::Stdevp),
+            "Stderr" => Some(Self::Stderr),
+            "Median" => Some(Self::Median),
+            "Q1" => Some(Self::Q1),
+            "Q3" => Some(Self::Q3),
+            "Ci0" => Some(Self::Ci0),
+            "Ci1" => Some(Self::Ci1),
+            "Min" => Some(Self::Min),
+            "Max" => Some(Self::Max),
+            "Argmin" => Some(Self::Argmin),
+            "Argmax" => Some(Self::Argmax),
+            "Values" => Some(Self::Values),
+            _ => None,
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -420,6 +457,23 @@ impl TimeUnitUnit {
             TimeUnitUnit::Milliseconds => "Milliseconds",
         }
     }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "Year" => Some(Self::Year),
+            "Quarter" => Some(Self::Quarter),
+            "Month" => Some(Self::Month),
+            "Date" => Some(Self::Date),
+            "Week" => Some(Self::Week),
+            "Day" => Some(Self::Day),
+            "DayOfYear" => Some(Self::DayOfYear),
+            "Hours" => Some(Self::Hours),
+            "Minutes" => Some(Self::Minutes),
+            "Seconds" => Some(Self::Seconds),
+            "Milliseconds" => Some(Self::Milliseconds),
+            _ => None,
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -436,6 +490,14 @@ impl TimeUnitTimeZone {
         match self {
             TimeUnitTimeZone::Local => "Local",
             TimeUnitTimeZone::Utc => "Utc",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "Local" => Some(Self::Local),
+            "Utc" => Some(Self::Utc),
+            _ => None,
         }
     }
 }
@@ -479,6 +541,25 @@ impl WindowOp {
             WindowOp::NextValue => "NextValue",
         }
     }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "RowNumber" => Some(Self::RowNumber),
+            "Rank" => Some(Self::Rank),
+            "DenseRank" => Some(Self::DenseRank),
+            "PercentileRank" => Some(Self::PercentileRank),
+            "CumeDist" => Some(Self::CumeDist),
+            "NTile" => Some(Self::NTile),
+            "Lag" => Some(Self::Lag),
+            "Lead" => Some(Self::Lead),
+            "FirstValue" => Some(Self::FirstValue),
+            "LastValue" => Some(Self::LastValue),
+            "NthValue" => Some(Self::NthValue),
+            "PrevValue" => Some(Self::PrevValue),
+            "NextValue" => Some(Self::NextValue),
+            _ => None,
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -497,6 +578,15 @@ impl StackOffset {
             StackOffset::Zero => "Zero",
             StackOffset::Center => "Center",
             StackOffset::Normalize => "Normalize",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "Zero" => Some(Self::Zero),
+            "Center" => Some(Self::Center),
+            "Normalize" => Some(Self::Normalize),
+            _ => None,
         }
     }
 }
@@ -521,6 +611,17 @@ impl ImputeMethod {
             ImputeMethod::ImputeMedian => "ImputeMedian",
             ImputeMethod::ImputeMax => "ImputeMax",
             ImputeMethod::ImputeMin => "ImputeMin",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "ImputeValue" => Some(Self::ImputeValue),
+            "ImputeMean" => Some(Self::ImputeMean),
+            "ImputeMedian" => Some(Self::ImputeMedian),
+            "ImputeMax" => Some(Self::ImputeMax),
+            "ImputeMin" => Some(Self::ImputeMin),
+            _ => None,
         }
     }
 }

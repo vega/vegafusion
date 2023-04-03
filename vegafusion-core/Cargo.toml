@@ -17,7 +17,7 @@ prost-types = "0.11.2"
 itertools = "0.10.3"
 lazy_static = "^1.4.0"
 regex = "^1.5.5"
-ordered-float = "^2.10.0"
+ordered-float = "3.6.0"
 petgraph = "0.6.0"
 deterministic-hash = "1.0.1"
 chrono = "0.4.23"
@@ -25,7 +25,7 @@ num-complex = "0.4.2"
 rand = "0.8.5"
 
 [dependencies.sqlparser]
-version = "0.30.0"
+version = "0.32.0"
 optional = true
 
 [dependencies.serde_json]
@@ -38,7 +38,7 @@ features = [ "json", "sqlparser",]
 version = "1.1.2"
 
 [dependencies.datafusion-common]
-version = "20.0.0"
+version = "21.1.0"
 
 [dependencies.pyo3]
 version = "0.18.1"
@@ -58,7 +58,7 @@ rev = "b3358dc6acf11ec800571735de1e1f1e449ec96a"
 version = "0.11.4"
 
 [build-dependencies.tonic-build]
-version = "0.8.4"
+version = "0.9.1"
 optional = true
 
 [build-dependencies.protobuf-src]

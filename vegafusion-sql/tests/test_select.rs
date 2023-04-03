@@ -16,8 +16,9 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 #[cfg(test)]
 mod test_numeric_operators {
     use crate::*;
-    use datafusion_expr::{col, expr, lit, Expr};
+    use datafusion_expr::{expr, lit, Expr};
     use std::ops::{Add, Div, Mul, Sub};
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -39,27 +40,27 @@ mod test_numeric_operators {
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
-                col("a"),
-                col("b"),
-                col("a").add(col("b")).alias("add"),
-                col("a").sub(col("b")).alias("sub"),
-                col("a").mul(col("b")).alias("mul"),
-                col("a").div(lit(2)).alias("div"),
-                col("a").modulus(lit(4)).alias("mod"),
-                col("a").eq(col("b")).alias("eq"),
-                col("a").not_eq(col("b")).alias("neq"),
-                col("a").gt(lit(5)).alias("gt"),
-                col("a").gt_eq(lit(5)).alias("gte"),
-                col("b").lt(lit(6)).alias("lt"),
-                col("b").lt_eq(lit(6)).alias("lte"),
-                Expr::Negative(Box::new(col("a"))).alias("neg"),
+                flat_col("a"),
+                flat_col("b"),
+                flat_col("a").add(flat_col("b")).alias("add"),
+                flat_col("a").sub(flat_col("b")).alias("sub"),
+                flat_col("a").mul(flat_col("b")).alias("mul"),
+                flat_col("a").div(lit(2)).alias("div"),
+                flat_col("a").modulus(lit(4)).alias("mod"),
+                flat_col("a").eq(flat_col("b")).alias("eq"),
+                flat_col("a").not_eq(flat_col("b")).alias("neq"),
+                flat_col("a").gt(lit(5)).alias("gt"),
+                flat_col("a").gt_eq(lit(5)).alias("gte"),
+                flat_col("b").lt(lit(6)).alias("lt"),
+                flat_col("b").lt_eq(lit(6)).alias("lte"),
+                Expr::Negative(Box::new(flat_col("a"))).alias("neg"),
             ])
             .await;
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -86,7 +87,8 @@ mod test_numeric_operators {
 #[cfg(test)]
 mod test_logical_operators {
     use crate::*;
-    use datafusion_expr::{col, expr, lit, Expr};
+    use datafusion_expr::{expr, lit, Expr};
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -108,23 +110,23 @@ mod test_logical_operators {
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
-                col("i"),
-                col("a"),
-                col("b"),
-                col("a").or(col("b")).alias("or"),
-                col("a").or(lit(true)).alias("or2"),
-                col("a").and(col("b")).alias("and"),
-                col("a").and(lit(true)).alias("and2"),
-                col("a").not().alias("not"),
-                col("a").eq(col("b")).alias("eq"),
-                col("a").not_eq(col("b")).alias("neq"),
+                flat_col("i"),
+                flat_col("a"),
+                flat_col("b"),
+                flat_col("a").or(flat_col("b")).alias("or"),
+                flat_col("a").or(lit(true)).alias("or2"),
+                flat_col("a").and(flat_col("b")).alias("and"),
+                flat_col("a").and(lit(true)).alias("and2"),
+                flat_col("a").not().alias("not"),
+                flat_col("a").eq(flat_col("b")).alias("eq"),
+                flat_col("a").not_eq(flat_col("b")).alias("neq"),
             ])
             .await;
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("i")),
+                    expr: Box::new(flat_col("i")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -151,7 +153,8 @@ mod test_logical_operators {
 #[cfg(test)]
 mod test_between {
     use crate::*;
-    use datafusion_expr::{col, expr, lit, Expr};
+    use datafusion_expr::{expr, lit, Expr};
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -173,20 +176,20 @@ mod test_between {
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
-                col("a"),
-                col("b"),
+                flat_col("a"),
+                flat_col("b"),
                 Expr::Between(expr::Between {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     negated: false,
                     low: Box::new(lit(0)),
-                    high: Box::new(col("b")),
+                    high: Box::new(flat_col("b")),
                 })
                 .alias("bet1"),
                 Expr::Between(expr::Between {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     negated: true,
                     low: Box::new(lit(0)),
-                    high: Box::new(col("b")),
+                    high: Box::new(flat_col("b")),
                 })
                 .alias("nbet1"),
             ])
@@ -195,7 +198,7 @@ mod test_between {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -217,7 +220,8 @@ mod test_between {
 mod test_cast_numeric {
     use crate::*;
     use arrow::datatypes::DataType;
-    use datafusion_expr::{cast, col, expr, Expr};
+    use datafusion_expr::{cast, expr, Expr};
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -236,23 +240,23 @@ mod test_cast_numeric {
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
-                col("a"),
-                cast(col("a"), DataType::Int8).alias("i8"),
-                cast(col("a"), DataType::UInt8).alias("u8"),
-                cast(col("a"), DataType::Int16).alias("i16"),
-                cast(col("a"), DataType::UInt16).alias("u16"),
-                cast(col("a"), DataType::Int32).alias("i32"),
-                cast(col("a"), DataType::UInt32).alias("u32"),
-                cast(col("a"), DataType::Int64).alias("i64"),
-                cast(col("a"), DataType::Float32).alias("f32"),
-                cast(col("a"), DataType::Float64).alias("f64"),
+                flat_col("a"),
+                cast(flat_col("a"), DataType::Int8).alias("i8"),
+                cast(flat_col("a"), DataType::UInt8).alias("u8"),
+                cast(flat_col("a"), DataType::Int16).alias("i16"),
+                cast(flat_col("a"), DataType::UInt16).alias("u16"),
+                cast(flat_col("a"), DataType::Int32).alias("i32"),
+                cast(flat_col("a"), DataType::UInt32).alias("u32"),
+                cast(flat_col("a"), DataType::Int64).alias("i64"),
+                cast(flat_col("a"), DataType::Float32).alias("f32"),
+                cast(flat_col("a"), DataType::Float64).alias("f64"),
             ])
             .await;
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -274,7 +278,8 @@ mod test_cast_numeric {
 mod test_cast_string {
     use crate::*;
     use arrow::datatypes::DataType;
-    use datafusion_expr::{cast, col, expr, Expr};
+    use datafusion_expr::{cast, expr, Expr};
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -294,17 +299,17 @@ mod test_cast_string {
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
-                cast(col("a"), DataType::Utf8).alias("a"),
-                cast(col("b"), DataType::Utf8).alias("b"),
-                cast(col("c"), DataType::Utf8).alias("c"),
-                cast(col("d"), DataType::Utf8).alias("d"),
+                cast(flat_col("a"), DataType::Utf8).alias("a"),
+                cast(flat_col("b"), DataType::Utf8).alias("b"),
+                cast(flat_col("c"), DataType::Utf8).alias("c"),
+                cast(flat_col("d"), DataType::Utf8).alias("d"),
             ])
             .await;
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -325,7 +330,8 @@ mod test_cast_string {
 #[cfg(test)]
 mod test_non_finite_numbers {
     use crate::*;
-    use datafusion_expr::{col, expr, lit, Expr};
+    use datafusion_expr::{expr, lit, Expr};
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -343,7 +349,7 @@ mod test_non_finite_numbers {
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
-                col("a"),
+                flat_col("a"),
                 lit(f64::NEG_INFINITY).alias("ninf"),
                 lit(f64::NAN).alias("nan"),
                 lit(f64::INFINITY).alias("inf"),
@@ -353,7 +359,7 @@ mod test_non_finite_numbers {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -380,12 +386,13 @@ mod test_non_finite_numbers {
 #[cfg(test)]
 mod test_scalar_math_functions {
     use crate::*;
-    use datafusion_expr::{col, expr, BuiltinScalarFunction, Expr};
+    use datafusion_expr::{expr, BuiltinScalarFunction, Expr};
+    use vegafusion_common::column::flat_col;
 
     fn make_scalar_fn1(fun: BuiltinScalarFunction, arg: &str, alias: &str) -> Expr {
         Expr::ScalarFunction {
             fun,
-            args: vec![col(arg)],
+            args: vec![flat_col(arg)],
         }
         .alias(alias)
     }
@@ -393,7 +400,7 @@ mod test_scalar_math_functions {
     fn make_scalar_fn2(fun: BuiltinScalarFunction, arg1: &str, arg2: &str, alias: &str) -> Expr {
         Expr::ScalarFunction {
             fun,
-            args: vec![col(arg1), col(arg2)],
+            args: vec![flat_col(arg1), flat_col(arg2)],
         }
         .alias(alias)
     }
@@ -419,7 +426,7 @@ mod test_scalar_math_functions {
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
-                col("a"),
+                flat_col("a"),
                 make_scalar_fn1(BuiltinScalarFunction::Abs, "b", "abs"),
                 make_scalar_fn1(BuiltinScalarFunction::Acos, "c", "acos"),
                 make_scalar_fn1(BuiltinScalarFunction::Asin, "c", "asin"),
@@ -444,7 +451,7 @@ mod test_scalar_math_functions {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -474,8 +481,9 @@ mod test_is_finite {
     use arrow::array::{Float64Array, Int32Array};
     use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
     use arrow::record_batch::RecordBatch;
-    use datafusion_expr::{col, expr, Expr};
+    use datafusion_expr::{expr, Expr};
     use std::sync::Arc;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -507,16 +515,16 @@ mod test_is_finite {
 
         let df_result = df
             .select(vec![
-                col("a"),
-                col("b"),
+                flat_col("a"),
+                flat_col("b"),
                 Expr::ScalarUDF {
                     fun: Arc::new(ISFINITE_UDF.clone()),
-                    args: vec![col("a")],
+                    args: vec![flat_col("a")],
                 }
                 .alias("f1"),
                 Expr::ScalarUDF {
                     fun: Arc::new(ISFINITE_UDF.clone()),
-                    args: vec![col("b")],
+                    args: vec![flat_col("b")],
                 }
                 .alias("f2"),
             ])
@@ -525,7 +533,7 @@ mod test_is_finite {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -546,8 +554,9 @@ mod test_is_finite {
 #[cfg(test)]
 mod test_str_to_utc_timestamp {
     use crate::*;
-    use datafusion_expr::{col, expr, lit, Expr};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
+    use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 
     #[apply(dialect_names)]
@@ -570,11 +579,11 @@ mod test_str_to_utc_timestamp {
 
         let df_result = df
             .select(vec![
-                col("a"),
-                col("b"),
+                flat_col("a"),
+                flat_col("b"),
                 Expr::ScalarUDF {
                     fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
-                    args: vec![col("b"), lit("America/New_York")],
+                    args: vec![flat_col("b"), lit("America/New_York")],
                 }
                 .alias("b_utc"),
             ])
@@ -583,7 +592,7 @@ mod test_str_to_utc_timestamp {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -610,8 +619,9 @@ mod test_str_to_utc_timestamp {
 #[cfg(test)]
 mod test_date_part_tz {
     use crate::*;
-    use datafusion_expr::{col, expr, lit, Expr};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
+    use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 
@@ -635,11 +645,11 @@ mod test_date_part_tz {
 
         let df_result = df
             .select(vec![
-                col("a"),
-                col("b"),
+                flat_col("a"),
+                flat_col("b"),
                 Expr::ScalarUDF {
                     fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
-                    args: vec![col("b"), lit("America/New_York")],
+                    args: vec![flat_col("b"), lit("America/New_York")],
                 }
                 .alias("b_utc"),
             ])
@@ -647,22 +657,22 @@ mod test_date_part_tz {
 
         let df_result = if let Ok(df) = df_result {
             df.select(vec![
-                col("a"),
-                col("b"),
-                col("b_utc"),
+                flat_col("a"),
+                flat_col("b"),
+                flat_col("b_utc"),
                 Expr::ScalarUDF {
                     fun: Arc::new(DATE_PART_TZ_UDF.clone()),
-                    args: vec![lit("hour"), col("b_utc"), lit("UTC")],
+                    args: vec![lit("hour"), flat_col("b_utc"), lit("UTC")],
                 }
                 .alias("hours_utc"),
                 Expr::ScalarUDF {
                     fun: Arc::new(DATE_PART_TZ_UDF.clone()),
-                    args: vec![lit("hour"), col("b_utc"), lit("America/Los_Angeles")],
+                    args: vec![lit("hour"), flat_col("b_utc"), lit("America/Los_Angeles")],
                 }
                 .alias("hours_la"),
                 Expr::ScalarUDF {
                     fun: Arc::new(DATE_PART_TZ_UDF.clone()),
-                    args: vec![lit("hour"), col("b_utc"), lit("America/New_York")],
+                    args: vec![lit("hour"), flat_col("b_utc"), lit("America/New_York")],
                 }
                 .alias("hours_nyc"),
             ])
@@ -674,7 +684,7 @@ mod test_date_part_tz {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -701,8 +711,9 @@ mod test_date_part_tz {
 #[cfg(test)]
 mod test_date_trunc_tz {
     use crate::*;
-    use datafusion_expr::{col, expr, lit, Expr};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
+    use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::date_trunc_tz::DATE_TRUNC_TZ_UDF;
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 
@@ -726,11 +737,11 @@ mod test_date_trunc_tz {
 
         let df_result = df
             .select(vec![
-                col("a"),
-                col("b"),
+                flat_col("a"),
+                flat_col("b"),
                 Expr::ScalarUDF {
                     fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
-                    args: vec![col("b"), lit("America/New_York")],
+                    args: vec![flat_col("b"), lit("America/New_York")],
                 }
                 .alias("b_utc"),
             ])
@@ -738,22 +749,22 @@ mod test_date_trunc_tz {
 
         let df_result = if let Ok(df) = df_result {
             df.select(vec![
-                col("a"),
-                col("b"),
-                col("b_utc"),
+                flat_col("a"),
+                flat_col("b"),
+                flat_col("b_utc"),
                 Expr::ScalarUDF {
                     fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
-                    args: vec![lit("day"), col("b_utc"), lit("UTC")],
+                    args: vec![lit("day"), flat_col("b_utc"), lit("UTC")],
                 }
                 .alias("day_utc"),
                 Expr::ScalarUDF {
                     fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
-                    args: vec![lit("day"), col("b_utc"), lit("America/Los_Angeles")],
+                    args: vec![lit("day"), flat_col("b_utc"), lit("America/Los_Angeles")],
                 }
                 .alias("day_la"),
                 Expr::ScalarUDF {
                     fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
-                    args: vec![lit("day"), col("b_utc"), lit("America/New_York")],
+                    args: vec![lit("day"), flat_col("b_utc"), lit("America/New_York")],
                 }
                 .alias("day_nyc"),
             ])
@@ -765,7 +776,7 @@ mod test_date_trunc_tz {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -792,8 +803,9 @@ mod test_date_trunc_tz {
 #[cfg(test)]
 mod test_make_timestamp_tz {
     use crate::*;
-    use datafusion_expr::{col, expr, lit, Expr};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
+    use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -815,17 +827,17 @@ mod test_make_timestamp_tz {
 
         let df_result = df
             .select(vec![
-                col("a"),
+                flat_col("a"),
                 Expr::ScalarUDF {
                     fun: Arc::new(MAKE_UTC_TIMESTAMP.clone()),
                     args: vec![
-                        col("Y"),
-                        col("M"),
-                        col("d"),
-                        col("h"),
-                        col("min"),
-                        col("s"),
-                        col("ms"),
+                        flat_col("Y"),
+                        flat_col("M"),
+                        flat_col("d"),
+                        flat_col("h"),
+                        flat_col("min"),
+                        flat_col("s"),
+                        flat_col("ms"),
                         lit("UTC"),
                     ],
                 }
@@ -833,13 +845,13 @@ mod test_make_timestamp_tz {
                 Expr::ScalarUDF {
                     fun: Arc::new(MAKE_UTC_TIMESTAMP.clone()),
                     args: vec![
-                        col("Y"),
-                        col("M"),
-                        col("d"),
-                        col("h"),
-                        col("min"),
-                        col("s"),
-                        col("ms"),
+                        flat_col("Y"),
+                        flat_col("M"),
+                        flat_col("d"),
+                        flat_col("h"),
+                        flat_col("min"),
+                        flat_col("s"),
+                        flat_col("ms"),
                         lit("America/New_York"),
                     ],
                 }
@@ -847,13 +859,13 @@ mod test_make_timestamp_tz {
                 Expr::ScalarUDF {
                     fun: Arc::new(MAKE_UTC_TIMESTAMP.clone()),
                     args: vec![
-                        col("Y"),
-                        col("M"),
-                        col("d"),
-                        col("h"),
-                        col("min"),
-                        col("s"),
-                        col("ms"),
+                        flat_col("Y"),
+                        flat_col("M"),
+                        flat_col("d"),
+                        flat_col("h"),
+                        flat_col("min"),
+                        flat_col("s"),
+                        flat_col("ms"),
                         lit("America/Los_Angeles"),
                     ],
                 }
@@ -864,7 +876,7 @@ mod test_make_timestamp_tz {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -891,8 +903,9 @@ mod test_make_timestamp_tz {
 #[cfg(test)]
 mod test_epoch_to_utc_timestamp {
     use crate::*;
-    use datafusion_expr::{col, expr, Expr};
+    use datafusion_expr::{expr, Expr};
     use std::sync::Arc;
+    use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -913,11 +926,11 @@ mod test_epoch_to_utc_timestamp {
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
-                col("a"),
-                col("t"),
+                flat_col("a"),
+                flat_col("t"),
                 Expr::ScalarUDF {
                     fun: Arc::new(EPOCH_MS_TO_UTC_TIMESTAMP_UDF.clone()),
-                    args: vec![col("t")],
+                    args: vec![flat_col("t")],
                 }
                 .alias("t_utc"),
             ])
@@ -926,7 +939,7 @@ mod test_epoch_to_utc_timestamp {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -953,8 +966,9 @@ mod test_epoch_to_utc_timestamp {
 #[cfg(test)]
 mod test_utc_timestamp_to_epoch_ms {
     use crate::*;
-    use datafusion_expr::{col, expr, Expr};
+    use datafusion_expr::{expr, Expr};
     use std::sync::Arc;
+    use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
     use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_epoch::UTC_TIMESTAMP_TO_EPOCH_MS;
 
@@ -977,11 +991,11 @@ mod test_utc_timestamp_to_epoch_ms {
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df_result = df
             .select(vec![
-                col("a"),
-                col("t"),
+                flat_col("a"),
+                flat_col("t"),
                 Expr::ScalarUDF {
                     fun: Arc::new(EPOCH_MS_TO_UTC_TIMESTAMP_UDF.clone()),
-                    args: vec![col("t")],
+                    args: vec![flat_col("t")],
                 }
                 .alias("t_utc"),
             ])
@@ -989,12 +1003,12 @@ mod test_utc_timestamp_to_epoch_ms {
 
         let df_result = if let Ok(df) = df_result {
             df.select(vec![
-                col("a"),
-                col("t"),
-                col("t_utc"),
+                flat_col("a"),
+                flat_col("t"),
+                flat_col("t_utc"),
                 Expr::ScalarUDF {
                     fun: Arc::new(UTC_TIMESTAMP_TO_EPOCH_MS.clone()),
-                    args: vec![col("t_utc")],
+                    args: vec![flat_col("t_utc")],
                 }
                 .alias("epoch_millis"),
             ])
@@ -1006,7 +1020,7 @@ mod test_utc_timestamp_to_epoch_ms {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -1033,8 +1047,9 @@ mod test_utc_timestamp_to_epoch_ms {
 #[cfg(test)]
 mod test_date_add_tz {
     use crate::*;
-    use datafusion_expr::{col, expr, lit, Expr};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
+    use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 
     #[apply(dialect_names)]
@@ -1057,11 +1072,11 @@ mod test_date_add_tz {
 
         let df_result = df
             .select(vec![
-                col("a"),
-                col("b"),
+                flat_col("a"),
+                flat_col("b"),
                 Expr::ScalarUDF {
                     fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
-                    args: vec![col("b"), lit("UTC")],
+                    args: vec![flat_col("b"), lit("UTC")],
                 }
                 .alias("b_utc"),
             ])
@@ -1069,17 +1084,22 @@ mod test_date_add_tz {
 
         let df_result = if let Ok(df) = df_result {
             df.select(vec![
-                col("a"),
-                col("b"),
-                col("b_utc"),
+                flat_col("a"),
+                flat_col("b"),
+                flat_col("b_utc"),
                 Expr::ScalarUDF {
                     fun: Arc::new(DATE_ADD_TZ_UDF.clone()),
-                    args: vec![lit("month"), lit(1), col("b_utc"), lit("UTC")],
+                    args: vec![lit("month"), lit(1), flat_col("b_utc"), lit("UTC")],
                 }
                 .alias("month_utc"),
                 Expr::ScalarUDF {
                     fun: Arc::new(DATE_ADD_TZ_UDF.clone()),
-                    args: vec![lit("month"), lit(1), col("b_utc"), lit("America/New_York")],
+                    args: vec![
+                        lit("month"),
+                        lit(1),
+                        flat_col("b_utc"),
+                        lit("America/New_York"),
+                    ],
                 }
                 .alias("month_nyc"),
             ])
@@ -1091,7 +1111,7 @@ mod test_date_add_tz {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -1118,8 +1138,9 @@ mod test_date_add_tz {
 #[cfg(test)]
 mod test_utc_timestamp_to_str {
     use crate::*;
-    use datafusion_expr::{col, expr, lit, Expr};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
+    use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
     use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_str::UTC_TIMESTAMP_TO_STR_UDF;
 
@@ -1143,11 +1164,11 @@ mod test_utc_timestamp_to_str {
 
         let df_result = df
             .select(vec![
-                col("a"),
-                col("b"),
+                flat_col("a"),
+                flat_col("b"),
                 Expr::ScalarUDF {
                     fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
-                    args: vec![col("b"), lit("UTC")],
+                    args: vec![flat_col("b"), lit("UTC")],
                 }
                 .alias("b_utc"),
             ])
@@ -1155,17 +1176,17 @@ mod test_utc_timestamp_to_str {
 
         let df_result = if let Ok(df) = df_result {
             df.select(vec![
-                col("a"),
-                col("b"),
-                col("b_utc"),
+                flat_col("a"),
+                flat_col("b"),
+                flat_col("b_utc"),
                 Expr::ScalarUDF {
                     fun: Arc::new(UTC_TIMESTAMP_TO_STR_UDF.clone()),
-                    args: vec![col("b_utc"), lit("UTC")],
+                    args: vec![flat_col("b_utc"), lit("UTC")],
                 }
                 .alias("str_utc"),
                 Expr::ScalarUDF {
                     fun: Arc::new(UTC_TIMESTAMP_TO_STR_UDF.clone()),
-                    args: vec![col("b_utc"), lit("America/New_York")],
+                    args: vec![flat_col("b_utc"), lit("America/New_York")],
                 }
                 .alias("str_nyc"),
             ])
@@ -1177,7 +1198,7 @@ mod test_utc_timestamp_to_str {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -1204,7 +1225,8 @@ mod test_utc_timestamp_to_str {
 #[cfg(test)]
 mod test_string_ops {
     use crate::*;
-    use datafusion_expr::{col, expr, lit, BuiltinScalarFunction, Expr};
+    use datafusion_expr::{expr, lit, BuiltinScalarFunction, Expr};
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -1225,27 +1247,27 @@ mod test_string_ops {
 
         let df_result = df
             .select(vec![
-                col("a"),
-                col("b"),
-                col("c"),
+                flat_col("a"),
+                flat_col("b"),
+                flat_col("c"),
                 Expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Substr,
-                    args: vec![col("b"), lit(2), lit(2)],
+                    args: vec![flat_col("b"), lit(2), lit(2)],
                 }
                 .alias("b_substr"),
                 Expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Concat,
-                    args: vec![col("b"), lit(" "), col("c")],
+                    args: vec![flat_col("b"), lit(" "), flat_col("c")],
                 }
                 .alias("bc_concat"),
                 Expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Upper,
-                    args: vec![col("b")],
+                    args: vec![flat_col("b")],
                 }
                 .alias("b_upper"),
                 Expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Lower,
-                    args: vec![col("b")],
+                    args: vec![flat_col("b")],
                 }
                 .alias("b_lower"),
             ])
@@ -1254,7 +1276,7 @@ mod test_string_ops {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],

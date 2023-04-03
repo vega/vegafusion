@@ -17,6 +17,7 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 #[cfg(test)]
 mod test_simple_aggs_unbounded {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -37,7 +38,7 @@ mod test_simple_aggs_unbounded {
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
-            expr: Box::new(col("a")),
+            expr: Box::new(flat_col("a")),
             asc: true,
             nulls_first: true,
         })];
@@ -48,12 +49,12 @@ mod test_simple_aggs_unbounded {
         };
         let df_result = df
             .select(vec![
-                col("a"),
-                col("b"),
-                col("c"),
+                flat_col("a"),
+                flat_col("b"),
+                flat_col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Sum),
-                    args: vec![col("b")],
+                    args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
@@ -63,15 +64,15 @@ mod test_simple_aggs_unbounded {
                     fun: window_function::WindowFunction::AggregateFunction(
                         AggregateFunction::Count,
                     ),
-                    args: vec![col("b")],
-                    partition_by: vec![col("c")],
+                    args: vec![flat_col("b")],
+                    partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Avg),
-                    args: vec![col("b")],
+                    args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
@@ -79,15 +80,15 @@ mod test_simple_aggs_unbounded {
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Min),
-                    args: vec![col("b")],
-                    partition_by: vec![col("c")],
+                    args: vec![flat_col("b")],
+                    partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Max),
-                    args: vec![col("b")],
+                    args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame,
@@ -117,6 +118,7 @@ mod test_simple_aggs_unbounded {
 #[cfg(test)]
 mod test_simple_aggs_unbounded_groups {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -137,7 +139,7 @@ mod test_simple_aggs_unbounded_groups {
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
-            expr: Box::new(col("a")),
+            expr: Box::new(flat_col("a")),
             asc: true,
             nulls_first: true,
         })];
@@ -148,12 +150,12 @@ mod test_simple_aggs_unbounded_groups {
         };
         let df_result = df
             .select(vec![
-                col("a"),
-                col("b"),
-                col("c"),
+                flat_col("a"),
+                flat_col("b"),
+                flat_col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Sum),
-                    args: vec![col("b")],
+                    args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
@@ -163,15 +165,15 @@ mod test_simple_aggs_unbounded_groups {
                     fun: window_function::WindowFunction::AggregateFunction(
                         AggregateFunction::Count,
                     ),
-                    args: vec![col("b")],
-                    partition_by: vec![col("c")],
+                    args: vec![flat_col("b")],
+                    partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Avg),
-                    args: vec![col("b")],
+                    args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
@@ -179,15 +181,15 @@ mod test_simple_aggs_unbounded_groups {
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Min),
-                    args: vec![col("b")],
-                    partition_by: vec![col("c")],
+                    args: vec![flat_col("b")],
+                    partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Max),
-                    args: vec![col("b")],
+                    args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame,
@@ -218,6 +220,7 @@ mod test_simple_aggs_unbounded_groups {
 #[cfg(test)]
 mod test_simple_aggs_bounded {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -238,7 +241,7 @@ mod test_simple_aggs_bounded {
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let order_by = vec![Expr::Sort(expr::Sort {
-            expr: Box::new(col("a")),
+            expr: Box::new(flat_col("a")),
             asc: true,
             nulls_first: true,
         })];
@@ -249,8 +252,8 @@ mod test_simple_aggs_bounded {
         };
         let df_result = df
             .select(vec![
-                col("a"),
-                col("b"),
+                flat_col("a"),
+                flat_col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
                     fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Sum),

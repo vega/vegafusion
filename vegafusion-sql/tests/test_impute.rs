@@ -3,7 +3,7 @@ extern crate lazy_static;
 
 mod utils;
 use datafusion_common::ScalarValue;
-use datafusion_expr::{col, expr, Expr};
+use datafusion_expr::{expr, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -52,6 +52,7 @@ fn impute_data(conn: Arc<dyn SqlConnection>, ordering: bool) -> Arc<dyn DataFram
 #[cfg(test)]
 mod test_unordered_no_groups {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -66,12 +67,12 @@ mod test_unordered_no_groups {
             df.sort(
                 vec![
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
+                        expr: Box::new(flat_col("a")),
                         asc: true,
                         nulls_first: true,
                     }),
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("b")),
+                        expr: Box::new(flat_col("b")),
                         asc: true,
                         nulls_first: true,
                     }),
@@ -99,6 +100,7 @@ mod test_unordered_no_groups {
 #[cfg(test)]
 mod test_unordered_one_group {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -115,12 +117,12 @@ mod test_unordered_one_group {
             df.sort(
                 vec![
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
+                        expr: Box::new(flat_col("a")),
                         asc: true,
                         nulls_first: true,
                     }),
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("b")),
+                        expr: Box::new(flat_col("b")),
                         asc: true,
                         nulls_first: true,
                     }),
@@ -148,6 +150,7 @@ mod test_unordered_one_group {
 #[cfg(test)]
 mod test_unordered_two_groups {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -170,22 +173,22 @@ mod test_unordered_two_groups {
             df.sort(
                 vec![
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
+                        expr: Box::new(flat_col("a")),
                         asc: true,
                         nulls_first: true,
                     }),
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("b")),
+                        expr: Box::new(flat_col("b")),
                         asc: true,
                         nulls_first: true,
                     }),
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("c")),
+                        expr: Box::new(flat_col("c")),
                         asc: true,
                         nulls_first: true,
                     }),
                     Expr::Sort(expr::Sort {
-                        expr: Box::new(col("d")),
+                        expr: Box::new(flat_col("d")),
                         asc: true,
                         nulls_first: true,
                     }),
@@ -213,6 +216,7 @@ mod test_unordered_two_groups {
 #[cfg(test)]
 mod test_ordered_no_groups {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -228,7 +232,7 @@ mod test_ordered_no_groups {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("_order")),
+                    expr: Box::new(flat_col("_order")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -255,6 +259,7 @@ mod test_ordered_no_groups {
 #[cfg(test)]
 mod test_ordered_one_group {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -276,7 +281,7 @@ mod test_ordered_one_group {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("_order")),
+                    expr: Box::new(flat_col("_order")),
                     asc: true,
                     nulls_first: true,
                 })],
@@ -303,6 +308,7 @@ mod test_ordered_one_group {
 #[cfg(test)]
 mod test_ordered_two_groups {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -324,7 +330,7 @@ mod test_ordered_two_groups {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("_order")),
+                    expr: Box::new(flat_col("_order")),
                     asc: true,
                     nulls_first: true,
                 })],

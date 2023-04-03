@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{col, expr, lit, Expr};
+use datafusion_expr::{expr, lit, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -14,6 +14,7 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 #[cfg(test)]
 mod test_simple_gte {
     use crate::*;
+    use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -36,13 +37,16 @@ mod test_simple_gte {
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
         let df = df
-            .filter((col("a").add(lit(2)).gt_eq(lit(9))).or(col("b").modulus(lit(4)).eq(lit(0))))
+            .filter(
+                (flat_col("a").add(lit(2)).gt_eq(lit(9)))
+                    .or(flat_col("b").modulus(lit(4)).eq(lit(0))),
+            )
             .await
             .unwrap();
         let df_result = df
             .sort(
                 vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(col("a")),
+                    expr: Box::new(flat_col("a")),
                     asc: true,
                     nulls_first: true,
                 })],

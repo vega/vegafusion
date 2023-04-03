@@ -14,13 +14,13 @@ deterministic-hash = "1.0.1"
 log = "0.4.17"
 
 [dev-dependencies]
-rstest = "0.16.0"
+rstest = "0.17.0"
 rstest_reuse = "0.5.0"
 lazy_static = "^1.4.0"
 toml = "0.7.2"
 
 [dependencies.sqlparser]
-version = "0.30.0"
+version = "0.32.0"
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
@@ -42,13 +42,13 @@ default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
-version = "20.0.0"
+version = "21.1.0"
 
 [dependencies.datafusion-expr]
-version = "20.0.0"
+version = "21.1.0"
 
 [dependencies.datafusion]
-version = "20.0.0"
+version = "21.1.0"
 optional = true
 
 [dependencies.tempfile]
@@ -91,7 +91,7 @@ version = "1.1.2"
 features = [ "sqlparser", "json", "prettyprint",]
 
 [dev-dependencies.tokio]
-version = "1.18.1"
+version = "1.27.0"
 features = [ "macros", "rt-multi-thread",]
 
 [dev-dependencies.serde]

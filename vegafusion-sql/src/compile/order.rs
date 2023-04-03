@@ -52,7 +52,8 @@ mod tests {
     use crate::compile::order::ToSqlOrderByExpr;
     use arrow::datatypes::Schema;
     use datafusion_common::DFSchema;
-    use datafusion_expr::{col, expr, Expr};
+    use datafusion_expr::{expr, Expr};
+    use vegafusion_common::column::flat_col;
 
     fn schema() -> DFSchema {
         DFSchema::try_from(Schema::new(Vec::new())).unwrap()
@@ -60,7 +61,7 @@ mod tests {
 
     #[test]
     pub fn test_non_sort_expr() {
-        let sort_expr = col("a");
+        let sort_expr = flat_col("a");
         sort_expr
             .to_sql_order(&Default::default(), &schema())
             .unwrap_err();
@@ -69,7 +70,7 @@ mod tests {
     #[test]
     pub fn test_sort_by_col() {
         let sort_expr = Expr::Sort(expr::Sort {
-            expr: Box::new(col("a")),
+            expr: Box::new(flat_col("a")),
             asc: false,
             nulls_first: false,
         });

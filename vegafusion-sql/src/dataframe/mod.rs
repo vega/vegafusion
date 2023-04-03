@@ -5,9 +5,9 @@ use crate::connection::SqlConnection;
 use crate::dialect::{Dialect, ValuesMode};
 use arrow::datatypes::{Field, Schema, SchemaRef};
 use async_trait::async_trait;
-use datafusion_common::{Column, DFSchema, ScalarValue};
+use datafusion_common::{Column, DFSchema, OwnedTableReference, ScalarValue};
 use datafusion_expr::{
-    abs, col, expr, is_null, lit, max, min, when, window_function, AggregateFunction,
+    abs, expr, is_null, lit, max, min, when, window_function, AggregateFunction,
     BuiltInWindowFunction, BuiltinScalarFunction, Expr, ExprSchemable, WindowFrame,
     WindowFrameBound, WindowFrameUnits, WindowFunction,
 };
@@ -318,7 +318,7 @@ impl SqlDataFrame {
                         .iter()
                         .enumerate()
                         .map(|(i, field)| {
-                            col(format!("{}{}", column_prefix, i + base_index))
+                            flat_col(&format!("{}{}", column_prefix, i + base_index))
                                 .alias(field.name())
                                 .to_sql_select(dialect, &schema_df)
                                 .unwrap()
@@ -331,6 +331,7 @@ impl SqlDataFrame {
                         opt_exclude: None,
                         opt_except: None,
                         opt_rename: None,
+                        opt_replace: None,
                     })];
 
                     let table_alias = TableAlias {
@@ -562,7 +563,7 @@ impl SqlDataFrame {
             .map(|col| {
                 let col = Expr::Column(Column {
                     relation: if self.dialect().joinaggregate_fully_qualified {
-                        Some(inner_name.to_string())
+                        Some(OwnedTableReference::bare(inner_name.clone()))
                     } else {
                         None
                     },
@@ -586,7 +587,7 @@ impl SqlDataFrame {
                 } else {
                     let expr = Expr::Column(Column {
                         relation: if self.dialect().joinaggregate_fully_qualified {
-                            Some(self.parent_name())
+                            Some(OwnedTableReference::bare(self.parent_name()))
                         } else {
                             None
                         },
@@ -1175,13 +1176,13 @@ impl SqlDataFrame {
                             .alias(col_name)
                         } else if col_name == key {
                             Expr::Column(Column {
-                                relation: Some("_key".to_string()),
+                                relation: Some(OwnedTableReference::bare("_key")),
                                 name: col_name.clone(),
                             })
                             .alias(col_name)
                         } else if groupby.contains(col_name) {
                             Expr::Column(Column {
-                                relation: Some("_groups".to_string()),
+                                relation: Some(OwnedTableReference::bare("_groups")),
                                 name: col_name.clone(),
                             })
                             .alias(col_name)
@@ -1221,9 +1222,9 @@ impl SqlDataFrame {
                     group_cols_csv = group_cols_csv,
                     key = key_col_str,
                     using_csv = using_csv,
-                    order_col = col(order_field).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
-                    order_group_col = col(format!("{order_field}_groups")).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
-                    order_key_col = col(format!("{order_field}_key")).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
+                    order_col = flat_col(order_field).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
+                    order_group_col = flat_col(&format!("{order_field}_groups")).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
+                    order_key_col = flat_col(&format!("{order_field}_key")).to_sql(self.dialect(), &self.schema_df()?)?.to_string(),
                     parent = self.parent_name(),
                 );
 
