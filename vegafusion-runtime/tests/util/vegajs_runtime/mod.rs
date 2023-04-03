@@ -446,7 +446,6 @@ pub enum ExportImage {
 impl ExportImage {
     pub fn save(&self, path: &str, add_ext: bool) -> Result<String> {
         let mut path = path.to_string();
-        let engine = base64::Engine {};
         match self {
             ExportImage::Svg(svg) => if !add_ext || path.ends_with(".svg") {
                 fs::write(&path, svg)
