@@ -6,7 +6,7 @@ edition = "2021"
 description = "Custom DataFusion UDFs used by VegaFusion"
 
 [dependencies]
-ordered-float = "3.4.0"
+ordered-float = "3.6.0"
 lazy_static = "^1.4.0"
 chrono = "0.4.23"
 chrono-tz = "0.8.1"

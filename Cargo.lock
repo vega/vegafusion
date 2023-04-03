@@ -4006,7 +4006,7 @@ dependencies = [
  "itertools",
  "lazy_static",
  "num-complex",
- "ordered-float 2.10.0",
+ "ordered-float 3.6.0",
  "petgraph",
  "prost",
  "prost-build",
