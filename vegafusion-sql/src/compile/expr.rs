@@ -36,7 +36,7 @@ impl ToSqlExpr for Expr {
             }
             Expr::Column(col) => Ok(match &col.relation {
                 Some(relation) => SqlExpr::CompoundIdentifier(vec![
-                    Ident::with_quote(dialect.quote_style, relation),
+                    Ident::with_quote(dialect.quote_style, relation.to_string()),
                     Ident::with_quote(dialect.quote_style, &col.name),
                 ]),
                 None => SqlExpr::Identifier(Ident::with_quote(dialect.quote_style, &col.name)),
@@ -474,6 +474,9 @@ impl ToSqlExpr for Expr {
             )),
             Expr::Placeholder { .. } => Err(VegaFusionError::internal(
                 "Placeholder cannot be converted to SQL",
+            )),
+            Expr::OuterReferenceColumn(_, _) => Err(VegaFusionError::internal(
+                "OuterReferenceColumn cannot be converted to SQL",
             )),
         }
     }

@@ -32,10 +32,10 @@ default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
-version = "20.0.0"
+version = "21.1.0"
 
 [dependencies.datafusion-expr]
-version = "20.0.0"
+version = "21.1.0"
 
 [dependencies.pyo3]
 version = "0.18.1"

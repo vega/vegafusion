@@ -5,7 +5,7 @@ use crate::connection::SqlConnection;
 use crate::dialect::{Dialect, ValuesMode};
 use arrow::datatypes::{Field, Schema, SchemaRef};
 use async_trait::async_trait;
-use datafusion_common::{Column, DFSchema, ScalarValue};
+use datafusion_common::{Column, DFSchema, OwnedTableReference, ScalarValue};
 use datafusion_expr::{
     abs, col, expr, is_null, lit, max, min, when, window_function, AggregateFunction,
     BuiltInWindowFunction, BuiltinScalarFunction, Expr, ExprSchemable, WindowFrame,
@@ -562,7 +562,7 @@ impl SqlDataFrame {
             .map(|col| {
                 let col = Expr::Column(Column {
                     relation: if self.dialect().joinaggregate_fully_qualified {
-                        Some(inner_name.to_string())
+                        Some(OwnedTableReference::bare(inner_name.clone()))
                     } else {
                         None
                     },
@@ -586,7 +586,7 @@ impl SqlDataFrame {
                 } else {
                     let expr = Expr::Column(Column {
                         relation: if self.dialect().joinaggregate_fully_qualified {
-                            Some(self.parent_name())
+                            Some(OwnedTableReference::bare(self.parent_name()))
                         } else {
                             None
                         },
@@ -1175,13 +1175,13 @@ impl SqlDataFrame {
                             .alias(col_name)
                         } else if col_name == key {
                             Expr::Column(Column {
-                                relation: Some("_key".to_string()),
+                                relation: Some(OwnedTableReference::bare("_key")),
                                 name: col_name.clone(),
                             })
                             .alias(col_name)
                         } else if groupby.contains(col_name) {
                             Expr::Column(Column {
-                                relation: Some("_groups".to_string()),
+                                relation: Some(OwnedTableReference::bare("_groups")),
                                 name: col_name.clone(),
                             })
                             .alias(col_name)
