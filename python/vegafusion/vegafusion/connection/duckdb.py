@@ -53,10 +53,15 @@ def duckdb_type_name_to_pyarrow_type(duckdb_type: str) -> pa.DataType:
 
 
 def duckdb_relation_to_schema(rel: duckdb.DuckDBPyRelation) -> pa.Schema:
-    return pa.schema({
-        col: duckdb_type_name_to_pyarrow_type(type_name)
-        for col, type_name in zip(rel.columns, rel.dtypes)
-    })
+    schema_fields = {}
+    for col, type_name in zip(rel.columns, rel.dtypes):
+        try:
+            type_ = duckdb_type_name_to_pyarrow_type(type_name)
+            schema_fields[col] = type_
+        except ValueError:
+            # Skip columns with unrecognized types
+            pass
+    return pa.schema(schema_fields)
 
 
 class DuckDbConnection(SqlConnection):
