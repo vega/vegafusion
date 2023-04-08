@@ -16,6 +16,23 @@ class RowLimitError(ValueError):
 
 
 def vegafusion_mime_renderer(spec, mimetype="html", row_limit=None, embed_options=None):
+    return spec_to_mime_bundle(
+        spec,
+        mimetype=mimetype,
+        row_limit=row_limit,
+        embed_options=embed_options
+    )
+
+
+def spec_to_mime_bundle(
+        spec,
+        mimetype="html",
+        row_limit=None,
+        embed_options=None,
+        html_template="universal",
+        full_html=False,
+        scale=1,
+):
     from . import transformer, runtime, local_tz, vegalite_compilers, altair_vl_version
     vega_spec = vegalite_compilers.get()(spec)
 
@@ -49,9 +66,9 @@ def vegafusion_mime_renderer(spec, mimetype="html", row_limit=None, embed_option
             vega_version="5",
             vegalite_version=altair_vl_version(),
             vegaembed_version="6",
-            fullhtml=False,
+            fullhtml=full_html,
             output_div=output_div,
-            template="universal",
+            template=html_template,
             embed_options=embed_options
         )
         return {"text/html": html}
@@ -61,7 +78,7 @@ def vegafusion_mime_renderer(spec, mimetype="html", row_limit=None, embed_option
         return {"image/svg+xml": svg}
     elif mimetype == "png":
         import vl_convert as vlc
-        png = vlc.vega_to_png(tx_vega_spec)
+        png = vlc.vega_to_png(tx_vega_spec, scale=scale)
         return {"image/png": png}
     else:
         raise ValueError(f"Unsupported mimetype: {mimetype}")
