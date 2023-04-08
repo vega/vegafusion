@@ -44,7 +44,7 @@ def altair_vl_version(vl_convert=False):
         return "_".join(SCHEMA_VERSION.split(".")[:2])
     else:
         # Return full version without leading v
-        return SCHEMA_VERSION.rstrip("v")
+        return SCHEMA_VERSION.lstrip("v")
 
 
 def enable(mimetype="html", row_limit=10000, embed_options=None):
