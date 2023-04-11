@@ -1108,13 +1108,33 @@ def test_duckdb_timestamp_with_timezone():
     finally:
         vf.runtime.set_connection("datafusion")
 
+
 def test_gh_268_hang():
     """
     Tests for hang reported in https://github.com/hex-inc/vegafusion/issues/268
     """
-
+    vf.runtime.set_connection("datafusion")
     movies = pd.read_json("https://raw.githubusercontent.com/vega/vega-datasets/main/data/movies.json")
-    spec = json.loads(r""" 
+    spec = gh_268_hang_spec()
+    for i in range(20):
+        # Break cache by removing one row each iteration
+        movies_inner = movies.iloc[i:]
+        vf.runtime.pre_transform_datasets(spec, ["data_3"], "UTC", inline_datasets=dict(movies_clean=movies_inner))
+
+
+def test_repeat_duckdb():
+    """
+    Tests for hang reported in https://github.com/hex-inc/vegafusion/issues/268
+    """
+    vf.runtime.set_connection("duckdb")
+    movies = pd.read_json("https://raw.githubusercontent.com/vega/vega-datasets/main/data/movies.json")
+    spec = gh_268_hang_spec()
+    for i in range(2):
+        vf.runtime.pre_transform_datasets(spec, ["data_3"], "UTC", inline_datasets=dict(movies_clean=movies))
+
+
+def gh_268_hang_spec():
+    return json.loads(r""" 
     {
       "$schema": "https://vega.github.io/schema/vega/v5.json",
       "data": [
@@ -1180,7 +1200,3 @@ def test_gh_268_hang():
       ]
     }
     """)
-    for i in range(20):
-        # Break cache by removing one row each iteration
-        movies_inner = movies.iloc[i:]
-        vf.runtime.pre_transform_datasets(spec, ["data_3"], "UTC", inline_datasets=dict(movies_clean=movies_inner))
