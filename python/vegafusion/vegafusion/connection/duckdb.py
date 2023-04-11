@@ -10,7 +10,7 @@ import duckdb
 import pyarrow as pa
 import pandas as pd
 import logging
-
+import uuid
 
 # Table suffix name to use for raw registered table
 RAW_PREFIX = "_vf_raw_"
@@ -223,10 +223,20 @@ class DuckDbConnection(SqlConnection):
         self.logger.info(f"Query:\n{query}\n")
         if self._verbose:
             print(f"DuckDB Query:\n{query}\n")
-        rel = self.conn.query(query)
-        tmp_table = "_duckdb_tmp_tbl"
-        replace_query = pyarrow_schema_to_select_replace(schema, tmp_table)
-        return rel.query(tmp_table, replace_query).to_arrow_table(8096)
+
+        # Save query result to temporary view
+        tmp_table = "_duckdb_tmp_tbl" + str(uuid.uuid4()).replace("-", "_")
+        self.conn.query(query).to_view(tmp_table)
+
+        try:
+            # Run replacement query to cast types to match schema
+            replace_query = pyarrow_schema_to_select_replace(schema, tmp_table)
+            result = self.conn.query(replace_query).to_arrow_table(8096)
+        finally:
+            # Unregister temporary view
+            self.conn.unregister(tmp_table)
+
+        return result
 
     def _update_temp_names(self, name: str, temporary: bool):
         if temporary:
