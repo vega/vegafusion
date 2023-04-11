@@ -3,7 +3,7 @@ import warnings
 
 from . import SqlConnection, CsvReadOptions
 
-from typing import Dict, Union
+from typing import Dict, Optional
 from distutils.version import LooseVersion
 
 import duckdb
@@ -70,7 +70,7 @@ def duckdb_relation_to_schema(rel: duckdb.DuckDBPyRelation) -> pa.Schema:
     return pa.schema(schema_fields)
 
 
-def pyarrow_type_to_duckdb_type_name(field_type: pa.Schema) -> str | None:
+def pyarrow_type_to_duckdb_type_name(field_type: pa.Schema) -> Optional[str]:
     if field_type in (pa.utf8(), pa.large_utf8()):
         return "VARCHAR"
     elif field_type in (pa.float16(), pa.float32()):
