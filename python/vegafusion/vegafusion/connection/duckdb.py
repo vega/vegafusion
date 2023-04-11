@@ -12,6 +12,10 @@ import pandas as pd
 import logging
 
 
+# Table suffix name to use for raw registered table
+RAW_PREFIX = "_vf_raw_"
+
+
 def duckdb_type_name_to_pyarrow_type(duckdb_type: str) -> pa.DataType:
     if duckdb_type in ("VARCHAR", "JSON", "CHAR"):
         return pa.string()
@@ -109,6 +113,28 @@ class DuckDbConnection(SqlConnection):
     def fallback(self) -> bool:
         return self._fallback
 
+    def _replace_query_for_table(self, table_name: str):
+        """
+        Build a `SELECT * REPLACE(...) FROM table_name` query for a table
+        that converts unsupported column types to varchar columns
+        """
+        rel = self.conn.view(table_name)
+        replaces = []
+        for col, type_name in zip(rel.columns, rel.dtypes):
+            quoted_col_name = quote_column(col)
+            try:
+                duckdb_type_name_to_pyarrow_type(type_name)
+                # Skip columns with supported types
+            except ValueError:
+                # Convert unsupported types to strings
+                replaces.append(f"{quoted_col_name}::varchar as {quoted_col_name}")
+
+        if replaces:
+            replace_csv = ", ".join(replaces)
+            return f"SELECT * REPLACE({replace_csv}) FROM {table_name}"
+        else:
+            return f"SELECT * FROM {table_name}"
+
     def _schema_for_table(self, table_name: str):
         rel = self.conn.query(f'select * from "{table_name}" limit 1')
         return duckdb_relation_to_schema(rel)
@@ -124,9 +150,9 @@ class DuckDbConnection(SqlConnection):
                 # Registered tables are expected to only change when self.register_* is called,
                 # so use the cached version
                 result[table_name] = self._registered_table_schemas[table_name]
-            else:
-                # Dynamically look up schema for tables that are registered with duckdb but now with
-                # the self.register_* methods
+            elif not table_name.startswith(RAW_PREFIX):
+                # Dynamically look up schema for tables that are registered with duckdb but not with
+                # the self.register_* methods. Skip raw tables
                 result[table_name] = self._schema_for_table(table_name)
 
         return result
@@ -146,15 +172,29 @@ class DuckDbConnection(SqlConnection):
     def register_pandas(self, name: str, df: pd.DataFrame, temporary: bool = False):
         # Add _vf_order column to avoid the more expensive operation of computing it with a
         # ROW_NUMBER function in duckdb
-        from ..transformer import to_arrow_table
         df = df.copy(deep=False)
         df["_vf_order"] = range(0, len(df))
-        self.conn.register(name, df)
+
+        # Register raw DataFrame under name with prefix
+        raw_name = RAW_PREFIX + name
+        self.conn.register(raw_name, df)
+
+        # then convert unsupported columns and register result as name
+        replace_query = self._replace_query_for_table(raw_name)
+        self.conn.query(replace_query).to_view(name)
+
         self._update_temp_names(name, temporary)
         self._registered_table_schemas[name] = self._schema_for_table(name)
 
     def register_arrow(self, name: str, table: pa.Table, temporary: bool = False):
-        self.conn.register(name, table)
+        # Register raw table under name with prefix
+        raw_name = RAW_PREFIX + name
+        self.conn.register(raw_name, table)
+
+        # then convert unsupported columns and register result as name
+        replace_query = self._replace_query_for_table(raw_name)
+        self.conn.query(replace_query).to_view(name)
+
         self._update_temp_names(name, temporary)
         self._registered_table_schemas[name] = table.schema
 
@@ -194,16 +234,23 @@ class DuckDbConnection(SqlConnection):
         self._registered_table_schemas[name] = self._schema_for_table(name)
 
     def register_parquet(self, name: str, path: str, temporary: bool = False):
-        relation = self.conn.read_parquet(path)
-        relation.to_view(name)
+        # Register raw table under name with prefix
+        raw_name = RAW_PREFIX + name
+        self.conn.read_parquet(path).to_view(raw_name)
+
+        # then convert unsupported columns and register result as name
+        replace_query = self._replace_query_for_table(raw_name)
+        self.conn.query(replace_query).to_view(name)
+
         self._update_temp_names(name, temporary)
         self._registered_table_schemas[name] = self._schema_for_table(name)
 
     def unregister(self, name: str):
-        self.conn.unregister(name)
-        if name in self._temp_tables:
-            self._temp_tables.remove(name)
-        self._registered_table_schemas.pop(name, None)
+        for view_name in [name, RAW_PREFIX + name]:
+            self.conn.unregister(view_name)
+            if view_name in self._temp_tables:
+                self._temp_tables.remove(view_name)
+            self._registered_table_schemas.pop(view_name, None)
 
     def unregister_temporary_tables(self):
         for name in list(self._temp_tables):
