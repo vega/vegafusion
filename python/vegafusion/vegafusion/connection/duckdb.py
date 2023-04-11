@@ -187,8 +187,9 @@ class DuckDbConnection(SqlConnection):
                 duckdb_type_name_to_pyarrow_type(type_name)
                 # Skip columns with supported types
             except ValueError:
-                # Convert unsupported types to strings
-                replaces.append(f"{quoted_col_name}::varchar as {quoted_col_name}")
+                # Convert unsupported types to strings (except struct)
+                if not type_name.startswith("STRUCT"):
+                    replaces.append(f"{quoted_col_name}::varchar as {quoted_col_name}")
 
         if replaces:
             replace_csv = ", ".join(replaces)
