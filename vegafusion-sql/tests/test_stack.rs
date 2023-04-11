@@ -120,10 +120,10 @@ mod test_mode_normalized {
                 flat_col("a"),
                 flat_col("b"),
                 flat_col("c"),
-                round(flat_col("start").mul(lit(100)))
+                round(vec![flat_col("start").mul(lit(100))])
                     .div(lit(100))
                     .alias("trunc_start"),
-                round(flat_col("end").mul(lit(100)))
+                round(vec![flat_col("end").mul(lit(100))])
                     .div(lit(100))
                     .alias("trunc_end"),
             ])

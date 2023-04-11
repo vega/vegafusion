@@ -151,48 +151,40 @@ mod test_variance_aggs {
             .aggregate(
                 vec![flat_col("b")],
                 vec![
-                    round(
-                        Expr::AggregateFunction(expr::AggregateFunction {
-                            fun: AggregateFunction::Stddev,
-                            args: vec![flat_col("a")],
-                            distinct: false,
-                            filter: None,
-                        })
-                        .mul(lit(100)),
-                    )
+                    round(vec![Expr::AggregateFunction(expr::AggregateFunction {
+                        fun: AggregateFunction::Stddev,
+                        args: vec![flat_col("a")],
+                        distinct: false,
+                        filter: None,
+                    })
+                    .mul(lit(100))])
                     .div(lit(100))
                     .alias("stddev_a"),
-                    round(
-                        Expr::AggregateFunction(expr::AggregateFunction {
-                            fun: AggregateFunction::StddevPop,
-                            args: vec![flat_col("a")],
-                            distinct: false,
-                            filter: None,
-                        })
-                        .mul(lit(100)),
-                    )
+                    round(vec![Expr::AggregateFunction(expr::AggregateFunction {
+                        fun: AggregateFunction::StddevPop,
+                        args: vec![flat_col("a")],
+                        distinct: false,
+                        filter: None,
+                    })
+                    .mul(lit(100))])
                     .div(lit(100))
                     .alias("stddev_pop_a"),
-                    round(
-                        Expr::AggregateFunction(expr::AggregateFunction {
-                            fun: AggregateFunction::Variance,
-                            args: vec![flat_col("a")],
-                            distinct: false,
-                            filter: None,
-                        })
-                        .mul(lit(100)),
-                    )
+                    round(vec![Expr::AggregateFunction(expr::AggregateFunction {
+                        fun: AggregateFunction::Variance,
+                        args: vec![flat_col("a")],
+                        distinct: false,
+                        filter: None,
+                    })
+                    .mul(lit(100))])
                     .div(lit(100))
                     .alias("var_a"),
-                    round(
-                        Expr::AggregateFunction(expr::AggregateFunction {
-                            fun: AggregateFunction::VariancePop,
-                            args: vec![flat_col("a")],
-                            distinct: false,
-                            filter: None,
-                        })
-                        .mul(lit(100)),
-                    )
+                    round(vec![Expr::AggregateFunction(expr::AggregateFunction {
+                        fun: AggregateFunction::VariancePop,
+                        args: vec![flat_col("a")],
+                        distinct: false,
+                        filter: None,
+                    })
+                    .mul(lit(100))])
                     .div(lit(100))
                     .alias("var_pop_a"),
                 ],

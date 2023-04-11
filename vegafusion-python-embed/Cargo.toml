@@ -30,7 +30,7 @@ features = [ "derive",]
 version = "1.0.79"
 
 [dependencies.arrow]
-version = "34.0.0"
+version = "36.0.0"
 features = [ "pyarrow",]
 
 [dependencies.vegafusion-common]

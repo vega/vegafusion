@@ -189,12 +189,10 @@ impl FunctionTransformer for DateAddTzDatafusionTransformer {
 
         let ts_in_tz_expr = maybe_from_utc(ts_expr, &time_zone);
 
-        let interval_string = format!("{n_str} {part}");
+        let date_time_field = part_to_date_time_field(&part)?;
         let interval = SqlExpr::Interval {
-            value: Box::new(SqlExpr::Value(SqlValue::SingleQuotedString(
-                interval_string,
-            ))),
-            leading_field: None,
+            value: Box::new(SqlExpr::Value(SqlValue::SingleQuotedString(n_str))),
+            leading_field: Some(date_time_field),
             leading_precision: None,
             last_field: None,
             fractional_seconds_precision: None,
