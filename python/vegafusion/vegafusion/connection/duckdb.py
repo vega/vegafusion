@@ -68,6 +68,65 @@ def duckdb_relation_to_schema(rel: duckdb.DuckDBPyRelation) -> pa.Schema:
     return pa.schema(schema_fields)
 
 
+def pyarrow_type_to_duckdb_type_name(field_type: pa.Schema) -> str | None:
+    if field_type in (pa.utf8(), pa.large_utf8()):
+        return "VARCHAR"
+    elif field_type in (pa.float16(), pa.float32()):
+        return "FLOAT"
+    elif field_type == pa.float64():
+        return "DOUBLE"
+    elif field_type == pa.int8():
+        return "TINYINT"
+    elif field_type == pa.int16():
+        return "SMALLINT"
+    elif field_type == pa.int32():
+        return "INTEGER"
+    elif field_type == pa.int64():
+        return "BIGINT"
+    elif field_type == pa.uint8():
+        return "UTINYINT"
+    elif field_type == pa.uint16():
+        return "USMALLINT"
+    elif field_type == pa.uint32():
+        return "UINTEGER"
+    elif field_type == pa.uint64():
+        return "UBIGINT"
+    elif field_type == pa.bool_():
+        return "BOOLEAN"
+    elif field_type == pa.date32():
+        return "DATE"
+    else:
+        return None
+
+
+def pyarrow_schema_to_select_replace(schema: pa.Schema, table_name: str) -> str:
+    """
+    Build `SELECT * REPLACE(...) from table_name` query that casts columns
+    to match the provided pyarrow schema.
+
+    This is needed because sometimes the resulting DuckDB column types won't exactly
+    match those that DataFusion expects (e.g. DuckDB returning a DECIMAL(5) instead of
+    and int64). Types that are not covered by `pyarrow_type_to_duckdb_type_name` above
+    are passed through as-is.
+    """
+    replaces = []
+    for field_index in range(len(schema)):
+        field = schema.field(field_index)
+        field_name = field.name
+        field_type = field.type
+
+        quoted_column = quote_column(field_name)
+        duckdb_type = pyarrow_type_to_duckdb_type_name(field_type)
+        if duckdb_type:
+            replaces.append(f"{quoted_column}::{duckdb_type} as {quoted_column}")
+
+    if replaces:
+        replace_csv = ", ".join(replaces)
+        return f"SELECT * REPLACE({replace_csv}) FROM {table_name}"
+    else:
+        return f"SELECT * FROM {table_name}"
+
+
 class DuckDbConnection(SqlConnection):
     def __init__(self, connection: duckdb.DuckDBPyConnection = None, fallback: bool = True, verbose: bool = False):
         # Validate duckdb version
@@ -161,7 +220,9 @@ class DuckDbConnection(SqlConnection):
         self.logger.info(f"Query:\n{query}\n")
         if self._verbose:
             print(f"DuckDB Query:\n{query}\n")
-        return self.conn.query(query).to_arrow_table(8096)
+        rel = self.conn.query(query)
+        replace_query = pyarrow_schema_to_select_replace(schema, "_tbl")
+        return rel.query("_tbl", replace_query).to_arrow_table(8096)
 
     def _update_temp_names(self, name: str, temporary: bool):
         if temporary:
