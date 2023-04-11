@@ -223,8 +223,9 @@ class DuckDbConnection(SqlConnection):
         if self._verbose:
             print(f"DuckDB Query:\n{query}\n")
         rel = self.conn.query(query)
-        replace_query = pyarrow_schema_to_select_replace(schema, "_tbl")
-        return rel.query("_tbl", replace_query).to_arrow_table(8096)
+        tmp_table = "_duckdb_tmp_tbl"
+        replace_query = pyarrow_schema_to_select_replace(schema, tmp_table)
+        return rel.query(tmp_table, replace_query).to_arrow_table(8096)
 
     def _update_temp_names(self, name: str, temporary: bool):
         if temporary:
