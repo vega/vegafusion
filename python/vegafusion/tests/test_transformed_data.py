@@ -131,8 +131,10 @@ def test_transformed_data_for_mock(mock_name, expected_len, expected_cols, conne
     assert len(df) == expected_len
 
 
-def test_gh_286():
+@pytest.mark.parametrize("connection", get_connections())
+def test_gh_286(connection):
     # https://github.com/hex-inc/vegafusion/issues/286
+    vf.runtime.set_connection(connection)
     source = pl.from_pandas(data.seattle_weather())
 
     chart = alt.Chart(source).mark_bar(
@@ -146,3 +148,20 @@ def test_gh_286():
     transformed = vf.transformed_data(chart)
     assert isinstance(transformed, pl.DataFrame)
     assert len(transformed) == 53
+
+
+@pytest.mark.parametrize("connection", get_connections())
+def test_categorical_columns(connection):
+    vf.runtime.set_connection(connection)
+
+    df = pd.DataFrame({
+        "a": [0, 1, 2, 3, 4, 5],
+        "categorical": pd.Categorical.from_codes([0, 1, 0, 1, 1, 0], ["A", "BB"])
+    })
+
+    chart = alt.Chart(df).mark_bar().encode(
+        alt.X("categorical:N"), alt.Y("sum(a):Q")
+    )
+    transformed = vf.transformed_data(chart)
+    expected = pd.DataFrame({"categorical": ["A", "BB"], "sum_a": [7, 8]})
+    pd.testing.assert_frame_equal(transformed, expected)
