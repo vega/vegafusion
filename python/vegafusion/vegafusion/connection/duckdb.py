@@ -48,8 +48,10 @@ def duckdb_type_name_to_pyarrow_type(duckdb_type: str) -> pa.DataType:
         return pa.bool_()
     elif duckdb_type == "DATE":
         return pa.date32()
-    elif duckdb_type == "TIMESTAMP":
+    elif duckdb_type in ("TIMESTAMP", "TIMESTAMP_MS"):
         return pa.timestamp("ms")
+    elif duckdb_type == "TIMESTAMP_NS":
+        return pa.timestamp("ns")
     elif duckdb_type == "TIMESTAMP WITH TIME ZONE":
         return pa.timestamp("ms", tz="UTC")
     else:
