@@ -216,6 +216,7 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::Ceil => "ceil",
                     BuiltinScalarFunction::Coalesce => "coalesce",
                     BuiltinScalarFunction::Cos => "cos",
+                    BuiltinScalarFunction::Cbrt => "cbrt",
                     BuiltinScalarFunction::Digest => "digest",
                     BuiltinScalarFunction::Exp => "exp",
                     BuiltinScalarFunction::Floor => "floor",
