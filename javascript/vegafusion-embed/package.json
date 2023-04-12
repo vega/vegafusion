@@ -50,6 +50,7 @@
     "vegafusion-wasm": "../../vegafusion-wasm/pkg"
   },
   "devDependencies": {
+    "@types/node": "17.0.21",
     "@babel/core": "^7.5.0",
     "@babel/preset-env": "^7.5.0",
     "@typescript-eslint/eslint-plugin": "^3.6.0",
