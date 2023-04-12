@@ -154,14 +154,14 @@ class DuckDbConnection(SqlConnection):
             except (IOError, duckdb.IOException, duckdb.InvalidInputException) as e:
                 warnings.warn(f"Failed to install and load the DuckDB httpfs extension:\n{e}")
 
+            # Use a less round number for pandas_analyze_sample (default is 1000)
+            connection.execute("SET GLOBAL pandas_analyze_sample=1007")
+
         # The icu extension is pre-bundled in Python, so no need to install it
         connection.load_extension("icu")
 
         self.conn = connection
         self.logger = logging.getLogger("DuckDbConnection")
-
-        # Use a less round number for pandas_analyze_sample (default is 1000)
-        self.conn.execute("SET GLOBAL pandas_analyze_sample=1007")
 
         self._registered_table_schemas = dict()
         # Call self.tables to warm the cache of table schemas
