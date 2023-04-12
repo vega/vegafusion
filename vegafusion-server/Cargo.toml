@@ -50,15 +50,11 @@ version = "1.27.0"
 features = [ "rt-multi-thread", "macros",]
 
 [dependencies.tonic-web]
-version = "0.5.0"
-git = "https://github.com/hyperium/tonic.git"
-rev = "b3358dc6acf11ec800571735de1e1f1e449ec96a"
+version = "0.9.1"
 
 [dependencies.tonic]
-version = "0.8.3"
+version = "0.9.1"
 features = [ "tls",]
-git = "https://github.com/hyperium/tonic.git"
-rev = "b3358dc6acf11ec800571735de1e1f1e449ec96a"
 
 [dependencies.clap]
 version = "3.2.22"
