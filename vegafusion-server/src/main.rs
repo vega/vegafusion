@@ -106,7 +106,7 @@ struct Args {
     pub memory_limit: Option<String>,
 
     /// Include compatibility with gRPC-Web
-    #[clap(long, takes_value = false)]
+    #[clap(long, num_args = 0)]
     pub web: bool,
 }
 
