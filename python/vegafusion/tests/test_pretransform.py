@@ -803,6 +803,182 @@ def nat_bar_spec():
     """)
 
 
+def date32_timeunit_spec():
+    return json.loads(r"""
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "autosize": {
+    "type": "fit",
+    "contains": "padding"
+  },
+  "background": "white",
+  "padding": 5,
+  "style": "cell",
+  "data": [
+    {
+      "name": "dataframe",
+      "url": "vegafusion+dataset://dataframe"
+    },
+    {
+      "name": "data_0",
+      "source": "dataframe",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"GO_LIVE_MONTH\"])"
+        },
+        {
+          "field": "GO_LIVE_MONTH",
+          "type": "timeunit",
+          "units": [
+            "year",
+            "month"
+          ],
+          "as": [
+            "go_live_start",
+            "go_live_end"
+          ]
+        },
+        {
+          "type": "stack",
+          "groupby": [
+            "go_live_start"
+          ],
+          "field": "PERCENT_GO_LIVES",
+          "sort": {
+            "field": [],
+            "order": []
+          },
+          "as": [
+            "percent_go_lives_start",
+            "percent_go_lives_end"
+          ],
+          "offset": "normalize"
+        },
+        {
+          "type": "formula",
+          "expr": "datum['percent_go_lives_end']-datum['percent_go_lives_start']",
+          "as": "percent_go_lives_delta"
+        }
+      ]
+    },
+    {
+      "name": "data_1",
+      "source": "data_0",
+      "transform": [
+        {
+          "field": "go_live_start",
+          "type": "timeunit",
+          "units": [
+            "year",
+            "month"
+          ],
+          "as": [
+            "go_live_start_start",
+            "go_live_start_end"
+          ]
+        },
+        {
+          "type": "filter",
+          "expr": "(isDate(datum[\"go_live_start_start\"]) || (isValid(datum[\"go_live_start_start\"]) && isFinite(+datum[\"go_live_start_start\"]))) && isValid(datum[\"percent_go_lives_start\"]) && isFinite(+datum[\"percent_go_lives_start\"])"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_layer_0_layer_0_marks",
+      "type": "rect",
+      "clip": true,
+      "style": [
+        "bar"
+      ],
+      "from": {
+        "data": "data_1"
+      },
+      "encode": {
+        "update": {
+          "fill": {
+            "value": "#ff4c00"
+          },
+          "opacity": {
+            "value": 1
+          },
+          "ariaRoleDescription": {
+            "value": "bar"
+          },
+          "x": {
+            "scale": "x",
+            "field": "go_live_start_start"
+          },
+          "x2": {
+            "scale": "x",
+            "field": "go_live_end",
+            "offset": -1
+          },
+          "y": {
+            "scale": "y",
+            "field": "percent_go_lives_start"
+          },
+          "y2": {
+            "scale": "y",
+            "field": "percent_go_lives_end"
+          }
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "time",
+      "domain": {
+        "fields": [
+          {
+            "data": "data_1",
+            "field": "go_live_start_start"
+          },
+          {
+            "data": "data_1",
+            "field": "go_live_end"
+          }
+        ]
+      },
+      "range": [
+        0,
+        {
+          "signal": "width"
+        }
+      ]
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {
+        "fields": [
+          {
+            "data": "data_1",
+            "field": "percent_go_lives_start"
+          },
+          {
+            "data": "data_1",
+            "field": "percent_go_lives_end"
+          }
+        ]
+      },
+      "range": [
+        {
+          "signal": "height"
+        },
+        0
+      ],
+      "nice": true,
+      "zero": true
+    }
+  ]
+}
+
+""")
 def test_pre_transform_multi_partition():
     n = 4050
     order_items = pd.DataFrame({
@@ -919,6 +1095,31 @@ def test_date32_pre_transform_dataset():
         pd.Timestamp('2022-01-02 00:00:00-0500', tz='America/New_York'),
         pd.Timestamp('2022-01-03 00:00:00-0500', tz='America/New_York')
     ]
+
+
+def test_date32_in_timeunit_duckdb_crash():
+    try:
+        # Set this as the active connection
+        vf.runtime.set_connection("duckdb")
+
+        # order_items includes a table://order_items data url
+        vega_spec = date32_timeunit_spec()
+        dataframe = pd.DataFrame({
+            "GO_LIVE_MONTH": [date(2021, 1, 1), date(2021, 2, 1)],
+            "PERCENT_GO_LIVES": [0.2, 0.3],
+        })
+
+        datasets, warnings = vf.runtime.pre_transform_datasets(
+            vega_spec,
+            ["data_1"],
+            "UTC",
+            inline_datasets=dict(dataframe=dataframe)
+        )
+        assert len(warnings) == 0
+        assert len(datasets) == 1
+        assert len(datasets[0]) == 2
+    finally:
+        vf.runtime.set_connection("datafusion")
 
 
 def test_period_in_column_name():
