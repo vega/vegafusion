@@ -51,9 +51,6 @@ features = [ "wasmbind",]
 version = "0.1.6"
 optional = true
 
-[dependencies.wee_alloc]
-version = "0.4.5"
-
 [dependencies.web-sys]
 version = "0.3.55"
 features = [ "Document", "Element", "HtmlElement", "Node", "Window",]
