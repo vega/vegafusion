@@ -5,7 +5,7 @@ use datafusion_common::DFSchema;
 use std::collections::HashSet;
 use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
-use vegafusion_common::arrow::datatypes::DataType;
+use vegafusion_common::arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -180,6 +180,11 @@ fn to_timestamp_col(field: &str, schema: &DFSchema, default_input_tz: &String) -
     let field_col = unescaped_col(field);
     Ok(match field_col.get_type(schema)? {
         DataType::Timestamp(_, _) => field_col,
+        DataType::Date64 | DataType::Date32 => cast_to(
+            field_col,
+            &DataType::Timestamp(ArrowTimeUnit::Millisecond, None),
+            schema,
+        )?,
         DataType::Utf8 => Expr::ScalarUDF {
             fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
             args: vec![field_col, lit(default_input_tz)],
