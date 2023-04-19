@@ -2,4 +2,4 @@
 Information about the frontend package of the widgets.
 """    
 module_name = "vegafusion-jupyter"
-module_version = "^1.2.1"
+module_version = "^1.2.2"
