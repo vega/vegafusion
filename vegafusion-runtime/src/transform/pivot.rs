@@ -86,8 +86,11 @@ impl TransformTrait for Pivot {
                 .iter()
                 .map(|field| {
                     if field.name() == &unescape_field(&self.field) {
+                        let field_col = unescaped_col(&self.field);
                         Ok(
-                            coalesce(vec![unescaped_col(&self.field), lit(NULL_PLACEHOLDER_NAME)])
+                            when(field_col.clone().is_null(), lit(NULL_PLACEHOLDER_NAME))
+                                .when(field_col.clone().eq(lit("")), lit(" "))
+                                .otherwise(field_col)?
                                 .alias(&self.field),
                         )
                     } else {
