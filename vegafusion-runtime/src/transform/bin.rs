@@ -64,8 +64,13 @@ impl TransformTrait for Bin {
 
         let bin_start = when(flat_col(bin_index_name).lt(lit(0.0)), neg_inf)
             .when(
-                abs(numeric_field.sub(lit(last_stop))).lt(eps),
-                lit(*bin_starts.last().unwrap()),
+                abs(numeric_field.sub(lit(last_stop)))
+                    .lt(eps)
+                    .and(flat_col(bin_index_name).eq(lit(n))),
+                flat_col(bin_index_name)
+                    .sub(lit(1))
+                    .mul(lit(step))
+                    .add(lit(start)),
             )
             .when(flat_col(bin_index_name).gt_eq(lit(n)), inf)
             .otherwise(bin_start)?

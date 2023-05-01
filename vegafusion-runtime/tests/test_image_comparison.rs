@@ -136,6 +136,7 @@ mod test_custom_specs {
         case("custom/bar_sort_x_axis_categorical", 0.001, true),
         case("custom/taxi_dashboard", 0.001, true),
         case("custom/periods_in_formula_output", 0.001, true)
+        case("custom/bin_transform_rounding", 0.001, true)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64, extract_inline_values: bool) {
         println!("spec_name: {spec_name}");
