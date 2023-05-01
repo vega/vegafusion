@@ -4086,7 +4086,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-common"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "arrow",
  "chrono",
@@ -4100,7 +4100,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-core"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "bytes",
  "chrono",
@@ -4129,7 +4129,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-dataframe"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "arrow",
  "async-trait",
@@ -4140,7 +4140,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-datafusion-udfs"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -4153,7 +4153,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-python-embed"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "arrow",
  "async-trait",
@@ -4174,7 +4174,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-runtime"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "async-lock",
  "async-recursion",
@@ -4225,7 +4225,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-server"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "assert_cmd",
  "clap 4.2.1",
@@ -4249,7 +4249,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-sql"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "arrow",
  "async-std",
@@ -4279,7 +4279,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-wasm"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = [
  "chrono",
  "console_error_panic_hook",
