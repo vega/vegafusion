@@ -76,7 +76,6 @@ impl ChartVisitor for AnyInlineDatasetUrlsVisitor {
 mod tests {
     use crate::patch::patch_pre_transformed_spec;
     use crate::spec::chart::ChartSpec;
-    use crate::spec::values::StringOrSignalSpec;
     use serde_json::json;
 
     fn histogram(color: &str, max_bins: u32) -> ChartSpec {
