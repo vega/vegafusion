@@ -17,6 +17,7 @@ use env_logger::{Builder, Target};
 use pythonize::depythonize;
 use serde::{Deserialize, Serialize};
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_core::patch::patch_pre_transformed_spec;
 use vegafusion_core::proto::gen::tasks::Variable;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
@@ -291,6 +292,25 @@ impl PyVegaFusionRuntime {
             let warnings = pythonize::pythonize(py, &warnings)?;
 
             Ok((tx_spec, datasets, warnings))
+        })
+    }
+
+    pub fn patch_pre_transformed_spec(
+        &self,
+        spec1: PyObject,
+        pre_transformed_spec1: PyObject,
+        spec2: PyObject,
+    ) -> PyResult<Option<PyObject>> {
+        let spec1 = parse_json_spec(spec1)?;
+        let pre_transformed_spec1 = parse_json_spec(pre_transformed_spec1)?;
+        let spec2 = parse_json_spec(spec2)?;
+        Python::with_gil(|py| {
+            match patch_pre_transformed_spec(&spec1, &pre_transformed_spec1, &spec2)? {
+                None => Ok(None),
+                Some(pre_transformed_spec2) => {
+                    Ok(Some(pythonize::pythonize(py, &pre_transformed_spec2)?))
+                }
+            }
         })
     }
 
