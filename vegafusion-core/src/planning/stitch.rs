@@ -8,7 +8,7 @@ use crate::task_graph::scope::TaskScope;
 use serde_json::Value;
 use std::collections::HashSet;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CommPlan {
     pub server_to_client: Vec<ScopedVariable>,
     pub client_to_server: Vec<ScopedVariable>,
