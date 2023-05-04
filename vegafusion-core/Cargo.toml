@@ -23,6 +23,7 @@ deterministic-hash = "1.0.1"
 chrono = "0.4.23"
 num-complex = "0.4.2"
 rand = "0.8.5"
+json-patch = "1.0.0"
 
 [dependencies.sqlparser]
 version = "0.32.0"

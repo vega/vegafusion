@@ -3,6 +3,7 @@ extern crate lazy_static;
 
 pub mod data;
 pub mod expression;
+pub mod patch;
 pub mod planning;
 pub mod proto;
 pub mod spec;

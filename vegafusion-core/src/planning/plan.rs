@@ -31,6 +31,7 @@ pub struct PlannerConfig {
     pub stringify_local_datetimes: bool,
     pub projection_pushdown: bool,
     pub extract_inline_data: bool,
+    pub extract_server_data: bool,
     pub allow_client_to_server_comms: bool,
     pub client_only_vars: Vec<ScopedVariable>,
 }
@@ -43,6 +44,7 @@ impl Default for PlannerConfig {
             stringify_local_datetimes: false,
             projection_pushdown: true,
             extract_inline_data: false,
+            extract_server_data: true,
             allow_client_to_server_comms: true,
             client_only_vars: Default::default(),
         }
@@ -79,42 +81,52 @@ impl SpecPlan {
             projection_pushdown(&mut client_spec)?;
         }
 
-        let mut task_scope = client_spec.to_task_scope()?;
-        let input_client_spec = client_spec.clone();
-        let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope, config)?;
-        let mut comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec)?;
+        if !config.extract_server_data {
+            // Return empty server spec and empty comm plan
+            Ok(Self {
+                server_spec: Default::default(),
+                client_spec,
+                comm_plan: Default::default(),
+                warnings,
+            })
+        } else {
+            let mut task_scope = client_spec.to_task_scope()?;
+            let input_client_spec = client_spec.clone();
+            let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope, config)?;
+            let mut comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec)?;
 
-        if !config.allow_client_to_server_comms && !comm_plan.client_to_server.is_empty() {
-            // Client to server comms are not allowed and the initial planning
-            // pass included them. re-plan without
-            let mut config = config.clone();
-            config
-                .client_only_vars
-                .extend(comm_plan.client_to_server.clone());
+            if !config.allow_client_to_server_comms && !comm_plan.client_to_server.is_empty() {
+                // Client to server comms are not allowed and the initial planning
+                // pass included them. re-plan without
+                let mut config = config.clone();
+                config
+                    .client_only_vars
+                    .extend(comm_plan.client_to_server.clone());
 
-            client_spec = input_client_spec;
-            server_spec = extract_server_data(&mut client_spec, &mut task_scope, &config)?;
-            comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec)?;
+                client_spec = input_client_spec;
+                server_spec = extract_server_data(&mut client_spec, &mut task_scope, &config)?;
+                comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec)?;
+            }
+
+            if config.split_url_data_nodes {
+                split_data_url_nodes(&mut server_spec)?;
+            }
+
+            if config.stringify_local_datetimes {
+                stringify_local_datetimes(
+                    &mut server_spec,
+                    &mut client_spec,
+                    &comm_plan,
+                    &domain_dataset_fields,
+                )?;
+            }
+
+            Ok(Self {
+                server_spec,
+                client_spec,
+                comm_plan,
+                warnings,
+            })
         }
-
-        if config.split_url_data_nodes {
-            split_data_url_nodes(&mut server_spec)?;
-        }
-
-        if config.stringify_local_datetimes {
-            stringify_local_datetimes(
-                &mut server_spec,
-                &mut client_spec,
-                &comm_plan,
-                &domain_dataset_fields,
-            )?;
-        }
-
-        Ok(Self {
-            server_spec,
-            client_spec,
-            comm_plan,
-            warnings,
-        })
     }
 }
