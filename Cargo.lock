@@ -2042,6 +2042,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "json-patch"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f54898088ccb91df1b492cc80029a6fdf1c48ca0db7c6822a8babad69c94658"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror",
+ "treediff",
+]
+
+[[package]]
 name = "kv-log-macro"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3973,6 +3985,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "treediff"
+version = "4.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52984d277bdf2a751072b5df30ec0377febdb02f7696d64c2d7d54630bac4303"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
 name = "try-lock"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4107,6 +4128,7 @@ dependencies = [
  "datafusion-common",
  "deterministic-hash",
  "itertools",
+ "json-patch",
  "lazy_static",
  "num-complex",
  "ordered-float 3.6.0",
