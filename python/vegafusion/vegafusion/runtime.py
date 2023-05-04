@@ -384,6 +384,31 @@ class VegaFusionRuntime:
 
             return new_spec, datasets, warnings
 
+    def patch_pre_transformed_spec(self, spec1, pre_transformed_spec1, spec2):
+        """
+        Attempt to patch a Vega spec was returned by the pre_transform_spec method without
+        rerunning the pre_transform_spec logic. When possible, this can be significantly
+        faster than rerunning the pre_transform_spec method.
+
+        :param spec1: The input Vega spec to a prior call to pre_transform_spec
+        :param pre_transformed_spec1: The prior result of passing spec1 to pre_transform_spec
+        :param spec2: A Vega spec that is assumed to be a small delta compared to spec1
+
+        :return: dict or None
+            If the delta between spec1 and spec2 is in the portions of spec1 that were not
+            modified by pre_transform_spec, then this delta can be applied cleanly to
+            pre_transform_spec1 and the result is returned. If the delta cannot be
+            applied cleanly, None is returned and spec2 should be passed through the
+            pre_transform_spec method.
+        """
+        if self._grpc_channel:
+            raise ValueError("patch_pre_transformed_spec not yet supported over gRPC")
+        else:
+            pre_transformed_spec2 = self.embedded_runtime.patch_pre_transformed_spec(
+                spec1, pre_transformed_spec1, spec2
+            )
+            return pre_transformed_spec2
+
     @property
     def worker_threads(self):
         return self._worker_threads
