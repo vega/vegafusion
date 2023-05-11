@@ -253,7 +253,7 @@ mod test_vl_selection_test_e_mixed_str_bool {
         let dataset = VegaFusionTable::from_json(&dataset_json, 16).unwrap();
 
         let formula_spec = FormulaTransformSpec {
-            expr: format!("vlSelectionTest('brush', datum, 'union')"),
+            expr: "vlSelectionTest('brush', datum, 'union')".to_string(),
             as_: "it_is_selected".to_string(),
             extra: Default::default(),
         };
