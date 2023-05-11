@@ -127,7 +127,7 @@ impl TaskCall for DataUrlTask {
         } else if url.ends_with(".csv") || url.ends_with(".tsv") {
             read_csv(&url, &parse, conn).await?
         } else if url.ends_with(".json") {
-            read_json(&url, self.batch_size as usize, conn).await?
+            read_json(&url, conn).await?
         } else if url.ends_with(".arrow") || url.ends_with(".feather") {
             read_arrow(&url, conn).await?
         } else {
@@ -603,7 +603,6 @@ fn build_csv_schema(parse: &Option<Parse>) -> Option<Schema> {
 
 async fn read_json(
     url: &str,
-    batch_size: usize,
     conn: Arc<dyn Connection>,
 ) -> Result<Arc<dyn DataFrame>> {
     // Read to json Value from local file or url.
