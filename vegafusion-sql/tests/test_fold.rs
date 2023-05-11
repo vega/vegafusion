@@ -20,13 +20,10 @@ mod test_simple_fold {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-              {"country": "USA", "gold": 10, "silver": 20},
-              {"country": "Canada", "gold": 7, "silver": 26}
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+          {"country": "USA", "gold": 10, "silver": 20},
+          {"country": "Canada", "gold": 7, "silver": 26}
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
@@ -81,13 +78,10 @@ mod test_ordered_fold {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-              {"_order": 1, "country": "USA", "gold": 10, "silver": 20},
-              {"_order": 2, "country": "Canada", "gold": 7, "silver": 26}
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+          {"_order": 1, "country": "USA", "gold": 10, "silver": 20},
+          {"_order": 2, "country": "Canada", "gold": 7, "silver": 26}
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();

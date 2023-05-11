@@ -23,7 +23,7 @@ pub fn vega_json_dataset(name: &str) -> VegaFusionTable {
     .unwrap();
     let json_value: Value = serde_json::from_str(&body).unwrap();
 
-    VegaFusionTable::from_json(&json_value, 1024).unwrap()
+    VegaFusionTable::from_json(&json_value).unwrap()
 }
 
 pub async fn vega_json_dataset_async(name: &str) -> VegaFusionTable {
@@ -46,5 +46,5 @@ pub async fn vega_json_dataset_async(name: &str) -> VegaFusionTable {
         .unwrap();
     let json_value: Value = serde_json::from_str(&body).unwrap();
 
-    VegaFusionTable::from_json(&json_value, 1024).unwrap()
+    VegaFusionTable::from_json(&json_value).unwrap()
 }

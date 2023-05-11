@@ -330,7 +330,7 @@ impl VegaJsRuntime {
         // println!("{}", serde_json::to_string_pretty(&spec).unwrap());
 
         let watches = self.eval_spec(&spec, &watches)?;
-        let dataset = VegaFusionTable::from_json(&watches[0].value, 1024)?;
+        let dataset = VegaFusionTable::from_json(&watches[0].value)?;
 
         let mut watch_signals = HashMap::new();
         for WatchValue { watch, value } in watches.iter().skip(1) {

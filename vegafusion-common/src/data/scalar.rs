@@ -1,5 +1,4 @@
 use crate::error::{Result, VegaFusionError};
-use std::sync::Arc;
 
 pub use datafusion_common::ScalarValue;
 
@@ -8,6 +7,7 @@ use {
     arrow::datatypes::{DataType, Field},
     serde_json::{Map, Value},
     std::ops::Deref,
+    std::sync::Arc,
 };
 
 // Prefix for special values JSON encoded as strings

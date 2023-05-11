@@ -306,7 +306,7 @@ impl MsgReceiver {
                         let updated_nodes = &task_graph
                             .update_value(
                                 node_value_index.node_index as usize,
-                                TaskValue::Table(VegaFusionTable::from_json(&val, 1024).unwrap()),
+                                TaskValue::Table(VegaFusionTable::from_json(&val).unwrap()),
                             )
                             .unwrap();
 

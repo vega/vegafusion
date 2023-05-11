@@ -18,16 +18,13 @@ mod test_limit1 {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": 2, "c": "A"},
-                {"a": 3, "b": 4, "c": "BB"},
-                {"a": 5, "b": 6, "c": "CCC"},
-                {"a": 7, "b": 8, "c": "DDDD"},
-                {"a": 9, "b": 10, "c": "EEEEE"},
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 2, "c": "A"},
+            {"a": 3, "b": 4, "c": "BB"},
+            {"a": 5, "b": 6, "c": "CCC"},
+            {"a": 7, "b": 8, "c": "DDDD"},
+            {"a": 9, "b": 10, "c": "EEEEE"},
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();

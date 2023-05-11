@@ -16,33 +16,27 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 
 fn impute_data(conn: Arc<dyn SqlConnection>, ordering: bool) -> Arc<dyn DataFrame> {
     let table = if ordering {
-        VegaFusionTable::from_json(
-            &json!([
-                {"_order": 1, "a": 0, "b": 28, "c": 0, "d": -1},
-                {"_order": 2, "a": 0, "b": 91, "c": 1, "d": -1},
-                {"_order": 3, "a": 1, "b": 43, "c": 0, "d": -2},
-                {"_order": 4, "a": null, "b": 55, "c": 1, "d": -2},
-                {"_order": 5, "a": 3, "b": 19, "c": 0, "d": -3},
-                {"_order": 6, "a": 2, "b": 81, "c": 0, "d": -3},
-                {"_order": 7, "a": 2, "b": 53, "c": 1, "d": -4},
-            ]),
-            1024,
-        )
+        VegaFusionTable::from_json(&json!([
+            {"_order": 1, "a": 0, "b": 28, "c": 0, "d": -1},
+            {"_order": 2, "a": 0, "b": 91, "c": 1, "d": -1},
+            {"_order": 3, "a": 1, "b": 43, "c": 0, "d": -2},
+            {"_order": 4, "a": null, "b": 55, "c": 1, "d": -2},
+            {"_order": 5, "a": 3, "b": 19, "c": 0, "d": -3},
+            {"_order": 6, "a": 2, "b": 81, "c": 0, "d": -3},
+            {"_order": 7, "a": 2, "b": 53, "c": 1, "d": -4},
+        ]))
         .unwrap()
     } else {
-        VegaFusionTable::from_json(
-            &json!([
-                {"a": 0, "b": 28, "c": 0, "d": -1},
-                {"a": 0, "b": 91, "c": 1, "d": -1},
-                {"a": 1, "b": 43, "c": 0, "d": -2},
-                {"a": null, "b": 55, "c": 1, "d": -2},
-                {"a": 3, "b": 19, "c": 0, "d": -3},
-                {"a": 2, "b": 81, "c": 0, "d": -3},
-                {"a": 2, "b": 53, "c": 1, "d": -4},
+        VegaFusionTable::from_json(&json!([
+            {"a": 0, "b": 28, "c": 0, "d": -1},
+            {"a": 0, "b": 91, "c": 1, "d": -1},
+            {"a": 1, "b": 43, "c": 0, "d": -2},
+            {"a": null, "b": 55, "c": 1, "d": -2},
+            {"a": 3, "b": 19, "c": 0, "d": -3},
+            {"a": 2, "b": 81, "c": 0, "d": -3},
+            {"a": 2, "b": 53, "c": 1, "d": -4},
 
-            ]),
-            1024,
-        )
+        ]))
         .unwrap()
     };
 

@@ -21,17 +21,14 @@ mod test_default_null_ordering {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": 4, "c": "BB"},
-                {"a": 2, "b": 6, "c": "DDDD"},
-                {"a": null, "b": 5, "c": "BB"},
-                {"a": 2, "b": 7, "c": "CCC"},
-                {"a": 1, "b": 8, "c": "CCC"},
-                {"a": 1, "b": 2, "c": "A"},
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 4, "c": "BB"},
+            {"a": 2, "b": 6, "c": "DDDD"},
+            {"a": null, "b": 5, "c": "BB"},
+            {"a": 2, "b": 7, "c": "CCC"},
+            {"a": 1, "b": 8, "c": "CCC"},
+            {"a": 1, "b": 2, "c": "A"},
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
@@ -78,17 +75,14 @@ mod test_custom_null_ordering {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": 4, "c": "BB"},
-                {"a": 2, "b": 6, "c": "DDDD"},
-                {"a": null, "b": 5, "c": "BB"},
-                {"a": 2, "b": 7, "c": "CCC"},
-                {"a": 1, "b": 8, "c": null},
-                {"a": 1, "b": 2, "c": "A"},
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 4, "c": "BB"},
+            {"a": 2, "b": 6, "c": "DDDD"},
+            {"a": null, "b": 5, "c": "BB"},
+            {"a": 2, "b": 7, "c": "CCC"},
+            {"a": 1, "b": 8, "c": null},
+            {"a": 1, "b": 2, "c": "A"},
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
@@ -130,17 +124,14 @@ mod test_order_with_limit {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": 4, "c": "BB"},
-                {"a": 2, "b": 6, "c": "DDDD"},
-                {"a": null, "b": 5, "c": "BB"},
-                {"a": 4, "b": 7, "c": "CCC"},
-                {"a": 5, "b": 8, "c": "CCC"},
-                {"a": 6, "b": 2, "c": "A"},
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 4, "c": "BB"},
+            {"a": 2, "b": 6, "c": "DDDD"},
+            {"a": null, "b": 5, "c": "BB"},
+            {"a": 4, "b": 7, "c": "CCC"},
+            {"a": 5, "b": 8, "c": "CCC"},
+            {"a": 6, "b": 2, "c": "A"},
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();

@@ -215,7 +215,7 @@ impl VegaFusionTable {
     }
 
     #[cfg(feature = "json")]
-    pub fn from_json(value: &serde_json::Value, batch_size: usize) -> Result<Self> {
+    pub fn from_json(value: &serde_json::Value) -> Result<Self> {
         if let serde_json::Value::Array(values) = value {
             // Handle special case where array elements are non-object scalars
             let mut values = Cow::Borrowed(values);
@@ -258,9 +258,8 @@ impl VegaFusionTable {
                     let schema_ref = Arc::new(schema);
 
                     // read record batches
-                    let reader = json::ReaderBuilder::new(schema_ref.clone())
-                        .with_batch_size(batch_size)
-                        .coerce_primitive(true);
+                    let reader =
+                        json::ReaderBuilder::new(schema_ref.clone()).coerce_primitive(true);
                     let mut decoder = reader.build_decoder()?;
 
                     let mut batches: Vec<RecordBatch> = Vec::new();
@@ -392,29 +391,23 @@ mod tests {
 
     #[test]
     fn test_with_ordering() {
-        let table1 = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": "A"},
-                {"a": 2, "b": "BB"},
-                {"a": 10, "b": "CCC"},
-                {"a": 20, "b": "DDDD"},
-            ]),
-            2,
-        )
+        let table1 = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": "A"},
+            {"a": 2, "b": "BB"},
+            {"a": 10, "b": "CCC"},
+            {"a": 20, "b": "DDDD"},
+        ]))
         .unwrap();
-        assert_eq!(table1.batches.len(), 2);
+        assert_eq!(table1.batches.len(), 1);
 
-        let table2 = VegaFusionTable::from_json(
-            &json!([
-                {"_vf_order": 10u32, "a": 1, "b": "A"},
-                {"_vf_order": 9u32, "a": 2, "b": "BB"},
-                {"_vf_order": 8u32, "a": 10, "b": "CCC"},
-                {"_vf_order": 7u32, "a": 20, "b": "DDDD"},
-            ]),
-            2,
-        )
+        let table2 = VegaFusionTable::from_json(&json!([
+            {"_vf_order": 10u32, "a": 1, "b": "A"},
+            {"_vf_order": 9u32, "a": 2, "b": "BB"},
+            {"_vf_order": 8u32, "a": 10, "b": "CCC"},
+            {"_vf_order": 7u32, "a": 20, "b": "DDDD"},
+        ]))
         .unwrap();
-        assert_eq!(table2.batches.len(), 2);
+        assert_eq!(table2.batches.len(), 1);
 
         let expected_json = json!([
             {"_vf_order": 0u32, "a": 1, "b": "A"},
@@ -425,12 +418,12 @@ mod tests {
 
         // Add ordering column to table without one
         let result_table1 = table1.with_ordering().unwrap();
-        assert_eq!(result_table1.batches.len(), 2);
+        assert_eq!(result_table1.batches.len(), 1);
         assert_eq!(result_table1.to_json().unwrap(), expected_json);
 
         // Override prior ordering column
         let result_table2 = table2.with_ordering().unwrap();
-        assert_eq!(result_table2.batches.len(), 2);
+        assert_eq!(result_table2.batches.len(), 1);
         assert_eq!(result_table2.to_json().unwrap(), expected_json);
     }
 }

@@ -633,7 +633,7 @@ async fn read_json(
         serde_json::from_str(&json_str)?
     };
 
-    let table = VegaFusionTable::from_json(&value, batch_size)?.with_ordering()?;
+    let table = VegaFusionTable::from_json(&value)?.with_ordering()?;
 
     conn.scan_arrow(table).await
 }

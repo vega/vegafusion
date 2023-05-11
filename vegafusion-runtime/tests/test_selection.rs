@@ -34,7 +34,7 @@ fn make_brush_r(ranges: &Vec<Vec<(&str, &str, [f64; 2])>>, typ: &str) -> VegaFus
             "values": Value::Array(value_elements),
         }));
     }
-    VegaFusionTable::from_json(&Value::Array(rows), 1024).unwrap()
+    VegaFusionTable::from_json(&Value::Array(rows)).unwrap()
 }
 
 fn make_brush_e_single(field: &str, values: &[f64]) -> VegaFusionTable {
@@ -54,7 +54,7 @@ fn make_brush_e_single(field: &str, values: &[f64]) -> VegaFusionTable {
         }));
     }
 
-    VegaFusionTable::from_json(&Value::Array(rows), 1024).unwrap()
+    VegaFusionTable::from_json(&Value::Array(rows)).unwrap()
 }
 
 fn make_brush_e_str(ranges: &Vec<Vec<(&str, &str, Vec<&str>)>>) -> VegaFusionTable {
@@ -80,7 +80,7 @@ fn make_brush_e_str(ranges: &Vec<Vec<(&str, &str, Vec<&str>)>>) -> VegaFusionTab
         }));
     }
 
-    VegaFusionTable::from_json(&Value::Array(rows), 1024).unwrap()
+    VegaFusionTable::from_json(&Value::Array(rows)).unwrap()
 }
 
 fn datum() -> VegaFusionTable {
@@ -93,7 +93,7 @@ fn datum() -> VegaFusionTable {
         {"colA": 6.0, "colB": 5.0, "colC": 600.0, "colB_str": "5", "__vgsid__": 6, "cat1": "BB", "cat2": "bb"},
         {"colA": 7.0, "colB": 4.0, "colC": 700.0, "colB_str": "4", "__vgsid__": 7, "cat1": "BB", "cat2": "aa"},
     ]);
-    VegaFusionTable::from_json(&json_value, 1024).unwrap()
+    VegaFusionTable::from_json(&json_value).unwrap()
 }
 
 pub fn check_vl_selection_test(
@@ -241,7 +241,7 @@ mod test_vl_selection_test_e_mixed_str_bool {
               "values": ["Comedy", false]
             }
         ]);
-        let brush = VegaFusionTable::from_json(&brush_json, 16).unwrap();
+        let brush = VegaFusionTable::from_json(&brush_json).unwrap();
 
         let dataset_json = json!([
             {"Major Genre": "Adventure", "is_pg": true, "Title": "A"},
@@ -250,7 +250,7 @@ mod test_vl_selection_test_e_mixed_str_bool {
             {"Major Genre": "Comedy", "is_pg": false, "Title": "D"},
             {"Major Genre": "Adventure", "is_pg": true, "Title": "E"},
         ]);
-        let dataset = VegaFusionTable::from_json(&dataset_json, 16).unwrap();
+        let dataset = VegaFusionTable::from_json(&dataset_json).unwrap();
 
         let formula_spec = FormulaTransformSpec {
             expr: "vlSelectionTest('brush', datum, 'union')".to_string(),

@@ -24,16 +24,13 @@ mod test_simple_aggs_unbounded {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": 2, "c": "A"},
-                {"a": 3, "b": 4, "c": "BB"},
-                {"a": 5, "b": 6, "c": "A"},
-                {"a": 7, "b": 8, "c": "BB"},
-                {"a": 9, "b": 10, "c": "A"},
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 2, "c": "A"},
+            {"a": 3, "b": 4, "c": "BB"},
+            {"a": 5, "b": 6, "c": "A"},
+            {"a": 7, "b": 8, "c": "BB"},
+            {"a": 9, "b": 10, "c": "A"},
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
@@ -125,16 +122,13 @@ mod test_simple_aggs_unbounded_groups {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": 2, "c": "A"},
-                {"a": 3, "b": 4, "c": "BB"},
-                {"a": 5, "b": 6, "c": "A"},
-                {"a": 7, "b": 8, "c": "BB"},
-                {"a": 9, "b": 10, "c": "A"},
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 2, "c": "A"},
+            {"a": 3, "b": 4, "c": "BB"},
+            {"a": 5, "b": 6, "c": "A"},
+            {"a": 7, "b": 8, "c": "BB"},
+            {"a": 9, "b": 10, "c": "A"},
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
@@ -227,16 +221,13 @@ mod test_simple_aggs_bounded {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": 2, "c": "A"},
-                {"a": 3, "b": 4, "c": "BB"},
-                {"a": 5, "b": 6, "c": "A"},
-                {"a": 7, "b": 8, "c": "BB"},
-                {"a": 9, "b": 10, "c": "A"},
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 2, "c": "A"},
+            {"a": 3, "b": 4, "c": "BB"},
+            {"a": 5, "b": 6, "c": "A"},
+            {"a": 7, "b": 8, "c": "BB"},
+            {"a": 9, "b": 10, "c": "A"},
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
@@ -328,16 +319,13 @@ mod test_simple_aggs_bounded_groups {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": 2, "c": "A"},
-                {"a": 1, "b": 4, "c": "BB"},
-                {"a": 5, "b": 6, "c": "A"},
-                {"a": 7, "b": 8, "c": "BB"},
-                {"a": 7, "b": 10, "c": "A"},
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 2, "c": "A"},
+            {"a": 1, "b": 4, "c": "BB"},
+            {"a": 5, "b": 6, "c": "A"},
+            {"a": 7, "b": 8, "c": "BB"},
+            {"a": 7, "b": 10, "c": "A"},
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
@@ -444,16 +432,13 @@ mod test_simple_window_fns {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": 2, "c": "A"},
-                {"a": 3, "b": 4, "c": "BB"},
-                {"a": 5, "b": 6, "c": "A"},
-                {"a": 7, "b": 8, "c": "BB"},
-                {"a": 9, "b": 10, "c": "A"},
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 2, "c": "A"},
+            {"a": 3, "b": 4, "c": "BB"},
+            {"a": 5, "b": 6, "c": "A"},
+            {"a": 7, "b": 8, "c": "BB"},
+            {"a": 9, "b": 10, "c": "A"},
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
@@ -553,16 +538,13 @@ mod test_advanced_window_fns {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": 2, "c": "A"},
-                {"a": 3, "b": 4, "c": "BB"},
-                {"a": 5, "b": 6, "c": "A"},
-                {"a": 7, "b": 8, "c": "BB"},
-                {"a": 9, "b": 10, "c": "A"},
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 2, "c": "A"},
+            {"a": 3, "b": 4, "c": "BB"},
+            {"a": 5, "b": 6, "c": "A"},
+            {"a": 7, "b": 8, "c": "BB"},
+            {"a": 9, "b": 10, "c": "A"},
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();

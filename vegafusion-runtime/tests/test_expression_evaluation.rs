@@ -29,7 +29,7 @@ pub fn dataset_1() -> VegaFusionTable {
         {"colA": 4.0, "colB": true, "colC": "second"},
         {"colA": 6.0, "colB": false, "colC": "third"},
     ]);
-    VegaFusionTable::from_json(&json_value, 1024).unwrap()
+    VegaFusionTable::from_json(&json_value).unwrap()
 }
 
 pub fn dataset_2() -> VegaFusionTable {
@@ -37,7 +37,7 @@ pub fn dataset_2() -> VegaFusionTable {
         {"colA": 40.0, "colB": true, "colC": "SECOND"},
         {"colA": 60.0, "colB": false, "colC": "THIRD"},
     ]);
-    VegaFusionTable::from_json(&json_value, 1024).unwrap()
+    VegaFusionTable::from_json(&json_value).unwrap()
 }
 
 fn datasets() -> HashMap<String, VegaFusionTable> {

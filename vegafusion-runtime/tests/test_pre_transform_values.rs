@@ -188,11 +188,9 @@ mod tests {
             Some(1024_i32.pow(3) as usize),
         );
 
-        let source_0 = VegaFusionTable::from_json(
-            &json!([{"normal": 1, "a.b": 2}, {"normal": 1, "a.b": 4}]),
-            16,
-        )
-        .unwrap();
+        let source_0 =
+            VegaFusionTable::from_json(&json!([{"normal": 1, "a.b": 2}, {"normal": 1, "a.b": 4}]))
+                .unwrap();
 
         let source_0_dataset =
             VegaFusionDataset::from_table_ipc_bytes(&source_0.to_ipc_bytes().unwrap()).unwrap();

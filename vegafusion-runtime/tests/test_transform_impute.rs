@@ -15,19 +15,16 @@ mod test_impute {
     use vegafusion_core::spec::values::Field;
 
     fn simple_dataset() -> VegaFusionTable {
-        VegaFusionTable::from_json(
-            &json!([
-                {"a": 0, "b": 28, "c": 0, "d": -1},
-                {"a": 0, "b": 91, "c": 1, "d": -1},
-                {"a": 1, "b": 43, "c": 0, "d": -2},
-                {"a": 1, "b": 55, "c": 1, "d": -2},
-                {"a": 3, "b": 19, "c": 0, "d": -3},
-                {"a": 2, "b": 81, "c": 0, "d": -3},
-                {"a": 2, "b": 53, "c": 1, "d": -4},
+        VegaFusionTable::from_json(&json!([
+            {"a": 0, "b": 28, "c": 0, "d": -1},
+            {"a": 0, "b": 91, "c": 1, "d": -1},
+            {"a": 1, "b": 43, "c": 0, "d": -2},
+            {"a": 1, "b": 55, "c": 1, "d": -2},
+            {"a": 3, "b": 19, "c": 0, "d": -3},
+            {"a": 2, "b": 81, "c": 0, "d": -3},
+            {"a": 2, "b": 53, "c": 1, "d": -4},
 
-            ]),
-            1024,
-        )
+        ]))
         .unwrap()
     }
 

@@ -16,18 +16,15 @@ use vegafusion_sql::connection::SqlConnection;
 use vegafusion_sql::dataframe::SqlDataFrame;
 
 fn stack_data(conn: Arc<dyn SqlConnection>) -> Arc<dyn DataFrame> {
-    let table = VegaFusionTable::from_json(
-        &json!([
-            {"a": 1, "b": 9, "c": "A"},
-            {"a": -3, "b": 8, "c": "BB"},
-            {"a": 5, "b": 7, "c": "A"},
-            {"a": -7, "b": 6, "c": "BB"},
-            {"a": 9, "b": 5, "c": "BB"},
-            {"a": -11, "b": 4, "c": "A"},
-            {"a": 13, "b": 3, "c": "BB"},
-        ]),
-        1024,
-    )
+    let table = VegaFusionTable::from_json(&json!([
+        {"a": 1, "b": 9, "c": "A"},
+        {"a": -3, "b": 8, "c": "BB"},
+        {"a": 5, "b": 7, "c": "A"},
+        {"a": -7, "b": 6, "c": "BB"},
+        {"a": 9, "b": 5, "c": "BB"},
+        {"a": -11, "b": 4, "c": "A"},
+        {"a": 13, "b": 3, "c": "BB"},
+    ]))
     .unwrap();
 
     SqlDataFrame::from_values(&table, conn, Default::default()).unwrap()
