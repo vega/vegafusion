@@ -61,7 +61,7 @@ fn make_span_udf() -> ScalarUDF {
             vec![
                 DataType::Float64, // For null
                 DataType::Null,    // For null
-                DataType::List(Box::new(Field::new("item", DataType::Float64, true))),
+                DataType::List(Arc::new(Field::new("item", DataType::Float64, true))),
             ],
             Volatility::Immutable,
         ),

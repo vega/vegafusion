@@ -282,7 +282,17 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::CurrentDate => "current_date",
                     BuiltinScalarFunction::CurrentTime => "current_time",
                     BuiltinScalarFunction::Uuid => "uuid",
+                    BuiltinScalarFunction::Acosh => "acosh",
+                    BuiltinScalarFunction::Asinh => "asinh",
+                    BuiltinScalarFunction::Atanh => "atanh",
+                    BuiltinScalarFunction::Cosh => "cosh",
+                    BuiltinScalarFunction::Degrees => "degrees",
+                    BuiltinScalarFunction::Pi => "pi",
+                    BuiltinScalarFunction::Radians => "radians",
+                    BuiltinScalarFunction::Sinh => "sinh",
+                    BuiltinScalarFunction::Tanh => "tanh",
                 };
+                println!("{fun_name}: {args:?}");
                 translate_scalar_function(fun_name, args, dialect, schema)
             }
             Expr::ScalarUDF { fun, args } => {

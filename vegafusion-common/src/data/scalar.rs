@@ -1,4 +1,5 @@
 use crate::error::{Result, VegaFusionError};
+use std::sync::Arc;
 
 pub use datafusion_common::ScalarValue;
 
@@ -72,7 +73,7 @@ impl ScalarValueHelpers for ScalarValue {
                     (elements, dtype)
                 };
 
-                ScalarValue::List(Some(elements), Box::new(Field::new("item", dtype, true)))
+                ScalarValue::List(Some(elements), Arc::new(Field::new("item", dtype, true)))
             }
         };
         Ok(scalar_value)

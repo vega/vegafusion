@@ -21,7 +21,7 @@ pub fn make_array_constructor_udf() -> ScalarUDF {
 
         let num_rows = args[0].len();
         let element_dtype = args[0].data_type();
-        let array_dtype = DataType::List(Box::new(Field::new("item", element_dtype.clone(), true)));
+        let array_dtype = DataType::List(Arc::new(Field::new("item", element_dtype.clone(), true)));
 
         // Concatenate arrays into single flat array (in column-major ordering)
         let arrays: Vec<&dyn Array> = args.iter().map(|a| a.as_ref()).collect();
@@ -55,8 +55,8 @@ pub fn make_array_constructor_udf() -> ScalarUDF {
         let list_array_data = ArrayDataBuilder::new(array_dtype)
             .len(num_rows)
             .null_bit_buffer(Some(flat_valid_builder.finish()))
-            .add_buffer(offsets.data().buffers()[0].clone())
-            .add_child_data(flat_values.data().clone())
+            .add_buffer(offsets.to_data().buffers()[0].clone())
+            .add_child_data(flat_values.to_data().clone())
             .build()?;
 
         Ok(Arc::new(ListArray::from(list_array_data)) as ArrayRef)
@@ -64,7 +64,7 @@ pub fn make_array_constructor_udf() -> ScalarUDF {
     let array_constructor = make_scalar_function(array_constructor);
 
     let return_type: ReturnTypeFunction = Arc::new(move |args| {
-        Ok(Arc::new(DataType::List(Box::new(Field::new(
+        Ok(Arc::new(DataType::List(Arc::new(Field::new(
             "item",
             if args.is_empty() {
                 DataType::Float64

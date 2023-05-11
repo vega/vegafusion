@@ -72,6 +72,7 @@ mod test_compile {
     use std::sync::Arc;
     use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
     use vegafusion_common::column::flat_col;
+    use vegafusion_core::arrow::datatypes::Fields;
     use vegafusion_datafusion_udfs::udfs::array::constructor::ARRAY_CONSTRUCTOR_UDF;
     use vegafusion_datafusion_udfs::udfs::object::make_object_constructor_udf;
 
@@ -405,7 +406,7 @@ mod test_compile {
                 ScalarValue::from(2.0),
                 ScalarValue::from(3.0),
             ]),
-            Box::new(Field::new("item", DataType::Float64, true)),
+            Arc::new(Field::new("item", DataType::Float64, true)),
         );
 
         println!("value: {result_value:?}");
@@ -429,7 +430,7 @@ mod test_compile {
 
         let expected_value = ScalarValue::List(
             Some(vec![]),
-            Box::new(Field::new("item", DataType::Float64, true)),
+            Arc::new(Field::new("item", DataType::Float64, true)),
         );
 
         println!("value: {result_value:?}");
@@ -467,20 +468,20 @@ mod test_compile {
             Some(vec![
                 ScalarValue::List(
                     Some(vec![ScalarValue::from(1.0), ScalarValue::from(2.0)]),
-                    Box::new(Field::new("item", DataType::Float64, true)),
+                    Arc::new(Field::new("item", DataType::Float64, true)),
                 ),
                 ScalarValue::List(
                     Some(vec![ScalarValue::from(3.0), ScalarValue::from(4.0)]),
-                    Box::new(Field::new("item", DataType::Float64, true)),
+                    Arc::new(Field::new("item", DataType::Float64, true)),
                 ),
                 ScalarValue::List(
                     Some(vec![ScalarValue::from(5.0), ScalarValue::from(6.0)]),
-                    Box::new(Field::new("item", DataType::Float64, true)),
+                    Arc::new(Field::new("item", DataType::Float64, true)),
                 ),
             ]),
-            Box::new(Field::new(
+            Arc::new(Field::new(
                 "item",
-                DataType::List(Box::new(Field::new("item", DataType::Float64, true))),
+                DataType::List(Arc::new(Field::new("item", DataType::Float64, true))),
                 true,
             )),
         );
@@ -499,7 +500,11 @@ mod test_compile {
                 &["a".to_string(), "two".to_string()],
                 &[
                     DataType::Float64,
-                    DataType::Struct(vec![Field::new("three", DataType::Float64, true)]),
+                    DataType::Struct(Fields::from(vec![Field::new(
+                        "three",
+                        DataType::Float64,
+                        true,
+                    )])),
                 ],
             )),
             args: vec![
@@ -575,7 +580,7 @@ mod test_compile {
         // let expr = parse("[datum['two'].foo * 3, datum['two'].foo]").unwrap();
         let foo_field = Field::new("foo", DataType::Float64, true);
 
-        let two_type = DataType::Struct(vec![foo_field]);
+        let two_type = DataType::Struct(Fields::from(vec![foo_field]));
         let two_field = Field::new("two", two_type, true);
         let schema = Schema::new(vec![two_field]);
         let schema = DFSchema::try_from(schema).unwrap();

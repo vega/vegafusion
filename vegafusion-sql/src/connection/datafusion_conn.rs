@@ -194,12 +194,12 @@ impl SqlConnection for DataFusionConnection {
             .schema()
             .fields()
             .iter()
-            .map(|f| f.field().clone().with_nullable(true))
+            .map(|f| f.field().as_ref().clone().with_nullable(true))
             .collect();
         let expected_fields: Vec<_> = schema
             .fields
             .iter()
-            .map(|f| f.clone().with_nullable(true))
+            .map(|f| f.as_ref().clone().with_nullable(true))
             .collect();
         let df = if result_fields == expected_fields {
             df

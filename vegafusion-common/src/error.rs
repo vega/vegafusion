@@ -303,7 +303,7 @@ impl From<serde_json::Error> for VegaFusionError {
     }
 }
 
-#[cfg(feature = "sqlparser")]
+// #[cfg(feature = "sqlparser")]
 impl From<sqlparser::parser::ParserError> for VegaFusionError {
     fn from(err: sqlparser::parser::ParserError) -> Self {
         Self::SqlParserError(err, Default::default())

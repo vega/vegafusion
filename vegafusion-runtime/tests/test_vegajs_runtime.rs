@@ -8,6 +8,7 @@ use datafusion_common::ScalarValue;
 use serde_json::json;
 use std::collections::HashMap;
 use std::fs;
+use std::sync::Arc;
 
 use vegafusion_common::arrow::datatypes::{DataType, Field};
 use vegafusion_common::data::table::VegaFusionTable;
@@ -126,7 +127,7 @@ fn test_evaluate_filter_transform() {
         result_signals,
         vec![ScalarValue::List(
             Some(vec![ScalarValue::from(6.0), ScalarValue::from(10.0)]),
-            Box::new(Field::new("item", DataType::Float64, true))
+            Arc::new(Field::new("item", DataType::Float64, true))
         )]
     );
 

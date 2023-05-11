@@ -35,6 +35,7 @@ use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
+use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::spec::visitors::extract_inline_dataset;
 use vegafusion_dataframe::connection::Connection;
 use vegafusion_dataframe::csv::CsvReadOptions;
@@ -378,7 +379,7 @@ async fn process_datetimes(
                             // Timestamp has explicit timezone
                             Expr::ScalarUDF {
                                 fun: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
-                                args: vec![flat_col(field.name()), lit(tz.as_str())],
+                                args: vec![flat_col(field.name()), lit(tz.as_ref())],
                             }
                         }
                         _ => {
@@ -446,6 +447,18 @@ impl TaskCall for DataValuesTask {
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
         if values_table.schema.fields.is_empty() {
             return Ok((TaskValue::Table(values_table), Default::default()));
+        }
+
+        // Return early for empty input data unless first transform is a sequence
+        // (which generates its own data)
+        if values_table.num_rows() == 0 {
+            if let Some(pipeline) = &self.pipeline {
+                if let Some(first_tx) = pipeline.transforms.get(0) {
+                    if !matches!(first_tx.transform_kind(), TransformKind::Sequence(_)) {
+                        return Ok((TaskValue::Table(values_table), Default::default()));
+                    }
+                }
+            }
         }
 
         // Add ordering column

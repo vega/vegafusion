@@ -3,6 +3,7 @@ use itertools::Itertools;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use vegafusion_common::arrow::datatypes::{DataType, Field};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
@@ -123,7 +124,7 @@ pub fn vl_selection_resolve_fn(
                 .get(0)
                 .map(|s| s.get_datatype())
                 .unwrap_or(DataType::Float64);
-            let values = ScalarValue::List(Some(values), Box::new(Field::new("item", dtype, true)));
+            let values = ScalarValue::List(Some(values), Arc::new(Field::new("item", dtype, true)));
             (name, values)
         })
         .sorted_by_key(|(n, _)| n.clone())
