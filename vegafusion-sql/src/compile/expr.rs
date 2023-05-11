@@ -624,14 +624,14 @@ fn compile_window_frame_bound(
 mod tests {
     use super::ToSqlExpr;
     use crate::dialect::Dialect;
-    use arrow::datatypes::{DataType, Schema};
+    use arrow::datatypes::DataType;
     use datafusion_common::DFSchema;
     use datafusion_expr::expr::Cast;
     use datafusion_expr::{lit, Between, BuiltinScalarFunction, Expr};
     use vegafusion_common::column::flat_col;
 
     fn schema() -> DFSchema {
-        DFSchema::try_from(Schema::new(Vec::new())).unwrap()
+        DFSchema::empty()
     }
 
     #[test]
