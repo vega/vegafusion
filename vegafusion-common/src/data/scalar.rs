@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use crate::error::{Result, VegaFusionError};
+use std::sync::Arc;
 
 pub use datafusion_common::ScalarValue;
 
