@@ -292,7 +292,6 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::Sinh => "sinh",
                     BuiltinScalarFunction::Tanh => "tanh",
                 };
-                println!("{fun_name}: {args:?}");
                 translate_scalar_function(fun_name, args, dialect, schema)
             }
             Expr::ScalarUDF { fun, args } => {

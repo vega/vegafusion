@@ -240,7 +240,6 @@ impl VegaFusionTable {
             let schema_result = json::reader::infer_json_schema_from_iterator(
                 values.iter().take(1024).map(|v| Ok(v.clone())),
             );
-            println!("{schema_result:#?}");
 
             match schema_result {
                 Err(_) => {
