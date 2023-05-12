@@ -601,10 +601,7 @@ fn build_csv_schema(parse: &Option<Parse>) -> Option<Schema> {
     Some(Schema::new(new_fields))
 }
 
-async fn read_json(
-    url: &str,
-    conn: Arc<dyn Connection>,
-) -> Result<Arc<dyn DataFrame>> {
+async fn read_json(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
     // Read to json Value from local file or url.
     let value: serde_json::Value = if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
