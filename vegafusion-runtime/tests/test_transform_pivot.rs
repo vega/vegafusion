@@ -5,40 +5,34 @@ use serde_json::json;
 use vegafusion_common::data::table::VegaFusionTable;
 
 fn medals() -> VegaFusionTable {
-    VegaFusionTable::from_json(
-        &json!([
-            {"country": "Germany", "type": "gold", "count": 14, "is_gold": true},
-            {"country": "Norway", "type": "gold", "count": 14, "is_gold": true},
-            {"country": "Norway", "type": "silver", "count": 14, "is_gold": false},
-            {"country": "Canada", "type": "copper", "count": 10, "is_gold": false},
-            {"country": "Norway", "type": "bronze", "count": 11, "is_gold": false},
-            {"country": "Germany", "type": "silver", "count": 10, "is_gold": false},
-            {"country": "Germany", "type": "bronze", "count": 7, "is_gold": false},
-            {"country": "Canada", "type": "gold", "count": 11, "is_gold": true},
-            {"country": "Canada", "type": "silver", "count": 8, "is_gold": false},
-            {"country": "Canada", "type": "bronze", "count": 10, "is_gold": false},
-            {"country": "Canada", "type": null, "count": 5, "is_gold": null},
-        ]),
-        1024,
-    )
+    VegaFusionTable::from_json(&json!([
+        {"country": "Germany", "type": "gold", "count": 14, "is_gold": true},
+        {"country": "Norway", "type": "gold", "count": 14, "is_gold": true},
+        {"country": "Norway", "type": "silver", "count": 14, "is_gold": false},
+        {"country": "Canada", "type": "copper", "count": 10, "is_gold": false},
+        {"country": "Norway", "type": "bronze", "count": 11, "is_gold": false},
+        {"country": "Germany", "type": "silver", "count": 10, "is_gold": false},
+        {"country": "Germany", "type": "bronze", "count": 7, "is_gold": false},
+        {"country": "Canada", "type": "gold", "count": 11, "is_gold": true},
+        {"country": "Canada", "type": "silver", "count": 8, "is_gold": false},
+        {"country": "Canada", "type": "bronze", "count": 10, "is_gold": false},
+        {"country": "Canada", "type": null, "count": 5, "is_gold": null},
+    ]))
     .unwrap()
 }
 
 fn colors() -> VegaFusionTable {
-    VegaFusionTable::from_json(
-        &json!([
-            {"A": 1, "color": "red", "count": 1},
-            {"A": 1, "color": "green", "count": 2},
-            {"A": 1, "color": "", "count": 3},
-            {"A": 2, "color": "red", "count": 4},
-            {"A": 2, "color": "blue", "count": 5},
-            {"A": 3, "color": "green", "count": 6},
-            {"A": 3, "color": "red", "count": 7},
-            {"A": 3, "color": "", "count": 8},
-            {"A": 3, "color": "blue", "count": 9},
-        ]),
-        1024,
-    )
+    VegaFusionTable::from_json(&json!([
+        {"A": 1, "color": "red", "count": 1},
+        {"A": 1, "color": "green", "count": 2},
+        {"A": 1, "color": "", "count": 3},
+        {"A": 2, "color": "red", "count": 4},
+        {"A": 2, "color": "blue", "count": 5},
+        {"A": 3, "color": "green", "count": 6},
+        {"A": 3, "color": "red", "count": 7},
+        {"A": 3, "color": "", "count": 8},
+        {"A": 3, "color": "blue", "count": 9},
+    ]))
     .unwrap()
 }
 

@@ -1347,7 +1347,7 @@ fn make_new_schema_from_exprs(schema: &Schema, exprs: &[Expr]) -> Result<Schema>
     for expr in exprs {
         if let Expr::Wildcard = expr {
             // Add field for each input schema field
-            fields.extend(schema.fields().clone())
+            fields.extend(schema.fields().iter().map(|f| f.as_ref().clone()));
         } else {
             // Add field for expression
             let schema_df = DFSchema::try_from(schema.clone())?;

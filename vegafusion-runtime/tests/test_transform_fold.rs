@@ -11,13 +11,10 @@ mod test_fold {
     use vegafusion_core::spec::transform::TransformSpec;
 
     fn simple_medals_dataset() -> VegaFusionTable {
-        VegaFusionTable::from_json(
-            &json!([
-              {"country": "USA", "gold": 10, "silver": 20},
-              {"country": "Canada", "gold": 7, "silver": 26}
-            ]),
-            1024,
-        )
+        VegaFusionTable::from_json(&json!([
+          {"country": "USA", "gold": 10, "silver": 20},
+          {"country": "Canada", "gold": 7, "silver": 26}
+        ]))
         .unwrap()
     }
 

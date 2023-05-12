@@ -179,6 +179,7 @@ impl FieldSpec {
 
                 let (low, high) = match &values {
                     ScalarValue::List(Some(elements), _) if elements.len() == 2 => {
+                        println!("{elements:?}");
                         let first = Self::cast_test_scalar(
                             elements[0].clone(),
                             &field_dtype,
@@ -191,6 +192,7 @@ impl FieldSpec {
                             schema,
                             default_input_tz,
                         )?;
+                        println!("{first:?} {second:?}");
 
                         // Don't assume elements are in ascending order
                         // Compute min and max values with Case expression

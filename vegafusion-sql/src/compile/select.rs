@@ -29,14 +29,13 @@ impl ToSqlSelectItem for Expr {
 mod tests {
     use crate::compile::select::ToSqlSelectItem;
     use crate::dialect::Dialect;
-    use arrow::datatypes::Schema;
     use datafusion_common::DFSchema;
     use datafusion_expr::{lit, Expr};
     use std::ops::Add;
     use vegafusion_common::column::flat_col;
 
     fn schema() -> DFSchema {
-        DFSchema::try_from(Schema::new(Vec::new())).unwrap()
+        DFSchema::empty()
     }
 
     #[test]

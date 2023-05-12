@@ -203,7 +203,7 @@ impl<'a> ChartVisitor for MakeTasksVisitor<'a> {
             )
         } else {
             let values_table = match data.values.as_ref() {
-                Some(values) => VegaFusionTable::from_json(values, 1024)?,
+                Some(values) => VegaFusionTable::from_json(values)?,
                 None => {
                     // Treat as empty values array
                     VegaFusionTable::empty_with_ordering()

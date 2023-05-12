@@ -35,6 +35,7 @@ use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
+use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::spec::visitors::extract_inline_dataset;
 use vegafusion_dataframe::connection::Connection;
 use vegafusion_dataframe::csv::CsvReadOptions;
@@ -126,7 +127,7 @@ impl TaskCall for DataUrlTask {
         } else if url.ends_with(".csv") || url.ends_with(".tsv") {
             read_csv(&url, &parse, conn).await?
         } else if url.ends_with(".json") {
-            read_json(&url, self.batch_size as usize, conn).await?
+            read_json(&url, conn).await?
         } else if url.ends_with(".arrow") || url.ends_with(".feather") {
             read_arrow(&url, conn).await?
         } else {
@@ -378,7 +379,7 @@ async fn process_datetimes(
                             // Timestamp has explicit timezone
                             Expr::ScalarUDF {
                                 fun: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
-                                args: vec![flat_col(field.name()), lit(tz.as_str())],
+                                args: vec![flat_col(field.name()), lit(tz.as_ref())],
                             }
                         }
                         _ => {
@@ -446,6 +447,18 @@ impl TaskCall for DataValuesTask {
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
         if values_table.schema.fields.is_empty() {
             return Ok((TaskValue::Table(values_table), Default::default()));
+        }
+
+        // Return early for empty input data unless first transform is a sequence
+        // (which generates its own data)
+        if values_table.num_rows() == 0 {
+            if let Some(pipeline) = &self.pipeline {
+                if let Some(first_tx) = pipeline.transforms.get(0) {
+                    if !matches!(first_tx.transform_kind(), TransformKind::Sequence(_)) {
+                        return Ok((TaskValue::Table(values_table), Default::default()));
+                    }
+                }
+            }
         }
 
         // Add ordering column
@@ -588,11 +601,7 @@ fn build_csv_schema(parse: &Option<Parse>) -> Option<Schema> {
     Some(Schema::new(new_fields))
 }
 
-async fn read_json(
-    url: &str,
-    batch_size: usize,
-    conn: Arc<dyn Connection>,
-) -> Result<Arc<dyn DataFrame>> {
+async fn read_json(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
     // Read to json Value from local file or url.
     let value: serde_json::Value = if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
@@ -620,7 +629,7 @@ async fn read_json(
         serde_json::from_str(&json_str)?
     };
 
-    let table = VegaFusionTable::from_json(&value, batch_size)?.with_ordering()?;
+    let table = VegaFusionTable::from_json(&value)?.with_ordering()?;
 
     conn.scan_arrow(table).await
 }

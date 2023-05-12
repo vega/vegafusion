@@ -941,14 +941,18 @@ mod tests {
         let schema = Schema::new(vec![
             Field::new(
                 "c1",
-                DataType::Struct(vec![
+                DataType::Struct(Fields::from(vec![
                     Field::new("c11", DataType::Int32, true),
                     Field::new(
                         "c12",
-                        DataType::Struct(vec![Field::new("c121", DataType::Utf8, false)]),
+                        DataType::Struct(Fields::from(vec![Field::new(
+                            "c121",
+                            DataType::Utf8,
+                            false,
+                        )])),
                         false,
                     ),
-                ]),
+                ])),
                 false,
             ),
             Field::new("c2", DataType::Utf8, false),
@@ -962,7 +966,11 @@ mod tests {
             (
                 Field::new(
                     "c12",
-                    DataType::Struct(vec![Field::new("c121", DataType::Utf8, false)]),
+                    DataType::Struct(Fields::from(vec![Field::new(
+                        "c121",
+                        DataType::Utf8,
+                        false,
+                    )])),
                     false,
                 ),
                 Arc::new(StructArray::from(vec![(
@@ -995,7 +1003,7 @@ mod tests {
     fn write_struct_with_list_field() {
         let field_c1 = Field::new(
             "c1",
-            DataType::List(Box::new(Field::new("c_list", DataType::Utf8, false))),
+            DataType::List(Arc::new(Field::new("c_list", DataType::Utf8, false))),
             false,
         );
         let field_c2 = Field::new("c2", DataType::Int32, false);
@@ -1007,7 +1015,7 @@ mod tests {
         let a_list_data = ArrayData::builder(field_c1.data_type().clone())
             .len(5)
             .add_buffer(a_value_offsets)
-            .add_child_data(a_values.data().clone())
+            .add_child_data(a_values.to_data())
             .null_bit_buffer(Some(Buffer::from(vec![0b00011111])))
             .build()
             .unwrap();
@@ -1038,12 +1046,12 @@ mod tests {
     fn write_nested_list() {
         let list_inner_type = Field::new(
             "a",
-            DataType::List(Box::new(Field::new("b", DataType::Int32, true))),
+            DataType::List(Arc::new(Field::new("b", DataType::Int32, true))),
             false,
         );
         let field_c1 = Field::new(
             "c1",
-            DataType::List(Box::new(list_inner_type.clone())),
+            DataType::List(Arc::new(list_inner_type.clone())),
             false,
         );
         let field_c2 = Field::new("c2", DataType::Utf8, true);
@@ -1058,7 +1066,7 @@ mod tests {
             .len(3)
             .add_buffer(a_value_offsets)
             .null_bit_buffer(Some(Buffer::from(vec![0b00000111])))
-            .add_child_data(a_values.data().clone())
+            .add_child_data(a_values.to_data())
             .build()
             .unwrap();
 
@@ -1095,16 +1103,20 @@ mod tests {
     fn write_list_of_struct() {
         let field_c1 = Field::new(
             "c1",
-            DataType::List(Box::new(Field::new(
+            DataType::List(Arc::new(Field::new(
                 "s",
-                DataType::Struct(vec![
+                DataType::Struct(Fields::from(vec![
                     Field::new("c11", DataType::Int32, true),
                     Field::new(
                         "c12",
-                        DataType::Struct(vec![Field::new("c121", DataType::Utf8, false)]),
+                        DataType::Struct(Fields::from(vec![Field::new(
+                            "c121",
+                            DataType::Utf8,
+                            false,
+                        )])),
                         false,
                     ),
-                ]),
+                ])),
                 false,
             ))),
             true,
@@ -1120,7 +1132,11 @@ mod tests {
             (
                 Field::new(
                     "c12",
-                    DataType::Struct(vec![Field::new("c121", DataType::Utf8, false)]),
+                    DataType::Struct(Fields::from(vec![Field::new(
+                        "c121",
+                        DataType::Utf8,
+                        false,
+                    )])),
                     false,
                 ),
                 Arc::new(StructArray::from(vec![(
@@ -1138,7 +1154,7 @@ mod tests {
         let c1_list_data = ArrayData::builder(field_c1.data_type().clone())
             .len(3)
             .add_buffer(c1_value_offsets)
-            .add_child_data(struct_values.data().clone())
+            .add_child_data(struct_values.to_data())
             .null_bit_buffer(Some(Buffer::from(vec![0b00000101])))
             .build()
             .unwrap();
@@ -1206,13 +1222,15 @@ mod tests {
         {"list": [{"ints": null}]}
         {"list": [null]}
         "#;
-        let ints_struct = DataType::Struct(vec![Field::new("ints", DataType::Int32, true)]);
-        let list_type = DataType::List(Box::new(Field::new("item", ints_struct, true)));
+        let ints_struct = DataType::Struct(Fields::from(vec![Field::new(
+            "ints",
+            DataType::Int32,
+            true,
+        )]));
+        let list_type = DataType::List(Arc::new(Field::new("item", ints_struct, true)));
         let list_field = Field::new("list", list_type, true);
         let schema = Arc::new(Schema::new(vec![list_field]));
-
-        #[allow(deprecated)]
-        let builder = ReaderBuilder::new().with_schema(schema).with_batch_size(64);
+        let builder = ReaderBuilder::new(schema).with_batch_size(64);
         let mut reader = builder.build(std::io::Cursor::new(json_content)).unwrap();
 
         let batch = reader.next().unwrap().unwrap();

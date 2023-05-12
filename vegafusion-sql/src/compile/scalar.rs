@@ -164,18 +164,34 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::Date64(_) => Err(VegaFusionError::internal(
                 "Date64 cannot be converted to SQL",
             )),
-            ScalarValue::TimestampSecond(_, _) => Err(VegaFusionError::internal(
-                "TimestampSecond cannot be converted to SQL",
-            )),
-            ScalarValue::TimestampMillisecond(_, _) => Err(VegaFusionError::internal(
-                "TimestampMillisecond cannot be converted to SQL",
-            )),
-            ScalarValue::TimestampMicrosecond(_, _) => Err(VegaFusionError::internal(
-                "TimestampMicrosecond cannot be converted to SQL",
-            )),
-            ScalarValue::TimestampNanosecond(_, _) => Err(VegaFusionError::internal(
-                "TimestampNanosecond cannot be converted to SQL",
-            )),
+            ScalarValue::TimestampSecond(v, _) => {
+                if let Some(v) = v {
+                    Ok(ms_to_timestamp(v * 1000))
+                } else {
+                    Ok(SqlExpr::Value(SqlValue::Null))
+                }
+            }
+            ScalarValue::TimestampMillisecond(v, _) => {
+                if let Some(v) = v {
+                    Ok(ms_to_timestamp(*v))
+                } else {
+                    Ok(SqlExpr::Value(SqlValue::Null))
+                }
+            }
+            ScalarValue::TimestampMicrosecond(v, _) => {
+                if let Some(v) = v {
+                    Ok(ms_to_timestamp(v / 1000))
+                } else {
+                    Ok(SqlExpr::Value(SqlValue::Null))
+                }
+            }
+            ScalarValue::TimestampNanosecond(v, _) => {
+                if let Some(v) = v {
+                    Ok(ms_to_timestamp(v / 1000000))
+                } else {
+                    Ok(SqlExpr::Value(SqlValue::Null))
+                }
+            }
             ScalarValue::IntervalYearMonth(_) => Err(VegaFusionError::internal(
                 "IntervalYearMonth cannot be converted to SQL",
             )),
@@ -208,4 +224,23 @@ impl ToSqlScalar for ScalarValue {
             )),
         }
     }
+}
+
+fn ms_to_timestamp(v: i64) -> SqlExpr {
+    let function_ident = Ident {
+        value: "epoch_ms_to_utc_timestamp".to_string(),
+        quote_style: None,
+    };
+
+    let v_ms_expr = SqlExpr::Value(SqlValue::Number(v.to_string(), false));
+
+    let args = vec![SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(v_ms_expr))];
+
+    SqlExpr::Function(SqlFunction {
+        name: SqlObjectName(vec![function_ident]),
+        args,
+        over: None,
+        distinct: false,
+        special: false,
+    })
 }

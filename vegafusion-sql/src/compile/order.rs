@@ -50,13 +50,12 @@ impl ToSqlOrderByExpr for Expr {
 #[cfg(test)]
 mod tests {
     use crate::compile::order::ToSqlOrderByExpr;
-    use arrow::datatypes::Schema;
     use datafusion_common::DFSchema;
     use datafusion_expr::{expr, Expr};
     use vegafusion_common::column::flat_col;
 
     fn schema() -> DFSchema {
-        DFSchema::try_from(Schema::new(Vec::new())).unwrap()
+        DFSchema::empty()
     }
 
     #[test]

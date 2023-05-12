@@ -7,6 +7,7 @@ use {
     arrow::datatypes::{DataType, Field},
     serde_json::{Map, Value},
     std::ops::Deref,
+    std::sync::Arc,
 };
 
 // Prefix for special values JSON encoded as strings
@@ -72,7 +73,7 @@ impl ScalarValueHelpers for ScalarValue {
                     (elements, dtype)
                 };
 
-                ScalarValue::List(Some(elements), Box::new(Field::new("item", dtype, true)))
+                ScalarValue::List(Some(elements), Arc::new(Field::new("item", dtype, true)))
             }
         };
         Ok(scalar_value)

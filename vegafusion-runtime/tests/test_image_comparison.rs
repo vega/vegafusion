@@ -1529,7 +1529,7 @@ async fn check_spec_sequence(
                     TaskValue::Scalar(ScalarValue::from_json(&watch_value.value).unwrap())
                 }
                 WatchNamespace::Data => {
-                    TaskValue::Table(VegaFusionTable::from_json(&watch_value.value, 1024).unwrap())
+                    TaskValue::Table(VegaFusionTable::from_json(&watch_value.value).unwrap())
                 }
             };
 

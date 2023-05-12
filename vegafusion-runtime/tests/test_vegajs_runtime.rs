@@ -8,6 +8,7 @@ use datafusion_common::ScalarValue;
 use serde_json::json;
 use std::collections::HashMap;
 use std::fs;
+use std::sync::Arc;
 
 use vegafusion_common::arrow::datatypes::{DataType, Field};
 use vegafusion_common::data::table::VegaFusionTable;
@@ -82,16 +83,13 @@ fn try_local_timezone() {
 #[test]
 fn test_evaluate_filter_transform() {
     let vegajs_runtime = vegajs_runtime();
-    let dataset = VegaFusionTable::from_json(
-        &json!([
-            {"colA": 2.0, "colB": false, "colC": "first"},
-            {"colA": 4.0, "colB": true, "colC": "second"},
-            {"colA": 6.0, "colB": false, "colC": "third"},
-            {"colA": 8.0, "colB": true, "colC": "forth"},
-            {"colA": 10.0, "colB": false, "colC": "fifth"},
-        ]),
-        1024,
-    )
+    let dataset = VegaFusionTable::from_json(&json!([
+        {"colA": 2.0, "colB": false, "colC": "first"},
+        {"colA": 4.0, "colB": true, "colC": "second"},
+        {"colA": 6.0, "colB": false, "colC": "third"},
+        {"colA": 8.0, "colB": true, "colC": "forth"},
+        {"colA": 10.0, "colB": false, "colC": "fifth"},
+    ]))
     .unwrap();
 
     let signal_scope: HashMap<_, _> = vec![("a".to_string(), ScalarValue::from(6.0))]
@@ -126,18 +124,15 @@ fn test_evaluate_filter_transform() {
         result_signals,
         vec![ScalarValue::List(
             Some(vec![ScalarValue::from(6.0), ScalarValue::from(10.0)]),
-            Box::new(Field::new("item", DataType::Float64, true))
+            Arc::new(Field::new("item", DataType::Float64, true))
         )]
     );
 
-    let expected_dataset = VegaFusionTable::from_json(
-        &json!([
-            {"colA": 6, "colB": false, "colC": "third"},
-            {"colA": 8, "colB": true, "colC": "forth"},
-            {"colA": 10, "colB": false, "colC": "fifth"},
-        ]),
-        1024,
-    )
+    let expected_dataset = VegaFusionTable::from_json(&json!([
+        {"colA": 6, "colB": false, "colC": "third"},
+        {"colA": 8, "colB": true, "colC": "forth"},
+        {"colA": 10, "colB": false, "colC": "fifth"},
+    ]))
     .unwrap();
 
     assert_eq!(

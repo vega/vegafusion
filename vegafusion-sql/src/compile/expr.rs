@@ -282,6 +282,15 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::CurrentDate => "current_date",
                     BuiltinScalarFunction::CurrentTime => "current_time",
                     BuiltinScalarFunction::Uuid => "uuid",
+                    BuiltinScalarFunction::Acosh => "acosh",
+                    BuiltinScalarFunction::Asinh => "asinh",
+                    BuiltinScalarFunction::Atanh => "atanh",
+                    BuiltinScalarFunction::Cosh => "cosh",
+                    BuiltinScalarFunction::Degrees => "degrees",
+                    BuiltinScalarFunction::Pi => "pi",
+                    BuiltinScalarFunction::Radians => "radians",
+                    BuiltinScalarFunction::Sinh => "sinh",
+                    BuiltinScalarFunction::Tanh => "tanh",
                 };
                 translate_scalar_function(fun_name, args, dialect, schema)
             }
@@ -614,14 +623,14 @@ fn compile_window_frame_bound(
 mod tests {
     use super::ToSqlExpr;
     use crate::dialect::Dialect;
-    use arrow::datatypes::{DataType, Schema};
+    use arrow::datatypes::DataType;
     use datafusion_common::DFSchema;
     use datafusion_expr::expr::Cast;
     use datafusion_expr::{lit, Between, BuiltinScalarFunction, Expr};
     use vegafusion_common::column::flat_col;
 
     fn schema() -> DFSchema {
-        DFSchema::try_from(Schema::new(Vec::new())).unwrap()
+        DFSchema::empty()
     }
 
     #[test]

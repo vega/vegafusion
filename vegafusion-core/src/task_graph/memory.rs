@@ -1,12 +1,12 @@
 use datafusion_common::ScalarValue;
 use std::mem::{size_of, size_of_val};
 use vegafusion_common::arrow::array::ArrayRef;
-use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
+use vegafusion_common::arrow::datatypes::{DataType, Field, FieldRef, Schema};
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::data::table::VegaFusionTable;
 
 /// Get the size of a Field value, including any inner heap-allocated data
-fn size_of_field(field: &Field) -> usize {
+fn size_of_field(field: &FieldRef) -> usize {
     size_of::<Field>() + inner_size_of_dtype(field.data_type())
 }
 
@@ -21,8 +21,12 @@ fn inner_size_of_dtype(value: &DataType) -> usize {
         DataType::Struct(fields) => {
             size_of::<Vec<Field>>() + fields.iter().map(size_of_field).sum::<usize>()
         }
-        DataType::Union(fields, _, _) => {
-            size_of::<Vec<Field>>() + fields.iter().map(size_of_field).sum::<usize>()
+        DataType::Union(fields, _) => {
+            size_of::<Vec<Field>>()
+                + fields
+                    .iter()
+                    .map(|(_, field)| size_of_field(field))
+                    .sum::<usize>()
         }
         DataType::Dictionary(key_dtype, value_dtype) => {
             2 * size_of::<DataType>()

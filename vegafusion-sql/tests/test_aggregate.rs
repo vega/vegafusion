@@ -21,17 +21,14 @@ mod test_simple_aggs {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": 2, "c": "A"},
-                {"a": 3, "b": 2, "c": "BB"},
-                {"a": 5, "b": 3, "c": "CCC"},
-                {"a": 7, "b": 3, "c": "DDDD"},
-                {"a": 9, "b": 3, "c": "EEEEE"},
-                {"a": 11, "b": 3, "c": "FFFFFF"},
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 2, "c": "A"},
+            {"a": 3, "b": 2, "c": "BB"},
+            {"a": 5, "b": 3, "c": "CCC"},
+            {"a": 7, "b": 3, "c": "DDDD"},
+            {"a": 9, "b": 3, "c": "EEEEE"},
+            {"a": 11, "b": 3, "c": "FFFFFF"},
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
@@ -82,16 +79,13 @@ mod test_median_agg {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": 2},
-                {"a": 3, "b": 2},
-                {"a": 5.5, "b": 3},
-                {"a": 7.5, "b": 3},
-                {"a": 100, "b": 3},
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 2},
+            {"a": 3, "b": 2},
+            {"a": 5.5, "b": 3},
+            {"a": 7.5, "b": 3},
+            {"a": 100, "b": 3},
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
@@ -134,16 +128,13 @@ mod test_variance_aggs {
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
-        let table = VegaFusionTable::from_json(
-            &json!([
-                {"a": 1, "b": 2},
-                {"a": 3, "b": 2},
-                {"a": 5, "b": 3},
-                {"a": 7, "b": 3},
-                {"a": 9, "b": 3},
-            ]),
-            1024,
-        )
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 2},
+            {"a": 3, "b": 2},
+            {"a": 5, "b": 3},
+            {"a": 7, "b": 3},
+            {"a": 9, "b": 3},
+        ]))
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();

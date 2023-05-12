@@ -17,4 +17,4 @@ path = "../vegafusion-common"
 version = "1.2.4"
 
 [dependencies.datafusion-physical-expr]
-version = "22.0.0"
+version = "24.0.0"

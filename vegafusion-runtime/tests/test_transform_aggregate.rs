@@ -230,18 +230,15 @@ mod test_aggregate_with_nulls {
         case(AggregateOpSpec::Max)
     )]
     fn test(op: AggregateOpSpec) {
-        let dataset = VegaFusionTable::from_json(
-            &json!(
-                [
-                    {"SHIP": "A", "NULL_ORDER_IDS": null},
-                    {"SHIP": "B", "NULL_ORDER_IDS": "CA-2011-168312"},
-                    {"SHIP": "C", "NULL_ORDER_IDS": "CA-2011-131009"},
-                    {"SHIP": "D", "NULL_ORDER_IDS": "CA-2011-131009"},
-                    {"SHIP": "E", "NULL_ORDER_IDS": "CA-2011-131009"}
-                ]
-            ),
-            1024,
-        )
+        let dataset = VegaFusionTable::from_json(&json!(
+            [
+                {"SHIP": "A", "NULL_ORDER_IDS": null},
+                {"SHIP": "B", "NULL_ORDER_IDS": "CA-2011-168312"},
+                {"SHIP": "C", "NULL_ORDER_IDS": "CA-2011-131009"},
+                {"SHIP": "D", "NULL_ORDER_IDS": "CA-2011-131009"},
+                {"SHIP": "E", "NULL_ORDER_IDS": "CA-2011-131009"}
+            ]
+        ))
         .unwrap();
 
         let aggregate_spec = AggregateTransformSpec {
@@ -287,18 +284,15 @@ mod test_aggregate_strings {
         case(AggregateOpSpec::Max)
     )]
     fn test(op: AggregateOpSpec) {
-        let dataset = VegaFusionTable::from_json(
-            &json!(
-                [
-                    {"a": 1, "b": "A"},
-                    {"a": 1, "b": "BB"},
-                    {"a": 2, "b": "CCC"},
-                    {"a": 2, "b": "CCC"},
-                    {"a": 2, "b": "DDDD"}
-                ]
-            ),
-            1024,
-        )
+        let dataset = VegaFusionTable::from_json(&json!(
+            [
+                {"a": 1, "b": "A"},
+                {"a": 1, "b": "BB"},
+                {"a": 2, "b": "CCC"},
+                {"a": 2, "b": "CCC"},
+                {"a": 2, "b": "DDDD"}
+            ]
+        ))
         .unwrap();
 
         let aggregate_spec = AggregateTransformSpec {

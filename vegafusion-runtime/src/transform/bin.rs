@@ -124,7 +124,7 @@ fn compute_output_value(bin_tx: &Bin, start: f64, stop: f64, step: f64) -> Optio
 
     let fields = ScalarValue::List(
         Some(vec![ScalarValue::from(bin_tx.field.as_str())]),
-        Box::new(Field::new("item", DataType::Utf8, true)),
+        Arc::new(Field::new("item", DataType::Utf8, true)),
     );
 
     if bin_tx.signal.is_some() {

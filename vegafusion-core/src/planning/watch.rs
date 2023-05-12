@@ -168,7 +168,7 @@ impl ExportUpdateJSON {
                 TaskValue::Scalar(ScalarValue::from_json(&self.value).unwrap())
             }
             ExportUpdateNamespace::Data => {
-                TaskValue::Table(VegaFusionTable::from_json(&self.value, 1024).unwrap())
+                TaskValue::Table(VegaFusionTable::from_json(&self.value).unwrap())
             }
         }
     }
