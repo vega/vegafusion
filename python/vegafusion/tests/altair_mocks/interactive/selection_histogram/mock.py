@@ -1,17 +1,15 @@
-# https://altair-viz.github.io/gallery/selection_histogram.html
-
 import altair as alt
 from vega_datasets import data
 
 source = data.cars()
 
-brush = alt.selection(type='interval')
+brush = alt.selection_interval()
 
 points = alt.Chart(source).mark_point().encode(
     x='Horsepower:Q',
     y='Miles_per_Gallon:Q',
     color=alt.condition(brush, 'Origin:N', alt.value('lightgray'))
-).add_selection(
+).add_params(
     brush
 )
 

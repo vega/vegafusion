@@ -29,6 +29,7 @@ def get_connections():
     "mock_name,expected_len,expected_cols", [
         ("area/cumulative_count", 3201, ["Running_Time_min", "cumulative_count"]),
         ("area/gradient", 68, ["symbol", "date", "price"]),
+        ("area/layered", 51, ["year", "source", "net_generation"]),
         ("area/normalized_stacked", 51, ["year", "source", "net_generation_start", "net_generation_end"]),
         ("area/streamgraph", 1708, ["series", "yearmonth_date", "sum_count_start", "sum_count_end"]),
         ("area/trellis", 51, ["year", "source", "net_generation_start", "net_generation_end"]),
@@ -129,6 +130,93 @@ def test_transformed_data_for_mock(mock_name, expected_len, expected_cols, conne
 
     # Check expected length
     assert len(df) == expected_len
+
+
+@pytest.mark.parametrize(
+    "mock_name,expected_lens,all_expected_cols", [
+        ("area/horizon_graph", [20, 20], [["x", "y"], ["x", "y", "ny"]]),
+        ("bar/and_tick_chart", [7, 7], [["goal", "score_start"], ["project", "goal"]]),
+        ("bar/stacked_with_text_overlay", [60, 60], [["site", "sum_yield_start"], ["variety", "sum_yield_end"]]),
+        ("bar/with_labels", [52, 52], [["wages", "wheat_start"], ["wheat", "wages"]]),
+        ("bar/with_line_at_mean", [52, 1], [["wages", "wheat_start"], ["mean_wheat"]]),
+        ("bar/with_line_on_dual_axis", [52, 52], [["wages", "wheat_start"], ["wheat", "wages"]]),
+        ("bar/with_rolling_mean", [52, 52], [["wages", "wheat_start"], ["wheat", "wages"]]),
+        ("casestudy/co2_concentration", [713, 7, 7], [["year", "decade"], ["scaled_date", "first_date"], ["end"]]),
+        ("casestudy/falkensee", [2, 38, 38], [["event", "start"], ["population", "year"], ["year"]]),
+        ("casestudy/us_employment", [120, 1, 2], [["construction"], ["president", "end"], ["start"]]),
+        ("casestudy/wheat_wages", [52, 52, 52, 52], [["wheat"], ["year_end"], ["year"], ["year"]]),
+        ("histogram/with_a_global_mean_overlay", [9, 1], [["bin_maxbins_10_IMDB_Rating_end"], ["mean_IMDB_Rating"]]),
+        ("interactive/area-interval_selection", [123, 123], [["price_start"], ["price_end"]]),
+        ("interactive/casestudy-seattle_weather_interactive", [1461, 5], [["monthdate_date"], ["__count"]]),
+        ("interactive/casestudy-us_population_pyramid_over_time", [19, 38, 19], [["sum_people"], ["people"], ["sum_people_end"]]),
+        ("interactive/cross_highlight", [64, 64, 13], [["__count"], ["__count"], ["__count"]]),
+        ("interactive/histogram-responsive", [20, 20], [["__count"], ["__count"]]),
+        ("interactive/multiline_highlight", [560, 560], [["price"], ["price"]]),
+        ("interactive/multiline_tooltip", [300, 300, 300], [["x"], ["y"], ["category"]]),
+        ("interactive/scatter-with_linked_table", [392, 19, 19, 19], [["Year"], ["rank"], ["rank"], ["rank"]]),
+        ("interactive/scatter-with_minimap", [1461, 1461], [["weather"], ["weather"]]),
+        ("interactive/scatter_with_histogram", [100, 10], [["mbin_end"], ["__count"]]),
+        ("interactive/scatter_with_layered_histogram", [2, 19], [["mean_height"], ["bin_step_5_age"]]),
+        ("interactive/select_detail", [20, 1000], [["mean_y"], ["value"]]),
+        ("interactive/select_mark_area", [122, 122], [["sum_count"], ["yearmonth_date"]]),
+        ("interactive/selection_histogram", [392, 3], [["Cylinders"], ["__count"]]),
+        ("interactive/selection_layer_bar_month", [12, 1], [["mean_precipitation"], ["mean_precipitation"]]),
+        ("line/layer_line_color_rule", [560, 5], [["symbol"], ["average_price"]]),
+        ("other/bar_chart_with_highlighted_segment", [52, 1, 1], [["wheat_start"], ["baseline"], ["threshold"]]),
+        ("other/candlestick_chart", [44, 44], [["ret"], ["signal"]]),
+        ("other/errorbars_with_std", [10, 10], [["mean_yield"], ["variety"]]),
+        ("other/layered_chart_with_dual_axis", [12, 12], [["average_temp_max"], ["average_temp_max"]]),
+        ("other/layered_heatmap_text", [9, 9], [["Origin"], ["num_cars"]]),
+        ("other/ranged_dot_plot", [10, 10], [["life_expect"], ["country"]]),
+        ("other/scatter_marginal_hist", [34, 150, 27], [["__count"], ["species"], ["__count"]]),
+        ("scatter/dot_dash_plot", [400, 392, 398], [["Cylinders"], ["Cylinders"], ["Cylinders"]]),
+        ("scatter/with_errorbars", [5, 5], [["ymin"], ["upper_ymin"]]),
+        ("scatter/with_labels", [5, 5], [["x"], ["label"]]),
+        ("scatter/with_rolling_mean", [1461, 1461], [["precipitation"], ["rolling_mean"]]),
+    ]
+)
+@pytest.mark.parametrize("connection", get_connections())
+def test_multi_transformed_data_for_mock(mock_name, expected_lens, all_expected_cols, connection):
+    vf.runtime.set_connection(connection)
+    mock_path = altair_mocks_dir / mock_name / "mock.py"
+    mock_src = mock_path.read_text("utf8")
+    chart = eval_block(mock_src)
+    dfs = vf.transformed_data(chart)
+
+    for df, expected_len, expected_cols in zip(dfs, expected_lens, all_expected_cols):
+        # Check that a DataFrame was returned
+        assert isinstance(df, pd.DataFrame)
+
+        # Check that the expected columns are present
+        assert set(expected_cols).issubset(set(df.columns))
+
+        # Check that datetime columns have local timezone
+        for dtype in df.dtypes.values:
+            if dtype.kind == "M":
+                assert dtype.tz == pytz.timezone(vf.get_local_tz())
+
+        # Check expected length
+        assert len(df) == expected_len
+
+
+def test_transformed_data_exclude():
+    source = data.wheat()
+    bar = alt.Chart(source).mark_bar().encode(x="year:O", y="wheat:Q")
+    rule = alt.Chart(source).mark_rule(color="red").encode(y="mean(wheat):Q")
+    some_annotation = (
+        alt.Chart(name="some_annotation")
+        .mark_text(fontWeight="bold")
+        .encode(text=alt.value("Just some text"), y=alt.datum(85), x=alt.value(200))
+    )
+
+    chart = (bar + rule + some_annotation).properties(width=600)
+    datasets = vf.transformed_data(chart, exclude=["some_annotation"])
+
+    assert len(datasets) == 2
+    assert len(datasets[0]) == 52
+    assert "wheat_start" in datasets[0]
+    assert len(datasets[1]) == 1
+    assert "mean_wheat" in datasets[1]
 
 
 @pytest.mark.parametrize("connection", get_connections())

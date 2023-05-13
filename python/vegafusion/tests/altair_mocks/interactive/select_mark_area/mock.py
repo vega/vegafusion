@@ -1,5 +1,3 @@
-# https://altair-viz.github.io/gallery/select_mark_area.html
-
 import altair as alt
 from vega_datasets import data
 
@@ -13,8 +11,8 @@ base = alt.Chart(source).mark_area(
     y='sum(count):Q',
 )
 
-brush = alt.selection_interval(encodings=['x'],empty='all')
-background = base.add_selection(brush)
+brush = alt.selection_interval(encodings=['x'])
+background = base.add_params(brush)
 selected = base.transform_filter(brush).mark_area(color='goldenrod')
 
 background + selected

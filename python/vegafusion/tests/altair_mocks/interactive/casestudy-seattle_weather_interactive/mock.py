@@ -1,5 +1,3 @@
-# https://altair-viz.github.io/gallery/seattle_weather_interactive.html
-
 import altair as alt
 from vega_datasets import data
 
@@ -13,7 +11,7 @@ color = alt.Color('weather:N', scale=scale)
 # - a brush that is active on the top panel
 # - a multi-click that is active on the bottom panel
 brush = alt.selection_interval(encodings=['x'])
-click = alt.selection_multi(encodings=['color'])
+click = alt.selection_point(encodings=['color'])
 
 # Top panel is scatter plot of temperature vs time
 points = alt.Chart().mark_point().encode(
@@ -27,7 +25,7 @@ points = alt.Chart().mark_point().encode(
 ).properties(
     width=550,
     height=300
-).add_selection(
+).add_params(
     brush
 ).transform_filter(
     click
@@ -42,7 +40,7 @@ bars = alt.Chart().mark_bar().encode(
     brush
 ).properties(
     width=550,
-).add_selection(
+).add_params(
     click
 )
 

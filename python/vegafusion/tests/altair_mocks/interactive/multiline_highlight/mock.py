@@ -1,12 +1,10 @@
-# https://altair-viz.github.io/gallery/multiline_highlight.html
-
 import altair as alt
 from vega_datasets import data
 
 source = data.stocks()
 
-highlight = alt.selection(type='single', on='mouseover',
-                          fields=['symbol'], nearest=True)
+highlight = alt.selection_point(on='mouseover',
+                                fields=['symbol'], nearest=True)
 
 base = alt.Chart(source).encode(
     x='date:T',
@@ -16,10 +14,10 @@ base = alt.Chart(source).encode(
 
 points = base.mark_circle().encode(
     opacity=alt.value(0)
-).add_selection(
+).add_params(
     highlight
 ).properties(
-    width=500
+    width=600
 )
 
 lines = base.mark_line().encode(

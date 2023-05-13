@@ -1,19 +1,17 @@
-# https://altair-viz.github.io/gallery/scatter_linked_table.html
-
 import altair as alt
 from vega_datasets import data
 
 source = data.cars()
 
 # Brush for selection
-brush = alt.selection(type='interval')
+brush = alt.selection_interval()
 
 # Scatter Plot
 points = alt.Chart(source).mark_point().encode(
     x='Horsepower:Q',
     y='Miles_per_Gallon:Q',
     color=alt.condition(brush, 'Cylinders:O', alt.value('grey'))
-).add_selection(brush)
+).add_params(brush)
 
 # Base chart for data tables
 ranked_text = alt.Chart(source).mark_text().encode(

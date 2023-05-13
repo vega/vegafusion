@@ -1,13 +1,11 @@
-# https://altair-viz.github.io/gallery/dot_dash_plot.html
-
 import altair as alt
 from vega_datasets import data
 
 source = data.cars()
 
 # Configure the options common to all layers
-brush = alt.selection(type='interval')
-base = alt.Chart(source).add_selection(brush)
+brush = alt.selection_interval()
+base = alt.Chart(source).add_params(brush)
 
 # Configure the points
 points = base.mark_point().encode(
