@@ -401,7 +401,7 @@ jobs:
           python -m pip install vl-convert-python
       - name: Update to latest Altair 5
         run: |
-          pip install --pre -U altair
+          pip install -U altair
       - name: Test vegafusion
         working-directory: python/vegafusion/
         run: pytest
