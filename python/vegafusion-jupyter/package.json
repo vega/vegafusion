@@ -56,9 +56,9 @@
     "@jupyter-widgets/base": "^4 || ^5 || ^6",
     "@jupyterlab/notebook": "^3 || ^4",
     "marked": "^4.0.10",
-    "vega": "^5.24.0",
-    "vega-lite": "^5.6.1",
-    "vega-themes": "^2.12.0",
+    "vega": "^5.25.0",
+    "vega-lite": "^5.8.0",
+    "vega-themes": "^2.13.0",
     "vegafusion-embed": "../../javascript/vegafusion-embed",
     "vegafusion-wasm": "../../vegafusion-wasm/pkg"
   },
