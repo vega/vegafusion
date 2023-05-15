@@ -18,6 +18,8 @@ class VegaFusionRuntime {
 
     private static native String innerPatchPreTransformedSpec(String spec1, String preTransformedSpec1, String spec2) throws IllegalArgumentException;
 
+    private static native String innerPreTransformSpec(long pointer, String spec, String localTz, String defaultInputTz);
+
     static {
         String libPath = System.getenv("VEGAFUSION_JNI_LIBRARY");
         if (libPath != null) {
@@ -72,9 +74,14 @@ class VegaFusionRuntime {
         return innerPatchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
     }
 
+    public String preTransformSpec(String spec, String localTz, String defaultInputTz) {
+        return innerPreTransformSpec(state_ptr, spec, localTz, defaultInputTz);
+    }
+
     public static void main(String[] args) {
         String version = VegaFusionRuntime.version();
         System.out.println("VegaFusion: Server-side scaling for Vega visualizations");
         System.out.println("Version: " + version);
     }
 }
+

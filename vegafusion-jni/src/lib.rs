@@ -28,7 +28,7 @@ struct VegaFusionRuntimeState {
 // This keeps Rust from "mangling" the name and making it unique for this
 // crate.
 #[no_mangle]
-pub extern "system" fn Java_io_vegafusion_VegaFusionRuntime_hello<'local>(
+pub extern "system" fn Java_io_vegafusion_VegaFusionRuntime_hello<'local> (
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     input: JString<'local>,
@@ -51,7 +51,7 @@ pub extern "system" fn Java_io_vegafusion_VegaFusionRuntime_hello<'local>(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_io_vegafusion_VegaFusionRuntime_version<'local>(
+pub extern "system" fn Java_io_vegafusion_VegaFusionRuntime_version<'local> (
     env: JNIEnv<'local>,
     _class: JClass<'local>,
 ) -> jstring {
@@ -68,7 +68,7 @@ pub extern "system" fn Java_io_vegafusion_VegaFusionRuntime_version<'local>(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerCreate<'local>(
+pub extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerCreate<'local> (
     env: JNIEnv<'local>,
     _class: JClass<'local>,
 ) -> jlong {
@@ -98,6 +98,7 @@ fn inner_create() -> Result<VegaFusionRuntimeState> {
 
     // Build tokio runtime
     let mut builder = tokio::runtime::Builder::new_multi_thread();
+    builder.enable_all();
     let worker_threads = 4;
     builder.worker_threads(worker_threads.max(1) as usize);
     let tokio_runtime = builder.build()?;
@@ -109,7 +110,7 @@ fn inner_create() -> Result<VegaFusionRuntimeState> {
 }
 
 #[no_mangle]
-pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerDestroy<'local>(
+pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerDestroy<'local> (
     _env: JNIEnv<'local>,
     _class: JClass<'local>,
     state_ptr: jlong,
@@ -119,7 +120,7 @@ pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerDestroy<
 }
 
 #[no_mangle]
-pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPatchPreTransformedSpec<'local>(
+pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPatchPreTransformedSpec<'local> (
     env: JNIEnv<'local>,
     class: JClass<'local>,
     spec1: JString<'local>,
@@ -189,4 +190,82 @@ pub fn inner_patch_pre_transformed_spec<'local> (
         todo!("Return null")
         // Ok(JObject::null().into_raw())
     }
+}
+
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPreTransformSpec<'local> (
+    env: JNIEnv<'local>,
+    class: JClass<'local>,
+    pointer: jlong,
+    spec: JString<'local>,
+    local_tz: JString<'local>,
+    default_input_tz: JString<'local>,
+) -> jstring {
+    let result = panic::catch_unwind(|| {
+        inner_pre_transform_spec(env, class, pointer, spec, local_tz, default_input_tz)
+    });
+
+    match result {
+        Ok(Ok(pre_transformed_spec)) => {
+            pre_transformed_spec
+        }
+        Ok(Err(vf_err)) => {
+            todo!("Raise VegaFusion Error")
+        }
+        Err(unwind_err) => {
+            todo!("Raise Panic Error")
+        }
+    }
+}
+
+pub unsafe fn inner_pre_transform_spec<'local> (
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    pointer: jlong,
+    spec: JString<'local>,
+    local_tz: JString<'local>,
+    default_input_tz: JString<'local>,
+) -> Result<jstring> {
+    let state = &mut *(pointer as *mut VegaFusionRuntimeState);
+    let row_limit = None;
+    let preserve_interactivity = true;
+    // TODO no panics!
+    let spec: String = env
+        .get_string(&spec)
+        .expect("Couldn't get java string!")
+        .into();
+
+    let local_tz: String = env
+        .get_string(&local_tz)
+        .expect("Couldn't get java string!")
+        .into();
+
+    let default_input_tz: String = env
+        .get_string(&default_input_tz)
+        .expect("Couldn't get java string!")
+        .into();
+
+    let spec: ChartSpec = serde_json::from_str(spec.as_str())?;
+
+    let (pre_transformed_spec, warnings) = state.tokio_runtime.block_on(
+        state.vf_runtime.pre_transform_spec(
+            &spec,
+            local_tz.as_str(),
+            &Some(default_input_tz),
+            row_limit,
+            preserve_interactivity,
+            Default::default(),
+        )
+    )?;
+    let pre_transformed_spec = serde_json::to_string(&pre_transformed_spec)?;
+
+    // Then we have to create a new Java string to return. Again, more info
+    // in the `strings` module.
+    let output = env
+        .new_string(pre_transformed_spec)
+        .expect("Couldn't create java string!"); // TODO: no panics
+
+    // Finally, extract the raw pointer to return.
+    Ok(output.into_raw())
 }
