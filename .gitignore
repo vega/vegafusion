@@ -41,3 +41,4 @@ _vegafusion_data
 .DS_Store
 __pycache__
 /.ipynb_checkpoints/
+/java/.idea/
