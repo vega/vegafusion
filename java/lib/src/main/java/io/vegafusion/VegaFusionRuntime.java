@@ -7,9 +7,6 @@ import java.nio.file.StandardCopyOption;
 import java.io.IOException;
 
 class VegaFusionRuntime {
-    // This declares that the static `hello` method will be provided
-    // a native library.
-    private static native String hello(String input);
     public static native String version();
 
     private static native long innerCreate();
