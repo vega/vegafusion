@@ -4162,6 +4162,7 @@ dependencies = [
  "chrono",
  "datafusion-common",
  "datafusion-expr",
+ "jni",
  "pyo3",
  "serde_json",
  "sqlparser",

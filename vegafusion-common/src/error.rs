@@ -7,6 +7,9 @@ use thiserror::Error;
 #[cfg(feature = "pyo3")]
 use pyo3::{exceptions::PyValueError, PyErr};
 
+#[cfg(feature = "jni")]
+use jni::errors::Error as JniError;
+
 pub type Result<T> = result::Result<T, VegaFusionError>;
 
 #[derive(Clone, Debug, Default)]
@@ -69,6 +72,10 @@ pub enum VegaFusionError {
     #[cfg(feature = "sqlparser")]
     #[error("SqlParser Error: {0}\n{1}")]
     SqlParserError(sqlparser::parser::ParserError, ErrorContext),
+
+    #[cfg(feature = "jni")]
+    #[error("JNI Error: {0}\n{1}")]
+    JniError(JniError, ErrorContext),
 }
 
 impl VegaFusionError {
@@ -138,6 +145,11 @@ impl VegaFusionError {
             SqlParserError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::SqlParserError(err, context)
+            }
+            #[cfg(feature = "jni")]
+            JniError(err, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::JniError(err, context)
             }
         }
     }
@@ -215,6 +227,10 @@ impl VegaFusionError {
             #[cfg(feature = "sqlparser")]
             SqlParserError(err, context) => {
                 VegaFusionError::SqlParserError(err.clone(), context.clone())
+            }
+            #[cfg(feature = "jni")]
+            JniError(err, context) => {
+                VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
         }
     }
@@ -307,6 +323,13 @@ impl From<serde_json::Error> for VegaFusionError {
 impl From<sqlparser::parser::ParserError> for VegaFusionError {
     fn from(err: sqlparser::parser::ParserError) -> Self {
         Self::SqlParserError(err, Default::default())
+    }
+}
+
+#[cfg(feature = "jni")]
+impl From<JniError> for VegaFusionError {
+    fn from(err: JniError) -> Self {
+        Self::JniError(err, Default::default())
     }
 }
 
