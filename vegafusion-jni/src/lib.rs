@@ -186,7 +186,7 @@ struct PreTransformSpecArgs {
     preserve_interactivity: bool,
 }
 
-fn parse_args_pre_transform_spec<'local> (
+fn parse_args_pre_transform_spec<'local>(
     env: &mut JNIEnv<'local>,
     spec: JString<'local>,
     local_tz: JString<'local>,
@@ -198,7 +198,7 @@ fn parse_args_pre_transform_spec<'local> (
     let local_tz: String = env.get_string(&local_tz)?.into();
     let default_input_tz: Option<String> = Some(env.get_string(&default_input_tz)?.into());
 
-   Ok(PreTransformSpecArgs {
+    Ok(PreTransformSpecArgs {
         spec,
         local_tz,
         default_input_tz,
@@ -207,31 +207,31 @@ fn parse_args_pre_transform_spec<'local> (
     })
 }
 
-unsafe fn inner_pre_transform_spec<'local> (
+unsafe fn inner_pre_transform_spec<'local>(
     pointer: jlong,
-    args: PreTransformSpecArgs
+    args: PreTransformSpecArgs,
 ) -> Result<String> {
     let state = &mut *(pointer as *mut VegaFusionRuntimeState);
     let spec: ChartSpec = serde_json::from_str(args.spec.as_str())?;
 
     // TODO: Handle warnings (Stash in spec metadata?)
-    let (pre_transformed_spec, _warnings) = state.tokio_runtime.block_on(
-        state.vf_runtime.pre_transform_spec(
-            &spec,
-            args.local_tz.as_str(),
-            &args.default_input_tz,
-            args.row_limit,
-            args.preserve_interactivity,
-            Default::default(),
-        )
-    )?;
+    let (pre_transformed_spec, _warnings) =
+        state
+            .tokio_runtime
+            .block_on(state.vf_runtime.pre_transform_spec(
+                &spec,
+                args.local_tz.as_str(),
+                &args.default_input_tz,
+                args.row_limit,
+                args.preserve_interactivity,
+                Default::default(),
+            ))?;
     let pre_transformed_spec = serde_json::to_string(&pre_transformed_spec)?;
     Ok(pre_transformed_spec)
 }
 
-
 #[no_mangle]
-pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPreTransformSpec<'local> (
+pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPreTransformSpec<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     pointer: jlong,
@@ -240,9 +240,7 @@ pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPreTrans
     default_input_tz: JString<'local>,
 ) -> jstring {
     if let Ok(args) = parse_args_pre_transform_spec(&mut env, spec, local_tz, default_input_tz) {
-        let result = panic::catch_unwind(|| {
-            inner_pre_transform_spec(pointer, args)
-        });
+        let result = panic::catch_unwind(|| inner_pre_transform_spec(pointer, args));
 
         match result {
             Ok(Ok(pre_transformed_spec)) => match env.new_string(pre_transformed_spec) {
