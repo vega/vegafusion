@@ -13,7 +13,7 @@ public class VegaFusionRuntimeTest {
         System.out.println("Expected Version: " + expectedVersion);
 
         var version = VegaFusionRuntime.version();
-        assertEquals(version, "1.3.0-rc1");
+        assertEquals(version, expectedVersion);
     }
 
     @Test
