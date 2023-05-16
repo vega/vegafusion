@@ -41,9 +41,13 @@ public class VegaFusionRuntimeTest {
         VegaFusionRuntime runtime = new VegaFusionRuntime();
         String spec = histSpec();
 
-        String preTransformedSpec = runtime.preTransformSpec(spec, "UTC", "UTC");
+        VegaFusionRuntime.PreTransformSpecResult preTransformedSpecResult = runtime.preTransformSpec(
+                spec, "UTC", "UTC", 0, true
+        );
+        String preTransformedSpec = preTransformedSpecResult.preTransformedSpec;
+        String preTransformedSpecWarnings = preTransformedSpecResult.preTransformWarnings;
         System.out.println(preTransformedSpec);
-
+        System.out.println(preTransformedSpecWarnings);
         runtime.destroy();
     }
 

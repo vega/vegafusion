@@ -15,7 +15,7 @@ class VegaFusionRuntime {
 
     private static native String innerPatchPreTransformedSpec(String spec1, String preTransformedSpec1, String spec2) throws IllegalArgumentException;
 
-    private static native String innerPreTransformSpec(long pointer, String spec, String localTz, String defaultInputTz);
+    private static native PreTransformSpecResult innerPreTransformSpec(long pointer, String spec, String localTz, String defaultInputTz, int rowLimit, boolean preserveInteractivity);
 
     static {
         String libPath = System.getenv("VEGAFUSION_JNI_LIBRARY");
@@ -56,6 +56,16 @@ class VegaFusionRuntime {
         }
     }
 
+    static class PreTransformSpecResult {
+        public String preTransformedSpec;
+        public String preTransformWarnings;
+
+        public PreTransformSpecResult(String preTransformedSpec, String preTransformWarnings) {
+            this.preTransformedSpec = preTransformedSpec;
+            this.preTransformWarnings = preTransformWarnings;
+        }
+    }
+
     private long state_ptr;
 
     public VegaFusionRuntime() {
@@ -71,8 +81,8 @@ class VegaFusionRuntime {
         return innerPatchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
     }
 
-    public String preTransformSpec(String spec, String localTz, String defaultInputTz) {
-        return innerPreTransformSpec(state_ptr, spec, localTz, defaultInputTz);
+    public PreTransformSpecResult preTransformSpec(String spec, String localTz, String defaultInputTz, int rowLimit, boolean preserveInteractivity) {
+        return innerPreTransformSpec(state_ptr, spec, localTz, defaultInputTz, rowLimit, preserveInteractivity);
     }
 
     public static void main(String[] args) {
