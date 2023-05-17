@@ -2,7 +2,6 @@ package io.vegafusion;
 
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.Locale;
 import java.util.Map;
 import java.util.List;
 
