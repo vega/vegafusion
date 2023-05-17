@@ -145,11 +145,11 @@ jobs:
           cd java
           ./gradlew test -i
         env:
-          VEGAFUSION_JNI_LIBRARY: D:/a/vegafusion/vegafusion/target/release/libvegafusion_jni.dll
+          VEGAFUSION_JNI_LIBRARY: D:/a/vegafusion/vegafusion/target/release/vegafusion_jni.dll
       - name: Copy native lib
         run: |
           mkdir -p native/win-64
-          cp target/release/libvegafusion_jni.dll native/win-64
+          cp target/release/vegafusion_jni.dll native/win-64
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:

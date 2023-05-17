@@ -32,20 +32,21 @@ class VegaFusionRuntime {
                 System.loadLibrary("vegafusion_jni");
             } catch (LinkageError e) {
                 // Build path based on os and architecture
-                String libName = "libvegafusion_jni";
+
                 String osName = System.getProperty("os.name").toLowerCase();
                 String osArch = System.getProperty("os.arch").toLowerCase();
 
-                String libExtension;
+                String libName;
                 String directory;
                 if  (osName.contains("win")) {
-                    libExtension = ".dll";
+                    libName = "vegafusion_jni.dll";
                     if (osArch.equals("amd64") || osArch.equals("x86_64")) {
                         directory = "win-64";
                     } else {
                         throw new UnsupportedOperationException("Unsupported architecture for Windows: " + osArch);
                     }
                 } else if (osName.contains("mac")) {
+                    libName = "libvegafusion_jni.dylib";
                     if (osArch.equals("amd64") || osArch.equals("x86_64")) {
                         directory = "osx-64";
                     } else if (osArch.equals("aarch64") || osArch.equals("arm64")) {
@@ -53,9 +54,8 @@ class VegaFusionRuntime {
                     } else {
                         throw new UnsupportedOperationException("Unsupported architecture for macOS: " + osArch);
                     }
-                    libExtension = ".dylib";
                 } else if (osName.contains("nix") || osName.contains("nux")) {
-                    libExtension = ".so";
+                    libName = "libvegafusion_jni.so";
                     if (osArch.equals("amd64") || osArch.equals("x86_64")) {
                         directory = "linux-64";
                     } else {
@@ -66,7 +66,7 @@ class VegaFusionRuntime {
                 }
 
                 // Path in the jar file to the compiled library
-                String libPathInJar = "/native/" + directory + "/" + libName + libExtension;
+                String libPathInJar = "/native/" + directory + "/" + libName;
 
                 // Extract the library to a temporary file
                 InputStream libStream = VegaFusionRuntime.class.getResourceAsStream(libPathInJar);
