@@ -50,7 +50,7 @@ jar {
     archiveVersion.set(version)
 
     // Include native libraries.
-    from('../../target/debug/libvegafusion_jni.dylib') {
-        into 'native/macos/'
+    from('../native') {
+        into 'native'
     }
 }
