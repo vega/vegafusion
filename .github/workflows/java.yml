@@ -137,12 +137,15 @@ jobs:
         run: choco install --yes protoc
       - name: Build jni
         run: cargo build -p vegafusion-jni --release
+      - name: Show release files
+        run: |
+          Get-ChildItem -Path target/release -Recurse
       - name: gradle test
         run: |
           cd java
           ./gradlew test -i
         env:
-          VEGAFUSION_JNI_LIBRARY: D:\a\vegafusion\vegafusion\target\release\libvegafusion_jni.dll
+          VEGAFUSION_JNI_LIBRARY: D:/a/vegafusion/vegafusion/target/release/libvegafusion_jni.dll
       - name: Copy native lib
         run: |
           mkdir -p native/win-64
