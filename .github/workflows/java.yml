@@ -160,6 +160,7 @@ jobs:
       - build-test-java-linux64
       - build-test-java-osx64
       - build-test-java-osx-arm64
+      - build-test-java-win64
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
