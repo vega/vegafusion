@@ -205,6 +205,12 @@ jobs:
         with:
           name: jar
           path: .
-      - name: Run jar
+      - name: Run jar (non-Windows)
+        if: ${{ runner.os != 'Windows' }}
         run: |
           java -jar VegaFusion-*.jar
+      - name: Run jar (Windows)
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          $jarFile = Get-ChildItem -Path .\ -Filter "VegaFusion-*.jar" | Select-Object -First 1
+          java -jar $jarFile
