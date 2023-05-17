@@ -41,6 +41,7 @@ jobs:
 
   build-jar:
     runs-on: ubuntu-latest
+    needs: [ build-test-java ]
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
