@@ -76,7 +76,7 @@ class VegaFusionRuntime {
 
                 // Create a temp file and get its path
                 try {
-                    String tempFileName = Paths.get("libvegafusion_jni.dylib").getFileName().toString();
+                    String tempFileName = Paths.get(libName).getFileName().toString();
                     java.nio.file.Path temp = Files.createTempFile(tempFileName, "");
 
                     // Copy the library to the temp file
