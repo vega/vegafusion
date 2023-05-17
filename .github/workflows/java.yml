@@ -26,7 +26,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - name: Build jni
-        run: cargo build -p vegafusion-jni --release
+        run: cargo build -p vegafusion-jni --release --features=protobuf-src
       - run: ls target/release
       - run: |
           mkdir -p native/linux-64
