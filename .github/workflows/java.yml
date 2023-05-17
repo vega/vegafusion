@@ -1,0 +1,39 @@
+name: java
+on:
+  pull_request:
+    types: [opened, synchronize]
+jobs:
+  build-test-jni:
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Install Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Build jni
+        run: cargo build -p vegafusion-jni --release
+      - run: ls target/release
+      - run: |
+          mkdir -p native/linux-64
+          cp target/release/libvegafusion_jni.so native/linux-64
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: jni-native
+          path: |
+            native
