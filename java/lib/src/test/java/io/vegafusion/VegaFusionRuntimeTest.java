@@ -2,16 +2,23 @@ package io.vegafusion;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.Locale;
+import java.util.Map;
+import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class VegaFusionRuntimeTest {
     @Test
     void testVersion() throws IOException {
         String expectedVersion = new String(Files.readAllBytes(Paths.get("../version.txt"))).trim();
-        System.out.println("Expected Version: " + expectedVersion);
-
         var version = VegaFusionRuntime.version();
         assertEquals(version, expectedVersion);
     }
@@ -19,35 +26,163 @@ public class VegaFusionRuntimeTest {
     @Test
     void testCreate() {
         VegaFusionRuntime runtime = new VegaFusionRuntime();
+        assertTrue(runtime.valid());
+
+        // Destroy should invalidate
         runtime.destroy();
+        assertFalse(runtime.valid());
+
+        // Destroy should be idempotent
+        runtime.destroy();
+        assertFalse(runtime.valid());
     }
 
     @Test
     void testPatchPretransformedSpec() {
+        // Create runtime
         VegaFusionRuntime runtime = new VegaFusionRuntime();
+
+        // Define simple specs that are compatible with patching
         String spec1 = "{\"width\": 100, \"height\": 200}";
         String preTransformedSpec1 = "{\"width\": 100, \"height\": 150}";
         String spec2 = "{\"width\": 150, \"height\": 200}";
 
+        // Perform patch and validate results
         String preTransformedSpec2 = runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
-        System.out.println(preTransformedSpec2);
+        assertEquals(
+                preTransformedSpec2,
+                "{\"$schema\":\"https://vega.github.io/schema/vega/v5.json\",\"width\":150,\"height\":150}"
+        );
 
-        assertEquals(preTransformedSpec2, "{\"$schema\":\"https://vega.github.io/schema/vega/v5.json\",\"width\":150,\"height\":150}");
+        // Cleanup
+        runtime.destroy();
+
+        // Calling again after destroy should raise an exception
+        assertThrows(IllegalStateException.class, () -> {
+            runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
+        });
+    }
+
+    @Test
+    void testUnsuccessfulPatchPretransformedSpec() {
+        // Create runtime
+        VegaFusionRuntime runtime = new VegaFusionRuntime();
+
+        // Define specs that are not compatible with patching
+        String spec1 = "{\"data\": [{\"name\": \"foo\"}]}";
+        String preTransformedSpec1 = "{\"data\": []}";
+        String spec2 = "{\"data\": [{\"name\": \"bar\"}]}";
+        String preTransformedSpec2 = runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
+        assertNull(preTransformedSpec2);
+
+        // Cleanup
+        runtime.destroy();
+
+        // Calling again after destroy should raise an exception
+        assertThrows(IllegalStateException.class, () -> {
+            runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
+        });
+    }
+
+    @Test
+    void testInvalidPatchPretransformedSpec1() {
+        // Create runtime
+        VegaFusionRuntime runtime = new VegaFusionRuntime();
+
+        // Define spec strings that are not valid JSON
+        String spec1 = "{\"data\"";
+        String preTransformedSpec1 = "{\"data\"";
+        String spec2 = "{\"data\"";
+
+        VegaFusionException e = assertThrows(VegaFusionException.class, () -> {
+            runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
+        });
+
+        assertTrue(e.getMessage().toLowerCase().contains("serde"));
+
+        // Cleanup
         runtime.destroy();
     }
 
     @Test
-    void testPretransformSpec() {
+    void testInvalidPatchPretransformedSpec2() {
+        // Create runtime
         VegaFusionRuntime runtime = new VegaFusionRuntime();
+
+        // Define spec strings that are valid JSON but invalid Vega specs
+        String spec1 = "{\"data\": 23}";
+        String preTransformedSpec1 = "{}";
+        String spec2 = "{}";
+
+        VegaFusionException e = assertThrows(VegaFusionException.class, () -> {
+            runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
+        });
+
+        assertTrue(e.getMessage().toLowerCase().contains("serde"));
+
+        // Cleanup
+        runtime.destroy();
+    }
+
+
+    @Test
+    void testPretransformSpec() throws JsonProcessingException {
+        // Build VegaFusionRuntime
+        VegaFusionRuntime runtime = new VegaFusionRuntime();
+
+        // Construct histogram spec
         String spec = histSpec();
 
+        // Pre-transform spec with rowLimit of 3 so that inline data is truncated
         VegaFusionRuntime.PreTransformSpecResult preTransformedSpecResult = runtime.preTransformSpec(
-                spec, "UTC", "UTC", 0, true
+                spec, "UTC", "UTC", 3, true
         );
+
+        // Check that resulting spec is reasonable
         String preTransformedSpec = preTransformedSpecResult.preTransformedSpec;
+        assertTrue(preTransformedSpec.startsWith("{\"$schema\":\"https://vega.github.io/schema/vega/v5.json\""));
+
+        // Parse warnings as JSON
         String preTransformedSpecWarnings = preTransformedSpecResult.preTransformWarnings;
-        System.out.println(preTransformedSpec);
-        System.out.println(preTransformedSpecWarnings);
+        ObjectMapper mapper = new ObjectMapper();
+        List<Map<String, JsonNode>> warningList = mapper.readValue(
+                preTransformedSpecWarnings, new TypeReference<>(){}
+        );
+
+        // We should have 1 RowLimitExceeded warning
+        assertEquals(warningList.size(), 1);
+        var firstWarningType = warningList.get(0).get("type").asText();
+        assertEquals(firstWarningType, "RowLimitExceeded");
+
+        // Clean up Runtime
+        runtime.destroy();
+
+        // Calling again after destroy should raise an exception
+        assertThrows(IllegalStateException.class, () -> {
+            runtime.preTransformSpec(
+                    spec, "UTC", "UTC", 3, true
+            );
+        });
+    }
+
+    @Test
+    void testInvalidPretransformSpec() {
+        // Build VegaFusionRuntime
+        VegaFusionRuntime runtime = new VegaFusionRuntime();
+
+        // Construct invalid Vega spec
+        String spec = "{\"data\": \"foo\"}";
+
+        // Check that exception is raised by preTransformSpec
+        VegaFusionException e = assertThrows(VegaFusionException.class, () -> {
+            runtime.preTransformSpec(
+                    spec, "UTC", "UTC", 0, true
+            );
+        });
+
+        assertTrue(e.getMessage().toLowerCase().contains("serde"));
+
+        // Clean up Runtime
         runtime.destroy();
     }
 

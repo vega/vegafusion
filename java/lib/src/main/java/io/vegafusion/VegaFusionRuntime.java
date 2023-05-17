@@ -13,9 +13,13 @@ class VegaFusionRuntime {
 
     private static native void innerDestroy(long pointer);
 
-    private static native String innerPatchPreTransformedSpec(String spec1, String preTransformedSpec1, String spec2) throws IllegalArgumentException;
+    private static native String innerPatchPreTransformedSpec(
+            String spec1, String preTransformedSpec1, String spec2
+    );
 
-    private static native PreTransformSpecResult innerPreTransformSpec(long pointer, String spec, String localTz, String defaultInputTz, int rowLimit, boolean preserveInteractivity);
+    private static native PreTransformSpecResult innerPreTransformSpec(
+            long pointer, String spec, String localTz, String defaultInputTz, int rowLimit, boolean preserveInteractivity
+    );
 
     static {
         String libPath = System.getenv("VEGAFUSION_JNI_LIBRARY");
@@ -73,16 +77,30 @@ class VegaFusionRuntime {
     }
 
     public void destroy() {
-        innerDestroy(state_ptr);
-        state_ptr = 0;
+        if (state_ptr != 0) {
+            innerDestroy(state_ptr);
+            state_ptr = 0;
+        }
     }
 
     public String patchPreTransformedSpec(String spec1, String preTransformedSpec1, String spec2) {
+        validatePtr();
         return innerPatchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
     }
 
     public PreTransformSpecResult preTransformSpec(String spec, String localTz, String defaultInputTz, int rowLimit, boolean preserveInteractivity) {
+        validatePtr();
         return innerPreTransformSpec(state_ptr, spec, localTz, defaultInputTz, rowLimit, preserveInteractivity);
+    }
+
+    public boolean valid() {
+        return state_ptr != 0;
+    }
+
+    private void validatePtr() throws IllegalStateException {
+        if (state_ptr == 0) {
+            throw new IllegalStateException("VegaFusionRuntime may not be used after calling destroy()");
+        }
     }
 
     public static void main(String[] args) {
