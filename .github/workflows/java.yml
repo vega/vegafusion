@@ -38,3 +38,27 @@ jobs:
           name: jni-native
           path: |
             native
+
+  build-jar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Download jni libs
+        uses: actions/download-artifact@v2
+        with:
+          name: jni-native
+          path: java/native
+      - name: Build jar
+        run: gradle jar
+      - name: Upload jar
+        uses: actions/upload-artifact@v2
+        with:
+          name: jar
+          path: |
+            java/lib/build/libs/VegaFusion-*.jar
