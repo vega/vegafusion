@@ -50,8 +50,10 @@ fn inner_version(env: &JNIEnv) -> Result<jstring> {
 pub extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerCreate<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
+    capacity: jint,
+    memory_limit: jint,
 ) -> jlong {
-    let result = panic::catch_unwind(|| inner_create());
+    let result = panic::catch_unwind(|| inner_create(capacity, memory_limit));
 
     match result {
         Ok(Ok(state)) => Box::into_raw(Box::new(state)) as jlong,
@@ -66,12 +68,15 @@ pub extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerCreate<'local>(
     }
 }
 
-fn inner_create() -> Result<VegaFusionRuntimeState> {
+fn inner_create(
+    capacity: jint,
+    memory_limit: jint,
+) -> Result<VegaFusionRuntimeState> {
     // Use DataFusion connection and multi-threaded tokio runtime
     let conn = Arc::new(DataFusionConnection::default()) as Arc<dyn Connection>;
-    let capacity = 64;
-    let memory_limit = 2 << 30; // 2GB
-    let vf_runtime = VegaFusionRuntime::new(conn, Some(capacity), Some(memory_limit));
+    let capacity = if capacity < 1 { None } else { Some(capacity as usize) };
+    let memory_limit = if memory_limit < 1 { None } else { Some(memory_limit as usize) };
+    let vf_runtime = VegaFusionRuntime::new(conn, capacity, memory_limit);
 
     // Build tokio runtime
     let mut builder = tokio::runtime::Builder::new_multi_thread();

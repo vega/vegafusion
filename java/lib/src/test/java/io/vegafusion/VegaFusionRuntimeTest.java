@@ -16,6 +16,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class VegaFusionRuntimeTest {
+    private VegaFusionRuntime makeRuntime() {
+        return new VegaFusionRuntime(32, 1000000000);
+    }
+
     @Test
     void testVersion() throws IOException {
         String expectedVersion = new String(Files.readAllBytes(Paths.get("../version.txt"))).trim();
@@ -25,7 +29,7 @@ public class VegaFusionRuntimeTest {
 
     @Test
     void testCreate() {
-        VegaFusionRuntime runtime = new VegaFusionRuntime();
+        VegaFusionRuntime runtime = makeRuntime();
         assertTrue(runtime.valid());
 
         // Destroy should invalidate
@@ -38,21 +42,25 @@ public class VegaFusionRuntimeTest {
     }
 
     @Test
-    void testPatchPretransformedSpec() {
+    void testPatchPretransformedSpec() throws JsonProcessingException {
         // Create runtime
-        VegaFusionRuntime runtime = new VegaFusionRuntime();
+        VegaFusionRuntime runtime = makeRuntime();
 
         // Define simple specs that are compatible with patching
         String spec1 = "{\"width\": 100, \"height\": 200}";
         String preTransformedSpec1 = "{\"width\": 100, \"height\": 150}";
         String spec2 = "{\"width\": 150, \"height\": 200}";
 
-        // Perform patch and validate results
+        // Perform patch
         String preTransformedSpec2 = runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
-        assertEquals(
-                preTransformedSpec2,
-                "{\"$schema\":\"https://vega.github.io/schema/vega/v5.json\",\"width\":150,\"height\":150}"
+
+        // Validate results
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, JsonNode> specMap = mapper.readValue(
+                preTransformedSpec2, new TypeReference<>(){}
         );
+        assertEquals(specMap.get("width").asInt(), 150);
+        assertEquals(specMap.get("height").asInt(), 150);
 
         // Cleanup
         runtime.destroy();
@@ -66,7 +74,7 @@ public class VegaFusionRuntimeTest {
     @Test
     void testUnsuccessfulPatchPretransformedSpec() {
         // Create runtime
-        VegaFusionRuntime runtime = new VegaFusionRuntime();
+        VegaFusionRuntime runtime = makeRuntime();
 
         // Define specs that are not compatible with patching
         String spec1 = "{\"data\": [{\"name\": \"foo\"}]}";
@@ -87,7 +95,7 @@ public class VegaFusionRuntimeTest {
     @Test
     void testInvalidPatchPretransformedSpec1() {
         // Create runtime
-        VegaFusionRuntime runtime = new VegaFusionRuntime();
+        VegaFusionRuntime runtime = makeRuntime();
 
         // Define spec strings that are not valid JSON
         String spec1 = "{\"data\"";
@@ -107,7 +115,7 @@ public class VegaFusionRuntimeTest {
     @Test
     void testInvalidPatchPretransformedSpec2() {
         // Create runtime
-        VegaFusionRuntime runtime = new VegaFusionRuntime();
+        VegaFusionRuntime runtime = makeRuntime();
 
         // Define spec strings that are valid JSON but invalid Vega specs
         String spec1 = "{\"data\": 23}";
@@ -128,7 +136,7 @@ public class VegaFusionRuntimeTest {
     @Test
     void testPretransformSpec() throws JsonProcessingException {
         // Build VegaFusionRuntime
-        VegaFusionRuntime runtime = new VegaFusionRuntime();
+        VegaFusionRuntime runtime = makeRuntime();
 
         // Construct histogram spec
         String spec = histSpec();
@@ -168,7 +176,7 @@ public class VegaFusionRuntimeTest {
     @Test
     void testInvalidPretransformSpec() {
         // Build VegaFusionRuntime
-        VegaFusionRuntime runtime = new VegaFusionRuntime();
+        VegaFusionRuntime runtime = makeRuntime();
 
         // Construct invalid Vega spec
         String spec = "{\"data\": \"foo\"}";

@@ -9,7 +9,7 @@ import java.io.IOException;
 class VegaFusionRuntime {
     public static native String version();
 
-    private static native long innerCreate();
+    private static native long innerCreate(int capacity, int memoryLimit);
 
     private static native void innerDestroy(long pointer);
 
@@ -72,8 +72,8 @@ class VegaFusionRuntime {
 
     private long state_ptr;
 
-    public VegaFusionRuntime() {
-        state_ptr = VegaFusionRuntime.innerCreate();
+    public VegaFusionRuntime(int capacity, int memoryLimit) {
+        state_ptr = VegaFusionRuntime.innerCreate(capacity, memoryLimit);
     }
 
     public void destroy() {
