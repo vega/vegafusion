@@ -59,11 +59,11 @@ pub extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerCreate<'local>(
         Ok(Ok(state)) => Box::into_raw(Box::new(state)) as jlong,
         Ok(Err(vf_err)) => {
             let _ = env.throw_new("io/vegafusion/VegaFusionException", vf_err.to_string());
-            return 0;
+            0
         }
         Err(_unwind_err) => {
             let _ = env.throw_new("io/vegafusion/VegaFusionException", "Uncaught Error");
-            return 0;
+            0
         }
     }
 }
@@ -175,9 +175,9 @@ pub fn inner_patch_pre_transformed_spec<'local>(
     spec2: &str,
 ) -> Result<Option<String>> {
     // Parse specs
-    let spec1: ChartSpec = serde_json::from_str(&spec1)?;
-    let pre_transformed_spec1: ChartSpec = serde_json::from_str(&pre_transformed_spec1)?;
-    let spec2: ChartSpec = serde_json::from_str(&spec2)?;
+    let spec1: ChartSpec = serde_json::from_str(spec1)?;
+    let pre_transformed_spec1: ChartSpec = serde_json::from_str(pre_transformed_spec1)?;
+    let spec2: ChartSpec = serde_json::from_str(spec2)?;
 
     let pre_transformed_spec2 = patch_pre_transformed_spec(&spec1, &pre_transformed_spec1, &spec2)?;
 
@@ -259,7 +259,7 @@ unsafe fn inner_pre_transform_spec<'local>(
     // Convert warnings to JSON compatible PreTransformSpecWarningSpec
     let warnings: Vec<_> = warnings
         .iter()
-        .map(|warning| PreTransformSpecWarningSpec::from(warning))
+        .map(PreTransformSpecWarningSpec::from)
         .collect();
     let warning_str = serde_json::to_string(&warnings)?;
 

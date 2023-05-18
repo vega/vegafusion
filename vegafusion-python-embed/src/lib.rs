@@ -136,7 +136,7 @@ impl PyVegaFusionRuntime {
 
         let warnings: Vec<_> = warnings
             .iter()
-            .map(|warning| PreTransformSpecWarningSpec::from(warning))
+            .map(PreTransformSpecWarningSpec::from)
             .collect();
 
         Python::with_gil(|py| -> PyResult<(PyObject, PyObject)> {
