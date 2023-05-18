@@ -8,16 +8,15 @@ use std::sync::{Arc, Once};
 use tokio::runtime::Runtime;
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_extract_warning::WarningType as ExtractWarningType;
-use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 use crate::connection::PySqlConnection;
 use env_logger::{Builder, Target};
 use pythonize::depythonize;
-use serde::{Deserialize, Serialize};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::patch::patch_pre_transformed_spec;
+use vegafusion_core::planning::plan::PreTransformSpecWarningSpec;
 use vegafusion_core::proto::gen::tasks::Variable;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
@@ -36,13 +35,6 @@ pub fn initialize_logging() {
         builder.target(Target::Stdout);
         builder.init();
     });
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-struct PreTransformSpecWarning {
-    #[serde(rename = "type")]
-    pub typ: String,
-    pub message: String,
 }
 
 #[pyclass]
@@ -142,34 +134,10 @@ impl PyVegaFusionRuntime {
                 inline_datasets,
             ))?;
 
-        let warnings: Vec<_> = warnings.iter().map(|warning| {
-            match warning.warning_type.as_ref().unwrap() {
-                WarningType::RowLimit(_) => {
-                    PreTransformSpecWarning {
-                        typ: "RowLimitExceeded".to_string(),
-                        message: "Some datasets in resulting Vega specification have been truncated to the provided row limit".to_string()
-                    }
-                }
-                WarningType::BrokenInteractivity(_) => {
-                    PreTransformSpecWarning {
-                        typ: "BrokenInteractivity".to_string(),
-                        message: "Some interactive features may have been broken in the resulting Vega specification".to_string()
-                    }
-                }
-                WarningType::Unsupported(_) => {
-                    PreTransformSpecWarning {
-                        typ: "Unsupported".to_string(),
-                        message: "Unable to pre-transform any datasets in the Vega specification".to_string()
-                    }
-                }
-                WarningType::Planner(warning) => {
-                    PreTransformSpecWarning {
-                        typ: "Planner".to_string(),
-                        message: warning.message.clone()
-                    }
-                }
-            }
-        }).collect();
+        let warnings: Vec<_> = warnings
+            .iter()
+            .map(PreTransformSpecWarningSpec::from)
+            .collect();
 
         Python::with_gil(|py| -> PyResult<(PyObject, PyObject)> {
             let py_spec = pythonize::pythonize(py, &spec)?;
@@ -214,11 +182,11 @@ impl PyVegaFusionRuntime {
         let warnings: Vec<_> = warnings
             .iter()
             .map(|warning| match warning.warning_type.as_ref().unwrap() {
-                ValueWarningType::Planner(planner_warning) => PreTransformSpecWarning {
+                ValueWarningType::Planner(planner_warning) => PreTransformSpecWarningSpec {
                     typ: "Planner".to_string(),
                     message: planner_warning.message.clone(),
                 },
-                ValueWarningType::RowLimit(_) => PreTransformSpecWarning {
+                ValueWarningType::RowLimit(_) => PreTransformSpecWarningSpec {
                     typ: "RowLimitExceeded".to_string(),
                     message: "Some datasets in resulting Vega specification have been truncated to the provided row limit".to_string()
                 }
@@ -268,7 +236,7 @@ impl PyVegaFusionRuntime {
         let warnings: Vec<_> = warnings
             .iter()
             .map(|warning| match warning.warning_type.as_ref().unwrap() {
-                ExtractWarningType::Planner(planner_warning) => PreTransformSpecWarning {
+                ExtractWarningType::Planner(planner_warning) => PreTransformSpecWarningSpec {
                     typ: "Planner".to_string(),
                     message: planner_warning.message.clone(),
                 },

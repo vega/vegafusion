@@ -6,8 +6,50 @@ use crate::planning::split_domain_data::split_domain_data;
 use crate::planning::stitch::{stitch_specs, CommPlan};
 use crate::planning::stringify_local_datetimes::stringify_local_datetimes;
 use crate::planning::unsupported_data_warning::add_unsupported_data_warnings;
+use crate::proto::gen::pretransform::{
+    pre_transform_spec_warning::WarningType, PreTransformSpecWarning,
+};
 use crate::spec::chart::ChartSpec;
 use crate::task_graph::graph::ScopedVariable;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct PreTransformSpecWarningSpec {
+    #[serde(rename = "type")]
+    pub typ: String,
+    pub message: String,
+}
+
+impl From<&PreTransformSpecWarning> for PreTransformSpecWarningSpec {
+    fn from(warning: &PreTransformSpecWarning) -> Self {
+        match warning.warning_type.as_ref().unwrap() {
+            WarningType::RowLimit(_) => {
+                PreTransformSpecWarningSpec {
+                    typ: "RowLimitExceeded".to_string(),
+                    message: "Some datasets in resulting Vega specification have been truncated to the provided row limit".to_string()
+                }
+            }
+            WarningType::BrokenInteractivity(_) => {
+                PreTransformSpecWarningSpec {
+                    typ: "BrokenInteractivity".to_string(),
+                    message: "Some interactive features may have been broken in the resulting Vega specification".to_string()
+                }
+            }
+            WarningType::Unsupported(_) => {
+                PreTransformSpecWarningSpec {
+                    typ: "Unsupported".to_string(),
+                    message: "Unable to pre-transform any datasets in the Vega specification".to_string()
+                }
+            }
+            WarningType::Planner(warning) => {
+                PreTransformSpecWarningSpec {
+                    typ: "Planner".to_string(),
+                    message: warning.message.clone()
+                }
+            }
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
 pub enum PlannerWarnings {
