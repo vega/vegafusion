@@ -96,6 +96,9 @@ fn inner_create(capacity: jint, memory_limit: jint) -> Result<VegaFusionRuntimeS
     })
 }
 
+/// # Safety
+/// This function uses the unsafe Box::from_raw function to convert the state pointer
+/// to a Boxed VegaFusionRuntimeState so that it will be dropped
 #[no_mangle]
 pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerDestroy<'local>(
     _env: JNIEnv<'local>,
@@ -107,9 +110,7 @@ pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerDestroy<
 }
 
 #[no_mangle]
-pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPatchPreTransformedSpec<
-    'local,
->(
+pub extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPatchPreTransformedSpec<'local>(
     mut env: JNIEnv<'local>,
     class: JClass<'local>,
     spec1: JString<'local>,
@@ -169,7 +170,7 @@ pub fn parse_args_patch_pre_transformed_spec<'local>(
     Ok((spec1, pre_transformed_spec1, spec2))
 }
 
-pub fn inner_patch_pre_transformed_spec<'local>(
+pub fn inner_patch_pre_transformed_spec(
     spec1: &str,
     pre_transformed_spec1: &str,
     spec2: &str,
@@ -235,14 +236,15 @@ fn parse_args_pre_transform_spec<'local>(
     })
 }
 
-unsafe fn inner_pre_transform_spec<'local>(
+/// # Safety
+/// This function performs an unsafe cast of the pointer to a VegaFusionRuntimeState reference
+unsafe fn inner_pre_transform_spec(
     pointer: jlong,
     args: PreTransformSpecArgs,
 ) -> Result<(String, String)> {
-    let state = &mut *(pointer as *mut VegaFusionRuntimeState);
+    let state = &*(pointer as *const VegaFusionRuntimeState);
     let spec: ChartSpec = serde_json::from_str(args.spec.as_str())?;
 
-    // TODO: Handle warnings (Stash in spec metadata?)
     let (pre_transformed_spec, warnings) =
         state
             .tokio_runtime
@@ -266,6 +268,9 @@ unsafe fn inner_pre_transform_spec<'local>(
     Ok((pre_transformed_spec, warning_str))
 }
 
+/// # Safety
+/// This function calls inner_pre_transform_spec which performs an unsafe cast of the pointer
+/// to a VegaFusionRuntimeState reference
 #[no_mangle]
 pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPreTransformSpec<'local>(
     mut env: JNIEnv<'local>,
