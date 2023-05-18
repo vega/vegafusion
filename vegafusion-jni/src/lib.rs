@@ -11,7 +11,7 @@ use jni::objects::{JClass, JObject, JString};
 // This is just a pointer. We'll be returning it from our function. We
 // can't return one of the objects with lifetime information because the
 // lifetime checker won't let us.
-use jni::sys::{jlong, jobject, jstring, jint, jboolean};
+use jni::sys::{jboolean, jint, jlong, jobject, jstring};
 use std::panic;
 use vegafusion_common::error::Result;
 use vegafusion_core::patch::patch_pre_transformed_spec;
@@ -68,14 +68,19 @@ pub extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerCreate<'local>(
     }
 }
 
-fn inner_create(
-    capacity: jint,
-    memory_limit: jint,
-) -> Result<VegaFusionRuntimeState> {
+fn inner_create(capacity: jint, memory_limit: jint) -> Result<VegaFusionRuntimeState> {
     // Use DataFusion connection and multi-threaded tokio runtime
     let conn = Arc::new(DataFusionConnection::default()) as Arc<dyn Connection>;
-    let capacity = if capacity < 1 { None } else { Some(capacity as usize) };
-    let memory_limit = if memory_limit < 1 { None } else { Some(memory_limit as usize) };
+    let capacity = if capacity < 1 {
+        None
+    } else {
+        Some(capacity as usize)
+    };
+    let memory_limit = if memory_limit < 1 {
+        None
+    } else {
+        Some(memory_limit as usize)
+    };
     let vf_runtime = VegaFusionRuntime::new(conn, capacity, memory_limit);
 
     // Build tokio runtime
@@ -209,7 +214,7 @@ fn parse_args_pre_transform_spec<'local>(
     };
 
     // default_input_tz
-    let default_input_tz:  Option<String> = if default_input_tz.is_null() {
+    let default_input_tz: Option<String> = if default_input_tz.is_null() {
         None
     } else {
         Some(env.get_string(&default_input_tz)?.into())
@@ -273,7 +278,12 @@ pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPreTrans
     preserve_interactivity: jboolean,
 ) -> jobject {
     if let Ok(args) = parse_args_pre_transform_spec(
-        &mut env, spec, local_tz, default_input_tz, row_limit, preserve_interactivity
+        &mut env,
+        spec,
+        local_tz,
+        default_input_tz,
+        row_limit,
+        preserve_interactivity,
     ) {
         let result = panic::catch_unwind(|| inner_pre_transform_spec(pointer, args));
 
