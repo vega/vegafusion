@@ -188,7 +188,7 @@ jobs:
         with:
           name: jar
           path: |
-            java/lib/build/libs/VegaFusion-*.jar
+            java/lib/build/libs/vegafusion-*.jar
 
   try-jar:
     strategy:
@@ -213,9 +213,9 @@ jobs:
       - name: Run jar (non-Windows)
         if: ${{ runner.os != 'Windows' }}
         run: |
-          java -jar VegaFusion-*.jar
+          java -jar vegafusion-*.jar
       - name: Run jar (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          $jarFile = Get-ChildItem -Path .\ -Filter "VegaFusion-*.jar" | Select-Object -First 1
+          $jarFile = Get-ChildItem -Path .\ -Filter "vegafusion-*.jar" | Select-Object -First 1
           java -jar $jarFile
