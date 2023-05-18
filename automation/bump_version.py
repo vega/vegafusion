@@ -23,7 +23,8 @@ def bump_version(version):
         "vegafusion-runtime",
         "vegafusion-python-embed",
         "vegafusion-server",
-        "vegafusion-wasm"
+        "vegafusion-wasm",
+        "vegafusion-jni",
     ]
 
     for package in cargo_packages:
@@ -114,6 +115,12 @@ module_name = "vegafusion-jupyter"
 module_version = "^{version}"
 """)
     print(f"Updated version in {frontend_py_path}")
+
+    # Handle java/version.txt
+    version_txt_path = root / "java" / "version.txt"
+    with open(version_txt_path, "wt") as f:
+        f.write(version)
+    print(f"Updated version in {version_txt_path}")
 
 
 if __name__ == '__main__':
