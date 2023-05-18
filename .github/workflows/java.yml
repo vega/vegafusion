@@ -176,8 +176,10 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: jni-native
-          path: java/native
+          path: jni-native
       - name: Build jar
+        env:
+          VEGAFUSION_JNI_LIBRARIES: /Users/runner/work/vegafusion/vegafusion/jni-native
         run: |
           cd java
           ./gradlew jar
