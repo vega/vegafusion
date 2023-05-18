@@ -65,9 +65,9 @@ public class VegaFusionRuntimeTest {
         runtime.destroy();
 
         // Calling again after destroy should raise an exception
-        assertThrows(IllegalStateException.class, () -> {
-            runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
-        });
+        assertThrows(IllegalStateException.class, () ->
+                runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2)
+        );
     }
 
     @Test
@@ -86,9 +86,9 @@ public class VegaFusionRuntimeTest {
         runtime.destroy();
 
         // Calling again after destroy should raise an exception
-        assertThrows(IllegalStateException.class, () -> {
-            runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
-        });
+        assertThrows(IllegalStateException.class, () ->
+            runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2)
+        );
     }
 
     @Test
@@ -101,9 +101,9 @@ public class VegaFusionRuntimeTest {
         String preTransformedSpec1 = "{\"data\"";
         String spec2 = "{\"data\"";
 
-        VegaFusionException e = assertThrows(VegaFusionException.class, () -> {
-            runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
-        });
+        VegaFusionException e = assertThrows(VegaFusionException.class, () ->
+            runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2)
+        );
 
         assertTrue(e.getMessage().toLowerCase().contains("serde"));
 
@@ -121,9 +121,9 @@ public class VegaFusionRuntimeTest {
         String preTransformedSpec1 = "{}";
         String spec2 = "{}";
 
-        VegaFusionException e = assertThrows(VegaFusionException.class, () -> {
-            runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
-        });
+        VegaFusionException e = assertThrows(VegaFusionException.class, () ->
+            runtime.patchPreTransformedSpec(spec1, preTransformedSpec1, spec2)
+        );
 
         assertTrue(e.getMessage().toLowerCase().contains("serde"));
 
@@ -142,15 +142,15 @@ public class VegaFusionRuntimeTest {
 
         // Pre-transform spec with rowLimit of 3 so that inline data is truncated
         VegaFusionRuntime.PreTransformSpecResult preTransformedSpecResult = runtime.preTransformSpec(
-                spec, "UTC", "UTC", 3, true
+                spec, "UTC", null, 3, true
         );
 
         // Check that resulting spec is reasonable
-        String preTransformedSpec = preTransformedSpecResult.preTransformedSpec;
+        String preTransformedSpec = preTransformedSpecResult.preTransformedSpec();
         assertTrue(preTransformedSpec.startsWith("{\"$schema\":\"https://vega.github.io/schema/vega/v5.json\""));
 
         // Parse warnings as JSON
-        String preTransformedSpecWarnings = preTransformedSpecResult.preTransformWarnings;
+        String preTransformedSpecWarnings = preTransformedSpecResult.preTransformWarnings();
         ObjectMapper mapper = new ObjectMapper();
         List<Map<String, JsonNode>> warningList = mapper.readValue(
                 preTransformedSpecWarnings, new TypeReference<>(){}
@@ -165,11 +165,11 @@ public class VegaFusionRuntimeTest {
         runtime.destroy();
 
         // Calling again after destroy should raise an exception
-        assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () ->
             runtime.preTransformSpec(
                     spec, "UTC", "UTC", 3, true
-            );
-        });
+            )
+        );
     }
 
     @Test
@@ -181,11 +181,11 @@ public class VegaFusionRuntimeTest {
         String spec = "{\"data\": \"foo\"}";
 
         // Check that exception is raised by preTransformSpec
-        VegaFusionException e = assertThrows(VegaFusionException.class, () -> {
+        VegaFusionException e = assertThrows(VegaFusionException.class, () ->
             runtime.preTransformSpec(
                     spec, "UTC", "UTC", 0, true
-            );
-        });
+            )
+        );
 
         assertTrue(e.getMessage().toLowerCase().contains("serde"));
 
