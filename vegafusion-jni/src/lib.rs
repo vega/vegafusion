@@ -201,7 +201,12 @@ fn parse_args_pre_transform_spec<'local>(
     preserve_interactivity: jboolean,
 ) -> Result<PreTransformSpecArgs> {
     let spec: String = env.get_string(&spec)?.into();
-    let local_tz: String = env.get_string(&local_tz)?.into();
+
+    let local_tz: String = if local_tz.is_null() {
+        "UTC".to_string()
+    } else {
+        env.get_string(&local_tz)?.into()
+    };
 
     // default_input_tz
     let default_input_tz:  Option<String> = if default_input_tz.is_null() {
