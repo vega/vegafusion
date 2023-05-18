@@ -77,7 +77,7 @@ From the `java/` directory, set the `VEGAFUSION_JNI_LIBS` environment variable t
 
 ```
 cd java/
-VEGAFUSION_JNI_LIBS=/path/to/jni-native ./gradlew publish
+VEGAFUSION_JNI_LIBRARIES=/path/to/jni-native ./gradlew publish
 ```
 
 This publishes the jar files to OSSRH at https://s01.oss.sonatype.org/. In order to sync these files to the public maven central repository, follow the steps described in https://central.sonatype.org/publish/release/.
