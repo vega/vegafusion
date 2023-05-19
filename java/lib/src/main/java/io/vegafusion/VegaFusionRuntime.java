@@ -10,7 +10,7 @@ import java.io.IOException;
  * This class provides a VegaFusion runtime that may be used to perform
  * Vega transform operations.
  */
-class VegaFusionRuntime {
+public class VegaFusionRuntime {
     /**
      * Returns the version of the VegaFusion
      *
