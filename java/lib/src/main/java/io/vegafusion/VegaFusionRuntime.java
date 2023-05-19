@@ -26,7 +26,7 @@ public class VegaFusionRuntime {
      * @param memoryLimit The memory limit for the runtime cache
      * @return A long representing a pointer to the native runtime.
      */
-    private static native long innerCreate(int capacity, int memoryLimit);
+    private static native long innerCreate(long capacity, long memoryLimit);
 
     /**
      * Destroys a native VegaFusionRuntime object.
@@ -150,7 +150,7 @@ public class VegaFusionRuntime {
      * @param capacity The cache capacity (in number of cache entries)
      * @param memoryLimit The cache memory limit (in bytes)
      */
-    public VegaFusionRuntime(int capacity, int memoryLimit) {
+    public VegaFusionRuntime(long capacity, long memoryLimit) {
         state_ptr = VegaFusionRuntime.innerCreate(capacity, memoryLimit);
     }
 
