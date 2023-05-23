@@ -185,6 +185,9 @@ pub struct Dialect {
     /// Whether dialect supports -inf, nan, and inf float values.
     /// If false, non-finite values are converted to NULL
     pub supports_non_finite_floats: bool,
+
+    /// Whether dialect supports multiple columns in the same table that differ only by case
+    pub supports_mixed_case_identical_columns: bool,
 }
 
 impl Default for Dialect {
@@ -213,6 +216,7 @@ impl Default for Dialect {
             cast_transformers: Default::default(),
             cast_propagates_null: true,
             supports_non_finite_floats: false,
+            supports_mixed_case_identical_columns: false,
         }
     }
 }
@@ -339,6 +343,7 @@ impl Dialect {
             cast_transformers: Default::default(),
             cast_propagates_null: true,
             supports_non_finite_floats: false,
+            supports_mixed_case_identical_columns: false,
         }
     }
 
@@ -464,6 +469,7 @@ impl Dialect {
             cast_transformers: Default::default(),
             cast_propagates_null: true,
             supports_non_finite_floats: true,
+            supports_mixed_case_identical_columns: false,
         }
     }
 
@@ -562,6 +568,7 @@ impl Dialect {
             cast_transformers: Default::default(),
             cast_propagates_null: false,
             supports_non_finite_floats: true,
+            supports_mixed_case_identical_columns: true,
         }
     }
 
@@ -703,6 +710,7 @@ impl Dialect {
             cast_transformers: Default::default(),
             cast_propagates_null: true,
             supports_non_finite_floats: true,
+            supports_mixed_case_identical_columns: false,
         }
     }
 
@@ -851,6 +859,7 @@ impl Dialect {
             .collect(),
             cast_propagates_null: true,
             supports_non_finite_floats: true,
+            supports_mixed_case_identical_columns: true,
         }
     }
 
@@ -999,6 +1008,7 @@ impl Dialect {
             cast_transformers: Default::default(),
             cast_propagates_null: true,
             supports_non_finite_floats: true,
+            supports_mixed_case_identical_columns: false,
         }
     }
 
@@ -1098,6 +1108,7 @@ impl Dialect {
             .collect(),
             cast_propagates_null: true,
             supports_non_finite_floats: false,
+            supports_mixed_case_identical_columns: false,
         }
     }
 
@@ -1247,6 +1258,7 @@ impl Dialect {
             cast_transformers: Default::default(),
             cast_propagates_null: true,
             supports_non_finite_floats: true,
+            supports_mixed_case_identical_columns: true,
         }
     }
 
@@ -1382,6 +1394,7 @@ impl Dialect {
             .collect(),
             cast_propagates_null: false,
             supports_non_finite_floats: true,
+            supports_mixed_case_identical_columns: false,
         }
     }
 
@@ -1517,6 +1530,7 @@ impl Dialect {
             cast_transformers: Default::default(),
             cast_propagates_null: true,
             supports_non_finite_floats: true,
+            supports_mixed_case_identical_columns: true,
         }
     }
 }
