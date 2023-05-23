@@ -238,14 +238,11 @@ fn parse_args_pre_transform_spec<'local>(
 
 /// # Safety
 /// This function performs an unsafe cast of the pointer to a VegaFusionRuntimeState reference
-unsafe fn inner_pre_transform_spec(
-    pointer: jlong,
-    args: PreTransformSpecArgs,
-) -> Result<(String, String)> {
+unsafe fn inner_pre_transform_spec(pointer: jlong, args: PreTransformSpecArgs) -> Result<String> {
     let state = &*(pointer as *const VegaFusionRuntimeState);
     let spec: ChartSpec = serde_json::from_str(args.spec.as_str())?;
 
-    let (pre_transformed_spec, warnings) =
+    let (mut pre_transformed_spec, warnings) =
         state
             .tokio_runtime
             .block_on(state.vf_runtime.pre_transform_spec(
@@ -256,16 +253,21 @@ unsafe fn inner_pre_transform_spec(
                 args.preserve_interactivity,
                 Default::default(),
             ))?;
-    let pre_transformed_spec = serde_json::to_string(&pre_transformed_spec)?;
 
     // Convert warnings to JSON compatible PreTransformSpecWarningSpec
     let warnings: Vec<_> = warnings
         .iter()
         .map(PreTransformSpecWarningSpec::from)
         .collect();
-    let warning_str = serde_json::to_string(&warnings)?;
 
-    Ok((pre_transformed_spec, warning_str))
+    // Add warnings to usermeta
+    pre_transformed_spec.usermeta.insert(
+        "vegafusion_warnings".to_string(),
+        serde_json::to_value(&warnings)?,
+    );
+
+    let pre_transformed_spec = serde_json::to_string(&pre_transformed_spec)?;
+    Ok(pre_transformed_spec)
 }
 
 /// # Safety
@@ -293,7 +295,7 @@ pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPreTrans
         let result = panic::catch_unwind(|| inner_pre_transform_spec(pointer, args));
 
         match result {
-            Ok(Ok((pre_transformed_spec, warnings))) => {
+            Ok(Ok(pre_transformed_spec)) => {
                 let pre_transformed_spec = match env.new_string(pre_transformed_spec) {
                     Ok(pre_transformed_spec) => JObject::from(pre_transformed_spec),
                     Err(err) => {
@@ -301,37 +303,7 @@ pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPreTrans
                         return JObject::null().into_raw();
                     }
                 };
-
-                let warnings = match env.new_string(warnings) {
-                    Ok(warnings) => JObject::from(warnings),
-                    Err(err) => {
-                        let _ = env.throw_new("io/vegafusion/VegaFusionException", err.to_string());
-                        return JObject::null().into_raw();
-                    }
-                };
-
-                let args = [(&pre_transformed_spec).into(), (&warnings).into()];
-                let inner_class = match env
-                    .find_class("io/vegafusion/VegaFusionRuntime$PreTransformSpecResult")
-                {
-                    Ok(inner_class) => inner_class,
-                    Err(err) => {
-                        let _ = env.throw_new("io/vegafusion/VegaFusionException", err.to_string());
-                        return JObject::null().into_raw();
-                    }
-                };
-                let result = match env.new_object(
-                    inner_class,
-                    "(Ljava/lang/String;Ljava/lang/String;)V",
-                    &args,
-                ) {
-                    Ok(result) => result,
-                    Err(err) => {
-                        let _ = env.throw_new("io/vegafusion/VegaFusionException", err.to_string());
-                        return JObject::null().into_raw();
-                    }
-                };
-                result.into_raw()
+                pre_transformed_spec.into_raw()
             }
             Ok(Err(vf_err)) => {
                 let _ = env.throw_new("io/vegafusion/VegaFusionException", vf_err.to_string());

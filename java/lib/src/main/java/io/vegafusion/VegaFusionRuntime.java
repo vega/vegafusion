@@ -63,9 +63,10 @@ public class VegaFusionRuntime {
      *                 If zero then no limit is imposed.
      * @param preserveInteractivity Whether to preserve interactivity in the resulting
      *                              Vega specification
-     * @return A PreTransformSpecResult containing the transformed specification and any warnings.
+     * @return String containing the transformed specification.
+               Any warnings are added to the spec under usermeta.vegafusion_warnings
      */
-    private static native PreTransformSpecResult innerPreTransformSpec(
+    private static native String innerPreTransformSpec(
             long pointer, String spec, String localTz, String defaultInputTz, int rowLimit, boolean preserveInteractivity
     );
 
@@ -181,11 +182,6 @@ public class VegaFusionRuntime {
     }
 
     /**
-     * This class encapsulates the results of the preTransformSpec method
-     */
-    record PreTransformSpecResult(String preTransformedSpec, String preTransformWarnings) {}
-
-    /**
      * Evaluate the transforms in a Vega specification, returning a new
      * specification with transformed data included inline.
      *
@@ -196,10 +192,11 @@ public class VegaFusionRuntime {
      *                 If zero then no limit is imposed.
      * @param preserveInteractivity Whether to preserve interactivity in the resulting
      *                              Vega specification
-     * @return A PreTransformSpecResult containing the transformed specification and any warnings.
+     * @return String containing the transformed specification.
+               Any warnings are added to the spec under usermeta.vegafusion_warnings.
      * @throws IllegalStateException if the destroy method was called previously
      */
-    public PreTransformSpecResult preTransformSpec(String spec, String localTz, String defaultInputTz, int rowLimit, boolean preserveInteractivity) {
+    public String preTransformSpec(String spec, String localTz, String defaultInputTz, int rowLimit, boolean preserveInteractivity) {
         validatePtr();
         return innerPreTransformSpec(state_ptr, spec, localTz, defaultInputTz, rowLimit, preserveInteractivity);
     }
