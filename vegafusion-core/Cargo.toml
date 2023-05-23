@@ -2,7 +2,7 @@
 name = "vegafusion-core"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "1.3.0-rc2"
+version = "1.3.0-rc3"
 description = "Core components required by multiple VegaFusion crates, with WASM compatibility"
 
 [features]
@@ -36,7 +36,7 @@ features = [ "preserve_order",]
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
 features = [ "json", "sqlparser",]
-version = "1.3.0-rc2"
+version = "1.3.0-rc3"
 
 [dependencies.datafusion-common]
 version = "24.0.0"
