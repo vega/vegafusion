@@ -263,7 +263,7 @@ unsafe fn inner_pre_transform_spec(pointer: jlong, args: PreTransformSpecArgs) -
     // Add warnings to usermeta
     pre_transformed_spec.usermeta.insert(
         "vegafusion_warnings".to_string(),
-        serde_json::to_value(&warnings)?,
+        serde_json::to_value(warnings)?,
     );
 
     let pre_transformed_spec = serde_json::to_string(&pre_transformed_spec)?;
