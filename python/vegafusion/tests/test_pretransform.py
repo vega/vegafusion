@@ -8,6 +8,17 @@ from datetime import date
 import decimal
 
 
+def get_connections():
+    connections = ["datafusion"]
+    try:
+        import duckdb
+        connections.append("duckdb")
+    except ImportError:
+        pass
+
+    return connections
+
+
 def order_items_spec():
     return json.loads(r"""
 {
@@ -1332,6 +1343,51 @@ def test_repeat_duckdb():
     spec = gh_268_hang_spec()
     for i in range(2):
         vf.runtime.pre_transform_datasets(spec, ["data_3"], "UTC", inline_datasets=dict(movies_clean=movies))
+
+
+@pytest.mark.parametrize("connection", get_connections())
+def test_pivot_mixed_case(connection):
+    vf.runtime.set_connection(connection)
+    source_0 = pd.DataFrame.from_records([
+        {"country": "Norway", "type": "gold", "count": 14},
+        {"country": "Norway", "type": "silver", "count": 14},
+        {"country": "Norway", "type": "Gold", "count": 11},
+        {"country": "Germany", "type": "gold", "count": 14},
+        {"country": "Germany", "type": "silver", "count": 10},
+        {"country": "Germany", "type": "bronze", "count": 7},
+        {"country": "Canada", "type": "gold", "count": 11},
+        {"country": "Canada", "type": "silver", "count": 8},
+        {"country": "Canada", "type": "bronze", "count": 10}
+    ])
+    spec = json.loads(r"""
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "data": [
+    {
+      "name": "source_0",
+      "url": "table://source_0"
+    },
+    {
+      "name": "data_0",
+      "source": "source_0",
+      "transform": [
+        {
+          "type": "pivot",
+          "field": "type",
+          "value": "count",
+          "groupby": ["country"]
+        }
+      ]
+    }
+  ]
+}   
+    """)
+
+    datasets, warnings = vf.runtime.pre_transform_datasets(
+        spec, ["data_0"], "UTC", inline_datasets=dict(source_0=source_0)
+    )
+
+    assert set(datasets[0].columns.tolist()) == {"gold", "Gold", "silver", "bronze", "country"}
 
 
 def gh_268_hang_spec():

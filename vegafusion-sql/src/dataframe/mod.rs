@@ -472,7 +472,8 @@ impl SqlDataFrame {
         )?;
 
         // Build new schema
-        let new_schema = make_new_schema_from_exprs(self.schema.as_ref(), expr.as_slice())?;
+        let new_schema =
+            make_new_schema_from_exprs(self.schema.as_ref(), expr.as_slice(), self.dialect())?;
 
         self.chain_query(query, new_schema)
     }
@@ -525,8 +526,11 @@ impl SqlDataFrame {
         };
 
         // Build new schema from aggregate expressions
-        let new_schema =
-            make_new_schema_from_exprs(self.schema.as_ref(), all_aggr_expr.as_slice())?;
+        let new_schema = make_new_schema_from_exprs(
+            self.schema.as_ref(),
+            all_aggr_expr.as_slice(),
+            self.dialect(),
+        )?;
         self.chain_query(query, new_schema)
     }
 
@@ -624,8 +628,11 @@ impl SqlDataFrame {
         // Build new schema
         let mut new_schema_exprs = input_col_exprs;
         new_schema_exprs.extend(aggr_expr);
-        let new_schema =
-            make_new_schema_from_exprs(self.schema.as_ref(), new_schema_exprs.as_slice())?;
+        let new_schema = make_new_schema_from_exprs(
+            self.schema.as_ref(),
+            new_schema_exprs.as_slice(),
+            self.dialect(),
+        )?;
 
         if sql_group_expr_strs.is_empty() {
             self.chain_query_str(
@@ -783,8 +790,11 @@ impl SqlDataFrame {
         let sql =
             format!("SELECT {selection_csv} FROM ({union_subquery}) as {union_subquery_name}");
 
-        let new_schmea =
-            make_new_schema_from_exprs(self.schema.as_ref(), subquery_exprs[0].as_slice())?;
+        let new_schmea = make_new_schema_from_exprs(
+            self.schema.as_ref(),
+            subquery_exprs[0].as_slice(),
+            self.dialect(),
+        )?;
         let dataframe = self.chain_query_str(&sql, new_schmea)?;
 
         if let Some(order_field) = order_field {
@@ -895,8 +905,11 @@ impl SqlDataFrame {
             // values stack in the negative direction and positive values stack in the positive
             // direction.
             let schema_exprs = vec![Expr::Wildcard, window_expr];
-            let new_schema =
-                make_new_schema_from_exprs(self.schema.as_ref(), schema_exprs.as_slice())?;
+            let new_schema = make_new_schema_from_exprs(
+                self.schema.as_ref(),
+                schema_exprs.as_slice(),
+                self.dialect(),
+            )?;
 
             let dataframe = self
                 .chain_query_str(&format!(
@@ -958,8 +971,11 @@ impl SqlDataFrame {
 
             // Add __total column with total or total per partition
             let schema_exprs = vec![Expr::Wildcard, total_agg];
-            let new_schema =
-                make_new_schema_from_exprs(&dataframe.schema(), schema_exprs.as_slice())?;
+            let new_schema = make_new_schema_from_exprs(
+                &dataframe.schema(),
+                schema_exprs.as_slice(),
+                self.dialect(),
+            )?;
 
             let dataframe = if partition_by.is_empty() {
                 dataframe.chain_query_str(
@@ -1031,8 +1047,11 @@ impl SqlDataFrame {
 
                     // Compute new schema
                     let schema_exprs = vec![Expr::Wildcard, max_total];
-                    let new_schema =
-                        make_new_schema_from_exprs(&dataframe.schema(), schema_exprs.as_slice())?;
+                    let new_schema = make_new_schema_from_exprs(
+                        &dataframe.schema(),
+                        schema_exprs.as_slice(),
+                        self.dialect(),
+                    )?;
 
                     let sqldataframe = dataframe
                         .as_any()
@@ -1233,8 +1252,11 @@ impl SqlDataFrame {
                     min(flat_col(order_field)).alias(format!("{order_field}_key")),
                     min(flat_col(order_field)).alias(format!("{order_field}_groups")),
                 ]);
-                let new_schema =
-                    make_new_schema_from_exprs(self.schema.as_ref(), schema_exprs.as_slice())?;
+                let new_schema = make_new_schema_from_exprs(
+                    self.schema.as_ref(),
+                    schema_exprs.as_slice(),
+                    self.dialect(),
+                )?;
                 let dataframe = self.chain_query_str(&sql, new_schema)?;
 
                 // Override ordering column since null values may have been introduced in the query above.
@@ -1334,15 +1356,22 @@ impl SqlDataFrame {
                     using_csv = using_csv,
                     parent = self.parent_name(),
                 );
-                let new_schema =
-                    make_new_schema_from_exprs(self.schema.as_ref(), select_columns.as_slice())?;
+                let new_schema = make_new_schema_from_exprs(
+                    self.schema.as_ref(),
+                    select_columns.as_slice(),
+                    self.dialect(),
+                )?;
                 self.chain_query_str(&sql, new_schema)
             }
         }
     }
 }
 
-fn make_new_schema_from_exprs(schema: &Schema, exprs: &[Expr]) -> Result<Schema> {
+fn make_new_schema_from_exprs(
+    schema: &Schema,
+    exprs: &[Expr],
+    dialect: &Dialect,
+) -> Result<Schema> {
     let mut fields: Vec<Field> = Vec::new();
     for expr in exprs {
         if let Expr::Wildcard = expr {
@@ -1358,7 +1387,23 @@ fn make_new_schema_from_exprs(schema: &Schema, exprs: &[Expr]) -> Result<Schema>
     }
 
     let new_schema = Schema::new(fields);
-    Ok(new_schema)
+
+    // Check for columns that differ only by case
+    let num_cols = new_schema.fields.len();
+    let num_unique_cols = new_schema
+        .fields
+        .iter()
+        .map(|f| f.name().to_ascii_lowercase())
+        .collect::<HashSet<_>>()
+        .len();
+
+    if !dialect.supports_mixed_case_identical_columns && num_cols != num_unique_cols {
+        Err(VegaFusionError::sql_not_supported(
+            "Dialect does not support multiple columns that differ only by case",
+        ))
+    } else {
+        Ok(new_schema)
+    }
 }
 
 fn cte_name_for_index(prefix: &str, index: usize) -> String {
