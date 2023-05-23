@@ -30,15 +30,15 @@ public class VegaFusionRuntimeTest {
     @Test
     void testCreate() {
         VegaFusionRuntime runtime = makeRuntime();
-        assertTrue(runtime.valid());
+        assertTrue(runtime.isValid());
 
         // Destroy should invalidate
         runtime.destroy();
-        assertFalse(runtime.valid());
+        assertFalse(runtime.isValid());
 
         // Destroy should be idempotent
         runtime.destroy();
-        assertFalse(runtime.valid());
+        assertFalse(runtime.isValid());
     }
 
     @Test

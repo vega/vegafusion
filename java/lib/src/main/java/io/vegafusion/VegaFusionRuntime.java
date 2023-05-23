@@ -177,7 +177,7 @@ public class VegaFusionRuntime {
      * @throws IllegalStateException if the destroy method was called previously
      */
     public String patchPreTransformedSpec(String spec1, String preTransformedSpec1, String spec2) {
-        validatePtr();
+        validate();
         return innerPatchPreTransformedSpec(spec1, preTransformedSpec1, spec2);
     }
 
@@ -197,7 +197,7 @@ public class VegaFusionRuntime {
      * @throws IllegalStateException if the destroy method was called previously
      */
     public String preTransformSpec(String spec, String localTz, String defaultInputTz, int rowLimit, boolean preserveInteractivity) {
-        validatePtr();
+        validate();
         return innerPreTransformSpec(state_ptr, spec, localTz, defaultInputTz, rowLimit, preserveInteractivity);
     }
 
@@ -205,18 +205,18 @@ public class VegaFusionRuntime {
      * Checks if the VegaFusionRuntime state is valid
      * (if the destroy method was not called previously)
      *
-     * @return A boolean indicating whether the state is valid.
+     * @return A boolean indicating whether the runtime is valid.
      */
-    public boolean valid() {
+    public boolean isValid() {
         return state_ptr != 0;
     }
 
     /**
-     * Validates the pointer to the native VegaFusionRuntime
+     * Validates the native VegaFusionRuntime
      *
-     * @throws IllegalStateException If the VegaFusionRuntime pointer is invalid.
+     * @throws IllegalStateException If the native VegaFusionRuntime is invalid.
      */
-    private void validatePtr() throws IllegalStateException {
+    public void validate() throws IllegalStateException {
         if (state_ptr == 0) {
             throw new IllegalStateException("VegaFusionRuntime may not be used after calling destroy()");
         }
