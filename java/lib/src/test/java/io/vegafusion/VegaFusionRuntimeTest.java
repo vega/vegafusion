@@ -2,6 +2,7 @@ package io.vegafusion;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
 
@@ -29,15 +30,15 @@ public class VegaFusionRuntimeTest {
     @Test
     void testCreate() {
         VegaFusionRuntime runtime = makeRuntime();
-        assertTrue(runtime.valid());
+        assertTrue(runtime.isValid());
 
         // Destroy should invalidate
         runtime.destroy();
-        assertFalse(runtime.valid());
+        assertFalse(runtime.isValid());
 
         // Destroy should be idempotent
         runtime.destroy();
-        assertFalse(runtime.valid());
+        assertFalse(runtime.isValid());
     }
 
     @Test
@@ -141,20 +142,30 @@ public class VegaFusionRuntimeTest {
         String spec = histSpec();
 
         // Pre-transform spec with rowLimit of 3 so that inline data is truncated
-        VegaFusionRuntime.PreTransformSpecResult preTransformedSpecResult = runtime.preTransformSpec(
+        String preTransformedSpecResult = runtime.preTransformSpec(
                 spec, "UTC", null, 3, true
         );
 
-        // Check that resulting spec is reasonable
-        String preTransformedSpec = preTransformedSpecResult.preTransformedSpec();
-        assertTrue(preTransformedSpec.startsWith("{\"$schema\":\"https://vega.github.io/schema/vega/v5.json\""));
-
-        // Parse warnings as JSON
-        String preTransformedSpecWarnings = preTransformedSpecResult.preTransformWarnings();
+        // Parse spec as JSON
         ObjectMapper mapper = new ObjectMapper();
-        List<Map<String, JsonNode>> warningList = mapper.readValue(
-                preTransformedSpecWarnings, new TypeReference<>(){}
+        Map<String, JsonNode> preTransformedSpec = mapper.readValue(
+                preTransformedSpecResult, new TypeReference<>(){}
         );
+
+        assertEquals(
+                preTransformedSpec.get("$schema").asText(),
+                "https://vega.github.io/schema/vega/v5.json"
+        );
+
+        // Collect list of warnings
+        JsonNode usermetaNode = preTransformedSpec.get("usermeta");
+        JsonNode vegafusionWarningsNode = usermetaNode.get("vegafusion_warnings");
+        assertTrue(vegafusionWarningsNode.isArray());
+        List<JsonNode> warningList = new ArrayList<>();
+        var elements = vegafusionWarningsNode.elements();
+        while (elements.hasNext()) {
+            warningList.add(elements.next());
+        }
 
         // We should have 1 RowLimitExceeded warning
         assertEquals(warningList.size(), 1);
