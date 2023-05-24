@@ -4,7 +4,7 @@ on:
     types: [opened, synchronize]
 jobs:
   build-test-java-linux64:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -158,7 +158,7 @@ jobs:
             native
 
   build-jar:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
       - build-test-java-linux64
       - build-test-java-osx64
@@ -194,7 +194,7 @@ jobs:
     strategy:
       matrix:
         os:
-         - ubuntu-latest
+         - ubuntu-20.04
          - macos-11
          - windows-2022
     runs-on: ${{ matrix.os }}
