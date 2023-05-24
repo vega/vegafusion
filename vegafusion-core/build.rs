@@ -36,8 +36,12 @@ fn gen_tonic() {
     println!("outdir: {outdir}");
     let builder = builder.out_dir(outdir);
 
+    let mut config = prost_build::Config::new();
+    config.protoc_arg("--experimental_allow_proto3_optional");
+
     builder
-        .compile(
+        .compile_with_config(
+            config,
             &[
                 "src/proto/expression.proto",
                 "src/proto/transforms.proto",
