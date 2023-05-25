@@ -6,7 +6,6 @@ use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::datasource::MemTable;
 use datafusion::execution::options::ReadOptions;
 use datafusion::prelude::{CsvReadOptions as DfCsvReadOptions, SessionConfig, SessionContext};
-use datafusion_common::config::OptimizerOptions;
 use log::Level;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::policies::ExponentialBackoff;
@@ -292,11 +291,9 @@ pub fn make_request_client() -> ClientWithMiddleware {
 
 pub fn make_datafusion_context() -> SessionContext {
     // Work around https://github.com/apache/arrow-datafusion/issues/6386
-    let mut optimizer = OptimizerOptions::default();
-    optimizer.skip_failed_rules = true;
     let mut config = SessionConfig::new();
     let options = config.options_mut();
-    options.optimizer = optimizer;
+    options.optimizer.skip_failed_rules = true;
     let ctx = SessionContext::with_config(config);
 
     // isNan
