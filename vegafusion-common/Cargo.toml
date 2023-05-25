@@ -1,12 +1,12 @@
 [package]
 name = "vegafusion-common"
-version = "1.3.0-rc3"
+version = "1.3.0-rc3.post1"
 edition = "2021"
 description = "Common components required by multiple VegaFusion crates"
 license = "BSD-3-Clause"
 
 [features]
-pyarrow = [ "pyo3",]
+pyarrow = [ "pyo3", "arrow/pyarrow"]
 json = [ "serde_json", "arrow/json", "chrono",]
 prettyprint = [ "arrow/prettyprint",]
 
@@ -27,15 +27,15 @@ default_features = false
 optional = true
 
 [dependencies.arrow]
-version = "38.0.0"
+version = "39.0.0"
 default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
-version = "24.0.0"
+version = "25.0.0"
 
 [dependencies.datafusion-expr]
-version = "24.0.0"
+version = "25.0.0"
 
 [dependencies.pyo3]
 version = "0.18.1"

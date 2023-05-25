@@ -960,7 +960,7 @@ mod tests {
 
         let c1 = StructArray::from(vec![
             (
-                Field::new("c11", DataType::Int32, true),
+                Field::new("c11", DataType::Int32, true).into(),
                 Arc::new(Int32Array::from(vec![Some(1), None, Some(5)])) as ArrayRef,
             ),
             (
@@ -972,9 +972,10 @@ mod tests {
                         false,
                     )])),
                     false,
-                ),
+                )
+                .into(),
                 Arc::new(StructArray::from(vec![(
-                    Field::new("c121", DataType::Utf8, false),
+                    Field::new("c121", DataType::Utf8, false).into(),
                     Arc::new(StringArray::from(vec![Some("e"), Some("f"), Some("g")])) as ArrayRef,
                 )])) as ArrayRef,
             ),
@@ -1126,7 +1127,7 @@ mod tests {
 
         let struct_values = StructArray::from(vec![
             (
-                Field::new("c11", DataType::Int32, true),
+                Field::new("c11", DataType::Int32, true).into(),
                 Arc::new(Int32Array::from(vec![Some(1), None, Some(5)])) as ArrayRef,
             ),
             (
@@ -1138,9 +1139,10 @@ mod tests {
                         false,
                     )])),
                     false,
-                ),
+                )
+                .into(),
                 Arc::new(StructArray::from(vec![(
-                    Field::new("c121", DataType::Utf8, false),
+                    Field::new("c121", DataType::Utf8, false).into(),
                     Arc::new(StringArray::from(vec![Some("e"), Some("f"), Some("g")])) as ArrayRef,
                 )])) as ArrayRef,
             ),

@@ -154,30 +154,35 @@ pub fn make_agg_expr_for_col_expr(
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
+            order_by: None,
         }),
         AggregateOp::Variance => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Variance,
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
+            order_by: None,
         }),
         AggregateOp::Variancep => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::VariancePop,
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
+            order_by: None,
         }),
         AggregateOp::Stdev => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Stddev,
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
+            order_by: None,
         }),
         AggregateOp::Stdevp => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::StddevPop,
             distinct: false,
             args: vec![numeric_column()],
             filter: None,
+            order_by: None,
         }),
         AggregateOp::Valid => {
             let valid = Expr::Cast(expr::Cast {

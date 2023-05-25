@@ -206,7 +206,7 @@ impl ToSqlExpr for Expr {
                 // Sort expressions need to be handled at a higher level
                 Err(VegaFusionError::internal("Sort cannot be converted to SQL"))
             }
-            Expr::ScalarFunction { fun, args } => {
+            Expr::ScalarFunction(expr::ScalarFunction { fun, args }) => {
                 let fun_name = match fun {
                     BuiltinScalarFunction::Abs => "abs",
                     BuiltinScalarFunction::Acos => "acos",
@@ -291,26 +291,27 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::Radians => "radians",
                     BuiltinScalarFunction::Sinh => "sinh",
                     BuiltinScalarFunction::Tanh => "tanh",
+                    BuiltinScalarFunction::Factorial => "factorial",
+                    BuiltinScalarFunction::Gcd => "gcd",
+                    BuiltinScalarFunction::Lcm => "lcm",
                 };
                 translate_scalar_function(fun_name, args, dialect, schema)
             }
-            Expr::ScalarUDF { fun, args } => {
+            Expr::ScalarUDF(expr::ScalarUDF { fun, args }) => {
                 translate_scalar_function(&fun.name, args, dialect, schema)
             }
             Expr::AggregateFunction(expr::AggregateFunction {
                 fun,
                 args,
                 distinct,
-                filter: _,
+                ..
             }) => {
                 let fun_name = aggr_fn_to_name(fun);
                 translate_aggregate_function(fun_name, args.as_slice(), *distinct, dialect, schema)
             }
-            Expr::AggregateUDF {
-                fun,
-                args,
-                filter: _,
-            } => translate_aggregate_function(&fun.name, args.as_slice(), false, dialect, schema),
+            Expr::AggregateUDF(expr::AggregateUDF { fun, args, .. }) => {
+                translate_aggregate_function(&fun.name, args.as_slice(), false, dialect, schema)
+            }
             Expr::WindowFunction(expr::WindowFunction {
                 fun,
                 args,
@@ -443,11 +444,11 @@ impl ToSqlExpr for Expr {
             Expr::IsNotUnknown(_) => Err(VegaFusionError::internal(
                 "IsNotUnknown cannot be converted to SQL",
             )),
-            Expr::InList {
+            Expr::InList(expr::InList {
                 expr,
                 list,
                 negated,
-            } => {
+            }) => {
                 let sql_expr = expr.to_sql(dialect, schema)?;
                 let sql_list = list
                     .iter()
@@ -594,6 +595,11 @@ fn aggr_fn_to_name(fun: &AggregateFunction) -> &str {
         AggregateFunction::ApproxPercentileContWithWeight => "approx_percentile_cont_with_weight",
         AggregateFunction::ApproxMedian => "approx_median",
         AggregateFunction::Grouping => "grouping",
+        AggregateFunction::BitAnd => "bit_and",
+        AggregateFunction::BitOr => "bit_or",
+        AggregateFunction::BitXor => "bit_xor",
+        AggregateFunction::BoolAnd => "bool_and",
+        AggregateFunction::BoolOr => "bool_or",
     }
 }
 
@@ -626,7 +632,7 @@ mod tests {
     use arrow::datatypes::DataType;
     use datafusion_common::DFSchema;
     use datafusion_expr::expr::Cast;
-    use datafusion_expr::{lit, Between, BuiltinScalarFunction, Expr};
+    use datafusion_expr::{expr, lit, Between, BuiltinScalarFunction, Expr};
     use vegafusion_common::column::flat_col;
 
     fn schema() -> DFSchema {
@@ -644,10 +650,10 @@ mod tests {
 
     #[test]
     pub fn test2() {
-        let df_expr = Expr::ScalarFunction {
+        let df_expr = Expr::ScalarFunction(expr::ScalarFunction {
             fun: BuiltinScalarFunction::Sin,
             args: vec![lit(1.2)],
-        } + flat_col("B");
+        }) + flat_col("B");
 
         let dialect: Dialect = Dialect::datafusion();
         let sql_expr = df_expr.to_sql(&dialect, &schema()).unwrap();
@@ -658,10 +664,10 @@ mod tests {
 
     #[test]
     pub fn test3() {
-        let df_expr = Expr::ScalarFunction {
+        let df_expr = Expr::ScalarFunction(expr::ScalarFunction {
             fun: BuiltinScalarFunction::Upper,
             args: vec![lit("foo")],
-        };
+        });
 
         let dialect: Dialect = Dialect::datafusion();
         let sql_expr = df_expr.to_sql(&dialect, &schema()).unwrap();

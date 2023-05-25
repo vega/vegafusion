@@ -65,7 +65,7 @@ mod test_compile {
     use crate::task_graph::timezone::RuntimeTzConfig;
     use datafusion_common::{DFSchema, ScalarValue};
     use datafusion_expr::expr::{BinaryExpr, Case, Cast};
-    use datafusion_expr::{concat, lit, BuiltinScalarFunction, Expr, Operator};
+    use datafusion_expr::{concat, expr, lit, BuiltinScalarFunction, Expr, Operator};
     use std::collections::HashMap;
     use std::convert::TryFrom;
     use std::ops::Deref;
@@ -171,7 +171,7 @@ mod test_compile {
         println!("expr: {result_expr:?}");
 
         // unary not should cast numeric value to boolean
-        let expected_expr = Expr::ScalarFunction {
+        let expected_expr = Expr::ScalarFunction(expr::ScalarFunction {
             fun: BuiltinScalarFunction::Coalesce,
             args: vec![
                 Expr::Cast(Cast {
@@ -180,7 +180,7 @@ mod test_compile {
                 }),
                 lit(false),
             ],
-        }
+        })
         .not();
 
         assert_eq!(result_expr, expected_expr);
@@ -202,7 +202,7 @@ mod test_compile {
         let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(Expr::ScalarFunction {
+                Box::new(Expr::ScalarFunction(expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Coalesce,
                     args: vec![
                         Expr::Cast(Cast {
@@ -211,7 +211,7 @@ mod test_compile {
                         }),
                         lit(false),
                     ],
-                }),
+                })),
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),
@@ -257,7 +257,7 @@ mod test_compile {
         let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(Expr::ScalarFunction {
+                Box::new(Expr::ScalarFunction(expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Coalesce,
                     args: vec![
                         Expr::Cast(Cast {
@@ -266,7 +266,7 @@ mod test_compile {
                         }),
                         lit(false),
                     ],
-                }),
+                })),
                 Box::new(lit(55.0)),
             )],
             else_expr: Some(Box::new(lit(5.0))),
@@ -390,10 +390,10 @@ mod test_compile {
         let expr = parse("[1, 2, 3]").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::ScalarUDF {
+        let expected_expr = Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
             args: vec![lit(1.0), lit(2.0), lit(3.0)],
-        };
+        });
         println!("expr: {result_expr:?}");
         assert_eq!(result_expr, expected_expr);
 
@@ -418,10 +418,10 @@ mod test_compile {
         let expr = parse("[]").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::ScalarUDF {
+        let expected_expr = Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
             args: vec![],
-        };
+        });
         println!("expr: {result_expr:?}");
         assert_eq!(result_expr, expected_expr);
 
@@ -442,23 +442,23 @@ mod test_compile {
         let expr = parse("[[1, 2], [3, 4], [5, 6]]").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::ScalarUDF {
+        let expected_expr = Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
             args: vec![
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
                     args: vec![lit(1.0), lit(2.0)],
-                },
-                Expr::ScalarUDF {
+                }),
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
                     args: vec![lit(3.0), lit(4.0)],
-                },
-                Expr::ScalarUDF {
+                }),
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
                     args: vec![lit(5.0), lit(6.0)],
-                },
+                }),
             ],
-        };
+        });
         println!("expr: {result_expr:?}");
         assert_eq!(result_expr, expected_expr);
 
@@ -495,7 +495,7 @@ mod test_compile {
         let expr = parse("{a: 1, 'two': {three: 3}}").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::ScalarUDF {
+        let expected_expr = Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new(make_object_constructor_udf(
                 &["a".to_string(), "two".to_string()],
                 &[
@@ -509,15 +509,15 @@ mod test_compile {
             )),
             args: vec![
                 lit(1.0),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(make_object_constructor_udf(
                         &["three".to_string()],
                         &[DataType::Float64],
                     )),
                     args: vec![lit(3.0)],
-                },
+                }),
             ],
-        };
+        });
 
         println!("expr: {result_expr:?}");
         assert_eq!(result_expr, expected_expr);
@@ -615,7 +615,7 @@ mod test_compile {
         let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(Expr::ScalarFunction {
+                Box::new(Expr::ScalarFunction(expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Coalesce,
                     args: vec![
                         Expr::Cast(Cast {
@@ -624,7 +624,7 @@ mod test_compile {
                         }),
                         lit(false),
                     ],
-                }),
+                })),
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),

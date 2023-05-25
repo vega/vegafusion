@@ -11,7 +11,7 @@ use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUn
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use datafusion_expr::expr::Cast;
-use datafusion_expr::{floor, lit, Expr, ExprSchemable};
+use datafusion_expr::{expr, floor, lit, Expr, ExprSchemable};
 use itertools::Itertools;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
@@ -53,10 +53,10 @@ fn timeunit_date_trunc(
     // Compute input timestamp expression based on timezone
     let tz_str = local_tz.clone().unwrap_or_else(|| "UTC".to_string());
 
-    let start_expr = Expr::ScalarUDF {
+    let start_expr = Expr::ScalarUDF(expr::ScalarUDF {
         fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
         args: vec![lit(part_str), field_col, lit(tz_str)],
-    };
+    });
 
     Ok((start_expr, interval))
 }
@@ -92,20 +92,20 @@ fn timeunit_date_part_tz(
 
     // Year
     if units_set.contains(&TimeUnitUnit::Year) {
-        make_timestamptz_args[0] = Expr::ScalarUDF {
+        make_timestamptz_args[0] = Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new(DATE_PART_TZ_UDF.clone()),
             args: vec![lit("year"), field_col.clone(), lit(&tz_str)],
-        };
+        });
 
         interval = (1, "YEAR".to_string());
     }
 
     // Quarter
     if units_set.contains(&TimeUnitUnit::Quarter) {
-        let month = Expr::ScalarUDF {
+        let month = Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new(DATE_PART_TZ_UDF.clone()),
             args: vec![lit("month"), field_col.clone(), lit(&tz_str)],
-        }
+        })
         .sub(lit(1.0));
 
         make_timestamptz_args[1] = Expr::Cast(Cast {
@@ -118,10 +118,10 @@ fn timeunit_date_part_tz(
 
     // Month
     if units_set.contains(&TimeUnitUnit::Month) {
-        make_timestamptz_args[1] = Expr::ScalarUDF {
+        make_timestamptz_args[1] = Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new(DATE_PART_TZ_UDF.clone()),
             args: vec![lit("month"), field_col.clone(), lit(&tz_str)],
-        }
+        })
         .sub(lit(1.0));
 
         interval = (1, "MONTH".to_string());
@@ -129,49 +129,49 @@ fn timeunit_date_part_tz(
 
     // Date
     if units_set.contains(&TimeUnitUnit::Date) {
-        make_timestamptz_args[2] = Expr::ScalarUDF {
+        make_timestamptz_args[2] = Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new(DATE_PART_TZ_UDF.clone()),
             args: vec![lit("day"), field_col.clone(), lit(&tz_str)],
-        };
+        });
 
         interval = (1, "DAY".to_string());
     }
 
     // Hour
     if units_set.contains(&TimeUnitUnit::Hours) {
-        make_timestamptz_args[3] = Expr::ScalarUDF {
+        make_timestamptz_args[3] = Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new(DATE_PART_TZ_UDF.clone()),
             args: vec![lit("hour"), field_col.clone(), lit(&tz_str)],
-        };
+        });
 
         interval = (1, "HOUR".to_string());
     }
 
     // Minute
     if units_set.contains(&TimeUnitUnit::Minutes) {
-        make_timestamptz_args[4] = Expr::ScalarUDF {
+        make_timestamptz_args[4] = Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new(DATE_PART_TZ_UDF.clone()),
             args: vec![lit("minute"), field_col.clone(), lit(&tz_str)],
-        };
+        });
 
         interval = (1, "MINUTE".to_string());
     }
 
     // Second
     if units_set.contains(&TimeUnitUnit::Seconds) {
-        make_timestamptz_args[5] = Expr::ScalarUDF {
+        make_timestamptz_args[5] = Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new(DATE_PART_TZ_UDF.clone()),
             args: vec![lit("second"), field_col, lit(&tz_str)],
-        };
+        });
 
         interval = (1, "SECOND".to_string());
     }
 
     // Construct expression to make timestamp from components
-    let start_expr = Expr::ScalarUDF {
+    let start_expr = Expr::ScalarUDF(expr::ScalarUDF {
         fun: Arc::new((*MAKE_UTC_TIMESTAMP).clone()),
         args: make_timestamptz_args,
-    };
+    });
 
     Ok((start_expr, interval))
 }
@@ -185,14 +185,14 @@ fn to_timestamp_col(field: &str, schema: &DFSchema, default_input_tz: &String) -
             &DataType::Timestamp(ArrowTimeUnit::Millisecond, None),
             schema,
         )?,
-        DataType::Utf8 => Expr::ScalarUDF {
+        DataType::Utf8 => Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
             args: vec![field_col, lit(default_input_tz)],
-        },
-        dtype if is_numeric_datatype(&dtype) => Expr::ScalarUDF {
+        }),
+        dtype if is_numeric_datatype(&dtype) => Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
             args: vec![cast_to(field_col, &DataType::Int64, schema)?],
-        },
+        }),
         dtype => {
             return Err(VegaFusionError::compilation(format!(
                 "Invalid data type for timeunit transform: {dtype:?}"
@@ -215,10 +215,10 @@ fn timeunit_weekday(
 
     // Use DATE_PART_TZ to extract the weekday
     // where Sunday is 0 and Saturday is 6
-    let weekday0 = Expr::ScalarUDF {
+    let weekday0 = Expr::ScalarUDF(expr::ScalarUDF {
         fun: Arc::new(DATE_PART_TZ_UDF.clone()),
         args: vec![lit("dow"), field_col, lit(tz_str)],
-    };
+    });
 
     // Add one to line up with the signature of MAKE_UTC_TIMESTAMP
     // where Sunday is 1 and Saturday is 7
@@ -237,10 +237,10 @@ fn timeunit_weekday(
     ];
 
     // Construct expression to make timestamp from components
-    let start_expr = Expr::ScalarUDF {
+    let start_expr = Expr::ScalarUDF(expr::ScalarUDF {
         fun: Arc::new((*MAKE_UTC_TIMESTAMP).clone()),
         args: make_timestamptz_args,
-    };
+    });
 
     Ok((start_expr, (1, "DAY".to_string())))
 }
@@ -505,7 +505,7 @@ impl TransformTrait for TimeUnit {
         };
 
         let tz_str = local_tz.unwrap_or_else(|| "UTC".to_string());
-        let timeunit_end_expr = Expr::ScalarUDF {
+        let timeunit_end_expr = Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new((*DATE_ADD_TZ_UDF).clone()),
             args: vec![
                 lit(&interval.1),
@@ -513,7 +513,7 @@ impl TransformTrait for TimeUnit {
                 flat_col(&timeunit_start_alias),
                 lit(tz_str),
             ],
-        }
+        })
         .alias(&timeunit_end_alias);
 
         let mut select_exprs: Vec<_> = dataframe

@@ -5,7 +5,7 @@ use std::convert::TryFrom;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion_expr::expr::Case;
-use datafusion_expr::{ceil, lit, Between, Expr, ExprSchemable};
+use datafusion_expr::{ceil, expr, lit, Between, Expr, ExprSchemable};
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
@@ -131,10 +131,10 @@ impl FieldSpec {
             field_col.get_type(schema)?,
             DataType::Timestamp(TimeUnit::Millisecond, _)
         ) {
-            Expr::ScalarUDF {
+            Expr::ScalarUDF(expr::ScalarUDF {
                 fun: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
                 args: vec![field_col],
-            }
+            })
         } else {
             field_col
         };
@@ -156,11 +156,11 @@ impl FieldSpec {
                     })
                     .collect::<Result<Vec<_>>>()?;
 
-                Expr::InList {
+                Expr::InList(expr::InList {
                     expr: Box::new(field_col),
                     list: list_exprs,
                     negated: false,
-                }
+                })
             }
             _ => {
                 let field_dtype = field_col
@@ -271,14 +271,14 @@ impl FieldSpec {
                 if parse_datetime(&s, &Some(chrono_tz::UTC)).is_some()
                     && is_numeric_datatype(field_type) =>
             {
-                let timestamp_expr = Expr::ScalarUDF {
+                let timestamp_expr = Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
                     args: vec![lit(s), lit(default_input_tz)],
-                };
-                let ms_expr = Expr::ScalarUDF {
+                });
+                let ms_expr = Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
                     args: vec![timestamp_expr],
-                };
+                });
                 cast_to(ms_expr, field_type, schema)
             }
             ScalarValue::Utf8(Some(s)) if field_type == &DataType::Boolean => {
@@ -345,24 +345,24 @@ impl TryFrom<ScalarValue> for FieldSpec {
 pub fn or_merge(lhs: Expr, rhs: Expr) -> Expr {
     match (lhs, rhs) {
         (
-            Expr::InList {
+            Expr::InList(expr::InList {
                 expr: lhs_expr,
                 list: lhs_list,
                 negated: false,
-            },
-            Expr::InList {
+            }),
+            Expr::InList(expr::InList {
                 expr: rhs_expr,
                 list: rhs_list,
                 negated: false,
-            },
+            }),
         ) if lhs_expr == rhs_expr => {
             let mut combined = lhs_list;
             combined.extend(rhs_list);
-            Expr::InList {
+            Expr::InList(expr::InList {
                 expr: lhs_expr,
                 list: combined,
                 negated: false,
-            }
+            })
         }
         (lhs, rhs) => {
             // Use regular disjunction

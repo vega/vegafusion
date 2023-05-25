@@ -99,6 +99,7 @@ mod test_median_agg {
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
+                        order_by: None,
                     })
                     .alias("median_a"),
                 ],
@@ -147,6 +148,7 @@ mod test_variance_aggs {
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
+                        order_by: None,
                     })
                     .mul(lit(100))])
                     .div(lit(100))
@@ -156,6 +158,7 @@ mod test_variance_aggs {
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
+                        order_by: None,
                     })
                     .mul(lit(100))])
                     .div(lit(100))
@@ -165,6 +168,7 @@ mod test_variance_aggs {
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
+                        order_by: None,
                     })
                     .mul(lit(100))])
                     .div(lit(100))
@@ -174,6 +178,7 @@ mod test_variance_aggs {
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
+                        order_by: None,
                     })
                     .mul(lit(100))])
                     .div(lit(100))
