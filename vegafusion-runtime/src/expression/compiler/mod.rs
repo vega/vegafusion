@@ -65,7 +65,7 @@ mod test_compile {
     use crate::task_graph::timezone::RuntimeTzConfig;
     use datafusion_common::{DFSchema, ScalarValue};
     use datafusion_expr::expr::{BinaryExpr, Case, Cast};
-    use datafusion_expr::{concat, lit, BuiltinScalarFunction, Expr, Operator, expr};
+    use datafusion_expr::{concat, expr, lit, BuiltinScalarFunction, Expr, Operator};
     use std::collections::HashMap;
     use std::convert::TryFrom;
     use std::ops::Deref;

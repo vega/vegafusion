@@ -632,7 +632,7 @@ mod tests {
     use arrow::datatypes::DataType;
     use datafusion_common::DFSchema;
     use datafusion_expr::expr::Cast;
-    use datafusion_expr::{lit, Between, BuiltinScalarFunction, Expr, expr};
+    use datafusion_expr::{expr, lit, Between, BuiltinScalarFunction, Expr};
     use vegafusion_common::column::flat_col;
 
     fn schema() -> DFSchema {

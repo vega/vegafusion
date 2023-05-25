@@ -972,7 +972,8 @@ mod tests {
                         false,
                     )])),
                     false,
-                ).into(),
+                )
+                .into(),
                 Arc::new(StructArray::from(vec![(
                     Field::new("c121", DataType::Utf8, false).into(),
                     Arc::new(StringArray::from(vec![Some("e"), Some("f"), Some("g")])) as ArrayRef,
@@ -1138,7 +1139,8 @@ mod tests {
                         false,
                     )])),
                     false,
-                ).into(),
+                )
+                .into(),
                 Arc::new(StructArray::from(vec![(
                     Field::new("c121", DataType::Utf8, false).into(),
                     Arc::new(StringArray::from(vec![Some("e"), Some("f"), Some("g")])) as ArrayRef,
