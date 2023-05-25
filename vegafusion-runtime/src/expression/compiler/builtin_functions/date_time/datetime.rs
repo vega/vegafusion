@@ -1,5 +1,5 @@
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion_expr::{lit, Expr, ExprSchemable};
+use datafusion_expr::{expr, lit, Expr, ExprSchemable};
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -43,15 +43,15 @@ pub fn to_date_transform(
             tz_config.default_input_tz
         };
 
-        Ok(Expr::ScalarUDF {
+        Ok(Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
             args: vec![arg, lit(default_input_tz.to_string())],
-        })
+        }))
     } else if is_numeric_datatype(&dtype) {
-        Ok(Expr::ScalarUDF {
+        Ok(Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
             args: vec![cast_to(arg, &DataType::Int64, schema)?],
-        })
+        }))
     } else {
         Ok(arg)
     }
@@ -71,20 +71,20 @@ pub fn datetime_transform_fn(
 
         if is_string_datatype(&dtype) {
             let default_input_tz_str = tz_config.default_input_tz.to_string();
-            arg = Expr::ScalarUDF {
+            arg = Expr::ScalarUDF(expr::ScalarUDF {
                 fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
                 args: vec![arg, lit(default_input_tz_str)],
-            }
+            })
         }
 
         cast_to(arg, &DataType::Int64, schema)
     } else {
         let udf_args =
             extract_datetime_component_args(args, &tz_config.default_input_tz.to_string(), schema)?;
-        Ok(Expr::ScalarUDF {
+        Ok(Expr::ScalarUDF(expr::ScalarUDF {
             fun: Arc::new((*MAKE_UTC_TIMESTAMP).clone()),
             args: udf_args,
-        })
+        }))
     }
 }
 
@@ -95,10 +95,10 @@ pub fn make_datetime_components_fn(
 ) -> Result<Expr> {
     let udf_args =
         extract_datetime_component_args(args, &tz_config.default_input_tz.to_string(), schema)?;
-    Ok(Expr::ScalarUDF {
+    Ok(Expr::ScalarUDF(expr::ScalarUDF {
         fun: Arc::new(MAKE_UTC_TIMESTAMP.deref().clone()),
         args: udf_args,
-    })
+    }))
 }
 
 fn extract_datetime_component_args(

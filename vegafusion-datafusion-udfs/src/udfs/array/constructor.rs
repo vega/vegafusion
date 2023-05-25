@@ -54,7 +54,7 @@ pub fn make_array_constructor_udf() -> ScalarUDF {
         // Build ListArray data
         let list_array_data = ArrayDataBuilder::new(array_dtype)
             .len(num_rows)
-            .null_bit_buffer(Some(flat_valid_builder.finish()))
+            .null_bit_buffer(Some(flat_valid_builder.finish().into_inner()))
             .add_buffer(offsets.to_data().buffers()[0].clone())
             .add_child_data(flat_values.to_data())
             .build()?;

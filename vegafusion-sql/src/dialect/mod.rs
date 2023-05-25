@@ -44,7 +44,7 @@ use crate::dialect::transforms::utc_timestamp_to_str::{
 use arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
-use datafusion_expr::{lit, ExprSchemable};
+use datafusion_expr::{expr, lit, ExprSchemable};
 use datafusion_expr::{when, Expr, Operator};
 use sqlparser::ast::{
     BinaryOperator as SqlBinaryOperator, DataType as SqlDataType, Expr as SqlExpr,
@@ -1813,11 +1813,11 @@ impl IsFiniteWithNotInTransformer {
 }
 impl FunctionTransformer for IsFiniteWithNotInTransformer {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
-        let isfinite_expr = Expr::InList {
+        let isfinite_expr = Expr::InList(expr::InList {
             expr: Box::new(args[0].clone()),
             list: vec![lit(f64::NEG_INFINITY), lit(f64::INFINITY), lit(f64::NAN)],
             negated: false,
-        }
+        })
         .not();
         isfinite_expr.to_sql(dialect, schema)
     }
@@ -1846,7 +1846,7 @@ impl IsFiniteWithNotInStringsTransformer {
 impl FunctionTransformer for IsFiniteWithNotInStringsTransformer {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
         let arg_string = args[0].clone().cast_to(&DataType::Utf8, schema)?;
-        let isfinite_expr = Expr::InList {
+        let isfinite_expr = Expr::InList(expr::InList {
             expr: Box::new(arg_string),
             list: vec![
                 lit(f64::NEG_INFINITY).cast_to(&DataType::Utf8, schema)?,
@@ -1854,7 +1854,7 @@ impl FunctionTransformer for IsFiniteWithNotInStringsTransformer {
                 lit(f64::NAN).cast_to(&DataType::Utf8, schema)?,
             ],
             negated: true,
-        };
+        });
         isfinite_expr.to_sql(dialect, schema)
     }
 }

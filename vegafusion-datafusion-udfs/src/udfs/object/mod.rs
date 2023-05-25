@@ -1,7 +1,7 @@
 use datafusion_physical_expr::functions::make_scalar_function;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::{ArrayRef, StructArray};
-use vegafusion_common::arrow::datatypes::{DataType, Field, Fields};
+use vegafusion_common::arrow::datatypes::{DataType, Field, FieldRef, Fields};
 use vegafusion_common::datafusion_expr::{ReturnTypeFunction, ScalarUDF, Signature, Volatility};
 
 pub fn make_object_constructor_udf(keys: &[String], value_types: &[DataType]) -> ScalarUDF {
@@ -18,7 +18,7 @@ pub fn make_object_constructor_udf(keys: &[String], value_types: &[DataType]) ->
         let pairs: Vec<_> = fields
             .iter()
             .zip(args.iter())
-            .map(|(f, v)| (f.clone(), v.clone()))
+            .map(|(f, v)| (FieldRef::new(f.clone()), v.clone()))
             .collect();
         Ok(Arc::new(StructArray::from(pairs)) as ArrayRef)
     };

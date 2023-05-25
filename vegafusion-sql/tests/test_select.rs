@@ -372,18 +372,18 @@ mod test_scalar_math_functions {
     use vegafusion_common::column::flat_col;
 
     fn make_scalar_fn1(fun: BuiltinScalarFunction, arg: &str, alias: &str) -> Expr {
-        Expr::ScalarFunction {
+        Expr::ScalarFunction(expr::ScalarFunction {
             fun,
             args: vec![flat_col(arg)],
-        }
+        })
         .alias(alias)
     }
 
     fn make_scalar_fn2(fun: BuiltinScalarFunction, arg1: &str, arg2: &str, alias: &str) -> Expr {
-        Expr::ScalarFunction {
+        Expr::ScalarFunction(expr::ScalarFunction {
             fun,
             args: vec![flat_col(arg1), flat_col(arg2)],
-        }
+        })
         .alias(alias)
     }
 
@@ -496,15 +496,15 @@ mod test_is_finite {
             .select(vec![
                 flat_col("a"),
                 flat_col("b"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(ISFINITE_UDF.clone()),
                     args: vec![flat_col("a")],
-                }
+                })
                 .alias("f1"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(ISFINITE_UDF.clone()),
                     args: vec![flat_col("b")],
-                }
+                })
                 .alias("f2"),
             ])
             .await;
@@ -557,10 +557,10 @@ mod test_str_to_utc_timestamp {
             .select(vec![
                 flat_col("a"),
                 flat_col("b"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("b"), lit("America/New_York")],
-                }
+                })
                 .alias("b_utc"),
             ])
             .await;
@@ -620,10 +620,10 @@ mod test_date_part_tz {
             .select(vec![
                 flat_col("a"),
                 flat_col("b"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("b"), lit("America/New_York")],
-                }
+                })
                 .alias("b_utc"),
             ])
             .await;
@@ -633,20 +633,20 @@ mod test_date_part_tz {
                 flat_col("a"),
                 flat_col("b"),
                 flat_col("b_utc"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(DATE_PART_TZ_UDF.clone()),
                     args: vec![lit("hour"), flat_col("b_utc"), lit("UTC")],
-                }
+                })
                 .alias("hours_utc"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(DATE_PART_TZ_UDF.clone()),
                     args: vec![lit("hour"), flat_col("b_utc"), lit("America/Los_Angeles")],
-                }
+                })
                 .alias("hours_la"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(DATE_PART_TZ_UDF.clone()),
                     args: vec![lit("hour"), flat_col("b_utc"), lit("America/New_York")],
-                }
+                })
                 .alias("hours_nyc"),
             ])
             .await
@@ -709,10 +709,10 @@ mod test_date_trunc_tz {
             .select(vec![
                 flat_col("a"),
                 flat_col("b"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("b"), lit("America/New_York")],
-                }
+                })
                 .alias("b_utc"),
             ])
             .await;
@@ -722,20 +722,20 @@ mod test_date_trunc_tz {
                 flat_col("a"),
                 flat_col("b"),
                 flat_col("b_utc"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
                     args: vec![lit("day"), flat_col("b_utc"), lit("UTC")],
-                }
+                })
                 .alias("day_utc"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
                     args: vec![lit("day"), flat_col("b_utc"), lit("America/Los_Angeles")],
-                }
+                })
                 .alias("day_la"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
                     args: vec![lit("day"), flat_col("b_utc"), lit("America/New_York")],
-                }
+                })
                 .alias("day_nyc"),
             ])
             .await
@@ -795,7 +795,7 @@ mod test_make_timestamp_tz {
         let df_result = df
             .select(vec![
                 flat_col("a"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(MAKE_UTC_TIMESTAMP.clone()),
                     args: vec![
                         flat_col("Y"),
@@ -807,9 +807,9 @@ mod test_make_timestamp_tz {
                         flat_col("ms"),
                         lit("UTC"),
                     ],
-                }
+                })
                 .alias("ts_utc"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(MAKE_UTC_TIMESTAMP.clone()),
                     args: vec![
                         flat_col("Y"),
@@ -821,9 +821,9 @@ mod test_make_timestamp_tz {
                         flat_col("ms"),
                         lit("America/New_York"),
                     ],
-                }
+                })
                 .alias("ts_nyc"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(MAKE_UTC_TIMESTAMP.clone()),
                     args: vec![
                         flat_col("Y"),
@@ -835,7 +835,7 @@ mod test_make_timestamp_tz {
                         flat_col("ms"),
                         lit("America/Los_Angeles"),
                     ],
-                }
+                })
                 .alias("ts_la"),
             ])
             .await;
@@ -892,10 +892,10 @@ mod test_epoch_to_utc_timestamp {
             .select(vec![
                 flat_col("a"),
                 flat_col("t"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(EPOCH_MS_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("t")],
-                }
+                })
                 .alias("t_utc"),
             ])
             .await;
@@ -954,10 +954,10 @@ mod test_utc_timestamp_to_epoch_ms {
             .select(vec![
                 flat_col("a"),
                 flat_col("t"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(EPOCH_MS_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("t")],
-                }
+                })
                 .alias("t_utc"),
             ])
             .await;
@@ -967,10 +967,10 @@ mod test_utc_timestamp_to_epoch_ms {
                 flat_col("a"),
                 flat_col("t"),
                 flat_col("t_utc"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(UTC_TIMESTAMP_TO_EPOCH_MS.clone()),
                     args: vec![flat_col("t_utc")],
-                }
+                })
                 .alias("epoch_millis"),
             ])
             .await
@@ -1032,10 +1032,10 @@ mod test_date_add_tz {
             .select(vec![
                 flat_col("a"),
                 flat_col("b"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("b"), lit("UTC")],
-                }
+                })
                 .alias("b_utc"),
             ])
             .await;
@@ -1045,12 +1045,12 @@ mod test_date_add_tz {
                 flat_col("a"),
                 flat_col("b"),
                 flat_col("b_utc"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(DATE_ADD_TZ_UDF.clone()),
                     args: vec![lit("month"), lit(1), flat_col("b_utc"), lit("UTC")],
-                }
+                })
                 .alias("month_utc"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(DATE_ADD_TZ_UDF.clone()),
                     args: vec![
                         lit("month"),
@@ -1058,7 +1058,7 @@ mod test_date_add_tz {
                         flat_col("b_utc"),
                         lit("America/New_York"),
                     ],
-                }
+                })
                 .alias("month_nyc"),
             ])
             .await
@@ -1121,10 +1121,10 @@ mod test_utc_timestamp_to_str {
             .select(vec![
                 flat_col("a"),
                 flat_col("b"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("b"), lit("UTC")],
-                }
+                })
                 .alias("b_utc"),
             ])
             .await;
@@ -1134,15 +1134,15 @@ mod test_utc_timestamp_to_str {
                 flat_col("a"),
                 flat_col("b"),
                 flat_col("b_utc"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(UTC_TIMESTAMP_TO_STR_UDF.clone()),
                     args: vec![flat_col("b_utc"), lit("UTC")],
-                }
+                })
                 .alias("str_utc"),
-                Expr::ScalarUDF {
+                Expr::ScalarUDF(expr::ScalarUDF {
                     fun: Arc::new(UTC_TIMESTAMP_TO_STR_UDF.clone()),
                     args: vec![flat_col("b_utc"), lit("America/New_York")],
-                }
+                })
                 .alias("str_nyc"),
             ])
             .await
@@ -1202,25 +1202,25 @@ mod test_string_ops {
                 flat_col("a"),
                 flat_col("b"),
                 flat_col("c"),
-                Expr::ScalarFunction {
+                Expr::ScalarFunction(expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Substr,
                     args: vec![flat_col("b"), lit(2), lit(2)],
-                }
+                })
                 .alias("b_substr"),
-                Expr::ScalarFunction {
+                Expr::ScalarFunction(expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Concat,
                     args: vec![flat_col("b"), lit(" "), flat_col("c")],
-                }
+                })
                 .alias("bc_concat"),
-                Expr::ScalarFunction {
+                Expr::ScalarFunction(expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Upper,
                     args: vec![flat_col("b")],
-                }
+                })
                 .alias("b_upper"),
-                Expr::ScalarFunction {
+                Expr::ScalarFunction(expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Lower,
                     args: vec![flat_col("b")],
-                }
+                })
                 .alias("b_lower"),
             ])
             .await;

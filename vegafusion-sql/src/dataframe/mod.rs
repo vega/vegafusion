@@ -873,10 +873,10 @@ impl SqlDataFrame {
         // Build partitioning column expressions
         let partition_by: Vec<_> = groupby.iter().map(|group| flat_col(group)).collect();
 
-        let numeric_field = Expr::ScalarFunction {
+        let numeric_field = Expr::ScalarFunction(expr::ScalarFunction {
             fun: BuiltinScalarFunction::Coalesce,
             args: vec![to_numeric(flat_col(field), &self.schema_df()?)?, lit(0.0)],
-        };
+        });
 
         if let StackMode::Zero = mode {
             // Build window expression
@@ -963,6 +963,7 @@ impl SqlDataFrame {
                 args: vec![flat_col(stack_col_name)],
                 distinct: false,
                 filter: None,
+                order_by: None,
             })
             .alias("__total");
             let total_agg_str = total_agg
@@ -1124,11 +1125,12 @@ impl SqlDataFrame {
                 .iter()
                 .map(|f| {
                     let col_name = f.name();
+
                     if col_name == field {
-                        Expr::ScalarFunction {
+                        Expr::ScalarFunction(expr::ScalarFunction {
                             fun: BuiltinScalarFunction::Coalesce,
                             args: vec![flat_col(field), lit(value.clone())],
-                        }
+                        })
                         .alias(col_name)
                     } else {
                         flat_col(col_name)
@@ -1170,10 +1172,10 @@ impl SqlDataFrame {
                 .iter()
                 .map(|col_name| {
                     if col_name == field {
-                        Expr::ScalarFunction {
+                        Expr::ScalarFunction(expr::ScalarFunction {
                             fun: BuiltinScalarFunction::Coalesce,
                             args: vec![flat_col(field), lit(value.clone())],
-                        }
+                        })
                         .alias(col_name)
                     } else {
                         flat_col(col_name)
@@ -1188,10 +1190,10 @@ impl SqlDataFrame {
                     .iter()
                     .map(|col_name| {
                         let expr = if col_name == field {
-                            Expr::ScalarFunction {
+                            Expr::ScalarFunction(expr::ScalarFunction {
                                 fun: BuiltinScalarFunction::Coalesce,
                                 args: vec![flat_col(field), lit(value.clone())],
-                            }
+                            })
                             .alias(col_name)
                         } else if col_name == key {
                             Expr::Column(Column {

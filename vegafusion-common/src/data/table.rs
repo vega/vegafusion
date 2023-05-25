@@ -258,7 +258,7 @@ impl VegaFusionTable {
 
                     // read record batches
                     let reader =
-                        json::ReaderBuilder::new(schema_ref.clone()).coerce_primitive(true);
+                        json::ReaderBuilder::new(schema_ref.clone()).with_coerce_primitive(true);
                     let mut decoder = reader.build_decoder()?;
 
                     let mut batches: Vec<RecordBatch> = Vec::new();

@@ -6,7 +6,7 @@ use crate::expression::compiler::builtin_functions::date_time::datetime::{
 use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_valid_fn;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use datafusion_expr::{BuiltinScalarFunction, Expr, ScalarUDF};
+use datafusion_expr::{expr, BuiltinScalarFunction, Expr, ScalarUDF};
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
@@ -131,17 +131,17 @@ pub fn compile_call(
         }
         VegaFusionCallable::ScalarUDF { udf, cast } => {
             let args = compile_scalar_arguments(node, config, schema, cast)?;
-            Ok(Expr::ScalarUDF {
+            Ok(Expr::ScalarUDF(expr::ScalarUDF {
                 fun: Arc::new(udf.clone()),
                 args,
-            })
+            }))
         }
         VegaFusionCallable::BuiltinScalarFunction { function, cast } => {
             let args = compile_scalar_arguments(node, config, schema, cast)?;
-            Ok(Expr::ScalarFunction {
+            Ok(Expr::ScalarFunction(expr::ScalarFunction {
                 fun: function.clone(),
                 args,
-            })
+            }))
         }
         VegaFusionCallable::Data(callee) => {
             if let Some(v) = node.arguments.get(0) {
