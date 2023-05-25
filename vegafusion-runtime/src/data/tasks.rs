@@ -7,6 +7,7 @@ use async_trait::async_trait;
 
 use datafusion_expr::{expr, lit, Expr};
 use std::collections::{HashMap, HashSet};
+use std::path::Path;
 
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
@@ -104,6 +105,15 @@ impl TaskCall for DataUrlTask {
 
         // Load data from URL
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
+        let file_type = self.format_type.as_ref().and_then(|fmt| fmt.r#type.clone());
+
+        // Vega-Lite sets unspecified file types to "json", so we don't want this to take
+        // precedence over file extension
+        let file_type = if file_type == Some("json".to_string()) {
+            None
+        } else {
+            file_type.as_ref().map(|t| t.as_str())
+        };
 
         let registered_tables = conn.tables().await?;
         let df = if let Some(inline_name) = extract_inline_dataset(&url) {
@@ -122,11 +132,15 @@ impl TaskCall for DataUrlTask {
                     "No inline dataset named {inline_name}"
                 )));
             }
-        } else if url.ends_with(".csv") || url.ends_with(".tsv") {
-            read_csv(&url, &parse, conn).await?
-        } else if url.ends_with(".json") {
+        } else if file_type == Some("csv") || (file_type.is_none() && url.ends_with(".csv")) {
+            read_csv(&url, &parse, conn, false).await?
+        } else if file_type == Some("tsv") || (file_type.is_none() && url.ends_with(".tsv")) {
+            read_csv(&url, &parse, conn, true).await?
+        } else if file_type == Some("json") || (file_type.is_none() && url.ends_with(".json")) {
             read_json(&url, conn).await?
-        } else if url.ends_with(".arrow") || url.ends_with(".feather") {
+        } else if file_type == Some("arrow")
+            || (file_type.is_none() && (url.ends_with(".arrow") || url.ends_with(".feather")))
+        {
             read_arrow(&url, conn).await?
         } else {
             return Err(VegaFusionError::internal(format!(
@@ -545,17 +559,24 @@ async fn read_csv(
     url: &str,
     parse: &Option<Parse>,
     conn: Arc<dyn Connection>,
+    is_tsv: bool,
 ) -> Result<Arc<dyn DataFrame>> {
     // Build base CSV options
-    let mut csv_opts = if url.ends_with(".tsv") {
+    let mut csv_opts = if is_tsv {
         CsvReadOptions {
             delimiter: b'\t',
-            file_extension: ".tsv".to_string(),
             ..Default::default()
         }
     } else {
         Default::default()
     };
+
+    // Add file extension based on URL
+    if let Some(ext) = Path::new(url).extension().and_then(|ext| ext.to_str()) {
+        csv_opts.file_extension = ext.to_string();
+    } else {
+        csv_opts.file_extension = "".to_string();
+    }
 
     // Build schema from Vega parse options
     let schema = build_csv_schema(parse);
