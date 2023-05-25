@@ -112,7 +112,7 @@ impl TaskCall for DataUrlTask {
         let file_type = if file_type == Some("json".to_string()) {
             None
         } else {
-            file_type.as_ref().map(|t| t.as_str())
+            file_type.as_deref()
         };
 
         let registered_tables = conn.tables().await?;
