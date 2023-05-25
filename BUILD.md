@@ -123,10 +123,17 @@ npm run build:dev
 ### Run the Rust tests
 From the repository root:
 ```bash
-cargo test
+cargo test --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
 ```
 
-### Run the vegafusion-jupyter integration tests
+### Run the vegafusion Python tests
+From the repository root:
+```bash
+cd python/vegafusion/
+pytest tests
+```
+
+### Run the vegafusion-jupyter Python integration tests
 From the repository root:
 ```bash
 cd python/vegafusion-jupyter/
@@ -138,6 +145,9 @@ To run the tests in headless mode (so that the chrome browser window doesn't pop
 ```bash
 VEGAFUSION_TEST_HEADLESS=1 pytest tests
 ```
+
+### Java tests
+Follow instructions in [java/README.md](java/README.md).
 
 ## Build Python packages for distribution
 The instructions above build the python packages for development. To build standalone python wheels, use `maturin build` instead of `maturin develop`.  Also, include the flags below to support manylinux 2010 standard on Linux and universal2 on MacOS.
