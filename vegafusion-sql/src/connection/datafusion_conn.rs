@@ -6,7 +6,11 @@ use arrow::ipc::reader::{FileReader, StreamReader};
 use arrow::record_batch::RecordBatch;
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::datasource::MemTable;
+use datafusion::execution::context::SessionState;
 use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
+use datafusion::execution::runtime_env::RuntimeEnv;
+use datafusion::optimizer::analyzer::inline_table_scan::InlineTableScan;
+use datafusion::optimizer::analyzer::type_coercion::TypeCoercion;
 use datafusion::prelude::{CsvReadOptions as DfCsvReadOptions, SessionConfig, SessionContext};
 use log::Level;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
@@ -350,11 +354,22 @@ pub fn make_request_client() -> ClientWithMiddleware {
 }
 
 pub fn make_datafusion_context() -> SessionContext {
-    // Work around https://github.com/apache/arrow-datafusion/issues/6386
+    // Work around issues:
+    // - https://github.com/apache/arrow-datafusion/issues/6386
+    // - https://github.com/apache/arrow-datafusion/issues/6447
     let mut config = SessionConfig::new();
     let options = config.options_mut();
     options.optimizer.skip_failed_rules = true;
-    let ctx = SessionContext::with_config(config);
+    let runtime = Arc::new(RuntimeEnv::default());
+    let session_state = SessionState::with_config_rt(config, runtime);
+    let session_state = session_state.with_analyzer_rules(vec![
+        Arc::new(InlineTableScan::new()),
+        Arc::new(TypeCoercion::new()),
+        // Intentionally exclude the CountWildcardRule
+        // Arc::new(CountWildcardRule::new()),
+    ]);
+
+    let ctx = SessionContext::with_state(session_state);
 
     // isNan
     ctx.register_udf((*ISNAN_UDF).clone());

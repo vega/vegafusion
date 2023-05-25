@@ -9,6 +9,7 @@ use util::equality::TablesEqualConfig;
 
 use rstest::rstest;
 use vegafusion_core::spec::transform::aggregate::AggregateOpSpec;
+use vegafusion_core::spec::transform::joinaggregate::JoinAggregateTransformSpec;
 
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_core::spec::values::Field;
@@ -162,4 +163,33 @@ mod test_joinaggregate_multi {
             &eq_config,
         );
     }
+}
+
+#[test]
+fn test_joinaggregate_count_star() {
+    // Check for issues related to https://github.com/apache/arrow-datafusion/issues/6447
+    let dataset = vega_json_dataset("penguins");
+
+    let joinaggregate_spec = JoinAggregateTransformSpec {
+        groupby: Some(vec![Field::String("Species".to_string())]),
+        fields: vec![Some(Field::String("Beak Depth (mm)".to_string()))],
+        ops: vec![AggregateOpSpec::Count],
+        as_: Some(vec![Some("COUNT(*)".to_string())]),
+        extra: Default::default(),
+    };
+    let transform_specs = vec![TransformSpec::JoinAggregate(joinaggregate_spec)];
+
+    let comp_config = Default::default();
+
+    let eq_config = TablesEqualConfig {
+        row_order: true,
+        ..Default::default()
+    };
+
+    check_transform_evaluation(
+        &dataset,
+        transform_specs.as_slice(),
+        &comp_config,
+        &eq_config,
+    );
 }
