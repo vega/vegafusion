@@ -88,13 +88,19 @@ npm install
 npm run build
 ```
 
-### Build the `vegafusion-python` PyO3 Python package in development mode
+### Build the `vegafusion-python-embed` PyO3 Python package in development mode
 Note: The PyO3 maturin build tool was included in the `maturin` conda-forge package installed in the development conda environment.
 
 From the repository root:
 ```bash
 cd vegafusion-python-embed
 maturin develop --release
+```
+
+### Install optional dependencies
+Install optional python dependencies
+```bash
+pip install -U vl-convert-python
 ```
 
 ### Install the `vegafusion` Python package in development mode
