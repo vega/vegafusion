@@ -8,6 +8,7 @@ from distutils.version import LooseVersion
 
 import duckdb
 import pyarrow as pa
+import pyarrow.feather
 import pandas as pd
 import logging
 import uuid
@@ -319,6 +320,10 @@ class DuckDbConnection(SqlConnection):
 
         self._update_temp_names(name, temporary)
         self._registered_table_schemas[name] = self._schema_for_table(name)
+
+    def register_arrow_file(self, name: str, path: str, temporary: bool = False):
+        arrow_table = pa.feather.read_table(path)
+        self.register_arrow(name, arrow_table, temporary)
 
     def unregister(self, name: str):
         for view_name in [name, RAW_PREFIX + name]:

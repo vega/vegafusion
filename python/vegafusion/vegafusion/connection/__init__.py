@@ -125,6 +125,16 @@ class SqlConnection(ABC):
         """
         raise ValueError("Connection does not support registration of parquet datasets")
 
+    def register_arrow_file(self, name: str, path: str, temporary: bool = False):
+        """
+        Register the Arrow file at the provided path as a table with the provided name
+        :param name: Table name
+        :param path: Path to arrow file (aka feather file)
+        :param temporary: Whether table is considered temporary,
+            and should be removed by unregister_temporary_tables
+        """
+        raise ValueError("Connection does not support registration of arrow file datasets")
+
     def unregister(self, name: str):
         """
         Unregister a table (temporary or otherwise) by name

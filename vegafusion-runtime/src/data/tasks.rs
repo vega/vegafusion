@@ -7,6 +7,7 @@ use async_trait::async_trait;
 
 use datafusion_expr::{expr, lit, Expr};
 use std::collections::{HashMap, HashSet};
+use std::path::Path;
 
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
@@ -29,8 +30,6 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
-use vegafusion_common::arrow::ipc::reader::{FileReader, StreamReader};
-use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::data::ORDER_COL;
@@ -106,6 +105,15 @@ impl TaskCall for DataUrlTask {
 
         // Load data from URL
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
+        let file_type = self.format_type.as_ref().and_then(|fmt| fmt.r#type.clone());
+
+        // Vega-Lite sets unspecified file types to "json", so we don't want this to take
+        // precedence over file extension
+        let file_type = if file_type == Some("json".to_string()) {
+            None
+        } else {
+            file_type.as_deref()
+        };
 
         let registered_tables = conn.tables().await?;
         let df = if let Some(inline_name) = extract_inline_dataset(&url) {
@@ -124,11 +132,15 @@ impl TaskCall for DataUrlTask {
                     "No inline dataset named {inline_name}"
                 )));
             }
-        } else if url.ends_with(".csv") || url.ends_with(".tsv") {
-            read_csv(&url, &parse, conn).await?
-        } else if url.ends_with(".json") {
+        } else if file_type == Some("csv") || (file_type.is_none() && url.ends_with(".csv")) {
+            read_csv(&url, &parse, conn, false).await?
+        } else if file_type == Some("tsv") || (file_type.is_none() && url.ends_with(".tsv")) {
+            read_csv(&url, &parse, conn, true).await?
+        } else if file_type == Some("json") || (file_type.is_none() && url.ends_with(".json")) {
             read_json(&url, conn).await?
-        } else if url.ends_with(".arrow") || url.ends_with(".feather") {
+        } else if file_type == Some("arrow")
+            || (file_type.is_none() && (url.ends_with(".arrow") || url.ends_with(".feather")))
+        {
             read_arrow(&url, conn).await?
         } else {
             return Err(VegaFusionError::internal(format!(
@@ -547,17 +559,24 @@ async fn read_csv(
     url: &str,
     parse: &Option<Parse>,
     conn: Arc<dyn Connection>,
+    is_tsv: bool,
 ) -> Result<Arc<dyn DataFrame>> {
     // Build base CSV options
-    let mut csv_opts = if url.ends_with(".tsv") {
+    let mut csv_opts = if is_tsv {
         CsvReadOptions {
             delimiter: b'\t',
-            file_extension: ".tsv".to_string(),
             ..Default::default()
         }
     } else {
         Default::default()
     };
+
+    // Add file extension based on URL
+    if let Some(ext) = Path::new(url).extension().and_then(|ext| ext.to_str()) {
+        csv_opts.file_extension = ext.to_string();
+    } else {
+        csv_opts.file_extension = "".to_string();
+    }
 
     // Build schema from Vega parse options
     let schema = build_csv_schema(parse);
@@ -635,58 +654,7 @@ async fn read_json(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataF
 }
 
 async fn read_arrow(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
-    // Read to json Value from local file or url.
-    let buffer = if url.starts_with("http://") || url.starts_with("https://") {
-        // Perform get request to collect file contents as text
-        make_request_client()
-            .get(url)
-            .send()
-            .await
-            .external(&format!("Failed to get URL data from {url}"))?
-            .bytes()
-            .await
-            .external("Failed to convert URL data to text")?
-    } else {
-        // Assume local file
-        let mut file = tokio::fs::File::open(url)
-            .await
-            .external(format!("Failed to open as local file: {url}"))?;
-
-        let mut buffer: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buffer)
-            .await
-            .external("Failed to read file contents")?;
-
-        bytes::Bytes::from(buffer)
-    };
-
-    let reader = std::io::Cursor::new(buffer);
-
-    // Try parsing file as both File and IPC formats
-    let (schema, batches) = if let Ok(arrow_reader) = FileReader::try_new(reader.clone(), None) {
-        let schema = arrow_reader.schema();
-        let mut batches: Vec<RecordBatch> = Vec::new();
-        for v in arrow_reader {
-            batches.push(v.with_context(|| "Failed to read arrow batch".to_string())?);
-        }
-        (schema, batches)
-    } else if let Ok(arrow_reader) = StreamReader::try_new(reader.clone(), None) {
-        let schema = arrow_reader.schema();
-        let mut batches: Vec<RecordBatch> = Vec::new();
-        for v in arrow_reader {
-            batches.push(v.with_context(|| "Failed to read arrow batch".to_string())?);
-        }
-        (schema, batches)
-    } else {
-        let _f = FileReader::try_new(reader, None).unwrap();
-        return Err(VegaFusionError::parse(format!(
-            "Failed to read arrow file at {url}"
-        )));
-    };
-
-    let table = VegaFusionTable::try_new(schema, batches)?.with_ordering()?;
-
-    conn.scan_arrow(table).await
+    conn.scan_arrow_file(url).await
 }
 
 pub fn make_request_client() -> ClientWithMiddleware {
