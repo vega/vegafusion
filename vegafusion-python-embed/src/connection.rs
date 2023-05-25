@@ -126,7 +126,7 @@ impl Connection for PySqlConnection {
         ))
     }
 
-    async fn scan_csv(&self, path: &str, opts: CsvReadOptions) -> Result<Arc<dyn DataFrame>> {
+    async fn scan_csv(&self, url: &str, opts: CsvReadOptions) -> Result<Arc<dyn DataFrame>> {
         let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
         let table_name = format!("csv_{random_id}");
 
@@ -154,7 +154,7 @@ impl Connection for PySqlConnection {
 
             // Register table with Python connection
             let table_name_object = table_name.clone().into_py(py);
-            let path_name_object = path.to_string().into_py(py);
+            let path_name_object = url.to_string().into_py(py);
             let is_temporary_object = true.into_py(py);
             let args = PyTuple::new(
                 py,
@@ -166,6 +166,39 @@ impl Connection for PySqlConnection {
                 ],
             );
             self.conn.call_method1(py, "register_csv", args)?;
+            Ok(())
+        })?;
+
+        // Build DataFrame referencing the registered table
+        Ok(Arc::new(
+            SqlDataFrame::try_new(
+                Arc::new(self.clone()),
+                &table_name,
+                self.fallback_conn.clone().into_iter().collect(),
+            )
+            .await?,
+        ))
+    }
+
+    async fn scan_arrow_file(&self, path: &str) -> Result<Arc<dyn DataFrame>> {
+        let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
+        let table_name = format!("arrow_file_{random_id}");
+
+        Python::with_gil(|py| -> std::result::Result<_, PyErr> {
+            // Register table with Python connection
+            let table_name_object = table_name.clone().into_py(py);
+            let path_name_object = path.to_string().into_py(py);
+            let is_temporary_object = true.into_py(py);
+
+            let args = PyTuple::new(
+                py,
+                vec![
+                    table_name_object.as_ref(py),
+                    path_name_object.as_ref(py),
+                    is_temporary_object.as_ref(py),
+                ],
+            );
+            self.conn.call_method1(py, "register_arrow_file", args)?;
             Ok(())
         })?;
 

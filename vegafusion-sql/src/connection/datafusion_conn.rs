@@ -2,9 +2,11 @@ use crate::connection::SqlConnection;
 use crate::dataframe::SqlDataFrame;
 use crate::dialect::Dialect;
 use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
+use arrow::ipc::reader::{FileReader, StreamReader};
+use arrow::record_batch::RecordBatch;
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::datasource::MemTable;
-use datafusion::execution::options::ReadOptions;
+use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
 use datafusion::prelude::{CsvReadOptions as DfCsvReadOptions, SessionConfig, SessionContext};
 use log::Level;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
@@ -13,11 +15,12 @@ use reqwest_retry::RetryTransientMiddleware;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
+use std::path::Path;
 use std::sync::Arc;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datatypes::cast_to;
-use vegafusion_common::error::{Result, ResultWithContext, ToExternalError};
+use vegafusion_common::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 use vegafusion_dataframe::connection::Connection;
 use vegafusion_dataframe::csv::CsvReadOptions;
 use vegafusion_dataframe::dataframe::DataFrame;
@@ -180,6 +183,63 @@ impl Connection for DataFusionConnection {
             let table = VegaFusionTable::try_new(schema, batches)?;
             let table = table.with_ordering()?;
             self.scan_arrow(table).await
+        }
+    }
+
+    async fn scan_arrow_file(&self, url: &str) -> Result<Arc<dyn DataFrame>> {
+        if url.starts_with("http://") || url.starts_with("https://") {
+            // Perform get request to collect file contents as text
+            let buffer = make_request_client()
+                .get(url)
+                .send()
+                .await
+                .external(&format!("Failed to get URL data from {url}"))?
+                .bytes()
+                .await
+                .external("Failed to convert URL data to text")?;
+
+            let reader = std::io::Cursor::new(buffer);
+
+            // Try parsing file as both File and IPC formats
+            let (schema, batches) =
+                if let Ok(arrow_reader) = FileReader::try_new(reader.clone(), None) {
+                    let schema = arrow_reader.schema();
+                    let mut batches: Vec<RecordBatch> = Vec::new();
+                    for v in arrow_reader {
+                        batches.push(v.with_context(|| "Failed to read arrow batch".to_string())?);
+                    }
+                    (schema, batches)
+                } else if let Ok(arrow_reader) = StreamReader::try_new(reader.clone(), None) {
+                    let schema = arrow_reader.schema();
+                    let mut batches: Vec<RecordBatch> = Vec::new();
+                    for v in arrow_reader {
+                        batches.push(v.with_context(|| "Failed to read arrow batch".to_string())?);
+                    }
+                    (schema, batches)
+                } else {
+                    return Err(VegaFusionError::parse(format!(
+                        "Failed to read arrow file at {url}"
+                    )));
+                };
+
+            let table = VegaFusionTable::try_new(schema, batches)?.with_ordering()?;
+            self.scan_arrow(table).await
+        } else {
+            // Assume local file
+            let path = Path::new(url);
+            let ctx = make_datafusion_context();
+            let mut opts = ArrowReadOptions::default();
+            if let Some(ext) = path.extension().and_then(|ext| ext.to_str()) {
+                opts.file_extension = ext;
+            } else {
+                opts.file_extension = "";
+            }
+
+            ctx.register_arrow("arrow_tbl", url, opts).await?;
+            let sql_conn = DataFusionConnection::new(Arc::new(ctx));
+            Ok(Arc::new(
+                SqlDataFrame::try_new(Arc::new(sql_conn), "arrow_tbl", Default::default()).await?,
+            ))
         }
     }
 }

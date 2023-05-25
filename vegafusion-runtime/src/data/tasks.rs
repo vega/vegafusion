@@ -29,8 +29,6 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
-use vegafusion_common::arrow::ipc::reader::{FileReader, StreamReader};
-use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::data::ORDER_COL;
@@ -635,58 +633,7 @@ async fn read_json(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataF
 }
 
 async fn read_arrow(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
-    // Read to json Value from local file or url.
-    let buffer = if url.starts_with("http://") || url.starts_with("https://") {
-        // Perform get request to collect file contents as text
-        make_request_client()
-            .get(url)
-            .send()
-            .await
-            .external(&format!("Failed to get URL data from {url}"))?
-            .bytes()
-            .await
-            .external("Failed to convert URL data to text")?
-    } else {
-        // Assume local file
-        let mut file = tokio::fs::File::open(url)
-            .await
-            .external(format!("Failed to open as local file: {url}"))?;
-
-        let mut buffer: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buffer)
-            .await
-            .external("Failed to read file contents")?;
-
-        bytes::Bytes::from(buffer)
-    };
-
-    let reader = std::io::Cursor::new(buffer);
-
-    // Try parsing file as both File and IPC formats
-    let (schema, batches) = if let Ok(arrow_reader) = FileReader::try_new(reader.clone(), None) {
-        let schema = arrow_reader.schema();
-        let mut batches: Vec<RecordBatch> = Vec::new();
-        for v in arrow_reader {
-            batches.push(v.with_context(|| "Failed to read arrow batch".to_string())?);
-        }
-        (schema, batches)
-    } else if let Ok(arrow_reader) = StreamReader::try_new(reader.clone(), None) {
-        let schema = arrow_reader.schema();
-        let mut batches: Vec<RecordBatch> = Vec::new();
-        for v in arrow_reader {
-            batches.push(v.with_context(|| "Failed to read arrow batch".to_string())?);
-        }
-        (schema, batches)
-    } else {
-        let _f = FileReader::try_new(reader, None).unwrap();
-        return Err(VegaFusionError::parse(format!(
-            "Failed to read arrow file at {url}"
-        )));
-    };
-
-    let table = VegaFusionTable::try_new(schema, batches)?.with_ordering()?;
-
-    conn.scan_arrow(table).await
+    conn.scan_arrow_file(url).await
 }
 
 pub fn make_request_client() -> ClientWithMiddleware {

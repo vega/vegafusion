@@ -29,9 +29,16 @@ pub trait Connection: Send + Sync + 'static {
     }
 
     /// Scan a CSV file into a DataFrame
-    async fn scan_csv(&self, _path: &str, _opts: CsvReadOptions) -> Result<Arc<dyn DataFrame>> {
+    async fn scan_csv(&self, _url: &str, _opts: CsvReadOptions) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported(
             "scan_csv not supported by connection",
+        ))
+    }
+
+    /// Scan an Arrow file (aka Feather file) into a DataFrame
+    async fn scan_arrow_file(&self, _url: &str) -> Result<Arc<dyn DataFrame>> {
+        Err(VegaFusionError::sql_not_supported(
+            "scan_arrow_file not supported by connection",
         ))
     }
 }
