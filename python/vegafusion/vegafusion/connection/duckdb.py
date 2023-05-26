@@ -18,6 +18,7 @@ RAW_PREFIX = "_vf_raw_"
 
 
 def duckdb_type_name_to_pyarrow_type(duckdb_type: str) -> pa.DataType:
+    duckdb_type = str(duckdb_type)
     if duckdb_type in ("VARCHAR", "JSON", "CHAR"):
         return pa.string()
     elif duckdb_type in ("REAL", "FLOAT4", "FLOAT"):
