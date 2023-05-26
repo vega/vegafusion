@@ -91,8 +91,7 @@ fn inner_create(
     // Build tokio runtime
     let mut builder = tokio::runtime::Builder::new_multi_thread();
     builder.enable_all();
-    let worker_threads = num_threads as i32;
-    builder.worker_threads(worker_threads.max(1) as usize);
+    builder.worker_threads(num_threads.max(1) as usize);
     let tokio_runtime = builder.build()?;
 
     Ok(VegaFusionRuntimeState {
