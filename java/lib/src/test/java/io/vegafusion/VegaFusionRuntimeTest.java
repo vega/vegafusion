@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class VegaFusionRuntimeTest {
     private VegaFusionRuntime makeRuntime() {
-        return new VegaFusionRuntime(32, 1000000000);
+        return new VegaFusionRuntime(32, 1000000000, 4);
     }
 
     @Test
