@@ -190,7 +190,7 @@ class DuckDbConnection(SqlConnection):
                 # Skip columns with supported types
             except ValueError:
                 # Convert unsupported types to strings (except struct)
-                if not type_name.startswith("STRUCT"):
+                if not str(type_name).startswith("STRUCT"):
                     replaces.append(f"{quoted_col_name}::varchar as {quoted_col_name}")
 
         if replaces:
