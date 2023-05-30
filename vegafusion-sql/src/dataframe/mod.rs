@@ -3,7 +3,7 @@ use crate::compile::order::ToSqlOrderByExpr;
 use crate::compile::select::ToSqlSelectItem;
 use crate::connection::SqlConnection;
 use crate::dialect::{Dialect, ValuesMode};
-use arrow::datatypes::{Field, Schema, SchemaRef};
+use arrow::datatypes::{DataType, Field, FieldRef, Fields, Schema, SchemaRef};
 use async_trait::async_trait;
 use datafusion_common::{Column, DFSchema, OwnedTableReference, ScalarValue};
 use datafusion_expr::{
@@ -22,6 +22,7 @@ use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
+use arrow::record_batch::RecordBatch;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datatypes::to_numeric;
@@ -90,7 +91,9 @@ impl DataFrame for SqlDataFrame {
 
     async fn collect(&self) -> Result<VegaFusionTable> {
         let query_string = self.as_query().to_string();
-        self.conn.fetch_query(&query_string, &self.schema).await
+        self.conn.fetch_query(&query_string, &self.schema).await.and_then(
+            pre_process_column_types
+        )
     }
 
     async fn sort(&self, expr: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
@@ -1463,4 +1466,36 @@ fn parse_sql_query(query: &str, dialect: &Dialect) -> Result<Query> {
     } else {
         Err(VegaFusionError::internal("Parser result empty"))
     }
+}
+
+
+/// There are some internal issues with LargeUtf8 arrays in Arrow/DataFusion, so cast
+/// these to Utf8 for now
+fn pre_process_column_types(table: VegaFusionTable) -> Result<VegaFusionTable> {
+    // Build new Schema
+    let new_field_refs = table.schema.fields.into_iter().map(|f| {
+        if f.data_type() == &DataType::LargeUtf8 {
+            Arc::new(Field::new(f.name(), DataType::Utf8, true)) as FieldRef
+        } else {
+            f.clone()
+        }
+    }).collect::<Vec<_>>();
+
+    let new_fields = Fields::from(new_field_refs);
+    let new_schema = Schema::new(new_fields);
+
+    // Build new record batches
+    let new_batches = table.batches.into_iter().map(|batch| {
+        let new_columns = batch.columns().iter().map(|c| {
+            if c.data_type() == &DataType::LargeUtf8 {
+                Ok(arrow::compute::cast(c, &DataType::Utf8)?)
+            } else {
+                Ok(c.clone())
+            }
+        }).collect::<Result<Vec<_>>>()?;
+
+        Ok(RecordBatch::try_new(Arc::new(new_schema.clone()), new_columns)?)
+    }).collect::<Result<Vec<_>>>()?;
+
+    VegaFusionTable::try_new(Arc::new(new_schema), new_batches)
 }
