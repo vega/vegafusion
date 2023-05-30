@@ -18,7 +18,8 @@ RAW_PREFIX = "_vf_raw_"
 
 
 def duckdb_type_name_to_pyarrow_type(duckdb_type: str) -> pa.DataType:
-    if duckdb_type in ("VARCHAR", "JSON", "CHAR"):
+    duckdb_type = str(duckdb_type).upper()
+    if duckdb_type in ("VARCHAR", "JSON", "CHAR", "CATEGORICAL"):
         return pa.string()
     elif duckdb_type in ("REAL", "FLOAT4", "FLOAT"):
         return pa.float32()
@@ -189,7 +190,7 @@ class DuckDbConnection(SqlConnection):
                 # Skip columns with supported types
             except ValueError:
                 # Convert unsupported types to strings (except struct)
-                if not type_name.startswith("STRUCT"):
+                if not str(type_name).startswith("STRUCT"):
                     replaces.append(f"{quoted_col_name}::varchar as {quoted_col_name}")
 
         if replaces:

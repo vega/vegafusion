@@ -126,7 +126,7 @@ def test_transformed_data_for_mock(mock_name, expected_len, expected_cols, conne
     # Check that datetime columns have local timezone
     for dtype in df.dtypes.values:
         if dtype.kind == "M":
-            assert dtype.tz == pytz.timezone(vf.get_local_tz())
+            assert str(dtype.tz) == vf.get_local_tz()
 
     # Check expected length
     assert len(df) == expected_len
@@ -193,7 +193,7 @@ def test_multi_transformed_data_for_mock(mock_name, expected_lens, all_expected_
         # Check that datetime columns have local timezone
         for dtype in df.dtypes.values:
             if dtype.kind == "M":
-                assert dtype.tz == pytz.timezone(vf.get_local_tz())
+                assert str(dtype.tz) == vf.get_local_tz()
 
         # Check expected length
         assert len(df) == expected_len
