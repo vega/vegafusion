@@ -90,7 +90,7 @@ fn make_stub(
     from_spec: &ChartSpec,
 ) -> Result<()> {
     let stub_name = stub_var.0.name.clone();
-    let stub_path = stub_var.1.clone();
+    let stub_path = stub_var.1;
     match stub_var.0.namespace() {
         VariableNamespace::Signal => {
             // Get initial value from client spec, if any
