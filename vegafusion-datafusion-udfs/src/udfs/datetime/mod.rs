@@ -56,9 +56,7 @@ pub fn process_input_datetime(
         DataType::Int64 => arg.clone(),
         DataType::Float64 => cast(arg, &DataType::Int64).expect("Failed to cast float to int"),
         _ => {
-            return Err(DataFusionError::Internal(format!(
-                "Unexpected data type for date part function:"
-            )))
+            return Err(DataFusionError::Internal("Unexpected data type for date part function:".to_string()))
         }
     })
 }

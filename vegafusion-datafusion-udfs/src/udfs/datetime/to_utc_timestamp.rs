@@ -75,11 +75,7 @@ pub fn to_utc_timestamp(timestamp_array: ArrayRef, tz: Tz) -> Result<ArrayRef, D
                     let milliseconds = v % 1000;
                     let nanoseconds = (milliseconds * 1_000_000) as u32;
                     let naive_local_datetime =
-                        if let Some(dt) = NaiveDateTime::from_timestamp_opt(seconds, nanoseconds) {
-                            dt
-                        } else {
-                            return None;
-                        };
+                        NaiveDateTime::from_timestamp_opt(seconds, nanoseconds)?;
 
                     // Get UTC offset when the naive datetime is considered to be in local time
                     let local_datetime = if let Some(local_datetime) =
