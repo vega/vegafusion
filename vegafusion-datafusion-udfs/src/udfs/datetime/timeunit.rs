@@ -40,7 +40,7 @@ fn unpack_timeunit_udf_args(
     })?;
 
     let timestamp = columns[0].clone().into_array(1);
-    let timestamp = process_input_datetime(&timestamp, &tz);
+    let timestamp = process_input_datetime(&timestamp, &tz)?;
 
     Ok((
         timestamp,

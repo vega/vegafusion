@@ -46,7 +46,7 @@ impl TransformTrait for Pivot {
                                 lit(NULL_PLACEHOLDER_NAME),
                             )
                             .otherwise(lit("false"))
-                            .expect("Failed to construct Case expression")
+                            .with_context(|| "Failed to construct Case expression")?
                             .alias(&self.field))
                     } else {
                         Ok(flat_col(field.name()))
