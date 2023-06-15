@@ -69,32 +69,29 @@ pub fn to_utc_timestamp(timestamp_array: ArrayRef, tz: Tz) -> Result<ArrayRef, D
         timestamp_millis
             .iter()
             .map(|v| {
-                v.map(|v| {
+                v.and_then(|v| {
                     // Build naive datetime for time
                     let seconds = v / 1000;
                     let milliseconds = v % 1000;
                     let nanoseconds = (milliseconds * 1_000_000) as u32;
                     let naive_local_datetime =
-                        NaiveDateTime::from_timestamp_opt(seconds, nanoseconds)
-                            .expect("invalid or out-of-range datetime");
+                        NaiveDateTime::from_timestamp_opt(seconds, nanoseconds)?;
 
                     // Get UTC offset when the naive datetime is considered to be in local time
                     let local_datetime = if let Some(local_datetime) =
                         tz.from_local_datetime(&naive_local_datetime).earliest()
                     {
-                        local_datetime
+                        Some(local_datetime)
                     } else {
                         // Try adding 1 hour to handle daylight savings boundaries
                         let hour = naive_local_datetime.hour();
                         let new_naive_local_datetime =
                             naive_local_datetime.with_hour(hour + 1).unwrap();
-                        tz.from_local_datetime(&new_naive_local_datetime)
-                            .earliest()
-                            .unwrap_or_else(|| panic!("Failed to convert {naive_local_datetime:?}"))
+                        tz.from_local_datetime(&new_naive_local_datetime).earliest()
                     };
 
                     // Get timestamp millis (in UTC)
-                    local_datetime.timestamp_millis()
+                    local_datetime.map(|local_datetime| local_datetime.timestamp_millis())
                 })
             })
             .collect::<Vec<Option<_>>>(),

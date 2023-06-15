@@ -17,6 +17,7 @@ use datafusion_expr::{
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::to_numeric;
+use vegafusion_common::error::{ResultWithContext, VegaFusionError};
 use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
@@ -89,51 +90,53 @@ impl TransformTrait for Window {
         };
 
         let schema_df = dataframe.schema_df()?;
-        let window_exprs: Vec<_> = self
+        let window_exprs = self
             .ops
             .iter()
             .zip(&self.fields)
             .enumerate()
-            .map(|(i, (op, field))| {
+            .map(|(i, (op, field))| -> Result<Expr> {
                 let (window_fn, args) = match op.op.as_ref().unwrap() {
                     window_transform_op::Op::AggregateOp(op) => {
                         let op = AggregateOp::from_i32(*op).unwrap();
 
-                        let numeric_field = || {
-                            to_numeric(unescaped_col(field), &schema_df).unwrap_or_else(|_| {
-                                panic!("Failed to convert field {field} to numeric data type")
+                        let numeric_field = || -> Result<Expr> {
+                            to_numeric(unescaped_col(field), &schema_df).with_context(|| {
+                                format!("Failed to convert field {field} to numeric data type")
                             })
                         };
 
                         use AggregateOp::*;
                         let (agg_fn, arg) = match op {
                             Count => (aggregate_function::AggregateFunction::Count, lit(true)),
-                            Sum => (aggregate_function::AggregateFunction::Sum, numeric_field()),
+                            Sum => (aggregate_function::AggregateFunction::Sum, numeric_field()?),
                             Mean | Average => {
-                                (aggregate_function::AggregateFunction::Avg, numeric_field())
+                                (aggregate_function::AggregateFunction::Avg, numeric_field()?)
                             }
-                            Min => (aggregate_function::AggregateFunction::Min, numeric_field()),
-                            Max => (aggregate_function::AggregateFunction::Max, numeric_field()),
+                            Min => (aggregate_function::AggregateFunction::Min, numeric_field()?),
+                            Max => (aggregate_function::AggregateFunction::Max, numeric_field()?),
                             Variance => (
                                 aggregate_function::AggregateFunction::Variance,
-                                numeric_field(),
+                                numeric_field()?,
                             ),
                             Variancep => (
                                 aggregate_function::AggregateFunction::VariancePop,
-                                numeric_field(),
+                                numeric_field()?,
                             ),
                             Stdev => (
                                 aggregate_function::AggregateFunction::Stddev,
-                                numeric_field(),
+                                numeric_field()?,
                             ),
                             Stdevp => (
                                 aggregate_function::AggregateFunction::StddevPop,
-                                numeric_field(),
+                                numeric_field()?,
                             ),
                             // ArrayAgg only available on master right now
                             // Values => (aggregates::AggregateFunction::ArrayAgg, unescaped_col(field)),
                             _ => {
-                                panic!("Unsupported window aggregate: {op:?}")
+                                return Err(VegaFusionError::compilation(format!(
+                                    "Unsupported window aggregate: {op:?}"
+                                )))
                             }
                         };
                         (WindowFunction::AggregateFunction(agg_fn), vec![arg])
@@ -158,7 +161,9 @@ impl TransformTrait for Window {
                                 (BuiltInWindowFunction::LastValue, vec![unescaped_col(field)])
                             }
                             _ => {
-                                panic!("Unsupported window function: {op:?}")
+                                return Err(VegaFusionError::compilation(format!(
+                                    "Unsupported window function: {op:?}"
+                                )))
                             }
                         };
                         (WindowFunction::BuiltInWindowFunction(window_fn), args)
@@ -174,12 +179,12 @@ impl TransformTrait for Window {
                 });
 
                 if let Some(alias) = self.aliases.get(i) {
-                    window_expr.alias(alias)
+                    Ok(window_expr.alias(alias))
                 } else {
-                    window_expr
+                    Ok(window_expr)
                 }
             })
-            .collect();
+            .collect::<Result<Vec<_>>>()?;
 
         // Add window expressions to original selections
         selections.extend(window_exprs);

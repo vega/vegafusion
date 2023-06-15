@@ -230,7 +230,7 @@ impl VegaFusionRuntime {
             result: Some(pre_transform_spec_result::Result::Response(
                 PreTransformSpecResponse {
                     spec: serde_json::to_string(&transformed_spec)
-                        .expect("Failed to convert chart spec to string"),
+                        .with_context(|| "Failed to convert chart spec to string")?,
                     warnings,
                 },
             )),
@@ -505,8 +505,7 @@ impl VegaFusionRuntime {
         let task_scope = plan.server_spec.to_task_scope().unwrap();
         let tasks = plan
             .server_spec
-            .to_tasks(&tz_config, &dataset_fingerprints)
-            .unwrap();
+            .to_tasks(&tz_config, &dataset_fingerprints)?;
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
 
@@ -764,7 +763,7 @@ impl VegaFusionRuntime {
         for var in &plan.comm_plan.server_to_client {
             let node_index = task_graph_mapping
                 .get(var)
-                .unwrap_or_else(|| panic!("Failed to lookup variable '{var:?}'"));
+                .with_context(|| format!("Failed to lookup variable '{var:?}'"))?;
             let value = self
                 .get_node_value(
                     Arc::new(task_graph.clone()),
@@ -772,7 +771,7 @@ impl VegaFusionRuntime {
                     inline_datasets.clone(),
                 )
                 .await
-                .expect("Failed to get node value");
+                .with_context(|| "Failed to get node value")?;
 
             init.push(ExportUpdateArrow {
                 namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),

@@ -337,7 +337,7 @@ impl MsgReceiver {
 
                     self.add_data_listener(&var_name, scope, ret_cb);
                 }
-                _ => panic!("Unsupported namespace"),
+                VariableNamespace::Scale => {}
             }
         }
     }

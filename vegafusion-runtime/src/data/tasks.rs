@@ -523,12 +523,12 @@ impl TaskCall for DataSourceTask {
         let mut config = build_compilation_config(&input_vars, values, tz_config);
 
         // Remove source table from config
-        let source_table = config.data_scope.remove(&self.source).unwrap_or_else(|| {
-            panic!(
+        let source_table = config.data_scope.remove(&self.source).with_context(|| {
+            format!(
                 "Missing source {} for task with input variables\n{:#?}",
                 self.source, input_vars
             )
-        });
+        })?;
 
         // Add ordering column
         let source_table = source_table.with_ordering()?;

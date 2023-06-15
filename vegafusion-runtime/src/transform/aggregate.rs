@@ -11,6 +11,7 @@ use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_common::datatypes::to_numeric;
+use vegafusion_common::error::ResultWithContext;
 use vegafusion_common::escape::unescape_field;
 use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::{Result, VegaFusionError};
@@ -137,50 +138,49 @@ pub fn make_agg_expr_for_col_expr(
     op: &AggregateOp,
     schema: &DFSchema,
 ) -> Result<Expr> {
-    let numeric_column = || {
-        to_numeric(column.clone(), schema).unwrap_or_else(|err| {
-            panic!("Failed to convert column {column:?} to numeric data type: {err:?}")
-        })
+    let numeric_column = || -> Result<Expr> {
+        to_numeric(column.clone(), schema)
+            .with_context(|| format!("Failed to convert column {column:?} to numeric data type"))
     };
 
     let agg_expr = match op {
         AggregateOp::Count => count(column),
-        AggregateOp::Mean | AggregateOp::Average => avg(numeric_column()),
+        AggregateOp::Mean | AggregateOp::Average => avg(numeric_column()?),
         AggregateOp::Min => min(column),
         AggregateOp::Max => max(column),
-        AggregateOp::Sum => sum(numeric_column()),
+        AggregateOp::Sum => sum(numeric_column()?),
         AggregateOp::Median => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Median,
             distinct: false,
-            args: vec![numeric_column()],
+            args: vec![numeric_column()?],
             filter: None,
             order_by: None,
         }),
         AggregateOp::Variance => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Variance,
             distinct: false,
-            args: vec![numeric_column()],
+            args: vec![numeric_column()?],
             filter: None,
             order_by: None,
         }),
         AggregateOp::Variancep => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::VariancePop,
             distinct: false,
-            args: vec![numeric_column()],
+            args: vec![numeric_column()?],
             filter: None,
             order_by: None,
         }),
         AggregateOp::Stdev => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Stddev,
             distinct: false,
-            args: vec![numeric_column()],
+            args: vec![numeric_column()?],
             filter: None,
             order_by: None,
         }),
         AggregateOp::Stdevp => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::StddevPop,
             distinct: false,
-            args: vec![numeric_column()],
+            args: vec![numeric_column()?],
             filter: None,
             order_by: None,
         }),

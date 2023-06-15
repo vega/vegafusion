@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::{DataType, Field};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
-use vegafusion_common::datafusion_common::ScalarValue;
+use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
 use vegafusion_common::datafusion_expr::{
     ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
     Volatility,
@@ -38,12 +38,16 @@ fn make_span_udf() -> ScalarUDF {
                                 }
                             }
                             _ => {
-                                panic!("Unexpected element type for span function: {element_type}")
+                                return Err(DataFusionError::Internal(format!(
+                                    "Unexpected element type for span function: {element_type}"
+                                )))
                             }
                         }
                     }
                     _ => {
-                        panic!("Unexpected type passed to span: {value}")
+                        return Err(DataFusionError::Internal(format!(
+                            "Unexpected type passed to span: {value}"
+                        )))
                     }
                 }
             }

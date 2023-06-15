@@ -476,10 +476,10 @@ fn set_column_for_json_rows(
             set_column_by_primitive_type::<Float64Type>(rows, row_count, &f64_array, col_name);
         }
         _ => {
-            panic!(
+            return Err(ArrowError::JsonError(format!(
                 "Unsupported datatype for JSON serialization: {:#?}",
                 array.data_type()
-            );
+            )))
         }
     }
     Ok(())

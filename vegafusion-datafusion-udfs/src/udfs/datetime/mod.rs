@@ -19,9 +19,13 @@ use vegafusion_common::arrow::{
     compute::{cast, unary},
     datatypes::{DataType, TimeUnit},
 };
+use vegafusion_common::datafusion_common::DataFusionError;
 
-pub fn process_input_datetime(arg: &ArrayRef, default_input_tz: &chrono_tz::Tz) -> ArrayRef {
-    match arg.data_type() {
+pub fn process_input_datetime(
+    arg: &ArrayRef,
+    default_input_tz: &chrono_tz::Tz,
+) -> Result<ArrayRef, DataFusionError> {
+    Ok(match arg.data_type() {
         DataType::Utf8 => {
             let array = arg.as_any().downcast_ref::<StringArray>().unwrap();
             cast(
@@ -51,6 +55,10 @@ pub fn process_input_datetime(arg: &ArrayRef, default_input_tz: &chrono_tz::Tz) 
         }
         DataType::Int64 => arg.clone(),
         DataType::Float64 => cast(arg, &DataType::Int64).expect("Failed to cast float to int"),
-        _ => panic!("Unexpected data type for date part function:"),
-    }
+        _ => {
+            return Err(DataFusionError::Internal(
+                "Unexpected data type for date part function:".to_string(),
+            ))
+        }
+    })
 }
