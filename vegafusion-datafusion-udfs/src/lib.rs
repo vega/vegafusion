@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate lazy_static;
 
+pub mod udafs;
 pub mod udfs;
 
 #[cfg(test)]

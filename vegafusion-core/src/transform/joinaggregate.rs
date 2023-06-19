@@ -2,6 +2,7 @@ use crate::proto::gen::transforms::{AggregateOp, JoinAggregate};
 use crate::spec::transform::aggregate::AggregateOpSpec;
 use crate::spec::transform::joinaggregate::JoinAggregateTransformSpec;
 use crate::transform::TransformDependencies;
+use itertools::Itertools;
 
 impl JoinAggregate {
     pub fn new(transform: &JoinAggregateTransformSpec) -> Self {
@@ -14,7 +15,7 @@ impl JoinAggregate {
         let groupby: Vec<_> = transform
             .groupby
             .as_ref()
-            .map(|groupby| groupby.iter().map(|f| f.field()).collect())
+            .map(|groupby| groupby.iter().map(|f| f.field()).unique().collect())
             .unwrap_or_default();
 
         // Initialize aliases with those potentially provided in field objects

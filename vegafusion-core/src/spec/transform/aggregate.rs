@@ -94,6 +94,8 @@ impl TransformSpecTrait for AggregateTransformSpec {
                     | Stdev
                     | Stdevp
                     | Median
+                    | Q1
+                    | Q3
             ) {
                 // Unsupported aggregation op
                 return false;

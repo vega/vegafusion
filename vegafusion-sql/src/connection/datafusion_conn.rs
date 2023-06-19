@@ -28,6 +28,7 @@ use vegafusion_common::error::{Result, ResultWithContext, ToExternalError, VegaF
 use vegafusion_dataframe::connection::Connection;
 use vegafusion_dataframe::csv::CsvReadOptions;
 use vegafusion_dataframe::dataframe::DataFrame;
+use vegafusion_datafusion_udfs::udafs::{Q1_UDF, Q3_UDF};
 use vegafusion_datafusion_udfs::udfs::array::constructor::ARRAY_CONSTRUCTOR_UDF;
 use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
 use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
@@ -398,6 +399,10 @@ pub fn make_datafusion_context() -> SessionContext {
     ctx.register_udf((*ARRAY_CONSTRUCTOR_UDF).clone());
     ctx.register_udf((*LENGTH_UDF).clone());
     ctx.register_udf((*INDEXOF_UDF).clone());
+
+    // q1/q3 aggregate functions
+    ctx.register_udaf((*Q1_UDF).clone());
+    ctx.register_udaf((*Q3_UDF).clone());
 
     ctx
 }

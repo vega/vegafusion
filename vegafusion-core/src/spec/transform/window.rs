@@ -100,6 +100,8 @@ impl TransformSpecTrait for WindowTransformSpec {
                             | Variancep
                             | Stdev
                             | Stdevp
+                            | Q1
+                            | Q3
                     ) {
                         // Unsupported aggregation op
                         return false;
