@@ -789,6 +789,8 @@ impl Dialect {
                 "covar",
                 "covar_pop",
                 "corr",
+                "q1",
+                "q3",
             ]
             .iter()
             .map(|s| s.to_string())

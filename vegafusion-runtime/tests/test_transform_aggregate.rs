@@ -28,7 +28,9 @@ mod test_aggregate_single {
         case(AggregateOpSpec::Average),
         case(AggregateOpSpec::Min),
         case(AggregateOpSpec::Max),
-        case(AggregateOpSpec::Median)
+        case(AggregateOpSpec::Median),
+        case(AggregateOpSpec::Q1),
+        case(AggregateOpSpec::Q3)
     )]
     fn test(op: AggregateOpSpec) {
         let dataset = vega_json_dataset("penguins");
@@ -75,7 +77,8 @@ mod test_aggregate_multi {
         case(AggregateOpSpec::Average, AggregateOpSpec::Mean),
         case(AggregateOpSpec::Min, AggregateOpSpec::Average),
         case(AggregateOpSpec::Max, AggregateOpSpec::Min),
-        case(AggregateOpSpec::Median, AggregateOpSpec::Average)
+        case(AggregateOpSpec::Median, AggregateOpSpec::Average),
+        case(AggregateOpSpec::Q1, AggregateOpSpec::Q3)
     )]
     fn test(op1: AggregateOpSpec, op2: AggregateOpSpec) {
         let dataset = vega_json_dataset("penguins");

@@ -19,6 +19,7 @@ use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::aggregate::op_name;
 use vegafusion_dataframe::dataframe::DataFrame;
+use vegafusion_datafusion_udfs::udafs::{Q1_UDF, Q3_UDF};
 
 #[async_trait]
 impl TransformTrait for Aggregate {
@@ -206,6 +207,18 @@ pub fn make_agg_expr_for_col_expr(
             });
             count_distinct(column) + max(missing)
         }
+        AggregateOp::Q1 => Expr::AggregateUDF(expr::AggregateUDF {
+            fun: Arc::new((*Q1_UDF).clone()),
+            args: vec![numeric_column()?],
+            filter: None,
+            order_by: None,
+        }),
+        AggregateOp::Q3 => Expr::AggregateUDF(expr::AggregateUDF {
+            fun: Arc::new((*Q3_UDF).clone()),
+            args: vec![numeric_column()?],
+            filter: None,
+            order_by: None,
+        }),
         _ => {
             return Err(VegaFusionError::specification(format!(
                 "Unsupported aggregation op: {op:?}"
