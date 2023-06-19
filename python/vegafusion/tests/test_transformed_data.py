@@ -84,6 +84,7 @@ def get_connections():
         ("line/with_points", 100, ["x", "f(x)"]),
         ("other/beckers_barley_wrapped_facet", 120, ["variety", "site", "median_yield"]),
         ("other/binned_heatmap", 378, ["__count", "bin_maxbins_60_IMDB_Rating_end"]),
+        ("other/boxplot", 19, ["age", "mid_box_people"]),
         ("other/comet_chart", 120, ["variety", "1932", "delta"]),
         ("other/gantt_chart", 3, ["task", "start", "end"]),
         ("other/hexbins", 84, ["month_date", "xFeaturePos", "mean_temp_max"]),
