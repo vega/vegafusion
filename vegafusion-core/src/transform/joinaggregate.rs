@@ -1,8 +1,8 @@
-use itertools::Itertools;
 use crate::proto::gen::transforms::{AggregateOp, JoinAggregate};
 use crate::spec::transform::aggregate::AggregateOpSpec;
 use crate::spec::transform::joinaggregate::JoinAggregateTransformSpec;
 use crate::transform::TransformDependencies;
+use itertools::Itertools;
 
 impl JoinAggregate {
     pub fn new(transform: &JoinAggregateTransformSpec) -> Self {

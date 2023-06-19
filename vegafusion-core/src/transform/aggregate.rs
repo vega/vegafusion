@@ -1,7 +1,7 @@
-use itertools::Itertools;
 use crate::proto::gen::transforms::{Aggregate, AggregateOp};
 use crate::spec::transform::aggregate::{AggregateOpSpec, AggregateTransformSpec};
 use crate::transform::TransformDependencies;
+use itertools::Itertools;
 
 impl Aggregate {
     pub fn new(transform: &AggregateTransformSpec) -> Self {
@@ -11,7 +11,12 @@ impl Aggregate {
             .map(|f| f.as_ref().map(|f| f.field()).unwrap_or_default())
             .collect();
 
-        let groupby: Vec<_> = transform.groupby.iter().map(|f| f.field()).unique().collect();
+        let groupby: Vec<_> = transform
+            .groupby
+            .iter()
+            .map(|f| f.field())
+            .unique()
+            .collect();
 
         // Initialize aliases with those potentially provided in field objects
         // (e.g. {"field": "foo", "as": "bar"}
