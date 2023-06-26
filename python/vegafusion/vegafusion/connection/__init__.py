@@ -18,6 +18,10 @@ class CsvReadOptions:
     schema: Optional[pa.Schema]
 
 
+class RegistrationNotSupportedError(RuntimeError):
+    pass
+
+
 class SqlConnection(ABC):
     """
     Python interface for SQL connections
@@ -82,7 +86,7 @@ class SqlConnection(ABC):
         :param temporary: Whether table is considered temporary,
             and should be removed by unregister_temporary_tables
         """
-        raise ValueError("Connection does not support registration of pandas datasets")
+        raise RegistrationNotSupportedError("Connection does not support registration of pandas datasets")
 
     def register_arrow(self, name: str, table: pa.Table, temporary: bool = False):
         """
@@ -92,7 +96,7 @@ class SqlConnection(ABC):
         :param temporary: Whether table is considered temporary,
             and should be removed by unregister_temporary_tables
         """
-        raise ValueError("Connection does not support registration of arrow datasets")
+        raise RegistrationNotSupportedError("Connection does not support registration of arrow datasets")
 
     def register_json(self, name: str, path: str, temporary: bool = False):
         """
@@ -102,7 +106,7 @@ class SqlConnection(ABC):
         :param temporary: Whether table is considered temporary,
             and should be removed by unregister_temporary_tables
         """
-        raise ValueError("Connection does not support registration of json datasets")
+        raise RegistrationNotSupportedError("Connection does not support registration of json datasets")
 
     def register_csv(self, name: str, path: str, options: CsvReadOptions, temporary: bool = False):
         """
@@ -113,7 +117,7 @@ class SqlConnection(ABC):
         :param temporary: Whether table is considered temporary,
             and should be removed by unregister_temporary_tables
         """
-        raise ValueError("Connection does not support registration of csv datasets")
+        raise RegistrationNotSupportedError("Connection does not support registration of csv datasets")
 
     def register_parquet(self, name: str, path: str, temporary: bool = False):
         """
@@ -123,7 +127,7 @@ class SqlConnection(ABC):
         :param temporary: Whether table is considered temporary,
             and should be removed by unregister_temporary_tables
         """
-        raise ValueError("Connection does not support registration of parquet datasets")
+        raise RegistrationNotSupportedError("Connection does not support registration of parquet datasets")
 
     def register_arrow_file(self, name: str, path: str, temporary: bool = False):
         """
@@ -133,17 +137,17 @@ class SqlConnection(ABC):
         :param temporary: Whether table is considered temporary,
             and should be removed by unregister_temporary_tables
         """
-        raise ValueError("Connection does not support registration of arrow file datasets")
+        raise RegistrationNotSupportedError("Connection does not support registration of arrow file datasets")
 
     def unregister(self, name: str):
         """
         Unregister a table (temporary or otherwise) by name
         :param name: Table name
         """
-        raise ValueError("Connection does not support unregistration")
+        raise RegistrationNotSupportedError("Connection does not support unregistration")
 
     def unregister_temporary_tables(self):
         """
         Unregister all dynamically registered tables
         """
-        raise ValueError("Connection does not support unregistering temporary tables")
+        raise RegistrationNotSupportedError("Connection does not support unregistering temporary tables")

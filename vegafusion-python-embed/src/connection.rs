@@ -104,48 +104,68 @@ impl Connection for PySqlConnection {
     async fn scan_arrow(&self, table: VegaFusionTable) -> Result<Arc<dyn DataFrame>> {
         let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
         let table_name = format!("arrow_{random_id}");
-        Python::with_gil(|py| -> std::result::Result<_, PyErr> {
+        let fallback_connection = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
             let pa_table = table.to_pyarrow(py)?;
 
             // Register table with Python connection
             let table_name_object = table_name.clone().into_py(py);
             let is_temporary_object = true.into_py(py);
             let args = PyTuple::new(py, vec![table_name_object, pa_table, is_temporary_object]);
-            self.conn.call_method1(py, "register_arrow", args)?;
-            Ok(())
+
+            match self.conn.call_method1(py, "register_arrow", args) {
+                Ok(_) => {}
+                Err(err) => {
+                    let exception_name = err.get_type(py).name()?;
+
+                    // Check if we have a fallback connection and this is a RegistrationNotSupportedError
+                    if let Some(fallback_connection) = &self.fallback_conn {
+                        if exception_name == "RegistrationNotSupportedError" {
+                            return Ok(Some(fallback_connection));
+                        }
+                    }
+                    return Err(err);
+                }
+            }
+            Ok(None)
         })?;
 
-        // Build DataFrame referencing the registered table
-        Ok(Arc::new(
-            SqlDataFrame::try_new(
-                Arc::new(self.clone()),
-                &table_name,
-                self.fallback_conn.clone().into_iter().collect(),
-            )
-            .await?,
-        ))
+        if let Some(fallback_connection) = fallback_connection {
+            // Try again with fallback connection
+            fallback_connection.scan_arrow(table).await
+        } else {
+            // Build DataFrame referencing the registered table
+            Ok(Arc::new(
+                SqlDataFrame::try_new(
+                    Arc::new(self.clone()),
+                    &table_name,
+                    self.fallback_conn.clone().into_iter().collect(),
+                )
+                .await?,
+            ))
+        }
     }
 
     async fn scan_csv(&self, url: &str, opts: CsvReadOptions) -> Result<Arc<dyn DataFrame>> {
         let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
         let table_name = format!("csv_{random_id}");
 
-        Python::with_gil(|py| -> std::result::Result<_, PyErr> {
+        let inner_opts = opts.clone();
+        let fallback_connection = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
             // Build Python CsvReadOptions
             let vegafusion_module = PyModule::import(py, "vegafusion.connection")?;
             let csv_opts_class = vegafusion_module.getattr("CsvReadOptions")?;
 
-            let pyschema = opts
+            let pyschema = inner_opts
                 .schema
                 .and_then(|schema| schema.to_pyarrow(py).ok())
                 .into_py(py);
             let kwargs = vec![
-                ("has_header", opts.has_header.into_py(py)),
+                ("has_header", inner_opts.has_header.into_py(py)),
                 (
                     "delimeter",
-                    (opts.delimiter as char).to_string().into_py(py),
+                    (inner_opts.delimiter as char).to_string().into_py(py),
                 ),
-                ("file_extension", opts.file_extension.into_py(py)),
+                ("file_extension", inner_opts.file_extension.into_py(py)),
                 ("schema", pyschema),
             ]
             .into_py_dict(py);
@@ -165,26 +185,45 @@ impl Connection for PySqlConnection {
                     is_temporary_object.as_ref(py),
                 ],
             );
-            self.conn.call_method1(py, "register_csv", args)?;
-            Ok(())
+
+            match self.conn.call_method1(py, "register_csv", args) {
+                Ok(_) => {}
+                Err(err) => {
+                    let exception_name = err.get_type(py).name()?;
+
+                    // Check if we have a fallback connection and this is a RegistrationNotSupportedError
+                    if let Some(fallback_connection) = &self.fallback_conn {
+                        if exception_name == "RegistrationNotSupportedError" {
+                            return Ok(Some(fallback_connection));
+                        }
+                    }
+                    return Err(err);
+                }
+            }
+            Ok(None)
         })?;
 
-        // Build DataFrame referencing the registered table
-        Ok(Arc::new(
-            SqlDataFrame::try_new(
-                Arc::new(self.clone()),
-                &table_name,
-                self.fallback_conn.clone().into_iter().collect(),
-            )
-            .await?,
-        ))
+        if let Some(fallback_connection) = fallback_connection {
+            // Try again with fallback connection
+            fallback_connection.scan_csv(url, opts).await
+        } else {
+            // Build DataFrame referencing the registered table
+            Ok(Arc::new(
+                SqlDataFrame::try_new(
+                    Arc::new(self.clone()),
+                    &table_name,
+                    self.fallback_conn.clone().into_iter().collect(),
+                )
+                .await?,
+            ))
+        }
     }
 
     async fn scan_arrow_file(&self, path: &str) -> Result<Arc<dyn DataFrame>> {
         let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
         let table_name = format!("arrow_file_{random_id}");
 
-        Python::with_gil(|py| -> std::result::Result<_, PyErr> {
+        let fallback_connection = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
             // Register table with Python connection
             let table_name_object = table_name.clone().into_py(py);
             let path_name_object = path.to_string().into_py(py);
@@ -198,19 +237,37 @@ impl Connection for PySqlConnection {
                     is_temporary_object.as_ref(py),
                 ],
             );
-            self.conn.call_method1(py, "register_arrow_file", args)?;
-            Ok(())
+            match self.conn.call_method1(py, "register_arrow_file", args) {
+                Ok(_) => {}
+                Err(err) => {
+                    let exception_name = err.get_type(py).name()?;
+
+                    // Check if we have a fallback connection and this is a RegistrationNotSupportedError
+                    if let Some(fallback_connection) = &self.fallback_conn {
+                        if exception_name == "RegistrationNotSupportedError" {
+                            return Ok(Some(fallback_connection));
+                        }
+                    }
+                    return Err(err);
+                }
+            }
+            Ok(None)
         })?;
 
-        // Build DataFrame referencing the registered table
-        Ok(Arc::new(
-            SqlDataFrame::try_new(
-                Arc::new(self.clone()),
-                &table_name,
-                self.fallback_conn.clone().into_iter().collect(),
-            )
-            .await?,
-        ))
+        if let Some(fallback_connection) = fallback_connection {
+            // Try again with fallback connection
+            fallback_connection.scan_arrow_file(path).await
+        } else {
+            // Build DataFrame referencing the registered table
+            Ok(Arc::new(
+                SqlDataFrame::try_new(
+                    Arc::new(self.clone()),
+                    &table_name,
+                    self.fallback_conn.clone().into_iter().collect(),
+                )
+                .await?,
+            ))
+        }
     }
 }
 
