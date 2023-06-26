@@ -398,7 +398,7 @@ jobs:
           ls -la
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_jupyter*.whl
-          python -m pip install vl-convert-python
+          python -m pip install vl-convert-python==0.10.3
       - name: Update to latest Altair 5
         run: |
           pip install -U altair
