@@ -110,6 +110,7 @@ impl PyVegaFusionRuntime {
         Python::with_gil(|py| Ok(PyBytes::new(py, &response_bytes).into()))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn pre_transform_spec(
         &self,
         spec: PyObject,
