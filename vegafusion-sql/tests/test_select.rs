@@ -43,7 +43,7 @@ mod test_numeric_operators {
                 flat_col("a").sub(flat_col("b")).alias("sub"),
                 flat_col("a").mul(flat_col("b")).alias("mul"),
                 flat_col("a").div(lit(2)).alias("div"),
-                flat_col("a").modulus(lit(4)).alias("mod"),
+                (flat_col("a") % lit(4)).alias("mod"),
                 flat_col("a").eq(flat_col("b")).alias("eq"),
                 flat_col("a").not_eq(flat_col("b")).alias("neq"),
                 flat_col("a").gt(lit(5)).alias("gt"),
@@ -111,7 +111,7 @@ mod test_logical_operators {
                 flat_col("a").or(lit(true)).alias("or2"),
                 flat_col("a").and(flat_col("b")).alias("and"),
                 flat_col("a").and(lit(true)).alias("and2"),
-                flat_col("a").not().alias("not"),
+                (!flat_col("a")).alias("not"),
                 flat_col("a").eq(flat_col("b")).alias("eq"),
                 flat_col("a").not_eq(flat_col("b")).alias("neq"),
             ])

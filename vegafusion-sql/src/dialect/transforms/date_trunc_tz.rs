@@ -77,6 +77,7 @@ impl FunctionTransformer for DateTruncTzWithDateTruncAndAtTimezoneTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let truncated_in_utc = if time_zone == "UTC" {
@@ -132,6 +133,7 @@ impl FunctionTransformer for DateTruncTzWithTimestampTruncTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -180,6 +182,7 @@ impl FunctionTransformer for DateTruncTzClickhouseTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let in_timezone_expr = if time_zone == "UTC" {
@@ -199,6 +202,7 @@ impl FunctionTransformer for DateTruncTzClickhouseTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 
@@ -240,6 +244,7 @@ impl FunctionTransformer for DateTruncTzWithFromUtcAndDateTruncTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 
@@ -257,6 +262,7 @@ impl FunctionTransformer for DateTruncTzWithFromUtcAndDateTruncTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let date_trunc_in_utc = if time_zone == "UTC" {
@@ -276,6 +282,7 @@ impl FunctionTransformer for DateTruncTzWithFromUtcAndDateTruncTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 
@@ -316,6 +323,7 @@ impl FunctionTransformer for DateTruncTzSnowflakeTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 
@@ -333,6 +341,7 @@ impl FunctionTransformer for DateTruncTzSnowflakeTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let date_trunc_in_utc = if time_zone == "UTC" {
@@ -355,6 +364,7 @@ impl FunctionTransformer for DateTruncTzSnowflakeTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 

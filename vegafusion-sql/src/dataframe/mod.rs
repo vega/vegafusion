@@ -258,7 +258,7 @@ impl SqlDataFrame {
                     }
 
                     expr_selects.push(Select {
-                        distinct: false,
+                        distinct: None,
                         top: None,
                         projection,
                         into: None,
@@ -270,6 +270,7 @@ impl SqlDataFrame {
                         distribute_by: Default::default(),
                         sort_by: Default::default(),
                         having: None,
+                        named_window: Default::default(),
                         qualify: None,
                     });
                 }
@@ -357,7 +358,7 @@ impl SqlDataFrame {
                 };
 
                 let select_body = SetExpr::Select(Box::new(Select {
-                    distinct: false,
+                    distinct: None,
                     top: None,
                     projection,
                     into: None,
@@ -377,6 +378,7 @@ impl SqlDataFrame {
                     sort_by: Default::default(),
                     having: None,
                     qualify: None,
+                    named_window: Default::default(),
                 }));
                 Query {
                     with: None,

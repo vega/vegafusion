@@ -49,6 +49,7 @@ impl FunctionTransformer for UtcTimestampToEpochMsDatabricksTransform {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
         let lhs = SqlExpr::BinaryOp {
             left: Box::new(unix_timestamp_expr),
@@ -70,6 +71,7 @@ impl FunctionTransformer for UtcTimestampToEpochMsDatabricksTransform {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
         let mod_1_expr = SqlExpr::Nested(Box::new(SqlExpr::BinaryOp {
             left: Box::new(date_part_expr),
@@ -117,6 +119,7 @@ impl FunctionTransformer for UtcTimestampToEpochMsDuckdbTransform {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
         let lhs = SqlExpr::BinaryOp {
             left: Box::new(unix_timestamp_expr),
@@ -138,6 +141,7 @@ impl FunctionTransformer for UtcTimestampToEpochMsDuckdbTransform {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
         let rhs = SqlExpr::BinaryOp {
             left: Box::new(date_part_expr),
@@ -188,6 +192,7 @@ impl FunctionTransformer for UtcTimestampToEpochMsPostgresTransform {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(epoch_expr)
@@ -224,6 +229,7 @@ impl FunctionTransformer for UtcTimestampToEpochMsSnowflakeTransform {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(date_part_expr)

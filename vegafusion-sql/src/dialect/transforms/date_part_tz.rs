@@ -114,6 +114,7 @@ impl FunctionTransformer for DatePartTzWithDatePartAndAtTimezoneTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -174,6 +175,7 @@ impl FunctionTransformer for DatePartTzClickhouseTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let part_function = match part.to_ascii_lowercase().as_str() {
@@ -203,6 +205,7 @@ impl FunctionTransformer for DatePartTzClickhouseTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -241,6 +244,7 @@ impl FunctionTransformer for DatePartTzWithFromUtcAndDatePartTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 
@@ -258,6 +262,7 @@ impl FunctionTransformer for DatePartTzWithFromUtcAndDatePartTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -295,6 +300,7 @@ impl FunctionTransformer for DatePartTzMySqlTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 
@@ -339,6 +345,7 @@ impl FunctionTransformer for DatePartTzSnowflakeTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 
@@ -356,6 +363,7 @@ impl FunctionTransformer for DatePartTzSnowflakeTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }

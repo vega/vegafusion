@@ -122,7 +122,7 @@ lazy_static! {
         );
     pub static ref MILLISECOND_TRANSFORM: TzTransformFn =
         make_local_datepart_transform(
-            "millisecond",  Some(|expr| expr.modulus(lit(1000.0)))
+            "millisecond",  Some(|expr| expr % lit(1000.0))
         );
 
     // UTC Transforms
@@ -150,6 +150,6 @@ lazy_static! {
         );
     pub static ref UTCMILLISECOND_TRANSFORM: TzTransformFn =
         make_utc_datepart_transform(
-            "millisecond", Some(|expr| expr.modulus(lit(1000.0)))
+            "millisecond", Some(|expr| expr % lit(1000.0))
         );
 }

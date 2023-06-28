@@ -171,7 +171,7 @@ mod test_compile {
         println!("expr: {result_expr:?}");
 
         // unary not should cast numeric value to boolean
-        let expected_expr = Expr::ScalarFunction(expr::ScalarFunction {
+        let expected_expr = !Expr::ScalarFunction(expr::ScalarFunction {
             fun: BuiltinScalarFunction::Coalesce,
             args: vec![
                 Expr::Cast(Cast {
@@ -180,8 +180,7 @@ mod test_compile {
                 }),
                 lit(false),
             ],
-        })
-        .not();
+        });
 
         assert_eq!(result_expr, expected_expr);
 

@@ -156,6 +156,7 @@ impl ToSqlScalar for ScalarValue {
                     over: None,
                     distinct: false,
                     special: false,
+                    order_by: Default::default(),
                 }))
             }
             ScalarValue::Date32(_) => Err(VegaFusionError::internal(
@@ -242,5 +243,6 @@ fn ms_to_timestamp(v: i64) -> SqlExpr {
         over: None,
         distinct: false,
         special: false,
+        order_by: Default::default(),
     })
 }

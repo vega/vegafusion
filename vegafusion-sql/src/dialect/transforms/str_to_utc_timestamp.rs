@@ -118,6 +118,7 @@ impl FunctionTransformer for StrToUtcTimestampWithCastFunctionAtTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
         if self.at_timezone_utc {
             Ok(SqlExpr::AtTimeZone {
@@ -163,6 +164,7 @@ impl FunctionTransformer for StrToUtcTimestampWithFunctionTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -196,6 +198,7 @@ impl FunctionTransformer for StrToUtcTimestampClickhouseTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let to_time_zone_expr = SqlExpr::Function(SqlFunction {
@@ -212,6 +215,7 @@ impl FunctionTransformer for StrToUtcTimestampClickhouseTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(to_time_zone_expr)
@@ -244,6 +248,7 @@ impl FunctionTransformer for StrToUtcTimestampMySqlTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         if time_zone == "UTC" {
@@ -267,6 +272,7 @@ impl FunctionTransformer for StrToUtcTimestampMySqlTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             });
 
             Ok(convert_tz_expr)
@@ -323,6 +329,7 @@ impl FunctionTransformer for StrToUtcTimestampSnowflakeTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             });
 
             Ok(convert_tz_expr)

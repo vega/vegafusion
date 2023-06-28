@@ -1415,11 +1415,16 @@ impl Dialect {
             parse_dialect: ParseDialect::Snowflake,
             quote_style: '"',
             binary_ops: vec![
-                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, And, Or,
             ]
             .into_iter()
             .collect(),
-            binary_op_transforms: Default::default(),
+            binary_op_transforms: vec![(
+                Modulo,
+                Arc::new(ModulusOpToFunction) as Arc<dyn BinaryOperatorTransformer>,
+            )]
+            .into_iter()
+            .collect(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
                 "ln", "pow", "round", "sin", "sqrt", "tan", "trunc", "random", "substr", "concat",
@@ -1595,6 +1600,7 @@ impl BinaryOperatorTransformer for ModulusOpToFunction {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -1637,6 +1643,7 @@ impl FunctionTransformer for RenameFunctionTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -1668,6 +1675,7 @@ impl FunctionTransformer for ExpWithPowFunctionTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -1706,6 +1714,7 @@ impl FunctionTransformer for CastArgsFunctionTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -1743,6 +1752,7 @@ impl FunctionTransformer for LogBaseTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -1782,6 +1792,7 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let base_arg = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
@@ -1796,6 +1807,7 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(SqlExpr::BinaryOp {
@@ -1815,12 +1827,11 @@ impl IsFiniteWithNotInTransformer {
 }
 impl FunctionTransformer for IsFiniteWithNotInTransformer {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
-        let isfinite_expr = Expr::InList(expr::InList {
+        let isfinite_expr = !Expr::InList(expr::InList {
             expr: Box::new(args[0].clone()),
             list: vec![lit(f64::NEG_INFINITY), lit(f64::INFINITY), lit(f64::NAN)],
             negated: false,
-        })
-        .not();
+        });
         isfinite_expr.to_sql(dialect, schema)
     }
 }
