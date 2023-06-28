@@ -18,6 +18,7 @@ pub fn stitch_specs(
     task_scope: &TaskScope,
     server_spec: &mut ChartSpec,
     client_spec: &mut ChartSpec,
+    keep_variables: &[ScopedVariable],
 ) -> Result<CommPlan> {
     // Get client spec variable types
     let client_defs: HashSet<_> = client_spec.definition_vars().unwrap().into_iter().collect();
@@ -46,10 +47,21 @@ pub fn stitch_specs(
         .collect();
 
     // Determine communication requirements
-    let server_to_client: HashSet<_> = client_inputs
+    let mut server_to_client: HashSet<_> = client_inputs
         .intersection(&server_updates)
         .cloned()
         .collect();
+
+    // Add keep variables to server_to_client to make sure they are included in the client spec
+    for keep_var in keep_variables.iter() {
+        if server_defs.contains(keep_var) || server_updates.contains(keep_var) {
+            server_to_client.insert(keep_var.clone());
+        } else if !(client_defs.contains(keep_var) || client_updates.contains(keep_var)) {
+            return Err(VegaFusionError::pre_transform(format!(
+                "Keep variable does not exist: {keep_var:?}"
+            )));
+        }
+    }
 
     let client_to_server: HashSet<_> = server_inputs
         .intersection(&client_updates)

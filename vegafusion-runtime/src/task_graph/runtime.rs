@@ -190,15 +190,22 @@ impl VegaFusionRuntime {
         request: PreTransformSpecRequest,
     ) -> Result<PreTransformSpecResult> {
         // Extract options
-        let (row_limit, preserve_interactivity, inline_pretransform_datasets) =
+        let (row_limit, preserve_interactivity, inline_pretransform_datasets, keep_variables) =
             if let Some(opts) = request.opts {
+                // Convert keep_variables to ScopedVariable
+                let keep_variables: Vec<ScopedVariable> = opts
+                    .keep_variables
+                    .into_iter()
+                    .map(|var| (var.variable.unwrap(), var.scope))
+                    .collect();
                 (
                     opts.row_limit,
                     opts.preserve_interactivity,
                     opts.inline_datasets,
+                    keep_variables,
                 )
             } else {
-                (None, true, Default::default())
+                (None, true, Default::default(), Default::default())
             };
 
         let inline_datasets = inline_pretransform_datasets
@@ -222,6 +229,7 @@ impl VegaFusionRuntime {
                 row_limit,
                 preserve_interactivity,
                 inline_datasets,
+                keep_variables,
             )
             .await?;
 
@@ -247,6 +255,7 @@ impl VegaFusionRuntime {
         row_limit: Option<u32>,
         preserve_interactivity: bool,
         inline_datasets: HashMap<String, VegaFusionDataset>,
+        keep_variables: Vec<ScopedVariable>,
     ) -> Result<(ChartSpec, Vec<PreTransformSpecWarning>)> {
         let input_spec = spec;
 
@@ -257,6 +266,7 @@ impl VegaFusionRuntime {
                 default_input_tz,
                 preserve_interactivity,
                 inline_datasets,
+                keep_variables,
             )
             .await?;
 
@@ -643,6 +653,7 @@ impl VegaFusionRuntime {
                 default_input_tz,
                 preserve_interactivity,
                 inline_datasets,
+                Default::default(),
             )
             .await?;
 
@@ -724,6 +735,7 @@ impl VegaFusionRuntime {
         default_input_tz: &Option<String>,
         preserve_interactivity: bool,
         inline_datasets: HashMap<String, VegaFusionDataset>,
+        keep_variables: Vec<ScopedVariable>,
     ) -> Result<(SpecPlan, Vec<ExportUpdateArrow>)> {
         // Create spec plan
         let plan = SpecPlan::try_new(
@@ -732,6 +744,7 @@ impl VegaFusionRuntime {
                 stringify_local_datetimes: true,
                 extract_inline_data: true,
                 allow_client_to_server_comms: !preserve_interactivity,
+                keep_variables,
                 ..Default::default()
             },
         )?;

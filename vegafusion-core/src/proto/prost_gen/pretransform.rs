@@ -8,6 +8,8 @@ pub struct PreTransformSpecOpts {
     pub inline_datasets: ::prost::alloc::vec::Vec<PreTransformInlineDataset>,
     #[prost(bool, tag = "3")]
     pub preserve_interactivity: bool,
+    #[prost(message, repeated, tag = "4")]
+    pub keep_variables: ::prost::alloc::vec::Vec<PreTransformVariable>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
