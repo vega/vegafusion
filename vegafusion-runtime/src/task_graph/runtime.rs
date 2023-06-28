@@ -247,6 +247,7 @@ impl VegaFusionRuntime {
         Ok(response)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn pre_transform_spec(
         &self,
         spec: &ChartSpec,
