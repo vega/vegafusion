@@ -1415,11 +1415,16 @@ impl Dialect {
             parse_dialect: ParseDialect::Snowflake,
             quote_style: '"',
             binary_ops: vec![
-                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, Modulo, And, Or,
+                Eq, NotEq, Lt, LtEq, Gt, GtEq, Plus, Minus, Multiply, Divide, And, Or,
             ]
             .into_iter()
             .collect(),
-            binary_op_transforms: Default::default(),
+            binary_op_transforms: vec![(
+                Modulo,
+                Arc::new(ModulusOpToFunction) as Arc<dyn BinaryOperatorTransformer>,
+            )]
+            .into_iter()
+            .collect(),
             scalar_functions: vec![
                 "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
                 "ln", "pow", "round", "sin", "sqrt", "tan", "trunc", "random", "substr", "concat",
