@@ -104,7 +104,7 @@ async fn test_extract_stitch_data() {
 
     let mut server_spec =
         extract_server_data(&mut spec, &mut task_scope, &Default::default()).unwrap();
-    let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
+    let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec, &[]).unwrap();
 
     println!("{comm_plan:#?}");
 
@@ -123,7 +123,7 @@ async fn try_extract_split_server_data() {
 
     let mut server_spec =
         extract_server_data(&mut spec, &mut task_scope, &Default::default()).unwrap();
-    let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec).unwrap();
+    let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec, &[]).unwrap();
 
     println!("{comm_plan:#?}");
 
