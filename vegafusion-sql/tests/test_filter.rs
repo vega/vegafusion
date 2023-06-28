@@ -36,7 +36,7 @@ mod test_simple_gte {
         let df = df
             .filter(
                 (flat_col("a").add(lit(2)).gt_eq(lit(9)))
-                    .or(flat_col("b").modulus(lit(4)).eq(lit(0))),
+                    .or((flat_col("b") % lit(4)).eq(lit(0))),
             )
             .await
             .unwrap();
