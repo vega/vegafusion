@@ -990,6 +990,228 @@ def date32_timeunit_spec():
 }
 
 """)
+
+
+def gh_268_hang_spec():
+    return json.loads(r""" 
+    {
+      "$schema": "https://vega.github.io/schema/vega/v5.json",
+      "data": [
+        {
+          "name": "interval_intervalselection__store"
+        },
+        {
+          "name": "legend_pointselection__store"
+        },
+        {
+          "name": "pivot_hover_32f2e9aa_f08a_4fb5_aa8a_ab3f2cc94a1d_store"
+        },
+        {
+          "name": "movies_clean",
+          "url": "vegafusion+dataset://movies_clean"
+        },
+        {
+          "name": "data_0",
+          "source": "movies_clean",
+          "transform": [
+            {
+              "type": "formula",
+              "expr": "toDate(datum[\"Release Date\"])",
+              "as": "Release Date"
+            }
+          ]
+        },
+        {
+          "name": "data_2",
+          "source": "data_0",
+          "transform": [
+            {
+              "field": "Release Date",
+              "type": "timeunit",
+              "units": [
+                "year"
+              ],
+              "as": [
+                "year_Release Date",
+                "year_Release Date_end"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "data_3",
+          "source": "data_2",
+          "transform": [
+            {
+              "type": "filter",
+              "expr": "!length(data(\"interval_intervalselection__store\")) || vlSelectionTest(\"interval_intervalselection__store\", datum)"
+            },
+            {
+              "type": "filter",
+              "expr": "time('1986-11-09T18:28:05.617') <= time(datum[\"year_Release Date\"]) && time(datum[\"year_Release Date\"]) <= time('2001-09-16T22:23:39.144')"
+            },
+            {
+              "type": "filter",
+              "expr": "!length(data(\"legend_pointselection__store\")) || vlSelectionTest(\"legend_pointselection__store\", datum)"
+            }
+          ]
+        }
+      ]
+    }
+    """)
+
+
+def manual_histogram_spec():
+    return json.loads(r"""
+    {
+      "$schema": "https://vega.github.io/schema/vega/v5.json",
+      "background": "white",
+      "padding": 5,
+      "width": 200,
+      "height": 200,
+      "style": "cell",
+      "data": [
+        {
+          "name": "movies",
+          "url": "https://cdn.jsdelivr.net/npm/vega-datasets@v1.29.0/data/movies.json",
+          "format": {"type": "json"},
+          "transform": [
+            {
+              "type": "extent",
+              "field": "IMDB_Rating",
+              "signal": "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_extent"
+            },
+            {
+              "type": "bin",
+              "field": "IMDB_Rating",
+              "as": ["__bin_field_name", "__bin_field_name_end"],
+              "signal": "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins",
+              "extent": {
+                "signal": "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_extent"
+              },
+              "maxbins": 10
+            },
+            {
+              "type": "aggregate",
+              "groupby": ["__bin_field_name", "__bin_field_name_end"],
+              "ops": ["count"],
+              "fields": [null],
+              "as": ["__count"]
+            },
+            {
+              "type": "formula",
+              "expr": "'[' + toString(datum[\"__bin_field_name\"]) + ', ' + toString(datum[\"__bin_field_name_end\"]) + ')'",
+              "as": "__bin_range"
+            },
+            {
+              "type": "filter",
+              "expr": "isValid(datum[\"__bin_field_name\"]) && isFinite(+datum[\"__bin_field_name\"]) && isValid(datum[\"__count\"]) && isFinite(+datum[\"__count\"])"
+            }
+          ]
+        }
+      ],
+      "marks": [
+        {
+          "name": "layer_0_layer_0_marks",
+          "type": "rect",
+          "clip": true,
+          "style": ["bar"],
+          "from": {"data": "movies"},
+          "encode": {
+            "update": {
+              "fill": {"value": "#4C78A8"},
+              "opacity": {"value": 1},
+              "ariaRoleDescription": {"value": "bar"},
+              "description": {
+                "signal": "\"IMDB_Rating (start): \" + (format(datum[\"__bin_field_name\"], \"\")) + \"; Count of Records: \" + (format(datum[\"__count\"], \"\")) + \"; __bin_field_name_end: \" + (format(datum[\"__bin_field_name_end\"], \"\"))"
+              },
+              "x": {"scale": "x", "field": "__bin_field_name"},
+              "x2": {"scale": "x", "field": "__bin_field_name_end", "offset": -1},
+              "y": {"scale": "y", "field": "__count"},
+              "y2": {"scale": "y", "value": 0}
+            }
+          }
+        }
+      ],
+      "scales": [
+        {
+          "name": "x",
+          "type": "linear",
+          "domain": {
+            "data": "movies",
+            "fields": ["__bin_field_name", "__bin_field_name_end"]
+          },
+          "range": [0, {"signal": "width"}],
+          "nice": true,
+          "zero": true
+        },
+        {
+          "name": "y",
+          "type": "linear",
+          "domain": {"fields": [{"data": "movies", "field": "__count"}, [0]]},
+          "range": [{"signal": "height"}, 0],
+          "nice": true,
+          "zero": true
+        }
+      ],
+      "axes": [
+        {
+          "scale": "x",
+          "orient": "bottom",
+          "grid": true,
+          "tickCount": 10,
+          "gridScale": "y",
+          "domain": false,
+          "labels": false,
+          "aria": false,
+          "maxExtent": 0,
+          "minExtent": 0,
+          "ticks": false,
+          "zindex": 0
+        },
+        {
+          "scale": "y",
+          "orient": "left",
+          "grid": true,
+          "gridScale": "x",
+          "tickCount": {"signal": "ceil(height/40)"},
+          "domain": false,
+          "labels": false,
+          "aria": false,
+          "maxExtent": 0,
+          "minExtent": 0,
+          "ticks": false,
+          "zindex": 0
+        },
+        {
+          "scale": "x",
+          "orient": "bottom",
+          "grid": false,
+          "title": "IMDB_Rating (start)",
+          "labelFlush": false,
+          "labels": true,
+          "tickCount": 10,
+          "ticks": true,
+          "labelOverlap": true,
+          "zindex": 0
+        },
+        {
+          "scale": "y",
+          "orient": "left",
+          "grid": false,
+          "title": "Count of Records",
+          "labelFlush": false,
+          "labels": true,
+          "ticks": true,
+          "labelOverlap": true,
+          "tickCount": {"signal": "ceil(height/40)"},
+          "zindex": 0
+        }
+      ]
+    }
+    """)
+
+
 def test_pre_transform_multi_partition():
     n = 4050
     order_items = pd.DataFrame({
@@ -1390,70 +1612,37 @@ def test_pivot_mixed_case(connection):
     assert set(datasets[0].columns.tolist()) == {"gold", "Gold", "silver", "bronze", "country"}
 
 
-def gh_268_hang_spec():
-    return json.loads(r""" 
-    {
-      "$schema": "https://vega.github.io/schema/vega/v5.json",
-      "data": [
-        {
-          "name": "interval_intervalselection__store"
-        },
-        {
-          "name": "legend_pointselection__store"
-        },
-        {
-          "name": "pivot_hover_32f2e9aa_f08a_4fb5_aa8a_ab3f2cc94a1d_store"
-        },
-        {
-          "name": "movies_clean",
-          "url": "vegafusion+dataset://movies_clean"
-        },
-        {
-          "name": "data_0",
-          "source": "movies_clean",
-          "transform": [
-            {
-              "type": "formula",
-              "expr": "toDate(datum[\"Release Date\"])",
-              "as": "Release Date"
-            }
-          ]
-        },
-        {
-          "name": "data_2",
-          "source": "data_0",
-          "transform": [
-            {
-              "field": "Release Date",
-              "type": "timeunit",
-              "units": [
-                "year"
-              ],
-              "as": [
-                "year_Release Date",
-                "year_Release Date_end"
-              ]
-            }
-          ]
-        },
-        {
-          "name": "data_3",
-          "source": "data_2",
-          "transform": [
-            {
-              "type": "filter",
-              "expr": "!length(data(\"interval_intervalselection__store\")) || vlSelectionTest(\"interval_intervalselection__store\", datum)"
-            },
-            {
-              "type": "filter",
-              "expr": "time('1986-11-09T18:28:05.617') <= time(datum[\"year_Release Date\"]) && time(datum[\"year_Release Date\"]) <= time('2001-09-16T22:23:39.144')"
-            },
-            {
-              "type": "filter",
-              "expr": "!length(data(\"legend_pointselection__store\")) || vlSelectionTest(\"legend_pointselection__store\", datum)"
-            }
-          ]
-        }
-      ]
-    }
-    """)
+def test_keep_signals():
+    spec = manual_histogram_spec()
+
+    # pre-transform without keep_signals. No signals should be present in pre-transformed spec
+    tx_spec, warnings = vf.runtime.pre_transform_spec(spec, "UTC")
+    assert len(tx_spec.get("signals", [])) == 0
+
+    # Specify single keep_signal as a string
+    tx_spec, warnings = vf.runtime.pre_transform_spec(
+        spec,
+        "UTC",
+        keep_signals="layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins"
+    )
+    assert len(tx_spec.get("signals", [])) == 1
+    sig0 = tx_spec["signals"][0]
+    assert sig0["name"] == "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins"
+    assert sig0["value"]["step"] == 1.0
+
+    # Specify multiple keep_signals as a list
+    tx_spec, warnings = vf.runtime.pre_transform_spec(
+        spec,
+        "UTC",
+        keep_signals=[
+            "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins",
+            ("layer_0_layer_0_bin_maxbins_10_IMDB_Rating_extent", [])
+        ]
+    )
+    assert len(tx_spec.get("signals", [])) == 2
+    sig0 = tx_spec["signals"][0]
+    sig1 = tx_spec["signals"][1]
+    [sig0, sig1] = sorted([sig0, sig1], key=lambda v: v["name"])
+    assert sig0["name"] == "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins"
+    assert sig1["name"] == "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_extent"
+    assert sig1["value"] == [1.4, 9.2]
