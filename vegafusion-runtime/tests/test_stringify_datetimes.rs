@@ -95,6 +95,7 @@ mod test_stringify_datetimes {
                 None,
                 true,
                 Default::default(),
+                Default::default(),
             )
             .await
             .unwrap();
@@ -150,6 +151,7 @@ mod test_stringify_datetimes {
                 &Some(default_input_tz),
                 None,
                 true,
+                Default::default(),
                 Default::default(),
             )
             .await
@@ -235,6 +237,7 @@ mod test_stringify_datetimes {
                 None,
                 true,
                 Default::default(),
+                Default::default(),
             )
             .await
             .unwrap();
@@ -301,6 +304,7 @@ mod test_stringify_datetimes {
                 None,
                 true,
                 Default::default(),
+                Default::default(),
             ))
             .unwrap();
 
@@ -340,7 +344,15 @@ mod test_stringify_datetimes {
         );
 
         let (spec, _warnings) = runtime
-            .pre_transform_spec(&spec, "UTC", &None, None, true, Default::default())
+            .pre_transform_spec(
+                &spec,
+                "UTC",
+                &None,
+                None,
+                true,
+                Default::default(),
+                Default::default(),
+            )
             .await
             .unwrap();
 
