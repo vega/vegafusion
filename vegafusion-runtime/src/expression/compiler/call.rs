@@ -139,7 +139,7 @@ pub fn compile_call(
         VegaFusionCallable::BuiltinScalarFunction { function, cast } => {
             let args = compile_scalar_arguments(node, config, schema, cast)?;
             Ok(Expr::ScalarFunction(expr::ScalarFunction {
-                fun: function.clone(),
+                fun: *function,
                 args,
             }))
         }
