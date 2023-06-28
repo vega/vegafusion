@@ -27,7 +27,7 @@ redshift = """
 WITH values0 AS (SELECT 1 AS "a", 2 AS "b" UNION ALL SELECT 3 AS "a", 4 AS "b" UNION ALL SELECT 6 AS "a", 6 AS "b" UNION ALL SELECT 9 AS "a", 8 AS "b" UNION ALL SELECT 12 AS "a", 10 AS "b"), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", ("a" % 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 snowflake = """
-WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b" FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10))), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", ("a" % 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b" FROM (VALUES (1, 2), (3, 4), (6, 6), (9, 8), (12, 10))), values1 AS (SELECT "a", "b", ("a" + "b") AS "add", ("a" - "b") AS "sub", ("a" * "b") AS "mul", ("a" / 2) AS "div", MOD("a", 4) AS "mod", ("a" = "b") AS "eq", ("a" <> "b") AS "neq", ("a" > 5) AS "gt", ("a" >= 5) AS "gte", ("b" < 6) AS "lt", ("b" <= 6) AS "lte", (-"a") AS "neg" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 result = '''
 +----+----+-----+-----+-----+-----+-----+-------+-------+-------+-------+-------+-------+-----+

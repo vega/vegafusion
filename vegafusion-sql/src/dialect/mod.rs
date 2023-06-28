@@ -1600,6 +1600,7 @@ impl BinaryOperatorTransformer for ModulusOpToFunction {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -1642,6 +1643,7 @@ impl FunctionTransformer for RenameFunctionTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -1673,6 +1675,7 @@ impl FunctionTransformer for ExpWithPowFunctionTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -1711,6 +1714,7 @@ impl FunctionTransformer for CastArgsFunctionTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -1748,6 +1752,7 @@ impl FunctionTransformer for LogBaseTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -1787,6 +1792,7 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let base_arg = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
@@ -1801,6 +1807,7 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(SqlExpr::BinaryOp {

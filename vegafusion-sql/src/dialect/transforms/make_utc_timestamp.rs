@@ -107,6 +107,7 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let time_expr = SqlExpr::Function(SqlFunction {
@@ -122,6 +123,7 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let time_with_ms_expr = SqlExpr::Function(SqlFunction {
@@ -131,17 +133,20 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
             }]),
             args: vec![
                 SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(time_expr)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Interval {
-                    value: Box::new(sql_args.millisecond),
-                    leading_field: Some(SqlDateTimeField::Millisecond),
-                    leading_precision: None,
-                    last_field: None,
-                    fractional_seconds_precision: None,
-                })),
+                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Interval(
+                    sqlparser::ast::Interval {
+                        value: Box::new(sql_args.millisecond),
+                        leading_field: Some(SqlDateTimeField::Millisecond),
+                        leading_precision: None,
+                        last_field: None,
+                        fractional_seconds_precision: None,
+                    },
+                ))),
             ],
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let datetime_expr = SqlExpr::Function(SqlFunction {
@@ -156,6 +161,7 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let timestamp_expr = SqlExpr::Function(SqlFunction {
@@ -172,6 +178,7 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(timestamp_expr)
@@ -211,6 +218,7 @@ impl FunctionTransformer for MakeUtcTimestampDatabricksTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let date_add_expr = SqlExpr::Function(SqlFunction {
@@ -229,6 +237,7 @@ impl FunctionTransformer for MakeUtcTimestampDatabricksTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let ts_in_utc_expr = if sql_args.time_zone == "UTC" {
@@ -248,6 +257,7 @@ impl FunctionTransformer for MakeUtcTimestampDatabricksTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 
@@ -288,6 +298,7 @@ impl FunctionTransformer for MakeUtcTimestampDuckDbTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let timestamp_in_utc_expr = if sql_args.time_zone == "UTC" {
@@ -340,6 +351,7 @@ impl FunctionTransformer for MakeUtcTimestampPostgresTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let timestamp_in_utc_expr = SqlExpr::AtTimeZone {
@@ -393,6 +405,7 @@ impl FunctionTransformer for MakeUtcTimestampSnowflakeTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let timestamp_in_utc_expr = if sql_args.time_zone == "UTC" {
@@ -415,6 +428,7 @@ impl FunctionTransformer for MakeUtcTimestampSnowflakeTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 

@@ -56,7 +56,7 @@ SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 snowflake = """
 WITH \
 values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b", "COLUMN3" AS "c" FROM (VALUES (1, 2, 'A'), (3, 4, 'BB'), (5, 6, 'CCC'), (7, 8, 'DDDD'), (9, 10, 'EEEEE'), (11, 12, 'FFFFFF'))), \
-values1 AS (SELECT * FROM values0 WHERE ((("a" + 2) >= 9) OR (("b" % 4) = 0))) \
+values1 AS (SELECT * FROM values0 WHERE ((("a" + 2) >= 9) OR (MOD("b", 4) = 0))) \
 SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 result = '''

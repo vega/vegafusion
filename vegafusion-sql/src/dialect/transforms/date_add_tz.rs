@@ -70,6 +70,7 @@ fn maybe_from_utc(ts_expr: SqlExpr, time_zone: &str) -> SqlExpr {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         })
     }
 }
@@ -92,6 +93,7 @@ fn maybe_to_utc(ts_expr: SqlExpr, time_zone: &str) -> SqlExpr {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         })
     }
 }
@@ -127,6 +129,7 @@ impl FunctionTransformer for DateAddTzBigQueryTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let date_time_field = part_to_date_time_field(&part)?;
@@ -137,17 +140,20 @@ impl FunctionTransformer for DateAddTzBigQueryTransformer {
             }]),
             args: vec![
                 SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(datetime_expr)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Interval {
-                    value: Box::new(SqlExpr::Value(SqlValue::Number(n_str, false))),
-                    leading_field: Some(date_time_field),
-                    leading_precision: None,
-                    last_field: None,
-                    fractional_seconds_precision: None,
-                })),
+                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Interval(
+                    sqlparser::ast::Interval {
+                        value: Box::new(SqlExpr::Value(SqlValue::Number(n_str, false))),
+                        leading_field: Some(date_time_field),
+                        leading_precision: None,
+                        last_field: None,
+                        fractional_seconds_precision: None,
+                    },
+                ))),
             ],
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let timestamp_expr = SqlExpr::Function(SqlFunction {
@@ -164,6 +170,7 @@ impl FunctionTransformer for DateAddTzBigQueryTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(timestamp_expr)
@@ -190,13 +197,13 @@ impl FunctionTransformer for DateAddTzDatafusionTransformer {
         let ts_in_tz_expr = maybe_from_utc(ts_expr, &time_zone);
 
         let date_time_field = part_to_date_time_field(&part)?;
-        let interval = SqlExpr::Interval {
+        let interval = SqlExpr::Interval(sqlparser::ast::Interval {
             value: Box::new(SqlExpr::Value(SqlValue::SingleQuotedString(n_str))),
             leading_field: Some(date_time_field),
             leading_precision: None,
             last_field: None,
             fractional_seconds_precision: None,
-        };
+        });
 
         let addition_expr = SqlExpr::BinaryOp {
             left: Box::new(ts_in_tz_expr),
@@ -245,6 +252,7 @@ impl FunctionTransformer for DateAddTzDatabricksTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(maybe_to_utc(shifted_tz_expr, &time_zone))
@@ -271,7 +279,7 @@ impl FunctionTransformer for DateAddTzWithAtTimeZoneIntervalTransformer {
         let ts_in_tz_expr = at_time_zone_if_not_utc(ts_expr, time_zone.clone(), true);
 
         let interval_string = format!("{n_str} {part}");
-        let interval = SqlExpr::Interval {
+        let interval = SqlExpr::Interval(sqlparser::ast::Interval {
             value: Box::new(SqlExpr::Value(SqlValue::SingleQuotedString(
                 interval_string,
             ))),
@@ -279,7 +287,7 @@ impl FunctionTransformer for DateAddTzWithAtTimeZoneIntervalTransformer {
             leading_precision: None,
             last_field: None,
             fractional_seconds_precision: None,
-        };
+        });
 
         let addition_expr = SqlExpr::BinaryOp {
             left: Box::new(SqlExpr::Nested(Box::new(ts_in_tz_expr))),
@@ -334,6 +342,7 @@ impl FunctionTransformer for DateAddTzSnowflakeTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 
@@ -355,6 +364,7 @@ impl FunctionTransformer for DateAddTzSnowflakeTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         let date_add_in_utc = if time_zone == "UTC" {
@@ -377,6 +387,7 @@ impl FunctionTransformer for DateAddTzSnowflakeTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 

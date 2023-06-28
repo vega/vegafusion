@@ -61,6 +61,7 @@ impl FunctionTransformer for UtcTimestampToStrBigQueryTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(SqlExpr::Function(SqlFunction {
@@ -77,6 +78,7 @@ impl FunctionTransformer for UtcTimestampToStrBigQueryTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     }
 }
@@ -115,6 +117,7 @@ impl FunctionTransformer for UtcTimestampToStrDatabricksTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 
@@ -132,6 +135,7 @@ impl FunctionTransformer for UtcTimestampToStrDatabricksTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         // There should be a better way to do this, but including the "T" directly in the format
@@ -153,6 +157,7 @@ impl FunctionTransformer for UtcTimestampToStrDatabricksTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(replace_expr)
@@ -202,6 +207,7 @@ impl FunctionTransformer for UtcTimestampToStrDuckDBTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(strftime_expr)
@@ -251,6 +257,7 @@ impl FunctionTransformer for UtcTimestampToStrPostgresTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(strftime_expr)
@@ -294,6 +301,7 @@ impl FunctionTransformer for UtcTimestampToStrSnowflakeTransformer {
                 over: None,
                 distinct: false,
                 special: false,
+                order_by: Default::default(),
             })
         };
 
@@ -311,6 +319,7 @@ impl FunctionTransformer for UtcTimestampToStrSnowflakeTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(date_format_expr)

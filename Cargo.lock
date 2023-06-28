@@ -1235,7 +1235,7 @@ dependencies = [
  "pin-project-lite",
  "rand",
  "smallvec",
- "sqlparser 0.34.0",
+ "sqlparser",
  "tempfile",
  "tokio",
  "tokio-stream",
@@ -1259,7 +1259,7 @@ dependencies = [
  "object_store",
  "parquet",
  "pyo3",
- "sqlparser 0.34.0",
+ "sqlparser",
 ]
 
 [[package]]
@@ -1290,7 +1290,7 @@ dependencies = [
  "arrow",
  "datafusion-common",
  "lazy_static",
- "sqlparser 0.34.0",
+ "sqlparser",
  "strum",
  "strum_macros",
 ]
@@ -1369,7 +1369,7 @@ dependencies = [
  "datafusion-common",
  "datafusion-expr",
  "log",
- "sqlparser 0.34.0",
+ "sqlparser",
 ]
 
 [[package]]
@@ -3521,15 +3521,6 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "sqlparser"
-version = "0.33.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "355dc4d4b6207ca8a3434fc587db0a8016130a574dbcdbfb93d7f7b5bc5b211a"
-dependencies = [
- "log",
-]
-
-[[package]]
-name = "sqlparser"
 version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37d3706eefb17039056234df6b566b0014f303f867f2656108334a55b8096f59"
@@ -4174,7 +4165,7 @@ dependencies = [
  "jni",
  "pyo3",
  "serde_json",
- "sqlparser 0.33.0",
+ "sqlparser",
  "thiserror",
 ]
 
@@ -4201,7 +4192,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "sqlparser 0.33.0",
+ "sqlparser",
  "thiserror",
  "tonic",
  "tonic-build",
@@ -4305,7 +4296,7 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
- "sqlparser 0.33.0",
+ "sqlparser",
  "tempfile",
  "test-case",
  "tokio",
@@ -4362,7 +4353,7 @@ dependencies = [
  "rstest_reuse",
  "serde",
  "serde_json",
- "sqlparser 0.33.0",
+ "sqlparser",
  "tempfile",
  "tokio",
  "toml",

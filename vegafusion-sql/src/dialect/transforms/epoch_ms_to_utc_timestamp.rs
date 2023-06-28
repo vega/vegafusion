@@ -47,6 +47,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampBigQueryTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(ts_millis_expr)
@@ -90,6 +91,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampDatabricksTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
         let from_unix_time_expr = SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![SqlIdent {
@@ -102,6 +104,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampDatabricksTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
         let dateadd_expr = SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![SqlIdent {
@@ -119,6 +122,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampDatabricksTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(dateadd_expr)
@@ -149,6 +153,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampDuckDbTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(epoch_ms_expr)
@@ -192,6 +197,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampPostgresTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
         let to_timestamp_expr = SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![SqlIdent {
@@ -204,9 +210,10 @@ impl FunctionTransformer for EpochMsToUtcTimestampPostgresTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
-        let interval_expr = SqlExpr::Interval {
+        let interval_expr = SqlExpr::Interval(sqlparser::ast::Interval {
             value: Box::new(SqlExpr::Value(SqlValue::SingleQuotedString(
                 "1 millisecond".to_string(),
             ))),
@@ -214,7 +221,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampPostgresTransformer {
             leading_precision: None,
             last_field: None,
             fractional_seconds_precision: None,
-        };
+        });
 
         let interval_mult_expr = SqlExpr::BinaryOp {
             left: Box::new(interval_expr),
@@ -261,6 +268,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampSnowflakeTransformer {
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         });
 
         Ok(to_timestamp_expr)

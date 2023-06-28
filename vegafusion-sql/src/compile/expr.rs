@@ -6,7 +6,7 @@ use sqlparser::ast::{
     FunctionArg as SqlFunctionArg, FunctionArg, Ident, ObjectName as SqlObjectName, ObjectName,
     UnaryOperator as SqlUnaryOperator, WindowFrame as SqlWindowFrame,
     WindowFrameBound as SqlWindowBound, WindowFrameUnits as SqlWindowFrameUnits,
-    WindowSpec as SqlWindowSpec,
+    WindowSpec as SqlWindowSpec, WindowType,
 };
 
 use datafusion_expr::expr::{BinaryExpr, Case, Cast};
@@ -401,11 +401,11 @@ impl ToSqlExpr for Expr {
                     };
 
                     // Process over
-                    let over = SqlWindowSpec {
+                    let over = WindowType::WindowSpec(SqlWindowSpec {
                         partition_by,
                         order_by,
                         window_frame: sql_window_frame,
-                    };
+                    });
 
                     let sql_fun = SqlFunction {
                         name: ObjectName(vec![Ident {
@@ -416,6 +416,7 @@ impl ToSqlExpr for Expr {
                         over: Some(over),
                         distinct: false,
                         special: false,
+                        order_by: Default::default(),
                     };
 
                     Ok(SqlExpr::Function(sql_fun))
@@ -516,6 +517,7 @@ fn translate_scalar_function(
             over: None,
             distinct: false,
             special: false,
+            order_by: Default::default(),
         }))
     } else if let Some(transformer) = dialect.scalar_transformers.get(fun_name) {
         // Supported through AST transformation
@@ -548,6 +550,7 @@ fn translate_aggregate_function(
             over: None,
             distinct,
             special: false,
+            order_by: Default::default(),
         }))
     } else if let Some(transformer) = dialect.aggregate_transformers.get(fun_name) {
         // Supported through AST transformation
