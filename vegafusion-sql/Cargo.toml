@@ -37,18 +37,18 @@ version = "1.4.0-rc1"
 optional = true
 
 [dependencies.arrow]
-version = "39.0.0"
+version = "40.0.0"
 default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
-version = "25.0.0"
+version = "26.0.0"
 
 [dependencies.datafusion-expr]
-version = "25.0.0"
+version = "26.0.0"
 
 [dependencies.datafusion]
-version = "25.0.0"
+version = "26.0.0"
 optional = true
 
 [dependencies.tempfile]

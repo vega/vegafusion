@@ -1815,12 +1815,11 @@ impl IsFiniteWithNotInTransformer {
 }
 impl FunctionTransformer for IsFiniteWithNotInTransformer {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
-        let isfinite_expr = Expr::InList(expr::InList {
+        let isfinite_expr = !Expr::InList(expr::InList {
             expr: Box::new(args[0].clone()),
             list: vec![lit(f64::NEG_INFINITY), lit(f64::INFINITY), lit(f64::NAN)],
             negated: false,
-        })
-        .not();
+        });
         isfinite_expr.to_sql(dialect, schema)
     }
 }

@@ -600,6 +600,8 @@ fn aggr_fn_to_name(fun: &AggregateFunction) -> &str {
         AggregateFunction::BitXor => "bit_xor",
         AggregateFunction::BoolAnd => "bool_and",
         AggregateFunction::BoolOr => "bool_or",
+        AggregateFunction::FirstValue => "first_value",
+        AggregateFunction::LastValue => "last_value",
     }
 }
 
