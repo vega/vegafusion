@@ -176,7 +176,9 @@ class VegaFusionRuntime:
         default_input_tz=None,
         row_limit=None,
         preserve_interactivity=True,
-        inline_datasets=None
+        inline_datasets=None,
+        keep_signals=None,
+        keep_datasets=None,
     ):
         """
         Evaluate supported transforms in an input Vega specification and produce a new
@@ -200,6 +202,16 @@ class VegaFusionRuntime:
             Tables. Inline datasets may be referenced by the input specification using
             the following url syntax 'vegafusion+dataset://{dataset_name}' or
             'table://{dataset_name}'.
+        :param keep_signals: Signals from the input spec that must be included in the
+            pre-transformed spec. A list with elements that are either:
+              - The name of a top-level signal as a string
+              - A two-element tuple where the first element is the name of a signal as a string
+                and the second element is the nested scope of the dataset as a list of integers
+        :param keep_datasets: Datasets from the input spec that must be included in the
+            pre-transformed spec. A list with elements that are either:
+              - The name of a top-level dataset as a string
+              - A two-element tuple where the first element is the name of a dataset as a string
+                and the second element is the nested scope of the dataset as a list of integers
         :return:
             Two-element tuple:
                 0. A string containing the JSON representation of a Vega specification
@@ -218,6 +230,10 @@ class VegaFusionRuntime:
             raise ValueError("pre_transform_spec not yet supported over gRPC")
         else:
             inline_arrow_dataset = self._arrowify_or_register_inline_datasets(inline_datasets)
+
+            # Parse input keep signals and datasets
+            keep_signals = parse_variables(keep_signals)
+            keep_datasets = parse_variables(keep_datasets)
             try:
                 new_spec, warnings = self.embedded_runtime.pre_transform_spec(
                     spec,
@@ -225,7 +241,9 @@ class VegaFusionRuntime:
                     default_input_tz=default_input_tz,
                     row_limit=row_limit,
                     preserve_interactivity=preserve_interactivity,
-                    inline_datasets=inline_arrow_dataset
+                    inline_datasets=inline_arrow_dataset,
+                    keep_signals=keep_signals,
+                    keep_datasets=keep_datasets,
                 )
             finally:
                 # Clean up temporary tables
@@ -268,18 +286,7 @@ class VegaFusionRuntime:
         else:
 
             # Build input variables
-            pre_tx_vars = []
-            err_msg = "Elements of variables argument must be strings are two-element tuples"
-            for var in datasets:
-                if isinstance(var, str):
-                    pre_tx_vars.append((var, []))
-                elif isinstance(var, (list, tuple)):
-                    if len(var) == 2:
-                        pre_tx_vars.append(tuple(var))
-                    else:
-                        raise ValueError(err_msg)
-                else:
-                    raise ValueError(err_msg)
+            pre_tx_vars = parse_variables(datasets)
 
             # Serialize inline datasets
             inline_arrow_dataset = self._arrowify_or_register_inline_datasets(inline_datasets)
@@ -496,6 +503,29 @@ class VegaFusionRuntime:
                 f"cache_capacity={self.cache_capacity}, worker_threads={self.worker_threads}"
                 f")"
             )
+
+
+def parse_variables(variables):
+    # Build input variables
+    pre_tx_vars = []
+    if variables is None:
+        return []
+
+    if isinstance(variables, str):
+        variables = [variables]
+
+    err_msg = "Elements of variables argument must be strings are two-element tuples"
+    for var in variables:
+        if isinstance(var, str):
+            pre_tx_vars.append((var, []))
+        elif isinstance(var, (list, tuple)):
+            if len(var) == 2:
+                pre_tx_vars.append(tuple(var))
+            else:
+                raise ValueError(err_msg)
+        else:
+            raise ValueError(err_msg)
+    return pre_tx_vars
 
 
 runtime = VegaFusionRuntime(64, psutil.virtual_memory().total // 2, psutil.cpu_count())

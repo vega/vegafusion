@@ -76,6 +76,7 @@ pub struct PlannerConfig {
     pub extract_server_data: bool,
     pub allow_client_to_server_comms: bool,
     pub client_only_vars: Vec<ScopedVariable>,
+    pub keep_variables: Vec<ScopedVariable>,
 }
 
 impl Default for PlannerConfig {
@@ -89,6 +90,7 @@ impl Default for PlannerConfig {
             extract_server_data: true,
             allow_client_to_server_comms: true,
             client_only_vars: Default::default(),
+            keep_variables: Default::default(),
         }
     }
 }
@@ -135,7 +137,12 @@ impl SpecPlan {
             let mut task_scope = client_spec.to_task_scope()?;
             let input_client_spec = client_spec.clone();
             let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope, config)?;
-            let mut comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec)?;
+            let mut comm_plan = stitch_specs(
+                &task_scope,
+                &mut server_spec,
+                &mut client_spec,
+                config.keep_variables.as_slice(),
+            )?;
 
             if !config.allow_client_to_server_comms && !comm_plan.client_to_server.is_empty() {
                 // Client to server comms are not allowed and the initial planning
@@ -147,7 +154,12 @@ impl SpecPlan {
 
                 client_spec = input_client_spec;
                 server_spec = extract_server_data(&mut client_spec, &mut task_scope, &config)?;
-                comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec)?;
+                comm_plan = stitch_specs(
+                    &task_scope,
+                    &mut server_spec,
+                    &mut client_spec,
+                    config.keep_variables.as_slice(),
+                )?;
             }
 
             if config.split_url_data_nodes {

@@ -256,6 +256,7 @@ unsafe fn inner_pre_transform_spec(pointer: jlong, args: PreTransformSpecArgs) -
                 args.row_limit,
                 args.preserve_interactivity,
                 Default::default(),
+                Default::default(),
             ))?;
 
     // Convert warnings to JSON compatible PreTransformSpecWarningSpec

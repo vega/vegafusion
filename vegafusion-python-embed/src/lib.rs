@@ -110,6 +110,7 @@ impl PyVegaFusionRuntime {
         Python::with_gil(|py| Ok(PyBytes::new(py, &response_bytes).into()))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn pre_transform_spec(
         &self,
         spec: PyObject,
@@ -118,10 +119,21 @@ impl PyVegaFusionRuntime {
         row_limit: Option<u32>,
         preserve_interactivity: Option<bool>,
         inline_datasets: Option<&PyDict>,
+        keep_signals: Option<Vec<(String, Vec<u32>)>>,
+        keep_datasets: Option<Vec<(String, Vec<u32>)>>,
     ) -> PyResult<(PyObject, PyObject)> {
         let inline_datasets = process_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
         let preserve_interactivity = preserve_interactivity.unwrap_or(false);
+
+        // Build keep_variables
+        let mut keep_variables: Vec<ScopedVariable> = Vec::new();
+        for (name, scope) in keep_signals.unwrap_or_default() {
+            keep_variables.push((Variable::new_signal(&name), scope))
+        }
+        for (name, scope) in keep_datasets.unwrap_or_default() {
+            keep_variables.push((Variable::new_data(&name), scope))
+        }
 
         let (spec, warnings) = self
             .tokio_runtime
@@ -132,6 +144,7 @@ impl PyVegaFusionRuntime {
                 row_limit,
                 preserve_interactivity,
                 inline_datasets,
+                keep_variables,
             ))?;
 
         let warnings: Vec<_> = warnings

@@ -26,7 +26,15 @@ mod tests {
         );
 
         let (chart_spec, _warnings) = runtime
-            .pre_transform_spec(&spec, "UTC", &None, None, true, Default::default())
+            .pre_transform_spec(
+                &spec,
+                "UTC",
+                &None,
+                None,
+                true,
+                Default::default(),
+                Default::default(),
+            )
             .await
             .unwrap();
 

@@ -8,6 +8,7 @@ message PreTransformSpecOpts {
   optional uint32 row_limit = 1;
   repeated PreTransformInlineDataset inline_datasets = 2;
   bool preserve_interactivity = 3;
+  repeated PreTransformVariable keep_variables = 4;
 }
 
 message PreTransformSpecRequest {
