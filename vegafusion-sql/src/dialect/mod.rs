@@ -116,6 +116,18 @@ pub enum ValuesMode {
 }
 
 #[derive(Clone, Debug)]
+pub enum UnorderedRowNumberMode {
+    /// `SELECT ROW_NUMBER() OVER ()` is supported
+    Supported,
+
+    /// `SELECT ${alternate}()` is supported as an alternative
+    AlternateScalarFunction(String),
+
+    /// `SELECT ROW_NUMBER() OVER (ORDER BY 1)` is supported
+    OrderByConstant,
+}
+
+#[derive(Clone, Debug)]
 pub struct Dialect {
     /// sqlparser dialect to use to parse queries
     parse_dialect: ParseDialect,
@@ -188,6 +200,9 @@ pub struct Dialect {
 
     /// Whether dialect supports multiple columns in the same table that differ only by case
     pub supports_mixed_case_identical_columns: bool,
+
+    /// How `ROW_NUMBER() OVER ()` should be handled
+    pub unordered_row_number_mode: UnorderedRowNumberMode,
 }
 
 impl Default for Dialect {
@@ -217,6 +232,7 @@ impl Default for Dialect {
             cast_propagates_null: true,
             supports_non_finite_floats: false,
             supports_mixed_case_identical_columns: false,
+            unordered_row_number_mode: UnorderedRowNumberMode::Supported,
         }
     }
 }
@@ -344,6 +360,7 @@ impl Dialect {
             cast_propagates_null: true,
             supports_non_finite_floats: false,
             supports_mixed_case_identical_columns: false,
+            unordered_row_number_mode: UnorderedRowNumberMode::Supported,
         }
     }
 
@@ -470,6 +487,7 @@ impl Dialect {
             cast_propagates_null: true,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: false,
+            unordered_row_number_mode: UnorderedRowNumberMode::Supported,
         }
     }
 
@@ -569,6 +587,7 @@ impl Dialect {
             cast_propagates_null: false,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: true,
+            unordered_row_number_mode: UnorderedRowNumberMode::Supported,
         }
     }
 
@@ -711,6 +730,7 @@ impl Dialect {
             cast_propagates_null: true,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: false,
+            unordered_row_number_mode: UnorderedRowNumberMode::OrderByConstant,
         }
     }
 
@@ -862,6 +882,7 @@ impl Dialect {
             cast_propagates_null: true,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: true,
+            unordered_row_number_mode: UnorderedRowNumberMode::Supported,
         }
     }
 
@@ -1011,6 +1032,7 @@ impl Dialect {
             cast_propagates_null: true,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: false,
+            unordered_row_number_mode: UnorderedRowNumberMode::Supported,
         }
     }
 
@@ -1111,6 +1133,7 @@ impl Dialect {
             cast_propagates_null: true,
             supports_non_finite_floats: false,
             supports_mixed_case_identical_columns: false,
+            unordered_row_number_mode: UnorderedRowNumberMode::Supported,
         }
     }
 
@@ -1261,6 +1284,7 @@ impl Dialect {
             cast_propagates_null: true,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: true,
+            unordered_row_number_mode: UnorderedRowNumberMode::Supported,
         }
     }
 
@@ -1397,6 +1421,7 @@ impl Dialect {
             cast_propagates_null: false,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: false,
+            unordered_row_number_mode: UnorderedRowNumberMode::Supported,
         }
     }
 
@@ -1538,6 +1563,9 @@ impl Dialect {
             cast_propagates_null: true,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: true,
+            unordered_row_number_mode: UnorderedRowNumberMode::AlternateScalarFunction(
+                "seq8".to_string(),
+            ),
         }
     }
 }
