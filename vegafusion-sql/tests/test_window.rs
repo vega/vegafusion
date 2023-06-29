@@ -634,3 +634,69 @@ mod test_advanced_window_fns {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
+#[cfg(test)]
+mod test_unordered_row_number {
+    use crate::*;
+
+    #[apply(dialect_names)]
+    async fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 1, "b": 2, "c": "A"},
+            {"a": 3, "b": 4, "c": "BB"},
+            {"a": 5, "b": 6, "c": "A"},
+            {"a": 7, "b": 8, "c": "BB"},
+            {"a": 9, "b": 10, "c": "A"},
+        ]))
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
+        let order_by = vec![Expr::Sort(expr::Sort {
+            expr: Box::new(col("a")),
+            asc: true,
+            nulls_first: true,
+        })];
+        let window_frame = WindowFrame {
+            units: WindowFrameUnits::Rows,
+            start_bound: WindowFrameBound::Preceding(ScalarValue::Null),
+            end_bound: WindowFrameBound::CurrentRow,
+        };
+        let df_result = df
+            .select(vec![
+                col("a"),
+                col("b"),
+                col("c"),
+                Expr::WindowFunction(expr::WindowFunction {
+                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                        BuiltInWindowFunction::RowNumber,
+                    ),
+                    args: vec![],
+                    partition_by: vec![],
+                    order_by: vec![],
+                    window_frame: window_frame.clone(),
+                })
+                .alias("row_num"),
+            ])
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(order_by, None).await
+        } else {
+            df_result
+        };
+
+        check_dataframe_query(
+            df_result,
+            "select_window",
+            "row_number_no_order",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}

@@ -9,7 +9,7 @@ use sqlparser::ast::{
     WindowSpec as SqlWindowSpec, WindowType,
 };
 
-use datafusion_expr::expr::{BinaryExpr, Case, Cast};
+use datafusion_expr::expr::{BinaryExpr, Case, Cast, Sort};
 use datafusion_expr::{
     expr, lit, AggregateFunction, Between, BuiltInWindowFunction, BuiltinScalarFunction, Expr,
     ExprSchemable, Operator, WindowFrameBound, WindowFrameUnits, WindowFunction,
@@ -17,7 +17,7 @@ use datafusion_expr::{
 
 use crate::compile::function_arg::ToSqlFunctionArg;
 use crate::compile::order::ToSqlOrderByExpr;
-use crate::dialect::Dialect;
+use crate::dialect::{Dialect, UnorderedRowNumberMode};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::error::{Result, VegaFusionError};
 
@@ -344,6 +344,32 @@ impl ToSqlExpr for Expr {
                         (win_fn.to_string().to_ascii_lowercase(), supports_frame)
                     }
                     WindowFunction::AggregateUDF(udf) => (udf.name.to_ascii_lowercase(), true),
+                };
+
+                // Handle unordered row_number
+                let order_by = if fun_name == "row_number" && order_by.is_empty() {
+                    match &dialect.unordered_row_number_mode {
+                        UnorderedRowNumberMode::AlternateScalarFunction(alt_fun) => {
+                            return Ok(SqlExpr::Function(SqlFunction {
+                                name: SqlObjectName(vec![Ident::new(alt_fun)]),
+                                args: vec![],
+                                over: None,
+                                distinct: false,
+                                special: false,
+                                order_by: vec![],
+                            }))
+                        }
+                        UnorderedRowNumberMode::OrderByConstant => {
+                            vec![Expr::Sort(Sort {
+                                expr: Box::new(lit(1)),
+                                asc: false,
+                                nulls_first: false,
+                            })]
+                        }
+                        _ => order_by.clone(),
+                    }
+                } else {
+                    order_by.clone()
                 };
 
                 if dialect.aggregate_functions.contains(&fun_name)
