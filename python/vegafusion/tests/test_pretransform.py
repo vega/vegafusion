@@ -8,6 +8,10 @@ from datetime import date
 import decimal
 
 
+def setup_module(module):
+    vf.set_local_tz("UTC")
+
+
 def get_connections():
     connections = ["datafusion"]
     try:
@@ -1219,7 +1223,7 @@ def test_pre_transform_multi_partition():
     })
 
     vega_spec = order_items_spec()
-    new_spec, warnings = vf.runtime.pre_transform_spec(vega_spec, "UTC", inline_datasets={
+    new_spec, warnings = vf.runtime.pre_transform_spec(vega_spec, inline_datasets={
         "order_items": order_items,
     })
 
@@ -1240,7 +1244,7 @@ def test_pre_transform_cache_cleared():
         })
 
         vega_spec = order_items_spec()
-        new_spec, warnings = vf.runtime.pre_transform_spec(vega_spec, "UTC", inline_datasets={
+        new_spec, warnings = vf.runtime.pre_transform_spec(vega_spec, inline_datasets={
             "order_items": order_items,
         })
 
@@ -1266,7 +1270,6 @@ def test_pre_transform_datasets():
     datasets, warnings = vf.runtime.pre_transform_datasets(
         vega_spec,
         ["data_0"],
-        "UTC",
         inline_datasets={
             "order_items": order_items,
         }
@@ -1282,12 +1285,12 @@ def test_pre_transform_datasets():
 def test_pre_transform_planner_warning1():
     # Pre-transform with supported aggregate function should result in no warnings
     vega_spec = movies_histogram_spec("mean")
-    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec, "UTC")
+    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
     assert len(warnings) == 0
 
     # Pre-transform with unsupported aggregate function should result in one warning
     vega_spec = movies_histogram_spec("ci0")
-    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec, "UTC")
+    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
     assert len(warnings) == 1
 
     warning = warnings[0]
@@ -1298,12 +1301,12 @@ def test_pre_transform_planner_warning1():
 def test_pre_transform_planner_warning2():
     # Pre-transform with supported aggregate function should result in no warnings
     vega_spec = standalone_aggregate_spec("mean")
-    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec, "UTC")
+    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
     assert len(warnings) == 0
 
     # Pre-transform with unsupported aggregate function should result in one warning
     vega_spec = standalone_aggregate_spec("ci0")
-    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec, "UTC")
+    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
     assert len(warnings) == 1
 
     warning = warnings[0]
@@ -1345,7 +1348,6 @@ def test_date32_in_timeunit_duckdb_crash():
         datasets, warnings = vf.runtime.pre_transform_datasets(
             vega_spec,
             ["data_1"],
-            "UTC",
             inline_datasets=dict(dataframe=dataframe)
         )
         assert len(warnings) == 0
@@ -1358,7 +1360,7 @@ def test_date32_in_timeunit_duckdb_crash():
 def test_period_in_column_name():
     df_period = pd.DataFrame([[1, 2]], columns=['normal', 'a.b'])
     spec = period_in_col_name_spec()
-    datasets, warnings = vf.runtime.pre_transform_datasets(spec, ["data_0"], "UTC", inline_datasets=dict(
+    datasets, warnings = vf.runtime.pre_transform_datasets(spec, ["data_0"], inline_datasets=dict(
         df_period=df_period
     ))
     assert len(warnings) == 0
@@ -1398,7 +1400,7 @@ def test_nat_values():
 
     spec = nat_bar_spec()
 
-    datasets, warnings = vf.runtime.pre_transform_datasets(spec, ["dataframe"], "UTC", inline_datasets=dict(
+    datasets, warnings = vf.runtime.pre_transform_datasets(spec, ["dataframe"], inline_datasets=dict(
         dataframe=dataframe
     ))
     assert len(warnings) == 0
@@ -1430,7 +1432,6 @@ def test_pre_transform_dataset_dataframe_interface_protocol():
     datasets, warnings = vf.runtime.pre_transform_datasets(
         vega_spec,
         ["data_0"],
-        "UTC",
         inline_datasets={
             "order_items": order_items,
         }
@@ -1468,7 +1469,6 @@ def test_pre_transform_dataset_duckdb_conn():
         datasets, warnings = vf.runtime.pre_transform_datasets(
             vega_spec,
             ["data_0"],
-            "UTC",
         )
         assert len(warnings) == 0
         assert len(datasets) == 1
@@ -1505,7 +1505,6 @@ def test_pre_transform_dataset_duckdb_with_decimal_conn():
         datasets, warnings = vf.runtime.pre_transform_datasets(
             vega_spec,
             ["data_0"],
-            "UTC",
         )
         assert len(warnings) == 0
         assert len(datasets) == 1
@@ -1553,7 +1552,7 @@ def test_gh_268_hang():
     for i in range(20):
         # Break cache by removing one row each iteration
         movies_inner = movies.iloc[i:]
-        vf.runtime.pre_transform_datasets(spec, ["data_3"], "UTC", inline_datasets=dict(movies_clean=movies_inner))
+        vf.runtime.pre_transform_datasets(spec, ["data_3"], inline_datasets=dict(movies_clean=movies_inner))
 
 
 def test_repeat_duckdb():
@@ -1564,7 +1563,7 @@ def test_repeat_duckdb():
     movies = pd.read_json("https://raw.githubusercontent.com/vega/vega-datasets/main/data/movies.json")
     spec = gh_268_hang_spec()
     for i in range(2):
-        vf.runtime.pre_transform_datasets(spec, ["data_3"], "UTC", inline_datasets=dict(movies_clean=movies))
+        vf.runtime.pre_transform_datasets(spec, ["data_3"], inline_datasets=dict(movies_clean=movies))
 
 
 @pytest.mark.parametrize("connection", get_connections())
@@ -1606,7 +1605,7 @@ def test_pivot_mixed_case(connection):
     """)
 
     datasets, warnings = vf.runtime.pre_transform_datasets(
-        spec, ["data_0"], "UTC", inline_datasets=dict(source_0=source_0)
+        spec, ["data_0"], inline_datasets=dict(source_0=source_0)
     )
 
     assert set(datasets[0].columns.tolist()) == {"gold", "Gold", "silver", "bronze", "country"}
@@ -1616,13 +1615,12 @@ def test_keep_signals():
     spec = manual_histogram_spec()
 
     # pre-transform without keep_signals. No signals should be present in pre-transformed spec
-    tx_spec, warnings = vf.runtime.pre_transform_spec(spec, "UTC")
+    tx_spec, warnings = vf.runtime.pre_transform_spec(spec)
     assert len(tx_spec.get("signals", [])) == 0
 
     # Specify single keep_signal as a string
     tx_spec, warnings = vf.runtime.pre_transform_spec(
         spec,
-        "UTC",
         keep_signals="layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins"
     )
     assert len(tx_spec.get("signals", [])) == 1
@@ -1633,7 +1631,6 @@ def test_keep_signals():
     # Specify multiple keep_signals as a list
     tx_spec, warnings = vf.runtime.pre_transform_spec(
         spec,
-        "UTC",
         keep_signals=[
             "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins",
             ("layer_0_layer_0_bin_maxbins_10_IMDB_Rating_extent", [])

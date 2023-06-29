@@ -12,6 +12,7 @@ import pyarrow as pa
 from typing import Union
 from .connection import SqlConnection
 from .transformer import import_pyarrow_interchange, to_arrow_table
+from .local_tz import get_local_tz
 
 try:
     from duckdb import DuckDBPyConnection
@@ -172,7 +173,7 @@ class VegaFusionRuntime:
     def pre_transform_spec(
         self,
         spec,
-        local_tz,
+        local_tz=None,
         default_input_tz=None,
         row_limit=None,
         preserve_interactivity=True,
@@ -186,8 +187,8 @@ class VegaFusionRuntime:
 
         :param spec: A Vega specification dict or JSON string
         :param local_tz: Name of timezone to be considered local. E.g. 'America/New_York'.
-            This can be computed for the local system using the tzlocal package and the
-            tzlocal.get_localzone_name() function.
+            Defaults to the value of vf.get_local_tz(), which defaults to the system timezone
+            if one can be determined.
         :param default_input_tz: Name of timezone (e.g. 'America/New_York') that naive datetime
             strings should be interpreted in. Defaults to `local_tz`.
         :param row_limit: Maximum number of dataset rows to include in the returned
@@ -229,6 +230,7 @@ class VegaFusionRuntime:
         if self._grpc_channel:
             raise ValueError("pre_transform_spec not yet supported over gRPC")
         else:
+            local_tz = local_tz or get_local_tz()
             inline_arrow_dataset = self._arrowify_or_register_inline_datasets(inline_datasets)
 
             # Parse input keep signals and datasets
@@ -252,7 +254,15 @@ class VegaFusionRuntime:
 
             return new_spec, warnings
 
-    def pre_transform_datasets(self, spec, datasets, local_tz, default_input_tz=None, row_limit=None, inline_datasets=None):
+    def pre_transform_datasets(
+        self,
+        spec,
+        datasets,
+        local_tz=None,
+        default_input_tz=None,
+        row_limit=None,
+        inline_datasets=None
+    ):
         """
         Extract the fully evaluated form of the requested datasets from a Vega specification
         as pandas DataFrames.
@@ -263,8 +273,8 @@ class VegaFusionRuntime:
           - A two-element tuple where the first element is the name of a dataset as a string
             and the second element is the nested scope of the dataset as a list of integers
         :param local_tz: Name of timezone to be considered local. E.g. 'America/New_York'.
-            This can be computed for the local system using the tzlocal package and the
-            tzlocal.get_localzone_name() function.
+            Defaults to the value of vf.get_local_tz(), which defaults to the system timezone
+            if one can be determined.
         :param default_input_tz: Name of timezone (e.g. 'America/New_York') that naive datetime
             strings should be interpreted in. Defaults to `local_tz`.
         :param row_limit: Maximum number of dataset rows to include in the returned
@@ -284,6 +294,7 @@ class VegaFusionRuntime:
         if self._grpc_channel:
             raise ValueError("pre_transform_datasets not yet supported over gRPC")
         else:
+            local_tz = local_tz or get_local_tz()
 
             # Build input variables
             pre_tx_vars = parse_variables(datasets)
@@ -332,12 +343,12 @@ class VegaFusionRuntime:
                 return datasets, warnings
 
     def pre_transform_extract(
-            self,
-            spec,
-            local_tz,
-            default_input_tz=None,
-            preserve_interactivity=True,
-            inline_datasets=None
+        self,
+        spec,
+        local_tz=None,
+        default_input_tz=None,
+        preserve_interactivity=True,
+        inline_datasets=None
     ):
         """
         Evaluate supported transforms in an input Vega specification and produce a new
@@ -346,8 +357,8 @@ class VegaFusionRuntime:
 
         :param spec: A Vega specification dict or JSON string
         :param local_tz: Name of timezone to be considered local. E.g. 'America/New_York'.
-            This can be computed for the local system using the tzlocal package and the
-            tzlocal.get_localzone_name() function.
+            Defaults to the value of vf.get_local_tz(), which defaults to the system timezone
+            if one can be determined.
         :param default_input_tz: Name of timezone (e.g. 'America/New_York') that naive datetime
             strings should be interpreted in. Defaults to `local_tz`.
         :param preserve_interactivity: If True (default) then the interactive behavior of
@@ -375,6 +386,8 @@ class VegaFusionRuntime:
         if self._grpc_channel:
             raise ValueError("pre_transform_spec not yet supported over gRPC")
         else:
+            local_tz = local_tz or get_local_tz()
+
             inline_arrow_dataset = self._arrowify_or_register_inline_datasets(inline_datasets)
             try:
                 new_spec, datasets, warnings = self.embedded_runtime.pre_transform_extract(
