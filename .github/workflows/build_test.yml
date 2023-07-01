@@ -162,7 +162,7 @@ jobs:
       matrix:
         options:
          - [ubuntu-latest, linux-64]
-         - [windows-2022, win-64]
+         - [windows-latest, win-64]
          - [macos-11, osx-64]
          - [macos-11, osx-arm64]
     steps:
@@ -172,6 +172,15 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         run: |
           choco install --yes protoc
+      - name: Install protoc on mac
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          brew install protobuf
+      - uses: actions/setup-python@v4
+        if: ${{ runner.os == 'Windows' }}
+        with:
+          architecture: 'x64'
+          python-version: '3.10'
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -189,28 +198,32 @@ jobs:
         if: ${{ runner.os == 'Windows'}}
         uses: messense/maturin-action@v1
         with:
-          maturin-version: 0.12.20
           command: build
           manylinux: 2014
           rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip -i python3.11 -i python3.10 -i python3.9 -i python3.8 -i python3.7
-      - name: Build wheels (Mac/Linux)
-        if: ${{ matrix.options[1] != 'osx-arm64' && runner.os != 'Windows'}}
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip
+      - name: Build wheels (Linux)
+        if: ${{ runner.os == 'Linux'}}
         uses: messense/maturin-action@v1
         with:
-          maturin-version: 0.13.6
           command: build
           manylinux: 2014
           rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip -i python3.11 -i python3.10 -i python3.9 -i python3.8 -i python3.7
+          args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip
+      - name: Build wheels (Mac)
+        if: ${{ matrix.options[1] == 'osx-64' }}
+        uses: messense/maturin-action@v1
+        with:
+          command: build
+          rust-toolchain: stable
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip
       - name: Build Apple Silicon wheels
         if: ${{ matrix.options[1] == 'osx-arm64' }}
         uses: messense/maturin-action@v1
         with:
-          maturin-version: 0.13.6
           command: build
           rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip --target aarch64-apple-darwin -i python3.11 -i python3.10 -i python3.9 -i python3.8 -i python3.7
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin
       - name: Remove unwanted universal
         if: ${{ runner.os == 'macOS' }}
         run: |
