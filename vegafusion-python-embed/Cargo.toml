@@ -59,4 +59,4 @@ features = [ "macros", "rt-multi-thread",]
 
 [dependencies.pyo3]
 version = "0.18.1"
-features = [ "extension-module",]
+features = [ "extension-module", "abi3-py38"]

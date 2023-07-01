@@ -193,7 +193,7 @@ jobs:
           command: build
           manylinux: 2014
           rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip -i python3.11 -i python3.10 -i python3.9 -i python3.8 -i python3.7
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip
       - name: Build wheels (Mac/Linux)
         if: ${{ matrix.options[1] != 'osx-arm64' && runner.os != 'Windows'}}
         uses: messense/maturin-action@v1
@@ -202,7 +202,7 @@ jobs:
           command: build
           manylinux: 2014
           rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip -i python3.11 -i python3.10 -i python3.9 -i python3.8 -i python3.7
+          args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip
       - name: Build Apple Silicon wheels
         if: ${{ matrix.options[1] == 'osx-arm64' }}
         uses: messense/maturin-action@v1
@@ -210,7 +210,7 @@ jobs:
           maturin-version: 0.13.6
           command: build
           rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip --target aarch64-apple-darwin -i python3.11 -i python3.10 -i python3.9 -i python3.8 -i python3.7
+          args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip --target aarch64-apple-darwin
       - name: Remove unwanted universal
         if: ${{ runner.os == 'macOS' }}
         run: |
