@@ -162,7 +162,7 @@ jobs:
       matrix:
         options:
          - [ubuntu-latest, linux-64]
-         - [windows-2022, win-64]
+         - [windows-latest, win-64]
          - [macos-11, osx-64]
          - [macos-11, osx-arm64]
     steps:
@@ -172,6 +172,10 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         run: |
           choco install --yes protoc
+      - uses: actions/setup-python@v4
+        with:
+          architecture: 'x64'
+          python-version: '3.10'
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -189,7 +193,6 @@ jobs:
         if: ${{ runner.os == 'Windows'}}
         uses: messense/maturin-action@v1
         with:
-          maturin-version: 0.12.20
           command: build
           manylinux: 2014
           rust-toolchain: stable
@@ -198,7 +201,6 @@ jobs:
         if: ${{ matrix.options[1] != 'osx-arm64' && runner.os != 'Windows'}}
         uses: messense/maturin-action@v1
         with:
-          maturin-version: 0.13.6
           command: build
           manylinux: 2014
           rust-toolchain: stable
@@ -207,7 +209,6 @@ jobs:
         if: ${{ matrix.options[1] == 'osx-arm64' }}
         uses: messense/maturin-action@v1
         with:
-          maturin-version: 0.13.6
           command: build
           rust-toolchain: stable
           args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip --target aarch64-apple-darwin
