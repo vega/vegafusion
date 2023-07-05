@@ -69,7 +69,7 @@ impl DataSpec {
             if !matches!(values, Value::Array(_)) {
                 return DependencyNodeSupported::Unsupported;
             }
-            if let Err(_) = VegaFusionTable::from_json(values) {
+            if VegaFusionTable::from_json(values).is_err() {
                 // Failed to read inline JSON as arrow, so unsupported
                 return DependencyNodeSupported::Unsupported;
             }
