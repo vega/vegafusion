@@ -9,6 +9,7 @@ use itertools::sorted;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
+use vegafusion_common::data::table::VegaFusionTable;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DataSpec {
@@ -66,6 +67,10 @@ impl DataSpec {
                 return DependencyNodeSupported::Unsupported;
             }
             if !matches!(values, Value::Array(_)) {
+                return DependencyNodeSupported::Unsupported;
+            }
+            if VegaFusionTable::from_json(values).is_err() {
+                // Failed to read inline JSON as arrow, so unsupported
                 return DependencyNodeSupported::Unsupported;
             }
         }
