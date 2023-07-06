@@ -31,7 +31,7 @@ use {
 
 #[cfg(feature = "pyarrow")]
 use {
-    arrow::pyarrow::PyArrowConvert,
+    arrow::pyarrow::{FromPyArrow, ToPyArrow},
     pyo3::{
         prelude::PyModule,
         types::{PyList, PyTuple},
