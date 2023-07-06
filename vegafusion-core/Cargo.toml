@@ -39,10 +39,10 @@ features = [ "json", "sqlparser",]
 version = "1.4.0-rc2"
 
 [dependencies.datafusion-common]
-version = "26.0.0"
+version = "27.0.0"
 
 [dependencies.pyo3]
-version = "0.18.1"
+version = "0.19"
 optional = true
 
 [dependencies.serde]

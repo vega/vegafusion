@@ -294,6 +294,20 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::Factorial => "factorial",
                     BuiltinScalarFunction::Gcd => "gcd",
                     BuiltinScalarFunction::Lcm => "lcm",
+                    BuiltinScalarFunction::ArrayAppend => "array_append",
+                    BuiltinScalarFunction::ArrayConcat => "array_concat",
+                    BuiltinScalarFunction::ArrayDims => "array_dims",
+                    BuiltinScalarFunction::ArrayFill => "array_fill",
+                    BuiltinScalarFunction::ArrayLength => "array_length",
+                    BuiltinScalarFunction::ArrayNdims => "array_ndims",
+                    BuiltinScalarFunction::ArrayPosition => "array_position",
+                    BuiltinScalarFunction::ArrayPositions => "array_positions",
+                    BuiltinScalarFunction::ArrayPrepend => "array_prepend",
+                    BuiltinScalarFunction::ArrayRemove => "array_remove",
+                    BuiltinScalarFunction::ArrayReplace => "array_replace",
+                    BuiltinScalarFunction::ArrayToString => "array_to_string",
+                    BuiltinScalarFunction::Cardinality => "array_cardinality",
+                    BuiltinScalarFunction::TrimArray => "trim_array",
                 };
                 translate_scalar_function(fun_name, args, dialect, schema)
             }
@@ -344,6 +358,7 @@ impl ToSqlExpr for Expr {
                         (win_fn.to_string().to_ascii_lowercase(), supports_frame)
                     }
                     WindowFunction::AggregateUDF(udf) => (udf.name.to_ascii_lowercase(), true),
+                    WindowFunction::WindowUDF(udf) => (udf.name.to_ascii_lowercase(), true),
                 };
 
                 // Handle unordered row_number

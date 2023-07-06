@@ -15,7 +15,7 @@ protobuf-src = [ "vegafusion-core/protobuf-src",]
 [dependencies]
 log = "0.4.17"
 env_logger = "0.10.0"
-pythonize = "0.18.0"
+pythonize = "0.19.0"
 async-trait = "0.1.53"
 uuid = "1.3.0"
 
@@ -30,7 +30,7 @@ features = [ "derive",]
 version = "1.0.79"
 
 [dependencies.arrow]
-version = "40.0.0"
+version = "42.0.0"
 features = [ "pyarrow",]
 
 [dependencies.vegafusion-common]
@@ -58,5 +58,5 @@ version = "1.27.0"
 features = [ "macros", "rt-multi-thread",]
 
 [dependencies.pyo3]
-version = "0.18.1"
+version = "0.19"
 features = [ "extension-module", "abi3-py38",]
