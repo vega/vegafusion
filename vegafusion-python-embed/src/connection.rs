@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use arrow::pyarrow::PyArrowConvert;
+use arrow::pyarrow::{FromPyArrow, ToPyArrow};
 use async_trait::async_trait;
 use pyo3::types::{IntoPyDict, PyDict, PyString, PyTuple};
 use vegafusion_common::data::table::VegaFusionTable;
