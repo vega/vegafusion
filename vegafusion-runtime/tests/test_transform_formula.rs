@@ -4,6 +4,7 @@ extern crate lazy_static;
 mod util;
 
 use datafusion_common::ScalarValue;
+use serde_json::json;
 use util::check::check_transform_evaluation;
 use util::datasets::vega_json_dataset;
 use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
@@ -78,6 +79,50 @@ fn test_formula_indexof() {
             extra: Default::default(),
         }),
     ];
+
+    let comp_config = Default::default();
+    let eq_config = Default::default();
+
+    check_transform_evaluation(
+        &dataset,
+        transform_specs.as_slice(),
+        &comp_config,
+        &eq_config,
+    );
+}
+
+#[test]
+fn test_formula_bitwise() {
+    let dataset = vega_json_dataset("penguins");
+
+    let transform_specs: Vec<TransformSpec> = serde_json::from_value(json!([
+        {
+            "type": "formula",
+            "expr": "datum['Body Mass (g)'] & 15 || 0",
+            "as": "bitwise_and"
+        },
+        {
+            "type": "formula",
+            "expr": "datum['Body Mass (g)'] ^ 15 || 0",
+            "as": "bitwise_xor"
+        },
+        {
+            "type": "formula",
+            "expr": "datum['Body Mass (g)'] | 15 || 0",
+            "as": "bitwise_or"
+        },
+        {
+            "type": "formula",
+            "expr": "datum['Body Mass (g)'] << 3 || 0",
+            "as": "bitwise_lshift"
+        },
+        {
+            "type": "formula",
+            "expr": "datum['Body Mass (g)'] >> 2 || 0",
+            "as": "bitwise_rshift"
+        }
+    ]))
+    .unwrap();
 
     let comp_config = Default::default();
     let eq_config = Default::default();
