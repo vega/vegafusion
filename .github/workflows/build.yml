@@ -51,6 +51,10 @@ jobs:
       - name: Download arm64 toolchain
         run: |
           rustup target add aarch64-unknown-linux-gnu
+      - name: Download gcc for cross compilation
+        run: |
+          sudo apt-get update
+          sudo apt-get install gcc-aarch64-linux-gnu
       - name: Build vegafusion-server (Mac/Linux)
         uses: actions-rs/cargo@v1
         with:
