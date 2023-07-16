@@ -35,6 +35,11 @@ pub enum Token {
     LessThanEquals,
     LogicalAnd,
     LogicalOr,
+    BitwiseAnd,
+    BitwiseOr,
+    BitwiseXor,
+    BitwiseShiftLeft,
+    BitwiseShiftRight,
 }
 
 impl fmt::Display for Token {
@@ -71,6 +76,11 @@ impl fmt::Display for Token {
             Token::Exclamation => write!(f, "!"),
             Token::ExclamationEquals => write!(f, "!="),
             Token::ExclamationDoubleEquals => write!(f, "!=="),
+            Token::BitwiseAnd => write!(f, "&"),
+            Token::BitwiseOr => write!(f, "|"),
+            Token::BitwiseXor => write!(f, "^"),
+            Token::BitwiseShiftLeft => write!(f, "<<"),
+            Token::BitwiseShiftRight => write!(f, ">>"),
         }
     }
 }
@@ -190,6 +200,7 @@ pub fn tokenize_single_token(data: &str) -> Result<(Token, usize)> {
         ',' => (Token::Comma, 1),
         '?' => (Token::Question, 1),
         ':' => (Token::Colon, 1),
+        '^' => (Token::BitwiseXor, 1),
         '|' => tokenize_logical_or(data)?,
         '&' => tokenize_logical_and(data)?,
         c @ '"' | c @ '\'' => tokenize_string(data, c)?,
@@ -263,7 +274,7 @@ fn tokenize_single_char_operator(data: &str, ch: char, token: Token) -> Result<(
 fn tokenize_logical_or(data: &str) -> Result<(Token, usize)> {
     let taken = take_while(data, |c| Ok(c == '|'))?;
     let token = match taken {
-        "|" => return Err(VegaFusionError::parse("Bitwise OR operator not supported")),
+        "|" => Token::BitwiseOr,
         "||" => Token::LogicalOr,
         _ => {
             return Err(VegaFusionError::parse(format!(
@@ -278,7 +289,7 @@ fn tokenize_logical_or(data: &str) -> Result<(Token, usize)> {
 fn tokenize_logical_and(data: &str) -> Result<(Token, usize)> {
     let taken = take_while(data, |c| Ok(c == '&'))?;
     let token = match taken {
-        "&" => return Err(VegaFusionError::parse("Bitwise AND operator not supported")),
+        "&" => Token::BitwiseAnd,
         "&&" => Token::LogicalAnd,
         _ => {
             return Err(VegaFusionError::parse(format!(
@@ -314,19 +325,11 @@ fn tokenize_comparison_operators(data: &str) -> Result<(Token, usize)> {
         }
         "==" => Token::DoubleEquals,
         "===" => Token::TripleEquals,
-        "<<" => {
-            return Err(VegaFusionError::parse(
-                "Bitwise left shift operator not supported",
-            ))
-        }
-        ">>" => {
-            return Err(VegaFusionError::parse(
-                "Bitwise signed right shift operator not supported",
-            ))
-        }
+        "<<" => Token::BitwiseShiftLeft,
+        ">>" => Token::BitwiseShiftRight,
         ">>>" => {
             return Err(VegaFusionError::parse(
-                "Bitwise right shift operator not supported",
+                "Bitwise unsigned right shift operator not supported",
             ))
         }
         "!" => Token::Exclamation,
@@ -617,6 +620,18 @@ mod test_tokenizers {
         println!("tokenized: {res:?}");
 
         let res = tokenize("  foo*.345 ").unwrap();
+        println!("tokenized: {res:?}");
+
+        let res = tokenize("true & false").unwrap();
+        println!("tokenized: {res:?}");
+
+        let res = tokenize("true ^ 4").unwrap();
+        println!("tokenized: {res:?}");
+
+        let res = tokenize("5 << 4").unwrap();
+        println!("tokenized: {res:?}");
+
+        let res = tokenize("12 >> 3").unwrap();
         println!("tokenized: {res:?}");
     }
 }

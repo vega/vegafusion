@@ -166,7 +166,24 @@ pub fn compile_binary(
             }
             // TODO: if both null, then equal. If one null, then not equal
         }
+        BinaryOperator::BitwiseAnd => bitwise_expr(lhs, Operator::BitwiseAnd, rhs, schema)?,
+        BinaryOperator::BitwiseOr => bitwise_expr(lhs, Operator::BitwiseOr, rhs, schema)?,
+        BinaryOperator::BitwiseXor => bitwise_expr(lhs, Operator::BitwiseXor, rhs, schema)?,
+        BinaryOperator::BitwiseShiftLeft => {
+            bitwise_expr(lhs, Operator::BitwiseShiftLeft, rhs, schema)?
+        }
+        BinaryOperator::BitwiseShiftRight => {
+            bitwise_expr(lhs, Operator::BitwiseShiftRight, rhs, schema)?
+        }
     };
 
     Ok(new_expr)
+}
+
+fn bitwise_expr(lhs: Expr, op: Operator, rhs: Expr, schema: &DFSchema) -> Result<Expr> {
+    Ok(Expr::BinaryExpr(BinaryExpr {
+        left: Box::new(cast_to(lhs, &DataType::Int64, schema)?),
+        op,
+        right: Box::new(cast_to(rhs, &DataType::Int64, schema)?),
+    }))
 }

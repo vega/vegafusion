@@ -240,6 +240,11 @@ pub enum BinaryOperator {
     Mult = 10,
     Div = 11,
     Mod = 12,
+    BitwiseAnd = 13,
+    BitwiseOr = 14,
+    BitwiseXor = 15,
+    BitwiseShiftLeft = 16,
+    BitwiseShiftRight = 17,
 }
 impl BinaryOperator {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -261,6 +266,11 @@ impl BinaryOperator {
             BinaryOperator::Mult => "Mult",
             BinaryOperator::Div => "Div",
             BinaryOperator::Mod => "Mod",
+            BinaryOperator::BitwiseAnd => "BitwiseAnd",
+            BinaryOperator::BitwiseOr => "BitwiseOr",
+            BinaryOperator::BitwiseXor => "BitwiseXor",
+            BinaryOperator::BitwiseShiftLeft => "BitwiseShiftLeft",
+            BinaryOperator::BitwiseShiftRight => "BitwiseShiftRight",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -279,6 +289,11 @@ impl BinaryOperator {
             "Mult" => Some(Self::Mult),
             "Div" => Some(Self::Div),
             "Mod" => Some(Self::Mod),
+            "BitwiseAnd" => Some(Self::BitwiseAnd),
+            "BitwiseOr" => Some(Self::BitwiseOr),
+            "BitwiseXor" => Some(Self::BitwiseXor),
+            "BitwiseShiftLeft" => Some(Self::BitwiseShiftLeft),
+            "BitwiseShiftRight" => Some(Self::BitwiseShiftRight),
             _ => None,
         }
     }

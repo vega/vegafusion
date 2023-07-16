@@ -19,6 +19,11 @@ impl Display for BinaryOperator {
             BinaryOperator::LessThan => write!(f, "<"),
             BinaryOperator::GreaterThanEqual => write!(f, ">="),
             BinaryOperator::LessThanEqual => write!(f, "<="),
+            BinaryOperator::BitwiseAnd => write!(f, "&"),
+            BinaryOperator::BitwiseOr => write!(f, "|"),
+            BinaryOperator::BitwiseXor => write!(f, "^"),
+            BinaryOperator::BitwiseShiftLeft => write!(f, "<<"),
+            BinaryOperator::BitwiseShiftRight => write!(f, ">>"),
         }
     }
 }
@@ -40,6 +45,10 @@ impl BinaryOperator {
             | BinaryOperator::StrictEquals
             | BinaryOperator::NotEquals
             | BinaryOperator::NotStrictEquals => (11.0, 11.5),
+            BinaryOperator::BitwiseShiftLeft | BinaryOperator::BitwiseShiftRight => (10.0, 10.5),
+            BinaryOperator::BitwiseAnd => (7.0, 7.5),
+            BinaryOperator::BitwiseXor => (6.0, 6.5),
+            BinaryOperator::BitwiseOr => (5.0, 5.5),
         }
     }
 }

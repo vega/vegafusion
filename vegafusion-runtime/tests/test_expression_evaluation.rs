@@ -88,7 +88,15 @@ mod test_binary_kinds {
         case("2 % 1"),
         case("'hello' + \"world\""),
         case("2 * bar"),
-        case("2 / foo")
+        case("2 / foo"),
+        case("true & false"),
+        case("15 & 20"),
+        case("true | false"),
+        case("-8 | 23"),
+        case("true ^ false"),
+        case("2 ^ 12"),
+        case("2 << 8"),
+        case("300 >> 3")
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())

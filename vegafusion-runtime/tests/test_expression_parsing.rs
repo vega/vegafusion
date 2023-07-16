@@ -118,6 +118,26 @@ mod test_parse_logical {
     fn test_marker() {} // Help IDE detect test module
 }
 
+mod test_parse_bitwise {
+    use crate::*;
+
+    #[rstest(
+        expr,
+        case("true & false"),
+        case("foo | bar"),
+        case("foo ^ bar"),
+        case("foo << bar"),
+        case("foo >> bar")
+    )]
+    fn test(expr: &str) {
+        check_parsing(expr);
+        check_expr_supported(expr);
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
 mod test_parse_ternary {
     use crate::*;
 

@@ -31,6 +31,11 @@ pub fn binary_op_from_token(value: &Token) -> Result<BinaryOperator> {
         Token::GreaterThanEquals => BinaryOperator::GreaterThanEqual,
         Token::LessThan => BinaryOperator::LessThan,
         Token::LessThanEquals => BinaryOperator::LessThanEqual,
+        Token::BitwiseAnd => BinaryOperator::BitwiseAnd,
+        Token::BitwiseOr => BinaryOperator::BitwiseOr,
+        Token::BitwiseXor => BinaryOperator::BitwiseXor,
+        Token::BitwiseShiftLeft => BinaryOperator::BitwiseShiftLeft,
+        Token::BitwiseShiftRight => BinaryOperator::BitwiseShiftRight,
         t => {
             return Err(VegaFusionError::parse(format!(
                 "Token '{t}' is not a valid binary operator"
