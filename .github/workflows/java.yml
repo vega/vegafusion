@@ -1,24 +1,24 @@
 name: java
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [ opened, synchronize ]
 jobs:
   build-test-java-linux64:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
       - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
         with:
           toolchain: stable
           override: true
       - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
         with:
           cache-on-failure: True
       - name: Install Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2 # pin@v3
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -35,7 +35,7 @@ jobs:
           mkdir -p native/linux-64
           cp target/release/libvegafusion_jni.so native/linux-64
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
         with:
           name: jni-native
           path: |
@@ -45,18 +45,18 @@ jobs:
     runs-on: macos-11
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
       - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
         with:
           toolchain: stable
           override: true
       - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
         with:
           cache-on-failure: True
       - name: Install Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2 # pin@v3
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -73,7 +73,7 @@ jobs:
           mkdir -p native/osx-64
           cp target/release/libvegafusion_jni.dylib native/osx-64
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
         with:
           name: jni-native
           path: |
@@ -83,18 +83,18 @@ jobs:
     runs-on: macos-11
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
       - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
         with:
           toolchain: stable
           override: true
       - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
         with:
           cache-on-failure: True
       - name: Install Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2 # pin@v3
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -108,7 +108,7 @@ jobs:
           mkdir -p native/osx-arm64
           cp target/aarch64-apple-darwin/release/libvegafusion_jni.dylib native/osx-arm64
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
         with:
           name: jni-native
           path: |
@@ -118,18 +118,18 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
       - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
         with:
           toolchain: stable
           override: true
       - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
         with:
           cache-on-failure: True
       - name: Install Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2 # pin@v3
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -151,7 +151,7 @@ jobs:
           mkdir -p native/win-64
           cp target/release/vegafusion_jni.dll native/win-64
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
         with:
           name: jni-native
           path: |
@@ -166,14 +166,14 @@ jobs:
       - build-test-java-win64
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
       - name: Install Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2 # pin@v3
         with:
           distribution: 'temurin'
           java-version: '17'
       - name: Download jni libs
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
         with:
           name: jni-native
           path: jni-native
@@ -184,7 +184,7 @@ jobs:
           cd java
           ./gradlew jar
       - name: Upload jar
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
         with:
           name: jar
           path: |
@@ -194,19 +194,19 @@ jobs:
     strategy:
       matrix:
         os:
-         - ubuntu-20.04
-         - macos-11
-         - windows-2022
+          - ubuntu-20.04
+          - macos-11
+          - windows-2022
     runs-on: ${{ matrix.os }}
     needs: [ build-jar ]
     steps:
       - name: Install Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2 # pin@v3
         with:
           distribution: 'temurin'
           java-version: '17'
       - name: Download jar
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
         with:
           name: jar
           path: .
