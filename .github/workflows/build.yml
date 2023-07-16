@@ -228,42 +228,42 @@ jobs:
             target/wheels/*.tar.gz
             target/wheels/*.whl
 
-    build-vegafusion-python-embed-win-64:
-      runs-on: windows-latest
-      steps:
-        - name: Check out repository code
-          uses: actions/checkout@v2
-        - name: Install protoc
-          run: |
-            choco install --yes protoc
-        - name: Setup Python 3.10
-          uses: actions/setup-python@v4
-          with:
-            architecture: 'x64'
-            python-version: '3.10'
-        - name: Install latest stable Rust toolchain
-          uses: actions-rs/toolchain@v1
-          with:
-            toolchain: stable
-            override: true
-        - name: Cache rust dependencies
-          uses: Swatinem/rust-cache@v1
-          with:
-            cache-on-failure: True
-        - name: Build wheels
-          uses: messense/maturin-action@v1
-          with:
-            command: build
-            manylinux: 2014
-            rust-toolchain: stable
-            args: --release -m vegafusion-python-embed/Cargo.toml --strip
-        - name: Upload artifacts
-          uses: actions/upload-artifact@v2
-          with:
-            name: vegafusion-python-embed-wheels
-            path: |
-              target/wheels/*.tar.gz
-              target/wheels/*.whl
+  build-vegafusion-python-embed-win-64:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install protoc
+        run: |
+          choco install --yes protoc
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          architecture: 'x64'
+          python-version: '3.10'
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Build wheels
+        uses: messense/maturin-action@v1
+        with:
+          command: build
+          manylinux: 2014
+          rust-toolchain: stable
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: |
+            target/wheels/*.tar.gz
+            target/wheels/*.whl
 
   build-vegafusion-python-embed-osx-64:
     runs-on: macos-11
