@@ -4371,6 +4371,7 @@ dependencies = [
  "uuid",
  "vegafusion-common",
  "vegafusion-core",
+ "vegafusion-dataframe",
  "vegafusion-runtime",
  "vegafusion-sql",
 ]

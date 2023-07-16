@@ -1,4 +1,5 @@
 pub mod connection;
+pub mod dataframe;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;

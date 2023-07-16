@@ -53,6 +53,10 @@ path = "../vegafusion-sql"
 version = "1.4.0-rc2"
 features = [ "datafusion-conn",]
 
+[dependencies.vegafusion-dataframe]
+path = "../vegafusion-dataframe"
+version = "1.4.0-rc2"
+
 [dependencies.tokio]
 version = "1.27.0"
 features = [ "macros", "rt-multi-thread",]

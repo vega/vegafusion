@@ -49,7 +49,7 @@ impl PySqlConnection {
         if fallback_conn.is_some() {
             // If we are going to fall back to the DataFusion connection, remove the
             // str_to_utc_timestamp scalar function so that timestamp parsing falls back to
-            // our DataFusion UDF, which matches Vega more closely that external SQL engines.
+            // our DataFusion UDF, which matches Vega more closely than external SQL engines.
             dialect.scalar_functions.remove("str_to_utc_timestamp");
             dialect.scalar_transformers.remove("str_to_utc_timestamp");
         }
