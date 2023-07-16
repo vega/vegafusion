@@ -55,7 +55,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install gcc-aarch64-linux-gnu
-      - name: Build vegafusion-server (Mac/Linux)
+      - name: Build vegafusion-server
         uses: actions-rs/cargo@v1
         with:
           command: build
