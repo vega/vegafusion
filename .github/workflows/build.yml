@@ -3,23 +3,11 @@ on:
   pull_request:
     types: [opened, synchronize]
 jobs:
-  build-vegafusion-server:
-    strategy:
-      matrix:
-        options: [
-          [ ubuntu-latest,  linux-64 ],
-          [ windows-2022,  win-64 ],
-          [ macos-11,   osx-64 ],
-          [ macos-11,   osx-arm64 ],
-        ]
-    runs-on: ${{ matrix.options[0] }}
+  build-vegafusion-server-linux-64:
+    runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
-      - name: Install protoc on Window
-        run: |
-          choco install --yes protoc
-        if: ${{ runner.os == 'Windows' }}
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -29,46 +17,16 @@ jobs:
         uses: Swatinem/rust-cache@v1
         with:
           cache-on-failure: True
-      - name: Download Apple Silicon toolchain
-        if: ${{ matrix.options[1] == 'osx-arm64' }}
-        run: |
-          rustup target add aarch64-apple-darwin
-      - name: Build vegafusion-server (Windows)
-        uses: actions-rs/cargo@v1
-        if: ${{ runner.os == 'Windows' }}
-        with:
-          command: build
-          args: -p vegafusion-server --release
       - name: Build vegafusion-server (Mac/Linux)
         uses: actions-rs/cargo@v1
-        if: ${{ matrix.options[1] != 'osx-arm64' && runner.os != 'Windows'}}
         with:
           command: build
           args: -p vegafusion-server --release --features=protobuf-src
-      - name: Build vegafusion-server (Apple Silicon)
-        uses: actions-rs/cargo@v1
-        if: ${{ matrix.options[1] == 'osx-arm64' }}
-        with:
-          command: build
-          args: -p vegafusion-server --release --target aarch64-apple-darwin --features=protobuf-src
-      - name: zip executable (Windows)
+      - name: zip executable
         uses: papeloto/action-zip@v1
-        if: runner.os == 'Windows'
-        with:
-          files: target/release/vegafusion-server.exe
-          dest: vegafusion-server-${{ matrix.options[1] }}.zip
-      - name: zip executable (Mac or Linux)
-        uses: papeloto/action-zip@v1
-        if: ${{ matrix.options[1] != 'osx-arm64' && runner.os != 'Windows'}}
         with:
           files: target/release/vegafusion-server
-          dest: vegafusion-server-${{ matrix.options[1] }}.zip
-      - name: zip executable (Apple silicon)
-        uses: papeloto/action-zip@v1
-        if: ${{ matrix.options[1] == 'osx-arm64'}}
-        with:
-          files: target/aarch64-apple-darwin/release/vegafusion-server
-          dest: vegafusion-server-${{ matrix.options[1] }}.zip
+          dest: vegafusion-server-linux-64.zip
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -76,32 +34,110 @@ jobs:
           path: |
             vegafusion-server-*
 
+  build-vegafusion-server-linux-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Download arm64 toolchain
+        run: |
+          rustup target add aarch64-unknown-linux-gnu
+      - name: Build vegafusion-server (Mac/Linux)
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: -p vegafusion-server --release --features=protobuf-src --target=aarch64-unknown-linux-gnu
+      - name: zip executable
+        uses: papeloto/action-zip@v1
+        with:
+          files: target/aarch64-unknown-linux-gnu/release/vegafusion-server
+          dest: vegafusion-server-linux-arm64.zip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-server
+          path: |
+            vegafusion-server-*
 
-  build-vegafusion-python-embed:
-    runs-on: ${{ matrix.options[0] }}
-    strategy:
-      matrix:
-        options:
-          - [ ubuntu-latest, linux-64 ]
-          - [ windows-latest, win-64 ]
-          - [ macos-11, osx-64 ]
-          - [ macos-11, osx-arm64 ]
+  build-vegafusion-server-win-64:
+    runs-on: windows-latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
       - name: Install protoc on Window
-        if: ${{ runner.os == 'Windows' }}
         run: |
           choco install --yes protoc
-      - name: Install protoc on mac
-        if: ${{ runner.os == 'macOS' }}
-        run: |
-          brew install protobuf
-      - uses: actions/setup-python@v4
-        if: ${{ runner.os == 'Windows' }}
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
-          architecture: 'x64'
-          python-version: '3.10'
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Build vegafusion-server (Windows)
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: -p vegafusion-server --release
+      - name: zip executable
+        uses: papeloto/action-zip@v1
+        with:
+          files: target/release/vegafusion-server.exe
+          dest: vegafusion-server-win-64.zip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-server
+          path: |
+            vegafusion-server-*
+
+  build-vegafusion-server-osx-64:
+    runs-on: macos-11
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Build vegafusion-server
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: -p vegafusion-server --release --features=protobuf-src
+      - name: zip executable
+        uses: papeloto/action-zip@v1
+        with:
+          files: target/release/vegafusion-server
+          dest: vegafusion-server-osx-64.zip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-server
+          path: |
+            vegafusion-server-*
+
+  build-vegafusion-server-osx-arm64:
+    runs-on: macos-11
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
       - name: Install latest stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -112,52 +148,184 @@ jobs:
         with:
           cache-on-failure: True
       - name: Download Apple Silicon toolchain
-        if: ${{ matrix.options[1] == 'osx-arm64' }}
         run: |
           rustup target add aarch64-apple-darwin
-      - name: Build wheels (Windows)
-        if: ${{ runner.os == 'Windows'}}
-        uses: messense/maturin-action@v1
+      - name: Build vegafusion-server
+        uses: actions-rs/cargo@v1
         with:
           command: build
-          manylinux: 2014
-          rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip
+          args: -p vegafusion-server --release --target aarch64-apple-darwin --features=protobuf-src
+      - name: zip executable (Apple silicon)
+        uses: papeloto/action-zip@v1
+        with:
+          files: target/aarch64-apple-darwin/release/vegafusion-server
+          dest: vegafusion-server-osx-arm64.zip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-server
+          path: |
+            vegafusion-server-*
+
+  build-vegafusion-python-embed-linux-64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
       - name: Build wheels (Linux)
-        if: ${{ runner.os == 'Linux'}}
         uses: messense/maturin-action@v1
         with:
           command: build
           manylinux: 2014
           rust-toolchain: stable
           args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip
-      - name: Build wheels (Mac)
-        if: ${{ matrix.options[1] == 'osx-64' }}
-        uses: messense/maturin-action@v1
-        with:
-          command: build
-          rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip
-      - name: Build Apple Silicon wheels
-        if: ${{ matrix.options[1] == 'osx-arm64' }}
-        uses: messense/maturin-action@v1
-        with:
-          command: build
-          rust-toolchain: stable
-          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin
-      - name: Remove unwanted universal
-        if: ${{ runner.os == 'macOS' }}
-        run: |
-          rm -rf target/wheels/*universal2*.whl
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: vegafusion-python-embed-wheels
           path: |
             target/wheels/*.tar.gz
-            target/wheels/*cp37*.whl
-            target/wheels/*cp38*.whl
-            target/wheels/*cp39*.whl
-            target/wheels/*cp310*.whl
-            target/wheels/*cp311*.whl
+            target/wheels/*.whl
 
+  build-vegafusion-python-embed-linux-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Download arm64 toolchain
+        run: |
+          rustup target add aarch64-unknown-linux-gnu
+      - name: Build arm64 wheels
+        uses: messense/maturin-action@v1
+        with:
+          command: build
+          manylinux: 2014
+          rust-toolchain: stable
+          args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip --target aarch64-unknown-linux-gnu
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: |
+            target/wheels/*.tar.gz
+            target/wheels/*.whl
+
+    build-vegafusion-python-embed-win-64:
+      runs-on: windows-latest
+      steps:
+        - name: Check out repository code
+          uses: actions/checkout@v2
+        - name: Install protoc
+          run: |
+            choco install --yes protoc
+        - name: Setup Python 3.10
+          uses: actions/setup-python@v4
+          with:
+            architecture: 'x64'
+            python-version: '3.10'
+        - name: Install latest stable Rust toolchain
+          uses: actions-rs/toolchain@v1
+          with:
+            toolchain: stable
+            override: true
+        - name: Cache rust dependencies
+          uses: Swatinem/rust-cache@v1
+          with:
+            cache-on-failure: True
+        - name: Build wheels
+          uses: messense/maturin-action@v1
+          with:
+            command: build
+            manylinux: 2014
+            rust-toolchain: stable
+            args: --release -m vegafusion-python-embed/Cargo.toml --strip
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v2
+          with:
+            name: vegafusion-python-embed-wheels
+            path: |
+              target/wheels/*.tar.gz
+              target/wheels/*.whl
+
+  build-vegafusion-python-embed-osx-64:
+    runs-on: macos-11
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install protoc
+        run: |
+          brew install protobuf
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Build wheels
+        uses: messense/maturin-action@v1
+        with:
+          command: build
+          rust-toolchain: stable
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: |
+            target/wheels/*.tar.gz
+            target/wheels/*.whl
+
+  build-vegafusion-python-embed-osx-arm64:
+    runs-on: macos-11
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install protoc
+        run: |
+          brew install protobuf
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@v1
+        with:
+          cache-on-failure: True
+      - name: Download Apple Silicon toolchain
+        run: |
+          rustup target add aarch64-apple-darwin
+      - name: Build Apple Silicon wheels
+        uses: messense/maturin-action@v1
+        with:
+          command: build
+          rust-toolchain: stable
+          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: |
+            target/wheels/*.tar.gz
+            target/wheels/*.whl
