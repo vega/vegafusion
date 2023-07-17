@@ -1,14 +1,16 @@
 from abc import ABC, abstractmethod
 import pyarrow as pa
 from vegafusion.proto.datafusion_pb2 import LogicalExprNode, SortExprNode
+from pyarrow.interchange.dataframe import _PyArrowDataFrame
 
 from typing import Optional, List, Literal
 
 
-class DataFrame(ABC):
+class DataFrameDataset(ABC):
     """
     Python interface for VegaFusion DataFrame
     """
+
     @abstractmethod
     def schema(self) -> pa.Schema:
         """DataFrame's pyarrow schema"""
@@ -29,27 +31,33 @@ class DataFrame(ABC):
         return True
 
     @abstractmethod
-    def sort(self, exprs: List[SortExprNode], limit: Optional[int]) -> "DataFrame":
+    def sort(
+        self, exprs: List[SortExprNode], limit: Optional[int]
+    ) -> "DataFrameDataset":
         raise NotImplementedError()
 
     @abstractmethod
-    def select(self, exprs: List[LogicalExprNode]) -> "DataFrame":
+    def select(self, exprs: List[LogicalExprNode]) -> "DataFrameDataset":
         raise NotImplementedError()
 
     @abstractmethod
-    def aggregate(self, group_exprs: List[LogicalExprNode], agg_exprs: List[LogicalExprNode]) -> "DataFrame":
+    def aggregate(
+        self, group_exprs: List[LogicalExprNode], agg_exprs: List[LogicalExprNode]
+    ) -> "DataFrameDataset":
         raise NotImplementedError()
 
     @abstractmethod
-    def joinaggregate(self, group_exprs: List[LogicalExprNode], agg_exprs: List[LogicalExprNode]) -> "DataFrame":
+    def joinaggregate(
+        self, group_exprs: List[LogicalExprNode], agg_exprs: List[LogicalExprNode]
+    ) -> "DataFrameDataset":
         raise NotImplementedError()
 
     @abstractmethod
-    def filter(self, predicate: LogicalExprNode) -> "DataFrame":
+    def filter(self, predicate: LogicalExprNode) -> "DataFrameDataset":
         raise NotImplementedError()
 
     @abstractmethod
-    def limit(self, limit: int) -> "DataFrame":
+    def limit(self, limit: int) -> "DataFrameDataset":
         raise NotImplementedError()
 
     @abstractmethod
@@ -59,7 +67,7 @@ class DataFrame(ABC):
         value_col: str,
         key_col: str,
         order_field: Optional[str],
-    ) -> "DataFrame":
+    ) -> "DataFrameDataset":
         raise NotImplementedError()
 
     @abstractmethod
@@ -71,7 +79,7 @@ class DataFrame(ABC):
         start_field: str,
         stop_field: str,
         mode: Literal["zero", "center", "normalize"],
-    ) -> "DataFrame":
+    ) -> "DataFrameDataset":
         raise NotImplementedError()
 
     @abstractmethod
@@ -82,5 +90,12 @@ class DataFrame(ABC):
         key: str,
         groupby: List[str],
         order_field: Optional[str],
-    ) -> "DataFrame":
+    ) -> "DataFrameDataset":
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __dataframe__(
+        self, nan_as_null: bool = False, allow_copy: bool = True, **kwargs
+    ) -> _PyArrowDataFrame:
+        """DataFrame interchange protocol support"""
         raise NotImplementedError()

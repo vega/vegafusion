@@ -1,19 +1,20 @@
 use std::any::Any;
 use std::sync::Arc;
 use arrow::datatypes::Schema;
-use pyo3::{PyErr, PyObject, Python};
+use pyo3::{PyObject, pyclass, pymethods};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_sql::connection::SqlConnection;
 use vegafusion_common::error::Result;
 use vegafusion_dataframe::connection::Connection;
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 use vegafusion_dataframe::dataframe::DataFrame;
+use async_trait::async_trait;
 
 #[pyclass]
 #[derive(Clone)]
 pub struct PyDataFrame {
     dataframe: PyObject,
-    fallback_conn: Arc<dyn SqlConnection>,
+    fallback_conn: Arc<dyn Connection>,
 }
 
 
@@ -23,11 +24,12 @@ impl PyDataFrame {
     pub fn new(dataframe: PyObject) -> Result<Self> {
         Ok(Self {
             dataframe,
-            fallback_conn: Arc::new(DataFusionConnection = Default::default()),
+            fallback_conn: Arc::new(DataFusionConnection::default()),
         })
     }
 }
 
+#[async_trait]
 impl DataFrame for PyDataFrame {
     fn as_any(&self) -> &dyn Any {
         self as &dyn Any

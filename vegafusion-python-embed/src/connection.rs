@@ -13,6 +13,53 @@ use vegafusion_sql::connection::{Connection, SqlConnection};
 use vegafusion_sql::dataframe::{CsvReadOptions, DataFrame, SqlDataFrame};
 use vegafusion_sql::dialect::Dialect;
 
+fn get_dialect_and_fallback_connection(
+    conn: &PyObject,
+) -> Result<(Dialect, Option<Arc<dyn SqlConnection>>)> {
+    let mut dialect = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
+        let dialect_object = conn.call_method0(py, "dialect")?;
+        let dialect_string = dialect_object.extract::<String>(py)?;
+        Ok(Dialect::from_str(&dialect_string)?)
+    })?;
+
+    let fallback_conn = Python::with_gil(
+        |py| -> std::result::Result<Option<Arc<dyn SqlConnection>>, PyErr> {
+            let should_fallback_object = conn.call_method0(py, "fallback")?;
+            let should_fallback = should_fallback_object.extract::<bool>(py)?;
+            if should_fallback {
+                // Create fallback DataFusion connection. This will be used when SQL is encountered
+                // that isn't supported by the main connection.
+                let fallback_conn: DataFusionConnection = Default::default();
+                Ok(Some(Arc::new(fallback_conn)))
+            } else {
+                Ok(None)
+            }
+        },
+    )?;
+
+    if fallback_conn.is_some() {
+        // If we are going to fall back to the DataFusion connection, remove the
+        // str_to_utc_timestamp scalar function so that timestamp parsing falls back to
+        // our DataFusion UDF, which matches Vega more closely than external SQL engines.
+        dialect.scalar_functions.remove("str_to_utc_timestamp");
+        dialect.scalar_transformers.remove("str_to_utc_timestamp");
+    }
+    Ok((dialect, fallback_conn))
+}
+
+fn perform_fetch_query(query: &str, schema: &Schema, conn: &PyObject) -> Result<VegaFusionTable> {
+    let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
+        let query_object = PyString::new(py, query);
+        let query_object = query_object.as_ref();
+        let schema_object = schema.to_pyarrow(py)?;
+        let schema_object = schema_object.as_ref(py);
+        let args = PyTuple::new(py, vec![query_object, schema_object]);
+        let table_object = conn.call_method(py, "fetch_query", args, None)?;
+        VegaFusionTable::from_pyarrow(py, table_object.as_ref(py))
+    })?;
+    Ok(table)
+}
+
 #[pyclass]
 #[derive(Clone)]
 pub struct PySqlConnection {
@@ -25,34 +72,7 @@ pub struct PySqlConnection {
 impl PySqlConnection {
     #[new]
     pub fn new(conn: PyObject) -> Result<Self> {
-        let mut dialect = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
-            let dialect_object = conn.call_method0(py, "dialect")?;
-            let dialect_string = dialect_object.extract::<String>(py)?;
-            Ok(Dialect::from_str(&dialect_string)?)
-        })?;
-
-        let fallback_conn = Python::with_gil(
-            |py| -> std::result::Result<Option<Arc<dyn SqlConnection>>, PyErr> {
-                let should_fallback_object = conn.call_method0(py, "fallback")?;
-                let should_fallback = should_fallback_object.extract::<bool>(py)?;
-                if should_fallback {
-                    // Create fallback DataFusion connection. This will be used when SQL is encountered
-                    // that isn't supported by the main connection.
-                    let fallback_conn: DataFusionConnection = Default::default();
-                    Ok(Some(Arc::new(fallback_conn)))
-                } else {
-                    Ok(None)
-                }
-            },
-        )?;
-
-        if fallback_conn.is_some() {
-            // If we are going to fall back to the DataFusion connection, remove the
-            // str_to_utc_timestamp scalar function so that timestamp parsing falls back to
-            // our DataFusion UDF, which matches Vega more closely than external SQL engines.
-            dialect.scalar_functions.remove("str_to_utc_timestamp");
-            dialect.scalar_transformers.remove("str_to_utc_timestamp");
-        }
+        let (dialect, fallback_conn) = get_dialect_and_fallback_connection(&conn)?;
 
         Ok(Self {
             conn,
@@ -274,16 +294,83 @@ impl Connection for PySqlConnection {
 #[async_trait]
 impl SqlConnection for PySqlConnection {
     async fn fetch_query(&self, query: &str, schema: &Schema) -> Result<VegaFusionTable> {
-        let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
-            let query_object = PyString::new(py, query);
-            let query_object = query_object.as_ref();
-            let schema_object = schema.to_pyarrow(py)?;
-            let schema_object = schema_object.as_ref(py);
-            let args = PyTuple::new(py, vec![query_object, schema_object]);
-            let table_object = self.conn.call_method(py, "fetch_query", args, None)?;
-            VegaFusionTable::from_pyarrow(py, table_object.as_ref(py))
+        perform_fetch_query(query, schema, &self.conn)
+    }
+
+    fn dialect(&self) -> &Dialect {
+        &self.dialect
+    }
+
+    fn to_connection(&self) -> Arc<dyn Connection> {
+        Arc::new(self.clone())
+    }
+}
+
+#[pyclass]
+#[derive(Clone)]
+pub struct PySqlDataset {
+    pub dataset: PyObject,
+    pub dialect: Dialect,
+    pub table_name: String,
+    pub table_schema: Schema,
+    pub fallback_conn: Option<Arc<dyn SqlConnection>>,
+}
+
+#[pymethods]
+impl PySqlDataset {
+    #[new]
+    pub fn new(dataset: PyObject) -> Result<Self> {
+        let (dialect, fallback_conn) = get_dialect_and_fallback_connection(&dataset)?;
+        let (table_name, table_schema) = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
+            let table_name_obj = dataset.call_method0(py, "table_name")?;
+            let table_name = table_name_obj.extract::<String>(py)?;
+
+            let table_schema_obj = dataset.call_method0(py, "table_schema")?;
+            let table_schema = Schema::from_pyarrow(table_schema_obj.as_ref(py))?;
+            Ok((table_name, table_schema))
         })?;
-        Ok(table)
+
+        Ok(Self {
+            dataset,
+            dialect,
+            table_name,
+            table_schema,
+            fallback_conn,
+        })
+    }
+}
+
+#[async_trait]
+impl Connection for PySqlDataset {
+    fn id(&self) -> String {
+        // Include random UUID in id because we can't be sure that the underlying data source
+        // hasn't changed between calls.
+        format!("pyduckdb-{}", uuid::Uuid::new_v4().to_string())
+    }
+
+    async fn tables(&self) -> Result<HashMap<String, Schema>> {
+        Ok(vec![(self.table_name.clone(), self.table_schema.clone())]
+            .into_iter()
+            .collect())
+    }
+
+    async fn scan_table(&self, name: &str) -> Result<Arc<dyn DataFrame>> {
+        // Build DataFrame referencing the registered table
+        Ok(Arc::new(
+            SqlDataFrame::try_new(
+                Arc::new(self.clone()),
+                name,
+                self.fallback_conn.clone().into_iter().collect(),
+            )
+            .await?,
+        ))
+    }
+}
+
+#[async_trait]
+impl SqlConnection for PySqlDataset {
+    async fn fetch_query(&self, query: &str, schema: &Schema) -> Result<VegaFusionTable> {
+        perform_fetch_query(query, schema, &self.dataset)
     }
 
     fn dialect(&self) -> &Dialect {

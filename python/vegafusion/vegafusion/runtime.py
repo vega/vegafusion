@@ -11,6 +11,7 @@ import psutil
 import pyarrow as pa
 from typing import Union
 from .connection import SqlConnection
+from .dataset import SqlDataset, DataFrameDataset
 from .transformer import import_pyarrow_interchange, to_arrow_table
 from .local_tz import get_local_tz
 
@@ -128,12 +129,16 @@ class VegaFusionRuntime:
             # No grpc channel, get or initialize an embedded runtime
             return self.embedded_runtime.process_request_bytes(request)
 
-    def _arrowify_or_register_inline_datasets(self, inline_datasets=None):
+    def _import_or_register_inline_datasets(self, inline_datasets=None):
         from .transformer import to_arrow_ipc_bytes, arrow_table_to_ipc_bytes
         inline_datasets = inline_datasets or dict()
-        inline_arrow_datasets = dict()
+        imported_inline_datasets = dict()
         for name, value in inline_datasets.items():
-            if isinstance(value, pa.Table):
+            if isinstance(value, SqlDataset):
+                imported_inline_datasets[name] = value
+            elif isinstance(value, DataFrameDataset):
+                imported_inline_datasets[name] = value
+            elif isinstance(value, pa.Table):
                 if self._connection is not None:
                     try:
                         # Try registering Arrow Table if supported
@@ -142,7 +147,7 @@ class VegaFusionRuntime:
                     except ValueError:
                         pass
 
-                inline_arrow_datasets[name] = value
+                imported_inline_datasets[name] = value
             elif isinstance(value, pd.DataFrame):
                 if self._connection is not None:
                     try:
@@ -152,7 +157,7 @@ class VegaFusionRuntime:
                     except ValueError:
                         pass
 
-                inline_arrow_datasets[name] = to_arrow_table(value)
+                imported_inline_datasets[name] = to_arrow_table(value)
             elif hasattr(value, "__dataframe__"):
                 pi = import_pyarrow_interchange()
                 value = pi.from_dataframe(value)
@@ -164,11 +169,11 @@ class VegaFusionRuntime:
                     except ValueError:
                         pass
 
-                inline_arrow_datasets[name] = value
+                imported_inline_datasets[name] = value
             else:
                 raise ValueError(f"Unsupported DataFrame type: {type(value)}")
 
-        return inline_arrow_datasets
+        return imported_inline_datasets
 
     def pre_transform_spec(
         self,
@@ -231,7 +236,7 @@ class VegaFusionRuntime:
             raise ValueError("pre_transform_spec not yet supported over gRPC")
         else:
             local_tz = local_tz or get_local_tz()
-            inline_arrow_dataset = self._arrowify_or_register_inline_datasets(inline_datasets)
+            imported_inline_dataset = self._import_or_register_inline_datasets(inline_datasets)
 
             # Parse input keep signals and datasets
             keep_signals = parse_variables(keep_signals)
@@ -243,7 +248,7 @@ class VegaFusionRuntime:
                     default_input_tz=default_input_tz,
                     row_limit=row_limit,
                     preserve_interactivity=preserve_interactivity,
-                    inline_datasets=inline_arrow_dataset,
+                    inline_datasets=imported_inline_dataset,
                     keep_signals=keep_signals,
                     keep_datasets=keep_datasets,
                 )
@@ -300,7 +305,7 @@ class VegaFusionRuntime:
             pre_tx_vars = parse_variables(datasets)
 
             # Serialize inline datasets
-            inline_arrow_dataset = self._arrowify_or_register_inline_datasets(inline_datasets)
+            inline_arrow_dataset = self._import_or_register_inline_datasets(inline_datasets)
             try:
                 values, warnings = self.embedded_runtime.pre_transform_datasets(
                     spec,
@@ -388,7 +393,7 @@ class VegaFusionRuntime:
         else:
             local_tz = local_tz or get_local_tz()
 
-            inline_arrow_dataset = self._arrowify_or_register_inline_datasets(inline_datasets)
+            inline_arrow_dataset = self._import_or_register_inline_datasets(inline_datasets)
             try:
                 new_spec, datasets, warnings = self.embedded_runtime.pre_transform_extract(
                     spec,
