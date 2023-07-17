@@ -18,6 +18,7 @@ use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::to_numeric;
 use vegafusion_common::error::{ResultWithContext, VegaFusionError};
+use vegafusion_common::escape::unescape_field;
 use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
@@ -59,6 +60,12 @@ impl TransformTrait for Window {
         let partition_by: Vec<_> = self
             .groupby
             .iter()
+            .filter(|c| {
+                dataframe
+                    .schema()
+                    .column_with_name(&unescape_field(c))
+                    .is_some()
+            })
             .map(|group| unescaped_col(group))
             .collect();
 

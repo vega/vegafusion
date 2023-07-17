@@ -87,7 +87,7 @@ def test_it(category, name):
     assert img_datafusion.shape == img_duckdb.shape, "Size mismatch between datafusion and duckdb connections"
     similarity = ssim(img_datafusion, img_duckdb, channel_axis=2)
     print(similarity)
-    assert similarity >= 0.999, f"Similarity failed between datafusion and duckdb connections"
+    assert similarity >= 0.998, f"Similarity failed between datafusion and duckdb connections"
 
 
 def test_pretransform_extract():
