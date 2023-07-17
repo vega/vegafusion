@@ -1,6 +1,6 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion_expr::expr::BinaryExpr;
-use datafusion_expr::{concat, lit, Expr, Operator};
+use datafusion_expr::{coalesce, concat, lit, Expr, Operator};
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_common::datatypes::{
     cast_to, data_type, is_null_literal, is_numeric_datatype, is_string_datatype, to_numeric,
@@ -166,7 +166,28 @@ pub fn compile_binary(
             }
             // TODO: if both null, then equal. If one null, then not equal
         }
+        BinaryOperator::BitwiseAnd => bitwise_expr(lhs, Operator::BitwiseAnd, rhs, schema)?,
+        BinaryOperator::BitwiseOr => bitwise_expr(lhs, Operator::BitwiseOr, rhs, schema)?,
+        BinaryOperator::BitwiseXor => bitwise_expr(lhs, Operator::BitwiseXor, rhs, schema)?,
+        BinaryOperator::BitwiseShiftLeft => {
+            bitwise_expr(lhs, Operator::BitwiseShiftLeft, rhs, schema)?
+        }
+        BinaryOperator::BitwiseShiftRight => {
+            bitwise_expr(lhs, Operator::BitwiseShiftRight, rhs, schema)?
+        }
     };
 
     Ok(new_expr)
+}
+
+fn bitwise_expr(lhs: Expr, op: Operator, rhs: Expr, schema: &DFSchema) -> Result<Expr> {
+    // Vega treats null as zero for bitwise operations
+    let left = coalesce(vec![cast_to(lhs, &DataType::Int64, schema)?, lit(0)]);
+    let right = coalesce(vec![cast_to(rhs, &DataType::Int64, schema)?, lit(0)]);
+
+    Ok(Expr::BinaryExpr(BinaryExpr {
+        left: Box::new(left),
+        op,
+        right: Box::new(right),
+    }))
 }

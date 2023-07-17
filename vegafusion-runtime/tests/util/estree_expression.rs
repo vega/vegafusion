@@ -99,6 +99,21 @@ pub enum BinaryOperator {
 
     #[serde(rename = "%")]
     Mod,
+
+    #[serde(rename = "&")]
+    BitwiseAnd,
+
+    #[serde(rename = "|")]
+    BitwiseOr,
+
+    #[serde(rename = "^")]
+    BitwiseXor,
+
+    #[serde(rename = "<<")]
+    BitwiseShiftLeft,
+
+    #[serde(rename = ">>")]
+    BitwiseShiftRight,
 }
 
 impl BinaryOperator {
@@ -117,6 +132,13 @@ impl BinaryOperator {
             BinaryOperator::Mult => proto_expression::BinaryOperator::Mult,
             BinaryOperator::Div => proto_expression::BinaryOperator::Div,
             BinaryOperator::Mod => proto_expression::BinaryOperator::Mod,
+            BinaryOperator::BitwiseAnd => proto_expression::BinaryOperator::BitwiseAnd,
+            BinaryOperator::BitwiseOr => proto_expression::BinaryOperator::BitwiseOr,
+            BinaryOperator::BitwiseXor => proto_expression::BinaryOperator::BitwiseXor,
+            BinaryOperator::BitwiseShiftLeft => proto_expression::BinaryOperator::BitwiseShiftLeft,
+            BinaryOperator::BitwiseShiftRight => {
+                proto_expression::BinaryOperator::BitwiseShiftRight
+            }
         }
     }
 }

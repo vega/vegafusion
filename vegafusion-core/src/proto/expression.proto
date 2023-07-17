@@ -64,6 +64,11 @@ enum BinaryOperator {
   Mult = 10;
   Div = 11;
   Mod = 12;
+  BitwiseAnd = 13;
+  BitwiseOr = 14;
+  BitwiseXor = 15;
+  BitwiseShiftLeft = 16;
+  BitwiseShiftRight = 17;
 }
 
 message BinaryExpression {
