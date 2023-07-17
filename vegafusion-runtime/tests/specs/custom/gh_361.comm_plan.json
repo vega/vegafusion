@@ -1,0 +1,8 @@
+{
+  "server_to_client": [{
+    "name": "data_0",
+    "namespace": "data",
+    "scope": []
+  }],
+  "client_to_server": []
+}

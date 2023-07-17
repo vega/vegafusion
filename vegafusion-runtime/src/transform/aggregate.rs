@@ -28,7 +28,18 @@ impl TransformTrait for Aggregate {
         dataframe: Arc<dyn DataFrame>,
         _config: &CompilationConfig,
     ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
-        let group_exprs: Vec<_> = self.groupby.iter().map(|c| unescaped_col(c)).collect();
+        let group_exprs: Vec<_> = self
+            .groupby
+            .iter()
+            .filter(|c| {
+                dataframe
+                    .schema()
+                    .column_with_name(&unescape_field(c))
+                    .is_some()
+            })
+            .map(|c| unescaped_col(c))
+            .collect();
+
         let (mut agg_exprs, projections) = get_agg_and_proj_exprs(self, &dataframe.schema_df()?)?;
 
         // Append ordering column to aggregations
