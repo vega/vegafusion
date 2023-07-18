@@ -116,7 +116,6 @@ impl DataFrame for PyDataFrame {
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
 
-            println!("Fallback sort: {:?}", exprs);
             new_df.sort(exprs, limit).await
         }
     }
@@ -156,7 +155,7 @@ impl DataFrame for PyDataFrame {
             })?;
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
-            println!("Fallback select: {:?}", exprs);
+
             new_df.select(exprs).await
         }
     }
@@ -202,7 +201,7 @@ impl DataFrame for PyDataFrame {
             })?;
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
-            println!("Fallback aggregate: {:?}\n{:?}", group_exprs, aggr_exprs);
+
             new_df.aggregate(group_exprs, aggr_exprs).await
         }
     }
@@ -248,10 +247,7 @@ impl DataFrame for PyDataFrame {
             })?;
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
-            println!(
-                "Fallback joinaggregate: {:?}\n{:?}",
-                group_exprs, aggr_exprs
-            );
+
             new_df.joinaggregate(group_exprs, aggr_exprs).await
         }
     }
@@ -291,7 +287,7 @@ impl DataFrame for PyDataFrame {
             })?;
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
-            println!("Fallback filter: {:?}", predicate);
+
             new_df.filter(predicate).await
         }
     }
@@ -334,7 +330,6 @@ impl DataFrame for PyDataFrame {
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
 
-            println!("Fallback limit: {:?}", limit);
             new_df.limit(limit).await
         }
     }
@@ -389,7 +384,6 @@ impl DataFrame for PyDataFrame {
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
 
-            println!("Fallback fold");
             new_df.fold(fields, value_col, key_col, order_field).await
         }
     }
@@ -455,7 +449,6 @@ impl DataFrame for PyDataFrame {
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
 
-            println!("Fallback stack");
             new_df
                 .stack(field, orderby, groupby, start_field, stop_field, mode)
                 .await
@@ -514,7 +507,6 @@ impl DataFrame for PyDataFrame {
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
 
-            println!("Fallback impute");
             new_df.impute(field, value, key, groupby, order_field).await
         }
     }
