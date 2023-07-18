@@ -107,10 +107,10 @@ impl DataFrame for SqlDataFrame {
 
     async fn aggregate(
         &self,
-        group_expr: Vec<Expr>,
-        aggr_expr: Vec<Expr>,
+        group_exprs: Vec<Expr>,
+        aggr_exprs: Vec<Expr>,
     ) -> Result<Arc<dyn DataFrame>> {
-        fallback_operation!(self, aggregate, _aggregate, group_expr, aggr_expr)
+        fallback_operation!(self, aggregate, _aggregate, group_exprs, aggr_exprs)
     }
 
     async fn joinaggregate(
@@ -486,14 +486,14 @@ impl SqlDataFrame {
 
     async fn _aggregate(
         &self,
-        group_expr: Vec<Expr>,
-        aggr_expr: Vec<Expr>,
+        group_exprs: Vec<Expr>,
+        aggr_exprs: Vec<Expr>,
     ) -> Result<Arc<dyn DataFrame>> {
         // Add group exprs to aggregates for SQL query
-        let mut all_aggr_expr = aggr_expr;
-        all_aggr_expr.extend(group_expr.clone());
+        let mut all_aggr_expr = aggr_exprs;
+        all_aggr_expr.extend(group_exprs.clone());
 
-        let sql_group_expr_strs = group_expr
+        let sql_group_expr_strs = group_exprs
             .iter()
             .map(|expr| Ok(expr.to_sql(self.dialect(), &self.schema_df()?)?.to_string()))
             .collect::<Result<Vec<_>>>()?;
