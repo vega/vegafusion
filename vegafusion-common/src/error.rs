@@ -1,9 +1,11 @@
 use arrow::error::ArrowError;
 use datafusion_common::DataFusionError;
-use datafusion_proto::logical_plan::to_proto::Error as DataFusionProtoError;
 use std::num::ParseFloatError;
 use std::result;
 use thiserror::Error;
+
+#[cfg(feature = "datafusion-proto")]
+use datafusion_proto::logical_plan::to_proto::Error as DataFusionProtoError;
 
 #[cfg(feature = "pyo3")]
 use pyo3::{exceptions::PyValueError, PyErr};
@@ -59,6 +61,7 @@ pub enum VegaFusionError {
     #[error("DataFusion error: {0}\n{1}")]
     DataFusionError(DataFusionError, ErrorContext),
 
+    #[cfg(feature = "datafusion-proto")]
     #[error("DataFusion proto error: {0}\n{1}")]
     DataFusionProtoError(DataFusionProtoError, ErrorContext),
 
@@ -131,6 +134,7 @@ impl VegaFusionError {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::DataFusionError(err, context)
             }
+            #[cfg(feature = "datafusion-proto")]
             DataFusionProtoError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::DataFusionProtoError(err, context)
@@ -221,6 +225,7 @@ impl VegaFusionError {
             DataFusionError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
+            #[cfg(feature = "datafusion-proto")]
             DataFusionProtoError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
@@ -298,6 +303,7 @@ impl From<DataFusionError> for VegaFusionError {
     }
 }
 
+#[cfg(feature = "datafusion-proto")]
 impl From<DataFusionProtoError> for VegaFusionError {
     fn from(err: DataFusionProtoError) -> Self {
         Self::DataFusionProtoError(err, Default::default())
