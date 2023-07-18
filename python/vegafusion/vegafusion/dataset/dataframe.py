@@ -87,3 +87,10 @@ class DataFrameDataset(ABC):
         order_field: Optional[str],
     ) -> "DataFrameDataset":
         raise DataFrameOperationNotSupportedError()
+
+    def __dataframe__(
+        self, nan_as_null: bool = False, allow_copy: bool = True, **kwargs
+    ) -> _PyArrowDataFrame:
+        """DataFrame interchange protocol support"""
+        table = self.collect()
+        return table.__dataframe__(nan_as_null=nan_as_null, allow_copy=allow_copy)

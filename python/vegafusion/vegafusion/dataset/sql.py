@@ -58,7 +58,6 @@ class SqlDataset(ABC):
         """
         return True
 
-    @abstractmethod
     def __dataframe__(
         self, nan_as_null: bool = False, allow_copy: bool = True, **kwargs
     ) -> _PyArrowDataFrame:
