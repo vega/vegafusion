@@ -39,11 +39,11 @@ pub trait DataFrame: Send + Sync + 'static {
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
 
-    async fn sort(&self, _expr: Vec<Expr>, _limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+    async fn sort(&self, _exprs: Vec<Expr>, _limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("sort not supported"))
     }
 
-    async fn select(&self, _expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
+    async fn select(&self, _exprs: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("select not supported"))
     }
 

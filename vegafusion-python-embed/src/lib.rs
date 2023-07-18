@@ -13,6 +13,7 @@ use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::War
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 use crate::connection::{PySqlConnection, PySqlDataset};
+use crate::dataframe::PyDataFrame;
 use env_logger::{Builder, Target};
 use pythonize::depythonize;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -41,8 +42,8 @@ pub fn initialize_logging() {
 #[pyclass]
 struct PyVegaFusionRuntime {
     runtime: VegaFusionRuntime,
-    tokio_runtime_connection: Runtime,
-    tokio_runtime_current_thread: Runtime,
+    tokio_runtime_connection: Arc<Runtime>,
+    tokio_runtime_current_thread: Arc<Runtime>,
 }
 
 impl PyVegaFusionRuntime {
@@ -61,15 +62,17 @@ impl PyVegaFusionRuntime {
                     .iter()
                     .map(|(name, inline_dataset)| {
                         let dataset = if inline_dataset.is_instance(sql_dataset_type)? {
+                            any_python_sources = true;
                             let sql_dataset = PySqlDataset::new(inline_dataset.into_py(py))?;
                             let df = self
                                 .tokio_runtime_current_thread
                                 .block_on(sql_dataset.scan_table(&sql_dataset.table_name))?;
-                            any_python_sources = true;
                             VegaFusionDataset::DataFrame(df)
                         } else if inline_dataset.is_instance(df_dataset_type)? {
                             any_python_sources = true;
-                            todo!()
+
+                            let df = Arc::new(PyDataFrame::new(inline_dataset.into_py(py))?);
+                            VegaFusionDataset::DataFrame(df)
                         } else {
                             // Assume PyArrow Table
                             // We convert to ipc bytes for two reasons:
@@ -131,8 +134,8 @@ impl PyVegaFusionRuntime {
 
         Ok(Self {
             runtime: VegaFusionRuntime::new(conn, max_capacity, memory_limit),
-            tokio_runtime_connection,
-            tokio_runtime_current_thread,
+            tokio_runtime_connection: Arc::new(tokio_runtime_connection),
+            tokio_runtime_current_thread: Arc::new(tokio_runtime_current_thread),
         })
     }
 

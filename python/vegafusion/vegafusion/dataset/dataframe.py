@@ -6,6 +6,10 @@ from pyarrow.interchange.dataframe import _PyArrowDataFrame
 from typing import Optional, List, Literal
 
 
+class DataFrameOperationNotSupportedError(RuntimeError):
+    pass
+
+
 class DataFrameDataset(ABC):
     """
     Python interface for VegaFusion DataFrame
@@ -30,37 +34,30 @@ class DataFrameDataset(ABC):
         """
         return True
 
-    @abstractmethod
     def sort(
         self, exprs: List[SortExprNode], limit: Optional[int]
     ) -> "DataFrameDataset":
-        raise NotImplementedError()
+        raise DataFrameOperationNotSupportedError()
 
-    @abstractmethod
     def select(self, exprs: List[LogicalExprNode]) -> "DataFrameDataset":
-        raise NotImplementedError()
+        raise DataFrameOperationNotSupportedError()
 
-    @abstractmethod
     def aggregate(
         self, group_exprs: List[LogicalExprNode], agg_exprs: List[LogicalExprNode]
     ) -> "DataFrameDataset":
-        raise NotImplementedError()
+        raise DataFrameOperationNotSupportedError()
 
-    @abstractmethod
     def joinaggregate(
         self, group_exprs: List[LogicalExprNode], agg_exprs: List[LogicalExprNode]
     ) -> "DataFrameDataset":
-        raise NotImplementedError()
+        raise DataFrameOperationNotSupportedError()
 
-    @abstractmethod
     def filter(self, predicate: LogicalExprNode) -> "DataFrameDataset":
-        raise NotImplementedError()
+        raise DataFrameOperationNotSupportedError()
 
-    @abstractmethod
     def limit(self, limit: int) -> "DataFrameDataset":
-        raise NotImplementedError()
+        raise DataFrameOperationNotSupportedError()
 
-    @abstractmethod
     def fold(
         self,
         fields: List[str],
@@ -68,9 +65,8 @@ class DataFrameDataset(ABC):
         key_col: str,
         order_field: Optional[str],
     ) -> "DataFrameDataset":
-        raise NotImplementedError()
+        raise DataFrameOperationNotSupportedError()
 
-    @abstractmethod
     def stack(
         self,
         field: str,
@@ -80,9 +76,8 @@ class DataFrameDataset(ABC):
         stop_field: str,
         mode: Literal["zero", "center", "normalize"],
     ) -> "DataFrameDataset":
-        raise NotImplementedError()
+        raise DataFrameOperationNotSupportedError()
 
-    @abstractmethod
     def impute(
         self,
         field: str,
@@ -91,11 +86,4 @@ class DataFrameDataset(ABC):
         groupby: List[str],
         order_field: Optional[str],
     ) -> "DataFrameDataset":
-        raise NotImplementedError()
-
-    @abstractmethod
-    def __dataframe__(
-        self, nan_as_null: bool = False, allow_copy: bool = True, **kwargs
-    ) -> _PyArrowDataFrame:
-        """DataFrame interchange protocol support"""
-        raise NotImplementedError()
+        raise DataFrameOperationNotSupportedError()

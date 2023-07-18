@@ -97,12 +97,12 @@ impl DataFrame for SqlDataFrame {
             .and_then(pre_process_column_types)
     }
 
-    async fn sort(&self, expr: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
-        fallback_operation!(self, sort, _sort, expr, limit)
+    async fn sort(&self, exprs: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+        fallback_operation!(self, sort, _sort, exprs, limit)
     }
 
-    async fn select(&self, expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
-        fallback_operation!(self, select, _select, expr)
+    async fn select(&self, exprs: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
+        fallback_operation!(self, select, _select, exprs)
     }
 
     async fn aggregate(
@@ -440,9 +440,9 @@ impl SqlDataFrame {
         .unwrap()
     }
 
-    async fn _sort(&self, expr: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+    async fn _sort(&self, exprs: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
         let mut query = self.make_select_star();
-        let sql_exprs = expr
+        let sql_exprs = exprs
             .iter()
             .map(|expr| expr.to_sql_order(self.dialect(), &self.schema_df()?))
             .collect::<Result<Vec<_>>>()?;
@@ -457,8 +457,8 @@ impl SqlDataFrame {
         self.chain_query(query, self.schema.as_ref().clone())
     }
 
-    async fn _select(&self, expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
-        let sql_expr_strs = expr
+    async fn _select(&self, exprs: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
+        let sql_expr_strs = exprs
             .iter()
             .map(|expr| {
                 Ok(expr
@@ -479,7 +479,7 @@ impl SqlDataFrame {
 
         // Build new schema
         let new_schema =
-            make_new_schema_from_exprs(self.schema.as_ref(), expr.as_slice(), self.dialect())?;
+            make_new_schema_from_exprs(self.schema.as_ref(), exprs.as_slice(), self.dialect())?;
 
         self.chain_query(query, new_schema)
     }
