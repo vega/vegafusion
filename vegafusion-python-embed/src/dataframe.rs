@@ -346,7 +346,7 @@ impl DataFrame for PyDataFrame {
             let py_fields = Vec::from(fields).into_py(py);
             let py_value_col = value_col.into_py(py);
             let py_key_col = key_col.into_py(py);
-            let py_order_field = order_field.clone().into_py(py);
+            let py_order_field = order_field.into_py(py);
 
             // Build arguments for Python sort method
             let args = PyTuple::new(

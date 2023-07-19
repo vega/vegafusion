@@ -291,7 +291,7 @@ impl TaskGraph {
         node_index: usize,
         value: TaskValue,
     ) -> Result<Vec<NodeValueIndex>> {
-        let mut node = self
+        let node = self
             .nodes
             .get_mut(node_index)
             .ok_or_else(|| VegaFusionError::internal("Missing node"))?;

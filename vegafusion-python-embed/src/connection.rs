@@ -345,7 +345,7 @@ impl Connection for PySqlDataset {
     fn id(&self) -> String {
         // Include random UUID in id because we can't be sure that the underlying data source
         // hasn't changed between calls.
-        format!("pyduckdb-{}", uuid::Uuid::new_v4().to_string())
+        format!("pyduckdb-{}", uuid::Uuid::new_v4())
     }
 
     async fn tables(&self) -> Result<HashMap<String, Schema>> {
