@@ -3,7 +3,7 @@ import pyarrow as pa
 from vegafusion.proto.datafusion_pb2 import LogicalExprNode
 from pyarrow.interchange.dataframe import _PyArrowDataFrame
 
-from typing import Optional, List, Literal
+from typing import Optional, List, Literal, Union
 
 
 class DataFrameOperationNotSupportedError(RuntimeError):
@@ -151,7 +151,7 @@ class DataFrameDataset(ABC):
     def impute(
         self,
         field: str,
-        value: str | int | float,
+        value: Union[str, int, float],
         key: str,
         groupby: List[str],
         order_field: Optional[str],
