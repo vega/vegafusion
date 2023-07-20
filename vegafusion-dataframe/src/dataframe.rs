@@ -9,6 +9,7 @@ use datafusion_expr::{
     WindowFrameUnits,
 };
 use std::any::Any;
+use std::fmt::{Display, Formatter};
 use std::sync::Arc;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
@@ -39,18 +40,18 @@ pub trait DataFrame: Send + Sync + 'static {
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
 
-    async fn sort(&self, _expr: Vec<Expr>, _limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+    async fn sort(&self, _exprs: Vec<Expr>, _limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("sort not supported"))
     }
 
-    async fn select(&self, _expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
+    async fn select(&self, _exprs: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("select not supported"))
     }
 
     async fn aggregate(
         &self,
-        _group_expr: Vec<Expr>,
-        _aggr_expr: Vec<Expr>,
+        _group_exprs: Vec<Expr>,
+        _aggr_exprs: Vec<Expr>,
     ) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported(
             "aggregate not supported",
@@ -140,4 +141,14 @@ pub enum StackMode {
     Zero,
     Center,
     Normalize,
+}
+
+impl Display for StackMode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StackMode::Zero => write!(f, "zero"),
+            StackMode::Center => write!(f, "center"),
+            StackMode::Normalize => write!(f, "normalize"),
+        }
+    }
 }

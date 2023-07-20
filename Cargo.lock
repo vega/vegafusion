@@ -1377,6 +1377,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "datafusion-proto"
+version = "27.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40f7357464aeec3b530a3193dc23ca01ef20a26bad6c6dfe407ea7fb971701eb"
+dependencies = [
+ "arrow",
+ "chrono",
+ "datafusion",
+ "datafusion-common",
+ "datafusion-expr",
+ "object_store",
+ "prost",
+]
+
+[[package]]
 name = "datafusion-row"
 version = "27.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4280,6 +4295,7 @@ dependencies = [
  "chrono",
  "datafusion-common",
  "datafusion-expr",
+ "datafusion-proto",
  "jni",
  "pyo3",
  "serde_json",
@@ -4360,9 +4376,11 @@ version = "1.4.0-rc2"
 dependencies = [
  "arrow",
  "async-trait",
+ "datafusion-proto",
  "deterministic-hash",
  "env_logger",
  "log",
+ "prost",
  "pyo3",
  "pythonize",
  "serde",
@@ -4371,6 +4389,7 @@ dependencies = [
  "uuid",
  "vegafusion-common",
  "vegafusion-core",
+ "vegafusion-dataframe",
  "vegafusion-runtime",
  "vegafusion-sql",
 ]

@@ -97,20 +97,20 @@ impl DataFrame for SqlDataFrame {
             .and_then(pre_process_column_types)
     }
 
-    async fn sort(&self, expr: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
-        fallback_operation!(self, sort, _sort, expr, limit)
+    async fn sort(&self, exprs: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+        fallback_operation!(self, sort, _sort, exprs, limit)
     }
 
-    async fn select(&self, expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
-        fallback_operation!(self, select, _select, expr)
+    async fn select(&self, exprs: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
+        fallback_operation!(self, select, _select, exprs)
     }
 
     async fn aggregate(
         &self,
-        group_expr: Vec<Expr>,
-        aggr_expr: Vec<Expr>,
+        group_exprs: Vec<Expr>,
+        aggr_exprs: Vec<Expr>,
     ) -> Result<Arc<dyn DataFrame>> {
-        fallback_operation!(self, aggregate, _aggregate, group_expr, aggr_expr)
+        fallback_operation!(self, aggregate, _aggregate, group_exprs, aggr_exprs)
     }
 
     async fn joinaggregate(
@@ -440,9 +440,9 @@ impl SqlDataFrame {
         .unwrap()
     }
 
-    async fn _sort(&self, expr: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+    async fn _sort(&self, exprs: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
         let mut query = self.make_select_star();
-        let sql_exprs = expr
+        let sql_exprs = exprs
             .iter()
             .map(|expr| expr.to_sql_order(self.dialect(), &self.schema_df()?))
             .collect::<Result<Vec<_>>>()?;
@@ -457,8 +457,8 @@ impl SqlDataFrame {
         self.chain_query(query, self.schema.as_ref().clone())
     }
 
-    async fn _select(&self, expr: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
-        let sql_expr_strs = expr
+    async fn _select(&self, exprs: Vec<Expr>) -> Result<Arc<dyn DataFrame>> {
+        let sql_expr_strs = exprs
             .iter()
             .map(|expr| {
                 Ok(expr
@@ -479,21 +479,21 @@ impl SqlDataFrame {
 
         // Build new schema
         let new_schema =
-            make_new_schema_from_exprs(self.schema.as_ref(), expr.as_slice(), self.dialect())?;
+            make_new_schema_from_exprs(self.schema.as_ref(), exprs.as_slice(), self.dialect())?;
 
         self.chain_query(query, new_schema)
     }
 
     async fn _aggregate(
         &self,
-        group_expr: Vec<Expr>,
-        aggr_expr: Vec<Expr>,
+        group_exprs: Vec<Expr>,
+        aggr_exprs: Vec<Expr>,
     ) -> Result<Arc<dyn DataFrame>> {
         // Add group exprs to aggregates for SQL query
-        let mut all_aggr_expr = aggr_expr;
-        all_aggr_expr.extend(group_expr.clone());
+        let mut all_aggr_expr = aggr_exprs;
+        all_aggr_expr.extend(group_exprs.clone());
 
-        let sql_group_expr_strs = group_expr
+        let sql_group_expr_strs = group_exprs
             .iter()
             .map(|expr| Ok(expr.to_sql(self.dialect(), &self.schema_df()?)?.to_string()))
             .collect::<Result<Vec<_>>>()?;
