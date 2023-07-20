@@ -1,7 +1,7 @@
 [package]
 name = "vegafusion-sql"
 license = "BSD-3-Clause"
-version = "1.4.0-rc2"
+version = "1.4.0-rc3"
 edition = "2021"
 description = "VegaFusion SQL dialect generation and connection implementations"
 
@@ -24,16 +24,16 @@ version = "0.34.0"
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-version = "1.4.0-rc2"
+version = "1.4.0-rc3"
 features = [ "sqlparser",]
 
 [dependencies.vegafusion-dataframe]
 path = "../vegafusion-dataframe"
-version = "1.4.0-rc2"
+version = "1.4.0-rc3"
 
 [dependencies.vegafusion-datafusion-udfs]
 path = "../vegafusion-datafusion-udfs"
-version = "1.4.0-rc2"
+version = "1.4.0-rc3"
 optional = true
 
 [dependencies.arrow]
@@ -83,11 +83,11 @@ features = [ "preserve_order",]
 
 [dev-dependencies.vegafusion-datafusion-udfs]
 path = "../vegafusion-datafusion-udfs"
-version = "1.4.0-rc2"
+version = "1.4.0-rc3"
 
 [dev-dependencies.vegafusion-common]
 path = "../vegafusion-common"
-version = "1.4.0-rc2"
+version = "1.4.0-rc3"
 features = [ "sqlparser", "json", "prettyprint",]
 
 [dev-dependencies.tokio]
