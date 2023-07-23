@@ -596,6 +596,7 @@ impl VegaFusionRuntime {
         let local_tz = request.local_tz;
         let default_input_tz = request.default_input_tz;
         let preserve_interactivity = request.preserve_interactivity;
+        let extract_threshold = request.extract_threshold;
 
         let (spec, datasets, warnings) = self
             .pre_transform_extract(
@@ -603,6 +604,7 @@ impl VegaFusionRuntime {
                 &local_tz,
                 &default_input_tz,
                 preserve_interactivity,
+                extract_threshold as usize,
                 inline_datasets,
             )
             .await?;
@@ -639,6 +641,7 @@ impl VegaFusionRuntime {
         local_tz: &str,
         default_input_tz: &Option<String>,
         preserve_interactivity: bool,
+        extract_threshold: usize,
         inline_datasets: HashMap<String, VegaFusionDataset>,
     ) -> Result<(
         ChartSpec,
@@ -693,7 +696,7 @@ impl VegaFusionRuntime {
                         // Set inline value
                         data.values = Some(input_values);
                     } else if let TaskValue::Table(table) = export_update.value {
-                        if table.num_rows() <= 20 {
+                        if table.num_rows() <= extract_threshold {
                             // Inline small tables
                             data.values = Some(table.to_json()?);
                         } else {

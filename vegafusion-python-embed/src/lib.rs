@@ -279,11 +279,15 @@ impl PyVegaFusionRuntime {
         local_tz: String,
         default_input_tz: Option<String>,
         preserve_interactivity: Option<bool>,
+        extract_threshold: Option<usize>,
+        extracted_format: Option<String>,
         inline_datasets: Option<&PyDict>,
     ) -> PyResult<(PyObject, Vec<PyObject>, PyObject)> {
         let (inline_datasets, any_py_sources) = self.process_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
         let preserve_interactivity = preserve_interactivity.unwrap_or(true);
+        let extract_threshold = extract_threshold.unwrap_or(20);
+        let extracted_format = extracted_format.unwrap_or_else(|| "pyarrow".to_string());
 
         // Get runtime based on whether there were any Python data sources
         // (in which case we need to use the current thread tokio runtime to avoid deadlocking)
@@ -298,6 +302,7 @@ impl PyVegaFusionRuntime {
             &local_tz,
             &default_input_tz,
             preserve_interactivity,
+            extract_threshold,
             inline_datasets,
         ))?;
 
@@ -319,7 +324,19 @@ impl PyVegaFusionRuntime {
                 .map(|(name, scope, table)| {
                     let name = name.into_py(py);
                     let scope = scope.into_py(py);
-                    let table = table.to_pyarrow(py)?;
+                    let table = match extracted_format.as_str() {
+                        "pyarrow" => table.to_pyarrow(py)?,
+                        "arrow-ipc" => {
+                            PyBytes::new(py, table.to_ipc_bytes()?.as_slice()).to_object(py)
+                        }
+                        _ => {
+                            return Err(PyValueError::new_err(format!(
+                                "Invalid extracted_format: {}",
+                                extracted_format
+                            )))
+                        }
+                    };
+
                     let dataset: PyObject = PyTuple::new(py, &[name, scope, table]).into_py(py);
                     Ok(dataset)
                 })

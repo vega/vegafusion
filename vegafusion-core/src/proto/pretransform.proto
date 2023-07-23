@@ -114,5 +114,6 @@ message PreTransformExtractRequest {
   string local_tz = 2;
   optional string default_input_tz = 3;
   bool preserve_interactivity = 4;
-  repeated PreTransformInlineDataset inline_datasets = 5;
+  int32 extract_threshold = 5;
+  repeated PreTransformInlineDataset inline_datasets = 6;
 }

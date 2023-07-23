@@ -353,6 +353,8 @@ class VegaFusionRuntime:
         local_tz=None,
         default_input_tz=None,
         preserve_interactivity=True,
+        extract_threshold=20,
+        extracted_format="pyarrow",
         inline_datasets=None
     ):
         """
@@ -371,6 +373,12 @@ class VegaFusionRuntime:
             in interactions be included in the resulting spec rather than being pre-transformed.
             If False, then all possible data transformations are applied even if they break
             the original interactive behavior of the chart.
+        :param extract_threshold: Datasets with length below extract_threshold will be
+            inlined
+        :param extracted_format: One of "pyarrow" or "arrow-ipc"
+            The format for extracted datasets:
+                - "pyarrow": pyarrow.Table
+                - "arrow-ipc": bytes in arrow IPC format
         :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
             Tables. Inline datasets may be referenced by the input specification using
             the following url syntax 'vegafusion+dataset://{dataset_name}' or
@@ -400,6 +408,8 @@ class VegaFusionRuntime:
                     local_tz=local_tz,
                     default_input_tz=default_input_tz,
                     preserve_interactivity=preserve_interactivity,
+                    extract_threshold=extract_threshold,
+                    extracted_format=extracted_format,
                     inline_datasets=inline_arrow_dataset
                 )
             finally:

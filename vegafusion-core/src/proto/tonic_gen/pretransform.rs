@@ -190,6 +190,8 @@ pub struct PreTransformExtractRequest {
     pub default_input_tz: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(bool, tag = "4")]
     pub preserve_interactivity: bool,
-    #[prost(message, repeated, tag = "5")]
+    #[prost(int32, tag = "5")]
+    pub extract_threshold: i32,
+    #[prost(message, repeated, tag = "6")]
     pub inline_datasets: ::prost::alloc::vec::Vec<PreTransformInlineDataset>,
 }
