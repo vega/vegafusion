@@ -194,4 +194,6 @@ pub struct PreTransformExtractRequest {
     pub extract_threshold: i32,
     #[prost(message, repeated, tag = "6")]
     pub inline_datasets: ::prost::alloc::vec::Vec<PreTransformInlineDataset>,
+    #[prost(message, repeated, tag = "7")]
+    pub keep_variables: ::prost::alloc::vec::Vec<PreTransformVariable>,
 }

@@ -282,6 +282,8 @@ impl PyVegaFusionRuntime {
         extract_threshold: Option<usize>,
         extracted_format: Option<String>,
         inline_datasets: Option<&PyDict>,
+        keep_signals: Option<Vec<(String, Vec<u32>)>>,
+        keep_datasets: Option<Vec<(String, Vec<u32>)>>,
     ) -> PyResult<(PyObject, Vec<PyObject>, PyObject)> {
         let (inline_datasets, any_py_sources) = self.process_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
@@ -297,6 +299,15 @@ impl PyVegaFusionRuntime {
             &self.tokio_runtime_connection
         };
 
+        // Build keep_variables
+        let mut keep_variables: Vec<ScopedVariable> = Vec::new();
+        for (name, scope) in keep_signals.unwrap_or_default() {
+            keep_variables.push((Variable::new_signal(&name), scope))
+        }
+        for (name, scope) in keep_datasets.unwrap_or_default() {
+            keep_variables.push((Variable::new_data(&name), scope))
+        }
+
         let (tx_spec, datasets, warnings) = rt.block_on(self.runtime.pre_transform_extract(
             &spec,
             &local_tz,
@@ -304,6 +315,7 @@ impl PyVegaFusionRuntime {
             preserve_interactivity,
             extract_threshold,
             inline_datasets,
+            keep_variables,
         ))?;
 
         let warnings: Vec<_> = warnings

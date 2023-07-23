@@ -116,4 +116,5 @@ message PreTransformExtractRequest {
   bool preserve_interactivity = 4;
   int32 extract_threshold = 5;
   repeated PreTransformInlineDataset inline_datasets = 6;
+  repeated PreTransformVariable keep_variables = 7;
 }

@@ -355,7 +355,9 @@ class VegaFusionRuntime:
         preserve_interactivity=True,
         extract_threshold=20,
         extracted_format="pyarrow",
-        inline_datasets=None
+        inline_datasets=None,
+        keep_signals=None,
+        keep_datasets=None,
     ):
         """
         Evaluate supported transforms in an input Vega specification and produce a new
@@ -384,6 +386,16 @@ class VegaFusionRuntime:
             Tables. Inline datasets may be referenced by the input specification using
             the following url syntax 'vegafusion+dataset://{dataset_name}' or
             'table://{dataset_name}'.
+        :param keep_signals: Signals from the input spec that must be included in the
+            pre-transformed spec. A list with elements that are either:
+              - The name of a top-level signal as a string
+              - A two-element tuple where the first element is the name of a signal as a string
+                and the second element is the nested scope of the dataset as a list of integers
+        :param keep_datasets: Datasets from the input spec that must be included in the
+            pre-transformed spec. A list with elements that are either:
+              - The name of a top-level dataset as a string
+              - A two-element tuple where the first element is the name of a dataset as a string
+                and the second element is the nested scope of the dataset as a list of integers
         :return:
             Three-element tuple:
                 0. A dict containing the JSON representation of the pre-transformed Vega
@@ -411,7 +423,9 @@ class VegaFusionRuntime:
                     preserve_interactivity=preserve_interactivity,
                     extract_threshold=extract_threshold,
                     extracted_format=extracted_format,
-                    inline_datasets=inline_arrow_dataset
+                    inline_datasets=inline_arrow_dataset,
+                    keep_signals=keep_signals,
+                    keep_datasets=keep_datasets,
                 )
             finally:
                 # Clean up temporary tables

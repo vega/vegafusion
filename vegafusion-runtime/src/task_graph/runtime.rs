@@ -597,6 +597,11 @@ impl VegaFusionRuntime {
         let default_input_tz = request.default_input_tz;
         let preserve_interactivity = request.preserve_interactivity;
         let extract_threshold = request.extract_threshold;
+        let keep_variables: Vec<ScopedVariable> = request
+            .keep_variables
+            .into_iter()
+            .map(|var| (var.variable.unwrap(), var.scope))
+            .collect();
 
         let (spec, datasets, warnings) = self
             .pre_transform_extract(
@@ -606,6 +611,7 @@ impl VegaFusionRuntime {
                 preserve_interactivity,
                 extract_threshold as usize,
                 inline_datasets,
+                keep_variables,
             )
             .await?;
 
@@ -643,6 +649,7 @@ impl VegaFusionRuntime {
         preserve_interactivity: bool,
         extract_threshold: usize,
         inline_datasets: HashMap<String, VegaFusionDataset>,
+        keep_variables: Vec<ScopedVariable>,
     ) -> Result<(
         ChartSpec,
         Vec<PreTransformExtractDataset>,
@@ -657,7 +664,7 @@ impl VegaFusionRuntime {
                 default_input_tz,
                 preserve_interactivity,
                 inline_datasets,
-                Default::default(),
+                keep_variables,
             )
             .await?;
 
