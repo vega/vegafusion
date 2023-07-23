@@ -1,12 +1,13 @@
 import pandas as pd
 import pytest
 from pandas import Timestamp, NaT
+import pyarrow as pa
 import vegafusion as vf
 import json
 import polars as pl
 from datetime import date
 import decimal
-
+import base64
 
 def setup_module(module):
     vf.set_local_tz("UTC")
@@ -1643,3 +1644,51 @@ def test_keep_signals():
     assert sig0["name"] == "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins"
     assert sig1["name"] == "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_extent"
     assert sig1["value"] == [1.4, 9.2]
+
+
+def test_pre_transform_spec_encoded_datasets():
+    # Pre-transform with supported aggregate function should result in no warnings
+    vega_spec = movies_histogram_spec()
+
+    # default list of dict format
+    tx_spec, warnings = vf.runtime.pre_transform_spec(
+        vega_spec, data_encoding_threshold=10, data_encoding_format="pyarrow"
+    )
+
+    values = tx_spec["data"][0]["values"]
+    assert isinstance(values, list)
+    assert len(values) == 9
+
+    # pyarrow format
+    tx_spec, warnings = vf.runtime.pre_transform_spec(
+        vega_spec, data_encoding_threshold=0, data_encoding_format="pyarrow"
+    )
+
+    values = tx_spec["data"][0]["values"]
+    assert isinstance(values, pa.Table)
+    values_df = values.to_pandas()
+    assert len(values_df) == 9
+    assert values_df.columns[0] == "bin_maxbins_10_IMDB Rating"
+
+    # arrow-ipc format
+    tx_spec, warnings = vf.runtime.pre_transform_spec(
+        vega_spec, data_encoding_threshold=0, data_encoding_format="arrow-ipc"
+    )
+
+    values = tx_spec["data"][0]["values"]
+    assert isinstance(values, bytes)
+    values_df = pa.ipc.deserialize_pandas(values)
+    assert len(values_df) == 9
+    assert values_df.columns[0] == "bin_maxbins_10_IMDB Rating"
+
+    # arrow-ipc-base64 format
+    tx_spec, warnings = vf.runtime.pre_transform_spec(
+        vega_spec, data_encoding_threshold=0, data_encoding_format="arrow-ipc-base64"
+    )
+
+    values = tx_spec["data"][0]["values"]
+    assert isinstance(values, str)
+    values_df = pa.ipc.deserialize_pandas(base64.standard_b64decode(values))
+    assert len(values_df) == 9
+    assert values_df.columns[0] == "bin_maxbins_10_IMDB Rating"
+
