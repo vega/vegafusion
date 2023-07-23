@@ -375,10 +375,11 @@ class VegaFusionRuntime:
             the original interactive behavior of the chart.
         :param extract_threshold: Datasets with length below extract_threshold will be
             inlined
-        :param extracted_format: One of "pyarrow" or "arrow-ipc"
+        :param extracted_format: The format for the extracted datasets
             The format for extracted datasets:
                 - "pyarrow": pyarrow.Table
                 - "arrow-ipc": bytes in arrow IPC format
+                - "arrow-ipc-base64": base64 encoded arrow IPC format
         :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
             Tables. Inline datasets may be referenced by the input specification using
             the following url syntax 'vegafusion+dataset://{dataset_name}' or
