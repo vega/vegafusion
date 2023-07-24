@@ -1,7 +1,7 @@
 [package]
 name = "vegafusion-dataframe"
 license = "BSD-3-Clause"
-version = "1.4.0-rc3"
+version = "1.4.0-rc4"
 edition = "2021"
 description = "VegaFusion's DataFrame and Connection traits"
 
@@ -10,7 +10,7 @@ async-trait = "0.1.53"
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-version = "1.4.0-rc3"
+version = "1.4.0-rc4"
 
 [dependencies.datafusion-common]
 version = "27.0.0"
