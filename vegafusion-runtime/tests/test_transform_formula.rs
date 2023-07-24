@@ -144,13 +144,10 @@ fn test_formula_recursive_ternary_doesnt_overflow_stack() {
             "type": "formula",
             "as": "nested_ternary",
             "expr": "\
-            datum['Island'] == 'Torgersen' ? 0: \
-            datum['Island'] == 'Dream' ? 1: \
-            datum['Island'] == 'Biscoe' ? 2: \
             datum['Island'] == 'A' ? 3: \
             datum['Island'] == 'B' ? 4: \
             datum['Island'] == 'C' ? 5: \
-            datum['Island'] == 'D' ? 6: \
+            datum['Island'] == 'Dream' ? 6: \
             datum['Island'] == 'E' ? 7: \
             datum['Island'] == 'F' ? 8: \
             datum['Island'] == 'G' ? 9: \
@@ -166,7 +163,7 @@ fn test_formula_recursive_ternary_doesnt_overflow_stack() {
             datum['Island'] == 'Q' ? 19: \
             datum['Island'] == 'R' ? 20: \
             datum['Island'] == 'S' ? 21: \
-            datum['Island'] == 'T' ? 22: \
+            datum['Island'] == 'Torgersen' ? 22: \
             datum['Island'] == 'U' ? 23: \
             datum['Island'] == 'V' ? 24: \
             datum['Island'] == 'W' ? 25: \
@@ -174,7 +171,7 @@ fn test_formula_recursive_ternary_doesnt_overflow_stack() {
             datum['Island'] == 'Y' ? 27: \
             datum['Island'] == 'Z' ? 28: \
             datum['Island'] == 'AA' ? 29: \
-            datum['Island'] == 'BB' ? 30: \
+            datum['Island'] == 'Biscoe' ? 30: \
             datum['Island'] == 'CC' ? 31: \
             datum['Island'] == 'DD' ? 32: \
             datum['Island'] == 'EE' ? 33: \
