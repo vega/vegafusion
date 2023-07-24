@@ -12,6 +12,7 @@ import pyarrow as pa
 from typing import Union
 from .connection import SqlConnection
 from .dataset import SqlDataset, DataFrameDataset
+from .evaluation import get_mark_group_for_scope
 from .transformer import import_pyarrow_interchange, to_arrow_table
 from .local_tz import get_local_tz
 
@@ -185,6 +186,8 @@ class VegaFusionRuntime:
         inline_datasets=None,
         keep_signals=None,
         keep_datasets=None,
+        data_encoding_threshold=None,
+        data_encoding_format="pyarrow",
     ):
         """
         Evaluate supported transforms in an input Vega specification and produce a new
@@ -218,6 +221,18 @@ class VegaFusionRuntime:
               - The name of a top-level dataset as a string
               - A two-element tuple where the first element is the name of a dataset as a string
                 and the second element is the nested scope of the dataset as a list of integers
+        :param data_encoding_threshold: threshold for encoding datasets
+            When length of pre-transformed datasets exceeds data_encoding_threshold, datasets
+            are encoded into an alternative format (as determined by the data_encoding_format
+            argument). When None (the default), pre-transformed datasets are never encoded and
+            are always included as JSON compatible lists of dictionaries.
+        :param data_encoding_format: format of encoded datasets
+            Format to use to encode datasets with length exceeding the data_encoding_threshold
+            argument.
+                - "pyarrow": Encode datasets as pyarrow Tables. Not JSON compatible.
+                - "arrow-ipc": Encode datasets as bytes in Arrow IPC format. Not JSON compatible.
+                - "arrow-ipc-base64": Encode datasets as strings in base64 encoded Arrow IPC format.
+                    JSON compatible.
         :return:
             Two-element tuple:
                 0. A string containing the JSON representation of a Vega specification
@@ -242,16 +257,38 @@ class VegaFusionRuntime:
             keep_signals = parse_variables(keep_signals)
             keep_datasets = parse_variables(keep_datasets)
             try:
-                new_spec, warnings = self.embedded_runtime.pre_transform_spec(
-                    spec,
-                    local_tz=local_tz,
-                    default_input_tz=default_input_tz,
-                    row_limit=row_limit,
-                    preserve_interactivity=preserve_interactivity,
-                    inline_datasets=imported_inline_dataset,
-                    keep_signals=keep_signals,
-                    keep_datasets=keep_datasets,
-                )
+                if data_encoding_threshold is None:
+                    new_spec, warnings = self.embedded_runtime.pre_transform_spec(
+                        spec,
+                        local_tz=local_tz,
+                        default_input_tz=default_input_tz,
+                        row_limit=row_limit,
+                        preserve_interactivity=preserve_interactivity,
+                        inline_datasets=imported_inline_dataset,
+                        keep_signals=keep_signals,
+                        keep_datasets=keep_datasets,
+                    )
+                else:
+                    # Use pre_transform_extract to extract large datasets
+                    new_spec, datasets, warnings = self.embedded_runtime.pre_transform_extract(
+                        spec,
+                        local_tz=local_tz,
+                        default_input_tz=default_input_tz,
+                        preserve_interactivity=preserve_interactivity,
+                        extract_threshold=data_encoding_threshold,
+                        extracted_format=data_encoding_format,
+                        inline_datasets=imported_inline_dataset,
+                        keep_signals=keep_signals,
+                        keep_datasets=keep_datasets,
+                    )
+
+                    # Insert encoded datasets back into spec
+                    for (name, scope, tbl) in datasets:
+                        group = get_mark_group_for_scope(new_spec, scope)
+                        for data in group.get("data", []):
+                            if data.get("name", None) == name:
+                                data["values"] = tbl
+
             finally:
                 # Clean up temporary tables
                 if self._connection is not None:
@@ -353,7 +390,11 @@ class VegaFusionRuntime:
         local_tz=None,
         default_input_tz=None,
         preserve_interactivity=True,
-        inline_datasets=None
+        extract_threshold=20,
+        extracted_format="pyarrow",
+        inline_datasets=None,
+        keep_signals=None,
+        keep_datasets=None,
     ):
         """
         Evaluate supported transforms in an input Vega specification and produce a new
@@ -371,10 +412,27 @@ class VegaFusionRuntime:
             in interactions be included in the resulting spec rather than being pre-transformed.
             If False, then all possible data transformations are applied even if they break
             the original interactive behavior of the chart.
+        :param extract_threshold: Datasets with length below extract_threshold will be
+            inlined
+        :param extracted_format: The format for the extracted datasets
+            The format for extracted datasets:
+                - "pyarrow": pyarrow.Table
+                - "arrow-ipc": bytes in arrow IPC format
+                - "arrow-ipc-base64": base64 encoded arrow IPC format
         :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
             Tables. Inline datasets may be referenced by the input specification using
             the following url syntax 'vegafusion+dataset://{dataset_name}' or
             'table://{dataset_name}'.
+        :param keep_signals: Signals from the input spec that must be included in the
+            pre-transformed spec. A list with elements that are either:
+              - The name of a top-level signal as a string
+              - A two-element tuple where the first element is the name of a signal as a string
+                and the second element is the nested scope of the dataset as a list of integers
+        :param keep_datasets: Datasets from the input spec that must be included in the
+            pre-transformed spec. A list with elements that are either:
+              - The name of a top-level dataset as a string
+              - A two-element tuple where the first element is the name of a dataset as a string
+                and the second element is the nested scope of the dataset as a list of integers
         :return:
             Three-element tuple:
                 0. A dict containing the JSON representation of the pre-transformed Vega
@@ -400,7 +458,11 @@ class VegaFusionRuntime:
                     local_tz=local_tz,
                     default_input_tz=default_input_tz,
                     preserve_interactivity=preserve_interactivity,
-                    inline_datasets=inline_arrow_dataset
+                    extract_threshold=extract_threshold,
+                    extracted_format=extracted_format,
+                    inline_datasets=inline_arrow_dataset,
+                    keep_signals=keep_signals,
+                    keep_datasets=keep_datasets,
                 )
             finally:
                 # Clean up temporary tables

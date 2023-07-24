@@ -29,7 +29,15 @@ mod tests {
         );
 
         let (tx_spec, datasets, warnings) = runtime
-            .pre_transform_extract(&spec, "UTC", &None, true, Default::default())
+            .pre_transform_extract(
+                &spec,
+                "UTC",
+                &None,
+                true,
+                20,
+                Default::default(),
+                Default::default(),
+            )
             .await
             .unwrap();
 

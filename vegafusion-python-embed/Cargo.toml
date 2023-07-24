@@ -36,7 +36,7 @@ features = [ "pyarrow",]
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-features = [ "pyo3", "datafusion-proto",]
+features = [ "pyo3", "datafusion-proto", "base64"]
 version = "1.4.0-rc3"
 
 [dependencies.vegafusion-core]

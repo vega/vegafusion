@@ -75,7 +75,7 @@ jobs:
             vegafusion-server-*
 
   build-vegafusion-server-win-64:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: Check out repository code
         uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
@@ -87,10 +87,6 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-        with:
-          cache-on-failure: True
       - name: Build vegafusion-server (Windows)
         uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
         with:

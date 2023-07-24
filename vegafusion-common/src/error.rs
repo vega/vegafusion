@@ -13,6 +13,9 @@ use pyo3::{exceptions::PyValueError, PyErr};
 #[cfg(feature = "jni")]
 use jni::errors::Error as JniError;
 
+#[cfg(feature = "base64")]
+use base64::DecodeError as Base64DecodeError;
+
 pub type Result<T> = result::Result<T, VegaFusionError>;
 
 #[derive(Clone, Debug, Default)]
@@ -83,6 +86,10 @@ pub enum VegaFusionError {
     #[cfg(feature = "jni")]
     #[error("JNI Error: {0}\n{1}")]
     JniError(JniError, ErrorContext),
+
+    #[cfg(feature = "base64")]
+    #[error("Base64 Decode Error: {0}\n{1}")]
+    Base64DecodeError(Base64DecodeError, ErrorContext),
 }
 
 impl VegaFusionError {
@@ -162,6 +169,11 @@ impl VegaFusionError {
             JniError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::JniError(err, context)
+            }
+            #[cfg(feature = "base64")]
+            Base64DecodeError(err, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::Base64DecodeError(err, context)
             }
         }
     }
@@ -247,6 +259,10 @@ impl VegaFusionError {
             #[cfg(feature = "jni")]
             JniError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
+            }
+            #[cfg(feature = "base64")]
+            Base64DecodeError(err, context) => {
+                VegaFusionError::Base64DecodeError(err.clone(), context.clone())
             }
         }
     }
@@ -353,6 +369,13 @@ impl From<sqlparser::parser::ParserError> for VegaFusionError {
 impl From<JniError> for VegaFusionError {
     fn from(err: JniError) -> Self {
         Self::JniError(err, Default::default())
+    }
+}
+
+#[cfg(feature = "base64")]
+impl From<Base64DecodeError> for VegaFusionError {
+    fn from(err: Base64DecodeError) -> Self {
+        Self::Base64DecodeError(err, Default::default())
     }
 }
 

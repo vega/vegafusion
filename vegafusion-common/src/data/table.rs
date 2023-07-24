@@ -39,6 +39,9 @@ use {
     },
 };
 
+#[cfg(feature = "base64")]
+use base64::{engine::general_purpose, Engine as _};
+
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
     pub schema: SchemaRef,
@@ -351,6 +354,17 @@ impl VegaFusionTable {
         }
 
         Ok(Self { schema, batches })
+    }
+
+    #[cfg(feature = "base64")]
+    pub fn to_ipc_base64(self) -> Result<String> {
+        Ok(general_purpose::STANDARD.encode(self.to_ipc_bytes()?.as_slice()))
+    }
+
+    #[cfg(feature = "base64")]
+    pub fn from_ipc_base64(data: &str) -> Result<Self> {
+        let data = general_purpose::STANDARD.decode(data)?;
+        Self::from_ipc_bytes(data.as_slice())
     }
 
     #[cfg(feature = "prettyprint")]
