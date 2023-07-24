@@ -39,9 +39,20 @@ pub fn compile_conditional(
             (consequent_expr, alternate_expr)
         };
 
-    Ok(Expr::Case(Case {
-        expr: None,
-        when_then_expr: vec![(Box::new(test), Box::new(consequent_expr))],
-        else_expr: Some(Box::new(alternate_expr)),
-    }))
+    if let Expr::Case(case) = alternate_expr {
+        // Flatten nested case statements
+        let mut when_then_expr = case.when_then_expr;
+        when_then_expr.extend(vec![(Box::new(test), Box::new(consequent_expr))]);
+        Ok(Expr::Case(Case {
+            expr: None,
+            when_then_expr,
+            else_expr: case.else_expr,
+        }))
+    } else {
+        Ok(Expr::Case(Case {
+            expr: None,
+            when_then_expr: vec![(Box::new(test), Box::new(consequent_expr))],
+            else_expr: Some(Box::new(alternate_expr)),
+        }))
+    }
 }
