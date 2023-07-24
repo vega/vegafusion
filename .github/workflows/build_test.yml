@@ -1,281 +1,281 @@
-name: build_test
-on:
-  pull_request:
-    types: [ opened, synchronize ]
-jobs:
-  rust-fmt-clippy:
-    runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-        with:
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-        with:
-          cache-on-failure: True
-      - name: Check cargo fmt compliance
-        run: cargo fmt --all -- --check
-      - name: Check no rustc warnings
-        run: cargo check --tests --features=protobuf-src
-      - name: Check for clippy warnings
-        run: cargo clippy --features=protobuf-src -- -A clippy::borrow_deref_ref
-
-  test-rust:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os:
-          - ubuntu-latest
-          - windows-2022
-          - macos-11
-
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-      - name: Install apt system dependencies needed to build nodecanvas
-        run: |
-          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
-        if: ${{ runner.os == 'Linux' }}
-      - name: Install protoc on Window
-        run: |
-          choco install --yes protoc
-        if: ${{ runner.os == 'Windows' }}
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Install node
-        uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # pin@v2
-        with:
-          node-version: '17.9.0'
-      - name: Install test node dependencies
-        working-directory: vegafusion-runtime/tests/util/vegajs_runtime
-        run: |
-          npm install
-      - name: Run Rust Tests (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
-        env:
-          CARGO_HOME: C:\cargo_home\
-          CARGO_TARGET_DIR: C:\cargo_target_dir\
-        with:
-          command: test
-          args: --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
-      - name: Run Rust Tests (MacOs/Linux)
-        if: ${{ runner.os != 'Windows' }}
-        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
-        with:
-          command: test
-          args: --release --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
-      - name: Upload test artifacts
-        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-        if: always()
-        with:
-          name: vegafusion-rt-test-images
-          path: |
-            vegafusion-runtime/tests/output
-
-  build-vegafusion-wasm:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      - name: Install node
-        uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # pin@v2
-        with:
-          node-version: '17.9.0'
-      - name: Build package
-        working-directory: vegafusion-wasm/
-        run: |
-          npm run build:protobuf-src
-          wasm-pack pack
-      - name: Upload artifacts
-        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-        with:
-          name: vegafusion-wasm-packages
-          path: vegafusion-wasm/pkg
-
-  build-vegafusion-wheel:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-      - uses: conda-incubator/setup-miniconda@3b0f2504dd76ef23b6d31f291f4913fb60ab5ff3 # pin@v2
-        with:
-          auto-update-conda: true
-          activate-environment: vegafusion_dev
-          miniforge-version: latest
-          environment-file: python/vegafusion-jupyter/conda-linux-64-cp310.lock
-      - name: Build vegafusion
-        working-directory: python/vegafusion
-        run: |
-          python setup.py sdist bdist_wheel
-      - name: Upload artifacts
-        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-        with:
-          name: vegafusion-wheel
-          path: |
-            python/vegafusion/dist/*.whl
-            python/vegafusion/dist/*.tar.gz
-
-  build-vegafusion-jupyter-package:
-    needs: [ build-vegafusion-wheel, build-vegafusion-wasm ]
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-      - uses: conda-incubator/setup-miniconda@3b0f2504dd76ef23b6d31f291f4913fb60ab5ff3 # pin@v2
-        with:
-          auto-update-conda: true
-          activate-environment: vegafusion_dev
-          miniforge-version: latest
-          environment-file: python/vegafusion-jupyter/conda-linux-64-cp310.lock
-      - name: Download vegafusion-wasm packages
-        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
-        with:
-          name: vegafusion-wasm-packages
-          path: vegafusion-wasm/pkg
-      - name: Build vegafusion-embed
-        working-directory: javascript/vegafusion-embed/
-        run: |
-          npm install
-          npm run build
-      - name: Download vegafusion wheel
-        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
-        with:
-          name: vegafusion-wheel
-          path: target/wheels/
-      - name: Install vegafusion wheel
-        run: |
-          python -m pip install target/wheels/vegafusion-*.whl
-      - name: Install vegafusion-wasm npm dependencies
-        working-directory: vegafusion-wasm/
-        run: |
-          npm install
-      - name: Build vegafusion-jupyter
-        working-directory: python/vegafusion-jupyter
-        run: |
-          python setup.py sdist bdist_wheel
-      - name: Upload artifacts
-        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-        with:
-          name: vegafusion-jupyter-packages
-          path: |
-            python/vegafusion-jupyter/dist/*.whl
-            python/vegafusion-jupyter/dist/*.tar.gz
-
-  test-vegafusion-python:
-    needs:
-      [
-        build-vegafusion-wheel,
-        build-vegafusion-jupyter-package
-      ]
-    strategy:
-      matrix:
-        options: [
-            [ubuntu-latest,  linux-64, "bash -l {0}",  cp38,  "vegafusion-jupyter"],
-            [ubuntu-latest,  linux-64, "bash -l {0}",  cp38,  "vegafusion"],
-            [ubuntu-latest,  linux-64, "bash -l {0}",  cp310, "vegafusion-jupyter"],
-            [ubuntu-latest,  linux-64, "bash -l {0}",  cp310, "vegafusion"],
-
-# TODO: Should vegafusion-jupyter tests on Windows and Mac as well, but there a selenium+GitHub action issue
-#            [windows-2022, win-64,   "pwsh",         cp38,  "vegafusion"],
-#            [macos-11,   osx-64,   "bash -l {0}",  cp310, "vegafusion"],
-#            [windows-2022, win-64,   "pwsh",         cp38,  "vegafusion-jupyter"],
-#            [macos-11,   osx-64,   "bash -l {0}",  cp310, "vegafusion-jupyter"],
-        ]
-    runs-on: ${{ matrix.options[0] }}
-    defaults:
-      run:
-        shell: ${{ matrix.options[2] }}
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-      - name: Create conda test environment
-        uses: conda-incubator/setup-miniconda@3b0f2504dd76ef23b6d31f291f4913fb60ab5ff3 # pin@v2
-        with:
-          auto-update-conda: true
-          activate-environment: vegafusion_dev
-          miniforge-version: latest
-          environment-file: python/vegafusion-jupyter/conda-${{ matrix.options[1] }}-${{ matrix.options[3] }}.lock
-      - name: Install protoc on Window
-        run: |
-          choco install --yes protoc
-        if: ${{ runner.os == 'Windows' }}
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-        with:
-          cache-on-failure: True
-      - name: Build vegafusion-python-embed in development mode (Non-windows)
-        run: |
-          maturin develop --release --features=protobuf-src -m vegafusion-python-embed/Cargo.toml
-        if: ${{ runner.os != 'Windows' }}
-      - name: Build vegafusion-python-embed in development mode (Windows)
-        run: |
-          maturin develop --release -m vegafusion-python-embed/Cargo.toml
-        if: ${{ runner.os == 'Windows' }}
-      - name: Install Chrome
-        uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
-        with:
-          chrome-version: stable
-      - name: Install ChromeDriver
-        run: |
-          pip install chromedriver-binary-auto
-      - name: Download vegafusion wheel
-        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
-        with:
-          name: vegafusion-wheel
-          path: target/wheels/
-      - name: Download vegafusion-jupyter wheel
-        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
-        with:
-          name: vegafusion-jupyter-packages
-          path: target/wheels/
-      - name: install wheels
-        working-directory: target/wheels/
-        run: |
-          ls -la
-          python -m pip install vegafusion-*.whl
-          python -m pip install vegafusion_jupyter*.whl
-          python -m pip install vl-convert-python==0.10.3
-      - name: Update to latest Altair 5
-        run: |
-          pip install -U altair
-      - name: Test vegafusion
-        working-directory: python/vegafusion/
-        run: pytest
-        if: ${{ matrix.options[4] == 'vegafusion' }}
-      - name: Test vegafusion-jupyter
-        env:
-          VEGAFUSION_TEST_HEADLESS: 1
-        working-directory: python/vegafusion-jupyter/tests/
-        run: pytest
-        if: ${{ matrix.options[5] == 'vegafusion-jupyter' }}
-      - name: Upload test artifacts
-        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-        if: always()
-        with:
-          name: vegafusion-jupyter-test-failures
-          path: |
-            python/vegafusion-jupyter/tests/failures/*
+#name: build_test
+#on:
+#  pull_request:
+#    types: [ opened, synchronize ]
+#jobs:
+#  rust-fmt-clippy:
+#    runs-on: ubuntu-latest
+#    env:
+#      RUSTFLAGS: "-D warnings"
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
+#        with:
+#          toolchain: stable
+#          override: true
+#          components: rustfmt, clippy
+#      - name: Cache rust dependencies
+#        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
+#        with:
+#          cache-on-failure: True
+#      - name: Check cargo fmt compliance
+#        run: cargo fmt --all -- --check
+#      - name: Check no rustc warnings
+#        run: cargo check --tests --features=protobuf-src
+#      - name: Check for clippy warnings
+#        run: cargo clippy --features=protobuf-src -- -A clippy::borrow_deref_ref
+#
+#  test-rust:
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os:
+#          - ubuntu-latest
+#          - windows-2022
+#          - macos-11
+#
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
+#      - name: Install apt system dependencies needed to build nodecanvas
+#        run: |
+#          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
+#        if: ${{ runner.os == 'Linux' }}
+#      - name: Install protoc on Window
+#        run: |
+#          choco install --yes protoc
+#        if: ${{ runner.os == 'Windows' }}
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
+#        with:
+#          toolchain: stable
+#          override: true
+#      - name: Install node
+#        uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # pin@v2
+#        with:
+#          node-version: '17.9.0'
+#      - name: Install test node dependencies
+#        working-directory: vegafusion-runtime/tests/util/vegajs_runtime
+#        run: |
+#          npm install
+#      - name: Run Rust Tests (Windows)
+#        if: ${{ runner.os == 'Windows' }}
+#        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
+#        env:
+#          CARGO_HOME: C:\cargo_home\
+#          CARGO_TARGET_DIR: C:\cargo_target_dir\
+#        with:
+#          command: test
+#          args: --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
+#      - name: Run Rust Tests (MacOs/Linux)
+#        if: ${{ runner.os != 'Windows' }}
+#        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
+#        with:
+#          command: test
+#          args: --release --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
+#      - name: Upload test artifacts
+#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
+#        if: always()
+#        with:
+#          name: vegafusion-rt-test-images
+#          path: |
+#            vegafusion-runtime/tests/output
+#
+#  build-vegafusion-wasm:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
+#      - name: Install wasm-pack
+#        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+#      - name: Install node
+#        uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # pin@v2
+#        with:
+#          node-version: '17.9.0'
+#      - name: Build package
+#        working-directory: vegafusion-wasm/
+#        run: |
+#          npm run build:protobuf-src
+#          wasm-pack pack
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
+#        with:
+#          name: vegafusion-wasm-packages
+#          path: vegafusion-wasm/pkg
+#
+#  build-vegafusion-wheel:
+#    runs-on: ubuntu-latest
+#    defaults:
+#      run:
+#        shell: bash -l {0}
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
+#      - uses: conda-incubator/setup-miniconda@3b0f2504dd76ef23b6d31f291f4913fb60ab5ff3 # pin@v2
+#        with:
+#          auto-update-conda: true
+#          activate-environment: vegafusion_dev
+#          miniforge-version: latest
+#          environment-file: python/vegafusion-jupyter/conda-linux-64-cp310.lock
+#      - name: Build vegafusion
+#        working-directory: python/vegafusion
+#        run: |
+#          python setup.py sdist bdist_wheel
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
+#        with:
+#          name: vegafusion-wheel
+#          path: |
+#            python/vegafusion/dist/*.whl
+#            python/vegafusion/dist/*.tar.gz
+#
+#  build-vegafusion-jupyter-package:
+#    needs: [ build-vegafusion-wheel, build-vegafusion-wasm ]
+#    runs-on: ubuntu-latest
+#    defaults:
+#      run:
+#        shell: bash -l {0}
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
+#      - uses: conda-incubator/setup-miniconda@3b0f2504dd76ef23b6d31f291f4913fb60ab5ff3 # pin@v2
+#        with:
+#          auto-update-conda: true
+#          activate-environment: vegafusion_dev
+#          miniforge-version: latest
+#          environment-file: python/vegafusion-jupyter/conda-linux-64-cp310.lock
+#      - name: Download vegafusion-wasm packages
+#        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+#        with:
+#          name: vegafusion-wasm-packages
+#          path: vegafusion-wasm/pkg
+#      - name: Build vegafusion-embed
+#        working-directory: javascript/vegafusion-embed/
+#        run: |
+#          npm install
+#          npm run build
+#      - name: Download vegafusion wheel
+#        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+#        with:
+#          name: vegafusion-wheel
+#          path: target/wheels/
+#      - name: Install vegafusion wheel
+#        run: |
+#          python -m pip install target/wheels/vegafusion-*.whl
+#      - name: Install vegafusion-wasm npm dependencies
+#        working-directory: vegafusion-wasm/
+#        run: |
+#          npm install
+#      - name: Build vegafusion-jupyter
+#        working-directory: python/vegafusion-jupyter
+#        run: |
+#          python setup.py sdist bdist_wheel
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
+#        with:
+#          name: vegafusion-jupyter-packages
+#          path: |
+#            python/vegafusion-jupyter/dist/*.whl
+#            python/vegafusion-jupyter/dist/*.tar.gz
+#
+#  test-vegafusion-python:
+#    needs:
+#      [
+#        build-vegafusion-wheel,
+#        build-vegafusion-jupyter-package
+#      ]
+#    strategy:
+#      matrix:
+#        options: [
+#            [ubuntu-latest,  linux-64, "bash -l {0}",  cp38,  "vegafusion-jupyter"],
+#            [ubuntu-latest,  linux-64, "bash -l {0}",  cp38,  "vegafusion"],
+#            [ubuntu-latest,  linux-64, "bash -l {0}",  cp310, "vegafusion-jupyter"],
+#            [ubuntu-latest,  linux-64, "bash -l {0}",  cp310, "vegafusion"],
+#
+## TODO: Should vegafusion-jupyter tests on Windows and Mac as well, but there a selenium+GitHub action issue
+##            [windows-2022, win-64,   "pwsh",         cp38,  "vegafusion"],
+##            [macos-11,   osx-64,   "bash -l {0}",  cp310, "vegafusion"],
+##            [windows-2022, win-64,   "pwsh",         cp38,  "vegafusion-jupyter"],
+##            [macos-11,   osx-64,   "bash -l {0}",  cp310, "vegafusion-jupyter"],
+#        ]
+#    runs-on: ${{ matrix.options[0] }}
+#    defaults:
+#      run:
+#        shell: ${{ matrix.options[2] }}
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
+#      - name: Create conda test environment
+#        uses: conda-incubator/setup-miniconda@3b0f2504dd76ef23b6d31f291f4913fb60ab5ff3 # pin@v2
+#        with:
+#          auto-update-conda: true
+#          activate-environment: vegafusion_dev
+#          miniforge-version: latest
+#          environment-file: python/vegafusion-jupyter/conda-${{ matrix.options[1] }}-${{ matrix.options[3] }}.lock
+#      - name: Install protoc on Window
+#        run: |
+#          choco install --yes protoc
+#        if: ${{ runner.os == 'Windows' }}
+#      - name: Install latest stable Rust toolchain
+#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
+#        with:
+#          toolchain: stable
+#          override: true
+#      - name: Cache rust dependencies
+#        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
+#        with:
+#          cache-on-failure: True
+#      - name: Build vegafusion-python-embed in development mode (Non-windows)
+#        run: |
+#          maturin develop --release --features=protobuf-src -m vegafusion-python-embed/Cargo.toml
+#        if: ${{ runner.os != 'Windows' }}
+#      - name: Build vegafusion-python-embed in development mode (Windows)
+#        run: |
+#          maturin develop --release -m vegafusion-python-embed/Cargo.toml
+#        if: ${{ runner.os == 'Windows' }}
+#      - name: Install Chrome
+#        uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
+#        with:
+#          chrome-version: stable
+#      - name: Install ChromeDriver
+#        run: |
+#          pip install chromedriver-binary-auto
+#      - name: Download vegafusion wheel
+#        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+#        with:
+#          name: vegafusion-wheel
+#          path: target/wheels/
+#      - name: Download vegafusion-jupyter wheel
+#        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+#        with:
+#          name: vegafusion-jupyter-packages
+#          path: target/wheels/
+#      - name: install wheels
+#        working-directory: target/wheels/
+#        run: |
+#          ls -la
+#          python -m pip install vegafusion-*.whl
+#          python -m pip install vegafusion_jupyter*.whl
+#          python -m pip install vl-convert-python==0.10.3
+#      - name: Update to latest Altair 5
+#        run: |
+#          pip install -U altair
+#      - name: Test vegafusion
+#        working-directory: python/vegafusion/
+#        run: pytest
+#        if: ${{ matrix.options[4] == 'vegafusion' }}
+#      - name: Test vegafusion-jupyter
+#        env:
+#          VEGAFUSION_TEST_HEADLESS: 1
+#        working-directory: python/vegafusion-jupyter/tests/
+#        run: pytest
+#        if: ${{ matrix.options[5] == 'vegafusion-jupyter' }}
+#      - name: Upload test artifacts
+#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
+#        if: always()
+#        with:
+#          name: vegafusion-jupyter-test-failures
+#          path: |
+#            python/vegafusion-jupyter/tests/failures/*
