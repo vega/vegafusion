@@ -75,7 +75,7 @@ jobs:
             vegafusion-server-*
 
   build-vegafusion-server-win-64:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: Check out repository code
         uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
@@ -235,7 +235,7 @@ jobs:
             target/wheels/*.whl
 
   build-vegafusion-python-embed-win-64:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: Check out repository code
         uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
