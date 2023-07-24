@@ -273,6 +273,7 @@ impl PyVegaFusionRuntime {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn pre_transform_extract(
         &self,
         spec: PyObject,
