@@ -241,7 +241,7 @@ jobs:
           chrome-version: stable
       - name: Install ChromeDriver
         run: |
-          pip install chromedriver-binary-auto
+          pip install chromedriver-binary-auto==0.2.6
       - name: Download vegafusion wheel
         uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
         with:
