@@ -22,6 +22,6 @@ dependencies:
   - flaky
   - click
   - toml
-  - pyarrow
+  - pyarrow=10.0.1
   - python-duckdb >=0.7.1
   - polars

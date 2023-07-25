@@ -3,7 +3,7 @@ import pyarrow as pa
 from duckdb import DuckDBPyRelation
 from .sql import SqlDataset
 from ..connection.duckdb import duckdb_relation_to_schema
-from pyarrow.interchange.dataframe import _PyArrowDataFrame
+from typing import Any
 
 
 class DuckDbDataset(SqlDataset):
@@ -34,7 +34,7 @@ class DuckDbDataset(SqlDataset):
 
     def __dataframe__(
         self, nan_as_null: bool = False, allow_copy: bool = True, **kwargs
-    ) -> _PyArrowDataFrame:
+    ) -> Any:
         return self._relation.to_arrow_table().__dataframe__(
             nan_as_null=nan_as_null, allow_copy=allow_copy
         )
