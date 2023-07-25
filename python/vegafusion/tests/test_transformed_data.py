@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
-import pytz
+import pyarrow as pa
 import pytest
 from altair.utils.execeval import eval_block
 import vegafusion as vf
@@ -9,6 +9,7 @@ from vega_datasets import data
 import polars as pl
 import altair as alt
 
+pa_major_minor = tuple((int(v) for v in pa.__version__.split(".")[:2]))
 
 here = Path(__file__).parent
 altair_mocks_dir = here / "altair_mocks"
@@ -220,6 +221,7 @@ def test_transformed_data_exclude():
     assert "mean_wheat" in datasets[1]
 
 
+@pytest.mark.skipif(pa_major_minor < (11, 0), reason="pyarrow 11+ required")
 @pytest.mark.parametrize("connection", get_connections())
 def test_gh_286(connection):
     # https://github.com/hex-inc/vegafusion/issues/286
