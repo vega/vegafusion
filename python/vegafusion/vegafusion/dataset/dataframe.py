@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 import pyarrow as pa
 from vegafusion.proto.datafusion_pb2 import LogicalExprNode
-from pyarrow.interchange.dataframe import _PyArrowDataFrame
 
-from typing import Optional, List, Literal, Union
+from typing import Optional, List, Literal, Union, Any
 
 
 class DataFrameOperationNotSupportedError(RuntimeError):
@@ -175,7 +174,7 @@ class DataFrameDataset(ABC):
 
     def __dataframe__(
         self, nan_as_null: bool = False, allow_copy: bool = True, **kwargs
-    ) -> _PyArrowDataFrame:
+    ) -> Any:
         """DataFrame interchange protocol support"""
         table = self.collect()
         return table.__dataframe__(nan_as_null=nan_as_null, allow_copy=allow_copy)

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import pyarrow as pa
-from pyarrow.interchange.dataframe import _PyArrowDataFrame
+from typing import Any
 
 
 class SqlDataset(ABC):
@@ -60,6 +60,6 @@ class SqlDataset(ABC):
 
     def __dataframe__(
         self, nan_as_null: bool = False, allow_copy: bool = True, **kwargs
-    ) -> _PyArrowDataFrame:
+    ) -> Any:
         """DataFrame interchange protocol support"""
         raise NotImplementedError()
