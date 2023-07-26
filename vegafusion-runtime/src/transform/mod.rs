@@ -2,6 +2,7 @@ pub mod aggregate;
 pub mod bin;
 pub mod collect;
 pub mod extent;
+pub mod facet;
 pub mod filter;
 pub mod fold;
 pub mod formula;
@@ -16,7 +17,6 @@ pub mod stack;
 pub mod timeunit;
 pub mod utils;
 pub mod window;
-pub mod facet;
 
 use crate::expression::compiler::config::CompilationConfig;
 

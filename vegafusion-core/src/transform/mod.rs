@@ -1,7 +1,10 @@
 use crate::error::VegaFusionError;
 use crate::proto::gen::tasks::Variable;
 use crate::proto::gen::transforms::transform::TransformKind;
-use crate::proto::gen::transforms::{Aggregate, Bin, Collect, Extent, Facet, Filter, Fold, Formula, Identifier, Impute, Pivot, Project, Sequence, Stack, TimeUnit};
+use crate::proto::gen::transforms::{
+    Aggregate, Bin, Collect, Extent, Facet, Filter, Fold, Formula, Identifier, Impute, Pivot,
+    Project, Sequence, Stack, TimeUnit,
+};
 use crate::proto::gen::transforms::{JoinAggregate, Transform, Window};
 use crate::spec::transform::TransformSpec;
 use crate::task_graph::task::InputVariable;
@@ -11,6 +14,7 @@ pub mod aggregate;
 pub mod bin;
 pub mod collect;
 pub mod extent;
+pub mod facet;
 pub mod filter;
 pub mod fold;
 pub mod formula;
@@ -24,7 +28,6 @@ pub mod sequence;
 pub mod stack;
 pub mod timeunit;
 pub mod window;
-pub mod facet;
 
 impl TryFrom<&TransformSpec> for TransformKind {
     type Error = VegaFusionError;

@@ -2,6 +2,7 @@ pub mod aggregate;
 pub mod bin;
 pub mod collect;
 pub mod extent;
+pub mod facet;
 pub mod filter;
 pub mod fold;
 pub mod formula;
@@ -16,7 +17,6 @@ pub mod stack;
 pub mod timeunit;
 pub mod unsupported;
 pub mod window;
-pub mod facet;
 
 use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransformSpec};
 
@@ -26,6 +26,7 @@ use crate::planning::plan::PlannerConfig;
 use crate::spec::transform::aggregate::AggregateTransformSpec;
 use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
+use crate::spec::transform::facet::FacetTransformSpec;
 use crate::spec::transform::fold::FoldTransformSpec;
 use crate::spec::transform::formula::FormulaTransformSpec;
 use crate::spec::transform::identifier::IdentifierTransformSpec;
@@ -44,7 +45,6 @@ use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use crate::spec::transform::facet::FacetTransformSpec;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
