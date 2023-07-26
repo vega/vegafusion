@@ -16,6 +16,7 @@ pub mod stack;
 pub mod timeunit;
 pub mod unsupported;
 pub mod window;
+pub mod facet;
 
 use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransformSpec};
 
@@ -43,6 +44,7 @@ use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task::InputVariable;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
+use crate::spec::transform::facet::FacetTransformSpec;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -63,6 +65,7 @@ pub enum TransformSpec {
     Identifier(IdentifierTransformSpec),
     Fold(FoldTransformSpec),
     Sequence(SequenceTransformSpec),
+    Facet(FacetTransformSpec),
 
     // Unsupported
     CountPattern(CountpatternTransformSpec),
@@ -119,6 +122,7 @@ impl Deref for TransformSpec {
             TransformSpec::Impute(t) => t,
             TransformSpec::Pivot(t) => t,
             TransformSpec::Sequence(t) => t,
+            TransformSpec::Facet(t) => t,
 
             // Supported for dependency determination, not implementation
             TransformSpec::Lookup(t) => t,

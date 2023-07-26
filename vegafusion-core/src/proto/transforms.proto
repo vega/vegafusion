@@ -252,6 +252,12 @@ message Sequence {
   optional string as = 4;
 }
 
+// Facet
+message Facet {
+  repeated string groupby = 1;
+  repeated Transform transform = 2;
+}
+
 // Top-level transform
 message Transform {
   oneof transform_kind {
@@ -271,6 +277,7 @@ message Transform {
     Identifier identifier = 14;
     Fold fold = 15;
     Sequence sequence = 16;
+    Facet facet = 17;
   }
 }
 

@@ -252,13 +252,22 @@ pub struct Sequence {
     #[prost(string, optional, tag = "4")]
     pub r#as: ::core::option::Option<::prost::alloc::string::String>,
 }
+/// Facet
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Facet {
+    #[prost(string, repeated, tag = "1")]
+    pub groupby: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(message, repeated, tag = "2")]
+    pub transform: ::prost::alloc::vec::Vec<Transform>,
+}
 /// Top-level transform
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transform {
     #[prost(
         oneof = "transform::TransformKind",
-        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16"
+        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17"
     )]
     pub transform_kind: ::core::option::Option<transform::TransformKind>,
 }
@@ -299,6 +308,8 @@ pub mod transform {
         Fold(super::Fold),
         #[prost(message, tag = "16")]
         Sequence(super::Sequence),
+        #[prost(message, tag = "17")]
+        Facet(super::Facet),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]

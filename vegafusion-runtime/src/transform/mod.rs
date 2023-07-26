@@ -16,6 +16,7 @@ pub mod stack;
 pub mod timeunit;
 pub mod utils;
 pub mod window;
+pub mod facet;
 
 use crate::expression::compiler::config::CompilationConfig;
 
@@ -55,6 +56,7 @@ pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
         TransformKind::Identifier(tx) => tx,
         TransformKind::Fold(tx) => tx,
         TransformKind::Sequence(tx) => tx,
+        TransformKind::Facet(tx) => tx,
     }
 }
 
