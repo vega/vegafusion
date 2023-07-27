@@ -3,8 +3,8 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion_common::ScalarValue;
 use datafusion_expr::lit;
+use futures_util::future::join_all;
 use std::sync::Arc;
-use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::{Result, VegaFusionError};
@@ -75,9 +75,7 @@ async fn facet_one_column(
         .collect::<Result<Vec<_>>>()?;
 
     // Collect output schema and batches
-    let mut final_schema = Schema::empty();
-    let mut batches: Vec<RecordBatch> = Vec::new();
-    let mut output_values: Vec<TaskValue> = Vec::new();
+    let mut futures = Vec::new();
     for col_value in col_values {
         let filter = if col_value.is_null() {
             group_col.clone().is_null()
@@ -85,37 +83,51 @@ async fn facet_one_column(
             group_col.clone().eq(lit(col_value.clone()))
         };
 
-        let mut filtered_df = dataframe.filter(filter).await?;
+        futures.push(async {
+            let mut filtered_df = dataframe.filter(filter).await?;
 
-        // Apply transform pipeline
-        for tx in transforms {
-            let (tx_df, tx_out_vals) = tx.eval(filtered_df, config).await?;
-            output_values.extend(tx_out_vals);
-            filtered_df = tx_df;
-        }
+            // Apply transform pipeline
+            let mut output_values: Vec<TaskValue> = Vec::new();
+            for tx in transforms {
+                let (tx_df, tx_out_vals) = tx.eval(filtered_df, config).await?;
+                output_values.extend(tx_out_vals);
+                filtered_df = tx_df;
+            }
 
-        // Add group value column back
-        let mut selections = filtered_df
-            .schema()
-            .fields
-            .iter()
-            .filter_map(|f| {
-                if f.name() == &unescaped_group_field {
-                    None
-                } else {
-                    Some(flat_col(f.name()))
-                }
-            })
-            .collect::<Vec<_>>();
-        selections.insert(0, lit(col_value).alias(&unescaped_group_field));
-        filtered_df = filtered_df.select(selections).await?;
+            // Add group value column back
+            let mut selections = filtered_df
+                .schema()
+                .fields
+                .iter()
+                .filter_map(|f| {
+                    if f.name() == &unescaped_group_field {
+                        None
+                    } else {
+                        Some(flat_col(f.name()))
+                    }
+                })
+                .collect::<Vec<_>>();
+            selections.insert(0, lit(col_value).alias(&unescaped_group_field));
+            filtered_df = filtered_df.select(selections).await?;
 
-        // Grab schema
-        final_schema = filtered_df.schema();
+            // evaluate to batches
+            Ok((
+                filtered_df.collect().await,
+                output_values,
+                filtered_df.schema(),
+            ))
+        });
+    }
 
-        // evaluate to batches
-        let final_table = filtered_df.collect().await?;
-        batches.extend(final_table.batches);
+    let partitions: Vec<(Result<VegaFusionTable>, Vec<TaskValue>, Schema)> =
+        join_all(futures).await.into_iter().collect::<Result<_>>()?;
+    let mut batches = Vec::new();
+    let mut output_values = Vec::new();
+    let mut final_schema = Schema::empty();
+    for (tbl, out_vals, schema) in partitions {
+        batches.extend(tbl?.batches);
+        output_values.extend(out_vals);
+        final_schema = schema;
     }
 
     let combined = VegaFusionTable::try_new(Arc::new(final_schema), batches)?;
@@ -156,9 +168,7 @@ async fn facet_two_columns(
         .collect::<Result<Vec<_>>>()?;
 
     // Collect output schema and batches
-    let mut final_schema = Schema::empty();
-    let mut batches: Vec<RecordBatch> = Vec::new();
-    let mut output_values: Vec<TaskValue> = Vec::new();
+    let mut futures = Vec::new();
     for (col0_value, col1_value) in col_values {
         let filter0 = if col0_value.is_null() {
             group_col0.clone().is_null()
@@ -171,38 +181,52 @@ async fn facet_two_columns(
             group_col1.clone().eq(lit(col1_value.clone()))
         };
 
-        let mut filtered_df = dataframe.filter(filter0.and(filter1)).await?;
+        futures.push(async {
+            let mut filtered_df = dataframe.filter(filter0.and(filter1)).await?;
 
-        // Apply transform pipeline
-        for tx in transforms {
-            let (tx_df, tx_out_vals) = tx.eval(filtered_df, config).await?;
-            output_values.extend(tx_out_vals);
-            filtered_df = tx_df;
-        }
+            // Apply transform pipeline
+            let mut output_values: Vec<TaskValue> = Vec::new();
+            for tx in transforms {
+                let (tx_df, tx_out_vals) = tx.eval(filtered_df, config).await?;
+                output_values.extend(tx_out_vals);
+                filtered_df = tx_df;
+            }
 
-        // Add group value column back
-        let mut selections = filtered_df
-            .schema()
-            .fields
-            .iter()
-            .filter_map(|f| {
-                if f.name() == &unescaped_group_field0 || f.name() == &unescaped_group_field1 {
-                    None
-                } else {
-                    Some(flat_col(f.name()))
-                }
-            })
-            .collect::<Vec<_>>();
-        selections.insert(0, lit(col1_value).alias(&unescaped_group_field1));
-        selections.insert(0, lit(col0_value).alias(&unescaped_group_field0));
-        filtered_df = filtered_df.select(selections).await?;
+            // Add group value column back
+            let mut selections = filtered_df
+                .schema()
+                .fields
+                .iter()
+                .filter_map(|f| {
+                    if f.name() == &unescaped_group_field0 || f.name() == &unescaped_group_field1 {
+                        None
+                    } else {
+                        Some(flat_col(f.name()))
+                    }
+                })
+                .collect::<Vec<_>>();
+            selections.insert(0, lit(col1_value).alias(&unescaped_group_field1));
+            selections.insert(0, lit(col0_value).alias(&unescaped_group_field0));
+            filtered_df = filtered_df.select(selections).await?;
 
-        // Grab schema
-        final_schema = filtered_df.schema();
+            // evaluate to batches
+            Ok((
+                filtered_df.collect().await,
+                output_values,
+                filtered_df.schema(),
+            ))
+        });
+    }
 
-        // evaluate to batches
-        let final_table = filtered_df.collect().await?;
-        batches.extend(final_table.batches);
+    let partitions: Vec<(Result<VegaFusionTable>, Vec<TaskValue>, Schema)> =
+        join_all(futures).await.into_iter().collect::<Result<_>>()?;
+    let mut batches = Vec::new();
+    let mut output_values = Vec::new();
+    let mut final_schema = Schema::empty();
+    for (tbl, out_vals, schema) in partitions {
+        batches.extend(tbl?.batches);
+        output_values.extend(out_vals);
+        final_schema = schema;
     }
 
     // Build combined DataFrame
