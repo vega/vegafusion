@@ -1,0 +1,40 @@
+{
+  "server_to_client": [
+    {
+      "name": "_facet_source_0_facet",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_2",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_2_x_domain_MPAA_Rating_1",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_3",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_3_color_domain_MPAA_Rating",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_3_x_domain_MPAA_Rating_0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "row_domain",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

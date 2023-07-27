@@ -1,5 +1,6 @@
 use crate::error::Result;
 use crate::planning::extract::extract_server_data;
+use crate::planning::extract_facet_data::extract_facet_data;
 use crate::planning::optimize_server::split_data_url_nodes;
 use crate::planning::projection_pushdown::projection_pushdown;
 use crate::planning::split_domain_data::split_domain_data;
@@ -77,6 +78,7 @@ pub struct PlannerConfig {
     pub allow_client_to_server_comms: bool,
     pub client_only_vars: Vec<ScopedVariable>,
     pub keep_variables: Vec<ScopedVariable>,
+    pub extract_facets: bool,
 }
 
 impl Default for PlannerConfig {
@@ -91,6 +93,7 @@ impl Default for PlannerConfig {
             allow_client_to_server_comms: true,
             client_only_vars: Default::default(),
             keep_variables: Default::default(),
+            extract_facets: true,
         }
     }
 }
@@ -137,6 +140,9 @@ impl SpecPlan {
             let mut task_scope = client_spec.to_task_scope()?;
             let input_client_spec = client_spec.clone();
             let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope, config)?;
+            if config.extract_facets {
+                extract_facet_data(&mut server_spec, &mut client_spec, &mut task_scope, config)?;
+            }
             let mut comm_plan = stitch_specs(
                 &task_scope,
                 &mut server_spec,
@@ -154,6 +160,9 @@ impl SpecPlan {
 
                 client_spec = input_client_spec;
                 server_spec = extract_server_data(&mut client_spec, &mut task_scope, &config)?;
+                if config.extract_facets {
+                    extract_facet_data(&mut server_spec, &mut client_spec, &mut task_scope, &config)?;
+                }
                 comm_plan = stitch_specs(
                     &task_scope,
                     &mut server_spec,
