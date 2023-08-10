@@ -7,8 +7,7 @@ from typing import Any
 
 
 class DuckDbDataset(SqlDataset):
-    @classmethod
-    def dialect(cls) -> str:
+    def dialect(self) -> str:
         return "duckdb"
 
     def __init__(self, relation: DuckDBPyRelation, fallback: bool = True, verbose: bool = False):
