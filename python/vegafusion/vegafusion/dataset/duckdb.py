@@ -3,7 +3,6 @@ import pyarrow as pa
 from duckdb import DuckDBPyRelation
 from .sql import SqlDataset
 from ..connection.duckdb import duckdb_relation_to_schema
-from typing import Any
 
 
 class DuckDbDataset(SqlDataset):
@@ -30,13 +29,6 @@ class DuckDbDataset(SqlDataset):
             print(f"DuckDB Query:\n{query}\n")
 
         return self._relation.query(self._table_name, query).to_arrow_table()
-
-    def __dataframe__(
-        self, nan_as_null: bool = False, allow_copy: bool = True, **kwargs
-    ) -> Any:
-        return self._relation.to_arrow_table().__dataframe__(
-            nan_as_null=nan_as_null, allow_copy=allow_copy
-        )
 
     def fallback(self) -> bool:
         return self._fallback
