@@ -8,8 +8,7 @@ class SqlDataset(ABC):
     Python interface for VegaFusion Sql Dataset
     """
 
-    @classmethod
-    def dialect(cls) -> str:
+    def dialect(self) -> str:
         """
         Returns SQL dialect accepted by the connection
 
