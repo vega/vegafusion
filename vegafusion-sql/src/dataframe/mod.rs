@@ -206,7 +206,20 @@ impl SqlDataFrame {
             .collect();
         let select_items = columns.join(", ");
 
-        let table_ident = Ident::with_quote(conn.dialect().quote_style, table).to_string();
+        // Replace special characters with underscores
+        let mut clean_table = table.to_string();
+        for c in &['"', '\'', '.', '-'] {
+            clean_table = clean_table.replace(*c, "_");
+        }
+
+        let quote_style = conn.dialect().quote_style;
+        let table_ident = if !table.starts_with(quote_style) {
+            // Quote table
+            Ident::with_quote(conn.dialect().quote_style, table).to_string()
+        } else {
+            // If table name starts with the quote character, assume already quoted
+            table.to_string()
+        };
 
         let query = parse_sql_query(
             &format!("select {select_items} from {table_ident}"),
@@ -214,7 +227,7 @@ impl SqlDataFrame {
         )?;
 
         Ok(Self {
-            prefix: format!("{table}_"),
+            prefix: format!("{clean_table}_"),
             ctes: vec![query],
             schema: Arc::new(schema),
             conn,
