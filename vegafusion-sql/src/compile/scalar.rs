@@ -1,3 +1,4 @@
+use crate::compile::data_type::ToSqlDataType;
 use crate::dialect::Dialect;
 use arrow::datatypes::DataType;
 use datafusion_common::scalar::ScalarValue;
@@ -5,6 +6,7 @@ use sqlparser::ast::{
     Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr,
     Ident, ObjectName as SqlObjectName, Value as SqlValue,
 };
+use std::ops::Add;
 use vegafusion_common::error::{Result, VegaFusionError};
 
 pub trait ToSqlScalar {
@@ -159,9 +161,7 @@ impl ToSqlScalar for ScalarValue {
                     order_by: Default::default(),
                 }))
             }
-            ScalarValue::Date32(_) => Err(VegaFusionError::internal(
-                "Date32 cannot be converted to SQL",
-            )),
+            ScalarValue::Date32(v) => date32_to_date(v, dialect),
             ScalarValue::Date64(_) => Err(VegaFusionError::internal(
                 "Date64 cannot be converted to SQL",
             )),
@@ -245,4 +245,22 @@ fn ms_to_timestamp(v: i64) -> SqlExpr {
         special: false,
         order_by: Default::default(),
     })
+}
+
+fn date32_to_date(days: &Option<i32>, dialect: &Dialect) -> Result<SqlExpr> {
+    let epoch = chrono::NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
+    match days {
+        None => Ok(SqlExpr::Cast {
+            expr: Box::new(ScalarValue::Utf8(None).to_sql(dialect)?),
+            data_type: DataType::Date32.to_sql(dialect)?,
+        }),
+        Some(days) => {
+            let date = epoch.add(chrono::Duration::days(*days as i64));
+            let date_str = date.format("%F").to_string();
+            Ok(SqlExpr::Cast {
+                expr: Box::new(ScalarValue::from(date_str.as_str()).to_sql(dialect)?),
+                data_type: DataType::Date32.to_sql(dialect)?,
+            })
+        }
+    }
 }

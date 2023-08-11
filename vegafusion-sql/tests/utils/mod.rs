@@ -88,7 +88,7 @@ pub fn check_dataframe_query(
             println!("Unsupported");
             return;
         } else {
-            panic!("Expected sort result to be an error")
+            panic!("Expected query result to be an error")
         }
     }
     let df = df_result.unwrap();
