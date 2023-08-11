@@ -12,6 +12,7 @@ datafusion-conn = [ "datafusion", "tempfile", "reqwest", "reqwest-retry", "reqwe
 async-trait = "0.1.53"
 deterministic-hash = "1.0.1"
 log = "0.4.17"
+chrono = "0.4.23"
 
 [dev-dependencies]
 rstest = "0.17.0"

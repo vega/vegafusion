@@ -636,6 +636,48 @@ result = '''
 +---+-------------------------+-------------------------+-------------------------+-------------------------+
 '''
 
+[date_to_utc_timestamp]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES (0, CAST('1998-12-20' AS DATE)), (1, CAST('2000-01-24' AS DATE)), (2, CAST('2000-02-13' AS DATE)), (3, CAST('2002-11-09' AS DATE))) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", CAST("b" AS TIMESTAMP) AT TIME ZONE 'America/New_York' AT TIME ZONE 'UTC' AS "b_utc" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH values0 AS (SELECT 0 AS `a`, CAST('1998-12-20' AS DATE) AS `b` UNION ALL SELECT 1 AS `a`, CAST('2000-01-24' AS DATE) AS `b` UNION ALL SELECT 2 AS `a`, CAST('2000-02-13' AS DATE) AS `b` UNION ALL SELECT 3 AS `a`, CAST('2002-11-09' AS DATE) AS `b`), values1 AS (SELECT `a`, `b`, timestamp(`b`, 'America/New_York') AS `b_utc` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH values0 AS (SELECT 0 AS "a", CAST('1998-12-20' AS DATE) AS "b" UNION ALL SELECT 1 AS "a", CAST('2000-01-24' AS DATE) AS "b" UNION ALL SELECT 2 AS "a", CAST('2000-02-13' AS DATE) AS "b" UNION ALL SELECT 3 AS "a", CAST('2002-11-09' AS DATE) AS "b"), values1 AS (SELECT "a", "b", toTimeZone(toDateTime("b", 'America/New_York'), 'UTC') AS "b_utc" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (0, CAST('1998-12-20' AS DATE)), (1, CAST('2000-01-24' AS DATE)), (2, CAST('2000-02-13' AS DATE)), (3, CAST('2002-11-09' AS DATE))) AS `_values` (`a`, `b`)), values1 AS (SELECT `a`, `b`, to_utc_timestamp(CAST(`b` AS TIMESTAMP), 'America/New_York') AS `b_utc` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (0, CAST('1998-12-20' AS DATE)), (1, CAST('2000-01-24' AS DATE)), (2, CAST('2000-02-13' AS DATE)), (3, CAST('2002-11-09' AS DATE))) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", date_to_utc_timestamp("b", 'America/New_York') AS "b_utc" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (0, CAST('1998-12-20' AS DATE)), (1, CAST('2000-01-24' AS DATE)), (2, CAST('2000-02-13' AS DATE)), (3, CAST('2002-11-09' AS DATE))) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", CAST("b" AS TIMESTAMP) AT TIME ZONE 'America/New_York' AT TIME ZONE 'UTC' AS "b_utc" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH values0 AS (SELECT * FROM (VALUES ROW(0, CAST('1998-12-20' AS DATE)), ROW(1, CAST('2000-01-24' AS DATE)), ROW(2, CAST('2000-02-13' AS DATE)), ROW(3, CAST('2002-11-09' AS DATE))) AS `_values` (`a`, `b`)), values1 AS (SELECT `a`, `b`, convert_tz(timestamp(`b`), 'America/New_York', 'UTC') AS `b_utc` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (0, CAST('1998-12-20' AS DATE)), (1, CAST('2000-01-24' AS DATE)), (2, CAST('2000-02-13' AS DATE)), (3, CAST('2002-11-09' AS DATE))) AS "_values" ("a", "b")), values1 AS (SELECT "a", "b", CAST("b" AS TIMESTAMP) AT TIME ZONE 'America/New_York' AT TIME ZONE 'UTC' AS "b_utc" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH values0 AS (SELECT 0 AS "a", CAST('1998-12-20' AS DATE) AS "b" UNION ALL SELECT 1 AS "a", CAST('2000-01-24' AS DATE) AS "b" UNION ALL SELECT 2 AS "a", CAST('2000-02-13' AS DATE) AS "b" UNION ALL SELECT 3 AS "a", CAST('2002-11-09' AS DATE) AS "b"), values1 AS (SELECT "a", "b", CAST("b" AS TIMESTAMP) AT TIME ZONE 'America/New_York' AT TIME ZONE 'UTC' AS "b_utc" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "b" FROM (VALUES (0, CAST('1998-12-20' AS DATE)), (1, CAST('2000-01-24' AS DATE)), (2, CAST('2000-02-13' AS DATE)), (3, CAST('2002-11-09' AS DATE)))), values1 AS (SELECT "a", "b", convert_timezone('America/New_York', 'UTC', CAST("b" AS timestamp_ntz)) AS "b_utc" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+------------+---------------------+
+| a | b          | b_utc               |
++---+------------+---------------------+
+| 0 | 1998-12-20 | 1998-12-20T05:00:00 |
+| 1 | 2000-01-24 | 2000-01-24T05:00:00 |
+| 2 | 2000-02-13 | 2000-02-13T05:00:00 |
+| 3 | 2002-11-09 | 2002-11-09T05:00:00 |
++---+------------+---------------------+
+'''
+
 [test_string_ops]
 athena = """
 WITH values0 AS (SELECT * FROM (VALUES (0, '1234', 'efGH'), (1, 'abCD', '5678'), (3, NULL, NULL)) AS "_values" ("a", "b", "c")), values1 AS (SELECT "a", "b", "c", substr("b", 2, 2) AS "b_substr", concat("b", ' ', "c") AS "bc_concat", upper("b") AS "b_upper", lower("b") AS "b_lower" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST

@@ -10,7 +10,11 @@ use crate::dialect::transforms::date_part_tz::{
     DatePartTzWithDatePartAndAtTimezoneTransformer, DatePartTzWithExtractAndAtTimezoneTransformer,
     DatePartTzWithFromUtcAndDatePartTransformer,
 };
-use crate::dialect::transforms::date_to_utc_timestamp::DateToUtcTimestampWithCastAndAtTimeZoneTransformer;
+use crate::dialect::transforms::date_to_utc_timestamp::{
+    DateToUtcTimestampClickhouseTransformer, DateToUtcTimestampMySqlTransformer,
+    DateToUtcTimestampSnowflakeTransform, DateToUtcTimestampWithCastAndAtTimeZoneTransformer,
+    DateToUtcTimestampWithCastFunctionAtTransformer, DateToUtcTimestampWithFunctionTransformer,
+};
 use crate::dialect::transforms::date_trunc_tz::{
     DateTruncTzClickhouseTransformer, DateTruncTzSnowflakeTransformer,
     DateTruncTzWithDateTruncAndAtTimezoneTransformer,
@@ -321,6 +325,10 @@ impl Dialect {
                     "date_trunc_tz",
                     DateTruncTzWithDateTruncAndAtTimezoneTransformer::new_dyn(false),
                 ),
+                (
+                    "date_to_utc_timestamp",
+                    DateToUtcTimestampWithCastAndAtTimeZoneTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -353,6 +361,7 @@ impl Dialect {
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
                 ),
+                (DataType::Date32, SqlDataType::Date),
             ]
             .into_iter()
             .collect(),
@@ -450,6 +459,10 @@ impl Dialect {
                     "utc_timestamp_to_str",
                     UtcTimestampToStrBigQueryTransformer::new_dyn(),
                 ),
+                (
+                    "date_to_utc_timestamp",
+                    DateToUtcTimestampWithFunctionTransformer::new_dyn("timestamp"),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -480,6 +493,7 @@ impl Dialect {
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
                 ),
+                (DataType::Date32, SqlDataType::Date),
             ]
             .into_iter()
             .collect(),
@@ -550,6 +564,10 @@ impl Dialect {
                 ),
                 ("date_part_tz", DatePartTzClickhouseTransformer::new_dyn()),
                 ("date_trunc_tz", DateTruncTzClickhouseTransformer::new_dyn()),
+                (
+                    "date_to_utc_timestamp",
+                    DateToUtcTimestampClickhouseTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -580,6 +598,7 @@ impl Dialect {
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
                 ),
+                (DataType::Date32, SqlDataType::Date),
             ]
             .into_iter()
             .collect(),
@@ -691,6 +710,14 @@ impl Dialect {
                     "utc_timestamp_to_str",
                     UtcTimestampToStrDatabricksTransformer::new_dyn(),
                 ),
+                (
+                    "date_to_utc_timestamp",
+                    DateToUtcTimestampWithCastFunctionAtTransformer::new_dyn(
+                        SqlDataType::Timestamp(None, TimezoneInfo::None),
+                        "to_utc_timestamp",
+                        false,
+                    ),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -723,6 +750,7 @@ impl Dialect {
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
                 ),
+                (DataType::Date32, SqlDataType::Date),
             ]
             .into_iter()
             .collect(),
@@ -887,6 +915,7 @@ impl Dialect {
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
                 ),
+                (DataType::Date32, SqlDataType::Date),
             ]
             .into_iter()
             .collect(),
@@ -1042,6 +1071,7 @@ impl Dialect {
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
                 ),
+                (DataType::Date32, SqlDataType::Date),
             ]
             .into_iter()
             .collect(),
@@ -1113,6 +1143,10 @@ impl Dialect {
                     StrToUtcTimestampMySqlTransformer::new_dyn(),
                 ),
                 ("date_part_tz", DatePartTzMySqlTransformer::new_dyn()),
+                (
+                    "date_to_utc_timestamp",
+                    DateToUtcTimestampMySqlTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1138,6 +1172,7 @@ impl Dialect {
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
                 (DataType::Utf8, SqlDataType::Char(None)),
+                (DataType::Date32, SqlDataType::Date),
             ]
             .into_iter()
             .collect(),
@@ -1294,6 +1329,7 @@ impl Dialect {
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
                 ),
+                (DataType::Date32, SqlDataType::Date),
             ]
             .into_iter()
             .collect(),
@@ -1396,6 +1432,10 @@ impl Dialect {
                     "date_trunc_tz",
                     DateTruncTzWithDateTruncAndAtTimezoneTransformer::new_dyn(true),
                 ),
+                (
+                    "date_to_utc_timestamp",
+                    DateToUtcTimestampWithCastAndAtTimeZoneTransformer::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1426,6 +1466,7 @@ impl Dialect {
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
                 ),
+                (DataType::Date32, SqlDataType::Date),
             ]
             .into_iter()
             .collect(),
@@ -1539,6 +1580,10 @@ impl Dialect {
                     "utc_timestamp_to_str",
                     UtcTimestampToStrSnowflakeTransformer::new_dyn(),
                 ),
+                (
+                    "date_to_utc_timestamp",
+                    DateToUtcTimestampSnowflakeTransform::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -1573,6 +1618,7 @@ impl Dialect {
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
                 ),
+                (DataType::Date32, SqlDataType::Date),
             ]
             .into_iter()
             .collect(),

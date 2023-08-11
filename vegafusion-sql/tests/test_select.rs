@@ -1178,6 +1178,79 @@ mod test_utc_timestamp_to_str {
 }
 
 #[cfg(test)]
+mod test_date_to_utc_timestamp {
+    use crate::*;
+    use arrow::array::{ArrayRef, Date32Array, Int32Array};
+    use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
+    use arrow::record_batch::RecordBatch;
+    use datafusion_expr::{expr, lit, Expr};
+    use std::sync::Arc;
+    use vegafusion_common::column::flat_col;
+    use vegafusion_datafusion_udfs::udfs::datetime::date_to_utc_timestamp::DATE_TO_UTC_TIMESTAMP_UDF;
+
+    #[apply(dialect_names)]
+    async fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let schema_ref: SchemaRef = Arc::new(Schema::new(vec![
+            Field::new("a", DataType::Int32, true),
+            Field::new("b", DataType::Date32, true),
+        ]));
+        let columns = vec![
+            Arc::new(Int32Array::from(vec![0, 1, 2, 3])) as ArrayRef,
+            Arc::new(Date32Array::from(vec![
+                10580, // 1998-12-20
+                10980, // 2000-01-24
+                11000, // 2000-02-13
+                12000, // 2002-11-09
+            ])) as ArrayRef,
+        ];
+
+        let batch = RecordBatch::try_new(schema_ref.clone(), columns).unwrap();
+        let table = VegaFusionTable::try_new(schema_ref, vec![batch]).unwrap();
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
+
+        let df_result = df
+            .select(vec![
+                flat_col("a"),
+                flat_col("b"),
+                Expr::ScalarUDF(expr::ScalarUDF {
+                    fun: Arc::new(DATE_TO_UTC_TIMESTAMP_UDF.clone()),
+                    args: vec![flat_col("b"), lit("America/New_York")],
+                })
+                .alias("b_utc"),
+            ])
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(flat_col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
+
+        check_dataframe_query(
+            df_result,
+            "select",
+            "date_to_utc_timestamp",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
+#[cfg(test)]
 mod test_string_ops {
     use crate::*;
     use datafusion_expr::{expr, lit, BuiltinScalarFunction, Expr};

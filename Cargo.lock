@@ -4477,6 +4477,7 @@ dependencies = [
  "arrow",
  "async-std",
  "async-trait",
+ "chrono",
  "datafusion",
  "datafusion-common",
  "datafusion-expr",
