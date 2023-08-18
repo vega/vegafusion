@@ -32,7 +32,7 @@ build-vegajs-runtime = { cmd = "cd vegafusion-runtime/tests/util/vegajs_runtime 
 test-rs-core = "cargo test -p vegafusion-core $0"
 test-rs-runtime = { cmd="cargo test -p vegafusion-runtime $0",  depends_on = ["build-vegajs-runtime"] }
 test-rs-server = "cargo test -p vegafusion-server $0"
-test-rs = "cargo test --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm $0"
+test-rs = { cmd = "cargo test --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm $0", depends_on = ["build-vegajs-runtime"] }
 
 # Build Wasm
 install-wasm-toolchain = "python automation/download_rust_target.py wasm32-unknown-unknown"
