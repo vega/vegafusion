@@ -31,7 +31,7 @@ test-rs-runtime = { cmd="cargo test -p vegafusion-runtime $0",  depends_on = ["b
 test-rs-server = "cargo test -p vegafusion-server $0"
 
 # Build Wasm
-install-wasm-toolchain = "python automation/download_wasm_target.py"
+install-wasm-toolchain = "python automation/download_rust_target.py wasm32-unknown-unknown"
 install-wasm-pack = "export CARGO_HOME=$PIXI_PACKAGE_ROOT/.pixi/env && cargo install wasm-pack"
 build-wasm = { cmd = "cd vegafusion-wasm && wasm-pack build --release && cp package.json pkg/", depends_on = ["install-wasm-toolchain", "install-wasm-pack"] }
 
@@ -42,7 +42,8 @@ build-js-embed = { cmd = "cd javascript/vegafusion-embed && npm install && npm r
 build-rs-vegafusion-server = { cmd = "cargo build -p vegafusion-server --release"}
 
 # Java
-build-jni = "cargo build -p vegafusion-jni --release"
+build-jni = "cargo build -p vegafusion-jni --release $0"
+build-jar = "export VEGAFUSION_JNI_LIBRARIES=$1 && cd java && ./gradlew jar"
 
 [tasks.test-java]
 cmd = """
