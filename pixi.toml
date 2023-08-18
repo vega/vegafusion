@@ -46,7 +46,7 @@ build-jni = "cargo build -p vegafusion-jni --release"
 
 [tasks.test-java]
 cmd = """
-VEGAFUSION_JNI_LIBRARY=$(python automation/find_file.py $PIXI_PACKAGE_ROOT/target/release/ \"libvegafusion_jni\\.(dylib|dll|so)\") &&
+export VEGAFUSION_JNI_LIBRARY=$(python automation/find_file.py $PIXI_PACKAGE_ROOT/target/release/ \"libvegafusion_jni\\.(dylib|dll|so)\") &&
 cd java &&
 ./gradlew test $0
 """

@@ -11,7 +11,11 @@ jobs:
       - name: Install pixi
         run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
       - name: Test Java
-        run: pixi run test-java
+        run: |
+          pixi run build-jni
+          ls target/release -la
+          pixi run python automation/find_file.py $PIXI_PACKAGE_ROOT/target/release/ \"libvegafusion_jni\\.(dylib|dll|so)\"
+          pixi run test-java
 
 #  build-test-java-linux64:
 #    runs-on: ubuntu-20.04
