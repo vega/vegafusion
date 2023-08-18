@@ -48,8 +48,8 @@ build-rs-vegafusion-server = { cmd = "cargo build -p vegafusion-server --release
 
 # Java
 build-jni = "cargo build -p vegafusion-jni --release $0"
-build-jar = "export VEGAFUSION_JNI_LIBRARIES=$1 && cd java && ./gradlew jar"
-build-jar-win = "export VEGAFUSION_JNI_LIBRARIES=$1 && cd java && ./gradlew.bat jar"
+build-jar = "cd java && ./gradlew jar"
+build-jar-win = "cd java && ./gradlew.bat jar"
 
 [tasks.test-java]
 cmd = """

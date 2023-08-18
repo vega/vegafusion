@@ -106,7 +106,8 @@ jobs:
           path: jni-native
       - name: Build jar
         run: |
-          pixi run build-jar /home/runner/work/vegafusion/vegafusion/jni-native
+          export VEGAFUSION_JNI_LIBRARIES=/home/runner/work/vegafusion/vegafusion/jni-native
+          pixi run build-jar
       - name: Upload jar
         uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
         with:
