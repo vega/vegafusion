@@ -32,11 +32,13 @@ build-vegajs-runtime = { cmd = "cd vegafusion-runtime/tests/util/vegajs_runtime 
 test-rs-core = "cargo test -p vegafusion-core $0"
 test-rs-runtime = { cmd="cargo test -p vegafusion-runtime $0",  depends_on = ["build-vegajs-runtime"] }
 test-rs-server = "cargo test -p vegafusion-server $0"
+test-rs = "cargo test --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm $0"
 
 # Build Wasm
 install-wasm-toolchain = "python automation/download_rust_target.py wasm32-unknown-unknown"
 install-wasm-pack = "export CARGO_HOME=$PIXI_PACKAGE_ROOT/.pixi/env && cargo install wasm-pack"
 build-wasm = { cmd = "cd vegafusion-wasm && wasm-pack build --release && cp package.json pkg/", depends_on = ["install-wasm-toolchain", "install-wasm-pack"] }
+pack-wasm = { cmd = "cd vegafusion-wasm && wasm-pack pack", depends_on=["build-wasm"] }
 
 # Install Javascript
 build-js-embed = { cmd = "cd javascript/vegafusion-embed && npm install && npm run build", depends_on = ["build-wasm"] }
