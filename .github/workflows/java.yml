@@ -75,7 +75,7 @@ jobs:
           iwr -useb https://pixi.sh/install.ps1 | iex
           echo "${HOME}/AppData/Local/pixi/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Test Java
-        run: pixi run test-java
+        run: pixi run test-java-win
       - name: Copy native lib
         run: |
           mkdir -p native/win-64
