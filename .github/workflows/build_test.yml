@@ -38,7 +38,7 @@ jobs:
           echo "${HOME}/AppData/Local/pixi/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Test rust
         run: |
-          pixi run test-rs
+          pixi run test-rs --release
       - name: Upload test artifacts
         uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
         if: always()
