@@ -7,6 +7,9 @@ channels = ["conda-forge"]
 platforms = ["osx-arm64", "osx-64", "linux-64", "win-64"]
 
 [tasks]
+check-rs-fmt = "cargo fmt --all -- --check"
+check-rs-warnings = "export RUSTFLAGS=\"-D warnings\" && cargo check --tests"
+check-rs-clippy = "cargo clippy -- -A clippy::borrow_deref_ref"
 
 # setup python dev packages
 dev-py-embed = { cmd = ["maturin", "develop", "-m", "vegafusion-python-embed/Cargo.toml", "--release"]}

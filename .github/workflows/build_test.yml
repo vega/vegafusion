@@ -1,32 +1,20 @@
-#name: build_test
-#on:
-#  pull_request:
-#    types: [ opened, synchronize ]
-#jobs:
-#  rust-fmt-clippy:
-#    runs-on: ubuntu-latest
-#    env:
-#      RUSTFLAGS: "-D warnings"
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#          components: rustfmt, clippy
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Check cargo fmt compliance
-#        run: cargo fmt --all -- --check
-#      - name: Check no rustc warnings
-#        run: cargo check --tests --features=protobuf-src
-#      - name: Check for clippy warnings
-#        run: cargo clippy --features=protobuf-src -- -A clippy::borrow_deref_ref
-#
+name: build_test
+on:
+  pull_request:
+    types: [ opened, synchronize ]
+jobs:
+  check-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
+      - name: Check fmt
+        run: pixi run check-rs-fmt
+      - name: Check warnings
+        run: pixi run check-rs-warnings
+      - name: Check clippy
+        run: pixi run check-rs-clippy
+
 #  test-rust:
 #    runs-on: ${{ matrix.os }}
 #    strategy:
