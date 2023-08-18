@@ -71,7 +71,9 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
       - name: Install pixi
-        run: iwr -useb https://pixi.sh/install.ps1 | iex
+        run: |
+          iwr -useb https://pixi.sh/install.ps1 | iex
+          echo "${HOME}/.pixi/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Test Java
         run: pixi run test-java
       - name: Copy native lib
