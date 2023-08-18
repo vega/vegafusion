@@ -14,7 +14,6 @@ jobs:
         run: |
           pixi run build-jni
           ls target/release -la
-          pixi run python automation/find_file.py /home/runner/work/vegafusion/vegafusion/target/release/ "libvegafusion_jni\\.(dylib|dll|so)"
           pixi run test-java
 
 #  build-test-java-linux64:
