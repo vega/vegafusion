@@ -4,7 +4,7 @@ on:
     types: [ opened, synchronize ]
 jobs:
   check-rust:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
@@ -22,7 +22,7 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu-latest
+          - ubuntu-20.04
           - windows-2022
           - macos-11
     steps:
@@ -48,7 +48,7 @@ jobs:
             vegafusion-runtime/tests/output
 
   build-vegafusion-wasm:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
