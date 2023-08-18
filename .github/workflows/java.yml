@@ -88,10 +88,10 @@ jobs:
   build-jar:
     runs-on: ubuntu-20.04
     needs:
-      - build-test-java-linux64
-      - build-test-java-osx64
+      - build-test-java-linux-64
+      - build-test-java-osx-64
       - build-java-osx-arm64
-      - build-test-java-win64
+      - build-test-java-win-64
     steps:
       - name: Check out repository code
         uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
