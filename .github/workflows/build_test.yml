@@ -63,84 +63,99 @@ jobs:
           name: vegafusion-wasm-packages
           path: vegafusion-wasm/pkg/vegafusion-wasm-*.tgz
 
-#  test-rust:
-#    runs-on: ${{ matrix.os }}
-#    strategy:
-#      matrix:
-#        os:
-#          - ubuntu-latest
-#          - windows-2022
-#          - macos-11
-#
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-#      - name: Install apt system dependencies needed to build nodecanvas
-#        run: |
-#          sudo apt-get install -y libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
-#        if: ${{ runner.os == 'Linux' }}
-#      - name: Install protoc on Window
-#        run: |
-#          choco install --yes protoc
-#        if: ${{ runner.os == 'Windows' }}
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Install node
-#        uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # pin@v2
-#        with:
-#          node-version: '17.9.0'
-#      - name: Install test node dependencies
-#        working-directory: vegafusion-runtime/tests/util/vegajs_runtime
-#        run: |
-#          npm install
-#      - name: Run Rust Tests (Windows)
-#        if: ${{ runner.os == 'Windows' }}
-#        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
-#        env:
-#          CARGO_HOME: C:\cargo_home\
-#          CARGO_TARGET_DIR: C:\cargo_target_dir\
-#        with:
-#          command: test
-#          args: --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
-#      - name: Run Rust Tests (MacOs/Linux)
-#        if: ${{ runner.os != 'Windows' }}
-#        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
-#        with:
-#          command: test
-#          args: --release --all-features --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
-#      - name: Upload test artifacts
-#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-#        if: always()
-#        with:
-#          name: vegafusion-rt-test-images
-#          path: |
-#            vegafusion-runtime/tests/output
-#
-#  build-vegafusion-wasm:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-#      - name: Install wasm-pack
-#        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-#      - name: Install node
-#        uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # pin@v2
-#        with:
-#          node-version: '17.9.0'
-#      - name: Build package
-#        working-directory: vegafusion-wasm/
-#        run: |
-#          npm run build:protobuf-src
-#          wasm-pack pack
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-#        with:
-#          name: vegafusion-wasm-packages
-#          path: vegafusion-wasm/pkg
-#
+  build-vegafusion-packages:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi (linux / osx)
+        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Build vegafusion wheel
+        run: |
+          pixi run build-py-vegafusion
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-packages
+          path: |
+            python/vegafusion/dist/*.whl
+            python/vegafusion/dist/*.tar.gz
+
+  build-vegafusion-jupyter-packages:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi (linux / osx)
+        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Build vegafusion-jupyter wheel
+        run: |
+          pixi run build-py-jupyter
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-jupyter-packages
+          path: |
+            python/vegafusion-jupyter/dist/*.whl
+            python/vegafusion-jupyter/dist/*.tar.gz
+
+  test-vegafusion-python:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-20.04
+          - windows-2022
+          - macos-11
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi (linux / osx)
+        if: ${{ runner.os != 'Windows' }}
+        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Install pixi (windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          iwr -useb https://pixi.sh/install.ps1 | iex
+          echo "${HOME}/AppData/Local/pixi/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Test vegafusion python
+        run: |
+          pixi run test-py-vegafusion
+
+  test-vegafusion-jupyter:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-20.04
+          - windows-2022
+          - macos-11
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi (linux / osx)
+        if: ${{ runner.os != 'Windows' }}
+        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Install pixi (windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          iwr -useb https://pixi.sh/install.ps1 | iex
+          echo "${HOME}/AppData/Local/pixi/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
+        with:
+          chrome-version: stable
+      - name: Test vegafusion jupyter
+        run: |
+          pixi run test-py-jupyter-headless
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        if: always()
+        with:
+          name: vegafusion-jupyter-test-failures
+          path: |
+            python/vegafusion-jupyter/tests/failures/*
+
 #  build-vegafusion-wheel:
 #    runs-on: ubuntu-latest
 #    defaults:
