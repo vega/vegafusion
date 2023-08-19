@@ -13,7 +13,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}-server
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-server
           path: |
             ~/.cargo
             target
@@ -43,7 +43,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: linux-arm64-{{ hashFiles('pixi.lock') }}-server
+          key: linux-arm64-${{ hashFiles('pixi.lock') }}-server
           path: |
             ~/.cargo
             target
@@ -77,7 +77,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}-server
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-server
           path: |
             ~/.cargo
             target
@@ -107,7 +107,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}-server
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-server
           path: |
             ~/.cargo
             target
@@ -137,7 +137,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: osx-arm64-{{ hashFiles('pixi.lock') }}-server
+          key: osx-arm64-${{ hashFiles('pixi.lock') }}-server
           path: |
             ~/.cargo
             target

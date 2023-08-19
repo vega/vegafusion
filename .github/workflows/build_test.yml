@@ -13,7 +13,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}
           path: |
             ~/.cargo
             target
@@ -48,7 +48,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}
           path: |
             ~/.cargo
             target
@@ -74,7 +74,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}
           path: |
             ~/.cargo
             target
@@ -98,7 +98,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}
           path: |
             ~/.cargo
             target
@@ -124,7 +124,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}
           path: |
             ~/.cargo
             target
@@ -164,7 +164,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}
           path: |
             ~/.cargo
             target
@@ -191,7 +191,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}
           path: |
             ~/.cargo
             target
