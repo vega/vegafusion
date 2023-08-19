@@ -1,6 +1,6 @@
 import subprocess
 import sys
-
+import platform
 import requests
 import tempfile
 import os
@@ -23,9 +23,14 @@ def ensure_target(target_name):
     if package_root is None:
         raise ValueError("Expected PIXI_PACKAGE_ROOT environment variable to be set")
 
-    dest_dir = os.path.join(
-        package_root, ".pixi", "env", "lib", "rustlib", target_name
-    )
+    if platform.system() == "Windows":
+        dest_dir = os.path.join(
+            package_root, ".pixi", "env", "Library", target_name
+        )
+    else:
+        dest_dir = os.path.join(
+            package_root, ".pixi", "env", "lib", "rustlib", target_name
+        )
     if os.path.exists(dest_dir):
         print("wasm32-unknown-unknown target already installed")
         return
