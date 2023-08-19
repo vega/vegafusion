@@ -104,3 +104,7 @@ altair = "5.0.1.*"
 protobuf = "4.23.3.*"
 ipywidgets = "8.1.0.*"
 vl-convert-python = "0.12.0.*"
+
+[target.linux-64.build-dependencies]
+gcc_linux-aarch64 = "13.1.0.*"
+
