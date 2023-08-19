@@ -34,8 +34,8 @@
   "scripts": {
     "build:dev": "npm run build:lib && npm run build:nbextension && npm run build:labextension:dev && pip install --force-reinstall --no-deps .",
     "build:prod": "npm run clean && npm run build:lib && npm run build:nbextension && npm run build:labextension",
-    "build:labextension": "jupyter labextension build .",
-    "build:labextension:dev": "jupyter labextension build --development True .",
+    "build:labextension": "jupyter-labextension build .",
+    "build:labextension:dev": "jupyter-labextension build --development True .",
     "build:lib": "tsc && sass scss:css",
     "build:nbextension": "webpack",
     "clean": "npm run clean:lib && npm run clean:dist && npm run clean:nbextension && npm run clean:labextension",
@@ -50,7 +50,7 @@
     "watch": "npm-run-all -p watch:*",
     "watch:lib": "tsc -w",
     "watch:nbextension": "webpack --watch --mode=development",
-    "watch:labextension": "jupyter labextension watch ."
+    "watch:labextension": "jupyter-labextension watch ."
   },
   "dependencies": {
     "@jupyter-widgets/base": "^4 || ^5 || ^6",
