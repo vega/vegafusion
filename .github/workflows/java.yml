@@ -117,6 +117,7 @@ jobs:
 
   try-jar:
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-20.04

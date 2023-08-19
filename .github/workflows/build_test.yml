@@ -20,6 +20,7 @@ jobs:
   test-rust:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-20.04
@@ -102,6 +103,7 @@ jobs:
   test-vegafusion-python:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-20.04
@@ -125,6 +127,7 @@ jobs:
   test-vegafusion-jupyter:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-20.04
