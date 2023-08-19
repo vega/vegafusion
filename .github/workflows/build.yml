@@ -33,27 +33,72 @@ jobs:
           path: |
             vegafusion-server-*
 
+# # Below is an Attempt to cross compile to linux aarch64 within conda environment.
+# # It fails in compiling protobuf-src. So instead we fall back to the direct use of
+# # cargo (without involving conda).
+#
+#  build-vegafusion-server-linux-arm64:
+#    runs-on: ubuntu-20.04
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+#      - name: Install pixi
+#        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+#      - name: Cache
+#        uses: actions/cache@v3
+#        with:
+#          key: linux-arm64-${{ hashFiles('pixi.lock') }}-server
+#          path: |
+#            ~/.cargo
+#            target
+#            .pixi
+#      - name: Build vegafusion-server
+#        run: |
+#          pixi run python automation/download_rust_target.py aarch64-unknown-linux-gnu
+#          pixi add gcc_linux-aarch64 -p linux-64
+#          export RUSTFLAGS="-C linker=aarch64-linux-gnu-gcc"
+#          pixi run build-rs-vegafusion-server --features=protobuf-src --target aarch64-unknown-linux-gnu
+#      - name: zip executable
+#        uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
+#        with:
+#          files: target/aarch64-unknown-linux-gnu/release/vegafusion-server
+#          dest: vegafusion-server-linux-arm64.zip
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+#        with:
+#          name: vegafusion-server
+#          path: |
+#            vegafusion-server-*
+
+
   build-vegafusion-server-linux-arm64:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - name: Install pixi
-        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
-      - name: Cache
-        uses: actions/cache@v3
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
         with:
-          key: linux-arm64-${{ hashFiles('pixi.lock') }}-server
-          path: |
-            ~/.cargo
-            target
-            .pixi
-      - name: Build vegafusion-server
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
+        with:
+          cache-on-failure: True
+      - name: Download arm64 toolchain
         run: |
-          pixi run python automation/download_rust_target.py aarch64-unknown-linux-gnu
-          pixi add gcc_linux-aarch64 -p linux-64
-          export RUSTFLAGS="-C linker=aarch64-linux-gnu-gcc"
-          pixi run build-rs-vegafusion-server --features=protobuf-src --target aarch64-unknown-linux-gnu
+          rustup target add aarch64-unknown-linux-gnu
+      - name: Download gcc for cross compilation
+        run: |
+          sudo apt-get update
+          sudo apt-get install gcc-aarch64-linux-gnu
+      - name: Build vegafusion-server
+        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
+        env:
+          RUSTFLAGS: "-C linker=aarch64-linux-gnu-gcc"
+        with:
+          command: build
+          args: -p vegafusion-server --release --features=protobuf-src --target=aarch64-unknown-linux-gnu
       - name: zip executable
         uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
         with:
