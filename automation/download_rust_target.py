@@ -25,7 +25,7 @@ def ensure_target(target_name):
 
     if platform.system() == "Windows":
         dest_dir = os.path.join(
-            package_root, ".pixi", "env", "Library", target_name
+            package_root, ".pixi", "env", "Library", "lib", "rustlib", target_name
         )
     else:
         dest_dir = os.path.join(
