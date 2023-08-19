@@ -204,331 +204,146 @@ jobs:
           path: |
             vegafusion-server-*
 
-#  build-vegafusion-server-linux-64:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Build vegafusion-server (Mac/Linux)
-#        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
-#        with:
-#          command: build
-#          args: -p vegafusion-server --release --features=protobuf-src
-#      - name: zip executable
-#        uses: papeloto/action-zip@5f1c4aa587ea41db1110df6a99981dbe19cee310 # pin@v1
-#        with:
-#          files: target/release/vegafusion-server
-#          dest: vegafusion-server-linux-64.zip
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-#        with:
-#          name: vegafusion-server
-#          path: |
-#            vegafusion-server-*
-#
-#  build-vegafusion-server-linux-arm64:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Download arm64 toolchain
-#        run: |
-#          rustup target add aarch64-unknown-linux-gnu
-#      - name: Download gcc for cross compilation
-#        run: |
-#          sudo apt-get update
-#          sudo apt-get install gcc-aarch64-linux-gnu
-#      - name: Build vegafusion-server
-#        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
-#        env:
-#          RUSTFLAGS: "-C linker=aarch64-linux-gnu-gcc"
-#        with:
-#          command: build
-#          args: -p vegafusion-server --release --features=protobuf-src --target=aarch64-unknown-linux-gnu
-#      - name: zip executable
-#        uses: papeloto/action-zip@5f1c4aa587ea41db1110df6a99981dbe19cee310 # pin@v1
-#        with:
-#          files: target/aarch64-unknown-linux-gnu/release/vegafusion-server
-#          dest: vegafusion-server-linux-arm64.zip
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-#        with:
-#          name: vegafusion-server
-#          path: |
-#            vegafusion-server-*
-#
-#  build-vegafusion-server-win-64:
-#    runs-on: windows-2022
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-#      - name: Install protoc on Window
-#        run: |
-#          choco install --yes protoc
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Build vegafusion-server (Windows)
-#        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
-#        with:
-#          command: build
-#          args: -p vegafusion-server --release
-#      - name: zip executable
-#        uses: papeloto/action-zip@5f1c4aa587ea41db1110df6a99981dbe19cee310 # pin@v1
-#        with:
-#          files: target/release/vegafusion-server.exe
-#          dest: vegafusion-server-win-64.zip
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-#        with:
-#          name: vegafusion-server
-#          path: |
-#            vegafusion-server-*
-#
-#  build-vegafusion-server-osx-64:
-#    runs-on: macos-11
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Build vegafusion-server
-#        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
-#        with:
-#          command: build
-#          args: -p vegafusion-server --release --features=protobuf-src
-#      - name: zip executable
-#        uses: papeloto/action-zip@5f1c4aa587ea41db1110df6a99981dbe19cee310 # pin@v1
-#        with:
-#          files: target/release/vegafusion-server
-#          dest: vegafusion-server-osx-64.zip
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-#        with:
-#          name: vegafusion-server
-#          path: |
-#            vegafusion-server-*
-#
-#  build-vegafusion-server-osx-arm64:
-#    runs-on: macos-11
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Download Apple Silicon toolchain
-#        run: |
-#          rustup target add aarch64-apple-darwin
-#      - name: Build vegafusion-server
-#        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
-#        with:
-#          command: build
-#          args: -p vegafusion-server --release --target aarch64-apple-darwin --features=protobuf-src
-#      - name: zip executable (Apple silicon)
-#        uses: papeloto/action-zip@5f1c4aa587ea41db1110df6a99981dbe19cee310 # pin@v1
-#        with:
-#          files: target/aarch64-apple-darwin/release/vegafusion-server
-#          dest: vegafusion-server-osx-arm64.zip
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-#        with:
-#          name: vegafusion-server
-#          path: |
-#            vegafusion-server-*
-#
-#  build-vegafusion-python-embed-linux-64:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Build wheels (Linux)
-#        uses: messense/maturin-action@6d52485c3b3044e20b4c8ee6ce6f61e20a7645b0 # pin@v1
-#        with:
-#          command: build
-#          manylinux: 2014
-#          rust-toolchain: stable
-#          args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-#        with:
-#          name: vegafusion-python-embed-wheels
-#          path: |
-#            target/wheels/*.tar.gz
-#            target/wheels/*.whl
-#
-#  build-vegafusion-python-embed-linux-arm64:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Download arm64 toolchain
-#        run: |
-#          rustup target add aarch64-unknown-linux-gnu
-#      - name: Build arm64 wheels
-#        uses: messense/maturin-action@6d52485c3b3044e20b4c8ee6ce6f61e20a7645b0 # pin@v1
-#        with:
-#          command: build
-#          manylinux: 2014
-#          rust-toolchain: stable
-#          args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip --target aarch64-unknown-linux-gnu
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-#        with:
-#          name: vegafusion-python-embed-wheels
-#          path: |
-#            target/wheels/*.tar.gz
-#            target/wheels/*.whl
-#
-#  build-vegafusion-python-embed-win-64:
-#    runs-on: windows-latest
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-#      - name: Install protoc
-#        run: |
-#          choco install --yes protoc
-#      - name: Setup Python 3.10
-#        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@v4
-#        with:
-#          architecture: 'x64'
-#          python-version: '3.10'
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Build wheels
-#        uses: messense/maturin-action@6d52485c3b3044e20b4c8ee6ce6f61e20a7645b0 # pin@v1
-#        with:
-#          command: build
-#          manylinux: 2014
-#          rust-toolchain: stable
-#          args: --release -m vegafusion-python-embed/Cargo.toml --strip
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-#        with:
-#          name: vegafusion-python-embed-wheels
-#          path: |
-#            target/wheels/*.tar.gz
-#            target/wheels/*.whl
-#
-#  build-vegafusion-python-embed-osx-64:
-#    runs-on: macos-11
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-#      - name: Install protoc
-#        run: |
-#          brew install protobuf
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Build wheels
-#        uses: messense/maturin-action@6d52485c3b3044e20b4c8ee6ce6f61e20a7645b0 # pin@v1
-#        with:
-#          command: build
-#          rust-toolchain: stable
-#          args: --release -m vegafusion-python-embed/Cargo.toml --strip
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-#        with:
-#          name: vegafusion-python-embed-wheels
-#          path: |
-#            target/wheels/*.tar.gz
-#            target/wheels/*.whl
-#
-#  build-vegafusion-python-embed-osx-arm64:
-#    runs-on: macos-11
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
-#      - name: Install protoc
-#        run: |
-#          brew install protobuf
-#      - name: Install latest stable Rust toolchain
-#        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-#        with:
-#          toolchain: stable
-#          override: true
-#      - name: Cache rust dependencies
-#        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-#        with:
-#          cache-on-failure: True
-#      - name: Download Apple Silicon toolchain
-#        run: |
-#          rustup target add aarch64-apple-darwin
-#      - name: Build Apple Silicon wheels
-#        uses: messense/maturin-action@6d52485c3b3044e20b4c8ee6ce6f61e20a7645b0 # pin@v1
-#        with:
-#          command: build
-#          rust-toolchain: stable
-#          args: --release -m vegafusion-python-embed/Cargo.toml --strip --target aarch64-apple-darwin
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
-#        with:
-#          name: vegafusion-python-embed-wheels
-#          path: |
-#            target/wheels/*.tar.gz
-#            target/wheels/*.whl
+  # Use maturin action to build linux wheels within proper manylinux compatible containers
+  # (This is why we don't use the pixi "build-py-embed" action)
+  build-vegafusion-python-embed-linux-64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
+        with:
+          cache-on-failure: True
+      - name: Build wheels (Linux)
+        uses: messense/maturin-action@9357a23898d2fca5ef8da7ac38aaaedab4ef218f # pin@v1.40.2
+        with:
+          command: build
+          manylinux: 2014
+          rust-toolchain: stable
+          args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: |
+            target/wheels/*.tar.gz
+            target/wheels/*.whl
+
+  build-vegafusion-python-embed-linux-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install latest stable Rust toolchain
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Cache rust dependencies
+        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
+        with:
+          cache-on-failure: True
+      - name: Download arm64 toolchain
+        run: |
+          rustup target add aarch64-unknown-linux-gnu
+      - name: Build arm64 wheels
+        uses: messense/maturin-action@6d52485c3b3044e20b4c8ee6ce6f61e20a7645b0 # pin@v1
+        with:
+          command: build
+          manylinux: 2014
+          rust-toolchain: stable
+          args: --release -m vegafusion-python-embed/Cargo.toml --features=protobuf-src --strip --target aarch64-unknown-linux-gnu
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: |
+            target/wheels/*.tar.gz
+            target/wheels/*.whl
+
+  build-vegafusion-python-embed-win-64:
+    runs-on: windows-2022
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi
+        run: |
+          iwr -useb https://pixi.sh/install.ps1 | iex
+          echo "${HOME}/AppData/Local/pixi/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-embed
+          path: |
+            ~/.cargo
+            target
+            .pixi
+      - name: Build vegafusion-python-embed
+        run: |
+          pixi run build-py-embed
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: |
+            target/wheels/*.tar.gz
+            target/wheels/*.whl
+
+  build-vegafusion-python-embed-osx-64:
+    runs-on: macos-11
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-embed
+          path: |
+            ~/.cargo
+            target
+            .pixi
+      - name: Build vegafusion-python-embed
+        run: |
+          pixi run build-py-embed
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: |
+            target/wheels/*.tar.gz
+            target/wheels/*.whl
+
+  build-vegafusion-python-embed-osx-arm64:
+    runs-on: macos-11
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          key: osx-arm64-${{ hashFiles('pixi.lock') }}-server
+          path: |
+            ~/.cargo
+            target
+            .pixi
+      - name: Build vegafusion-server
+        run: |
+          pixi run python automation/download_rust_target.py aarch64-apple-darwin  
+          pixi run build-py-embed --target aarch64-apple-darwin
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: |
+            target/wheels/*.tar.gz
+            target/wheels/*.whl
