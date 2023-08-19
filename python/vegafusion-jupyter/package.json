@@ -65,7 +65,7 @@
   "devDependencies": {
     "@babel/core": "^7.5.0",
     "@babel/preset-env": "^7.5.0",
-    "@jupyterlab/builder": "^4.0.5",
+    "@jupyterlab/builder": "^3.6.5",
     "@phosphor/application": "^1.6.0",
     "@phosphor/widgets": "^1.6.0",
     "@types/jest": "^26.0.0",

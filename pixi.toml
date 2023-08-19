@@ -19,7 +19,7 @@ dev-py-jupyter = { cmd = "cd python/vegafusion-jupyter && npm install && npm run
 # Build Python packages
 build-py-embed = {cmd = "maturin build -m vegafusion-python-embed/Cargo.toml --release --strip $0"}
 build-py-vegafusion = {cmd = "cd python/vegafusion && python -m build $0"}
-build-py-jupyter = {cmd = "cd python/vegafusion-jupyter && python -m build $0", depends_on = ["build-js-embed"]}
+build-py-jupyter = {cmd = "cd python/vegafusion-jupyter && npm install && python -m build $0", depends_on = ["build-js-embed"]}
 
 # test python
 test-py-vegafusion = { cmd = "cd python/vegafusion && pytest $0", depends_on = ["dev-py-vegafusion"]}
