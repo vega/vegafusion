@@ -10,6 +10,14 @@ jobs:
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
       - name: Install pixi
         run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}
+          path: |
+            ~/.cargo
+            target
+            .pixi
       - name: Test Java
         run: pixi run test-java
       - name: Copy native lib
@@ -30,6 +38,14 @@ jobs:
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
       - name: Install pixi
         run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}
+          path: |
+            ~/.cargo
+            target
+            .pixi
       - name: Test Java
         run: pixi run test-java
       - name: Copy native lib
@@ -50,6 +66,14 @@ jobs:
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
       - name: Install pixi
         run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}
+          path: |
+            ~/.cargo
+            target
+            .pixi
       - name: Build jni library
         run: |
           pixi run python automation/download_rust_target.py aarch64-apple-darwin 
@@ -74,6 +98,14 @@ jobs:
         run: |
           iwr -useb https://pixi.sh/install.ps1 | iex
           echo "${HOME}/AppData/Local/pixi/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}
+          path: |
+            ~/.cargo
+            target
+            .pixi
       - name: Test Java
         run: pixi run test-java-win
       - name: Copy native lib
@@ -99,6 +131,14 @@ jobs:
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
       - name: Install pixi
         run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-{{ hashFiles('pixi.lock') }}
+          path: |
+            ~/.cargo
+            target
+            .pixi
       - name: Download jni libs
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # pin@v3.0.2
         with:
