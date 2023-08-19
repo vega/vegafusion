@@ -37,7 +37,7 @@ test-rs = { cmd = "cargo test --workspace --exclude vegafusion-python-embed --ex
 # Build Wasm
 install-wasm-toolchain = "python automation/download_rust_target.py wasm32-unknown-unknown"
 install-wasm-pack = "export CARGO_HOME=$PIXI_PACKAGE_ROOT/.pixi/env && cargo install wasm-pack"
-build-wasm = { cmd = "cd vegafusion-wasm && wasm-pack build --release && cp package.json pkg/", depends_on = ["install-wasm-toolchain", "install-wasm-pack"] }
+build-wasm = { cmd = "cd vegafusion-wasm && npm install && wasm-pack build --release && cp package.json pkg/", depends_on = ["install-wasm-toolchain", "install-wasm-pack"] }
 pack-wasm = { cmd = "cd vegafusion-wasm && wasm-pack pack", depends_on=["build-wasm"] }
 
 # Install Javascript
