@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
       - name: Install pixi
         run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
       - name: Test Java
@@ -17,7 +17,7 @@ jobs:
           mkdir -p native/linux-64
           cp target/release/libvegafusion_jni.so native/linux-64
       - name: Upload artifacts
-        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
           name: jni-native
           path: |
@@ -27,7 +27,7 @@ jobs:
     runs-on: macos-11
     steps:
       - name: Check out repository code
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
       - name: Install pixi
         run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
       - name: Test Java
@@ -37,7 +37,7 @@ jobs:
           mkdir -p native/osx-64
           cp target/release/libvegafusion_jni.dylib native/osx-64
       - name: Upload artifacts
-        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
           name: jni-native
           path: |
@@ -47,7 +47,7 @@ jobs:
     runs-on: macos-11
     steps:
       - name: Check out repository code
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
       - name: Install pixi
         run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
       - name: Build jni library
@@ -59,7 +59,7 @@ jobs:
           mkdir -p native/osx-arm64
           cp target/aarch64-apple-darwin/release/libvegafusion_jni.dylib native/osx-arm64
       - name: Upload artifacts
-        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
           name: jni-native
           path: |
@@ -69,7 +69,7 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Check out repository code
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
       - name: Install pixi
         run: |
           iwr -useb https://pixi.sh/install.ps1 | iex
@@ -81,7 +81,7 @@ jobs:
           mkdir -p native/win-64
           cp target/release/vegafusion_jni.dll native/win-64
       - name: Upload artifacts
-        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
           name: jni-native
           path: |
@@ -96,11 +96,11 @@ jobs:
       - build-test-java-win-64
     steps:
       - name: Check out repository code
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # pin@v2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
       - name: Install pixi
         run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
       - name: Download jni libs
-        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # pin@v3.0.2
         with:
           name: jni-native
           path: jni-native
@@ -109,7 +109,7 @@ jobs:
           export VEGAFUSION_JNI_LIBRARIES=/home/runner/work/vegafusion/vegafusion/jni-native
           pixi run build-jar
       - name: Upload jar
-        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
           name: jar
           path: |
@@ -131,7 +131,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - name: Download jar
-        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # pin@v3.0.2
         with:
           name: jar
           path: .
