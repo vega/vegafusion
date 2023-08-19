@@ -1,8 +1,122 @@
-#name: build
-#on:
-#  pull_request:
-#    types: [ opened, synchronize ]
-#jobs:
+name: build
+on:
+  pull_request:
+    types: [ opened, synchronize ]
+jobs:
+  build-vegafusion-server-linux-64:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Build vegafusion-server
+        run: |
+          pixi run build-rs-vegafusion-server
+      - name: zip executable
+        uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
+        with:
+          files: target/release/vegafusion-server
+          dest: vegafusion-server-linux-64.zip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-server
+          path: |
+            vegafusion-server-*
+
+  build-vegafusion-server-linux-arm64:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Build vegafusion-server
+        run: |
+          pixi run python automation/download_rust_target.py aarch64-unknown-linux-gnu 
+          pixi run build-rs-vegafusion-server --target aarch64-unknown-linux-gnu
+      - name: zip executable
+        uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
+        with:
+          files: target/aarch64-unknown-linux-gnu/release/vegafusion-server
+          dest: vegafusion-server-linux-arm64.zip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-server
+          path: |
+            vegafusion-server-*
+
+  build-vegafusion-server-win-64:
+    runs-on: windows-2022
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi
+        run: |
+          iwr -useb https://pixi.sh/install.ps1 | iex
+          echo "${HOME}/AppData/Local/pixi/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Build vegafusion-server
+        run: |
+          pixi run build-rs-vegafusion-server
+      - name: zip executable
+        uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
+        with:
+          files: target/release/vegafusion-server.exe
+          dest: vegafusion-server-win-64.zip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-server
+          path: |
+            vegafusion-server-*
+
+  build-vegafusion-server-osx-64:
+    runs-on: macos-11
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Build vegafusion-server
+        run: |
+          pixi run build-rs-vegafusion-server
+      - name: zip executable
+        uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
+        with:
+          files: target/release/vegafusion-server
+          dest: vegafusion-server-osx-64.zip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-server
+          path: |
+            vegafusion-server-*
+
+  build-vegafusion-server-osx-arm64:
+    runs-on: macos-11
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Build vegafusion-server
+        run: |
+          pixi run python automation/download_rust_target.py aarch64-apple-darwin  
+          pixi run build-rs-vegafusion-server --target aarch64-apple-darwin
+      - name: zip executable
+        uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
+        with:
+          files: target/aarch64-apple-darwin/release/vegafusion-server
+          dest: vegafusion-server-osx-arm64.zip
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-server
+          path: |
+            vegafusion-server-*
+
 #  build-vegafusion-server-linux-64:
 #    runs-on: ubuntu-latest
 #    steps:

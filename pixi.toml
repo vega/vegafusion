@@ -44,7 +44,7 @@ pack-wasm = { cmd = "cd vegafusion-wasm && wasm-pack pack", depends_on=["build-w
 build-js-embed = { cmd = "cd javascript/vegafusion-embed && npm install && npm run build", depends_on = ["build-wasm"] }
 
 # VegaFusion Server
-build-rs-vegafusion-server = { cmd = "cargo build -p vegafusion-server --release"}
+build-rs-vegafusion-server = { cmd = "cargo build -p vegafusion-server --release $0" }
 
 # Java
 build-jni = "cargo build -p vegafusion-jni --release $0"
