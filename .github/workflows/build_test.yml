@@ -91,6 +91,7 @@ jobs:
         run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
       - name: Build vegafusion-jupyter wheel
         run: |
+          echo JupyterLab Version: `pixi run jupyter-lab --version`
           pixi run build-py-jupyter
       - name: Upload artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
@@ -150,6 +151,7 @@ jobs:
           chrome-version: stable
       - name: Test vegafusion jupyter
         run: |
+          echo JupyterLab Version: `pixi run jupyter-lab --version`
           pixi run test-py-jupyter-headless
       - name: Upload test artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
