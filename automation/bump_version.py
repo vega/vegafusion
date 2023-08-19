@@ -76,7 +76,8 @@ def bump_version(version):
 
     # Handle cfg files
     cfg_dirs = [
-        root / "python" / "vegafusion"
+        root / "python" / "vegafusion",
+        root / "python" / "vegafusion-jupyter",
     ]
     for cfg_dir in cfg_dirs:
         cgf_path = cfg_dir / "setup.cfg"

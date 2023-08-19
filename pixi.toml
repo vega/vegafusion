@@ -18,8 +18,8 @@ dev-py-jupyter = { cmd = "cd python/vegafusion-jupyter && npm install && npm run
 
 # Build Python packages
 build-py-embed = {cmd = "maturin build -m vegafusion-python-embed/Cargo.toml --release --strip $0"}
-build-py-vegafusion = {cmd = "cd python/vegafusion && python setup.py sdist bdist_wheel $0"}
-build-py-jupyter = {cmd = "cd python/vegafusion-jupyter && python setup.py sdist bdist_wheel $0", depends_on = ["build-js-embed"]}
+build-py-vegafusion = {cmd = "cd python/vegafusion && python -m build $0"}
+build-py-jupyter = {cmd = "cd python/vegafusion-jupyter && python -m build $0", depends_on = ["build-js-embed"]}
 
 # test python
 test-py-vegafusion = { cmd = "cd python/vegafusion && pytest $0", depends_on = ["dev-py-vegafusion"]}
@@ -92,6 +92,7 @@ vega_datasets = "0.9.0.*"
 rust = "1.71.1.*"
 jupytext = "1.15.0.*"
 openjdk = "20.0.0.*"
+build = "0.7.0.*"
 
 
 # Dependencies are those required at runtime by the Python packages
