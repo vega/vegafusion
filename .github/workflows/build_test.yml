@@ -181,8 +181,9 @@ jobs:
       matrix:
         os:
           - ubuntu-20.04
-          - windows-2022
           - macos-11
+          # # The windows case hangs after installing chromedriver-binary-auto
+          # - windows-2022
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
