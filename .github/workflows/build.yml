@@ -130,6 +130,7 @@ jobs:
             .pixi
       - name: Build vegafusion-server
         run: |
+          pixi install -vvv
           pixi run build-rs-vegafusion-server
       - name: zip executable
         uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
@@ -286,6 +287,7 @@ jobs:
             .pixi
       - name: Build vegafusion-python-embed
         run: |
+          pixi install -vvv
           pixi run build-py-embed
       - name: Upload artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
