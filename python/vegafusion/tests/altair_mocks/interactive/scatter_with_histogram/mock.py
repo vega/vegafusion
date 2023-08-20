@@ -2,6 +2,8 @@ import altair as alt
 import pandas as pd
 import numpy as np
 
+np.random.seed(42)
+
 x = np.random.normal(size=100)
 y = np.random.normal(size=100)
 

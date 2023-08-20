@@ -5,6 +5,7 @@ import pandas as pd
 import altair as alt
 
 # Generate some random data
+np.random.seed(42)
 rng = np.random.RandomState(1)
 x = rng.rand(40) ** 2
 y = 10 - 1.0 / (x + 0.1) + rng.randn(40)
