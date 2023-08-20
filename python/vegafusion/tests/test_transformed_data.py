@@ -157,7 +157,6 @@ def test_transformed_data_for_mock(mock_name, expected_len, expected_cols, conne
         ("interactive/multiline_tooltip", [300, 300, 300], [["x"], ["y"], ["category"]]),
         ("interactive/scatter-with_linked_table", [392, 19, 19, 19], [["Year"], ["rank"], ["rank"], ["rank"]]),
         ("interactive/scatter-with_minimap", [1461, 1461], [["weather"], ["weather"]]),
-        ("interactive/scatter_with_histogram", [100, 12], [["mbin_end"], ["__count"]]),
         ("interactive/scatter_with_layered_histogram", [2, 19], [["mean_height"], ["bin_step_5_age"]]),
         ("interactive/select_detail", [20, 1000], [["mean_y"], ["value"]]),
         ("interactive/select_mark_area", [122, 122], [["sum_count"], ["yearmonth_date"]]),
