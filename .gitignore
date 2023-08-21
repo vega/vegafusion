@@ -42,3 +42,4 @@ _vegafusion_data
 __pycache__
 /.ipynb_checkpoints/
 /java/.idea/
+/.pixi/env/
