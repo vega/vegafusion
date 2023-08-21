@@ -20,14 +20,16 @@ jobs:
           - 8
           - 9
           - 10
+          - 11
+          - 12
+          - 13
+          - 14
+          - 15
+          - 16
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - name: Install pixi
-        run: |
-          iwr -useb https://pixi.sh/install.ps1 | iex
-          echo "${HOME}/AppData/Local/pixi/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Pixi command
         run: |
-          pixi install -vvv
-          pixi run python --version
+          pixi.exe install -vvv
+          pixi.exe run python --version
