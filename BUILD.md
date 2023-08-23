@@ -1,202 +1,109 @@
 ## Install Development Requirements
-To get started developing VegaFusion, several technologies need to be installed 
+VegaFusion's entire development environment setup is managed by [Pixi](https://prefix.dev/docs/pixi/overview).  Pixi is a cross-platform environment manager that installs packages from [conda-forge](https://conda-forge.org/) into an isolated environment directory for the project. Conda-forge provides all the development and build technologies that are required by VegaFusion, and so Pixi is the only system installation required to build and develop VegaFusion.
 
-### Install Rust
-Install Rust, following the instructions at https://www.rust-lang.org/tools/install
+### Installing Pixi
+On Linux and MacOS install pixi with:
 
-### Install miniconda
-Install miniconda, following instructions at https://docs.conda.io/en/latest/miniconda.html.
-
-If you already have conda installed, you can skip this step.
-
-### Install wasm-pack
-Install `wasm-pack`, following instructions at https://rustwasm.github.io/wasm-pack/installer/
-
-### Create conda development environment
-
-For Linux:
-```bash
-conda create --name vegafusion_dev --file python/vegafusion-jupyter/conda-linux-64-cp310.lock
+```
+curl -fsSL https://pixi.sh/install.sh | bash
 ```
 
-For MacOS (Intel):
-```bash
-conda create --name vegafusion_dev --file python/vegafusion-jupyter/conda-osx-64-cp310.lock
+On Windows, install Pixi with:
+```
+iwr -useb https://pixi.sh/install.ps1 | iex
 ```
 
-For MacOS (Arm):
-```bash
-conda create --name vegafusion_dev --file python/vegafusion-jupyter/conda-osx-arm64-cp310.lock
+Then restart your shell. 
+
+For more information on installing Pixi, see https://prefix.dev/docs/pixi/overview.
+
+## Build and test Rust
+Build and test the VegaFusion Rust crates with:
+
+```
+pixi run test-rs
 ```
 
-For Windows:
-```bash
-conda create --name vegafusion_dev --file python/vegafusion-jupyter/conda-win-64-cp310.lock
+Individual rust crates can be tested using:
+```
+pixi run test-rs-core
+pixi run test-rs-runtime
+pixi run test-rs-server
+pixi run test-rs-sql
 ```
 
-### Activate conda development environment
-```bash
-conda activate vegafusion_dev
+## Build and test Python
+
+### vegafusion and vegafusion-python-embed
+Build and test the `vegafusion` and `vegafusion-python-embed` Python packages with
+```
+pixi run test-py-vegafusion
 ```
 
-### Install Chrome and Chrome Webdriver
-Install Chrome desktop and a compatible Chrome Driver:
-
-For MacOS
+### vegafusion-jupyter
+Build and test the `vegafusion-jupyter` Python package with
 ```
-$ brew install --cask chromedriver
+pixi run test-py-jupyter-headless
 ```
 
-For Linux and Windows, this can be installed with conda
+This requires a system installation of Chrome, but the correct version of the chrome driver should be installed automatically by the `chromedriver-binary-auto` package. 
+
+The command above will run the browser-based tests in headless mode. To instead display the browser during testing, use:
+
 ```
-$ conda install -c conda-forge python-chromedriver-binary
-```
-
-In both cases, make sure the chromedriver version is compatible with the version of Chrome desktop
-
-### Install test npm dependencies
-Note: The `npm` command is included in the `nodejs` conda-forge package installed in the development conda environment.
-
-From the repository root:
-```bash
-cd vegafusion-runtime/tests/util/vegajs_runtime/
-npm install
+pixi run test-py-jupyter
 ```
 
-Note: On a MacOS ARM machine, npm may attempt to build the node canvas dependency from source. The following dependencies may be needed.
-```
-$ brew install pkg-config cairo pango libpng jpeg giflib librsvg
-```
-See https://stackoverflow.com/questions/71352368/is-it-possible-to-install-canvas-with-m1-chip
+### Try Python packages in JupyterLab
+To use the development versions of the Python packages in JupyterLab, first install the packages in development mode with:
 
-## Install/Build packages
-VegaFusion contains several packages using a variety of languages and build tools that need to be built before running the test suite.
-
-### Build `vegafusion-wasm` package
-From the repository root:
-```bash
-cd vegafusion-wasm
-npm install
-npm run build
+```
+pixi run dev-py-jupyter
 ```
 
-### Build `javascript/vegafusion-embed` package
-From the repository root:
-```bash
-cd javascript/vegafusion-embed
-npm install
-npm run build
+Then launch JupyterLab
+
+```
+pixi run jupyter-lab
 ```
 
-### Build the `vegafusion-python-embed` PyO3 Python package in development mode
-Note: The PyO3 maturin build tool was included in the `maturin` conda-forge package installed in the development conda environment.
+## Build and test Java
+Build and test the VegaFusion Java package with
 
-From the repository root:
-```bash
-cd vegafusion-python-embed
-maturin develop --release
+```
+pixi run test-java
 ```
 
-### Install optional dependencies
-Install optional python dependencies
-```bash
-pip install -U vl-convert-python
-```
-
-### Install the `vegafusion` Python package in development mode
-From the repository root:
-```bash
-cd python/vegafusion/
-pip install -e .
-```
-
-### Install the `vegafusion-jupyter` Python package in development mode
-From the repository root:
-```bash
-cd python/vegafusion-jupyter/
-npm install
-pip install -e ".[test]"
-```
-
-Then, build the jupyterlab extension
-
-```bash
-npm run build:dev
-```
-
-## Running tests
-
-### Run the Rust tests
-From the repository root:
-```bash
-cargo test --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm
-```
-
-### Run the vegafusion Python tests
-From the repository root:
-```bash
-cd python/vegafusion/
-pytest tests
-```
-
-### Run the vegafusion-jupyter Python integration tests
-From the repository root:
-```bash
-cd python/vegafusion-jupyter/
-pytest tests
-```
-
-To run the tests in headless mode (so that the chrome browser window doesn't pop up), set the `VEGAFUSION_TEST_HEADLESS` environment variable.
-
-```bash
-VEGAFUSION_TEST_HEADLESS=1 pytest tests
-```
-
-### Java tests
-Follow instructions in [java/README.md](java/README.md).
 
 ## Build Python packages for distribution
-The instructions above build the python packages for development. To build standalone python wheels, use `maturin build` instead of `maturin develop`.  Also, include the flags below to support manylinux 2010 standard on Linux and universal2 on MacOS.
+To build Python wheels for the current platform, the `build-py-embed`, `build-py-vegafusion`, and `build-py-jupyter` tasks may be used
 
-From repository root:
-```bash
-cd vegafusion-python-embed
-maturin build --release --strip --manylinux 2010
+```
+pixi run build-py-embed
+```
+This will build a wheel and sdist in the `target/wheels` directory.
+
+```
+pixi run build-py-vegafusion
 ```
 
-This will create wheel files for `vegafusion-python` in the `target/wheels` directory.
+This will build a wheel and sdist to the `python/vegafusion/dist` directory
 
-From repository root:
-```bash
-cd python/vegafusion-jupyter/
-python setup.py bdist_wheel
+```
+pixi run build-py-jupyter
 ```
 
-### (MacOs) Cross compile to Apple Silicon from Intel
-In order to compile for the Apple Silicon (M1) architecture from an intel Mac, the `aarch64-apple-darwin` Rust toolchain.
+This will build a wheel and sdist to the `python/vegafusion-jupyter/dist` directory
 
-```bash
-rustup target add aarch64-apple-darwin
-```
-
-Then build MacOS Apple Silicon package with 
-```bash
-maturin build --release --strip --target aarch64-apple-darwin
-```
 
 ## Making a change to development conda environment requirements
+To add a conda-forge package to the Pixi development environment, use the `pixi add` command with the `--build` flag
 
-1. Edit the dev-environment-3.X.yml file
-2. Update lock files with
-
-Note: the 3.7 environment is not supported on `osx-arm64`
-```bash
-cd python/vegafusion-jupyter/
-conda-lock --no-mamba -f dev-environment-3.8.yml --kind explicit -p osx-64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp38.lock"
-conda-lock --no-mamba -f dev-environment-3.10.yml --kind explicit -p osx-64 -p osx-arm64 -p linux-64 -p win-64 --filename-template "conda-{platform}-cp310.lock"
+```
+pixi add my-new-package --build
 ```
 
-Note: the `--no-mamba` flag is due to https://github.com/conda/conda-lock/issues/381.
+This will install the package and update the pixi.lock file with the new environment solution.
 
 ## Updating DataFusion protobuf
 When updating the version of DataFusion that VegaFusion depends on, the protobuf definition file at `python/vegafusion/proto/datafusion.proto` must be updated to match. This file should be downloaded from GitHub from https://raw.githubusercontent.com/apache/arrow-datafusion/27.0.0/datafusion/proto/proto/datafusion.proto, replacing `27.0.0` with the matching version of DataFusion.
@@ -204,6 +111,7 @@ When updating the version of DataFusion that VegaFusion depends on, the protobuf
 Then Python bindings should be generated using `protoc`
 
 ```
+pixi shell
 cd python/vegafusion
 protoc --python_out=vegafusion ./proto/datafusion.proto
 ```

@@ -9,16 +9,11 @@ This directory contains the Java interface to VegaFusion. This is the pure-Java 
  - Custom SQL connections aren't supported yet (The default DataFusion connection is used)
 
 # Running tests
-In order to run tests, the `VEGAFUSION_JNI_LIBRARY` environment variable must be set to the compiled output of the `vegafusion-jni` crate. For example, on macOS:
+In order to run tests:
 
 ```
-cd vegafusion-jni
-cargo build
-cd ../java
-VEGAFUSION_JNI_LIBRARY=`pwd`/../target/debug/libvegafusion_jni.dylib gradle test
+pixi run test-java
 ```
-
-Note that `VEGAFUSION_JNI_LIBRARY` must be set to an absolute path.
 
 # Releasing
 See [RELEASE.md](../RELEASE.md) for instructions on publishing to Maven Central.

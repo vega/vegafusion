@@ -11,6 +11,9 @@ check-rs-fmt = "cargo fmt --all -- --check"
 check-rs-warnings = "export RUSTFLAGS=\"-D warnings\" && cargo check --tests"
 check-rs-clippy = "cargo clippy -- -A clippy::borrow_deref_ref"
 
+# Bump version
+bump-version = "python automation/bump_version.py $1"
+
 # setup python dev packages
 dev-py-embed = { cmd = ["maturin", "develop", "-m", "vegafusion-python-embed/Cargo.toml", "--release"]}
 dev-py-vegafusion = { cmd = "cd python/vegafusion && pip install -e . --no-deps", depends_on = ["dev-py-embed"] }
@@ -32,6 +35,7 @@ build-vegajs-runtime = { cmd = "cd vegafusion-runtime/tests/util/vegajs_runtime 
 test-rs-core = "cargo test -p vegafusion-core $0"
 test-rs-runtime = { cmd="cargo test -p vegafusion-runtime $0",  depends_on = ["build-vegajs-runtime"] }
 test-rs-server = "cargo test -p vegafusion-server $0"
+test-rs-sql = "cargo test -p vegafusion-sql $0"
 test-rs = { cmd = "cargo test --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm $0", depends_on = ["build-vegajs-runtime"] }
 
 # Build Wasm
@@ -66,6 +70,29 @@ cd java &&
 ./gradlew.bat test $0
 """
 depends_on = ["build-jni"]
+
+[tasks.publish-java]
+cmd = """
+cd java/ &&
+./gradlew publish
+"""
+
+# Note: the `--no-verify` flag below for `vegafusion-core` is due to this cargo publish error:
+#
+#   Source directory was modified by build.rs during cargo publish. Build scripts should not modify anything outside of OUT_DIR.
+#
+# We currently write the prost files to src (mostly to make it easier for IDEs to locate them). This should be safe in our case
+# as these aren't modified unless the .proto files change, but we should revisit where these files are written in the future.
+[tasks.publish-rs]
+cmd = """
+cargo publish -p vegafusion-common &&
+cargo publish -p vegafusion-core --no-verify &&
+cargo publish -p vegafusion-dataframe &&
+cargo publish -p vegafusion-datafusion-udfs &&
+cargo publish -p vegafusion-sql &&
+cargo publish -p vegafusion-runtime &&
+cargo publish -p vegafusion-server
+"""
 
 # Build dependencies are those required to build and test all packages
 [build-dependencies]
