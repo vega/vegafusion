@@ -13,7 +13,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-check-rust
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-check-rust
           path: |
             ~/.cargo
             target
@@ -48,7 +48,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-test-rust
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-test-rust
           path: |
             ~/.cargo
             target
@@ -74,7 +74,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-build-vegafusion-wasm
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-wasm
           path: |
             ~/.cargo
             target
@@ -163,7 +163,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-build-vegafusion-python-embed-win-64
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-python-embed-win-64
           path: |
             ~/.cargo
             target
@@ -189,7 +189,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-build-vegafusion-python-embed-osx-64
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-python-embed-osx-64
           path: |
             ~/.cargo
             target
@@ -215,7 +215,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: osx-arm64-${{ hashFiles('pixi.lock') }}-build-vegafusion-python-embed-osx-arm64
+          key: osx-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-python-embed-osx-arm64
           path: |
             ~/.cargo
             target
@@ -242,7 +242,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-build-vegafusion-packages
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-packages
           path: |
             ~/.cargo
             target
@@ -268,7 +268,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-build-vegafusion-jupyter-packages
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-jupyter-packages
           path: |
             ~/.cargo
             target
@@ -399,7 +399,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-test-vegafusion-jupyter-linux-64
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-test-vegafusion-jupyter-linux-64
           path: |
             .pixi
       - name: Install Chrome
@@ -451,7 +451,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-build-vegafusion-server-linux-64
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-server-linux-64
           path: |
             ~/.cargo
             target
@@ -485,7 +485,7 @@ jobs:
 #      - name: Cache
 #        uses: actions/cache@v3
 #        with:
-#          key: linux-arm64-${{ hashFiles('pixi.lock') }}-server
+#          key: linux-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-server
 #          path: |
 #            ~/.cargo
 #            target
@@ -561,7 +561,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-build-vegafusion-server-win-64
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-server-win-64
           path: |
             ~/.cargo
             target
@@ -592,7 +592,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-build-vegafusion-server-osx-64
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-server-osx-64
           path: |
             ~/.cargo
             target
@@ -622,7 +622,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: osx-arm64-${{ hashFiles('pixi.lock') }}-build-vegafusion-server-osx-arm64
+          key: osx-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-server-osx-arm64
           path: |
             ~/.cargo
             target
