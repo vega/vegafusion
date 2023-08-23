@@ -151,35 +151,35 @@ jobs:
 #          path: |
 #            target/wheels/*.tar.gz
 #            target/wheels/*.whl
-#
-#  build-vegafusion-python-embed-win-64:
-#    runs-on: windows-2022
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-#      - name: Install pixi
-#        run: |
-#          iwr -useb https://pixi.sh/install.ps1 | iex
-#          echo "${HOME}/AppData/Local/pixi/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-#      - name: Cache
-#        uses: actions/cache@v3
-#        with:
-#          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-embed
-#          path: |
-#            ~/.cargo
-#            target
-#            .pixi
-#      - name: Build vegafusion-python-embed
-#        run: |
-#          pixi install -vvv
-#          pixi run build-py-embed
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
-#        with:
-#          name: vegafusion-python-embed-wheels
-#          path: |
-#            target/wheels/*.tar.gz
-#            target/wheels/*.whl
+
+  build-vegafusion-python-embed-win-64:
+    runs-on: windows-2022
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi
+        run: |
+          iwr -useb https://pixi.sh/install.ps1 | iex
+          echo "${HOME}/AppData/Local/pixi/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-embed
+          path: |
+            ~/.cargo
+            target
+            .pixi
+      - name: Build vegafusion-python-embed
+        run: |
+          pixi install -vvv
+          pixi run build-py-embed
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: |
+            target/wheels/*.tar.gz
+            target/wheels/*.whl
 
   build-vegafusion-python-embed-osx-64:
     runs-on: macos-11
@@ -350,6 +350,40 @@ jobs:
         working-directory: python/vegafusion/
         run: pytest
 
+  test-vegafusion-python-win-64:
+    runs-on: windows-2022
+    needs: [build-vegafusion-python-embed-win-64, build-vegafusion-packages]
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Setup Python
+        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
+        with:
+          python-version: '3.10'
+      - name: Download vegafusion-python-embed wheel
+        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: target/wheels/
+      - name: Download vegafusion wheel
+        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+        with:
+          name: vegafusion-packages
+          path: target/wheels/
+      - name: install wheels
+        working-directory: target/wheels/
+        shell: powershell
+        run: |
+          Get-ChildItem -Force
+          $vegafusion = Get-ChildItem -Name "vegafusion-*.whl" | Select-Object -First 1
+          $vegafusion-python-embed = Get-ChildItem -Name "vegafusion_python_embed-*win_amd64.whl" | Select-Object -First 1
+
+          python -m pip install $vegafusion
+          python -m pip install $vegafusion-python-embed
+          python -m pip install pytest vega-datasets polars duckdb vl-convert-python scikit-image
+      - name: Test vegafusion
+        working-directory: python/vegafusion/
+        run: pytest
 
 #  test-vegafusion-python:
 #    runs-on: ${{ matrix.os }}
