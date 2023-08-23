@@ -253,12 +253,14 @@ def test_altair_mock(mock_name, img_tolerance, delay):
 
     # Create selenium Chrome instance
     chrome_opts = webdriver.ChromeOptions()
-    chrome_opts.add_argument("--no-sandbox")
+
     if os.environ.get("VEGAFUSION_TEST_HEADLESS"):
         chrome_opts.add_argument("--headless")
 
     if platform.system() == "Linux":
         chrome_opts.add_argument("--disable-dev-shm-usage")
+        chrome_opts.add_argument("--no-sandbox")
+        chrome_opts.add_argument("--remote-debugging-port=9222")
 
     chrome_opts.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
     chrome_driver = webdriver.Chrome(options=chrome_opts)
