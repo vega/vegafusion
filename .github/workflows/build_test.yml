@@ -508,7 +508,7 @@ jobs:
           pip install chromedriver-binary-auto
       - name: Test vegafusion jupyter
         run: |
-          pixi run "cd python/vegafusion-jupyter && pytest"
+          pixi run pytest python/vegafusion-jupyter/tests
       - name: Upload test artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         if: always()
