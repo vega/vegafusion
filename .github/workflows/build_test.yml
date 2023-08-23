@@ -271,7 +271,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-jupyter
           path: |
             ~/.cargo
             target
@@ -315,7 +315,7 @@ jobs:
           ls -la
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_python_embed-*manylinux_2_17_x86_64*.whl
-          python -m pip install pytest vega-datasets
+          python -m pip install pytest vega-datasets polars duckdb
       - name: Test vegafusion
         working-directory: python/vegafusion/
         run: pytest
@@ -389,7 +389,7 @@ jobs:
           python -m pip install vegafusion_python_embed-*manylinux_2_17_x86_64*.whl
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion-jupyter-*.whl
-          python -m pip install pytest vega-datasets chromedriver-binary-auto
+          python -m pip install pytest vega-datasets polars duckdb chromedriver-binary-auto
       - name: Install Chrome
         uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
         with:
