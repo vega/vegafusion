@@ -94,7 +94,6 @@ jupytext = "1.15.0.*"
 openjdk = "20.0.0.*"
 build = "0.7.0.*"
 
-
 # Dependencies are those required at runtime by the Python packages
 [dependencies]
 psutil = "5.9.5.*"
@@ -105,3 +104,14 @@ protobuf = "4.23.3.*"
 ipywidgets = "8.1.0.*"
 vl-convert-python = "0.12.0.*"
 
+[target.osx-arm64.build-dependencies]
+# These dependencies are for building node canvas from source on apple silicon
+pkg-config = "0.29.2.*"
+cairo = "1.16.0.*"
+pango = "1.50.14.*"
+libpng = "1.6.39.*"
+librsvg = "2.56.3.*"
+jpeg = "9e.*"
+giflib = "5.2.1.*"
+libglib = "2.76.4.*"
+glib = "2.76.4.*"
