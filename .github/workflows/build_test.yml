@@ -425,10 +425,11 @@ jobs:
         working-directory: target/wheels/
         run: |
           ls -la
+          pixi shell
           python -m pip install vegafusion_python_embed-*manylinux_2_17_x86_64*.whl
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_jupyter-*.whl
-          pip install chromedriver-binary-auto
+          python -m pip install chromedriver-binary-auto
       - name: Test vegafusion jupyter
         run: |
           pixi run pytest python/vegafusion-jupyter/tests
