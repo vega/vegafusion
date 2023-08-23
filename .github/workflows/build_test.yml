@@ -376,10 +376,10 @@ jobs:
         run: |
           Get-ChildItem -Force
           $vegafusion = Get-ChildItem -Name "vegafusion-*.whl" | Select-Object -First 1
-          $vegafusion-python-embed = Get-ChildItem -Name "vegafusion_python_embed-*win_amd64.whl" | Select-Object -First 1
+          $vegafusion_python_embed = Get-ChildItem -Name "vegafusion_python_embed-*win_amd64.whl" | Select-Object -First 1
 
           python -m pip install $vegafusion
-          python -m pip install $vegafusion-python-embed
+          python -m pip install $vegafusion_python_embed
           python -m pip install pytest vega-datasets polars duckdb vl-convert-python scikit-image
       - name: Test vegafusion
         working-directory: python/vegafusion/
