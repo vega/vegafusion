@@ -1,6 +1,6 @@
 import pyarrow as pa
 from functools import cached_property
-from typing import Sequence
+from typing import Sequence, Optional
 from .sql import SqlDataset
 
 
@@ -22,7 +22,7 @@ class SqlDatasetDataFrame:
         dataset: SqlDataset,
         nan_as_null: bool = False,
         allow_copy: bool = True,
-        pyarrow_table: pa.Table | None = None,
+        pyarrow_table: Optional[pa.Table] = None,
     ):
         self._dataset = dataset
         self._nan_as_null = nan_as_null
@@ -101,13 +101,13 @@ class SqlDatasetDataFrame:
     def metadata(self):
         return self._pyarrow_df.metadata
 
-    def num_rows(self) -> int | None:
+    def num_rows(self) -> Optional[int]:
         return self._pyarrow_df.num_rows()
 
     def num_chunks(self) -> int:
         return self._pyarrow_df.num_chunks()
 
-    def get_chunks(self, n_chunks: int | None = None):
+    def get_chunks(self, n_chunks: Optional[int] = None):
         return self._pyarrow_df.get_chunks(n_chunks=n_chunks)
 
 
@@ -156,7 +156,7 @@ class DatasetColumn:
     def num_chunks(self) -> int:
         return self._pyarrow_col.num_chunks()
 
-    def get_chunks(self, n_chunks: int | None = None):
+    def get_chunks(self, n_chunks: Optional[int] = None):
         return self._pyarrow_col.get_chunks(n_chunks=n_chunks)
 
     def get_buffers(self):
