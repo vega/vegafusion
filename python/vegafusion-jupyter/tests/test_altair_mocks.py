@@ -15,6 +15,7 @@ from tenacity import retry, wait, stop
 import os
 from flaky import flaky
 import json
+import platform
 
 try:
     import chromedriver_binary
@@ -252,8 +253,13 @@ def test_altair_mock(mock_name, img_tolerance, delay):
 
     # Create selenium Chrome instance
     chrome_opts = webdriver.ChromeOptions()
+    chrome_opts.add_argument("--no-sandbox")
     if os.environ.get("VEGAFUSION_TEST_HEADLESS"):
         chrome_opts.add_argument("--headless")
+
+    if platform.system() == "Linux":
+        chrome_opts.add_argument("--disable-dev-shm-usage")
+
     chrome_opts.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
     chrome_driver = webdriver.Chrome(options=chrome_opts)
     chrome_driver.set_window_size(800, 800)
