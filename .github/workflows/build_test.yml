@@ -418,20 +418,71 @@ jobs:
 #          pixi run test-py-vegafusion
 #
 
+#  test-vegafusion-jupyter-linux-64:
+#    runs-on: ubuntu-20.04
+#    needs:
+#     - build-vegafusion-python-embed-linux-64
+#     - build-vegafusion-packages
+#     - build-vegafusion-jupyter-packages
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+#      - name: Setup Python
+#        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
+#        with:
+#          python-version: '3.10'
+#      - name: Download vegafusion-python-embed wheel
+#        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+#        with:
+#          name: vegafusion-python-embed-wheels
+#          path: target/wheels/
+#      - name: Download vegafusion wheel
+#        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+#        with:
+#          name: vegafusion-packages
+#          path: target/wheels/
+#      - name: Download vegafusion-jupyter wheel
+#        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+#        with:
+#          name: vegafusion-jupyter-packages
+#          path: target/wheels/
+#      - name: install wheels
+#        working-directory: target/wheels/
+#        run: |
+#          ls -la
+#          python -m pip install vegafusion_python_embed-*manylinux_2_17_x86_64*.whl
+#          python -m pip install vegafusion-*.whl
+#          python -m pip install vegafusion_jupyter-*.whl
+#          python -m pip install pytest vega-datasets polars duckdb vl-convert-python scikit-image jupytext selenium tenacity flaky voila ipykernel chromedriver-binary-auto
+#      - name: Install Chrome
+#        uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
+#        with:
+#          chrome-version: stable
+#      - name: Test vegafusion
+#        working-directory: python/vegafusion-jupyter/
+#        run: pytest
 
   test-vegafusion-jupyter-linux-64:
     runs-on: ubuntu-20.04
     needs:
-     - build-vegafusion-python-embed-linux-64
-     - build-vegafusion-packages
-     - build-vegafusion-jupyter-packages
+      - build-vegafusion-python-embed-linux-64
+      - build-vegafusion-packages
+      - build-vegafusion-jupyter-packages
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - name: Setup Python
-        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
+      - name: Install pixi on linux
+        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Cache
+        uses: actions/cache@v3
         with:
-          python-version: '3.10'
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}-test-jupyter
+          path: |
+            .pixi
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
+        with:
+          chrome-version: stable
       - name: Download vegafusion-python-embed wheel
         uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
         with:
@@ -454,15 +505,17 @@ jobs:
           python -m pip install vegafusion_python_embed-*manylinux_2_17_x86_64*.whl
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_jupyter-*.whl
-          python -m pip install pytest vega-datasets polars duckdb vl-convert-python scikit-image jupytext selenium tenacity flaky voila ipykernel chromedriver-binary-auto
-      - name: Install Chrome
-        uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
+          pip install chromedriver-binary-auto
+      - name: Test vegafusion jupyter
+        run: |
+          pixi run cd python/vegafusion-jupyter && pytest
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        if: always()
         with:
-          chrome-version: stable
-      - name: Test vegafusion
-        working-directory: python/vegafusion-jupyter/
-        run: pytest
-
+          name: vegafusion-jupyter-test-failures
+          path: |
+            python/vegafusion-jupyter/tests/failures/*
 
 #  test-vegafusion-jupyter:
 #    runs-on: ${{ matrix.os }}
