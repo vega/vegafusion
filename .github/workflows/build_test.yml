@@ -261,32 +261,32 @@ jobs:
             python/vegafusion/dist/*.whl
             python/vegafusion/dist/*.tar.gz
 
-#  build-vegafusion-jupyter-packages:
-#    runs-on: ubuntu-20.04
-#    steps:
-#      - name: Check out repository code
-#        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-#      - name: Install pixi (linux / osx)
-#        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
-#      - name: Cache
-#        uses: actions/cache@v3
-#        with:
-#          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}
-#          path: |
-#            ~/.cargo
-#            target
-#            .pixi
-#      - name: Build vegafusion-jupyter wheel
-#        run: |
-#          echo JupyterLab Version: `pixi run jupyter-lab --version`
-#          pixi run build-py-jupyter
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
-#        with:
-#          name: vegafusion-jupyter-packages
-#          path: |
-#            python/vegafusion-jupyter/dist/*.whl
-#            python/vegafusion-jupyter/dist/*.tar.gz
+  build-vegafusion-jupyter-packages:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Install pixi (linux / osx)
+        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock') }}
+          path: |
+            ~/.cargo
+            target
+            .pixi
+      - name: Build vegafusion-jupyter wheel
+        run: |
+          echo JupyterLab Version: `pixi run jupyter-lab --version`
+          pixi run build-py-jupyter
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: vegafusion-jupyter-packages
+          path: |
+            python/vegafusion-jupyter/dist/*.whl
+            python/vegafusion-jupyter/dist/*.tar.gz
 
 
   test-vegafusion-python-linux-64:
@@ -315,6 +315,7 @@ jobs:
           ls -la
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_python_embed-*manylinux_2_17_x86_64*.whl
+          python -m pip install pytest vega-datasets
       - name: Test vegafusion
         working-directory: python/vegafusion/
         run: pytest
@@ -351,6 +352,53 @@ jobs:
 #        run: |
 #          pixi run test-py-vegafusion
 #
+
+
+  test-vegafusion-jupyter-linux-64:
+    runs-on: ubuntu-20.04
+    needs:
+     - build-vegafusion-python-embed-linux-64
+     - build-vegafusion-packages
+     - build-vegafusion-jupyter-packages
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Setup Python
+        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
+        with:
+          python-version: '3.10'
+      - name: Download vegafusion-python-embed wheel
+        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+        with:
+          name: vegafusion-python-embed-wheels
+          path: target/wheels/
+      - name: Download vegafusion wheel
+        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+        with:
+          name: vegafusion-packages
+          path: target/wheels/
+      - name: Download vegafusion-jupyter wheel
+        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+        with:
+          name: vegafusion-jupyter-packages
+          path: target/wheels/
+      - name: install wheels
+        working-directory: target/wheels/
+        run: |
+          ls -la
+          python -m pip install vegafusion_python_embed-*manylinux_2_17_x86_64*.whl
+          python -m pip install vegafusion-*.whl
+          python -m pip install vegafusion-jupyter-*.whl
+          python -m pip install pytest vega-datasets chromedriver-binary-auto
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
+        with:
+          chrome-version: stable
+      - name: Test vegafusion
+        working-directory: python/vegafusion/
+        run: pytest
+
+
 #  test-vegafusion-jupyter:
 #    runs-on: ${{ matrix.os }}
 #    strategy:
