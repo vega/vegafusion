@@ -388,7 +388,7 @@ jobs:
           ls -la
           python -m pip install vegafusion_python_embed-*manylinux_2_17_x86_64*.whl
           python -m pip install vegafusion-*.whl
-          python -m pip install vegafusion-jupyter-*.whl
+          python -m pip install vegafusion_jupyter-*.whl
           python -m pip install pytest vega-datasets polars duckdb vl-convert-python scikit-image jupytext selenium tenacity flaky chromedriver-binary-auto
       - name: Install Chrome
         uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
