@@ -345,7 +345,7 @@ jobs:
           python -m pip install pytest vega-datasets polars duckdb vl-convert-python scikit-image
           
           # Downgrade pyarrow to 10.0.1
-          python -m pip pyarrow==10.0.1
+          python -m pip install pyarrow==10.0.1
       - name: Test vegafusion
         working-directory: python/vegafusion/
         run: pytest
@@ -641,5 +641,3 @@ jobs:
           name: vegafusion-server
           path: |
             vegafusion-server-*
-
-
