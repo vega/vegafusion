@@ -422,12 +422,11 @@ jobs:
           name: vegafusion-jupyter-packages
           path: target/wheels/
       - name: install wheels
-        working-directory: target/wheels/
         run: |
-          ls -la
-          pixi run pip install vegafusion_python_embed-*manylinux_2_17_x86_64*.whl
-          pixi run pip install vegafusion-*.whl
-          pixi run pip install vegafusion_jupyter-*.whl
+          ls -la target/wheels/
+          pixi run pip install target/wheels/vegafusion_python_embed-*manylinux_2_17_x86_64*.whl
+          pixi run pip install target/wheels/vegafusion-*.whl
+          pixi run pip install target/wheels/vegafusion_jupyter-*.whl
           pixi run pip install chromedriver-binary-auto
           pixi run pip list
       - name: Test vegafusion jupyter
