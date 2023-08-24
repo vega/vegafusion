@@ -34,7 +34,7 @@ detail = (
         ),
         color="weather",
     )
-    .properties(width=600, height=400, title="Seattle weather -- detail view")
+    .properties(width=300, height=300, title="Seattle weather -- detail view")
 )
 
 detail | minimap

@@ -10,13 +10,12 @@ import time
 from io import BytesIO
 from skimage.io import imread
 from skimage.metrics import structural_similarity as ssim
-import json
 import shutil
 from tenacity import retry, wait, stop
 import os
 from flaky import flaky
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import json
+import platform
 
 try:
     import chromedriver_binary
@@ -42,41 +41,6 @@ alt.renderers.enable('default', embed_options={'actions': False});
 
 ```python
 assert(alt.renderers.active == "default")
-assert(alt.data_transformers.active == 'default')
-```
-"""
-
-vegafusion_widget_feather_markdown_template = r"""
-```python
-import altair as alt
-import vegafusion as vf
-vf.enable_widget();
-```
-
-```python
-{code}
-```
-
-```python
-assert(alt.renderers.active == "vegafusion-widget")
-assert(alt.data_transformers.active == 'vegafusion-feather')
-```
-"""
-
-vegafusion_widget_default_markdown_template = r"""
-```python
-import altair as alt
-import vegafusion as vf
-vf.enable_widget()
-alt.data_transformers.enable("default");
-```
-
-```python
-{code}
-```
-
-```python
-assert(alt.renderers.active == "vegafusion-widget")
 assert(alt.data_transformers.active == 'default')
 ```
 """
@@ -114,70 +78,70 @@ def setup_module(module):
 @flaky(max_runs=2)
 @pytest.mark.parametrize(
     "mock_name,img_tolerance,delay", [
-        ("area/cumulative_count", 1.0, 0.5),
-        ("area/density_facet", 1.0, 0.5),
-        ("area/gradient", 1.0, 0.5),
-        ("area/horizon_graph", 1.0, 0.5),
-        ("area/layered", 1.0, 0.5),
-        ("area/normalized_stacked", 1.0, 0.5),
-        ("area/density_stack", 1.0, 0.5),
-        ("area/trellis", 1.0, 0.5),
-        ("area/trellis_sort_array", 1.0, 0.5),
-        ("area/streamgraph", 0.998, 0.5),
-        ("bar/with_highlighted_bar", 1.0, 0.5),
-        ("bar/with_labels", 1.0, 0.5),
-        ("bar/with_line_at_mean", 1.0, 0.5),
-        ("bar/with_line_on_dual_axis", 1.0, 0.5),
-        ("bar/with_rolling_mean", 1.0, 0.5),
-        ("bar/with_rounded_edges", 0.999, 0.5),
-        ("bar/and_tick_chart", 1.0, 0.5),
-        ("bar/percentage_of_total", 1.0, 0.5),
-        ("bar/trellis_compact", 1.0, 0.5),
-        ("bar/diverging_stacked", 1.0, 0.5),
-        ("bar/grouped", 1.0, 0.5),
-        ("bar/horizontal", 1.0, 0.5),
-        ("bar/horizontal_grouped", 1.0, 0.5),
-        ("bar/horizontal_stacked", 0.999, 0.5),
-        ("bar/normalized_stacked", 0.999, 0.5),
-        ("bar/sorted", 1.0, 0.5),
-        ("bar/stacked", 0.999, 0.5),
-        ("bar/stacked_with_sorted_segments", 0.999, 0.5),
-        ("bar/stacked_with_text_overlay", 0.999, 0.5),
-        ("bar/trellis_stacked", 1.0, 0.5),
-        ("bar/trellis_stacked", 1.0, 0.5),
-        ("bar/with_negative_values", 1.0, 0.5),
-        ("bar/layered", 1.0, 0.5),
-        ("bar/with_error_bars", 0.998, 0.5),
-        ("casestudy/co2_concentration", 1.0, 0.5),
-        ("casestudy/gapminder_bubble_plot", 1.0, 0.5),
-        ("casestudy/iowa_electricity", 1.0, 0.5),
-        ("casestudy/natural_disasters", 1.0, 0.5),
-        ("casestudy/top_k_with_others", 1.0, 0.5),
-        ("casestudy/wheat_wages", 1.0, 0.5),
-        ("casestudy/window_rank", 0.999, 0.5),
-        ("casestudy/airports", 1.0, 0.5),
-        ("casestudy/us_state_capitals", 1.0, 0.5),
-        ("casestudy/falkensee", 1.0, 0.5),
-        ("casestudy/us_employment", 1.0, 0.5),
-        ("casestudy/top_k_items", 1.0, 0.5),
+        ("area/cumulative_count", 1.0, 0.25),
+        ("area/density_facet", 1.0, 0.25),
+        ("area/gradient", 1.0, 0.25),
+        ("area/horizon_graph", 1.0, 0.25),
+        ("area/layered", 1.0, 0.25),
+        ("area/normalized_stacked", 1.0, 0.25),
+        ("area/density_stack", 1.0, 0.25),
+        ("area/trellis", 1.0, 0.25),
+        ("area/trellis_sort_array", 1.0, 0.25),
+        ("area/streamgraph", 0.998, 0.25),
+        ("bar/with_highlighted_bar", 1.0, 0.25),
+        ("bar/with_labels", 1.0, 0.25),
+        ("bar/with_line_at_mean", 1.0, 0.25),
+        ("bar/with_line_on_dual_axis", 1.0, 0.25),
+        ("bar/with_rolling_mean", 1.0, 0.25),
+        ("bar/with_rounded_edges", 0.999, 0.25),
+        ("bar/and_tick_chart", 1.0, 0.25),
+        ("bar/percentage_of_total", 1.0, 0.25),
+        ("bar/trellis_compact", 1.0, 0.25),
+        ("bar/diverging_stacked", 1.0, 0.25),
+        ("bar/grouped", 1.0, 0.25),
+        ("bar/horizontal", 1.0, 0.25),
+        ("bar/horizontal_grouped", 1.0, 0.25),
+        ("bar/horizontal_stacked", 0.999, 0.25),
+        ("bar/normalized_stacked", 0.999, 0.25),
+        ("bar/sorted", 1.0, 0.25),
+        ("bar/stacked", 0.999, 0.25),
+        ("bar/stacked_with_sorted_segments", 0.999, 0.25),
+        ("bar/stacked_with_text_overlay", 0.999, 0.25),
+        ("bar/trellis_stacked", 1.0, 0.25),
+        ("bar/trellis_stacked", 1.0, 0.25),
+        ("bar/with_negative_values", 1.0, 0.25),
+        ("bar/layered", 1.0, 0.25),
+        ("bar/with_error_bars", 0.998, 0.25),
+        ("casestudy/co2_concentration", 1.0, 0.25),
+        ("casestudy/gapminder_bubble_plot", 1.0, 0.25),
+        ("casestudy/iowa_electricity", 1.0, 0.25),
+        ("casestudy/natural_disasters", 1.0, 0.25),
+        ("casestudy/top_k_with_others", 1.0, 0.25),
+        ("casestudy/wheat_wages", 1.0, 0.25),
+        ("casestudy/window_rank", 0.999, 0.25),
+        ("casestudy/airports", 1.0, 0.25),
+        ("casestudy/us_state_capitals", 1.0, 0.25),
+        ("casestudy/falkensee", 1.0, 0.25),
+        ("casestudy/us_employment", 1.0, 0.25),
+        ("casestudy/top_k_items", 1.0, 0.25),
 
         # Different order of ticks for equal bar lengths
-        ("casestudy/top_k_letters", 0.995, 0.5),
-        ("casestudy/isotype", 1.0, 0.5),
-        ("casestudy/london_tube", 1.0, 0.5),
-        ("casestudy/isotype_emoji", 1.0, 0.5),
-        ("casestudy/beckers_barley_trellis_plot", 1.0, 0.5),
-        ("casestudy/anscombe_plot", 1.0, 0.5),
-        ("casestudy/us_population_over_time_facet", 1.0, 0.5),
+        ("casestudy/top_k_letters", 0.995, 0.25),
+        ("casestudy/isotype", 1.0, 0.25),
+        ("casestudy/london_tube", 1.0, 0.25),
+        ("casestudy/isotype_emoji", 1.0, 0.25),
+        ("casestudy/beckers_barley_trellis_plot", 1.0, 0.25),
+        ("casestudy/anscombe_plot", 1.0, 0.25),
+        ("casestudy/us_population_over_time_facet", 1.0, 0.25),
         ("casestudy/one_dot_per_zipcode", 0.999, 1.0),
-        ("circular/donut", 1.0, 0.5),
-        ("circular/pie", 1.0, 0.5),
-        ("circular/pie_with_labels", 1.0, 0.5),
-        ("circular/radial", 1.0, 0.5),
-        ("circular/pacman", 1.0, 0.5),
-        ("histogram/with_a_global_mean_overlay", 1.0, 0.5),
-        ("histogram/layered", 1.0, 0.5),
-        ("histogram/trellis", 1.0, 0.5),
+        ("circular/donut", 1.0, 0.25),
+        ("circular/pie", 1.0, 0.25),
+        ("circular/pie_with_labels", 1.0, 0.25),
+        ("circular/radial", 1.0, 0.25),
+        ("circular/pacman", 1.0, 0.25),
+        ("histogram/with_a_global_mean_overlay", 1.0, 0.25),
+        ("histogram/layered", 1.0, 0.25),
+        ("histogram/trellis", 1.0, 0.25),
         ("interactive/selection_layer_bar_month", 1.0, 1),
         ("interactive/area-interval_selection", 1.0, 1),
         ("interactive/layered_crossfilter", 1.0, 1),
@@ -203,75 +167,75 @@ def setup_module(module):
         ("interactive/casestudy-weather_heatmap", 0.999, 2),
         ("interactive/casestudy-airport_connections", 1.0, 1),
         ("interactive/histogram-responsive", 1.0, 8),
-        ("line/bump_chart", 0.999, 0.5),
-        ("line/filled_step_chart", 1.0, 0.5),
-        ("line/with_cumsum", 1.0, 0.5),
-        ("line/with_logarithmic_scale", 1.0, 0.5),
-        ("line/percent_axis", 1.0, 0.5),
-        ("line/with_points", 1.0, 0.5),
-        ("line/with_generator", 1.0, 0.5),
-        ("line/slope_graph", 1.0, 0.5),
-        ("line/slope_graph2", 0.999, 0.5),
-        ("line/step_chart", 1.0, 0.5),
-        ("line/layer_line_color_rule", 1.0, 0.5),
-        ("line/multi_series", 1.0, 0.5),
-        ("line/with_ci", 1.0, 0.5),
-        ("line/trail_marker", 1.0, 0.5),
-        ("line/with_datum", 1.0, 0.5),
-        ("line/with_color_datum", 1.0, 0.5),
-        ("maps/choropleth", 1.0, 0.5),
-        ("maps/choropleth_repeat", 1.0, 0.5),
-        ("maps/us_incomebrackets_by_state_facet", 1.0, 0.5),
-        ("maps/world", 1.0, 0.5),
-        ("maps/world_projections", 1.0, 0.5),
-        ("maps/airports_count", 0.999, 0.5),
-        ("other/bar_chart_with_highlighted_segment", 1.0, 0.5),
-        ("other/beckers_barley_wrapped_facet", 1.0, 0.5),
-        ("other/boxplot", 1.0, 0.5),
-        ("other/comet_chart", 1.0, 0.5),
-        ("other/errorbars_with_std", 1.0, 0.5),
-        ("other/scatter_marginal_hist", 0.999, 0.5),
-        ("other/gantt_chart", 1.0, 0.5),
-        ("other/isotype_grid", 1.0, 0.5),
-        ("other/layered_chart_with_dual_axis", 1.0, 0.5),
-        ("other/ridgeline_plot", 1.0, 0.5),
-        ("other/stem_and_leaf", 1.0, 0.5),
-        ("other/layered_heatmap_text", 1.0, 0.5),
-        ("other/candlestick_chart", 1.0, 0.5),
-        ("other/multiple_marks", 1.0, 0.5),
-        ("other/hexbins", 0.999, 0.5),
-        ("other/wilkinson_dot_plot", 1.0, 0.5),
-        ("other/binned_heatmap", 0.998, 0.5),
-        ("other/normed_parallel_coordinates", 1.0, 0.5),
-        ("other/parallel_coordinates", 1.0, 0.5),
-        ("other/violin_plot", 1.0, 0.5),
-        ("other/ranged_dot_plot", 1.0, 0.5),
-        ("scatter/binned", 0.999, 0.5),
-        ("scatter/bubble_plot", 1.0, 0.5),
-        ("scatter/connected", 1.0, 0.5),
-        ("scatter/dot_dash_plot", 1.0, 0.5),
-        ("scatter/multifeature", 1.0, 0.5),
-        ("scatter/poly_fit_regression", 1.0, 0.5),
-        ("scatter/qq", 1.0, 0.5),
-        ("scatter/matrix", 1.0, 0.5),
-        ("scatter/with_lowess", 1.0, 0.5),
-        ("scatter/with_errorbars", 1.0, 0.5),
-        ("scatter/with_labels", 1.0, 0.5),
-        ("scatter/table_bubble_plot_github", 0.999, 0.5),
-        ("scatter/trellis", 1.0, 0.5),
-        ("scatter/wind_vector_map", 1.0, 0.5),
-        ("scatter/with_rolling_mean", 1.0, 0.5),
-        ("simple/stacked_bar_chart", 1.0, 0.5),
-        ("simple/bar_chart", 1.0, 0.5),
-        ("simple/heatmap", 1.0, 0.5),
-        ("simple/line_chart", 1.0, 0.5),
-        ("simple/scatter_tooltips", 1.0, 0.5),
-        ("simple/strip_chart", 1.0, 0.5),
+        ("line/bump_chart", 0.999, 0.25),
+        ("line/filled_step_chart", 1.0, 0.25),
+        ("line/with_cumsum", 1.0, 0.25),
+        ("line/with_logarithmic_scale", 1.0, 0.25),
+        ("line/percent_axis", 1.0, 0.25),
+        ("line/with_points", 1.0, 0.25),
+        ("line/with_generator", 1.0, 0.25),
+        ("line/slope_graph", 1.0, 0.25),
+        ("line/slope_graph2", 0.999, 0.25),
+        ("line/step_chart", 1.0, 0.25),
+        ("line/layer_line_color_rule", 1.0, 0.25),
+        ("line/multi_series", 1.0, 0.25),
+        ("line/with_ci", 1.0, 0.25),
+        ("line/trail_marker", 1.0, 0.25),
+        ("line/with_datum", 1.0, 0.25),
+        ("line/with_color_datum", 1.0, 0.25),
+        ("maps/choropleth", 1.0, 0.25),
+        ("maps/choropleth_repeat", 1.0, 0.25),
+        ("maps/us_incomebrackets_by_state_facet", 1.0, 0.25),
+        ("maps/world", 1.0, 0.25),
+        ("maps/world_projections", 1.0, 0.25),
+        ("maps/airports_count", 0.999, 0.25),
+        ("other/bar_chart_with_highlighted_segment", 1.0, 0.25),
+        ("other/beckers_barley_wrapped_facet", 1.0, 0.25),
+        ("other/boxplot", 1.0, 0.25),
+        ("other/comet_chart", 1.0, 0.25),
+        ("other/errorbars_with_std", 1.0, 0.25),
+        ("other/scatter_marginal_hist", 0.999, 0.25),
+        ("other/gantt_chart", 1.0, 0.25),
+        ("other/isotype_grid", 1.0, 0.25),
+        ("other/layered_chart_with_dual_axis", 1.0, 0.25),
+        ("other/ridgeline_plot", 1.0, 0.25),
+        ("other/stem_and_leaf", 1.0, 0.25),
+        ("other/layered_heatmap_text", 1.0, 0.25),
+        ("other/candlestick_chart", 1.0, 0.25),
+        ("other/multiple_marks", 1.0, 0.25),
+        ("other/hexbins", 0.999, 0.25),
+        ("other/wilkinson_dot_plot", 1.0, 0.25),
+        ("other/binned_heatmap", 0.998, 0.25),
+        ("other/normed_parallel_coordinates", 1.0, 0.25),
+        ("other/parallel_coordinates", 1.0, 0.25),
+        ("other/violin_plot", 1.0, 0.25),
+        ("other/ranged_dot_plot", 1.0, 0.25),
+        ("scatter/binned", 0.999, 0.25),
+        ("scatter/bubble_plot", 1.0, 0.25),
+        ("scatter/connected", 1.0, 0.25),
+        ("scatter/dot_dash_plot", 1.0, 0.25),
+        ("scatter/multifeature", 1.0, 0.25),
+        ("scatter/poly_fit_regression", 1.0, 0.25),
+        ("scatter/qq", 1.0, 0.25),
+        ("scatter/matrix", 1.0, 0.25),
+        ("scatter/with_lowess", 1.0, 0.25),
+        ("scatter/with_errorbars", 1.0, 0.25),
+        ("scatter/with_labels", 1.0, 0.25),
+        ("scatter/table_bubble_plot_github", 0.999, 0.25),
+        ("scatter/trellis", 1.0, 0.25),
+        ("scatter/wind_vector_map", 1.0, 0.25),
+        ("scatter/with_rolling_mean", 1.0, 0.25),
+        ("simple/stacked_bar_chart", 1.0, 0.25),
+        ("simple/bar_chart", 1.0, 0.25),
+        ("simple/heatmap", 1.0, 0.25),
+        ("simple/line_chart", 1.0, 0.25),
+        ("simple/scatter_tooltips", 1.0, 0.25),
+        ("simple/strip_chart", 1.0, 0.25),
 
         # Non-deterministic mocks have lower image tolerance
-        ("other/errorbars_with_ci", 0.8, 0.5),
-        ("other/sorted_error_bars_with_ci", 0.8, 0.5),
-        ("scatter/stripplot", 0.8, 0.5)  # random()
+        ("other/errorbars_with_ci", 0.8, 0.25),
+        ("other/sorted_error_bars_with_ci", 0.8, 0.25),
+        ("scatter/stripplot", 0.8, 0.25)  # random()
     ])
 def test_altair_mock(mock_name, img_tolerance, delay):
 
@@ -281,20 +245,22 @@ def test_altair_mock(mock_name, img_tolerance, delay):
 
     mock_code = mock_path.read_text()
     altair_markdown = altair_markdown_template.replace("{code}", mock_code)
-    vegafusion_arrow_markdown = vegafusion_widget_feather_markdown_template.replace("{code}", mock_code)
-    vegafusion_default_markdown = vegafusion_widget_default_markdown_template.replace("{code}", mock_code)
     vegafusion_mime_markdown = vegafusion_mime_markdown_template.replace("{code}", mock_code)
 
     # Use jupytext to convert markdown to an ipynb file
     altair_notebook = jupytext.read(io.StringIO(altair_markdown), fmt="markdown")
-    vegafusion_arrow_notebook = jupytext.read(io.StringIO(vegafusion_arrow_markdown), fmt="markdown")
-    vegafusion_default_notebook = jupytext.read(io.StringIO(vegafusion_default_markdown), fmt="markdown")
     vegafusion_mime_notebook = jupytext.read(io.StringIO(vegafusion_mime_markdown), fmt="markdown")
 
     # Create selenium Chrome instance
     chrome_opts = webdriver.ChromeOptions()
+
     if os.environ.get("VEGAFUSION_TEST_HEADLESS"):
         chrome_opts.add_argument("--headless")
+
+    if platform.system() == "Linux":
+        chrome_opts.add_argument("--disable-dev-shm-usage")
+        chrome_opts.add_argument("--no-sandbox")
+
     chrome_opts.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
     chrome_driver = webdriver.Chrome(options=chrome_opts)
     chrome_driver.set_window_size(800, 800)
@@ -303,18 +269,12 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     voila_proc = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
 
     # Sleep to allow Voila itself to start (this does not include loading a particular dashboard).
-    time.sleep(1.5)
+    time.sleep(1.0)
 
     try:
         name = mock_name.replace("/", "-")
         altair_imgs = export_image_sequence(
             chrome_driver, altair_notebook, name + "_altair", actions, delay
-        )
-        vegafusion_arrow_imgs = export_image_sequence(
-            chrome_driver, vegafusion_arrow_notebook, name + "_vegafusion_feather", actions, delay
-        )
-        vegafusion_default_imgs = export_image_sequence(
-            chrome_driver, vegafusion_default_notebook, name + "_vegafusion_widget", actions, delay
         )
         vegafusion_mime_imgs = export_image_sequence(
             chrome_driver, vegafusion_mime_notebook, name + "_vegafusion_mime", actions, delay
@@ -322,24 +282,12 @@ def test_altair_mock(mock_name, img_tolerance, delay):
 
         for i in range(len(altair_imgs)):
             altair_img = altair_imgs[i]
-            vegafusion_arrow_img = vegafusion_arrow_imgs[i]
-            vegafusion_default_img = vegafusion_default_imgs[i]
             vegafusion_mime_img = vegafusion_mime_imgs[i]
 
-            assert altair_img.shape == vegafusion_arrow_img.shape, "Size mismatch with Arrow data transformer"
-            assert altair_img.shape == vegafusion_default_img.shape, "Size mismatch with default data transformer"
             assert altair_img.shape == vegafusion_mime_img.shape, "Size mismatch with mime renderer"
 
-            similarity_arrow_value = ssim(altair_img, vegafusion_arrow_img, channel_axis=2)
-            similarity_default_value = ssim(altair_img, vegafusion_default_img, channel_axis=2)
             similarity_mime_value = ssim(altair_img, vegafusion_mime_img, channel_axis=2)
-
-            print(f"({i}) similarity_arrow_value={similarity_arrow_value}")
-            print(f"({i}) similarity_default_value={similarity_default_value}")
             print(f"({i}) similarity_mime_value={similarity_mime_value}")
-
-            assert similarity_arrow_value >= img_tolerance, f"Similarity failed with Arrow data transformer on image {i}"
-            assert similarity_default_value >= img_tolerance, f"Similarity failed with default data transformer on image {i}"
 
             # Allow slightly more image tolerance for mime renderer as floating point differences may
             # be introduced by pre-transform process
@@ -394,11 +342,6 @@ def export_image_sequence(
         script = 'document.styleSheets[0].insertRule("' + css + '", 0 )'
         chrome_driver.execute_script(script)
 
-        # Hide vegafusion logo for comparison with Altair
-        css = ".vegafusion-embed summary { visibility: hidden }"
-        script = 'document.styleSheets[0].insertRule("' + css + '", 0 )'
-        chrome_driver.execute_script(script)
-
         # Get canvas element (the canvas that Vega renders to)
         @retry(wait=wait.wait_fixed(0.5), stop=stop.stop_after_delay(10))
         def get_canvas():
@@ -428,9 +371,9 @@ def export_image_sequence(
         for i, action in enumerate(actions):
             action_type = action["type"]
             if action_type in ("snapshot", "screenshot"):
-                time.sleep(0.5)
+                time.sleep(0.25)
                 chain.perform()
-                time.sleep(1.0)
+                time.sleep(0.25)
 
                 img_path = (temp_screenshots_dir / f"{name}_{i}.png").as_posix();
                 print(f"img_path: {img_path}")

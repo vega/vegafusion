@@ -1,6 +1,6 @@
 [
   {"type": "snapshot"},
-  {"type": "move_to", "coords":  [414, 60]},
+  {"type": "move_to", "coords":  [514, 60]},
   {"type": "click_and_hold"},
   {"type": "move_by", "coords":  [50, 90]},
   {"type": "release"},

@@ -1,8 +1,8 @@
 [
   {"type": "screenshot"},
-  {"type": "move_to", "coords":  [186, 424]},
+  {"type": "move_to", "coords":  [162, 407]},
   {"type":  "click_and_hold"},
-  {"type": "move_to", "coords":  [138, 424]},
+  {"type": "move_to", "coords":  [112, 407]},
   {"type":  "release"},
   {"type": "screenshot"}
 ]
