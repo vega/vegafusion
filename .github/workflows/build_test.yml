@@ -342,7 +342,7 @@ jobs:
           ls -la
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_python_embed-*macosx_10_7_x86_64.whl
-          python -m pip install pytest vega-datasets polars duckdb vl-convert-python scikit-image pandas==2.0
+          python -m pip install pytest vega-datasets polars duckdb altair==5.0.1 vl-convert-python==0.12.0 scikit-image pandas==2.0
           
           # Downgrade pyarrow to 10.0.1
           python -m pip install pyarrow==10.0.1
@@ -380,7 +380,7 @@ jobs:
 
           python -m pip install $vegafusion
           python -m pip install $vegafusion_python_embed
-          python -m pip install pytest vega-datasets polars duckdb vl-convert-python scikit-image
+          python -m pip install pytest vega-datasets polars duckdb altair==5.0.1 vl-convert-python==0.12.0 scikit-image
       - name: Test vegafusion
         working-directory: python/vegafusion/
         run: pytest
