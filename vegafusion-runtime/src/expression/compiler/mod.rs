@@ -64,7 +64,7 @@ mod test_compile {
 
     use crate::task_graph::timezone::RuntimeTzConfig;
     use datafusion_common::{DFSchema, ScalarValue};
-    use datafusion_expr::expr::{BinaryExpr, Case, Cast};
+    use datafusion_expr::expr::{BinaryExpr, Case, TryCast};
     use datafusion_expr::{concat, expr, lit, BuiltinScalarFunction, Expr, Operator};
     use std::collections::HashMap;
     use std::convert::TryFrom;
@@ -150,7 +150,7 @@ mod test_compile {
         println!("expr: {result_expr:?}");
 
         // plus prefix on a string should result in a numeric cast
-        let expected_expr = Expr::Cast(Cast {
+        let expected_expr = Expr::TryCast(TryCast {
             expr: Box::new(lit("72")),
             data_type: DataType::Float64,
         });
@@ -174,7 +174,7 @@ mod test_compile {
         let expected_expr = !Expr::ScalarFunction(expr::ScalarFunction {
             fun: BuiltinScalarFunction::Coalesce,
             args: vec![
-                Expr::Cast(Cast {
+                Expr::TryCast(TryCast {
                     expr: Box::new(lit(32.0)),
                     data_type: DataType::Boolean,
                 }),
@@ -204,7 +204,7 @@ mod test_compile {
                 Box::new(Expr::ScalarFunction(expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Coalesce,
                     args: vec![
-                        Expr::Cast(Cast {
+                        Expr::TryCast(TryCast {
                             expr: Box::new(lit(32.0)),
                             data_type: DataType::Boolean,
                         }),
@@ -259,7 +259,7 @@ mod test_compile {
                 Box::new(Expr::ScalarFunction(expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Coalesce,
                     args: vec![
-                        Expr::Cast(Cast {
+                        Expr::TryCast(TryCast {
                             expr: Box::new(lit(5.0)),
                             data_type: DataType::Boolean,
                         }),
@@ -291,7 +291,7 @@ mod test_compile {
         let t1 = Expr::BinaryExpr(BinaryExpr {
             left: Box::new(lit(1.0)),
             op: Operator::Plus,
-            right: Box::new(Expr::Cast(Cast {
+            right: Box::new(Expr::TryCast(TryCast {
                 expr: Box::new(lit("2")),
                 data_type: DataType::Float64,
             })),
@@ -299,7 +299,7 @@ mod test_compile {
 
         // true * 10
         let t2 = Expr::BinaryExpr(BinaryExpr {
-            left: Box::new(Expr::Cast(Cast {
+            left: Box::new(Expr::TryCast(TryCast {
                 expr: Box::new(lit(true)),
                 data_type: DataType::Float64,
             })),
@@ -347,7 +347,7 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
         let expected_expr = Expr::BinaryExpr(BinaryExpr {
-            left: Box::new(Expr::Cast(Cast {
+            left: Box::new(Expr::TryCast(TryCast {
                 expr: Box::new(lit("2.0")),
                 data_type: DataType::Float64,
             })),
@@ -617,7 +617,7 @@ mod test_compile {
                 Box::new(Expr::ScalarFunction(expr::ScalarFunction {
                     fun: BuiltinScalarFunction::Coalesce,
                     args: vec![
-                        Expr::Cast(Cast {
+                        Expr::TryCast(TryCast {
                             expr: Box::new(lit(32.0)),
                             data_type: DataType::Boolean,
                         }),

@@ -1,7 +1,7 @@
 use crate::error::{Result, ResultWithContext};
 use arrow::datatypes::DataType;
 use datafusion_common::DFSchema;
-use datafusion_expr::{coalesce, expr, lit, BuiltinScalarFunction, Cast, Expr, ExprSchemable};
+use datafusion_expr::{coalesce, expr, lit, BuiltinScalarFunction, Expr, ExprSchemable, TryCast};
 
 pub fn is_numeric_datatype(dtype: &DataType) -> bool {
     matches!(
@@ -67,7 +67,7 @@ pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
         //  - empty string to false
         //  - NaN to false
         coalesce(vec![
-            Expr::Cast(Cast {
+            Expr::TryCast(TryCast {
                 expr: Box::new(value),
                 data_type: DataType::Boolean,
             }),
@@ -91,7 +91,7 @@ pub fn to_numeric(value: Expr, schema: &DFSchema) -> Result<Expr> {
         })
     } else {
         // Cast non-numeric types (like UTF-8) to Float64
-        Expr::Cast(Cast {
+        Expr::TryCast(TryCast {
             expr: Box::new(value),
             data_type: DataType::Float64,
         })
@@ -106,7 +106,7 @@ pub fn to_string(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let utf8_value = if dtype == DataType::Utf8 || dtype == DataType::LargeUtf8 {
         value
     } else {
-        Expr::Cast(Cast {
+        Expr::TryCast(TryCast {
             expr: Box::new(value),
             data_type: DataType::Utf8,
         })
@@ -129,7 +129,7 @@ pub fn cast_to(value: Expr, cast_dtype: &DataType, schema: &DFSchema) -> Result<
         Ok(value)
     } else {
         // Cast non-numeric types (like UTF-8) to Float64
-        Ok(Expr::Cast(Cast {
+        Ok(Expr::TryCast(TryCast {
             expr: Box::new(value),
             data_type: cast_dtype.clone(),
         }))

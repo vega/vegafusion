@@ -169,6 +169,45 @@ result = '''
 +---+----+----+-----+-----+-----+-----+-----+-----+-----+
 '''
 
+[try_cast_numeric]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", TRY_CAST("a" AS TINYINT) AS "i8", TRY_CAST("a" AS SMALLINT) AS "u8", TRY_CAST("a" AS SMALLINT) AS "i16", TRY_CAST("a" AS INT) AS "u16", TRY_CAST("a" AS INT) AS "i32", TRY_CAST("a" AS BIGINT) AS "u32", TRY_CAST("a" AS BIGINT) AS "i64", TRY_CAST("a" AS DOUBLE) AS "f32", TRY_CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH values0 AS (SELECT '0' AS `a` UNION ALL SELECT '1' AS `a`), values1 AS (SELECT `a`, SAFE_CAST(`a` AS INT) AS `i8`, SAFE_CAST(`a` AS INT) AS `u8`, SAFE_CAST(`a` AS INT) AS `i16`, SAFE_CAST(`a` AS INT) AS `u16`, SAFE_CAST(`a` AS INT) AS `i32`, SAFE_CAST(`a` AS INT) AS `u32`, SAFE_CAST(`a` AS INT) AS `i64`, SAFE_CAST(`a` AS float64) AS `f32`, SAFE_CAST(`a` AS float64) AS `f64` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH values0 AS (SELECT '0' AS "a" UNION ALL SELECT '1' AS "a"), values1 AS (SELECT "a", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS TINYINT) ELSE NULL END AS "i8", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "u8", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "i16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS INT) ELSE NULL END AS "u16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS INT) ELSE NULL END AS "i32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS BIGINT) ELSE NULL END AS "u32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS BIGINT) ELSE NULL END AS "i64", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS FLOAT) ELSE NULL END AS "f32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS DOUBLE) ELSE NULL END AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS `_values` (`a`)), values1 AS (SELECT `a`, TRY_CAST(`a` AS TINYINT) AS `i8`, TRY_CAST(`a` AS SMALLINT) AS `u8`, TRY_CAST(`a` AS SMALLINT) AS `i16`, TRY_CAST(`a` AS INT) AS `u16`, TRY_CAST(`a` AS INT) AS `i32`, TRY_CAST(`a` AS BIGINT) AS `u32`, TRY_CAST(`a` AS BIGINT) AS `i64`, TRY_CAST(`a` AS FLOAT) AS `f32`, TRY_CAST(`a` AS DOUBLE) AS `f64` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", TRY_CAST("a" AS TINYINT) AS "i8", TRY_CAST("a" AS SMALLINT) AS "u8", TRY_CAST("a" AS SMALLINT) AS "i16", TRY_CAST("a" AS INT) AS "u16", TRY_CAST("a" AS INT) AS "i32", TRY_CAST("a" AS BIGINT) AS "u32", TRY_CAST("a" AS BIGINT) AS "i64", TRY_CAST("a" AS FLOAT) AS "f32", TRY_CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", TRY_CAST("a" AS TINYINT) AS "i8", TRY_CAST("a" AS SMALLINT) AS "u8", TRY_CAST("a" AS SMALLINT) AS "i16", TRY_CAST("a" AS INT) AS "u16", TRY_CAST("a" AS INT) AS "i32", TRY_CAST("a" AS BIGINT) AS "u32", TRY_CAST("a" AS BIGINT) AS "i64", TRY_CAST("a" AS FLOAT) AS "f32", TRY_CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH values0 AS (SELECT * FROM (VALUES ROW('0'), ROW('1')) AS `_values` (`a`)), values1 AS (SELECT `a`, CAST(`a` AS SIGNED) AS `i8`, CAST(`a` AS UNSIGNED) AS `u8`, CAST(`a` AS SIGNED) AS `i16`, CAST(`a` AS UNSIGNED) AS `u16`, CAST(`a` AS SIGNED) AS `i32`, CAST(`a` AS UNSIGNED) AS `u32`, CAST(`a` AS SIGNED) AS `i64`, CAST(`a` AS FLOAT) AS `f32`, CAST(`a` AS DOUBLE) AS `f64` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES ('0'), ('1')) AS "_values" ("a")), values1 AS (SELECT "a", CAST("a" AS SMALLINT) AS "i8", CAST("a" AS SMALLINT) AS "u8", CAST("a" AS SMALLINT) AS "i16", CAST("a" AS INTEGER) AS "u16", CAST("a" AS INTEGER) AS "i32", CAST("a" AS BIGINT) AS "u32", CAST("a" AS BIGINT) AS "i64", CAST("a" AS REAL) AS "f32", CAST("a" AS DOUBLE PRECISION) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH values0 AS (SELECT '0' AS "a" UNION ALL SELECT '1' AS "a"), values1 AS (SELECT "a", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "i8", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "u8", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS SMALLINT) ELSE NULL END AS "i16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS INTEGER) ELSE NULL END AS "u16", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS INTEGER) ELSE NULL END AS "i32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS BIGINT) ELSE NULL END AS "u32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS BIGINT) ELSE NULL END AS "i64", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS REAL) ELSE NULL END AS "f32", CASE WHEN "a" IS NOT NULL THEN CAST("a" AS DOUBLE PRECISION) ELSE NULL END AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a" FROM (VALUES ('0'), ('1'))), values1 AS (SELECT "a", TRY_CAST("a" AS TINYINT) AS "i8", TRY_CAST("a" AS SMALLINT) AS "u8", TRY_CAST("a" AS SMALLINT) AS "i16", TRY_CAST("a" AS INTEGER) AS "u16", TRY_CAST("a" AS INTEGER) AS "i32", TRY_CAST("a" AS BIGINT) AS "u32", TRY_CAST("a" AS BIGINT) AS "i64", TRY_CAST("a" AS FLOAT) AS "f32", TRY_CAST("a" AS DOUBLE) AS "f64" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+----+----+-----+-----+-----+-----+-----+-----+-----+
+| a | i8 | u8 | i16 | u16 | i32 | u32 | i64 | f32 | f64 |
++---+----+----+-----+-----+-----+-----+-----+-----+-----+
+| 0 | 0  | 0  | 0   | 0   | 0   | 0   | 0   | 0.0 | 0.0 |
+| 1 | 1  | 1  | 1   | 1   | 1   | 1   | 1   | 1.0 | 1.0 |
++---+----+----+-----+-----+-----+-----+-----+-----+-----+
+'''
 
 [cast_string]
 athena = """
@@ -200,6 +239,47 @@ WITH values0 AS (SELECT 0 AS "a", true AS "c", 'A' AS "d", NULL AS "b" UNION ALL
 """
 snowflake = """
 WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "c", "COLUMN3" AS "d", "COLUMN4" AS "b" FROM (VALUES (0, true, 'A', NULL), (1, false, 'BB', 1.5), (NULL, NULL, 'CCC', 2.25))), values1 AS (SELECT CAST("a" AS VARCHAR) AS "a", CAST("b" AS VARCHAR) AS "b", CAST("c" AS VARCHAR) AS "c", CAST("d" AS VARCHAR) AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+result = '''
++---+------+-------+-----+
+| a | b    | c     | d   |
++---+------+-------+-----+
+|   | 2.25 |       | CCC |
+| 0 |      | true  | A   |
+| 1 | 1.5  | false | BB  |
++---+------+-------+-----+
+'''
+
+[try_cast_string]
+athena = """
+WITH values0 AS (SELECT * FROM (VALUES (0, true, 'A', NULL), (1, false, 'BB', 1.5), (NULL, NULL, 'CCC', 2.25)) AS "_values" ("a", "c", "d", "b")), values1 AS (SELECT TRY_CAST("a" AS VARCHAR) AS "a", TRY_CAST("b" AS VARCHAR) AS "b", TRY_CAST("c" AS VARCHAR) AS "c", TRY_CAST("d" AS VARCHAR) AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+bigquery = """
+WITH values0 AS (SELECT 0 AS `a`, true AS `c`, 'A' AS `d`, NULL AS `b` UNION ALL SELECT 1 AS `a`, false AS `c`, 'BB' AS `d`, 1.5 AS `b` UNION ALL SELECT NULL AS `a`, NULL AS `c`, 'CCC' AS `d`, 2.25 AS `b`), values1 AS (SELECT SAFE_CAST(`a` AS STRING) AS `a`, SAFE_CAST(`b` AS STRING) AS `b`, SAFE_CAST(`c` AS STRING) AS `c`, SAFE_CAST(`d` AS STRING) AS `d` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+clickhouse = """
+WITH values0 AS (SELECT 0 AS "a", true AS "c", 'A' AS "d", NULL AS "b" UNION ALL SELECT 1 AS "a", false AS "c", 'BB' AS "d", 1.5 AS "b" UNION ALL SELECT NULL AS "a", NULL AS "c", 'CCC' AS "d", 2.25 AS "b"), values1 AS (SELECT CASE WHEN "a" IS NOT NULL THEN CAST("a" AS VARCHAR) ELSE NULL END AS "a", CASE WHEN "b" IS NOT NULL THEN CAST("b" AS VARCHAR) ELSE NULL END AS "b", CASE WHEN "c" IS NOT NULL THEN CAST("c" AS VARCHAR) ELSE NULL END AS "c", CASE WHEN "d" IS NOT NULL THEN CAST("d" AS VARCHAR) ELSE NULL END AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+databricks = """
+WITH values0 AS (SELECT * FROM (VALUES (0, true, 'A', NULL), (1, false, 'BB', 1.5), (NULL, NULL, 'CCC', 2.25)) AS `_values` (`a`, `c`, `d`, `b`)), values1 AS (SELECT TRY_CAST(`a` AS STRING) AS `a`, TRY_CAST(`b` AS STRING) AS `b`, TRY_CAST(`c` AS STRING) AS `c`, TRY_CAST(`d` AS STRING) AS `d` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC NULLS FIRST
+"""
+datafusion = """
+WITH values0 AS (SELECT * FROM (VALUES (0, true, 'A', NULL), (1, false, 'BB', 1.5), (NULL, NULL, 'CCC', 2.25)) AS "_values" ("a", "c", "d", "b")), values1 AS (SELECT TRY_CAST("a" AS STRING) AS "a", TRY_CAST("b" AS STRING) AS "b", CASE WHEN ("c" = true) THEN 'true' WHEN ("c" = false) THEN 'false' ELSE NULL END AS "c", TRY_CAST("d" AS STRING) AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+duckdb = """
+WITH values0 AS (SELECT * FROM (VALUES (0, true, 'A', NULL), (1, false, 'BB', 1.5), (NULL, NULL, 'CCC', 2.25)) AS "_values" ("a", "c", "d", "b")), values1 AS (SELECT TRY_CAST("a" AS VARCHAR) AS "a", TRY_CAST("b" AS VARCHAR) AS "b", TRY_CAST("c" AS VARCHAR) AS "c", TRY_CAST("d" AS VARCHAR) AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+mysql = """
+WITH values0 AS (SELECT * FROM (VALUES ROW(0, true, 'A', NULL), ROW(1, false, 'BB', 1.5), ROW(NULL, NULL, 'CCC', 2.25)) AS `_values` (`a`, `c`, `d`, `b`)), values1 AS (SELECT CAST(`a` AS CHAR) AS `a`, CAST(`b` AS CHAR) AS `b`, CASE WHEN (`c` = true) THEN 'true' WHEN (`c` = false) THEN 'false' ELSE NULL END AS `c`, CAST(`d` AS CHAR) AS `d` FROM values0) SELECT * FROM values1 ORDER BY `a` ASC
+"""
+postgres = """
+WITH values0 AS (SELECT * FROM (VALUES (0, true, 'A', NULL), (1, false, 'BB', 1.5), (NULL, NULL, 'CCC', 2.25)) AS "_values" ("a", "c", "d", "b")), values1 AS (SELECT CAST("a" AS TEXT) AS "a", CAST("b" AS TEXT) AS "b", CAST("c" AS TEXT) AS "c", CAST("d" AS TEXT) AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+redshift = """
+WITH values0 AS (SELECT 0 AS "a", true AS "c", 'A' AS "d", NULL AS "b" UNION ALL SELECT 1 AS "a", false AS "c", 'BB' AS "d", 1.5 AS "b" UNION ALL SELECT NULL AS "a", NULL AS "c", 'CCC' AS "d", 2.25 AS "b"), values1 AS (SELECT CASE WHEN "a" IS NOT NULL THEN CAST("a" AS TEXT) ELSE NULL END AS "a", CASE WHEN "b" IS NOT NULL THEN CAST("b" AS TEXT) ELSE NULL END AS "b", CASE WHEN "c" IS NOT NULL THEN CASE WHEN ("c" = true) THEN 'true' WHEN ("c" = false) THEN 'false' ELSE NULL END ELSE NULL END AS "c", CASE WHEN "d" IS NOT NULL THEN CAST("d" AS TEXT) ELSE NULL END AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
+"""
+snowflake = """
+WITH values0 AS (SELECT "COLUMN1" AS "a", "COLUMN2" AS "c", "COLUMN3" AS "d", "COLUMN4" AS "b" FROM (VALUES (0, true, 'A', NULL), (1, false, 'BB', 1.5), (NULL, NULL, 'CCC', 2.25))), values1 AS (SELECT CAST("a" AS VARCHAR) AS "a", CAST("b" AS VARCHAR) AS "b", CAST("c" AS VARCHAR) AS "c", TRY_CAST("d" AS VARCHAR) AS "d" FROM values0) SELECT * FROM values1 ORDER BY "a" ASC NULLS FIRST
 """
 result = '''
 +---+------+-------+-----+
