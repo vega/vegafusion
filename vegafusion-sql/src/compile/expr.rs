@@ -1,5 +1,6 @@
 use crate::compile::data_type::ToSqlDataType;
 use crate::compile::scalar::ToSqlScalar;
+use arrow::datatypes::DataType;
 use datafusion_common::{DFSchema, ScalarValue};
 use sqlparser::ast::{
     BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction,
@@ -17,7 +18,7 @@ use datafusion_expr::{
 
 use crate::compile::function_arg::ToSqlFunctionArg;
 use crate::compile::order::ToSqlOrderByExpr;
-use crate::dialect::{Dialect, UnorderedRowNumberMode};
+use crate::dialect::{Dialect, TryCastMode, UnorderedRowNumberMode};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::error::{Result, VegaFusionError};
 
@@ -196,10 +197,60 @@ impl ToSqlExpr for Expr {
                 })
             }
             Expr::TryCast(expr::TryCast { expr, data_type }) => {
-                let data_type = data_type.to_sql(dialect)?;
-                Ok(SqlExpr::TryCast {
-                    expr: Box::new(expr.to_sql(dialect, schema)?),
-                    data_type,
+                let from_dtype = expr.get_type(schema)?;
+                let sql_data_type = data_type.to_sql(dialect)?;
+                let cast_expr = if let Some(transformer) = dialect
+                    .cast_transformers
+                    .get(&(from_dtype.clone(), data_type.clone()))
+                {
+                    // Cast transformer overrides TryCast as well as Cast
+                    transformer.transform(expr.as_ref(), dialect, schema)?
+                } else {
+                    match &dialect.try_cast_mode {
+                        TryCastMode::Supported => SqlExpr::TryCast {
+                            expr: Box::new(expr.to_sql(dialect, schema)?),
+                            data_type: sql_data_type,
+                        },
+                        TryCastMode::JustUseCast => SqlExpr::Cast {
+                            expr: Box::new(expr.to_sql(dialect, schema)?),
+                            data_type: sql_data_type,
+                        },
+                        TryCastMode::SafeCast => SqlExpr::SafeCast {
+                            expr: Box::new(expr.to_sql(dialect, schema)?),
+                            data_type: sql_data_type,
+                        },
+                        TryCastMode::SupportedOnStringsOtherwiseJustCast => {
+                            if let DataType::Utf8 | DataType::LargeUtf8 = from_dtype {
+                                // TRY_CAST is supported
+                                SqlExpr::TryCast {
+                                    expr: Box::new(expr.to_sql(dialect, schema)?),
+                                    data_type: sql_data_type,
+                                }
+                            } else {
+                                // Fall back to regular CAST
+                                SqlExpr::Cast {
+                                    expr: Box::new(expr.to_sql(dialect, schema)?),
+                                    data_type: sql_data_type,
+                                }
+                            }
+                        }
+                    }
+                };
+
+                // Handle manual null propagation
+                Ok(if dialect.cast_propagates_null {
+                    cast_expr
+                } else {
+                    // Need to manually propagate nulls through cast
+                    let condition = Expr::IsNotNull(expr.clone()).to_sql(dialect, schema)?;
+                    let result = cast_expr;
+                    let else_result = lit(ScalarValue::Null).to_sql(dialect, schema)?;
+                    SqlExpr::Case {
+                        operand: None,
+                        conditions: vec![condition],
+                        results: vec![result],
+                        else_result: Some(Box::new(else_result)),
+                    }
                 })
             }
             Expr::Sort { .. } => {

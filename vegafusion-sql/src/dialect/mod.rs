@@ -132,6 +132,22 @@ pub enum UnorderedRowNumberMode {
 }
 
 #[derive(Clone, Debug)]
+pub enum TryCastMode {
+    /// TRY_CAST is supported
+    Supported,
+
+    /// Regular CAST is the best we can do
+    JustUseCast,
+
+    /// Use SAFE_CAST
+    SafeCast,
+
+    /// TRY_CAST is supported when the first argument is a string type
+    /// Otherwise fall back to regular CAST
+    SupportedOnStringsOtherwiseJustCast,
+}
+
+#[derive(Clone, Debug)]
 pub struct Dialect {
     /// sqlparser dialect to use to parse queries
     parse_dialect: ParseDialect,
@@ -198,6 +214,9 @@ pub struct Dialect {
     /// Whether dialect supports null values in cast expressions
     pub cast_propagates_null: bool,
 
+    /// How TRY_CAST is implemented
+    pub try_cast_mode: TryCastMode,
+
     /// Whether dialect supports -inf, nan, and inf float values.
     /// If false, non-finite values are converted to NULL
     pub supports_non_finite_floats: bool,
@@ -234,6 +253,7 @@ impl Default for Dialect {
             cast_datatypes: Default::default(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            try_cast_mode: TryCastMode::Supported,
             supports_non_finite_floats: false,
             supports_mixed_case_identical_columns: false,
             unordered_row_number_mode: UnorderedRowNumberMode::Supported,
@@ -367,6 +387,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            try_cast_mode: TryCastMode::Supported,
             supports_non_finite_floats: false,
             supports_mixed_case_identical_columns: false,
             unordered_row_number_mode: UnorderedRowNumberMode::Supported,
@@ -499,6 +520,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            try_cast_mode: TryCastMode::SafeCast,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: false,
             unordered_row_number_mode: UnorderedRowNumberMode::Supported,
@@ -604,6 +626,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: false,
+            try_cast_mode: TryCastMode::JustUseCast,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: true,
             unordered_row_number_mode: UnorderedRowNumberMode::Supported,
@@ -756,6 +779,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            try_cast_mode: TryCastMode::Supported,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: false,
             unordered_row_number_mode: UnorderedRowNumberMode::OrderByConstant,
@@ -926,6 +950,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             cast_propagates_null: true,
+            try_cast_mode: TryCastMode::Supported,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: true,
             unordered_row_number_mode: UnorderedRowNumberMode::Supported,
@@ -1077,6 +1102,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            try_cast_mode: TryCastMode::Supported,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: false,
             unordered_row_number_mode: UnorderedRowNumberMode::Supported,
@@ -1183,6 +1209,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             cast_propagates_null: true,
+            try_cast_mode: TryCastMode::JustUseCast,
             supports_non_finite_floats: false,
             supports_mixed_case_identical_columns: false,
             unordered_row_number_mode: UnorderedRowNumberMode::Supported,
@@ -1335,6 +1362,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            try_cast_mode: TryCastMode::JustUseCast,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: true,
             unordered_row_number_mode: UnorderedRowNumberMode::Supported,
@@ -1477,6 +1505,7 @@ impl Dialect {
             .into_iter()
             .collect(),
             cast_propagates_null: false,
+            try_cast_mode: TryCastMode::JustUseCast,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: false,
             unordered_row_number_mode: UnorderedRowNumberMode::Supported,
@@ -1624,6 +1653,7 @@ impl Dialect {
             .collect(),
             cast_transformers: Default::default(),
             cast_propagates_null: true,
+            try_cast_mode: TryCastMode::SupportedOnStringsOtherwiseJustCast,
             supports_non_finite_floats: true,
             supports_mixed_case_identical_columns: true,
             unordered_row_number_mode: UnorderedRowNumberMode::AlternateScalarFunction(

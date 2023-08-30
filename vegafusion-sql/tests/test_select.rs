@@ -263,6 +263,67 @@ mod test_cast_numeric {
 }
 
 #[cfg(test)]
+mod test_try_cast_numeric {
+    use crate::*;
+    use arrow::datatypes::DataType;
+    use datafusion_expr::{cast, expr, try_cast, Expr};
+    use vegafusion_common::column::flat_col;
+
+    #[apply(dialect_names)]
+    async fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": "0"},
+            {"a": "1"},
+        ]))
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
+        let df_result = df
+            .select(vec![
+                flat_col("a"),
+                try_cast(flat_col("a"), DataType::Int8).alias("i8"),
+                try_cast(flat_col("a"), DataType::UInt8).alias("u8"),
+                try_cast(flat_col("a"), DataType::Int16).alias("i16"),
+                try_cast(flat_col("a"), DataType::UInt16).alias("u16"),
+                try_cast(flat_col("a"), DataType::Int32).alias("i32"),
+                try_cast(flat_col("a"), DataType::UInt32).alias("u32"),
+                try_cast(flat_col("a"), DataType::Int64).alias("i64"),
+                try_cast(flat_col("a"), DataType::Float32).alias("f32"),
+                try_cast(flat_col("a"), DataType::Float64).alias("f64"),
+            ])
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(flat_col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
+
+        check_dataframe_query(
+            df_result,
+            "select",
+            "try_cast_numeric",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
+#[cfg(test)]
 mod test_cast_string {
     use crate::*;
     use arrow::datatypes::DataType;
@@ -306,6 +367,62 @@ mod test_cast_string {
         };
 
         check_dataframe_query(df_result, "select", "cast_string", dialect_name, evaluable);
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
+#[cfg(test)]
+mod test_try_cast_string {
+    use crate::*;
+    use arrow::datatypes::DataType;
+    use datafusion_expr::{cast, expr, try_cast, Expr};
+    use vegafusion_common::column::flat_col;
+
+    #[apply(dialect_names)]
+    async fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let table = VegaFusionTable::from_json(&json!([
+            {"a": 0, "b": null, "c": true, "d": "A"},
+            {"a": 1, "b": 1.5, "c": false, "d": "BB"},
+            {"a": null, "b": 2.25, "c": null, "d": "CCC"},
+        ]))
+        .unwrap();
+
+        let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
+        let df_result = df
+            .select(vec![
+                try_cast(flat_col("a"), DataType::Utf8).alias("a"),
+                try_cast(flat_col("b"), DataType::Utf8).alias("b"),
+                try_cast(flat_col("c"), DataType::Utf8).alias("c"),
+                try_cast(flat_col("d"), DataType::Utf8).alias("d"),
+            ])
+            .await;
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(flat_col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
+
+        check_dataframe_query(
+            df_result,
+            "select",
+            "try_cast_string",
+            dialect_name,
+            evaluable,
+        );
     }
 
     #[test]
