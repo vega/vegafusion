@@ -266,7 +266,7 @@ mod test_cast_numeric {
 mod test_try_cast_numeric {
     use crate::*;
     use arrow::datatypes::DataType;
-    use datafusion_expr::{cast, expr, try_cast, Expr};
+    use datafusion_expr::{expr, try_cast, Expr};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -377,7 +377,7 @@ mod test_cast_string {
 mod test_try_cast_string {
     use crate::*;
     use arrow::datatypes::DataType;
-    use datafusion_expr::{cast, expr, try_cast, Expr};
+    use datafusion_expr::{expr, try_cast, Expr};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
