@@ -8,7 +8,8 @@ use crate::spec::chart::{ChartSpec, ChartVisitor, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::mark::{MarkEncodeSpec, MarkEncodingField, MarkEncodingSpec, MarkSpec};
 use crate::spec::scale::{
-    ScaleDataReferenceSort, ScaleDataReferenceSpec, ScaleDomainSpec, ScaleRangeSpec, ScaleSpec,
+    ScaleDataReferenceOrSignalSpec, ScaleDataReferenceSort, ScaleDataReferenceSpec,
+    ScaleDomainSpec, ScaleRangeSpec, ScaleSpec,
 };
 use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
 use crate::spec::transform::project::ProjectTransformSpec;
@@ -347,14 +348,29 @@ impl GetDatasetsColumnUsage for ScaleDomainSpec {
         vl_selection_fields: &VlSelectionFields,
     ) -> DatasetsColumnUsage {
         let mut usage = DatasetsColumnUsage::empty();
-        let (scale_data_refs, sort) = match &self {
-            ScaleDomainSpec::FieldReference(scale_data_ref) => {
-                (vec![scale_data_ref.clone()], scale_data_ref.sort.clone())
+        let mut scale_data_refs = Vec::new();
+        let mut signals = Vec::new();
+        let mut sort = None;
+
+        match &self {
+            ScaleDomainSpec::FieldReference(field_ref) => {
+                scale_data_refs.push(field_ref.clone());
+                sort = field_ref.sort.clone();
             }
-            ScaleDomainSpec::FieldsReference(scale_data_refs) => {
-                (scale_data_refs.fields.clone(), scale_data_refs.sort.clone())
+            ScaleDomainSpec::FieldsReference(fields_refs) => {
+                for v in &fields_refs.fields {
+                    match v {
+                        ScaleDataReferenceOrSignalSpec::Reference(scale_data_ref) => {
+                            scale_data_refs.push(scale_data_ref.clone());
+                        }
+                        ScaleDataReferenceOrSignalSpec::Signal(signal) => {
+                            signals.push(signal);
+                        }
+                    }
+                    sort = fields_refs.sort.clone();
+                }
             }
-            _ => (Vec::new(), None),
+            _ => {}
         };
         for scale_data_ref in scale_data_refs {
             // Push sort field down in the case of FieldsReference
@@ -367,6 +383,18 @@ impl GetDatasetsColumnUsage for ScaleDomainSpec {
                 task_scope,
                 vl_selection_fields,
             ))
+        }
+
+        // Handle signals
+        for signal in signals {
+            if let Ok(expr) = parse(&signal.signal) {
+                usage = usage.union(&expr.datasets_column_usage(
+                    &None,
+                    usage_scope,
+                    task_scope,
+                    vl_selection_fields,
+                ))
+            }
         }
         usage
     }

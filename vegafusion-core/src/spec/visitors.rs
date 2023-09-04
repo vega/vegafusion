@@ -9,8 +9,8 @@ use crate::spec::chart::{ChartSpec, ChartVisitor};
 use crate::spec::data::{DataFormatParseSpec, DataSpec};
 use crate::spec::mark::{MarkFacetSpec, MarkSpec};
 use crate::spec::scale::{
-    ScaleArrayElementSpec, ScaleBinsSpec, ScaleDataReferenceSpec, ScaleDomainSpec, ScaleRangeSpec,
-    ScaleSpec,
+    ScaleArrayElementSpec, ScaleBinsSpec, ScaleDataReferenceOrSignalSpec, ScaleDataReferenceSpec,
+    ScaleDomainSpec, ScaleRangeSpec, ScaleSpec,
 };
 use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
 use crate::spec::values::{SignalExpressionSpec, StringOrSignalSpec};
@@ -560,7 +560,16 @@ impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
                     references.push(reference.clone());
                 }
                 ScaleDomainSpec::FieldsReference(field_references) => {
-                    references.extend(field_references.fields.clone());
+                    for v in field_references.fields.clone() {
+                        match v {
+                            ScaleDataReferenceOrSignalSpec::Reference(field_ref) => {
+                                references.push(field_ref);
+                            }
+                            ScaleDataReferenceOrSignalSpec::Signal(signal) => {
+                                signals.push(signal);
+                            }
+                        }
+                    }
                 }
                 ScaleDomainSpec::FieldsSignals(fields_signals) => {
                     signals.extend(fields_signals.fields.clone());

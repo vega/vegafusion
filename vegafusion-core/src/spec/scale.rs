@@ -78,13 +78,20 @@ pub enum ScaleDomainSpec {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScaleDataReferencesSpec {
-    pub fields: Vec<ScaleDataReferenceSpec>,
+    pub fields: Vec<ScaleDataReferenceOrSignalSpec>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sort: Option<ScaleDataReferenceSort>,
 
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum ScaleDataReferenceOrSignalSpec {
+    Reference(ScaleDataReferenceSpec),
+    Signal(SignalExpressionSpec),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
