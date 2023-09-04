@@ -29,6 +29,11 @@
       "name": "source_1_concat_1_y_domain___count",
       "namespace": "data",
       "scope": []
+    },
+    {
+      "name": "source_2",
+      "namespace": "data",
+      "scope": []
     }
   ],
   "client_to_server": []
