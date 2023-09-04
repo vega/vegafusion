@@ -1,0 +1,40 @@
+{
+  "server_to_client": [
+    {
+      "name": "concat_0_bin_maxbins_20_mean_price_bins",
+      "namespace": "signal",
+      "scope": []
+    },
+    {
+      "name": "concat_1_layer_0_bin_maxbins_20_mean_price_bins",
+      "namespace": "signal",
+      "scope": []
+    },
+    {
+      "name": "source_0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "source_0_concat_0_y_domain___count",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "source_1",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "source_1_concat_1_y_domain___count",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "source_2",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

@@ -5,7 +5,9 @@ use crate::spec::axis::{AxisFormatTypeSpec, AxisSpec};
 use crate::spec::chart::{ChartSpec, ChartVisitor, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::mark::{MarkEncodingField, MarkSpec};
-use crate::spec::scale::{ScaleDomainSpec, ScaleSpec, ScaleTypeSpec};
+use crate::spec::scale::{
+    ScaleDataReferenceOrSignalSpec, ScaleDomainSpec, ScaleSpec, ScaleTypeSpec,
+};
 use crate::spec::transform::formula::FormulaTransformSpec;
 use crate::spec::transform::TransformSpec;
 use crate::task_graph::graph::ScopedVariable;
@@ -244,7 +246,17 @@ impl ChartVisitor for CollectLocalTimeScaledFieldsVisitor {
                     ScaleDomainSpec::FieldReference(field_ref) => {
                         vec![field_ref.clone()]
                     }
-                    ScaleDomainSpec::FieldsReference(fields_ref) => fields_ref.fields.clone(),
+                    ScaleDomainSpec::FieldsReference(fields_ref) => fields_ref
+                        .fields
+                        .iter()
+                        .filter_map(|f| {
+                            if let ScaleDataReferenceOrSignalSpec::Reference(f) = f {
+                                Some(f.clone())
+                            } else {
+                                None
+                            }
+                        })
+                        .collect(),
                     _ => Default::default(),
                 };
                 for field_ref in &field_refs {

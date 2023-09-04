@@ -2,8 +2,8 @@ use crate::proto::gen::tasks::Variable;
 use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::scale::{
-    ScaleDataReferenceSort, ScaleDataReferenceSortParameters, ScaleDataReferenceSpec,
-    ScaleDataReferencesSpec, ScaleDomainSpec, ScaleSpec, ScaleTypeSpec,
+    ScaleDataReferenceOrSignalSpec, ScaleDataReferenceSort, ScaleDataReferenceSortParameters,
+    ScaleDataReferenceSpec, ScaleDataReferencesSpec, ScaleDomainSpec, ScaleSpec, ScaleTypeSpec,
 };
 use crate::spec::transform::aggregate::AggregateOpSpec;
 use crate::task_graph::graph::ScopedVariable;
@@ -91,34 +91,36 @@ impl<'a> SplitScaleDomainVisitor<'a> {
             let mut new_dataset_scope = Vec::new();
             let mut new_fields = Vec::new();
             for (field_index, field_ref) in fields_ref.fields.iter().enumerate() {
-                let field_name = &field_ref.field;
-                let data_name = field_ref.data.clone();
-                let scope_suffix = Self::build_scope_suffix(scope);
+                if let ScaleDataReferenceOrSignalSpec::Reference(field_ref) = field_ref {
+                    let field_name = &field_ref.field;
+                    let data_name = field_ref.data.clone();
+                    let scope_suffix = Self::build_scope_suffix(scope);
 
-                let new_data_name = format!(
-                    "{}_{}_domain_{}{}_{}",
-                    data_name, scale.name, field_name, scope_suffix, field_index
-                );
+                    let new_data_name = format!(
+                        "{}_{}_domain_{}{}_{}",
+                        data_name, scale.name, field_name, scope_suffix, field_index
+                    );
 
-                let new_data = Self::make_discrete_domain_data(
-                    &data_name,
-                    &new_data_name,
-                    field_name,
-                    sort_field.clone(),
-                    sort_op.clone(),
-                )?;
-                new_datasets.push(new_data);
+                    let new_data = Self::make_discrete_domain_data(
+                        &data_name,
+                        &new_data_name,
+                        field_name,
+                        sort_field.clone(),
+                        sort_op.clone(),
+                    )?;
+                    new_datasets.push(new_data);
 
-                // Compute new domain field
-                let mut new_field_ref = field_ref.clone();
-                new_field_ref.data = new_data_name.clone();
-                new_fields.push(new_field_ref);
+                    // Compute new domain field
+                    let mut new_field_ref = field_ref.clone();
+                    new_field_ref.data = new_data_name.clone();
+                    new_fields.push(new_field_ref);
 
-                // Compute scope for the original referenced dataset
-                let resolved = self
-                    .task_scope
-                    .resolve_scope(&Variable::new_data(data_name.as_str()), scope)?;
-                new_dataset_scope.push(resolved.scope);
+                    // Compute scope for the original referenced dataset
+                    let resolved = self
+                        .task_scope
+                        .resolve_scope(&Variable::new_data(data_name.as_str()), scope)?;
+                    new_dataset_scope.push(resolved.scope);
+                }
             }
 
             // Create new domain specification that uses the new fields
@@ -134,7 +136,10 @@ impl<'a> SplitScaleDomainVisitor<'a> {
             };
 
             let new_domain = ScaleDomainSpec::FieldsReference(ScaleDataReferencesSpec {
-                fields: new_fields,
+                fields: new_fields
+                    .into_iter()
+                    .map(|f| ScaleDataReferenceOrSignalSpec::Reference(f))
+                    .collect(),
                 sort,
                 extra: Default::default(),
             });
