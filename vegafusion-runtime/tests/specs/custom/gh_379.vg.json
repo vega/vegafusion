@@ -1,0 +1,186 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "axes": [
+    {
+      "aria": false,
+      "domain": false,
+      "grid": true,
+      "gridScale": "y",
+      "labels": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "orient": "bottom",
+      "scale": "x",
+      "tickCount": {
+        "signal": "ceil(width/40)"
+      },
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "grid": false,
+      "labelFlush": true,
+      "labelOverlap": true,
+      "orient": "bottom",
+      "scale": "x",
+      "tickCount": {
+        "signal": "ceil(width/40)"
+      },
+      "title": "x",
+      "zindex": 0
+    },
+    {
+      "grid": false,
+      "orient": "left",
+      "scale": "y",
+      "title": "y",
+      "zindex": 0
+    }
+  ],
+  "background": "white",
+  "data": [
+    {
+      "name": "data-0f23fed2edacf0a993b08905dbfc85d0",
+      "values": [
+        {
+          "x": 1,
+          "y": "A"
+        }
+      ]
+    },
+    {
+      "name": "data_0",
+      "source": "data-0f23fed2edacf0a993b08905dbfc85d0",
+      "transform": [
+        {
+          "as": [
+            "x_start",
+            "x_end"
+          ],
+          "field": "x",
+          "groupby": [
+            "y"
+          ],
+          "offset": "zero",
+          "sort": {
+            "field": [],
+            "order": []
+          },
+          "type": "stack"
+        },
+        {
+          "expr": "isValid(datum[\"x\"]) && isFinite(+datum[\"x\"])",
+          "type": "filter"
+        }
+      ]
+    }
+  ],
+  "legends": [
+    {
+      "fill": "color",
+      "symbolType": "square",
+      "title": "y"
+    }
+  ],
+  "marks": [
+    {
+      "encode": {
+        "update": {
+          "ariaRoleDescription": {
+            "value": "bar"
+          },
+          "description": {
+            "signal": "\"x: \" + (format(datum[\"x\"], \"\")) + \"; y: \" + (isValid(datum[\"y\"]) ? datum[\"y\"] : \"\"+datum[\"y\"])"
+          },
+          "fill": {
+            "field": "y",
+            "scale": "color"
+          },
+          "height": {
+            "signal": "max(0.25, bandwidth('y'))"
+          },
+          "x": {
+            "field": "x_end",
+            "scale": "x"
+          },
+          "x2": {
+            "field": "x_start",
+            "scale": "x"
+          },
+          "y": {
+            "field": "y",
+            "scale": "y"
+          }
+        }
+      },
+      "from": {
+        "data": "data_0"
+      },
+      "name": "marks",
+      "style": [
+        "bar"
+      ],
+      "type": "rect"
+    }
+  ],
+  "padding": 5,
+  "scales": [
+    {
+      "domain": {
+        "data": "data_0",
+        "fields": [
+          "x_start",
+          "x_end"
+        ]
+      },
+      "name": "x",
+      "nice": true,
+      "range": [
+        0,
+        {
+          "signal": "width"
+        }
+      ],
+      "type": "linear",
+      "zero": true
+    },
+    {
+      "domain": {
+        "data": "data_0",
+        "field": "y",
+        "sort": true
+      },
+      "name": "y",
+      "paddingInner": 0.1,
+      "paddingOuter": 0.05,
+      "range": {
+        "step": {
+          "signal": "y_step"
+        }
+      },
+      "type": "band"
+    },
+    {
+      "domain": [
+        "A"
+      ],
+      "name": "color",
+      "range": [
+        "#0000FF"
+      ],
+      "type": "ordinal"
+    }
+  ],
+  "signals": [
+    {
+      "name": "y_step",
+      "value": 20
+    },
+    {
+      "name": "height",
+      "update": "bandspace(domain('y').length, 0.1, 0.05) * y_step"
+    }
+  ],
+  "style": "cell",
+  "width": 300
+}

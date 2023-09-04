@@ -176,8 +176,8 @@ pub enum ScaleBinsSpec {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ScaleRangeSpec {
+    Array(Vec<ScaleArrayElementSpec>),
     Reference(ScaleDataReferenceSpec),
     Signal(SignalExpressionSpec),
-    Array(Vec<ScaleArrayElementSpec>),
     Value(Value),
 }
