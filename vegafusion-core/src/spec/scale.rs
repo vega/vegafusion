@@ -68,9 +68,9 @@ impl ScaleTypeSpec {
 pub enum ScaleDomainSpec {
     Array(Vec<ScaleArrayElementSpec>),
     FieldReference(ScaleDataReferenceSpec),
-    FieldsReference(ScaleDataReferencesSpec),
     FieldsVecStrings(ScaleVecStringsSpec),
     FieldsStrings(ScaleStringsSpec),
+    FieldsReference(ScaleDataReferencesSpec),
     FieldsSignals(ScaleSignalsSpec),
     Signal(SignalExpressionSpec),
     Value(Value),
