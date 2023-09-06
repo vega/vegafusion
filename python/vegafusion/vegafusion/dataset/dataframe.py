@@ -37,6 +37,15 @@ class DataFrameDataset(ABC):
         """
         return True
 
+    def main_thread(self) -> bool:
+        """
+        True if the dataset must be evaluated run on the main thread.
+        This blocks multithreaded parallelization, but is sometimes required
+
+        :return: bool
+        """
+        return True
+
     def sort(
         self, exprs: List[LogicalExprNode], limit: Optional[int]
     ) -> "DataFrameDataset":

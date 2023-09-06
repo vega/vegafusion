@@ -51,7 +51,7 @@ impl PyVegaFusionRuntime {
         &self,
         inline_datasets: Option<&PyDict>,
     ) -> PyResult<(HashMap<String, VegaFusionDataset>, bool)> {
-        let mut any_python_sources = false;
+        let mut any_main_thread = false;
         if let Some(inline_datasets) = inline_datasets {
             Python::with_gil(|py| -> PyResult<_> {
                 let vegafusion_dataset_module = PyModule::import(py, "vegafusion.dataset")?;
@@ -62,14 +62,25 @@ impl PyVegaFusionRuntime {
                     .iter()
                     .map(|(name, inline_dataset)| {
                         let dataset = if inline_dataset.is_instance(sql_dataset_type)? {
-                            any_python_sources = true;
+                            let main_thread = inline_dataset
+                                .call_method0("main_thread")?
+                                .extract::<bool>()?;
+                            any_main_thread = any_main_thread || main_thread;
                             let sql_dataset = PySqlDataset::new(inline_dataset.into_py(py))?;
-                            let df = self
-                                .tokio_runtime_current_thread
-                                .block_on(sql_dataset.scan_table(&sql_dataset.table_name))?;
+                            let rt = if main_thread {
+                                &self.tokio_runtime_current_thread
+                            } else {
+                                &self.tokio_runtime_connection
+                            };
+                            let df = py.allow_threads(|| {
+                                rt.block_on(sql_dataset.scan_table(&sql_dataset.table_name))
+                            })?;
                             VegaFusionDataset::DataFrame(df)
                         } else if inline_dataset.is_instance(df_dataset_type)? {
-                            any_python_sources = true;
+                            let main_thread = inline_dataset
+                                .call_method0("main_thread")?
+                                .extract::<bool>()?;
+                            any_main_thread = any_main_thread || main_thread;
 
                             let df = Arc::new(PyDataFrame::new(inline_dataset.into_py(py))?);
                             VegaFusionDataset::DataFrame(df)
@@ -85,7 +96,7 @@ impl PyVegaFusionRuntime {
                         Ok((name.to_string(), dataset))
                     })
                     .collect::<PyResult<HashMap<_, _>>>()?;
-                Ok((imported_datasets, any_python_sources))
+                Ok((imported_datasets, any_main_thread))
             })
         } else {
             Ok((Default::default(), false))
@@ -139,16 +150,19 @@ impl PyVegaFusionRuntime {
         })
     }
 
-    pub fn process_request_bytes(&self, request_bytes: &PyBytes) -> PyResult<PyObject> {
-        let response_bytes = self
-            .tokio_runtime_connection
-            .block_on(self.runtime.query_request_bytes(request_bytes.as_bytes()))?;
-        Python::with_gil(|py| Ok(PyBytes::new(py, &response_bytes).into()))
+    pub fn process_request_bytes(&self, py: Python, request_bytes: &PyBytes) -> PyResult<PyObject> {
+        let request_bytes = request_bytes.as_bytes();
+        let response_bytes = py.allow_threads(|| {
+            self.tokio_runtime_connection
+                .block_on(self.runtime.query_request_bytes(request_bytes))
+        })?;
+        Ok(PyBytes::new(py, &response_bytes).into())
     }
 
     #[allow(clippy::too_many_arguments)]
     pub fn pre_transform_spec(
         &self,
+        py: Python,
         spec: PyObject,
         local_tz: String,
         default_input_tz: Option<String>,
@@ -158,7 +172,8 @@ impl PyVegaFusionRuntime {
         keep_signals: Option<Vec<(String, Vec<u32>)>>,
         keep_datasets: Option<Vec<(String, Vec<u32>)>>,
     ) -> PyResult<(PyObject, PyObject)> {
-        let (inline_datasets, any_py_sources) = self.process_inline_datasets(inline_datasets)?;
+        let (inline_datasets, any_main_thread_sources) =
+            self.process_inline_datasets(inline_datasets)?;
 
         let spec = parse_json_spec(spec)?;
         let preserve_interactivity = preserve_interactivity.unwrap_or(false);
@@ -172,23 +187,25 @@ impl PyVegaFusionRuntime {
             keep_variables.push((Variable::new_data(&name), scope))
         }
 
-        // Get runtime based on whether there were any Python data sources
-        // (in which case we need to use the current thread tokio runtime to avoid deadlocking)
-        let rt = if any_py_sources {
+        // Get runtime based on whether there were any Python data sources that require running
+        // on the main thread. In this case we need to use the current thread tokio runtime
+        let rt = if any_main_thread_sources {
             &self.tokio_runtime_current_thread
         } else {
             &self.tokio_runtime_connection
         };
 
-        let (spec, warnings) = rt.block_on(self.runtime.pre_transform_spec(
-            &spec,
-            &local_tz,
-            &default_input_tz,
-            row_limit,
-            preserve_interactivity,
-            inline_datasets,
-            keep_variables,
-        ))?;
+        let (spec, warnings) = py.allow_threads(|| {
+            rt.block_on(self.runtime.pre_transform_spec(
+                &spec,
+                &local_tz,
+                &default_input_tz,
+                row_limit,
+                preserve_interactivity,
+                inline_datasets,
+                keep_variables,
+            ))
+        })?;
 
         let warnings: Vec<_> = warnings
             .iter()
@@ -204,6 +221,7 @@ impl PyVegaFusionRuntime {
 
     pub fn pre_transform_datasets(
         &self,
+        py: Python,
         spec: PyObject,
         variables: Vec<(String, Vec<u32>)>,
         local_tz: String,
@@ -211,7 +229,8 @@ impl PyVegaFusionRuntime {
         row_limit: Option<u32>,
         inline_datasets: Option<&PyDict>,
     ) -> PyResult<(PyObject, PyObject)> {
-        let (inline_datasets, any_py_sources) = self.process_inline_datasets(inline_datasets)?;
+        let (inline_datasets, any_main_thread_sources) =
+            self.process_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
 
         // Build variables
@@ -224,22 +243,24 @@ impl PyVegaFusionRuntime {
             })
             .collect();
 
-        // Get runtime based on whether there were any Python data sources
-        // (in which case we need to use the current thread tokio runtime to avoid deadlocking)
-        let rt = if any_py_sources {
+        // Get runtime based on whether there were any Python data sources that require running
+        // on the main thread. In this case we need to use the current thread tokio runtime
+        let rt = if any_main_thread_sources {
             &self.tokio_runtime_current_thread
         } else {
             &self.tokio_runtime_connection
         };
 
-        let (values, warnings) = rt.block_on(self.runtime.pre_transform_values(
-            &spec,
-            &variables,
-            &local_tz,
-            &default_input_tz,
-            row_limit,
-            inline_datasets,
-        ))?;
+        let (values, warnings) = py.allow_threads(|| {
+            rt.block_on(self.runtime.pre_transform_values(
+                &spec,
+                &variables,
+                &local_tz,
+                &default_input_tz,
+                row_limit,
+                inline_datasets,
+            ))
+        })?;
 
         let warnings: Vec<_> = warnings
             .iter()
@@ -276,6 +297,7 @@ impl PyVegaFusionRuntime {
     #[allow(clippy::too_many_arguments)]
     pub fn pre_transform_extract(
         &self,
+        py: Python,
         spec: PyObject,
         local_tz: String,
         default_input_tz: Option<String>,
@@ -286,15 +308,16 @@ impl PyVegaFusionRuntime {
         keep_signals: Option<Vec<(String, Vec<u32>)>>,
         keep_datasets: Option<Vec<(String, Vec<u32>)>>,
     ) -> PyResult<(PyObject, Vec<PyObject>, PyObject)> {
-        let (inline_datasets, any_py_sources) = self.process_inline_datasets(inline_datasets)?;
+        let (inline_datasets, any_main_thread_sources) =
+            self.process_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
         let preserve_interactivity = preserve_interactivity.unwrap_or(true);
         let extract_threshold = extract_threshold.unwrap_or(20);
         let extracted_format = extracted_format.unwrap_or_else(|| "pyarrow".to_string());
 
-        // Get runtime based on whether there were any Python data sources
-        // (in which case we need to use the current thread tokio runtime to avoid deadlocking)
-        let rt = if any_py_sources {
+        // Get runtime based on whether there were any Python data sources that require running
+        // on the main thread. In this case we need to use the current thread tokio runtime
+        let rt = if any_main_thread_sources {
             &self.tokio_runtime_current_thread
         } else {
             &self.tokio_runtime_connection
@@ -309,15 +332,17 @@ impl PyVegaFusionRuntime {
             keep_variables.push((Variable::new_data(&name), scope))
         }
 
-        let (tx_spec, datasets, warnings) = rt.block_on(self.runtime.pre_transform_extract(
-            &spec,
-            &local_tz,
-            &default_input_tz,
-            preserve_interactivity,
-            extract_threshold,
-            inline_datasets,
-            keep_variables,
-        ))?;
+        let (tx_spec, datasets, warnings) = py.allow_threads(|| {
+            rt.block_on(self.runtime.pre_transform_extract(
+                &spec,
+                &local_tz,
+                &default_input_tz,
+                preserve_interactivity,
+                extract_threshold,
+                inline_datasets,
+                keep_variables,
+            ))
+        })?;
 
         let warnings: Vec<_> = warnings
             .iter()
@@ -381,9 +406,11 @@ impl PyVegaFusionRuntime {
         })
     }
 
-    pub fn clear_cache(&self) {
-        self.tokio_runtime_connection
-            .block_on(self.runtime.clear_cache());
+    pub fn clear_cache(&self, py: Python) {
+        py.allow_threads(|| {
+            self.tokio_runtime_connection
+                .block_on(self.runtime.clear_cache())
+        });
     }
 
     pub fn size(&self) -> usize {
