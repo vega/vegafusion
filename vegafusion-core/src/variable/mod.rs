@@ -26,7 +26,7 @@ impl Variable {
     }
 
     pub fn ns(&self) -> VariableNamespace {
-        VariableNamespace::from_i32(self.namespace).unwrap()
+        VariableNamespace::try_from(self.namespace).unwrap()
     }
 }
 

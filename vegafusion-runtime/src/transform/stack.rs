@@ -45,7 +45,7 @@ impl TransformTrait for Stack {
             nulls_first: true,
         }));
 
-        let offset = StackOffset::from_i32(self.offset).expect("Failed to convert stack offset");
+        let offset = StackOffset::try_from(self.offset).expect("Failed to convert stack offset");
         let mode = match offset {
             StackOffset::Zero => StackMode::Zero,
             StackOffset::Normalize => StackMode::Normalize,

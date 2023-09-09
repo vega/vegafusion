@@ -12,8 +12,8 @@ pyarrow = [ "pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow",]
 [dependencies]
 thiserror = "^1.0.29"
 bytes = "1.1.0"
-prost = "0.11.3"
-prost-types = "0.11.2"
+prost = "0.12.0"
+prost-types = "0.12.0"
 itertools = "0.10.3"
 lazy_static = "^1.4.0"
 regex = "^1.5.5"
@@ -50,14 +50,14 @@ version = "1.0.137"
 features = [ "derive",]
 
 [dependencies.tonic]
-version = "0.9.1"
+version = "0.10.0"
 optional = true
 
 [build-dependencies.prost-build]
-version = "0.11.4"
+version = "0.12.0"
 
 [build-dependencies.tonic-build]
-version = "0.9.1"
+version = "0.10.0"
 optional = true
 
 [build-dependencies.protobuf-src]

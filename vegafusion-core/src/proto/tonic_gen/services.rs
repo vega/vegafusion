@@ -411,7 +411,8 @@ pub mod vega_fusion_runtime_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                (*inner).task_graph_query(request).await
+                                <T as VegaFusionRuntime>::task_graph_query(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -460,7 +461,11 @@ pub mod vega_fusion_runtime_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                (*inner).pre_transform_spec(request).await
+                                <T as VegaFusionRuntime>::pre_transform_spec(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -509,7 +514,11 @@ pub mod vega_fusion_runtime_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                (*inner).pre_transform_values(request).await
+                                <T as VegaFusionRuntime>::pre_transform_values(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -558,7 +567,11 @@ pub mod vega_fusion_runtime_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                (*inner).pre_transform_extract(request).await
+                                <T as VegaFusionRuntime>::pre_transform_extract(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
                             };
                             Box::pin(fut)
                         }
