@@ -454,22 +454,22 @@ dependencies = [
 
 [[package]]
 name = "async-lock"
-version = "2.7.0"
+version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa24f727524730b077666307f2734b4a1a1c57acb79193127dcc8914d5242dd7"
+checksum = "287272293e9d8c41773cec55e365490fe034813a2f172f502d6ddcf75b2f582b"
 dependencies = [
  "event-listener",
 ]
 
 [[package]]
 name = "async-recursion"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e97ce7de6cf12de5d7226c73f5ba9811622f4db3a5b91b55c53e987e5f91cba"
+checksum = "5fd55a5ba1179988837d24ab4c7cc8ed6efdeff578ede0416b4225a5fca35bd0"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -529,13 +529,13 @@ checksum = "ecc7ab41815b3c653ccd2978ec3255c81349336702dfdf62ee6f7069b12a3aae"
 
 [[package]]
 name = "async-trait"
-version = "0.1.68"
+version = "0.1.73"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9ccdd8f2a161be9bd5c023df56f1b2a0bd1d83872ae53b71a84a12c9bf6e842"
+checksum = "bc00ceb34980c03614e35a3a4e218276a0a824e911d07651cd0d858a51e8c0f0"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -908,7 +908,7 @@ dependencies = [
  "heck",
  "proc-macro2",
  "quote",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -1195,7 +1195,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "scratch",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -1212,7 +1212,7 @@ checksum = "2345488264226bf682893e25de0769f3360aac9957980ec49361b083ddaa5bc5"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -1267,7 +1267,7 @@ dependencies = [
  "pin-project-lite",
  "rand",
  "smallvec",
- "sqlparser",
+ "sqlparser 0.35.0",
  "tempfile",
  "tokio",
  "tokio-util",
@@ -1290,7 +1290,7 @@ dependencies = [
  "object_store",
  "parquet",
  "pyo3",
- "sqlparser",
+ "sqlparser 0.35.0",
 ]
 
 [[package]]
@@ -1321,7 +1321,7 @@ dependencies = [
  "arrow",
  "datafusion-common",
  "lazy_static",
- "sqlparser",
+ "sqlparser 0.35.0",
  "strum 0.25.0",
  "strum_macros 0.25.1",
 ]
@@ -1405,7 +1405,7 @@ dependencies = [
  "datafusion-common",
  "datafusion-expr",
  "log",
- "sqlparser",
+ "sqlparser 0.35.0",
 ]
 
 [[package]]
@@ -1608,7 +1608,7 @@ checksum = "1a5c6c585bc94aaf2c7b51dd4c2ba22680844aba4c687be581871a6f518c5742"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -1697,7 +1697,7 @@ checksum = "89ca545a94061b6365f2c7355b4b32bd20df3ff95f02da9329b34ccc3bd6ee72"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -2361,11 +2361,11 @@ dependencies = [
 
 [[package]]
 name = "lru"
-version = "0.10.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03f1160296536f10c833a82dca22267d5486734230d47bf00bf435885814ba1e"
+checksum = "a4a83fb7698b3643a0e34f9ae6f2e8f0178c0fd42f8b59d493aa271ff3a5bf21"
 dependencies = [
- "hashbrown 0.13.2",
+ "hashbrown 0.14.0",
 ]
 
 [[package]]
@@ -2498,9 +2498,9 @@ checksum = "61807f77802ff30975e01f4f071c8ba10c022052f98b3294119f3e615d13e5be"
 
 [[package]]
 name = "num"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43db66d1170d347f9a065114077f7dccb00c1b9478c89384490a3425279a4606"
+checksum = "b05180d69e3da0e530ba2a1dae5110317e49e3b7f3d41be227dc5f92e49ee7af"
 dependencies = [
  "num-bigint",
  "num-complex",
@@ -2932,7 +2932,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9825a04601d60621feed79c4e6b56d65db77cdca55cef43b46b0de1096d1c282"
 dependencies = [
  "proc-macro2",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -2967,9 +2967,9 @@ checksum = "dc375e1527247fe1a97d8b7156678dfe7c1af2fc075c9a4db3690ecd2a148068"
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.56"
+version = "1.0.66"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b63bdb0cd06f1f4dedf69b254734f9b45af66e4a031e42a7480257d9898b435"
+checksum = "18fb31db3f9bddb2ea821cde30a9f70117e3f119938b5ee630b7403aa6e2ead9"
 dependencies = [
  "unicode-ident",
 ]
@@ -3011,7 +3011,7 @@ dependencies = [
  "prost 0.12.0",
  "prost-types",
  "regex",
- "syn 2.0.16",
+ "syn 2.0.31",
  "tempfile",
  "which",
 ]
@@ -3039,7 +3039,7 @@ dependencies = [
  "itertools 0.11.0",
  "proc-macro2",
  "quote",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -3138,9 +3138,9 @@ checksum = "a993555f31e5a609f617c12db6250dedcac1b0a85076912c436e6fc9b2c8e6a3"
 
 [[package]]
 name = "quote"
-version = "1.0.26"
+version = "1.0.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4424af4bf778aae2051a77b60283332f386554255d722233d09fbfc7e30da2fc"
+checksum = "5267fca4496028628a95160fc423a33e8b2e6af8a5302579e322e4b520293cae"
 dependencies = [
  "proc-macro2",
 ]
@@ -3239,6 +3239,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a5996294f19bd3aae0453a862ad728f60e6600695733dd5df01da90c54363a3c"
 
 [[package]]
+name = "relative-path"
+version = "1.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c707298afce11da2efef2f600116fa93ffa7a032b5d7b628aa17711ec81383ca"
+
+[[package]]
 name = "reqwest"
 version = "0.11.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3295,9 +3301,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest-retry"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48d0fd6ef4c6d23790399fe15efc8d12cd9f3d4133958f9bd7801ee5cbaec6c4"
+checksum = "9af20b65c2ee9746cc575acb6bd28a05ffc0d15e25c992a8f4462d8686aacb4f"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3318,9 +3324,9 @@ dependencies = [
 
 [[package]]
 name = "retry-policies"
-version = "0.1.2"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e09bbcb5003282bcb688f0bae741b278e9c7e8f378f561522c9806c58e075d9b"
+checksum = "a715dc4d0e8aea3085a9a94d76e79c79c7df7c9f6be609da841a6d2489ca3687"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3362,9 +3368,9 @@ dependencies = [
 
 [[package]]
 name = "rstest"
-version = "0.17.0"
+version = "0.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de1bb486a691878cd320c2f0d319ba91eeaa2e894066d8b5f8f117c000e9d962"
+checksum = "97eeab2f3c0a199bc4be135c36c924b6590b88c377d416494288c14f2db30199"
 dependencies = [
  "futures",
  "futures-timer",
@@ -3374,28 +3380,31 @@ dependencies = [
 
 [[package]]
 name = "rstest_macros"
-version = "0.17.0"
+version = "0.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "290ca1a1c8ca7edb7c3283bd44dc35dd54fdec6253a3912e201ba1072018fca8"
+checksum = "d428f8247852f894ee1be110b375111b586d4fa431f6c46e64ba5a0dcccbe605"
 dependencies = [
  "cfg-if",
+ "glob",
  "proc-macro2",
  "quote",
+ "regex",
+ "relative-path",
  "rustc_version",
- "syn 1.0.109",
+ "syn 2.0.31",
  "unicode-ident",
 ]
 
 [[package]]
 name = "rstest_reuse"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45f80dcc84beab3a327bbe161f77db25f336a1452428176787c8c79ac79d7073"
+checksum = "88530b681abe67924d42cca181d070e3ac20e0740569441a9e35a7cedd2b34a4"
 dependencies = [
  "quote",
  "rand",
  "rustc_version",
- "syn 1.0.109",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -3536,7 +3545,7 @@ checksum = "4c614d17805b093df4b147b51339e7e44bf05ef59fba1e45d83500bcfb4d8585"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -3669,6 +3678,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "sqlparser"
+version = "0.36.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2eaa1e88e78d2c2460d78b7dc3f0c08dbb606ab4222f9aff36f420d36e307d87"
+dependencies = [
+ "log",
+]
+
+[[package]]
 name = "sqlparser_derive"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3729,7 +3747,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rustversion",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -3751,9 +3769,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.16"
+version = "2.0.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6f671d4b5ffdb8eadec19c0ae67fe2639df8684bd7bc4b83d986b8db549cf01"
+checksum = "718fa2415bcb8d8bd775917a1bf12a7931b6dfa890753378538118181e0cb398"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3867,7 +3885,7 @@ checksum = "f9456a42c5b0d803c8cd86e73dd7cc9edd429499f37a3550d286d5e86720569f"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -3962,7 +3980,7 @@ checksum = "630bdcf245f78637c13ec01ffae6187cca34625e8c63150d424b59e55af2675e"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -4073,7 +4091,7 @@ dependencies = [
  "proc-macro2",
  "prost-build",
  "quote",
- "syn 2.0.16",
+ "syn 2.0.31",
 ]
 
 [[package]]
@@ -4312,7 +4330,7 @@ dependencies = [
  "jni",
  "pyo3",
  "serde_json",
- "sqlparser",
+ "sqlparser 0.35.0",
  "thiserror",
 ]
 
@@ -4324,7 +4342,7 @@ dependencies = [
  "chrono",
  "datafusion-common",
  "deterministic-hash",
- "itertools 0.10.5",
+ "itertools 0.11.0",
  "json-patch",
  "lazy_static",
  "num-complex",
@@ -4339,7 +4357,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "sqlparser",
+ "sqlparser 0.35.0",
  "thiserror",
  "tonic",
  "tonic-build",
@@ -4429,7 +4447,7 @@ dependencies = [
  "float-cmp",
  "futures",
  "futures-util",
- "itertools 0.10.5",
+ "itertools 0.11.0",
  "lazy_static",
  "lodepng",
  "log",
@@ -4446,7 +4464,7 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
- "sqlparser",
+ "sqlparser 0.36.1",
  "tempfile",
  "test-case",
  "tokio",
@@ -4504,7 +4522,7 @@ dependencies = [
  "rstest_reuse",
  "serde",
  "serde_json",
- "sqlparser",
+ "sqlparser 0.35.0",
  "tempfile",
  "tokio",
  "toml",
