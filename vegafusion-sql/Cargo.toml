@@ -92,7 +92,7 @@ version = "1.4.0"
 features = [ "sqlparser", "json", "prettyprint",]
 
 [dev-dependencies.tokio]
-version = "1.27.0"
+version = "1.32.0"
 features = [ "macros", "rt-multi-thread",]
 
 [dev-dependencies.serde]
