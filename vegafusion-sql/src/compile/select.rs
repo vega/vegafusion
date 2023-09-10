@@ -1,7 +1,7 @@
 use crate::compile::expr::ToSqlExpr;
 use crate::dialect::Dialect;
 use datafusion_common::DFSchema;
-use datafusion_expr::Expr;
+use datafusion_expr::{expr, Expr};
 use sqlparser::ast::{Ident, SelectItem as SqlSelectItem};
 use vegafusion_common::error::Result;
 
@@ -12,7 +12,7 @@ pub trait ToSqlSelectItem {
 impl ToSqlSelectItem for Expr {
     fn to_sql_select(&self, dialect: &Dialect, schema: &DFSchema) -> Result<SqlSelectItem> {
         Ok(match self {
-            Expr::Alias(expr, alias) => SqlSelectItem::ExprWithAlias {
+            Expr::Alias(expr::Alias { expr, name: alias }) => SqlSelectItem::ExprWithAlias {
                 expr: expr.to_sql(dialect, schema)?,
                 alias: Ident {
                     value: alias.clone(),

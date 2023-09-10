@@ -9,19 +9,19 @@ description = "VegaFusion SQL dialect generation and connection implementations"
 datafusion-conn = [ "datafusion", "tempfile", "reqwest", "reqwest-retry", "reqwest-middleware", "vegafusion-datafusion-udfs",]
 
 [dependencies]
-async-trait = "0.1.53"
+async-trait = "0.1.73"
 deterministic-hash = "1.0.1"
 log = "0.4.17"
 chrono = "0.4.23"
 
 [dev-dependencies]
-rstest = "0.17.0"
-rstest_reuse = "0.5.0"
+rstest = "0.18.2"
+rstest_reuse = "0.6.0"
 lazy_static = "^1.4.0"
 toml = "0.7.2"
 
 [dependencies.sqlparser]
-version = "0.34.0"
+version = "0.35.0"
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
@@ -38,18 +38,18 @@ version = "1.4.0"
 optional = true
 
 [dependencies.arrow]
-version = "42.0.0"
+version = "43.0.0"
 default_features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
-version = "27.0.0"
+version = "28.0.0"
 
 [dependencies.datafusion-expr]
-version = "27.0.0"
+version = "28.0.0"
 
 [dependencies.datafusion]
-version = "27.0.0"
+version = "28.0.0"
 optional = true
 
 [dependencies.tempfile]
@@ -63,7 +63,7 @@ features = [ "rustls-tls",]
 optional = true
 
 [dependencies.reqwest-retry]
-version = "0.2.1"
+version = "0.3.0"
 optional = true
 
 [dependencies.reqwest-middleware]
@@ -92,7 +92,7 @@ version = "1.4.0"
 features = [ "sqlparser", "json", "prettyprint",]
 
 [dev-dependencies.tokio]
-version = "1.27.0"
+version = "1.32.0"
 features = [ "macros", "rt-multi-thread",]
 
 [dev-dependencies.serde]

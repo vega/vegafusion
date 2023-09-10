@@ -29,7 +29,7 @@ pub trait ToSqlExpr {
 impl ToSqlExpr for Expr {
     fn to_sql(&self, dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
         match self {
-            Expr::Alias(_, _) => {
+            Expr::Alias(_) => {
                 // Alias expressions need to be handled at a higher level
                 Err(VegaFusionError::internal(format!(
                     "Alias cannot be converted to SQL: {self:?}"
@@ -348,7 +348,6 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::ArrayAppend => "array_append",
                     BuiltinScalarFunction::ArrayConcat => "array_concat",
                     BuiltinScalarFunction::ArrayDims => "array_dims",
-                    BuiltinScalarFunction::ArrayFill => "array_fill",
                     BuiltinScalarFunction::ArrayLength => "array_length",
                     BuiltinScalarFunction::ArrayNdims => "array_ndims",
                     BuiltinScalarFunction::ArrayPosition => "array_position",
@@ -358,6 +357,11 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::ArrayReplace => "array_replace",
                     BuiltinScalarFunction::ArrayToString => "array_to_string",
                     BuiltinScalarFunction::Cardinality => "array_cardinality",
+                    BuiltinScalarFunction::Decode => "decode",
+                    BuiltinScalarFunction::Encode => "encode",
+                    BuiltinScalarFunction::Cot => "cot",
+                    BuiltinScalarFunction::ArrayContains => "array_contains",
+                    BuiltinScalarFunction::ArrayFill => "array_fill",
                     BuiltinScalarFunction::TrimArray => "trim_array",
                 };
                 translate_scalar_function(fun_name, args, dialect, schema)
@@ -573,9 +577,6 @@ impl ToSqlExpr for Expr {
                 "GroupingSet cannot be converted to SQL",
             )),
             Expr::Like { .. } => Err(VegaFusionError::internal("Like cannot be converted to SQL")),
-            Expr::ILike { .. } => Err(VegaFusionError::internal(
-                "ILike cannot be converted to SQL",
-            )),
             Expr::SimilarTo { .. } => Err(VegaFusionError::internal(
                 "SimilarTo cannot be converted to SQL",
             )),

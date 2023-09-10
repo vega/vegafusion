@@ -223,6 +223,21 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::Time64Nanosecond(_) => Err(VegaFusionError::internal(
                 "Time64Nanosecond cannot be converted to SQL",
             )),
+            ScalarValue::Fixedsizelist(_, _, _) => Err(VegaFusionError::internal(
+                "Fixedsizelist cannot be converted to SQL",
+            )),
+            ScalarValue::DurationSecond(_) => Err(VegaFusionError::internal(
+                "DurationSecond cannot be converted to SQL",
+            )),
+            ScalarValue::DurationMillisecond(_) => Err(VegaFusionError::internal(
+                "DurationMillisecond cannot be converted to SQL",
+            )),
+            ScalarValue::DurationMicrosecond(_) => Err(VegaFusionError::internal(
+                "DurationMicrosecond cannot be converted to SQL",
+            )),
+            ScalarValue::DurationNanosecond(_) => Err(VegaFusionError::internal(
+                "DurationNanosecond cannot be converted to SQL",
+            )),
         }
     }
 }

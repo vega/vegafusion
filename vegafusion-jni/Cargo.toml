@@ -33,5 +33,5 @@ version = "1.4.0"
 features = [ "datafusion-conn",]
 
 [dependencies.tokio]
-version = "1.27.0"
+version = "1.32.0"
 features = [ "macros", "rt-multi-thread",]

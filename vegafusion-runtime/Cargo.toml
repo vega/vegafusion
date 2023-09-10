@@ -22,13 +22,13 @@ chrono-tz = "0.8.1"
 prost = "0.11.3"
 prost-types = "0.11.2"
 num-traits = "0.2.15"
-itertools = "0.10.3"
+itertools = "0.11.0"
 float-cmp = "0.9.0"
-lru = "0.10.0"
+lru = "0.11.1"
 futures = "0.3.21"
-async-trait = "0.1.53"
-async-recursion = "1.0.4"
-async-lock = "2.5.0"
+async-trait = "0.1.73"
+async-recursion = "1.0.5"
+async-lock = "2.8.0"
 tempfile = "3.3.0"
 futures-util = "0.3.21"
 bytes = "1.1.0"
@@ -36,13 +36,13 @@ deterministic-hash = "1.0.1"
 log = "0.4.17"
 env_logger = "0.10.0"
 ordered-float = "3.6.0"
-reqwest-retry = "0.2.1"
+reqwest-retry = "0.3.0"
 reqwest-middleware = "0.2.0"
 
 [dev-dependencies]
 futures = "0.3.21"
 futures-util = "0.3.21"
-rstest = "0.17.0"
+rstest = "0.18.2"
 test-case = "3.1.0"
 base64 = "0.21.0"
 dssim = "3.1.0"
@@ -79,19 +79,19 @@ version = "1.0.137"
 features = [ "derive",]
 
 [dependencies.datafusion-common]
-version = "27.0.0"
+version = "28.0.0"
 
 [dependencies.datafusion-expr]
-version = "27.0.0"
+version = "28.0.0"
 
 [dependencies.datafusion-physical-expr]
-version = "27.0.0"
+version = "28.0.0"
 
 [dependencies.datafusion-optimizer]
-version = "27.0.0"
+version = "28.0.0"
 
 [dependencies.tokio]
-version = "1.29.1"
+version = "1.32.0"
 features = [ "macros", "rt-multi-thread", "fs",]
 
 [dependencies.reqwest]

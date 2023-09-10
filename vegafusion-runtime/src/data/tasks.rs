@@ -432,7 +432,7 @@ async fn process_datetimes(
                     _ => flat_col(field.name()),
                 };
 
-                Ok(if matches!(expr, Expr::Alias(_, _)) {
+                Ok(if matches!(expr, Expr::Alias(_)) {
                     expr
                 } else {
                     expr.alias(field.name())
