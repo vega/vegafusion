@@ -4358,7 +4358,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "sqlparser 0.36.1",
+ "sqlparser 0.35.0",
  "thiserror",
  "tonic",
  "tonic-build",
