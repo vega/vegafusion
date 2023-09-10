@@ -28,7 +28,7 @@ impl UnaryExpression {
     }
 
     pub fn to_operator(&self) -> UnaryOperator {
-        UnaryOperator::try_from(self.operator).unwrap()
+        UnaryOperator::from_i32(self.operator).unwrap()
     }
 
     pub fn new(op: &UnaryOperator, arg: Expression) -> Self {

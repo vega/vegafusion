@@ -19,8 +19,8 @@ lazy_static = "^1.4.0"
 serde_json = "1.0.91"
 chrono = "0.4.23"
 chrono-tz = "0.8.1"
-prost = "0.12.0"
-prost-types = "0.12.0"
+prost = "0.11.3"
+prost-types = "0.11.2"
 num-traits = "0.2.15"
 itertools = "0.11.0"
 float-cmp = "0.9.0"
@@ -95,12 +95,12 @@ version = "1.32.0"
 features = [ "macros", "rt-multi-thread", "fs",]
 
 [dependencies.reqwest]
-version = "0.11.20"
+version = "0.11.10"
 default_features = false
 features = [ "rustls-tls",]
 
 [dev-dependencies.reqwest]
-version = "0.11.20"
+version = "0.11.10"
 default_features = false
 features = [ "blocking", "rustls-tls",]
 

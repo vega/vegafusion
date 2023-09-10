@@ -12,9 +12,9 @@ pyarrow = [ "pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow",]
 [dependencies]
 thiserror = "^1.0.29"
 bytes = "1.1.0"
-prost = "0.12.0"
-prost-types = "0.12.0"
-itertools = "0.11.0"
+prost = "0.11.3"
+prost-types = "0.11.2"
+itertools = "0.10.3"
 lazy_static = "^1.4.0"
 regex = "^1.5.5"
 ordered-float = "3.6.0"
@@ -26,7 +26,7 @@ rand = "0.8.5"
 json-patch = "1.0.0"
 
 [dependencies.sqlparser]
-version = "0.35.0"
+version = "0.36.1"
 optional = true
 
 [dependencies.serde_json]
@@ -39,7 +39,7 @@ features = [ "json", "sqlparser",]
 version = "1.4.0"
 
 [dependencies.datafusion-common]
-version = "28.0.0"
+version = "30.0.0"
 
 [dependencies.pyo3]
 version = "0.19"
@@ -50,14 +50,14 @@ version = "1.0.137"
 features = [ "derive",]
 
 [dependencies.tonic]
-version = "0.10.0"
+version = "0.9.1"
 optional = true
 
 [build-dependencies.prost-build]
-version = "0.12.0"
+version = "0.11.4"
 
 [build-dependencies.tonic-build]
-version = "0.10.0"
+version = "0.9.1"
 optional = true
 
 [build-dependencies.protobuf-src]

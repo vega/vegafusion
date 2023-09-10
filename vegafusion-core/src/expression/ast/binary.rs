@@ -63,7 +63,7 @@ impl BinaryExpression {
     }
 
     pub fn to_operator(&self) -> BinaryOperator {
-        BinaryOperator::try_from(self.operator).unwrap()
+        BinaryOperator::from_i32(self.operator).unwrap()
     }
 
     pub fn infix_binding_power(&self) -> (f64, f64) {

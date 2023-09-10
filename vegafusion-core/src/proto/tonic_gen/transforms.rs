@@ -68,7 +68,7 @@ pub struct Bin {
     /// A minimum distance between adjacent bins
     #[prost(double, tag = "12")]
     pub minstep: f64,
-    /// Scale factors indicating the allowed subdivisions. The defualt value is vec!\[5.0, 2.0\],
+    /// Scale factors indicating the allowed subdivisions. The defualt value is vec![5.0, 2.0],
     /// which indicates that for base 10 numbers, the method may consider dividing bin sizes by 5 and/or 2.
     #[prost(double, repeated, tag = "13")]
     pub divide: ::prost::alloc::vec::Vec<f64>,

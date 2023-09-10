@@ -373,7 +373,7 @@ impl TransformTrait for TimeUnit {
             .units
             .iter()
             .sorted()
-            .map(|unit_i32| TimeUnitUnit::try_from(*unit_i32).unwrap())
+            .map(|unit_i32| TimeUnitUnit::from_i32(*unit_i32).unwrap())
             .collect::<Vec<TimeUnitUnit>>();
 
         // Add timeunit start

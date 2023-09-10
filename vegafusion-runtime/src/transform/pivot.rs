@@ -158,7 +158,7 @@ async fn pivot_case(
     // Process aggregate operation
     let agg_op: AggregateOp = tx
         .op
-        .map(|op_code| AggregateOp::try_from(op_code).unwrap())
+        .map(|op_code| AggregateOp::from_i32(op_code).unwrap())
         .unwrap_or(AggregateOp::Sum);
     let fill_zero = should_fill_zero(&agg_op);
 
