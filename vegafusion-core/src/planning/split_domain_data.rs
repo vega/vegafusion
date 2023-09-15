@@ -3,7 +3,7 @@ use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::scale::{
     ScaleDataReferenceOrSignalSpec, ScaleDataReferenceSort, ScaleDataReferenceSortParameters,
-    ScaleDataReferenceSpec, ScaleDataReferencesSpec, ScaleDomainSpec, ScaleSpec, ScaleTypeSpec,
+    ScaleDomainSpec, ScaleFieldReferenceSpec, ScaleFieldsReferencesSpec, ScaleSpec, ScaleTypeSpec,
 };
 use crate::spec::transform::aggregate::AggregateOpSpec;
 use crate::task_graph::graph::ScopedVariable;
@@ -59,7 +59,7 @@ impl<'a> MutChartVisitor for SplitScaleDomainVisitor<'a> {
                 ScaleDomainSpec::FieldReference(field_ref) => {
                     self.split_field_reference_domain(scale, scope, &field_ref)?;
                 }
-                ScaleDomainSpec::FieldsReference(fields_ref) => {
+                ScaleDomainSpec::FieldsReferences(fields_ref) => {
                     self.split_fields_reference_domain(scale, scope, &fields_ref)?;
                 }
                 _ => {}
@@ -74,7 +74,7 @@ impl<'a> SplitScaleDomainVisitor<'a> {
         &mut self,
         scale: &mut ScaleSpec,
         scope: &[u32],
-        fields_ref: &ScaleDataReferencesSpec,
+        fields_ref: &ScaleFieldsReferencesSpec,
     ) -> Result<()> {
         let discrete_scale = scale.type_.clone().unwrap_or_default().is_discrete();
         let (new_datasets, new_dataset_scope, new_domain) = if discrete_scale {
@@ -135,7 +135,7 @@ impl<'a> SplitScaleDomainVisitor<'a> {
                 sort => sort.clone(),
             };
 
-            let new_domain = ScaleDomainSpec::FieldsReference(ScaleDataReferencesSpec {
+            let new_domain = ScaleDomainSpec::FieldsReferences(ScaleFieldsReferencesSpec {
                 fields: new_fields
                     .into_iter()
                     .map(|f| ScaleDataReferenceOrSignalSpec::Reference(f))
@@ -165,7 +165,7 @@ impl<'a> SplitScaleDomainVisitor<'a> {
         &mut self,
         scale: &mut ScaleSpec,
         scope: &[u32],
-        field_ref: &ScaleDataReferenceSpec,
+        field_ref: &ScaleFieldReferenceSpec,
     ) -> Result<()> {
         let discrete_scale = scale.type_.clone().unwrap_or_default().is_discrete();
         let data_name = field_ref.data.clone();
@@ -217,7 +217,7 @@ impl<'a> SplitScaleDomainVisitor<'a> {
                 sort => sort.clone(),
             };
 
-            let new_domain = ScaleDomainSpec::FieldReference(ScaleDataReferenceSpec {
+            let new_domain = ScaleDomainSpec::FieldReference(ScaleFieldReferenceSpec {
                 data: new_data_name,
                 field: field_name.clone(),
                 sort,

@@ -9,8 +9,8 @@ use crate::spec::chart::{ChartSpec, ChartVisitor};
 use crate::spec::data::{DataFormatParseSpec, DataSpec};
 use crate::spec::mark::{MarkFacetSpec, MarkSpec};
 use crate::spec::scale::{
-    ScaleArrayElementSpec, ScaleBinsSpec, ScaleDataReferenceOrSignalSpec, ScaleDataReferenceSpec,
-    ScaleDomainSpec, ScaleRangeSpec, ScaleSpec,
+    ScaleArrayElementSpec, ScaleBinsSpec, ScaleDataReferenceOrSignalSpec, ScaleDomainSpec,
+    ScaleFieldReferenceSpec, ScaleRangeSpec, ScaleSpec,
 };
 use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
 use crate::spec::values::{SignalExpressionSpec, StringOrSignalSpec};
@@ -550,7 +550,7 @@ impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
     }
 
     fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
-        let mut references: Vec<ScaleDataReferenceSpec> = Vec::new();
+        let mut references: Vec<ScaleFieldReferenceSpec> = Vec::new();
         let mut signals: Vec<SignalExpressionSpec> = Vec::new();
 
         // domain
@@ -559,7 +559,10 @@ impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
                 ScaleDomainSpec::FieldReference(reference) => {
                     references.push(reference.clone());
                 }
-                ScaleDomainSpec::FieldsReference(field_references) => {
+                ScaleDomainSpec::FieldsReference(fields_reference) => {
+                    references.extend(fields_reference.to_field_references());
+                }
+                ScaleDomainSpec::FieldsReferences(field_references) => {
                     for v in field_references.fields.clone() {
                         match v {
                             ScaleDataReferenceOrSignalSpec::Reference(field_ref) => {

@@ -246,7 +246,10 @@ impl ChartVisitor for CollectLocalTimeScaledFieldsVisitor {
                     ScaleDomainSpec::FieldReference(field_ref) => {
                         vec![field_ref.clone()]
                     }
-                    ScaleDomainSpec::FieldsReference(fields_ref) => fields_ref
+                    ScaleDomainSpec::FieldsReference(fields_ref) => {
+                        fields_ref.to_field_references()
+                    }
+                    ScaleDomainSpec::FieldsReferences(fields_ref) => fields_ref
                         .fields
                         .iter()
                         .filter_map(|f| {
