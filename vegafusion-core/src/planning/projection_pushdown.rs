@@ -8,8 +8,8 @@ use crate::spec::chart::{ChartSpec, ChartVisitor, MutChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::mark::{MarkEncodeSpec, MarkEncodingField, MarkEncodingSpec, MarkSpec};
 use crate::spec::scale::{
-    ScaleDataReferenceOrSignalSpec, ScaleDataReferenceSort, ScaleDataReferenceSpec,
-    ScaleDomainSpec, ScaleRangeSpec, ScaleSpec,
+    ScaleDataReferenceOrSignalSpec, ScaleDataReferenceSort, ScaleDomainSpec,
+    ScaleFieldReferenceSpec, ScaleRangeSpec, ScaleSpec,
 };
 use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
 use crate::spec::transform::project::ProjectTransformSpec;
@@ -305,7 +305,7 @@ impl GetDatasetsColumnUsage for MarkSpec {
     }
 }
 
-impl GetDatasetsColumnUsage for ScaleDataReferenceSpec {
+impl GetDatasetsColumnUsage for ScaleFieldReferenceSpec {
     fn datasets_column_usage(
         &self,
         _datum_var: &Option<ScopedVariable>,
@@ -357,7 +357,10 @@ impl GetDatasetsColumnUsage for ScaleDomainSpec {
                 scale_data_refs.push(field_ref.clone());
                 sort = field_ref.sort.clone();
             }
-            ScaleDomainSpec::FieldsReference(fields_refs) => {
+            ScaleDomainSpec::FieldsReference(fields_ref) => {
+                scale_data_refs.extend(fields_ref.to_field_references());
+            }
+            ScaleDomainSpec::FieldsReferences(fields_refs) => {
                 for v in &fields_refs.fields {
                     match v {
                         ScaleDataReferenceOrSignalSpec::Reference(scale_data_ref) => {

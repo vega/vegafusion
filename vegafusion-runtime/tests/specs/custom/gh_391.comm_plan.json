@@ -1,0 +1,30 @@
+{
+  "server_to_client": [
+    {
+      "name": "column_domain",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_2",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_2_color_domain_location",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_source",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_source_y_domain_category",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

@@ -67,17 +67,17 @@ impl ScaleTypeSpec {
 #[serde(untagged)]
 pub enum ScaleDomainSpec {
     Array(Vec<ScaleArrayElementSpec>),
-    FieldReference(ScaleDataReferenceSpec),
+    FieldReference(ScaleFieldReferenceSpec),
     FieldsVecStrings(ScaleVecStringsSpec),
-    FieldsStrings(ScaleStringsSpec),
-    FieldsReference(ScaleDataReferencesSpec),
+    FieldsReference(ScaleFieldsReferenceSpec),
+    FieldsReferences(ScaleFieldsReferencesSpec),
     FieldsSignals(ScaleSignalsSpec),
     Signal(SignalExpressionSpec),
     Value(Value),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ScaleDataReferencesSpec {
+pub struct ScaleFieldsReferencesSpec {
     pub fields: Vec<ScaleDataReferenceOrSignalSpec>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -88,14 +88,22 @@ pub struct ScaleDataReferencesSpec {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScaleVecStringsSpec {
+    pub fields: Vec<Vec<String>>,
+
+    #[serde(flatten)]
+    pub extra: HashMap<String, Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ScaleDataReferenceOrSignalSpec {
-    Reference(ScaleDataReferenceSpec),
+    Reference(ScaleFieldReferenceSpec),
     Signal(SignalExpressionSpec),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ScaleDataReferenceSpec {
+pub struct ScaleFieldReferenceSpec {
     pub data: String,
     pub field: String,
 
@@ -110,19 +118,35 @@ pub struct ScaleDataReferenceSpec {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ScaleVecStringsSpec {
-    pub fields: Vec<Vec<String>>,
+pub struct ScaleFieldsReferenceSpec {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<String>,
+
+    pub fields: Vec<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sort: Option<ScaleDataReferenceSort>,
 
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ScaleStringsSpec {
-    pub fields: Vec<String>,
-
-    #[serde(flatten)]
-    pub extra: HashMap<String, Value>,
+impl ScaleFieldsReferenceSpec {
+    pub fn to_field_references(&self) -> Vec<ScaleFieldReferenceSpec> {
+        if let Some(data) = &self.data.clone() {
+            self.fields
+                .iter()
+                .map(|f| ScaleFieldReferenceSpec {
+                    data: data.clone(),
+                    field: f.clone(),
+                    sort: self.sort.clone(),
+                    extra: Default::default(),
+                })
+                .collect::<Vec<_>>()
+        } else {
+            Vec::new()
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -177,7 +201,7 @@ pub enum ScaleBinsSpec {
 #[serde(untagged)]
 pub enum ScaleRangeSpec {
     Array(Vec<ScaleArrayElementSpec>),
-    Reference(ScaleDataReferenceSpec),
+    Reference(ScaleFieldReferenceSpec),
     Signal(SignalExpressionSpec),
     Value(Value),
 }

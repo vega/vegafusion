@@ -140,7 +140,8 @@ mod test_custom_specs {
         case("custom/geojson_inline", 0.001, true),
         case("custom/gh_361", 0.001, true),
         case("custom/gh_379", 0.001, true),
-        case("custom/gh_383", 0.001, true)
+        case("custom/gh_383", 0.001, true),
+        case("custom/gh_391", 0.001, true)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64, extract_inline_values: bool) {
         println!("spec_name: {spec_name}");

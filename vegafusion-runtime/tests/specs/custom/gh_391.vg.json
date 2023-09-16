@@ -1,0 +1,237 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "data": [
+    {
+      "name": "data_source",
+      "values": [
+        {"location": "US", "category": "low", "value": 1},
+        {"location": "US", "category": "high", "value": 2},
+        {"location": "US", "category": "high", "value": 3},
+        {"location": "UK", "category": "low", "value": 2},
+        {"location": "UK", "category": "high", "value": 3},
+        {"location": "UK", "category": "high", "value": 4}
+      ]
+    },
+    {
+      "name": "column_domain",
+      "source": "data_source",
+      "transform": [{"type": "aggregate", "groupby": ["location"]}]
+    },
+    {
+      "name": "data_2",
+      "source": "data_source",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["category", "location"],
+          "ops": ["sum"],
+          "fields": ["value"],
+          "as": ["sum_value"]
+        },
+        {
+          "type": "stack",
+          "groupby": ["category", "location"],
+          "field": "sum_value",
+          "sort": {"field": ["location"], "order": ["ascending"]},
+          "as": ["sum_value_start", "sum_value_end"],
+          "offset": "zero"
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"sum_value\"]) && isFinite(+datum[\"sum_value\"])"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {"name": "child_width", "value": 300},
+    {"name": "y_step", "value": 20},
+    {
+      "name": "child_height",
+      "update": "bandspace(domain('y').length, 0.1, 0.05) * y_step"
+    }
+  ],
+  "layout": {
+    "padding": 20,
+    "offset": {"columnTitle": 10},
+    "columns": {"signal": "length(data('column_domain'))"},
+    "bounds": "full",
+    "align": "all"
+  },
+  "marks": [
+    {
+      "name": "column-title",
+      "type": "group",
+      "role": "column-title",
+      "title": {"text": "location", "style": "guide-title", "offset": 10}
+    },
+    {
+      "name": "row_header",
+      "type": "group",
+      "role": "row-header",
+      "encode": {"update": {"height": {"signal": "child_height"}}},
+      "axes": [
+        {
+          "scale": "y",
+          "orient": "left",
+          "grid": false,
+          "title": "category",
+          "zindex": 0
+        }
+      ]
+    },
+    {
+      "name": "column_header",
+      "type": "group",
+      "role": "column-header",
+      "from": {"data": "column_domain"},
+      "sort": {"field": "datum[\"location\"]", "order": "ascending"},
+      "title": {
+        "text": {
+          "signal": "isValid(parent[\"location\"]) ? parent[\"location\"] : \"\"+parent[\"location\"]"
+        },
+        "style": "guide-label",
+        "frame": "group",
+        "offset": 10
+      },
+      "encode": {"update": {"width": {"signal": "child_width"}}}
+    },
+    {
+      "name": "column_footer",
+      "type": "group",
+      "role": "column-footer",
+      "from": {"data": "column_domain"},
+      "sort": {"field": "datum[\"location\"]", "order": "ascending"},
+      "encode": {"update": {"width": {"signal": "child_width"}}},
+      "axes": [
+        {
+          "scale": "x",
+          "orient": "bottom",
+          "grid": false,
+          "title": "Sum of value",
+          "labelFlush": true,
+          "labelOverlap": true,
+          "tickCount": {"signal": "ceil(child_width/40)"},
+          "zindex": 0
+        }
+      ]
+    },
+    {
+      "name": "cell",
+      "type": "group",
+      "style": "cell",
+      "from": {
+        "facet": {
+          "name": "facet",
+          "data": "data_source",
+          "groupby": ["location"]
+        }
+      },
+      "sort": {"field": ["datum[\"location\"]"], "order": ["ascending"]},
+      "data": [
+        {
+          "source": "facet",
+          "name": "data_0",
+          "transform": [
+            {
+              "type": "aggregate",
+              "groupby": ["category", "location"],
+              "ops": ["sum"],
+              "fields": ["value"],
+              "as": ["sum_value"]
+            },
+            {
+              "type": "stack",
+              "groupby": ["category"],
+              "field": "sum_value",
+              "sort": {"field": ["location"], "order": ["ascending"]},
+              "as": ["sum_value_start", "sum_value_end"],
+              "offset": "zero"
+            },
+            {
+              "type": "filter",
+              "expr": "isValid(datum[\"sum_value\"]) && isFinite(+datum[\"sum_value\"])"
+            }
+          ]
+        }
+      ],
+      "encode": {
+        "update": {
+          "width": {"signal": "child_width"},
+          "height": {"signal": "child_height"}
+        }
+      },
+      "marks": [
+        {
+          "name": "child_marks",
+          "type": "rect",
+          "style": ["bar"],
+          "from": {"data": "data_0"},
+          "encode": {
+            "update": {
+              "fill": {"scale": "color", "field": "location"},
+              "ariaRoleDescription": {"value": "bar"},
+              "description": {
+                "signal": "\"Sum of value: \" + (format(datum[\"sum_value\"], \"\")) + \"; category: \" + (isValid(datum[\"category\"]) ? datum[\"category\"] : \"\"+datum[\"category\"]) + \"; location: \" + (isValid(datum[\"location\"]) ? datum[\"location\"] : \"\"+datum[\"location\"])"
+              },
+              "x": {"scale": "x", "field": "sum_value_end"},
+              "x2": {"scale": "x", "field": "sum_value_start"},
+              "y": {"scale": "y", "field": "category"},
+              "height": {"signal": "max(0.25, bandwidth('y'))"}
+            }
+          }
+        }
+      ],
+      "axes": [
+        {
+          "scale": "x",
+          "orient": "bottom",
+          "gridScale": "y",
+          "grid": true,
+          "tickCount": {"signal": "ceil(child_width/40)"},
+          "domain": false,
+          "labels": false,
+          "aria": false,
+          "maxExtent": 0,
+          "minExtent": 0,
+          "ticks": false,
+          "zindex": 0
+        }
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "linear",
+      "domain": {
+        "data": "data_2",
+        "fields": ["sum_value_start", "sum_value_end"]
+      },
+      "range": [0, {"signal": "child_width"}],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "y",
+      "type": "band",
+      "domain": {
+        "data": "data_source",
+        "field": "category",
+        "sort": {"op": "sum", "field": "value", "order": "descending"}
+      },
+      "range": {"step": {"signal": "y_step"}},
+      "paddingInner": 0.1,
+      "paddingOuter": 0.05
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": {"data": "data_2", "field": "location", "sort": true},
+      "range": "category"
+    }
+  ],
+  "legends": [{"fill": "color", "symbolType": "square", "title": "location"}]
+}
