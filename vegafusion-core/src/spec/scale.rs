@@ -68,6 +68,7 @@ impl ScaleTypeSpec {
 pub enum ScaleDomainSpec {
     Array(Vec<ScaleArrayElementSpec>),
     FieldReference(ScaleFieldReferenceSpec),
+    FieldsVecStrings(ScaleVecStringsSpec),
     FieldsReference(ScaleFieldsReferenceSpec),
     FieldsReferences(ScaleFieldsReferencesSpec),
     FieldsSignals(ScaleSignalsSpec),
@@ -81,6 +82,14 @@ pub struct ScaleFieldsReferencesSpec {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sort: Option<ScaleDataReferenceSort>,
+
+    #[serde(flatten)]
+    pub extra: HashMap<String, Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScaleVecStringsSpec {
+    pub fields: Vec<Vec<String>>,
 
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
@@ -110,7 +119,9 @@ pub struct ScaleFieldReferenceSpec {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScaleFieldsReferenceSpec {
-    pub data: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<String>,
+
     pub fields: Vec<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -122,15 +133,19 @@ pub struct ScaleFieldsReferenceSpec {
 
 impl ScaleFieldsReferenceSpec {
     pub fn to_field_references(&self) -> Vec<ScaleFieldReferenceSpec> {
-        self.fields
-            .iter()
-            .map(|f| ScaleFieldReferenceSpec {
-                data: self.data.clone(),
-                field: f.clone(),
-                sort: self.sort.clone(),
-                extra: Default::default(),
-            })
-            .collect::<Vec<_>>()
+        if let Some(data) = &self.data.clone() {
+            self.fields
+                .iter()
+                .map(|f| ScaleFieldReferenceSpec {
+                    data: data.clone(),
+                    field: f.clone(),
+                    sort: self.sort.clone(),
+                    extra: Default::default(),
+                })
+                .collect::<Vec<_>>()
+        } else {
+            Vec::new()
+        }
     }
 }
 
