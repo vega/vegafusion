@@ -211,6 +211,9 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::Decimal128(_, _, _) => Err(VegaFusionError::internal(
                 "Decimal128 cannot be converted to SQL",
             )),
+            ScalarValue::Decimal256(_, _, _) => Err(VegaFusionError::internal(
+                "Decimal256 cannot be converted to SQL",
+            )),
             ScalarValue::Time32Second(_) => Err(VegaFusionError::internal(
                 "Time32Second cannot be converted to SQL",
             )),

@@ -3,7 +3,6 @@ use std::sync::Arc;
 use vegafusion_common::{
     arrow::{
         array::{ArrayRef, BooleanArray, Float32Array, Float64Array},
-        compute::no_simd_compare_op_scalar,
         datatypes::DataType,
     },
     datafusion_expr::{ReturnTypeFunction, ScalarUDF, Signature, Volatility},
@@ -22,11 +21,11 @@ fn make_is_nan_udf() -> ScalarUDF {
         let is_nan_array = match arg.data_type() {
             DataType::Float32 => {
                 let array = arg.as_any().downcast_ref::<Float32Array>().unwrap();
-                no_simd_compare_op_scalar(array, f32::NAN, |a, _| a.is_nan()).unwrap()
+                BooleanArray::from_unary(array, |a| a.is_nan())
             }
             DataType::Float64 => {
                 let array = arg.as_any().downcast_ref::<Float64Array>().unwrap();
-                no_simd_compare_op_scalar(array, f64::NAN, |a, _| a.is_nan()).unwrap()
+                BooleanArray::from_unary(array, |a| a.is_nan())
             }
             _ => {
                 // No other type can be NaN
