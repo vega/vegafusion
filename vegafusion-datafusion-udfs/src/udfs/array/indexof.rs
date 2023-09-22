@@ -37,7 +37,7 @@ fn make_indexof_udf() -> ScalarUDF {
         let arg = &args[1];
         Ok(match arg {
             ColumnarValue::Scalar(value) => {
-                let value_dtype = value.get_datatype();
+                let value_dtype = value.data_type();
                 if is_numeric_datatype(&value_dtype) && is_numeric_datatype(&array_dtype) {
                     let indices = build_notnan_index_map(array.as_slice());
                     if let Ok(value) = value.to_f64() {

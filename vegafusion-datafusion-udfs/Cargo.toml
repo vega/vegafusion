@@ -8,7 +8,7 @@ description = "Custom DataFusion UDFs used by VegaFusion"
 [dependencies]
 ordered-float = "3.6.0"
 lazy_static = "^1.4.0"
-chrono = "0.4.23"
+chrono = { workspace = true }
 chrono-tz = "0.8.1"
 regex = "^1.5.5"
 
@@ -17,4 +17,4 @@ path = "../vegafusion-common"
 version = "1.4.0"
 
 [dependencies.datafusion-physical-expr]
-version = "31.0.0"
+workspace = true

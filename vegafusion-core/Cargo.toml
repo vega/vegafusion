@@ -26,7 +26,7 @@ rand = "0.8.5"
 json-patch = "1.0.0"
 
 [dependencies.sqlparser]
-version = "0.37.0"
+workspace = true
 optional = true
 
 [dependencies.serde_json]
@@ -39,11 +39,11 @@ features = [ "json", "sqlparser",]
 version = "1.4.0"
 
 [dependencies.datafusion-common]
-version = "31.0.0"
+workspace = true
 default_features = false
 
 [dependencies.pyo3]
-version = "0.19"
+workspace = true
 optional = true
 
 [dependencies.serde]

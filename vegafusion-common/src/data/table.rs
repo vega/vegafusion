@@ -201,7 +201,7 @@ impl VegaFusionTable {
             }
         }
 
-        let dtype = elements[0].get_datatype();
+        let dtype = elements[0].data_type();
         Ok(ScalarValue::List(
             Some(elements),
             Arc::new(Field::new("item", dtype, true)),

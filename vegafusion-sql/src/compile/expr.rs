@@ -386,6 +386,7 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::Iszero => "iszero",
                     BuiltinScalarFunction::Nanvl => "nanvl",
                     BuiltinScalarFunction::Flatten => "flatten",
+                    BuiltinScalarFunction::StringToArray => "string_to_array",
                 };
                 translate_scalar_function(fun_name, args, dialect, schema)
             }

@@ -31,7 +31,7 @@ features = [ "derive",]
 version = "1.0.79"
 
 [dependencies.arrow]
-version = "46.0.0"
+workspace = true
 features = [ "pyarrow",]
 
 [dependencies.vegafusion-common]
@@ -59,12 +59,12 @@ path = "../vegafusion-dataframe"
 version = "1.4.0"
 
 [dependencies.datafusion-proto]
-version = "31.0.0"
+workspace = true
 
 [dependencies.tokio]
-version = "1.32.0"
+workspace = true
 features = [ "macros", "rt-multi-thread",]
 
 [dependencies.pyo3]
-version = "0.19"
+workspace = true
 features = [ "extension-module", "abi3-py38",]

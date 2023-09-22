@@ -61,7 +61,7 @@ fn extract_extent_list(table: &VegaFusionTable) -> Result<TaskValue> {
     let max_val_scalar = ScalarValue::try_from_array(max_val_array, 0).unwrap();
 
     // Build two-element list of the extents
-    let element_datatype = min_val_scalar.get_datatype();
+    let element_datatype = min_val_scalar.data_type();
     let extent_list = TaskValue::Scalar(ScalarValue::List(
         Some(vec![min_val_scalar, max_val_scalar]),
         Arc::new(Field::new("item", element_datatype, true)),
