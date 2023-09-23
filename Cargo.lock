@@ -1233,7 +1233,7 @@ dependencies = [
 [[package]]
 name = "datafusion"
 version = "31.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9fa020708bab6e7293f3731d807a80284c1204bd#9fa020708bab6e7293f3731d807a80284c1204bd"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=d19e9d684bbe1fd820674d48a96795bfbea9db7d#d19e9d684bbe1fd820674d48a96795bfbea9db7d"
 dependencies = [
  "ahash",
  "arrow",
@@ -1267,7 +1267,7 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "rand",
- "sqlparser",
+ "sqlparser 0.38.0",
  "tempfile",
  "tokio",
  "tokio-util",
@@ -1280,7 +1280,7 @@ dependencies = [
 [[package]]
 name = "datafusion-common"
 version = "31.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9fa020708bab6e7293f3731d807a80284c1204bd#9fa020708bab6e7293f3731d807a80284c1204bd"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=d19e9d684bbe1fd820674d48a96795bfbea9db7d#d19e9d684bbe1fd820674d48a96795bfbea9db7d"
 dependencies = [
  "arrow",
  "arrow-array",
@@ -1289,13 +1289,13 @@ dependencies = [
  "object_store",
  "parquet",
  "pyo3",
- "sqlparser",
+ "sqlparser 0.38.0",
 ]
 
 [[package]]
 name = "datafusion-execution"
 version = "31.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9fa020708bab6e7293f3731d807a80284c1204bd#9fa020708bab6e7293f3731d807a80284c1204bd"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=d19e9d684bbe1fd820674d48a96795bfbea9db7d#d19e9d684bbe1fd820674d48a96795bfbea9db7d"
 dependencies = [
  "arrow",
  "chrono",
@@ -1315,12 +1315,13 @@ dependencies = [
 [[package]]
 name = "datafusion-expr"
 version = "31.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9fa020708bab6e7293f3731d807a80284c1204bd#9fa020708bab6e7293f3731d807a80284c1204bd"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=d19e9d684bbe1fd820674d48a96795bfbea9db7d#d19e9d684bbe1fd820674d48a96795bfbea9db7d"
 dependencies = [
  "ahash",
  "arrow",
+ "arrow-array",
  "datafusion-common",
- "sqlparser",
+ "sqlparser 0.38.0",
  "strum 0.25.0",
  "strum_macros 0.25.1",
 ]
@@ -1328,7 +1329,7 @@ dependencies = [
 [[package]]
 name = "datafusion-optimizer"
 version = "31.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9fa020708bab6e7293f3731d807a80284c1204bd#9fa020708bab6e7293f3731d807a80284c1204bd"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=d19e9d684bbe1fd820674d48a96795bfbea9db7d#d19e9d684bbe1fd820674d48a96795bfbea9db7d"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1345,7 +1346,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-expr"
 version = "31.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9fa020708bab6e7293f3731d807a80284c1204bd#9fa020708bab6e7293f3731d807a80284c1204bd"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=d19e9d684bbe1fd820674d48a96795bfbea9db7d#d19e9d684bbe1fd820674d48a96795bfbea9db7d"
 dependencies = [
  "ahash",
  "arrow",
@@ -1378,7 +1379,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-plan"
 version = "31.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9fa020708bab6e7293f3731d807a80284c1204bd#9fa020708bab6e7293f3731d807a80284c1204bd"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=d19e9d684bbe1fd820674d48a96795bfbea9db7d#d19e9d684bbe1fd820674d48a96795bfbea9db7d"
 dependencies = [
  "ahash",
  "arrow",
@@ -1408,7 +1409,7 @@ dependencies = [
 [[package]]
 name = "datafusion-proto"
 version = "31.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9fa020708bab6e7293f3731d807a80284c1204bd#9fa020708bab6e7293f3731d807a80284c1204bd"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=d19e9d684bbe1fd820674d48a96795bfbea9db7d#d19e9d684bbe1fd820674d48a96795bfbea9db7d"
 dependencies = [
  "arrow",
  "chrono",
@@ -1422,14 +1423,14 @@ dependencies = [
 [[package]]
 name = "datafusion-sql"
 version = "31.0.0"
-source = "git+https://github.com/apache/arrow-datafusion.git?rev=9fa020708bab6e7293f3731d807a80284c1204bd#9fa020708bab6e7293f3731d807a80284c1204bd"
+source = "git+https://github.com/apache/arrow-datafusion.git?rev=d19e9d684bbe1fd820674d48a96795bfbea9db7d#d19e9d684bbe1fd820674d48a96795bfbea9db7d"
 dependencies = [
  "arrow",
  "arrow-schema",
  "datafusion-common",
  "datafusion-expr",
  "log",
- "sqlparser",
+ "sqlparser 0.38.0",
 ]
 
 [[package]]
@@ -3697,6 +3698,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37ae05a8250b968a3f7db93155a84d68b2e6cea1583949af5ca5b5170c76c075"
 dependencies = [
  "log",
+]
+
+[[package]]
+name = "sqlparser"
+version = "0.38.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0272b7bb0a225320170c99901b4b5fb3a4384e255a7f2cc228f61e2ba3893e75"
+dependencies = [
+ "log",
  "sqlparser_derive",
 ]
 
@@ -4342,7 +4352,7 @@ dependencies = [
  "jni",
  "pyo3",
  "serde_json",
- "sqlparser",
+ "sqlparser 0.37.0",
  "thiserror",
 ]
 
@@ -4369,7 +4379,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "sqlparser",
+ "sqlparser 0.37.0",
  "thiserror",
  "tonic",
  "tonic-build",
@@ -4476,7 +4486,7 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
- "sqlparser",
+ "sqlparser 0.37.0",
  "tempfile",
  "test-case",
  "tokio",
@@ -4534,7 +4544,7 @@ dependencies = [
  "rstest_reuse",
  "serde",
  "serde_json",
- "sqlparser",
+ "sqlparser 0.37.0",
  "tempfile",
  "tokio",
  "toml",

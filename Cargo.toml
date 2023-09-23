@@ -30,12 +30,12 @@ pyo3 = { version = "0.19" }
 #datafusion-optimizer = { version = "32.0.0" }
 
 # # Git dependencies for development
-datafusion = { git = "https://github.com/apache/arrow-datafusion.git", rev = "9fa020708bab6e7293f3731d807a80284c1204bd" }
-datafusion-common = { git = "https://github.com/apache/arrow-datafusion.git", rev = "9fa020708bab6e7293f3731d807a80284c1204bd", default_features = false}
-datafusion-expr = { git = "https://github.com/apache/arrow-datafusion.git", rev = "9fa020708bab6e7293f3731d807a80284c1204bd"  }
-datafusion-proto = { git = "https://github.com/apache/arrow-datafusion.git", rev = "9fa020708bab6e7293f3731d807a80284c1204bd"  }
-datafusion-physical-expr = { git = "https://github.com/apache/arrow-datafusion.git", rev = "9fa020708bab6e7293f3731d807a80284c1204bd"  }
-datafusion-optimizer = { git = "https://github.com/apache/arrow-datafusion.git", rev = "9fa020708bab6e7293f3731d807a80284c1204bd"  }
+datafusion = { git = "https://github.com/apache/arrow-datafusion.git", rev = "d19e9d684bbe1fd820674d48a96795bfbea9db7d" }
+datafusion-common = { git = "https://github.com/apache/arrow-datafusion.git", rev = "d19e9d684bbe1fd820674d48a96795bfbea9db7d", default_features = false}
+datafusion-expr = { git = "https://github.com/apache/arrow-datafusion.git", rev = "d19e9d684bbe1fd820674d48a96795bfbea9db7d"  }
+datafusion-proto = { git = "https://github.com/apache/arrow-datafusion.git", rev = "d19e9d684bbe1fd820674d48a96795bfbea9db7d"  }
+datafusion-physical-expr = { git = "https://github.com/apache/arrow-datafusion.git", rev = "d19e9d684bbe1fd820674d48a96795bfbea9db7d"  }
+datafusion-optimizer = { git = "https://github.com/apache/arrow-datafusion.git", rev = "d19e9d684bbe1fd820674d48a96795bfbea9db7d"  }
 
 [profile.release]
 ## Tell `rustc` to use highest performance optimization and perform Link Time Optimization
