@@ -157,7 +157,7 @@ pub fn calculate_bin_params(
     let extent_expr = compile(tx.extent.as_ref().unwrap(), config, Some(schema))?;
     let extent_scalar = extent_expr.eval_to_scalar()?;
 
-    let extent = extent_scalar.to_f64x2()?;
+    let extent = extent_scalar.to_f64x2().unwrap_or([0.0, 0.0]);
 
     let [min_, max_] = extent;
     if min_ > max_ {

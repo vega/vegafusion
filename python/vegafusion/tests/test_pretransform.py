@@ -1217,6 +1217,156 @@ def manual_histogram_spec():
     """)
 
 
+def empty_histogram_spec():
+    return json.loads(r"""
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 200,
+  "height": 200,
+  "style": "cell",
+  "data": [
+    {"name": "empty_df", "url": "table://empty_df"},
+    {
+      "name": "data_0",
+      "source": "empty_df",
+      "transform": [
+        {
+          "type": "extent",
+          "field": "col",
+          "signal": "layer_0_layer_0_bin_maxbins_10_col_extent"
+        },
+        {
+          "type": "bin",
+          "field": "col",
+          "as": ["__bin_field_name", "__bin_field_name_end"],
+          "signal": "layer_0_layer_0_bin_maxbins_10_col_bins",
+          "extent": {"signal": "layer_0_layer_0_bin_maxbins_10_col_extent"},
+          "maxbins": 10
+        },
+        {
+          "type": "aggregate",
+          "groupby": ["__bin_field_name", "__bin_field_name_end"],
+          "ops": ["count"],
+          "fields": [null],
+          "as": ["__count"]
+        },
+        {
+          "type": "formula",
+          "expr": "'[' + toString(datum[\"__bin_field_name\"]) + ', ' + toString(datum[\"__bin_field_name_end\"]) + ')'",
+          "as": "__bin_range"
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"__bin_field_name\"]) && isFinite(+datum[\"__bin_field_name\"]) && isValid(datum[\"__count\"]) && isFinite(+datum[\"__count\"])"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_layer_0_marks",
+      "type": "rect",
+      "clip": true,
+      "style": ["bar"],
+      "from": {"data": "data_0"},
+      "encode": {
+        "update": {
+          "cursor": {"value": "pointer"},
+          "fill": {"value": "#3e277a"},
+          "opacity": {"value": 1},
+          "ariaRoleDescription": {"value": "bar"},
+          "description": {
+            "signal": "\"col (start): \" + (format(datum[\"__bin_field_name\"], \"\")) + \"; Count of Records: \" + (format(datum[\"__count\"], \"\")) + \"; __bin_field_name_end: \" + (format(datum[\"__bin_field_name_end\"], \"\"))"
+          },
+          "x": {"scale": "x", "field": "__bin_field_name"},
+          "x2": {"scale": "x", "field": "__bin_field_name_end", "offset": -1},
+          "y": {"scale": "y", "field": "__count"},
+          "y2": {"scale": "y", "value": 0}
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "linear",
+      "domain": {
+        "data": "data_0",
+        "fields": ["__bin_field_name", "__bin_field_name_end"]
+      },
+      "range": [0, {"signal": "width"}],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {"fields": [{"data": "data_0", "field": "__count"}, [0]]},
+      "range": [{"signal": "height"}, 0],
+      "nice": true,
+      "zero": true
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": true,
+      "tickCount": 10,
+      "gridScale": "y",
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": true,
+      "gridScale": "x",
+      "tickCount": {"signal": "ceil(height/40)"},
+      "domain": false,
+      "labels": false,
+      "aria": false,
+      "maxExtent": 0,
+      "minExtent": 0,
+      "ticks": false,
+      "zindex": 0
+    },
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "col (start)",
+      "labelFlush": false,
+      "labels": true,
+      "tickCount": 10,
+      "ticks": true,
+      "labelOverlap": true,
+      "zindex": 0
+    },
+    {
+      "scale": "y",
+      "orient": "left",
+      "grid": false,
+      "title": "Count of Records",
+      "labelFlush": false,
+      "labels": true,
+      "ticks": true,
+      "labelOverlap": true,
+      "tickCount": {"signal": "ceil(height/40)"},
+      "zindex": 0
+    }
+  ]
+}
+""")
+
+
 def test_pre_transform_multi_partition():
     n = 4050
     order_items = pd.DataFrame({
@@ -1644,6 +1794,16 @@ def test_keep_signals():
     assert sig0["name"] == "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins"
     assert sig1["name"] == "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_extent"
     assert sig1["value"] == [1.4, 9.2]
+
+
+def test_empty_histogram():
+    spec = empty_histogram_spec()
+    empty_df = pd.DataFrame({ 'col': []})
+    (data_0,), warnings = vf.runtime.pre_transform_datasets(
+        spec, ["data_0"], inline_datasets=dict(empty_df=empty_df)
+    )
+    assert data_0.empty
+    assert data_0.columns.tolist() == ["__bin_field_name", "__bin_field_name_end", "__count", "__bin_range"]
 
 
 def test_pre_transform_spec_encoded_datasets():
