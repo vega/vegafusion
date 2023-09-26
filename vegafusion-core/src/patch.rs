@@ -3,7 +3,9 @@ use crate::planning::plan::{PlannerConfig, SpecPlan};
 use crate::spec::chart::{ChartSpec, ChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::values::StringOrSignalSpec;
+use itertools::Itertools;
 use json_patch::{diff, patch};
+use serde_json::Value;
 
 /// Attempt to apply the difference between two vega specs to a third pre-transformed spec
 pub fn patch_pre_transformed_spec(
@@ -35,6 +37,10 @@ pub fn patch_pre_transformed_spec(
         // Patch failed to apply, return None
         Ok(None)
     } else {
+        // Convert objects with index keys (like {"0": "foo", "1": "bar"})
+        // to arrays (like ["foo", "bar"])
+        let pre_transformed_spec2 = arrayify_int_key_objects(&pre_transformed_spec2);
+
         // Patch applied successfully, check validity
         let pre_transformed_spec2: ChartSpec = serde_json::from_value(pre_transformed_spec2)?;
 
@@ -46,6 +52,41 @@ pub fn patch_pre_transformed_spec(
         }
 
         Ok(Some(pre_transformed_spec2))
+    }
+}
+
+/// When replacing an object with an array, the patched chart will sometimes end up with
+/// objects of the form {"0": "A", "1": "BB"}. This function identifies such objects and converts
+/// them into arrays (["A", "BB"]).
+fn arrayify_int_key_objects(obj: &Value) -> Value {
+    match obj {
+        Value::Object(map) => {
+            if !map.is_empty() && map.keys().all(|k| k.parse::<usize>().is_ok()) {
+                // Object is not empty and all keys unsigned integer strings
+                let indices: Vec<_> = map
+                    .keys()
+                    .map(|k| k.parse::<usize>().unwrap())
+                    .sorted()
+                    .collect();
+                let max_index = indices[indices.len() - 1];
+                let mut new_array = vec![Value::Null; max_index + 1];
+                for idx in indices {
+                    new_array[idx] = arrayify_int_key_objects(&map[&idx.to_string()]);
+                }
+                Value::Array(new_array)
+            } else {
+                // Recurse into the sub-object otherwise
+                let mut new_map = serde_json::Map::new();
+                for (k, v) in map {
+                    new_map.insert(k.clone(), arrayify_int_key_objects(v));
+                }
+                Value::Object(new_map)
+            }
+        }
+        Value::Array(arr) => {
+            Value::Array(arr.iter().map(|v| arrayify_int_key_objects(v)).collect())
+        }
+        _ => obj.clone(),
     }
 }
 
@@ -76,9 +117,9 @@ impl ChartVisitor for AnyInlineDatasetUrlsVisitor {
 mod tests {
     use crate::patch::patch_pre_transformed_spec;
     use crate::spec::chart::ChartSpec;
-    use serde_json::json;
+    use serde_json::{json, Value};
 
-    fn histogram(color: &str, max_bins: u32) -> ChartSpec {
+    fn histogram(fill: Value, max_bins: u32) -> ChartSpec {
         serde_json::from_value(json!(
             {
               "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -134,7 +175,7 @@ mod tests {
                   "from": {"data": "source_0"},
                   "encode": {
                     "update": {
-                      "fill": {"value": color},
+                      "fill": fill,
                       "ariaRoleDescription": {"value": "bar"},
                       "x2": {
                         "scale": "x",
@@ -207,7 +248,7 @@ mod tests {
         )).unwrap()
     }
 
-    fn pre_transformed_histogram(color: &str) -> ChartSpec {
+    fn pre_transformed_histogram(fill: Value) -> ChartSpec {
         serde_json::from_value(json!(
             {
               "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -310,9 +351,7 @@ mod tests {
                         "value": 0,
                         "scale": "y"
                       },
-                      "fill": {
-                        "value": color
-                      },
+                      "fill": fill,
                       "x2": {
                         "field": "bin_maxbins_10_IMDB Rating",
                         "scale": "x",
@@ -416,27 +455,55 @@ mod tests {
 
     #[test]
     fn test_patch_color_succeeds() {
-        let spec1: ChartSpec = histogram("blue", 10);
+        let spec1: ChartSpec = histogram(json!({"value": "blue"}), 10);
 
-        let spec2: ChartSpec = histogram("red", 10);
+        let spec2: ChartSpec = histogram(json!({"value": "red"}), 10);
 
-        let pre_transformed_spec1: ChartSpec = pre_transformed_histogram("blue");
+        let pre_transformed_spec1: ChartSpec = pre_transformed_histogram(json!({"value": "blue"}));
 
         let pre_transform_spec2 =
             patch_pre_transformed_spec(&spec1, &pre_transformed_spec1, &spec2)
                 .expect("Expected patch_pre_transformed_spec to succeed")
                 .expect("Expected patch_pre_transformed_spec to return Some");
 
-        assert_eq!(pre_transform_spec2, pre_transformed_histogram("red"))
+        assert_eq!(
+            pre_transform_spec2,
+            pre_transformed_histogram(json!({"value": "red"}))
+        )
+    }
+
+    #[test]
+    fn test_patch_color_array_succeeds() {
+        // Replace an object with an array of objects
+        let fill_value = json!({"value": "blue"});
+        let fill_array = json!([{"test": "2 < 3", "value": "red"}, {"value": "green"}]);
+
+        let spec1: ChartSpec = histogram(fill_value.clone(), 10);
+        let spec2: ChartSpec = histogram(fill_array.clone(), 10);
+        let pre_transformed_spec1: ChartSpec = pre_transformed_histogram(fill_value);
+
+        let pre_transform_spec2 =
+            patch_pre_transformed_spec(&spec1, &pre_transformed_spec1, &spec2)
+                .expect("Expected patch_pre_transformed_spec to succeed")
+                .expect("Expected patch_pre_transformed_spec to return Some");
+
+        let encode_spec = pre_transform_spec2.marks[0].encode.clone().unwrap();
+        let update_spec = encode_spec.encodings.get("update").unwrap();
+        let fill = update_spec.channels.get("fill").unwrap();
+        let fill_str = serde_json::to_string(fill).unwrap();
+        assert_eq!(
+            fill_str,
+            r#"[{"value":"red","test":"2 < 3"},{"value":"green"}]"#
+        );
     }
 
     #[test]
     fn test_patch_max_bins_fails() {
-        let spec1: ChartSpec = histogram("blue", 10);
+        let spec1: ChartSpec = histogram(json!({"value": "blue"}), 10);
 
-        let spec2: ChartSpec = histogram("blue", 20);
+        let spec2: ChartSpec = histogram(json!({"value": "blue"}), 20);
 
-        let pre_transformed_spec1: ChartSpec = pre_transformed_histogram("blue");
+        let pre_transformed_spec1: ChartSpec = pre_transformed_histogram(json!({"value": "blue"}));
 
         let pre_transform_spec2 =
             patch_pre_transformed_spec(&spec1, &pre_transformed_spec1, &spec2)
