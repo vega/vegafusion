@@ -248,8 +248,7 @@ impl<'a> SplitScaleDomainVisitor<'a> {
                         }
                     ]
                 }
-            ))
-            .unwrap();
+            ))?;
 
             // Create new domain specification that uses the new dataset
             let new_domain: ScaleDomainSpec = serde_json::from_value(serde_json::json!([
@@ -267,8 +266,7 @@ impl<'a> SplitScaleDomainVisitor<'a> {
                             escape_field(&new_data_name)
                         )
                 }
-            ]))
-            .unwrap();
+            ]))?;
 
             (new_data, new_domain)
         } else {
@@ -324,8 +322,7 @@ impl<'a> SplitScaleDomainVisitor<'a> {
                         }
                     ]
                }
-            ))
-            .unwrap()
+            ))?
         } else {
             // Will sort by the grouped field values
             serde_json::from_value(serde_json::json!(
@@ -346,8 +343,7 @@ impl<'a> SplitScaleDomainVisitor<'a> {
                         }
                     ]
                }
-            ))
-            .unwrap()
+            ))?
         })
     }
 }
