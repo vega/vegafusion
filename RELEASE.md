@@ -30,7 +30,7 @@ twine upload *
 To publish the `vegafusion` packages, download and unzip the `vegafusion-wheel` artifacts. Then upload with twine.
 
 ```bash
-cd vegafusion-wheel
+cd vegafusion-packages
 twine upload *
 ```
 
@@ -45,7 +45,7 @@ twine upload *
 First, download and unzip the `vegafusion-wasm-packages` artifact. Then publish the `vegafusion-wasm-X.Y.Z.tgz` package to NPM.  If this is a release candidate, include the `--pre` flag to `npm publish`.
 
 ```bash
-cd vegafusion-wasm-packages
+unzip vegafusion-wasm-packages.zip
 npm publish vegafusion-wasm-$VF_VERSION.tgz
 ```
 
