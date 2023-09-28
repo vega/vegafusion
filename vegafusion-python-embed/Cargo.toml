@@ -2,7 +2,7 @@
 name = "vegafusion-python-embed"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "1.4.0"
+version = "1.4.1"
 description = "vegafusion-python-embed PyO3 Python Package"
 
 [lib]
@@ -37,26 +37,26 @@ features = [ "pyarrow",]
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
 features = [ "pyo3", "datafusion-proto", "base64",]
-version = "1.4.0"
+version = "1.4.1"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = [ "pyarrow",]
-version = "1.4.0"
+version = "1.4.1"
 
 [dependencies.vegafusion-runtime]
 path = "../vegafusion-runtime"
 features = [ "pyarrow",]
-version = "1.4.0"
+version = "1.4.1"
 
 [dependencies.vegafusion-sql]
 path = "../vegafusion-sql"
-version = "1.4.0"
+version = "1.4.1"
 features = [ "datafusion-conn",]
 
 [dependencies.vegafusion-dataframe]
 path = "../vegafusion-dataframe"
-version = "1.4.0"
+version = "1.4.1"
 
 [dependencies.datafusion-proto]
 version = "28.0.0"
