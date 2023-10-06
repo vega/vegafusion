@@ -360,6 +360,7 @@ impl PyVegaFusionRuntime {
             let datasets = datasets
                 .into_iter()
                 .map(|(name, scope, table)| {
+                    let table = table.to_js_types()?;
                     let name = name.into_py(py);
                     let scope = scope.into_py(py);
                     let table = match extracted_format.as_str() {
