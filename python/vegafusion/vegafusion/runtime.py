@@ -287,7 +287,10 @@ class VegaFusionRuntime:
                         group = get_mark_group_for_scope(new_spec, scope)
                         for data in group.get("data", []):
                             if data.get("name", None) == name:
-                                data["values"] = tbl
+                                if data_encoding_format == "arrow-ipc-url":
+                                    data["url"] = tbl
+                                else:
+                                    data["values"] = tbl
 
             finally:
                 # Clean up temporary tables
