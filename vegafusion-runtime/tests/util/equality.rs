@@ -228,8 +228,7 @@ pub fn assert_scalars_almost_equals(
 
             if lhs == rhs || lhs.is_null() && rhs.is_null() {
                 // Equal
-            } else if is_numeric_datatype(&lhs.get_datatype())
-                && is_numeric_datatype(&rhs.get_datatype())
+            } else if is_numeric_datatype(&lhs.data_type()) && is_numeric_datatype(&rhs.data_type())
             {
                 if (lhs.is_null() || !numeric_to_f64(&lhs).is_finite())
                     && (rhs.is_null() || !numeric_to_f64(&rhs).is_finite())

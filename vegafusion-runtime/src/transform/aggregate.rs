@@ -68,7 +68,7 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
     projections.insert(0, flat_col(ORDER_COL));
 
     for (i, (field, op_code)) in tx.fields.iter().zip(tx.ops.iter()).enumerate() {
-        let op = AggregateOp::from_i32(*op_code).unwrap();
+        let op = AggregateOp::try_from(*op_code).unwrap();
 
         let column = if *op_code == AggregateOp::Count as i32 {
             // In Vega, the provided column is always ignored if op is 'count'.
@@ -107,7 +107,7 @@ fn get_agg_and_proj_exprs(tx: &Aggregate, schema: &DFSchema) -> Result<(Vec<Expr
     let mut agg_exprs = Vec::new();
 
     for ((col_name, op_code), alias) in agg_aliases {
-        let op = AggregateOp::from_i32(op_code).unwrap();
+        let op = AggregateOp::try_from(op_code).unwrap();
 
         let agg_expr = make_aggr_expr_for_named_col(col_name, &op, schema)?;
 
