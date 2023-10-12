@@ -190,7 +190,7 @@ impl MsgReceiver {
                                 if self.verbose {
                                     log(&format!("VegaFusion(wasm): Received {}", var.name));
                                     log(&serde_json::to_string_pretty(&json).unwrap());
-                                    log(&format!("DataType: {:#?}", &value.get_datatype()));
+                                    log(&format!("DataType: {:#?}", &value.data_type()));
                                 }
 
                                 let js_value =
