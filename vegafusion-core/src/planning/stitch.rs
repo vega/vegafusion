@@ -21,30 +21,14 @@ pub fn stitch_specs(
     keep_variables: &[ScopedVariable],
 ) -> Result<CommPlan> {
     // Get client spec variable types
-    let client_defs: HashSet<_> = client_spec.definition_vars().unwrap().into_iter().collect();
-    let client_inputs: HashSet<_> = client_spec
-        .input_vars(task_scope)
-        .unwrap()
-        .into_iter()
-        .collect();
-    let client_updates: HashSet<_> = client_spec
-        .update_vars(task_scope)
-        .unwrap()
-        .into_iter()
-        .collect();
+    let client_defs: HashSet<_> = client_spec.definition_vars()?.into_iter().collect();
+    let client_inputs: HashSet<_> = client_spec.input_vars(task_scope)?.into_iter().collect();
+    let client_updates: HashSet<_> = client_spec.update_vars(task_scope)?.into_iter().collect();
 
     // Get server spec variable types
-    let server_defs: HashSet<_> = server_spec.definition_vars().unwrap().into_iter().collect();
-    let server_inputs: HashSet<_> = server_spec
-        .input_vars(task_scope)
-        .unwrap()
-        .into_iter()
-        .collect();
-    let server_updates: HashSet<_> = server_spec
-        .update_vars(task_scope)
-        .unwrap()
-        .into_iter()
-        .collect();
+    let server_defs: HashSet<_> = server_spec.definition_vars()?.into_iter().collect();
+    let server_inputs: HashSet<_> = server_spec.input_vars(task_scope)?.into_iter().collect();
+    let server_updates: HashSet<_> = server_spec.update_vars(task_scope)?.into_iter().collect();
 
     // Determine communication requirements
     let mut server_to_client: HashSet<_> = client_inputs
