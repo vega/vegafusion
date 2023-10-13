@@ -34,7 +34,7 @@ impl LogicalExpression {
     }
 
     pub fn to_operator(&self) -> LogicalOperator {
-        LogicalOperator::from_i32(self.operator).unwrap()
+        LogicalOperator::try_from(self.operator).unwrap()
     }
 
     pub fn infix_binding_power(&self) -> (f64, f64) {

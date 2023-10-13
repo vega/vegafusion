@@ -14,11 +14,11 @@ prettyprint = [ "arrow/prettyprint",]
 thiserror = "^1.0.29"
 
 [dependencies.chrono]
-version = "0.4.23"
+workspace = true
 optional = true
 
 [dependencies.sqlparser]
-version = "0.35.0"
+workspace = true
 optional = true
 
 [dependencies.serde_json]
@@ -27,22 +27,22 @@ default_features = false
 optional = true
 
 [dependencies.arrow]
-version = "43.0.0"
-default_features = false
+workspace = true
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
-version = "28.0.0"
+workspace = true
+default_features = false
 
 [dependencies.datafusion-expr]
-version = "28.0.0"
+workspace = true
 
 [dependencies.datafusion-proto]
-version = "28.0.0"
+workspace = true
 optional = true
 
 [dependencies.pyo3]
-version = "0.19"
+workspace = true
 optional = true
 
 [dependencies.jni]

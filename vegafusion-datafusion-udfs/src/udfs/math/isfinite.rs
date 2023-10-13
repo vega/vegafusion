@@ -1,7 +1,6 @@
 use datafusion_physical_expr::functions::make_scalar_function;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::{ArrayRef, BooleanArray, Float32Array, Float64Array};
-use vegafusion_common::arrow::compute::no_simd_compare_op_scalar;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_expr::{ReturnTypeFunction, ScalarUDF, Signature, Volatility};
 
@@ -18,11 +17,11 @@ fn make_is_finite_udf() -> ScalarUDF {
         let is_finite_array = match arg.data_type() {
             DataType::Float32 => {
                 let array = arg.as_any().downcast_ref::<Float32Array>().unwrap();
-                no_simd_compare_op_scalar(array, f32::NAN, |a, _| a.is_finite()).unwrap()
+                BooleanArray::from_unary(array, |a| a.is_finite())
             }
             DataType::Float64 => {
                 let array = arg.as_any().downcast_ref::<Float64Array>().unwrap();
-                no_simd_compare_op_scalar(array, f64::NAN, |a, _| a.is_finite()).unwrap()
+                BooleanArray::from_unary(array, |a| a.is_finite())
             }
             _ => {
                 // No other type can be non-finite

@@ -24,7 +24,7 @@ impl TransformTrait for JoinAggregate {
         let mut agg_exprs = Vec::new();
         let mut new_col_exprs = Vec::new();
         for (i, (field, op)) in self.fields.iter().zip(&self.ops).enumerate() {
-            let op = AggregateOp::from_i32(*op).unwrap();
+            let op = AggregateOp::try_from(*op).unwrap();
             let alias = if let Some(alias) = self.aliases.get(i).filter(|a| !a.is_empty()) {
                 // Alias is a non-empty string
                 alias.clone()

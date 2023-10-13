@@ -17,10 +17,10 @@ protobuf-src = [ "vegafusion-core/protobuf-src",]
 regex = "^1.5.5"
 lazy_static = "^1.4.0"
 serde_json = "1.0.91"
-chrono = "0.4.23"
+chrono = { workspace = true }
 chrono-tz = "0.8.1"
-prost = "0.11.3"
-prost-types = "0.11.2"
+prost = { workspace = true }
+prost-types = { workspace = true }
 num-traits = "0.2.15"
 itertools = "0.11.0"
 float-cmp = "0.9.0"
@@ -54,7 +54,7 @@ version = "^1.2"
 features = [ "v4",]
 
 [dependencies.sqlparser]
-version = "0.35.0"
+workspace = true
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
@@ -79,28 +79,28 @@ version = "1.0.137"
 features = [ "derive",]
 
 [dependencies.datafusion-common]
-version = "28.0.0"
+workspace = true
 
 [dependencies.datafusion-expr]
-version = "28.0.0"
+workspace = true
 
 [dependencies.datafusion-physical-expr]
-version = "28.0.0"
+workspace = true
 
 [dependencies.datafusion-optimizer]
-version = "28.0.0"
+workspace = true
 
 [dependencies.tokio]
-version = "1.32.0"
+workspace = true
 features = [ "macros", "rt-multi-thread", "fs",]
 
 [dependencies.reqwest]
-version = "0.11.10"
+workspace = true
 default_features = false
 features = [ "rustls-tls",]
 
 [dev-dependencies.reqwest]
-version = "0.11.10"
+workspace = true
 default_features = false
 features = [ "blocking", "rustls-tls",]
 

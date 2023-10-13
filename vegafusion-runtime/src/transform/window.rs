@@ -105,7 +105,7 @@ impl TransformTrait for Window {
             .map(|(i, (op, field))| -> Result<Expr> {
                 let (window_fn, args) = match op.op.as_ref().unwrap() {
                     window_transform_op::Op::AggregateOp(op) => {
-                        let op = AggregateOp::from_i32(*op).unwrap();
+                        let op = AggregateOp::try_from(*op).unwrap();
 
                         let numeric_field = || -> Result<Expr> {
                             to_numeric(unescaped_col(field), &schema_df).with_context(|| {
@@ -149,7 +149,7 @@ impl TransformTrait for Window {
                         (WindowFunction::AggregateFunction(agg_fn), vec![arg])
                     }
                     window_transform_op::Op::WindowOp(op) => {
-                        let op = WindowOp::from_i32(*op).unwrap();
+                        let op = WindowOp::try_from(*op).unwrap();
                         let _param = self.params.get(i);
 
                         let (window_fn, args) = match op {

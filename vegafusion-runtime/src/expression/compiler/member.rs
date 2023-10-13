@@ -32,7 +32,7 @@ pub fn compile_member(
             || format!("VegaFusion does not support the use of datum expressions in object member access: {node}")
         )?;
         let prop_str = evaluated_property.to_string();
-        if is_numeric_datatype(&evaluated_property.get_datatype()) {
+        if is_numeric_datatype(&evaluated_property.data_type()) {
             let int_array = cast(&evaluated_property.to_array(), &DataType::Int64).unwrap();
             let int_array = int_array.as_any().downcast_ref::<Int64Array>().unwrap();
             index = Some(int_array.value(0) as usize);

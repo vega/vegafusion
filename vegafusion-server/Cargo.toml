@@ -13,7 +13,7 @@ description = "VegaFusion Server"
 protobuf-src = [ "vegafusion-core/protobuf-src",]
 
 [dependencies]
-prost = "0.11.3"
+prost = { workspace = true }
 futures-util = "0.3.21"
 regex = "^1.5.5"
 h2 = "0.3.16"
@@ -24,8 +24,8 @@ assert_cmd = "2.0"
 predicates = "3.0.2"
 
 [build-dependencies]
-tonic-build = "0.9.1"
-prost-build = "0.11.4"
+tonic-build = "0.10.2"
+prost-build = "0.12.1"
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
@@ -46,14 +46,14 @@ version = "1.4.1"
 features = [ "datafusion-conn",]
 
 [dependencies.tokio]
-version = "1.32.0"
+workspace = true
 features = [ "rt-multi-thread", "macros",]
 
 [dependencies.tonic-web]
-version = "0.9.1"
+version = "0.10.2"
 
 [dependencies.tonic]
-version = "0.9.1"
+version = "0.10.2"
 features = [ "tls",]
 
 [dependencies.clap]

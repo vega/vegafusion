@@ -362,7 +362,7 @@ pub fn make_datafusion_context() -> SessionContext {
     let options = config.options_mut();
     options.optimizer.skip_failed_rules = true;
     let runtime = Arc::new(RuntimeEnv::default());
-    let session_state = SessionState::with_config_rt(config, runtime);
+    let session_state = SessionState::new_with_config_rt(config, runtime);
     let session_state = session_state.with_analyzer_rules(vec![
         Arc::new(InlineTableScan::new()),
         Arc::new(TypeCoercion::new()),
@@ -370,7 +370,7 @@ pub fn make_datafusion_context() -> SessionContext {
         // Arc::new(CountWildcardRule::new()),
     ]);
 
-    let ctx = SessionContext::with_state(session_state);
+    let ctx = SessionContext::new_with_state(session_state);
 
     // isNan
     ctx.register_udf((*ISNAN_UDF).clone());

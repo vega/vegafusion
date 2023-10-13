@@ -85,6 +85,16 @@ impl ToSqlExpr for Expr {
                         Operator::StringConcat => SqlBinaryOperator::StringConcat,
                         Operator::BitwiseShiftRight => SqlBinaryOperator::PGBitwiseShiftRight,
                         Operator::BitwiseShiftLeft => SqlBinaryOperator::PGBitwiseShiftLeft,
+                        Operator::AtArrow => {
+                            return Err(VegaFusionError::internal(
+                                "AtArrow cannot be converted to SQL".to_string(),
+                            ))
+                        }
+                        Operator::ArrowAt => {
+                            return Err(VegaFusionError::internal(
+                                "ArrowAt cannot be converted to SQL".to_string(),
+                            ))
+                        }
                     };
                     Ok(SqlExpr::Nested(Box::new(SqlExpr::BinaryOp {
                         left: Box::new(left.to_sql(dialect, schema)?),
@@ -357,12 +367,26 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::ArrayReplace => "array_replace",
                     BuiltinScalarFunction::ArrayToString => "array_to_string",
                     BuiltinScalarFunction::Cardinality => "array_cardinality",
+                    BuiltinScalarFunction::ArrayHas => "array_has",
+                    BuiltinScalarFunction::ArrayHasAll => "array_has_all",
+                    BuiltinScalarFunction::ArrayHasAny => "array_has_any",
+                    BuiltinScalarFunction::ArrayPopBack => "array_pop_back",
+                    BuiltinScalarFunction::ArrayElement => "array_element",
+                    BuiltinScalarFunction::ArrayEmpty => "array_empty",
+                    BuiltinScalarFunction::ArrayRemoveN => "array_remove_n",
+                    BuiltinScalarFunction::ArrayRemoveAll => "array_remove_all",
+                    BuiltinScalarFunction::ArrayRepeat => "array_repeat",
+                    BuiltinScalarFunction::ArrayReplaceN => "array_replace_n",
+                    BuiltinScalarFunction::ArrayReplaceAll => "array_replace_all",
+                    BuiltinScalarFunction::ArraySlice => "array_slice",
                     BuiltinScalarFunction::Decode => "decode",
                     BuiltinScalarFunction::Encode => "encode",
                     BuiltinScalarFunction::Cot => "cot",
-                    BuiltinScalarFunction::ArrayContains => "array_contains",
-                    BuiltinScalarFunction::ArrayFill => "array_fill",
-                    BuiltinScalarFunction::TrimArray => "trim_array",
+                    BuiltinScalarFunction::Isnan => "isnan",
+                    BuiltinScalarFunction::Iszero => "iszero",
+                    BuiltinScalarFunction::Nanvl => "nanvl",
+                    BuiltinScalarFunction::Flatten => "flatten",
+                    BuiltinScalarFunction::StringToArray => "string_to_array",
                 };
                 translate_scalar_function(fun_name, args, dialect, schema)
             }
@@ -698,6 +722,15 @@ fn aggr_fn_to_name(fun: &AggregateFunction) -> &str {
         AggregateFunction::BoolOr => "bool_or",
         AggregateFunction::FirstValue => "first_value",
         AggregateFunction::LastValue => "last_value",
+        AggregateFunction::RegrSlope => "regr_slope",
+        AggregateFunction::RegrIntercept => "regr_intercept",
+        AggregateFunction::RegrCount => "regr_count",
+        AggregateFunction::RegrR2 => "regr_r2",
+        AggregateFunction::RegrAvgx => "regr_avgx",
+        AggregateFunction::RegrAvgy => "regr_avgy",
+        AggregateFunction::RegrSXX => "regr_sxx",
+        AggregateFunction::RegrSYY => "regr_syy",
+        AggregateFunction::RegrSXY => "regr_sxy",
     }
 }
 

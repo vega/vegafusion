@@ -16,8 +16,8 @@ protobuf-src = [ "vegafusion-core/protobuf-src",]
 serde_json = "1.0.91"
 wasm-bindgen-futures = "0.4.28"
 js-sys = "0.3.55"
-prost = "0.11.3"
-prost-types = "0.11.2"
+prost = { workspace = true }
+prost-types = { workspace = true }
 indexmap = "1.9.2"
 
 [dev-dependencies]
@@ -44,7 +44,7 @@ version = "0.2.8"
 features = [ "js",]
 
 [dependencies.chrono]
-version = "0.4.19"
+version = "0.4.31"
 features = [ "wasmbind",]
 
 [dependencies.console_error_panic_hook]

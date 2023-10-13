@@ -122,7 +122,7 @@ pub fn vl_selection_resolve_fn(
             // Turn values into a scalar list
             let dtype = values
                 .get(0)
-                .map(|s| s.get_datatype())
+                .map(|s| s.data_type())
                 .unwrap_or(DataType::Float64);
             let values = ScalarValue::List(Some(values), Arc::new(Field::new("item", dtype, true)));
             (name, values)

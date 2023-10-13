@@ -142,7 +142,7 @@ lazy_static! {
     pub static ref Q1_UDF: AggregateUDF = create_udaf(
         "q1",
         // input type
-        DataType::Float64,
+        vec![DataType::Float64],
         // the return type
         Arc::new(DataType::Float64),
         Volatility::Immutable,
@@ -161,7 +161,7 @@ lazy_static! {
     pub static ref Q3_UDF: AggregateUDF = create_udaf(
         "q3",
         // input type
-        DataType::Float64,
+        vec![DataType::Float64],
         // the return type
         Arc::new(DataType::Float64),
         Volatility::Immutable,
