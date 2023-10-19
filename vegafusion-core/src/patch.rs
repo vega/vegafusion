@@ -4,7 +4,7 @@ use crate::spec::chart::{ChartSpec, ChartVisitor};
 use crate::spec::data::DataSpec;
 use crate::spec::values::StringOrSignalSpec;
 use itertools::Itertools;
-use json_patch::{diff, patch};
+use json_patch::{diff, patch, PatchOperation};
 use serde_json::Value;
 
 /// Attempt to apply the difference between two vega specs to a third pre-transformed spec
@@ -30,6 +30,21 @@ pub fn patch_pre_transformed_spec(
         &serde_json::to_value(planned_spec1)?,
         &serde_json::to_value(planned_spec2)?,
     );
+
+    // Do not apply patch if there are changes to any datasets
+    for patch_op in &spec_patch.0 {
+        let path = match patch_op {
+            PatchOperation::Add(op) => &op.path,
+            PatchOperation::Remove(op) => &op.path,
+            PatchOperation::Replace(op) => &op.path,
+            PatchOperation::Move(op) => &op.path,
+            PatchOperation::Copy(op) => &op.path,
+            PatchOperation::Test(op) => &op.path,
+        };
+        if path.contains("/data/") {
+            return Ok(None);
+        }
+    }
 
     // Attempt to apply patch to pre-transformed spec
     let mut pre_transformed_spec2 = serde_json::to_value(pre_transformed_spec1)?;
@@ -119,8 +134,8 @@ mod tests {
     use crate::spec::chart::ChartSpec;
     use serde_json::{json, Value};
 
-    fn histogram(fill: Value, max_bins: u32) -> ChartSpec {
-        serde_json::from_value(json!(
+    fn histogram(fill: Value, max_bins: u32, add_dataset: bool) -> ChartSpec {
+        let mut chart_spec: ChartSpec = serde_json::from_value(json!(
             {
               "$schema": "https://vega.github.io/schema/vega/v5.json",
               "background": "white",
@@ -245,7 +260,21 @@ mod tests {
                 }
               ]
             }
-        )).unwrap()
+        )).unwrap();
+
+        if add_dataset {
+            chart_spec.data.push(
+                serde_json::from_value(json!(
+                    {
+                        "name": "added_dataset",
+                        "values": [{"a": 1, "b": 2}]
+                    }
+                ))
+                .unwrap(),
+            )
+        }
+
+        chart_spec
     }
 
     fn pre_transformed_histogram(fill: Value) -> ChartSpec {
@@ -455,9 +484,9 @@ mod tests {
 
     #[test]
     fn test_patch_color_succeeds() {
-        let spec1: ChartSpec = histogram(json!({"value": "blue"}), 10);
+        let spec1: ChartSpec = histogram(json!({"value": "blue"}), 10, false);
 
-        let spec2: ChartSpec = histogram(json!({"value": "red"}), 10);
+        let spec2: ChartSpec = histogram(json!({"value": "red"}), 10, false);
 
         let pre_transformed_spec1: ChartSpec = pre_transformed_histogram(json!({"value": "blue"}));
 
@@ -478,8 +507,8 @@ mod tests {
         let fill_value = json!({"value": "blue"});
         let fill_array = json!([{"test": "2 < 3", "value": "red"}, {"value": "green"}]);
 
-        let spec1: ChartSpec = histogram(fill_value.clone(), 10);
-        let spec2: ChartSpec = histogram(fill_array.clone(), 10);
+        let spec1: ChartSpec = histogram(fill_value.clone(), 10, false);
+        let spec2: ChartSpec = histogram(fill_array.clone(), 10, false);
         let pre_transformed_spec1: ChartSpec = pre_transformed_histogram(fill_value);
 
         let pre_transform_spec2 =
@@ -499,9 +528,9 @@ mod tests {
 
     #[test]
     fn test_patch_max_bins_fails() {
-        let spec1: ChartSpec = histogram(json!({"value": "blue"}), 10);
+        let spec1: ChartSpec = histogram(json!({"value": "blue"}), 10, false);
 
-        let spec2: ChartSpec = histogram(json!({"value": "blue"}), 20);
+        let spec2: ChartSpec = histogram(json!({"value": "blue"}), 20, false);
 
         let pre_transformed_spec1: ChartSpec = pre_transformed_histogram(json!({"value": "blue"}));
 
@@ -543,6 +572,20 @@ mod tests {
             patch_pre_transformed_spec(&spec1, &pre_transformed_spec1, &spec2)
                 .expect("Expected patch_pre_transformed_spec to succeed");
 
+        assert!(pre_transform_spec2.is_none());
+    }
+
+    #[test]
+    fn test_patch_add_dataset_fails() {
+        let spec1: ChartSpec = histogram(json!({"value": "blue"}), 10, false);
+
+        let spec2: ChartSpec = histogram(json!({"value": "red"}), 10, true);
+
+        let pre_transformed_spec1: ChartSpec = pre_transformed_histogram(json!({"value": "blue"}));
+
+        let pre_transform_spec2 =
+            patch_pre_transformed_spec(&spec1, &pre_transformed_spec1, &spec2)
+                .expect("Expected patch_pre_transformed_spec to succeed");
         assert!(pre_transform_spec2.is_none());
     }
 }
