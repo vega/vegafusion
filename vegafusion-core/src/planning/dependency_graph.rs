@@ -16,6 +16,19 @@ use petgraph::prelude::{DiGraph, EdgeRef, NodeIndex};
 use petgraph::Incoming;
 use std::collections::{HashMap, HashSet};
 
+pub fn toposort_dependency_graph(
+    data_graph: &DiGraph<(ScopedVariable, DependencyNodeSupported), ()>,
+) -> Result<Vec<NodeIndex>> {
+    Ok(match toposort(&data_graph, None) {
+        Ok(v) => v,
+        Err(err) => {
+            return Err(VegaFusionError::internal(format!(
+                "Failed to sort datasets topologically: {err:?}"
+            )))
+        }
+    })
+}
+
 /// get HashSet of all data variables with fully supported parents that are themselves fully or
 /// partially supported
 pub fn get_supported_data_variables(
@@ -24,14 +37,7 @@ pub fn get_supported_data_variables(
 ) -> Result<HashMap<ScopedVariable, DependencyNodeSupported>> {
     let data_graph = build_dependency_graph(chart_spec, config)?;
     // Sort dataset nodes topologically
-    let nodes: Vec<NodeIndex> = match toposort(&data_graph, None) {
-        Ok(v) => v,
-        Err(err) => {
-            return Err(VegaFusionError::internal(format!(
-                "Failed to sort datasets topologically: {err:?}"
-            )))
-        }
-    };
+    let nodes: Vec<NodeIndex> = toposort_dependency_graph(&data_graph)?;
 
     // Traverse nodes and save those to supported_vars that are supported with all supported
     // parents

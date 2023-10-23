@@ -1,5 +1,6 @@
 use crate::error::Result;
 use crate::planning::extract::extract_server_data;
+use crate::planning::fuse::fuse_datasets;
 use crate::planning::optimize_server::split_data_url_nodes;
 use crate::planning::projection_pushdown::projection_pushdown;
 use crate::planning::split_domain_data::split_domain_data;
@@ -7,7 +8,7 @@ use crate::planning::stitch::{stitch_specs, CommPlan};
 use crate::planning::stringify_local_datetimes::stringify_local_datetimes;
 use crate::planning::unsupported_data_warning::add_unsupported_data_warnings;
 use crate::proto::gen::pretransform::{
-    pre_transform_spec_warning::WarningType, PreTransformSpecWarning,
+    pre_transform_spec_warning::WarningType, PlannerWarning, PreTransformSpecWarning,
 };
 use crate::spec::chart::ChartSpec;
 use crate::task_graph::graph::ScopedVariable;
@@ -51,7 +52,17 @@ impl From<&PreTransformSpecWarning> for PreTransformSpecWarningSpec {
     }
 }
 
-#[derive(Clone, Debug)]
+impl From<&PlannerWarning> for PreTransformSpecWarning {
+    fn from(value: &PlannerWarning) -> Self {
+        PreTransformSpecWarning {
+            warning_type: Some(WarningType::Planner(PlannerWarning {
+                message: value.message.clone(),
+            })),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum PlannerWarnings {
     StringifyDatetimeMixedUsage(String),
     UnsupportedTransforms(String),
@@ -75,6 +86,7 @@ pub struct PlannerConfig {
     pub extract_inline_data: bool,
     pub extract_server_data: bool,
     pub allow_client_to_server_comms: bool,
+    pub fuse_datasets: bool,
     pub client_only_vars: Vec<ScopedVariable>,
     pub keep_variables: Vec<ScopedVariable>,
 }
@@ -89,8 +101,24 @@ impl Default for PlannerConfig {
             extract_inline_data: false,
             extract_server_data: true,
             allow_client_to_server_comms: true,
+            fuse_datasets: true,
             client_only_vars: Default::default(),
             keep_variables: Default::default(),
+        }
+    }
+}
+
+impl PlannerConfig {
+    pub fn pre_transformed_spec_config(
+        preserve_interactivity: bool,
+        keep_variables: Vec<ScopedVariable>,
+    ) -> PlannerConfig {
+        PlannerConfig {
+            stringify_local_datetimes: true,
+            extract_inline_data: true,
+            allow_client_to_server_comms: !preserve_interactivity,
+            keep_variables,
+            ..Default::default()
         }
     }
 }
@@ -164,6 +192,12 @@ impl SpecPlan {
 
             if config.split_url_data_nodes {
                 split_data_url_nodes(&mut server_spec)?;
+            }
+
+            if config.fuse_datasets {
+                let mut do_not_fuse = config.keep_variables.clone();
+                do_not_fuse.extend(comm_plan.server_to_client.clone());
+                fuse_datasets(&mut server_spec, do_not_fuse.as_slice())?;
             }
 
             if config.stringify_local_datetimes {

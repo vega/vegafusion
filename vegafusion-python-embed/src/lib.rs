@@ -16,9 +16,11 @@ use crate::connection::{PySqlConnection, PySqlDataset};
 use crate::dataframe::PyDataFrame;
 use env_logger::{Builder, Target};
 use pythonize::depythonize;
+use serde_json::json;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::patch::patch_pre_transformed_spec;
-use vegafusion_core::planning::plan::PreTransformSpecWarningSpec;
+use vegafusion_core::planning::plan::{PlannerConfig, PreTransformSpecWarningSpec, SpecPlan};
+use vegafusion_core::planning::watch::WatchPlan;
 use vegafusion_core::proto::gen::tasks::Variable;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
@@ -157,6 +159,45 @@ impl PyVegaFusionRuntime {
                 .block_on(self.runtime.query_request_bytes(request_bytes))
         })?;
         Ok(PyBytes::new(py, &response_bytes).into())
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn build_pre_transform_spec_plan(
+        &self,
+        spec: PyObject,
+        preserve_interactivity: Option<bool>,
+        keep_signals: Option<Vec<(String, Vec<u32>)>>,
+        keep_datasets: Option<Vec<(String, Vec<u32>)>>,
+    ) -> PyResult<PyObject> {
+        let spec = parse_json_spec(spec)?;
+        let preserve_interactivity = preserve_interactivity.unwrap_or(false);
+
+        // Build keep_variables
+        let mut keep_variables: Vec<ScopedVariable> = Vec::new();
+        for (name, scope) in keep_signals.unwrap_or_default() {
+            keep_variables.push((Variable::new_signal(&name), scope))
+        }
+        for (name, scope) in keep_datasets.unwrap_or_default() {
+            keep_variables.push((Variable::new_data(&name), scope))
+        }
+
+        let plan = SpecPlan::try_new(
+            &spec,
+            &PlannerConfig::pre_transformed_spec_config(preserve_interactivity, keep_variables),
+        )?;
+        let watch_plan = WatchPlan::from(plan.comm_plan);
+
+        let json_plan = json!({
+            "server_spec": plan.server_spec,
+            "client_spec": plan.client_spec,
+            "comm_plan": watch_plan,
+            "warnings": plan.warnings,
+        });
+
+        Python::with_gil(|py| -> PyResult<PyObject> {
+            let py_plan = pythonize::pythonize(py, &json_plan)?;
+            Ok(py_plan)
+        })
     }
 
     #[allow(clippy::too_many_arguments)]

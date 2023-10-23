@@ -498,6 +498,7 @@ impl VegaFusionRuntime {
                 split_domain_data: false,
                 projection_pushdown: false,
                 allow_client_to_server_comms: true,
+                keep_variables: Vec::from(variables),
                 ..Default::default()
             },
         )?;
@@ -752,13 +753,7 @@ impl VegaFusionRuntime {
         // Create spec plan
         let plan = SpecPlan::try_new(
             spec,
-            &PlannerConfig {
-                stringify_local_datetimes: true,
-                extract_inline_data: true,
-                allow_client_to_server_comms: !preserve_interactivity,
-                keep_variables,
-                ..Default::default()
-            },
+            &PlannerConfig::pre_transformed_spec_config(preserve_interactivity, keep_variables),
         )?;
         // println!("pre transform client_spec: {}", serde_json::to_string_pretty(&plan.client_spec).unwrap());
         // println!("pre transform server_spec: {}", serde_json::to_string_pretty(&plan.server_spec).unwrap());

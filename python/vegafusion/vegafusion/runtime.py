@@ -176,6 +176,52 @@ class VegaFusionRuntime:
 
         return imported_inline_datasets
 
+    def build_pre_transform_spec_plan(
+            self,
+            spec,
+            preserve_interactivity=True,
+            keep_signals=None,
+            keep_datasets=None,
+    ):
+        """
+        Diagnostic function that returns the plan used by the pre_transform_spec method
+
+        :param spec: A Vega specification dict or JSON string
+        :param preserve_interactivity: If True (default) then the interactive behavior of
+            the chart will pre preserved. This requires that all the data that participates
+            in interactions be included in the resulting spec rather than being pre-transformed.
+            If False, then all possible data transformations are applied even if they break
+            the original interactive behavior of the chart.
+        :param keep_signals: Signals from the input spec that must be included in the
+            pre-transformed spec. A list with elements that are either:
+              - The name of a top-level signal as a string
+              - A two-element tuple where the first element is the name of a signal as a string
+                and the second element is the nested scope of the dataset as a list of integers
+        :param keep_datasets: Datasets from the input spec that must be included in the
+            pre-transformed spec. A list with elements that are either:
+              - The name of a top-level dataset as a string
+              - A two-element tuple where the first element is the name of a dataset as a string
+                and the second element is the nested scope of the dataset as a list of integers
+        :return:
+            dict with keys:
+                - "client_spec": Planned client spec
+                - "server_spec: Planned server spec
+                - "comm_plan": Communication plan
+                - "warnings": List of planner warnings
+        """
+        if self._grpc_channel:
+            raise ValueError("build_pre_transform_spec_plan not yet supported over gRPC")
+        else:
+            # Parse input keep signals and datasets
+            keep_signals = parse_variables(keep_signals)
+            keep_datasets = parse_variables(keep_datasets)
+            return self.embedded_runtime.build_pre_transform_spec_plan(
+                spec,
+                preserve_interactivity=preserve_interactivity,
+                keep_signals=keep_signals,
+                keep_datasets=keep_datasets,
+            )
+
     def pre_transform_spec(
         self,
         spec,

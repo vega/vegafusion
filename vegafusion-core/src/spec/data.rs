@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::error::VegaFusionError;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DataSpec {
@@ -141,6 +142,40 @@ impl DataSpec {
         }
 
         Ok(output_local_datetime_columns)
+    }
+
+    /// Fuse this dataset into a child dataset. This mutates the child to include this dataset's
+    /// source data and transforms. The name of the child is preserved.
+    pub fn fuse_into(&self, child: &mut DataSpec) -> Result<()> {
+        if Some(&self.name) != child.source.as_ref() {
+            return Err(VegaFusionError::internal(format!(
+                "Incompatible fuse dataset names {:?} and {:?}",
+                self.name, child.source
+            )));
+        }
+        if self.on.is_some() {
+            return Err(VegaFusionError::internal(
+                "Cannot fuse dataset with \"on\" trigger",
+            ));
+        }
+
+        // Copy over source dataset info
+        child.source = self.source.clone();
+        child.url = self.url.clone();
+        child.format = self.format.clone();
+        child.values = self.values.clone();
+
+        // Prepend this dataset's transforms
+        let mut new_transforms = self.transform.clone();
+        new_transforms.extend(child.transform.clone());
+        child.transform = new_transforms;
+        Ok(())
+    }
+
+    pub fn has_aggregate(&self) -> bool {
+        self.transform
+            .iter()
+            .any(|tx| matches!(tx, &TransformSpec::Aggregate(_)))
     }
 }
 
