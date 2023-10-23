@@ -35,6 +35,7 @@ mod test_custom_specs {
 
         let planner_config = PlannerConfig {
             projection_pushdown: true,
+            fuse_datasets: false,
             ..Default::default()
         };
         let spec_plan = SpecPlan::try_new(&spec, &planner_config).unwrap();
