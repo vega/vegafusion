@@ -5,7 +5,7 @@ path = "src/main.rs"
 [package]
 name = "vegafusion-server"
 license = "BSD-3-Clause"
-version = "1.4.1"
+version = "1.4.2"
 edition = "2021"
 description = "VegaFusion Server"
 
@@ -13,7 +13,6 @@ description = "VegaFusion Server"
 protobuf-src = [ "vegafusion-core/protobuf-src",]
 
 [dependencies]
-prost = { workspace = true }
 futures-util = "0.3.21"
 regex = "^1.5.5"
 h2 = "0.3.16"
@@ -27,22 +26,25 @@ predicates = "3.0.2"
 tonic-build = "0.10.2"
 prost-build = "0.12.1"
 
+[dependencies.prost]
+workspace = true
+
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-version = "1.4.1"
+version = "1.4.2"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = [ "tonic_support",]
-version = "1.4.1"
+version = "1.4.2"
 
 [dependencies.vegafusion-runtime]
 path = "../vegafusion-runtime"
-version = "1.4.1"
+version = "1.4.2"
 
 [dependencies.vegafusion-sql]
 path = "../vegafusion-sql"
-version = "1.4.1"
+version = "1.4.2"
 features = [ "datafusion-conn",]
 
 [dependencies.tokio]

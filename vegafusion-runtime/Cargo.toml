@@ -6,7 +6,7 @@ harness = false
 name = "vegafusion-runtime"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "1.4.1"
+version = "1.4.2"
 description = "VegaFusion Runtime"
 
 [features]
@@ -17,10 +17,7 @@ protobuf-src = [ "vegafusion-core/protobuf-src",]
 regex = "^1.5.5"
 lazy_static = "^1.4.0"
 serde_json = "1.0.91"
-chrono = { workspace = true }
 chrono-tz = "0.8.1"
-prost = { workspace = true }
-prost-types = { workspace = true }
 num-traits = "0.2.15"
 itertools = "0.11.0"
 float-cmp = "0.9.0"
@@ -49,6 +46,15 @@ dssim = "3.1.0"
 rgb = "0.8.32"
 lodepng = "3.6.1"
 
+[dependencies.chrono]
+workspace = true
+
+[dependencies.prost]
+workspace = true
+
+[dependencies.prost-types]
+workspace = true
+
 [dependencies.uuid]
 version = "^1.2"
 features = [ "v4",]
@@ -59,20 +65,20 @@ workspace = true
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
 features = [ "json", "sqlparser", "prettyprint",]
-version = "1.4.1"
+version = "1.4.2"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = [ "sqlparser",]
-version = "1.4.1"
+version = "1.4.2"
 
 [dependencies.vegafusion-datafusion-udfs]
 path = "../vegafusion-datafusion-udfs"
-version = "1.4.1"
+version = "1.4.2"
 
 [dependencies.vegafusion-dataframe]
 path = "../vegafusion-dataframe"
-version = "1.4.1"
+version = "1.4.2"
 
 [dependencies.serde]
 version = "1.0.137"
@@ -110,5 +116,5 @@ features = [ "async_tokio",]
 
 [dev-dependencies.vegafusion-sql]
 path = "../vegafusion-sql"
-version = "1.4.1"
+version = "1.4.2"
 features = [ "datafusion-conn",]

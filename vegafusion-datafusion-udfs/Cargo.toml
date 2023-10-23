@@ -1,20 +1,22 @@
 [package]
 name = "vegafusion-datafusion-udfs"
 license = "BSD-3-Clause"
-version = "1.4.1"
+version = "1.4.2"
 edition = "2021"
 description = "Custom DataFusion UDFs used by VegaFusion"
 
 [dependencies]
 ordered-float = "3.6.0"
 lazy_static = "^1.4.0"
-chrono = { workspace = true }
 chrono-tz = "0.8.1"
 regex = "^1.5.5"
 
+[dependencies.chrono]
+workspace = true
+
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-version = "1.4.1"
+version = "1.4.2"
 
 [dependencies.datafusion-physical-expr]
 workspace = true
