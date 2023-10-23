@@ -304,6 +304,17 @@ mod tests {
                             }
                         ]
                     },
+                    {
+                        "name": "data_4",
+                        "source": "data_1",
+                        "transform": [
+                            {
+                                "type": "formula",
+                                "expr": "datum.A * 5",
+                                "as": "D"
+                            }
+                        ]
+                    },
                 ]
             }
         ))
@@ -376,6 +387,17 @@ mod tests {
           "type": "formula",
           "expr": "datum.A * 4",
           "as": "C"
+        }
+      ]
+    },
+    {
+      "name": "data_4",
+      "source": "data_1",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "datum.A * 5",
+          "as": "D"
         }
       ]
     }
