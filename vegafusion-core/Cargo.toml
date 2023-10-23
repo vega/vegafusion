@@ -2,7 +2,7 @@
 name = "vegafusion-core"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "1.4.1"
+version = "1.4.2"
 description = "Core components required by multiple VegaFusion crates, with WASM compatibility"
 
 [features]
@@ -12,8 +12,6 @@ pyarrow = [ "pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow",]
 [dependencies]
 thiserror = "^1.0.29"
 bytes = "1.1.0"
-prost = { workspace = true }
-prost-types = { workspace = true }
 itertools = "0.10.3"
 lazy_static = "^1.4.0"
 regex = "^1.5.5"
@@ -24,6 +22,12 @@ chrono = "0.4.23"
 num-complex = "0.4.2"
 rand = "0.8.5"
 json-patch = "1.0.0"
+
+[dependencies.prost]
+workspace = true
+
+[dependencies.prost-types]
+workspace = true
 
 [dependencies.sqlparser]
 workspace = true
@@ -36,7 +40,7 @@ features = [ "preserve_order",]
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
 features = [ "json", "sqlparser",]
-version = "1.4.1"
+version = "1.4.2"
 
 [dependencies.datafusion-common]
 workspace = true
