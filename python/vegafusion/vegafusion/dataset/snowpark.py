@@ -92,7 +92,7 @@ class SnowparkDataset(SqlDataset):
         sp_df = self._session.sql(query)
         batches = []
         for pd_batch in sp_df.to_pandas_batches():
-            pa_tbl = to_arrow_table(pd_batch).cast(schema)
+            pa_tbl = to_arrow_table(pd_batch).cast(schema, safe=False)
             batches.extend(pa_tbl.to_batches())
 
         return pa.Table.from_batches(batches, schema)
