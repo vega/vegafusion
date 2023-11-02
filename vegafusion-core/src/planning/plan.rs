@@ -1,6 +1,7 @@
 use crate::error::Result;
 use crate::planning::extract::extract_server_data;
 use crate::planning::fuse::fuse_datasets;
+use crate::planning::lift_facet_aggregations::lift_facet_aggregations;
 use crate::planning::optimize_server::split_data_url_nodes;
 use crate::planning::projection_pushdown::projection_pushdown;
 use crate::planning::split_domain_data::split_domain_data;
@@ -87,6 +88,7 @@ pub struct PlannerConfig {
     pub extract_server_data: bool,
     pub allow_client_to_server_comms: bool,
     pub fuse_datasets: bool,
+    pub lift_facet_aggregations: bool,
     pub client_only_vars: Vec<ScopedVariable>,
     pub keep_variables: Vec<ScopedVariable>,
 }
@@ -102,6 +104,7 @@ impl Default for PlannerConfig {
             extract_server_data: true,
             allow_client_to_server_comms: true,
             fuse_datasets: true,
+            lift_facet_aggregations: true,
             client_only_vars: Default::default(),
             keep_variables: Default::default(),
         }
@@ -146,6 +149,11 @@ impl SpecPlan {
         } else {
             Default::default()
         };
+
+        // Lift aggregation transforms out of facets so they can be evaluated on the server
+        if config.lift_facet_aggregations {
+            lift_facet_aggregations(&mut client_spec, config)?;
+        }
 
         // Attempt to limit the columns produced by each dataset to only include those
         // that are actually used downstream

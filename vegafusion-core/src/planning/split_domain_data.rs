@@ -138,7 +138,7 @@ impl<'a> SplitScaleDomainVisitor<'a> {
             let new_domain = ScaleDomainSpec::FieldsReferences(ScaleFieldsReferencesSpec {
                 fields: new_fields
                     .into_iter()
-                    .map(|f| ScaleDataReferenceOrSignalSpec::Reference(f))
+                    .map(ScaleDataReferenceOrSignalSpec::Reference)
                     .collect(),
                 sort,
                 extra: Default::default(),

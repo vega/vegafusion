@@ -1,0 +1,324 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "data": [
+    {
+      "name": "source_0",
+      "url": "https://cdn.jsdelivr.net/npm/vega-datasets@v1.29.0/data/movies.json",
+      "format": {"type": "json"}
+    },
+    {
+      "name": "row_domain",
+      "source": "source_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["Creative_Type"],
+          "fields": ["Worldwide_Gross"],
+          "ops": ["mean"],
+          "as": ["mean_Worldwide_Gross"]
+        }
+      ]
+    },
+    {
+      "name": "data_1",
+      "source": "source_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["MPAA_Rating", "Creative_Type"],
+          "ops": ["stdev", "mean", "mean"],
+          "fields": ["Worldwide_Gross", "Worldwide_Gross", "Worldwide_Gross"],
+          "as": [
+            "extent_Worldwide_Gross",
+            "center_Worldwide_Gross",
+            "mean_Worldwide_Gross"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "data_2",
+      "source": "data_1",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "datum[\"center_Worldwide_Gross\"] + datum[\"extent_Worldwide_Gross\"]",
+          "as": "upper_Worldwide_Gross"
+        },
+        {
+          "type": "formula",
+          "expr": "datum[\"center_Worldwide_Gross\"] - datum[\"extent_Worldwide_Gross\"]",
+          "as": "lower_Worldwide_Gross"
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"lower_Worldwide_Gross\"]) && isFinite(+datum[\"lower_Worldwide_Gross\"])"
+        }
+      ]
+    },
+    {
+      "name": "data_3",
+      "source": "data_1",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"mean_Worldwide_Gross\"]) && isFinite(+datum[\"mean_Worldwide_Gross\"])"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {"name": "x_step", "value": 20},
+    {
+      "name": "child_width",
+      "update": "bandspace(domain('x').length, 0.1, 0.05) * x_step"
+    },
+    {"name": "child_height", "value": 300}
+  ],
+  "layout": {
+    "padding": 20,
+    "offset": {"rowTitle": 10},
+    "columns": 1,
+    "bounds": "full",
+    "align": "all"
+  },
+  "marks": [
+    {
+      "name": "row-title",
+      "type": "group",
+      "role": "row-title",
+      "title": {
+        "text": "Creative_Type",
+        "orient": "left",
+        "style": "guide-title",
+        "offset": 10
+      }
+    },
+    {
+      "name": "row_header",
+      "type": "group",
+      "role": "row-header",
+      "from": {"data": "row_domain"},
+      "sort": {
+        "field": "datum[\"mean_Worldwide_Gross\"]",
+        "order": "descending"
+      },
+      "title": {
+        "text": {
+          "signal": "isValid(parent[\"Creative_Type\"]) ? parent[\"Creative_Type\"] : \"\"+parent[\"Creative_Type\"]"
+        },
+        "orient": "left",
+        "style": "guide-label",
+        "frame": "group",
+        "offset": 10
+      },
+      "encode": {"update": {"height": {"signal": "child_height"}}},
+      "axes": [
+        {
+          "scale": "y",
+          "orient": "left",
+          "grid": false,
+          "title": "Worldwide_Gross",
+          "labelOverlap": true,
+          "tickCount": {"signal": "ceil(child_height/40)"},
+          "zindex": 0
+        }
+      ]
+    },
+    {
+      "name": "column_footer",
+      "type": "group",
+      "role": "column-footer",
+      "encode": {"update": {"width": {"signal": "child_width"}}},
+      "axes": [
+        {
+          "scale": "x",
+          "orient": "bottom",
+          "grid": false,
+          "title": "MPAA_Rating",
+          "labelAlign": "right",
+          "labelAngle": 270,
+          "labelBaseline": "middle",
+          "zindex": 0
+        }
+      ]
+    },
+    {
+      "name": "cell",
+      "type": "group",
+      "style": "cell",
+      "from": {
+        "facet": {
+          "name": "facet",
+          "data": "source_0",
+          "groupby": ["Creative_Type"],
+          "aggregate": {
+            "fields": ["Worldwide_Gross"],
+            "ops": ["mean"],
+            "as": ["mean_Worldwide_Gross_by_Creative_Type"]
+          }
+        }
+      },
+      "sort": {
+        "field": ["datum[\"mean_Worldwide_Gross_by_Creative_Type\"]"],
+        "order": ["descending"]
+      },
+      "data": [
+        {
+          "source": "facet",
+          "name": "data_0",
+          "transform": [
+            {
+              "type": "aggregate",
+              "groupby": ["MPAA_Rating"],
+              "ops": ["stdev", "mean", "mean"],
+              "fields": [
+                "Worldwide_Gross",
+                "Worldwide_Gross",
+                "Worldwide_Gross"
+              ],
+              "as": [
+                "extent_Worldwide_Gross",
+                "center_Worldwide_Gross",
+                "mean_Worldwide_Gross"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "data_1",
+          "source": "data_0",
+          "transform": [
+            {
+              "type": "formula",
+              "expr": "datum[\"center_Worldwide_Gross\"] + datum[\"extent_Worldwide_Gross\"]",
+              "as": "upper_Worldwide_Gross"
+            },
+            {
+              "type": "formula",
+              "expr": "datum[\"center_Worldwide_Gross\"] - datum[\"extent_Worldwide_Gross\"]",
+              "as": "lower_Worldwide_Gross"
+            },
+            {
+              "type": "filter",
+              "expr": "isValid(datum[\"lower_Worldwide_Gross\"]) && isFinite(+datum[\"lower_Worldwide_Gross\"])"
+            }
+          ]
+        },
+        {
+          "name": "data_2",
+          "source": "data_0",
+          "transform": [
+            {
+              "type": "filter",
+              "expr": "isValid(datum[\"mean_Worldwide_Gross\"]) && isFinite(+datum[\"mean_Worldwide_Gross\"])"
+            }
+          ]
+        }
+      ],
+      "encode": {
+        "update": {
+          "width": {"signal": "child_width"},
+          "height": {"signal": "child_height"}
+        }
+      },
+      "marks": [
+        {
+          "name": "child_layer_0_marks",
+          "type": "rect",
+          "style": ["bar"],
+          "from": {"data": "data_2"},
+          "encode": {
+            "update": {
+              "fill": {"scale": "color", "field": "MPAA_Rating"},
+              "ariaRoleDescription": {"value": "bar"},
+              "description": {
+                "signal": "\"MPAA_Rating: \" + (isValid(datum[\"MPAA_Rating\"]) ? datum[\"MPAA_Rating\"] : \"\"+datum[\"MPAA_Rating\"]) + \"; Mean of Worldwide_Gross: \" + (format(datum[\"mean_Worldwide_Gross\"], \"\"))"
+              },
+              "x": {"scale": "x", "field": "MPAA_Rating"},
+              "width": {"signal": "max(0.25, bandwidth('x'))"},
+              "y": {"scale": "y", "field": "mean_Worldwide_Gross"},
+              "y2": {"scale": "y", "value": 0}
+            }
+          }
+        },
+        {
+          "name": "child_layer_1_marks",
+          "type": "rule",
+          "style": ["rule", "errorbar-rule"],
+          "from": {"data": "data_1"},
+          "encode": {
+            "update": {
+              "ariaRoleDescription": {"value": "errorbar"},
+              "stroke": {"value": "black"},
+              "tooltip": {
+                "signal": "{\"Mean of Worldwide_Gross\": format(datum[\"center_Worldwide_Gross\"], \"\"), \"Mean + stdev of Worldwide_Gross\": format(datum[\"upper_Worldwide_Gross\"], \"\"), \"Mean - stdev of Worldwide_Gross\": format(datum[\"lower_Worldwide_Gross\"], \"\"), \"MPAA_Rating\": isValid(datum[\"MPAA_Rating\"]) ? datum[\"MPAA_Rating\"] : \"\"+datum[\"MPAA_Rating\"]}"
+              },
+              "description": {
+                "signal": "\"MPAA_Rating: \" + (isValid(datum[\"MPAA_Rating\"]) ? datum[\"MPAA_Rating\"] : \"\"+datum[\"MPAA_Rating\"]) + \"; Worldwide_Gross: \" + (format(datum[\"lower_Worldwide_Gross\"], \"\")) + \"; upper_Worldwide_Gross: \" + (format(datum[\"upper_Worldwide_Gross\"], \"\")) + \"; Mean of Worldwide_Gross: \" + (format(datum[\"center_Worldwide_Gross\"], \"\")) + \"; Mean + stdev of Worldwide_Gross: \" + (format(datum[\"upper_Worldwide_Gross\"], \"\")) + \"; Mean - stdev of Worldwide_Gross: \" + (format(datum[\"lower_Worldwide_Gross\"], \"\"))"
+              },
+              "x": {"scale": "x", "field": "MPAA_Rating", "band": 0.5},
+              "y": {"scale": "y", "field": "lower_Worldwide_Gross"},
+              "y2": {"scale": "y", "field": "upper_Worldwide_Gross"}
+            }
+          }
+        }
+      ],
+      "axes": [
+        {
+          "scale": "y",
+          "orient": "left",
+          "gridScale": "x",
+          "grid": true,
+          "tickCount": {"signal": "ceil(child_height/40)"},
+          "domain": false,
+          "labels": false,
+          "aria": false,
+          "maxExtent": 0,
+          "minExtent": 0,
+          "ticks": false,
+          "zindex": 0
+        }
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "band",
+      "domain": {
+        "fields": [
+          {"data": "data_3", "field": "MPAA_Rating"},
+          {"data": "data_2", "field": "MPAA_Rating"}
+        ],
+        "sort": true
+      },
+      "range": {"step": {"signal": "x_step"}},
+      "paddingInner": 0.1,
+      "paddingOuter": 0.05
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {
+        "fields": [
+          {"data": "data_3", "field": "mean_Worldwide_Gross"},
+          {"data": "data_2", "field": "lower_Worldwide_Gross"},
+          {"data": "data_2", "field": "upper_Worldwide_Gross"}
+        ]
+      },
+      "range": [{"signal": "child_height"}, 0],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": {"data": "data_3", "field": "MPAA_Rating", "sort": true},
+      "range": "category"
+    }
+  ],
+  "legends": [{"fill": "color", "symbolType": "square", "title": "MPAA_Rating"}]
+}

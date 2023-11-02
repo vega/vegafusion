@@ -1,33 +1,38 @@
 {
   "server_to_client": [
     {
+      "name": "data_2",
       "namespace": "data",
-      "name": "data_2_trellis_barley_color_domain_year",
       "scope": []
     },
     {
+      "name": "data_2_x_domain_MPAA_Rating_1",
       "namespace": "data",
-      "name": "data_2_trellis_barley_x_domain_median_yield",
       "scope": []
     },
     {
+      "name": "data_3",
       "namespace": "data",
-      "name": "source_0_facet_trellis_barley_facet0",
       "scope": []
     },
     {
+      "name": "data_3_color_domain_MPAA_Rating",
       "namespace": "data",
-      "name": "source_0_trellis_barley_y_domain_variety",
       "scope": []
     },
     {
+      "name": "data_3_x_domain_MPAA_Rating_0",
       "namespace": "data",
-      "name": "trellis_barley_facet_domain",
       "scope": []
     },
     {
+      "name": "row_domain",
       "namespace": "data",
-      "name": "trellis_barley_facet_domain_row",
+      "scope": []
+    },
+    {
+      "name": "source_0_facet_facet0",
+      "namespace": "data",
       "scope": []
     }
   ],

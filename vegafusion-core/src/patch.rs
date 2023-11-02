@@ -99,7 +99,7 @@ fn arrayify_int_key_objects(obj: &Value) -> Value {
             }
         }
         Value::Array(arr) => {
-            Value::Array(arr.iter().map(|v| arrayify_int_key_objects(v)).collect())
+            Value::Array(arr.iter().map(arrayify_int_key_objects).collect())
         }
         _ => obj.clone(),
     }
