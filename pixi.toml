@@ -129,8 +129,8 @@ pandas = "2.0.3.*"
 altair = "5.1.1.*"
 protobuf = "4.23.3.*"
 ipywidgets = "8.1.0.*"
-vl-convert-python = "1.0.*"
 rust = "1.72.*"
+vl-convert-python = "1.0.1rc1"
 
 [target.osx-arm64.build-dependencies]
 # These dependencies are for building node canvas from source on apple silicon
