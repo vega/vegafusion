@@ -5,7 +5,8 @@ use crate::spec::data::DataSpec;
 use crate::spec::scale::ScaleSpec;
 use crate::spec::signal::SignalSpec;
 use crate::spec::title::TitleSpec;
-use crate::spec::values::StringOrStringList;
+use crate::spec::transform::aggregate::AggregateOpSpec;
+use crate::spec::values::{Field, StringOrStringList};
 use serde::{Deserialize, Serialize};
 use serde_json::{Number, Value};
 use std::collections::HashMap;
@@ -217,6 +218,12 @@ pub struct MarkFacetSpec {
     pub data: String,
     pub name: String,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub groupby: Option<StringOrStringList>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aggregate: Option<MarkFacetAggregate>,
+
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
@@ -245,4 +252,19 @@ pub struct MarkSort {
 
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MarkFacetAggregate {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fields: Option<Vec<Option<Field>>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ops: Option<Vec<AggregateOpSpec>>,
+
+    #[serde(rename = "as", skip_serializing_if = "Option::is_none")]
+    pub as_: Option<Vec<Option<String>>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cross: Option<bool>,
 }

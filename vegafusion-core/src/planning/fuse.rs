@@ -12,7 +12,7 @@ use vegafusion_common::error::Result;
 /// transforms up through at least the first aggregation into the root dataset's transform
 /// pipeline.
 pub fn fuse_datasets(server_spec: &mut ChartSpec, do_not_fuse: &[ScopedVariable]) -> Result<()> {
-    let data_graph = build_dependency_graph(server_spec, &Default::default())?;
+    let (data_graph, _) = build_dependency_graph(server_spec, &Default::default())?;
     let nodes: Vec<NodeIndex> = toposort_dependency_graph(&data_graph)?;
 
     'outer: for node_index in &nodes {

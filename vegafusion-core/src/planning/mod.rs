@@ -1,6 +1,7 @@
 pub mod dependency_graph;
 pub mod extract;
 pub mod fuse;
+pub mod lift_facet_aggregations;
 pub mod optimize_server;
 pub mod plan;
 pub mod projection_pushdown;

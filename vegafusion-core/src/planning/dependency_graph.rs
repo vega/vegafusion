@@ -16,9 +16,9 @@ use petgraph::prelude::{DiGraph, EdgeRef, NodeIndex};
 use petgraph::Incoming;
 use std::collections::{HashMap, HashSet};
 
-pub fn toposort_dependency_graph(
-    data_graph: &DiGraph<(ScopedVariable, DependencyNodeSupported), ()>,
-) -> Result<Vec<NodeIndex>> {
+pub type DependencyGraph = DiGraph<(ScopedVariable, DependencyNodeSupported), ()>;
+
+pub fn toposort_dependency_graph(data_graph: &DependencyGraph) -> Result<Vec<NodeIndex>> {
     Ok(match toposort(&data_graph, None) {
         Ok(v) => v,
         Err(err) => {
@@ -35,7 +35,7 @@ pub fn get_supported_data_variables(
     chart_spec: &ChartSpec,
     config: &PlannerConfig,
 ) -> Result<HashMap<ScopedVariable, DependencyNodeSupported>> {
-    let data_graph = build_dependency_graph(chart_spec, config)?;
+    let (data_graph, _) = build_dependency_graph(chart_spec, config)?;
     // Sort dataset nodes topologically
     let nodes: Vec<NodeIndex> = toposort_dependency_graph(&data_graph)?;
 
@@ -129,7 +129,7 @@ pub fn get_supported_data_variables(
 pub fn build_dependency_graph(
     chart_spec: &ChartSpec,
     config: &PlannerConfig,
-) -> Result<DiGraph<(ScopedVariable, DependencyNodeSupported), ()>> {
+) -> Result<(DependencyGraph, HashMap<ScopedVariable, NodeIndex>)> {
     let task_scope = chart_spec.to_task_scope()?;
 
     // Initialize graph with nodes
@@ -144,16 +144,17 @@ pub fn build_dependency_graph(
     );
     chart_spec.walk(&mut edges_visitor)?;
 
-    Ok(nodes_visitor.dependency_graph)
+    Ok((nodes_visitor.dependency_graph, nodes_visitor.node_indexes))
 }
 
 /// Visitor to initialize directed graph with nodes for each dataset (no edges yet)
 #[derive(Debug)]
 pub struct AddDependencyNodesVisitor<'a> {
-    pub dependency_graph: DiGraph<(ScopedVariable, DependencyNodeSupported), ()>,
+    pub dependency_graph: DependencyGraph,
     pub node_indexes: HashMap<ScopedVariable, NodeIndex>,
     planner_config: &'a PlannerConfig,
     task_scope: &'a TaskScope,
+    mark_index: u32,
 }
 
 impl<'a> AddDependencyNodesVisitor<'a> {
@@ -174,6 +175,7 @@ impl<'a> AddDependencyNodesVisitor<'a> {
             node_indexes,
             planner_config,
             task_scope,
+            mark_index: 0,
         }
     }
 }
@@ -223,14 +225,19 @@ impl<'a> ChartVisitor for AddDependencyNodesVisitor<'a> {
     }
 
     fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
-        // Named non-group marks can serve as datasets
-        if let Some(name) = &mark.name {
-            let scoped_var = (Variable::new_data(name), Vec::from(scope));
-            let node_index = self
-                .dependency_graph
-                .add_node((scoped_var.clone(), DependencyNodeSupported::Unsupported));
-            self.node_indexes.insert(scoped_var, node_index);
-        }
+        // non-group marks can serve as datasets
+        let name = mark
+            .name
+            .clone()
+            .unwrap_or_else(|| format!("unnamed_mark_{}", self.mark_index));
+        self.mark_index += 1;
+
+        let scoped_var = (Variable::new_data(&name), Vec::from(scope));
+        let node_index = self
+            .dependency_graph
+            .add_node((scoped_var.clone(), DependencyNodeSupported::Unsupported));
+        self.node_indexes.insert(scoped_var, node_index);
+
         Ok(())
     }
 
@@ -247,7 +254,7 @@ impl<'a> ChartVisitor for AddDependencyNodesVisitor<'a> {
 
         // Named group marks can serve as datasets
         if let Some(name) = &mark.name {
-            let parent_scope = Vec::from(&scope[..scope.len()]);
+            let parent_scope = Vec::from(&scope[..(scope.len() - 1)]);
             let scoped_var = (Variable::new_data(name), parent_scope);
             let node_index = self
                 .dependency_graph
@@ -262,14 +269,15 @@ impl<'a> ChartVisitor for AddDependencyNodesVisitor<'a> {
 /// Visitor to add directed edges to graph with data nodes
 #[derive(Debug)]
 pub struct AddDependencyEdgesVisitor<'a> {
-    pub dependency_graph: &'a mut DiGraph<(ScopedVariable, DependencyNodeSupported), ()>,
+    pub dependency_graph: &'a mut DependencyGraph,
     node_indexes: &'a HashMap<ScopedVariable, NodeIndex>,
     task_scope: &'a TaskScope,
+    mark_index: u32,
 }
 
 impl<'a> AddDependencyEdgesVisitor<'a> {
     pub fn new(
-        dependency_graph: &'a mut DiGraph<(ScopedVariable, DependencyNodeSupported), ()>,
+        dependency_graph: &'a mut DependencyGraph,
         node_indexes: &'a HashMap<ScopedVariable, NodeIndex>,
         task_scope: &'a TaskScope,
     ) -> Self {
@@ -277,6 +285,7 @@ impl<'a> AddDependencyEdgesVisitor<'a> {
             dependency_graph,
             node_indexes,
             task_scope,
+            mark_index: 0,
         }
     }
 }
@@ -334,6 +343,79 @@ impl<'a> ChartVisitor for AddDependencyEdgesVisitor<'a> {
             self.dependency_graph
                 .add_edge(*source_node_index, *node_index, ());
         }
+
+        Ok(())
+    }
+
+    fn visit_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
+        // Facet datasets have parents
+        if let Some(from) = &mark.from {
+            if let Some(facet) = &from.facet {
+                // Scoped var for this facet dataset
+                let scoped_var = (Variable::new_data(&facet.name), Vec::from(scope));
+
+                let node_index = self
+                    .node_indexes
+                    .get(&scoped_var)
+                    .with_context(|| format!("Missing data node: {scoped_var:?}"))?;
+
+                // Build scoped var for parent node
+                let source = &facet.data;
+                let source_var = Variable::new_data(source);
+                // Resolve scope up one level because source dataset must be defined in parent,
+                // not as a dataset within this group mark
+                let resolved = self
+                    .task_scope
+                    .resolve_scope(&source_var, &scope[..(scope.len() - 1)])?;
+                let scoped_source_var = (resolved.var, resolved.scope);
+
+                let source_node_index = self
+                    .node_indexes
+                    .get(&scoped_source_var)
+                    .with_context(|| format!("Missing data node: {scoped_source_var:?}"))?;
+
+                // Add directed edge
+                self.dependency_graph
+                    .add_edge(*source_node_index, *node_index, ());
+            }
+        }
+
+        Ok(())
+    }
+
+    fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
+        // non-group marks can serve as datasets
+        let name = mark
+            .name
+            .clone()
+            .unwrap_or_else(|| format!("unnamed_mark_{}", self.mark_index));
+        self.mark_index += 1;
+
+        let Some(from) = &mark.from else { return Ok(()) };
+        let Some(source) = &from.data else { return Ok(()) };
+
+        // Scoped var for this facet dataset
+        let scoped_var = (Variable::new_data(&name), Vec::from(scope));
+
+        let node_index = self
+            .node_indexes
+            .get(&scoped_var)
+            .with_context(|| format!("Missing data node: {scoped_var:?}"))?;
+
+        let source_var = Variable::new_data(source);
+        // Resolve scope up one level because source dataset must be defined in parent,
+        // not as a dataset within this group mark
+        let resolved = self.task_scope.resolve_scope(&source_var, scope)?;
+        let scoped_source_var = (resolved.var, resolved.scope);
+
+        let source_node_index = self
+            .node_indexes
+            .get(&scoped_source_var)
+            .with_context(|| format!("Missing data node: {scoped_source_var:?}"))?;
+
+        // Add directed edge
+        self.dependency_graph
+            .add_edge(*source_node_index, *node_index, ());
 
         Ok(())
     }

@@ -19,6 +19,12 @@ impl StringOrStringList {
     }
 }
 
+impl Default for StringOrStringList {
+    fn default() -> Self {
+        Self::StringList(Vec::new())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Field {
