@@ -1,7 +1,9 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion_expr::{avg, count, count_distinct, lit, max, min, sum, Expr};
+use datafusion_expr::{
+    avg, count, count_distinct, lit, max, min, sum, BuiltinScalarFunction, Expr,
+};
 use std::collections::HashMap;
 
 use async_trait::async_trait;
@@ -160,7 +162,10 @@ pub fn make_agg_expr_for_col_expr(
         AggregateOp::Mean | AggregateOp::Average => avg(numeric_column()?),
         AggregateOp::Min => min(column),
         AggregateOp::Max => max(column),
-        AggregateOp::Sum => sum(numeric_column()?),
+        AggregateOp::Sum => Expr::ScalarFunction(expr::ScalarFunction {
+            fun: BuiltinScalarFunction::Coalesce,
+            args: vec![sum(numeric_column()?), lit(0.0)],
+        }),
         AggregateOp::Median => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Median,
             distinct: false,
