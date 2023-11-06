@@ -311,3 +311,74 @@ mod test_stack_no_divide_by_zero {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
+#[cfg(test)]
+mod test_stack_timestamp_group {
+    use super::*;
+    use serde_json::json;
+    use vegafusion_common::data::table::VegaFusionTable;
+    use vegafusion_core::spec::transform::stack::StackOffsetSpec;
+
+    #[rstest(
+        offset,
+        case(None),
+        case(Some(StackOffsetSpec::Zero)),
+        case(Some(StackOffsetSpec::Normalize)),
+        case(Some(StackOffsetSpec::Center))
+    )]
+    fn test(offset: Option<StackOffsetSpec>) {
+        let dataset = VegaFusionTable::from_json(&json!([
+            {
+              "RELEASE_DATE": "Jun 12 1998"
+            },
+            {
+              "RELEASE_DATE": "Aug 07 1998"
+            },
+            {
+              "RELEASE_DATE": "Aug 28 1998"
+            },
+            {
+              "RELEASE_DATE": "Sep 11 1998"
+            },
+            {
+              "RELEASE_DATE": "Oct 09 1998"
+            }
+        ]))
+        .unwrap();
+
+        let transform_specs: Vec<TransformSpec> = serde_json::from_value(json!([
+            {
+              "type": "formula",
+              "expr": "toDate(datum[\"RELEASE_DATE\"])",
+              "as": "RELEASE_DATE"
+            },
+            {
+              "type": "stack",
+              "groupby": [
+                "RELEASE_DATE"
+              ],
+              "field": "RELEASE_DATE",
+              "sort": {
+                "field": [],
+                "order": []
+              },
+              "as": [
+                "__RELEASE_DATE_start__",
+                "__RELEASE_DATE_end__"
+              ],
+              "offset": offset
+            }
+        ]))
+        .unwrap();
+
+        check_transform_evaluation(
+            &dataset,
+            transform_specs.as_slice(),
+            &Default::default(),
+            &Default::default(),
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}

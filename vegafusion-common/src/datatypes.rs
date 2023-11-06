@@ -85,9 +85,12 @@ pub fn to_numeric(value: Expr, schema: &DFSchema) -> Result<Expr> {
         value
     } else if matches!(dtype, DataType::Timestamp(_, _)) {
         // Convert to milliseconds
-        Expr::ScalarFunction(expr::ScalarFunction {
-            fun: BuiltinScalarFunction::ToTimestampMillis,
-            args: vec![value],
+        Expr::TryCast(TryCast {
+            expr: Box::new(Expr::ScalarFunction(expr::ScalarFunction {
+                fun: BuiltinScalarFunction::ToTimestampMillis,
+                args: vec![value],
+            })),
+            data_type: DataType::Int64,
         })
     } else {
         // Cast non-numeric types (like UTF-8) to Float64
