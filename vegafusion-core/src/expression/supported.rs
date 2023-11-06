@@ -51,7 +51,7 @@ lazy_static! {
         // Datetime
         "year", "quarter", "month", "day", "date", "dayofyear", "hours", "minutes", "seconds", "milliseconds",
         "utcyear", "utcquarter", "utcmonth", "utcday", "utcdate", "utcdayofyear",
-        "utchours", "utcminutes", "utcseconds", "utcmilliseconds", "datetime", "utc", "time", "timeFormat", "utcFormat",
+        "utchours", "utcminutes", "utcseconds", "utcmilliseconds", "datetime", "utc", "time", "format", "timeFormat", "utcFormat",
 
         // Conversion
         "toBoolean", "toDate", "toNumber", "toString",

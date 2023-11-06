@@ -1,0 +1,135 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "height": 10,
+  "style": "cell",
+  "data": [
+    {
+      "name": "data-80fc413b53d2d970f0f81ba51c6f3334",
+      "values": [
+        {"doy": 45, "variable": "doy_threshold_2011", "value": 16165},
+        {"doy": 46, "variable": "doy_threshold_2011", "value": 1922},
+        {"doy": 47, "variable": "doy_threshold_2011", "value": null},
+        {"doy": 48, "variable": "doy_threshold_2011", "value": null},
+        {"doy": 49, "variable": "doy_threshold_2011", "value": 65604},
+        {"doy": 50, "variable": "doy_threshold_2011", "value": null},
+        {"doy": 51, "variable": "doy_threshold_2011", "value": null},
+        {"doy": 52, "variable": "doy_threshold_2011", "value": 27549},
+        {"doy": 53, "variable": "doy_threshold_2011", "value": 294663},
+        {"doy": 54, "variable": "doy_threshold_2011", "value": 290251},
+        {"doy": 55, "variable": "doy_threshold_2011", "value": 10},
+        {"doy": 56, "variable": "doy_threshold_2011", "value": 394929},
+        {"doy": 57, "variable": "doy_threshold_2011", "value": 20165},
+        {"doy": 58, "variable": "doy_threshold_2011", "value": 117251},
+        {"doy": 59, "variable": "doy_threshold_2011", "value": 52055},
+        {"doy": 60, "variable": "doy_threshold_2011", "value": 76243},
+        {"doy": 61, "variable": "doy_threshold_2011", "value": 147},
+        {"doy": 62, "variable": "doy_threshold_2011", "value": 96486},
+        {"doy": 63, "variable": "doy_threshold_2011", "value": 79729},
+        {"doy": 64, "variable": "doy_threshold_2011", "value": 16243}
+      ]
+    },
+    {
+      "name": "data_0",
+      "source": "data-80fc413b53d2d970f0f81ba51c6f3334",
+      "transform": [
+        {
+          "type": "extent",
+          "field": "doy",
+          "signal": "bin_maxbins_10_doy_extent"
+        },
+        {
+          "type": "bin",
+          "field": "doy",
+          "as": ["bin_maxbins_10_doy", "bin_maxbins_10_doy_end"],
+          "signal": "bin_maxbins_10_doy_bins",
+          "extent": {"signal": "bin_maxbins_10_doy_extent"},
+          "maxbins": 10
+        },
+        {
+          "type": "formula",
+          "expr": "!isValid(datum[\"bin_maxbins_10_doy\"]) || !isFinite(+datum[\"bin_maxbins_10_doy\"]) ? \"null\" : format(datum[\"bin_maxbins_10_doy\"], \"\") + \" – \" + format(datum[\"bin_maxbins_10_doy_end\"], \"\")",
+          "as": "bin_maxbins_10_doy_range"
+        },
+        {
+          "type": "aggregate",
+          "groupby": [
+            "bin_maxbins_10_doy",
+            "bin_maxbins_10_doy_end",
+            "bin_maxbins_10_doy_range"
+          ],
+          "ops": ["sum"],
+          "fields": ["value"],
+          "as": ["sum_value"]
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {"name": "x_step", "value": 20},
+    {
+      "name": "width",
+      "update": "bandspace(domain('x').length, 1, 0.5) * x_step"
+    }
+  ],
+  "marks": [
+    {
+      "name": "marks",
+      "type": "area",
+      "style": ["area"],
+      "sort": {"field": "datum[\"bin_maxbins_10_doy\"]"},
+      "from": {"data": "data_0"},
+      "encode": {
+        "update": {
+          "interpolate": {"value": "monotone"},
+          "orient": {"value": "vertical"},
+          "fill": {"value": "#4c78a8"},
+          "description": {
+            "signal": "\"doy (binned): \" + (!isValid(datum[\"bin_maxbins_10_doy\"]) || !isFinite(+datum[\"bin_maxbins_10_doy\"]) ? \"null\" : format(datum[\"bin_maxbins_10_doy\"], \"\") + \" – \" + format(datum[\"bin_maxbins_10_doy_end\"], \"\")) + \"; Sum of value: \" + (format(datum[\"sum_value\"], \"\"))"
+          },
+          "x": {"scale": "x", "field": "bin_maxbins_10_doy_range"},
+          "y": {"scale": "y", "field": "sum_value"},
+          "y2": {"scale": "y", "value": 0},
+          "defined": {
+            "signal": "isValid(datum[\"sum_value\"]) && isFinite(+datum[\"sum_value\"])"
+          }
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "point",
+      "domain": {
+        "data": "data_0",
+        "field": "bin_maxbins_10_doy_range",
+        "sort": {"field": "bin_maxbins_10_doy", "op": "min"}
+      },
+      "range": {"step": {"signal": "x_step"}},
+      "padding": 0.5
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {"data": "data_0", "field": "sum_value"},
+      "range": [10, -10],
+      "nice": true,
+      "zero": true
+    }
+  ],
+  "axes": [
+    {
+      "scale": "x",
+      "orient": "bottom",
+      "grid": false,
+      "title": "doy (binned)",
+      "labelAlign": "right",
+      "labelAngle": 270,
+      "labelBaseline": "middle",
+      "zindex": 0
+    }
+  ],
+  "config": {"style": {"cell": {"stroke": null}}}
+}

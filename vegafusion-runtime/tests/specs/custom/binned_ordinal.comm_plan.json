@@ -1,0 +1,20 @@
+{
+  "server_to_client": [
+    {
+      "name": "data_0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_0_x_domain_bin_maxbins_10_doy_range",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_0_y_domain_sum_value",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}
