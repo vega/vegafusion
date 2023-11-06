@@ -1,7 +1,9 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion_expr::{avg, count, count_distinct, lit, max, min, sum, Expr};
+use datafusion_expr::{
+    avg, count, count_distinct, lit, max, min, sum, BuiltinScalarFunction, Expr, ExprSchemable,
+};
 use std::collections::HashMap;
 
 use async_trait::async_trait;
@@ -10,7 +12,7 @@ use std::sync::Arc;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
-use vegafusion_common::datatypes::to_numeric;
+use vegafusion_common::datatypes::{cast_to, to_numeric};
 use vegafusion_common::error::ResultWithContext;
 use vegafusion_common::escape::unescape_field;
 use vegafusion_core::arrow::datatypes::DataType;
@@ -160,7 +162,15 @@ pub fn make_agg_expr_for_col_expr(
         AggregateOp::Mean | AggregateOp::Average => avg(numeric_column()?),
         AggregateOp::Min => min(column),
         AggregateOp::Max => max(column),
-        AggregateOp::Sum => sum(numeric_column()?),
+        AggregateOp::Sum => {
+            let numeric_col = numeric_column()?;
+            let dtype = numeric_col.get_type(schema)?;
+            let zero = cast_to(lit(0), &dtype, schema)?;
+            Expr::ScalarFunction(expr::ScalarFunction {
+                fun: BuiltinScalarFunction::Coalesce,
+                args: vec![sum(numeric_col), zero],
+            })
+        }
         AggregateOp::Median => Expr::AggregateFunction(expr::AggregateFunction {
             fun: aggregate_function::AggregateFunction::Median,
             distinct: false,

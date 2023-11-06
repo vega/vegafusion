@@ -203,6 +203,21 @@ impl ExpressionVisitor for CheckSupportedExprVisitor {
             if !(args.len() == 2 && matches!(args[0].expr, Some(Expr::Array(_)))) {
                 self.supported = false;
             }
+        } else if node.name == "format" {
+            // We only support format with an empty string as second argument
+            if args.len() != 2 {
+                self.supported = false;
+            } else if let Some(Expr::Literal(Literal {
+                value: Some(Value::String(v)),
+                ..
+            })) = &args[1].expr
+            {
+                if v != "" {
+                    self.supported = false;
+                }
+            } else {
+                self.supported = false;
+            }
         }
     }
 

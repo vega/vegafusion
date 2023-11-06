@@ -193,3 +193,60 @@ fn test_joinaggregate_count_star() {
         &eq_config,
     );
 }
+
+mod test_aggregate_nulls {
+    use crate::*;
+    use serde_json::json;
+    use vegafusion_common::data::table::VegaFusionTable;
+
+    #[rstest(
+        op,
+        case(AggregateOpSpec::Count),
+        case(AggregateOpSpec::Valid),
+        case(AggregateOpSpec::Missing),
+        case(AggregateOpSpec::Distinct),
+        case(AggregateOpSpec::Sum),
+        case(AggregateOpSpec::Mean),
+        case(AggregateOpSpec::Average),
+        case(AggregateOpSpec::Min),
+        case(AggregateOpSpec::Max),
+        case(AggregateOpSpec::Median),
+        case(AggregateOpSpec::Q1),
+        case(AggregateOpSpec::Q3)
+    )]
+    fn test(op: AggregateOpSpec) {
+        let dataset = VegaFusionTable::from_json(&json!(
+            [
+                {"a": 1, "b": 1.0},
+                {"a": 1, "b": null},
+                {"a": 2, "b": null},
+                {"a": 2, "b": null},
+                {"a": 2, "b": null}
+            ]
+        ))
+        .unwrap();
+
+        let aggregate_spec = JoinAggregateTransformSpec {
+            groupby: Some(vec![Field::String("a".to_string())]),
+            fields: vec![Some(Field::String("b".to_string()))],
+            ops: vec![op],
+            as_: None,
+            extra: Default::default(),
+        };
+        let transform_specs = vec![TransformSpec::JoinAggregate(aggregate_spec)];
+
+        let comp_config = Default::default();
+
+        let eq_config = TablesEqualConfig {
+            row_order: true,
+            ..Default::default()
+        };
+
+        check_transform_evaluation(
+            &dataset,
+            transform_specs.as_slice(),
+            &comp_config,
+            &eq_config,
+        );
+    }
+}

@@ -2,7 +2,17 @@
   "server_to_client": [
     {
       "namespace": "data",
-      "name": "_server_source_0",
+      "name": "source_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_x_domain_bin_maxbins_10_IMDB Rating_range",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "source_0_y_domain___count",
       "scope": []
     }
   ],
