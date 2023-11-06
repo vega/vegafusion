@@ -1401,6 +1401,11 @@ fn make_new_schema_from_exprs(
         } else {
             // Add field for expression
             let schema_df = DFSchema::try_from(schema.clone())?;
+            println!(
+                "Expr: {:?}\n{:?}",
+                expr.to_sql_select(dialect, &schema_df).unwrap().to_string(),
+                schema_df
+            );
             let dtype = expr.get_type(&schema_df)?;
             let name = expr.display_name()?;
             fields.push(Field::new(name, dtype, true));
