@@ -52,3 +52,7 @@ optional = true
 [dependencies.base64]
 version = "0.21.2"
 optional = true
+
+[dependencies.object_store]
+workspace = true
+optional = true

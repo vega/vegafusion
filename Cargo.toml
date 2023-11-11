@@ -17,11 +17,12 @@ members = [
 arrow = { version = "47.0.0", default_features = false }
 sqlparser = { version = "0.37.0" }
 chrono = { version = "0.4.31", default_features = false }
-reqwest = { version = "=0.11.13", default-features = false }
+reqwest = { version = "0.11.22", default-features = false }
 tokio = { version = "1.32.0" }
 pyo3 = { version = "0.19" }
 prost = { version = "0.12.1" }
 prost-types = { version = "0.12.1" }
+object_store = { version="0.8.0" }
 
 datafusion = { version = "32.0.0" }
 datafusion-common = { version = "32.0.0", default_features = false}

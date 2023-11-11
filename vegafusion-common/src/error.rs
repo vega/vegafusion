@@ -16,6 +16,9 @@ use jni::errors::Error as JniError;
 #[cfg(feature = "base64")]
 use base64::DecodeError as Base64DecodeError;
 
+#[cfg(feature = "object_store")]
+use object_store::{path::Error as ObjectStorePathError, Error as ObjectStoreError};
+
 pub type Result<T> = result::Result<T, VegaFusionError>;
 
 #[derive(Clone, Debug, Default)]
@@ -90,6 +93,10 @@ pub enum VegaFusionError {
     #[cfg(feature = "base64")]
     #[error("Base64 Decode Error: {0}\n{1}")]
     Base64DecodeError(Base64DecodeError, ErrorContext),
+
+    #[cfg(feature = "object_store")]
+    #[error("ObjectStoreError Error: {0}\n{1}")]
+    ObjectStoreError(ObjectStoreError, ErrorContext),
 }
 
 impl VegaFusionError {
@@ -174,6 +181,11 @@ impl VegaFusionError {
             Base64DecodeError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::Base64DecodeError(err, context)
+            }
+            #[cfg(feature = "object_store")]
+            ObjectStoreError(err, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::ObjectStoreError(err, context)
             }
         }
     }
@@ -263,6 +275,10 @@ impl VegaFusionError {
             #[cfg(feature = "base64")]
             Base64DecodeError(err, context) => {
                 VegaFusionError::Base64DecodeError(err.clone(), context.clone())
+            }
+            #[cfg(feature = "object_store")]
+            ObjectStoreError(err, context) => {
+                VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
         }
     }
@@ -376,6 +392,23 @@ impl From<JniError> for VegaFusionError {
 impl From<Base64DecodeError> for VegaFusionError {
     fn from(err: Base64DecodeError) -> Self {
         Self::Base64DecodeError(err, Default::default())
+    }
+}
+
+#[cfg(feature = "object_store")]
+impl From<ObjectStoreError> for VegaFusionError {
+    fn from(err: ObjectStoreError) -> Self {
+        Self::ObjectStoreError(err, Default::default())
+    }
+}
+
+#[cfg(feature = "object_store")]
+impl From<ObjectStorePathError> for VegaFusionError {
+    fn from(err: ObjectStorePathError) -> Self {
+        Self::ObjectStoreError(
+            ObjectStoreError::InvalidPath { source: err },
+            Default::default(),
+        )
     }
 }
 

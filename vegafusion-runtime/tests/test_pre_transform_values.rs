@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::crate_dir;
+    use crate::{crate_dir, setup_s3_environment_vars};
     use serde_json::json;
     use std::collections::HashMap;
     use std::fs;
@@ -10,6 +10,7 @@ mod tests {
     use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType;
     use vegafusion_core::proto::gen::tasks::Variable;
     use vegafusion_core::spec::chart::ChartSpec;
+    use vegafusion_core::spec::values::StringOrSignalSpec;
     use vegafusion_runtime::data::dataset::VegaFusionDataset;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
@@ -351,10 +352,75 @@ mod tests {
 +---------------------+---------------------+---------+---------+---------------+-------------+";
         assert_eq!(drag_selected.pretty_format(None).unwrap(), expected);
     }
+
+    #[tokio::test]
+    async fn test_pre_transform_dataset_s3() {
+        // Note: s3 tests require the pixi start-minio job
+        setup_s3_environment_vars();
+
+        // Load spec
+        let spec_path = format!("{}/tests/specs/vegalite/histogram.vg.json", crate_dir());
+        let spec_str = fs::read_to_string(spec_path).unwrap();
+        let mut spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
+
+        // Prefix data/movies.json with s3://
+        spec.data[0].url = Some(StringOrSignalSpec::String(format!("s3://data/movies.json")));
+
+        // Initialize task graph runtime
+        let runtime = VegaFusionRuntime::new(
+            Arc::new(DataFusionConnection::default()),
+            Some(16),
+            Some(1024_i32.pow(3) as usize),
+        );
+
+        let (values, warnings) = runtime
+            .pre_transform_values(
+                &spec,
+                &[(Variable::new_data("source_0"), vec![])],
+                "UTC",
+                &None,
+                None,
+                Default::default(),
+            )
+            .await
+            .unwrap();
+
+        // Check there are no warnings
+        assert!(warnings.is_empty());
+
+        // Check single returned dataset
+        assert_eq!(values.len(), 1);
+
+        let dataset = values[0].as_table().cloned().unwrap();
+
+        let expected = "\
++----------------------------+--------------------------------+---------+
+| bin_maxbins_10_IMDB Rating | bin_maxbins_10_IMDB Rating_end | __count |
++----------------------------+--------------------------------+---------+
+| 6.0                        | 7.0                            | 985     |
+| 3.0                        | 4.0                            | 100     |
+| 7.0                        | 8.0                            | 741     |
+| 5.0                        | 6.0                            | 633     |
+| 8.0                        | 9.0                            | 204     |
+| 2.0                        | 3.0                            | 43      |
+| 4.0                        | 5.0                            | 273     |
+| 9.0                        | 10.0                           | 4       |
+| 1.0                        | 2.0                            | 5       |
++----------------------------+--------------------------------+---------+";
+        assert_eq!(dataset.pretty_format(None).unwrap(), expected);
+    }
 }
 
 fn crate_dir() -> String {
     std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .display()
         .to_string()
+}
+
+fn setup_s3_environment_vars() {
+    std::env::set_var("AWS_DEFAULT_REGION", "us-east-1");
+    std::env::set_var("AWS_ACCESS_KEY_ID", "access_key123");
+    std::env::set_var("AWS_SECRET_ACCESS_KEY", "secret_key123");
+    std::env::set_var("AWS_ENDPOINT", "http://127.0.0.1:9000");
+    std::env::set_var("AWS_ALLOW_HTTP", "true");
 }
