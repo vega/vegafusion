@@ -21,6 +21,8 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::sync::Arc;
+use object_store::aws::AmazonS3Builder;
+use url::Url;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datatypes::cast_to;
@@ -165,7 +167,7 @@ impl Connection for DataFusionConnection {
             let path = tempdir.path().to_str().unwrap();
 
             // Build final csv schema that combines the requested and inferred schemas
-            let final_schema = build_csv_schema(&df_csv_opts, path).await?;
+            let final_schema = build_csv_schema(&df_csv_opts, path, &self.ctx).await?;
             df_csv_opts = df_csv_opts.schema(&final_schema);
 
             // Load through VegaFusionTable so that temp file can be deleted
@@ -177,12 +179,38 @@ impl Connection for DataFusionConnection {
 
             let table = table.with_ordering()?;
             self.scan_arrow(table).await
-        } else {
-            // Build final csv schema that combines the requested and inferred schemas
-            let final_schema = build_csv_schema(&df_csv_opts, url).await?;
+        } else if let Some(bucket_path) = url.strip_prefix("s3://") {
+            let s3 = AmazonS3Builder::from_env().with_url(url).build().with_context(||
+                format!(
+                    "Failed to initialize s3 connection from environment variables.\n\
+                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env"
+                )
+            )?;
+            let Some((bucket, _)) = bucket_path.split_once("/") else {
+                return Err(VegaFusionError::specification(format!("Invalid s3 URL: {url}")));
+            };
+            let base_url = Url::parse(&format!("s3://{bucket}/")).expect("Should be valid URL");
+            let ctx = make_datafusion_context();
+            ctx.runtime_env()
+                .register_object_store(
+                    &base_url,
+                    Arc::new(s3)
+                );
+
+            let final_schema = build_csv_schema(&df_csv_opts, url, &ctx).await?;
             df_csv_opts = df_csv_opts.schema(&final_schema);
 
-            let df = self.ctx.read_csv(url, df_csv_opts).await.unwrap();
+            ctx.register_csv("csv_tbl", url, df_csv_opts).await?;
+            let sql_conn = DataFusionConnection::new(Arc::new(ctx));
+            Ok(Arc::new(
+                SqlDataFrame::try_new(Arc::new(sql_conn), "csv_tbl", Default::default()).await?,
+            ))
+        } else {
+            // Build final csv schema that combines the requested and inferred schemas
+            let final_schema = build_csv_schema(&df_csv_opts, url, &self.ctx).await?;
+            df_csv_opts = df_csv_opts.schema(&final_schema);
+
+            let df = self.ctx.read_csv(url, df_csv_opts).await?;
             let schema: SchemaRef = Arc::new(df.schema().into()) as SchemaRef;
             let batches = df.collect().await?;
             let table = VegaFusionTable::try_new(schema, batches)?;
@@ -229,6 +257,37 @@ impl Connection for DataFusionConnection {
 
             let table = VegaFusionTable::try_new(schema, batches)?.with_ordering()?;
             self.scan_arrow(table).await
+        } else if let Some(bucket_path) = url.strip_prefix("s3://") {
+            let s3 = AmazonS3Builder::from_env().with_url(url).build().with_context(||
+                format!(
+                    "Failed to initialize s3 connection from environment variables.\n\
+                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env"
+                )
+            )?;
+            let Some((bucket, _)) = bucket_path.split_once("/") else {
+                return Err(VegaFusionError::specification(format!("Invalid s3 URL: {url}")));
+            };
+            let base_url = Url::parse(&format!("s3://{bucket}/")).expect("Should be valid URL");
+            let ctx = make_datafusion_context();
+            ctx.runtime_env()
+                .register_object_store(
+                    &base_url,
+                    Arc::new(s3)
+                );
+
+            let mut opts = ArrowReadOptions::default();
+            let path = Path::new(url);
+            if let Some(ext) = path.extension().and_then(|ext| ext.to_str()) {
+                opts.file_extension = ext;
+            } else {
+                opts.file_extension = "";
+            }
+
+            ctx.register_arrow("arrow_tbl", url, opts).await?;
+            let sql_conn = DataFusionConnection::new(Arc::new(ctx));
+            Ok(Arc::new(
+                SqlDataFrame::try_new(Arc::new(sql_conn), "arrow_tbl", Default::default()).await?,
+            ))
         } else {
             // Assume local file
             let path = Path::new(url);
@@ -310,8 +369,8 @@ impl SqlConnection for DataFusionConnection {
 async fn build_csv_schema(
     csv_opts: &DfCsvReadOptions<'_>,
     uri: impl Into<String>,
+    ctx: &SessionContext,
 ) -> Result<Schema> {
-    let ctx = SessionContext::new();
     let table_path = ListingTableUrl::parse(uri.into().as_str())?;
     let listing_options = csv_opts.to_listing_options(&ctx.copied_config());
     let inferred_schema = listing_options

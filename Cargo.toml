@@ -22,7 +22,7 @@ tokio = { version = "1.32.0" }
 pyo3 = { version = "0.19" }
 prost = { version = "0.12.1" }
 prost-types = { version = "0.12.1" }
-object_store = { version="0.8.0" }
+object_store = { version="0.7" }
 
 datafusion = { version = "32.0.0" }
 datafusion-common = { version = "32.0.0", default_features = false}

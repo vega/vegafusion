@@ -5,6 +5,11 @@ import subprocess
 import time
 from pathlib import Path
 import shutil
+from tempfile import NamedTemporaryFile
+import pandas as pd
+from vegafusion.transformer import to_feather
+from csv import QUOTE_ALL
+
 
 root = Path(__file__).parent.parent
 
@@ -33,10 +38,44 @@ def main():
     else:
         print("Bucket 'data' already exists")
 
-    for fname in ["movies.json", "barley.json", "disasters.csv", "github.csv"]:
+    # Put original json object
+    movies_json_path = root / "vegafusion-runtime" / "tests" / "util" / "vegajs_runtime" / "data" / "movies.json"
+    client.fput_object(
+        "data",
+        "movies.json",
+        movies_json_path,
+    )
+
+    # load as pandas
+    df = pd.read_json(movies_json_path)
+    df["Title"] = df.Title.astype(str)
+    df["Release Date"] = pd.to_datetime(df["Release Date"])
+
+    # Convert to csv
+    with NamedTemporaryFile("wb") as f:
+        df.to_csv(f, index=False, quoting=QUOTE_ALL)
         client.fput_object(
             "data",
-            fname, root / "vegafusion-runtime" / "tests" / "util" / "vegajs_runtime" / "data" / fname,
+            "movies.csv",
+            f.name,
+        )
+
+    # Convert to arrow
+    with NamedTemporaryFile("wb") as f:
+        to_feather(df, f)
+        client.fput_object(
+            "data",
+            "movies.arrow",
+            f.name,
+        )
+
+    # Convert to parquet
+    with NamedTemporaryFile("wb") as f:
+        df.to_parquet(f)
+        client.fput_object(
+            "data",
+            "movies.parquet",
+            f.name,
         )
 
     print("Data loaded")
