@@ -44,3 +44,4 @@ __pycache__
 /java/.idea/
 /.pixi/
 /python/vegafusion-jupyter/MANIFEST
+/minio_data/

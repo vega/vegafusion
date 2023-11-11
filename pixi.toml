@@ -50,6 +50,9 @@ build-js-embed = { cmd = "cd javascript/vegafusion-embed && npm install && npm r
 # VegaFusion Server
 build-rs-vegafusion-server = { cmd = "cargo build -p vegafusion-server --release $0" }
 
+# minio
+start-minio = "python automation/start_minio.py"
+
 # Java
 build-jni = "cargo build -p vegafusion-jni --release $0"
 build-jar = "cd java && ./gradlew jar"
@@ -120,6 +123,8 @@ rust = "1.71.1.*"
 jupytext = "1.15.0.*"
 openjdk = "20.0.0.*"
 build = "0.7.0.*"
+minio-server = "2023.9.23.3.47.50.*"
+minio = "7.1.17.*"
 
 # Dependencies are those required at runtime by the Python packages
 [dependencies]
