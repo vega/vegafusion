@@ -53,8 +53,13 @@ jobs:
             ~/.cargo
             target
             .pixi
-      - name: start minio server in the background
-        run: pixi run start-minio &
+      - uses: JarvusInnovations/background-action@v1
+        name: start minio server in the background
+        with:
+          run: pixi run start-minio &
+          wait-on: |
+            http://127.0.0.1:9000
+          tail: true
       - name: Test rust
         run: |
           pixi run test-rs --release
