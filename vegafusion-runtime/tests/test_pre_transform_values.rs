@@ -10,7 +10,6 @@ mod tests {
     use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType;
     use vegafusion_core::proto::gen::tasks::Variable;
     use vegafusion_core::spec::chart::ChartSpec;
-    use vegafusion_core::spec::data::{DataFormatParseSpec, DataFormatSpec};
     use vegafusion_core::spec::values::StringOrSignalSpec;
     use vegafusion_runtime::data::dataset::VegaFusionDataset;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
@@ -364,14 +363,12 @@ mod tests {
         let spec_str = fs::read_to_string(spec_path).unwrap();
         let mut spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
-        for file_type in [
-            "json",
-            "csv",
-            "arrow"
-        ] {
+        for file_type in ["json", "csv", "arrow", "parquet"] {
             // Prefix data/movies.json with s3://
             println!("File type: {file_type}");
-            spec.data[0].url = Some(StringOrSignalSpec::String(format!("s3://data/movies.{file_type}")));
+            spec.data[0].url = Some(StringOrSignalSpec::String(format!(
+                "s3://data/movies.{file_type}"
+            )));
 
             // Initialize task graph runtime
             let runtime = VegaFusionRuntime::new(

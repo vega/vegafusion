@@ -11,8 +11,11 @@ use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
 use datafusion::execution::runtime_env::RuntimeEnv;
 use datafusion::optimizer::analyzer::inline_table_scan::InlineTableScan;
 use datafusion::optimizer::analyzer::type_coercion::TypeCoercion;
-use datafusion::prelude::{CsvReadOptions as DfCsvReadOptions, SessionConfig, SessionContext};
+use datafusion::prelude::{
+    CsvReadOptions as DfCsvReadOptions, ParquetReadOptions, SessionConfig, SessionContext,
+};
 use log::Level;
+use object_store::aws::AmazonS3Builder;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::policies::ExponentialBackoff;
 use reqwest_retry::RetryTransientMiddleware;
@@ -21,7 +24,6 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::sync::Arc;
-use object_store::aws::AmazonS3Builder;
 use url::Url;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -60,6 +62,37 @@ impl DataFusionConnection {
             dialect: Arc::new(make_datafusion_dialect()),
             ctx,
         }
+    }
+
+    fn create_s3_datafusion_session_context(
+        url: &str,
+        bucket_path: &str,
+    ) -> Result<SessionContext> {
+        let s3 = AmazonS3Builder::from_env().with_url(url).build().with_context(||
+            format!(
+                "Failed to initialize s3 connection from environment variables.\n\
+                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env"
+            )
+        )?;
+        let Some((bucket, _)) = bucket_path.split_once("/") else {
+            return Err(VegaFusionError::specification(format!("Invalid s3 URL: {url}")));
+        };
+        let base_url = Url::parse(&format!("s3://{bucket}/")).expect("Should be valid URL");
+        let ctx = make_datafusion_context();
+        ctx.runtime_env()
+            .register_object_store(&base_url, Arc::new(s3));
+        Ok(ctx)
+    }
+
+    fn get_parquet_opts(url: &str) -> ParquetReadOptions {
+        let mut opts = ParquetReadOptions::default();
+        let path = Path::new(url);
+        if let Some(ext) = path.extension().and_then(|ext| ext.to_str()) {
+            opts.file_extension = ext;
+        } else {
+            opts.file_extension = "";
+        }
+        opts
     }
 }
 
@@ -192,10 +225,7 @@ impl Connection for DataFusionConnection {
             let base_url = Url::parse(&format!("s3://{bucket}/")).expect("Should be valid URL");
             let ctx = make_datafusion_context();
             ctx.runtime_env()
-                .register_object_store(
-                    &base_url,
-                    Arc::new(s3)
-                );
+                .register_object_store(&base_url, Arc::new(s3));
 
             let final_schema = build_csv_schema(&df_csv_opts, url, &ctx).await?;
             df_csv_opts = df_csv_opts.schema(&final_schema);
@@ -258,22 +288,7 @@ impl Connection for DataFusionConnection {
             let table = VegaFusionTable::try_new(schema, batches)?.with_ordering()?;
             self.scan_arrow(table).await
         } else if let Some(bucket_path) = url.strip_prefix("s3://") {
-            let s3 = AmazonS3Builder::from_env().with_url(url).build().with_context(||
-                format!(
-                    "Failed to initialize s3 connection from environment variables.\n\
-                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env"
-                )
-            )?;
-            let Some((bucket, _)) = bucket_path.split_once("/") else {
-                return Err(VegaFusionError::specification(format!("Invalid s3 URL: {url}")));
-            };
-            let base_url = Url::parse(&format!("s3://{bucket}/")).expect("Should be valid URL");
-            let ctx = make_datafusion_context();
-            ctx.runtime_env()
-                .register_object_store(
-                    &base_url,
-                    Arc::new(s3)
-                );
+            let ctx = Self::create_s3_datafusion_session_context(url, bucket_path)?;
 
             let mut opts = ArrowReadOptions::default();
             let path = Path::new(url);
@@ -303,6 +318,37 @@ impl Connection for DataFusionConnection {
             let sql_conn = DataFusionConnection::new(Arc::new(ctx));
             Ok(Arc::new(
                 SqlDataFrame::try_new(Arc::new(sql_conn), "arrow_tbl", Default::default()).await?,
+            ))
+        }
+    }
+
+    async fn scan_parquet(&self, url: &str) -> Result<Arc<dyn DataFrame>> {
+        if url.starts_with("http://") || url.starts_with("https://") {
+            Err(VegaFusionError::internal(
+                "The DataFusion connection does not yet support loading parquet files over http or https.\n\
+                Loading parquet files from the local filesystem and from s3 is supported."
+            ))
+        } else if let Some(bucket_path) = url.strip_prefix("s3://") {
+            let ctx = Self::create_s3_datafusion_session_context(url, bucket_path)?;
+
+            let opts = Self::get_parquet_opts(url);
+
+            ctx.register_parquet("parquet_tbl", url, opts).await?;
+            let sql_conn = DataFusionConnection::new(Arc::new(ctx));
+            Ok(Arc::new(
+                SqlDataFrame::try_new(Arc::new(sql_conn), "parquet_tbl", Default::default())
+                    .await?,
+            ))
+        } else {
+            // Assume local file
+            let ctx = make_datafusion_context();
+            let opts = Self::get_parquet_opts(url);
+
+            ctx.register_parquet("parquet_tbl", url, opts).await?;
+            let sql_conn = DataFusionConnection::new(Arc::new(ctx));
+            Ok(Arc::new(
+                SqlDataFrame::try_new(Arc::new(sql_conn), "parquet_tbl", Default::default())
+                    .await?,
             ))
         }
     }

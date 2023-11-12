@@ -9,7 +9,7 @@ from tempfile import NamedTemporaryFile
 import pandas as pd
 from vegafusion.transformer import to_feather
 from csv import QUOTE_ALL
-
+from io import BytesIO
 
 root = Path(__file__).parent.parent
 
@@ -69,14 +69,19 @@ def main():
             f.name,
         )
 
-    # Convert to parquet
-    with NamedTemporaryFile("wb") as f:
-        df.to_parquet(f)
-        client.fput_object(
-            "data",
-            "movies.parquet",
-            f.name,
-        )
+    # Convert to parquet. For some reason, uploading to minio with client.fput_object
+    # (as above for arrow) results in a parquet file with corrupt footer.
+    f = BytesIO()
+    df.to_parquet(f)
+    b = f.getvalue()
+    n = len(b)
+
+    client.put_object(
+        "data",
+        "movies.parquet",
+        BytesIO(b),
+        n
+    )
 
     print("Data loaded")
     print(f"""

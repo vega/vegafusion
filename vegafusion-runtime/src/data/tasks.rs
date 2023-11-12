@@ -144,6 +144,10 @@ impl TaskCall for DataUrlTask {
             || (file_type.is_none() && (url.ends_with(".arrow") || url.ends_with(".feather")))
         {
             read_arrow(&url, conn).await?
+        } else if file_type == Some("parquet")
+            || (file_type.is_none() && (url.ends_with(".parquet")))
+        {
+            read_parquet(&url, conn).await?
         } else {
             return Err(VegaFusionError::internal(format!(
                 "Invalid url file extension {url}"
@@ -672,6 +676,10 @@ async fn read_json(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataF
 
 async fn read_arrow(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
     conn.scan_arrow_file(url).await
+}
+
+async fn read_parquet(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
+    conn.scan_parquet(url).await
 }
 
 pub fn make_request_client() -> ClientWithMiddleware {
