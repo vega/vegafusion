@@ -53,6 +53,8 @@ jobs:
             ~/.cargo
             target
             .pixi
+      - name: start minio server in the background
+        run: pixi run start-minio &
       - name: Test rust
         run: |
           pixi run test-rs --release
