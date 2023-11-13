@@ -3,6 +3,7 @@ mod tests {
     use crate::{crate_dir, setup_s3_environment_vars};
     use serde_json::json;
     use std::collections::HashMap;
+    use std::env;
     use std::fs;
     use std::sync::Arc;
     use vegafusion_common::data::table::VegaFusionTable;
@@ -355,6 +356,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_pre_transform_dataset_s3() {
+        let run_s3_tests = env::var("VEGAFUSION_S3_TESTS").is_ok();
+        if !run_s3_tests {
+            return;
+        }
+
         // Note: s3 tests require the pixi start-minio job
         setup_s3_environment_vars();
 

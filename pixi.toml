@@ -34,6 +34,7 @@ test-py-jupyter-headless = { cmd = "export VEGAFUSION_TEST_HEADLESS=1 && cd pyth
 build-vegajs-runtime = { cmd = "cd vegafusion-runtime/tests/util/vegajs_runtime && npm install" }
 test-rs-core = "cargo test -p vegafusion-core $0"
 test-rs-runtime = { cmd="cargo test -p vegafusion-runtime $0",  depends_on = ["build-vegajs-runtime"] }
+test-rs-runtime-s3 = { cmd="VEGAFUSION_S3_TESTS=1 cargo test -p vegafusion-runtime $0",  depends_on = ["build-vegajs-runtime"] }
 test-rs-server = "cargo test -p vegafusion-server $0"
 test-rs-sql = "cargo test -p vegafusion-sql $0"
 test-rs = { cmd = "cargo test --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm $0", depends_on = ["build-vegajs-runtime"] }
