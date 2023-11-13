@@ -5,7 +5,6 @@ import subprocess
 import time
 from pathlib import Path
 import shutil
-from tempfile import NamedTemporaryFile
 import pandas as pd
 from csv import QUOTE_ALL
 from io import BytesIO
@@ -52,13 +51,17 @@ def main():
     df["Release Date"] = pd.to_datetime(df["Release Date"])
 
     # Convert to csv
-    with NamedTemporaryFile("wb") as f:
-        df.to_csv(f, index=False, quoting=QUOTE_ALL)
-        client.fput_object(
-            "data",
-            "movies.csv",
-            f.name,
-        )
+    f = BytesIO()
+    df.to_csv(f, index=False, quoting=QUOTE_ALL)
+    b = f.getvalue()
+    n = len(b)
+
+    client.put_object(
+        "data",
+        "movies.csv",
+        BytesIO(b),
+        n
+    )
 
     # Convert to arrow
     tbl = pa.Table.from_pandas(df)
