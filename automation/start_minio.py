@@ -94,8 +94,7 @@ username: {access_key}
 password: {secret_key}
 """)
     # Block on the server
-    # p.wait()
-    p.terminate()
+    p.wait()
 
 
 def start_minio_server(access_key, secret_key):
