@@ -27,6 +27,8 @@ use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
+use object_store::aws::AmazonS3Builder;
+use object_store::ObjectStore;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
@@ -142,6 +144,10 @@ impl TaskCall for DataUrlTask {
             || (file_type.is_none() && (url.ends_with(".arrow") || url.ends_with(".feather")))
         {
             read_arrow(&url, conn).await?
+        } else if file_type == Some("parquet")
+            || (file_type.is_none() && (url.ends_with(".parquet")))
+        {
+            read_parquet(&url, conn).await?
         } else {
             return Err(VegaFusionError::internal(format!(
                 "Invalid url file extension {url}"
@@ -634,6 +640,21 @@ async fn read_json(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataF
             .external("Failed to convert URL data to text")?;
 
         serde_json::from_str(&body)?
+    } else if let Some(bucket_path) = url.strip_prefix("s3://") {
+        let s3= AmazonS3Builder::from_env().with_url(url).build().with_context(||
+            format!(
+                "Failed to initialize s3 connection from environment variables.\n\
+                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env"
+            )
+        )?;
+        let Some((_, path)) = bucket_path.split_once("/") else {
+            return Err(VegaFusionError::specification(format!("Invalid s3 URL: {url}")));
+        };
+        let path = object_store::path::Path::from_url_path(path)?;
+        let get_result = s3.get(&path).await?;
+        let b = get_result.bytes().await?;
+        let text = String::from_utf8_lossy(b.as_ref());
+        serde_json::from_str(text.as_ref())?
     } else {
         // Assume local file
         let mut file = tokio::fs::File::open(url)
@@ -655,6 +676,10 @@ async fn read_json(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataF
 
 async fn read_arrow(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
     conn.scan_arrow_file(url).await
+}
+
+async fn read_parquet(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
+    conn.scan_parquet(url).await
 }
 
 pub fn make_request_client() -> ClientWithMiddleware {

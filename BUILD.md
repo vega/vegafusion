@@ -18,6 +18,13 @@ Then restart your shell.
 For more information on installing Pixi, see https://prefix.dev/docs/pixi/overview.
 
 ## Build and test Rust
+
+Start the test minio server in a dedicated terminal
+
+```
+pixi run start-minio
+```
+
 Build and test the VegaFusion Rust crates with:
 
 ```

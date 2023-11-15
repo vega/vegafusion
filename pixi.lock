@@ -4466,6 +4466,90 @@ package:
   noarch: python
   size: 11682
   timestamp: 1691045097208
+- name: configparser
+  version: 5.3.0
+  manager: conda
+  platform: linux-64
+  dependencies:
+    python: '>=3.6'
+  url: https://conda.anaconda.org/conda-forge/noarch/configparser-5.3.0-pyhd8ed1ab_0.tar.bz2
+  hash:
+    md5: c99fd5916160900dc5ff64204da99c4d
+    sha256: ce6ce9ee08437b46c284d52b076fb091cf6f2a9e12860d4a37546adbd5f53b28
+  optional: false
+  category: main
+  build: pyhd8ed1ab_0
+  arch: x86_64
+  subdir: linux-64
+  build_number: 0
+  license: MIT
+  license_family: MIT
+  noarch: python
+  size: 22490
+  timestamp: 1660952265700
+- name: configparser
+  version: 5.3.0
+  manager: conda
+  platform: osx-64
+  dependencies:
+    python: '>=3.6'
+  url: https://conda.anaconda.org/conda-forge/noarch/configparser-5.3.0-pyhd8ed1ab_0.tar.bz2
+  hash:
+    md5: c99fd5916160900dc5ff64204da99c4d
+    sha256: ce6ce9ee08437b46c284d52b076fb091cf6f2a9e12860d4a37546adbd5f53b28
+  optional: false
+  category: main
+  build: pyhd8ed1ab_0
+  arch: x86_64
+  subdir: osx-64
+  build_number: 0
+  license: MIT
+  license_family: MIT
+  noarch: python
+  size: 22490
+  timestamp: 1660952265700
+- name: configparser
+  version: 5.3.0
+  manager: conda
+  platform: osx-arm64
+  dependencies:
+    python: '>=3.6'
+  url: https://conda.anaconda.org/conda-forge/noarch/configparser-5.3.0-pyhd8ed1ab_0.tar.bz2
+  hash:
+    md5: c99fd5916160900dc5ff64204da99c4d
+    sha256: ce6ce9ee08437b46c284d52b076fb091cf6f2a9e12860d4a37546adbd5f53b28
+  optional: false
+  category: main
+  build: pyhd8ed1ab_0
+  arch: aarch64
+  subdir: osx-arm64
+  build_number: 0
+  license: MIT
+  license_family: MIT
+  noarch: python
+  size: 22490
+  timestamp: 1660952265700
+- name: configparser
+  version: 5.3.0
+  manager: conda
+  platform: win-64
+  dependencies:
+    python: '>=3.6'
+  url: https://conda.anaconda.org/conda-forge/noarch/configparser-5.3.0-pyhd8ed1ab_0.tar.bz2
+  hash:
+    md5: c99fd5916160900dc5ff64204da99c4d
+    sha256: ce6ce9ee08437b46c284d52b076fb091cf6f2a9e12860d4a37546adbd5f53b28
+  optional: false
+  category: main
+  build: pyhd8ed1ab_0
+  arch: x86_64
+  subdir: win-64
+  build_number: 0
+  license: MIT
+  license_family: MIT
+  noarch: python
+  size: 22490
+  timestamp: 1660952265700
 - name: coverage
   version: 7.3.2
   manager: conda
@@ -5869,6 +5953,90 @@ package:
   license: LGPL-2.1
   size: 60255
   timestamp: 1604417405528
+- name: future
+  version: 0.18.3
+  manager: conda
+  platform: linux-64
+  dependencies:
+    python: '>=3.8'
+  url: https://conda.anaconda.org/conda-forge/noarch/future-0.18.3-pyhd8ed1ab_0.conda
+  hash:
+    md5: fec8329fc739090f26a7d7803db254f1
+    sha256: b3d34bf4924cb80363c1ab57ac821393f118ffaa94f05368bf4044941163b65e
+  optional: false
+  category: main
+  build: pyhd8ed1ab_0
+  arch: x86_64
+  subdir: linux-64
+  build_number: 0
+  license: MIT
+  license_family: MIT
+  noarch: python
+  size: 365520
+  timestamp: 1673596757510
+- name: future
+  version: 0.18.3
+  manager: conda
+  platform: osx-64
+  dependencies:
+    python: '>=3.8'
+  url: https://conda.anaconda.org/conda-forge/noarch/future-0.18.3-pyhd8ed1ab_0.conda
+  hash:
+    md5: fec8329fc739090f26a7d7803db254f1
+    sha256: b3d34bf4924cb80363c1ab57ac821393f118ffaa94f05368bf4044941163b65e
+  optional: false
+  category: main
+  build: pyhd8ed1ab_0
+  arch: x86_64
+  subdir: osx-64
+  build_number: 0
+  license: MIT
+  license_family: MIT
+  noarch: python
+  size: 365520
+  timestamp: 1673596757510
+- name: future
+  version: 0.18.3
+  manager: conda
+  platform: osx-arm64
+  dependencies:
+    python: '>=3.8'
+  url: https://conda.anaconda.org/conda-forge/noarch/future-0.18.3-pyhd8ed1ab_0.conda
+  hash:
+    md5: fec8329fc739090f26a7d7803db254f1
+    sha256: b3d34bf4924cb80363c1ab57ac821393f118ffaa94f05368bf4044941163b65e
+  optional: false
+  category: main
+  build: pyhd8ed1ab_0
+  arch: aarch64
+  subdir: osx-arm64
+  build_number: 0
+  license: MIT
+  license_family: MIT
+  noarch: python
+  size: 365520
+  timestamp: 1673596757510
+- name: future
+  version: 0.18.3
+  manager: conda
+  platform: win-64
+  dependencies:
+    python: '>=3.8'
+  url: https://conda.anaconda.org/conda-forge/noarch/future-0.18.3-pyhd8ed1ab_0.conda
+  hash:
+    md5: fec8329fc739090f26a7d7803db254f1
+    sha256: b3d34bf4924cb80363c1ab57ac821393f118ffaa94f05368bf4044941163b65e
+  optional: false
+  category: main
+  build: pyhd8ed1ab_0
+  arch: x86_64
+  subdir: win-64
+  build_number: 0
+  license: MIT
+  license_family: MIT
+  noarch: python
+  size: 365520
+  timestamp: 1673596757510
 - name: gcc_impl_linux-64
   version: 13.2.0
   manager: conda
@@ -14580,6 +14748,192 @@ package:
   noarch: python
   size: 13707
   timestamp: 1639515992326
+- name: minio
+  version: 7.1.17
+  manager: conda
+  platform: linux-64
+  dependencies:
+    certifi: '*'
+    configparser: '*'
+    future: '*'
+    python: '>=3.6'
+    python-dateutil: '*'
+    pytz: '*'
+    urllib3: '*'
+  url: https://conda.anaconda.org/conda-forge/noarch/minio-7.1.17-pyhd8ed1ab_0.conda
+  hash:
+    md5: 37a6599b8de3b46f8faff4aeb55b718f
+    sha256: 845cea4347a5b40d08caf013a7ae4aefe0112a66dd3bf0aa334068a3a5db962c
+  optional: false
+  category: main
+  build: pyhd8ed1ab_0
+  arch: x86_64
+  subdir: linux-64
+  build_number: 0
+  license: Apache-2.0
+  license_family: Apache
+  noarch: python
+  size: 59925
+  timestamp: 1695627015341
+- name: minio
+  version: 7.1.17
+  manager: conda
+  platform: osx-64
+  dependencies:
+    certifi: '*'
+    configparser: '*'
+    future: '*'
+    python: '>=3.6'
+    python-dateutil: '*'
+    pytz: '*'
+    urllib3: '*'
+  url: https://conda.anaconda.org/conda-forge/noarch/minio-7.1.17-pyhd8ed1ab_0.conda
+  hash:
+    md5: 37a6599b8de3b46f8faff4aeb55b718f
+    sha256: 845cea4347a5b40d08caf013a7ae4aefe0112a66dd3bf0aa334068a3a5db962c
+  optional: false
+  category: main
+  build: pyhd8ed1ab_0
+  arch: x86_64
+  subdir: osx-64
+  build_number: 0
+  license: Apache-2.0
+  license_family: Apache
+  noarch: python
+  size: 59925
+  timestamp: 1695627015341
+- name: minio
+  version: 7.1.17
+  manager: conda
+  platform: osx-arm64
+  dependencies:
+    certifi: '*'
+    configparser: '*'
+    future: '*'
+    python: '>=3.6'
+    python-dateutil: '*'
+    pytz: '*'
+    urllib3: '*'
+  url: https://conda.anaconda.org/conda-forge/noarch/minio-7.1.17-pyhd8ed1ab_0.conda
+  hash:
+    md5: 37a6599b8de3b46f8faff4aeb55b718f
+    sha256: 845cea4347a5b40d08caf013a7ae4aefe0112a66dd3bf0aa334068a3a5db962c
+  optional: false
+  category: main
+  build: pyhd8ed1ab_0
+  arch: aarch64
+  subdir: osx-arm64
+  build_number: 0
+  license: Apache-2.0
+  license_family: Apache
+  noarch: python
+  size: 59925
+  timestamp: 1695627015341
+- name: minio
+  version: 7.1.17
+  manager: conda
+  platform: win-64
+  dependencies:
+    certifi: '*'
+    configparser: '*'
+    future: '*'
+    python: '>=3.6'
+    python-dateutil: '*'
+    pytz: '*'
+    urllib3: '*'
+  url: https://conda.anaconda.org/conda-forge/noarch/minio-7.1.17-pyhd8ed1ab_0.conda
+  hash:
+    md5: 37a6599b8de3b46f8faff4aeb55b718f
+    sha256: 845cea4347a5b40d08caf013a7ae4aefe0112a66dd3bf0aa334068a3a5db962c
+  optional: false
+  category: main
+  build: pyhd8ed1ab_0
+  arch: x86_64
+  subdir: win-64
+  build_number: 0
+  license: Apache-2.0
+  license_family: Apache
+  noarch: python
+  size: 59925
+  timestamp: 1695627015341
+- name: minio-server
+  version: 2023.09.23.03.47.50
+  manager: conda
+  platform: linux-64
+  dependencies: {}
+  url: https://conda.anaconda.org/conda-forge/linux-64/minio-server-2023.09.23.03.47.50-hbcca054_0.conda
+  hash:
+    md5: ff773f379a8324cefc3a904a5fcb0c27
+    sha256: 83d01977a656502d67ba01b709bdaa39730d19d4630d0965e3150fc5b76de5b1
+  optional: false
+  category: main
+  build: hbcca054_0
+  arch: x86_64
+  subdir: linux-64
+  build_number: 0
+  license: AGPL-3.0-only
+  license_family: AGPL
+  size: 28514641
+  timestamp: 1695661212355
+- name: minio-server
+  version: 2023.09.23.03.47.50
+  manager: conda
+  platform: osx-64
+  dependencies: {}
+  url: https://conda.anaconda.org/conda-forge/osx-64/minio-server-2023.09.23.03.47.50-h8857fd0_0.conda
+  hash:
+    md5: e5631d220e6361e9945598970cb8cbd3
+    sha256: 5466cf7e24112c70405a1631f3f4fb5e86fa9e93c5beaf5ea72a9839ae75f7bb
+  optional: false
+  category: main
+  build: h8857fd0_0
+  arch: x86_64
+  subdir: osx-64
+  build_number: 0
+  constrains:
+  - __osx>=10.12
+  license: AGPL-3.0-only
+  license_family: AGPL
+  size: 29438678
+  timestamp: 1695669781862
+- name: minio-server
+  version: 2023.09.23.03.47.50
+  manager: conda
+  platform: osx-arm64
+  dependencies: {}
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/minio-server-2023.09.23.03.47.50-hf0a4a13_0.conda
+  hash:
+    md5: 716354cbeec9ed541b75c4d1398af8e9
+    sha256: e8ecdc8c0943cd01a1ac488f2fdea36ec74161ca1225f47c06b71934dea61ef2
+  optional: false
+  category: main
+  build: hf0a4a13_0
+  arch: aarch64
+  subdir: osx-arm64
+  build_number: 0
+  license: AGPL-3.0-only
+  license_family: AGPL
+  size: 28775220
+  timestamp: 1695661328725
+- name: minio-server
+  version: 2023.09.23.03.47.50
+  manager: conda
+  platform: win-64
+  dependencies: {}
+  url: https://conda.anaconda.org/conda-forge/win-64/minio-server-2023.09.23.03.47.50-h56e8100_0.conda
+  hash:
+    md5: 842697378d8ac142d1dac05a310cb9eb
+    sha256: 1382416ae6dc8c5fcde90f448e03860ef0da591d2aa3e06bde312ccfb8bd5607
+  optional: false
+  category: main
+  build: h56e8100_0
+  arch: x86_64
+  subdir: win-64
+  build_number: 0
+  license: AGPL-3.0-only
+  license_family: AGPL
+  size: 28599729
+  timestamp: 1695661919637
 - name: mistune
   version: 3.0.2
   manager: conda

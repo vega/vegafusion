@@ -41,4 +41,11 @@ pub trait Connection: Send + Sync + 'static {
             "scan_arrow_file not supported by connection",
         ))
     }
+
+    /// Scan an Parquet file into a DataFrame
+    async fn scan_parquet(&self, _url: &str) -> Result<Arc<dyn DataFrame>> {
+        Err(VegaFusionError::sql_not_supported(
+            "scan_parquet not supported by connection",
+        ))
+    }
 }
