@@ -106,7 +106,8 @@ jobs:
       - name: Install pixi
         run: |
           iwr -useb https://pixi.sh/install.ps1 | iex
-          echo "${USERPROFILE}\.pixi\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "${HOME}\.pixi\bin"
+          echo "${HOME}\.pixi\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Cache
         uses: actions/cache@v3
         with:
