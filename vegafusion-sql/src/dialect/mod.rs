@@ -35,7 +35,10 @@ use crate::dialect::transforms::str_to_utc_timestamp::{
     StrToUtcTimestampSnowflakeTransformer, StrToUtcTimestampWithCastAndAtTimeZoneTransformer,
     StrToUtcTimestampWithCastFunctionAtTransformer, StrToUtcTimestampWithFunctionTransformer,
 };
-use crate::dialect::transforms::to_utc_timestamp::ToUtcTimestampWithAtTimeZoneTransformer;
+use crate::dialect::transforms::to_utc_timestamp::{
+    ToUtcTimestampBigQueryTransform, ToUtcTimestampSnowflakeTransform,
+    ToUtcTimestampWithAtTimeZoneTransformer,
+};
 use crate::dialect::transforms::utc_timestamp_to_epoch_ms::{
     UtcTimestampToEpochMsDatabricksTransform, UtcTimestampToEpochMsDuckdbTransform,
     UtcTimestampToEpochMsPostgresTransform, UtcTimestampToEpochMsSnowflakeTransform,
@@ -484,6 +487,10 @@ impl Dialect {
                     "date_to_utc_timestamp",
                     DateToUtcTimestampWithFunctionTransformer::new_dyn("timestamp"),
                 ),
+                (
+                    "to_utc_timestamp",
+                    ToUtcTimestampBigQueryTransform::new_dyn(),
+                ),
             ]
             .into_iter()
             .map(|(name, v)| (name.to_string(), v))
@@ -654,9 +661,30 @@ impl Dialect {
             .collect(),
             binary_op_transforms: Default::default(),
             scalar_functions: vec![
-                "abs", "acos", "asin", "atan", "atan2", "ceil", "coalesce", "cos", "exp", "floor",
-                "ln", "log10", "log2", "pow", "round", "sin", "sqrt", "tan", "random", "substr",
-                "concat", "upper", "lower",
+                "abs",
+                "acos",
+                "asin",
+                "atan",
+                "atan2",
+                "ceil",
+                "coalesce",
+                "cos",
+                "exp",
+                "floor",
+                "ln",
+                "log10",
+                "log2",
+                "pow",
+                "round",
+                "sin",
+                "sqrt",
+                "tan",
+                "random",
+                "substr",
+                "concat",
+                "upper",
+                "lower",
+                "to_utc_timestamp",
             ]
             .iter()
             .map(|s| s.to_string())
@@ -1612,6 +1640,10 @@ impl Dialect {
                 (
                     "date_to_utc_timestamp",
                     DateToUtcTimestampSnowflakeTransform::new_dyn(),
+                ),
+                (
+                    "to_utc_timestamp",
+                    ToUtcTimestampSnowflakeTransform::new_dyn(),
                 ),
             ]
             .into_iter()

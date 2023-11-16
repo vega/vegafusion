@@ -213,6 +213,11 @@ impl FunctionTransformer for EpochMsToUtcTimestampPostgresTransformer {
             order_by: Default::default(),
         });
 
+        let to_timestamp_at_utc_expr = SqlExpr::AtTimeZone {
+            timestamp: Box::new(to_timestamp_expr),
+            time_zone: "UTC".to_string(),
+        };
+
         let interval_expr = SqlExpr::Interval(sqlparser::ast::Interval {
             value: Box::new(SqlExpr::Value(SqlValue::SingleQuotedString(
                 "1 millisecond".to_string(),
@@ -230,7 +235,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampPostgresTransformer {
         };
 
         let interval_addition_expr = SqlExpr::BinaryOp {
-            left: Box::new(to_timestamp_expr),
+            left: Box::new(to_timestamp_at_utc_expr),
             op: SqlBinaryOperator::Plus,
             right: Box::new(interval_mult_expr),
         };
