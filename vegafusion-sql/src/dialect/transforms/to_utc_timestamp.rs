@@ -3,7 +3,11 @@ use crate::dialect::{Dialect, FunctionTransformer};
 use arrow::datatypes::DataType;
 use datafusion_common::DFSchema;
 use datafusion_expr::{Expr, ExprSchemable};
-use sqlparser::ast::{Expr as SqlExpr, Value as SqlValue};
+use sqlparser::ast::{
+    Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg,
+    FunctionArgExpr as SqlFunctionArgExpr, Ident as SqlIdent, ObjectName as SqlObjectName,
+    Value as SqlValue,
+};
 use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
 
@@ -75,5 +79,106 @@ impl FunctionTransformer for ToUtcTimestampWithAtTimeZoneTransformer {
         };
 
         Ok(utc_expr)
+    }
+}
+
+/// Convert to_utc_timestamp(ts, tz) ->
+///     CONVERT_TIMEZONE(tz, 'UTC', ts)
+/// or if tz = 'UTC'
+///     ts
+#[derive(Clone, Debug)]
+pub struct ToUtcTimestampSnowflakeTransform;
+
+impl ToUtcTimestampSnowflakeTransform {
+    pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self)
+    }
+}
+
+impl FunctionTransformer for ToUtcTimestampSnowflakeTransform {
+    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
+        let (ts_arg, time_zone) = process_to_utc_timestamp_args(args, dialect, schema)?;
+
+        if time_zone == "UTC" {
+            // No conversion needed
+            Ok(ts_arg)
+        } else {
+            let convert_tz_expr = SqlExpr::Function(SqlFunction {
+                name: SqlObjectName(vec![SqlIdent {
+                    value: "convert_timezone".to_string(),
+                    quote_style: None,
+                }]),
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString(time_zone),
+                    ))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString("UTC".to_string()),
+                    ))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_arg)),
+                ],
+                over: None,
+                distinct: false,
+                special: false,
+                order_by: Default::default(),
+            });
+
+            Ok(convert_tz_expr)
+        }
+    }
+}
+
+/// Convert to_utc_timestamp(ts, tz) ->
+///     timestamp(CAST(ts as DATETIME), tz)
+/// or if tz = 'UTC'
+///     ts
+#[derive(Clone, Debug)]
+pub struct ToUtcTimestampBigQueryTransform;
+
+impl ToUtcTimestampBigQueryTransform {
+    pub fn new_dyn() -> Arc<dyn FunctionTransformer> {
+        Arc::new(Self)
+    }
+}
+
+impl FunctionTransformer for ToUtcTimestampBigQueryTransform {
+    fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
+        let (ts_arg, time_zone) = process_to_utc_timestamp_args(args, dialect, schema)?;
+
+        if time_zone == "UTC" {
+            // No conversion needed
+            Ok(ts_arg)
+        } else {
+            let datetime_expr = SqlExpr::Function(SqlFunction {
+                name: SqlObjectName(vec![SqlIdent {
+                    value: "datetime".to_string(),
+                    quote_style: None,
+                }]),
+                args: vec![SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_arg))],
+                over: None,
+                distinct: false,
+                special: false,
+                order_by: Default::default(),
+            });
+
+            let convert_tz_expr = SqlExpr::Function(SqlFunction {
+                name: SqlObjectName(vec![SqlIdent {
+                    value: "timestamp".to_string(),
+                    quote_style: None,
+                }]),
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(datetime_expr)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString(time_zone),
+                    ))),
+                ],
+                over: None,
+                distinct: false,
+                special: false,
+                order_by: Default::default(),
+            });
+
+            Ok(convert_tz_expr)
+        }
     }
 }

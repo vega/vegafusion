@@ -1,12 +1,19 @@
 use crate::compile::data_type::ToSqlDataType;
+use crate::compile::expr::ToSqlExpr;
 use crate::dialect::Dialect;
-use arrow::datatypes::DataType;
+use arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::scalar::ScalarValue;
+use datafusion_common::DFSchema;
+use datafusion_expr::{
+    expr, lit, ColumnarValue, Expr, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF,
+    Signature, Volatility,
+};
 use sqlparser::ast::{
     Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr,
     Ident, ObjectName as SqlObjectName, Value as SqlValue,
 };
 use std::ops::Add;
+use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
 
 pub trait ToSqlScalar {
@@ -167,28 +174,28 @@ impl ToSqlScalar for ScalarValue {
             )),
             ScalarValue::TimestampSecond(v, _) => {
                 if let Some(v) = v {
-                    Ok(ms_to_timestamp(v * 1000))
+                    Ok(ms_to_timestamp(v * 1000, dialect)?)
                 } else {
                     Ok(SqlExpr::Value(SqlValue::Null))
                 }
             }
             ScalarValue::TimestampMillisecond(v, _) => {
                 if let Some(v) = v {
-                    Ok(ms_to_timestamp(*v))
+                    Ok(ms_to_timestamp(*v, dialect)?)
                 } else {
                     Ok(SqlExpr::Value(SqlValue::Null))
                 }
             }
             ScalarValue::TimestampMicrosecond(v, _) => {
                 if let Some(v) = v {
-                    Ok(ms_to_timestamp(v / 1000))
+                    Ok(ms_to_timestamp(v / 1000, dialect)?)
                 } else {
                     Ok(SqlExpr::Value(SqlValue::Null))
                 }
             }
             ScalarValue::TimestampNanosecond(v, _) => {
                 if let Some(v) = v {
-                    Ok(ms_to_timestamp(v / 1000000))
+                    Ok(ms_to_timestamp(v / 1000000, dialect)?)
                 } else {
                     Ok(SqlExpr::Value(SqlValue::Null))
                 }
@@ -245,24 +252,26 @@ impl ToSqlScalar for ScalarValue {
     }
 }
 
-fn ms_to_timestamp(v: i64) -> SqlExpr {
-    let function_ident = Ident {
-        value: "epoch_ms_to_utc_timestamp".to_string(),
-        quote_style: None,
-    };
+fn ms_to_timestamp(v: i64, dialect: &Dialect) -> Result<SqlExpr> {
+    // Hack to recursively transform the epoch_ms_to_utc_timestamp
+    let return_type: ReturnTypeFunction =
+        Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
+    let signature: Signature = Signature::exact(vec![DataType::Int64], Volatility::Immutable);
+    let scalar_fn: ScalarFunctionImplementation = Arc::new(move |_args: &[ColumnarValue]| {
+        panic!("Placeholder UDF implementation should not be called")
+    });
 
-    let v_ms_expr = SqlExpr::Value(SqlValue::Number(v.to_string(), false));
-
-    let args = vec![SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(v_ms_expr))];
-
-    SqlExpr::Function(SqlFunction {
-        name: SqlObjectName(vec![function_ident]),
-        args,
-        over: None,
-        distinct: false,
-        special: false,
-        order_by: Default::default(),
+    let udf = ScalarUDF::new(
+        "epoch_ms_to_utc_timestamp",
+        &signature,
+        &return_type,
+        &scalar_fn,
+    );
+    Expr::ScalarUDF(expr::ScalarUDF {
+        fun: Arc::new(udf),
+        args: vec![lit(v)],
     })
+    .to_sql(dialect, &DFSchema::empty())
 }
 
 fn date32_to_date(days: &Option<i32>, dialect: &Dialect) -> Result<SqlExpr> {

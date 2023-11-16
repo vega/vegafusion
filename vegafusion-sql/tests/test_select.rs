@@ -1368,6 +1368,81 @@ mod test_date_to_utc_timestamp {
 }
 
 #[cfg(test)]
+mod test_timestamp_to_utc_timestamp {
+    use crate::*;
+    use arrow::array::{ArrayRef, Int32Array, TimestampMillisecondArray};
+    use arrow::datatypes::{DataType, Field, Schema, SchemaRef, TimeUnit};
+    use arrow::record_batch::RecordBatch;
+    use datafusion_expr::{expr, lit, Expr};
+    use std::sync::Arc;
+    use vegafusion_common::column::flat_col;
+    use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
+
+    #[apply(dialect_names)]
+    async fn test(dialect_name: &str) {
+        println!("{dialect_name}");
+        let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
+
+        let schema_ref: SchemaRef = Arc::new(Schema::new(vec![
+            Field::new("a", DataType::Int32, true),
+            Field::new("b", DataType::Timestamp(TimeUnit::Millisecond, None), true),
+        ]));
+        let columns = vec![
+            Arc::new(Int32Array::from(vec![0, 1, 2])) as ArrayRef,
+            Arc::new(TimestampMillisecondArray::from(vec![
+                1641058496123i64, // 2022-01-01 05:34:56.123
+                1641108601321i64, // 2022-01-02 07:30:01.321
+                1641192141999i64, // 2022-01-03 06:42:21.999
+            ])) as ArrayRef,
+        ];
+
+        let batch = RecordBatch::try_new(schema_ref.clone(), columns).unwrap();
+        let table = VegaFusionTable::try_new(schema_ref, vec![batch]).unwrap();
+        let df_result = SqlDataFrame::from_values(&table, conn, Default::default());
+
+        let df_result = if let Ok(df) = df_result {
+            df.select(vec![
+                flat_col("a"),
+                flat_col("b"),
+                Expr::ScalarUDF(expr::ScalarUDF {
+                    fun: Arc::new(TO_UTC_TIMESTAMP_UDF.clone()),
+                    args: vec![flat_col("b"), lit("America/New_York")],
+                })
+                .alias("b_utc"),
+            ])
+            .await
+        } else {
+            df_result
+        };
+
+        let df_result = if let Ok(df) = df_result {
+            df.sort(
+                vec![Expr::Sort(expr::Sort {
+                    expr: Box::new(flat_col("a")),
+                    asc: true,
+                    nulls_first: true,
+                })],
+                None,
+            )
+            .await
+        } else {
+            df_result
+        };
+
+        check_dataframe_query(
+            df_result,
+            "select",
+            "to_utc_timestamp",
+            dialect_name,
+            evaluable,
+        );
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
+#[cfg(test)]
 mod test_string_ops {
     use crate::*;
     use datafusion_expr::{expr, lit, BuiltinScalarFunction, Expr};

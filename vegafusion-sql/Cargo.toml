@@ -6,7 +6,7 @@ edition = "2021"
 description = "VegaFusion SQL dialect generation and connection implementations"
 
 [features]
-datafusion-conn = [ "datafusion", "tempfile", "reqwest", "reqwest-retry", "reqwest-middleware", "vegafusion-datafusion-udfs", "object_store", "url"]
+datafusion-conn = [ "datafusion", "tempfile", "reqwest", "reqwest-retry", "reqwest-middleware", "vegafusion-datafusion-udfs", "object_store", "url", "vegafusion-common/object_store",]
 
 [dependencies]
 async-trait = "0.1.73"
