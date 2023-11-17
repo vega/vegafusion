@@ -1,7 +1,7 @@
 use crate::error::Result;
 use crate::expression::parser::parse;
 use crate::task_graph::task::InputVariable;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -136,6 +136,65 @@ impl SortOrderOrList {
         match self {
             SortOrderOrList::SortOrder(v) => vec![v.clone()],
             SortOrderOrList::SortOrderList(v) => v.clone(),
+        }
+    }
+}
+
+/// Helper struct that will not drop null values on round trip (de)serialization
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MissingNullOrValue {
+    Missing,
+    Null,
+    Value(serde_json::Value),
+}
+
+impl MissingNullOrValue {
+    pub fn is_missing(&self) -> bool {
+        matches!(self, MissingNullOrValue::Missing)
+    }
+
+    pub fn as_option(&self) -> Option<serde_json::Value> {
+        match self {
+            MissingNullOrValue::Missing => None,
+            MissingNullOrValue::Null => Some(serde_json::Value::Null),
+            MissingNullOrValue::Value(v) => Some(v.clone()),
+        }
+    }
+}
+
+impl Default for MissingNullOrValue {
+    fn default() -> Self {
+        MissingNullOrValue::Missing
+    }
+}
+
+impl From<Option<serde_json::Value>> for MissingNullOrValue {
+    fn from(opt: Option<serde_json::Value>) -> MissingNullOrValue {
+        match opt {
+            Some(v) => MissingNullOrValue::Value(v),
+            None => MissingNullOrValue::Null,
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for MissingNullOrValue {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Option::deserialize(deserializer).map(Into::into)
+    }
+}
+
+impl Serialize for MissingNullOrValue {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            MissingNullOrValue::Missing => None::<Option<serde_json::Value>>.serialize(serializer),
+            MissingNullOrValue::Null => serde_json::Value::Null.serialize(serializer),
+            MissingNullOrValue::Value(v) => v.serialize(serializer),
         }
     }
 }

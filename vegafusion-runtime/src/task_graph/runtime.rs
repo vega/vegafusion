@@ -41,6 +41,7 @@ use vegafusion_core::proto::gen::tasks::{
     TaskValue as ProtoTaskValue, TzConfig, Variable, VariableNamespace,
 };
 use vegafusion_core::spec::chart::ChartSpec;
+use vegafusion_core::spec::values::MissingNullOrValue;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_dataframe::connection::Connection;
 
@@ -281,7 +282,7 @@ impl VegaFusionRuntime {
             match export_update.namespace {
                 ExportUpdateNamespace::Signal => {
                     let signal = spec.get_nested_signal_mut(&scope, name)?;
-                    signal.value = Some(export_update.value);
+                    signal.value = MissingNullOrValue::Value(export_update.value);
                 }
                 ExportUpdateNamespace::Data => {
                     let data = spec.get_nested_data_mut(&scope, name)?;
@@ -681,7 +682,7 @@ impl VegaFusionRuntime {
                 ExportUpdateNamespace::Signal => {
                     // Always inline signal values
                     let signal = spec.get_nested_signal_mut(&scope, name)?;
-                    signal.value = Some(export_update.value.to_json()?);
+                    signal.value = MissingNullOrValue::Value(export_update.value.to_json()?);
                 }
                 ExportUpdateNamespace::Data => {
                     let data = spec.get_nested_data_mut(&scope, name)?;

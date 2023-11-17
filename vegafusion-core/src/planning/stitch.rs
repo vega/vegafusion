@@ -3,6 +3,7 @@ use crate::proto::gen::tasks::VariableNamespace;
 use crate::spec::chart::ChartSpec;
 use crate::spec::data::DataSpec;
 use crate::spec::signal::SignalSpec;
+use crate::spec::values::MissingNullOrValue;
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use serde_json::Value;
@@ -93,13 +94,13 @@ fn make_stub(
             let stub_value = from_spec
                 .get_nested_signal(&stub_path, &stub_name)
                 .ok()
-                .and_then(|s| s.value.clone());
+                .and_then(|s| s.value.as_option());
 
             let new_signal_spec = SignalSpec {
                 name: stub_name,
                 init: None,
                 update: None,
-                value: stub_value,
+                value: MissingNullOrValue::from(stub_value),
                 on: vec![],
                 extra: Default::default(),
             };
