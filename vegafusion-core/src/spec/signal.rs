@@ -1,7 +1,7 @@
 use crate::expression::parser::parse;
 use crate::planning::plan::PlannerConfig;
 use crate::spec::data::DependencyNodeSupported;
-use crate::spec::values::StringOrStringList;
+use crate::spec::values::{MissingNullOrValue, StringOrStringList};
 use crate::task_graph::scope::TaskScope;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -17,8 +17,8 @@ pub struct SignalSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub update: Option<String>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<Value>,
+    #[serde(default, skip_serializing_if = "MissingNullOrValue::is_missing")]
+    pub value: MissingNullOrValue,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub on: Vec<SignalOnSpec>,
@@ -34,7 +34,7 @@ impl SignalSpec {
         task_scope: &TaskScope,
         scope: &[u32],
     ) -> DependencyNodeSupported {
-        if self.value.is_some() {
+        if !self.value.is_missing() {
             return DependencyNodeSupported::Supported;
         } else if let Some(expr) = &self.update {
             if self.on.is_empty() {
@@ -125,4 +125,24 @@ pub struct SignalOnSourceEvent {
 
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::spec::signal::SignalSpec;
+
+    #[test]
+    fn test_signal_null_value_not_dropped() {
+        // No value is valid
+        let s = r#"{"name":"foo"}"#;
+        let sig: SignalSpec = serde_json::from_str(s).unwrap();
+        let res = serde_json::to_string(&sig).unwrap();
+        assert_eq!(res, s);
+
+        // Null value should not be dropped
+        let s = r#"{"name":"foo","value":null}"#;
+        let sig: SignalSpec = serde_json::from_str(s).unwrap();
+        let res = serde_json::to_string(&sig).unwrap();
+        assert_eq!(res, s);
+    }
 }

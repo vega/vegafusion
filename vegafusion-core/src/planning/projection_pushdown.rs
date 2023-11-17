@@ -753,7 +753,7 @@ impl ChartVisitor for CollectVlSelectionTestFieldsVisitor {
             if let Ok(resolved) = self.task_scope.resolve_scope(&store_var, scope) {
                 let scoped_brush_var: ScopedVariable = (resolved.var, resolved.scope);
 
-                if let Some(value) = &signal.value {
+                if let Some(value) = &signal.value.as_option() {
                     if let Ok(table) = VegaFusionTable::from_json(value) {
                         // Check that we have "field", "channel", and "type" columns
                         let schema = &table.schema;

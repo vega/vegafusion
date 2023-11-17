@@ -234,7 +234,7 @@ impl<'a> ChartVisitor for MakeTasksVisitor<'a> {
     fn visit_signal(&mut self, signal: &SignalSpec, scope: &[u32]) -> Result<()> {
         let signal_var = Variable::new_signal(&signal.name);
 
-        let task = if let Some(value) = &signal.value {
+        let task = if let Some(value) = &signal.value.as_option() {
             let value = TaskValue::Scalar(ScalarValue::from_json(value)?);
             Task::new_value(signal_var, scope, value)
         } else if let Some(update) = &signal.update {
@@ -334,7 +334,7 @@ impl<'a> ChartVisitor for UpdateVarsChartVisitor<'a> {
 
     fn visit_signal(&mut self, signal: &SignalSpec, scope: &[u32]) -> Result<()> {
         // Signal is an update variable if it's not an empty stub
-        if signal.value.is_some()
+        if signal.value.as_option().is_some()
             || signal.init.is_some()
             || signal.update.is_some()
             || !signal.on.is_empty()
