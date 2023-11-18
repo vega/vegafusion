@@ -41,7 +41,7 @@ impl TransformTrait for Identifier {
         .alias(&self.r#as);
 
         let result = dataframe
-            .select(vec![Expr::Wildcard, row_number_expr])
+            .select(vec![Expr::Wildcard { qualifier: None }, row_number_expr])
             .await?;
 
         Ok((result, Default::default()))

@@ -18,7 +18,7 @@ fn make_date_part_tz_udf() -> ScalarUDF {
         // [1] data array
         let timestamp_array = match &args[1] {
             ColumnarValue::Array(array) => array.clone(),
-            ColumnarValue::Scalar(scalar) => scalar.to_array(),
+            ColumnarValue::Scalar(scalar) => scalar.to_array()?,
         };
 
         let timestamp_array = to_timestamp_ms(&timestamp_array)?;

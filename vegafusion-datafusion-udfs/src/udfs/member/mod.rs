@@ -62,17 +62,16 @@ pub fn make_get_element_udf(index: i32) -> ScalarUDF {
         Ok(match arg {
             ColumnarValue::Scalar(value) => {
                 match value {
-                    ScalarValue::List(Some(arr), element_dtype) => {
-                        match arr.get(index as usize) {
-                            Some(element) => {
+                    ScalarValue::List(arr) => {
+                        let arr = arr.as_any().downcast_ref::<ListArray>().unwrap();
+                        match ScalarValue::try_from_array(&arr.value(0), index as usize) {
+                            Ok(element) => {
                                 // Scalar element of list
                                 ColumnarValue::Scalar(element.clone())
                             }
-                            None => {
+                            _ => {
                                 // out of bounds, null
-                                ColumnarValue::Scalar(
-                                    ScalarValue::try_from(element_dtype.data_type()).unwrap(),
-                                )
+                                ColumnarValue::Scalar(ScalarValue::try_from(arr.data_type())?)
                             }
                         }
                     }

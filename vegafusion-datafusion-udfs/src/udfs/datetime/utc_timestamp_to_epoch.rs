@@ -18,7 +18,7 @@ fn make_utc_timestamp_to_epoch_ms_udf() -> ScalarUDF {
         // [0] data array
         let data_array = match &args[0] {
             ColumnarValue::Array(array) => array.clone(),
-            ColumnarValue::Scalar(scalar) => scalar.to_array(),
+            ColumnarValue::Scalar(scalar) => scalar.to_array()?,
         };
         let data_array = to_timestamp_ms(&data_array)?;
 

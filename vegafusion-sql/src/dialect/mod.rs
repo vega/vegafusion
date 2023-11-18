@@ -516,7 +516,7 @@ impl Dialect {
                 (DataType::Float16, float64dtype.clone()),
                 (DataType::Float32, float64dtype.clone()),
                 (DataType::Float64, float64dtype),
-                (DataType::Utf8, SqlDataType::String),
+                (DataType::Utf8, SqlDataType::String(None)),
                 (
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
@@ -796,7 +796,7 @@ impl Dialect {
                 (DataType::Float16, SqlDataType::Float(None)),
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
-                (DataType::Utf8, SqlDataType::String),
+                (DataType::Utf8, SqlDataType::String(None)),
                 (
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
@@ -962,7 +962,7 @@ impl Dialect {
                 (DataType::Float16, SqlDataType::Float(None)),
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
-                (DataType::Utf8, SqlDataType::String),
+                (DataType::Utf8, SqlDataType::String(None)),
                 (
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
@@ -1750,6 +1750,8 @@ impl BinaryOperatorTransformer for ModulusOpToFunction {
                 quote_style: None,
             }]),
             args: vec![arg0, arg1],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -1793,6 +1795,8 @@ impl FunctionTransformer for RenameFunctionTransformer {
                 quote_style: None,
             }]),
             args: sql_args,
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -1825,6 +1829,8 @@ impl FunctionTransformer for ExpWithPowFunctionTransformer {
                 quote_style: None,
             }]),
             args: sql_args,
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -1854,6 +1860,7 @@ impl FunctionTransformer for CastArgsFunctionTransformer {
                 Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(SqlExpr::Cast {
                     expr: Box::new(arg.to_sql(dialect, schema)?),
                     data_type: self.cast_dtype.clone(),
+                    format: None,
                 })))
             })
             .collect::<Result<Vec<_>>>()?;
@@ -1864,6 +1871,8 @@ impl FunctionTransformer for CastArgsFunctionTransformer {
                 quote_style: None,
             }]),
             args: sql_args,
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -1902,6 +1911,8 @@ impl FunctionTransformer for LogBaseTransformer {
                 quote_style: None,
             }]),
             args: sql_args,
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -1929,6 +1940,7 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
                     Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(SqlExpr::Cast {
                         expr: Box::new(arg.to_sql(dialect, schema)?),
                         data_type: cast_dtype.clone(),
+                        format: None,
                     })))
                 })
                 .collect::<Result<Vec<_>>>()?
@@ -1942,6 +1954,8 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
                 quote_style: None,
             }]),
             args: sql_args,
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -1957,6 +1971,8 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
                 quote_style: None,
             }]),
             args: vec![base_arg],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,

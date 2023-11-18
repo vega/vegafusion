@@ -197,14 +197,12 @@ impl Connection for DataFusionConnection {
                 writeln!(file, "{body}").unwrap();
             }
 
-            let path = tempdir.path().to_str().unwrap();
-
             // Build final csv schema that combines the requested and inferred schemas
-            let final_schema = build_csv_schema(&df_csv_opts, path, &self.ctx).await?;
+            let final_schema = build_csv_schema(&df_csv_opts, &filepath, &self.ctx).await?;
             df_csv_opts = df_csv_opts.schema(&final_schema);
 
             // Load through VegaFusionTable so that temp file can be deleted
-            let df = self.ctx.read_csv(path, df_csv_opts).await?;
+            let df = self.ctx.read_csv(&filepath, df_csv_opts).await?;
 
             let schema: SchemaRef = Arc::new(df.schema().into()) as SchemaRef;
             let batches = df.collect().await?;

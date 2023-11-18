@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use vegafusion_common::arrow::array::{Array, ListArray};
 use vegafusion_common::arrow::datatypes::{DataType, Field};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
@@ -25,21 +26,31 @@ fn make_span_udf() -> ScalarUDF {
                         // Span of scalar (including null) is 0
                         ColumnarValue::Scalar(ScalarValue::from(0.0))
                     }
-                    ScalarValue::List(Some(arr), element_type) => {
-                        match element_type.data_type() {
+                    ScalarValue::List(arr) => {
+                        // Unwrap single element ListArray
+                        let arr = arr.as_any().downcast_ref::<ListArray>().unwrap();
+                        let arr = arr.value(0);
+                        match arr.data_type() {
                             DataType::Float64 => {
                                 if arr.is_empty() {
                                     // Span of empty array is 0
                                     ColumnarValue::Scalar(ScalarValue::from(0.0))
                                 } else {
-                                    let first = arr.first().unwrap().to_f64().unwrap();
-                                    let last = arr.last().unwrap().to_f64().unwrap();
+                                    let first = ScalarValue::try_from_array(&arr, 0)
+                                        .unwrap()
+                                        .to_f64()
+                                        .unwrap();
+                                    let last = ScalarValue::try_from_array(&arr, arr.len() - 1)
+                                        .unwrap()
+                                        .to_f64()
+                                        .unwrap();
                                     ColumnarValue::Scalar(ScalarValue::from(last - first))
                                 }
                             }
                             _ => {
                                 return Err(DataFusionError::Internal(format!(
-                                    "Unexpected element type for span function: {element_type}"
+                                    "Unexpected element type for span function: {}",
+                                    arr.data_type()
                                 )))
                             }
                         }

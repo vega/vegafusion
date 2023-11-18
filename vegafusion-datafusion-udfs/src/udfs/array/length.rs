@@ -21,8 +21,9 @@ fn make_length_udf() -> ScalarUDF {
         Ok(match arg {
             ColumnarValue::Scalar(value) => {
                 match value {
-                    ScalarValue::List(Some(arr), _) => {
-                        ColumnarValue::Scalar(ScalarValue::from(arr.len() as f64))
+                    ScalarValue::List(arr) => {
+                        let arr = arr.as_any().downcast_ref::<ListArray>().unwrap();
+                        ColumnarValue::Scalar(ScalarValue::from(arr.value(0).len() as f64))
                     }
                     ScalarValue::Utf8(Some(s)) | ScalarValue::LargeUtf8(Some(s)) => {
                         ColumnarValue::Scalar(ScalarValue::from(s.len() as f64))

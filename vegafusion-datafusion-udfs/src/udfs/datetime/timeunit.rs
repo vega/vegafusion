@@ -39,7 +39,7 @@ fn unpack_timeunit_udf_args(
         DataFusionError::Internal(format!("Failed to parse {tz_str} as a timezone"))
     })?;
 
-    let timestamp = columns[0].clone().into_array(1);
+    let timestamp = columns[0].clone().into_array(1)?;
     let timestamp = process_input_datetime(&timestamp, &tz)?;
 
     Ok((

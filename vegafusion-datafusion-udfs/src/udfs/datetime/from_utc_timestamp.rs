@@ -23,7 +23,7 @@ fn make_from_utc_timestamp() -> ScalarUDF {
         // [0] data array
         let timestamp_array = match &args[0] {
             ColumnarValue::Array(array) => array.clone(),
-            ColumnarValue::Scalar(scalar) => scalar.to_array(),
+            ColumnarValue::Scalar(scalar) => scalar.to_array()?,
         };
 
         // [1] timezone string

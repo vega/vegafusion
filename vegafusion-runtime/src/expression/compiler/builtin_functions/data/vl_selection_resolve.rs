@@ -1,12 +1,11 @@
+use datafusion_common::utils::array_into_list_array;
 use datafusion_expr::{lit, Expr};
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use std::sync::Arc;
-
-use vegafusion_common::arrow::datatypes::{DataType, Field};
-use vegafusion_common::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::scalar::{ArrayRefHelpers, ScalarValueHelpers};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_common::error::{Result, VegaFusionError};
@@ -63,8 +62,8 @@ pub fn vl_selection_resolve_fn(
     let _op = parse_args(args)?;
 
     // Extract vector of rows for selection dataset
-    let rows = if let ScalarValue::List(Some(elements), _) = table.to_scalar_value()? {
-        elements
+    let rows = if let ScalarValue::List(array) = table.to_scalar_value()? {
+        array.list_el_to_scalar_vec()?
     } else {
         unreachable!()
     };
@@ -79,16 +78,17 @@ pub fn vl_selection_resolve_fn(
         for (field, value) in row_spec.fields.iter().zip(&row_spec.values) {
             let value = match field.typ {
                 SelectionType::Enum => {
-                    if let ScalarValue::List(Some(elements), _) = value {
-                        elements.clone()
+                    if let ScalarValue::List(array) = value {
+                        array.list_el_to_scalar_vec()?
                     } else {
                         vec![value.clone()]
                     }
                 }
                 _ => {
                     match &value {
-                        ScalarValue::List(Some(elements), _) if elements.len() == 2 => {
+                        ScalarValue::List(array) if array.list_el_len()? == 2 => {
                             // Don't assume elements are in ascending order
+                            let elements = array.list_el_to_scalar_vec()?;
                             let first = elements[0].to_f64()?;
                             let second = elements[1].to_f64()?;
 
@@ -98,9 +98,6 @@ pub fn vl_selection_resolve_fn(
                                 (second, first)
                             };
                             vec![ScalarValue::from(low), ScalarValue::from(high)]
-                            // ScalarValue::List(Some(Box::new(vec![
-                            //     ScalarValue::from(low), ScalarValue::from(high)
-                            // ])), Box::new(DataType::Float64))
                         }
                         v => {
                             return Err(VegaFusionError::internal(format!(
@@ -116,20 +113,20 @@ pub fn vl_selection_resolve_fn(
         }
     }
 
-    let props: Vec<_> = props
+    let props = props
         .into_iter()
         .map(|(name, values)| {
             // Turn values into a scalar list
-            let dtype = values
-                .get(0)
-                .map(|s| s.data_type())
-                .unwrap_or(DataType::Float64);
-            let values = ScalarValue::List(Some(values), Arc::new(Field::new("item", dtype, true)));
-            (name, values)
+            let values = ScalarValue::List(Arc::new(array_into_list_array(
+                ScalarValue::iter_to_array(values)?,
+            )));
+            Ok((name, values))
         })
+        .collect::<Result<Vec<_>>>()?;
+    let props: Vec<_> = props
+        .iter()
         .sorted_by_key(|(n, _)| n.clone())
-        .collect();
-
+        .collect::<Vec<_>>();
     let props: Vec<_> = props
         .iter()
         .map(|(name, value)| (name.as_str(), value.clone()))

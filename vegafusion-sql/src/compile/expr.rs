@@ -187,6 +187,7 @@ impl ToSqlExpr for Expr {
                     SqlExpr::Cast {
                         expr: Box::new(expr.to_sql(dialect, schema)?),
                         data_type: sql_data_type,
+                        format: None,
                     }
                 };
 
@@ -220,14 +221,17 @@ impl ToSqlExpr for Expr {
                         TryCastMode::Supported => SqlExpr::TryCast {
                             expr: Box::new(expr.to_sql(dialect, schema)?),
                             data_type: sql_data_type,
+                            format: None,
                         },
                         TryCastMode::JustUseCast => SqlExpr::Cast {
                             expr: Box::new(expr.to_sql(dialect, schema)?),
                             data_type: sql_data_type,
+                            format: None,
                         },
                         TryCastMode::SafeCast => SqlExpr::SafeCast {
                             expr: Box::new(expr.to_sql(dialect, schema)?),
                             data_type: sql_data_type,
+                            format: None,
                         },
                         TryCastMode::SupportedOnStringsOtherwiseJustCast => {
                             if let DataType::Utf8 | DataType::LargeUtf8 = from_dtype {
@@ -235,12 +239,14 @@ impl ToSqlExpr for Expr {
                                 SqlExpr::TryCast {
                                     expr: Box::new(expr.to_sql(dialect, schema)?),
                                     data_type: sql_data_type,
+                                    format: None,
                                 }
                             } else {
                                 // Fall back to regular CAST
                                 SqlExpr::Cast {
                                     expr: Box::new(expr.to_sql(dialect, schema)?),
                                     data_type: sql_data_type,
+                                    format: None,
                                 }
                             }
                         }
@@ -379,6 +385,7 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::ArrayReplaceN => "array_replace_n",
                     BuiltinScalarFunction::ArrayReplaceAll => "array_replace_all",
                     BuiltinScalarFunction::ArraySlice => "array_slice",
+                    BuiltinScalarFunction::ArrayIntersect => "array_intersect",
                     BuiltinScalarFunction::Decode => "decode",
                     BuiltinScalarFunction::Encode => "encode",
                     BuiltinScalarFunction::Cot => "cot",
@@ -387,6 +394,7 @@ impl ToSqlExpr for Expr {
                     BuiltinScalarFunction::Nanvl => "nanvl",
                     BuiltinScalarFunction::Flatten => "flatten",
                     BuiltinScalarFunction::StringToArray => "string_to_array",
+                    BuiltinScalarFunction::ToTimestampNanos => "to_timestamp_nanos",
                 };
                 translate_scalar_function(fun_name, args, dialect, schema)
             }
@@ -447,6 +455,8 @@ impl ToSqlExpr for Expr {
                             return Ok(SqlExpr::Function(SqlFunction {
                                 name: SqlObjectName(vec![Ident::new(alt_fun)]),
                                 args: vec![],
+                                filter: None,
+                                null_treatment: None,
                                 over: None,
                                 distinct: false,
                                 special: false,
@@ -533,6 +543,8 @@ impl ToSqlExpr for Expr {
                             quote_style: None,
                         }]),
                         args,
+                        filter: None,
+                        null_treatment: None,
                         over: Some(over),
                         distinct: false,
                         special: false,
@@ -582,7 +594,7 @@ impl ToSqlExpr for Expr {
                     negated: *negated,
                 })
             }
-            Expr::Wildcard => Err(VegaFusionError::internal(
+            Expr::Wildcard { .. } => Err(VegaFusionError::internal(
                 "Wildcard cannot be converted to SQL",
             )),
             Expr::Exists { .. } => Err(VegaFusionError::internal(
@@ -593,9 +605,6 @@ impl ToSqlExpr for Expr {
             )),
             Expr::ScalarSubquery(_) => Err(VegaFusionError::internal(
                 "ScalarSubquery cannot be converted to SQL",
-            )),
-            Expr::QualifiedWildcard { .. } => Err(VegaFusionError::internal(
-                "QualifiedWildcard cannot be converted to SQL",
             )),
             Expr::GroupingSet(_) => Err(VegaFusionError::internal(
                 "GroupingSet cannot be converted to SQL",
@@ -631,6 +640,8 @@ fn translate_scalar_function(
         Ok(SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![ident]),
             args,
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -664,6 +675,8 @@ fn translate_aggregate_function(
         Ok(SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![ident]),
             args,
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct,
             special: false,

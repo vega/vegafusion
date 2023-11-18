@@ -19,7 +19,7 @@ fn make_format_timestamp_udf() -> ScalarUDF {
         // [0] data array
         let data_array = match &args[0] {
             ColumnarValue::Array(array) => array.clone(),
-            ColumnarValue::Scalar(scalar) => scalar.to_array(),
+            ColumnarValue::Scalar(scalar) => scalar.to_array()?,
         };
 
         // [1] time format string

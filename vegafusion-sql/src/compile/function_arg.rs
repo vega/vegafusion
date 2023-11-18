@@ -20,13 +20,13 @@ impl ToSqlFunctionArg for Expr {
         schema: &DFSchema,
     ) -> Result<SqlFunctionArgExpr> {
         Ok(match self {
-            Expr::Wildcard => SqlFunctionArgExpr::Wildcard,
-            Expr::QualifiedWildcard { qualifier } => {
-                SqlFunctionArgExpr::QualifiedWildcard(ObjectName(vec![Ident {
-                    value: qualifier.clone(),
-                    quote_style: None,
-                }]))
-            }
+            Expr::Wildcard { qualifier: None } => SqlFunctionArgExpr::Wildcard,
+            Expr::Wildcard {
+                qualifier: Some(qualifier),
+            } => SqlFunctionArgExpr::QualifiedWildcard(ObjectName(vec![Ident {
+                value: qualifier.clone(),
+                quote_style: None,
+            }])),
             expr => SqlFunctionArgExpr::Expr(expr.to_sql(dialect, schema)?),
         })
     }

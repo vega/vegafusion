@@ -42,11 +42,11 @@ fn make_utc_timestamp_udf() -> ScalarUDF {
             let args = if let Some(len) = len {
                 args.iter()
                     .map(|arg| arg.clone().into_array(len))
-                    .collect::<Vec<ArrayRef>>()
+                    .collect::<Result<Vec<ArrayRef>, DataFusionError>>()?
             } else {
                 args.iter()
                     .map(|arg| arg.clone().into_array(1))
-                    .collect::<Vec<ArrayRef>>()
+                    .collect::<Result<Vec<ArrayRef>, DataFusionError>>()?
             };
 
             // To int64 arrays

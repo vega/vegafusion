@@ -13,8 +13,8 @@ use datafusion_expr::{
     WindowFrameBound, WindowFrameUnits, WindowFunction,
 };
 use sqlparser::ast::{
-    Cte, Expr as SqlExpr, Ident, Query, Select, SelectItem, SetExpr, Statement, TableAlias,
-    TableFactor, TableWithJoins, Values, WildcardAdditionalOptions, With,
+    Cte, Expr as SqlExpr, GroupByExpr, Ident, Query, Select, SelectItem, SetExpr, Statement,
+    TableAlias, TableFactor, TableWithJoins, Values, WildcardAdditionalOptions, With,
 };
 use sqlparser::parser::Parser;
 use std::any::Any;
@@ -278,7 +278,7 @@ impl SqlDataFrame {
                         selection: None,
                         from: Default::default(),
                         lateral_views: Default::default(),
-                        group_by: Default::default(),
+                        group_by: GroupByExpr::Expressions(Vec::new()),
                         cluster_by: Default::default(),
                         distribute_by: Default::default(),
                         sort_by: Default::default(),
@@ -320,6 +320,7 @@ impl SqlDataFrame {
                     body: Box::new(values_body),
                     order_by: Default::default(),
                     limit: None,
+                    limit_by: vec![],
                     offset: None,
                     fetch: None,
                     locks: Default::default(),
@@ -385,7 +386,7 @@ impl SqlDataFrame {
                     }],
                     lateral_views: Default::default(),
                     selection: None,
-                    group_by: Default::default(),
+                    group_by: GroupByExpr::Expressions(Vec::new()),
                     cluster_by: Default::default(),
                     distribute_by: Default::default(),
                     sort_by: Default::default(),
@@ -398,6 +399,7 @@ impl SqlDataFrame {
                     body: Box::new(select_body),
                     order_by: Default::default(),
                     limit: None,
+                    limit_by: vec![],
                     offset: None,
                     fetch: None,
                     locks: Default::default(),
@@ -923,7 +925,7 @@ impl SqlDataFrame {
             // then union the results. This is required to make sure stacks do not overlap. Negative
             // values stack in the negative direction and positive values stack in the positive
             // direction.
-            let schema_exprs = vec![Expr::Wildcard, window_expr];
+            let schema_exprs = vec![Expr::Wildcard { qualifier: None }, window_expr];
             let new_schema = make_new_schema_from_exprs(
                 self.schema.as_ref(),
                 schema_exprs.as_slice(),
@@ -967,7 +969,10 @@ impl SqlDataFrame {
             // Create __stack column with numeric field
             let stack_col_name = "__stack";
             let dataframe = self
-                .select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)])
+                .select(vec![
+                    Expr::Wildcard { qualifier: None },
+                    numeric_field.alias(stack_col_name),
+                ])
                 .await?;
 
             let dataframe = dataframe
@@ -990,7 +995,7 @@ impl SqlDataFrame {
                 .to_string();
 
             // Add __total column with total or total per partition
-            let schema_exprs = vec![Expr::Wildcard, total_agg];
+            let schema_exprs = vec![Expr::Wildcard { qualifier: None }, total_agg];
             let new_schema = make_new_schema_from_exprs(
                 &dataframe.schema(),
                 schema_exprs.as_slice(),
@@ -1043,7 +1048,9 @@ impl SqlDataFrame {
             .alias(cumulative_field);
 
             // Perform selection to add new field value
-            let dataframe = dataframe.select(vec![Expr::Wildcard, window_expr]).await?;
+            let dataframe = dataframe
+                .select(vec![Expr::Wildcard { qualifier: None }, window_expr])
+                .await?;
 
             // Build final_selection
             let mut final_selection: Vec<_> = input_fields
@@ -1066,7 +1073,7 @@ impl SqlDataFrame {
                         .to_string();
 
                     // Compute new schema
-                    let schema_exprs = vec![Expr::Wildcard, max_total];
+                    let schema_exprs = vec![Expr::Wildcard { qualifier: None }, max_total];
                     let new_schema = make_new_schema_from_exprs(
                         &dataframe.schema(),
                         schema_exprs.as_slice(),
@@ -1395,7 +1402,7 @@ fn make_new_schema_from_exprs(
 ) -> Result<Schema> {
     let mut fields: Vec<Field> = Vec::new();
     for expr in exprs {
-        if let Expr::Wildcard = expr {
+        if let Expr::Wildcard { .. } = expr {
             // Add field for each input schema field
             fields.extend(schema.fields().iter().map(|f| f.as_ref().clone()));
         } else {

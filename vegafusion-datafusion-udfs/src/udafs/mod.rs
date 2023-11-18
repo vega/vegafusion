@@ -2,7 +2,7 @@ use std::sync::Arc;
 use vegafusion_common::arrow::array::{Array, ArrayRef, UInt32Array};
 use vegafusion_common::arrow::compute::sort_to_indices;
 use vegafusion_common::arrow::datatypes::{DataType, Field, FieldRef};
-use vegafusion_common::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::scalar::{ArrayRefHelpers, ScalarValueHelpers};
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
 use vegafusion_common::datafusion_expr::{create_udaf, Accumulator, AggregateUDF, Volatility};
 
@@ -19,8 +19,8 @@ pub(crate) struct PercentileContAccumulator {
 
 impl Accumulator for PercentileContAccumulator {
     fn state(&self) -> Result<Vec<ScalarValue>, DataFusionError> {
-        let state = ScalarValue::new_list(Some(self.all_values.clone()), self.data_type.clone());
-        Ok(vec![state])
+        let state = ScalarValue::new_list(self.all_values.as_slice(), &self.data_type);
+        Ok(vec![ScalarValue::List(Arc::new(state))])
     }
 
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<(), DataFusionError> {
@@ -43,14 +43,13 @@ impl Accumulator for PercentileContAccumulator {
         assert!(matches!(array.data_type(), DataType::List(_)));
         for index in 0..array.len() {
             match ScalarValue::try_from_array(array, index)? {
-                ScalarValue::List(Some(values), _) => {
-                    for scalar in values {
+                ScalarValue::List(array) => {
+                    for scalar in array.list_el_to_scalar_vec()? {
                         if !scalar_is_non_finite(&scalar) {
                             self.all_values.push(scalar);
                         }
                     }
                 }
-                ScalarValue::List(None, _) => {} // skip empty state
                 v => {
                     return Err(DataFusionError::Internal(format!(
                         "unexpected state in percentile_cont. Expected DataType::List, got {v:?}"

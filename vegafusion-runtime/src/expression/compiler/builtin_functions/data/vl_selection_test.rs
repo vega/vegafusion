@@ -10,7 +10,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_common::column::flat_col;
-use vegafusion_common::data::scalar::ScalarValue;
+use vegafusion_common::data::scalar::{ArrayRefHelpers, ScalarValue};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_common::datatypes::{
@@ -142,8 +142,8 @@ impl FieldSpec {
         let expr = match self.typ {
             SelectionType::Enum => {
                 let field_type = field_col.get_type(schema)?;
-                let list_scalars = if let ScalarValue::List(Some(elements), _) = &values {
-                    elements.clone()
+                let list_scalars = if let ScalarValue::List(array) = &values {
+                    array.list_el_to_scalar_vec()?
                 } else {
                     // convert values to single element list
                     vec![values.clone()]
@@ -178,7 +178,8 @@ impl FieldSpec {
                 };
 
                 let (low, high) = match &values {
-                    ScalarValue::List(Some(elements), _) if elements.len() == 2 => {
+                    ScalarValue::List(array) if array.list_el_len()? == 2 => {
+                        let elements = array.list_el_to_scalar_vec()?;
                         let first = Self::cast_test_scalar(
                             elements[0].clone(),
                             &field_dtype,
@@ -405,7 +406,7 @@ impl TryFrom<ScalarValue> for SelectionRow {
                     .get("values")
                     .with_context(|| "Missing required property 'values'".to_string())?;
                 let values = match struct_values.get(*values_index) {
-                    Some(ScalarValue::List(Some(elements), _)) => elements.clone(),
+                    Some(ScalarValue::List(array)) => array.list_el_to_scalar_vec()?,
                     _ => {
                         return Err(VegaFusionError::internal(
                             "Expected 'values' to be an array".to_string(),
@@ -420,8 +421,8 @@ impl TryFrom<ScalarValue> for SelectionRow {
 
                 let mut fields: Vec<FieldSpec> = Vec::new();
                 match struct_values.get(*fields_index) {
-                    Some(ScalarValue::List(Some(elements), _)) => {
-                        for el in elements.iter() {
+                    Some(ScalarValue::List(array)) => {
+                        for el in array.list_el_to_scalar_vec()?.iter() {
                             fields.push(FieldSpec::try_from(el.clone())?)
                         }
                     }
@@ -508,8 +509,8 @@ pub fn vl_selection_test_fn(
     let op = parse_args(args)?;
 
     // Extract vector of rows for selection dataset
-    let rows = if let ScalarValue::List(Some(elements), _) = table.to_scalar_value()? {
-        elements
+    let rows = if let ScalarValue::List(array) = table.to_scalar_value()? {
+        array.list_el_to_scalar_vec()?
     } else {
         unreachable!()
     };

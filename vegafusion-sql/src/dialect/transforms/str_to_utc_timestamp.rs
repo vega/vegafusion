@@ -54,6 +54,7 @@ impl FunctionTransformer for StrToUtcTimestampWithCastAndAtTimeZoneTransformer {
         let cast_expr = SqlExpr::Cast {
             expr: Box::new(sql_arg0),
             data_type: self.timestamp_type.clone(),
+            format: None,
         };
         let utc_expr = if time_zone == "UTC" {
             cast_expr
@@ -103,6 +104,7 @@ impl FunctionTransformer for StrToUtcTimestampWithCastFunctionAtTransformer {
         let cast_expr = SqlExpr::Cast {
             expr: Box::new(sql_arg0),
             data_type: self.timestamp_type.clone(),
+            format: None,
         };
         let fn_expr = SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![SqlIdent {
@@ -115,6 +117,8 @@ impl FunctionTransformer for StrToUtcTimestampWithCastFunctionAtTransformer {
                     SqlValue::SingleQuotedString(time_zone),
                 ))),
             ],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -161,6 +165,8 @@ impl FunctionTransformer for StrToUtcTimestampWithFunctionTransformer {
                     SqlValue::SingleQuotedString(time_zone),
                 ))),
             ],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -195,6 +201,8 @@ impl FunctionTransformer for StrToUtcTimestampClickhouseTransformer {
                     SqlValue::SingleQuotedString(time_zone),
                 ))),
             ],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -212,6 +220,8 @@ impl FunctionTransformer for StrToUtcTimestampClickhouseTransformer {
                     SqlValue::SingleQuotedString("UTC".to_string()),
                 ))),
             ],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -245,6 +255,8 @@ impl FunctionTransformer for StrToUtcTimestampMySqlTransformer {
                 quote_style: None,
             }]),
             args: vec![SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_arg0))],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -269,6 +281,8 @@ impl FunctionTransformer for StrToUtcTimestampMySqlTransformer {
                         SqlValue::SingleQuotedString("UTC".to_string()),
                     ))),
                 ],
+                filter: None,
+                null_treatment: None,
                 over: None,
                 distinct: false,
                 special: false,
@@ -306,6 +320,7 @@ impl FunctionTransformer for StrToUtcTimestampSnowflakeTransformer {
                 }]),
                 Vec::new(),
             ),
+            format: None,
         };
 
         if time_zone == "UTC" {
@@ -326,6 +341,8 @@ impl FunctionTransformer for StrToUtcTimestampSnowflakeTransformer {
                     ))),
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(cast_timestamp_ntz_expr)),
                 ],
+                filter: None,
+                null_treatment: None,
                 over: None,
                 distinct: false,
                 special: false,

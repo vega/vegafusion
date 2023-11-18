@@ -1,6 +1,7 @@
 use crate::compile::data_type::ToSqlDataType;
 use crate::compile::expr::ToSqlExpr;
 use crate::dialect::Dialect;
+use arrow::array::Array;
 use arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
@@ -47,6 +48,7 @@ impl ToSqlScalar for ScalarValue {
                                     false,
                                 ))),
                                 data_type: cast_dtype,
+                                format: None,
                             })
                         } else {
                             Ok(SqlExpr::Value(SqlValue::Null))
@@ -79,6 +81,7 @@ impl ToSqlScalar for ScalarValue {
                                     false,
                                 ))),
                                 data_type: cast_dtype,
+                                format: None,
                             })
                         } else {
                             Ok(SqlExpr::Value(SqlValue::Null))
@@ -142,26 +145,24 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::FixedSizeBinary(_, _) => Err(VegaFusionError::internal(
                 "FixedSizeBinary cannot be converted to SQL",
             )),
-            ScalarValue::List(args, _) => {
+            ScalarValue::List(array) => {
                 let function_ident = Ident {
                     value: "make_list".to_string(),
                     quote_style: None,
                 };
 
-                let args = args
-                    .clone()
-                    .unwrap_or_default()
-                    .iter()
-                    .map(|expr| {
-                        Ok(SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(
-                            expr.to_sql(dialect)?,
-                        )))
+                let args = (0..array.len())
+                    .map(|i| {
+                        let sql_expr = ScalarValue::try_from_array(array, i)?.to_sql(dialect)?;
+                        Ok(SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(sql_expr)))
                     })
                     .collect::<Result<Vec<_>>>()?;
 
                 Ok(SqlExpr::Function(SqlFunction {
                     name: SqlObjectName(vec![function_ident]),
                     args,
+                    filter: None,
+                    null_treatment: None,
                     over: None,
                     distinct: false,
                     special: false,
@@ -280,6 +281,7 @@ fn date32_to_date(days: &Option<i32>, dialect: &Dialect) -> Result<SqlExpr> {
         None => Ok(SqlExpr::Cast {
             expr: Box::new(ScalarValue::Utf8(None).to_sql(dialect)?),
             data_type: DataType::Date32.to_sql(dialect)?,
+            format: None,
         }),
         Some(days) => {
             let date = epoch.add(chrono::Duration::days(*days as i64));
@@ -287,6 +289,7 @@ fn date32_to_date(days: &Option<i32>, dialect: &Dialect) -> Result<SqlExpr> {
             Ok(SqlExpr::Cast {
                 expr: Box::new(ScalarValue::from(date_str.as_str()).to_sql(dialect)?),
                 data_type: DataType::Date32.to_sql(dialect)?,
+                format: None,
             })
         }
     }

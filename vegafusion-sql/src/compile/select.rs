@@ -2,7 +2,7 @@ use crate::compile::expr::ToSqlExpr;
 use crate::dialect::Dialect;
 use datafusion_common::DFSchema;
 use datafusion_expr::{expr, Expr};
-use sqlparser::ast::{Ident, SelectItem as SqlSelectItem};
+use sqlparser::ast::{Ident, ObjectName, SelectItem as SqlSelectItem};
 use vegafusion_common::error::Result;
 
 pub trait ToSqlSelectItem {
@@ -19,7 +19,16 @@ impl ToSqlSelectItem for Expr {
                     quote_style: Some(dialect.quote_style),
                 },
             },
-            Expr::Wildcard => SqlSelectItem::Wildcard(Default::default()),
+            Expr::Wildcard { qualifier: None } => SqlSelectItem::Wildcard(Default::default()),
+            Expr::Wildcard {
+                qualifier: Some(qualifier),
+            } => SqlSelectItem::QualifiedWildcard(
+                ObjectName(vec![Ident {
+                    value: qualifier.to_string(),
+                    quote_style: Some(dialect.quote_style),
+                }]),
+                Default::default(),
+            ),
             expr => SqlSelectItem::UnnamedExpr(expr.to_sql(dialect, schema)?),
         })
     }

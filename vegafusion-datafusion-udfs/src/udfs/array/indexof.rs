@@ -6,7 +6,7 @@ use vegafusion_common::arrow::array::{
 };
 use vegafusion_common::arrow::compute::cast;
 use vegafusion_common::arrow::datatypes::DataType;
-use vegafusion_common::data::scalar::ScalarValueHelpers;
+use vegafusion_common::data::scalar::{ArrayRefHelpers, ScalarValueHelpers};
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
 use vegafusion_common::datafusion_expr::{
     ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
@@ -24,8 +24,9 @@ fn make_indexof_udf() -> ScalarUDF {
     let indexof_fn: ScalarFunctionImplementation = Arc::new(|args: &[ColumnarValue]| {
         // Signature ensures there is a single argument
         let (array, array_dtype) = match &args[0] {
-            ColumnarValue::Scalar(ScalarValue::List(Some(scalar_array), field)) => {
-                (scalar_array.clone(), field.data_type().clone())
+            ColumnarValue::Scalar(ScalarValue::List(array)) => {
+                let scalar_array = array.list_el_to_scalar_vec()?;
+                (scalar_array, array.list_el_dtype()?)
             }
             _ => {
                 return Err(DataFusionError::Internal(

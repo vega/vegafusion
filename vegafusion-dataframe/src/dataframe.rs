@@ -112,7 +112,7 @@ pub trait DataFrame: Send + Sync + 'static {
     async fn with_index(&self, index_name: &str) -> Result<Arc<dyn DataFrame>> {
         if self.schema().column_with_name(index_name).is_some() {
             // Column is already present, don't overwrite
-            self.select(vec![Expr::Wildcard]).await
+            self.select(vec![Expr::Wildcard { qualifier: None }]).await
         } else {
             let selections = vec![
                 Expr::WindowFunction(expr::WindowFunction {
@@ -129,7 +129,7 @@ pub trait DataFrame: Send + Sync + 'static {
                     },
                 })
                 .alias(index_name),
-                Expr::Wildcard,
+                Expr::Wildcard { qualifier: None },
             ];
             self.select(selections).await
         }

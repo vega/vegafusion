@@ -1,10 +1,13 @@
 use crate::error::{Result, VegaFusionError};
+use arrow::array::{new_empty_array, Array, ArrayRef, ListArray};
+use datafusion_common::DataFusionError;
 
+use datafusion_common::utils::array_into_list_array;
 pub use datafusion_common::ScalarValue;
 
 #[cfg(feature = "json")]
 use {
-    arrow::datatypes::{DataType, Field},
+    arrow::datatypes::DataType,
     serde_json::{Map, Value},
     std::ops::Deref,
     std::sync::Arc,
@@ -62,18 +65,18 @@ impl ScalarValueHelpers for ScalarValue {
                 }
             }
             Value::Array(elements) => {
-                let (elements, dtype) = if elements.is_empty() {
-                    (Vec::new(), DataType::Float64)
+                let array: ListArray = if elements.is_empty() {
+                    array_into_list_array(Arc::new(new_empty_array(&DataType::Float64)))
                 } else {
                     let elements: Vec<_> = elements
                         .iter()
                         .map(ScalarValue::from_json)
                         .collect::<Result<Vec<ScalarValue>>>()?;
-                    let dtype = elements[0].data_type();
-                    (elements, dtype)
+
+                    array_into_list_array(ScalarValue::iter_to_array(elements)?)
                 };
 
-                ScalarValue::List(Some(elements), Arc::new(Field::new("item", dtype, true)))
+                ScalarValue::List(Arc::new(array))
             }
         };
         Ok(scalar_value)
@@ -132,13 +135,12 @@ impl ScalarValueHelpers for ScalarValue {
             ScalarValue::IntervalDayTime(Some(_v)) => {
                 unimplemented!()
             }
-            ScalarValue::List(Some(v), _) => Value::Array(
-                v.clone()
-                    .into_iter()
-                    .map(|v| v.to_json())
+            ScalarValue::List(a) => Value::Array(
+                a.list_el_to_scalar_vec()?
+                    .iter()
+                    .map(|s| s.to_json())
                     .collect::<Result<Vec<_>>>()?,
             ),
-            ScalarValue::List(None, _) => Value::Array(Vec::new()),
             ScalarValue::Struct(Some(v), fields) => {
                 let mut pairs: Map<String, Value> = Default::default();
                 for (val, field) in v.iter().zip(fields.deref()) {
@@ -173,7 +175,8 @@ impl ScalarValueHelpers for ScalarValue {
     }
 
     fn to_f64x2(&self) -> Result<[f64; 2]> {
-        if let ScalarValue::List(Some(elements), _) = self {
+        if let ScalarValue::List(array) = self {
+            let elements = array.list_el_to_scalar_vec()?;
             if let [v0, v1] = elements.as_slice() {
                 return Ok([v0.to_f64()?, v1.to_f64()?]);
             }
@@ -193,5 +196,57 @@ impl ScalarValueHelpers for ScalarValue {
                 )))
             }
         })
+    }
+}
+
+pub trait ArrayRefHelpers {
+    fn to_scalar_vec(&self) -> std::result::Result<Vec<ScalarValue>, DataFusionError>;
+
+    fn list_el_to_scalar_vec(&self) -> std::result::Result<Vec<ScalarValue>, DataFusionError>;
+
+    fn list_el_len(&self) -> std::result::Result<usize, DataFusionError>;
+
+    fn list_el_dtype(&self) -> std::result::Result<DataType, DataFusionError>;
+}
+
+impl ArrayRefHelpers for ArrayRef {
+    /// Convert ArrayRef into vector of ScalarValues
+    fn to_scalar_vec(&self) -> std::result::Result<Vec<ScalarValue>, DataFusionError> {
+        (0..self.len())
+            .map(|i| Ok(ScalarValue::try_from_array(self, i)?))
+            .collect::<std::result::Result<Vec<_>, DataFusionError>>()
+    }
+
+    /// Extract Vec<ScalarValue> for single element ListArray (as is stored inside ScalarValue::List(arr))
+    fn list_el_to_scalar_vec(&self) -> std::result::Result<Vec<ScalarValue>, DataFusionError> {
+        let a = self
+            .as_any()
+            .downcast_ref::<ListArray>()
+            .ok_or(DataFusionError::Internal(
+                "list_el_to_scalar_vec called on non-List type".to_string(),
+            ))?;
+        a.value(0).to_scalar_vec()
+    }
+
+    /// Extract length of single element ListArray
+    fn list_el_len(&self) -> std::result::Result<usize, DataFusionError> {
+        let a = self
+            .as_any()
+            .downcast_ref::<ListArray>()
+            .ok_or(DataFusionError::Internal(
+                "list_el_len called on non-List type".to_string(),
+            ))?;
+        Ok(a.value(0).len())
+    }
+
+    /// Extract data type of single element ListArray
+    fn list_el_dtype(&self) -> std::result::Result<DataType, DataFusionError> {
+        let a = self
+            .as_any()
+            .downcast_ref::<ListArray>()
+            .ok_or(DataFusionError::Internal(
+                "list_el_len called on non-List type".to_string(),
+            ))?;
+        Ok(a.value(0).data_type().clone())
     }
 }
