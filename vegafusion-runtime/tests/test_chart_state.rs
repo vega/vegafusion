@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{crate_dir};
+    use crate::crate_dir;
     use serde_json::json;
     use std::collections::HashMap;
     use std::env;
@@ -20,7 +20,10 @@ mod tests {
     #[tokio::test]
     async fn test_pre_transform_dataset() {
         // Load spec
-        let spec_path = format!("{}/tests/specs/custom/flights_crossfilter_a.vg.json", crate_dir());
+        let spec_path = format!(
+            "{}/tests/specs/custom/flights_crossfilter_a.vg.json",
+            crate_dir()
+        );
         let spec_str = fs::read_to_string(spec_path).unwrap();
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
@@ -35,15 +38,20 @@ mod tests {
             &runtime,
             spec,
             Default::default(),
-            TzConfig { local_tz: "UTC".to_string(), default_input_tz: None },
-            None
-        ).await.unwrap();
+            TzConfig {
+                local_tz: "UTC".to_string(),
+                default_input_tz: None,
+            },
+            None,
+        )
+        .await
+        .unwrap();
 
         let updates = vec![ExportUpdateJSON {
             namespace: ExportUpdateNamespace::Data,
             name: "brush_store".to_string(),
             scope: vec![],
-            value:json!([
+            value: json!([
               {
                 "unit": "child__column_distance_layer_0",
                 "fields": [
@@ -65,10 +73,8 @@ mod tests {
 
         let response_updates = chart_state.update(&runtime, updates).await.unwrap();
         println!("{response_updates:?}");
-
     }
 }
-
 
 fn crate_dir() -> String {
     std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))

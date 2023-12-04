@@ -8,18 +8,20 @@ use crate::pre_transform::destringify_selection_datetimes::destringify_selection
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use crate::task_graph::timezone::RuntimeTzConfig;
+use datafusion_common::ScalarValue;
 use futures_util::{future, FutureExt};
 use prost::Message as ProstMessage;
 use serde_json::Value;
 use std::convert::{TryFrom, TryInto};
 use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, Mutex};
-use datafusion_common::ScalarValue;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 use vegafusion_core::planning::stitch::CommPlan;
-use vegafusion_core::planning::watch::{ExportUpdateArrow, ExportUpdateJSON, ExportUpdateNamespace, WatchPlan};
+use vegafusion_core::planning::watch::{
+    ExportUpdateArrow, ExportUpdateJSON, ExportUpdateNamespace, WatchPlan,
+};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
@@ -39,8 +41,10 @@ use vegafusion_core::proto::gen::services::{
     query_request, query_result, PreTransformExtractResult, PreTransformSpecResult,
     PreTransformValuesResult, QueryRequest, QueryResult,
 };
-use vegafusion_core::proto::gen::services::query_result::Response;
-use vegafusion_core::proto::gen::tasks::{task::TaskKind, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueResponse, TaskValue as ProtoTaskValue, TzConfig, Variable, VariableNamespace, TaskGraphValueRequest};
+use vegafusion_core::proto::gen::tasks::{
+    task::TaskKind, InlineDataset, NodeValueIndex, ResponseTaskValue, TaskGraph,
+    TaskGraphValueResponse, TaskValue as ProtoTaskValue, TzConfig, Variable, VariableNamespace,
+};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::spec::values::MissingNullOrValue;
 use vegafusion_core::task_graph::graph::ScopedVariable;
@@ -95,57 +99,69 @@ impl VegaFusionRuntime {
         })
     }
 
-    pub async fn query_request(&self, request: QueryRequest) -> Result<QueryResult> {
+    pub async fn query_request(
+        &self,
+        task_graph: Arc<TaskGraph>,
+        indices: &[NodeValueIndex],
+        inline_datasets: &HashMap<String, VegaFusionDataset>,
+    ) -> Result<Vec<ResponseTaskValue>> {
+        // Clone task_graph and task_graph_runtime for use in closure
+        let task_graph_runtime = self.clone();
+        let response_value_futures: Vec<_> = indices
+            .iter()
+            .map(|node_value_index| {
+                let node = task_graph
+                    .nodes
+                    .get(node_value_index.node_index as usize)
+                    .with_context(|| {
+                        format!(
+                            "Node index {} out of bounds for graph with size {}",
+                            node_value_index.node_index,
+                            task_graph.nodes.len()
+                        )
+                    })?;
+                let task = node.task();
+                let var = match node_value_index.output_index {
+                    None => task.variable().clone(),
+                    Some(output_index) => task.output_vars()[output_index as usize].clone(),
+                };
+
+                let scope = node.task().scope.clone();
+
+                // Clone task_graph and task_graph_runtime for use in closure
+                let task_graph_runtime = task_graph_runtime.clone();
+                let task_graph = task_graph.clone();
+
+                Ok(async move {
+                    let value = task_graph_runtime
+                        .clone()
+                        .get_node_value(task_graph, node_value_index, inline_datasets.clone())
+                        .await?;
+
+                    Ok::<_, VegaFusionError>(ResponseTaskValue {
+                        variable: Some(var),
+                        scope,
+                        value: Some(ProtoTaskValue::try_from(&value).unwrap()),
+                    })
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        future::try_join_all(response_value_futures).await
+    }
+
+    pub async fn query_request_message(&self, request: QueryRequest) -> Result<QueryResult> {
         match request.request {
             Some(query_request::Request::TaskGraphValues(task_graph_values)) => {
                 let task_graph = Arc::new(task_graph_values.task_graph.unwrap());
+                let indices = &task_graph_values.indices;
+                let inline_datasets =
+                    Self::decode_inline_datasets(task_graph_values.inline_datasets)?;
 
-                // Clone task_graph and task_graph_runtime for use in closure
-                let task_graph_runtime = self.clone();
-                let task_graph = task_graph.clone();
-
-                let response_value_futures: Vec<_> = task_graph_values
-                    .indices
-                    .iter()
-                    .map(|node_value_index| {
-                        let node = task_graph
-                            .nodes
-                            .get(node_value_index.node_index as usize)
-                            .with_context(|| {
-                                format!(
-                                    "Node index {} out of bounds for graph with size {}",
-                                    node_value_index.node_index,
-                                    task_graph.nodes.len()
-                                )
-                            })?;
-                        let task = node.task();
-                        let var = match node_value_index.output_index {
-                            None => task.variable().clone(),
-                            Some(output_index) => task.output_vars()[output_index as usize].clone(),
-                        };
-
-                        let scope = node.task().scope.clone();
-
-                        // Clone task_graph and task_graph_runtime for use in closure
-                        let task_graph_runtime = task_graph_runtime.clone();
-                        let task_graph = task_graph.clone();
-
-                        Ok(async move {
-                            let value = task_graph_runtime
-                                .clone()
-                                .get_node_value(task_graph, node_value_index, Default::default())
-                                .await?;
-
-                            Ok::<_, VegaFusionError>(ResponseTaskValue {
-                                variable: Some(var),
-                                scope,
-                                value: Some(ProtoTaskValue::try_from(&value).unwrap()),
-                            })
-                        })
-                    })
-                    .collect::<Result<Vec<_>>>()?;
-
-                match future::try_join_all(response_value_futures).await {
+                match self
+                    .query_request(task_graph, indices.as_slice(), &inline_datasets)
+                    .await
+                {
                     Ok(response_values) => {
                         let response_msg = QueryResult {
                             response: Some(query_result::Response::TaskGraphValues(
@@ -177,7 +193,7 @@ impl VegaFusionRuntime {
     pub async fn query_request_bytes(&self, request_bytes: &[u8]) -> Result<Vec<u8>> {
         // Decode request
         let request = QueryRequest::decode(request_bytes).unwrap();
-        let response_msg = self.query_request(request).await?;
+        let response_msg = self.query_request_message(request).await?;
 
         let mut buf: Vec<u8> = Vec::new();
         buf.reserve(response_msg.encoded_len());
@@ -210,13 +226,7 @@ impl VegaFusionRuntime {
                 (None, true, Default::default(), Default::default())
             };
 
-        let inline_datasets = inline_pretransform_datasets
-            .iter()
-            .map(|inline_dataset| {
-                let dataset = VegaFusionDataset::from_table_ipc_bytes(&inline_dataset.table)?;
-                Ok((inline_dataset.name.clone(), dataset))
-            })
-            .collect::<Result<HashMap<_, _>>>()?;
+        let inline_datasets = Self::decode_inline_datasets(inline_pretransform_datasets)?;
 
         // Parse spec
         let spec: ChartSpec = serde_json::from_str(&request.spec)?;
@@ -247,6 +257,19 @@ impl VegaFusionRuntime {
         };
 
         Ok(response)
+    }
+
+    fn decode_inline_datasets(
+        inline_pretransform_datasets: Vec<InlineDataset>,
+    ) -> Result<HashMap<String, VegaFusionDataset>> {
+        let inline_datasets = inline_pretransform_datasets
+            .iter()
+            .map(|inline_dataset| {
+                let dataset = VegaFusionDataset::from_table_ipc_bytes(&inline_dataset.table)?;
+                Ok((inline_dataset.name.clone(), dataset))
+            })
+            .collect::<Result<HashMap<_, _>>>()?;
+        Ok(inline_datasets)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -290,13 +313,7 @@ impl VegaFusionRuntime {
             .map(|opts| opts.inline_datasets)
             .unwrap_or_default();
 
-        let inline_datasets = inline_pretransform_datasets
-            .iter()
-            .map(|inline_dataset| {
-                let dataset = VegaFusionDataset::from_table_ipc_bytes(&inline_dataset.table)?;
-                Ok((inline_dataset.name.clone(), dataset))
-            })
-            .collect::<Result<HashMap<_, _>>>()?;
+        let inline_datasets = Self::decode_inline_datasets(inline_pretransform_datasets)?;
 
         // Extract requested variables
         let variables: Vec<ScopedVariable> = request
@@ -481,14 +498,7 @@ impl VegaFusionRuntime {
     ) -> Result<PreTransformExtractResult> {
         // Extract and deserialize inline datasets
         let inline_pretransform_datasets = request.inline_datasets;
-
-        let inline_datasets = inline_pretransform_datasets
-            .iter()
-            .map(|inline_dataset| {
-                let dataset = VegaFusionDataset::from_table_ipc_bytes(&inline_dataset.table)?;
-                Ok((inline_dataset.name.clone(), dataset))
-            })
-            .collect::<Result<HashMap<_, _>>>()?;
+        let inline_datasets = Self::decode_inline_datasets(inline_pretransform_datasets)?;
 
         // Parse spec
         let spec_string = request.spec;
@@ -782,7 +792,12 @@ async fn get_or_compute_node_value(
     }
 }
 
-fn apply_pre_transform_datasets(input_spec: &ChartSpec, plan: &SpecPlan, init: Vec<ExportUpdateArrow>, row_limit: Option<u32>) -> Result<(ChartSpec, Vec<PreTransformSpecWarning>)> {
+fn apply_pre_transform_datasets(
+    input_spec: &ChartSpec,
+    plan: &SpecPlan,
+    init: Vec<ExportUpdateArrow>,
+    row_limit: Option<u32>,
+) -> Result<(ChartSpec, Vec<PreTransformSpecWarning>)> {
     // Update client spec with server values
     let mut spec = plan.client_spec.clone();
     let mut limited_datasets: Vec<Variable> = Vec::new();
@@ -802,17 +817,16 @@ fn apply_pre_transform_datasets(input_spec: &ChartSpec, plan: &SpecPlan, init: V
                 // copy the input JSON directly to avoid the case where round-tripping
                 // through Arrow homogenizes mixed type arrays.
                 // E.g. round tripping may turn [1, "two"] into ["1", "two"]
-                let input_values =
-                    input_spec
-                        .get_nested_data(&scope, name)
-                        .ok()
-                        .and_then(|data| {
-                            if data.transform.is_empty() {
-                                data.values.clone()
-                            } else {
-                                None
-                            }
-                        });
+                let input_values = input_spec
+                    .get_nested_data(&scope, name)
+                    .ok()
+                    .and_then(|data| {
+                        if data.transform.is_empty() {
+                            data.values.clone()
+                        } else {
+                            None
+                        }
+                    });
                 let value = if let Some(input_values) = input_values {
                     input_values
                 } else if let Value::Array(values) = &export_update.value {
@@ -902,7 +916,13 @@ pub struct ChartState {
 }
 
 impl ChartState {
-    pub async fn try_new(runtime: &VegaFusionRuntime, spec: ChartSpec, inline_datasets: HashMap<String, VegaFusionDataset>, tz_config: TzConfig, row_limit: Option<u32>) -> Result<Self> {
+    pub async fn try_new(
+        runtime: &VegaFusionRuntime,
+        spec: ChartSpec,
+        inline_datasets: HashMap<String, VegaFusionDataset>,
+        tz_config: TzConfig,
+        row_limit: Option<u32>,
+    ) -> Result<Self> {
         let dataset_fingerprints = inline_datasets
             .iter()
             .map(|(k, ds)| (k.clone(), ds.fingerprint()))
@@ -921,8 +941,7 @@ impl ChartState {
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
         let server_to_client_value_indices: Arc<HashSet<_>> = Arc::new(
-            plan
-                .comm_plan
+            plan.comm_plan
                 .server_to_client
                 .iter()
                 .map(|scoped_var| task_graph_mapping.get(scoped_var).unwrap().clone())
@@ -952,9 +971,8 @@ impl ChartState {
             });
         }
 
-        let (transformed_spec, warnings) = apply_pre_transform_datasets(
-            &spec, &plan, init, row_limit
-        )?;
+        let (transformed_spec, warnings) =
+            apply_pre_transform_datasets(&spec, &plan, init, row_limit)?;
 
         Ok(Self {
             input_spec: spec,
@@ -968,73 +986,85 @@ impl ChartState {
         })
     }
 
-    pub async fn update(&self, runtime: &VegaFusionRuntime, updates: Vec<ExportUpdateJSON>) -> Result<Vec<ExportUpdateJSON>> {
-        let mut task_graph = self.task_graph.lock().map_err(
-            |err| VegaFusionError::internal(format!("Failed to acquire task graph lock: {:?}", err))
-        )?;
+    pub async fn update(
+        &self,
+        runtime: &VegaFusionRuntime,
+        updates: Vec<ExportUpdateJSON>,
+    ) -> Result<Vec<ExportUpdateJSON>> {
+        let mut task_graph = self.task_graph.lock().map_err(|err| {
+            VegaFusionError::internal(format!("Failed to acquire task graph lock: {:?}", err))
+        })?;
         let server_to_client = self.server_to_client_value_indices.clone();
-        let mut updated_nodes: Vec<NodeValueIndex> = Vec::new();
+        let mut indices: Vec<NodeValueIndex> = Vec::new();
         for export_update in &updates {
             let var = match export_update.namespace {
                 ExportUpdateNamespace::Signal => Variable::new_signal(&export_update.name),
                 ExportUpdateNamespace::Data => Variable::new_data(&export_update.name),
             };
             let scoped_var: ScopedVariable = (var, export_update.scope.clone());
-            let node_value_index = self.task_graph_mapping.get(&scoped_var).with_context(
-                || format!("No task graph node found for {scoped_var:?}")
-            )?.clone();
+            let node_value_index = self
+                .task_graph_mapping
+                .get(&scoped_var)
+                .with_context(|| format!("No task graph node found for {scoped_var:?}"))?
+                .clone();
 
             let value = match export_update.namespace {
-                ExportUpdateNamespace::Signal => TaskValue::Scalar(ScalarValue::from_json(&export_update.value)?),
-                ExportUpdateNamespace::Data => TaskValue::Table(VegaFusionTable::from_json(&export_update.value)?)
+                ExportUpdateNamespace::Signal => {
+                    TaskValue::Scalar(ScalarValue::from_json(&export_update.value)?)
+                }
+                ExportUpdateNamespace::Data => {
+                    TaskValue::Table(VegaFusionTable::from_json(&export_update.value)?)
+                }
             };
 
-            updated_nodes.extend(
-                task_graph.update_value(node_value_index.node_index as usize, value)?
-            );
+            indices.extend(task_graph.update_value(node_value_index.node_index as usize, value)?);
         }
 
         // Filter to update nodes in the comm plan
-        let updated_nodes: Vec<_> = updated_nodes
+        let indices: Vec<_> = indices
             .iter()
             .cloned()
             .filter(|node| server_to_client.contains(node))
             .collect();
 
-        let request_msg = QueryRequest {
-            request: Some(query_request::Request::TaskGraphValues(
-                TaskGraphValueRequest {
-                    task_graph: Some(task_graph.clone()),
-                    indices: updated_nodes,
-                },
-            )),
-        };
+        let response_task_values = runtime
+            .query_request(
+                Arc::new(task_graph.clone()),
+                indices.as_slice(),
+                &self.inline_datasets,
+            )
+            .await?;
 
-        // TODO: route inline datasets through query_request
-        let a = runtime.query_request(request_msg).await?;
-        let response = a.response.with_context(|| "Query response is None")?;
+        let response_updates = response_task_values
+            .into_iter()
+            .map(|response_value| {
+                let variable = response_value
+                    .variable
+                    .with_context(|| "Missing variable for response value".to_string())?;
 
-        let response_updates: Vec<_> = match response {
-            Response::Error(err) => return Err(VegaFusionError::internal(format!("{err:?}"))),
-            Response::TaskGraphValues(task_graph_vals) => {
-                task_graph_vals.deserialize()
-                    .with_context(|| "Failed to deserialize response")?.iter().map(|(var, scope, value)| {
+                let scope = response_value.scope;
+                let proto_value = response_value
+                    .value
+                    .with_context(|| "missing value for response value: {:?}".to_string())?;
 
-                    Ok(ExportUpdateJSON {
-                        namespace: match var.ns() {
-                            VariableNamespace::Signal => ExportUpdateNamespace::Signal,
-                            VariableNamespace::Data => ExportUpdateNamespace::Data,
-                            VariableNamespace::Scale => {
-                                return Err(VegaFusionError::internal("Unexpected scale variable"))
-                            }
-                        },
-                        name: var.name.clone(),
-                        scope: scope.clone(),
-                        value: value.to_json()?,
-                    })
-                }).collect::<Result<Vec<_>>>()?
-            }
-        };
+                let value = TaskValue::try_from(&proto_value).with_context(|| {
+                    "Deserialization failed for value of response value: {:?}".to_string()
+                })?;
+
+                Ok(ExportUpdateJSON {
+                    namespace: match variable.ns() {
+                        VariableNamespace::Signal => ExportUpdateNamespace::Signal,
+                        VariableNamespace::Data => ExportUpdateNamespace::Data,
+                        VariableNamespace::Scale => {
+                            return Err(VegaFusionError::internal("Unexpected scale variable"))
+                        }
+                    },
+                    name: variable.name.clone(),
+                    scope: scope.clone(),
+                    value: value.to_json()?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(response_updates)
     }
@@ -1046,5 +1076,8 @@ impl ChartState {
     pub fn get_comm_plan(&self) -> &CommPlan {
         &self.plan.comm_plan
     }
-}
 
+    pub fn get_warnings(&self) -> &Vec<PreTransformSpecWarning> {
+        &self.warnings
+    }
+}

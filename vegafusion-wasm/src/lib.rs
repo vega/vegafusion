@@ -277,6 +277,7 @@ impl MsgReceiver {
                                 TaskGraphValueRequest {
                                     task_graph: Some(task_graph.clone()),
                                     indices: updated_nodes,
+                                    inline_datasets: vec![],
                                 },
                             )),
                         };
@@ -323,6 +324,7 @@ impl MsgReceiver {
                                     TaskGraphValueRequest {
                                         task_graph: Some(task_graph.clone()),
                                         indices: updated_nodes,
+                                        inline_datasets: vec![],
                                     },
                                 )),
                             };
@@ -431,6 +433,7 @@ pub fn render_vegafusion(
             TaskGraphValueRequest {
                 task_graph: Some(task_graph),
                 indices: updated_node_indices,
+                inline_datasets: vec![],
             },
         )),
     };

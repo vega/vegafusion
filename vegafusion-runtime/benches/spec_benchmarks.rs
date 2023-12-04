@@ -67,10 +67,11 @@ async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> Q
         request: Some(Request::TaskGraphValues(TaskGraphValueRequest {
             task_graph: Some(task_graph.clone()),
             indices: vec![node_index.clone()],
+            inline_datasets: vec![],
         })),
     };
 
-    runtime.query_request(request).await.unwrap()
+    runtime.query_request_message(request).await.unwrap()
 }
 
 async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdateBatch>) {
@@ -118,9 +119,10 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
         request: Some(Request::TaskGraphValues(TaskGraphValueRequest {
             task_graph: Some(task_graph.clone()),
             indices: query_indices,
+            inline_datasets: vec![],
         })),
     };
-    let _response = runtime.query_request(request).await.unwrap();
+    let _response = runtime.query_request_message(request).await.unwrap();
 
     // Get update values
     for update_batch in full_updates {
@@ -137,9 +139,10 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
             request: Some(Request::TaskGraphValues(TaskGraphValueRequest {
                 task_graph: Some(task_graph.clone()),
                 indices: query_indices,
+                inline_datasets: vec![],
             })),
         };
-        let _response = runtime.query_request(request).await.unwrap();
+        let _response = runtime.query_request_message(request).await.unwrap();
     }
 }
 

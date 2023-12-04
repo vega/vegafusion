@@ -10,7 +10,7 @@ use tokio::runtime::Runtime;
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_extract_warning::WarningType as ExtractWarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
-use vegafusion_runtime::task_graph::runtime::{ChartState, VegaFusionRuntime};
+use vegafusion_runtime::task_graph::runtime::{ChartState as RsChartState, VegaFusionRuntime};
 
 use crate::connection::{PySqlConnection, PySqlDataset};
 use crate::dataframe::PyDataFrame;
@@ -42,33 +42,52 @@ pub fn initialize_logging() {
 }
 
 #[pyclass]
-struct PyChartState {
+struct ChartState {
     runtime: Arc<VegaFusionRuntime>,
-    state: ChartState,
+    state: RsChartState,
     tokio_runtime: Arc<Runtime>,
 }
 
-impl PyChartState {
-    pub fn try_new(runtime: Arc<VegaFusionRuntime>, tokio_runtime: Arc<Runtime>, spec: ChartSpec, inline_datasets: HashMap<String, VegaFusionDataset>, tz_config: TzConfig, row_limit: Option<u32>) -> PyResult<Self> {
-        let state = tokio_runtime.block_on(ChartState::try_new(&runtime, spec, inline_datasets, tz_config, row_limit))?;
+impl ChartState {
+    pub fn try_new(
+        runtime: Arc<VegaFusionRuntime>,
+        tokio_runtime: Arc<Runtime>,
+        spec: ChartSpec,
+        inline_datasets: HashMap<String, VegaFusionDataset>,
+        tz_config: TzConfig,
+        row_limit: Option<u32>,
+    ) -> PyResult<Self> {
+        let state = tokio_runtime.block_on(RsChartState::try_new(
+            &runtime,
+            spec,
+            inline_datasets,
+            tz_config,
+            row_limit,
+        ))?;
         Ok(Self {
             runtime,
             state,
-            tokio_runtime
+            tokio_runtime,
         })
     }
 }
 
 #[pymethods]
-impl PyChartState {
+impl ChartState {
     pub fn update(&self, py: Python, updates: Vec<PyObject>) -> PyResult<Vec<PyObject>> {
-        let updates = updates.into_iter().map(
-            |el| Ok(depythonize::<ExportUpdateJSON>(el.as_ref(py))?)
-        ).collect::<PyResult<Vec<_>>>()?;
+        let updates = updates
+            .into_iter()
+            .map(|el| Ok(depythonize::<ExportUpdateJSON>(el.as_ref(py))?))
+            .collect::<PyResult<Vec<_>>>()?;
 
-        let result_updates = self.tokio_runtime.block_on(self.state.update(&self.runtime, updates))?;
+        let result_updates = self
+            .tokio_runtime
+            .block_on(self.state.update(&self.runtime, updates))?;
 
-        let a = result_updates.into_iter().map(|el| Ok(pythonize(py, &el)?)).collect::<PyResult<Vec<_>>>()?;
+        let a = result_updates
+            .into_iter()
+            .map(|el| Ok(pythonize(py, &el)?))
+            .collect::<PyResult<Vec<_>>>()?;
         Ok(a)
     }
 
@@ -79,6 +98,16 @@ impl PyChartState {
     pub fn get_watch_plan(&self, py: Python) -> PyResult<PyObject> {
         let watch_plan = WatchPlan::from(self.state.get_comm_plan().clone());
         Ok(pythonize(py, &watch_plan)?)
+    }
+
+    pub fn get_warnings(&self, py: Python) -> PyResult<PyObject> {
+        let warnings: Vec<_> = self
+            .state
+            .get_warnings()
+            .iter()
+            .map(PreTransformSpecWarningSpec::from)
+            .collect();
+        Ok(pythonize::pythonize(py, &warnings)?)
     }
 }
 
@@ -193,7 +222,14 @@ impl PyVegaFusionRuntime {
         })
     }
 
-    pub fn new_chart_state(&self, py: Python, spec: PyObject, local_tz: String, default_input_tz: Option<String>, row_limit: Option<u32>, inline_datasets: Option<&PyDict>,) -> PyResult<PyChartState> {
+    pub fn new_chart_state(
+        &self,
+        spec: PyObject,
+        local_tz: String,
+        default_input_tz: Option<String>,
+        row_limit: Option<u32>,
+        inline_datasets: Option<&PyDict>,
+    ) -> PyResult<ChartState> {
         let spec = parse_json_spec(spec)?;
         let tz_config = TzConfig {
             local_tz: local_tz.to_string(),
@@ -211,13 +247,13 @@ impl PyVegaFusionRuntime {
             &self.tokio_runtime_connection
         };
 
-        PyChartState::try_new(
+        ChartState::try_new(
             self.runtime.clone(),
             tokio_runtime.clone(),
             spec,
             inline_datasets,
             tz_config,
-            row_limit
+            row_limit,
         )
     }
 
