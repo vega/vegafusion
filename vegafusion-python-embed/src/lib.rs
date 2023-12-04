@@ -10,18 +10,18 @@ use tokio::runtime::Runtime;
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_extract_warning::WarningType as ExtractWarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
-use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
+use vegafusion_runtime::task_graph::runtime::{ChartState, VegaFusionRuntime};
 
 use crate::connection::{PySqlConnection, PySqlDataset};
 use crate::dataframe::PyDataFrame;
 use env_logger::{Builder, Target};
-use pythonize::depythonize;
+use pythonize::{depythonize, pythonize};
 use serde_json::json;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::patch::patch_pre_transformed_spec;
 use vegafusion_core::planning::plan::{PlannerConfig, PreTransformSpecWarningSpec, SpecPlan};
-use vegafusion_core::planning::watch::WatchPlan;
-use vegafusion_core::proto::gen::tasks::Variable;
+use vegafusion_core::planning::watch::{ExportUpdateJSON, WatchPlan};
+use vegafusion_core::proto::gen::tasks::{TzConfig, Variable};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -42,8 +42,49 @@ pub fn initialize_logging() {
 }
 
 #[pyclass]
+struct PyChartState {
+    runtime: Arc<VegaFusionRuntime>,
+    state: ChartState,
+    tokio_runtime: Arc<Runtime>,
+}
+
+impl PyChartState {
+    pub fn try_new(runtime: Arc<VegaFusionRuntime>, tokio_runtime: Arc<Runtime>, spec: ChartSpec, inline_datasets: HashMap<String, VegaFusionDataset>, tz_config: TzConfig, row_limit: Option<u32>) -> PyResult<Self> {
+        let state = tokio_runtime.block_on(ChartState::try_new(&runtime, spec, inline_datasets, tz_config, row_limit))?;
+        Ok(Self {
+            runtime,
+            state,
+            tokio_runtime
+        })
+    }
+}
+
+#[pymethods]
+impl PyChartState {
+    pub fn update(&self, py: Python, updates: Vec<PyObject>) -> PyResult<Vec<PyObject>> {
+        let updates = updates.into_iter().map(
+            |el| Ok(depythonize::<ExportUpdateJSON>(el.as_ref(py))?)
+        ).collect::<PyResult<Vec<_>>>()?;
+
+        let result_updates = self.tokio_runtime.block_on(self.state.update(&self.runtime, updates))?;
+
+        let a = result_updates.into_iter().map(|el| Ok(pythonize(py, &el)?)).collect::<PyResult<Vec<_>>>()?;
+        Ok(a)
+    }
+
+    pub fn get_transformed_spec(&self, py: Python) -> PyResult<PyObject> {
+        Ok(pythonize(py, self.state.get_transformed_spec())?)
+    }
+
+    pub fn get_watch_plan(&self, py: Python) -> PyResult<PyObject> {
+        let watch_plan = WatchPlan::from(self.state.get_comm_plan().clone());
+        Ok(pythonize(py, &watch_plan)?)
+    }
+}
+
+#[pyclass]
 struct PyVegaFusionRuntime {
-    runtime: VegaFusionRuntime,
+    runtime: Arc<VegaFusionRuntime>,
     tokio_runtime_connection: Arc<Runtime>,
     tokio_runtime_current_thread: Arc<Runtime>,
 }
@@ -146,10 +187,38 @@ impl PyVegaFusionRuntime {
             .external("Failed to create Tokio thread pool")?;
 
         Ok(Self {
-            runtime: VegaFusionRuntime::new(conn, max_capacity, memory_limit),
+            runtime: Arc::new(VegaFusionRuntime::new(conn, max_capacity, memory_limit)),
             tokio_runtime_connection: Arc::new(tokio_runtime_connection),
             tokio_runtime_current_thread: Arc::new(tokio_runtime_current_thread),
         })
+    }
+
+    pub fn new_chart_state(&self, py: Python, spec: PyObject, local_tz: String, default_input_tz: Option<String>, row_limit: Option<u32>, inline_datasets: Option<&PyDict>,) -> PyResult<PyChartState> {
+        let spec = parse_json_spec(spec)?;
+        let tz_config = TzConfig {
+            local_tz: local_tz.to_string(),
+            default_input_tz: default_input_tz.clone(),
+        };
+
+        let (inline_datasets, any_main_thread_sources) =
+            self.process_inline_datasets(inline_datasets)?;
+
+        // Get runtime based on whether there were any Python data sources that require running
+        // on the main thread. In this case we need to use the current thread tokio runtime
+        let tokio_runtime = if any_main_thread_sources {
+            &self.tokio_runtime_current_thread
+        } else {
+            &self.tokio_runtime_connection
+        };
+
+        PyChartState::try_new(
+            self.runtime.clone(),
+            tokio_runtime.clone(),
+            spec,
+            inline_datasets,
+            tz_config,
+            row_limit
+        )
     }
 
     pub fn process_request_bytes(&self, py: Python, request_bytes: &PyBytes) -> PyResult<PyObject> {

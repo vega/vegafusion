@@ -126,7 +126,7 @@ impl PlannerConfig {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SpecPlan {
     pub server_spec: ChartSpec,
     pub client_spec: ChartSpec,
