@@ -5,7 +5,7 @@ pub struct PreTransformSpecOpts {
     #[prost(uint32, optional, tag = "1")]
     pub row_limit: ::core::option::Option<u32>,
     #[prost(message, repeated, tag = "2")]
-    pub inline_datasets: ::prost::alloc::vec::Vec<PreTransformInlineDataset>,
+    pub inline_datasets: ::prost::alloc::vec::Vec<super::tasks::InlineDataset>,
     #[prost(bool, tag = "3")]
     pub preserve_interactivity: bool,
     #[prost(message, repeated, tag = "4")]
@@ -82,7 +82,7 @@ pub struct PreTransformValuesOpts {
     #[prost(message, repeated, tag = "1")]
     pub variables: ::prost::alloc::vec::Vec<PreTransformVariable>,
     #[prost(message, repeated, tag = "2")]
-    pub inline_datasets: ::prost::alloc::vec::Vec<PreTransformInlineDataset>,
+    pub inline_datasets: ::prost::alloc::vec::Vec<super::tasks::InlineDataset>,
     #[prost(uint32, optional, tag = "3")]
     pub row_limit: ::core::option::Option<u32>,
 }
@@ -124,16 +124,6 @@ pub mod pre_transform_values_warning {
     }
 }
 /// / Common pre-transform messages
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct PreTransformInlineDataset {
-    /// Inline dataset name
-    #[prost(string, tag = "1")]
-    pub name: ::prost::alloc::string::String,
-    /// Serialized Arrow record batch in Arrow IPC format
-    #[prost(bytes = "vec", tag = "2")]
-    pub table: ::prost::alloc::vec::Vec<u8>,
-}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PlannerWarning {
@@ -193,7 +183,7 @@ pub struct PreTransformExtractRequest {
     #[prost(int32, tag = "5")]
     pub extract_threshold: i32,
     #[prost(message, repeated, tag = "6")]
-    pub inline_datasets: ::prost::alloc::vec::Vec<PreTransformInlineDataset>,
+    pub inline_datasets: ::prost::alloc::vec::Vec<super::tasks::InlineDataset>,
     #[prost(message, repeated, tag = "7")]
     pub keep_variables: ::prost::alloc::vec::Vec<PreTransformVariable>,
 }
