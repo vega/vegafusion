@@ -342,6 +342,34 @@ class VegaFusionRuntime:
 
             return new_spec, warnings
 
+    def new_chart_state(
+        self, spec, local_tz=None, default_input_tz=None, row_limit=None, inline_datasets=None
+    ):
+        """
+        Construct new ChartState object
+
+        :param spec: A Vega specification dict or JSON string
+        :param local_tz: Name of timezone to be considered local. E.g. 'America/New_York'.
+            Defaults to the value of vf.get_local_tz(), which defaults to the system timezone
+            if one can be determined.
+        :param default_input_tz: Name of timezone (e.g. 'America/New_York') that naive datetime
+            strings should be interpreted in. Defaults to `local_tz`.
+        :param row_limit: Maximum number of dataset rows to include in the returned
+            datasets. If exceeded, datasets will be truncated to this number of rows
+            and a RowLimitExceeded warning will be included in the ChartState's warnings list
+        :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
+            Tables. Inline datasets may be referenced by the input specification using
+            the following url syntax 'vegafusion+dataset://{dataset_name}' or
+            'table://{dataset_name}'.
+        :return: ChartState
+        """
+        if self._grpc_channel:
+            raise ValueError("new_chart_state not yet supported over gRPC")
+        else:
+            local_tz = local_tz or get_local_tz()
+            inline_arrow_dataset = self._import_or_register_inline_datasets(inline_datasets)
+            return self.embedded_runtime.new_chart_state(spec, local_tz, default_input_tz, row_limit, inline_arrow_dataset)
+
     def pre_transform_datasets(
         self,
         spec,
@@ -371,7 +399,7 @@ class VegaFusionRuntime:
         :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
             Tables. Inline datasets may be referenced by the input specification using
             the following url syntax 'vegafusion+dataset://{dataset_name}' or
-            'table://{dataset_name}'..
+            'table://{dataset_name}'.
         :return:
             Two-element tuple:
                 0. List of pandas DataFrames corresponding to the input datasets list

@@ -150,6 +150,7 @@ message NodeValueIndex {
 message TaskGraphValueRequest {
   TaskGraph task_graph = 1;
   repeated NodeValueIndex indices = 2;
+  repeated InlineDataset inline_datasets = 3;
 }
 
 message ResponseTaskValue {
@@ -160,4 +161,11 @@ message ResponseTaskValue {
 
 message TaskGraphValueResponse {
   repeated ResponseTaskValue response_values = 1;
+}
+
+message InlineDataset {
+  // Inline dataset name
+  string name = 1;
+  // Serialized Arrow record batch in Arrow IPC format
+  bytes table = 2;
 }

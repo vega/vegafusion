@@ -35,7 +35,10 @@ impl TonicVegaFusionRuntime for VegaFusionRuntimeGrpc {
         &self,
         request: Request<QueryRequest>,
     ) -> Result<Response<QueryResult>, Status> {
-        let result = self.runtime.query_request(request.into_inner()).await;
+        let result = self
+            .runtime
+            .query_request_message(request.into_inner())
+            .await;
         match result {
             Ok(result) => Ok(Response::new(result)),
             Err(err) => Err(Status::unknown(err.to_string())),

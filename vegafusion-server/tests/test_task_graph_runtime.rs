@@ -59,6 +59,7 @@ async fn try_it_from_spec() {
             TaskGraphValueRequest {
                 task_graph: Some(graph),
                 indices: vec![NodeValueIndex::new(2, Some(0))],
+                inline_datasets: vec![],
             },
         )),
     };
