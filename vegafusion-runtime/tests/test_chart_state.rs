@@ -73,95 +73,96 @@ mod tests {
 
         let response_updates = chart_state.update(&runtime, updates).await.unwrap();
         let expected_updates: Vec<ExportUpdateJSON> = serde_json::from_value(json!(
-            [
+        [
+          {
+            "namespace": "data",
+            "name": "data_2",
+            "scope": [],
+            "value": [
               {
-                "namespace": "data",
-                "name": "data_2",
-                "scope": [],
-                "value": [
-                  {
-                    "__count": 23,
-                    "bin_maxbins_20_distance": 1400.0,
-                    "bin_maxbins_20_distance_end": 1600.0
-                  },
-                  {
-                    "__count": 30,
-                    "bin_maxbins_20_distance": 1000.0,
-                    "bin_maxbins_20_distance_end": 1200.0
-                  },
-                  {
-                    "__count": 34,
-                    "bin_maxbins_20_distance": 1200.0,
-                    "bin_maxbins_20_distance_end": 1400.0
-                  }
-                ]
+                "__count": 23,
+                "bin_maxbins_20_distance": 1400.0,
+                "bin_maxbins_20_distance_end": 1600.0
               },
               {
-                "namespace": "data",
-                "name": "data_1",
-                "scope": [],
-                "value": [
-                  {
-                    "__count": 44,
-                    "bin_maxbins_20_delay": -20.0,
-                    "bin_maxbins_20_delay_end": 0.0
-                  },
-                  {
-                    "__count": 27,
-                    "bin_maxbins_20_delay": 0.0,
-                    "bin_maxbins_20_delay_end": 20.0
-                  },
-                  {
-                    "__count": 8,
-                    "bin_maxbins_20_delay": 20.0,
-                    "bin_maxbins_20_delay_end": 40.0
-                  },
-                  {
-                    "__count": 5,
-                    "bin_maxbins_20_delay": -40.0,
-                    "bin_maxbins_20_delay_end": -20.0
-                  },
-                  {
-                    "__count": 1,
-                    "bin_maxbins_20_delay": 40.0,
-                    "bin_maxbins_20_delay_end": 60.0
-                  },
-                  {
-                    "__count": 2,
-                    "bin_maxbins_20_delay": 60.0,
-                    "bin_maxbins_20_delay_end": 80.0
-                  }
-                ]
+                "__count": 30,
+                "bin_maxbins_20_distance": 1000.0,
+                "bin_maxbins_20_distance_end": 1200.0
               },
               {
-                "namespace": "signal",
-                "name": "child__column_delay_layer_1_bin_maxbins_20_delay_bins",
-                "scope": [],
-                "value": {
-                  "fields": [
-                    "delay"
-                  ],
-                  "fname": "bin_delay",
-                  "start": -40.0,
-                  "step": 20.0,
-                  "stop": 260.0
-                }
-              },
-              {
-                "namespace": "signal",
-                "name": "child__column_distance_layer_0_bin_maxbins_20_distance_bins",
-                "scope": [],
-                "value": {
-                  "fields": [
-                    "distance"
-                  ],
-                  "fname": "bin_distance",
-                  "start": 0.0,
-                  "step": 200.0,
-                  "stop": 2400.0
-                }
+                "__count": 34,
+                "bin_maxbins_20_distance": 1200.0,
+                "bin_maxbins_20_distance_end": 1400.0
               }
-            ])).unwrap();
+            ]
+          },
+          {
+            "namespace": "data",
+            "name": "data_1",
+            "scope": [],
+            "value": [
+              {
+                "__count": 44,
+                "bin_maxbins_20_delay": -20.0,
+                "bin_maxbins_20_delay_end": 0.0
+              },
+              {
+                "__count": 27,
+                "bin_maxbins_20_delay": 0.0,
+                "bin_maxbins_20_delay_end": 20.0
+              },
+              {
+                "__count": 8,
+                "bin_maxbins_20_delay": 20.0,
+                "bin_maxbins_20_delay_end": 40.0
+              },
+              {
+                "__count": 5,
+                "bin_maxbins_20_delay": -40.0,
+                "bin_maxbins_20_delay_end": -20.0
+              },
+              {
+                "__count": 1,
+                "bin_maxbins_20_delay": 40.0,
+                "bin_maxbins_20_delay_end": 60.0
+              },
+              {
+                "__count": 2,
+                "bin_maxbins_20_delay": 60.0,
+                "bin_maxbins_20_delay_end": 80.0
+              }
+            ]
+          },
+          {
+            "namespace": "signal",
+            "name": "child__column_delay_layer_1_bin_maxbins_20_delay_bins",
+            "scope": [],
+            "value": {
+              "fields": [
+                "delay"
+              ],
+              "fname": "bin_delay",
+              "start": -40.0,
+              "step": 20.0,
+              "stop": 260.0
+            }
+          },
+          {
+            "namespace": "signal",
+            "name": "child__column_distance_layer_0_bin_maxbins_20_distance_bins",
+            "scope": [],
+            "value": {
+              "fields": [
+                "distance"
+              ],
+              "fname": "bin_distance",
+              "start": 0.0,
+              "step": 200.0,
+              "stop": 2400.0
+            }
+          }
+        ]))
+        .unwrap();
 
         assert_eq!(response_updates, expected_updates)
     }
