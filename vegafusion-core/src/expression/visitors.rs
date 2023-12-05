@@ -212,7 +212,7 @@ impl ExpressionVisitor for CheckSupportedExprVisitor {
                 ..
             })) = &args[1].expr
             {
-                if v != "" {
+                if !v.is_empty() {
                     self.supported = false;
                 }
             } else {

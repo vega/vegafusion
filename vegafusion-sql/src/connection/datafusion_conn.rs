@@ -69,12 +69,10 @@ impl DataFusionConnection {
         bucket_path: &str,
     ) -> Result<SessionContext> {
         let s3 = AmazonS3Builder::from_env().with_url(url).build().with_context(||
-            format!(
-                "Failed to initialize s3 connection from environment variables.\n\
-                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env"
-            )
+            "Failed to initialize s3 connection from environment variables.\n\
+                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env".to_string()
         )?;
-        let Some((bucket, _)) = bucket_path.split_once("/") else {
+        let Some((bucket, _)) = bucket_path.split_once('/') else {
             return Err(VegaFusionError::specification(format!("Invalid s3 URL: {url}")));
         };
         let base_url = Url::parse(&format!("s3://{bucket}/")).expect("Should be valid URL");
@@ -214,12 +212,10 @@ impl Connection for DataFusionConnection {
             self.scan_arrow(table).await
         } else if let Some(bucket_path) = url.strip_prefix("s3://") {
             let s3 = AmazonS3Builder::from_env().with_url(url).build().with_context(||
-                format!(
-                    "Failed to initialize s3 connection from environment variables.\n\
-                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env"
-                )
+                "Failed to initialize s3 connection from environment variables.\n\
+                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env".to_string()
             )?;
-            let Some((bucket, _)) = bucket_path.split_once("/") else {
+            let Some((bucket, _)) = bucket_path.split_once('/') else {
                 return Err(VegaFusionError::specification(format!("Invalid s3 URL: {url}")));
             };
             let base_url = Url::parse(&format!("s3://{bucket}/")).expect("Should be valid URL");

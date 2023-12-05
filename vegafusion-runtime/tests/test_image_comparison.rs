@@ -1161,7 +1161,7 @@ mod test_image_comparison_window {
 mod test_pre_transform_inline {
     use super::*;
     use crate::util::datasets::vega_json_dataset_async;
-    use vegafusion_core::proto::gen::pretransform::PreTransformInlineDataset;
+    use vegafusion_core::proto::gen::tasks::InlineDataset;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
     #[tokio::test]
@@ -1186,7 +1186,7 @@ mod test_pre_transform_inline {
 
         // Load csv file as inline dataset
         let movies_table = vega_json_dataset_async("movies").await;
-        let inline_datasets = vec![PreTransformInlineDataset {
+        let inline_datasets = vec![InlineDataset {
             name: "movies".to_string(),
             table: movies_table.to_ipc_bytes().unwrap(),
         }];
