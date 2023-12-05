@@ -74,6 +74,7 @@ impl ChartState {
 
 #[pymethods]
 impl ChartState {
+    /// Update chart state with updates from the client
     pub fn update(&self, py: Python, updates: Vec<PyObject>) -> PyResult<Vec<PyObject>> {
         let updates = updates
             .into_iter()
@@ -91,15 +92,23 @@ impl ChartState {
         Ok(a)
     }
 
+    /// Get ChartState's initial input spec
+    pub fn get_input_spec(&self, py: Python) -> PyResult<PyObject> {
+        Ok(pythonize(py, self.state.get_input_spec())?)
+    }
+
+    /// Get ChartState's initial transformed spec
     pub fn get_transformed_spec(&self, py: Python) -> PyResult<PyObject> {
         Ok(pythonize(py, self.state.get_transformed_spec())?)
     }
 
+    /// Get ChartState's watch plan
     pub fn get_watch_plan(&self, py: Python) -> PyResult<PyObject> {
         let watch_plan = WatchPlan::from(self.state.get_comm_plan().clone());
         Ok(pythonize(py, &watch_plan)?)
     }
 
+    /// Get list of transform warnings
     pub fn get_warnings(&self, py: Python) -> PyResult<PyObject> {
         let warnings: Vec<_> = self
             .state

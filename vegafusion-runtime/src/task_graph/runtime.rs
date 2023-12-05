@@ -20,7 +20,7 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 use vegafusion_core::planning::stitch::CommPlan;
 use vegafusion_core::planning::watch::{
-    ExportUpdateArrow, ExportUpdateJSON, ExportUpdateNamespace, WatchPlan,
+    ExportUpdateArrow, ExportUpdateJSON, ExportUpdateNamespace,
 };
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
@@ -1067,6 +1067,10 @@ impl ChartState {
             .collect::<Result<Vec<_>>>()?;
 
         Ok(response_updates)
+    }
+
+    pub fn get_input_spec(&self) -> &ChartSpec {
+        &self.input_spec
     }
 
     pub fn get_transformed_spec(&self) -> &ChartSpec {
