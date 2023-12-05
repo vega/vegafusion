@@ -11,7 +11,7 @@ mod tests {
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
     #[tokio::test]
-    async fn test_pre_transform_dataset() {
+    async fn test_chart_state() {
         // Load spec
         let spec_path = format!(
             "{}/tests/specs/custom/flights_crossfilter_a.vg.json",
@@ -68,26 +68,32 @@ mod tests {
         let expected_updates: Vec<ExportUpdateJSON> = serde_json::from_value(json!(
         [
           {
-            "namespace": "data",
-            "name": "data_2",
+            "namespace": "signal",
+            "name": "child__column_delay_layer_1_bin_maxbins_20_delay_bins",
             "scope": [],
-            "value": [
-              {
-                "__count": 23,
-                "bin_maxbins_20_distance": 1400.0,
-                "bin_maxbins_20_distance_end": 1600.0
-              },
-              {
-                "__count": 30,
-                "bin_maxbins_20_distance": 1000.0,
-                "bin_maxbins_20_distance_end": 1200.0
-              },
-              {
-                "__count": 34,
-                "bin_maxbins_20_distance": 1200.0,
-                "bin_maxbins_20_distance_end": 1400.0
-              }
-            ]
+            "value": {
+              "fields": [
+                "delay"
+              ],
+              "fname": "bin_delay",
+              "start": -40.0,
+              "step": 20.0,
+              "stop": 260.0
+            }
+          },
+          {
+            "namespace": "signal",
+            "name": "child__column_distance_layer_0_bin_maxbins_20_distance_bins",
+            "scope": [],
+            "value": {
+              "fields": [
+                "distance"
+              ],
+              "fname": "bin_distance",
+              "start": 0.0,
+              "step": 200.0,
+              "stop": 2400.0
+            }
           },
           {
             "namespace": "data",
@@ -127,33 +133,27 @@ mod tests {
             ]
           },
           {
-            "namespace": "signal",
-            "name": "child__column_delay_layer_1_bin_maxbins_20_delay_bins",
+            "namespace": "data",
+            "name": "data_2",
             "scope": [],
-            "value": {
-              "fields": [
-                "delay"
-              ],
-              "fname": "bin_delay",
-              "start": -40.0,
-              "step": 20.0,
-              "stop": 260.0
-            }
+            "value": [
+              {
+                "__count": 23,
+                "bin_maxbins_20_distance": 1400.0,
+                "bin_maxbins_20_distance_end": 1600.0
+              },
+              {
+                "__count": 30,
+                "bin_maxbins_20_distance": 1000.0,
+                "bin_maxbins_20_distance_end": 1200.0
+              },
+              {
+                "__count": 34,
+                "bin_maxbins_20_distance": 1200.0,
+                "bin_maxbins_20_distance_end": 1400.0
+              }
+            ]
           },
-          {
-            "namespace": "signal",
-            "name": "child__column_distance_layer_0_bin_maxbins_20_distance_bins",
-            "scope": [],
-            "value": {
-              "fields": [
-                "distance"
-              ],
-              "fname": "bin_distance",
-              "start": 0.0,
-              "step": 200.0,
-              "stop": 2400.0
-            }
-          }
         ]))
         .unwrap();
 

@@ -1035,7 +1035,7 @@ impl ChartState {
             )
             .await?;
 
-        let response_updates = response_task_values
+        let mut response_updates = response_task_values
             .into_iter()
             .map(|response_value| {
                 let variable = response_value
@@ -1065,6 +1065,9 @@ impl ChartState {
                 })
             })
             .collect::<Result<Vec<_>>>()?;
+
+        // Sort for deterministic ordering
+        response_updates.sort_by_key(|update| update.name.clone());
 
         Ok(response_updates)
     }
