@@ -646,7 +646,9 @@ async fn read_json(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataF
                 See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env".to_string()
         )?;
         let Some((_, path)) = bucket_path.split_once('/') else {
-            return Err(VegaFusionError::specification(format!("Invalid s3 URL: {url}")));
+            return Err(VegaFusionError::specification(format!(
+                "Invalid s3 URL: {url}"
+            )));
         };
         let path = object_store::path::Path::from_url_path(path)?;
         let get_result = s3.get(&path).await?;
