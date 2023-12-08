@@ -391,8 +391,12 @@ impl<'a> ChartVisitor for AddDependencyEdgesVisitor<'a> {
             .unwrap_or_else(|| format!("unnamed_mark_{}", self.mark_index));
         self.mark_index += 1;
 
-        let Some(from) = &mark.from else { return Ok(()) };
-        let Some(source) = &from.data else { return Ok(()) };
+        let Some(from) = &mark.from else {
+            return Ok(());
+        };
+        let Some(source) = &from.data else {
+            return Ok(());
+        };
 
         // Scoped var for this facet dataset
         let scoped_var = (Variable::new_data(&name), Vec::from(scope));
