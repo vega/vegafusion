@@ -38,7 +38,7 @@ fn process_date_add_tz_args(
         n
     } else {
         return Err(VegaFusionError::sql_not_supported(
-            "Second arg to date_add must be an i32 literal",
+            "Second arg to date_add must be a numeric literal",
         ));
     };
 
