@@ -17,7 +17,12 @@ pub fn fuse_datasets(server_spec: &mut ChartSpec, do_not_fuse: &[ScopedVariable]
 
     'outer: for node_index in &nodes {
         let (parent_var, _) = data_graph.node_weight(*node_index).unwrap();
-        let Ok(parent_dataset) = server_spec.get_nested_data(&parent_var.1, &parent_var.0.name).cloned() else { continue };
+        let Ok(parent_dataset) = server_spec
+            .get_nested_data(&parent_var.1, &parent_var.0.name)
+            .cloned()
+        else {
+            continue;
+        };
 
         // Don't push down datasets that are required by client
         if do_not_fuse.contains(parent_var) {
@@ -56,7 +61,10 @@ pub fn fuse_datasets(server_spec: &mut ChartSpec, do_not_fuse: &[ScopedVariable]
         // (it's possible for a dataset's transform pipeline to reference this dataset, in which
         // case we can't fuse.)
         for child_var in &child_vars {
-            let Ok(child_dataset) = server_spec.get_nested_data(&child_var.1, &child_var.0.name) else { continue 'outer};
+            let Ok(child_dataset) = server_spec.get_nested_data(&child_var.1, &child_var.0.name)
+            else {
+                continue 'outer;
+            };
             if child_dataset.source.as_ref() != Some(&parent_dataset.name) {
                 continue 'outer;
             }
@@ -64,12 +72,19 @@ pub fn fuse_datasets(server_spec: &mut ChartSpec, do_not_fuse: &[ScopedVariable]
 
         // Extract child datasets
         for child_var in &child_vars {
-            let Ok(child_dataset) = server_spec.get_nested_data_mut(&child_var.1, &child_var.0.name) else { continue 'outer};
+            let Ok(child_dataset) =
+                server_spec.get_nested_data_mut(&child_var.1, &child_var.0.name)
+            else {
+                continue 'outer;
+            };
             parent_dataset.fuse_into(child_dataset)?;
         }
 
         // Convert parent dataset into a stub
-        let Ok(parent_dataset) = server_spec.get_nested_data_mut(&parent_var.1, &parent_var.0.name) else { continue };
+        let Ok(parent_dataset) = server_spec.get_nested_data_mut(&parent_var.1, &parent_var.0.name)
+        else {
+            continue;
+        };
         parent_dataset.transform = Default::default();
         parent_dataset.source = Default::default();
         parent_dataset.values = Default::default();
