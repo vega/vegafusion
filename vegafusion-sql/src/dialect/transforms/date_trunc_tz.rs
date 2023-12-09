@@ -163,7 +163,7 @@ impl FunctionTransformer for DateTruncTzClickhouseTransformer {
             "second" => "toStartOfSecond",
             _ => {
                 return Err(VegaFusionError::sql_not_supported(format!(
-                    "Unsupported date part to date_part_tz: {part}"
+                    "Unsupported date part to date_trunc_tz: {part}"
                 )))
             }
         };
