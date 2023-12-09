@@ -97,6 +97,16 @@ impl ChartState {
         Ok(pythonize(py, self.state.get_input_spec())?)
     }
 
+    /// Get ChartState's server spec
+    pub fn get_server_spec(&self, py: Python) -> PyResult<PyObject> {
+        Ok(pythonize(py, self.state.get_server_spec())?)
+    }
+
+    /// Get ChartState's client spec
+    pub fn get_client_spec(&self, py: Python) -> PyResult<PyObject> {
+        Ok(pythonize(py, self.state.get_client_spec())?)
+    }
+
     /// Get ChartState's initial transformed spec
     pub fn get_transformed_spec(&self, py: Python) -> PyResult<PyObject> {
         Ok(pythonize(py, self.state.get_transformed_spec())?)

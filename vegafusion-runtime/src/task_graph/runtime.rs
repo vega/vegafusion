@@ -1076,6 +1076,14 @@ impl ChartState {
         &self.input_spec
     }
 
+    pub fn get_server_spec(&self) -> &ChartSpec {
+        &self.plan.server_spec
+    }
+
+    pub fn get_client_spec(&self) -> &ChartSpec {
+        &self.plan.client_spec
+    }
+
     pub fn get_transformed_spec(&self) -> &ChartSpec {
         &self.transformed_spec
     }
