@@ -73,7 +73,9 @@ impl DataFusionConnection {
                 See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env".to_string()
         )?;
         let Some((bucket, _)) = bucket_path.split_once('/') else {
-            return Err(VegaFusionError::specification(format!("Invalid s3 URL: {url}")));
+            return Err(VegaFusionError::specification(format!(
+                "Invalid s3 URL: {url}"
+            )));
         };
         let base_url = Url::parse(&format!("s3://{bucket}/")).expect("Should be valid URL");
         let ctx = make_datafusion_context();
@@ -216,7 +218,9 @@ impl Connection for DataFusionConnection {
                 See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env".to_string()
             )?;
             let Some((bucket, _)) = bucket_path.split_once('/') else {
-                return Err(VegaFusionError::specification(format!("Invalid s3 URL: {url}")));
+                return Err(VegaFusionError::specification(format!(
+                    "Invalid s3 URL: {url}"
+                )));
             };
             let base_url = Url::parse(&format!("s3://{bucket}/")).expect("Should be valid URL");
             let ctx = make_datafusion_context();

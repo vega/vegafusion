@@ -68,12 +68,18 @@ impl ExtractFacetAggregationsVisitor {
 
 impl MutChartVisitor for ExtractFacetAggregationsVisitor {
     fn visit_group_mark(&mut self, mark: &mut MarkSpec, scope: &[u32]) -> Result<()> {
-        let Some(from) = &mut mark.from else { return Ok(()) };
-        let Some(facet) = &mut from.facet else { return Ok(()) };
+        let Some(from) = &mut mark.from else {
+            return Ok(());
+        };
+        let Some(facet) = &mut from.facet else {
+            return Ok(());
+        };
 
         // Check for child datasets
         let facet_dataset_var: ScopedVariable = (Variable::new_data(&facet.name), Vec::from(scope));
-        let Some(facet_dataset_idx) = self.node_indexes.get(&facet_dataset_var) else { return Ok(())};
+        let Some(facet_dataset_idx) = self.node_indexes.get(&facet_dataset_var) else {
+            return Ok(());
+        };
         let edges = self
             .graph
             .edges_directed(*facet_dataset_idx, Direction::Outgoing);
@@ -97,9 +103,10 @@ impl MutChartVisitor for ExtractFacetAggregationsVisitor {
         }
 
         let child_dataset = &mut child_datasets[0];
-        let Some(TransformSpec::Aggregate(mut agg)) = child_dataset.transform.get(0).cloned() else {
+        let Some(TransformSpec::Aggregate(mut agg)) = child_dataset.transform.get(0).cloned()
+        else {
             // dataset does not have a aggregate transform as the first transform, nothing to lift
-            return Ok(())
+            return Ok(());
         };
 
         // Add facet groupby fields as aggregate transform groupby fields
@@ -204,9 +211,12 @@ impl MutChartVisitor for ExtractFacetAggregationsVisitor {
         };
 
         // Save new dataset at the same scope as the original input dataset
-        let Ok(resolved) = self.task_scope.resolve_scope(
-            &Variable::new_data(&facet.data), scope
-        ) else { return Ok(()) };
+        let Ok(resolved) = self
+            .task_scope
+            .resolve_scope(&Variable::new_data(&facet.data), scope)
+        else {
+            return Ok(());
+        };
 
         self.new_datasets
             .entry(resolved.scope.clone())
