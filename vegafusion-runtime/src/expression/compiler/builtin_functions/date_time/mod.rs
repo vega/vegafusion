@@ -8,3 +8,4 @@ pub mod date_format;
 pub mod date_parts;
 pub mod datetime;
 pub mod time;
+pub mod time_offset;

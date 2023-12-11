@@ -1,0 +1,20 @@
+{
+  "server_to_client": [
+    {
+      "name": "data_1_layer_0_layer_0_color_domain_symbol",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_2",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_3",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}
