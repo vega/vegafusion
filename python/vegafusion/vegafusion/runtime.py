@@ -1,9 +1,3 @@
-# VegaFusion
-# Copyright (C) 2022, Jon Mease
-#
-# This program is distributed under multiple licenses.
-# Please consult the license documentation provided alongside
-# this program the details of the active license.
 import pandas as pd
 import psutil
 import pyarrow as pa
