@@ -1,6 +1,8 @@
 use crate::planning::dependency_graph::{build_dependency_graph, toposort_dependency_graph};
 use crate::proto::gen::tasks::VariableNamespace;
 use crate::spec::chart::ChartSpec;
+use crate::spec::values::StringOrSignalSpec;
+use crate::spec::visitors::extract_inline_dataset;
 use crate::task_graph::graph::ScopedVariable;
 use petgraph::prelude::{EdgeRef, NodeIndex};
 use petgraph::Direction;
@@ -44,8 +46,17 @@ pub fn fuse_datasets(server_spec: &mut ChartSpec, do_not_fuse: &[ScopedVariable]
             continue;
         }
 
+        // Check if the url references an inline dataset. We assume that it's preferable to
+        // push computation into the inline dataset's transform pipeline, whereas we don't want
+        // to duplicate the loading of datasets from an https:// URL.
+        let has_inline_dataset = if let Some(StringOrSignalSpec::String(s)) = &parent_dataset.url {
+            extract_inline_dataset(s).is_some()
+        } else {
+            false
+        };
+
         // Don't fuse down datasets with aggregate transforms and multiple children
-        if parent_dataset.has_aggregate() && child_vars.len() > 1 {
+        if (parent_dataset.has_aggregate() || !has_inline_dataset) && child_vars.len() > 1 {
             continue;
         }
 
@@ -108,7 +119,7 @@ mod tests {
                 "data": [
                     {
                         "name": "data_0",
-                        "url": "path/to/data.json",
+                        "url": "vegafusion+dataset://foo",
                         "transform": [
                             {
                                 "type": "filter",
@@ -179,7 +190,7 @@ mod tests {
     },
     {
       "name": "data_2",
-      "url": "path/to/data.json",
+      "url": "vegafusion+dataset://foo",
       "transform": [
         {
           "type": "filter",
@@ -194,7 +205,7 @@ mod tests {
     },
     {
       "name": "data_3",
-      "url": "path/to/data.json",
+      "url": "vegafusion+dataset://foo",
       "transform": [
         {
           "type": "filter",
@@ -227,7 +238,7 @@ mod tests {
   "data": [
     {
       "name": "data_0",
-      "url": "path/to/data.json",
+      "url": "vegafusion+dataset://foo",
       "transform": [
         {
           "type": "filter",
@@ -277,7 +288,7 @@ mod tests {
                 "data": [
                     {
                         "name": "data_0",
-                        "url": "path/to/data.json",
+                        "url": "vegafusion+dataset://foo",
                         "transform": [
                             {
                                 "type": "filter",
@@ -357,7 +368,7 @@ mod tests {
     },
     {
       "name": "data_1",
-      "url": "path/to/data.json",
+      "url": "vegafusion+dataset://foo",
       "transform": [
         {
           "type": "filter",
@@ -381,7 +392,7 @@ mod tests {
     },
     {
       "name": "data_2",
-      "url": "path/to/data.json",
+      "url": "vegafusion+dataset://foo",
       "transform": [
         {
           "type": "filter",
