@@ -289,6 +289,57 @@ impl Connection for PySqlConnection {
             ))
         }
     }
+
+    async fn scan_parquet(&self, path: &str) -> Result<Arc<dyn DataFrame>> {
+        let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
+        let table_name = format!("parquet_{random_id}");
+
+        let fallback_connection = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
+            // Register table with Python connection
+            let table_name_object = table_name.clone().into_py(py);
+            let path_name_object = path.to_string().into_py(py);
+            let is_temporary_object = true.into_py(py);
+
+            let args = PyTuple::new(
+                py,
+                vec![
+                    table_name_object.as_ref(py),
+                    path_name_object.as_ref(py),
+                    is_temporary_object.as_ref(py),
+                ],
+            );
+            match self.conn.call_method1(py, "register_parquet", args) {
+                Ok(_) => {}
+                Err(err) => {
+                    let exception_name = err.get_type(py).name()?;
+
+                    // Check if we have a fallback connection and this is a RegistrationNotSupportedError
+                    if let Some(fallback_connection) = &self.fallback_conn {
+                        if exception_name == "RegistrationNotSupportedError" {
+                            return Ok(Some(fallback_connection));
+                        }
+                    }
+                    return Err(err);
+                }
+            }
+            Ok(None)
+        })?;
+
+        if let Some(fallback_connection) = fallback_connection {
+            // Try again with fallback connection
+            fallback_connection.scan_parquet(path).await
+        } else {
+            // Build DataFrame referencing the registered table
+            Ok(Arc::new(
+                SqlDataFrame::try_new(
+                    Arc::new(self.clone()),
+                    &table_name,
+                    self.fallback_conn.clone().into_iter().collect(),
+                )
+                .await?,
+            ))
+        }
+    }
 }
 
 #[async_trait]
