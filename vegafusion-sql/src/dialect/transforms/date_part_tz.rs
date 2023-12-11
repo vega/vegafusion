@@ -63,15 +63,15 @@ pub fn at_time_zone_if_not_utc(arg: SqlExpr, time_zone: String, naive_timestamps
 
 pub fn part_to_date_time_field(part: &str) -> Result<DateTimeField> {
     Ok(match part.to_ascii_lowercase().as_str() {
-        "year" => SqlDateTimeField::Year,
-        "month" => SqlDateTimeField::Month,
-        "week" => SqlDateTimeField::Week,
-        "day" => SqlDateTimeField::Day,
+        "year" | "years" => SqlDateTimeField::Year,
+        "month" | "months " => SqlDateTimeField::Month,
+        "week" | "weeks" => SqlDateTimeField::Week,
+        "day" | "days" => SqlDateTimeField::Day,
         "date" => SqlDateTimeField::Date,
-        "hour" => SqlDateTimeField::Hour,
-        "minute" => SqlDateTimeField::Minute,
-        "second" => SqlDateTimeField::Second,
-        "millisecond" => SqlDateTimeField::Millisecond,
+        "hour" | "hours" => SqlDateTimeField::Hour,
+        "minute" | "minutes" => SqlDateTimeField::Minute,
+        "second" | "seconds" => SqlDateTimeField::Second,
+        "millisecond" | "milliseconds" => SqlDateTimeField::Millisecond,
         _ => {
             return Err(VegaFusionError::sql_not_supported(format!(
                 "Unsupported date part to date_part_tz: {part}"

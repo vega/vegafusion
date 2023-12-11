@@ -9,7 +9,7 @@ use sqlparser::ast::{
     ObjectName as SqlObjectName, Value as SqlValue,
 };
 use std::sync::Arc;
-use vegafusion_common::error::{Result, VegaFusionError};
+use vegafusion_common::error::{Result, ToExternalError, VegaFusionError};
 
 fn process_date_add_tz_args(
     args: &[Expr],
@@ -27,7 +27,7 @@ fn process_date_add_tz_args(
     let sql_arg3 = args[3].to_sql(dialect, schema)?;
 
     let part = if let SqlExpr::Value(SqlValue::SingleQuotedString(part)) = sql_arg0 {
-        part
+        part.to_ascii_lowercase()
     } else {
         return Err(VegaFusionError::sql_not_supported(
             "First argument to date_add_tz must be a string literal",
@@ -38,9 +38,12 @@ fn process_date_add_tz_args(
         n
     } else {
         return Err(VegaFusionError::sql_not_supported(
-            "Second arg to date_add must be a numeric literal",
+            "Second arg to date_add must be an integer literal",
         ));
     };
+    let n_int = n_str
+        .parse::<i32>()
+        .external("Failed to parse interval step as integer")?;
 
     let time_zone = if let SqlExpr::Value(SqlValue::SingleQuotedString(timezone)) = sql_arg3 {
         timezone
@@ -49,7 +52,15 @@ fn process_date_add_tz_args(
             "Forth argument to date_add_tz must be a string literal",
         ));
     };
-    Ok((part, n_str, sql_arg2, time_zone))
+
+    // Handle special cases for intervals
+    let (n_int, part) = match part.as_str() {
+        "week" => (n_int * 7, "day".to_string()),
+        "date" => (n_int, "day".to_string()),
+        _ => (n_int, part),
+    };
+
+    Ok((part, n_int.to_string(), sql_arg2, time_zone))
 }
 
 fn maybe_from_utc(ts_expr: SqlExpr, time_zone: &str) -> SqlExpr {
