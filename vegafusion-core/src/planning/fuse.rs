@@ -119,7 +119,7 @@ mod tests {
                 "data": [
                     {
                         "name": "data_0",
-                        "url": "path/to/data.json",
+                        "url": "vegafusion+dataset://foo",
                         "transform": [
                             {
                                 "type": "filter",
@@ -190,7 +190,7 @@ mod tests {
     },
     {
       "name": "data_2",
-      "url": "path/to/data.json",
+      "url": "vegafusion+dataset://foo",
       "transform": [
         {
           "type": "filter",
@@ -205,7 +205,7 @@ mod tests {
     },
     {
       "name": "data_3",
-      "url": "path/to/data.json",
+      "url": "vegafusion+dataset://foo",
       "transform": [
         {
           "type": "filter",
@@ -238,7 +238,7 @@ mod tests {
   "data": [
     {
       "name": "data_0",
-      "url": "path/to/data.json",
+      "url": "vegafusion+dataset://foo",
       "transform": [
         {
           "type": "filter",
@@ -288,7 +288,7 @@ mod tests {
                 "data": [
                     {
                         "name": "data_0",
-                        "url": "path/to/data.json",
+                        "url": "vegafusion+dataset://foo",
                         "transform": [
                             {
                                 "type": "filter",
@@ -368,7 +368,7 @@ mod tests {
     },
     {
       "name": "data_1",
-      "url": "path/to/data.json",
+      "url": "vegafusion+dataset://foo",
       "transform": [
         {
           "type": "filter",
@@ -392,7 +392,7 @@ mod tests {
     },
     {
       "name": "data_2",
-      "url": "path/to/data.json",
+      "url": "vegafusion+dataset://foo",
       "transform": [
         {
           "type": "filter",
