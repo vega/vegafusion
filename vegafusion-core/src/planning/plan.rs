@@ -198,14 +198,14 @@ impl SpecPlan {
                 )?;
             }
 
-            if config.split_url_data_nodes {
-                split_data_url_nodes(&mut server_spec)?;
-            }
-
             if config.fuse_datasets {
                 let mut do_not_fuse = config.keep_variables.clone();
                 do_not_fuse.extend(comm_plan.server_to_client.clone());
                 fuse_datasets(&mut server_spec, do_not_fuse.as_slice())?;
+            }
+
+            if config.split_url_data_nodes {
+                split_data_url_nodes(&mut server_spec)?;
             }
 
             if config.stringify_local_datetimes {
