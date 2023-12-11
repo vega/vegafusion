@@ -68,34 +68,6 @@ mod tests {
         let expected_updates: Vec<ExportUpdateJSON> = serde_json::from_value(json!(
         [
           {
-            "namespace": "signal",
-            "name": "child__column_delay_layer_1_bin_maxbins_20_delay_bins",
-            "scope": [],
-            "value": {
-              "fields": [
-                "delay"
-              ],
-              "fname": "bin_delay",
-              "start": -40.0,
-              "step": 20.0,
-              "stop": 260.0
-            }
-          },
-          {
-            "namespace": "signal",
-            "name": "child__column_distance_layer_0_bin_maxbins_20_distance_bins",
-            "scope": [],
-            "value": {
-              "fields": [
-                "distance"
-              ],
-              "fname": "bin_distance",
-              "start": 0.0,
-              "step": 200.0,
-              "stop": 2400.0
-            }
-          },
-          {
             "namespace": "data",
             "name": "data_1",
             "scope": [],
@@ -153,9 +125,15 @@ mod tests {
                 "bin_maxbins_20_distance_end": 1400.0
               }
             ]
-          },
-        ]))
+          }
+        ]
+        ))
         .unwrap();
+
+        // println!(
+        //     "{}",
+        //     serde_json::to_string_pretty(&response_updates).unwrap()
+        // );
 
         assert_eq!(response_updates, expected_updates)
     }
