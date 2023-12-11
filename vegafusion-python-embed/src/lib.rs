@@ -42,13 +42,13 @@ pub fn initialize_logging() {
 }
 
 #[pyclass]
-struct ChartState {
+struct PyChartState {
     runtime: Arc<VegaFusionRuntime>,
     state: RsChartState,
     tokio_runtime: Arc<Runtime>,
 }
 
-impl ChartState {
+impl PyChartState {
     pub fn try_new(
         runtime: Arc<VegaFusionRuntime>,
         tokio_runtime: Arc<Runtime>,
@@ -73,7 +73,7 @@ impl ChartState {
 }
 
 #[pymethods]
-impl ChartState {
+impl PyChartState {
     /// Update chart state with updates from the client
     pub fn update(&self, py: Python, updates: Vec<PyObject>) -> PyResult<Vec<PyObject>> {
         let updates = updates
@@ -248,7 +248,7 @@ impl PyVegaFusionRuntime {
         default_input_tz: Option<String>,
         row_limit: Option<u32>,
         inline_datasets: Option<&PyDict>,
-    ) -> PyResult<ChartState> {
+    ) -> PyResult<PyChartState> {
         let spec = parse_json_spec(spec)?;
         let tz_config = TzConfig {
             local_tz: local_tz.to_string(),
@@ -266,7 +266,7 @@ impl PyVegaFusionRuntime {
             &self.tokio_runtime_connection
         };
 
-        ChartState::try_new(
+        PyChartState::try_new(
             self.runtime.clone(),
             tokio_runtime.clone(),
             spec,
@@ -602,7 +602,7 @@ impl PyVegaFusionRuntime {
 fn vegafusion_embed(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyVegaFusionRuntime>()?;
     m.add_class::<PySqlConnection>()?;
-    m.add_class::<ChartState>()?;
+    m.add_class::<PyChartState>()?;
     Ok(())
 }
 

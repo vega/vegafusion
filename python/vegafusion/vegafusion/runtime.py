@@ -1,11 +1,3 @@
-# VegaFusion
-# Copyright (C) 2022, Jon Mease
-#
-# This program is distributed under multiple licenses.
-# Please consult the license documentation provided alongside
-# this program the details of the active license.
-import json
-
 import pandas as pd
 import psutil
 import pyarrow as pa
@@ -26,6 +18,8 @@ try:
 except ImportError:
     pl = None
 
+from typing import TypedDict, List, Literal, Any
+
 
 def _all_datasets_have_type(inline_datasets, types):
     if not inline_datasets:
@@ -37,6 +31,82 @@ def _all_datasets_have_type(inline_datasets, types):
             if not isinstance(dataset, types):
                 return False
         return True
+
+
+class VariableUpdate(TypedDict):
+    name: str
+    namespace: Literal["data", "signal"]
+    scope: List[int]
+    value: Any
+
+
+class Watch(TypedDict):
+    name: str
+    namespace: Literal["data", "signal"]
+    scope: List[int]
+
+
+class WatchPlan(TypedDict):
+    client_to_server: List[Watch]
+    server_to_client: List[Watch]
+
+
+class PreTransformWarning(TypedDict):
+    type: str
+    message: str
+
+
+class ChartState:
+    def __init__(self, chart_state):
+        self._chart_state = chart_state
+
+    def update(self, client_updates: List[VariableUpdate]) -> List[VariableUpdate]:
+        """Update chart state with updates from the client
+
+        :param client_updates: List of VariableUpdate values from the client
+        :return: list of VariableUpdates that should be pushed to the client
+        """
+        return self._chart_state.update(client_updates)
+
+    def get_watch_plan(self) -> WatchPlan:
+        """Get ChartState's watch plan
+
+        The watch plan specifies the signals and datasets that should be communicated
+        between ChartState and client to preserve the input Vega spec's interactivity
+        :return: WatchPlan
+        """
+        return self._chart_state.get_watch_plan()
+
+    def get_transformed_spec(self) -> dict:
+        """Get initial transformed spec
+
+        Get the initial transformed spec. This is equivalent to the spec that would
+        be produced by vf.runtime.pre_transform_spec()
+        """
+        return self._chart_state.get_transformed_spec()
+
+    def get_warnings(self) -> List[PreTransformWarning]:
+        """Get transformed spec warnings
+
+        :return: A list of warnings as dictionaries. Each warning dict has a 'type'
+           key indicating the warning type, and a 'message' key containing
+           a description of the warning. Potential warning types include:
+            'RowLimitExceeded': Some datasets in resulting Vega specification
+                have been truncated to the provided row limit
+            'BrokenInteractivity': Some interactive features may have been
+                broken in the resulting Vega specification
+            'Unsupported': No transforms in the provided Vega specification were
+                eligible for pre-transforming
+        """
+        return self._chart_state.get_warnings()
+
+    def get_server_spec(self) -> dict:
+        """Get server spec"""
+        return self._chart_state.get_server_spec()
+
+    def get_client_spec(self) -> dict:
+        """Get client spec"""
+        return self._chart_state.get_client_spec()
 
 
 class VegaFusionRuntime:
@@ -344,7 +414,7 @@ class VegaFusionRuntime:
 
     def new_chart_state(
         self, spec, local_tz=None, default_input_tz=None, row_limit=None, inline_datasets=None
-    ):
+    ) -> ChartState:
         """
         Construct new ChartState object
 
@@ -368,7 +438,9 @@ class VegaFusionRuntime:
         else:
             local_tz = local_tz or get_local_tz()
             inline_arrow_dataset = self._import_or_register_inline_datasets(inline_datasets)
-            return self.embedded_runtime.new_chart_state(spec, local_tz, default_input_tz, row_limit, inline_arrow_dataset)
+            return ChartState(
+                self.embedded_runtime.new_chart_state(spec, local_tz, default_input_tz, row_limit, inline_arrow_dataset)
+            )
 
     def pre_transform_datasets(
         self,
