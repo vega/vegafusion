@@ -1,0 +1,462 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 300,
+  "height": 300,
+  "style": "view",
+  "data": [
+    {
+      "name": "param_9_store",
+      "transform": [{"type": "collect", "sort": {"field": "_vgsid_"}}],
+      "values": [{"unit": "view_10", "_vgsid_": [-50, -110]}]
+    },
+    {
+      "name": "data-fb86529059777efe8f13f1951acfb87c",
+      "values": [
+        {"lon": -118.6671667, "lat": 34.4945, "mag": 2},
+        {"lon": -118.0873333, "lat": 34.12, "mag": 1.6},
+        {"lon": -116.7943333, "lat": 33.518, "mag": 0.54},
+        {"lon": -149.145, "lat": 55.7729, "mag": 3.8},
+        {"lon": -122.8560028, "lat": 38.8246651, "mag": 0.66},
+        {"lon": -149.6259, "lat": 63.8969, "mag": 1.7},
+        {"lon": -148.6001, "lat": 56.5687, "mag": 3.1},
+        {"lon": -117.137, "lat": 34.0473333, "mag": 1.23},
+        {"lon": -148.6645, "lat": 56.2823, "mag": 2.8},
+        {"lon": -150.2399, "lat": 61.7028, "mag": 3.8},
+        {"lon": -149.8542, "lat": 61.6978, "mag": 3.5},
+        {"lon": -147.408, "lat": 64.9794, "mag": 1.4},
+        {"lon": -156.4712, "lat": 57.8731, "mag": 2.6},
+        {"lon": -122.8541641, "lat": 38.8250008, "mag": 0.96},
+        {"lon": 121.6773, "lat": 23.9887, "mag": 4.7},
+        {"lon": -116.7895, "lat": 33.5021667, "mag": 0.48},
+        {"lon": 121.7221, "lat": 24.0424, "mag": 4.7},
+        {"lon": -150.4985, "lat": 62.0043, "mag": 1.9},
+        {"lon": -151.5091, "lat": 63.0943, "mag": 1},
+        {"lon": -120.5753326, "lat": 36.0098343, "mag": 1.56},
+        {"lon": -117.2048, "lat": 40.7226, "mag": 2.1},
+        {"lon": -116.6631667, "lat": 33.6496667, "mag": 0.33},
+        {"lon": -116.7865, "lat": 33.4858333, "mag": 0.82},
+        {"lon": -116.3719, "lat": 40.9433, "mag": 2},
+        {"lon": 72.5446, "lat": 38.1608, "mag": 5},
+        {"lon": -122.7938309, "lat": 38.8209991, "mag": 0.55},
+        {"lon": 70.4201, "lat": 36.6781, "mag": 4.2},
+        {"lon": -118.9148, "lat": 38.3974, "mag": 1.6},
+        {"lon": -84.6085, "lat": 9.4429, "mag": 4.4},
+        {"lon": -147.7124, "lat": 61.0186, "mag": 1.4},
+        {"lon": -149.8753, "lat": 62.34, "mag": 1.8},
+        {"lon": -149.3296, "lat": 55.8526, "mag": 3.9},
+        {"lon": 121.7366, "lat": 24.054, "mag": 4.9},
+        {"lon": -148.4808, "lat": 62.2947, "mag": 3},
+        {"lon": -152.7284, "lat": 60.2249, "mag": 2.4},
+        {"lon": -152.9563, "lat": 60.0371, "mag": 2.3},
+        {"lon": -152.5878, "lat": 59.8703, "mag": 2.1},
+        {"lon": -121.5946655, "lat": 36.9138336, "mag": 1.51},
+        {"lon": -155.3447, "lat": 58.1913, "mag": 1},
+        {"lon": -116.7953333, "lat": 33.4961667, "mag": 0.53},
+        {"lon": -117.0976667, "lat": 33.7835, "mag": 0.63},
+        {"lon": -70.3349, "lat": -32.4714, "mag": 4.5},
+        {"lon": -117.1061667, "lat": 33.2346667, "mag": 0.95},
+        {"lon": -153.399, "lat": 58.9587, "mag": 2.6},
+        {"lon": 121.7751, "lat": 23.9506, "mag": 4.8},
+        {"lon": 72.1924, "lat": 37.7994, "mag": 4},
+        {"lon": -121.1765, "lat": 40.2825, "mag": 2.31},
+        {"lon": -122.7841644, "lat": 38.8380013, "mag": 0.56},
+        {"lon": 121.7566, "lat": 23.942, "mag": 5.4},
+        {"lon": -117.5008333, "lat": 35.6961667, "mag": 1.1},
+        {"lon": -122.8290024, "lat": 38.8371658, "mag": 0.57},
+        {"lon": 169.4658, "lat": -18.9718, "mag": 5.6},
+        {"lon": -118.1963, "lat": 37.2339, "mag": 0.2},
+        {"lon": -68.4818, "lat": 18.171, "mag": 2.71},
+        {"lon": 121.759, "lat": 24.0413, "mag": 5.3},
+        {"lon": 121.756, "lat": 24.0521, "mag": 5.2},
+        {"lon": -115.5586, "lat": 39.9385, "mag": 2},
+        {"lon": -66.7358, "lat": 17.911, "mag": 1.71},
+        {"lon": -120.6545, "lat": 39.8157, "mag": 0.5},
+        {"lon": -116.5465, "lat": 33.1596667, "mag": 0.5},
+        {"lon": -122.8040009, "lat": 38.8214989, "mag": 1},
+        {"lon": -155.2733333, "lat": 19.3948333, "mag": 1.4},
+        {"lon": -116.2853333, "lat": 33.3198333, "mag": 1.12},
+        {"lon": -155.2771667, "lat": 19.3831667, "mag": 0.93},
+        {"lon": -122.2388306, "lat": 37.9975014, "mag": 1.1},
+        {"lon": -122.8034973, "lat": 38.8223343, "mag": 0.88},
+        {"lon": -149.9556, "lat": 65.4043, "mag": 1.4},
+        {"lon": -155.5506667, "lat": 19.1508333, "mag": 1.97},
+        {"lon": -150.0793, "lat": 56.1815, "mag": 3.7},
+        {"lon": 121.654, "lat": 23.9342, "mag": 5.1},
+        {"lon": -118.9056, "lat": 38.3726, "mag": 1.1},
+        {"lon": -116.6651667, "lat": 33.577, "mag": 0.52},
+        {"lon": 121.653, "lat": 24.1737, "mag": 6.4},
+        {"lon": -116.814, "lat": 33.5786667, "mag": 1.37},
+        {"lon": -116.7773333, "lat": 33.4973333, "mag": 0.46},
+        {"lon": -112.6238333, "lat": 45.3583333, "mag": -0.07},
+        {"lon": -116.9461667, "lat": 33.6703333, "mag": 0.89},
+        {"lon": -148.3011, "lat": 56.2507, "mag": 4.4},
+        {"lon": -155.2419, "lat": 57.9207, "mag": 1},
+        {"lon": -121.0294, "lat": 40.0627, "mag": 1.4},
+        {"lon": -118.9343338, "lat": 37.6343346, "mag": 1.66},
+        {"lon": -121.0054, "lat": 40.048, "mag": 1.7},
+        {"lon": -68.3323, "lat": 19.0268, "mag": 3.24},
+        {"lon": -116.3998333, "lat": 33.2496667, "mag": 0.81},
+        {"lon": -121.1480026, "lat": 36.5584984, "mag": 0.88},
+        {"lon": -121.4188309, "lat": 36.9329987, "mag": 1.7},
+        {"lon": -152.0545, "lat": 60.5649, "mag": 1.5},
+        {"lon": 140.8677, "lat": 36.7501, "mag": 4.2},
+        {"lon": -147.3152, "lat": 61.4805, "mag": 1.9},
+        {"lon": -116.0961667, "lat": 33.7426667, "mag": 1.09},
+        {"lon": -147.1244, "lat": 60.5003, "mag": 2.3},
+        {"lon": -116.09, "lat": 33.7415, "mag": 0.86},
+        {"lon": -67.1968, "lat": 18.2985, "mag": 2.68},
+        {"lon": -118.976, "lat": 37.5316667, "mag": 0.41},
+        {"lon": -146.414, "lat": 61.5779, "mag": 1.9},
+        {"lon": -121.1191635, "lat": 36.5750008, "mag": 1},
+        {"lon": -122.831665, "lat": 38.8371658, "mag": 0.81},
+        {"lon": -118.8825, "lat": 38.0526, "mag": 0.7},
+        {"lon": -116.5515, "lat": 33.4958333, "mag": 0.64},
+        {"lon": -118.9881667, "lat": 37.6145, "mag": 0.43}
+      ]
+    },
+    {
+      "name": "data_0",
+      "source": "data-fb86529059777efe8f13f1951acfb87c",
+      "transform": [
+        {"type": "identifier", "as": "_vgsid_"},
+        {
+          "type": "geojson",
+          "fields": ["lon", "lat"],
+          "signal": "view_10_geojson_0"
+        },
+        {
+          "type": "geopoint",
+          "projection": "projection",
+          "fields": ["lon", "lat"],
+          "as": ["view_10_x", "view_10_y"]
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"mag\"]) && isFinite(+datum[\"mag\"])"
+        }
+      ]
+    }
+  ],
+  "projections": [
+    {
+      "name": "projection",
+      "size": {"signal": "[width, height]"},
+      "fit": {"signal": "view_10_geojson_0"},
+      "type": "mercator"
+    }
+  ],
+  "signals": [
+    {
+      "name": "unit",
+      "value": {},
+      "on": [
+        {"events": "pointermove", "update": "isTuple(group()) ? group() : unit"}
+      ]
+    },
+    {
+      "name": "geo_interval_init_tick",
+      "value": null,
+      "on": [
+        {
+          "events": "timer{1}",
+          "update": "geo_interval_init_tick === null ? {} : geo_interval_init_tick"
+        }
+      ]
+    },
+    {
+      "name": "param_9",
+      "update": "vlSelectionResolve(\"param_9_store\", \"union\")"
+    },
+    {
+      "name": "projection_center",
+      "update": "invert(\"projection\", [width/2, height/2])"
+    },
+    {
+      "name": "param_9_init",
+      "init": "[scale(\"projection\", [-50, projection_center[1]]), scale(\"projection\", [-110, projection_center[1]])]"
+    },
+    {
+      "name": "param_9_longitude",
+      "init": "[param_9_init[0][0], param_9_init[1][0]]",
+      "on": [
+        {
+          "events": {
+            "source": "scope",
+            "type": "pointerdown",
+            "filter": [
+              "!event.item || event.item.mark.name !== \"param_9_brush\""
+            ]
+          },
+          "update": "[x(unit), x(unit)]"
+        },
+        {
+          "events": {
+            "source": "window",
+            "type": "pointermove",
+            "consume": true,
+            "between": [
+              {
+                "source": "scope",
+                "type": "pointerdown",
+                "filter": [
+                  "!event.item || event.item.mark.name !== \"param_9_brush\""
+                ]
+              },
+              {"source": "window", "type": "pointerup"}
+            ]
+          },
+          "update": "[param_9_longitude[0], clamp(x(unit), 0, width)]"
+        },
+        {
+          "events": [{"source": "view", "type": "dblclick"}],
+          "update": "[0, 0]"
+        },
+        {
+          "events": {"signal": "param_9_translate_delta"},
+          "update": "clampRange(panLinear(param_9_translate_anchor.extent_x, param_9_translate_delta.x / span(param_9_translate_anchor.extent_x)), 0, width)"
+        },
+        {
+          "events": {"signal": "param_9_zoom_delta"},
+          "update": "clampRange(zoomLinear(param_9_longitude, param_9_zoom_anchor.x, param_9_zoom_delta), 0, width)"
+        }
+      ]
+    },
+    {
+      "name": "param_9_tuple",
+      "on": [
+        {
+          "events": [
+            {"signal": "param_9_longitude"},
+            {"signal": "geo_interval_init_tick"}
+          ],
+          "update": "vlSelectionTuples(intersect([[param_9_longitude[0], 0],[param_9_longitude[1], height]], {markname: \"view_10_marks\"}, unit.mark), {unit: \"view_10\"})"
+        }
+      ]
+    },
+    {
+      "name": "param_9_translate_anchor",
+      "value": {},
+      "on": [
+        {
+          "events": [
+            {
+              "source": "scope",
+              "type": "pointerdown",
+              "markname": "param_9_brush"
+            }
+          ],
+          "update": "{x: x(unit), y: y(unit), extent_x: slice(param_9_longitude)}"
+        }
+      ]
+    },
+    {
+      "name": "param_9_translate_delta",
+      "value": {},
+      "on": [
+        {
+          "events": [
+            {
+              "source": "window",
+              "type": "pointermove",
+              "consume": true,
+              "between": [
+                {
+                  "source": "scope",
+                  "type": "pointerdown",
+                  "markname": "param_9_brush"
+                },
+                {"source": "window", "type": "pointerup"}
+              ]
+            }
+          ],
+          "update": "{x: param_9_translate_anchor.x - x(unit), y: param_9_translate_anchor.y - y(unit)}"
+        }
+      ]
+    },
+    {
+      "name": "param_9_zoom_anchor",
+      "on": [
+        {
+          "events": [
+            {
+              "source": "scope",
+              "type": "wheel",
+              "consume": true,
+              "markname": "param_9_brush"
+            }
+          ],
+          "update": "{x: x(unit), y: y(unit)}"
+        }
+      ]
+    },
+    {
+      "name": "param_9_zoom_delta",
+      "on": [
+        {
+          "events": [
+            {
+              "source": "scope",
+              "type": "wheel",
+              "consume": true,
+              "markname": "param_9_brush"
+            }
+          ],
+          "force": true,
+          "update": "pow(1.001, event.deltaY * pow(16, event.deltaMode))"
+        }
+      ]
+    },
+    {
+      "name": "param_9_modify",
+      "on": [
+        {
+          "events": {"signal": "param_9_tuple"},
+          "update": "modify(\"param_9_store\", param_9_tuple, true)"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "name": "param_9_brush_bg",
+      "type": "rect",
+      "clip": true,
+      "encode": {
+        "enter": {"fill": {"value": "#333"}, "fillOpacity": {"value": 0.125}},
+        "update": {
+          "x": [
+            {
+              "test": "data(\"param_9_store\").length && data(\"param_9_store\")[0].unit === \"view_10\"",
+              "signal": "param_9_longitude[0]"
+            },
+            {"value": 0}
+          ],
+          "y": [
+            {
+              "test": "data(\"param_9_store\").length && data(\"param_9_store\")[0].unit === \"view_10\"",
+              "value": 0
+            },
+            {"value": 0}
+          ],
+          "x2": [
+            {
+              "test": "data(\"param_9_store\").length && data(\"param_9_store\")[0].unit === \"view_10\"",
+              "signal": "param_9_longitude[1]"
+            },
+            {"value": 0}
+          ],
+          "y2": [
+            {
+              "test": "data(\"param_9_store\").length && data(\"param_9_store\")[0].unit === \"view_10\"",
+              "field": {"group": "height"}
+            },
+            {"value": 0}
+          ]
+        }
+      }
+    },
+    {
+      "name": "view_10_marks",
+      "type": "symbol",
+      "style": ["circle"],
+      "interactive": true,
+      "from": {"data": "data_0"},
+      "encode": {
+        "update": {
+          "opacity": {"value": 0.35},
+          "tooltip": {
+            "signal": "{\"lon\": format(datum[\"lon\"], \"\"), \"lat\": format(datum[\"lat\"], \"\"), \"mag\": format(datum[\"mag\"], \"\")}"
+          },
+          "fill": [
+            {
+              "test": "length(data(\"param_9_store\")) && vlSelectionIdTest(\"param_9_store\", datum)",
+              "value": "goldenrod"
+            },
+            {"value": "steelblue"}
+          ],
+          "ariaRoleDescription": {"value": "circle"},
+          "description": {
+            "signal": "\"lon: \" + (format(datum[\"lon\"], \"\")) + \"; lat: \" + (format(datum[\"lat\"], \"\")) + \"; mag: \" + (format(datum[\"mag\"], \"\"))"
+          },
+          "x": {"field": "view_10_x"},
+          "y": {"field": "view_10_y"},
+          "size": {"scale": "size", "field": "mag"},
+          "shape": {"value": "circle"}
+        }
+      }
+    },
+    {
+      "name": "param_9_brush",
+      "type": "rect",
+      "clip": true,
+      "encode": {
+        "enter": {"fill": {"value": "transparent"}},
+        "update": {
+          "x": [
+            {
+              "test": "data(\"param_9_store\").length && data(\"param_9_store\")[0].unit === \"view_10\"",
+              "signal": "param_9_longitude[0]"
+            },
+            {"value": 0}
+          ],
+          "y": [
+            {
+              "test": "data(\"param_9_store\").length && data(\"param_9_store\")[0].unit === \"view_10\"",
+              "value": 0
+            },
+            {"value": 0}
+          ],
+          "x2": [
+            {
+              "test": "data(\"param_9_store\").length && data(\"param_9_store\")[0].unit === \"view_10\"",
+              "signal": "param_9_longitude[1]"
+            },
+            {"value": 0}
+          ],
+          "y2": [
+            {
+              "test": "data(\"param_9_store\").length && data(\"param_9_store\")[0].unit === \"view_10\"",
+              "field": {"group": "height"}
+            },
+            {"value": 0}
+          ],
+          "stroke": [
+            {
+              "test": "param_9_longitude[0] !== param_9_longitude[1]",
+              "value": "white"
+            },
+            {"value": null}
+          ]
+        }
+      }
+    }
+  ],
+  "scales": [
+    {
+      "name": "size",
+      "type": "pow",
+      "domain": [0, 7],
+      "range": [1, 1000],
+      "exponent": 4,
+      "zero": true
+    }
+  ],
+  "legends": [
+    {
+      "size": "size",
+      "symbolType": "circle",
+      "title": "mag",
+      "encode": {
+        "symbols": {
+          "update": {
+            "fill": {"value": "steelblue"},
+            "opacity": {"value": 0.35},
+            "stroke": {"value": "transparent"}
+          }
+        }
+      }
+    }
+  ]
+}

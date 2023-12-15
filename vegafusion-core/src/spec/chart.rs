@@ -3,6 +3,7 @@ use crate::proto::gen::tasks::{Task, TzConfig};
 use crate::spec::axis::AxisSpec;
 use crate::spec::data::DataSpec;
 use crate::spec::mark::MarkSpec;
+use crate::spec::projection::ProjectionSpec;
 use crate::spec::scale::ScaleSpec;
 use crate::spec::signal::SignalSpec;
 use crate::spec::title::TitleSpec;
@@ -33,6 +34,9 @@ pub struct ChartSpec {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scales: Vec<ScaleSpec>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub projections: Vec<ProjectionSpec>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub axes: Vec<AxisSpec>,
@@ -78,6 +82,9 @@ impl ChartSpec {
         for scale in &self.scales {
             visitor.visit_scale(scale, &scope)?;
         }
+        for projection in &self.projections {
+            visitor.visit_projection(projection, &scope)?;
+        }
         for axis in &self.axes {
             visitor.visit_axis(axis, &scope)?;
         }
@@ -102,6 +109,9 @@ impl ChartSpec {
         }
         for scale in &mut self.scales {
             visitor.visit_scale(scale, &scope)?;
+        }
+        for projection in &mut self.projections {
+            visitor.visit_projection(projection, &scope)?;
         }
         for axis in &mut self.axes {
             visitor.visit_axis(axis, &scope)?;
@@ -316,6 +326,9 @@ pub trait ChartVisitor {
     fn visit_scale(&mut self, _scale: &ScaleSpec, _scope: &[u32]) -> Result<()> {
         Ok(())
     }
+    fn visit_projection(&mut self, _projection: &ProjectionSpec, _scope: &[u32]) -> Result<()> {
+        Ok(())
+    }
     fn visit_axis(&mut self, _axis: &AxisSpec, _scope: &[u32]) -> Result<()> {
         Ok(())
     }
@@ -338,6 +351,9 @@ pub trait MutChartVisitor {
         Ok(())
     }
     fn visit_scale(&mut self, _scale: &mut ScaleSpec, _scope: &[u32]) -> Result<()> {
+        Ok(())
+    }
+    fn visit_projection(&mut self, _projection: &mut ProjectionSpec, _scope: &[u32]) -> Result<()> {
         Ok(())
     }
     fn visit_axis(&mut self, _axis: &mut AxisSpec, _scope: &[u32]) -> Result<()> {

@@ -8,6 +8,7 @@ use crate::proto::gen::transforms::TransformPipeline;
 use crate::spec::chart::{ChartSpec, ChartVisitor};
 use crate::spec::data::{DataFormatParseSpec, DataSpec};
 use crate::spec::mark::{MarkFacetSpec, MarkSpec};
+use crate::spec::projection::ProjectionSpec;
 use crate::spec::scale::{
     ScaleArrayElementSpec, ScaleBinsSpec, ScaleDataReferenceOrSignalSpec, ScaleDomainSpec,
     ScaleFieldReferenceSpec, ScaleRangeSpec, ScaleSpec,
@@ -60,6 +61,12 @@ impl ChartVisitor for MakeTaskScopeVisitor {
     fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
         let task_scope = self.task_scope.get_child_mut(scope)?;
         task_scope.scales.insert(scale.name.clone());
+        Ok(())
+    }
+
+    fn visit_projection(&mut self, projection: &ProjectionSpec, scope: &[u32]) -> Result<()> {
+        let task_scope = self.task_scope.get_child_mut(scope)?;
+        task_scope.scales.insert(projection.name.clone());
         Ok(())
     }
 
@@ -252,6 +259,10 @@ impl<'a> ChartVisitor for MakeTasksVisitor<'a> {
     fn visit_scale(&mut self, _scale: &ScaleSpec, _scope: &[u32]) -> Result<()> {
         unimplemented!("Scale tasks not yet supported")
     }
+
+    fn visit_projection(&mut self, _projection: &ProjectionSpec, _scope: &[u32]) -> Result<()> {
+        unimplemented!("Projection tasks not yet supported")
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -283,6 +294,12 @@ impl ChartVisitor for DefinitionVarsChartVisitor {
     fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
         self.definition_vars
             .insert((Variable::new_scale(&scale.name), Vec::from(scope)));
+        Ok(())
+    }
+
+    fn visit_projection(&mut self, projection: &ProjectionSpec, scope: &[u32]) -> Result<()> {
+        self.definition_vars
+            .insert((Variable::new_scale(&projection.name), Vec::from(scope)));
         Ok(())
     }
 }
@@ -393,6 +410,13 @@ impl<'a> ChartVisitor for UpdateVarsChartVisitor<'a> {
         // scales with that can be updated, and those that can't
         self.update_vars
             .insert((Variable::new_scale(&scale.name), Vec::from(scope)));
+        Ok(())
+    }
+
+    fn visit_projection(&mut self, projection: &ProjectionSpec, scope: &[u32]) -> Result<()> {
+        // See scales note
+        self.update_vars
+            .insert((Variable::new_scale(&projection.name), Vec::from(scope)));
         Ok(())
     }
 }
