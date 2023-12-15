@@ -388,21 +388,30 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                         .with_unknown_usage(&scoped_reference_data_var);
 
                     // Handle vlSelectionTest, which also uses datum columns
-                    if node.callee == "vlSelectionTest" {
-                        if let Some(datum_var) = self.datum_var {
-                            if let Some(fields) =
-                                self.vl_selection_fields.get(&scoped_reference_data_var)
-                            {
-                                // Add selection fields to usage for datum
+                    if let Some(datum_var) = self.datum_var {
+                        match node.callee.as_str() {
+                            "vlSelectionTest" => {
+                                if let Some(fields) =
+                                    self.vl_selection_fields.get(&scoped_reference_data_var)
+                                {
+                                    // Add selection fields to usage for datum
+                                    self.dataset_column_usage = self
+                                        .dataset_column_usage
+                                        .with_column_usage(datum_var, fields.clone());
+                                } else {
+                                    // Unknown fields dataset, so we don't know which datum columns
+                                    // are needed at runtime
+                                    self.dataset_column_usage =
+                                        self.dataset_column_usage.with_unknown_usage(datum_var);
+                                }
+                            }
+                            "vlSelectionIdTest" => {
+                                // Add _vgsid_ fields usage for datum
                                 self.dataset_column_usage = self
                                     .dataset_column_usage
-                                    .with_column_usage(datum_var, fields.clone());
-                            } else {
-                                // Unknown fields dataset, so we don't know which datum columns
-                                // are needed at runtime
-                                self.dataset_column_usage =
-                                    self.dataset_column_usage.with_unknown_usage(datum_var);
+                                    .with_column_usage(datum_var, ColumnUsage::from("_vgsid_"));
                             }
+                            _ => {}
                         }
                     }
                 } else {
@@ -411,6 +420,48 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                     if let Some(datum_var) = self.datum_var {
                         self.dataset_column_usage =
                             self.dataset_column_usage.with_unknown_usage(datum_var);
+                    }
+                }
+            }
+        } else if node.callee.as_str() == "intersect" {
+            // Look for expression like:
+            //     intersect(arg0, {markname: "view_10_marks"}, ...)
+            // In this case "view_10_marks" is the name of a mark dataset, and we don't know what columns
+            // from the mark's source dataset are used.
+            if let Some(Expression {
+                expr: Some(Expr::Object(arg1)),
+                ..
+            }) = node.arguments.get(1)
+            {
+                for prop in &arg1.properties {
+                    if let (Some(key), Some(val)) = (&prop.key, &prop.value) {
+                        let property = match key {
+                            Key::Identifier(id) => id.name.clone(),
+                            Key::Literal(Literal {
+                                value: Some(Value::String(name)),
+                                ..
+                            }) => name.clone(),
+                            _ => continue,
+                        };
+                        if property == "markname" {
+                            if let Some(Expr::Literal(Literal {
+                                value: Some(Value::String(mark_name)),
+                                ..
+                            })) = &val.expr
+                            {
+                                let mark_data_var = Variable::new_data(mark_name);
+                                if let Ok(resolved) = self
+                                    .task_scope
+                                    .resolve_scope(&mark_data_var, self.usage_scope)
+                                {
+                                    let scoped_reference_data_var: ScopedVariable =
+                                        (resolved.var, resolved.scope);
+                                    self.dataset_column_usage = self
+                                        .dataset_column_usage
+                                        .with_unknown_usage(&scoped_reference_data_var);
+                                }
+                            }
+                        }
                     }
                 }
             }

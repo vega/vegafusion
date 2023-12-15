@@ -126,30 +126,49 @@ impl DatasetsColumnUsage {
         }
     }
 
+    fn apply_aliases(&self, aliases: &HashMap<ScopedVariable, ScopedVariable>) -> Self {
+        let mut new_usages = self.usages.clone();
+        for var in new_usages.keys().cloned().collect::<Vec<_>>() {
+            if let Some(target) = aliases.get(&var) {
+                let aliased = new_usages.remove(&var).unwrap();
+                new_usages.insert(target.clone(), aliased);
+            }
+        }
+
+        // Union aliases
+        let mut new_aliases = self.aliases.clone();
+        for (key, val) in aliases {
+            new_aliases.insert(key.clone(), val.clone());
+        }
+        Self {
+            usages: new_usages,
+            aliases: new_aliases,
+        }
+    }
+
     /// Take the union of two DatasetColumnUsage instances.
     pub fn union(&self, other: &DatasetsColumnUsage) -> DatasetsColumnUsage {
-        let self_vars: HashSet<_> = self.usages.keys().cloned().collect();
-        let other_vars: HashSet<_> = other.usages.keys().cloned().collect();
-        let union_vars: HashSet<_> = self_vars.union(&other_vars).cloned().collect();
-
         // Union aliases
         let mut aliases = self.aliases.clone();
         for (key, val) in &other.aliases {
             aliases.insert(key.clone(), val.clone());
         }
 
+        // Apply aliases
+        let unaliased_self_usages = self.apply_aliases(&aliases).usages;
+        let unaliased_other_usages = other.apply_aliases(&aliases).usages;
+
+        let self_vars: HashSet<_> = unaliased_self_usages.keys().cloned().collect();
+        let other_vars: HashSet<_> = unaliased_other_usages.keys().cloned().collect();
+        let union_vars: HashSet<_> = self_vars.union(&other_vars).cloned().collect();
+
         let mut usages: HashMap<ScopedVariable, ColumnUsage> = HashMap::new();
         for var in union_vars {
-            // Check if var is an alias
-            let var = aliases.get(&var).unwrap_or(&var).clone();
-
-            let self_usage = self
-                .usages
+            let self_usage = unaliased_self_usages
                 .get(&var)
                 .cloned()
                 .unwrap_or_else(ColumnUsage::empty);
-            let other_usage = other
-                .usages
+            let other_usage = unaliased_other_usages
                 .get(&var)
                 .cloned()
                 .unwrap_or_else(ColumnUsage::empty);
