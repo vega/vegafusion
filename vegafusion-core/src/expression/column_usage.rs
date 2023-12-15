@@ -140,21 +140,39 @@ impl DatasetsColumnUsage {
 
         let mut usages: HashMap<ScopedVariable, ColumnUsage> = HashMap::new();
         for var in union_vars {
-            // Check if var is an alias
-            let var = aliases.get(&var).unwrap_or(&var).clone();
+            let mut self_usage = self
+                .usages
+                .get(&var)
+                .cloned()
+                .unwrap_or_else(ColumnUsage::empty);
+            let mut other_usage = other
+                .usages
+                .get(&var)
+                .cloned()
+                .unwrap_or_else(ColumnUsage::empty);
 
-            let self_usage = self
-                .usages
-                .get(&var)
-                .cloned()
-                .unwrap_or_else(ColumnUsage::empty);
-            let other_usage = other
-                .usages
-                .get(&var)
-                .cloned()
-                .unwrap_or_else(ColumnUsage::empty);
+            let aliased_var = if let Some(aliased_var) = aliases.get(&var) {
+                // Union in aliased usages
+                let aliased_self_usage = self
+                    .usages
+                    .get(&aliased_var)
+                    .cloned()
+                    .unwrap_or_else(ColumnUsage::empty);
+                self_usage = self_usage.union(&aliased_self_usage);
+
+                let aliased_usage_other_usage = other
+                    .usages
+                    .get(&aliased_var)
+                    .cloned()
+                    .unwrap_or_else(ColumnUsage::empty);
+                other_usage = other_usage.union(&aliased_usage_other_usage);
+                aliased_var.clone()
+            } else {
+                var.clone()
+            };
+
             let combined_usage = self_usage.union(&other_usage);
-            usages.insert(var, combined_usage);
+            usages.insert(aliased_var, combined_usage);
         }
 
         Self { usages, aliases }

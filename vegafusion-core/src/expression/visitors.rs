@@ -414,6 +414,48 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                     }
                 }
             }
+        } else if node.callee.as_str() == "intersect" {
+            // Look for expression like:
+            //     intersect(arg0, {markname: "view_10_marks"}, ...)
+            // In this case "view_10_marks" is the name of a mark dataset, and we don't know what columns
+            // from the mark's source dataset are used.
+            if let Some(Expression {
+                expr: Some(Expr::Object(arg1)),
+                ..
+            }) = node.arguments.get(1)
+            {
+                for prop in &arg1.properties {
+                    if let (Some(key), Some(val)) = (&prop.key, &prop.value) {
+                        let property = match key {
+                            Key::Identifier(id) => id.name.clone(),
+                            Key::Literal(Literal {
+                                value: Some(Value::String(name)),
+                                ..
+                            }) => name.clone(),
+                            _ => continue,
+                        };
+                        if property == "markname" {
+                            if let Some(Expr::Literal(Literal {
+                                value: Some(Value::String(mark_name)),
+                                ..
+                            })) = &val.expr
+                            {
+                                let mark_data_var = Variable::new_data(mark_name);
+                                if let Ok(resolved) = self
+                                    .task_scope
+                                    .resolve_scope(&mark_data_var, self.usage_scope)
+                                {
+                                    let scoped_reference_data_var: ScopedVariable =
+                                        (resolved.var, resolved.scope);
+                                    self.dataset_column_usage = self
+                                        .dataset_column_usage
+                                        .with_unknown_usage(&scoped_reference_data_var);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

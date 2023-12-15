@@ -265,6 +265,14 @@ impl GetDatasetsColumnUsage for MarkSpec {
                     let data_var = Variable::new_data(data_name);
                     if let Ok(resolved) = task_scope.resolve_scope(&data_var, usage_scope) {
                         let scoped_datum_var: ScopedVariable = (resolved.var, resolved.scope);
+
+                        // Add alias from mark name to dataset
+                        if let Some(name) = &self.name {
+                            let mark_data_var: ScopedVariable =
+                                (Variable::new_data(name), Vec::from(usage_scope));
+                            usage = usage.with_alias(mark_data_var, scoped_datum_var.clone());
+                        }
+
                         if let Some(encode) = &self.encode {
                             usage = usage.union(&encode.datasets_column_usage(
                                 &Some(scoped_datum_var.clone()),
