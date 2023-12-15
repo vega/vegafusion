@@ -388,21 +388,30 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                         .with_unknown_usage(&scoped_reference_data_var);
 
                     // Handle vlSelectionTest, which also uses datum columns
-                    if node.callee == "vlSelectionTest" {
-                        if let Some(datum_var) = self.datum_var {
-                            if let Some(fields) =
-                                self.vl_selection_fields.get(&scoped_reference_data_var)
-                            {
-                                // Add selection fields to usage for datum
+                    if let Some(datum_var) = self.datum_var {
+                        match node.callee.as_str() {
+                            "vlSelectionTest" => {
+                                if let Some(fields) =
+                                    self.vl_selection_fields.get(&scoped_reference_data_var)
+                                {
+                                    // Add selection fields to usage for datum
+                                    self.dataset_column_usage = self
+                                        .dataset_column_usage
+                                        .with_column_usage(datum_var, fields.clone());
+                                } else {
+                                    // Unknown fields dataset, so we don't know which datum columns
+                                    // are needed at runtime
+                                    self.dataset_column_usage =
+                                        self.dataset_column_usage.with_unknown_usage(datum_var);
+                                }
+                            }
+                            "vlSelectionIdTest" => {
+                                // Add _vgsid_ fields usage for datum
                                 self.dataset_column_usage = self
                                     .dataset_column_usage
-                                    .with_column_usage(datum_var, fields.clone());
-                            } else {
-                                // Unknown fields dataset, so we don't know which datum columns
-                                // are needed at runtime
-                                self.dataset_column_usage =
-                                    self.dataset_column_usage.with_unknown_usage(datum_var);
+                                    .with_column_usage(datum_var, ColumnUsage::from("_vgsid_"));
                             }
+                            _ => {}
                         }
                     }
                 } else {
