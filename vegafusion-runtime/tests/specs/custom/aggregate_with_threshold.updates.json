@@ -1,0 +1,18 @@
+[
+  [
+    {
+      "namespace": "signal",
+      "name": "param_5",
+      "scope": [],
+      "value": 3.5
+    }
+  ],
+  [
+    {
+      "namespace": "signal",
+      "name": "param_5",
+      "scope": [],
+      "value": 6.3
+    }
+  ]
+]

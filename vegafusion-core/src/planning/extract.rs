@@ -176,7 +176,8 @@ impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
         let scoped_signal_var = (Variable::new_signal(&signal.name), Vec::from(scope));
         if self.supported_vars.contains_key(&scoped_signal_var) {
             // Move signal to server
-            let server_signal = signal.clone();
+            let mut server_signal = signal.clone();
+            server_signal.bind = None;
             if scope.is_empty() {
                 self.server_spec.signals.push(server_signal)
             } else {

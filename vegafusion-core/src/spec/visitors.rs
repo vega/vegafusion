@@ -351,9 +351,9 @@ impl<'a> ChartVisitor for UpdateVarsChartVisitor<'a> {
 
     fn visit_signal(&mut self, signal: &SignalSpec, scope: &[u32]) -> Result<()> {
         // Signal is an update variable if it's not an empty stub
-        if signal.value.as_option().is_some()
-            || signal.init.is_some()
+        if signal.init.is_some()
             || signal.update.is_some()
+            || signal.bind.is_some()
             || !signal.on.is_empty()
         {
             self.update_vars
