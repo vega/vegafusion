@@ -1,40 +1,35 @@
 {
   "server_to_client": [
     {
-      "namespace": "data",
-      "name": "ageGroups",
+      "namespace": "signal",
+      "name": "layer_1_bin_maxbins_10_IMDB_Rating_bins",
+      "scope": []
+    },
+    {
+      "namespace": "signal",
+      "name": "layer_1_bin_maxbins_10_Rotten_Tomatoes_Rating_bins",
       "scope": []
     },
     {
       "namespace": "data",
-      "name": "ageGroups_y_domain_age",
+      "name": "data_0",
       "scope": []
     },
     {
       "namespace": "data",
-      "name": "females",
+      "name": "data_1",
       "scope": []
     },
     {
       "namespace": "data",
-      "name": "males",
-      "scope": []
-    },
-    {
-      "namespace": "data",
-      "name": "population_x_domain_people_0",
-      "scope": []
-    },
-    {
-      "namespace": "data",
-      "name": "population_x_domain_people_1",
+      "name": "empty",
       "scope": []
     }
   ],
   "client_to_server": [
     {
       "namespace": "signal",
-      "name": "year",
+      "name": "param_5",
       "scope": []
     }
   ]
