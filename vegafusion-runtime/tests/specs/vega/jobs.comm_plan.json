@@ -6,11 +6,6 @@
       "scope": []
     },
     {
-      "namespace": "signal",
-      "name": "sex",
-      "scope": []
-    },
-    {
       "namespace": "data",
       "name": "_server_jobs",
       "scope": []
