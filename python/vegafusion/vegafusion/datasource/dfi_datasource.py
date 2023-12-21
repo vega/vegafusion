@@ -3,12 +3,12 @@ import re
 import pyarrow as pa
 from pyarrow.interchange import from_dataframe
 
-from typing import Any
+from typing import Any, Dict
 from ._dfi_types import DtypeKind, DataFrame as DfiDataFrame
 from .datasource import Datasource
 
 # Taken from private pyarrow utilities
-_PYARROW_DTYPES: dict[DtypeKind, dict[int, Any]] = {
+_PYARROW_DTYPES: Dict[DtypeKind, Dict[int, Any]] = {
     DtypeKind.INT: {8: pa.int8(),
                     16: pa.int16(),
                     32: pa.int32(),
