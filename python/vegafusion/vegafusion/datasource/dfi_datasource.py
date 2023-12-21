@@ -79,4 +79,7 @@ class DfiDatasource(Datasource):
         return self._schema
 
     def fetch(self, columns: Iterable[str]) -> pa.Table:
-        return from_dataframe(self._dataframe.select_columns_by_name(columns))
+        columns = list(columns)
+        projected_schema = pa.schema([f for f in self._schema if f.name in columns])
+        table = from_dataframe(self._dataframe.select_columns_by_name(columns))
+        return table.cast(projected_schema, safe=False)

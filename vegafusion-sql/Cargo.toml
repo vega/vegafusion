@@ -7,11 +7,13 @@ description = "VegaFusion SQL dialect generation and connection implementations"
 
 [features]
 datafusion-conn = [ "datafusion", "tempfile", "reqwest", "reqwest-retry", "reqwest-middleware", "vegafusion-datafusion-udfs", "object_store", "url", "vegafusion-common/object_store",]
+pyarrow = [ "pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow", "vegafusion-dataframe/pyarrow"]
 
 [dependencies]
 async-trait = "0.1.73"
 deterministic-hash = "1.0.1"
 log = "0.4.17"
+uuid = "1.4.1"
 
 [dev-dependencies]
 rstest = "0.18.2"
@@ -83,6 +85,10 @@ features = [ "aws",]
 
 [dependencies.url]
 version = "2.3.1"
+optional = true
+
+[dependencies.pyo3]
+workspace = true
 optional = true
 
 [dev-dependencies.async-std]

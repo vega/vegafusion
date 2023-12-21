@@ -6,10 +6,10 @@ from .datasource import Datasource
 
 
 class PandasDatasource(Datasource):
-    def __init__(self, df: pd.DataFrame, sample_size: int = 10000, batch_size: int = 8096):
+    def __init__(self, df: pd.DataFrame, sample_size: int = 1000, batch_size: int = 8096):
         fields = []
         casts = {}
-        sample_stride = floor(len(df) / sample_size)
+        sample_stride = max(1, floor(len(df) / sample_size))
 
         # Shallow copy and add named index levels as columns
         # (this is faster that df.reset_index, which seems to perform a deep copy)
@@ -26,7 +26,7 @@ class PandasDatasource(Datasource):
                 # We will expand categoricals (not yet supported in VegaFusion)
                 if isinstance(pd_type, pd.CategoricalDtype):
                     cat = df[col].cat
-                    field = pa.Schema.from_pandas(pd.DataFrame({"cat": cat.categories})).field("cat")
+                    field = pa.Schema.from_pandas(pd.DataFrame({col: cat.categories})).field(col)
                 else:
                     candidate_schema = pa.Schema.from_pandas(df.iloc[::sample_stride][[col]])
                     field = candidate_schema.field(col)

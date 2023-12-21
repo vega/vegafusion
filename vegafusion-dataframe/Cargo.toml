@@ -5,6 +5,9 @@ version = "1.5.1"
 edition = "2021"
 description = "VegaFusion's DataFrame and Connection traits"
 
+[features]
+pyarrow = [ "pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow",]
+
 [dependencies]
 async-trait = "0.1.73"
 
@@ -21,3 +24,7 @@ workspace = true
 [dependencies.arrow]
 workspace = true
 default_features = false
+
+[dependencies.pyo3]
+workspace = true
+optional = true

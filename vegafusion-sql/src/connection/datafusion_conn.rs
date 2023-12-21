@@ -50,6 +50,9 @@ use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_str::UTC_TIMEST
 use vegafusion_datafusion_udfs::udfs::math::isfinite::ISFINITE_UDF;
 use vegafusion_datafusion_udfs::udfs::math::isnan::ISNAN_UDF;
 
+#[cfg(feature = "pyarrow")]
+use {crate::connection::datafusion_py_datasource::PyDatasource, pyo3::PyObject};
+
 #[derive(Clone)]
 pub struct DataFusionConnection {
     dialect: Arc<Dialect>,
@@ -351,6 +354,23 @@ impl Connection for DataFusionConnection {
                     .await?,
             ))
         }
+    }
+
+    #[cfg(feature = "pyarrow")]
+    async fn scan_py_datasource(&self, datasource: PyObject) -> Result<Arc<dyn DataFrame>> {
+        let datasource = PyDatasource::try_new(datasource)?;
+        let ctx = make_datafusion_context();
+
+        // Use random id in table name to break cache in cse backing datasource is modified
+        let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
+        let table_name = format!("py_table_{random_id}");
+
+        ctx.register_table(&table_name, Arc::new(datasource))?;
+
+        let sql_conn = DataFusionConnection::new(Arc::new(ctx));
+        Ok(Arc::new(
+            SqlDataFrame::try_new(Arc::new(sql_conn), &table_name, Default::default()).await?,
+        ))
     }
 }
 

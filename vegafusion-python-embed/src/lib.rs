@@ -81,9 +81,10 @@ impl PyChartState {
             .map(|el| Ok(depythonize::<ExportUpdateJSON>(el.as_ref(py))?))
             .collect::<PyResult<Vec<_>>>()?;
 
-        let result_updates = self
-            .tokio_runtime
-            .block_on(self.state.update(&self.runtime, updates))?;
+        let result_updates = py.allow_threads(|| {
+            self.tokio_runtime
+                .block_on(self.state.update(&self.runtime, updates))
+        })?;
 
         let a = result_updates
             .into_iter()
@@ -149,6 +150,9 @@ impl PyVegaFusionRuntime {
                 let sql_dataset_type = vegafusion_dataset_module.getattr("SqlDataset")?;
                 let df_dataset_type = vegafusion_dataset_module.getattr("DataFrameDataset")?;
 
+                let vegafusion_datasource_module = PyModule::import(py, "vegafusion.datasource")?;
+                let datasource_type = vegafusion_datasource_module.getattr("Datasource")?;
+
                 let imported_datasets = inline_datasets
                     .iter()
                     .map(|(name, inline_dataset)| {
@@ -174,6 +178,13 @@ impl PyVegaFusionRuntime {
                             any_main_thread = any_main_thread || main_thread;
 
                             let df = Arc::new(PyDataFrame::new(inline_dataset.into_py(py))?);
+                            VegaFusionDataset::DataFrame(df)
+                        } else if inline_dataset.is_instance(datasource_type)? {
+                            let df = self.tokio_runtime_connection.block_on(
+                                self.runtime
+                                    .conn
+                                    .scan_py_datasource(inline_dataset.to_object(py)),
+                            )?;
                             VegaFusionDataset::DataFrame(df)
                         } else {
                             // Assume PyArrow Table
@@ -243,6 +254,7 @@ impl PyVegaFusionRuntime {
 
     pub fn new_chart_state(
         &self,
+        py: Python,
         spec: PyObject,
         local_tz: String,
         default_input_tz: Option<String>,
@@ -266,14 +278,16 @@ impl PyVegaFusionRuntime {
             &self.tokio_runtime_connection
         };
 
-        PyChartState::try_new(
-            self.runtime.clone(),
-            tokio_runtime.clone(),
-            spec,
-            inline_datasets,
-            tz_config,
-            row_limit,
-        )
+        py.allow_threads(|| {
+            PyChartState::try_new(
+                self.runtime.clone(),
+                tokio_runtime.clone(),
+                spec,
+                inline_datasets,
+                tz_config,
+                row_limit,
+            )
+        })
     }
 
     pub fn process_request_bytes(&self, py: Python, request_bytes: &PyBytes) -> PyResult<PyObject> {

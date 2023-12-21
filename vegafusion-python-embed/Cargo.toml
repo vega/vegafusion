@@ -54,7 +54,7 @@ version = "1.5.1"
 [dependencies.vegafusion-sql]
 path = "../vegafusion-sql"
 version = "1.5.1"
-features = [ "datafusion-conn",]
+features = [ "datafusion-conn", "pyarrow"]
 
 [dependencies.vegafusion-dataframe]
 path = "../vegafusion-dataframe"

@@ -4,6 +4,7 @@ import pyarrow as pa
 from typing import Union
 from .connection import SqlConnection
 from .dataset import SqlDataset, DataFrameDataset
+from .datasource import PandasDatasource, DfiDatasource
 from .evaluation import get_mark_group_for_scope
 from .transformer import import_pyarrow_interchange, to_arrow_table
 from .local_tz import get_local_tz
@@ -201,7 +202,6 @@ class VegaFusionRuntime:
             return self.embedded_runtime.process_request_bytes(request)
 
     def _import_or_register_inline_datasets(self, inline_datasets=None):
-        from .transformer import to_arrow_ipc_bytes, arrow_table_to_ipc_bytes
         inline_datasets = inline_datasets or dict()
         imported_inline_datasets = dict()
         for name, value in inline_datasets.items():
@@ -218,7 +218,7 @@ class VegaFusionRuntime:
                     except ValueError:
                         pass
 
-                imported_inline_datasets[name] = value
+                imported_inline_datasets[name] = DfiDatasource(value)
             elif isinstance(value, pd.DataFrame):
                 if self._connection is not None:
                     try:
@@ -228,19 +228,9 @@ class VegaFusionRuntime:
                     except ValueError:
                         pass
 
-                imported_inline_datasets[name] = to_arrow_table(value)
+                imported_inline_datasets[name] = PandasDatasource(value)
             elif hasattr(value, "__dataframe__"):
-                pi = import_pyarrow_interchange()
-                value = pi.from_dataframe(value)
-                if self._connection is not None:
-                    try:
-                        # Try registering Arrow Table if supported
-                        self._connection.register_arrow(name, value, temporary=True)
-                        continue
-                    except ValueError:
-                        pass
-
-                imported_inline_datasets[name] = value
+                imported_inline_datasets[name] = DfiDatasource(value)
             else:
                 raise ValueError(f"Unsupported DataFrame type: {type(value)}")
 
