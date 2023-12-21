@@ -4433,6 +4433,7 @@ dependencies = [
  "async-trait",
  "datafusion-common",
  "datafusion-expr",
+ "pyo3",
  "vegafusion-common",
 ]
 
@@ -4577,6 +4578,7 @@ dependencies = [
  "lazy_static",
  "log",
  "object_store",
+ "pyo3",
  "regex",
  "reqwest",
  "reqwest-middleware",
@@ -4590,6 +4592,7 @@ dependencies = [
  "tokio",
  "toml",
  "url",
+ "uuid",
  "vegafusion-common",
  "vegafusion-dataframe",
  "vegafusion-datafusion-udfs",
