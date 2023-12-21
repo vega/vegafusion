@@ -213,7 +213,7 @@ impl MutChartVisitor for ExtractFacetAggregationsVisitor {
         // Save new dataset at the same scope as the original input dataset
         let Ok(resolved) = self
             .task_scope
-            .resolve_scope(&Variable::new_data(&facet.data), scope)
+            .resolve_scope(&Variable::new_data(&facet.data), &scope[..scope.len() - 1])
         else {
             return Ok(());
         };
