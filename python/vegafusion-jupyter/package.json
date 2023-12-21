@@ -1,6 +1,6 @@
 {
   "name": "vegafusion-jupyter",
-  "version": "1.5.1",
+  "version": "1.6.0-rc1",
   "description": "Altair Jupyter Widget library that relies on VegaFusion for serverside calculations",
   "keywords": [
     "jupyter",
