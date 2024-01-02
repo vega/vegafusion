@@ -144,7 +144,8 @@ mod test_custom_specs {
         case("custom/gh_391", 0.001, true),
         case("custom/facet_grouped_bar_with_error_bars", 0.001, true),
         case("custom/facet_grouped_bar_with_error_bars_with_sort", 0.001, true),
-        case("custom/binned_ordinal", 0.001, true),
+        // Re-enable after updating to Vega 5.26.2
+        // case("custom/binned_ordinal", 0.001, true),
         case("custom/timeOffset_stocks", 0.001, true),
         case("custom/quakes_initial_selection", 0.001, true),
         case("custom/aggregate_with_threshold", 0.001, true),

@@ -337,7 +337,8 @@ mod test_aggregate_nulls {
         case(AggregateOpSpec::Valid),
         case(AggregateOpSpec::Missing),
         case(AggregateOpSpec::Distinct),
-        case(AggregateOpSpec::Sum),
+        // Re-enable after updating to Vega 5.26.2 when sum([null]) behavior will matche
+        // case(AggregateOpSpec::Sum),
         case(AggregateOpSpec::Mean),
         case(AggregateOpSpec::Average),
         case(AggregateOpSpec::Min),
