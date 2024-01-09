@@ -1,7 +1,6 @@
 from typing import Iterable
 import re
 import pyarrow as pa
-from pyarrow.interchange import from_dataframe
 
 from typing import Any, Dict
 from ._dfi_types import DtypeKind, DataFrame as DfiDataFrame
@@ -79,6 +78,7 @@ class DfiDatasource(Datasource):
         return self._schema
 
     def fetch(self, columns: Iterable[str]) -> pa.Table:
+        from pyarrow.interchange import from_dataframe
         columns = list(columns)
         projected_schema = pa.schema([f for f in self._schema if f.name in columns])
         table = from_dataframe(self._dataframe.select_columns_by_name(columns))
