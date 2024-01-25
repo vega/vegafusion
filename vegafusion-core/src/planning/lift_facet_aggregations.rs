@@ -125,6 +125,7 @@ impl MutChartVisitor for ExtractFacetAggregationsVisitor {
                 }
                 Some(TransformSpec::Aggregate(agg)) => {
                     // Reached an aggregation, bail out
+                    child_dataset.transform.remove(0);
                     break Some(agg);
                 }
                 Some(TransformSpec::Formula(tx)) => {
@@ -262,9 +263,6 @@ impl MutChartVisitor for ExtractFacetAggregationsVisitor {
             .entry(resolved.scope.clone())
             .or_default()
             .push(new_dataset);
-
-        // Remove leading aggregate transform from child dataset
-        child_dataset.transform.remove(0);
 
         // Rename source dataset in facet
         facet.data = facet_dataset_name;
