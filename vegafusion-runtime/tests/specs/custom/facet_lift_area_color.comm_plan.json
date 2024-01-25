@@ -1,0 +1,40 @@
+{
+  "server_to_client": [
+    {
+      "name": "data_0_facet_facet0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_2_color_domain_sex",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_4",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_4_x_domain_day_0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_5",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_5_x_domain_day_1",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "row_domain",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

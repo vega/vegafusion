@@ -1,0 +1,35 @@
+{
+  "server_to_client": [
+    {
+      "name": "data_2",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_2_x_domain_day_0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_3",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_3_x_domain_day_1",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "row_domain",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "tips_facet_facet0",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}
