@@ -617,6 +617,7 @@ fn vegafusion_embed(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyVegaFusionRuntime>()?;
     m.add_class::<PySqlConnection>()?;
     m.add_class::<PyChartState>()?;
+    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
 }
 
