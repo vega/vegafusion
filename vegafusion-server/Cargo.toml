@@ -5,7 +5,7 @@ path = "src/main.rs"
 [package]
 name = "vegafusion-server"
 license = "BSD-3-Clause"
-version = "1.6.1"
+version = "1.6.2"
 edition = "2021"
 description = "VegaFusion Server"
 
@@ -31,20 +31,20 @@ workspace = true
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-version = "1.6.1"
+version = "1.6.2"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = [ "tonic_support",]
-version = "1.6.1"
+version = "1.6.2"
 
 [dependencies.vegafusion-runtime]
 path = "../vegafusion-runtime"
-version = "1.6.1"
+version = "1.6.2"
 
 [dependencies.vegafusion-sql]
 path = "../vegafusion-sql"
-version = "1.6.1"
+version = "1.6.2"
 features = [ "datafusion-conn",]
 
 [dependencies.tokio]
