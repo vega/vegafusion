@@ -1,7 +1,7 @@
 [package]
 name = "vegafusion-dataframe"
 license = "BSD-3-Clause"
-version = "1.6.1"
+version = "1.6.2"
 edition = "2021"
 description = "VegaFusion's DataFrame and Connection traits"
 
@@ -13,7 +13,7 @@ async-trait = "0.1.73"
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-version = "1.6.1"
+version = "1.6.2"
 
 [dependencies.datafusion-common]
 workspace = true
