@@ -136,6 +136,14 @@ impl MutChartVisitor for ExtractFacetAggregationsVisitor {
                     lifted_transforms.push(TransformSpec::Filter(tx));
                     child_dataset.transform.remove(0);
                 }
+                Some(TransformSpec::Bin(tx)) => {
+                    lifted_transforms.push(TransformSpec::Bin(tx));
+                    child_dataset.transform.remove(0);
+                }
+                Some(TransformSpec::Timeunit(tx)) => {
+                    lifted_transforms.push(TransformSpec::Timeunit(tx));
+                    child_dataset.transform.remove(0);
+                }
                 _ => {
                     // Reached unsupported transform type without an aggregation
                     break None;
