@@ -15,6 +15,7 @@ use crate::task_graph::scope::TaskScope;
 use itertools::sorted;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
+use vegafusion_common::escape::unescape_field;
 
 /// This planning phase converts select datetime columns from the default millisecond UTC
 /// representation to naive datetime strings in an "output timezone". This is only done for datetime
@@ -385,13 +386,14 @@ impl<'a> MutChartVisitor for StringifyLocalDatetimeFieldsVisitor<'a> {
         );
 
         for field in sorted(fields) {
+            let field = unescape_field(&field);
             let expr_str =
                 format!("timeFormat(toDate(datum['{field}'], 'local'), '%Y-%m-%dT%H:%M:%S.%L')");
 
             let transforms = &mut data.transform;
             let transform = FormulaTransformSpec {
                 expr: expr_str,
-                as_: field.to_string(),
+                as_: field,
                 extra: Default::default(),
             };
             transforms.push(TransformSpec::Formula(transform))
@@ -405,6 +407,7 @@ impl<'a> MutChartVisitor for StringifyLocalDatetimeFieldsVisitor<'a> {
             let source_resolved_var = (source_resolved.var, source_resolved.scope);
             if let Some(fields) = self.local_datetime_fields.get(&source_resolved_var) {
                 for field in sorted(fields) {
+                    let field = unescape_field(&field);
                     let expr_str = format!("toDate(datum['{field}'], 'local')");
                     let transforms = &mut data.transform;
                     let transform = FormulaTransformSpec {
@@ -448,6 +451,7 @@ impl<'a> MutChartVisitor for FormatLocalDatetimeFieldsVisitor<'a> {
             self.domain_dataset_fields,
         );
         for field in sorted(fields) {
+            let field = unescape_field(&field);
             let transforms = &mut data.transform;
             let transform = FormulaTransformSpec {
                 expr: format!("toDate(datum['{field}'])"),
