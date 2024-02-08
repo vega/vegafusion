@@ -117,7 +117,12 @@ jar {
         }
 
         // Validate the expected subdirectories
-        def subdirs = ['linux-64', 'osx-64', 'osx-arm64', 'win-64']
+        def subdirs = [
+            'linux-64',
+            'osx-64',
+            'osx-arm64',
+//             'win-64'
+        ]
         subdirs.each { subdir ->
             def subdirPath = new File(nativeLibDir, subdir)
             if (!subdirPath.isDirectory()) {
