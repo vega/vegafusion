@@ -563,11 +563,11 @@ jobs:
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
       - uses: prefix-dev/setup-pixi@v0.4.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-server-win-64
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-server-win-64b
           path: |
             ~/.cargo
             target
@@ -595,7 +595,7 @@ jobs:
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
       - uses: prefix-dev/setup-pixi@v0.4.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -626,7 +626,7 @@ jobs:
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
       - uses: prefix-dev/setup-pixi@v0.4.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
