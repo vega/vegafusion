@@ -41,7 +41,7 @@ test-rs = { cmd = "cargo test --workspace --exclude vegafusion-python-embed --ex
 
 # Build Wasm
 install-wasm-toolchain = "python automation/download_rust_target.py wasm32-unknown-unknown"
-install-wasm-pack = "export CARGO_HOME=$PIXI_PACKAGE_ROOT/.pixi/env && cargo install wasm-pack"
+install-wasm-pack = "export CARGO_HOME=$PIXI_PROJECT_ROOT/.pixi/envs/default && cargo install wasm-pack"
 build-wasm = { cmd = "cd vegafusion-wasm && npm install && wasm-pack build --release && cp package.json pkg/", depends_on = ["install-wasm-toolchain", "install-wasm-pack"] }
 pack-wasm = { cmd = "cd vegafusion-wasm && wasm-pack pack", depends_on=["build-wasm"] }
 
@@ -120,7 +120,6 @@ tenacity = "8.2.3.*"
 pytest-cov = "4.1.0.*"
 flaky = "3.7.0.*"
 vega_datasets = "0.9.0.*"
-rust = "1.71.1.*"
 jupytext = "1.15.0.*"
 openjdk = "20.0.0.*"
 build = "0.7.0.*"
@@ -135,7 +134,7 @@ pandas = "2.0.3.*"
 altair = "5.1.1.*"
 protobuf = "4.23.3.*"
 ipywidgets = "8.1.0.*"
-rust = "1.72.*"
+rust = "1.75.*"
 vl-convert-python = "1.0.1rc1"
 
 [target.osx-arm64.build-dependencies]
