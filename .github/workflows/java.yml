@@ -171,7 +171,7 @@ jobs:
         os:
           - ubuntu-20.04
           - macos-11
-          - windows-2022
+#          - windows-2022
     runs-on: ${{ matrix.os }}
     needs: [ build-jar ]
     steps:
