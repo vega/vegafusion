@@ -19,17 +19,17 @@ def get_rustc_version():
 
 
 def ensure_target(target_name):
-    package_root = os.environ.get("PIXI_PACKAGE_ROOT", None)
+    package_root = os.environ.get("PIXI_PROJECT_ROOT", None)
     if package_root is None:
-        raise ValueError("Expected PIXI_PACKAGE_ROOT environment variable to be set")
+        raise ValueError("Expected PIXI_PROJECT_ROOT environment variable to be set")
 
     if platform.system() == "Windows":
         dest_dir = os.path.join(
-            package_root, ".pixi", "env", "Library", "lib", "rustlib", target_name
+            package_root, ".pixi", "envs", "default", "Library", "lib", "rustlib", target_name
         )
     else:
         dest_dir = os.path.join(
-            package_root, ".pixi", "env", "lib", "rustlib", target_name
+            package_root, ".pixi", "envs", "default", "lib", "rustlib", target_name
         )
     if os.path.exists(dest_dir):
         print("wasm32-unknown-unknown target already installed")

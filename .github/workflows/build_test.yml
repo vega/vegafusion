@@ -8,9 +8,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
+      - uses: prefix-dev/setup-pixi@v0.5.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
           cache: true
       - name: Cache
         uses: actions/cache@v3
@@ -39,9 +39,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
+      - uses: prefix-dev/setup-pixi@v0.5.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -68,9 +68,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
+      - uses: prefix-dev/setup-pixi@v0.5.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -156,9 +156,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
+      - uses: prefix-dev/setup-pixi@v0.5.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -183,9 +183,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
+      - uses: prefix-dev/setup-pixi@v0.5.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -210,9 +210,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
+      - uses: prefix-dev/setup-pixi@v0.5.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -238,9 +238,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
+      - uses: prefix-dev/setup-pixi@v0.5.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -265,9 +265,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
+      - uses: prefix-dev/setup-pixi@v0.5.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -349,7 +349,7 @@ jobs:
         run: |
           ls -la
           python -m pip install vegafusion-*.whl
-          python -m pip install vegafusion_python_embed-*macosx_10_7_x86_64.whl
+          python -m pip install vegafusion_python_embed-*macosx_10_*_x86_64.whl
           python -m pip install pytest vega-datasets polars duckdb vl-convert-python scikit-image pandas==2.0
           python -m pip install pyarrow==10.0 altair==5.1.2
       - name: Test vegafusion
@@ -400,9 +400,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
+      - uses: prefix-dev/setup-pixi@v0.5.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -452,9 +452,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
+      - uses: prefix-dev/setup-pixi@v0.5.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -561,13 +561,13 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
+      - uses: prefix-dev/setup-pixi@v0.5.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-server-win-64
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-server-win-64b
           path: |
             ~/.cargo
             target
@@ -593,9 +593,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
+      - uses: prefix-dev/setup-pixi@v0.5.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -624,9 +624,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - uses: prefix-dev/setup-pixi@v0.4.1
+      - uses: prefix-dev/setup-pixi@v0.5.1
         with:
-          pixi-version: v0.7.0
+          pixi-version: v0.13.0
       - name: Cache
         uses: actions/cache@v3
         with:
