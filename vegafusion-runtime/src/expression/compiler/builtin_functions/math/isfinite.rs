@@ -1,4 +1,4 @@
-use datafusion_expr::{expr, lit, Expr, ExprSchemable};
+use datafusion_expr::{expr, lit, Expr, ExprSchemable, ScalarFunctionDefinition};
 use std::ops::Deref;
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
@@ -21,8 +21,8 @@ pub fn is_finite_fn(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
         Ok(match dtype {
             DataType::Float16 | DataType::Float32 | DataType::Float64 => {
                 let is_finite_udf = ISFINITE_UDF.deref().clone();
-                Expr::ScalarUDF(expr::ScalarUDF {
-                    fun: Arc::new(is_finite_udf),
+                Expr::ScalarFunction(expr::ScalarFunction {
+                    func_def: ScalarFunctionDefinition::UDF(Arc::new(is_finite_udf)),
                     args: vec![arg],
                 })
             }

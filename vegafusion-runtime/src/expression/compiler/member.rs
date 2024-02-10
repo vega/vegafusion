@@ -1,7 +1,7 @@
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
-use datafusion_expr::{expr, lit, BuiltinScalarFunction, Expr};
+use datafusion_expr::{expr, lit, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
 use std::convert::TryFrom;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -73,8 +73,8 @@ pub fn compile_member(
     let expr = match dtype {
         DataType::Struct(ref fields) => {
             if fields.iter().any(|f| f.name() == &property_string) {
-                Expr::ScalarUDF(expr::ScalarUDF {
-                    fun: Arc::new(make_get_object_member_udf(&dtype, &property_string)?),
+                Expr::ScalarFunction(expr::ScalarFunction {
+                    func_def: ScalarFunctionDefinition::UDF(Arc::new(make_get_object_member_udf(&dtype, &property_string)?)),
                     args: vec![compiled_object],
                 })
             } else {
@@ -86,15 +86,15 @@ pub fn compile_member(
             if property_string == "length" {
                 // Special case to treat foo.length as length(foo) when foo is not an object
                 // make_length()
-                Expr::ScalarUDF(expr::ScalarUDF {
-                    fun: Arc::new(LENGTH_UDF.deref().clone()),
+                Expr::ScalarFunction(expr::ScalarFunction {
+                    func_def: ScalarFunctionDefinition::UDF(Arc::new(LENGTH_UDF.deref().clone())),
                     args: vec![compiled_object],
                 })
             } else if matches!(dtype, DataType::Utf8 | DataType::LargeUtf8) {
                 if let Some(index) = index {
                     // SQL substr function is 1-indexed so add one
                     Expr::ScalarFunction(expr::ScalarFunction {
-                        fun: BuiltinScalarFunction::Substr,
+                        func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Substr),
                         args: vec![compiled_object, lit((index + 1) as i64), lit(1i64)],
                     })
                 } else {
@@ -104,8 +104,8 @@ pub fn compile_member(
                 }
             } else if matches!(dtype, DataType::List(_) | DataType::FixedSizeList(_, _)) {
                 if let Some(index) = index {
-                    Expr::ScalarUDF(expr::ScalarUDF {
-                        fun: Arc::new(make_get_element_udf(index as i32)),
+                    Expr::ScalarFunction(expr::ScalarFunction {
+                        func_def: ScalarFunctionDefinition::UDF(Arc::new(make_get_element_udf(index as i32))),
                         args: vec![compiled_object],
                     })
                 } else {

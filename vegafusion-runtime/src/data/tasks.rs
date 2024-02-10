@@ -5,7 +5,7 @@ use crate::task_graph::task::TaskCall;
 
 use async_trait::async_trait;
 
-use datafusion_expr::{expr, lit, Expr};
+use datafusion_expr::{expr, lit, Expr, ScalarFunctionDefinition};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
@@ -336,16 +336,16 @@ async fn process_datetimes(
                             .map(|tz_config| tz_config.default_input_tz.to_string())
                             .unwrap_or_else(|| "UTC".to_string());
 
-                        Expr::ScalarUDF(expr::ScalarUDF {
-                            fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
+                        Expr::ScalarFunction(expr::ScalarFunction {
+                            func_def: ScalarFunctionDefinition::UDF(Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone())),
                             args: vec![flat_col(&spec.name), lit(default_input_tz_str)],
                         })
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically, use local time
                         let tz_config =
                             tz_config.with_context(|| "No local timezone info provided")?;
-                        Expr::ScalarUDF(expr::ScalarUDF {
-                            fun: Arc::new((*MAKE_UTC_TIMESTAMP).clone()),
+                        Expr::ScalarFunction(expr::ScalarFunction {
+                            func_def: ScalarFunctionDefinition::UDF(Arc::new((*MAKE_UTC_TIMESTAMP).clone())),
                             args: vec![
                                 flat_col(&spec.name),                        // year
                                 lit(0),                                      // month
@@ -395,8 +395,8 @@ async fn process_datetimes(
                     DataType::Timestamp(_, tz) => match tz {
                         Some(tz) => {
                             // Timestamp has explicit timezone
-                            Expr::ScalarUDF(expr::ScalarUDF {
-                                fun: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
+                            Expr::ScalarFunction(expr::ScalarFunction {
+                                func_def: ScalarFunctionDefinition::UDF(Arc::new((*TO_UTC_TIMESTAMP_UDF).clone())),
                                 args: vec![flat_col(field.name()), lit(tz.as_ref())],
                             })
                         }
@@ -405,8 +405,8 @@ async fn process_datetimes(
                             let tz_config =
                                 tz_config.with_context(|| "No local timezone info provided")?;
 
-                            Expr::ScalarUDF(expr::ScalarUDF {
-                                fun: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
+                            Expr::ScalarFunction(expr::ScalarFunction {
+                                func_def: ScalarFunctionDefinition::UDF(Arc::new((*TO_UTC_TIMESTAMP_UDF).clone())),
                                 args: vec![
                                     flat_col(field.name()),
                                     lit(tz_config.default_input_tz.to_string()),
@@ -418,8 +418,8 @@ async fn process_datetimes(
                         let tz_config =
                             tz_config.with_context(|| "No local timezone info provided")?;
 
-                        Expr::ScalarUDF(expr::ScalarUDF {
-                            fun: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
+                        Expr::ScalarFunction(expr::ScalarFunction {
+                            func_def: ScalarFunctionDefinition::UDF(Arc::new((*TO_UTC_TIMESTAMP_UDF).clone())),
                             args: vec![
                                 flat_col(field.name()),
                                 lit(tz_config.default_input_tz.to_string()),
@@ -430,8 +430,8 @@ async fn process_datetimes(
                         let tz_config =
                             tz_config.with_context(|| "No local timezone info provided")?;
 
-                        Expr::ScalarUDF(expr::ScalarUDF {
-                            fun: Arc::new((*DATE_TO_UTC_TIMESTAMP_UDF).clone()),
+                        Expr::ScalarFunction(expr::ScalarFunction {
+                            func_def: ScalarFunctionDefinition::UDF(Arc::new((*DATE_TO_UTC_TIMESTAMP_UDF).clone())),
                             args: vec![flat_col(field.name()), lit(tz_config.local_tz.to_string())],
                         })
                     }

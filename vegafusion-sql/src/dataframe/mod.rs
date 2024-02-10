@@ -7,11 +7,7 @@ use arrow::datatypes::{DataType, Field, FieldRef, Fields, Schema, SchemaRef};
 use arrow::record_batch::RecordBatch;
 use async_trait::async_trait;
 use datafusion_common::{Column, DFSchema, OwnedTableReference, ScalarValue};
-use datafusion_expr::{
-    abs, expr, is_null, lit, max, min, when, window_function, AggregateFunction,
-    BuiltInWindowFunction, BuiltinScalarFunction, Expr, ExprSchemable, WindowFrame,
-    WindowFrameBound, WindowFrameUnits, WindowFunction,
-};
+use datafusion_expr::{abs, expr, is_null, lit, max, min, when, window_function, AggregateFunction, BuiltInWindowFunction, BuiltinScalarFunction, Expr, ExprSchemable, WindowFrame, WindowFrameBound, WindowFrameUnits, WindowFunction, ScalarFunctionDefinition};
 use sqlparser::ast::{
     Cte, Expr as SqlExpr, GroupByExpr, Ident, Query, Select, SelectItem, SetExpr, Statement,
     TableAlias, TableFactor, TableWithJoins, Values, WildcardAdditionalOptions, With,
@@ -23,6 +19,7 @@ use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Sub};
 use std::sync::Arc;
+use datafusion_expr::expr::AggregateFunctionDefinition;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datatypes::to_numeric;
@@ -895,7 +892,7 @@ impl SqlDataFrame {
         let partition_by: Vec<_> = groupby.iter().map(|group| flat_col(group)).collect();
 
         let numeric_field = Expr::ScalarFunction(expr::ScalarFunction {
-            fun: BuiltinScalarFunction::Coalesce,
+            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
             args: vec![to_numeric(flat_col(field), &self.schema_df()?)?, lit(0.0)],
         });
 
@@ -983,7 +980,7 @@ impl SqlDataFrame {
 
             // Create aggregate for total of stack value
             let total_agg = Expr::AggregateFunction(expr::AggregateFunction {
-                fun: AggregateFunction::Sum,
+                func_def: AggregateFunctionDefinition::BuiltIn(AggregateFunction::Sum),
                 args: vec![flat_col(stack_col_name)],
                 distinct: false,
                 filter: None,
@@ -1154,7 +1151,7 @@ impl SqlDataFrame {
 
                     if col_name == field {
                         Expr::ScalarFunction(expr::ScalarFunction {
-                            fun: BuiltinScalarFunction::Coalesce,
+                            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
                             args: vec![flat_col(field), lit(value.clone())],
                         })
                         .alias(col_name)
@@ -1199,7 +1196,7 @@ impl SqlDataFrame {
                 .map(|col_name| {
                     if col_name == field {
                         Expr::ScalarFunction(expr::ScalarFunction {
-                            fun: BuiltinScalarFunction::Coalesce,
+                            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
                             args: vec![flat_col(field), lit(value.clone())],
                         })
                         .alias(col_name)
@@ -1217,7 +1214,7 @@ impl SqlDataFrame {
                     .map(|col_name| {
                         let expr = if col_name == field {
                             Expr::ScalarFunction(expr::ScalarFunction {
-                                fun: BuiltinScalarFunction::Coalesce,
+                                func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
                                 args: vec![flat_col(field), lit(value.clone())],
                             })
                             .alias(col_name)

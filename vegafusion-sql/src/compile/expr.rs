@@ -11,10 +11,7 @@ use sqlparser::ast::{
 };
 
 use datafusion_expr::expr::{BinaryExpr, Case, Cast, Sort};
-use datafusion_expr::{
-    expr, lit, AggregateFunction, Between, BuiltInWindowFunction, BuiltinScalarFunction, Expr,
-    ExprSchemable, Operator, WindowFrameBound, WindowFrameUnits, WindowFunction,
-};
+use datafusion_expr::{expr, lit, Between, BuiltInWindowFunction, Expr, ExprSchemable, Operator, WindowFrameBound, WindowFrameUnits, WindowFunction};
 
 use crate::compile::function_arg::ToSqlFunctionArg;
 use crate::compile::order::ToSqlOrderByExpr;
@@ -273,145 +270,16 @@ impl ToSqlExpr for Expr {
                 // Sort expressions need to be handled at a higher level
                 Err(VegaFusionError::internal("Sort cannot be converted to SQL"))
             }
-            Expr::ScalarFunction(expr::ScalarFunction { fun, args }) => {
-                let fun_name = match fun {
-                    BuiltinScalarFunction::Abs => "abs",
-                    BuiltinScalarFunction::Acos => "acos",
-                    BuiltinScalarFunction::Asin => "asin",
-                    BuiltinScalarFunction::Atan => "atan",
-                    BuiltinScalarFunction::Atan2 => "atan2",
-                    BuiltinScalarFunction::Ceil => "ceil",
-                    BuiltinScalarFunction::Coalesce => "coalesce",
-                    BuiltinScalarFunction::Cos => "cos",
-                    BuiltinScalarFunction::Cbrt => "cbrt",
-                    BuiltinScalarFunction::Digest => "digest",
-                    BuiltinScalarFunction::Exp => "exp",
-                    BuiltinScalarFunction::Floor => "floor",
-                    BuiltinScalarFunction::Ln => "ln",
-                    BuiltinScalarFunction::Log => "log",
-                    BuiltinScalarFunction::Log10 => "log10",
-                    BuiltinScalarFunction::Log2 => "log2",
-                    BuiltinScalarFunction::Power => "pow",
-                    BuiltinScalarFunction::Round => "round",
-                    BuiltinScalarFunction::Signum => "signum",
-                    BuiltinScalarFunction::Sin => "sin",
-                    BuiltinScalarFunction::Sqrt => "sqrt",
-                    BuiltinScalarFunction::Tan => "tan",
-                    BuiltinScalarFunction::Trunc => "trunc",
-                    BuiltinScalarFunction::MakeArray => "make_array",
-                    BuiltinScalarFunction::Ascii => "ascii",
-                    BuiltinScalarFunction::BitLength => "bit_length",
-                    BuiltinScalarFunction::Btrim => "btrim",
-                    BuiltinScalarFunction::CharacterLength => "length",
-                    BuiltinScalarFunction::Chr => "chr",
-                    BuiltinScalarFunction::Concat => "concat",
-                    BuiltinScalarFunction::ConcatWithSeparator => "concat_ws",
-                    BuiltinScalarFunction::DatePart => "date_part",
-                    BuiltinScalarFunction::DateTrunc => "date_trunc",
-                    BuiltinScalarFunction::DateBin => "date_bin",
-                    BuiltinScalarFunction::InitCap => "initcap",
-                    BuiltinScalarFunction::Left => "left",
-                    BuiltinScalarFunction::Lpad => "lpad",
-                    BuiltinScalarFunction::Lower => "lower",
-                    BuiltinScalarFunction::Ltrim => "ltrim",
-                    BuiltinScalarFunction::MD5 => "md5",
-                    BuiltinScalarFunction::NullIf => "nullif",
-                    BuiltinScalarFunction::OctetLength => "octet_length",
-                    BuiltinScalarFunction::Random => "random",
-                    BuiltinScalarFunction::RegexpReplace => "regexp_replace",
-                    BuiltinScalarFunction::Repeat => "repeat",
-                    BuiltinScalarFunction::Replace => "replace",
-                    BuiltinScalarFunction::Reverse => "reverse",
-                    BuiltinScalarFunction::Right => "right",
-                    BuiltinScalarFunction::Rpad => "rpad",
-                    BuiltinScalarFunction::Rtrim => "rtrim",
-                    BuiltinScalarFunction::SHA224 => "sha224",
-                    BuiltinScalarFunction::SHA256 => "sha256",
-                    BuiltinScalarFunction::SHA384 => "sha384",
-                    BuiltinScalarFunction::SHA512 => "sha512",
-                    BuiltinScalarFunction::SplitPart => "split_part",
-                    BuiltinScalarFunction::StartsWith => "starts_with",
-                    BuiltinScalarFunction::Strpos => "strpos",
-                    BuiltinScalarFunction::Substr => "substr",
-                    BuiltinScalarFunction::ToHex => "to_hex",
-                    BuiltinScalarFunction::ToTimestamp => "to_timestamp",
-                    BuiltinScalarFunction::ToTimestampMillis => "to_timestamp_millis",
-                    BuiltinScalarFunction::ToTimestampMicros => "to_timestamp_micros",
-                    BuiltinScalarFunction::ToTimestampSeconds => "to_timestamp_seconds",
-                    BuiltinScalarFunction::FromUnixtime => "from_unixtime",
-                    BuiltinScalarFunction::Now => "now",
-                    BuiltinScalarFunction::Translate => "translate",
-                    BuiltinScalarFunction::Trim => "trim",
-                    BuiltinScalarFunction::Upper => "upper",
-                    BuiltinScalarFunction::RegexpMatch => "regexp_match",
-                    BuiltinScalarFunction::Struct => "struct",
-                    BuiltinScalarFunction::ArrowTypeof => "arrow_typeof",
-                    BuiltinScalarFunction::CurrentDate => "current_date",
-                    BuiltinScalarFunction::CurrentTime => "current_time",
-                    BuiltinScalarFunction::Uuid => "uuid",
-                    BuiltinScalarFunction::Acosh => "acosh",
-                    BuiltinScalarFunction::Asinh => "asinh",
-                    BuiltinScalarFunction::Atanh => "atanh",
-                    BuiltinScalarFunction::Cosh => "cosh",
-                    BuiltinScalarFunction::Degrees => "degrees",
-                    BuiltinScalarFunction::Pi => "pi",
-                    BuiltinScalarFunction::Radians => "radians",
-                    BuiltinScalarFunction::Sinh => "sinh",
-                    BuiltinScalarFunction::Tanh => "tanh",
-                    BuiltinScalarFunction::Factorial => "factorial",
-                    BuiltinScalarFunction::Gcd => "gcd",
-                    BuiltinScalarFunction::Lcm => "lcm",
-                    BuiltinScalarFunction::ArrayAppend => "array_append",
-                    BuiltinScalarFunction::ArrayConcat => "array_concat",
-                    BuiltinScalarFunction::ArrayDims => "array_dims",
-                    BuiltinScalarFunction::ArrayLength => "array_length",
-                    BuiltinScalarFunction::ArrayNdims => "array_ndims",
-                    BuiltinScalarFunction::ArrayPosition => "array_position",
-                    BuiltinScalarFunction::ArrayPositions => "array_positions",
-                    BuiltinScalarFunction::ArrayPrepend => "array_prepend",
-                    BuiltinScalarFunction::ArrayRemove => "array_remove",
-                    BuiltinScalarFunction::ArrayReplace => "array_replace",
-                    BuiltinScalarFunction::ArrayToString => "array_to_string",
-                    BuiltinScalarFunction::Cardinality => "array_cardinality",
-                    BuiltinScalarFunction::ArrayHas => "array_has",
-                    BuiltinScalarFunction::ArrayHasAll => "array_has_all",
-                    BuiltinScalarFunction::ArrayHasAny => "array_has_any",
-                    BuiltinScalarFunction::ArrayPopBack => "array_pop_back",
-                    BuiltinScalarFunction::ArrayElement => "array_element",
-                    BuiltinScalarFunction::ArrayEmpty => "array_empty",
-                    BuiltinScalarFunction::ArrayRemoveN => "array_remove_n",
-                    BuiltinScalarFunction::ArrayRemoveAll => "array_remove_all",
-                    BuiltinScalarFunction::ArrayRepeat => "array_repeat",
-                    BuiltinScalarFunction::ArrayReplaceN => "array_replace_n",
-                    BuiltinScalarFunction::ArrayReplaceAll => "array_replace_all",
-                    BuiltinScalarFunction::ArraySlice => "array_slice",
-                    BuiltinScalarFunction::ArrayIntersect => "array_intersect",
-                    BuiltinScalarFunction::Decode => "decode",
-                    BuiltinScalarFunction::Encode => "encode",
-                    BuiltinScalarFunction::Cot => "cot",
-                    BuiltinScalarFunction::Isnan => "isnan",
-                    BuiltinScalarFunction::Iszero => "iszero",
-                    BuiltinScalarFunction::Nanvl => "nanvl",
-                    BuiltinScalarFunction::Flatten => "flatten",
-                    BuiltinScalarFunction::StringToArray => "string_to_array",
-                    BuiltinScalarFunction::ToTimestampNanos => "to_timestamp_nanos",
-                };
-                translate_scalar_function(fun_name, args, dialect, schema)
-            }
-            Expr::ScalarUDF(expr::ScalarUDF { fun, args }) => {
-                translate_scalar_function(&fun.name, args, dialect, schema)
+            Expr::ScalarFunction(fun) => {
+                translate_scalar_function(&fun.name(), &fun.args, dialect, schema)
             }
             Expr::AggregateFunction(expr::AggregateFunction {
-                fun,
-                args,
-                distinct,
-                ..
+                                        func_def,
+                                        args,
+                                        distinct,
+                                        ..
             }) => {
-                let fun_name = aggr_fn_to_name(fun);
-                translate_aggregate_function(fun_name, args.as_slice(), *distinct, dialect, schema)
-            }
-            Expr::AggregateUDF(expr::AggregateUDF { fun, args, .. }) => {
-                translate_aggregate_function(&fun.name, args.as_slice(), false, dialect, schema)
+                translate_aggregate_function(func_def.name(), args.as_slice(), *distinct, dialect, schema)
             }
             Expr::WindowFunction(expr::WindowFunction {
                 fun,
@@ -423,7 +291,7 @@ impl ToSqlExpr for Expr {
                 // Extract function name
                 let (fun_name, supports_frame) = match fun {
                     WindowFunction::AggregateFunction(agg) => {
-                        (aggr_fn_to_name(agg).to_string().to_ascii_lowercase(), true)
+                        (agg.name().to_string().to_ascii_lowercase(), true)
                     }
                     WindowFunction::BuiltInWindowFunction(win_fn) => {
                         let is_navigation_function = matches!(
@@ -444,8 +312,8 @@ impl ToSqlExpr for Expr {
 
                         (win_fn.to_string().to_ascii_lowercase(), supports_frame)
                     }
-                    WindowFunction::AggregateUDF(udf) => (udf.name.to_ascii_lowercase(), true),
-                    WindowFunction::WindowUDF(udf) => (udf.name.to_ascii_lowercase(), true),
+                    WindowFunction::AggregateUDF(udf) => (udf.name().to_ascii_lowercase(), true),
+                    WindowFunction::WindowUDF(udf) => (udf.name().to_ascii_lowercase(), true),
                 };
 
                 // Handle unordered row_number
@@ -707,46 +575,6 @@ fn translate_function_args(
         .collect::<Result<Vec<_>>>()
 }
 
-fn aggr_fn_to_name(fun: &AggregateFunction) -> &str {
-    match fun {
-        AggregateFunction::Min => "min",
-        AggregateFunction::Max => "max",
-        AggregateFunction::Count => "count",
-        AggregateFunction::Avg => "avg",
-        AggregateFunction::Sum => "sum",
-        AggregateFunction::Median => "median",
-        AggregateFunction::ApproxDistinct => "approx_distinct",
-        AggregateFunction::ArrayAgg => "array_agg",
-        AggregateFunction::Variance => "var",
-        AggregateFunction::VariancePop => "var_pop",
-        AggregateFunction::Stddev => "stddev",
-        AggregateFunction::StddevPop => "stddev_pop",
-        AggregateFunction::Covariance => "covar",
-        AggregateFunction::CovariancePop => "covar_pop",
-        AggregateFunction::Correlation => "corr",
-        AggregateFunction::ApproxPercentileCont => "approx_percentile_cont",
-        AggregateFunction::ApproxPercentileContWithWeight => "approx_percentile_cont_with_weight",
-        AggregateFunction::ApproxMedian => "approx_median",
-        AggregateFunction::Grouping => "grouping",
-        AggregateFunction::BitAnd => "bit_and",
-        AggregateFunction::BitOr => "bit_or",
-        AggregateFunction::BitXor => "bit_xor",
-        AggregateFunction::BoolAnd => "bool_and",
-        AggregateFunction::BoolOr => "bool_or",
-        AggregateFunction::FirstValue => "first_value",
-        AggregateFunction::LastValue => "last_value",
-        AggregateFunction::RegrSlope => "regr_slope",
-        AggregateFunction::RegrIntercept => "regr_intercept",
-        AggregateFunction::RegrCount => "regr_count",
-        AggregateFunction::RegrR2 => "regr_r2",
-        AggregateFunction::RegrAvgx => "regr_avgx",
-        AggregateFunction::RegrAvgy => "regr_avgy",
-        AggregateFunction::RegrSXX => "regr_sxx",
-        AggregateFunction::RegrSYY => "regr_syy",
-        AggregateFunction::RegrSXY => "regr_sxy",
-    }
-}
-
 fn compile_window_frame_bound(
     bound: &WindowFrameBound,
     dialect: &Dialect,
@@ -776,7 +604,7 @@ mod tests {
     use arrow::datatypes::DataType;
     use datafusion_common::DFSchema;
     use datafusion_expr::expr::Cast;
-    use datafusion_expr::{expr, lit, Between, BuiltinScalarFunction, Expr};
+    use datafusion_expr::{expr, lit, Between, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
     use vegafusion_common::column::flat_col;
 
     fn schema() -> DFSchema {
@@ -795,7 +623,7 @@ mod tests {
     #[test]
     pub fn test2() {
         let df_expr = Expr::ScalarFunction(expr::ScalarFunction {
-            fun: BuiltinScalarFunction::Sin,
+            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Sin),
             args: vec![lit(1.2)],
         }) + flat_col("B");
 
@@ -809,7 +637,7 @@ mod tests {
     #[test]
     pub fn test3() {
         let df_expr = Expr::ScalarFunction(expr::ScalarFunction {
-            fun: BuiltinScalarFunction::Upper,
+            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Upper),
             args: vec![lit("foo")],
         });
 

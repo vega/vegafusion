@@ -1,7 +1,7 @@
 use crate::error::{Result, ResultWithContext};
 use arrow::datatypes::DataType;
 use datafusion_common::DFSchema;
-use datafusion_expr::{coalesce, expr, lit, BuiltinScalarFunction, Expr, ExprSchemable, TryCast};
+use datafusion_expr::{coalesce, expr, lit, BuiltinScalarFunction, Expr, ExprSchemable, TryCast, ScalarFunctionDefinition};
 
 pub fn is_numeric_datatype(dtype: &DataType) -> bool {
     matches!(
@@ -87,7 +87,7 @@ pub fn to_numeric(value: Expr, schema: &DFSchema) -> Result<Expr> {
         // Convert to milliseconds
         Expr::TryCast(TryCast {
             expr: Box::new(Expr::ScalarFunction(expr::ScalarFunction {
-                fun: BuiltinScalarFunction::ToTimestampMillis,
+                func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::ToTimestampMillis),
                 args: vec![value],
             })),
             data_type: DataType::Int64,

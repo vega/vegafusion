@@ -5,10 +5,7 @@ use arrow::array::Array;
 use arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
-use datafusion_expr::{
-    expr, lit, ColumnarValue, Expr, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF,
-    Signature, Volatility,
-};
+use datafusion_expr::{expr, lit, ColumnarValue, Expr, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature, Volatility, ScalarFunctionDefinition};
 use sqlparser::ast::{
     Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr,
     Ident, ObjectName as SqlObjectName, Value as SqlValue,
@@ -234,9 +231,6 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::Time64Nanosecond(_) => Err(VegaFusionError::internal(
                 "Time64Nanosecond cannot be converted to SQL",
             )),
-            ScalarValue::Fixedsizelist(_, _, _) => Err(VegaFusionError::internal(
-                "Fixedsizelist cannot be converted to SQL",
-            )),
             ScalarValue::DurationSecond(_) => Err(VegaFusionError::internal(
                 "DurationSecond cannot be converted to SQL",
             )),
@@ -248,6 +242,12 @@ impl ToSqlScalar for ScalarValue {
             )),
             ScalarValue::DurationNanosecond(_) => Err(VegaFusionError::internal(
                 "DurationNanosecond cannot be converted to SQL",
+            )),
+            ScalarValue::FixedSizeList(_) => Err(VegaFusionError::internal(
+                "FixedSizeList cannot be converted to SQL",
+            )),
+            ScalarValue::LargeList(_) => Err(VegaFusionError::internal(
+                "LargeList cannot be converted to SQL",
             )),
         }
     }
@@ -268,8 +268,8 @@ fn ms_to_timestamp(v: i64, dialect: &Dialect) -> Result<SqlExpr> {
         &return_type,
         &scalar_fn,
     );
-    Expr::ScalarUDF(expr::ScalarUDF {
-        fun: Arc::new(udf),
+    Expr::ScalarFunction(expr::ScalarFunction {
+        func_def: ScalarFunctionDefinition::UDF(Arc::new(udf)),
         args: vec![lit(v)],
     })
     .to_sql(dialect, &DFSchema::empty())

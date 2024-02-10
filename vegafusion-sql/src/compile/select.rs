@@ -12,7 +12,7 @@ pub trait ToSqlSelectItem {
 impl ToSqlSelectItem for Expr {
     fn to_sql_select(&self, dialect: &Dialect, schema: &DFSchema) -> Result<SqlSelectItem> {
         Ok(match self {
-            Expr::Alias(expr::Alias { expr, name: alias }) => SqlSelectItem::ExprWithAlias {
+            Expr::Alias(expr::Alias { expr, name: alias, .. }) => SqlSelectItem::ExprWithAlias {
                 expr: expr.to_sql(dialect, schema)?,
                 alias: Ident {
                     value: alias.clone(),

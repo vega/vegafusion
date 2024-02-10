@@ -1,5 +1,5 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
-use datafusion_expr::{expr, Expr};
+use datafusion_expr::{expr, Expr, ScalarFunctionDefinition};
 use std::ops::Deref;
 use std::sync::Arc;
 use vegafusion_common::datafusion_common::DFSchema;
@@ -17,8 +17,8 @@ pub fn compile_array(
         let phys_expr = compile(el, config, Some(schema))?;
         elements.push(phys_expr);
     }
-    Ok(Expr::ScalarUDF(expr::ScalarUDF {
-        fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
+    Ok(Expr::ScalarFunction(expr::ScalarFunction {
+        func_def: ScalarFunctionDefinition::UDF(Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone())),
         args: elements,
     }))
 }
