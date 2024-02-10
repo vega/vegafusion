@@ -64,127 +64,183 @@ impl ExtractFacetAggregationsVisitor {
         }
         Ok(())
     }
-}
 
-impl MutChartVisitor for ExtractFacetAggregationsVisitor {
-    fn visit_group_mark(&mut self, mark: &mut MarkSpec, scope: &[u32]) -> Result<()> {
-        let Some(from) = &mut mark.from else { return Ok(()) };
-        let Some(facet) = &mut from.facet else { return Ok(()) };
-
-        // Check for child datasets
-        let facet_dataset_var: ScopedVariable = (Variable::new_data(&facet.name), Vec::from(scope));
-        let Some(facet_dataset_idx) = self.node_indexes.get(&facet_dataset_var) else { return Ok(())};
+    fn num_children_of_dataset(&self, name: &str, scope: &[u32]) -> usize {
+        let facet_dataset_var: ScopedVariable = (Variable::new_data(&name), Vec::from(scope));
+        let Some(facet_dataset_idx) = self.node_indexes.get(&facet_dataset_var) else {
+            return 0;
+        };
         let edges = self
             .graph
             .edges_directed(*facet_dataset_idx, Direction::Outgoing);
         let edges_vec = edges.into_iter().collect::<Vec<_>>();
-        if edges_vec.len() != 1 {
-            // We don't have exactly one child dataset so we cannot lift
+        edges_vec.len()
+    }
+}
+
+impl MutChartVisitor for ExtractFacetAggregationsVisitor {
+    fn visit_group_mark(&mut self, mark: &mut MarkSpec, scope: &[u32]) -> Result<()> {
+        let Some(from) = &mut mark.from else {
             return Ok(());
-        }
-
-        // Collect datasets that are immediate children of the facet dataset
-        let mut child_datasets = mark
-            .data
-            .iter_mut()
-            .filter(|d| d.source.as_ref() == Some(&facet.name))
-            .collect::<Vec<_>>();
-
-        if child_datasets.len() != 1 {
-            // Child dataset isn't located in this facet's dataset.
-            // I don't think this shouldn't happen, but bail out in case
+        };
+        let Some(facet) = &mut from.facet else {
             return Ok(());
-        }
-
-        let child_dataset = &mut child_datasets[0];
-        let Some(TransformSpec::Aggregate(mut agg)) = child_dataset.transform.get(0).cloned() else {
-            // dataset does not have a aggregate transform as the first transform, nothing to lift
-            return Ok(())
         };
 
-        // Add facet groupby fields as aggregate transform groupby fields
-        let facet_groupby_fields: Vec<Field> = facet
-            .groupby
-            .clone()
-            .unwrap_or_default()
-            .to_vec()
-            .into_iter()
-            .map(Field::String)
-            .collect();
+        // Check for child datasets
+        let num_facet_children = self.num_children_of_dataset(&facet.name, scope);
+        if num_facet_children != 1 {
+            // We don't have exactly one child dataset, so we cannot lift
+            return Ok(());
+        }
 
-        agg.groupby.extend(facet_groupby_fields.clone());
+        let mark_datasets = mark.data.clone();
+        let mut child_dataset = if let Some(idx) = mark_datasets
+            .iter()
+            .position(|d| d.source.as_ref() == Some(&facet.name.to_string()))
+        {
+            &mut mark.data[idx]
+        } else {
+            return Ok(());
+        };
 
         let mut lifted_transforms: Vec<TransformSpec> = Vec::new();
 
-        // When the facet defines an aggregation, we need to perform it with a joinaggregate
-        // prior to the lifted aggregation.
-        //
-        // Leave `cross` field as-is
-        if let Some(facet_aggregate) = &mut facet.aggregate {
-            if facet_aggregate.fields.is_some()
-                && facet_aggregate.ops.is_some()
-                && facet_aggregate.as_.is_some()
-            {
-                // Add joinaggregate transform that performs the facet's aggregation using the same
-                // grouping columns as the facet
-                lifted_transforms.push(TransformSpec::JoinAggregate(JoinAggregateTransformSpec {
-                    groupby: Some(facet_groupby_fields),
-                    fields: facet_aggregate.fields.clone().unwrap(),
-                    ops: facet_aggregate.ops.clone().unwrap(),
-                    as_: facet_aggregate.as_.clone(),
-                    extra: Default::default(),
-                }));
+        let agg = loop {
+            match child_dataset.transform.get(0).cloned() {
+                None => {
+                    // End of transforms for this dataset, advance to child dataset if possible
+                    if self.num_children_of_dataset(&child_dataset.name, scope) != 1 {
+                        break None;
+                    }
 
-                // Add aggregations to the lifted aggregate transform that pass through the
-                // fields that the joinaggregate above calculates
-                let mut new_fields = agg.fields.clone().unwrap_or_default();
-                let mut new_ops = agg.ops.clone().unwrap_or_default();
-                let mut new_as = agg.as_.clone().unwrap_or_default();
-
-                new_fields.extend(
-                    facet_aggregate
-                        .as_
-                        .clone()
-                        .unwrap()
-                        .into_iter()
-                        .map(|s| s.map(Field::String)),
-                );
-                // Use min aggregate to pass through single unique value
-                new_ops.extend(facet_aggregate.ops.iter().map(|_| AggregateOpSpec::Min));
-                new_as.extend(facet_aggregate.as_.clone().unwrap());
-
-                agg.fields = Some(new_fields);
-                agg.ops = Some(new_ops);
-                agg.as_ = Some(new_as);
-
-                // Update facet aggregate to pass through the fields compute in joinaggregate
-                facet_aggregate.fields = Some(
-                    facet_aggregate
-                        .as_
-                        .clone()
-                        .unwrap()
-                        .into_iter()
-                        .map(|s| s.map(Field::String))
-                        .collect(),
-                );
-                facet_aggregate.ops = Some(
-                    facet_aggregate
-                        .ops
+                    if let Some(idx) = mark_datasets
                         .iter()
-                        .map(|_| AggregateOpSpec::Min)
-                        .collect(),
-                );
-            } else if facet_aggregate.fields.is_some()
-                || facet_aggregate.ops.is_some()
-                || facet_aggregate.as_.is_some()
-            {
-                // Not all of fields, ops, and as are defined so skip lifting
+                        .position(|d| d.source.as_ref() == Some(&child_dataset.name))
+                    {
+                        child_dataset = &mut mark.data[idx]
+                    } else {
+                        break None;
+                    };
+                }
+                Some(TransformSpec::Aggregate(agg)) => {
+                    // Reached an aggregation, bail out
+                    child_dataset.transform.remove(0);
+                    break Some(agg);
+                }
+                Some(TransformSpec::Formula(tx)) => {
+                    lifted_transforms.push(TransformSpec::Formula(tx));
+                    child_dataset.transform.remove(0);
+                }
+                Some(TransformSpec::Filter(tx)) => {
+                    lifted_transforms.push(TransformSpec::Filter(tx));
+                    child_dataset.transform.remove(0);
+                }
+                Some(TransformSpec::Bin(tx)) => {
+                    lifted_transforms.push(TransformSpec::Bin(tx));
+                    child_dataset.transform.remove(0);
+                }
+                Some(TransformSpec::Timeunit(tx)) => {
+                    lifted_transforms.push(TransformSpec::Timeunit(tx));
+                    child_dataset.transform.remove(0);
+                }
+                _ => {
+                    // Reached unsupported transform type without an aggregation
+                    break None;
+                }
+            }
+        };
+
+        if let Some(mut agg) = agg {
+            // Add facet groupby fields as aggregate transform groupby fields
+            let facet_groupby_fields: Vec<Field> = facet
+                .groupby
+                .clone()
+                .unwrap_or_default()
+                .to_vec()
+                .into_iter()
+                .map(Field::String)
+                .collect();
+
+            agg.groupby.extend(facet_groupby_fields.clone());
+
+            // When the facet defines an aggregation, we need to perform it with a joinaggregate
+            // prior to the lifted aggregation.
+            //
+            // Leave `cross` field as-is
+            if let Some(facet_aggregate) = &mut facet.aggregate {
+                if facet_aggregate.fields.is_some()
+                    && facet_aggregate.ops.is_some()
+                    && facet_aggregate.as_.is_some()
+                {
+                    // Add joinaggregate transform that performs the facet's aggregation using the same
+                    // grouping columns as the facet
+                    lifted_transforms.push(TransformSpec::JoinAggregate(
+                        JoinAggregateTransformSpec {
+                            groupby: Some(facet_groupby_fields),
+                            fields: facet_aggregate.fields.clone().unwrap(),
+                            ops: facet_aggregate.ops.clone().unwrap(),
+                            as_: facet_aggregate.as_.clone(),
+                            extra: Default::default(),
+                        },
+                    ));
+
+                    // Add aggregations to the lifted aggregate transform that pass through the
+                    // fields that the joinaggregate above calculates
+                    let mut new_fields = agg.fields.clone().unwrap_or_default();
+                    let mut new_ops = agg.ops.clone().unwrap_or_default();
+                    let mut new_as = agg.as_.clone().unwrap_or_default();
+
+                    new_fields.extend(
+                        facet_aggregate
+                            .as_
+                            .clone()
+                            .unwrap()
+                            .into_iter()
+                            .map(|s| s.map(Field::String)),
+                    );
+                    // Use min aggregate to pass through single unique value
+                    new_ops.extend(facet_aggregate.ops.iter().map(|_| AggregateOpSpec::Min));
+                    new_as.extend(facet_aggregate.as_.clone().unwrap());
+
+                    agg.fields = Some(new_fields);
+                    agg.ops = Some(new_ops);
+                    agg.as_ = Some(new_as);
+
+                    // Update facet aggregate to pass through the fields compute in joinaggregate
+                    facet_aggregate.fields = Some(
+                        facet_aggregate
+                            .as_
+                            .clone()
+                            .unwrap()
+                            .into_iter()
+                            .map(|s| s.map(Field::String))
+                            .collect(),
+                    );
+                    facet_aggregate.ops = Some(
+                        facet_aggregate
+                            .ops
+                            .iter()
+                            .map(|_| AggregateOpSpec::Min)
+                            .collect(),
+                    );
+                } else if facet_aggregate.fields.is_some()
+                    || facet_aggregate.ops.is_some()
+                    || facet_aggregate.as_.is_some()
+                {
+                    // Not all of fields, ops, and as are defined so skip lifting
+                    return Ok(());
+                }
+            }
+
+            // Add lifted aggregate transform, potentially after the joinaggregate transform
+            lifted_transforms.push(TransformSpec::Aggregate(agg));
+        } else {
+            if lifted_transforms.is_empty() {
+                // No supported transforms found
                 return Ok(());
             }
         }
-
-        // Add lifted aggregate transform, potentially after the joinaggregate transform
-        lifted_transforms.push(TransformSpec::Aggregate(agg));
 
         // Create facet dataset name and increment counter to keep names unique even if the same
         // source dataset is used in multiple facets
@@ -204,17 +260,17 @@ impl MutChartVisitor for ExtractFacetAggregationsVisitor {
         };
 
         // Save new dataset at the same scope as the original input dataset
-        let Ok(resolved) = self.task_scope.resolve_scope(
-            &Variable::new_data(&facet.data), scope
-        ) else { return Ok(()) };
+        let Ok(resolved) = self
+            .task_scope
+            .resolve_scope(&Variable::new_data(&facet.data), &scope[..scope.len() - 1])
+        else {
+            return Ok(());
+        };
 
         self.new_datasets
             .entry(resolved.scope.clone())
             .or_default()
             .push(new_dataset);
-
-        // Remove leading aggregate transform from child dataset
-        child_dataset.transform.remove(0);
 
         // Rename source dataset in facet
         facet.data = facet_dataset_name;

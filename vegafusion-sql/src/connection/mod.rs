@@ -1,6 +1,3 @@
-// pub mod datafusion_conn;
-// pub mod sqlite_conn;
-
 use crate::dialect::Dialect;
 use arrow::datatypes::Schema;
 use async_trait::async_trait;
@@ -14,6 +11,10 @@ pub use vegafusion_dataframe::connection::Connection;
 
 #[cfg(feature = "datafusion-conn")]
 pub mod datafusion_conn;
+
+#[cfg(feature = "datafusion-conn")]
+#[cfg(feature = "pyarrow")]
+pub mod datafusion_py_datasource;
 
 #[async_trait]
 pub trait SqlConnection: Connection {

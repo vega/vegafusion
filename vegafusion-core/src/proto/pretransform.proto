@@ -6,7 +6,7 @@ import "tasks.proto";
 /// Pre transform spec messages
 message PreTransformSpecOpts {
   optional uint32 row_limit = 1;
-  repeated PreTransformInlineDataset inline_datasets = 2;
+  repeated tasks.InlineDataset inline_datasets = 2;
   bool preserve_interactivity = 3;
   repeated PreTransformVariable keep_variables = 4;
 }
@@ -50,7 +50,7 @@ message PreTransformVariable {
 
 message PreTransformValuesOpts {
   repeated PreTransformVariable variables = 1;
-  repeated PreTransformInlineDataset inline_datasets = 2;
+  repeated tasks.InlineDataset inline_datasets = 2;
   optional uint32 row_limit = 3;
 }
 
@@ -74,13 +74,6 @@ message PreTransformValuesWarning {
 }
 
 /// Common pre-transform messages
-message PreTransformInlineDataset {
-  // Inline dataset name
-  string name = 1;
-  // Serialized Arrow record batch in Arrow IPC format
-  bytes table = 2;
-}
-
 message PlannerWarning {
   string message = 1;
 }
@@ -115,6 +108,6 @@ message PreTransformExtractRequest {
   optional string default_input_tz = 3;
   bool preserve_interactivity = 4;
   int32 extract_threshold = 5;
-  repeated PreTransformInlineDataset inline_datasets = 6;
+  repeated tasks.InlineDataset inline_datasets = 6;
   repeated PreTransformVariable keep_variables = 7;
 }

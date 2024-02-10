@@ -141,8 +141,9 @@ impl SortOrderOrList {
 }
 
 /// Helper struct that will not drop null values on round trip (de)serialization
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum MissingNullOrValue {
+    #[default]
     Missing,
     Null,
     Value(serde_json::Value),
@@ -159,12 +160,6 @@ impl MissingNullOrValue {
             MissingNullOrValue::Null => Some(serde_json::Value::Null),
             MissingNullOrValue::Value(v) => Some(v.clone()),
         }
-    }
-}
-
-impl Default for MissingNullOrValue {
-    fn default() -> Self {
-        MissingNullOrValue::Missing
     }
 }
 

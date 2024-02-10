@@ -642,13 +642,13 @@ async fn read_json(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataF
         serde_json::from_str(&body)?
     } else if let Some(bucket_path) = url.strip_prefix("s3://") {
         let s3= AmazonS3Builder::from_env().with_url(url).build().with_context(||
-            format!(
-                "Failed to initialize s3 connection from environment variables.\n\
-                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env"
-            )
+            "Failed to initialize s3 connection from environment variables.\n\
+                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env".to_string()
         )?;
-        let Some((_, path)) = bucket_path.split_once("/") else {
-            return Err(VegaFusionError::specification(format!("Invalid s3 URL: {url}")));
+        let Some((_, path)) = bucket_path.split_once('/') else {
+            return Err(VegaFusionError::specification(format!(
+                "Invalid s3 URL: {url}"
+            )));
         };
         let path = object_store::path::Path::from_url_path(path)?;
         let get_result = s3.get(&path).await?;

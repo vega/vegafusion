@@ -102,6 +102,7 @@ fn make_stub(
                 update: None,
                 value: MissingNullOrValue::from(stub_value),
                 on: vec![],
+                bind: None,
                 extra: Default::default(),
             };
 

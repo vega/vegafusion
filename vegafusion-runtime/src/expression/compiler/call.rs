@@ -38,6 +38,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_parts::{
     UTCYEAR_TRANSFORM, YEAR_TRANSFORM,
 };
 use crate::expression::compiler::builtin_functions::date_time::time::time_fn;
+use crate::expression::compiler::builtin_functions::date_time::time_offset::time_offset_fn;
 use crate::expression::compiler::builtin_functions::format::format_transform;
 use crate::expression::compiler::builtin_functions::math::isfinite::is_finite_fn;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
@@ -386,6 +387,10 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "utcFormat".to_string(),
         VegaFusionCallable::LocalTransform(Arc::new(utc_format_fn)),
+    );
+    callables.insert(
+        "timeOffset".to_string(),
+        VegaFusionCallable::LocalTransform(Arc::new(time_offset_fn)),
     );
 
     // format

@@ -1,17 +1,10 @@
-# VegaFusion
-# Copyright (C) 2022, Jon Mease
-#
-# This program is distributed under multiple licenses.
-# Please consult the license documentation provided alongside
-# this program the details of the active license.
-import json
-
 import pandas as pd
 import psutil
 import pyarrow as pa
 from typing import Union
 from .connection import SqlConnection
 from .dataset import SqlDataset, DataFrameDataset
+from .datasource import PandasDatasource, DfiDatasource
 from .evaluation import get_mark_group_for_scope
 from .transformer import import_pyarrow_interchange, to_arrow_table
 from .local_tz import get_local_tz
@@ -26,6 +19,8 @@ try:
 except ImportError:
     pl = None
 
+from typing import TypedDict, List, Literal, Any
+
 
 def _all_datasets_have_type(inline_datasets, types):
     if not inline_datasets:
@@ -37,6 +32,82 @@ def _all_datasets_have_type(inline_datasets, types):
             if not isinstance(dataset, types):
                 return False
         return True
+
+
+class VariableUpdate(TypedDict):
+    name: str
+    namespace: Literal["data", "signal"]
+    scope: List[int]
+    value: Any
+
+
+class Watch(TypedDict):
+    name: str
+    namespace: Literal["data", "signal"]
+    scope: List[int]
+
+
+class WatchPlan(TypedDict):
+    client_to_server: List[Watch]
+    server_to_client: List[Watch]
+
+
+class PreTransformWarning(TypedDict):
+    type: str
+    message: str
+
+
+class ChartState:
+    def __init__(self, chart_state):
+        self._chart_state = chart_state
+
+    def update(self, client_updates: List[VariableUpdate]) -> List[VariableUpdate]:
+        """Update chart state with updates from the client
+
+        :param client_updates: List of VariableUpdate values from the client
+        :return: list of VariableUpdates that should be pushed to the client
+        """
+        return self._chart_state.update(client_updates)
+
+    def get_watch_plan(self) -> WatchPlan:
+        """Get ChartState's watch plan
+
+        The watch plan specifies the signals and datasets that should be communicated
+        between ChartState and client to preserve the input Vega spec's interactivity
+        :return: WatchPlan
+        """
+        return self._chart_state.get_watch_plan()
+
+    def get_transformed_spec(self) -> dict:
+        """Get initial transformed spec
+
+        Get the initial transformed spec. This is equivalent to the spec that would
+        be produced by vf.runtime.pre_transform_spec()
+        """
+        return self._chart_state.get_transformed_spec()
+
+    def get_warnings(self) -> List[PreTransformWarning]:
+        """Get transformed spec warnings
+
+        :return: A list of warnings as dictionaries. Each warning dict has a 'type'
+           key indicating the warning type, and a 'message' key containing
+           a description of the warning. Potential warning types include:
+            'RowLimitExceeded': Some datasets in resulting Vega specification
+                have been truncated to the provided row limit
+            'BrokenInteractivity': Some interactive features may have been
+                broken in the resulting Vega specification
+            'Unsupported': No transforms in the provided Vega specification were
+                eligible for pre-transforming
+        """
+        return self._chart_state.get_warnings()
+
+    def get_server_spec(self) -> dict:
+        """Get server spec"""
+        return self._chart_state.get_server_spec()
+
+    def get_client_spec(self) -> dict:
+        """Get client spec"""
+        return self._chart_state.get_client_spec()
 
 
 class VegaFusionRuntime:
@@ -131,7 +202,6 @@ class VegaFusionRuntime:
             return self.embedded_runtime.process_request_bytes(request)
 
     def _import_or_register_inline_datasets(self, inline_datasets=None):
-        from .transformer import to_arrow_ipc_bytes, arrow_table_to_ipc_bytes
         inline_datasets = inline_datasets or dict()
         imported_inline_datasets = dict()
         for name, value in inline_datasets.items():
@@ -148,7 +218,7 @@ class VegaFusionRuntime:
                     except ValueError:
                         pass
 
-                imported_inline_datasets[name] = value
+                imported_inline_datasets[name] = DfiDatasource(value)
             elif isinstance(value, pd.DataFrame):
                 if self._connection is not None:
                     try:
@@ -158,19 +228,9 @@ class VegaFusionRuntime:
                     except ValueError:
                         pass
 
-                imported_inline_datasets[name] = to_arrow_table(value)
+                imported_inline_datasets[name] = PandasDatasource(value)
             elif hasattr(value, "__dataframe__"):
-                pi = import_pyarrow_interchange()
-                value = pi.from_dataframe(value)
-                if self._connection is not None:
-                    try:
-                        # Try registering Arrow Table if supported
-                        self._connection.register_arrow(name, value, temporary=True)
-                        continue
-                    except ValueError:
-                        pass
-
-                imported_inline_datasets[name] = value
+                imported_inline_datasets[name] = DfiDatasource(value)
             else:
                 raise ValueError(f"Unsupported DataFrame type: {type(value)}")
 
@@ -342,6 +402,36 @@ class VegaFusionRuntime:
 
             return new_spec, warnings
 
+    def new_chart_state(
+        self, spec, local_tz=None, default_input_tz=None, row_limit=None, inline_datasets=None
+    ) -> ChartState:
+        """
+        Construct new ChartState object
+
+        :param spec: A Vega specification dict or JSON string
+        :param local_tz: Name of timezone to be considered local. E.g. 'America/New_York'.
+            Defaults to the value of vf.get_local_tz(), which defaults to the system timezone
+            if one can be determined.
+        :param default_input_tz: Name of timezone (e.g. 'America/New_York') that naive datetime
+            strings should be interpreted in. Defaults to `local_tz`.
+        :param row_limit: Maximum number of dataset rows to include in the returned
+            datasets. If exceeded, datasets will be truncated to this number of rows
+            and a RowLimitExceeded warning will be included in the ChartState's warnings list
+        :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
+            Tables. Inline datasets may be referenced by the input specification using
+            the following url syntax 'vegafusion+dataset://{dataset_name}' or
+            'table://{dataset_name}'.
+        :return: ChartState
+        """
+        if self._grpc_channel:
+            raise ValueError("new_chart_state not yet supported over gRPC")
+        else:
+            local_tz = local_tz or get_local_tz()
+            inline_arrow_dataset = self._import_or_register_inline_datasets(inline_datasets)
+            return ChartState(
+                self.embedded_runtime.new_chart_state(spec, local_tz, default_input_tz, row_limit, inline_arrow_dataset)
+            )
+
     def pre_transform_datasets(
         self,
         spec,
@@ -371,7 +461,7 @@ class VegaFusionRuntime:
         :param inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
             Tables. Inline datasets may be referenced by the input specification using
             the following url syntax 'vegafusion+dataset://{dataset_name}' or
-            'table://{dataset_name}'..
+            'table://{dataset_name}'.
         :return:
             Two-element tuple:
                 0. List of pandas DataFrames corresponding to the input datasets list

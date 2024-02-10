@@ -12,7 +12,7 @@ lazy_static! {
             .collect();
 
     pub static ref ALL_DATA_FNS: HashSet<&'static str> = vec![
-        "data", "indata", "vlSelectionTest", "vlSelectionResolve", "modify"
+        "data", "indata", "vlSelectionTest", "vlSelectionIdTest", "vlSelectionResolve", "modify"
     ]
     .into_iter()
     .collect();
@@ -52,6 +52,7 @@ lazy_static! {
         "year", "quarter", "month", "day", "date", "dayofyear", "hours", "minutes", "seconds", "milliseconds",
         "utcyear", "utcquarter", "utcmonth", "utcday", "utcdate", "utcdayofyear",
         "utchours", "utcminutes", "utcseconds", "utcmilliseconds", "datetime", "utc", "time", "format", "timeFormat", "utcFormat",
+        "timeOffset",
 
         // Conversion
         "toBoolean", "toDate", "toNumber", "toString",

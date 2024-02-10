@@ -233,6 +233,8 @@ pub struct TaskGraphValueRequest {
     pub task_graph: ::core::option::Option<TaskGraph>,
     #[prost(message, repeated, tag = "2")]
     pub indices: ::prost::alloc::vec::Vec<NodeValueIndex>,
+    #[prost(message, repeated, tag = "3")]
+    pub inline_datasets: ::prost::alloc::vec::Vec<InlineDataset>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -249,6 +251,16 @@ pub struct ResponseTaskValue {
 pub struct TaskGraphValueResponse {
     #[prost(message, repeated, tag = "1")]
     pub response_values: ::prost::alloc::vec::Vec<ResponseTaskValue>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct InlineDataset {
+    /// Inline dataset name
+    #[prost(string, tag = "1")]
+    pub name: ::prost::alloc::string::String,
+    /// Serialized Arrow record batch in Arrow IPC format
+    #[prost(bytes = "vec", tag = "2")]
+    pub table: ::prost::alloc::vec::Vec<u8>,
 }
 /// ## Variable
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]

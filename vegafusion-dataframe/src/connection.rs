@@ -7,6 +7,9 @@ use std::sync::Arc;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::{Result, VegaFusionError};
 
+#[cfg(feature = "pyarrow")]
+use pyo3::PyObject;
+
 #[async_trait]
 pub trait Connection: Send + Sync + 'static {
     fn id(&self) -> String;
@@ -46,6 +49,13 @@ pub trait Connection: Send + Sync + 'static {
     async fn scan_parquet(&self, _url: &str) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported(
             "scan_parquet not supported by connection",
+        ))
+    }
+
+    #[cfg(feature = "pyarrow")]
+    async fn scan_py_datasource(&self, _datasource: PyObject) -> Result<Arc<dyn DataFrame>> {
+        Err(VegaFusionError::sql_not_supported(
+            "scan_py_datasource not supported by connection",
         ))
     }
 }

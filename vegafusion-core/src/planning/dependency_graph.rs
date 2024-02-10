@@ -6,6 +6,7 @@ use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use crate::spec::chart::{ChartSpec, ChartVisitor};
 use crate::spec::data::{DataSpec, DependencyNodeSupported};
 use crate::spec::mark::MarkSpec;
+use crate::spec::projection::ProjectionSpec;
 use crate::spec::scale::ScaleSpec;
 use crate::spec::signal::SignalSpec;
 use crate::task_graph::graph::ScopedVariable;
@@ -224,6 +225,16 @@ impl<'a> ChartVisitor for AddDependencyNodesVisitor<'a> {
         Ok(())
     }
 
+    fn visit_projection(&mut self, projection: &ProjectionSpec, scope: &[u32]) -> Result<()> {
+        // Projections create scale variables
+        let scoped_var = (Variable::new_scale(&projection.name), Vec::from(scope));
+        let node_index = self
+            .dependency_graph
+            .add_node((scoped_var.clone(), DependencyNodeSupported::Unsupported));
+        self.node_indexes.insert(scoped_var, node_index);
+        Ok(())
+    }
+
     fn visit_non_group_mark(&mut self, mark: &MarkSpec, scope: &[u32]) -> Result<()> {
         // non-group marks can serve as datasets
         let name = mark
@@ -391,8 +402,12 @@ impl<'a> ChartVisitor for AddDependencyEdgesVisitor<'a> {
             .unwrap_or_else(|| format!("unnamed_mark_{}", self.mark_index));
         self.mark_index += 1;
 
-        let Some(from) = &mark.from else { return Ok(()) };
-        let Some(source) = &from.data else { return Ok(()) };
+        let Some(from) = &mark.from else {
+            return Ok(());
+        };
+        let Some(source) = &from.data else {
+            return Ok(());
+        };
 
         // Scoped var for this facet dataset
         let scoped_var = (Variable::new_data(&name), Vec::from(scope));

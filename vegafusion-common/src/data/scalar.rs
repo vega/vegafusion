@@ -26,6 +26,7 @@ pub trait ScalarValueHelpers {
     fn to_f64(&self) -> Result<f64>;
     fn to_f64x2(&self) -> Result<[f64; 2]>;
     fn to_scalar_string(&self) -> Result<String>;
+    fn negate(&self) -> Self;
 }
 
 impl ScalarValueHelpers for ScalarValue {
@@ -196,6 +197,22 @@ impl ScalarValueHelpers for ScalarValue {
                 )))
             }
         })
+    }
+
+    fn negate(&self) -> Self {
+        match self {
+            ScalarValue::Float32(Some(e)) => ScalarValue::Float32(Some(-*e)),
+            ScalarValue::Float64(Some(e)) => ScalarValue::Float64(Some(-*e)),
+            ScalarValue::Int8(Some(e)) => ScalarValue::Int8(Some(-*e)),
+            ScalarValue::Int16(Some(e)) => ScalarValue::Int16(Some(-*e)),
+            ScalarValue::Int32(Some(e)) => ScalarValue::Int32(Some(-*e)),
+            ScalarValue::Int64(Some(e)) => ScalarValue::Int64(Some(-*e)),
+            ScalarValue::UInt8(Some(e)) => ScalarValue::Int16(Some(-(*e as i16))),
+            ScalarValue::UInt16(Some(e)) => ScalarValue::Int32(Some(-(*e as i32))),
+            ScalarValue::UInt32(Some(e)) => ScalarValue::Int64(Some(-(*e as i64))),
+            ScalarValue::UInt64(Some(e)) => ScalarValue::Int64(Some(-(*e as i64))),
+            _ => self.clone(),
+        }
     }
 }
 

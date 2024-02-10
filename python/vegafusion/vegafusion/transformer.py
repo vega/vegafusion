@@ -1,10 +1,3 @@
-# VegaFusion
-# Copyright (C) 2022, Jon Mease
-#
-# This program is distributed under multiple licenses.
-# Please consult the license documentation provided alongside
-# this program the details of the active license.
-
 import io
 import os
 import pathlib
@@ -17,6 +10,8 @@ import pyarrow as pa
 from weakref import WeakValueDictionary
 
 DATASET_PREFIXES = ("vegafusion+dataset://", "table://")
+BATCH_SIZE = 8096
+
 
 def to_arrow_table(data):
     """
@@ -71,6 +66,10 @@ def to_arrow_table(data):
     preserve_index = bool([name for name in getattr(data.index, "names", []) if name])
     table = pa.Table.from_pandas(data, preserve_index=preserve_index)
 
+    # Split into batches of desired size
+    batches = table.to_batches(BATCH_SIZE)
+    table = pa.Table.from_batches(batches, table.schema)
+
     return table
 
 
@@ -102,14 +101,12 @@ def arrow_table_to_ipc_bytes(table, stream=False):
     # Write it in memory first so we can hash the contents before touching disk.
     bytes_buffer = io.BytesIO()
 
-    max_chunksize=8096
-
     if stream:
         with pa.ipc.new_stream(bytes_buffer, table.schema) as f:
-            f.write_table(table, max_chunksize=max_chunksize)
+            f.write_table(table, max_chunksize=BATCH_SIZE)
     else:
         with pa.ipc.new_file(bytes_buffer, table.schema) as f:
-            f.write_table(table, max_chunksize=max_chunksize)
+            f.write_table(table, max_chunksize=BATCH_SIZE)
 
     return bytes_buffer.getvalue()
 

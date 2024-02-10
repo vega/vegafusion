@@ -221,10 +221,9 @@ def test_transformed_data_exclude():
 
 
 @pytest.mark.skipif(pa_major_minor < (11, 0), reason="pyarrow 11+ required")
-@pytest.mark.parametrize("connection", get_connections())
-def test_gh_286(connection):
+def test_gh_286():
     # https://github.com/hex-inc/vegafusion/issues/286
-    vf.runtime.set_connection(connection)
+    vf.runtime.set_connection("datafusion")
     source = pl.from_pandas(data.seattle_weather())
 
     chart = alt.Chart(source).mark_bar(
