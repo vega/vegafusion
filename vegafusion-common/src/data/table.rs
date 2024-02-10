@@ -234,7 +234,7 @@ impl VegaFusionTable {
                         "__dummy",
                         ScalarValue::try_from(&DataType::Float64).unwrap(),
                     )]);
-                    let array = empty_scalar.to_array_of_size(values.len());
+                    let array = empty_scalar.to_array_of_size(values.len())?;
                     let struct_array = array.as_any().downcast_ref::<StructArray>().unwrap();
                     let record_batch = RecordBatch::from(struct_array);
                     Self::try_new(record_batch.schema(), vec![record_batch])
