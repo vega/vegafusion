@@ -63,6 +63,7 @@ mod test_compile {
     use vegafusion_core::expression::parser::parse;
 
     use crate::task_graph::timezone::RuntimeTzConfig;
+    use datafusion_common::utils::array_into_list_array;
     use datafusion_common::{DFSchema, ScalarValue};
     use datafusion_expr::expr::{BinaryExpr, Case, TryCast};
     use datafusion_expr::{concat, expr, lit, BuiltinScalarFunction, Expr, Operator};
@@ -70,10 +71,9 @@ mod test_compile {
     use std::convert::TryFrom;
     use std::ops::Deref;
     use std::sync::Arc;
-    use datafusion_common::utils::array_into_list_array;
     use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
     use vegafusion_common::column::flat_col;
-    use vegafusion_core::arrow::array::{Float64Array, new_empty_array};
+    use vegafusion_core::arrow::array::{new_empty_array, Float64Array};
     use vegafusion_core::arrow::datatypes::Fields;
     use vegafusion_datafusion_udfs::udfs::array::constructor::ARRAY_CONSTRUCTOR_UDF;
     use vegafusion_datafusion_udfs::udfs::object::make_object_constructor_udf;
@@ -401,8 +401,9 @@ mod test_compile {
         // Check evaluated value
         let result_value = result_expr.eval_to_scalar().unwrap();
 
-
-        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(Arc::new(Float64Array::from(vec![1.0, 2.0, 3.0])))));
+        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(Arc::new(
+            Float64Array::from(vec![1.0, 2.0, 3.0]),
+        ))));
 
         println!("value: {result_value:?}");
         assert_eq!(result_value, expected_value);
@@ -423,8 +424,9 @@ mod test_compile {
         // Check evaluated value. Empty array is given Float64 data type
         let result_value = result_expr.eval_to_scalar().unwrap();
 
-
-        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(new_empty_array(&DataType::Float64))));
+        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(new_empty_array(
+            &DataType::Float64,
+        ))));
 
         println!("value: {result_value:?}");
         assert_eq!(result_value, expected_value);
@@ -457,13 +459,20 @@ mod test_compile {
 
         // Check evaluated value
         let result_value = result_expr.eval_to_scalar().unwrap();
-        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(ScalarValue::iter_to_array(
-            vec![
-                ScalarValue::List(Arc::new(array_into_list_array(Arc::new(Float64Array::from(vec![1.0, 2.0]))))),
-                ScalarValue::List(Arc::new(array_into_list_array(Arc::new(Float64Array::from(vec![3.0, 4.0]))))),
-                ScalarValue::List(Arc::new(array_into_list_array(Arc::new(Float64Array::from(vec![5.0, 6.0]))))),
-            ]
-        ).unwrap())));
+        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(
+            ScalarValue::iter_to_array(vec![
+                ScalarValue::List(Arc::new(array_into_list_array(Arc::new(
+                    Float64Array::from(vec![1.0, 2.0]),
+                )))),
+                ScalarValue::List(Arc::new(array_into_list_array(Arc::new(
+                    Float64Array::from(vec![3.0, 4.0]),
+                )))),
+                ScalarValue::List(Arc::new(array_into_list_array(Arc::new(
+                    Float64Array::from(vec![5.0, 6.0]),
+                )))),
+            ])
+            .unwrap(),
+        )));
 
         println!("value: {result_value:?}");
         assert_eq!(result_value, expected_value);

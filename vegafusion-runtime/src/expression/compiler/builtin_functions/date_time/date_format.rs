@@ -49,7 +49,9 @@ pub fn time_format_fn(
         // General case
         if format_tz_str.to_ascii_lowercase() != "utc" {
             timestamptz_expr = Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::UDF(Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone())),
+                func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                    (*FROM_UTC_TIMESTAMP_UDF).clone(),
+                )),
                 args: vec![timestamptz_expr, lit(format_tz_str)],
             })
         }
@@ -108,7 +110,9 @@ fn to_timestamptz_expr(arg: &Expr, schema: &DFSchema, default_input_tz: &str) ->
         DataType::Null => arg.clone(),
         dtype if is_numeric_datatype(&dtype) || matches!(dtype, DataType::Boolean) => {
             Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::UDF(Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone())),
+                func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                    (*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone(),
+                )),
                 args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?],
             })
         }

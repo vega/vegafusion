@@ -74,7 +74,10 @@ pub fn compile_member(
         DataType::Struct(ref fields) => {
             if fields.iter().any(|f| f.name() == &property_string) {
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(make_get_object_member_udf(&dtype, &property_string)?)),
+                    func_def: ScalarFunctionDefinition::UDF(Arc::new(make_get_object_member_udf(
+                        &dtype,
+                        &property_string,
+                    )?)),
                     args: vec![compiled_object],
                 })
             } else {
@@ -105,7 +108,9 @@ pub fn compile_member(
             } else if matches!(dtype, DataType::List(_) | DataType::FixedSizeList(_, _)) {
                 if let Some(index) = index {
                     Expr::ScalarFunction(expr::ScalarFunction {
-                        func_def: ScalarFunctionDefinition::UDF(Arc::new(make_get_element_udf(index as i32))),
+                        func_def: ScalarFunctionDefinition::UDF(Arc::new(make_get_element_udf(
+                            index as i32,
+                        ))),
                         args: vec![compiled_object],
                     })
                 } else {

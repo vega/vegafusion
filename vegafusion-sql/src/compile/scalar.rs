@@ -5,13 +5,17 @@ use arrow::array::Array;
 use arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
-use datafusion_expr::{expr, lit, ColumnarValue, Expr, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature, Volatility, ScalarFunctionDefinition};
+use datafusion_expr::{
+    expr, lit, ColumnarValue, Expr, ReturnTypeFunction, ScalarFunctionDefinition,
+    ScalarFunctionImplementation, ScalarUDF, Signature, Volatility,
+};
 use sqlparser::ast::{
     Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr,
     Ident, ObjectName as SqlObjectName, Value as SqlValue,
 };
 use std::ops::Add;
 use std::sync::Arc;
+use vegafusion_common::data::scalar::ArrayRefHelpers;
 use vegafusion_common::error::{Result, VegaFusionError};
 
 pub trait ToSqlScalar {
@@ -150,7 +154,8 @@ impl ToSqlScalar for ScalarValue {
 
                 let args = (0..array.len())
                     .map(|i| {
-                        let sql_expr = ScalarValue::try_from_array(array, i)?.to_sql(dialect)?;
+                        let v = array.value(0).to_scalar_vec()?;
+                        let sql_expr = v[i].to_sql(dialect)?;
                         Ok(SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(sql_expr)))
                     })
                     .collect::<Result<Vec<_>>>()?;

@@ -6,7 +6,7 @@ use crate::expression::compiler::builtin_functions::date_time::datetime::{
 use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_valid_fn;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use datafusion_expr::{expr, BuiltinScalarFunction, Expr, ScalarUDF, ScalarFunctionDefinition};
+use datafusion_expr::{expr, BuiltinScalarFunction, Expr, ScalarFunctionDefinition, ScalarUDF};
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;

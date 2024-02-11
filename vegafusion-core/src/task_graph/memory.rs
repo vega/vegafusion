@@ -1,3 +1,4 @@
+use crate::arrow::array::ListArray;
 use datafusion_common::ScalarValue;
 use std::mem::{size_of, size_of_val};
 use vegafusion_common::arrow::array::ArrayRef;
@@ -47,7 +48,7 @@ pub fn inner_size_of_scalar(value: &ScalarValue) -> usize {
         ScalarValue::LargeUtf8(Some(s)) => size_of_val(s.as_bytes()) + size_of::<String>(),
         ScalarValue::Binary(Some(b)) => size_of_val(b.as_slice()) + size_of::<Vec<u8>>(),
         ScalarValue::LargeBinary(Some(b)) => size_of_val(b.as_slice()) + size_of::<Vec<u8>>(),
-        ScalarValue::List(array) => size_of::<Vec<ScalarValue>>() + size_of_array_ref(array),
+        ScalarValue::List(array) => size_of::<Vec<ScalarValue>>() + size_of_list_array(array),
         ScalarValue::Struct(Some(values), fields) => {
             let values_bytes: usize = size_of::<Vec<ScalarValue>>()
                 + values
@@ -65,6 +66,13 @@ pub fn inner_size_of_scalar(value: &ScalarValue) -> usize {
             0
         }
     }
+}
+
+pub fn size_of_list_array(array: &ListArray) -> usize {
+    array
+        .iter()
+        .map(|el| el.map(|el| size_of_array_ref(&el)).unwrap_or(0))
+        .sum()
 }
 
 pub fn size_of_array_ref(array: &ArrayRef) -> usize {

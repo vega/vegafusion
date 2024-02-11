@@ -5,8 +5,8 @@ use arrow::record_batch::RecordBatch;
 use async_trait::async_trait;
 use datafusion_common::{DFSchema, ScalarValue};
 use datafusion_expr::{
-    expr, window_function, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound,
-    WindowFrameUnits,
+    expr, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound, WindowFrameUnits,
+    WindowFunctionDefinition,
 };
 use std::any::Any;
 use std::fmt::{Display, Formatter};
@@ -116,17 +116,13 @@ pub trait DataFrame: Send + Sync + 'static {
         } else {
             let selections = vec![
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::RowNumber,
                     ),
                     args: vec![],
                     partition_by: vec![],
                     order_by: vec![],
-                    window_frame: WindowFrame {
-                        units: WindowFrameUnits::Rows,
-                        start_bound: WindowFrameBound::Preceding(ScalarValue::Null),
-                        end_bound: WindowFrameBound::CurrentRow,
-                    },
+                    window_frame: WindowFrame::new(Some(true)),
                 })
                 .alias(index_name),
                 Expr::Wildcard { qualifier: None },

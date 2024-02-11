@@ -63,7 +63,7 @@ pub fn vl_selection_resolve_fn(
 
     // Extract vector of rows for selection dataset
     let rows = if let ScalarValue::List(array) = table.to_scalar_value()? {
-        array.list_el_to_scalar_vec()?
+        array.value(0).to_scalar_vec()?
     } else {
         unreachable!()
     };
@@ -79,16 +79,16 @@ pub fn vl_selection_resolve_fn(
             let value = match field.typ {
                 SelectionType::Enum => {
                     if let ScalarValue::List(array) = value {
-                        array.list_el_to_scalar_vec()?
+                        array.value(0).to_scalar_vec()?
                     } else {
                         vec![value.clone()]
                     }
                 }
                 _ => {
                     match &value {
-                        ScalarValue::List(array) if array.list_el_len()? == 2 => {
+                        ScalarValue::List(array) if array.value(0).len() == 2 => {
                             // Don't assume elements are in ascending order
-                            let elements = array.list_el_to_scalar_vec()?;
+                            let elements = array.value(0).to_scalar_vec()?;
                             let first = elements[0].to_f64()?;
                             let second = elements[1].to_f64()?;
 

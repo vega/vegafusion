@@ -4,7 +4,7 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion_expr::{
     expr, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound, WindowFrameUnits,
-    WindowFunction,
+    WindowFunctionDefinition,
 };
 use std::sync::Arc;
 use vegafusion_common::column::flat_col;
@@ -24,7 +24,7 @@ impl TransformTrait for Identifier {
     ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
         // Add row number column with the desired name, sorted by the input order column
         let row_number_expr = Expr::WindowFunction(expr::WindowFunction {
-            fun: WindowFunction::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
+            fun: WindowFunctionDefinition::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
             args: Vec::new(),
             partition_by: Vec::new(),
             order_by: vec![Expr::Sort(expr::Sort {
@@ -32,11 +32,7 @@ impl TransformTrait for Identifier {
                 asc: true,
                 nulls_first: false,
             })],
-            window_frame: WindowFrame {
-                units: WindowFrameUnits::Rows,
-                start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
-                end_bound: WindowFrameBound::CurrentRow,
-            },
+            window_frame: WindowFrame::new(Some(true)),
         })
         .alias(&self.r#as);
 

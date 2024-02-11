@@ -11,7 +11,10 @@ use sqlparser::ast::{
 };
 
 use datafusion_expr::expr::{BinaryExpr, Case, Cast, Sort};
-use datafusion_expr::{expr, lit, Between, BuiltInWindowFunction, Expr, ExprSchemable, Operator, WindowFrameBound, WindowFrameUnits, WindowFunction};
+use datafusion_expr::{
+    expr, lit, Between, BuiltInWindowFunction, Expr, ExprSchemable, Operator, WindowFrameBound,
+    WindowFrameUnits, WindowFunctionDefinition,
+};
 
 use crate::compile::function_arg::ToSqlFunctionArg;
 use crate::compile::order::ToSqlOrderByExpr;
@@ -274,13 +277,17 @@ impl ToSqlExpr for Expr {
                 translate_scalar_function(&fun.name(), &fun.args, dialect, schema)
             }
             Expr::AggregateFunction(expr::AggregateFunction {
-                                        func_def,
-                                        args,
-                                        distinct,
-                                        ..
-            }) => {
-                translate_aggregate_function(func_def.name(), args.as_slice(), *distinct, dialect, schema)
-            }
+                func_def,
+                args,
+                distinct,
+                ..
+            }) => translate_aggregate_function(
+                func_def.name(),
+                args.as_slice(),
+                *distinct,
+                dialect,
+                schema,
+            ),
             Expr::WindowFunction(expr::WindowFunction {
                 fun,
                 args,
@@ -290,10 +297,10 @@ impl ToSqlExpr for Expr {
             }) => {
                 // Extract function name
                 let (fun_name, supports_frame) = match fun {
-                    WindowFunction::AggregateFunction(agg) => {
+                    WindowFunctionDefinition::AggregateFunction(agg) => {
                         (agg.name().to_string().to_ascii_lowercase(), true)
                     }
-                    WindowFunction::BuiltInWindowFunction(win_fn) => {
+                    WindowFunctionDefinition::BuiltInWindowFunction(win_fn) => {
                         let is_navigation_function = matches!(
                             win_fn,
                             BuiltInWindowFunction::FirstValue
@@ -312,8 +319,12 @@ impl ToSqlExpr for Expr {
 
                         (win_fn.to_string().to_ascii_lowercase(), supports_frame)
                     }
-                    WindowFunction::AggregateUDF(udf) => (udf.name().to_ascii_lowercase(), true),
-                    WindowFunction::WindowUDF(udf) => (udf.name().to_ascii_lowercase(), true),
+                    WindowFunctionDefinition::AggregateUDF(udf) => {
+                        (udf.name().to_ascii_lowercase(), true)
+                    }
+                    WindowFunctionDefinition::WindowUDF(udf) => {
+                        (udf.name().to_ascii_lowercase(), true)
+                    }
                 };
 
                 // Handle unordered row_number
@@ -604,7 +615,9 @@ mod tests {
     use arrow::datatypes::DataType;
     use datafusion_common::DFSchema;
     use datafusion_expr::expr::Cast;
-    use datafusion_expr::{expr, lit, Between, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{
+        expr, lit, Between, BuiltinScalarFunction, Expr, ScalarFunctionDefinition,
+    };
     use vegafusion_common::column::flat_col;
 
     fn schema() -> DFSchema {

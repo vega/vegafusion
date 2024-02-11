@@ -49,7 +49,9 @@ pub fn to_date_transform(
         }))
     } else if is_numeric_datatype(&dtype) {
         Ok(Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF(Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone())),
+            func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                (*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone(),
+            )),
             args: vec![cast_to(arg, &DataType::Int64, schema)?],
         }))
     } else {
@@ -72,7 +74,9 @@ pub fn datetime_transform_fn(
         if is_string_datatype(&dtype) {
             let default_input_tz_str = tz_config.default_input_tz.to_string();
             arg = Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::UDF(Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone())),
+                func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                    (*STR_TO_UTC_TIMESTAMP_UDF).clone(),
+                )),
                 args: vec![arg, lit(default_input_tz_str)],
             })
         }

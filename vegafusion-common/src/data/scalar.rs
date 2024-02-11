@@ -136,12 +136,16 @@ impl ScalarValueHelpers for ScalarValue {
             ScalarValue::IntervalDayTime(Some(_v)) => {
                 unimplemented!()
             }
-            ScalarValue::List(a) => Value::Array(
-                a.list_el_to_scalar_vec()?
-                    .iter()
-                    .map(|s| s.to_json())
-                    .collect::<Result<Vec<_>>>()?,
-            ),
+            ScalarValue::List(a) => {
+                let values = a
+                    .value(0)
+                    .to_scalar_vec()?
+                    .into_iter()
+                    .map(|v| v.to_json())
+                    .collect::<Result<Vec<_>>>()?;
+
+                Value::Array(values)
+            }
             ScalarValue::Struct(Some(v), fields) => {
                 let mut pairs: Map<String, Value> = Default::default();
                 for (val, field) in v.iter().zip(fields.deref()) {
@@ -151,7 +155,6 @@ impl ScalarValueHelpers for ScalarValue {
             }
             _ => Value::Null,
         };
-
         Ok(res)
     }
 
@@ -177,7 +180,7 @@ impl ScalarValueHelpers for ScalarValue {
 
     fn to_f64x2(&self) -> Result<[f64; 2]> {
         if let ScalarValue::List(array) = self {
-            let elements = array.list_el_to_scalar_vec()?;
+            let elements = array.value(0).to_scalar_vec()?;
             if let [v0, v1] = elements.as_slice() {
                 return Ok([v0.to_f64()?, v1.to_f64()?]);
             }

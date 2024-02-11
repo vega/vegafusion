@@ -20,7 +20,7 @@ pub(crate) struct PercentileContAccumulator {
 impl Accumulator for PercentileContAccumulator {
     fn state(&self) -> Result<Vec<ScalarValue>, DataFusionError> {
         let state = ScalarValue::new_list(self.all_values.as_slice(), &self.data_type);
-        Ok(vec![ScalarValue::List(Arc::new(state))])
+        Ok(vec![ScalarValue::List(state)])
     }
 
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<(), DataFusionError> {
@@ -44,7 +44,7 @@ impl Accumulator for PercentileContAccumulator {
         for index in 0..array.len() {
             match ScalarValue::try_from_array(array, index)? {
                 ScalarValue::List(array) => {
-                    for scalar in array.list_el_to_scalar_vec()? {
+                    for scalar in array.value(0).to_scalar_vec()? {
                         if !scalar_is_non_finite(&scalar) {
                             self.all_values.push(scalar);
                         }

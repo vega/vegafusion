@@ -130,7 +130,7 @@ fn timeunit_date_part_tz(
     // Date
     if units_set.contains(&TimeUnitUnit::Date) {
         make_timestamptz_args[2] = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF( Arc::new(DATE_PART_TZ_UDF.clone())),
+            func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_PART_TZ_UDF.clone())),
             args: vec![lit("day"), field_col.clone(), lit(&tz_str)],
         });
 
@@ -140,7 +140,7 @@ fn timeunit_date_part_tz(
     // Hour
     if units_set.contains(&TimeUnitUnit::Hours) {
         make_timestamptz_args[3] = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF( Arc::new(DATE_PART_TZ_UDF.clone())),
+            func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_PART_TZ_UDF.clone())),
             args: vec![lit("hour"), field_col.clone(), lit(&tz_str)],
         });
 
@@ -150,7 +150,7 @@ fn timeunit_date_part_tz(
     // Minute
     if units_set.contains(&TimeUnitUnit::Minutes) {
         make_timestamptz_args[4] = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF( Arc::new(DATE_PART_TZ_UDF.clone())),
+            func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_PART_TZ_UDF.clone())),
             args: vec![lit("minute"), field_col.clone(), lit(&tz_str)],
         });
 
@@ -160,7 +160,7 @@ fn timeunit_date_part_tz(
     // Second
     if units_set.contains(&TimeUnitUnit::Seconds) {
         make_timestamptz_args[5] = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF( Arc::new(DATE_PART_TZ_UDF.clone())),
+            func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_PART_TZ_UDF.clone())),
             args: vec![lit("second"), field_col, lit(&tz_str)],
         });
 
@@ -169,7 +169,7 @@ fn timeunit_date_part_tz(
 
     // Construct expression to make timestamp from components
     let start_expr = Expr::ScalarFunction(expr::ScalarFunction {
-        func_def: ScalarFunctionDefinition::UDF( Arc::new((*MAKE_UTC_TIMESTAMP).clone())),
+        func_def: ScalarFunctionDefinition::UDF(Arc::new((*MAKE_UTC_TIMESTAMP).clone())),
         args: make_timestamptz_args,
     });
 
@@ -186,11 +186,13 @@ fn to_timestamp_col(field: &str, schema: &DFSchema, default_input_tz: &String) -
             schema,
         )?,
         DataType::Utf8 => Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF( Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone())),
+            func_def: ScalarFunctionDefinition::UDF(Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone())),
             args: vec![field_col, lit(default_input_tz)],
         }),
         dtype if is_numeric_datatype(&dtype) => Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF( Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone())),
+            func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                (*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone(),
+            )),
             args: vec![cast_to(field_col, &DataType::Int64, schema)?],
         }),
         dtype => {
@@ -216,7 +218,7 @@ fn timeunit_weekday(
     // Use DATE_PART_TZ to extract the weekday
     // where Sunday is 0 and Saturday is 6
     let weekday0 = Expr::ScalarFunction(expr::ScalarFunction {
-        func_def: ScalarFunctionDefinition::UDF( Arc::new(DATE_PART_TZ_UDF.clone())),
+        func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_PART_TZ_UDF.clone())),
         args: vec![lit("dow"), field_col, lit(tz_str)],
     });
 
@@ -238,7 +240,7 @@ fn timeunit_weekday(
 
     // Construct expression to make timestamp from components
     let start_expr = Expr::ScalarFunction(expr::ScalarFunction {
-        func_def: ScalarFunctionDefinition::UDF( Arc::new((*MAKE_UTC_TIMESTAMP).clone())),
+        func_def: ScalarFunctionDefinition::UDF(Arc::new((*MAKE_UTC_TIMESTAMP).clone())),
         args: make_timestamptz_args,
     });
 
@@ -506,7 +508,7 @@ impl TransformTrait for TimeUnit {
 
         let tz_str = local_tz.unwrap_or_else(|| "UTC".to_string());
         let timeunit_end_expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF( Arc::new((*DATE_ADD_TZ_UDF).clone())),
+            func_def: ScalarFunctionDefinition::UDF(Arc::new((*DATE_ADD_TZ_UDF).clone())),
             args: vec![
                 lit(&interval.1),
                 lit(interval.0),

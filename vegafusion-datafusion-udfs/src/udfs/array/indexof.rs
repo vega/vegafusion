@@ -25,8 +25,8 @@ fn make_indexof_udf() -> ScalarUDF {
         // Signature ensures there is a single argument
         let (array, array_dtype) = match &args[0] {
             ColumnarValue::Scalar(ScalarValue::List(array)) => {
-                let scalar_array = array.list_el_to_scalar_vec()?;
-                (scalar_array, array.list_el_dtype()?)
+                let scalar_array = array.value(0).to_scalar_vec()?;
+                (scalar_array, array.value(0).data_type().clone())
             }
             _ => {
                 return Err(DataFusionError::Internal(
