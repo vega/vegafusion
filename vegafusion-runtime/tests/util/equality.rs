@@ -179,30 +179,31 @@ pub fn assert_scalars_almost_equals(
     index: usize,
 ) {
     match (lhs, rhs) {
-        (
-            ScalarValue::Struct(Some(lhs_vals), lhs_fields),
-            ScalarValue::Struct(Some(rhs_vals), rhs_fields),
-        ) => {
-            let lhs_map: HashMap<_, _> = lhs_fields
+        (ScalarValue::Struct(lhs_sa), ScalarValue::Struct(rhs_sa)) => {
+            let lhs_map: HashMap<_, _> = lhs_sa
+                .fields()
                 .iter()
-                .zip(lhs_vals.iter())
-                .filter_map(|(f, val)| {
-                    if DROP_COLS.contains(&f.name().as_str()) {
+                .enumerate()
+                .filter_map(|(field_ind, field)| {
+                    if DROP_COLS.contains(&field.name().as_str()) {
                         None
                     } else {
-                        Some((f.name().clone(), val.clone()))
+                        let val = ScalarValue::try_from_array(lhs_sa.column(field_ind), 0).unwrap();
+                        Some((field.name().clone(), val))
                     }
                 })
                 .collect();
 
-            let rhs_map: HashMap<_, _> = rhs_fields
+            let rhs_map: HashMap<_, _> = rhs_sa
+                .fields()
                 .iter()
-                .zip(rhs_vals.iter())
-                .filter_map(|(f, val)| {
-                    if DROP_COLS.contains(&f.name().as_str()) {
+                .enumerate()
+                .filter_map(|(field_ind, field)| {
+                    if DROP_COLS.contains(&field.name().as_str()) {
                         None
                     } else {
-                        Some((f.name().clone(), val.clone()))
+                        let val = ScalarValue::try_from_array(rhs_sa.column(field_ind), 0).unwrap();
+                        Some((field.name().clone(), val))
                     }
                 })
                 .collect();

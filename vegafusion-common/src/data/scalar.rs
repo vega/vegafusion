@@ -151,7 +151,10 @@ impl ScalarValueHelpers for ScalarValue {
                 let mut pairs: Map<String, Value> = Default::default();
                 for (col_ind, field) in sa.fields().deref().iter().enumerate() {
                     let column = sa.column(col_ind);
-                    pairs.insert(field.name().clone(), ScalarValue::try_from_array(column, 0)?.to_json()?);
+                    pairs.insert(
+                        field.name().clone(),
+                        ScalarValue::try_from_array(column, 0)?.to_json()?,
+                    );
                 }
                 Value::Object(pairs)
             }

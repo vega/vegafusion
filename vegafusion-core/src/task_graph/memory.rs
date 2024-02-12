@@ -53,7 +53,11 @@ pub fn inner_size_of_scalar(value: &ScalarValue) -> usize {
             let fields = sa.fields();
             let fields_bytes: usize =
                 size_of::<Vec<DataType>>() + fields.iter().map(size_of_field).sum::<usize>();
-            let values_bytes: usize = sa.columns().iter().map(|col| col.get_array_memory_size()).sum();
+            let values_bytes: usize = sa
+                .columns()
+                .iter()
+                .map(|col| col.get_array_memory_size())
+                .sum();
             values_bytes + fields_bytes
         }
         _ => {

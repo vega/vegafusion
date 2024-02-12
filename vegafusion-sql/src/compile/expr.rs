@@ -95,18 +95,26 @@ impl ToSqlExpr for Expr {
                                 "ArrowAt cannot be converted to SQL".to_string(),
                             ))
                         }
-                        Operator::LikeMatch => return Err(VegaFusionError::internal(
-                            "LikeMatch cannot be converted to SQL".to_string(),
-                        )),
-                        Operator::ILikeMatch => return Err(VegaFusionError::internal(
-                            "ILikeMatch cannot be converted to SQL".to_string(),
-                        )),
-                        Operator::NotLikeMatch => return Err(VegaFusionError::internal(
-                            "NotLikeMatch cannot be converted to SQL".to_string(),
-                        )),
-                        Operator::NotILikeMatch => return Err(VegaFusionError::internal(
-                            "NotILikeMatch cannot be converted to SQL".to_string(),
-                        ))
+                        Operator::LikeMatch => {
+                            return Err(VegaFusionError::internal(
+                                "LikeMatch cannot be converted to SQL".to_string(),
+                            ))
+                        }
+                        Operator::ILikeMatch => {
+                            return Err(VegaFusionError::internal(
+                                "ILikeMatch cannot be converted to SQL".to_string(),
+                            ))
+                        }
+                        Operator::NotLikeMatch => {
+                            return Err(VegaFusionError::internal(
+                                "NotLikeMatch cannot be converted to SQL".to_string(),
+                            ))
+                        }
+                        Operator::NotILikeMatch => {
+                            return Err(VegaFusionError::internal(
+                                "NotILikeMatch cannot be converted to SQL".to_string(),
+                            ))
+                        }
                     };
                     Ok(SqlExpr::Nested(Box::new(SqlExpr::BinaryOp {
                         left: Box::new(left.to_sql(dialect, schema)?),
@@ -288,7 +296,7 @@ impl ToSqlExpr for Expr {
             Expr::ScalarFunction(fun) => {
                 let fun_name = match fun.name().to_ascii_lowercase().as_str() {
                     "power" => "pow".to_string(),
-                    fun_name => fun_name.to_string()
+                    fun_name => fun_name.to_string(),
                 };
                 translate_scalar_function(&fun_name, &fun.args, dialect, schema)
             }

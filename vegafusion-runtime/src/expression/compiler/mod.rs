@@ -66,7 +66,9 @@ mod test_compile {
     use datafusion_common::utils::array_into_list_array;
     use datafusion_common::{DFSchema, ScalarValue};
     use datafusion_expr::expr::{BinaryExpr, Case, TryCast};
-    use datafusion_expr::{concat, expr, lit, BuiltinScalarFunction, Expr, Operator, ScalarFunctionDefinition};
+    use datafusion_expr::{
+        concat, expr, lit, BuiltinScalarFunction, Expr, Operator, ScalarFunctionDefinition,
+    };
     use std::collections::HashMap;
     use std::convert::TryFrom;
     use std::ops::Deref;
@@ -392,7 +394,9 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
         let expected_expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF(Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone())),
+            func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                ARRAY_CONSTRUCTOR_UDF.deref().clone(),
+            )),
             args: vec![lit(1.0), lit(2.0), lit(3.0)],
         });
         println!("expr: {result_expr:?}");
@@ -415,7 +419,9 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
         let expected_expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF(Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone())),
+            func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                ARRAY_CONSTRUCTOR_UDF.deref().clone(),
+            )),
             args: vec![],
         });
         println!("expr: {result_expr:?}");
@@ -438,18 +444,26 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
         let expected_expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF(Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone())),
+            func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                ARRAY_CONSTRUCTOR_UDF.deref().clone(),
+            )),
             args: vec![
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone())),
+                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                        ARRAY_CONSTRUCTOR_UDF.deref().clone(),
+                    )),
                     args: vec![lit(1.0), lit(2.0)],
                 }),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone())),
+                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                        ARRAY_CONSTRUCTOR_UDF.deref().clone(),
+                    )),
                     args: vec![lit(3.0), lit(4.0)],
                 }),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone())),
+                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                        ARRAY_CONSTRUCTOR_UDF.deref().clone(),
+                    )),
                     args: vec![lit(5.0), lit(6.0)],
                 }),
             ],
