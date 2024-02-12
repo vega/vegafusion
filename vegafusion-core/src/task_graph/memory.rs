@@ -49,16 +49,11 @@ pub fn inner_size_of_scalar(value: &ScalarValue) -> usize {
         ScalarValue::Binary(Some(b)) => size_of_val(b.as_slice()) + size_of::<Vec<u8>>(),
         ScalarValue::LargeBinary(Some(b)) => size_of_val(b.as_slice()) + size_of::<Vec<u8>>(),
         ScalarValue::List(array) => size_of::<Vec<ScalarValue>>() + size_of_list_array(array),
-        ScalarValue::Struct(Some(values), fields) => {
-            let values_bytes: usize = size_of::<Vec<ScalarValue>>()
-                + values
-                    .iter()
-                    .map(|v| size_of::<ScalarValue>() + inner_size_of_scalar(v))
-                    .sum::<usize>();
-
+        ScalarValue::Struct(sa) => {
+            let fields = sa.fields();
             let fields_bytes: usize =
                 size_of::<Vec<DataType>>() + fields.iter().map(size_of_field).sum::<usize>();
-
+            let values_bytes: usize = sa.columns().iter().map(|col| col.get_array_memory_size()).sum();
             values_bytes + fields_bytes
         }
         _ => {

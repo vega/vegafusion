@@ -212,7 +212,7 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::IntervalMonthDayNano(_) => Err(VegaFusionError::internal(
                 "IntervalMonthDayNano cannot be converted to SQL",
             )),
-            ScalarValue::Struct(_, _) => Err(VegaFusionError::internal(
+            ScalarValue::Struct(_) => Err(VegaFusionError::internal(
                 "Struct cannot be converted to SQL",
             )),
             ScalarValue::Dictionary(_, _) => Err(VegaFusionError::internal(

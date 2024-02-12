@@ -48,7 +48,6 @@ use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTA
 use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_epoch::UTC_TIMESTAMP_TO_EPOCH_MS;
 use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_str::UTC_TIMESTAMP_TO_STR_UDF;
 use vegafusion_datafusion_udfs::udfs::math::isfinite::ISFINITE_UDF;
-use vegafusion_datafusion_udfs::udfs::math::isnan::ISNAN_UDF;
 
 #[cfg(feature = "pyarrow")]
 use {crate::connection::datafusion_py_datasource::PyDatasource, pyo3::PyObject};
@@ -494,9 +493,6 @@ pub fn make_datafusion_context() -> SessionContext {
     ]);
 
     let ctx = SessionContext::new_with_state(session_state);
-
-    // isNan
-    ctx.register_udf((*ISNAN_UDF).clone());
 
     // isFinite
     ctx.register_udf((*ISFINITE_UDF).clone());

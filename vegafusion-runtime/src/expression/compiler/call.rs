@@ -22,7 +22,6 @@ use vegafusion_core::proto::gen::expression::{
 use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
 use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
 use vegafusion_datafusion_udfs::udfs::array::span::SPAN_UDF;
-use vegafusion_datafusion_udfs::udfs::math::isnan::ISNAN_UDF;
 
 use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
@@ -236,9 +235,9 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
 
     callables.insert(
         "isNaN".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: ISNAN_UDF.deref().clone(),
-            cast: None,
+        VegaFusionCallable::BuiltinScalarFunction {
+            function: BuiltinScalarFunction::Isnan,
+            cast: Some(DataType::Float64),
         },
     );
 

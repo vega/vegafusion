@@ -310,7 +310,8 @@ impl TryFrom<ScalarValue> for FieldSpec {
 
     fn try_from(value: ScalarValue) -> Result<Self> {
         match value {
-            ScalarValue::Struct(Some(values), fields) => {
+            ScalarValue::Struct(sa) => {
+                let fields = sa.fields();
                 let field_names: HashMap<_, _> = fields
                     .iter()
                     .enumerate()
@@ -322,8 +323,10 @@ impl TryFrom<ScalarValue> for FieldSpec {
                     .get("field")
                     .with_context(|| "Missing required property 'field'".to_string())?;
 
-                let field = match values.get(*field_index) {
-                    Some(ScalarValue::Utf8(Some(field))) => field.clone(),
+                let field_value = ScalarValue::try_from_array(sa.column(*field_index), 0)?;
+
+                let field = match field_value {
+                    ScalarValue::Utf8(Some(field)) => field.clone(),
                     _ => {
                         return Err(VegaFusionError::internal(
                             "Expected field to be a string".to_string(),
@@ -335,7 +338,8 @@ impl TryFrom<ScalarValue> for FieldSpec {
                 let typ_index = field_names
                     .get("type")
                     .with_context(|| "Missing required property 'type'".to_string())?;
-                let typ = SelectionType::try_from(values.get(*typ_index).unwrap().clone())?;
+                let type_value = ScalarValue::try_from_array(sa.column(*typ_index), 0)?;
+                let typ = SelectionType::try_from(type_value)?;
 
                 Ok(Self { field, typ })
             }
@@ -400,8 +404,9 @@ impl TryFrom<ScalarValue> for SelectionRow {
 
     fn try_from(value: ScalarValue) -> Result<Self> {
         match value {
-            ScalarValue::Struct(Some(struct_values), struct_fields) => {
-                let field_names: HashMap<_, _> = struct_fields
+            ScalarValue::Struct(sa) => {
+                let fields = sa.fields();
+                let field_names: HashMap<_, _> = fields
                     .iter()
                     .enumerate()
                     .map(|(ind, f)| (f.name().clone(), ind))
@@ -411,8 +416,9 @@ impl TryFrom<ScalarValue> for SelectionRow {
                 let values_index = field_names
                     .get("values")
                     .with_context(|| "Missing required property 'values'".to_string())?;
-                let values = match struct_values.get(*values_index) {
-                    Some(ScalarValue::List(array)) => array.value(0).to_scalar_vec()?,
+                let struct_value = ScalarValue::try_from_array(sa.column(*values_index), 0)?;
+                let values = match struct_value {
+                    ScalarValue::List(array) => array.value(0).to_scalar_vec()?,
                     _ => {
                         return Err(VegaFusionError::internal(
                             "Expected 'values' to be an array".to_string(),
@@ -426,8 +432,9 @@ impl TryFrom<ScalarValue> for SelectionRow {
                     .with_context(|| "Missing required property 'fields'".to_string())?;
 
                 let mut fields: Vec<FieldSpec> = Vec::new();
-                match struct_values.get(*fields_index) {
-                    Some(ScalarValue::List(array)) => {
+                let struct_field = ScalarValue::try_from_array(sa.column(*fields_index), 0)?;
+                match struct_field {
+                    ScalarValue::List(array) => {
                         for el in array.value(0).to_scalar_vec()?.iter() {
                             fields.push(FieldSpec::try_from(el.clone())?)
                         }

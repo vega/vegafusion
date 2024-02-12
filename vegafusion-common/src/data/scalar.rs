@@ -4,6 +4,7 @@ use datafusion_common::DataFusionError;
 
 use datafusion_common::utils::array_into_list_array;
 pub use datafusion_common::ScalarValue;
+use datafusion_expr::col;
 
 #[cfg(feature = "json")]
 use {
@@ -146,10 +147,11 @@ impl ScalarValueHelpers for ScalarValue {
 
                 Value::Array(values)
             }
-            ScalarValue::Struct(Some(v), fields) => {
+            ScalarValue::Struct(sa) => {
                 let mut pairs: Map<String, Value> = Default::default();
-                for (val, field) in v.iter().zip(fields.deref()) {
-                    pairs.insert(field.name().clone(), val.to_json()?);
+                for (col_ind, field) in sa.fields().deref().iter().enumerate() {
+                    let column = sa.column(col_ind);
+                    pairs.insert(field.name().clone(), ScalarValue::try_from_array(column, 0)?.to_json()?);
                 }
                 Value::Object(pairs)
             }

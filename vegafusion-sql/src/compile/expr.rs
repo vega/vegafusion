@@ -95,6 +95,18 @@ impl ToSqlExpr for Expr {
                                 "ArrowAt cannot be converted to SQL".to_string(),
                             ))
                         }
+                        Operator::LikeMatch => return Err(VegaFusionError::internal(
+                            "LikeMatch cannot be converted to SQL".to_string(),
+                        )),
+                        Operator::ILikeMatch => return Err(VegaFusionError::internal(
+                            "ILikeMatch cannot be converted to SQL".to_string(),
+                        )),
+                        Operator::NotLikeMatch => return Err(VegaFusionError::internal(
+                            "NotLikeMatch cannot be converted to SQL".to_string(),
+                        )),
+                        Operator::NotILikeMatch => return Err(VegaFusionError::internal(
+                            "NotILikeMatch cannot be converted to SQL".to_string(),
+                        ))
                     };
                     Ok(SqlExpr::Nested(Box::new(SqlExpr::BinaryOp {
                         left: Box::new(left.to_sql(dialect, schema)?),
@@ -274,7 +286,11 @@ impl ToSqlExpr for Expr {
                 Err(VegaFusionError::internal("Sort cannot be converted to SQL"))
             }
             Expr::ScalarFunction(fun) => {
-                translate_scalar_function(&fun.name(), &fun.args, dialect, schema)
+                let fun_name = match fun.name().to_ascii_lowercase().as_str() {
+                    "power" => "pow".to_string(),
+                    fun_name => fun_name.to_string()
+                };
+                translate_scalar_function(&fun_name, &fun.args, dialect, schema)
             }
             Expr::AggregateFunction(expr::AggregateFunction {
                 func_def,
@@ -282,7 +298,7 @@ impl ToSqlExpr for Expr {
                 distinct,
                 ..
             }) => translate_aggregate_function(
-                func_def.name(),
+                &func_def.name().to_ascii_lowercase(),
                 args.as_slice(),
                 *distinct,
                 dialect,
@@ -298,7 +314,7 @@ impl ToSqlExpr for Expr {
                 // Extract function name
                 let (fun_name, supports_frame) = match fun {
                     WindowFunctionDefinition::AggregateFunction(agg) => {
-                        (agg.name().to_string().to_ascii_lowercase(), true)
+                        (agg.name().to_ascii_lowercase(), true)
                     }
                     WindowFunctionDefinition::BuiltInWindowFunction(win_fn) => {
                         let is_navigation_function = matches!(
@@ -497,6 +513,9 @@ impl ToSqlExpr for Expr {
             )),
             Expr::OuterReferenceColumn(_, _) => Err(VegaFusionError::internal(
                 "OuterReferenceColumn cannot be converted to SQL",
+            )),
+            Expr::Unnest(_) => Err(VegaFusionError::internal(
+                "Unnest cannot be converted to SQL",
             )),
         }
     }
