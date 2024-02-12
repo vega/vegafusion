@@ -11,7 +11,7 @@ use datafusion_expr::expr::AggregateFunctionDefinition;
 use datafusion_expr::{
     abs, expr, is_null, lit, max, min, when, AggregateFunction, BuiltInWindowFunction,
     BuiltinScalarFunction, Expr, ExprSchemable, ScalarFunctionDefinition, WindowFrame,
-    WindowFrameBound, WindowFrameUnits, WindowFunctionDefinition,
+    WindowFunctionDefinition,
 };
 use sqlparser::ast::{
     Cte, Expr as SqlExpr, GroupByExpr, Ident, Query, Select, SelectItem, SetExpr, Statement,

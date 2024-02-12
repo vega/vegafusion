@@ -4,7 +4,6 @@ use datafusion_common::DataFusionError;
 
 use datafusion_common::utils::array_into_list_array;
 pub use datafusion_common::ScalarValue;
-use datafusion_expr::col;
 
 #[cfg(feature = "json")]
 use {

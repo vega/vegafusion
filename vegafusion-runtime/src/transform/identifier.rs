@@ -2,13 +2,9 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
 use async_trait::async_trait;
-use datafusion_expr::{
-    expr, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound, WindowFrameUnits,
-    WindowFunctionDefinition,
-};
+use datafusion_expr::{expr, BuiltInWindowFunction, Expr, WindowFrame, WindowFunctionDefinition};
 use std::sync::Arc;
 use vegafusion_common::column::flat_col;
-use vegafusion_common::data::scalar::ScalarValue;
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::error::Result;
 use vegafusion_core::proto::gen::transforms::Identifier;

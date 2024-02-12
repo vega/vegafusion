@@ -8,8 +8,7 @@ use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::{Collect, SortOrder};
 
 use async_trait::async_trait;
-use datafusion_common::scalar::ScalarValue;
-use datafusion_expr::{BuiltInWindowFunction, WindowFrame, WindowFrameBound, WindowFrameUnits};
+use datafusion_expr::{BuiltInWindowFunction, WindowFrame};
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_core::task_graph::task_value::TaskValue;

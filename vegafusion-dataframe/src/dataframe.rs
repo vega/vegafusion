@@ -4,10 +4,7 @@ use arrow::datatypes::{Schema, SchemaRef};
 use arrow::record_batch::RecordBatch;
 use async_trait::async_trait;
 use datafusion_common::{DFSchema, ScalarValue};
-use datafusion_expr::{
-    expr, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound, WindowFrameUnits,
-    WindowFunctionDefinition,
-};
+use datafusion_expr::{expr, BuiltInWindowFunction, Expr, WindowFrame, WindowFunctionDefinition};
 use std::any::Any;
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
