@@ -151,11 +151,12 @@ impl ToSqlScalar for ScalarValue {
                     value: "make_list".to_string(),
                     quote_style: None,
                 };
-
-                let args = (0..array.len())
-                    .map(|i| {
-                        let v = array.value(0).to_scalar_vec()?;
-                        let sql_expr = v[i].to_sql(dialect)?;
+                let args = array
+                    .value(0)
+                    .to_scalar_vec()?
+                    .into_iter()
+                    .map(|v| {
+                        let sql_expr = v.to_sql(dialect)?;
                         Ok(SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(sql_expr)))
                     })
                     .collect::<Result<Vec<_>>>()?;
