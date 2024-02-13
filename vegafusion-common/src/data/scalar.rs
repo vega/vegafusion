@@ -2,12 +2,12 @@ use crate::error::{Result, VegaFusionError};
 use arrow::array::{new_empty_array, Array, ArrayRef, ListArray};
 use datafusion_common::DataFusionError;
 
+use arrow::datatypes::DataType;
 use datafusion_common::utils::array_into_list_array;
 pub use datafusion_common::ScalarValue;
 
 #[cfg(feature = "json")]
 use {
-    arrow::datatypes::DataType,
     serde_json::{Map, Value},
     std::ops::Deref,
     std::sync::Arc,

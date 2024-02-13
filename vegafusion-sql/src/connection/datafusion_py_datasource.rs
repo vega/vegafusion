@@ -148,7 +148,7 @@ impl ExecutionPlan for PyDatasourceExec {
         )?))
     }
 
-    fn statistics(&self) -> Statistics {
-        Statistics::default()
+    fn statistics(&self) -> datafusion_common::Result<Statistics> {
+        Ok(Statistics::new_unknown(self.schema().as_ref()))
     }
 }
