@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     pub fn test_select_wildcard() {
-        let expr = Expr::Wildcard;
+        let expr = Expr::Wildcard { qualifier: None };
         let sql_expr = expr
             .to_sql_select(&Dialect::datafusion(), &schema())
             .unwrap();
