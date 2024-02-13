@@ -1,0 +1,25 @@
+{
+  "server_to_client": [
+    {
+      "name": "data_0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_0_layer_0_layer_0_color_domain_sym\\.bol",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_0_x_domain_sym\\.bol",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_0_y_domain_sum_price",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}
