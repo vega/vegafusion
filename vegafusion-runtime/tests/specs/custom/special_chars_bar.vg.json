@@ -20,7 +20,7 @@
       "transform": [
         {
           "type": "formula",
-          "expr": "datum[\"pe.riods\"]===\"c.d\" ? 0 : datum[\"pe.riods\"]===\"a.b\" ? 1 : datum[\"pe.riods\"]===\"e.f\" ? 2 : 3",
+          "expr": "datum[\"pe.riods\"]===\"a.b\" ? 0 : datum[\"pe.riods\"]===\"c.d\" ? 1 : datum[\"pe.riods\"]===\"e.f\" ? 2 : 3",
           "as": "color_pe.riods_sort_index"
         }
       ]
