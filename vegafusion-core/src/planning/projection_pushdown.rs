@@ -748,6 +748,10 @@ impl ChartVisitor for CollectVlSelectionTestFieldsVisitor {
         //   ]
         // }
         //
+        // or, for point selections
+        //
+        //   "value": [{"field": "year_date", "type": "E"}]
+        //
         // With a corresponding dataset named "{name}_store". If we fine this pair, then use the
         // "field" entries in {name}_tuple_fields as column usage fields.
         if signal.name.ends_with("_tuple_fields") {
@@ -765,9 +769,7 @@ impl ChartVisitor for CollectVlSelectionTestFieldsVisitor {
                     if let Ok(table) = VegaFusionTable::from_json(value) {
                         // Check that we have "field", "channel", and "type" columns
                         let schema = &table.schema;
-                        if schema.field_with_name("channel").is_ok()
-                            && schema.field_with_name("type").is_ok()
-                        {
+                        if schema.field_with_name("type").is_ok() {
                             if let Ok(field_index) = schema.index_of("field") {
                                 if let Ok(batch) = table.to_record_batch() {
                                     let field_array = batch.column(field_index);
