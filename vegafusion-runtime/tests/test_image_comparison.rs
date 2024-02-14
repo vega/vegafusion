@@ -142,7 +142,6 @@ mod test_custom_specs {
         case("custom/gh_379", 0.001, true),
         case("custom/gh_383", 0.001, true),
         case("custom/gh_391", 0.001, true),
-        case("custom/gh_456", 0.001, true),
         case("custom/facet_grouped_bar_with_error_bars", 0.001, true),
         case("custom/facet_grouped_bar_with_error_bars_with_sort", 0.001, true),
         // Re-enable after updating to Vega 5.26.2
@@ -154,6 +153,8 @@ mod test_custom_specs {
         case("custom/facet_lift_area", 0.001, true),
         case("custom/facet_lift_area_color", 0.001, true),
         case("custom/local_timezone_with_dot", 0.001, true),
+        case("custom/gh_455", 0.001, true),
+        case("custom/gh_456", 0.001, true),
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64, extract_inline_values: bool) {
         println!("spec_name: {spec_name}");
