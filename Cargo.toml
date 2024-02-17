@@ -28,28 +28,28 @@ object_store = { version= "0.9.0" }
 # Post 35.0.0
 [workspace.dependencies.datafusion]
 git = "https://github.com/apache/arrow-datafusion.git"
-ref = "afb169cd069e0227fb0ef6d39f44d5eabbdc21a2"
+ref = "441a4356b889edde0802ec1b394f1f10c18283c3"
 
 [workspace.dependencies.datafusion-common]
 git = "https://github.com/apache/arrow-datafusion.git"
 default_features = false
-ref = "afb169cd069e0227fb0ef6d39f44d5eabbdc21a2"
+ref = "441a4356b889edde0802ec1b394f1f10c18283c3"
 
 [workspace.dependencies.datafusion-expr]
 git = "https://github.com/apache/arrow-datafusion.git"
-ref = "afb169cd069e0227fb0ef6d39f44d5eabbdc21a2"
+ref = "441a4356b889edde0802ec1b394f1f10c18283c3"
 
 [workspace.dependencies.datafusion-proto]
 git = "https://github.com/apache/arrow-datafusion.git"
-ref = "afb169cd069e0227fb0ef6d39f44d5eabbdc21a2"
+ref = "441a4356b889edde0802ec1b394f1f10c18283c3"
 
 [workspace.dependencies.datafusion-physical-expr]
 git = "https://github.com/apache/arrow-datafusion.git"
-ref = "afb169cd069e0227fb0ef6d39f44d5eabbdc21a2"
+ref = "441a4356b889edde0802ec1b394f1f10c18283c3"
 
 [workspace.dependencies.datafusion-optimizer]
 git = "https://github.com/apache/arrow-datafusion.git"
-ref = "afb169cd069e0227fb0ef6d39f44d5eabbdc21a2"
+ref = "441a4356b889edde0802ec1b394f1f10c18283c3"
 
 [profile.release]
 ## Tell `rustc` to use highest performance optimization and perform Link Time Optimization
