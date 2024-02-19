@@ -174,8 +174,9 @@ impl TransformSpecTrait for AggregateTransformSpec {
             .iter()
             .filter_map(|groupby_field| {
                 let groupby_field_name = groupby_field.field();
-                if input_local_datetime_columns.contains(&groupby_field_name) {
-                    Some(groupby_field_name)
+                let unescaped = unescape_field(&groupby_field_name);
+                if input_local_datetime_columns.contains(&unescaped) {
+                    Some(unescaped)
                 } else {
                     None
                 }
