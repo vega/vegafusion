@@ -1,0 +1,1045 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": {
+    "bottom": 20,
+    "right": 20
+  },
+  "width": 800,
+  "height": 800,
+  "data": [
+    {
+      "name": "interval_intervalselection_0_store"
+    },
+    {
+      "name": "click_pointselection_0_store"
+    },
+    {
+      "name": "legend_pointselection_0_store"
+    },
+    {
+      "name": "legend_pointhover_0_store"
+    },
+    {
+      "name": "dataframe",
+      "url": "https://raw.githubusercontent.com/vega/vega-datasets/main/data/movies.json"
+    },
+    {
+      "name": "data_0",
+      "source": "dataframe",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "if(datum[\"Major Genre\"] === \"Action\", 0, if(datum[\"Major Genre\"] === \"Adventure\", 1, if(datum[\"Major Genre\"] === \"Black Comedy\", 2, if(datum[\"Major Genre\"] === \"Comedy\", 3, if(datum[\"Major Genre\"] === \"Concert/Performance\", 4, if(datum[\"Major Genre\"] === \"Documentary\", 5, if(datum[\"Major Genre\"] === \"Drama\", 6, if(datum[\"Major Genre\"] === \"Horror\", 7, if(datum[\"Major Genre\"] === \"Musical\", 8, if(datum[\"Major Genre\"] === \"Romantic Comedy\", 9, if(datum[\"Major Genre\"] === \"Thriller/Suspense\", 10, if(datum[\"Major Genre\"] === \"Western\", 11, if(datum[\"Major Genre\"] === \"null\", 12, 13)))))))))))))",
+          "as": "2ef7f4a9-91f2-4f6d-a07d-d390da778b0b-custom-stack-order"
+        },
+        {
+          "type": "formula",
+          "expr": "datum[\"Major Genre\"]===\"Action\" ? 0 : datum[\"Major Genre\"]===\"Adventure\" ? 1 : datum[\"Major Genre\"]===\"Black Comedy\" ? 2 : datum[\"Major Genre\"]===\"Comedy\" ? 3 : datum[\"Major Genre\"]===\"Concert/Performance\" ? 4 : datum[\"Major Genre\"]===\"Documentary\" ? 5 : datum[\"Major Genre\"]===\"Drama\" ? 6 : datum[\"Major Genre\"]===\"Horror\" ? 7 : datum[\"Major Genre\"]===\"Musical\" ? 8 : datum[\"Major Genre\"]===\"Romantic Comedy\" ? 9 : datum[\"Major Genre\"]===\"Thriller/Suspense\" ? 10 : datum[\"Major Genre\"]===\"Western\" ? 11 : datum[\"Major Genre\"]===\"null\" ? 12 : 13",
+          "as": "color_Major Genre_sort_index"
+        }
+      ]
+    },
+    {
+      "name": "facet_domain",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["Source"]
+        }
+      ]
+    },
+    {
+      "name": "facet_domain_row",
+      "transform": [
+        {
+          "type": "sequence",
+          "start": 0,
+          "stop": {
+            "signal": "ceil(length(data(\"facet_domain\")) / 3)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "facet_domain_column",
+      "transform": [
+        {
+          "type": "sequence",
+          "start": 0,
+          "stop": {
+            "signal": "min(length(data(\"facet_domain\")), 3)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "data_3",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "stack",
+          "groupby": ["MPAA Rating", "Source"],
+          "field": "US Gross",
+          "sort": {
+            "field": [
+              "2ef7f4a9-91f2-4f6d-a07d-d390da778b0b-custom-stack-order"
+            ],
+            "order": ["descending"]
+          },
+          "as": ["US Gross_start", "US Gross_end"],
+          "offset": "zero"
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"US Gross\"]) && isFinite(+datum[\"US Gross\"])"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "name": "unit",
+      "value": {},
+      "on": [
+        {
+          "events": "pointermove",
+          "update": "isTuple(group()) ? group() : unit"
+        }
+      ]
+    },
+    {
+      "name": "legend_pointhover_0_Major_Genre_legend",
+      "value": null,
+      "on": [
+        {
+          "events": [
+            {
+              "source": "view",
+              "type": "click",
+              "markname": "Major_Genre_legend_symbols"
+            },
+            {
+              "source": "view",
+              "type": "click",
+              "markname": "Major_Genre_legend_labels"
+            },
+            {
+              "source": "view",
+              "type": "click",
+              "markname": "Major_Genre_legend_entries"
+            }
+          ],
+          "update": "isDefined(datum.value) ? datum.value : item().items[0].items[0].datum.value",
+          "force": true
+        },
+        {
+          "events": [
+            {
+              "source": "view",
+              "type": "click"
+            }
+          ],
+          "update": "!event.item || !datum ? null : legend_pointhover_0_Major_Genre_legend",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "legend_pointselection_0_Major_Genre_legend",
+      "value": null,
+      "on": [
+        {
+          "events": [
+            {
+              "source": "view",
+              "type": "click",
+              "markname": "Major_Genre_legend_symbols"
+            },
+            {
+              "source": "view",
+              "type": "click",
+              "markname": "Major_Genre_legend_labels"
+            },
+            {
+              "source": "view",
+              "type": "click",
+              "markname": "Major_Genre_legend_entries"
+            }
+          ],
+          "update": "isDefined(datum.value) ? datum.value : item().items[0].items[0].datum.value",
+          "force": true
+        },
+        {
+          "events": [
+            {
+              "source": "view",
+              "type": "click"
+            }
+          ],
+          "update": "!event.item || !datum ? null : legend_pointselection_0_Major_Genre_legend",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "interval_intervalselection_0",
+      "update": "vlSelectionResolve(\"interval_intervalselection_0_store\", \"union\")"
+    },
+    {
+      "name": "click_pointselection_0",
+      "update": "vlSelectionResolve(\"click_pointselection_0_store\", \"union\", true, true)"
+    },
+    {
+      "name": "legend_pointselection_0",
+      "update": "vlSelectionResolve(\"legend_pointselection_0_store\", \"union\", true, true)"
+    },
+    {
+      "name": "legend_pointhover_0",
+      "update": "vlSelectionResolve(\"legend_pointhover_0_store\", \"union\", true, true)"
+    },
+    {
+      "name": "cursor",
+      "value": "default",
+      "on": [
+        {
+          "events": "mousemove",
+          "update": "if(isDefined((group()).bounds), if(item().mark.marktype != 'group', 'default', 'crosshair'), 'default')"
+        }
+      ]
+    },
+    {
+      "name": "child_width",
+      "update": "3 > 0? width / 3 - 1: 120"
+    },
+    {
+      "name": "min_width",
+      "update": "120 * 3"
+    },
+    {
+      "name": "child_height",
+      "update": "height / length(data('facet_domain_row'))"
+    },
+    {
+      "name": "min_height",
+      "update": "120 * length(data('facet_domain_row'))"
+    }
+  ],
+  "layout": {
+    "padding": 20,
+    "bounds": "full",
+    "align": "all",
+    "columns": 3
+  },
+  "marks": [
+    {
+      "name": "facet-title",
+      "type": "group",
+      "role": "column-title",
+      "title": {
+        "text": "Source",
+        "style": "guide-title",
+        "offset": 10
+      }
+    },
+    {
+      "name": "row_header",
+      "type": "group",
+      "role": "row-header",
+      "from": {
+        "data": "facet_domain_row"
+      },
+      "encode": {
+        "update": {
+          "height": {
+            "signal": "child_height"
+          }
+        }
+      },
+      "axes": [
+        {
+          "scale": "y",
+          "orient": "left",
+          "grid": false,
+          "title": "US Gross",
+          "labelFlush": false,
+          "labels": true,
+          "ticks": true,
+          "labelOverlap": true,
+          "tickCount": {
+            "signal": "ceil(child_height/40)"
+          },
+          "encode": {
+            "labels": {
+              "update": {
+                "text": {
+                  "signal": "datum.value"
+                }
+              }
+            }
+          },
+          "zindex": 0
+        }
+      ]
+    },
+    {
+      "name": "column_footer",
+      "type": "group",
+      "role": "column-footer",
+      "from": {
+        "data": "facet_domain_column"
+      },
+      "encode": {
+        "update": {
+          "width": {
+            "signal": "child_width"
+          }
+        }
+      },
+      "axes": [
+        {
+          "scale": "x",
+          "orient": "bottom",
+          "grid": false,
+          "title": "MPAA Rating",
+          "labelFlush": false,
+          "labelOverlap": "greedy",
+          "labels": true,
+          "ticks": true,
+          "labelAlign": "right",
+          "labelAngle": 270,
+          "labelBaseline": "middle",
+          "zindex": 0
+        }
+      ]
+    },
+    {
+      "name": "cell",
+      "type": "group",
+      "title": {
+        "text": {
+          "signal": "isValid(parent[\"Source\"]) ? parent[\"Source\"] : \"\"+parent[\"Source\"]"
+        },
+        "style": "guide-label",
+        "frame": "group",
+        "offset": 10
+      },
+      "style": "cell",
+      "from": {
+        "facet": {
+          "name": "facet",
+          "data": "data_0",
+          "groupby": ["Source"]
+        }
+      },
+      "sort": {
+        "field": ["datum[\"Source\"]"],
+        "order": ["ascending"]
+      },
+      "data": [
+        {
+          "source": "facet",
+          "name": "data_0",
+          "transform": [
+            {
+              "type": "stack",
+              "groupby": ["MPAA Rating"],
+              "field": "US Gross",
+              "sort": {
+                "field": [
+                  "2ef7f4a9-91f2-4f6d-a07d-d390da778b0b-custom-stack-order"
+                ],
+                "order": ["descending"]
+              },
+              "as": ["US Gross_start", "US Gross_end"],
+              "offset": "zero"
+            },
+            {
+              "type": "filter",
+              "expr": "isValid(datum[\"US Gross\"]) && isFinite(+datum[\"US Gross\"])"
+            }
+          ]
+        }
+      ],
+      "encode": {
+        "update": {
+          "width": {
+            "signal": "child_width"
+          },
+          "height": {
+            "signal": "child_height"
+          }
+        }
+      },
+      "signals": [
+        {
+          "name": "facet",
+          "value": {},
+          "on": [
+            {
+              "events": [
+                {
+                  "source": "scope",
+                  "type": "pointermove"
+                }
+              ],
+              "update": "isTuple(facet) ? facet : group(\"cell\").datum"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_x",
+          "value": [],
+          "on": [
+            {
+              "events": {
+                "source": "scope",
+                "type": "pointerdown",
+                "filter": [
+                  "!event.item || event.item.mark.name !== \"interval_intervalselection_0_brush\""
+                ]
+              },
+              "update": "[x(unit), x(unit)]"
+            },
+            {
+              "events": {
+                "source": "window",
+                "type": "pointermove",
+                "consume": true,
+                "between": [
+                  {
+                    "source": "scope",
+                    "type": "pointerdown",
+                    "filter": [
+                      "!event.item || event.item.mark.name !== \"interval_intervalselection_0_brush\""
+                    ]
+                  },
+                  {
+                    "source": "window",
+                    "type": "pointerup"
+                  }
+                ]
+              },
+              "update": "[interval_intervalselection_0_x[0], clamp(x(unit), 0, child_width)]"
+            },
+            {
+              "events": {
+                "signal": "interval_intervalselection_0_scale_trigger"
+              },
+              "update": "[0, 0]"
+            },
+            {
+              "events": [
+                {
+                  "source": "view",
+                  "type": "dblclick"
+                }
+              ],
+              "update": "[0, 0]"
+            },
+            {
+              "events": {
+                "signal": "interval_intervalselection_0_translate_delta"
+              },
+              "update": "clampRange(panLinear(interval_intervalselection_0_translate_anchor.extent_x, interval_intervalselection_0_translate_delta.x / span(interval_intervalselection_0_translate_anchor.extent_x)), 0, child_width)"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_MPAA_Rating",
+          "on": [
+            {
+              "events": {
+                "signal": "interval_intervalselection_0_x"
+              },
+              "update": "interval_intervalselection_0_x[0] === interval_intervalselection_0_x[1] ? null : invert(\"x\", interval_intervalselection_0_x)"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_scale_trigger",
+          "value": {},
+          "on": [
+            {
+              "events": [
+                {
+                  "scale": "x"
+                }
+              ],
+              "update": "(!isArray(interval_intervalselection_0_MPAA_Rating) || (invert(\"x\", interval_intervalselection_0_x)[0] === interval_intervalselection_0_MPAA_Rating[0] && invert(\"x\", interval_intervalselection_0_x)[1] === interval_intervalselection_0_MPAA_Rating[1])) ? interval_intervalselection_0_scale_trigger : {}"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_tuple",
+          "on": [
+            {
+              "events": [
+                {
+                  "signal": "interval_intervalselection_0_MPAA_Rating"
+                }
+              ],
+              "update": "interval_intervalselection_0_MPAA_Rating ? {unit: \"child_layer_0_layer_0_layer_0\" + '__facet_facet_' + (facet[\"Source\"]), fields: interval_intervalselection_0_tuple_fields, values: [interval_intervalselection_0_MPAA_Rating]} : null"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_tuple_fields",
+          "value": [
+            {
+              "field": "MPAA Rating",
+              "channel": "x",
+              "type": "E"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_translate_anchor",
+          "value": {},
+          "on": [
+            {
+              "events": [
+                {
+                  "source": "scope",
+                  "type": "pointerdown",
+                  "markname": "interval_intervalselection_0_brush"
+                }
+              ],
+              "update": "{x: x(unit), y: y(unit), extent_x: slice(interval_intervalselection_0_x)}"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_translate_delta",
+          "value": {},
+          "on": [
+            {
+              "events": [
+                {
+                  "source": "window",
+                  "type": "pointermove",
+                  "consume": true,
+                  "between": [
+                    {
+                      "source": "scope",
+                      "type": "pointerdown",
+                      "markname": "interval_intervalselection_0_brush"
+                    },
+                    {
+                      "source": "window",
+                      "type": "pointerup"
+                    }
+                  ]
+                }
+              ],
+              "update": "{x: interval_intervalselection_0_translate_anchor.x - x(unit), y: interval_intervalselection_0_translate_anchor.y - y(unit)}"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_modify",
+          "on": [
+            {
+              "events": {
+                "signal": "interval_intervalselection_0_tuple"
+              },
+              "update": "modify(\"interval_intervalselection_0_store\", interval_intervalselection_0_tuple, true)"
+            }
+          ]
+        },
+        {
+          "name": "click_pointselection_0_tuple",
+          "on": [
+            {
+              "events": [
+                {
+                  "source": "scope",
+                  "type": "click"
+                }
+              ],
+              "update": "datum && item().mark.marktype !== 'group' && indexof(item().mark.role, 'legend') < 0 && indexof(item().mark.name, 'interval_intervalselection_0_brush') < 0 ? {unit: \"child_layer_0_layer_0_layer_0\" + '__facet_facet_' + (facet[\"Source\"]), fields: click_pointselection_0_tuple_fields, values: [(item().isVoronoi ? datum.datum : datum)[\"MPAA Rating\"], (item().isVoronoi ? datum.datum : datum)[\"Major Genre\"]]} : null",
+              "force": true
+            },
+            {
+              "events": [
+                {
+                  "source": "view",
+                  "type": "dblclick"
+                }
+              ],
+              "update": "null"
+            }
+          ]
+        },
+        {
+          "name": "click_pointselection_0_tuple_fields",
+          "value": [
+            {
+              "field": "MPAA Rating",
+              "channel": "x",
+              "type": "E"
+            },
+            {
+              "field": "Major Genre",
+              "channel": "color",
+              "type": "E"
+            }
+          ]
+        },
+        {
+          "name": "click_pointselection_0_toggle",
+          "value": false,
+          "on": [
+            {
+              "events": [
+                {
+                  "source": "scope",
+                  "type": "click"
+                }
+              ],
+              "update": "false"
+            },
+            {
+              "events": [
+                {
+                  "source": "view",
+                  "type": "dblclick"
+                }
+              ],
+              "update": "false"
+            }
+          ]
+        },
+        {
+          "name": "click_pointselection_0_modify",
+          "on": [
+            {
+              "events": {
+                "signal": "click_pointselection_0_tuple"
+              },
+              "update": "modify(\"click_pointselection_0_store\", click_pointselection_0_toggle ? null : click_pointselection_0_tuple, click_pointselection_0_toggle ? null : true, click_pointselection_0_toggle ? click_pointselection_0_tuple : null)"
+            }
+          ]
+        },
+        {
+          "name": "legend_pointselection_0_tuple",
+          "update": "legend_pointselection_0_Major_Genre_legend !== null ? {fields: legend_pointselection_0_tuple_fields, values: [legend_pointselection_0_Major_Genre_legend]} : null"
+        },
+        {
+          "name": "legend_pointselection_0_tuple_fields",
+          "value": [
+            {
+              "field": "Major Genre",
+              "channel": "color",
+              "type": "E"
+            }
+          ]
+        },
+        {
+          "name": "legend_pointselection_0_toggle",
+          "value": false,
+          "on": [
+            {
+              "events": {
+                "merge": [
+                  {
+                    "source": "view",
+                    "type": "click"
+                  }
+                ]
+              },
+              "update": "event.shiftKey"
+            }
+          ]
+        },
+        {
+          "name": "legend_pointselection_0_modify",
+          "on": [
+            {
+              "events": {
+                "signal": "legend_pointselection_0_tuple"
+              },
+              "update": "modify(\"legend_pointselection_0_store\", legend_pointselection_0_toggle ? null : legend_pointselection_0_tuple, legend_pointselection_0_toggle ? null : true, legend_pointselection_0_toggle ? legend_pointselection_0_tuple : null)"
+            }
+          ]
+        },
+        {
+          "name": "legend_pointhover_0_tuple",
+          "update": "legend_pointhover_0_Major_Genre_legend !== null ? {fields: legend_pointhover_0_tuple_fields, values: [legend_pointhover_0_Major_Genre_legend]} : null"
+        },
+        {
+          "name": "legend_pointhover_0_tuple_fields",
+          "value": [
+            {
+              "field": "Major Genre",
+              "channel": "color",
+              "type": "E"
+            }
+          ]
+        },
+        {
+          "name": "legend_pointhover_0_toggle",
+          "value": false,
+          "on": [
+            {
+              "events": {
+                "merge": [
+                  {
+                    "source": "view",
+                    "type": "click"
+                  }
+                ]
+              },
+              "update": "event.shiftKey"
+            }
+          ]
+        },
+        {
+          "name": "legend_pointhover_0_modify",
+          "on": [
+            {
+              "events": {
+                "signal": "legend_pointhover_0_tuple"
+              },
+              "update": "modify(\"legend_pointhover_0_store\", legend_pointhover_0_toggle ? null : legend_pointhover_0_tuple, legend_pointhover_0_toggle ? null : true, legend_pointhover_0_toggle ? legend_pointhover_0_tuple : null)"
+            }
+          ]
+        }
+      ],
+      "marks": [
+        {
+          "name": "interval_intervalselection_0_brush_bg",
+          "type": "rect",
+          "clip": true,
+          "encode": {
+            "enter": {
+              "fill": {
+                "value": "#669EFF"
+              },
+              "fillOpacity": {
+                "value": 0.07
+              }
+            },
+            "update": {
+              "x": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_facet_' + (facet[\"Source\"])",
+                  "signal": "interval_intervalselection_0_x[0]"
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "y": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_facet_' + (facet[\"Source\"])",
+                  "value": 0
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "x2": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_facet_' + (facet[\"Source\"])",
+                  "signal": "interval_intervalselection_0_x[1]"
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "y2": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_facet_' + (facet[\"Source\"])",
+                  "field": {
+                    "group": "height"
+                  }
+                },
+                {
+                  "value": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "child_layer_0_layer_0_layer_0_marks",
+          "type": "rect",
+          "clip": true,
+          "style": ["bar"],
+          "interactive": true,
+          "from": {
+            "data": "data_0"
+          },
+          "encode": {
+            "update": {
+              "cursor": {
+                "value": "pointer"
+              },
+              "fill": {
+                "scale": "color",
+                "field": "Major Genre"
+              },
+              "opacity": [
+                {
+                  "test": "!((!length(data(\"interval_intervalselection_0_store\")) || vlSelectionTest(\"interval_intervalselection_0_store\", datum)) && (!length(data(\"click_pointselection_0_store\")) || vlSelectionTest(\"click_pointselection_0_store\", datum)) && ((length(data(\"legend_pointselection_0_store\")) && vlSelectionTest(\"legend_pointselection_0_store\", datum)) || (!length(data(\"legend_pointhover_0_store\")) || vlSelectionTest(\"legend_pointhover_0_store\", datum))))",
+                  "value": 0.3
+                },
+                {
+                  "value": 1
+                }
+              ],
+              "tooltip": {
+                "signal": "{\"Title\": isValid(datum[\"Title\"]) ? datum[\"Title\"] : \"\"+datum[\"Title\"]}"
+              },
+              "ariaRoleDescription": {
+                "value": "bar"
+              },
+              "description": {
+                "signal": "\"MPAA Rating: \" + (isValid(datum[\"MPAA Rating\"]) ? datum[\"MPAA Rating\"] : \"\"+datum[\"MPAA Rating\"]) + \"; US Gross: \" + (datum[\"US Gross\"]) + \"; Major Genre: \" + (isValid(datum[\"Major Genre\"]) ? datum[\"Major Genre\"] : \"\"+datum[\"Major Genre\"]) + \"; 2ef7f4a9-91f2-4f6d-a07d-d390da778b0b-custom-stack-order: \" + (isValid(datum[\"2ef7f4a9-91f2-4f6d-a07d-d390da778b0b-custom-stack-order\"]) ? datum[\"2ef7f4a9-91f2-4f6d-a07d-d390da778b0b-custom-stack-order\"] : \"\"+datum[\"2ef7f4a9-91f2-4f6d-a07d-d390da778b0b-custom-stack-order\"]) + \"; Title: \" + (isValid(datum[\"Title\"]) ? datum[\"Title\"] : \"\"+datum[\"Title\"])"
+              },
+              "x": {
+                "scale": "x",
+                "field": "MPAA Rating"
+              },
+              "width": {
+                "signal": "max(0.25, bandwidth('x'))"
+              },
+              "y": {
+                "scale": "y",
+                "field": "US Gross_end"
+              },
+              "y2": {
+                "scale": "y",
+                "field": "US Gross_start"
+              }
+            }
+          }
+        },
+        {
+          "name": "interval_intervalselection_0_brush",
+          "type": "rect",
+          "clip": true,
+          "encode": {
+            "enter": {
+              "fill": {
+                "value": "transparent"
+              }
+            },
+            "update": {
+              "x": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_facet_' + (facet[\"Source\"])",
+                  "signal": "interval_intervalselection_0_x[0]"
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "y": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_facet_' + (facet[\"Source\"])",
+                  "value": 0
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "x2": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_facet_' + (facet[\"Source\"])",
+                  "signal": "interval_intervalselection_0_x[1]"
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "y2": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_facet_' + (facet[\"Source\"])",
+                  "field": {
+                    "group": "height"
+                  }
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "stroke": [
+                {
+                  "test": "interval_intervalselection_0_x[0] !== interval_intervalselection_0_x[1]",
+                  "value": "#669EFF"
+                },
+                {
+                  "value": null
+                }
+              ],
+              "strokeOpacity": [
+                {
+                  "test": "interval_intervalselection_0_x[0] !== interval_intervalselection_0_x[1]",
+                  "value": 0.4
+                },
+                {
+                  "value": null
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "axes": [
+        {
+          "scale": "x",
+          "orient": "bottom",
+          "grid": true,
+          "gridScale": "y",
+          "domain": false,
+          "labels": false,
+          "aria": false,
+          "maxExtent": 0,
+          "minExtent": 0,
+          "ticks": false,
+          "zindex": 0
+        },
+        {
+          "scale": "y",
+          "orient": "left",
+          "grid": true,
+          "gridScale": "x",
+          "tickCount": {
+            "signal": "ceil(child_height/40)"
+          },
+          "domain": false,
+          "labels": false,
+          "aria": false,
+          "maxExtent": 0,
+          "minExtent": 0,
+          "ticks": false,
+          "zindex": 0
+        }
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "band",
+      "domain": {
+        "data": "data_3",
+        "field": "MPAA Rating",
+        "sort": true
+      },
+      "range": [
+        0,
+        {
+          "signal": "child_width"
+        }
+      ],
+      "paddingInner": 0.1,
+      "paddingOuter": 0.05
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {
+        "data": "data_3",
+        "fields": ["US Gross_start", "US Gross_end"]
+      },
+      "range": [
+        {
+          "signal": "child_height"
+        },
+        0
+      ],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": {
+        "data": "data_0",
+        "field": "Major Genre",
+        "sort": {
+          "op": "min",
+          "field": "color_Major Genre_sort_index"
+        }
+      },
+      "range": [
+        "#3e277a",
+        "#b28fc9",
+        "#2458b3",
+        "#669eff",
+        "#00998c",
+        "#14ccbd",
+        "#d99e0b",
+        "#ffc940",
+        "#717a94",
+        "#b1b6c4",
+        "#6a5898",
+        "#9588b6",
+        "#c1b9d4",
+        "#ece9f2",
+        "#008075",
+        "#63a5a5",
+        "#c6cad4",
+        "#c4799b",
+        "#c22762"
+      ],
+      "interpolate": "hcl"
+    }
+  ],
+  "legends": [
+    {
+      "symbolOpacity": 1,
+      "title": "Major Genre",
+      "fill": "color",
+      "symbolType": "square",
+      "encode": {
+        "labels": {
+          "name": "Major_Genre_legend_labels",
+          "interactive": true,
+          "update": {
+            "opacity": [
+              {
+                "test": "(!length(data(\"legend_pointselection_0_store\")) || (legend_pointselection_0[\"Major Genre\"] && indexof(legend_pointselection_0[\"Major Genre\"], datum.value) >= 0)) || (!length(data(\"legend_pointhover_0_store\")) || (legend_pointhover_0[\"Major Genre\"] && indexof(legend_pointhover_0[\"Major Genre\"], datum.value) >= 0))",
+                "value": 1
+              },
+              {
+                "value": 0.35
+              }
+            ]
+          }
+        },
+        "symbols": {
+          "name": "Major_Genre_legend_symbols",
+          "interactive": true,
+          "update": {
+            "opacity": [
+              {
+                "test": "(!length(data(\"legend_pointselection_0_store\")) || (legend_pointselection_0[\"Major Genre\"] && indexof(legend_pointselection_0[\"Major Genre\"], datum.value) >= 0)) || (!length(data(\"legend_pointhover_0_store\")) || (legend_pointhover_0[\"Major Genre\"] && indexof(legend_pointhover_0[\"Major Genre\"], datum.value) >= 0))",
+                "value": 1
+              },
+              {
+                "value": 0.35
+              }
+            ]
+          }
+        },
+        "entries": {
+          "name": "Major_Genre_legend_entries",
+          "interactive": true,
+          "update": {
+            "fill": {
+              "value": "transparent"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "autosize": {
+    "type": "fit"
+  }
+}

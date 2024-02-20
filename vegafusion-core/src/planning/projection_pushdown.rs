@@ -220,7 +220,8 @@ impl GetDatasetsColumnUsage for MarkSpec {
             // the subset datasets are used.
             if let Some(facet) = self.from.as_ref().and_then(|from| from.facet.clone()) {
                 let facet_data_var = Variable::new_data(&facet.data);
-                if let Ok(resolved) = task_scope.resolve_scope(&facet_data_var, usage_scope) {
+                let parent_scope = &usage_scope[0..usage_scope.len() - 1];
+                if let Ok(resolved) = task_scope.resolve_scope(&facet_data_var, parent_scope) {
                     let scoped_facet_data_var = (resolved.var, resolved.scope);
                     usage = usage.with_unknown_usage(&scoped_facet_data_var);
                 }
