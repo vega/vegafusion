@@ -931,7 +931,7 @@ mod tests {
 
         assert_eq!(
             String::from_utf8(buf).unwrap(),
-            r#"{"duration_sec":"PT120S","duration_msec":"PT0.120S","duration_usec":"PT0.000120S","duration_nsec":"PT0.000000120S","name":"a"}
+            r#"{"duration_sec":"PT120S","duration_msec":"PT0.12S","duration_usec":"PT0.00012S","duration_nsec":"PT0.00000012S","name":"a"}
 {"duration_sec":null,"duration_msec":null,"duration_usec":null,"duration_nsec":null,"name":"b"}
 "#
         );
