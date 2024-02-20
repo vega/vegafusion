@@ -156,6 +156,7 @@ mod test_custom_specs {
         case("custom/gh_455", 0.001, true),
         case("custom/gh_456", 0.001, true),
         case("custom/facet_dots_sort_datum", 0.001, true),
+        case("custom/gh_463", 0.001, true),
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64, extract_inline_values: bool) {
         println!("spec_name: {spec_name}");
