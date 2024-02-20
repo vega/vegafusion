@@ -1,6 +1,6 @@
 [package]
 name = "vegafusion-jni"
-version = "1.6.4"
+version = "1.6.5"
 edition = "2021"
 
 [lib]
@@ -15,21 +15,21 @@ serde_json = "1.0.96"
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-version = "1.6.4"
+version = "1.6.5"
 features = [ "jni",]
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = [ "tonic_support",]
-version = "1.6.4"
+version = "1.6.5"
 
 [dependencies.vegafusion-runtime]
 path = "../vegafusion-runtime"
-version = "1.6.4"
+version = "1.6.5"
 
 [dependencies.vegafusion-sql]
 path = "../vegafusion-sql"
-version = "1.6.4"
+version = "1.6.5"
 features = [ "datafusion-conn",]
 
 [dependencies.tokio]
