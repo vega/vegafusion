@@ -7,6 +7,7 @@ use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_v
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use datafusion_expr::{expr, BuiltinScalarFunction, Expr, ScalarFunctionDefinition, ScalarUDF};
+use datafusion_functions::expr_fn::isnan;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
@@ -48,6 +49,7 @@ use crate::task_graph::timezone::RuntimeTzConfig;
 
 pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>;
 pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
+pub type ScalarTransformFn = Arc<dyn Fn(Expr) -> Expr + Send + Sync>;
 pub type TzTransformFn =
     Arc<dyn Fn(&RuntimeTzConfig, &[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
 pub type DataFn = Arc<
@@ -63,6 +65,9 @@ pub enum VegaFusionCallable {
 
     /// A function that operates on the compiled arguments and produces a new expression.
     Transform(TransformFn),
+
+    /// An infallible function that operates on a single compiled argument
+    UnaryTransform(ScalarTransformFn),
 
     /// A function that uses the local timezone to operate on the compiled arguments and
     /// produces a new expression.
@@ -183,6 +188,18 @@ pub fn compile_call(
             let args = compile_scalar_arguments(node, config, schema, &None)?;
             callable(&args, schema)
         }
+        VegaFusionCallable::UnaryTransform(callable) => {
+            let mut args = compile_scalar_arguments(node, config, schema, &None)?;
+            if args.len() != 1 {
+                Err(VegaFusionError::internal(format!(
+                    "The {} function requires 1 argument. Received {}",
+                    &node.callee,
+                    args.len()
+                )))
+            } else {
+                Ok(callable(args.pop().unwrap()))
+            }
+        }
         VegaFusionCallable::LocalTransform(callable) => {
             let args = compile_scalar_arguments(node, config, schema, &None)?;
             let tz_config = config
@@ -235,10 +252,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
 
     callables.insert(
         "isNaN".to_string(),
-        VegaFusionCallable::BuiltinScalarFunction {
-            function: BuiltinScalarFunction::Isnan,
-            cast: Some(DataType::Float64),
-        },
+        VegaFusionCallable::UnaryTransform(Arc::new(isnan)),
     );
 
     callables.insert(
