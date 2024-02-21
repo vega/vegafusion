@@ -73,7 +73,7 @@ impl TransformSpecTrait for FoldTransformSpec {
         let value_is_datetime = self
             .fields
             .iter()
-            .all(|field| local_datetime_cols.contains(&field.field()));
+            .all(|field| local_datetime_cols.contains(&unescape_field(&field.field())));
 
         if value_is_datetime {
             let value_col = self.as_().get(1).cloned().unwrap();

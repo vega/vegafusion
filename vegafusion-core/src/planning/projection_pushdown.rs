@@ -220,7 +220,8 @@ impl GetDatasetsColumnUsage for MarkSpec {
             // the subset datasets are used.
             if let Some(facet) = self.from.as_ref().and_then(|from| from.facet.clone()) {
                 let facet_data_var = Variable::new_data(&facet.data);
-                if let Ok(resolved) = task_scope.resolve_scope(&facet_data_var, usage_scope) {
+                let parent_scope = &usage_scope[0..usage_scope.len() - 1];
+                if let Ok(resolved) = task_scope.resolve_scope(&facet_data_var, parent_scope) {
                     let scoped_facet_data_var = (resolved.var, resolved.scope);
                     usage = usage.with_unknown_usage(&scoped_facet_data_var);
                 }
@@ -748,6 +749,10 @@ impl ChartVisitor for CollectVlSelectionTestFieldsVisitor {
         //   ]
         // }
         //
+        // or, for point selections
+        //
+        //   "value": [{"field": "year_date", "type": "E"}]
+        //
         // With a corresponding dataset named "{name}_store". If we fine this pair, then use the
         // "field" entries in {name}_tuple_fields as column usage fields.
         if signal.name.ends_with("_tuple_fields") {
@@ -765,9 +770,7 @@ impl ChartVisitor for CollectVlSelectionTestFieldsVisitor {
                     if let Ok(table) = VegaFusionTable::from_json(value) {
                         // Check that we have "field", "channel", and "type" columns
                         let schema = &table.schema;
-                        if schema.field_with_name("channel").is_ok()
-                            && schema.field_with_name("type").is_ok()
-                        {
+                        if schema.field_with_name("type").is_ok() {
                             if let Ok(field_index) = schema.index_of("field") {
                                 if let Ok(batch) = table.to_record_batch() {
                                     let field_array = batch.column(field_index);

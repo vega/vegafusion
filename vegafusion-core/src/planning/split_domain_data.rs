@@ -40,14 +40,18 @@ pub struct SplitScaleDomainVisitor<'a> {
     pub task_scope: &'a TaskScope,
     pub new_datasets: Vec<(Vec<u32>, DataSpec)>,
     pub domain_dataset_fields: HashMap<ScopedVariable, (ScopedVariable, String)>,
+    pub nested_regex: regex::Regex,
 }
 
 impl<'a> SplitScaleDomainVisitor<'a> {
     pub fn new(task_scope: &'a TaskScope) -> Self {
+        // Regex matching unescaped dot characters
+        let nested_regex = regex::Regex::new(r#"[^\\]\."#).unwrap();
         Self {
             new_datasets: Vec::new(),
             task_scope,
             domain_dataset_fields: Default::default(),
+            nested_regex,
         }
     }
 }
@@ -173,7 +177,7 @@ impl<'a> SplitScaleDomainVisitor<'a> {
         let field_name = &field_ref.field;
 
         // Validate whether we can do anything
-        if field_name.contains('.') {
+        if self.nested_regex.is_match(field_name) {
             // Nested fields not supported
             return Ok(());
         }

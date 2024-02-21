@@ -1,28 +1,28 @@
 {
   "server_to_client": [
     {
+      "name": "column_domain",
       "namespace": "data",
-      "name": "data_1_layer_0_layer_0_color_domain_pe\\.riods",
       "scope": []
     },
     {
+      "name": "data_0_color_domain_symbol",
       "namespace": "data",
-      "name": "data_2",
       "scope": []
     },
     {
+      "name": "data_0_facet_facet0",
       "namespace": "data",
-      "name": "data_2_x_domain_pe\\.riods",
       "scope": []
     },
     {
+      "name": "data_3_x_domain_symbol",
       "namespace": "data",
-      "name": "data_2_y_domain___count",
       "scope": []
     },
     {
+      "name": "data_3_y_domain_sum_price",
       "namespace": "data",
-      "name": "data_3",
       "scope": []
     }
   ],

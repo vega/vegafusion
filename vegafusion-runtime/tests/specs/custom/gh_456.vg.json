@@ -1,0 +1,4994 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": {
+    "bottom": 20,
+    "right": 20
+  },
+  "data": [
+    {
+      "name": "interval_intervalselection_0_store"
+    },
+    {
+      "name": "click_pointselection_0_store"
+    },
+    {
+      "name": "legend_pointselection_0_store"
+    },
+    {
+      "name": "legend_pointhover_0_store"
+    },
+    {
+      "name": "dataframe",
+      "values": [
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jan 1 2000",
+          "symbol": "MSFT",
+          "date": "Jan 1 2000",
+          "price": 39.81
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Feb 1 2000",
+          "symbol": "MSFT",
+          "date": "Feb 1 2000",
+          "price": 36.35
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Mar 1 2000",
+          "symbol": "MSFT",
+          "date": "Mar 1 2000",
+          "price": 43.22
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Apr 1 2000",
+          "symbol": "MSFT",
+          "date": "Apr 1 2000",
+          "price": 28.37
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "May 1 2000",
+          "symbol": "MSFT",
+          "date": "May 1 2000",
+          "price": 25.45
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jun 1 2000",
+          "symbol": "MSFT",
+          "date": "Jun 1 2000",
+          "price": 32.54
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jul 1 2000",
+          "symbol": "MSFT",
+          "date": "Jul 1 2000",
+          "price": 28.4
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Aug 1 2000",
+          "symbol": "MSFT",
+          "date": "Aug 1 2000",
+          "price": 28.4
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Sep 1 2000",
+          "symbol": "MSFT",
+          "date": "Sep 1 2000",
+          "price": 24.53
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Oct 1 2000",
+          "symbol": "MSFT",
+          "date": "Oct 1 2000",
+          "price": 28.02
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Nov 1 2000",
+          "symbol": "MSFT",
+          "date": "Nov 1 2000",
+          "price": 23.34
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Dec 1 2000",
+          "symbol": "MSFT",
+          "date": "Dec 1 2000",
+          "price": 17.65
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jan 1 2001",
+          "symbol": "MSFT",
+          "date": "Jan 1 2001",
+          "price": 24.84
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Feb 1 2001",
+          "symbol": "MSFT",
+          "date": "Feb 1 2001",
+          "price": 24.0
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Mar 1 2001",
+          "symbol": "MSFT",
+          "date": "Mar 1 2001",
+          "price": 22.25
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Apr 1 2001",
+          "symbol": "MSFT",
+          "date": "Apr 1 2001",
+          "price": 27.56
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "May 1 2001",
+          "symbol": "MSFT",
+          "date": "May 1 2001",
+          "price": 28.14
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jun 1 2001",
+          "symbol": "MSFT",
+          "date": "Jun 1 2001",
+          "price": 29.7
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jul 1 2001",
+          "symbol": "MSFT",
+          "date": "Jul 1 2001",
+          "price": 26.93
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Aug 1 2001",
+          "symbol": "MSFT",
+          "date": "Aug 1 2001",
+          "price": 23.21
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Sep 1 2001",
+          "symbol": "MSFT",
+          "date": "Sep 1 2001",
+          "price": 20.82
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Oct 1 2001",
+          "symbol": "MSFT",
+          "date": "Oct 1 2001",
+          "price": 23.65
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Nov 1 2001",
+          "symbol": "MSFT",
+          "date": "Nov 1 2001",
+          "price": 26.12
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Dec 1 2001",
+          "symbol": "MSFT",
+          "date": "Dec 1 2001",
+          "price": 26.95
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jan 1 2002",
+          "symbol": "MSFT",
+          "date": "Jan 1 2002",
+          "price": 25.92
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Feb 1 2002",
+          "symbol": "MSFT",
+          "date": "Feb 1 2002",
+          "price": 23.73
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Mar 1 2002",
+          "symbol": "MSFT",
+          "date": "Mar 1 2002",
+          "price": 24.53
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Apr 1 2002",
+          "symbol": "MSFT",
+          "date": "Apr 1 2002",
+          "price": 21.26
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "May 1 2002",
+          "symbol": "MSFT",
+          "date": "May 1 2002",
+          "price": 20.71
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jun 1 2002",
+          "symbol": "MSFT",
+          "date": "Jun 1 2002",
+          "price": 22.25
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jul 1 2002",
+          "symbol": "MSFT",
+          "date": "Jul 1 2002",
+          "price": 19.52
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Aug 1 2002",
+          "symbol": "MSFT",
+          "date": "Aug 1 2002",
+          "price": 19.97
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Sep 1 2002",
+          "symbol": "MSFT",
+          "date": "Sep 1 2002",
+          "price": 17.79
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Oct 1 2002",
+          "symbol": "MSFT",
+          "date": "Oct 1 2002",
+          "price": 21.75
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Nov 1 2002",
+          "symbol": "MSFT",
+          "date": "Nov 1 2002",
+          "price": 23.46
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Dec 1 2002",
+          "symbol": "MSFT",
+          "date": "Dec 1 2002",
+          "price": 21.03
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jan 1 2003",
+          "symbol": "MSFT",
+          "date": "Jan 1 2003",
+          "price": 19.31
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Feb 1 2003",
+          "symbol": "MSFT",
+          "date": "Feb 1 2003",
+          "price": 19.34
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Mar 1 2003",
+          "symbol": "MSFT",
+          "date": "Mar 1 2003",
+          "price": 19.76
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Apr 1 2003",
+          "symbol": "MSFT",
+          "date": "Apr 1 2003",
+          "price": 20.87
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "May 1 2003",
+          "symbol": "MSFT",
+          "date": "May 1 2003",
+          "price": 20.09
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jun 1 2003",
+          "symbol": "MSFT",
+          "date": "Jun 1 2003",
+          "price": 20.93
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jul 1 2003",
+          "symbol": "MSFT",
+          "date": "Jul 1 2003",
+          "price": 21.56
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Aug 1 2003",
+          "symbol": "MSFT",
+          "date": "Aug 1 2003",
+          "price": 21.65
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Sep 1 2003",
+          "symbol": "MSFT",
+          "date": "Sep 1 2003",
+          "price": 22.69
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Oct 1 2003",
+          "symbol": "MSFT",
+          "date": "Oct 1 2003",
+          "price": 21.45
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Nov 1 2003",
+          "symbol": "MSFT",
+          "date": "Nov 1 2003",
+          "price": 21.1
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Dec 1 2003",
+          "symbol": "MSFT",
+          "date": "Dec 1 2003",
+          "price": 22.46
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jan 1 2004",
+          "symbol": "MSFT",
+          "date": "Jan 1 2004",
+          "price": 22.69
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Feb 1 2004",
+          "symbol": "MSFT",
+          "date": "Feb 1 2004",
+          "price": 21.77
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Mar 1 2004",
+          "symbol": "MSFT",
+          "date": "Mar 1 2004",
+          "price": 20.46
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Apr 1 2004",
+          "symbol": "MSFT",
+          "date": "Apr 1 2004",
+          "price": 21.45
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "May 1 2004",
+          "symbol": "MSFT",
+          "date": "May 1 2004",
+          "price": 21.53
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jun 1 2004",
+          "symbol": "MSFT",
+          "date": "Jun 1 2004",
+          "price": 23.44
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jul 1 2004",
+          "symbol": "MSFT",
+          "date": "Jul 1 2004",
+          "price": 23.38
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Aug 1 2004",
+          "symbol": "MSFT",
+          "date": "Aug 1 2004",
+          "price": 22.47
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Sep 1 2004",
+          "symbol": "MSFT",
+          "date": "Sep 1 2004",
+          "price": 22.76
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Oct 1 2004",
+          "symbol": "MSFT",
+          "date": "Oct 1 2004",
+          "price": 23.02
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Nov 1 2004",
+          "symbol": "MSFT",
+          "date": "Nov 1 2004",
+          "price": 24.6
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Dec 1 2004",
+          "symbol": "MSFT",
+          "date": "Dec 1 2004",
+          "price": 24.52
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jan 1 2005",
+          "symbol": "MSFT",
+          "date": "Jan 1 2005",
+          "price": 24.11
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Feb 1 2005",
+          "symbol": "MSFT",
+          "date": "Feb 1 2005",
+          "price": 23.15
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Mar 1 2005",
+          "symbol": "MSFT",
+          "date": "Mar 1 2005",
+          "price": 22.24
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Apr 1 2005",
+          "symbol": "MSFT",
+          "date": "Apr 1 2005",
+          "price": 23.28
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "May 1 2005",
+          "symbol": "MSFT",
+          "date": "May 1 2005",
+          "price": 23.82
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jun 1 2005",
+          "symbol": "MSFT",
+          "date": "Jun 1 2005",
+          "price": 22.93
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jul 1 2005",
+          "symbol": "MSFT",
+          "date": "Jul 1 2005",
+          "price": 23.64
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Aug 1 2005",
+          "symbol": "MSFT",
+          "date": "Aug 1 2005",
+          "price": 25.35
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Sep 1 2005",
+          "symbol": "MSFT",
+          "date": "Sep 1 2005",
+          "price": 23.83
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Oct 1 2005",
+          "symbol": "MSFT",
+          "date": "Oct 1 2005",
+          "price": 23.8
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Nov 1 2005",
+          "symbol": "MSFT",
+          "date": "Nov 1 2005",
+          "price": 25.71
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Dec 1 2005",
+          "symbol": "MSFT",
+          "date": "Dec 1 2005",
+          "price": 24.29
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jan 1 2006",
+          "symbol": "MSFT",
+          "date": "Jan 1 2006",
+          "price": 26.14
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Feb 1 2006",
+          "symbol": "MSFT",
+          "date": "Feb 1 2006",
+          "price": 25.04
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Mar 1 2006",
+          "symbol": "MSFT",
+          "date": "Mar 1 2006",
+          "price": 25.36
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Apr 1 2006",
+          "symbol": "MSFT",
+          "date": "Apr 1 2006",
+          "price": 22.5
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "May 1 2006",
+          "symbol": "MSFT",
+          "date": "May 1 2006",
+          "price": 21.19
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jun 1 2006",
+          "symbol": "MSFT",
+          "date": "Jun 1 2006",
+          "price": 21.8
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jul 1 2006",
+          "symbol": "MSFT",
+          "date": "Jul 1 2006",
+          "price": 22.51
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Aug 1 2006",
+          "symbol": "MSFT",
+          "date": "Aug 1 2006",
+          "price": 24.13
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Sep 1 2006",
+          "symbol": "MSFT",
+          "date": "Sep 1 2006",
+          "price": 25.68
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Oct 1 2006",
+          "symbol": "MSFT",
+          "date": "Oct 1 2006",
+          "price": 26.96
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Nov 1 2006",
+          "symbol": "MSFT",
+          "date": "Nov 1 2006",
+          "price": 27.66
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Dec 1 2006",
+          "symbol": "MSFT",
+          "date": "Dec 1 2006",
+          "price": 28.13
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jan 1 2007",
+          "symbol": "MSFT",
+          "date": "Jan 1 2007",
+          "price": 29.07
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Feb 1 2007",
+          "symbol": "MSFT",
+          "date": "Feb 1 2007",
+          "price": 26.63
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Mar 1 2007",
+          "symbol": "MSFT",
+          "date": "Mar 1 2007",
+          "price": 26.35
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Apr 1 2007",
+          "symbol": "MSFT",
+          "date": "Apr 1 2007",
+          "price": 28.3
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "May 1 2007",
+          "symbol": "MSFT",
+          "date": "May 1 2007",
+          "price": 29.11
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jun 1 2007",
+          "symbol": "MSFT",
+          "date": "Jun 1 2007",
+          "price": 27.95
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jul 1 2007",
+          "symbol": "MSFT",
+          "date": "Jul 1 2007",
+          "price": 27.5
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Aug 1 2007",
+          "symbol": "MSFT",
+          "date": "Aug 1 2007",
+          "price": 27.34
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Sep 1 2007",
+          "symbol": "MSFT",
+          "date": "Sep 1 2007",
+          "price": 28.04
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Oct 1 2007",
+          "symbol": "MSFT",
+          "date": "Oct 1 2007",
+          "price": 35.03
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Nov 1 2007",
+          "symbol": "MSFT",
+          "date": "Nov 1 2007",
+          "price": 32.09
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Dec 1 2007",
+          "symbol": "MSFT",
+          "date": "Dec 1 2007",
+          "price": 34.0
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jan 1 2008",
+          "symbol": "MSFT",
+          "date": "Jan 1 2008",
+          "price": 31.13
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Feb 1 2008",
+          "symbol": "MSFT",
+          "date": "Feb 1 2008",
+          "price": 26.07
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Mar 1 2008",
+          "symbol": "MSFT",
+          "date": "Mar 1 2008",
+          "price": 27.21
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Apr 1 2008",
+          "symbol": "MSFT",
+          "date": "Apr 1 2008",
+          "price": 27.34
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "May 1 2008",
+          "symbol": "MSFT",
+          "date": "May 1 2008",
+          "price": 27.25
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jun 1 2008",
+          "symbol": "MSFT",
+          "date": "Jun 1 2008",
+          "price": 26.47
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jul 1 2008",
+          "symbol": "MSFT",
+          "date": "Jul 1 2008",
+          "price": 24.75
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Aug 1 2008",
+          "symbol": "MSFT",
+          "date": "Aug 1 2008",
+          "price": 26.36
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Sep 1 2008",
+          "symbol": "MSFT",
+          "date": "Sep 1 2008",
+          "price": 25.78
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Oct 1 2008",
+          "symbol": "MSFT",
+          "date": "Oct 1 2008",
+          "price": 21.57
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Nov 1 2008",
+          "symbol": "MSFT",
+          "date": "Nov 1 2008",
+          "price": 19.66
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Dec 1 2008",
+          "symbol": "MSFT",
+          "date": "Dec 1 2008",
+          "price": 18.91
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jan 1 2009",
+          "symbol": "MSFT",
+          "date": "Jan 1 2009",
+          "price": 16.63
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Feb 1 2009",
+          "symbol": "MSFT",
+          "date": "Feb 1 2009",
+          "price": 15.81
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Mar 1 2009",
+          "symbol": "MSFT",
+          "date": "Mar 1 2009",
+          "price": 17.99
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Apr 1 2009",
+          "symbol": "MSFT",
+          "date": "Apr 1 2009",
+          "price": 19.84
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "May 1 2009",
+          "symbol": "MSFT",
+          "date": "May 1 2009",
+          "price": 20.59
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jun 1 2009",
+          "symbol": "MSFT",
+          "date": "Jun 1 2009",
+          "price": 23.42
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jul 1 2009",
+          "symbol": "MSFT",
+          "date": "Jul 1 2009",
+          "price": 23.18
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Aug 1 2009",
+          "symbol": "MSFT",
+          "date": "Aug 1 2009",
+          "price": 24.43
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Sep 1 2009",
+          "symbol": "MSFT",
+          "date": "Sep 1 2009",
+          "price": 25.49
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Oct 1 2009",
+          "symbol": "MSFT",
+          "date": "Oct 1 2009",
+          "price": 27.48
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Nov 1 2009",
+          "symbol": "MSFT",
+          "date": "Nov 1 2009",
+          "price": 29.27
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Dec 1 2009",
+          "symbol": "MSFT",
+          "date": "Dec 1 2009",
+          "price": 30.34
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Jan 1 2010",
+          "symbol": "MSFT",
+          "date": "Jan 1 2010",
+          "price": 28.05
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Feb 1 2010",
+          "symbol": "MSFT",
+          "date": "Feb 1 2010",
+          "price": 28.67
+        },
+        {
+          "sym.bol": "MSFT",
+          "da.te": "Mar 1 2010",
+          "symbol": "MSFT",
+          "date": "Mar 1 2010",
+          "price": 28.8
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jan 1 2000",
+          "symbol": "AMZN",
+          "date": "Jan 1 2000",
+          "price": 64.56
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Feb 1 2000",
+          "symbol": "AMZN",
+          "date": "Feb 1 2000",
+          "price": 68.87
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Mar 1 2000",
+          "symbol": "AMZN",
+          "date": "Mar 1 2000",
+          "price": 67.0
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Apr 1 2000",
+          "symbol": "AMZN",
+          "date": "Apr 1 2000",
+          "price": 55.19
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "May 1 2000",
+          "symbol": "AMZN",
+          "date": "May 1 2000",
+          "price": 48.31
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jun 1 2000",
+          "symbol": "AMZN",
+          "date": "Jun 1 2000",
+          "price": 36.31
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jul 1 2000",
+          "symbol": "AMZN",
+          "date": "Jul 1 2000",
+          "price": 30.12
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Aug 1 2000",
+          "symbol": "AMZN",
+          "date": "Aug 1 2000",
+          "price": 41.5
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Sep 1 2000",
+          "symbol": "AMZN",
+          "date": "Sep 1 2000",
+          "price": 38.44
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Oct 1 2000",
+          "symbol": "AMZN",
+          "date": "Oct 1 2000",
+          "price": 36.62
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Nov 1 2000",
+          "symbol": "AMZN",
+          "date": "Nov 1 2000",
+          "price": 24.69
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Dec 1 2000",
+          "symbol": "AMZN",
+          "date": "Dec 1 2000",
+          "price": 15.56
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jan 1 2001",
+          "symbol": "AMZN",
+          "date": "Jan 1 2001",
+          "price": 17.31
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Feb 1 2001",
+          "symbol": "AMZN",
+          "date": "Feb 1 2001",
+          "price": 10.19
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Mar 1 2001",
+          "symbol": "AMZN",
+          "date": "Mar 1 2001",
+          "price": 10.23
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Apr 1 2001",
+          "symbol": "AMZN",
+          "date": "Apr 1 2001",
+          "price": 15.78
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "May 1 2001",
+          "symbol": "AMZN",
+          "date": "May 1 2001",
+          "price": 16.69
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jun 1 2001",
+          "symbol": "AMZN",
+          "date": "Jun 1 2001",
+          "price": 14.15
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jul 1 2001",
+          "symbol": "AMZN",
+          "date": "Jul 1 2001",
+          "price": 12.49
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Aug 1 2001",
+          "symbol": "AMZN",
+          "date": "Aug 1 2001",
+          "price": 8.94
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Sep 1 2001",
+          "symbol": "AMZN",
+          "date": "Sep 1 2001",
+          "price": 5.97
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Oct 1 2001",
+          "symbol": "AMZN",
+          "date": "Oct 1 2001",
+          "price": 6.98
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Nov 1 2001",
+          "symbol": "AMZN",
+          "date": "Nov 1 2001",
+          "price": 11.32
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Dec 1 2001",
+          "symbol": "AMZN",
+          "date": "Dec 1 2001",
+          "price": 10.82
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jan 1 2002",
+          "symbol": "AMZN",
+          "date": "Jan 1 2002",
+          "price": 14.19
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Feb 1 2002",
+          "symbol": "AMZN",
+          "date": "Feb 1 2002",
+          "price": 14.1
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Mar 1 2002",
+          "symbol": "AMZN",
+          "date": "Mar 1 2002",
+          "price": 14.3
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Apr 1 2002",
+          "symbol": "AMZN",
+          "date": "Apr 1 2002",
+          "price": 16.69
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "May 1 2002",
+          "symbol": "AMZN",
+          "date": "May 1 2002",
+          "price": 18.23
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jun 1 2002",
+          "symbol": "AMZN",
+          "date": "Jun 1 2002",
+          "price": 16.25
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jul 1 2002",
+          "symbol": "AMZN",
+          "date": "Jul 1 2002",
+          "price": 14.45
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Aug 1 2002",
+          "symbol": "AMZN",
+          "date": "Aug 1 2002",
+          "price": 14.94
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Sep 1 2002",
+          "symbol": "AMZN",
+          "date": "Sep 1 2002",
+          "price": 15.93
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Oct 1 2002",
+          "symbol": "AMZN",
+          "date": "Oct 1 2002",
+          "price": 19.36
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Nov 1 2002",
+          "symbol": "AMZN",
+          "date": "Nov 1 2002",
+          "price": 23.35
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Dec 1 2002",
+          "symbol": "AMZN",
+          "date": "Dec 1 2002",
+          "price": 18.89
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jan 1 2003",
+          "symbol": "AMZN",
+          "date": "Jan 1 2003",
+          "price": 21.85
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Feb 1 2003",
+          "symbol": "AMZN",
+          "date": "Feb 1 2003",
+          "price": 22.01
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Mar 1 2003",
+          "symbol": "AMZN",
+          "date": "Mar 1 2003",
+          "price": 26.03
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Apr 1 2003",
+          "symbol": "AMZN",
+          "date": "Apr 1 2003",
+          "price": 28.69
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "May 1 2003",
+          "symbol": "AMZN",
+          "date": "May 1 2003",
+          "price": 35.89
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jun 1 2003",
+          "symbol": "AMZN",
+          "date": "Jun 1 2003",
+          "price": 36.32
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jul 1 2003",
+          "symbol": "AMZN",
+          "date": "Jul 1 2003",
+          "price": 41.64
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Aug 1 2003",
+          "symbol": "AMZN",
+          "date": "Aug 1 2003",
+          "price": 46.32
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Sep 1 2003",
+          "symbol": "AMZN",
+          "date": "Sep 1 2003",
+          "price": 48.43
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Oct 1 2003",
+          "symbol": "AMZN",
+          "date": "Oct 1 2003",
+          "price": 54.43
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Nov 1 2003",
+          "symbol": "AMZN",
+          "date": "Nov 1 2003",
+          "price": 53.97
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Dec 1 2003",
+          "symbol": "AMZN",
+          "date": "Dec 1 2003",
+          "price": 52.62
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jan 1 2004",
+          "symbol": "AMZN",
+          "date": "Jan 1 2004",
+          "price": 50.4
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Feb 1 2004",
+          "symbol": "AMZN",
+          "date": "Feb 1 2004",
+          "price": 43.01
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Mar 1 2004",
+          "symbol": "AMZN",
+          "date": "Mar 1 2004",
+          "price": 43.28
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Apr 1 2004",
+          "symbol": "AMZN",
+          "date": "Apr 1 2004",
+          "price": 43.6
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "May 1 2004",
+          "symbol": "AMZN",
+          "date": "May 1 2004",
+          "price": 48.5
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jun 1 2004",
+          "symbol": "AMZN",
+          "date": "Jun 1 2004",
+          "price": 54.4
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jul 1 2004",
+          "symbol": "AMZN",
+          "date": "Jul 1 2004",
+          "price": 38.92
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Aug 1 2004",
+          "symbol": "AMZN",
+          "date": "Aug 1 2004",
+          "price": 38.14
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Sep 1 2004",
+          "symbol": "AMZN",
+          "date": "Sep 1 2004",
+          "price": 40.86
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Oct 1 2004",
+          "symbol": "AMZN",
+          "date": "Oct 1 2004",
+          "price": 34.13
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Nov 1 2004",
+          "symbol": "AMZN",
+          "date": "Nov 1 2004",
+          "price": 39.68
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Dec 1 2004",
+          "symbol": "AMZN",
+          "date": "Dec 1 2004",
+          "price": 44.29
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jan 1 2005",
+          "symbol": "AMZN",
+          "date": "Jan 1 2005",
+          "price": 43.22
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Feb 1 2005",
+          "symbol": "AMZN",
+          "date": "Feb 1 2005",
+          "price": 35.18
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Mar 1 2005",
+          "symbol": "AMZN",
+          "date": "Mar 1 2005",
+          "price": 34.27
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Apr 1 2005",
+          "symbol": "AMZN",
+          "date": "Apr 1 2005",
+          "price": 32.36
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "May 1 2005",
+          "symbol": "AMZN",
+          "date": "May 1 2005",
+          "price": 35.51
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jun 1 2005",
+          "symbol": "AMZN",
+          "date": "Jun 1 2005",
+          "price": 33.09
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jul 1 2005",
+          "symbol": "AMZN",
+          "date": "Jul 1 2005",
+          "price": 45.15
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Aug 1 2005",
+          "symbol": "AMZN",
+          "date": "Aug 1 2005",
+          "price": 42.7
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Sep 1 2005",
+          "symbol": "AMZN",
+          "date": "Sep 1 2005",
+          "price": 45.3
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Oct 1 2005",
+          "symbol": "AMZN",
+          "date": "Oct 1 2005",
+          "price": 39.86
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Nov 1 2005",
+          "symbol": "AMZN",
+          "date": "Nov 1 2005",
+          "price": 48.46
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Dec 1 2005",
+          "symbol": "AMZN",
+          "date": "Dec 1 2005",
+          "price": 47.15
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jan 1 2006",
+          "symbol": "AMZN",
+          "date": "Jan 1 2006",
+          "price": 44.82
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Feb 1 2006",
+          "symbol": "AMZN",
+          "date": "Feb 1 2006",
+          "price": 37.44
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Mar 1 2006",
+          "symbol": "AMZN",
+          "date": "Mar 1 2006",
+          "price": 36.53
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Apr 1 2006",
+          "symbol": "AMZN",
+          "date": "Apr 1 2006",
+          "price": 35.21
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "May 1 2006",
+          "symbol": "AMZN",
+          "date": "May 1 2006",
+          "price": 34.61
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jun 1 2006",
+          "symbol": "AMZN",
+          "date": "Jun 1 2006",
+          "price": 38.68
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jul 1 2006",
+          "symbol": "AMZN",
+          "date": "Jul 1 2006",
+          "price": 26.89
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Aug 1 2006",
+          "symbol": "AMZN",
+          "date": "Aug 1 2006",
+          "price": 30.83
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Sep 1 2006",
+          "symbol": "AMZN",
+          "date": "Sep 1 2006",
+          "price": 32.12
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Oct 1 2006",
+          "symbol": "AMZN",
+          "date": "Oct 1 2006",
+          "price": 38.09
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Nov 1 2006",
+          "symbol": "AMZN",
+          "date": "Nov 1 2006",
+          "price": 40.34
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Dec 1 2006",
+          "symbol": "AMZN",
+          "date": "Dec 1 2006",
+          "price": 39.46
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jan 1 2007",
+          "symbol": "AMZN",
+          "date": "Jan 1 2007",
+          "price": 37.67
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Feb 1 2007",
+          "symbol": "AMZN",
+          "date": "Feb 1 2007",
+          "price": 39.14
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Mar 1 2007",
+          "symbol": "AMZN",
+          "date": "Mar 1 2007",
+          "price": 39.79
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Apr 1 2007",
+          "symbol": "AMZN",
+          "date": "Apr 1 2007",
+          "price": 61.33
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "May 1 2007",
+          "symbol": "AMZN",
+          "date": "May 1 2007",
+          "price": 69.14
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jun 1 2007",
+          "symbol": "AMZN",
+          "date": "Jun 1 2007",
+          "price": 68.41
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jul 1 2007",
+          "symbol": "AMZN",
+          "date": "Jul 1 2007",
+          "price": 78.54
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Aug 1 2007",
+          "symbol": "AMZN",
+          "date": "Aug 1 2007",
+          "price": 79.91
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Sep 1 2007",
+          "symbol": "AMZN",
+          "date": "Sep 1 2007",
+          "price": 93.15
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Oct 1 2007",
+          "symbol": "AMZN",
+          "date": "Oct 1 2007",
+          "price": 89.15
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Nov 1 2007",
+          "symbol": "AMZN",
+          "date": "Nov 1 2007",
+          "price": 90.56
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Dec 1 2007",
+          "symbol": "AMZN",
+          "date": "Dec 1 2007",
+          "price": 92.64
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jan 1 2008",
+          "symbol": "AMZN",
+          "date": "Jan 1 2008",
+          "price": 77.7
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Feb 1 2008",
+          "symbol": "AMZN",
+          "date": "Feb 1 2008",
+          "price": 64.47
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Mar 1 2008",
+          "symbol": "AMZN",
+          "date": "Mar 1 2008",
+          "price": 71.3
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Apr 1 2008",
+          "symbol": "AMZN",
+          "date": "Apr 1 2008",
+          "price": 78.63
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "May 1 2008",
+          "symbol": "AMZN",
+          "date": "May 1 2008",
+          "price": 81.62
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jun 1 2008",
+          "symbol": "AMZN",
+          "date": "Jun 1 2008",
+          "price": 73.33
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jul 1 2008",
+          "symbol": "AMZN",
+          "date": "Jul 1 2008",
+          "price": 76.34
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Aug 1 2008",
+          "symbol": "AMZN",
+          "date": "Aug 1 2008",
+          "price": 80.81
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Sep 1 2008",
+          "symbol": "AMZN",
+          "date": "Sep 1 2008",
+          "price": 72.76
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Oct 1 2008",
+          "symbol": "AMZN",
+          "date": "Oct 1 2008",
+          "price": 57.24
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Nov 1 2008",
+          "symbol": "AMZN",
+          "date": "Nov 1 2008",
+          "price": 42.7
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Dec 1 2008",
+          "symbol": "AMZN",
+          "date": "Dec 1 2008",
+          "price": 51.28
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jan 1 2009",
+          "symbol": "AMZN",
+          "date": "Jan 1 2009",
+          "price": 58.82
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Feb 1 2009",
+          "symbol": "AMZN",
+          "date": "Feb 1 2009",
+          "price": 64.79
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Mar 1 2009",
+          "symbol": "AMZN",
+          "date": "Mar 1 2009",
+          "price": 73.44
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Apr 1 2009",
+          "symbol": "AMZN",
+          "date": "Apr 1 2009",
+          "price": 80.52
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "May 1 2009",
+          "symbol": "AMZN",
+          "date": "May 1 2009",
+          "price": 77.99
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jun 1 2009",
+          "symbol": "AMZN",
+          "date": "Jun 1 2009",
+          "price": 83.66
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jul 1 2009",
+          "symbol": "AMZN",
+          "date": "Jul 1 2009",
+          "price": 85.76
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Aug 1 2009",
+          "symbol": "AMZN",
+          "date": "Aug 1 2009",
+          "price": 81.19
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Sep 1 2009",
+          "symbol": "AMZN",
+          "date": "Sep 1 2009",
+          "price": 93.36
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Oct 1 2009",
+          "symbol": "AMZN",
+          "date": "Oct 1 2009",
+          "price": 118.81
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Nov 1 2009",
+          "symbol": "AMZN",
+          "date": "Nov 1 2009",
+          "price": 135.91
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Dec 1 2009",
+          "symbol": "AMZN",
+          "date": "Dec 1 2009",
+          "price": 134.52
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Jan 1 2010",
+          "symbol": "AMZN",
+          "date": "Jan 1 2010",
+          "price": 125.41
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Feb 1 2010",
+          "symbol": "AMZN",
+          "date": "Feb 1 2010",
+          "price": 118.4
+        },
+        {
+          "sym.bol": "AMZN",
+          "da.te": "Mar 1 2010",
+          "symbol": "AMZN",
+          "date": "Mar 1 2010",
+          "price": 128.82
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jan 1 2000",
+          "symbol": "IBM",
+          "date": "Jan 1 2000",
+          "price": 100.52
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Feb 1 2000",
+          "symbol": "IBM",
+          "date": "Feb 1 2000",
+          "price": 92.11
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Mar 1 2000",
+          "symbol": "IBM",
+          "date": "Mar 1 2000",
+          "price": 106.11
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Apr 1 2000",
+          "symbol": "IBM",
+          "date": "Apr 1 2000",
+          "price": 99.95
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "May 1 2000",
+          "symbol": "IBM",
+          "date": "May 1 2000",
+          "price": 96.31
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jun 1 2000",
+          "symbol": "IBM",
+          "date": "Jun 1 2000",
+          "price": 98.33
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jul 1 2000",
+          "symbol": "IBM",
+          "date": "Jul 1 2000",
+          "price": 100.74
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Aug 1 2000",
+          "symbol": "IBM",
+          "date": "Aug 1 2000",
+          "price": 118.62
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Sep 1 2000",
+          "symbol": "IBM",
+          "date": "Sep 1 2000",
+          "price": 101.19
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Oct 1 2000",
+          "symbol": "IBM",
+          "date": "Oct 1 2000",
+          "price": 88.5
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Nov 1 2000",
+          "symbol": "IBM",
+          "date": "Nov 1 2000",
+          "price": 84.12
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Dec 1 2000",
+          "symbol": "IBM",
+          "date": "Dec 1 2000",
+          "price": 76.47
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jan 1 2001",
+          "symbol": "IBM",
+          "date": "Jan 1 2001",
+          "price": 100.76
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Feb 1 2001",
+          "symbol": "IBM",
+          "date": "Feb 1 2001",
+          "price": 89.98
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Mar 1 2001",
+          "symbol": "IBM",
+          "date": "Mar 1 2001",
+          "price": 86.63
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Apr 1 2001",
+          "symbol": "IBM",
+          "date": "Apr 1 2001",
+          "price": 103.7
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "May 1 2001",
+          "symbol": "IBM",
+          "date": "May 1 2001",
+          "price": 100.82
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jun 1 2001",
+          "symbol": "IBM",
+          "date": "Jun 1 2001",
+          "price": 102.35
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jul 1 2001",
+          "symbol": "IBM",
+          "date": "Jul 1 2001",
+          "price": 94.87
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Aug 1 2001",
+          "symbol": "IBM",
+          "date": "Aug 1 2001",
+          "price": 90.25
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Sep 1 2001",
+          "symbol": "IBM",
+          "date": "Sep 1 2001",
+          "price": 82.82
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Oct 1 2001",
+          "symbol": "IBM",
+          "date": "Oct 1 2001",
+          "price": 97.58
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Nov 1 2001",
+          "symbol": "IBM",
+          "date": "Nov 1 2001",
+          "price": 104.5
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Dec 1 2001",
+          "symbol": "IBM",
+          "date": "Dec 1 2001",
+          "price": 109.36
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jan 1 2002",
+          "symbol": "IBM",
+          "date": "Jan 1 2002",
+          "price": 97.54
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Feb 1 2002",
+          "symbol": "IBM",
+          "date": "Feb 1 2002",
+          "price": 88.82
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Mar 1 2002",
+          "symbol": "IBM",
+          "date": "Mar 1 2002",
+          "price": 94.15
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Apr 1 2002",
+          "symbol": "IBM",
+          "date": "Apr 1 2002",
+          "price": 75.82
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "May 1 2002",
+          "symbol": "IBM",
+          "date": "May 1 2002",
+          "price": 72.97
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jun 1 2002",
+          "symbol": "IBM",
+          "date": "Jun 1 2002",
+          "price": 65.31
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jul 1 2002",
+          "symbol": "IBM",
+          "date": "Jul 1 2002",
+          "price": 63.86
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Aug 1 2002",
+          "symbol": "IBM",
+          "date": "Aug 1 2002",
+          "price": 68.52
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Sep 1 2002",
+          "symbol": "IBM",
+          "date": "Sep 1 2002",
+          "price": 53.01
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Oct 1 2002",
+          "symbol": "IBM",
+          "date": "Oct 1 2002",
+          "price": 71.76
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Nov 1 2002",
+          "symbol": "IBM",
+          "date": "Nov 1 2002",
+          "price": 79.16
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Dec 1 2002",
+          "symbol": "IBM",
+          "date": "Dec 1 2002",
+          "price": 70.58
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jan 1 2003",
+          "symbol": "IBM",
+          "date": "Jan 1 2003",
+          "price": 71.22
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Feb 1 2003",
+          "symbol": "IBM",
+          "date": "Feb 1 2003",
+          "price": 71.13
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Mar 1 2003",
+          "symbol": "IBM",
+          "date": "Mar 1 2003",
+          "price": 71.57
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Apr 1 2003",
+          "symbol": "IBM",
+          "date": "Apr 1 2003",
+          "price": 77.47
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "May 1 2003",
+          "symbol": "IBM",
+          "date": "May 1 2003",
+          "price": 80.48
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jun 1 2003",
+          "symbol": "IBM",
+          "date": "Jun 1 2003",
+          "price": 75.42
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jul 1 2003",
+          "symbol": "IBM",
+          "date": "Jul 1 2003",
+          "price": 74.28
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Aug 1 2003",
+          "symbol": "IBM",
+          "date": "Aug 1 2003",
+          "price": 75.12
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Sep 1 2003",
+          "symbol": "IBM",
+          "date": "Sep 1 2003",
+          "price": 80.91
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Oct 1 2003",
+          "symbol": "IBM",
+          "date": "Oct 1 2003",
+          "price": 81.96
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Nov 1 2003",
+          "symbol": "IBM",
+          "date": "Nov 1 2003",
+          "price": 83.08
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Dec 1 2003",
+          "symbol": "IBM",
+          "date": "Dec 1 2003",
+          "price": 85.05
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jan 1 2004",
+          "symbol": "IBM",
+          "date": "Jan 1 2004",
+          "price": 91.06
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Feb 1 2004",
+          "symbol": "IBM",
+          "date": "Feb 1 2004",
+          "price": 88.7
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Mar 1 2004",
+          "symbol": "IBM",
+          "date": "Mar 1 2004",
+          "price": 84.41
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Apr 1 2004",
+          "symbol": "IBM",
+          "date": "Apr 1 2004",
+          "price": 81.04
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "May 1 2004",
+          "symbol": "IBM",
+          "date": "May 1 2004",
+          "price": 81.59
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jun 1 2004",
+          "symbol": "IBM",
+          "date": "Jun 1 2004",
+          "price": 81.19
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jul 1 2004",
+          "symbol": "IBM",
+          "date": "Jul 1 2004",
+          "price": 80.19
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Aug 1 2004",
+          "symbol": "IBM",
+          "date": "Aug 1 2004",
+          "price": 78.17
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Sep 1 2004",
+          "symbol": "IBM",
+          "date": "Sep 1 2004",
+          "price": 79.13
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Oct 1 2004",
+          "symbol": "IBM",
+          "date": "Oct 1 2004",
+          "price": 82.84
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Nov 1 2004",
+          "symbol": "IBM",
+          "date": "Nov 1 2004",
+          "price": 87.15
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Dec 1 2004",
+          "symbol": "IBM",
+          "date": "Dec 1 2004",
+          "price": 91.16
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jan 1 2005",
+          "symbol": "IBM",
+          "date": "Jan 1 2005",
+          "price": 86.39
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Feb 1 2005",
+          "symbol": "IBM",
+          "date": "Feb 1 2005",
+          "price": 85.78
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Mar 1 2005",
+          "symbol": "IBM",
+          "date": "Mar 1 2005",
+          "price": 84.66
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Apr 1 2005",
+          "symbol": "IBM",
+          "date": "Apr 1 2005",
+          "price": 70.77
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "May 1 2005",
+          "symbol": "IBM",
+          "date": "May 1 2005",
+          "price": 70.18
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jun 1 2005",
+          "symbol": "IBM",
+          "date": "Jun 1 2005",
+          "price": 68.93
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jul 1 2005",
+          "symbol": "IBM",
+          "date": "Jul 1 2005",
+          "price": 77.53
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Aug 1 2005",
+          "symbol": "IBM",
+          "date": "Aug 1 2005",
+          "price": 75.07
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Sep 1 2005",
+          "symbol": "IBM",
+          "date": "Sep 1 2005",
+          "price": 74.7
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Oct 1 2005",
+          "symbol": "IBM",
+          "date": "Oct 1 2005",
+          "price": 76.25
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Nov 1 2005",
+          "symbol": "IBM",
+          "date": "Nov 1 2005",
+          "price": 82.98
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Dec 1 2005",
+          "symbol": "IBM",
+          "date": "Dec 1 2005",
+          "price": 76.73
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jan 1 2006",
+          "symbol": "IBM",
+          "date": "Jan 1 2006",
+          "price": 75.89
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Feb 1 2006",
+          "symbol": "IBM",
+          "date": "Feb 1 2006",
+          "price": 75.09
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Mar 1 2006",
+          "symbol": "IBM",
+          "date": "Mar 1 2006",
+          "price": 77.17
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Apr 1 2006",
+          "symbol": "IBM",
+          "date": "Apr 1 2006",
+          "price": 77.05
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "May 1 2006",
+          "symbol": "IBM",
+          "date": "May 1 2006",
+          "price": 75.04
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jun 1 2006",
+          "symbol": "IBM",
+          "date": "Jun 1 2006",
+          "price": 72.15
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jul 1 2006",
+          "symbol": "IBM",
+          "date": "Jul 1 2006",
+          "price": 72.7
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Aug 1 2006",
+          "symbol": "IBM",
+          "date": "Aug 1 2006",
+          "price": 76.35
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Sep 1 2006",
+          "symbol": "IBM",
+          "date": "Sep 1 2006",
+          "price": 77.26
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Oct 1 2006",
+          "symbol": "IBM",
+          "date": "Oct 1 2006",
+          "price": 87.06
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Nov 1 2006",
+          "symbol": "IBM",
+          "date": "Nov 1 2006",
+          "price": 86.95
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Dec 1 2006",
+          "symbol": "IBM",
+          "date": "Dec 1 2006",
+          "price": 91.9
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jan 1 2007",
+          "symbol": "IBM",
+          "date": "Jan 1 2007",
+          "price": 93.79
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Feb 1 2007",
+          "symbol": "IBM",
+          "date": "Feb 1 2007",
+          "price": 88.18
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Mar 1 2007",
+          "symbol": "IBM",
+          "date": "Mar 1 2007",
+          "price": 89.44
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Apr 1 2007",
+          "symbol": "IBM",
+          "date": "Apr 1 2007",
+          "price": 96.98
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "May 1 2007",
+          "symbol": "IBM",
+          "date": "May 1 2007",
+          "price": 101.54
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jun 1 2007",
+          "symbol": "IBM",
+          "date": "Jun 1 2007",
+          "price": 100.25
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jul 1 2007",
+          "symbol": "IBM",
+          "date": "Jul 1 2007",
+          "price": 105.4
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Aug 1 2007",
+          "symbol": "IBM",
+          "date": "Aug 1 2007",
+          "price": 111.54
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Sep 1 2007",
+          "symbol": "IBM",
+          "date": "Sep 1 2007",
+          "price": 112.6
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Oct 1 2007",
+          "symbol": "IBM",
+          "date": "Oct 1 2007",
+          "price": 111.0
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Nov 1 2007",
+          "symbol": "IBM",
+          "date": "Nov 1 2007",
+          "price": 100.9
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Dec 1 2007",
+          "symbol": "IBM",
+          "date": "Dec 1 2007",
+          "price": 103.7
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jan 1 2008",
+          "symbol": "IBM",
+          "date": "Jan 1 2008",
+          "price": 102.75
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Feb 1 2008",
+          "symbol": "IBM",
+          "date": "Feb 1 2008",
+          "price": 109.64
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Mar 1 2008",
+          "symbol": "IBM",
+          "date": "Mar 1 2008",
+          "price": 110.87
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Apr 1 2008",
+          "symbol": "IBM",
+          "date": "Apr 1 2008",
+          "price": 116.23
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "May 1 2008",
+          "symbol": "IBM",
+          "date": "May 1 2008",
+          "price": 125.14
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jun 1 2008",
+          "symbol": "IBM",
+          "date": "Jun 1 2008",
+          "price": 114.6
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jul 1 2008",
+          "symbol": "IBM",
+          "date": "Jul 1 2008",
+          "price": 123.74
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Aug 1 2008",
+          "symbol": "IBM",
+          "date": "Aug 1 2008",
+          "price": 118.16
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Sep 1 2008",
+          "symbol": "IBM",
+          "date": "Sep 1 2008",
+          "price": 113.53
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Oct 1 2008",
+          "symbol": "IBM",
+          "date": "Oct 1 2008",
+          "price": 90.24
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Nov 1 2008",
+          "symbol": "IBM",
+          "date": "Nov 1 2008",
+          "price": 79.65
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Dec 1 2008",
+          "symbol": "IBM",
+          "date": "Dec 1 2008",
+          "price": 82.15
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jan 1 2009",
+          "symbol": "IBM",
+          "date": "Jan 1 2009",
+          "price": 89.46
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Feb 1 2009",
+          "symbol": "IBM",
+          "date": "Feb 1 2009",
+          "price": 90.32
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Mar 1 2009",
+          "symbol": "IBM",
+          "date": "Mar 1 2009",
+          "price": 95.09
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Apr 1 2009",
+          "symbol": "IBM",
+          "date": "Apr 1 2009",
+          "price": 101.29
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "May 1 2009",
+          "symbol": "IBM",
+          "date": "May 1 2009",
+          "price": 104.85
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jun 1 2009",
+          "symbol": "IBM",
+          "date": "Jun 1 2009",
+          "price": 103.01
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jul 1 2009",
+          "symbol": "IBM",
+          "date": "Jul 1 2009",
+          "price": 116.34
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Aug 1 2009",
+          "symbol": "IBM",
+          "date": "Aug 1 2009",
+          "price": 117.0
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Sep 1 2009",
+          "symbol": "IBM",
+          "date": "Sep 1 2009",
+          "price": 118.55
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Oct 1 2009",
+          "symbol": "IBM",
+          "date": "Oct 1 2009",
+          "price": 119.54
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Nov 1 2009",
+          "symbol": "IBM",
+          "date": "Nov 1 2009",
+          "price": 125.79
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Dec 1 2009",
+          "symbol": "IBM",
+          "date": "Dec 1 2009",
+          "price": 130.32
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Jan 1 2010",
+          "symbol": "IBM",
+          "date": "Jan 1 2010",
+          "price": 121.85
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Feb 1 2010",
+          "symbol": "IBM",
+          "date": "Feb 1 2010",
+          "price": 127.16
+        },
+        {
+          "sym.bol": "IBM",
+          "da.te": "Mar 1 2010",
+          "symbol": "IBM",
+          "date": "Mar 1 2010",
+          "price": 125.55
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Aug 1 2004",
+          "symbol": "GOOG",
+          "date": "Aug 1 2004",
+          "price": 102.37
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Sep 1 2004",
+          "symbol": "GOOG",
+          "date": "Sep 1 2004",
+          "price": 129.6
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Oct 1 2004",
+          "symbol": "GOOG",
+          "date": "Oct 1 2004",
+          "price": 190.64
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Nov 1 2004",
+          "symbol": "GOOG",
+          "date": "Nov 1 2004",
+          "price": 181.98
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Dec 1 2004",
+          "symbol": "GOOG",
+          "date": "Dec 1 2004",
+          "price": 192.79
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jan 1 2005",
+          "symbol": "GOOG",
+          "date": "Jan 1 2005",
+          "price": 195.62
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Feb 1 2005",
+          "symbol": "GOOG",
+          "date": "Feb 1 2005",
+          "price": 187.99
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Mar 1 2005",
+          "symbol": "GOOG",
+          "date": "Mar 1 2005",
+          "price": 180.51
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Apr 1 2005",
+          "symbol": "GOOG",
+          "date": "Apr 1 2005",
+          "price": 220.0
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "May 1 2005",
+          "symbol": "GOOG",
+          "date": "May 1 2005",
+          "price": 277.27
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jun 1 2005",
+          "symbol": "GOOG",
+          "date": "Jun 1 2005",
+          "price": 294.15
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jul 1 2005",
+          "symbol": "GOOG",
+          "date": "Jul 1 2005",
+          "price": 287.76
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Aug 1 2005",
+          "symbol": "GOOG",
+          "date": "Aug 1 2005",
+          "price": 286.0
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Sep 1 2005",
+          "symbol": "GOOG",
+          "date": "Sep 1 2005",
+          "price": 316.46
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Oct 1 2005",
+          "symbol": "GOOG",
+          "date": "Oct 1 2005",
+          "price": 372.14
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Nov 1 2005",
+          "symbol": "GOOG",
+          "date": "Nov 1 2005",
+          "price": 404.91
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Dec 1 2005",
+          "symbol": "GOOG",
+          "date": "Dec 1 2005",
+          "price": 414.86
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jan 1 2006",
+          "symbol": "GOOG",
+          "date": "Jan 1 2006",
+          "price": 432.66
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Feb 1 2006",
+          "symbol": "GOOG",
+          "date": "Feb 1 2006",
+          "price": 362.62
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Mar 1 2006",
+          "symbol": "GOOG",
+          "date": "Mar 1 2006",
+          "price": 390.0
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Apr 1 2006",
+          "symbol": "GOOG",
+          "date": "Apr 1 2006",
+          "price": 417.94
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "May 1 2006",
+          "symbol": "GOOG",
+          "date": "May 1 2006",
+          "price": 371.82
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jun 1 2006",
+          "symbol": "GOOG",
+          "date": "Jun 1 2006",
+          "price": 419.33
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jul 1 2006",
+          "symbol": "GOOG",
+          "date": "Jul 1 2006",
+          "price": 386.6
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Aug 1 2006",
+          "symbol": "GOOG",
+          "date": "Aug 1 2006",
+          "price": 378.53
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Sep 1 2006",
+          "symbol": "GOOG",
+          "date": "Sep 1 2006",
+          "price": 401.9
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Oct 1 2006",
+          "symbol": "GOOG",
+          "date": "Oct 1 2006",
+          "price": 476.39
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Nov 1 2006",
+          "symbol": "GOOG",
+          "date": "Nov 1 2006",
+          "price": 484.81
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Dec 1 2006",
+          "symbol": "GOOG",
+          "date": "Dec 1 2006",
+          "price": 460.48
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jan 1 2007",
+          "symbol": "GOOG",
+          "date": "Jan 1 2007",
+          "price": 501.5
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Feb 1 2007",
+          "symbol": "GOOG",
+          "date": "Feb 1 2007",
+          "price": 449.45
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Mar 1 2007",
+          "symbol": "GOOG",
+          "date": "Mar 1 2007",
+          "price": 458.16
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Apr 1 2007",
+          "symbol": "GOOG",
+          "date": "Apr 1 2007",
+          "price": 471.38
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "May 1 2007",
+          "symbol": "GOOG",
+          "date": "May 1 2007",
+          "price": 497.91
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jun 1 2007",
+          "symbol": "GOOG",
+          "date": "Jun 1 2007",
+          "price": 522.7
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jul 1 2007",
+          "symbol": "GOOG",
+          "date": "Jul 1 2007",
+          "price": 510.0
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Aug 1 2007",
+          "symbol": "GOOG",
+          "date": "Aug 1 2007",
+          "price": 515.25
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Sep 1 2007",
+          "symbol": "GOOG",
+          "date": "Sep 1 2007",
+          "price": 567.27
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Oct 1 2007",
+          "symbol": "GOOG",
+          "date": "Oct 1 2007",
+          "price": 707.0
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Nov 1 2007",
+          "symbol": "GOOG",
+          "date": "Nov 1 2007",
+          "price": 693.0
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Dec 1 2007",
+          "symbol": "GOOG",
+          "date": "Dec 1 2007",
+          "price": 691.48
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jan 1 2008",
+          "symbol": "GOOG",
+          "date": "Jan 1 2008",
+          "price": 564.3
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Feb 1 2008",
+          "symbol": "GOOG",
+          "date": "Feb 1 2008",
+          "price": 471.18
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Mar 1 2008",
+          "symbol": "GOOG",
+          "date": "Mar 1 2008",
+          "price": 440.47
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Apr 1 2008",
+          "symbol": "GOOG",
+          "date": "Apr 1 2008",
+          "price": 574.29
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "May 1 2008",
+          "symbol": "GOOG",
+          "date": "May 1 2008",
+          "price": 585.8
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jun 1 2008",
+          "symbol": "GOOG",
+          "date": "Jun 1 2008",
+          "price": 526.42
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jul 1 2008",
+          "symbol": "GOOG",
+          "date": "Jul 1 2008",
+          "price": 473.75
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Aug 1 2008",
+          "symbol": "GOOG",
+          "date": "Aug 1 2008",
+          "price": 463.29
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Sep 1 2008",
+          "symbol": "GOOG",
+          "date": "Sep 1 2008",
+          "price": 400.52
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Oct 1 2008",
+          "symbol": "GOOG",
+          "date": "Oct 1 2008",
+          "price": 359.36
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Nov 1 2008",
+          "symbol": "GOOG",
+          "date": "Nov 1 2008",
+          "price": 292.96
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Dec 1 2008",
+          "symbol": "GOOG",
+          "date": "Dec 1 2008",
+          "price": 307.65
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jan 1 2009",
+          "symbol": "GOOG",
+          "date": "Jan 1 2009",
+          "price": 338.53
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Feb 1 2009",
+          "symbol": "GOOG",
+          "date": "Feb 1 2009",
+          "price": 337.99
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Mar 1 2009",
+          "symbol": "GOOG",
+          "date": "Mar 1 2009",
+          "price": 348.06
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Apr 1 2009",
+          "symbol": "GOOG",
+          "date": "Apr 1 2009",
+          "price": 395.97
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "May 1 2009",
+          "symbol": "GOOG",
+          "date": "May 1 2009",
+          "price": 417.23
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jun 1 2009",
+          "symbol": "GOOG",
+          "date": "Jun 1 2009",
+          "price": 421.59
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jul 1 2009",
+          "symbol": "GOOG",
+          "date": "Jul 1 2009",
+          "price": 443.05
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Aug 1 2009",
+          "symbol": "GOOG",
+          "date": "Aug 1 2009",
+          "price": 461.67
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Sep 1 2009",
+          "symbol": "GOOG",
+          "date": "Sep 1 2009",
+          "price": 495.85
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Oct 1 2009",
+          "symbol": "GOOG",
+          "date": "Oct 1 2009",
+          "price": 536.12
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Nov 1 2009",
+          "symbol": "GOOG",
+          "date": "Nov 1 2009",
+          "price": 583.0
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Dec 1 2009",
+          "symbol": "GOOG",
+          "date": "Dec 1 2009",
+          "price": 619.98
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Jan 1 2010",
+          "symbol": "GOOG",
+          "date": "Jan 1 2010",
+          "price": 529.94
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Feb 1 2010",
+          "symbol": "GOOG",
+          "date": "Feb 1 2010",
+          "price": 526.8
+        },
+        {
+          "sym.bol": "GOOG",
+          "da.te": "Mar 1 2010",
+          "symbol": "GOOG",
+          "date": "Mar 1 2010",
+          "price": 560.19
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jan 1 2000",
+          "symbol": "AAPL",
+          "date": "Jan 1 2000",
+          "price": 25.94
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Feb 1 2000",
+          "symbol": "AAPL",
+          "date": "Feb 1 2000",
+          "price": 28.66
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Mar 1 2000",
+          "symbol": "AAPL",
+          "date": "Mar 1 2000",
+          "price": 33.95
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Apr 1 2000",
+          "symbol": "AAPL",
+          "date": "Apr 1 2000",
+          "price": 31.01
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "May 1 2000",
+          "symbol": "AAPL",
+          "date": "May 1 2000",
+          "price": 21.0
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jun 1 2000",
+          "symbol": "AAPL",
+          "date": "Jun 1 2000",
+          "price": 26.19
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jul 1 2000",
+          "symbol": "AAPL",
+          "date": "Jul 1 2000",
+          "price": 25.41
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Aug 1 2000",
+          "symbol": "AAPL",
+          "date": "Aug 1 2000",
+          "price": 30.47
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Sep 1 2000",
+          "symbol": "AAPL",
+          "date": "Sep 1 2000",
+          "price": 12.88
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Oct 1 2000",
+          "symbol": "AAPL",
+          "date": "Oct 1 2000",
+          "price": 9.78
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Nov 1 2000",
+          "symbol": "AAPL",
+          "date": "Nov 1 2000",
+          "price": 8.25
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Dec 1 2000",
+          "symbol": "AAPL",
+          "date": "Dec 1 2000",
+          "price": 7.44
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jan 1 2001",
+          "symbol": "AAPL",
+          "date": "Jan 1 2001",
+          "price": 10.81
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Feb 1 2001",
+          "symbol": "AAPL",
+          "date": "Feb 1 2001",
+          "price": 9.12
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Mar 1 2001",
+          "symbol": "AAPL",
+          "date": "Mar 1 2001",
+          "price": 11.03
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Apr 1 2001",
+          "symbol": "AAPL",
+          "date": "Apr 1 2001",
+          "price": 12.74
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "May 1 2001",
+          "symbol": "AAPL",
+          "date": "May 1 2001",
+          "price": 9.98
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jun 1 2001",
+          "symbol": "AAPL",
+          "date": "Jun 1 2001",
+          "price": 11.62
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jul 1 2001",
+          "symbol": "AAPL",
+          "date": "Jul 1 2001",
+          "price": 9.4
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Aug 1 2001",
+          "symbol": "AAPL",
+          "date": "Aug 1 2001",
+          "price": 9.27
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Sep 1 2001",
+          "symbol": "AAPL",
+          "date": "Sep 1 2001",
+          "price": 7.76
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Oct 1 2001",
+          "symbol": "AAPL",
+          "date": "Oct 1 2001",
+          "price": 8.78
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Nov 1 2001",
+          "symbol": "AAPL",
+          "date": "Nov 1 2001",
+          "price": 10.65
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Dec 1 2001",
+          "symbol": "AAPL",
+          "date": "Dec 1 2001",
+          "price": 10.95
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jan 1 2002",
+          "symbol": "AAPL",
+          "date": "Jan 1 2002",
+          "price": 12.36
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Feb 1 2002",
+          "symbol": "AAPL",
+          "date": "Feb 1 2002",
+          "price": 10.85
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Mar 1 2002",
+          "symbol": "AAPL",
+          "date": "Mar 1 2002",
+          "price": 11.84
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Apr 1 2002",
+          "symbol": "AAPL",
+          "date": "Apr 1 2002",
+          "price": 12.14
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "May 1 2002",
+          "symbol": "AAPL",
+          "date": "May 1 2002",
+          "price": 11.65
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jun 1 2002",
+          "symbol": "AAPL",
+          "date": "Jun 1 2002",
+          "price": 8.86
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jul 1 2002",
+          "symbol": "AAPL",
+          "date": "Jul 1 2002",
+          "price": 7.63
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Aug 1 2002",
+          "symbol": "AAPL",
+          "date": "Aug 1 2002",
+          "price": 7.38
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Sep 1 2002",
+          "symbol": "AAPL",
+          "date": "Sep 1 2002",
+          "price": 7.25
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Oct 1 2002",
+          "symbol": "AAPL",
+          "date": "Oct 1 2002",
+          "price": 8.03
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Nov 1 2002",
+          "symbol": "AAPL",
+          "date": "Nov 1 2002",
+          "price": 7.75
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Dec 1 2002",
+          "symbol": "AAPL",
+          "date": "Dec 1 2002",
+          "price": 7.16
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jan 1 2003",
+          "symbol": "AAPL",
+          "date": "Jan 1 2003",
+          "price": 7.18
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Feb 1 2003",
+          "symbol": "AAPL",
+          "date": "Feb 1 2003",
+          "price": 7.51
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Mar 1 2003",
+          "symbol": "AAPL",
+          "date": "Mar 1 2003",
+          "price": 7.07
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Apr 1 2003",
+          "symbol": "AAPL",
+          "date": "Apr 1 2003",
+          "price": 7.11
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "May 1 2003",
+          "symbol": "AAPL",
+          "date": "May 1 2003",
+          "price": 8.98
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jun 1 2003",
+          "symbol": "AAPL",
+          "date": "Jun 1 2003",
+          "price": 9.53
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jul 1 2003",
+          "symbol": "AAPL",
+          "date": "Jul 1 2003",
+          "price": 10.54
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Aug 1 2003",
+          "symbol": "AAPL",
+          "date": "Aug 1 2003",
+          "price": 11.31
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Sep 1 2003",
+          "symbol": "AAPL",
+          "date": "Sep 1 2003",
+          "price": 10.36
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Oct 1 2003",
+          "symbol": "AAPL",
+          "date": "Oct 1 2003",
+          "price": 11.44
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Nov 1 2003",
+          "symbol": "AAPL",
+          "date": "Nov 1 2003",
+          "price": 10.45
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Dec 1 2003",
+          "symbol": "AAPL",
+          "date": "Dec 1 2003",
+          "price": 10.69
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jan 1 2004",
+          "symbol": "AAPL",
+          "date": "Jan 1 2004",
+          "price": 11.28
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Feb 1 2004",
+          "symbol": "AAPL",
+          "date": "Feb 1 2004",
+          "price": 11.96
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Mar 1 2004",
+          "symbol": "AAPL",
+          "date": "Mar 1 2004",
+          "price": 13.52
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Apr 1 2004",
+          "symbol": "AAPL",
+          "date": "Apr 1 2004",
+          "price": 12.89
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "May 1 2004",
+          "symbol": "AAPL",
+          "date": "May 1 2004",
+          "price": 14.03
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jun 1 2004",
+          "symbol": "AAPL",
+          "date": "Jun 1 2004",
+          "price": 16.27
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jul 1 2004",
+          "symbol": "AAPL",
+          "date": "Jul 1 2004",
+          "price": 16.17
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Aug 1 2004",
+          "symbol": "AAPL",
+          "date": "Aug 1 2004",
+          "price": 17.25
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Sep 1 2004",
+          "symbol": "AAPL",
+          "date": "Sep 1 2004",
+          "price": 19.38
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Oct 1 2004",
+          "symbol": "AAPL",
+          "date": "Oct 1 2004",
+          "price": 26.2
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Nov 1 2004",
+          "symbol": "AAPL",
+          "date": "Nov 1 2004",
+          "price": 33.53
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Dec 1 2004",
+          "symbol": "AAPL",
+          "date": "Dec 1 2004",
+          "price": 32.2
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jan 1 2005",
+          "symbol": "AAPL",
+          "date": "Jan 1 2005",
+          "price": 38.45
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Feb 1 2005",
+          "symbol": "AAPL",
+          "date": "Feb 1 2005",
+          "price": 44.86
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Mar 1 2005",
+          "symbol": "AAPL",
+          "date": "Mar 1 2005",
+          "price": 41.67
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Apr 1 2005",
+          "symbol": "AAPL",
+          "date": "Apr 1 2005",
+          "price": 36.06
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "May 1 2005",
+          "symbol": "AAPL",
+          "date": "May 1 2005",
+          "price": 39.76
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jun 1 2005",
+          "symbol": "AAPL",
+          "date": "Jun 1 2005",
+          "price": 36.81
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jul 1 2005",
+          "symbol": "AAPL",
+          "date": "Jul 1 2005",
+          "price": 42.65
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Aug 1 2005",
+          "symbol": "AAPL",
+          "date": "Aug 1 2005",
+          "price": 46.89
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Sep 1 2005",
+          "symbol": "AAPL",
+          "date": "Sep 1 2005",
+          "price": 53.61
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Oct 1 2005",
+          "symbol": "AAPL",
+          "date": "Oct 1 2005",
+          "price": 57.59
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Nov 1 2005",
+          "symbol": "AAPL",
+          "date": "Nov 1 2005",
+          "price": 67.82
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Dec 1 2005",
+          "symbol": "AAPL",
+          "date": "Dec 1 2005",
+          "price": 71.89
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jan 1 2006",
+          "symbol": "AAPL",
+          "date": "Jan 1 2006",
+          "price": 75.51
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Feb 1 2006",
+          "symbol": "AAPL",
+          "date": "Feb 1 2006",
+          "price": 68.49
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Mar 1 2006",
+          "symbol": "AAPL",
+          "date": "Mar 1 2006",
+          "price": 62.72
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Apr 1 2006",
+          "symbol": "AAPL",
+          "date": "Apr 1 2006",
+          "price": 70.39
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "May 1 2006",
+          "symbol": "AAPL",
+          "date": "May 1 2006",
+          "price": 59.77
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jun 1 2006",
+          "symbol": "AAPL",
+          "date": "Jun 1 2006",
+          "price": 57.27
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jul 1 2006",
+          "symbol": "AAPL",
+          "date": "Jul 1 2006",
+          "price": 67.96
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Aug 1 2006",
+          "symbol": "AAPL",
+          "date": "Aug 1 2006",
+          "price": 67.85
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Sep 1 2006",
+          "symbol": "AAPL",
+          "date": "Sep 1 2006",
+          "price": 76.98
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Oct 1 2006",
+          "symbol": "AAPL",
+          "date": "Oct 1 2006",
+          "price": 81.08
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Nov 1 2006",
+          "symbol": "AAPL",
+          "date": "Nov 1 2006",
+          "price": 91.66
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Dec 1 2006",
+          "symbol": "AAPL",
+          "date": "Dec 1 2006",
+          "price": 84.84
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jan 1 2007",
+          "symbol": "AAPL",
+          "date": "Jan 1 2007",
+          "price": 85.73
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Feb 1 2007",
+          "symbol": "AAPL",
+          "date": "Feb 1 2007",
+          "price": 84.61
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Mar 1 2007",
+          "symbol": "AAPL",
+          "date": "Mar 1 2007",
+          "price": 92.91
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Apr 1 2007",
+          "symbol": "AAPL",
+          "date": "Apr 1 2007",
+          "price": 99.8
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "May 1 2007",
+          "symbol": "AAPL",
+          "date": "May 1 2007",
+          "price": 121.19
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jun 1 2007",
+          "symbol": "AAPL",
+          "date": "Jun 1 2007",
+          "price": 122.04
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jul 1 2007",
+          "symbol": "AAPL",
+          "date": "Jul 1 2007",
+          "price": 131.76
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Aug 1 2007",
+          "symbol": "AAPL",
+          "date": "Aug 1 2007",
+          "price": 138.48
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Sep 1 2007",
+          "symbol": "AAPL",
+          "date": "Sep 1 2007",
+          "price": 153.47
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Oct 1 2007",
+          "symbol": "AAPL",
+          "date": "Oct 1 2007",
+          "price": 189.95
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Nov 1 2007",
+          "symbol": "AAPL",
+          "date": "Nov 1 2007",
+          "price": 182.22
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Dec 1 2007",
+          "symbol": "AAPL",
+          "date": "Dec 1 2007",
+          "price": 198.08
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jan 1 2008",
+          "symbol": "AAPL",
+          "date": "Jan 1 2008",
+          "price": 135.36
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Feb 1 2008",
+          "symbol": "AAPL",
+          "date": "Feb 1 2008",
+          "price": 125.02
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Mar 1 2008",
+          "symbol": "AAPL",
+          "date": "Mar 1 2008",
+          "price": 143.5
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Apr 1 2008",
+          "symbol": "AAPL",
+          "date": "Apr 1 2008",
+          "price": 173.95
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "May 1 2008",
+          "symbol": "AAPL",
+          "date": "May 1 2008",
+          "price": 188.75
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jun 1 2008",
+          "symbol": "AAPL",
+          "date": "Jun 1 2008",
+          "price": 167.44
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jul 1 2008",
+          "symbol": "AAPL",
+          "date": "Jul 1 2008",
+          "price": 158.95
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Aug 1 2008",
+          "symbol": "AAPL",
+          "date": "Aug 1 2008",
+          "price": 169.53
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Sep 1 2008",
+          "symbol": "AAPL",
+          "date": "Sep 1 2008",
+          "price": 113.66
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Oct 1 2008",
+          "symbol": "AAPL",
+          "date": "Oct 1 2008",
+          "price": 107.59
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Nov 1 2008",
+          "symbol": "AAPL",
+          "date": "Nov 1 2008",
+          "price": 92.67
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Dec 1 2008",
+          "symbol": "AAPL",
+          "date": "Dec 1 2008",
+          "price": 85.35
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jan 1 2009",
+          "symbol": "AAPL",
+          "date": "Jan 1 2009",
+          "price": 90.13
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Feb 1 2009",
+          "symbol": "AAPL",
+          "date": "Feb 1 2009",
+          "price": 89.31
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Mar 1 2009",
+          "symbol": "AAPL",
+          "date": "Mar 1 2009",
+          "price": 105.12
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Apr 1 2009",
+          "symbol": "AAPL",
+          "date": "Apr 1 2009",
+          "price": 125.83
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "May 1 2009",
+          "symbol": "AAPL",
+          "date": "May 1 2009",
+          "price": 135.81
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jun 1 2009",
+          "symbol": "AAPL",
+          "date": "Jun 1 2009",
+          "price": 142.43
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jul 1 2009",
+          "symbol": "AAPL",
+          "date": "Jul 1 2009",
+          "price": 163.39
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Aug 1 2009",
+          "symbol": "AAPL",
+          "date": "Aug 1 2009",
+          "price": 168.21
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Sep 1 2009",
+          "symbol": "AAPL",
+          "date": "Sep 1 2009",
+          "price": 185.35
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Oct 1 2009",
+          "symbol": "AAPL",
+          "date": "Oct 1 2009",
+          "price": 188.5
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Nov 1 2009",
+          "symbol": "AAPL",
+          "date": "Nov 1 2009",
+          "price": 199.91
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Dec 1 2009",
+          "symbol": "AAPL",
+          "date": "Dec 1 2009",
+          "price": 210.73
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Jan 1 2010",
+          "symbol": "AAPL",
+          "date": "Jan 1 2010",
+          "price": 192.06
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Feb 1 2010",
+          "symbol": "AAPL",
+          "date": "Feb 1 2010",
+          "price": 204.62
+        },
+        {
+          "sym.bol": "AAPL",
+          "da.te": "Mar 1 2010",
+          "symbol": "AAPL",
+          "date": "Mar 1 2010",
+          "price": 223.02
+        }
+      ]
+    },
+    {
+      "name": "data_0",
+      "source": "dataframe",
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "toDate(datum[\"da.te\"])",
+          "as": "da.te"
+        },
+        {
+          "field": "da\\.te",
+          "type": "timeunit",
+          "units": [
+            "year"
+          ],
+          "as": [
+            "year_da.te",
+            "year_da.te_end"
+          ]
+        },
+        {
+          "type": "formula",
+          "expr": "datum[\"symbol\"]===\"AAPL\" ? 0 : datum[\"symbol\"]===\"AMZN\" ? 1 : datum[\"symbol\"]===\"GOOG\" ? 2 : datum[\"symbol\"]===\"IBM\" ? 3 : datum[\"symbol\"]===\"MSFT\" ? 4 : 5",
+          "as": "color_symbol_sort_index"
+        }
+      ]
+    },
+    {
+      "name": "column_domain",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": [
+            "year_da\\.te"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "data_3",
+      "source": "data_0",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": [
+            "symbol",
+            "year_da\\.te"
+          ],
+          "ops": [
+            "sum"
+          ],
+          "fields": [
+            "price"
+          ],
+          "as": [
+            "sum_price"
+          ]
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"sum_price\"]) && isFinite(+datum[\"sum_price\"])"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "name": "unit",
+      "value": {},
+      "on": [
+        {
+          "events": "pointermove",
+          "update": "isTuple(group()) ? group() : unit"
+        }
+      ]
+    },
+    {
+      "name": "legend_pointhover_0_symbol_legend",
+      "value": null,
+      "on": [
+        {
+          "events": [
+            {
+              "source": "view",
+              "type": "click",
+              "markname": "symbol_legend_symbols"
+            },
+            {
+              "source": "view",
+              "type": "click",
+              "markname": "symbol_legend_labels"
+            },
+            {
+              "source": "view",
+              "type": "click",
+              "markname": "symbol_legend_entries"
+            }
+          ],
+          "update": "isDefined(datum.value) ? datum.value : item().items[0].items[0].datum.value",
+          "force": true
+        },
+        {
+          "events": [
+            {
+              "source": "view",
+              "type": "click"
+            }
+          ],
+          "update": "!event.item || !datum ? null : legend_pointhover_0_symbol_legend",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "legend_pointselection_0_symbol_legend",
+      "value": null,
+      "on": [
+        {
+          "events": [
+            {
+              "source": "view",
+              "type": "click",
+              "markname": "symbol_legend_symbols"
+            },
+            {
+              "source": "view",
+              "type": "click",
+              "markname": "symbol_legend_labels"
+            },
+            {
+              "source": "view",
+              "type": "click",
+              "markname": "symbol_legend_entries"
+            }
+          ],
+          "update": "isDefined(datum.value) ? datum.value : item().items[0].items[0].datum.value",
+          "force": true
+        },
+        {
+          "events": [
+            {
+              "source": "view",
+              "type": "click"
+            }
+          ],
+          "update": "!event.item || !datum ? null : legend_pointselection_0_symbol_legend",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "interval_intervalselection_0",
+      "update": "vlSelectionResolve(\"interval_intervalselection_0_store\", \"union\")"
+    },
+    {
+      "name": "click_pointselection_0",
+      "update": "vlSelectionResolve(\"click_pointselection_0_store\", \"union\", true, true)"
+    },
+    {
+      "name": "legend_pointselection_0",
+      "update": "vlSelectionResolve(\"legend_pointselection_0_store\", \"union\", true, true)"
+    },
+    {
+      "name": "legend_pointhover_0",
+      "update": "vlSelectionResolve(\"legend_pointhover_0_store\", \"union\", true, true)"
+    },
+    {
+      "name": "cursor",
+      "value": "default",
+      "on": [
+        {
+          "events": "mousemove",
+          "update": "if(isDefined((group()).bounds), if(item().mark.marktype != 'group', 'default', 'crosshair'), 'default')"
+        }
+      ]
+    },
+    {
+      "name": "width",
+      "init": "isFinite(containerSize()[0]) ? containerSize()[0] : 120",
+      "on": [
+        {
+          "update": "isFinite(containerSize()[0]) ? containerSize()[0] : 120",
+          "events": "window:resize"
+        }
+      ]
+    },
+    {
+      "name": "height",
+      "init": "isFinite(containerSize()[1]) ? containerSize()[1] : 120",
+      "on": [
+        {
+          "update": "isFinite(containerSize()[1]) ? containerSize()[1] : 120",
+          "events": "window:resize"
+        }
+      ]
+    },
+    {
+      "name": "child_width",
+      "update": "length(data('column_domain')) > 0? width / length(data('column_domain')) - 1: 120"
+    },
+    {
+      "name": "min_width",
+      "update": "120 * length(data('column_domain'))"
+    },
+    {
+      "name": "child_height",
+      "update": "height"
+    },
+    {
+      "name": "min_height",
+      "update": "240"
+    }
+  ],
+  "layout": {
+    "padding": 20,
+    "offset": {
+      "columnTitle": 10
+    },
+    "columns": {
+      "signal": "length(data('column_domain'))"
+    },
+    "bounds": "full",
+    "align": "all"
+  },
+  "marks": [
+    {
+      "name": "column-title",
+      "type": "group",
+      "role": "column-title",
+      "title": {
+        "text": "da.te",
+        "style": "guide-title",
+        "offset": 10
+      }
+    },
+    {
+      "name": "row_header",
+      "type": "group",
+      "role": "row-header",
+      "encode": {
+        "update": {
+          "height": {
+            "signal": "child_height"
+          }
+        }
+      },
+      "axes": [
+        {
+          "scale": "y",
+          "orient": "left",
+          "grid": false,
+          "title": "Sum of price",
+          "labelFlush": false,
+          "labels": true,
+          "ticks": true,
+          "labelOverlap": true,
+          "tickCount": {
+            "signal": "ceil(child_height/40)"
+          },
+          "encode": {
+            "labels": {
+              "update": {
+                "text": {
+                  "signal": "datum.value"
+                }
+              }
+            }
+          },
+          "zindex": 0
+        }
+      ]
+    },
+    {
+      "name": "column_header",
+      "type": "group",
+      "role": "column-header",
+      "from": {
+        "data": "column_domain"
+      },
+      "sort": {
+        "field": "datum[\"year_da.te\"]",
+        "order": "ascending"
+      },
+      "title": {
+        "text": {
+          "signal": "timeFormat(parent[\"year_da.te\"], timeUnitSpecifier([\"year\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))"
+        },
+        "style": "guide-label",
+        "frame": "group",
+        "offset": 10
+      },
+      "encode": {
+        "update": {
+          "width": {
+            "signal": "child_width"
+          }
+        }
+      }
+    },
+    {
+      "name": "column_footer",
+      "type": "group",
+      "role": "column-footer",
+      "from": {
+        "data": "column_domain"
+      },
+      "sort": {
+        "field": "datum[\"year_da.te\"]",
+        "order": "ascending"
+      },
+      "encode": {
+        "update": {
+          "width": {
+            "signal": "child_width"
+          }
+        }
+      },
+      "axes": [
+        {
+          "scale": "x",
+          "orient": "bottom",
+          "grid": false,
+          "title": "symbol",
+          "labelFlush": false,
+          "labelOverlap": "greedy",
+          "labels": true,
+          "ticks": true,
+          "labelAlign": "right",
+          "labelAngle": 270,
+          "labelBaseline": "middle",
+          "zindex": 0
+        }
+      ]
+    },
+    {
+      "name": "cell",
+      "type": "group",
+      "style": "cell",
+      "from": {
+        "facet": {
+          "name": "facet",
+          "data": "data_0",
+          "groupby": [
+            "year_da\\.te"
+          ]
+        }
+      },
+      "sort": {
+        "field": [
+          "datum[\"year_da.te\"]"
+        ],
+        "order": [
+          "ascending"
+        ]
+      },
+      "data": [
+        {
+          "source": "facet",
+          "name": "data_0",
+          "transform": [
+            {
+              "type": "aggregate",
+              "groupby": [
+                "symbol"
+              ],
+              "ops": [
+                "sum"
+              ],
+              "fields": [
+                "price"
+              ],
+              "as": [
+                "sum_price"
+              ]
+            },
+            {
+              "type": "filter",
+              "expr": "isValid(datum[\"sum_price\"]) && isFinite(+datum[\"sum_price\"])"
+            }
+          ]
+        }
+      ],
+      "encode": {
+        "update": {
+          "width": {
+            "signal": "child_width"
+          },
+          "height": {
+            "signal": "child_height"
+          }
+        }
+      },
+      "signals": [
+        {
+          "name": "facet",
+          "value": {},
+          "on": [
+            {
+              "events": [
+                {
+                  "source": "scope",
+                  "type": "pointermove"
+                }
+              ],
+              "update": "isTuple(facet) ? facet : group(\"cell\").datum"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_x",
+          "value": [],
+          "on": [
+            {
+              "events": {
+                "source": "scope",
+                "type": "pointerdown",
+                "filter": [
+                  "!event.item || event.item.mark.name !== \"interval_intervalselection_0_brush\""
+                ]
+              },
+              "update": "[x(unit), x(unit)]"
+            },
+            {
+              "events": {
+                "source": "window",
+                "type": "pointermove",
+                "consume": true,
+                "between": [
+                  {
+                    "source": "scope",
+                    "type": "pointerdown",
+                    "filter": [
+                      "!event.item || event.item.mark.name !== \"interval_intervalselection_0_brush\""
+                    ]
+                  },
+                  {
+                    "source": "window",
+                    "type": "pointerup"
+                  }
+                ]
+              },
+              "update": "[interval_intervalselection_0_x[0], clamp(x(unit), 0, child_width)]"
+            },
+            {
+              "events": {
+                "signal": "interval_intervalselection_0_scale_trigger"
+              },
+              "update": "[0, 0]"
+            },
+            {
+              "events": [
+                {
+                  "source": "view",
+                  "type": "dblclick"
+                }
+              ],
+              "update": "[0, 0]"
+            },
+            {
+              "events": {
+                "signal": "interval_intervalselection_0_translate_delta"
+              },
+              "update": "clampRange(panLinear(interval_intervalselection_0_translate_anchor.extent_x, interval_intervalselection_0_translate_delta.x / span(interval_intervalselection_0_translate_anchor.extent_x)), 0, child_width)"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_symbol",
+          "on": [
+            {
+              "events": {
+                "signal": "interval_intervalselection_0_x"
+              },
+              "update": "interval_intervalselection_0_x[0] === interval_intervalselection_0_x[1] ? null : invert(\"x\", interval_intervalselection_0_x)"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_scale_trigger",
+          "value": {},
+          "on": [
+            {
+              "events": [
+                {
+                  "scale": "x"
+                }
+              ],
+              "update": "(!isArray(interval_intervalselection_0_symbol) || (invert(\"x\", interval_intervalselection_0_x)[0] === interval_intervalselection_0_symbol[0] && invert(\"x\", interval_intervalselection_0_x)[1] === interval_intervalselection_0_symbol[1])) ? interval_intervalselection_0_scale_trigger : {}"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_tuple",
+          "on": [
+            {
+              "events": [
+                {
+                  "signal": "interval_intervalselection_0_symbol"
+                }
+              ],
+              "update": "interval_intervalselection_0_symbol ? {unit: \"child_layer_0_layer_0_layer_0\" + '__facet_column_' + (facet[\"year_da\\\\.te\"]), fields: interval_intervalselection_0_tuple_fields, values: [interval_intervalselection_0_symbol]} : null"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_tuple_fields",
+          "value": [
+            {
+              "field": "symbol",
+              "channel": "x",
+              "type": "E"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_translate_anchor",
+          "value": {},
+          "on": [
+            {
+              "events": [
+                {
+                  "source": "scope",
+                  "type": "pointerdown",
+                  "markname": "interval_intervalselection_0_brush"
+                }
+              ],
+              "update": "{x: x(unit), y: y(unit), extent_x: slice(interval_intervalselection_0_x)}"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_translate_delta",
+          "value": {},
+          "on": [
+            {
+              "events": [
+                {
+                  "source": "window",
+                  "type": "pointermove",
+                  "consume": true,
+                  "between": [
+                    {
+                      "source": "scope",
+                      "type": "pointerdown",
+                      "markname": "interval_intervalselection_0_brush"
+                    },
+                    {
+                      "source": "window",
+                      "type": "pointerup"
+                    }
+                  ]
+                }
+              ],
+              "update": "{x: interval_intervalselection_0_translate_anchor.x - x(unit), y: interval_intervalselection_0_translate_anchor.y - y(unit)}"
+            }
+          ]
+        },
+        {
+          "name": "interval_intervalselection_0_modify",
+          "on": [
+            {
+              "events": {
+                "signal": "interval_intervalselection_0_tuple"
+              },
+              "update": "modify(\"interval_intervalselection_0_store\", interval_intervalselection_0_tuple, true)"
+            }
+          ]
+        },
+        {
+          "name": "click_pointselection_0_tuple",
+          "on": [
+            {
+              "events": [
+                {
+                  "source": "scope",
+                  "type": "click"
+                }
+              ],
+              "update": "datum && item().mark.marktype !== 'group' && indexof(item().mark.role, 'legend') < 0 && indexof(item().mark.name, 'interval_intervalselection_0_brush') < 0 ? {unit: \"child_layer_0_layer_0_layer_0\" + '__facet_column_' + (facet[\"year_da\\\\.te\"]), fields: click_pointselection_0_tuple_fields, values: [(item().isVoronoi ? datum.datum : datum)[\"symbol\"]]} : null",
+              "force": true
+            },
+            {
+              "events": [
+                {
+                  "source": "view",
+                  "type": "dblclick"
+                }
+              ],
+              "update": "null"
+            }
+          ]
+        },
+        {
+          "name": "click_pointselection_0_tuple_fields",
+          "value": [
+            {
+              "field": "symbol",
+              "channel": "x",
+              "type": "E"
+            }
+          ]
+        },
+        {
+          "name": "click_pointselection_0_toggle",
+          "value": false,
+          "on": [
+            {
+              "events": [
+                {
+                  "source": "scope",
+                  "type": "click"
+                }
+              ],
+              "update": "false"
+            },
+            {
+              "events": [
+                {
+                  "source": "view",
+                  "type": "dblclick"
+                }
+              ],
+              "update": "false"
+            }
+          ]
+        },
+        {
+          "name": "click_pointselection_0_modify",
+          "on": [
+            {
+              "events": {
+                "signal": "click_pointselection_0_tuple"
+              },
+              "update": "modify(\"click_pointselection_0_store\", click_pointselection_0_toggle ? null : click_pointselection_0_tuple, click_pointselection_0_toggle ? null : true, click_pointselection_0_toggle ? click_pointselection_0_tuple : null)"
+            }
+          ]
+        },
+        {
+          "name": "legend_pointselection_0_tuple",
+          "update": "legend_pointselection_0_symbol_legend !== null ? {fields: legend_pointselection_0_tuple_fields, values: [legend_pointselection_0_symbol_legend]} : null"
+        },
+        {
+          "name": "legend_pointselection_0_tuple_fields",
+          "value": [
+            {
+              "field": "symbol",
+              "channel": "color",
+              "type": "E"
+            }
+          ]
+        },
+        {
+          "name": "legend_pointselection_0_toggle",
+          "value": false,
+          "on": [
+            {
+              "events": {
+                "merge": [
+                  {
+                    "source": "view",
+                    "type": "click"
+                  }
+                ]
+              },
+              "update": "event.shiftKey"
+            }
+          ]
+        },
+        {
+          "name": "legend_pointselection_0_modify",
+          "on": [
+            {
+              "events": {
+                "signal": "legend_pointselection_0_tuple"
+              },
+              "update": "modify(\"legend_pointselection_0_store\", legend_pointselection_0_toggle ? null : legend_pointselection_0_tuple, legend_pointselection_0_toggle ? null : true, legend_pointselection_0_toggle ? legend_pointselection_0_tuple : null)"
+            }
+          ]
+        },
+        {
+          "name": "legend_pointhover_0_tuple",
+          "update": "legend_pointhover_0_symbol_legend !== null ? {fields: legend_pointhover_0_tuple_fields, values: [legend_pointhover_0_symbol_legend]} : null"
+        },
+        {
+          "name": "legend_pointhover_0_tuple_fields",
+          "value": [
+            {
+              "field": "symbol",
+              "channel": "color",
+              "type": "E"
+            }
+          ]
+        },
+        {
+          "name": "legend_pointhover_0_toggle",
+          "value": false,
+          "on": [
+            {
+              "events": {
+                "merge": [
+                  {
+                    "source": "view",
+                    "type": "click"
+                  }
+                ]
+              },
+              "update": "event.shiftKey"
+            }
+          ]
+        },
+        {
+          "name": "legend_pointhover_0_modify",
+          "on": [
+            {
+              "events": {
+                "signal": "legend_pointhover_0_tuple"
+              },
+              "update": "modify(\"legend_pointhover_0_store\", legend_pointhover_0_toggle ? null : legend_pointhover_0_tuple, legend_pointhover_0_toggle ? null : true, legend_pointhover_0_toggle ? legend_pointhover_0_tuple : null)"
+            }
+          ]
+        }
+      ],
+      "marks": [
+        {
+          "name": "interval_intervalselection_0_brush_bg",
+          "type": "rect",
+          "clip": true,
+          "encode": {
+            "enter": {
+              "fill": {
+                "value": "#669EFF"
+              },
+              "fillOpacity": {
+                "value": 0.07
+              }
+            },
+            "update": {
+              "x": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_column_' + (facet[\"year_da\\\\.te\"])",
+                  "signal": "interval_intervalselection_0_x[0]"
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "y": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_column_' + (facet[\"year_da\\\\.te\"])",
+                  "value": 0
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "x2": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_column_' + (facet[\"year_da\\\\.te\"])",
+                  "signal": "interval_intervalselection_0_x[1]"
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "y2": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_column_' + (facet[\"year_da\\\\.te\"])",
+                  "field": {
+                    "group": "height"
+                  }
+                },
+                {
+                  "value": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "child_layer_0_layer_0_layer_0_marks",
+          "type": "rect",
+          "clip": true,
+          "style": [
+            "bar"
+          ],
+          "interactive": true,
+          "from": {
+            "data": "data_0"
+          },
+          "encode": {
+            "update": {
+              "cursor": {
+                "value": "pointer"
+              },
+              "fill": {
+                "scale": "color",
+                "field": "symbol"
+              },
+              "opacity": [
+                {
+                  "test": "!((!length(data(\"interval_intervalselection_0_store\")) || vlSelectionTest(\"interval_intervalselection_0_store\", datum)) && (!length(data(\"click_pointselection_0_store\")) || vlSelectionTest(\"click_pointselection_0_store\", datum)) && ((length(data(\"legend_pointselection_0_store\")) && vlSelectionTest(\"legend_pointselection_0_store\", datum)) || (!length(data(\"legend_pointhover_0_store\")) || vlSelectionTest(\"legend_pointhover_0_store\", datum))))",
+                  "value": 0.3
+                },
+                {
+                  "value": 1
+                }
+              ],
+              "tooltip": {
+                "signal": "{\"symbol\": isValid(datum[\"symbol\"]) ? datum[\"symbol\"] : \"\"+datum[\"symbol\"], \"Sum of price\": datum[\"sum_price\"]}"
+              },
+              "ariaRoleDescription": {
+                "value": "bar"
+              },
+              "description": {
+                "signal": "\"symbol: \" + (isValid(datum[\"symbol\"]) ? datum[\"symbol\"] : \"\"+datum[\"symbol\"]) + \"; Sum of price: \" + (datum[\"sum_price\"])"
+              },
+              "x": {
+                "scale": "x",
+                "field": "symbol"
+              },
+              "width": {
+                "signal": "max(0.25, bandwidth('x'))"
+              },
+              "y": {
+                "scale": "y",
+                "field": "sum_price"
+              },
+              "y2": {
+                "scale": "y",
+                "value": 0
+              }
+            }
+          }
+        },
+        {
+          "name": "interval_intervalselection_0_brush",
+          "type": "rect",
+          "clip": true,
+          "encode": {
+            "enter": {
+              "fill": {
+                "value": "transparent"
+              }
+            },
+            "update": {
+              "x": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_column_' + (facet[\"year_da\\\\.te\"])",
+                  "signal": "interval_intervalselection_0_x[0]"
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "y": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_column_' + (facet[\"year_da\\\\.te\"])",
+                  "value": 0
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "x2": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_column_' + (facet[\"year_da\\\\.te\"])",
+                  "signal": "interval_intervalselection_0_x[1]"
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "y2": [
+                {
+                  "test": "data(\"interval_intervalselection_0_store\").length && data(\"interval_intervalselection_0_store\")[0].unit === \"child_layer_0_layer_0_layer_0\" + '__facet_column_' + (facet[\"year_da\\\\.te\"])",
+                  "field": {
+                    "group": "height"
+                  }
+                },
+                {
+                  "value": 0
+                }
+              ],
+              "stroke": [
+                {
+                  "test": "interval_intervalselection_0_x[0] !== interval_intervalselection_0_x[1]",
+                  "value": "#669EFF"
+                },
+                {
+                  "value": null
+                }
+              ],
+              "strokeOpacity": [
+                {
+                  "test": "interval_intervalselection_0_x[0] !== interval_intervalselection_0_x[1]",
+                  "value": 0.4
+                },
+                {
+                  "value": null
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "axes": [
+        {
+          "scale": "x",
+          "orient": "bottom",
+          "grid": true,
+          "gridScale": "y",
+          "domain": false,
+          "labels": false,
+          "aria": false,
+          "maxExtent": 0,
+          "minExtent": 0,
+          "ticks": false,
+          "zindex": 0
+        },
+        {
+          "scale": "y",
+          "orient": "left",
+          "grid": true,
+          "gridScale": "x",
+          "tickCount": {
+            "signal": "ceil(child_height/40)"
+          },
+          "domain": false,
+          "labels": false,
+          "aria": false,
+          "maxExtent": 0,
+          "minExtent": 0,
+          "ticks": false,
+          "zindex": 0
+        }
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "band",
+      "domain": {
+        "data": "data_3",
+        "field": "symbol",
+        "sort": true
+      },
+      "range": [
+        0,
+        {
+          "signal": "child_width"
+        }
+      ],
+      "paddingInner": 0.1,
+      "paddingOuter": 0.05
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {
+        "data": "data_3",
+        "field": "sum_price"
+      },
+      "range": [
+        {
+          "signal": "child_height"
+        },
+        0
+      ],
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": {
+        "data": "data_0",
+        "field": "symbol",
+        "sort": {
+          "op": "min",
+          "field": "color_symbol_sort_index"
+        }
+      },
+      "range": [
+        "#4C78A8",
+        "#F58518",
+        "#E45756",
+        "#72B7B2",
+        "#54A24B",
+        "#EECA3B",
+        "#B279A2",
+        "#FF9DA6",
+        "#9D755D",
+        "#BAB0AC"
+      ],
+      "interpolate": "hcl"
+    }
+  ],
+  "legends": [
+    {
+      "symbolOpacity": 1,
+      "title": "symbol",
+      "fill": "color",
+      "symbolType": "square",
+      "encode": {
+        "labels": {
+          "name": "symbol_legend_labels",
+          "interactive": true,
+          "update": {
+            "opacity": [
+              {
+                "test": "(!length(data(\"legend_pointselection_0_store\")) || (legend_pointselection_0[\"symbol\"] && indexof(legend_pointselection_0[\"symbol\"], datum.value) >= 0)) || (!length(data(\"legend_pointhover_0_store\")) || (legend_pointhover_0[\"symbol\"] && indexof(legend_pointhover_0[\"symbol\"], datum.value) >= 0))",
+                "value": 1
+              },
+              {
+                "value": 0.35
+              }
+            ]
+          }
+        },
+        "symbols": {
+          "name": "symbol_legend_symbols",
+          "interactive": true,
+          "update": {
+            "opacity": [
+              {
+                "test": "(!length(data(\"legend_pointselection_0_store\")) || (legend_pointselection_0[\"symbol\"] && indexof(legend_pointselection_0[\"symbol\"], datum.value) >= 0)) || (!length(data(\"legend_pointhover_0_store\")) || (legend_pointhover_0[\"symbol\"] && indexof(legend_pointhover_0[\"symbol\"], datum.value) >= 0))",
+                "value": 1
+              },
+              {
+                "value": 0.35
+              }
+            ]
+          }
+        },
+        "entries": {
+          "name": "symbol_legend_entries",
+          "interactive": true,
+          "update": {
+            "fill": {
+              "value": "transparent"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

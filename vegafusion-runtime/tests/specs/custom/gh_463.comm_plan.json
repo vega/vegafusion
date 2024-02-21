@@ -1,28 +1,33 @@
 {
   "server_to_client": [
     {
+      "name": "data_0",
       "namespace": "data",
-      "name": "data_1_layer_0_layer_0_color_domain_pe\\.riods",
       "scope": []
     },
     {
+      "name": "data_0_color_domain_Major Genre",
       "namespace": "data",
-      "name": "data_2",
       "scope": []
     },
     {
-      "namespace": "data",
-      "name": "data_2_x_domain_pe\\.riods",
-      "scope": []
-    },
-    {
-      "namespace": "data",
-      "name": "data_2_y_domain___count",
-      "scope": []
-    },
-    {
-      "namespace": "data",
       "name": "data_3",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "data_3_x_domain_MPAA Rating",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "facet_domain",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "facet_domain_row",
+      "namespace": "data",
       "scope": []
     }
   ],
