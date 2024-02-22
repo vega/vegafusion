@@ -32,7 +32,6 @@ features = [ "ipc",]
 
 [dependencies.datafusion-common]
 workspace = true
-default_features = false
 
 [dependencies.datafusion-expr]
 workspace = true
