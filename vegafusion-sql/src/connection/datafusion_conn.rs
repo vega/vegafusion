@@ -33,7 +33,6 @@ use vegafusion_dataframe::connection::Connection;
 use vegafusion_dataframe::csv::CsvReadOptions;
 use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udafs::{Q1_UDF, Q3_UDF};
-use vegafusion_datafusion_udfs::udfs::array::constructor::ARRAY_CONSTRUCTOR_UDF;
 use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
 use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
@@ -515,7 +514,6 @@ pub fn make_datafusion_context() -> SessionContext {
     ctx.register_udf((*FORMAT_TIMESTAMP_UDF).clone());
 
     // list
-    ctx.register_udf((*ARRAY_CONSTRUCTOR_UDF).clone());
     ctx.register_udf((*LENGTH_UDF).clone());
     ctx.register_udf((*INDEXOF_UDF).clone());
 

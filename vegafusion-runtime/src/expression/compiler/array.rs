@@ -1,11 +1,10 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
-use datafusion_expr::{expr, Expr, ScalarFunctionDefinition};
+use datafusion_expr::{BuiltinScalarFunction, expr, Expr, ScalarFunctionDefinition};
 use std::ops::Deref;
 use std::sync::Arc;
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ArrayExpression;
-use vegafusion_datafusion_udfs::udfs::array::constructor::ARRAY_CONSTRUCTOR_UDF;
 
 pub fn compile_array(
     node: &ArrayExpression,
@@ -18,7 +17,7 @@ pub fn compile_array(
         elements.push(phys_expr);
     }
     Ok(Expr::ScalarFunction(expr::ScalarFunction {
-        func_def: ScalarFunctionDefinition::UDF(Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone())),
+        func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
         args: elements,
     }))
 }
