@@ -885,7 +885,8 @@ impl Dialect {
                 "vega_timeunit",
                 "format_timestamp",
                 "make_list",
-                "len",
+                "array_length",
+                "character_length",
                 "indexof",
             ]
             .iter()

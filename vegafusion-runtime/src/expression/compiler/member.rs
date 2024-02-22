@@ -13,7 +13,6 @@ use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_common::datatypes::{data_type, is_numeric_datatype};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{Identifier, MemberExpression};
-use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
 use vegafusion_datafusion_udfs::udfs::member::{make_get_element_udf, make_get_object_member_udf};
 
 pub fn compile_member(
@@ -86,11 +85,16 @@ pub fn compile_member(
             }
         }
         _ => {
-            if property_string == "length" {
-                // Special case to treat foo.length as length(foo) when foo is not an object
-                // make_length()
+            if property_string == "length" && matches!(dtype, DataType::Utf8 | DataType::LargeUtf8) {
+                // Special case to treat foo.length as length(foo) on a string
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(LENGTH_UDF.deref().clone())),
+                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::CharacterLength),
+                    args: vec![compiled_object],
+                })
+            } else if property_string == "length" && matches!(dtype, DataType::List(_) | DataType::LargeList(_) | DataType::FixedSizeList(_, _)) {
+                // Special case to treat foo.length as length(foo) on an array
+                Expr::ScalarFunction(expr::ScalarFunction {
+                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::ArrayLength),
                     args: vec![compiled_object],
                 })
             } else if matches!(dtype, DataType::Utf8 | DataType::LargeUtf8) {

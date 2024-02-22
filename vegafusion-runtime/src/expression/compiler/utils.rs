@@ -45,7 +45,7 @@ impl ExprHelpers for Expr {
             Ok(scalar)
         } else {
             Err(VegaFusionError::internal(format!(
-                "Failed to evaluate expression to scalar value: {self}"
+                "Failed to evaluate expression to scalar value: {self}\nsimplified to: {simplified_expr}\n"
             )))
         }
     }

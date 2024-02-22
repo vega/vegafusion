@@ -30,12 +30,11 @@ fn make_span_udf() -> ScalarUDF {
                         // Unwrap single element ListArray
                         let arr = arr.as_any().downcast_ref::<ListArray>().unwrap();
                         let arr = arr.value(0);
-                        match arr.data_type() {
-                            DataType::Float64 => {
-                                if arr.is_empty() {
-                                    // Span of empty array is 0
-                                    ColumnarValue::Scalar(ScalarValue::from(0.0))
-                                } else {
+                        if arr.is_empty() {
+                            ColumnarValue::Scalar(ScalarValue::from(0.0))
+                        } else {
+                            match arr.data_type() {
+                                DataType::Float64 => {
                                     let first = ScalarValue::try_from_array(&arr, 0)
                                         .unwrap()
                                         .to_f64()
@@ -46,12 +45,12 @@ fn make_span_udf() -> ScalarUDF {
                                         .unwrap();
                                     ColumnarValue::Scalar(ScalarValue::from(last - first))
                                 }
-                            }
-                            _ => {
-                                return Err(DataFusionError::Internal(format!(
-                                    "Unexpected element type for span function: {}",
-                                    arr.data_type()
-                                )))
+                                _ => {
+                                    return Err(DataFusionError::Internal(format!(
+                                        "Unexpected element type for span function: {}",
+                                        arr.data_type()
+                                    )))
+                                }
                             }
                         }
                     }

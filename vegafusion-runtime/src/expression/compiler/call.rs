@@ -21,7 +21,6 @@ use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
 };
 use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
-use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
 use vegafusion_datafusion_udfs::udfs::array::span::SPAN_UDF;
 
 use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
@@ -40,6 +39,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_parts::{
 use crate::expression::compiler::builtin_functions::date_time::time::time_fn;
 use crate::expression::compiler::builtin_functions::date_time::time_offset::time_offset_fn;
 use crate::expression::compiler::builtin_functions::format::format_transform;
+use crate::expression::compiler::builtin_functions::length::length_transform;
 use crate::expression::compiler::builtin_functions::math::isfinite::is_finite_fn;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
@@ -272,10 +272,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
 
     callables.insert(
         "length".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: LENGTH_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::Transform (Arc::new(length_transform)),
     );
 
     callables.insert(
