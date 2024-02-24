@@ -5,13 +5,14 @@ use arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
 use datafusion_expr::{
-    expr, lit, ColumnarValue, Expr, ReturnTypeFunction, ScalarFunctionDefinition,
-    ScalarFunctionImplementation, ScalarUDF, Signature, Volatility,
+    expr, lit, ColumnarValue, Expr, ScalarFunctionDefinition, ScalarUDF, ScalarUDFImpl, Signature,
+    Volatility,
 };
 use sqlparser::ast::{
     Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr,
     Ident, ObjectName as SqlObjectName, Value as SqlValue,
 };
+use std::any::Any;
 use std::ops::Add;
 use std::sync::Arc;
 use vegafusion_common::data::scalar::ArrayRefHelpers;
@@ -260,24 +261,48 @@ impl ToSqlScalar for ScalarValue {
 
 fn ms_to_timestamp(v: i64, dialect: &Dialect) -> Result<SqlExpr> {
     // Hack to recursively transform the epoch_ms_to_utc_timestamp
-    let return_type: ReturnTypeFunction =
-        Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
-    let signature: Signature = Signature::exact(vec![DataType::Int64], Volatility::Immutable);
-    let scalar_fn: ScalarFunctionImplementation = Arc::new(move |_args: &[ColumnarValue]| {
-        panic!("Placeholder UDF implementation should not be called")
-    });
-
-    let udf = ScalarUDF::new(
-        "epoch_ms_to_utc_timestamp",
-        &signature,
-        &return_type,
-        &scalar_fn,
-    );
     Expr::ScalarFunction(expr::ScalarFunction {
-        func_def: ScalarFunctionDefinition::UDF(Arc::new(udf)),
+        func_def: ScalarFunctionDefinition::UDF(Arc::new(ScalarUDF::from(
+            EpochMsToUtcTimestampUDF::new(),
+        ))),
         args: vec![lit(v)],
     })
     .to_sql(dialect, &DFSchema::empty())
+}
+
+// Hack to recursively transform the epoch_ms_to_utc_timestamp
+#[derive(Debug, Clone)]
+pub struct EpochMsToUtcTimestampUDF {
+    signature: Signature,
+}
+
+impl EpochMsToUtcTimestampUDF {
+    pub fn new() -> Self {
+        let signature: Signature = Signature::exact(vec![DataType::Int64], Volatility::Immutable);
+        Self { signature }
+    }
+}
+
+impl ScalarUDFImpl for EpochMsToUtcTimestampUDF {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn name(&self) -> &str {
+        "epoch_ms_to_utc_timestamp"
+    }
+
+    fn signature(&self) -> &Signature {
+        &self.signature
+    }
+
+    fn return_type(&self, _arg_types: &[DataType]) -> datafusion_common::Result<DataType> {
+        Ok(DataType::Timestamp(TimeUnit::Millisecond, None))
+    }
+
+    fn invoke(&self, _args: &[ColumnarValue]) -> datafusion_common::Result<ColumnarValue> {
+        panic!("Placeholder UDF implementation should not be called")
+    }
 }
 
 fn date32_to_date(days: &Option<i32>, dialect: &Dialect) -> Result<SqlExpr> {

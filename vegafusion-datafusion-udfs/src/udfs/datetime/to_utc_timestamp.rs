@@ -1,9 +1,11 @@
 use chrono::TimeZone;
 use chrono::{NaiveDateTime, Timelike};
 use chrono_tz::Tz;
+use std::any::Any;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::Array;
+use vegafusion_common::datafusion_expr::ScalarUDFImpl;
 use vegafusion_common::{
     arrow::{
         array::{ArrayRef, TimestampMillisecondArray},
@@ -11,14 +13,48 @@ use vegafusion_common::{
         datatypes::{DataType, TimeUnit},
     },
     datafusion_common::{DataFusionError, ScalarValue},
-    datafusion_expr::{
-        ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
-        Volatility,
-    },
+    datafusion_expr::{ColumnarValue, ScalarUDF, Signature, Volatility},
 };
 
-fn make_to_utc_timestamp_udf() -> ScalarUDF {
-    let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
+#[derive(Debug, Clone)]
+pub struct ToUtcTimestampUDF {
+    signature: Signature,
+}
+
+impl ToUtcTimestampUDF {
+    pub fn new() -> Self {
+        // Signature should be (Timestamp, UTF8), but specifying Timestamp in the signature
+        // requires specifying the timezone explicitly, and DataFusion doesn't currently
+        // coerce between timezones.
+        let signature: Signature = Signature::any(2, Volatility::Immutable);
+        Self { signature }
+    }
+}
+
+impl ScalarUDFImpl for ToUtcTimestampUDF {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn name(&self) -> &str {
+        "to_utc_timestamp"
+    }
+
+    fn signature(&self) -> &Signature {
+        &self.signature
+    }
+
+    fn return_type(
+        &self,
+        _arg_types: &[DataType],
+    ) -> vegafusion_common::datafusion_common::Result<DataType> {
+        Ok(DataType::Timestamp(TimeUnit::Millisecond, None))
+    }
+
+    fn invoke(
+        &self,
+        args: &[ColumnarValue],
+    ) -> vegafusion_common::datafusion_common::Result<ColumnarValue> {
         // [0] data array
         let timestamp_array = match &args[0] {
             ColumnarValue::Array(array) => array.clone(),
@@ -45,17 +81,7 @@ fn make_to_utc_timestamp_udf() -> ScalarUDF {
         } else {
             ScalarValue::try_from_array(&result_array, 0).map(ColumnarValue::Scalar)
         }
-    });
-
-    let return_type: ReturnTypeFunction =
-        Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
-
-    // Signature should be (Timestamp, UTF8), but specifying Timestamp in the signature
-    // requires specifying the timezone explicitly, and DataFusion doesn't currently
-    // coerce between timezones.
-    let signature: Signature = Signature::any(2, Volatility::Immutable);
-
-    ScalarUDF::new("to_utc_timestamp", &signature, &return_type, &scalar_fn)
+    }
 }
 
 pub fn to_utc_timestamp(timestamp_array: ArrayRef, tz: Tz) -> Result<ArrayRef, DataFusionError> {
@@ -127,5 +153,5 @@ pub fn to_timestamp_ms(array: &ArrayRef) -> Result<ArrayRef, DataFusionError> {
 }
 
 lazy_static! {
-    pub static ref TO_UTC_TIMESTAMP_UDF: ScalarUDF = make_to_utc_timestamp_udf();
+    pub static ref TO_UTC_TIMESTAMP_UDF: ScalarUDF = ScalarUDF::from(ToUtcTimestampUDF::new());
 }

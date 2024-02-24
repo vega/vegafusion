@@ -357,7 +357,7 @@ impl ScalarUDFImpl for StrToUtcTimestampUDF {
 
     fn return_type(
         &self,
-        arg_types: &[DataType],
+        _arg_types: &[DataType],
     ) -> vegafusion_common::datafusion_common::Result<DataType> {
         Ok(DataType::Timestamp(TimeUnit::Millisecond, None))
     }
