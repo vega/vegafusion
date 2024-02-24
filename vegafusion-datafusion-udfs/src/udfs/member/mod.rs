@@ -87,12 +87,10 @@ impl ScalarUDFImpl for GetObjectMemberUDF {
                     struct_array.column(self.field_index).clone(),
                 ))
             }
-            _ => {
-                return Err(DataFusionError::Internal(format!(
-                    "Unexpected object type for member access: {:?}",
-                    arg.data_type()
-                )));
-            }
+            _ => Err(DataFusionError::Internal(format!(
+                "Unexpected object type for member access: {:?}",
+                arg.data_type()
+            ))),
         }
     }
 }

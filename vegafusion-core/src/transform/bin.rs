@@ -39,7 +39,7 @@ impl Bin {
         Ok(Self {
             field,
             extent: Some(extent_expr),
-            alias_0: as_.get(0).cloned(),
+            alias_0: as_.first().cloned(),
             alias_1: as_.get(1).cloned(),
             anchor: config.anchor,
             maxbins: config.maxbins,

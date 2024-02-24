@@ -15,6 +15,12 @@ pub struct UtcTimestampToEpochUDF {
     signature: Signature,
 }
 
+impl Default for UtcTimestampToEpochUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl UtcTimestampToEpochUDF {
     pub fn new() -> Self {
         let signature = Signature::one_of(

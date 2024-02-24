@@ -71,7 +71,7 @@ mod test_compile {
     };
     use std::collections::HashMap;
     use std::convert::TryFrom;
-    use std::ops::Deref;
+
     use std::sync::Arc;
     use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
     use vegafusion_common::column::flat_col;

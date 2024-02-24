@@ -297,7 +297,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec![
+            aggregate_functions: [
                 "min",
                 "max",
                 "count",
@@ -311,7 +311,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -423,11 +423,11 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec!["min", "max", "count", "avg", "sum"]
+            aggregate_functions: ["min", "max", "count", "avg", "sum"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -568,11 +568,11 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec!["min", "max", "count", "avg", "sum", "median", "corr"]
+            aggregate_functions: ["min", "max", "count", "avg", "sum", "median", "corr"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -689,7 +689,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec![
+            aggregate_functions: [
                 "min",
                 "max",
                 "count",
@@ -704,7 +704,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -914,7 +914,7 @@ impl Dialect {
             .map(|s| s.to_string())
             .collect(),
 
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -1013,7 +1013,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec![
+            aggregate_functions: [
                 "min",
                 "max",
                 "count",
@@ -1028,7 +1028,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -1167,11 +1167,11 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec!["min", "max", "count", "avg", "sum", "var_pop", "stddev_pop"]
+            aggregate_functions: ["min", "max", "count", "avg", "sum", "var_pop", "stddev_pop"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -1272,7 +1272,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec![
+            aggregate_functions: [
                 "min",
                 "max",
                 "count",
@@ -1286,7 +1286,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -1425,7 +1425,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec![
+            aggregate_functions: [
                 "min",
                 "max",
                 "count",
@@ -1439,7 +1439,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -1574,7 +1574,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec![
+            aggregate_functions: [
                 "min",
                 "max",
                 "count",
@@ -1589,7 +1589,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",

@@ -11,6 +11,12 @@ pub struct DateAddTzUDF {
     signature: Signature,
 }
 
+impl Default for DateAddTzUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DateAddTzUDF {
     pub fn new() -> Self {
         let signature = Signature::one_of(

@@ -108,7 +108,7 @@ pub fn vl_selection_resolve_fn(
                 }
             };
 
-            let values = props.entry(field.field.clone()).or_insert_with(Vec::new);
+            let values = props.entry(field.field.clone()).or_default();
             values.extend(value.clone());
         }
     }

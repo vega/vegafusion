@@ -67,7 +67,7 @@ impl TimeUnitTransformSpec {
         let as0 = self
             .as_
             .clone()
-            .and_then(|as_| as_.get(0).cloned())
+            .and_then(|as_| as_.first().cloned())
             .unwrap_or_else(|| "unit0".to_string());
         let as1 = self
             .as_

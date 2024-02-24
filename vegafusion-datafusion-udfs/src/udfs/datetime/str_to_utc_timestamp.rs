@@ -334,6 +334,12 @@ pub struct StrToUtcTimestampUDF {
     signature: Signature,
 }
 
+impl Default for StrToUtcTimestampUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StrToUtcTimestampUDF {
     pub fn new() -> Self {
         let signature =

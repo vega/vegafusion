@@ -30,7 +30,7 @@ pub trait DataFrame: Send + Sync + 'static {
     async fn collect_flat(&self) -> Result<RecordBatch> {
         let mut arrow_schema = Arc::new(self.schema()) as SchemaRef;
         let table = self.collect().await?;
-        if let Some(batch) = table.batches.get(0) {
+        if let Some(batch) = table.batches.first() {
             arrow_schema = batch.schema()
         }
         concat_batches(&arrow_schema, table.batches.as_slice())

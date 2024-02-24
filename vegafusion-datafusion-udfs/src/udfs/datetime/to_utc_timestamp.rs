@@ -21,6 +21,12 @@ pub struct ToUtcTimestampUDF {
     signature: Signature,
 }
 
+impl Default for ToUtcTimestampUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ToUtcTimestampUDF {
     pub fn new() -> Self {
         // Signature should be (Timestamp, UTF8), but specifying Timestamp in the signature

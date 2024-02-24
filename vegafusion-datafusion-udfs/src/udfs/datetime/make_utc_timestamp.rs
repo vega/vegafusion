@@ -18,6 +18,12 @@ pub struct MakeUtcTimestampUDF {
     signature: Signature,
 }
 
+impl Default for MakeUtcTimestampUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MakeUtcTimestampUDF {
     pub fn new() -> Self {
         let signature = Signature::exact(

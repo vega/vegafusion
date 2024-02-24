@@ -16,7 +16,7 @@ impl TimeUnit {
             .collect();
         let signal = transform.signal.clone();
 
-        let alias_0 = transform.as_.as_ref().and_then(|v| v.get(0).cloned());
+        let alias_0 = transform.as_.as_ref().and_then(|v| v.first().cloned());
         let alias_1 = transform.as_.as_ref().and_then(|v| v.get(1).cloned());
 
         let timezone = match &transform.timezone {

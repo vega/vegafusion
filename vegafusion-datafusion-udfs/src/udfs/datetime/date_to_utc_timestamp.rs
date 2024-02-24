@@ -18,6 +18,12 @@ pub struct DateToUtcTimestampUDF {
     signature: Signature,
 }
 
+impl Default for DateToUtcTimestampUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DateToUtcTimestampUDF {
     pub fn new() -> Self {
         let signature = Signature::exact(

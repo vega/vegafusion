@@ -23,6 +23,12 @@ pub struct IndexOfUDF {
     signature: Signature,
 }
 
+impl Default for IndexOfUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl IndexOfUDF {
     pub fn new() -> Self {
         let signature = Signature::any(2, Volatility::Immutable);

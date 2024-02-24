@@ -17,6 +17,12 @@ pub struct FormatTimestampUDF {
     signature: Signature,
 }
 
+impl Default for FormatTimestampUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FormatTimestampUDF {
     pub fn new() -> Self {
         let signature = Signature::one_of(

@@ -42,8 +42,8 @@ pub fn stringify_local_datetimes(
     let server_to_client_datasets: HashSet<_> = comm_plan
         .server_to_client
         .iter()
+        .filter(|&var| var.0.namespace == VariableNamespace::Data as i32)
         .cloned()
-        .filter(|var| var.0.namespace == VariableNamespace::Data as i32)
         .collect();
 
     let mut visitor = CollectCandidateDatasetMapping::new(
@@ -407,7 +407,7 @@ impl<'a> MutChartVisitor for StringifyLocalDatetimeFieldsVisitor<'a> {
             let source_resolved_var = (source_resolved.var, source_resolved.scope);
             if let Some(fields) = self.local_datetime_fields.get(&source_resolved_var) {
                 for field in sorted(fields) {
-                    let field = unescape_field(&field);
+                    let field = unescape_field(field);
                     let expr_str = format!("toDate(datum['{field}'], 'local')");
                     let transforms = &mut data.transform;
                     let transform = FormulaTransformSpec {

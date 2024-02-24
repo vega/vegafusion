@@ -15,6 +15,12 @@ pub struct IsFiniteUDF {
     signature: Signature,
 }
 
+impl Default for IsFiniteUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl IsFiniteUDF {
     pub fn new() -> Self {
         let signature = Signature::any(1, Volatility::Immutable);

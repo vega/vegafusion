@@ -22,6 +22,12 @@ pub struct FromUtcTimestampUDF {
     signature: Signature,
 }
 
+impl Default for FromUtcTimestampUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FromUtcTimestampUDF {
     pub fn new() -> Self {
         let signature = Signature::one_of(

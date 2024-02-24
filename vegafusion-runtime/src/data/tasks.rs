@@ -483,7 +483,7 @@ impl TaskCall for DataValuesTask {
         // (which generates its own data)
         if values_table.num_rows() == 0 {
             if let Some(pipeline) = &self.pipeline {
-                if let Some(first_tx) = pipeline.transforms.get(0) {
+                if let Some(first_tx) = pipeline.transforms.first() {
                     if !matches!(first_tx.transform_kind(), TransformKind::Sequence(_)) {
                         return Ok((TaskValue::Table(values_table), Default::default()));
                     }

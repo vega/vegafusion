@@ -268,8 +268,8 @@ impl MsgReceiver {
                         // Filter to update nodes in the comm plan
                         let updated_nodes: Vec<_> = updated_nodes
                             .iter()
+                            .filter(|&node| server_to_client.contains(node))
                             .cloned()
-                            .filter(|node| server_to_client.contains(node))
                             .collect();
 
                         let request_msg = QueryRequest {
@@ -314,8 +314,8 @@ impl MsgReceiver {
                         // Filter to update nodes in the comm plan
                         let updated_nodes: Vec<_> = updated_nodes
                             .iter()
+                            .filter(|&node| server_to_client.contains(node))
                             .cloned()
-                            .filter(|node| server_to_client.contains(node))
                             .collect();
 
                         if !updated_nodes.is_empty() {

@@ -14,6 +14,12 @@ pub struct EpochMsToUtcTimestampUDF {
     signature: Signature,
 }
 
+impl Default for EpochMsToUtcTimestampUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EpochMsToUtcTimestampUDF {
     pub fn new() -> Self {
         let signature = Signature::exact(vec![DataType::Int64], Volatility::Immutable);

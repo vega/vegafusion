@@ -237,7 +237,7 @@ impl ArrayRefHelpers for ArrayRef {
     /// Convert ArrayRef into vector of ScalarValues
     fn to_scalar_vec(&self) -> std::result::Result<Vec<ScalarValue>, DataFusionError> {
         (0..self.len())
-            .map(|i| Ok(ScalarValue::try_from_array(self, i)?))
+            .map(|i| ScalarValue::try_from_array(self, i))
             .collect::<std::result::Result<Vec<_>, DataFusionError>>()
     }
 

@@ -115,11 +115,11 @@ impl Connection for DataFusionConnection {
 
     async fn tables(&self) -> Result<HashMap<String, Schema>> {
         let catalog_names = self.ctx.catalog_names();
-        let first_catalog_name = catalog_names.get(0).unwrap();
+        let first_catalog_name = catalog_names.first().unwrap();
         let catalog = self.ctx.catalog(first_catalog_name).unwrap();
 
         let schema_provider_names = catalog.schema_names();
-        let first_schema_provider_name = schema_provider_names.get(0).unwrap();
+        let first_schema_provider_name = schema_provider_names.first().unwrap();
         let schema_provider = catalog.schema(first_schema_provider_name).unwrap();
 
         let mut tables: HashMap<String, Schema> = HashMap::new();
@@ -141,7 +141,7 @@ impl Connection for DataFusionConnection {
         let batch_schema = if table.batches.is_empty() {
             None
         } else {
-            Some(table.batches.get(0).unwrap().schema())
+            Some(table.batches.first().unwrap().schema())
         };
 
         // Create memtable

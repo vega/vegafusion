@@ -67,7 +67,7 @@ impl TransformSpecTrait for PivotTransformSpec {
             .unwrap_or_default()
             .iter()
             .filter_map(|groupby_field| {
-                let unescaped = unescape_field(&groupby_field);
+                let unescaped = unescape_field(groupby_field);
                 if input_local_datetime_columns.contains(&unescaped) {
                     Some(unescaped)
                 } else {

@@ -49,10 +49,7 @@ pub fn process_input_datetime(
             let array: Int64Array = unary(array, |v| (v as i64) * ms_per_day);
             Arc::new(array) as ArrayRef as _
         }
-        DataType::Date64 => {
-            let int_array = cast(arg, &DataType::Int64).unwrap();
-            int_array
-        }
+        DataType::Date64 => (cast(arg, &DataType::Int64).unwrap()) as _,
         DataType::Int64 => arg.clone(),
         DataType::Float64 => cast(arg, &DataType::Int64).expect("Failed to cast float to int"),
         _ => {

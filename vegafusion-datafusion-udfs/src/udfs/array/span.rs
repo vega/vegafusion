@@ -18,6 +18,12 @@ pub struct SpanUDF {
     signature: Signature,
 }
 
+impl Default for SpanUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SpanUDF {
     pub fn new() -> Self {
         let signature = Signature::uniform(

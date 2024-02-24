@@ -62,7 +62,7 @@ fn extract_timestamp_arg(
     schema: &DFSchema,
     default_input_tz: &str,
 ) -> Result<Expr> {
-    if let Some(arg) = args.get(0) {
+    if let Some(arg) = args.first() {
         Ok(match arg.get_type(schema)? {
             DataType::Date32 => Expr::Cast(expr::Cast {
                 expr: Box::new(arg.clone()),

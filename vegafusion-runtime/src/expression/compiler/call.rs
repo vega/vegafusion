@@ -150,7 +150,7 @@ pub fn compile_call(
             }))
         }
         VegaFusionCallable::Data(callee) => {
-            if let Some(v) = node.arguments.get(0) {
+            if let Some(v) = node.arguments.first() {
                 match v.expr() {
                     expression::Expr::Literal(Literal {
                         value: Some(literal::Value::String(name)),

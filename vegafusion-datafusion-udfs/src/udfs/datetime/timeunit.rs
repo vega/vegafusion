@@ -228,6 +228,12 @@ pub struct TimeunitStartUDF {
     signature: Signature,
 }
 
+impl Default for TimeunitStartUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TimeunitStartUDF {
     pub fn new() -> Self {
         let make_sig = |timestamp_dtype: DataType| -> TypeSignature {

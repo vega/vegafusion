@@ -1471,7 +1471,7 @@ fn query_chain_to_cte(queries: &[Query], prefix: &str) -> Query {
 
 fn parse_sql_query(query: &str, dialect: &Dialect) -> Result<Query> {
     let statements: Vec<Statement> = Parser::parse_sql(dialect.parser_dialect().as_ref(), query)?;
-    if let Some(statement) = statements.get(0) {
+    if let Some(statement) = statements.first() {
         if let Statement::Query(box_query) = statement {
             let query: &Query = box_query.as_ref();
             Ok(query.clone())

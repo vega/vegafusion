@@ -174,7 +174,7 @@ impl VegaFusionTable {
 
     pub fn to_record_batch(&self) -> Result<RecordBatch> {
         let mut schema = self.schema.clone();
-        if let Some(batch) = self.batches.get(0) {
+        if let Some(batch) = self.batches.first() {
             schema = batch.schema()
         }
         concat_batches(&schema, &self.batches)
@@ -205,7 +205,7 @@ impl VegaFusionTable {
         if let serde_json::Value::Array(values) = value {
             // Handle special case where array elements are non-object scalars
             let mut values = Cow::Borrowed(values);
-            if let Some(first) = values.get(0) {
+            if let Some(first) = values.first() {
                 if let Value::Object(props) = first {
                     // Handle odd special case where vega will interpret
                     // [{}, {}] as [{"datum": {}}, {"datum": {}}]
@@ -298,7 +298,7 @@ impl VegaFusionTable {
         let batches_list = PyList::new(py, batch_objects);
 
         // Convert table's schema into pyarrow schema
-        let schema = if let Some(batch) = self.batches.get(0) {
+        let schema = if let Some(batch) = self.batches.first() {
             // Get schema from first batch if present
             batch.schema()
         } else {

@@ -429,7 +429,7 @@ fn set_column_for_json_rows(
             let inner_objs = struct_array_to_jsonmap_array(as_struct_array(array), row_count)?;
             rows.iter_mut()
                 .take(row_count)
-                .zip(inner_objs.into_iter())
+                .zip(inner_objs)
                 .for_each(|(row, obj)| {
                     row.insert(col_name.to_string(), Value::Object(obj));
                 });

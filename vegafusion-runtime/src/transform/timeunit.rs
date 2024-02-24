@@ -255,18 +255,18 @@ fn timeunit_custom_udf(
     default_input_tz: &String,
     local_tz: &Option<String>,
 ) -> Result<(Expr, (i32, String))> {
-    let units_mask = vec![
-        units_set.contains(&TimeUnitUnit::Year),         // 0
-        units_set.contains(&TimeUnitUnit::Quarter),      // 1
-        units_set.contains(&TimeUnitUnit::Month),        // 2
-        units_set.contains(&TimeUnitUnit::Date),         // 3
-        units_set.contains(&TimeUnitUnit::Week),         // 4
-        units_set.contains(&TimeUnitUnit::Day),          // 5
-        units_set.contains(&TimeUnitUnit::DayOfYear),    // 6
-        units_set.contains(&TimeUnitUnit::Hours),        // 7
-        units_set.contains(&TimeUnitUnit::Minutes),      // 8
-        units_set.contains(&TimeUnitUnit::Seconds),      // 9
-        units_set.contains(&TimeUnitUnit::Milliseconds), // 10
+    let units_mask = [
+        units_set.contains(&TimeUnitUnit::Year),      // 0
+        units_set.contains(&TimeUnitUnit::Quarter),   // 1
+        units_set.contains(&TimeUnitUnit::Month),     // 2
+        units_set.contains(&TimeUnitUnit::Date),      // 3
+        units_set.contains(&TimeUnitUnit::Week),      // 4
+        units_set.contains(&TimeUnitUnit::Day),       // 5
+        units_set.contains(&TimeUnitUnit::DayOfYear), // 6
+        units_set.contains(&TimeUnitUnit::Hours),     // 7
+        units_set.contains(&TimeUnitUnit::Minutes),   // 8
+        units_set.contains(&TimeUnitUnit::Seconds),   // 9
+        units_set.contains(&TimeUnitUnit::Milliseconds),
     ];
 
     let timeunit_start_udf = &TIMEUNIT_START_UDF;
