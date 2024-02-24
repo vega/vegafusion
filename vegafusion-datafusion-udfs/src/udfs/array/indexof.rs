@@ -1,4 +1,5 @@
 use ordered_float::NotNan;
+use std::any::Any;
 use std::collections::HashMap;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::{
@@ -8,10 +9,7 @@ use vegafusion_common::arrow::compute::cast;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::data::scalar::{ArrayRefHelpers, ScalarValueHelpers};
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
-use vegafusion_common::datafusion_expr::{
-    ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
-    Volatility,
-};
+use vegafusion_common::datafusion_expr::{ColumnarValue, ScalarUDFImpl, Signature, Volatility};
 use vegafusion_common::datatypes::{is_numeric_datatype, is_string_datatype};
 
 /// `indexof(array, value)`
@@ -20,8 +18,36 @@ use vegafusion_common::datatypes::{is_numeric_datatype, is_string_datatype};
 ///
 /// See https://vega.github.io/vega/docs/expressions/#indexof
 /// and https://vega.github.io/vega/docs/expressions/#string_indexof
-fn make_indexof_udf() -> ScalarUDF {
-    let indexof_fn: ScalarFunctionImplementation = Arc::new(|args: &[ColumnarValue]| {
+#[derive(Debug, Clone)]
+pub struct IndexOfUDF {
+    signature: Signature,
+}
+
+impl IndexOfUDF {
+    pub fn new() -> Self {
+        let signature = Signature::any(2, Volatility::Immutable);
+        Self { signature }
+    }
+}
+
+impl ScalarUDFImpl for IndexOfUDF {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn name(&self) -> &str {
+        "indexof"
+    }
+
+    fn signature(&self) -> &Signature {
+        &self.signature
+    }
+
+    fn return_type(&self, _arg_types: &[DataType]) -> Result<DataType, DataFusionError> {
+        Ok(DataType::Int32)
+    }
+
+    fn invoke(&self, args: &[ColumnarValue]) -> Result<ColumnarValue, DataFusionError> {
         // Signature ensures there is a single argument
         let (array, array_dtype) = match &args[0] {
             ColumnarValue::Scalar(ScalarValue::List(array)) => {
@@ -112,16 +138,7 @@ fn make_indexof_udf() -> ScalarUDF {
                 }
             }
         })
-    });
-
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Int32)));
-
-    ScalarUDF::new(
-        "indexof",
-        &Signature::any(2, Volatility::Immutable),
-        &return_type,
-        &indexof_fn,
-    )
+    }
 }
 
 fn build_notnan_index_map(array: &[ScalarValue]) -> HashMap<NotNan<f64>, i32> {
@@ -137,8 +154,4 @@ fn build_notnan_index_map(array: &[ScalarValue]) -> HashMap<NotNan<f64>, i32> {
             None
         })
         .collect::<HashMap<_, _>>()
-}
-
-lazy_static! {
-    pub static ref INDEXOF_UDF: ScalarUDF = make_indexof_udf();
 }

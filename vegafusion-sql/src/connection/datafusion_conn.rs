@@ -14,6 +14,7 @@ use datafusion::optimizer::analyzer::type_coercion::TypeCoercion;
 use datafusion::prelude::{
     CsvReadOptions as DfCsvReadOptions, ParquetReadOptions, SessionConfig, SessionContext,
 };
+use datafusion_expr::ScalarUDF;
 use log::Level;
 use object_store::aws::AmazonS3Builder;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
@@ -33,7 +34,7 @@ use vegafusion_dataframe::connection::Connection;
 use vegafusion_dataframe::csv::CsvReadOptions;
 use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udafs::{Q1_UDF, Q3_UDF};
-use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
+use vegafusion_datafusion_udfs::udfs::array::indexof::IndexOfUDF;
 use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::date_to_utc_timestamp::DATE_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
@@ -513,7 +514,7 @@ pub fn make_datafusion_context() -> SessionContext {
     ctx.register_udf((*FORMAT_TIMESTAMP_UDF).clone());
 
     // list
-    ctx.register_udf((*INDEXOF_UDF).clone());
+    ctx.register_udf(ScalarUDF::from(IndexOfUDF::new()));
 
     // q1/q3 aggregate functions
     ctx.register_udaf((*Q1_UDF).clone());

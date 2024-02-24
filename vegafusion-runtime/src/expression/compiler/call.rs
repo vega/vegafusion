@@ -20,7 +20,7 @@ use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
 };
-use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
+use vegafusion_datafusion_udfs::udfs::array::indexof::IndexOfUDF;
 use vegafusion_datafusion_udfs::udfs::array::span::SpanUDF;
 
 use crate::expression::compiler::builtin_functions::array::length::length_transform;
@@ -286,7 +286,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "indexof".to_string(),
         VegaFusionCallable::ScalarUDF {
-            udf: INDEXOF_UDF.deref().clone(),
+            udf: ScalarUDF::from(IndexOfUDF::new()),
             cast: None,
         },
     );
