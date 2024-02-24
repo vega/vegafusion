@@ -1,52 +1,80 @@
-use std::sync::Arc;
-use vegafusion_common::datafusion_expr::TypeSignature;
+use std::any::Any;
+use vegafusion_common::datafusion_expr::{ScalarUDFImpl, TypeSignature};
 use vegafusion_common::{
     arrow::datatypes::{DataType, TimeUnit},
     datafusion_expr::{
-        ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
+        ColumnarValue, ScalarUDF, Signature,
         Volatility,
     },
 };
+use vegafusion_common::datafusion_common::DataFusionError;
+
+#[derive(Debug, Clone)]
+pub struct DateAddTzUDF {
+    signature: Signature
+}
+
+impl  DateAddTzUDF {
+    pub fn new() -> Self {
+        let signature = Signature::one_of(
+            vec![
+                TypeSignature::Exact(vec![
+                    DataType::Utf8,
+                    DataType::Int32,
+                    DataType::Date32,
+                    DataType::Utf8,
+                ]),
+                TypeSignature::Exact(vec![
+                    DataType::Utf8,
+                    DataType::Int32,
+                    DataType::Date64,
+                    DataType::Utf8,
+                ]),
+                TypeSignature::Exact(vec![
+                    DataType::Utf8,
+                    DataType::Int32,
+                    DataType::Timestamp(TimeUnit::Millisecond, None),
+                    DataType::Utf8,
+                ]),
+                TypeSignature::Exact(vec![
+                    DataType::Utf8,
+                    DataType::Int32,
+                    DataType::Timestamp(TimeUnit::Nanosecond, None),
+                    DataType::Utf8,
+                ]),
+            ],
+            Volatility::Immutable,
+        );
+        Self {
+            signature,
+        }
+    }
+}
+
+impl ScalarUDFImpl for DateAddTzUDF {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn name(&self) -> &str {
+        "date_add_tz"
+    }
+
+    fn signature(&self) -> &Signature {
+        &self.signature
+    }
+
+    fn return_type(&self, _arg_types: &[DataType]) -> Result<DataType, DataFusionError> {
+        Ok(DataType::Timestamp(TimeUnit::Millisecond, None))
+    }
+
+    fn invoke(&self, _args: &[ColumnarValue]) -> vegafusion_common::datafusion_common::Result<ColumnarValue> {
+        unimplemented!("date_add_tz function is not implemented by DataFusion")
+    }
+}
 
 fn make_date_add_tz_udf() -> ScalarUDF {
-    let scalar_fn: ScalarFunctionImplementation = Arc::new(move |_args: &[ColumnarValue]| {
-        unimplemented!("date_add_tz function is not implemented by DataFusion")
-    });
-
-    let return_type: ReturnTypeFunction =
-        Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
-
-    let signature = Signature::one_of(
-        vec![
-            TypeSignature::Exact(vec![
-                DataType::Utf8,
-                DataType::Int32,
-                DataType::Date32,
-                DataType::Utf8,
-            ]),
-            TypeSignature::Exact(vec![
-                DataType::Utf8,
-                DataType::Int32,
-                DataType::Date64,
-                DataType::Utf8,
-            ]),
-            TypeSignature::Exact(vec![
-                DataType::Utf8,
-                DataType::Int32,
-                DataType::Timestamp(TimeUnit::Millisecond, None),
-                DataType::Utf8,
-            ]),
-            TypeSignature::Exact(vec![
-                DataType::Utf8,
-                DataType::Int32,
-                DataType::Timestamp(TimeUnit::Nanosecond, None),
-                DataType::Utf8,
-            ]),
-        ],
-        Volatility::Immutable,
-    );
-
-    ScalarUDF::new("date_add_tz", &signature, &return_type, &scalar_fn)
+    ScalarUDF::from(DateAddTzUDF::new())
 }
 
 lazy_static! {
