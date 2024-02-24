@@ -1,5 +1,5 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
-use datafusion_expr::{BuiltinScalarFunction, expr, Expr, ScalarFunctionDefinition};
+use datafusion_expr::{expr, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
 use std::ops::Deref;
 use std::sync::Arc;
 use vegafusion_common::datafusion_common::DFSchema;

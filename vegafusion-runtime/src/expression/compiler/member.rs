@@ -85,13 +85,21 @@ pub fn compile_member(
             }
         }
         _ => {
-            if property_string == "length" && matches!(dtype, DataType::Utf8 | DataType::LargeUtf8) {
+            if property_string == "length" && matches!(dtype, DataType::Utf8 | DataType::LargeUtf8)
+            {
                 // Special case to treat foo.length as length(foo) on a string
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::CharacterLength),
+                    func_def: ScalarFunctionDefinition::BuiltIn(
+                        BuiltinScalarFunction::CharacterLength,
+                    ),
                     args: vec![compiled_object],
                 })
-            } else if property_string == "length" && matches!(dtype, DataType::List(_) | DataType::LargeList(_) | DataType::FixedSizeList(_, _)) {
+            } else if property_string == "length"
+                && matches!(
+                    dtype,
+                    DataType::List(_) | DataType::LargeList(_) | DataType::FixedSizeList(_, _)
+                )
+            {
                 // Special case to treat foo.length as length(foo) on an array
                 Expr::ScalarFunction(expr::ScalarFunction {
                     func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::ArrayLength),

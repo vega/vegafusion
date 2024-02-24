@@ -1,9 +1,14 @@
 use datafusion_common::DFSchema;
-use datafusion_expr::{BuiltinScalarFunction, Expr, expr, ExprSchemable, lit, ScalarFunctionDefinition};
+use datafusion_expr::{
+    expr, lit, BuiltinScalarFunction, Expr, ExprSchemable, ScalarFunctionDefinition,
+};
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::error::{ResultWithContext, VegaFusionError};
 
-pub fn length_transform(args: &[Expr], schema: &DFSchema) -> vegafusion_common::error::Result<Expr> {
+pub fn length_transform(
+    args: &[Expr],
+    schema: &DFSchema,
+) -> vegafusion_common::error::Result<Expr> {
     if args.len() == 1 {
         let arg = args[0].clone();
         let dtype = arg
