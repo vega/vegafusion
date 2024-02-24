@@ -1,20 +1,17 @@
 use std::any::Any;
+use vegafusion_common::datafusion_common::DataFusionError;
 use vegafusion_common::datafusion_expr::{ScalarUDFImpl, TypeSignature};
 use vegafusion_common::{
     arrow::datatypes::{DataType, TimeUnit},
-    datafusion_expr::{
-        ColumnarValue, ScalarUDF, Signature,
-        Volatility,
-    },
+    datafusion_expr::{ColumnarValue, ScalarUDF, Signature, Volatility},
 };
-use vegafusion_common::datafusion_common::DataFusionError;
 
 #[derive(Debug, Clone)]
 pub struct DateAddTzUDF {
-    signature: Signature
+    signature: Signature,
 }
 
-impl  DateAddTzUDF {
+impl DateAddTzUDF {
     pub fn new() -> Self {
         let signature = Signature::one_of(
             vec![
@@ -45,9 +42,7 @@ impl  DateAddTzUDF {
             ],
             Volatility::Immutable,
         );
-        Self {
-            signature,
-        }
+        Self { signature }
     }
 }
 
@@ -68,7 +63,10 @@ impl ScalarUDFImpl for DateAddTzUDF {
         Ok(DataType::Timestamp(TimeUnit::Millisecond, None))
     }
 
-    fn invoke(&self, _args: &[ColumnarValue]) -> vegafusion_common::datafusion_common::Result<ColumnarValue> {
+    fn invoke(
+        &self,
+        _args: &[ColumnarValue],
+    ) -> vegafusion_common::datafusion_common::Result<ColumnarValue> {
         unimplemented!("date_add_tz function is not implemented by DataFusion")
     }
 }

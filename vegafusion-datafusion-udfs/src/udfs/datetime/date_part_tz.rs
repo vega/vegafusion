@@ -1,20 +1,69 @@
 use crate::udfs::datetime::from_utc_timestamp::from_utc_timestamp;
 use crate::udfs::datetime::to_utc_timestamp::to_timestamp_ms;
 use datafusion_physical_expr::datetime_expressions;
+use std::any::Any;
 use std::str::FromStr;
-use std::sync::Arc;
-use vegafusion_common::datafusion_expr::TypeSignature;
+use vegafusion_common::datafusion_expr::{ScalarUDFImpl, TypeSignature};
 use vegafusion_common::{
     arrow::datatypes::{DataType, TimeUnit},
     datafusion_common::DataFusionError,
-    datafusion_expr::{
-        ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
-        Volatility,
-    },
+    datafusion_expr::{ColumnarValue, ScalarUDF, Signature, Volatility},
 };
 
-fn make_date_part_tz_udf() -> ScalarUDF {
-    let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
+#[derive(Debug, Clone)]
+pub struct DatePartTzUDF {
+    signature: Signature,
+}
+
+impl DatePartTzUDF {
+    pub fn new() -> Self {
+        let signature = Signature::one_of(
+            vec![
+                TypeSignature::Exact(vec![
+                    DataType::Utf8, // part
+                    DataType::Date32,
+                    DataType::Utf8, // timezone
+                ]),
+                TypeSignature::Exact(vec![
+                    DataType::Utf8, // part
+                    DataType::Date64,
+                    DataType::Utf8, // timezone
+                ]),
+                TypeSignature::Exact(vec![
+                    DataType::Utf8, // part
+                    DataType::Timestamp(TimeUnit::Millisecond, None),
+                    DataType::Utf8, // timezone
+                ]),
+                TypeSignature::Exact(vec![
+                    DataType::Utf8, // part
+                    DataType::Timestamp(TimeUnit::Nanosecond, None),
+                    DataType::Utf8, // timezone
+                ]),
+            ],
+            Volatility::Immutable,
+        );
+        Self { signature }
+    }
+}
+
+impl ScalarUDFImpl for DatePartTzUDF {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn name(&self) -> &str {
+        "date_part_tz"
+    }
+
+    fn signature(&self) -> &Signature {
+        &self.signature
+    }
+
+    fn return_type(&self, _arg_types: &[DataType]) -> Result<DataType, DataFusionError> {
+        Ok(DataType::Float64)
+    }
+
+    fn invoke(&self, args: &[ColumnarValue]) -> Result<ColumnarValue, DataFusionError> {
         // [1] data array
         let timestamp_array = match &args[1] {
             ColumnarValue::Array(array) => array.clone(),
@@ -48,39 +97,9 @@ fn make_date_part_tz_udf() -> ScalarUDF {
             args[0].clone(), // Part
             timestamp_in_tz, // Timestamp converted to timezone
         ])
-    });
-
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Float64)));
-
-    let signature = Signature::one_of(
-        vec![
-            TypeSignature::Exact(vec![
-                DataType::Utf8, // part
-                DataType::Date32,
-                DataType::Utf8, // timezone
-            ]),
-            TypeSignature::Exact(vec![
-                DataType::Utf8, // part
-                DataType::Date64,
-                DataType::Utf8, // timezone
-            ]),
-            TypeSignature::Exact(vec![
-                DataType::Utf8, // part
-                DataType::Timestamp(TimeUnit::Millisecond, None),
-                DataType::Utf8, // timezone
-            ]),
-            TypeSignature::Exact(vec![
-                DataType::Utf8, // part
-                DataType::Timestamp(TimeUnit::Nanosecond, None),
-                DataType::Utf8, // timezone
-            ]),
-        ],
-        Volatility::Immutable,
-    );
-
-    ScalarUDF::new("date_part_tz", &signature, &return_type, &scalar_fn)
+    }
 }
 
 lazy_static! {
-    pub static ref DATE_PART_TZ_UDF: ScalarUDF = make_date_part_tz_udf();
+    pub static ref DATE_PART_TZ_UDF: ScalarUDF = ScalarUDF::from(DatePartTzUDF::new());
 }
