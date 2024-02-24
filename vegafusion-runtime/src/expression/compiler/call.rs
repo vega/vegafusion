@@ -21,7 +21,7 @@ use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
 };
 use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
-use vegafusion_datafusion_udfs::udfs::array::span::SPAN_UDF;
+use vegafusion_datafusion_udfs::udfs::array::span::SpanUDF;
 
 use crate::expression::compiler::builtin_functions::array::length::length_transform;
 use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
@@ -278,7 +278,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "span".to_string(),
         VegaFusionCallable::ScalarUDF {
-            udf: SPAN_UDF.deref().clone(),
+            udf: ScalarUDF::from(SpanUDF::new()),
             cast: None,
         },
     );

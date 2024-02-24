@@ -1,12 +1,11 @@
+use std::any::Any;
 use std::sync::Arc;
-use vegafusion_common::arrow::array::{Array, ListArray};
+use vegafusion_common::arrow::array::Array;
+use vegafusion_common::arrow::array::ListArray;
 use vegafusion_common::arrow::datatypes::{DataType, Field};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
-use vegafusion_common::datafusion_expr::{
-    ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
-    Volatility,
-};
+use vegafusion_common::datafusion_expr::{ColumnarValue, ScalarUDFImpl, Signature, Volatility};
 
 /// `span(array)`
 ///
@@ -14,8 +13,44 @@ use vegafusion_common::datafusion_expr::{
 /// or array[array.length-1] - array[0].
 ///
 /// See https://vega.github.io/vega/docs/expressions/#span
-fn make_span_udf() -> ScalarUDF {
-    let span_fn: ScalarFunctionImplementation = Arc::new(|args: &[ColumnarValue]| {
+#[derive(Debug, Clone)]
+pub struct SpanUDF {
+    signature: Signature,
+}
+
+impl SpanUDF {
+    pub fn new() -> Self {
+        let signature = Signature::uniform(
+            1,
+            vec![
+                DataType::Float64, // For null
+                DataType::Null,    // For null
+                DataType::List(Arc::new(Field::new("item", DataType::Float64, true))),
+            ],
+            Volatility::Immutable,
+        );
+        Self { signature }
+    }
+}
+
+impl ScalarUDFImpl for SpanUDF {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn name(&self) -> &str {
+        "span"
+    }
+
+    fn signature(&self) -> &Signature {
+        &self.signature
+    }
+
+    fn return_type(&self, _arg_types: &[DataType]) -> Result<DataType, DataFusionError> {
+        Ok(DataType::Float64)
+    }
+
+    fn invoke(&self, args: &[ColumnarValue]) -> Result<ColumnarValue, DataFusionError> {
         // Signature ensures there is a single argument
         let arg = &args[0];
         Ok(match arg {
@@ -65,25 +100,5 @@ fn make_span_udf() -> ScalarUDF {
                 todo!("Span on column not yet implemented")
             }
         })
-    });
-
-    let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(Arc::new(DataType::Float64)));
-    ScalarUDF::new(
-        "span",
-        &Signature::uniform(
-            1,
-            vec![
-                DataType::Float64, // For null
-                DataType::Null,    // For null
-                DataType::List(Arc::new(Field::new("item", DataType::Float64, true))),
-            ],
-            Volatility::Immutable,
-        ),
-        &return_type,
-        &span_fn,
-    )
-}
-
-lazy_static! {
-    pub static ref SPAN_UDF: ScalarUDF = make_span_udf();
+    }
 }
