@@ -1,3 +1,4 @@
+use datafusion_physical_expr::udf::ScalarUDF;
 use std::any::Any;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::{BooleanArray, Float32Array, Float64Array};
@@ -75,4 +76,8 @@ impl ScalarUDFImpl for IsFiniteUDF {
             }
         }
     }
+}
+
+lazy_static! {
+    pub static ref ISFINITE_UDF: ScalarUDF = ScalarUDF::from(IsFiniteUDF::new());
 }
