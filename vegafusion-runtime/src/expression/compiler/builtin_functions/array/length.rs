@@ -13,7 +13,7 @@ pub fn length_transform(
             .get_type(schema)
             .with_context(|| format!("Failed to infer type of expression: {arg:?}"))?;
 
-        match dtype {
+        let len_expr = match dtype {
             DataType::Utf8 | DataType::LargeUtf8 => Ok(Expr::Cast(expr::Cast {
                 expr: Box::new(Expr::ScalarFunction(expr::ScalarFunction {
                     func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::CharacterLength),
@@ -32,7 +32,9 @@ pub fn length_transform(
                 "length function support array and string arguments. Received argument with type {:?}",
                 dtype
             ))),
-        }
+        }?;
+
+        Ok(len_expr.cast_to(&DataType::Float64, schema)?)
     } else {
         Err(VegaFusionError::parse(format!(
             "length requires a single argument. Received {} arguments",

@@ -1,3 +1,4 @@
+use crate::expression::compiler::builtin_functions::array::length::length_transform;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
@@ -84,26 +85,8 @@ pub fn compile_member(
             }
         }
         _ => {
-            if property_string == "length" && matches!(dtype, DataType::Utf8 | DataType::LargeUtf8)
-            {
-                // Special case to treat foo.length as length(foo) on a string
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(
-                        BuiltinScalarFunction::CharacterLength,
-                    ),
-                    args: vec![compiled_object],
-                })
-            } else if property_string == "length"
-                && matches!(
-                    dtype,
-                    DataType::List(_) | DataType::LargeList(_) | DataType::FixedSizeList(_, _)
-                )
-            {
-                // Special case to treat foo.length as length(foo) on an array
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::ArrayLength),
-                    args: vec![compiled_object],
-                })
+            if property_string == "length" {
+                length_transform(&[compiled_object], schema)?
             } else if matches!(dtype, DataType::Utf8 | DataType::LargeUtf8) {
                 if let Some(index) = index {
                     // SQL substr function is 1-indexed so add one
