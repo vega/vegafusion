@@ -1,7 +1,5 @@
 use datafusion_common::DFSchema;
-use datafusion_expr::{
-    expr, lit, BuiltinScalarFunction, Expr, ExprSchemable, ScalarFunctionDefinition,
-};
+use datafusion_expr::{expr, BuiltinScalarFunction, Expr, ExprSchemable, ScalarFunctionDefinition};
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::error::{ResultWithContext, VegaFusionError};
 

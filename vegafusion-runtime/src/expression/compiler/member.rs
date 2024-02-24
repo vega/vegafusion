@@ -3,7 +3,6 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
 use datafusion_expr::{expr, lit, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
 use std::convert::TryFrom;
-use std::ops::Deref;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::Int64Array;
 use vegafusion_common::arrow::compute::cast;

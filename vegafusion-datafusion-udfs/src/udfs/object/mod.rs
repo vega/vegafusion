@@ -1,5 +1,5 @@
-use std::any::Any;
 use crate::udfs::util::make_scalar_function;
+use std::any::Any;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::{ArrayRef, StructArray};
 use vegafusion_common::arrow::datatypes::{DataType, Field, FieldRef, Fields};

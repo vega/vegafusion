@@ -1,7 +1,6 @@
 use crate::compile::data_type::ToSqlDataType;
 use crate::compile::expr::ToSqlExpr;
 use crate::dialect::Dialect;
-use arrow::array::Array;
 use arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;

@@ -12,7 +12,6 @@ use vegafusion_common::error::{Result, VegaFusionError};
 pub struct GetObjectMemberUDF {
     field_type: DataType,
     field_index: usize,
-    property_name: String,
     signature: Signature,
     name: String,
 }
@@ -44,7 +43,6 @@ impl GetObjectMemberUDF {
         Ok(Self {
             field_type,
             field_index,
-            property_name,
             signature,
             name,
         })

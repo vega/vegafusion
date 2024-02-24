@@ -1,5 +1,4 @@
 use datafusion_expr::{expr, lit, Expr, ExprSchemable, ScalarFunctionDefinition, ScalarUDF};
-use std::ops::Deref;
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::DFSchema;
