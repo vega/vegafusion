@@ -39,7 +39,7 @@ use crate::expression::compiler::builtin_functions::date_time::date_parts::{
 use crate::expression::compiler::builtin_functions::date_time::time::time_fn;
 use crate::expression::compiler::builtin_functions::date_time::time_offset::time_offset_fn;
 use crate::expression::compiler::builtin_functions::format::format_transform;
-use crate::expression::compiler::builtin_functions::length::length_transform;
+use crate::expression::compiler::builtin_functions::array::length::length_transform;
 use crate::expression::compiler::builtin_functions::math::isfinite::is_finite_fn;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
