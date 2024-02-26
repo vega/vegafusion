@@ -1,17 +1,14 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion_expr::{expr, Expr};
+use datafusion_expr::{expr, Expr, WindowFunctionDefinition};
 
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::{Collect, SortOrder};
 
 use async_trait::async_trait;
-use datafusion_common::scalar::ScalarValue;
-use datafusion_expr::{
-    window_function, BuiltInWindowFunction, WindowFrame, WindowFrameBound, WindowFrameUnits,
-};
+use datafusion_expr::{BuiltInWindowFunction, WindowFrame};
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -47,17 +44,11 @@ impl TransformTrait for Collect {
         // criteria. This column becomes the new ORDER_COL, which will be sorted at the end of
         // the pipeline.
         let order_col = Expr::WindowFunction(expr::WindowFunction {
-            fun: window_function::WindowFunction::BuiltInWindowFunction(
-                BuiltInWindowFunction::RowNumber,
-            ),
+            fun: WindowFunctionDefinition::BuiltInWindowFunction(BuiltInWindowFunction::RowNumber),
             args: vec![],
             partition_by: vec![],
             order_by: sort_exprs,
-            window_frame: WindowFrame {
-                units: WindowFrameUnits::Rows,
-                start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
-                end_bound: WindowFrameBound::CurrentRow,
-            },
+            window_frame: WindowFrame::new(Some(true)),
         })
         .alias(ORDER_COL);
 

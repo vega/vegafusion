@@ -3,7 +3,7 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
 use datafusion_common::ScalarValue;
-use datafusion_expr::{aggregate_function, expr, lit, Expr};
+use datafusion_expr::{aggregate_function, expr, lit, Expr, WindowFrame, WindowFunctionDefinition};
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::{
@@ -11,9 +11,7 @@ use vegafusion_core::proto::gen::transforms::{
 };
 use vegafusion_core::task_graph::task_value::TaskValue;
 
-use datafusion_expr::{
-    window_frame, BuiltInWindowFunction, WindowFrameBound, WindowFrameUnits, WindowFunction,
-};
+use datafusion_expr::{BuiltInWindowFunction, WindowFrameBound, WindowFrameUnits};
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::to_numeric;
@@ -86,15 +84,12 @@ impl TransformTrait for Window {
 
         let ignore_peers = self.ignore_peers.unwrap_or(false);
 
-        let window_frame = window_frame::WindowFrame {
-            units: if ignore_peers {
-                WindowFrameUnits::Rows
-            } else {
-                WindowFrameUnits::Groups
-            },
-            start_bound,
-            end_bound,
+        let units = if ignore_peers {
+            WindowFrameUnits::Rows
+        } else {
+            WindowFrameUnits::Groups
         };
+        let window_frame = WindowFrame::new_bounds(units, start_bound, end_bound);
 
         let schema_df = dataframe.schema_df()?;
         let window_exprs = self
@@ -146,7 +141,10 @@ impl TransformTrait for Window {
                                 )))
                             }
                         };
-                        (WindowFunction::AggregateFunction(agg_fn), vec![arg])
+                        (
+                            WindowFunctionDefinition::AggregateFunction(agg_fn),
+                            vec![arg],
+                        )
                     }
                     window_transform_op::Op::WindowOp(op) => {
                         let op = WindowOp::try_from(*op).unwrap();
@@ -173,7 +171,10 @@ impl TransformTrait for Window {
                                 )))
                             }
                         };
-                        (WindowFunction::BuiltInWindowFunction(window_fn), args)
+                        (
+                            WindowFunctionDefinition::BuiltInWindowFunction(window_fn),
+                            args,
+                        )
                     }
                 };
 

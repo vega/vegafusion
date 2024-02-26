@@ -14,6 +14,7 @@ use datafusion::optimizer::analyzer::type_coercion::TypeCoercion;
 use datafusion::prelude::{
     CsvReadOptions as DfCsvReadOptions, ParquetReadOptions, SessionConfig, SessionContext,
 };
+use datafusion_expr::ScalarUDF;
 use log::Level;
 use object_store::aws::AmazonS3Builder;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
@@ -33,9 +34,7 @@ use vegafusion_dataframe::connection::Connection;
 use vegafusion_dataframe::csv::CsvReadOptions;
 use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udafs::{Q1_UDF, Q3_UDF};
-use vegafusion_datafusion_udfs::udfs::array::constructor::ARRAY_CONSTRUCTOR_UDF;
-use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
-use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
+use vegafusion_datafusion_udfs::udfs::array::indexof::IndexOfUDF;
 use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::date_to_utc_timestamp::DATE_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
@@ -47,8 +46,7 @@ use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_epoch::UTC_TIMESTAMP_TO_EPOCH_MS;
 use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_str::UTC_TIMESTAMP_TO_STR_UDF;
-use vegafusion_datafusion_udfs::udfs::math::isfinite::ISFINITE_UDF;
-use vegafusion_datafusion_udfs::udfs::math::isnan::ISNAN_UDF;
+use vegafusion_datafusion_udfs::udfs::math::isfinite::IsFiniteUDF;
 
 #[cfg(feature = "pyarrow")]
 use {crate::connection::datafusion_py_datasource::PyDatasource, pyo3::PyObject};
@@ -117,11 +115,11 @@ impl Connection for DataFusionConnection {
 
     async fn tables(&self) -> Result<HashMap<String, Schema>> {
         let catalog_names = self.ctx.catalog_names();
-        let first_catalog_name = catalog_names.get(0).unwrap();
+        let first_catalog_name = catalog_names.first().unwrap();
         let catalog = self.ctx.catalog(first_catalog_name).unwrap();
 
         let schema_provider_names = catalog.schema_names();
-        let first_schema_provider_name = schema_provider_names.get(0).unwrap();
+        let first_schema_provider_name = schema_provider_names.first().unwrap();
         let schema_provider = catalog.schema(first_schema_provider_name).unwrap();
 
         let mut tables: HashMap<String, Schema> = HashMap::new();
@@ -143,7 +141,7 @@ impl Connection for DataFusionConnection {
         let batch_schema = if table.batches.is_empty() {
             None
         } else {
-            Some(table.batches.get(0).unwrap().schema())
+            Some(table.batches.first().unwrap().schema())
         };
 
         // Create memtable
@@ -200,14 +198,12 @@ impl Connection for DataFusionConnection {
                 writeln!(file, "{body}").unwrap();
             }
 
-            let path = tempdir.path().to_str().unwrap();
-
             // Build final csv schema that combines the requested and inferred schemas
-            let final_schema = build_csv_schema(&df_csv_opts, path, &self.ctx).await?;
+            let final_schema = build_csv_schema(&df_csv_opts, &filepath, &self.ctx).await?;
             df_csv_opts = df_csv_opts.schema(&final_schema);
 
             // Load through VegaFusionTable so that temp file can be deleted
-            let df = self.ctx.read_csv(path, df_csv_opts).await?;
+            let df = self.ctx.read_csv(&filepath, df_csv_opts).await?;
 
             let schema: SchemaRef = Arc::new(df.schema().into()) as SchemaRef;
             let batches = df.collect().await?;
@@ -497,11 +493,8 @@ pub fn make_datafusion_context() -> SessionContext {
 
     let ctx = SessionContext::new_with_state(session_state);
 
-    // isNan
-    ctx.register_udf((*ISNAN_UDF).clone());
-
     // isFinite
-    ctx.register_udf((*ISFINITE_UDF).clone());
+    ctx.register_udf(ScalarUDF::from(IsFiniteUDF::new()));
 
     // datetime
     ctx.register_udf((*DATE_PART_TZ_UDF).clone());
@@ -521,9 +514,7 @@ pub fn make_datafusion_context() -> SessionContext {
     ctx.register_udf((*FORMAT_TIMESTAMP_UDF).clone());
 
     // list
-    ctx.register_udf((*ARRAY_CONSTRUCTOR_UDF).clone());
-    ctx.register_udf((*LENGTH_UDF).clone());
-    ctx.register_udf((*INDEXOF_UDF).clone());
+    ctx.register_udf(ScalarUDF::from(IndexOfUDF::new()));
 
     // q1/q3 aggregate functions
     ctx.register_udaf((*Q1_UDF).clone());

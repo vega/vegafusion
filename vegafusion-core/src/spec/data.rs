@@ -85,7 +85,7 @@ impl DataSpec {
         } else if self.url.is_some() {
             DependencyNodeSupported::PartiallySupported
         } else {
-            match self.transform.get(0) {
+            match self.transform.first() {
                 Some(tx) if tx.supported_and_allowed(planner_config, task_scope, scope) => {
                     DependencyNodeSupported::PartiallySupported
                 }

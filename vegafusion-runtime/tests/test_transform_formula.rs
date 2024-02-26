@@ -238,3 +238,52 @@ fn test_formula_recursive_ternary_doesnt_overflow_stack() {
         &eq_config,
     );
 }
+
+#[test]
+fn test_formula_span() {
+    let dataset = vega_json_dataset("penguins");
+
+    let transform_specs: Vec<TransformSpec> = serde_json::from_value(json!([
+        {
+            "type": "formula",
+            "expr": "span([1, 2])",
+            "as": "span1"
+        },
+        {
+            "type": "formula",
+            "expr": "span([])",
+            "as": "span2"
+        },
+        {
+            "type": "formula",
+            "expr": "span(null)",
+            "as": "span3"
+        },
+        {
+            "type": "formula",
+            "expr": "span(23)",
+            "as": "span4"
+        },
+        {
+            "type": "formula",
+            "expr": "span([17])",
+            "as": "span5"
+        },
+         {
+            "type": "formula",
+            "expr": "span([1, 2, 5, 6, 7])",
+            "as": "span6"
+        },
+    ]))
+    .unwrap();
+
+    let comp_config = Default::default();
+    let eq_config = Default::default();
+
+    check_transform_evaluation(
+        &dataset,
+        transform_specs.as_slice(),
+        &comp_config,
+        &eq_config,
+    );
+}

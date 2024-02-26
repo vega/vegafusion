@@ -1,29 +1,82 @@
 use chrono::NaiveDateTime;
 use chrono::TimeZone;
 use chrono_tz::Tz;
+use std::any::Any;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::Array;
+use vegafusion_common::datafusion_expr::ScalarUDFImpl;
 use vegafusion_common::{
     arrow::{
         array::{ArrayRef, TimestampMillisecondArray},
         datatypes::{DataType, TimeUnit},
     },
     datafusion_common::{DataFusionError, ScalarValue},
-    datafusion_expr::{
-        ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
-        TypeSignature, Volatility,
-    },
+    datafusion_expr::{ColumnarValue, ScalarUDF, Signature, TypeSignature, Volatility},
 };
 
 use crate::udfs::datetime::to_utc_timestamp::to_timestamp_ms;
 
-fn make_from_utc_timestamp() -> ScalarUDF {
-    let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
+#[derive(Debug, Clone)]
+pub struct FromUtcTimestampUDF {
+    signature: Signature,
+}
+
+impl Default for FromUtcTimestampUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl FromUtcTimestampUDF {
+    pub fn new() -> Self {
+        let signature = Signature::one_of(
+            vec![
+                TypeSignature::Exact(vec![DataType::Date32, DataType::Utf8]),
+                TypeSignature::Exact(vec![DataType::Date64, DataType::Utf8]),
+                TypeSignature::Exact(vec![
+                    DataType::Timestamp(TimeUnit::Millisecond, None),
+                    DataType::Utf8,
+                ]),
+                TypeSignature::Exact(vec![
+                    DataType::Timestamp(TimeUnit::Nanosecond, None),
+                    DataType::Utf8,
+                ]),
+            ],
+            Volatility::Immutable,
+        );
+        Self { signature }
+    }
+}
+
+impl ScalarUDFImpl for FromUtcTimestampUDF {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn name(&self) -> &str {
+        "from_utc_timestamp"
+    }
+
+    fn signature(&self) -> &Signature {
+        &self.signature
+    }
+
+    fn return_type(
+        &self,
+        _arg_types: &[DataType],
+    ) -> vegafusion_common::datafusion_common::Result<DataType> {
+        Ok(DataType::Timestamp(TimeUnit::Millisecond, None))
+    }
+
+    fn invoke(
+        &self,
+        args: &[ColumnarValue],
+    ) -> vegafusion_common::datafusion_common::Result<ColumnarValue> {
         // [0] data array
         let timestamp_array = match &args[0] {
             ColumnarValue::Array(array) => array.clone(),
-            ColumnarValue::Scalar(scalar) => scalar.to_array(),
+            ColumnarValue::Scalar(scalar) => scalar.to_array()?,
         };
 
         // [1] timezone string
@@ -46,28 +99,7 @@ fn make_from_utc_timestamp() -> ScalarUDF {
         } else {
             ScalarValue::try_from_array(&result_array, 0).map(ColumnarValue::Scalar)
         }
-    });
-
-    let return_type: ReturnTypeFunction =
-        Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
-
-    let signature: Signature = Signature::one_of(
-        vec![
-            TypeSignature::Exact(vec![DataType::Date32, DataType::Utf8]),
-            TypeSignature::Exact(vec![DataType::Date64, DataType::Utf8]),
-            TypeSignature::Exact(vec![
-                DataType::Timestamp(TimeUnit::Millisecond, None),
-                DataType::Utf8,
-            ]),
-            TypeSignature::Exact(vec![
-                DataType::Timestamp(TimeUnit::Nanosecond, None),
-                DataType::Utf8,
-            ]),
-        ],
-        Volatility::Immutable,
-    );
-
-    ScalarUDF::new("from_utc_timestamp", &signature, &return_type, &scalar_fn)
+    }
 }
 
 pub fn from_utc_timestamp(timestamp_array: ArrayRef, tz: Tz) -> Result<ArrayRef, DataFusionError> {
@@ -104,5 +136,5 @@ pub fn from_utc_timestamp(timestamp_array: ArrayRef, tz: Tz) -> Result<ArrayRef,
 }
 
 lazy_static! {
-    pub static ref FROM_UTC_TIMESTAMP_UDF: ScalarUDF = make_from_utc_timestamp();
+    pub static ref FROM_UTC_TIMESTAMP_UDF: ScalarUDF = ScalarUDF::from(FromUtcTimestampUDF::new());
 }

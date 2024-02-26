@@ -7,7 +7,7 @@ license = "BSD-3-Clause"
 
 [features]
 pyarrow = [ "pyo3", "arrow/pyarrow",]
-json = [ "serde_json", "arrow/json", "chrono",]
+json = [ "serde_json/preserve_order", "arrow/json", "chrono",]
 prettyprint = [ "arrow/prettyprint",]
 
 [dependencies]
@@ -32,7 +32,6 @@ features = [ "ipc",]
 
 [dependencies.datafusion-common]
 workspace = true
-default_features = false
 
 [dependencies.datafusion-expr]
 workspace = true

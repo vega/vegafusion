@@ -7,14 +7,15 @@ use arrow::datatypes::{DataType, Field, FieldRef, Fields, Schema, SchemaRef};
 use arrow::record_batch::RecordBatch;
 use async_trait::async_trait;
 use datafusion_common::{Column, DFSchema, OwnedTableReference, ScalarValue};
+use datafusion_expr::expr::AggregateFunctionDefinition;
 use datafusion_expr::{
-    abs, expr, is_null, lit, max, min, when, window_function, AggregateFunction,
-    BuiltInWindowFunction, BuiltinScalarFunction, Expr, ExprSchemable, WindowFrame,
-    WindowFrameBound, WindowFrameUnits, WindowFunction,
+    abs, expr, is_null, lit, max, min, when, AggregateFunction, BuiltInWindowFunction,
+    BuiltinScalarFunction, Expr, ExprSchemable, ScalarFunctionDefinition, WindowFrame,
+    WindowFunctionDefinition,
 };
 use sqlparser::ast::{
-    Cte, Expr as SqlExpr, Ident, Query, Select, SelectItem, SetExpr, Statement, TableAlias,
-    TableFactor, TableWithJoins, Values, WildcardAdditionalOptions, With,
+    Cte, Expr as SqlExpr, GroupByExpr, Ident, Query, Select, SelectItem, SetExpr, Statement,
+    TableAlias, TableFactor, TableWithJoins, Values, WildcardAdditionalOptions, With,
 };
 use sqlparser::parser::Parser;
 use std::any::Any;
@@ -278,7 +279,7 @@ impl SqlDataFrame {
                         selection: None,
                         from: Default::default(),
                         lateral_views: Default::default(),
-                        group_by: Default::default(),
+                        group_by: GroupByExpr::Expressions(Vec::new()),
                         cluster_by: Default::default(),
                         distribute_by: Default::default(),
                         sort_by: Default::default(),
@@ -320,9 +321,11 @@ impl SqlDataFrame {
                     body: Box::new(values_body),
                     order_by: Default::default(),
                     limit: None,
+                    limit_by: vec![],
                     offset: None,
                     fetch: None,
                     locks: Default::default(),
+                    for_clause: None,
                 };
 
                 let (projection, table_alias) = if let ValuesMode::ValuesWithSelectColumnAliases {
@@ -385,7 +388,7 @@ impl SqlDataFrame {
                     }],
                     lateral_views: Default::default(),
                     selection: None,
-                    group_by: Default::default(),
+                    group_by: GroupByExpr::Expressions(Vec::new()),
                     cluster_by: Default::default(),
                     distribute_by: Default::default(),
                     sort_by: Default::default(),
@@ -398,9 +401,11 @@ impl SqlDataFrame {
                     body: Box::new(select_body),
                     order_by: Default::default(),
                     limit: None,
+                    limit_by: vec![],
                     offset: None,
                     fetch: None,
                     locks: Default::default(),
+                    for_clause: None,
                 }
             }
         };
@@ -822,7 +827,7 @@ impl SqlDataFrame {
             // 2. field index
             let field_order_col = format!("{order_field}_field");
             let order_col = Expr::WindowFunction(expr::WindowFunction {
-                fun: window_function::WindowFunction::BuiltInWindowFunction(
+                fun: WindowFunctionDefinition::BuiltInWindowFunction(
                     BuiltInWindowFunction::RowNumber,
                 ),
                 args: vec![],
@@ -839,11 +844,7 @@ impl SqlDataFrame {
                         nulls_first: true,
                     }),
                 ],
-                window_frame: WindowFrame {
-                    units: WindowFrameUnits::Rows,
-                    start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
-                    end_bound: WindowFrameBound::CurrentRow,
-                },
+                window_frame: WindowFrame::new(Some(true)),
             })
             .alias(order_field);
 
@@ -893,25 +894,20 @@ impl SqlDataFrame {
         let partition_by: Vec<_> = groupby.iter().map(|group| flat_col(group)).collect();
 
         let numeric_field = Expr::ScalarFunction(expr::ScalarFunction {
-            fun: BuiltinScalarFunction::Coalesce,
+            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
             args: vec![to_numeric(flat_col(field), &self.schema_df()?)?, lit(0.0)],
         });
 
         if let StackMode::Zero = mode {
             // Build window expression
-            let fun = WindowFunction::AggregateFunction(AggregateFunction::Sum);
 
             // Build window function to compute stacked value
             let window_expr = Expr::WindowFunction(expr::WindowFunction {
-                fun,
+                fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
                 args: vec![numeric_field.clone()],
                 partition_by,
                 order_by: orderby,
-                window_frame: WindowFrame {
-                    units: WindowFrameUnits::Rows,
-                    start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
-                    end_bound: WindowFrameBound::CurrentRow,
-                },
+                window_frame: WindowFrame::new(Some(true)),
             })
             .alias(stop_field);
 
@@ -923,7 +919,7 @@ impl SqlDataFrame {
             // then union the results. This is required to make sure stacks do not overlap. Negative
             // values stack in the negative direction and positive values stack in the positive
             // direction.
-            let schema_exprs = vec![Expr::Wildcard, window_expr];
+            let schema_exprs = vec![Expr::Wildcard { qualifier: None }, window_expr];
             let new_schema = make_new_schema_from_exprs(
                 self.schema.as_ref(),
                 schema_exprs.as_slice(),
@@ -967,7 +963,10 @@ impl SqlDataFrame {
             // Create __stack column with numeric field
             let stack_col_name = "__stack";
             let dataframe = self
-                .select(vec![Expr::Wildcard, numeric_field.alias(stack_col_name)])
+                .select(vec![
+                    Expr::Wildcard { qualifier: None },
+                    numeric_field.alias(stack_col_name),
+                ])
                 .await?;
 
             let dataframe = dataframe
@@ -978,7 +977,7 @@ impl SqlDataFrame {
 
             // Create aggregate for total of stack value
             let total_agg = Expr::AggregateFunction(expr::AggregateFunction {
-                fun: AggregateFunction::Sum,
+                func_def: AggregateFunctionDefinition::BuiltIn(AggregateFunction::Sum),
                 args: vec![flat_col(stack_col_name)],
                 distinct: false,
                 filter: None,
@@ -990,7 +989,7 @@ impl SqlDataFrame {
                 .to_string();
 
             // Add __total column with total or total per partition
-            let schema_exprs = vec![Expr::Wildcard, total_agg];
+            let schema_exprs = vec![Expr::Wildcard { qualifier: None }, total_agg];
             let new_schema = make_new_schema_from_exprs(
                 &dataframe.schema(),
                 schema_exprs.as_slice(),
@@ -1028,22 +1027,20 @@ impl SqlDataFrame {
 
             // Build window function to compute cumulative sum of stack column
             let cumulative_field = "_cumulative";
-            let fun = WindowFunction::AggregateFunction(AggregateFunction::Sum);
+            let fun = WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum);
             let window_expr = Expr::WindowFunction(expr::WindowFunction {
                 fun,
                 args: vec![flat_col(stack_col_name)],
                 partition_by,
                 order_by: orderby,
-                window_frame: WindowFrame {
-                    units: WindowFrameUnits::Rows,
-                    start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
-                    end_bound: WindowFrameBound::CurrentRow,
-                },
+                window_frame: WindowFrame::new(Some(true)),
             })
             .alias(cumulative_field);
 
             // Perform selection to add new field value
-            let dataframe = dataframe.select(vec![Expr::Wildcard, window_expr]).await?;
+            let dataframe = dataframe
+                .select(vec![Expr::Wildcard { qualifier: None }, window_expr])
+                .await?;
 
             // Build final_selection
             let mut final_selection: Vec<_> = input_fields
@@ -1066,7 +1063,7 @@ impl SqlDataFrame {
                         .to_string();
 
                     // Compute new schema
-                    let schema_exprs = vec![Expr::Wildcard, max_total];
+                    let schema_exprs = vec![Expr::Wildcard { qualifier: None }, max_total];
                     let new_schema = make_new_schema_from_exprs(
                         &dataframe.schema(),
                         schema_exprs.as_slice(),
@@ -1147,7 +1144,9 @@ impl SqlDataFrame {
 
                     if col_name == field {
                         Expr::ScalarFunction(expr::ScalarFunction {
-                            fun: BuiltinScalarFunction::Coalesce,
+                            func_def: ScalarFunctionDefinition::BuiltIn(
+                                BuiltinScalarFunction::Coalesce,
+                            ),
                             args: vec![flat_col(field), lit(value.clone())],
                         })
                         .alias(col_name)
@@ -1192,7 +1191,9 @@ impl SqlDataFrame {
                 .map(|col_name| {
                     if col_name == field {
                         Expr::ScalarFunction(expr::ScalarFunction {
-                            fun: BuiltinScalarFunction::Coalesce,
+                            func_def: ScalarFunctionDefinition::BuiltIn(
+                                BuiltinScalarFunction::Coalesce,
+                            ),
                             args: vec![flat_col(field), lit(value.clone())],
                         })
                         .alias(col_name)
@@ -1210,7 +1211,9 @@ impl SqlDataFrame {
                     .map(|col_name| {
                         let expr = if col_name == field {
                             Expr::ScalarFunction(expr::ScalarFunction {
-                                fun: BuiltinScalarFunction::Coalesce,
+                                func_def: ScalarFunctionDefinition::BuiltIn(
+                                    BuiltinScalarFunction::Coalesce,
+                                ),
                                 args: vec![flat_col(field), lit(value.clone())],
                             })
                             .alias(col_name)
@@ -1333,17 +1336,13 @@ impl SqlDataFrame {
                 };
 
                 let order_col = Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::RowNumber,
                     ),
                     args: vec![],
                     partition_by: vec![],
                     order_by,
-                    window_frame: WindowFrame {
-                        units: WindowFrameUnits::Rows,
-                        start_bound: WindowFrameBound::Preceding(ScalarValue::UInt64(None)),
-                        end_bound: WindowFrameBound::CurrentRow,
-                    },
+                    window_frame: WindowFrame::new(Some(true)),
                 })
                 .alias(order_field);
 
@@ -1395,7 +1394,7 @@ fn make_new_schema_from_exprs(
 ) -> Result<Schema> {
     let mut fields: Vec<Field> = Vec::new();
     for expr in exprs {
-        if let Expr::Wildcard = expr {
+        if let Expr::Wildcard { .. } = expr {
             // Add field for each input schema field
             fields.extend(schema.fields().iter().map(|f| f.as_ref().clone()));
         } else {
@@ -1472,7 +1471,7 @@ fn query_chain_to_cte(queries: &[Query], prefix: &str) -> Query {
 
 fn parse_sql_query(query: &str, dialect: &Dialect) -> Result<Query> {
     let statements: Vec<Statement> = Parser::parse_sql(dialect.parser_dialect().as_ref(), query)?;
-    if let Some(statement) = statements.get(0) {
+    if let Some(statement) = statements.first() {
         if let Statement::Query(box_query) = statement {
             let query: &Query = box_query.as_ref();
             Ok(query.clone())

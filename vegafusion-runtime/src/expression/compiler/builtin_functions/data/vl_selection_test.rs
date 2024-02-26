@@ -5,12 +5,12 @@ use std::convert::TryFrom;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion_expr::expr::Case;
-use datafusion_expr::{ceil, expr, lit, Between, Expr, ExprSchemable};
+use datafusion_expr::{ceil, expr, lit, Between, Expr, ExprSchemable, ScalarFunctionDefinition};
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_common::column::flat_col;
-use vegafusion_common::data::scalar::ScalarValue;
+use vegafusion_common::data::scalar::{ArrayRefHelpers, ScalarValue};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_common::datatypes::{
@@ -131,8 +131,10 @@ impl FieldSpec {
             field_col.get_type(schema)?,
             DataType::Timestamp(TimeUnit::Millisecond, _)
         ) {
-            Expr::ScalarUDF(expr::ScalarUDF {
-                fun: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
+            Expr::ScalarFunction(expr::ScalarFunction {
+                func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                    (*UTC_TIMESTAMP_TO_EPOCH_MS).clone(),
+                )),
                 args: vec![field_col],
             })
         } else {
@@ -142,8 +144,8 @@ impl FieldSpec {
         let expr = match self.typ {
             SelectionType::Enum => {
                 let field_type = field_col.get_type(schema)?;
-                let list_scalars = if let ScalarValue::List(Some(elements), _) = &values {
-                    elements.clone()
+                let list_scalars = if let ScalarValue::List(array) = &values {
+                    array.value(0).to_scalar_vec()?
                 } else {
                     // convert values to single element list
                     vec![values.clone()]
@@ -178,7 +180,8 @@ impl FieldSpec {
                 };
 
                 let (low, high) = match &values {
-                    ScalarValue::List(Some(elements), _) if elements.len() == 2 => {
+                    ScalarValue::List(array) if array.value(0).len() == 2 => {
+                        let elements = array.value(0).to_scalar_vec()?;
                         let first = Self::cast_test_scalar(
                             elements[0].clone(),
                             &field_dtype,
@@ -269,12 +272,16 @@ impl FieldSpec {
                 if parse_datetime(&s, &Some(chrono_tz::UTC)).is_some()
                     && is_numeric_datatype(field_type) =>
             {
-                let timestamp_expr = Expr::ScalarUDF(expr::ScalarUDF {
-                    fun: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
+                let timestamp_expr = Expr::ScalarFunction(expr::ScalarFunction {
+                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                        (*STR_TO_UTC_TIMESTAMP_UDF).clone(),
+                    )),
                     args: vec![lit(s), lit(default_input_tz)],
                 });
-                let ms_expr = Expr::ScalarUDF(expr::ScalarUDF {
-                    fun: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
+                let ms_expr = Expr::ScalarFunction(expr::ScalarFunction {
+                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
+                        (*UTC_TIMESTAMP_TO_EPOCH_MS).clone(),
+                    )),
                     args: vec![timestamp_expr],
                 });
                 cast_to(ms_expr, field_type, schema)
@@ -303,7 +310,8 @@ impl TryFrom<ScalarValue> for FieldSpec {
 
     fn try_from(value: ScalarValue) -> Result<Self> {
         match value {
-            ScalarValue::Struct(Some(values), fields) => {
+            ScalarValue::Struct(sa) => {
+                let fields = sa.fields();
                 let field_names: HashMap<_, _> = fields
                     .iter()
                     .enumerate()
@@ -315,8 +323,10 @@ impl TryFrom<ScalarValue> for FieldSpec {
                     .get("field")
                     .with_context(|| "Missing required property 'field'".to_string())?;
 
-                let field = match values.get(*field_index) {
-                    Some(ScalarValue::Utf8(Some(field))) => field.clone(),
+                let field_value = ScalarValue::try_from_array(sa.column(*field_index), 0)?;
+
+                let field = match field_value {
+                    ScalarValue::Utf8(Some(field)) => field.clone(),
                     _ => {
                         return Err(VegaFusionError::internal(
                             "Expected field to be a string".to_string(),
@@ -328,7 +338,8 @@ impl TryFrom<ScalarValue> for FieldSpec {
                 let typ_index = field_names
                     .get("type")
                     .with_context(|| "Missing required property 'type'".to_string())?;
-                let typ = SelectionType::try_from(values.get(*typ_index).unwrap().clone())?;
+                let type_value = ScalarValue::try_from_array(sa.column(*typ_index), 0)?;
+                let typ = SelectionType::try_from(type_value)?;
 
                 Ok(Self { field, typ })
             }
@@ -393,8 +404,9 @@ impl TryFrom<ScalarValue> for SelectionRow {
 
     fn try_from(value: ScalarValue) -> Result<Self> {
         match value {
-            ScalarValue::Struct(Some(struct_values), struct_fields) => {
-                let field_names: HashMap<_, _> = struct_fields
+            ScalarValue::Struct(sa) => {
+                let fields = sa.fields();
+                let field_names: HashMap<_, _> = fields
                     .iter()
                     .enumerate()
                     .map(|(ind, f)| (f.name().clone(), ind))
@@ -404,8 +416,9 @@ impl TryFrom<ScalarValue> for SelectionRow {
                 let values_index = field_names
                     .get("values")
                     .with_context(|| "Missing required property 'values'".to_string())?;
-                let values = match struct_values.get(*values_index) {
-                    Some(ScalarValue::List(Some(elements), _)) => elements.clone(),
+                let struct_value = ScalarValue::try_from_array(sa.column(*values_index), 0)?;
+                let values = match struct_value {
+                    ScalarValue::List(array) => array.value(0).to_scalar_vec()?,
                     _ => {
                         return Err(VegaFusionError::internal(
                             "Expected 'values' to be an array".to_string(),
@@ -419,9 +432,10 @@ impl TryFrom<ScalarValue> for SelectionRow {
                     .with_context(|| "Missing required property 'fields'".to_string())?;
 
                 let mut fields: Vec<FieldSpec> = Vec::new();
-                match struct_values.get(*fields_index) {
-                    Some(ScalarValue::List(Some(elements), _)) => {
-                        for el in elements.iter() {
+                let struct_field = ScalarValue::try_from_array(sa.column(*fields_index), 0)?;
+                match struct_field {
+                    ScalarValue::List(array) => {
+                        for el in array.value(0).to_scalar_vec()?.iter() {
                             fields.push(FieldSpec::try_from(el.clone())?)
                         }
                     }
@@ -508,8 +522,8 @@ pub fn vl_selection_test_fn(
     let op = parse_args(args)?;
 
     // Extract vector of rows for selection dataset
-    let rows = if let ScalarValue::List(Some(elements), _) = table.to_scalar_value()? {
-        elements
+    let rows = if let ScalarValue::List(array) = table.to_scalar_value()? {
+        array.value(0).to_scalar_vec()?
     } else {
         unreachable!()
     };

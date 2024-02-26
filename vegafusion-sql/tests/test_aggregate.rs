@@ -72,6 +72,7 @@ mod test_simple_aggs {
 #[cfg(test)]
 mod test_median_agg {
     use crate::*;
+    use datafusion_expr::expr::AggregateFunctionDefinition;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -95,7 +96,7 @@ mod test_median_agg {
                 vec![
                     count(flat_col("a")).alias("count_a"),
                     Expr::AggregateFunction(expr::AggregateFunction {
-                        fun: AggregateFunction::Median,
+                        func_def: AggregateFunctionDefinition::BuiltIn(AggregateFunction::Median),
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
@@ -122,6 +123,7 @@ mod test_median_agg {
 #[cfg(test)]
 mod test_variance_aggs {
     use crate::*;
+    use datafusion_expr::expr::AggregateFunctionDefinition;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -144,7 +146,7 @@ mod test_variance_aggs {
                 vec![flat_col("b")],
                 vec![
                     round(vec![Expr::AggregateFunction(expr::AggregateFunction {
-                        fun: AggregateFunction::Stddev,
+                        func_def: AggregateFunctionDefinition::BuiltIn(AggregateFunction::Stddev),
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
@@ -154,7 +156,9 @@ mod test_variance_aggs {
                     .div(lit(100))
                     .alias("stddev_a"),
                     round(vec![Expr::AggregateFunction(expr::AggregateFunction {
-                        fun: AggregateFunction::StddevPop,
+                        func_def: AggregateFunctionDefinition::BuiltIn(
+                            AggregateFunction::StddevPop,
+                        ),
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
@@ -164,7 +168,7 @@ mod test_variance_aggs {
                     .div(lit(100))
                     .alias("stddev_pop_a"),
                     round(vec![Expr::AggregateFunction(expr::AggregateFunction {
-                        fun: AggregateFunction::Variance,
+                        func_def: AggregateFunctionDefinition::BuiltIn(AggregateFunction::Variance),
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
@@ -174,7 +178,9 @@ mod test_variance_aggs {
                     .div(lit(100))
                     .alias("var_a"),
                     round(vec![Expr::AggregateFunction(expr::AggregateFunction {
-                        fun: AggregateFunction::VariancePop,
+                        func_def: AggregateFunctionDefinition::BuiltIn(
+                            AggregateFunction::VariancePop,
+                        ),
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,

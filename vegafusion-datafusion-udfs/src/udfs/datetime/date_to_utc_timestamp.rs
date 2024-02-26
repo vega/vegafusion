@@ -1,6 +1,8 @@
 use chrono::{NaiveDateTime, TimeZone};
+use std::any::Any;
 use std::str::FromStr;
 use std::sync::Arc;
+use vegafusion_common::datafusion_expr::ScalarUDFImpl;
 use vegafusion_common::{
     arrow::{
         array::{ArrayRef, Date32Array, TimestampMillisecondArray},
@@ -8,18 +10,52 @@ use vegafusion_common::{
         datatypes::{DataType, TimeUnit},
     },
     datafusion_common::{DataFusionError, ScalarValue},
-    datafusion_expr::{
-        ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
-        Volatility,
-    },
+    datafusion_expr::{ColumnarValue, ScalarUDF, Signature, Volatility},
 };
 
-fn make_date_to_utc_timestamp() -> ScalarUDF {
-    let scalar_fn: ScalarFunctionImplementation = Arc::new(move |args: &[ColumnarValue]| {
+#[derive(Debug, Clone)]
+pub struct DateToUtcTimestampUDF {
+    signature: Signature,
+}
+
+impl Default for DateToUtcTimestampUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl DateToUtcTimestampUDF {
+    pub fn new() -> Self {
+        let signature = Signature::exact(
+            vec![DataType::Date32, DataType::Utf8],
+            Volatility::Immutable,
+        );
+        Self { signature }
+    }
+}
+
+impl ScalarUDFImpl for DateToUtcTimestampUDF {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn name(&self) -> &str {
+        "date_to_utc_timestamp"
+    }
+
+    fn signature(&self) -> &Signature {
+        &self.signature
+    }
+
+    fn return_type(&self, _arg_types: &[DataType]) -> Result<DataType, DataFusionError> {
+        Ok(DataType::Timestamp(TimeUnit::Millisecond, None))
+    }
+
+    fn invoke(&self, args: &[ColumnarValue]) -> Result<ColumnarValue, DataFusionError> {
         // [0] data array
         let date_array = match &args[0] {
             ColumnarValue::Array(array) => array.clone(),
-            ColumnarValue::Scalar(scalar) => scalar.to_array(),
+            ColumnarValue::Scalar(scalar) => scalar.to_array()?,
         };
 
         // [1] timezone string
@@ -61,24 +97,10 @@ fn make_date_to_utc_timestamp() -> ScalarUDF {
         } else {
             ScalarValue::try_from_array(&timestamp_array, 0).map(ColumnarValue::Scalar)
         }
-    });
-
-    let return_type: ReturnTypeFunction =
-        Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
-
-    let signature: Signature = Signature::exact(
-        vec![DataType::Date32, DataType::Utf8],
-        Volatility::Immutable,
-    );
-
-    ScalarUDF::new(
-        "date_to_utc_timestamp",
-        &signature,
-        &return_type,
-        &scalar_fn,
-    )
+    }
 }
 
 lazy_static! {
-    pub static ref DATE_TO_UTC_TIMESTAMP_UDF: ScalarUDF = make_date_to_utc_timestamp();
+    pub static ref DATE_TO_UTC_TIMESTAMP_UDF: ScalarUDF =
+        ScalarUDF::from(DateToUtcTimestampUDF::new());
 }

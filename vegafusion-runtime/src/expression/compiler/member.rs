@@ -1,9 +1,9 @@
+use crate::expression::compiler::builtin_functions::array::length::length_transform;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
-use datafusion_expr::{expr, lit, BuiltinScalarFunction, Expr};
+use datafusion_expr::{expr, lit, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
 use std::convert::TryFrom;
-use std::ops::Deref;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::Int64Array;
 use vegafusion_common::arrow::compute::cast;
@@ -13,7 +13,6 @@ use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_common::datatypes::{data_type, is_numeric_datatype};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{Identifier, MemberExpression};
-use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
 use vegafusion_datafusion_udfs::udfs::member::{make_get_element_udf, make_get_object_member_udf};
 
 pub fn compile_member(
@@ -33,7 +32,7 @@ pub fn compile_member(
         )?;
         let prop_str = evaluated_property.to_string();
         if is_numeric_datatype(&evaluated_property.data_type()) {
-            let int_array = cast(&evaluated_property.to_array(), &DataType::Int64).unwrap();
+            let int_array = cast(&evaluated_property.to_array()?, &DataType::Int64).unwrap();
             let int_array = int_array.as_any().downcast_ref::<Int64Array>().unwrap();
             index = Some(int_array.value(0) as usize);
         } else {
@@ -73,8 +72,11 @@ pub fn compile_member(
     let expr = match dtype {
         DataType::Struct(ref fields) => {
             if fields.iter().any(|f| f.name() == &property_string) {
-                Expr::ScalarUDF(expr::ScalarUDF {
-                    fun: Arc::new(make_get_object_member_udf(&dtype, &property_string)?),
+                Expr::ScalarFunction(expr::ScalarFunction {
+                    func_def: ScalarFunctionDefinition::UDF(Arc::new(make_get_object_member_udf(
+                        &dtype,
+                        &property_string,
+                    )?)),
                     args: vec![compiled_object],
                 })
             } else {
@@ -84,17 +86,12 @@ pub fn compile_member(
         }
         _ => {
             if property_string == "length" {
-                // Special case to treat foo.length as length(foo) when foo is not an object
-                // make_length()
-                Expr::ScalarUDF(expr::ScalarUDF {
-                    fun: Arc::new(LENGTH_UDF.deref().clone()),
-                    args: vec![compiled_object],
-                })
+                length_transform(&[compiled_object], schema)?
             } else if matches!(dtype, DataType::Utf8 | DataType::LargeUtf8) {
                 if let Some(index) = index {
                     // SQL substr function is 1-indexed so add one
                     Expr::ScalarFunction(expr::ScalarFunction {
-                        fun: BuiltinScalarFunction::Substr,
+                        func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Substr),
                         args: vec![compiled_object, lit((index + 1) as i64), lit(1i64)],
                     })
                 } else {
@@ -104,8 +101,10 @@ pub fn compile_member(
                 }
             } else if matches!(dtype, DataType::List(_) | DataType::FixedSizeList(_, _)) {
                 if let Some(index) = index {
-                    Expr::ScalarUDF(expr::ScalarUDF {
-                        fun: Arc::new(make_get_element_udf(index as i32)),
+                    Expr::ScalarFunction(expr::ScalarFunction {
+                        func_def: ScalarFunctionDefinition::UDF(Arc::new(make_get_element_udf(
+                            index as i32,
+                        ))),
                         args: vec![compiled_object],
                     })
                 } else {

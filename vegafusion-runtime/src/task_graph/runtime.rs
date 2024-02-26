@@ -1023,8 +1023,8 @@ impl ChartState {
         // Filter to update nodes in the comm plan
         let indices: Vec<_> = indices
             .iter()
+            .filter(|&node| server_to_client.contains(node))
             .cloned()
-            .filter(|node| server_to_client.contains(node))
             .collect();
 
         let response_task_values = runtime

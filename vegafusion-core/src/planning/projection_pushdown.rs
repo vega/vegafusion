@@ -701,8 +701,8 @@ impl<'a> MutChartVisitor for InsertProjectionVisitor<'a> {
                 // so we can append a projection transform to limit the columns that are produced
                 // Note: empty strings here seem to break vega, filter them out
                 let proj_fields: Vec<_> = sorted(columns)
+                    .filter(|&f| !f.is_empty())
                     .cloned()
-                    .filter(|f| !f.is_empty())
                     .map(|f| escape_field(&f))
                     .collect();
 

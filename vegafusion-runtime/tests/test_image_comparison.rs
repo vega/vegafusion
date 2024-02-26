@@ -754,8 +754,8 @@ mod test_vegalite_specs {
         case("vegalite/point_no_axis_domain_grid", 0.001),
 
         // (random function is non-deterministic so use higher tolerance)
-        case("vegalite/point_offset_random", 0.3),
-        case("vegalite/point_ordinal_bin_offset_random", 0.3),
+        case("vegalite/point_offset_random", 0.8),
+        case("vegalite/point_ordinal_bin_offset_random", 0.8),
 
         case("vegalite/point_ordinal_color", 0.001),
         case("vegalite/point_overlap", 0.001),

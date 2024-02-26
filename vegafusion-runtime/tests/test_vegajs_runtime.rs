@@ -4,14 +4,15 @@ extern crate lazy_static;
 mod util;
 use crate::util::vegajs_runtime::{vegajs_runtime, ExportImage, ExportImageFormat};
 
+use datafusion_common::utils::array_into_list_array;
 use datafusion_common::ScalarValue;
 use serde_json::json;
 use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
 
-use vegafusion_common::arrow::datatypes::{DataType, Field};
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_core::arrow::array::Float64Array;
 use vegafusion_core::planning::watch::{
     ExportUpdateBatch, ExportUpdateJSON, ExportUpdateNamespace, Watch, WatchNamespace,
 };
@@ -122,10 +123,9 @@ fn test_evaluate_filter_transform() {
     // Check extent signal
     assert_eq!(
         result_signals,
-        vec![ScalarValue::List(
-            Some(vec![ScalarValue::from(6.0), ScalarValue::from(10.0)]),
-            Arc::new(Field::new("item", DataType::Float64, true))
-        )]
+        vec![ScalarValue::List(Arc::new(array_into_list_array(
+            Arc::new(Float64Array::from(vec![6.0, 10.0]))
+        )))]
     );
 
     let expected_dataset = VegaFusionTable::from_json(&json!([

@@ -63,17 +63,20 @@ mod test_compile {
     use vegafusion_core::expression::parser::parse;
 
     use crate::task_graph::timezone::RuntimeTzConfig;
+    use datafusion_common::utils::array_into_list_array;
     use datafusion_common::{DFSchema, ScalarValue};
     use datafusion_expr::expr::{BinaryExpr, Case, TryCast};
-    use datafusion_expr::{concat, expr, lit, BuiltinScalarFunction, Expr, Operator};
+    use datafusion_expr::{
+        concat, expr, lit, BuiltinScalarFunction, Expr, Operator, ScalarFunctionDefinition,
+    };
     use std::collections::HashMap;
     use std::convert::TryFrom;
-    use std::ops::Deref;
+
     use std::sync::Arc;
     use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
     use vegafusion_common::column::flat_col;
+    use vegafusion_core::arrow::array::{new_empty_array, Float64Array};
     use vegafusion_core::arrow::datatypes::Fields;
-    use vegafusion_datafusion_udfs::udfs::array::constructor::ARRAY_CONSTRUCTOR_UDF;
     use vegafusion_datafusion_udfs::udfs::object::make_object_constructor_udf;
 
     #[test]
@@ -172,7 +175,7 @@ mod test_compile {
 
         // unary not should cast numeric value to boolean
         let expected_expr = !Expr::ScalarFunction(expr::ScalarFunction {
-            fun: BuiltinScalarFunction::Coalesce,
+            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
             args: vec![
                 Expr::TryCast(TryCast {
                     expr: Box::new(lit(32.0)),
@@ -202,7 +205,7 @@ mod test_compile {
             expr: None,
             when_then_expr: vec![(
                 Box::new(Expr::ScalarFunction(expr::ScalarFunction {
-                    fun: BuiltinScalarFunction::Coalesce,
+                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
                     args: vec![
                         Expr::TryCast(TryCast {
                             expr: Box::new(lit(32.0)),
@@ -257,7 +260,7 @@ mod test_compile {
             expr: None,
             when_then_expr: vec![(
                 Box::new(Expr::ScalarFunction(expr::ScalarFunction {
-                    fun: BuiltinScalarFunction::Coalesce,
+                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
                     args: vec![
                         Expr::TryCast(TryCast {
                             expr: Box::new(lit(5.0)),
@@ -389,8 +392,8 @@ mod test_compile {
         let expr = parse("[1, 2, 3]").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::ScalarUDF(expr::ScalarUDF {
-            fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
+        let expected_expr = Expr::ScalarFunction(expr::ScalarFunction {
+            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
             args: vec![lit(1.0), lit(2.0), lit(3.0)],
         });
         println!("expr: {result_expr:?}");
@@ -399,14 +402,9 @@ mod test_compile {
         // Check evaluated value
         let result_value = result_expr.eval_to_scalar().unwrap();
 
-        let expected_value = ScalarValue::List(
-            Some(vec![
-                ScalarValue::from(1.0),
-                ScalarValue::from(2.0),
-                ScalarValue::from(3.0),
-            ]),
-            Arc::new(Field::new("item", DataType::Float64, true)),
-        );
+        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(Arc::new(
+            Float64Array::from(vec![1.0, 2.0, 3.0]),
+        ))));
 
         println!("value: {result_value:?}");
         assert_eq!(result_value, expected_value);
@@ -417,20 +415,17 @@ mod test_compile {
         let expr = parse("[]").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::ScalarUDF(expr::ScalarUDF {
-            fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
+        let expected_expr = Expr::ScalarFunction(expr::ScalarFunction {
+            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
             args: vec![],
         });
         println!("expr: {result_expr:?}");
         assert_eq!(result_expr, expected_expr);
 
-        // Check evaluated value. Empty array is given Float64 data type
         let result_value = result_expr.eval_to_scalar().unwrap();
-
-        let expected_value = ScalarValue::List(
-            Some(vec![]),
-            Arc::new(Field::new("item", DataType::Float64, true)),
-        );
+        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(new_empty_array(
+            &DataType::Null,
+        ))));
 
         println!("value: {result_value:?}");
         assert_eq!(result_value, expected_value);
@@ -441,19 +436,19 @@ mod test_compile {
         let expr = parse("[[1, 2], [3, 4], [5, 6]]").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::ScalarUDF(expr::ScalarUDF {
-            fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
+        let expected_expr = Expr::ScalarFunction(expr::ScalarFunction {
+            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
             args: vec![
-                Expr::ScalarUDF(expr::ScalarUDF {
-                    fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
+                Expr::ScalarFunction(expr::ScalarFunction {
+                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
                     args: vec![lit(1.0), lit(2.0)],
                 }),
-                Expr::ScalarUDF(expr::ScalarUDF {
-                    fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
+                Expr::ScalarFunction(expr::ScalarFunction {
+                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
                     args: vec![lit(3.0), lit(4.0)],
                 }),
-                Expr::ScalarUDF(expr::ScalarUDF {
-                    fun: Arc::new(ARRAY_CONSTRUCTOR_UDF.deref().clone()),
+                Expr::ScalarFunction(expr::ScalarFunction {
+                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
                     args: vec![lit(5.0), lit(6.0)],
                 }),
             ],
@@ -463,27 +458,20 @@ mod test_compile {
 
         // Check evaluated value
         let result_value = result_expr.eval_to_scalar().unwrap();
-        let expected_value = ScalarValue::List(
-            Some(vec![
-                ScalarValue::List(
-                    Some(vec![ScalarValue::from(1.0), ScalarValue::from(2.0)]),
-                    Arc::new(Field::new("item", DataType::Float64, true)),
-                ),
-                ScalarValue::List(
-                    Some(vec![ScalarValue::from(3.0), ScalarValue::from(4.0)]),
-                    Arc::new(Field::new("item", DataType::Float64, true)),
-                ),
-                ScalarValue::List(
-                    Some(vec![ScalarValue::from(5.0), ScalarValue::from(6.0)]),
-                    Arc::new(Field::new("item", DataType::Float64, true)),
-                ),
-            ]),
-            Arc::new(Field::new(
-                "item",
-                DataType::List(Arc::new(Field::new("item", DataType::Float64, true))),
-                true,
-            )),
-        );
+        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(
+            ScalarValue::iter_to_array(vec![
+                ScalarValue::List(Arc::new(array_into_list_array(Arc::new(
+                    Float64Array::from(vec![1.0, 2.0]),
+                )))),
+                ScalarValue::List(Arc::new(array_into_list_array(Arc::new(
+                    Float64Array::from(vec![3.0, 4.0]),
+                )))),
+                ScalarValue::List(Arc::new(array_into_list_array(Arc::new(
+                    Float64Array::from(vec![5.0, 6.0]),
+                )))),
+            ])
+            .unwrap(),
+        )));
 
         println!("value: {result_value:?}");
         assert_eq!(result_value, expected_value);
@@ -494,8 +482,8 @@ mod test_compile {
         let expr = parse("{a: 1, 'two': {three: 3}}").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::ScalarUDF(expr::ScalarUDF {
-            fun: Arc::new(make_object_constructor_udf(
+        let expected_expr = Expr::ScalarFunction(expr::ScalarFunction {
+            func_def: ScalarFunctionDefinition::UDF(Arc::new(make_object_constructor_udf(
                 &["a".to_string(), "two".to_string()],
                 &[
                     DataType::Float64,
@@ -505,14 +493,14 @@ mod test_compile {
                         true,
                     )])),
                 ],
-            )),
+            ))),
             args: vec![
                 lit(1.0),
-                Expr::ScalarUDF(expr::ScalarUDF {
-                    fun: Arc::new(make_object_constructor_udf(
+                Expr::ScalarFunction(expr::ScalarFunction {
+                    func_def: ScalarFunctionDefinition::UDF(Arc::new(make_object_constructor_udf(
                         &["three".to_string()],
                         &[DataType::Float64],
-                    )),
+                    ))),
                     args: vec![lit(3.0)],
                 }),
             ],
@@ -615,7 +603,7 @@ mod test_compile {
             expr: None,
             when_then_expr: vec![(
                 Box::new(Expr::ScalarFunction(expr::ScalarFunction {
-                    fun: BuiltinScalarFunction::Coalesce,
+                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
                     args: vec![
                         Expr::TryCast(TryCast {
                             expr: Box::new(lit(32.0)),

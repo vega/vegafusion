@@ -52,6 +52,7 @@ impl FunctionTransformer for DateToUtcTimestampWithCastAndAtTimeZoneTransformer 
         let timestamp_arg = SqlExpr::Cast {
             expr: Box::new(date_arg),
             data_type: SqlDataType::Timestamp(None, SqlTimezoneInfo::None),
+            format: None,
         };
 
         let utc_timestamp = if time_zone == "UTC" {
@@ -97,6 +98,7 @@ impl FunctionTransformer for DateToUtcTimestampSnowflakeTransform {
                 }]),
                 Vec::new(),
             ),
+            format: None,
         };
 
         if time_zone == "UTC" {
@@ -117,6 +119,8 @@ impl FunctionTransformer for DateToUtcTimestampSnowflakeTransform {
                     ))),
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(cast_timestamp_ntz_expr)),
                 ],
+                filter: None,
+                null_treatment: None,
                 over: None,
                 distinct: false,
                 special: false,
@@ -158,6 +162,8 @@ impl FunctionTransformer for DateToUtcTimestampWithFunctionTransformer {
                     SqlValue::SingleQuotedString(time_zone),
                 ))),
             ],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -198,6 +204,7 @@ impl FunctionTransformer for DateToUtcTimestampWithCastFunctionAtTransformer {
         let cast_expr = SqlExpr::Cast {
             expr: Box::new(date_arg),
             data_type: self.timestamp_type.clone(),
+            format: None,
         };
         let fn_expr = SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![SqlIdent {
@@ -210,6 +217,8 @@ impl FunctionTransformer for DateToUtcTimestampWithCastFunctionAtTransformer {
                     SqlValue::SingleQuotedString(time_zone),
                 ))),
             ],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -252,6 +261,8 @@ impl FunctionTransformer for DateToUtcTimestampClickhouseTransformer {
                     SqlValue::SingleQuotedString(time_zone),
                 ))),
             ],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -269,6 +280,8 @@ impl FunctionTransformer for DateToUtcTimestampClickhouseTransformer {
                     SqlValue::SingleQuotedString("UTC".to_string()),
                 ))),
             ],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -302,6 +315,8 @@ impl FunctionTransformer for DateToUtcTimestampMySqlTransformer {
                 quote_style: None,
             }]),
             args: vec![SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(date_arg))],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -326,6 +341,8 @@ impl FunctionTransformer for DateToUtcTimestampMySqlTransformer {
                         SqlValue::SingleQuotedString("UTC".to_string()),
                     ))),
                 ],
+                filter: None,
+                null_treatment: None,
                 over: None,
                 distinct: false,
                 special: false,

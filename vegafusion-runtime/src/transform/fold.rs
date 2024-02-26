@@ -21,7 +21,7 @@ impl TransformTrait for Fold {
         let key_col = unescape_field(
             &self
                 .r#as
-                .get(0)
+                .first()
                 .cloned()
                 .unwrap_or_else(|| "key".to_string()),
         );

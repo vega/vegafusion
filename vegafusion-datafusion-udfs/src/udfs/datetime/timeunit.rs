@@ -1,5 +1,6 @@
 use crate::udfs::datetime::process_input_datetime;
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc, Weekday};
+use std::any::Any;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::{ArrayRef, Int64Array, TimestampMillisecondArray};
@@ -8,8 +9,7 @@ use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_common::arrow::temporal_conversions::date64_to_datetime;
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
 use vegafusion_common::datafusion_expr::{
-    ColumnarValue, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF, Signature,
-    TypeSignature, Volatility,
+    ColumnarValue, ScalarUDF, ScalarUDFImpl, Signature, TypeSignature, Volatility,
 };
 
 fn extract_bool(value: &ColumnarValue) -> std::result::Result<bool, DataFusionError> {
@@ -39,7 +39,7 @@ fn unpack_timeunit_udf_args(
         DataFusionError::Internal(format!("Failed to parse {tz_str} as a timezone"))
     })?;
 
-    let timestamp = columns[0].clone().into_array(1);
+    let timestamp = columns[0].clone().into_array(1)?;
     let timestamp = process_input_datetime(&timestamp, &tz)?;
 
     Ok((
@@ -223,9 +223,77 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
     dt_value
 }
 
-fn make_timeunit_start_udf() -> ScalarUDF {
-    let timeunit_start: ScalarFunctionImplementation = Arc::new(|columns: &[ColumnarValue]| {
-        let (timestamp, tz, units_mask) = unpack_timeunit_udf_args(columns)?;
+#[derive(Debug, Clone)]
+pub struct TimeunitStartUDF {
+    signature: Signature,
+}
+
+impl Default for TimeunitStartUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl TimeunitStartUDF {
+    pub fn new() -> Self {
+        let make_sig = |timestamp_dtype: DataType| -> TypeSignature {
+            TypeSignature::Exact(vec![
+                timestamp_dtype,   // [0] timestamp
+                DataType::Utf8,    // [1] timezone
+                DataType::Boolean, // [2] Year
+                DataType::Boolean, // [3] Quarter
+                DataType::Boolean, // [4] Month
+                DataType::Boolean, // [5] Date
+                DataType::Boolean, // [6] Week
+                DataType::Boolean, // [7] Day
+                DataType::Boolean, // [8] DayOfYear
+                DataType::Boolean, // [9] Hours
+                DataType::Boolean, // [10] Minutes
+                DataType::Boolean, // [11] Seconds
+                DataType::Boolean, // [12] Milliseconds
+            ])
+        };
+
+        let signature = Signature::one_of(
+            vec![
+                make_sig(DataType::Int64),
+                make_sig(DataType::Date64),
+                make_sig(DataType::Date32),
+                make_sig(DataType::Timestamp(TimeUnit::Millisecond, None)),
+                make_sig(DataType::Timestamp(TimeUnit::Nanosecond, None)),
+            ],
+            Volatility::Immutable,
+        );
+
+        Self { signature }
+    }
+}
+
+impl ScalarUDFImpl for TimeunitStartUDF {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn name(&self) -> &str {
+        "vega_timeunit"
+    }
+
+    fn signature(&self) -> &Signature {
+        &self.signature
+    }
+
+    fn return_type(
+        &self,
+        _arg_types: &[DataType],
+    ) -> vegafusion_common::datafusion_common::Result<DataType> {
+        Ok(DataType::Timestamp(TimeUnit::Millisecond, None))
+    }
+
+    fn invoke(
+        &self,
+        args: &[ColumnarValue],
+    ) -> vegafusion_common::datafusion_common::Result<ColumnarValue> {
+        let (timestamp, tz, units_mask) = unpack_timeunit_udf_args(args)?;
 
         let array = timestamp.as_any().downcast_ref::<Int64Array>().unwrap();
         let result_array: TimestampMillisecondArray = unary(array, |value| {
@@ -233,43 +301,9 @@ fn make_timeunit_start_udf() -> ScalarUDF {
         });
 
         Ok(ColumnarValue::Array(Arc::new(result_array) as ArrayRef))
-    });
-
-    let return_type: ReturnTypeFunction =
-        Arc::new(move |_datatypes| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
-
-    let make_sig = |timestamp_dtype: DataType| -> TypeSignature {
-        TypeSignature::Exact(vec![
-            timestamp_dtype,   // [0] timestamp
-            DataType::Utf8,    // [1] timezone
-            DataType::Boolean, // [2] Year
-            DataType::Boolean, // [3] Quarter
-            DataType::Boolean, // [4] Month
-            DataType::Boolean, // [5] Date
-            DataType::Boolean, // [6] Week
-            DataType::Boolean, // [7] Day
-            DataType::Boolean, // [8] DayOfYear
-            DataType::Boolean, // [9] Hours
-            DataType::Boolean, // [10] Minutes
-            DataType::Boolean, // [11] Seconds
-            DataType::Boolean, // [12] Milliseconds
-        ])
-    };
-
-    let signature: Signature = Signature::one_of(
-        vec![
-            make_sig(DataType::Int64),
-            make_sig(DataType::Date64),
-            make_sig(DataType::Date32),
-            make_sig(DataType::Timestamp(TimeUnit::Millisecond, None)),
-            make_sig(DataType::Timestamp(TimeUnit::Nanosecond, None)),
-        ],
-        Volatility::Immutable,
-    );
-
-    ScalarUDF::new("vega_timeunit", &signature, &return_type, &timeunit_start)
+    }
 }
 
 lazy_static! {
-    pub static ref TIMEUNIT_START_UDF: ScalarUDF = make_timeunit_start_udf();
+    pub static ref TIMEUNIT_START_UDF: ScalarUDF = ScalarUDF::from(TimeunitStartUDF::new());
 }

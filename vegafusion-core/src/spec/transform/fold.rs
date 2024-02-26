@@ -24,7 +24,7 @@ impl FoldTransformSpec {
     pub fn as_(&self) -> Vec<String> {
         let as_ = self.as_.clone().unwrap_or_default();
         vec![
-            as_.get(0).cloned().unwrap_or_else(|| "key".to_string()),
+            as_.first().cloned().unwrap_or_else(|| "key".to_string()),
             as_.get(1).cloned().unwrap_or_else(|| "value".to_string()),
         ]
     }

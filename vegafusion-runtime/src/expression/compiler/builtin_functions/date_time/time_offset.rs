@@ -1,6 +1,6 @@
 use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion_common::{DFSchema, ScalarValue};
-use datafusion_expr::{expr, lit, Expr};
+use datafusion_expr::{expr, lit, Expr, ScalarFunctionDefinition};
 use std::sync::Arc;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::error::VegaFusionError;
@@ -79,8 +79,8 @@ pub fn time_offset_fn(
 
     let mut udf_args = vec![lit(tz_config.local_tz.to_string())];
     udf_args.extend(Vec::from(args));
-    Ok(Expr::ScalarUDF(expr::ScalarUDF {
-        fun: Arc::new((*DATE_ADD_TZ_UDF).clone()),
+    Ok(Expr::ScalarFunction(expr::ScalarFunction {
+        func_def: ScalarFunctionDefinition::UDF(Arc::new((*DATE_ADD_TZ_UDF).clone())),
         args: vec![
             lit(unit),
             step,

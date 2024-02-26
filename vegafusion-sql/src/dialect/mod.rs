@@ -297,7 +297,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec![
+            aggregate_functions: [
                 "min",
                 "max",
                 "count",
@@ -311,7 +311,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -423,11 +423,11 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec!["min", "max", "count", "avg", "sum"]
+            aggregate_functions: ["min", "max", "count", "avg", "sum"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -516,7 +516,7 @@ impl Dialect {
                 (DataType::Float16, float64dtype.clone()),
                 (DataType::Float32, float64dtype.clone()),
                 (DataType::Float64, float64dtype),
-                (DataType::Utf8, SqlDataType::String),
+                (DataType::Utf8, SqlDataType::String(None)),
                 (
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
@@ -568,11 +568,11 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec!["min", "max", "count", "avg", "sum", "median", "corr"]
+            aggregate_functions: ["min", "max", "count", "avg", "sum", "median", "corr"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -689,7 +689,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec![
+            aggregate_functions: [
                 "min",
                 "max",
                 "count",
@@ -704,7 +704,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -796,7 +796,7 @@ impl Dialect {
                 (DataType::Float16, SqlDataType::Float(None)),
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
-                (DataType::Utf8, SqlDataType::String),
+                (DataType::Utf8, SqlDataType::String(None)),
                 (
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
@@ -885,7 +885,8 @@ impl Dialect {
                 "vega_timeunit",
                 "format_timestamp",
                 "make_list",
-                "len",
+                "array_length",
+                "character_length",
                 "indexof",
             ]
             .iter()
@@ -913,7 +914,7 @@ impl Dialect {
             .map(|s| s.to_string())
             .collect(),
 
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -962,7 +963,7 @@ impl Dialect {
                 (DataType::Float16, SqlDataType::Float(None)),
                 (DataType::Float32, SqlDataType::Float(None)),
                 (DataType::Float64, SqlDataType::Double),
-                (DataType::Utf8, SqlDataType::String),
+                (DataType::Utf8, SqlDataType::String(None)),
                 (
                     DataType::Timestamp(TimeUnit::Millisecond, None),
                     SqlDataType::Timestamp(None, TimezoneInfo::None),
@@ -1012,7 +1013,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec![
+            aggregate_functions: [
                 "min",
                 "max",
                 "count",
@@ -1027,7 +1028,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -1166,11 +1167,11 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec!["min", "max", "count", "avg", "sum", "var_pop", "stddev_pop"]
+            aggregate_functions: ["min", "max", "count", "avg", "sum", "var_pop", "stddev_pop"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -1271,7 +1272,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec![
+            aggregate_functions: [
                 "min",
                 "max",
                 "count",
@@ -1285,7 +1286,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -1424,7 +1425,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec![
+            aggregate_functions: [
                 "min",
                 "max",
                 "count",
@@ -1438,7 +1439,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -1573,7 +1574,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            aggregate_functions: vec![
+            aggregate_functions: [
                 "min",
                 "max",
                 "count",
@@ -1588,7 +1589,7 @@ impl Dialect {
             .iter()
             .map(|s| s.to_string())
             .collect(),
-            window_functions: vec![
+            window_functions: [
                 "row_number",
                 "rank",
                 "dense_rank",
@@ -1750,6 +1751,8 @@ impl BinaryOperatorTransformer for ModulusOpToFunction {
                 quote_style: None,
             }]),
             args: vec![arg0, arg1],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -1793,6 +1796,8 @@ impl FunctionTransformer for RenameFunctionTransformer {
                 quote_style: None,
             }]),
             args: sql_args,
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -1825,6 +1830,8 @@ impl FunctionTransformer for ExpWithPowFunctionTransformer {
                 quote_style: None,
             }]),
             args: sql_args,
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -1854,6 +1861,7 @@ impl FunctionTransformer for CastArgsFunctionTransformer {
                 Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(SqlExpr::Cast {
                     expr: Box::new(arg.to_sql(dialect, schema)?),
                     data_type: self.cast_dtype.clone(),
+                    format: None,
                 })))
             })
             .collect::<Result<Vec<_>>>()?;
@@ -1864,6 +1872,8 @@ impl FunctionTransformer for CastArgsFunctionTransformer {
                 quote_style: None,
             }]),
             args: sql_args,
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -1902,6 +1912,8 @@ impl FunctionTransformer for LogBaseTransformer {
                 quote_style: None,
             }]),
             args: sql_args,
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -1929,6 +1941,7 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
                     Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(SqlExpr::Cast {
                         expr: Box::new(arg.to_sql(dialect, schema)?),
                         data_type: cast_dtype.clone(),
+                        format: None,
                     })))
                 })
                 .collect::<Result<Vec<_>>>()?
@@ -1942,6 +1955,8 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
                 quote_style: None,
             }]),
             args: sql_args,
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,
@@ -1957,6 +1972,8 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
                 quote_style: None,
             }]),
             args: vec![base_arg],
+            filter: None,
+            null_treatment: None,
             over: None,
             distinct: false,
             special: false,

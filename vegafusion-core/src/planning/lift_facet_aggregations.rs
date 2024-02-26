@@ -66,7 +66,7 @@ impl ExtractFacetAggregationsVisitor {
     }
 
     fn num_children_of_dataset(&self, name: &str, scope: &[u32]) -> usize {
-        let facet_dataset_var: ScopedVariable = (Variable::new_data(&name), Vec::from(scope));
+        let facet_dataset_var: ScopedVariable = (Variable::new_data(name), Vec::from(scope));
         let Some(facet_dataset_idx) = self.node_indexes.get(&facet_dataset_var) else {
             return 0;
         };
@@ -107,7 +107,7 @@ impl MutChartVisitor for ExtractFacetAggregationsVisitor {
         let mut lifted_transforms: Vec<TransformSpec> = Vec::new();
 
         let agg = loop {
-            match child_dataset.transform.get(0).cloned() {
+            match child_dataset.transform.first().cloned() {
                 None => {
                     // End of transforms for this dataset, advance to child dataset if possible
                     if self.num_children_of_dataset(&child_dataset.name, scope) != 1 {
@@ -235,11 +235,9 @@ impl MutChartVisitor for ExtractFacetAggregationsVisitor {
 
             // Add lifted aggregate transform, potentially after the joinaggregate transform
             lifted_transforms.push(TransformSpec::Aggregate(agg));
-        } else {
-            if lifted_transforms.is_empty() {
-                // No supported transforms found
-                return Ok(());
-            }
+        } else if lifted_transforms.is_empty() {
+            // No supported transforms found
+            return Ok(());
         }
 
         // Create facet dataset name and increment counter to keep names unique even if the same

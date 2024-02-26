@@ -27,9 +27,9 @@ impl DestringifySelectionDatetimesVisitor {
 impl MutChartVisitor for DestringifySelectionDatetimesVisitor {
     fn visit_data(&mut self, data: &mut DataSpec, _scope: &[u32]) -> Result<()> {
         if let Some(Value::Array(values)) = &data.values {
-            if let Some(Value::Object(value0)) = values.get(0) {
+            if let Some(Value::Object(value0)) = values.first() {
                 let columns: HashSet<_> = value0.keys().cloned().collect();
-                let store_columns: HashSet<_> = vec!["unit", "fields", "values"]
+                let store_columns: HashSet<_> = ["unit", "fields", "values"]
                     .iter()
                     .map(|f| f.to_string())
                     .collect();
@@ -37,7 +37,7 @@ impl MutChartVisitor for DestringifySelectionDatetimesVisitor {
                     // We have a selection store dataset with no transforms
                     // Extract the values array
                     if let Value::Array(values) = &value0["values"] {
-                        if let Some(Value::Array(values)) = values.get(0) {
+                        if let Some(Value::Array(values)) = values.first() {
                             // Nested array, as in the case of an interval selection
                             let is_date_str: Vec<_> = values
                                 .iter()

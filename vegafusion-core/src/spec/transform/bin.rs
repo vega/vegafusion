@@ -125,7 +125,7 @@ impl TransformSpecTrait for BinTransformSpec {
             let bin_start = self
                 .as_
                 .as_ref()
-                .and_then(|as_| as_.get(0).cloned())
+                .and_then(|as_| as_.first().cloned())
                 .unwrap_or_else(|| "bin0".to_string());
             let bin_end = self
                 .as_

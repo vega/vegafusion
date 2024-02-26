@@ -6,7 +6,8 @@ use crate::expression::compiler::builtin_functions::date_time::datetime::{
 use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_valid_fn;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use datafusion_expr::{expr, BuiltinScalarFunction, Expr, ScalarUDF};
+use datafusion_expr::{expr, BuiltinScalarFunction, Expr, ScalarFunctionDefinition, ScalarUDF};
+use datafusion_functions::expr_fn::isnan;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::str::FromStr;
@@ -19,11 +20,10 @@ use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
 };
-use vegafusion_datafusion_udfs::udfs::array::indexof::INDEXOF_UDF;
-use vegafusion_datafusion_udfs::udfs::array::length::LENGTH_UDF;
-use vegafusion_datafusion_udfs::udfs::array::span::SPAN_UDF;
-use vegafusion_datafusion_udfs::udfs::math::isnan::ISNAN_UDF;
+use vegafusion_datafusion_udfs::udfs::array::indexof::IndexOfUDF;
+use vegafusion_datafusion_udfs::udfs::array::span::SpanUDF;
 
+use crate::expression::compiler::builtin_functions::array::length::length_transform;
 use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
@@ -49,6 +49,7 @@ use crate::task_graph::timezone::RuntimeTzConfig;
 
 pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>;
 pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
+pub type ScalarTransformFn = Arc<dyn Fn(Expr) -> Expr + Send + Sync>;
 pub type TzTransformFn =
     Arc<dyn Fn(&RuntimeTzConfig, &[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;
 pub type DataFn = Arc<
@@ -64,6 +65,9 @@ pub enum VegaFusionCallable {
 
     /// A function that operates on the compiled arguments and produces a new expression.
     Transform(TransformFn),
+
+    /// An infallible function that operates on a single compiled argument
+    UnaryTransform(ScalarTransformFn),
 
     /// A function that uses the local timezone to operate on the compiled arguments and
     /// produces a new expression.
@@ -133,20 +137,20 @@ pub fn compile_call(
         }
         VegaFusionCallable::ScalarUDF { udf, cast } => {
             let args = compile_scalar_arguments(node, config, schema, cast)?;
-            Ok(Expr::ScalarUDF(expr::ScalarUDF {
-                fun: Arc::new(udf.clone()),
+            Ok(Expr::ScalarFunction(expr::ScalarFunction {
+                func_def: ScalarFunctionDefinition::UDF(Arc::new(udf.clone())),
                 args,
             }))
         }
         VegaFusionCallable::BuiltinScalarFunction { function, cast } => {
             let args = compile_scalar_arguments(node, config, schema, cast)?;
             Ok(Expr::ScalarFunction(expr::ScalarFunction {
-                fun: *function,
+                func_def: ScalarFunctionDefinition::BuiltIn(*function),
                 args,
             }))
         }
         VegaFusionCallable::Data(callee) => {
-            if let Some(v) = node.arguments.get(0) {
+            if let Some(v) = node.arguments.first() {
                 match v.expr() {
                     expression::Expr::Literal(Literal {
                         value: Some(literal::Value::String(name)),
@@ -183,6 +187,18 @@ pub fn compile_call(
         VegaFusionCallable::Transform(callable) => {
             let args = compile_scalar_arguments(node, config, schema, &None)?;
             callable(&args, schema)
+        }
+        VegaFusionCallable::UnaryTransform(callable) => {
+            let mut args = compile_scalar_arguments(node, config, schema, &None)?;
+            if args.len() != 1 {
+                Err(VegaFusionError::internal(format!(
+                    "The {} function requires 1 argument. Received {}",
+                    &node.callee,
+                    args.len()
+                )))
+            } else {
+                Ok(callable(args.pop().unwrap()))
+            }
         }
         VegaFusionCallable::LocalTransform(callable) => {
             let args = compile_scalar_arguments(node, config, schema, &None)?;
@@ -236,10 +252,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
 
     callables.insert(
         "isNaN".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: ISNAN_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::UnaryTransform(Arc::new(isnan)),
     );
 
     callables.insert(
@@ -259,16 +272,13 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
 
     callables.insert(
         "length".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: LENGTH_UDF.deref().clone(),
-            cast: None,
-        },
+        VegaFusionCallable::Transform(Arc::new(length_transform)),
     );
 
     callables.insert(
         "span".to_string(),
         VegaFusionCallable::ScalarUDF {
-            udf: SPAN_UDF.deref().clone(),
+            udf: ScalarUDF::from(SpanUDF::new()),
             cast: None,
         },
     );
@@ -276,7 +286,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "indexof".to_string(),
         VegaFusionCallable::ScalarUDF {
-            udf: INDEXOF_UDF.deref().clone(),
+            udf: ScalarUDF::from(IndexOfUDF::new()),
             cast: None,
         },
     );

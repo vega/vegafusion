@@ -4,10 +4,7 @@ use arrow::datatypes::{Schema, SchemaRef};
 use arrow::record_batch::RecordBatch;
 use async_trait::async_trait;
 use datafusion_common::{DFSchema, ScalarValue};
-use datafusion_expr::{
-    expr, window_function, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound,
-    WindowFrameUnits,
-};
+use datafusion_expr::{expr, BuiltInWindowFunction, Expr, WindowFrame, WindowFunctionDefinition};
 use std::any::Any;
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
@@ -33,7 +30,7 @@ pub trait DataFrame: Send + Sync + 'static {
     async fn collect_flat(&self) -> Result<RecordBatch> {
         let mut arrow_schema = Arc::new(self.schema()) as SchemaRef;
         let table = self.collect().await?;
-        if let Some(batch) = table.batches.get(0) {
+        if let Some(batch) = table.batches.first() {
             arrow_schema = batch.schema()
         }
         concat_batches(&arrow_schema, table.batches.as_slice())
@@ -112,24 +109,20 @@ pub trait DataFrame: Send + Sync + 'static {
     async fn with_index(&self, index_name: &str) -> Result<Arc<dyn DataFrame>> {
         if self.schema().column_with_name(index_name).is_some() {
             // Column is already present, don't overwrite
-            self.select(vec![Expr::Wildcard]).await
+            self.select(vec![Expr::Wildcard { qualifier: None }]).await
         } else {
             let selections = vec![
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::RowNumber,
                     ),
                     args: vec![],
                     partition_by: vec![],
                     order_by: vec![],
-                    window_frame: WindowFrame {
-                        units: WindowFrameUnits::Rows,
-                        start_bound: WindowFrameBound::Preceding(ScalarValue::Null),
-                        end_bound: WindowFrameBound::CurrentRow,
-                    },
+                    window_frame: WindowFrame::new(Some(true)),
                 })
                 .alias(index_name),
-                Expr::Wildcard,
+                Expr::Wildcard { qualifier: None },
             ];
             self.select(selections).await
         }

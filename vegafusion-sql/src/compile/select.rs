@@ -2,7 +2,7 @@ use crate::compile::expr::ToSqlExpr;
 use crate::dialect::Dialect;
 use datafusion_common::DFSchema;
 use datafusion_expr::{expr, Expr};
-use sqlparser::ast::{Ident, SelectItem as SqlSelectItem};
+use sqlparser::ast::{Ident, ObjectName, SelectItem as SqlSelectItem};
 use vegafusion_common::error::Result;
 
 pub trait ToSqlSelectItem {
@@ -12,14 +12,25 @@ pub trait ToSqlSelectItem {
 impl ToSqlSelectItem for Expr {
     fn to_sql_select(&self, dialect: &Dialect, schema: &DFSchema) -> Result<SqlSelectItem> {
         Ok(match self {
-            Expr::Alias(expr::Alias { expr, name: alias }) => SqlSelectItem::ExprWithAlias {
+            Expr::Alias(expr::Alias {
+                expr, name: alias, ..
+            }) => SqlSelectItem::ExprWithAlias {
                 expr: expr.to_sql(dialect, schema)?,
                 alias: Ident {
                     value: alias.clone(),
                     quote_style: Some(dialect.quote_style),
                 },
             },
-            Expr::Wildcard => SqlSelectItem::Wildcard(Default::default()),
+            Expr::Wildcard { qualifier: None } => SqlSelectItem::Wildcard(Default::default()),
+            Expr::Wildcard {
+                qualifier: Some(qualifier),
+            } => SqlSelectItem::QualifiedWildcard(
+                ObjectName(vec![Ident {
+                    value: qualifier.to_string(),
+                    quote_style: Some(dialect.quote_style),
+                }]),
+                Default::default(),
+            ),
             expr => SqlSelectItem::UnnamedExpr(expr.to_sql(dialect, schema)?),
         })
     }
@@ -40,7 +51,7 @@ mod tests {
 
     #[test]
     pub fn test_select_wildcard() {
-        let expr = Expr::Wildcard;
+        let expr = Expr::Wildcard { qualifier: None };
         let sql_expr = expr
             .to_sql_select(&Dialect::datafusion(), &schema())
             .unwrap();

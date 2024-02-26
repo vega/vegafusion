@@ -96,7 +96,7 @@ impl Connection for PySqlConnection {
             let mut tables: HashMap<String, Schema> = HashMap::new();
 
             for key in tables_dict.keys() {
-                let value = tables_dict.get_item(key).unwrap();
+                let value = tables_dict.get_item(key)?.unwrap();
                 let key_string = key.extract::<String>()?;
                 let value_schema = Schema::from_pyarrow(value)?;
                 tables.insert(key_string, value_schema);

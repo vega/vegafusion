@@ -47,7 +47,7 @@ impl Stack {
         // Extract aliases
         let alias0 = spec
             .as_()
-            .get(0)
+            .first()
             .cloned()
             .unwrap_or_else(|| "y0".to_string());
         let alias1 = spec

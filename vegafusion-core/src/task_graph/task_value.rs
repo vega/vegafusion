@@ -70,7 +70,7 @@ impl TryFrom<&TaskValue> for ProtoTaskValue {
     fn try_from(value: &TaskValue) -> std::result::Result<Self, Self::Error> {
         match value {
             TaskValue::Scalar(scalar) => {
-                let scalar_array = scalar.to_array();
+                let scalar_array = scalar.to_array()?;
                 let scalar_rb = RecordBatch::try_from_iter(vec![("value", scalar_array)])?;
                 let ipc_bytes = VegaFusionTable::from(scalar_rb).to_ipc_bytes()?;
                 Ok(Self {

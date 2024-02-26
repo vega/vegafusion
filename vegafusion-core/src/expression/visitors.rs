@@ -105,7 +105,7 @@ impl ExpressionVisitor for GetInputVariablesVisitor {
     /// Collect data and scale identifiers. These show up as a literal string as the first
     /// argument to a Data or Scale callable.
     fn visit_called_identifier(&mut self, node: &Identifier, args: &[Expression]) {
-        if let Some(arg0) = args.get(0) {
+        if let Some(arg0) = args.first() {
             if let Ok(arg0) = arg0.as_literal() {
                 if let Value::String(arg0) = arg0.value() {
                     // Check data callable
@@ -157,7 +157,7 @@ impl UpdateVariablesExprVisitor {
 impl ExpressionVisitor for UpdateVariablesExprVisitor {
     fn visit_called_identifier(&mut self, node: &Identifier, args: &[Expression]) {
         if node.name == "modify" {
-            if let Some(arg0) = args.get(0) {
+            if let Some(arg0) = args.first() {
                 if let Ok(arg0) = arg0.as_literal() {
                     if let Value::String(arg0) = arg0.value() {
                         // First arg is a string, which holds the name of the output dataset
@@ -372,7 +372,7 @@ impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
                         ..
                     })),
                 ..
-            }) = node.arguments.get(0)
+            }) = node.arguments.first()
             {
                 // Resolve data variable
                 let reference_data_var = Variable::new_data(reference_data_name);

@@ -13,6 +13,7 @@ use crate::{
     error::{Result, ResultWithContext, VegaFusionError},
 };
 
+use arrow::array::new_empty_array;
 #[cfg(feature = "prettyprint")]
 use arrow::util::pretty::pretty_format_batches;
 use std::{
@@ -41,6 +42,7 @@ use {
 
 #[cfg(feature = "base64")]
 use base64::{engine::general_purpose, Engine as _};
+use datafusion_common::utils::array_into_list_array;
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
@@ -172,7 +174,7 @@ impl VegaFusionTable {
 
     pub fn to_record_batch(&self) -> Result<RecordBatch> {
         let mut schema = self.schema.clone();
-        if let Some(batch) = self.batches.get(0) {
+        if let Some(batch) = self.batches.first() {
             schema = batch.schema()
         }
         concat_batches(&schema, &self.batches)
@@ -182,30 +184,11 @@ impl VegaFusionTable {
     pub fn to_scalar_value(&self) -> Result<ScalarValue> {
         if self.num_rows() == 0 {
             // Return empty list with (arbitrary) Float64 type
-            let dtype = DataType::Float64;
-            return Ok(ScalarValue::List(
-                Some(Vec::new()),
-                Arc::new(Field::new("item", dtype, true)),
-            ));
+            let array = Arc::new(new_empty_array(&DataType::Float64));
+            return Ok(ScalarValue::List(Arc::new(array_into_list_array(array))));
         }
-
-        let mut elements: Vec<ScalarValue> = Vec::new();
-        for batch in &self.batches {
-            let array = Arc::new(StructArray::from(batch.clone())) as ArrayRef;
-
-            for i in 0..array.len() {
-                let scalar = ScalarValue::try_from_array(&array, i).with_context(|| {
-                    "Failed to convert record batch row to ScalarValue".to_string()
-                })?;
-                elements.push(scalar)
-            }
-        }
-
-        let dtype = elements[0].data_type();
-        Ok(ScalarValue::List(
-            Some(elements),
-            Arc::new(Field::new("item", dtype, true)),
-        ))
+        let array = Arc::new(StructArray::from(self.to_record_batch()?)) as ArrayRef;
+        Ok(ScalarValue::List(Arc::new(array_into_list_array(array))))
     }
 
     #[cfg(feature = "json")]
@@ -222,7 +205,7 @@ impl VegaFusionTable {
         if let serde_json::Value::Array(values) = value {
             // Handle special case where array elements are non-object scalars
             let mut values = Cow::Borrowed(values);
-            if let Some(first) = values.get(0) {
+            if let Some(first) = values.first() {
                 if let Value::Object(props) = first {
                     // Handle odd special case where vega will interpret
                     // [{}, {}] as [{"datum": {}}, {"datum": {}}]
@@ -251,7 +234,7 @@ impl VegaFusionTable {
                         "__dummy",
                         ScalarValue::try_from(&DataType::Float64).unwrap(),
                     )]);
-                    let array = empty_scalar.to_array_of_size(values.len());
+                    let array = empty_scalar.to_array_of_size(values.len())?;
                     let struct_array = array.as_any().downcast_ref::<StructArray>().unwrap();
                     let record_batch = RecordBatch::from(struct_array);
                     Self::try_new(record_batch.schema(), vec![record_batch])
@@ -315,7 +298,7 @@ impl VegaFusionTable {
         let batches_list = PyList::new(py, batch_objects);
 
         // Convert table's schema into pyarrow schema
-        let schema = if let Some(batch) = self.batches.get(0) {
+        let schema = if let Some(batch) = self.batches.first() {
             // Get schema from first batch if present
             batch.schema()
         } else {

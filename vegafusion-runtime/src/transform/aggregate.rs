@@ -5,6 +5,7 @@ use datafusion_expr::{avg, count, count_distinct, lit, max, min, sum, Expr};
 use std::collections::HashMap;
 
 use async_trait::async_trait;
+use datafusion_expr::expr::AggregateFunctionDefinition;
 use datafusion_expr::{aggregate_function, expr};
 use std::sync::Arc;
 use vegafusion_common::column::{flat_col, unescaped_col};
@@ -162,35 +163,45 @@ pub fn make_agg_expr_for_col_expr(
         AggregateOp::Max => max(column),
         AggregateOp::Sum => sum(numeric_column()?),
         AggregateOp::Median => Expr::AggregateFunction(expr::AggregateFunction {
-            fun: aggregate_function::AggregateFunction::Median,
+            func_def: AggregateFunctionDefinition::BuiltIn(
+                aggregate_function::AggregateFunction::Median,
+            ),
             distinct: false,
             args: vec![numeric_column()?],
             filter: None,
             order_by: None,
         }),
         AggregateOp::Variance => Expr::AggregateFunction(expr::AggregateFunction {
-            fun: aggregate_function::AggregateFunction::Variance,
+            func_def: AggregateFunctionDefinition::BuiltIn(
+                aggregate_function::AggregateFunction::Variance,
+            ),
             distinct: false,
             args: vec![numeric_column()?],
             filter: None,
             order_by: None,
         }),
         AggregateOp::Variancep => Expr::AggregateFunction(expr::AggregateFunction {
-            fun: aggregate_function::AggregateFunction::VariancePop,
+            func_def: AggregateFunctionDefinition::BuiltIn(
+                aggregate_function::AggregateFunction::VariancePop,
+            ),
             distinct: false,
             args: vec![numeric_column()?],
             filter: None,
             order_by: None,
         }),
         AggregateOp::Stdev => Expr::AggregateFunction(expr::AggregateFunction {
-            fun: aggregate_function::AggregateFunction::Stddev,
+            func_def: AggregateFunctionDefinition::BuiltIn(
+                aggregate_function::AggregateFunction::Stddev,
+            ),
             distinct: false,
             args: vec![numeric_column()?],
             filter: None,
             order_by: None,
         }),
         AggregateOp::Stdevp => Expr::AggregateFunction(expr::AggregateFunction {
-            fun: aggregate_function::AggregateFunction::StddevPop,
+            func_def: AggregateFunctionDefinition::BuiltIn(
+                aggregate_function::AggregateFunction::StddevPop,
+            ),
             distinct: false,
             args: vec![numeric_column()?],
             filter: None,
@@ -218,15 +229,17 @@ pub fn make_agg_expr_for_col_expr(
             });
             count_distinct(column) + max(missing)
         }
-        AggregateOp::Q1 => Expr::AggregateUDF(expr::AggregateUDF {
-            fun: Arc::new((*Q1_UDF).clone()),
+        AggregateOp::Q1 => Expr::AggregateFunction(expr::AggregateFunction {
+            func_def: AggregateFunctionDefinition::UDF(Arc::new((*Q1_UDF).clone())),
             args: vec![numeric_column()?],
+            distinct: false,
             filter: None,
             order_by: None,
         }),
-        AggregateOp::Q3 => Expr::AggregateUDF(expr::AggregateUDF {
-            fun: Arc::new((*Q3_UDF).clone()),
+        AggregateOp::Q3 => Expr::AggregateFunction(expr::AggregateFunction {
+            func_def: AggregateFunctionDefinition::UDF(Arc::new((*Q3_UDF).clone())),
             args: vec![numeric_column()?],
+            distinct: false,
             filter: None,
             order_by: None,
         }),

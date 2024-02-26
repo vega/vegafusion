@@ -4,8 +4,8 @@ extern crate lazy_static;
 mod utils;
 use datafusion_common::ScalarValue;
 use datafusion_expr::{
-    col, expr, lit, window_function, AggregateFunction, BuiltInWindowFunction, Expr, WindowFrame,
-    WindowFrameBound, WindowFrameUnits,
+    col, expr, lit, AggregateFunction, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound,
+    WindowFrameUnits,
 };
 use rstest::rstest;
 use rstest_reuse::{self, *};
@@ -17,6 +17,7 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 #[cfg(test)]
 mod test_simple_aggs_unbounded {
     use crate::*;
+    use datafusion_expr::WindowFunctionDefinition;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -39,18 +40,14 @@ mod test_simple_aggs_unbounded {
             asc: true,
             nulls_first: true,
         })];
-        let window_frame = WindowFrame {
-            units: WindowFrameUnits::Rows,
-            start_bound: WindowFrameBound::Preceding(ScalarValue::Null),
-            end_bound: WindowFrameBound::CurrentRow,
-        };
+        let window_frame = WindowFrame::new(Some(true));
         let df_result = df
             .select(vec![
                 flat_col("a"),
                 flat_col("b"),
                 flat_col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Sum),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -58,9 +55,7 @@ mod test_simple_aggs_unbounded {
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(
-                        AggregateFunction::Count,
-                    ),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Count),
                     args: vec![flat_col("b")],
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
@@ -68,7 +63,7 @@ mod test_simple_aggs_unbounded {
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Avg),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Avg),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -76,7 +71,7 @@ mod test_simple_aggs_unbounded {
                 })
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Min),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Min),
                     args: vec![flat_col("b")],
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
@@ -84,7 +79,7 @@ mod test_simple_aggs_unbounded {
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Max),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Max),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -115,6 +110,7 @@ mod test_simple_aggs_unbounded {
 #[cfg(test)]
 mod test_simple_aggs_unbounded_groups {
     use crate::*;
+    use datafusion_expr::WindowFunctionDefinition;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -137,18 +133,18 @@ mod test_simple_aggs_unbounded_groups {
             asc: true,
             nulls_first: true,
         })];
-        let window_frame = WindowFrame {
-            units: WindowFrameUnits::Groups,
-            start_bound: WindowFrameBound::Preceding(ScalarValue::Null),
-            end_bound: WindowFrameBound::CurrentRow,
-        };
+        let window_frame = WindowFrame::new_bounds(
+            WindowFrameUnits::Groups,
+            WindowFrameBound::Preceding(ScalarValue::Null),
+            WindowFrameBound::CurrentRow,
+        );
         let df_result = df
             .select(vec![
                 flat_col("a"),
                 flat_col("b"),
                 flat_col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Sum),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -156,9 +152,7 @@ mod test_simple_aggs_unbounded_groups {
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(
-                        AggregateFunction::Count,
-                    ),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Count),
                     args: vec![flat_col("b")],
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
@@ -166,7 +160,7 @@ mod test_simple_aggs_unbounded_groups {
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Avg),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Avg),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -174,7 +168,7 @@ mod test_simple_aggs_unbounded_groups {
                 })
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Min),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Min),
                     args: vec![flat_col("b")],
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
@@ -182,7 +176,7 @@ mod test_simple_aggs_unbounded_groups {
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Max),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Max),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -214,6 +208,7 @@ mod test_simple_aggs_unbounded_groups {
 #[cfg(test)]
 mod test_simple_aggs_bounded {
     use crate::*;
+    use datafusion_expr::WindowFunctionDefinition;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -236,18 +231,18 @@ mod test_simple_aggs_bounded {
             asc: true,
             nulls_first: true,
         })];
-        let window_frame = WindowFrame {
-            units: WindowFrameUnits::Rows,
-            start_bound: WindowFrameBound::Preceding(ScalarValue::from(1)),
-            end_bound: WindowFrameBound::CurrentRow,
-        };
+        let window_frame = WindowFrame::new_bounds(
+            WindowFrameUnits::Rows,
+            WindowFrameBound::Preceding(ScalarValue::from(1)),
+            WindowFrameBound::CurrentRow,
+        );
         let df_result = df
             .select(vec![
                 flat_col("a"),
                 flat_col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Sum),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -255,9 +250,7 @@ mod test_simple_aggs_bounded {
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(
-                        AggregateFunction::Count,
-                    ),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Count),
                     args: vec![col("b")],
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
@@ -265,7 +258,7 @@ mod test_simple_aggs_bounded {
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Avg),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Avg),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -273,7 +266,7 @@ mod test_simple_aggs_bounded {
                 })
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Min),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Min),
                     args: vec![col("b")],
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
@@ -281,7 +274,7 @@ mod test_simple_aggs_bounded {
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Max),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Max),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -313,6 +306,7 @@ mod test_simple_aggs_bounded {
 #[cfg(test)]
 mod test_simple_aggs_bounded_groups {
     use crate::*;
+    use datafusion_expr::WindowFunctionDefinition;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -334,18 +328,18 @@ mod test_simple_aggs_bounded_groups {
             asc: true,
             nulls_first: true,
         })];
-        let window_frame = WindowFrame {
-            units: WindowFrameUnits::Groups,
-            start_bound: WindowFrameBound::Preceding(ScalarValue::from(1)),
-            end_bound: WindowFrameBound::CurrentRow,
-        };
+        let window_frame = WindowFrame::new_bounds(
+            WindowFrameUnits::Groups,
+            WindowFrameBound::Preceding(ScalarValue::from(1)),
+            WindowFrameBound::CurrentRow,
+        );
         let df_result = df
             .select(vec![
                 col("a"),
                 col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Sum),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -353,9 +347,7 @@ mod test_simple_aggs_bounded_groups {
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(
-                        AggregateFunction::Count,
-                    ),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Count),
                     args: vec![col("b")],
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
@@ -363,7 +355,7 @@ mod test_simple_aggs_bounded_groups {
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Avg),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Avg),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -371,7 +363,7 @@ mod test_simple_aggs_bounded_groups {
                 })
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Min),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Min),
                     args: vec![col("b")],
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
@@ -379,7 +371,7 @@ mod test_simple_aggs_bounded_groups {
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::AggregateFunction(AggregateFunction::Max),
+                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Max),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -426,6 +418,7 @@ mod test_simple_aggs_bounded_groups {
 #[cfg(test)]
 mod test_simple_window_fns {
     use crate::*;
+    use datafusion_expr::WindowFunctionDefinition;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -447,18 +440,14 @@ mod test_simple_window_fns {
             asc: true,
             nulls_first: true,
         })];
-        let window_frame = WindowFrame {
-            units: WindowFrameUnits::Rows,
-            start_bound: WindowFrameBound::Preceding(ScalarValue::Null),
-            end_bound: WindowFrameBound::CurrentRow,
-        };
+        let window_frame = WindowFrame::new(Some(true));
         let df_result = df
             .select(vec![
                 col("a"),
                 col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::RowNumber,
                     ),
                     args: vec![],
@@ -468,7 +457,7 @@ mod test_simple_window_fns {
                 })
                 .alias("row_num"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::Rank,
                     ),
                     args: vec![],
@@ -478,7 +467,7 @@ mod test_simple_window_fns {
                 })
                 .alias("rank"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::DenseRank,
                     ),
                     args: vec![],
@@ -488,7 +477,7 @@ mod test_simple_window_fns {
                 })
                 .alias("d_rank"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::FirstValue,
                     ),
                     args: vec![col("b")],
@@ -498,7 +487,7 @@ mod test_simple_window_fns {
                 })
                 .alias("first"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::LastValue,
                     ),
                     args: vec![col("b")],
@@ -532,6 +521,7 @@ mod test_simple_window_fns {
 #[cfg(test)]
 mod test_advanced_window_fns {
     use crate::*;
+    use datafusion_expr::WindowFunctionDefinition;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -553,18 +543,14 @@ mod test_advanced_window_fns {
             asc: true,
             nulls_first: true,
         })];
-        let window_frame = WindowFrame {
-            units: WindowFrameUnits::Rows,
-            start_bound: WindowFrameBound::Preceding(ScalarValue::Null),
-            end_bound: WindowFrameBound::CurrentRow,
-        };
+        let window_frame = WindowFrame::new(Some(true));
         let df_result = df
             .select(vec![
                 col("a"),
                 col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::NthValue,
                     ),
                     args: vec![col("b"), lit(1)],
@@ -574,7 +560,7 @@ mod test_advanced_window_fns {
                 })
                 .alias("nth1"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::CumeDist,
                     ),
                     args: vec![],
@@ -584,7 +570,7 @@ mod test_advanced_window_fns {
                 })
                 .alias("cdist"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::Lag,
                     ),
                     args: vec![col("b")],
@@ -594,7 +580,7 @@ mod test_advanced_window_fns {
                 })
                 .alias("lag_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::Lead,
                     ),
                     args: vec![col("b")],
@@ -604,7 +590,7 @@ mod test_advanced_window_fns {
                 })
                 .alias("lead_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::Ntile,
                     ),
                     args: vec![lit(2)],
@@ -638,6 +624,7 @@ mod test_advanced_window_fns {
 #[cfg(test)]
 mod test_unordered_row_number {
     use crate::*;
+    use datafusion_expr::WindowFunctionDefinition;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -659,18 +646,14 @@ mod test_unordered_row_number {
             asc: true,
             nulls_first: true,
         })];
-        let window_frame = WindowFrame {
-            units: WindowFrameUnits::Rows,
-            start_bound: WindowFrameBound::Preceding(ScalarValue::Null),
-            end_bound: WindowFrameBound::CurrentRow,
-        };
+        let window_frame = WindowFrame::new(Some(true));
         let df_result = df
             .select(vec![
                 col("a"),
                 col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: window_function::WindowFunction::BuiltInWindowFunction(
+                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
                         BuiltInWindowFunction::RowNumber,
                     ),
                     args: vec![],

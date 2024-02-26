@@ -5,15 +5,17 @@ use arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
 use datafusion_expr::{
-    expr, lit, ColumnarValue, Expr, ReturnTypeFunction, ScalarFunctionImplementation, ScalarUDF,
-    Signature, Volatility,
+    expr, lit, ColumnarValue, Expr, ScalarFunctionDefinition, ScalarUDF, ScalarUDFImpl, Signature,
+    Volatility,
 };
 use sqlparser::ast::{
     Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr,
     Ident, ObjectName as SqlObjectName, Value as SqlValue,
 };
+use std::any::Any;
 use std::ops::Add;
 use std::sync::Arc;
+use vegafusion_common::data::scalar::ArrayRefHelpers;
 use vegafusion_common::error::{Result, VegaFusionError};
 
 pub trait ToSqlScalar {
@@ -47,6 +49,7 @@ impl ToSqlScalar for ScalarValue {
                                     false,
                                 ))),
                                 data_type: cast_dtype,
+                                format: None,
                             })
                         } else {
                             Ok(SqlExpr::Value(SqlValue::Null))
@@ -79,6 +82,7 @@ impl ToSqlScalar for ScalarValue {
                                     false,
                                 ))),
                                 data_type: cast_dtype,
+                                format: None,
                             })
                         } else {
                             Ok(SqlExpr::Value(SqlValue::Null))
@@ -142,26 +146,26 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::FixedSizeBinary(_, _) => Err(VegaFusionError::internal(
                 "FixedSizeBinary cannot be converted to SQL",
             )),
-            ScalarValue::List(args, _) => {
+            ScalarValue::List(array) => {
                 let function_ident = Ident {
                     value: "make_list".to_string(),
                     quote_style: None,
                 };
-
-                let args = args
-                    .clone()
-                    .unwrap_or_default()
-                    .iter()
-                    .map(|expr| {
-                        Ok(SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(
-                            expr.to_sql(dialect)?,
-                        )))
+                let args = array
+                    .value(0)
+                    .to_scalar_vec()?
+                    .into_iter()
+                    .map(|v| {
+                        let sql_expr = v.to_sql(dialect)?;
+                        Ok(SqlFunctionArg::Unnamed(FunctionArgExpr::Expr(sql_expr)))
                     })
                     .collect::<Result<Vec<_>>>()?;
 
                 Ok(SqlExpr::Function(SqlFunction {
                     name: SqlObjectName(vec![function_ident]),
                     args,
+                    filter: None,
+                    null_treatment: None,
                     over: None,
                     distinct: false,
                     special: false,
@@ -209,7 +213,7 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::IntervalMonthDayNano(_) => Err(VegaFusionError::internal(
                 "IntervalMonthDayNano cannot be converted to SQL",
             )),
-            ScalarValue::Struct(_, _) => Err(VegaFusionError::internal(
+            ScalarValue::Struct(_) => Err(VegaFusionError::internal(
                 "Struct cannot be converted to SQL",
             )),
             ScalarValue::Dictionary(_, _) => Err(VegaFusionError::internal(
@@ -233,9 +237,6 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::Time64Nanosecond(_) => Err(VegaFusionError::internal(
                 "Time64Nanosecond cannot be converted to SQL",
             )),
-            ScalarValue::Fixedsizelist(_, _, _) => Err(VegaFusionError::internal(
-                "Fixedsizelist cannot be converted to SQL",
-            )),
             ScalarValue::DurationSecond(_) => Err(VegaFusionError::internal(
                 "DurationSecond cannot be converted to SQL",
             )),
@@ -248,30 +249,66 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::DurationNanosecond(_) => Err(VegaFusionError::internal(
                 "DurationNanosecond cannot be converted to SQL",
             )),
+            ScalarValue::FixedSizeList(_) => Err(VegaFusionError::internal(
+                "FixedSizeList cannot be converted to SQL",
+            )),
+            ScalarValue::LargeList(_) => Err(VegaFusionError::internal(
+                "LargeList cannot be converted to SQL",
+            )),
         }
     }
 }
 
 fn ms_to_timestamp(v: i64, dialect: &Dialect) -> Result<SqlExpr> {
     // Hack to recursively transform the epoch_ms_to_utc_timestamp
-    let return_type: ReturnTypeFunction =
-        Arc::new(move |_| Ok(Arc::new(DataType::Timestamp(TimeUnit::Millisecond, None))));
-    let signature: Signature = Signature::exact(vec![DataType::Int64], Volatility::Immutable);
-    let scalar_fn: ScalarFunctionImplementation = Arc::new(move |_args: &[ColumnarValue]| {
-        panic!("Placeholder UDF implementation should not be called")
-    });
-
-    let udf = ScalarUDF::new(
-        "epoch_ms_to_utc_timestamp",
-        &signature,
-        &return_type,
-        &scalar_fn,
-    );
-    Expr::ScalarUDF(expr::ScalarUDF {
-        fun: Arc::new(udf),
+    Expr::ScalarFunction(expr::ScalarFunction {
+        func_def: ScalarFunctionDefinition::UDF(Arc::new(ScalarUDF::from(
+            EpochMsToUtcTimestampUDF::new(),
+        ))),
         args: vec![lit(v)],
     })
     .to_sql(dialect, &DFSchema::empty())
+}
+
+// Hack to recursively transform the epoch_ms_to_utc_timestamp
+#[derive(Debug, Clone)]
+pub struct EpochMsToUtcTimestampUDF {
+    signature: Signature,
+}
+
+impl Default for EpochMsToUtcTimestampUDF {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl EpochMsToUtcTimestampUDF {
+    pub fn new() -> Self {
+        let signature: Signature = Signature::exact(vec![DataType::Int64], Volatility::Immutable);
+        Self { signature }
+    }
+}
+
+impl ScalarUDFImpl for EpochMsToUtcTimestampUDF {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn name(&self) -> &str {
+        "epoch_ms_to_utc_timestamp"
+    }
+
+    fn signature(&self) -> &Signature {
+        &self.signature
+    }
+
+    fn return_type(&self, _arg_types: &[DataType]) -> datafusion_common::Result<DataType> {
+        Ok(DataType::Timestamp(TimeUnit::Millisecond, None))
+    }
+
+    fn invoke(&self, _args: &[ColumnarValue]) -> datafusion_common::Result<ColumnarValue> {
+        panic!("Placeholder UDF implementation should not be called")
+    }
 }
 
 fn date32_to_date(days: &Option<i32>, dialect: &Dialect) -> Result<SqlExpr> {
@@ -280,6 +317,7 @@ fn date32_to_date(days: &Option<i32>, dialect: &Dialect) -> Result<SqlExpr> {
         None => Ok(SqlExpr::Cast {
             expr: Box::new(ScalarValue::Utf8(None).to_sql(dialect)?),
             data_type: DataType::Date32.to_sql(dialect)?,
+            format: None,
         }),
         Some(days) => {
             let date = epoch.add(chrono::Duration::days(*days as i64));
@@ -287,6 +325,7 @@ fn date32_to_date(days: &Option<i32>, dialect: &Dialect) -> Result<SqlExpr> {
             Ok(SqlExpr::Cast {
                 expr: Box::new(ScalarValue::from(date_str.as_str()).to_sql(dialect)?),
                 data_type: DataType::Date32.to_sql(dialect)?,
+                format: None,
             })
         }
     }

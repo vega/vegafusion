@@ -1,5 +1,4 @@
 use datafusion_common::ScalarValue;
-use dssim::{Dssim, DssimImage};
 use regex::Regex;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -7,6 +6,7 @@ use std::collections::HashMap;
 
 use self::super::estree_expression::ESTreeExpression;
 use itertools::Itertools;
+use pixelmatch::{pixelmatch, Options};
 use std::io::{Read, Write};
 use std::ops::Deref;
 use std::process::{Child, Command, Stdio};
@@ -471,51 +471,37 @@ impl ExportImage {
         Ok(path)
     }
 
-    pub fn to_dssim(&self, attr: &Dssim) -> Result<DssimImage<f32>> {
-        if !matches!(self, ExportImage::Png(_)) {
-            return Err(VegaFusionError::internal("Only PNG image supported"));
+    pub fn as_png_bytes(&self) -> Result<Vec<u8>> {
+        match self {
+            ExportImage::Png(png_b64) => {
+                #[allow(deprecated)]
+                let png_bytes = base64::decode(png_b64)
+                    .external("Failed to decdode base64 encoded png image")?;
+                Ok(png_bytes)
+            }
+            _ => Err(VegaFusionError::internal("Only PNG image supported")),
         }
-        let tmpfile = tempfile::NamedTempFile::new().unwrap();
-        let tmppath = tmpfile.path().to_str().unwrap();
-        self.save(tmppath, false)?;
-
-        let img = dssim::load_image(attr, tmppath)
-            .external("Failed to create DSSIM image for comparison")?;
-        Ok(img)
     }
 
     pub fn compare(&self, other: &Self) -> Result<(f64, Option<Vec<u8>>)> {
-        let mut attr = Dssim::new();
-        attr.set_save_ssim_maps(1);
-        let this_img = self.to_dssim(&attr)?;
-        let other_img = other.to_dssim(&attr)?;
-        let (diff, ssim_maps) = attr.compare(&this_img, other_img);
-        // println!("ssim_map: {:?}", ssim_map);
+        let self_png = self.as_png_bytes()?;
+        let other_png = other.as_png_bytes()?;
+        let mut img_out = Vec::new();
+        let res = pixelmatch(
+            self_png.as_slice(),
+            other_png.as_slice(),
+            Some(&mut img_out),
+            None,
+            None,
+            Some(Options {
+                threshold: 0.1,
+                ..Default::default()
+            }),
+        )
+        .expect("pixelmatch failed");
 
-        if diff > 0.0 {
-            let map_meta = ssim_maps[0].clone();
-            let avgssim = map_meta.ssim as f32;
-
-            let out: Vec<_> = map_meta
-                .map
-                .pixels()
-                .map(|ssim| {
-                    let max = 1_f32 - ssim;
-                    let maxsq = max * max;
-                    rgb::RGBA8 {
-                        r: to_byte(maxsq * 16.0),
-                        g: to_byte(max * 3.0),
-                        b: to_byte(max / ((1_f32 - avgssim) * 4_f32)),
-                        a: 255,
-                    }
-                })
-                .collect();
-            let png_res =
-                lodepng::encode32(&out, map_meta.map.width(), map_meta.map.height()).unwrap();
-            Ok((diff.into(), Some(png_res)))
-        } else {
-            Ok((diff.into(), None))
-        }
+        let diff_factor = (res as f64) / 10000.0;
+        Ok((diff_factor, Some(img_out)))
     }
 }
 
