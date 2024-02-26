@@ -73,6 +73,8 @@ message LogicalPlanNode {
     CustomTableScanNode custom_scan = 25;
     PrepareNode prepare = 26;
     DropViewNode drop_view = 27;
+    DistinctOnNode distinct_on = 28;
+    CopyToNode copy_to = 29;
   }
 }
 
@@ -88,6 +90,10 @@ message ProjectionColumns {
 message CsvFormat {
   bool has_header = 1;
   string delimiter = 2;
+  string quote = 3;
+  oneof optional_escape {
+    string escape = 4;
+  }
 }
 
 message ParquetFormat {
@@ -176,6 +182,25 @@ message EmptyRelationNode {
   bool produce_one_row = 1;
 }
 
+message PrimaryKeyConstraint{
+  repeated uint64 indices = 1;
+}
+
+message UniqueConstraint{
+  repeated uint64 indices = 1;
+}
+
+message Constraint{
+  oneof constraint_mode{
+    PrimaryKeyConstraint primary_key = 1;
+    UniqueConstraint unique = 2;
+  }
+}
+
+message Constraints{
+  repeated Constraint constraints = 1;
+}
+
 message CreateExternalTableNode {
   reserved 1; // was string name
   OwnedTableReference name = 12;
@@ -187,10 +212,13 @@ message CreateExternalTableNode {
   bool if_not_exists = 7;
   string delimiter = 8;
   string definition = 9;
-  string file_compression_type = 10;
+  reserved 10; // was string file_compression_type
+  CompressionTypeVariant file_compression_type = 17;
   repeated LogicalExprNodeCollection order_exprs = 13;
   bool unbounded = 14;
   map<string, string> options = 11;
+  Constraints constraints = 15;
+  map<string, LogicalExprNode> column_defaults = 16;
 }
 
 message PrepareNode {
@@ -284,6 +312,32 @@ message DistinctNode {
   LogicalPlanNode input = 1;
 }
 
+message DistinctOnNode {
+  repeated LogicalExprNode on_expr = 1;
+  repeated LogicalExprNode select_expr = 2;
+  repeated LogicalExprNode sort_expr = 3;
+  LogicalPlanNode input = 4;
+}
+
+message CopyToNode {
+    LogicalPlanNode input = 1;
+    string output_url = 2;
+    oneof CopyOptions {
+        SQLOptions sql_options = 4;
+        FileTypeWriterOptions writer_options = 5;
+    }
+    string file_type = 6;
+}
+
+message SQLOptions {
+  repeated SQLOption option = 1;
+}
+
+message SQLOption {
+    string key = 1;
+    string value = 2;
+}
+
 message UnionNode {
   repeated LogicalPlanNode inputs = 1;
 }
@@ -339,7 +393,7 @@ message LogicalExprNode {
     SortExprNode sort = 12;
     NegativeNode negative = 13;
     InListNode in_list = 14;
-    bool wildcard = 15;
+    Wildcard wildcard = 15;
     ScalarFunctionNode scalar_function = 16;
     TryCastNode try_cast = 17;
 
@@ -372,7 +426,13 @@ message LogicalExprNode {
 
     PlaceholderNode placeholder = 34;
 
+    Unnest unnest = 35;
+
   }
+}
+
+message Wildcard {
+  string qualifier = 1;
 }
 
 message PlaceholderNode {
@@ -396,11 +456,27 @@ message RollupNode {
   repeated LogicalExprNode expr = 1;
 }
 
+message NamedStructField {
+  ScalarValue name = 1;
+}
 
+message ListIndex {
+  LogicalExprNode key = 1;
+}
+
+message ListRange {
+  LogicalExprNode start = 1;
+  LogicalExprNode stop = 2;
+  LogicalExprNode stride = 3;
+}
 
 message GetIndexedField {
   LogicalExprNode expr = 1;
-  ScalarValue key = 2;
+  oneof field {
+    NamedStructField named_struct_field = 2;
+    ListIndex list_index = 3;
+    ListRange list_range = 4;
+  }
 }
 
 message IsNull {
@@ -442,6 +518,7 @@ message Not {
 message AliasNode {
   LogicalExprNode expr = 1;
   string alias = 2;
+  repeated OwnedTableReference relation = 3;
 }
 
 message BinaryExprNode {
@@ -454,6 +531,10 @@ message BinaryExprNode {
 
 message NegativeNode {
   LogicalExprNode expr = 1;
+}
+
+message Unnest {
+  repeated LogicalExprNode exprs = 1;
 }
 
 message InListNode {
@@ -499,7 +580,7 @@ enum ScalarFunction {
   Lower = 33;
   Ltrim = 34;
   MD5 = 35;
-  NullIf = 36;
+  //  36 was NullIf
   OctetLength = 37;
   Random = 38;
   RegexpReplace = 39;
@@ -552,7 +633,7 @@ enum ScalarFunction {
   ArrayAppend = 86;
   ArrayConcat = 87;
   ArrayDims = 88;
-  ArrayFill = 89;
+  ArrayRepeat = 89;
   ArrayLength = 90;
   ArrayNdims = 91;
   ArrayPosition = 92;
@@ -560,13 +641,44 @@ enum ScalarFunction {
   ArrayPrepend = 94;
   ArrayRemove = 95;
   ArrayReplace = 96;
-  ArrayToString = 97;
+  // 97 was ArrayToString
   Cardinality = 98;
-  TrimArray = 99;
-  ArrayContains = 100;
-  Encode = 101;
-  Decode = 102;
+  ArrayElement = 99;
+  ArraySlice = 100;
   Cot = 103;
+  ArrayHas = 104;
+  ArrayHasAny = 105;
+  ArrayHasAll = 106;
+  ArrayRemoveN = 107;
+  ArrayReplaceN = 108;
+  ArrayRemoveAll = 109;
+  ArrayReplaceAll = 110;
+  Nanvl = 111;
+  Flatten = 112;
+  // 113 was IsNan
+  Iszero = 114;
+  ArrayEmpty = 115;
+  ArrayPopBack = 116;
+  StringToArray = 117;
+  ToTimestampNanos = 118;
+  ArrayIntersect = 119;
+  ArrayUnion = 120;
+  OverLay = 121;
+  Range = 122;
+  ArrayExcept = 123;
+  ArrayPopFront = 124;
+  Levenshtein = 125;
+  SubstrIndex = 126;
+  FindInSet = 127;
+  ArraySort = 128;
+  ArrayDistinct = 129;
+  ArrayResize = 130;
+  EndsWith = 131;
+  InStr = 132;
+  MakeDate = 133;
+  ArrayReverse = 134;
+  RegexpLike = 135;
+  ToChar = 136;
 }
 
 message ScalarFunctionNode {
@@ -603,6 +715,17 @@ enum AggregateFunction {
   // we append "_AGG" to obey name scoping rules.
   FIRST_VALUE_AGG = 24;
   LAST_VALUE_AGG = 25;
+  REGR_SLOPE = 26;
+  REGR_INTERCEPT = 27;
+  REGR_COUNT = 28;
+  REGR_R2 = 29;
+  REGR_AVGX = 30;
+  REGR_AVGY = 31;
+  REGR_SXX = 32;
+  REGR_SYY = 33;
+  REGR_SXY = 34;
+  STRING_AGG = 35;
+  NTH_VALUE_AGG = 36;
 }
 
 message AggregateExprNode {
@@ -752,6 +875,8 @@ message Field {
   // for complex data types like structs, unions
   repeated Field children = 4;
   map<string, string> metadata = 5;
+  int64 dict_id = 6;
+  bool dict_ordered = 7;
 }
 
 message FixedSizeBinary{
@@ -821,12 +946,11 @@ message Union{
   repeated int32 type_ids = 3;
 }
 
-message ScalarListValue{
-  // encode null explicitly to distinguish a list with a null value
-  // from a list with no values)
-  bool is_null = 3;
-  Field field = 1;
-  repeated ScalarValue values = 2;
+// Used for List/FixedSizeList/LargeList/Struct
+message ScalarNestedValue {
+  bytes ipc_message = 1;
+  bytes arrow_data = 2;
+  Schema schema = 3;
 }
 
 message ScalarTime32Value {
@@ -864,14 +988,6 @@ message IntervalMonthDayNanoValue {
   int64 nanos = 3;
 }
 
-message StructValue {
-  // Note that a null struct value must have one or more fields, so we
-  // encode a null StructValue as one witth an empty field_values
-  // list.
-  repeated ScalarValue field_values = 2;
-  repeated Field fields = 3;
-}
-
 message ScalarFixedSizeBinary{
   bytes values = 1;
   int32 length = 2;
@@ -902,10 +1018,14 @@ message ScalarValue{
     // Literal Date32 value always has a unit of day
     int32  date_32_value = 14;
     ScalarTime32Value time32_value = 15;
-    ScalarListValue list_value = 17;
-    //WAS: ScalarType null_list_value = 18;
+    ScalarNestedValue large_list_value = 16;
+    ScalarNestedValue list_value = 17;
+    ScalarNestedValue fixed_size_list_value = 18;
+    ScalarNestedValue struct_value = 32;
 
     Decimal128 decimal128_value = 20;
+    Decimal256 decimal256_value = 39;
+
     int64 date_64_value = 21;
     int32 interval_yearmonth_value = 24;
     int64 interval_daytime_value = 25;
@@ -921,12 +1041,17 @@ message ScalarValue{
     bytes large_binary_value = 29;
     ScalarTime64Value time64_value = 30;
     IntervalMonthDayNanoValue interval_month_day_nano = 31;
-    StructValue struct_value = 32;
     ScalarFixedSizeBinary fixed_size_binary_value = 34;
   }
 }
 
 message Decimal128{
+  bytes value = 1;
+  int64 p = 2;
+  int64 s = 3;
+}
+
+message Decimal256{
   bytes value = 1;
   int64 p = 2;
   int64 s = 3;
@@ -1002,8 +1127,10 @@ message PlanType {
     OptimizedLogicalPlanType OptimizedLogicalPlan = 2;
     EmptyMessage FinalLogicalPlan = 3;
     EmptyMessage InitialPhysicalPlan = 4;
+    EmptyMessage InitialPhysicalPlanWithStats = 9;
     OptimizedPhysicalPlanType OptimizedPhysicalPlan = 5;
     EmptyMessage FinalPhysicalPlan = 6;
+    EmptyMessage FinalPhysicalPlanWithStats = 10;
   }
 }
 
@@ -1061,7 +1188,120 @@ message PhysicalPlanNode {
     ExplainExecNode explain = 20;
     SortPreservingMergeExecNode sort_preserving_merge = 21;
     NestedLoopJoinExecNode nested_loop_join = 22;
+    AnalyzeExecNode analyze = 23;
+    JsonSinkExecNode json_sink = 24;
+    SymmetricHashJoinExecNode symmetric_hash_join = 25;
+    InterleaveExecNode  interleave = 26;
+    PlaceholderRowExecNode placeholder_row = 27;
+    CsvSinkExecNode csv_sink = 28;
+    ParquetSinkExecNode parquet_sink = 29;
   }
+}
+
+enum CompressionTypeVariant {
+  GZIP = 0;
+  BZIP2 = 1;
+  XZ = 2;
+  ZSTD = 3;
+  UNCOMPRESSED = 4;
+}
+
+message PartitionColumn {
+  string name = 1;
+  ArrowType arrow_type = 2;
+}
+
+message FileTypeWriterOptions {
+  oneof FileType {
+    JsonWriterOptions json_options = 1;
+    ParquetWriterOptions parquet_options = 2;
+    CsvWriterOptions csv_options = 3;
+    ArrowWriterOptions arrow_options = 4;
+  }
+}
+
+message JsonWriterOptions {
+  CompressionTypeVariant compression = 1;
+}
+
+message ParquetWriterOptions {
+    WriterProperties writer_properties = 1;
+}
+
+message CsvWriterOptions {
+  // Compression type
+  CompressionTypeVariant compression = 1;
+  // Optional column delimiter. Defaults to `b','`
+  string delimiter = 2;
+  // Whether to write column names as file headers. Defaults to `true`
+  bool has_header = 3;
+  // Optional date format for date arrays
+  string date_format = 4;
+  // Optional datetime format for datetime arrays
+  string datetime_format = 5;
+  // Optional timestamp format for timestamp arrays
+  string timestamp_format = 6;
+  // Optional time format for time arrays
+  string time_format = 7;
+  // Optional value to represent null
+  string null_value = 8;
+}
+
+message ArrowWriterOptions {}
+
+message WriterProperties {
+  uint64 data_page_size_limit = 1;
+  uint64 dictionary_page_size_limit = 2;
+  uint64 data_page_row_count_limit = 3;
+  uint64 write_batch_size = 4;
+  uint64 max_row_group_size = 5;
+  string writer_version = 6;
+  string created_by = 7;
+}
+
+message FileSinkConfig {
+  reserved 6; // writer_mode
+
+  string object_store_url = 1;
+  repeated PartitionedFile file_groups = 2;
+  repeated string table_paths = 3;
+  Schema output_schema = 4;
+  repeated PartitionColumn table_partition_cols = 5;
+  bool overwrite = 8;
+  FileTypeWriterOptions file_type_writer_options = 9;
+}
+
+message JsonSink {
+  FileSinkConfig config = 1;
+}
+
+message JsonSinkExecNode {
+  PhysicalPlanNode input = 1;
+  JsonSink sink = 2;
+  Schema sink_schema = 3;
+  PhysicalSortExprNodeCollection sort_order = 4;
+}
+
+message CsvSink {
+  FileSinkConfig config = 1;
+}
+
+message CsvSinkExecNode {
+  PhysicalPlanNode input = 1;
+  CsvSink sink = 2;
+  Schema sink_schema = 3;
+  PhysicalSortExprNodeCollection sort_order = 4;
+}
+
+message ParquetSink {
+  FileSinkConfig config = 1;
+}
+
+message ParquetSinkExecNode {
+  PhysicalPlanNode input = 1;
+  ParquetSink sink = 2;
+  Schema sink_schema = 3;
+  PhysicalSortExprNodeCollection sort_order = 4;
 }
 
 message PhysicalExtensionNode {
@@ -1071,6 +1311,9 @@ message PhysicalExtensionNode {
 
 // physical expressions
 message PhysicalExprNode {
+  // Was date_time_interval_expr
+  reserved 17;
+
   oneof ExprType {
     // column references
     PhysicalColumn column = 1;
@@ -1101,8 +1344,6 @@ message PhysicalExprNode {
 
     PhysicalScalarUdfNode scalar_udf = 16;
 
-    PhysicalDateTimeIntervalExprNode date_time_interval_expr = 17;
-
     PhysicalLikeExprNode like_expr = 18;
 
     PhysicalGetIndexedFieldExprNode get_indexed_field_expr = 19;
@@ -1131,7 +1372,11 @@ message PhysicalWindowExprNode {
     BuiltInWindowFunction built_in_function = 2;
     // udaf = 3
   }
-  PhysicalExprNode expr = 4;
+  repeated PhysicalExprNode args = 4;
+  repeated PhysicalExprNode partition_by = 5;
+  repeated PhysicalSortExprNode order_by = 6;
+  WindowFrame window_frame = 7;
+  string name = 8;
 }
 
 message PhysicalIsNull {
@@ -1217,6 +1462,7 @@ message PhysicalNegativeNode {
 message FilterExecNode {
   PhysicalPlanNode input = 1;
   PhysicalExprNode expr = 2;
+  uint32 default_filter_selectivity = 3;
 }
 
 message FileGroup {
@@ -1259,6 +1505,10 @@ message CsvScanExecNode {
   FileScanExecConf base_conf = 1;
   bool has_header = 2;
   string delimiter = 3;
+  string quote = 4;
+  oneof optional_escape {
+    string escape = 5;
+  }
 }
 
 message AvroScanExecNode {
@@ -1281,6 +1531,27 @@ message HashJoinExecNode {
   JoinFilter filter = 8;
 }
 
+enum StreamPartitionMode {
+  SINGLE_PARTITION = 0;
+  PARTITIONED_EXEC = 1;
+}
+
+message SymmetricHashJoinExecNode {
+  PhysicalPlanNode left = 1;
+  PhysicalPlanNode right = 2;
+  repeated JoinOn on = 3;
+  JoinType join_type = 4;
+  StreamPartitionMode partition_mode = 6;
+  bool null_equals_null = 7;
+  JoinFilter filter = 8;
+  repeated PhysicalSortExprNode left_sort_exprs = 9;
+  repeated PhysicalSortExprNode right_sort_exprs = 10;
+}
+
+message InterleaveExecNode {
+  repeated PhysicalPlanNode inputs = 1;
+}
+
 message UnionExecNode {
   repeated PhysicalPlanNode inputs = 1;
 }
@@ -1289,6 +1560,13 @@ message ExplainExecNode {
   Schema schema = 1;
   repeated StringifiedPlan stringified_plans = 2;
   bool verbose = 3;
+}
+
+message AnalyzeExecNode {
+  bool verbose = 1;
+  bool show_statistics = 2;
+  PhysicalPlanNode input = 3;
+  Schema schema = 4;
 }
 
 message CrossJoinExecNode {
@@ -1302,13 +1580,16 @@ message PhysicalColumn {
 }
 
 message JoinOn {
-  PhysicalColumn left = 1;
-  PhysicalColumn right = 2;
+  PhysicalExprNode left = 1;
+  PhysicalExprNode right = 2;
 }
 
 message EmptyExecNode {
-  bool produce_one_row = 1;
-  Schema schema = 2;
+  Schema schema = 1;
+}
+
+message PlaceholderRowExecNode {
+  Schema schema = 1;
 }
 
 message ProjectionExecNode {
@@ -1325,11 +1606,20 @@ enum AggregateMode {
   SINGLE_PARTITIONED = 4;
 }
 
+message PartiallySortedInputOrderMode {
+  repeated uint64 columns = 6;
+}
+
 message WindowAggExecNode {
   PhysicalPlanNode input = 1;
-  repeated PhysicalExprNode window_expr = 2;
-  repeated string window_expr_name = 3;
-  Schema input_schema = 4;
+  repeated PhysicalWindowExprNode window_expr = 2;
+  repeated PhysicalExprNode partition_keys = 5;
+  // Set optional to `None` for `BoundedWindowAggExec`.
+  oneof input_order_mode {
+    EmptyMessage linear = 7;
+    PartiallySortedInputOrderMode partially_sorted = 8;
+    EmptyMessage sorted = 9;
+  }
 }
 
 message MaybeFilter {
@@ -1352,7 +1642,6 @@ message AggregateExecNode {
   repeated PhysicalExprNode null_expr = 8;
   repeated bool groups = 9;
   repeated MaybeFilter filter_expr = 10;
-  repeated MaybePhysicalSortExprs order_by_expr = 11;
 }
 
 message GlobalLimitExecNode {
@@ -1449,21 +1738,49 @@ message PartitionStats {
   repeated ColumnStats column_stats = 4;
 }
 
+message Precision{
+  PrecisionInfo precision_info = 1;
+  ScalarValue val = 2;
+}
+
+enum PrecisionInfo {
+  EXACT = 0;
+  INEXACT = 1;
+  ABSENT = 2;
+}
+
 message Statistics {
-  int64 num_rows = 1;
-  int64 total_byte_size = 2;
+  Precision num_rows = 1;
+  Precision total_byte_size = 2;
   repeated ColumnStats column_stats = 3;
-  bool is_exact = 4;
 }
 
 message ColumnStats {
-  ScalarValue min_value = 1;
-  ScalarValue max_value = 2;
-  uint32 null_count = 3;
-  uint32 distinct_count = 4;
+  Precision min_value = 1;
+  Precision max_value = 2;
+  Precision null_count = 3;
+  Precision distinct_count = 4;
+}
+
+message NamedStructFieldExpr {
+  ScalarValue name = 1;
+}
+
+message ListIndexExpr {
+  PhysicalExprNode key = 1;
+}
+
+message ListRangeExpr {
+  PhysicalExprNode start = 1;
+  PhysicalExprNode stop = 2;
+  PhysicalExprNode stride = 3;
 }
 
 message PhysicalGetIndexedFieldExprNode {
   PhysicalExprNode arg = 1;
-  ScalarValue key = 2;
+  oneof field {
+    NamedStructFieldExpr named_struct_field_expr = 2;
+    ListIndexExpr list_index_expr = 3;
+    ListRangeExpr list_range_expr = 4;
+  }
 }
