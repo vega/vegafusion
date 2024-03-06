@@ -200,13 +200,13 @@ class DuckDbConnection(SqlConnection):
             return f"SELECT * FROM {table_name}"
 
     def _schema_for_table(self, table_name: str):
-        rel = self.conn.query(f'select * from "{table_name}" limit 1')
+        rel = self.conn.query(f'select * from {table_name} limit 1')
         return duckdb_relation_to_schema(rel)
 
     def tables(self) -> Dict[str, pa.Schema]:
         result = {}
         table_names = self.conn.query(
-            "select table_name from information_schema.tables"
+            "select concat_ws('.', table_catalog, table_schema, table_name) as table_name from information_schema.tables"
         ).to_df()["table_name"].tolist()
 
         for table_name in table_names:
