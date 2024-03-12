@@ -5,9 +5,11 @@ use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 use std::collections::HashSet;
 use std::sync::Arc;
+use vegafusion_core::planning::plan::PlannerConfig;
 use vegafusion_core::planning::split_domain_data::split_domain_data;
 
 use vegafusion_core::planning::stitch::stitch_specs;
+use vegafusion_core::planning::strip_encodings::strip_encodings;
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
 #[tokio::test(flavor = "multi_thread")]
@@ -143,6 +145,36 @@ async fn try_split_domain() {
     let mut spec = cars_scatter_spec();
     split_domain_data(&mut spec).unwrap();
     println!("{}", serde_json::to_string_pretty(&spec).unwrap())
+}
+
+#[test]
+fn test_strip_encodings() {
+    // Don't strip
+    let config1 = PlannerConfig {
+        strip_description_encoding: false,
+        strip_aria_encoding: false,
+        ..Default::default()
+    };
+    let mut spec = cars_scatter_spec();
+    strip_encodings(&mut spec, &config1).unwrap();
+    println!("{}", serde_json::to_string_pretty(&spec).unwrap());
+    let encode = spec.marks[0].encode.clone().unwrap();
+    let mark_encoding = encode.encodings.get("update").unwrap();
+    assert!(mark_encoding.channels.contains_key("description"));
+    assert!(mark_encoding.channels.contains_key("ariaRoleDescription"));
+
+    // Perform strip
+    let config2 = PlannerConfig {
+        strip_description_encoding: true,
+        strip_aria_encoding: true,
+        ..Default::default()
+    };
+    let mut spec = cars_scatter_spec();
+    strip_encodings(&mut spec, &config2).unwrap();
+    let encode = spec.marks[0].encode.clone().unwrap();
+    let mark_encoding = encode.encodings.get("update").unwrap();
+    assert!(!mark_encoding.channels.contains_key("description"));
+    assert!(!mark_encoding.channels.contains_key("ariaRoleDescription"));
 }
 
 #[allow(dead_code)]
