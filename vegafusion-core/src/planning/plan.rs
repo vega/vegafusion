@@ -162,6 +162,9 @@ impl SpecPlan {
             lift_facet_aggregations(&mut client_spec, config)?;
         }
 
+        // Remove unused encodings
+        strip_encodings(&mut client_spec, config)?;
+
         // Attempt to limit the columns produced by each dataset to only include those
         // that are actually used downstream
         if config.projection_pushdown {
@@ -223,8 +226,6 @@ impl SpecPlan {
                     &domain_dataset_fields,
                 )?;
             }
-
-            strip_encodings(&mut client_spec, config)?;
 
             Ok(Self {
                 server_spec,

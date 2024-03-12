@@ -172,378 +172,324 @@ def expected_spec():
       "name": "source_0",
       "values": [
         {
-          "__count": 10,
           "__count_end": 124,
           "__count_start": 114,
           "month_date": "2012-01-01T00:00:00.000",
           "weather": "drizzle"
         },
         {
-          "__count": 17,
           "__count_end": 114,
           "__count_start": 97,
           "month_date": "2012-01-01T00:00:00.000",
           "weather": "fog"
         },
         {
-          "__count": 61,
           "__count_end": 97,
           "__count_start": 36,
           "month_date": "2012-01-01T00:00:00.000",
           "weather": "rain"
         },
         {
-          "__count": 8,
           "__count_end": 36,
           "__count_start": 28,
           "month_date": "2012-01-01T00:00:00.000",
           "weather": "snow"
         },
         {
-          "__count": 28,
           "__count_end": 28,
           "__count_start": 0,
           "month_date": "2012-01-01T00:00:00.000",
           "weather": "sun"
         },
         {
-          "__count": 4,
           "__count_end": 113,
           "__count_start": 109,
           "month_date": "2012-02-01T00:00:00.000",
           "weather": "drizzle"
         },
         {
-          "__count": 3,
           "__count_end": 109,
           "__count_start": 106,
           "month_date": "2012-02-01T00:00:00.000",
           "weather": "fog"
         },
         {
-          "__count": 75,
           "__count_end": 106,
           "__count_start": 31,
           "month_date": "2012-02-01T00:00:00.000",
           "weather": "rain"
         },
         {
-          "__count": 4,
           "__count_end": 31,
           "__count_start": 27,
           "month_date": "2012-02-01T00:00:00.000",
           "weather": "snow"
         },
         {
-          "__count": 27,
           "__count_end": 27,
           "__count_start": 0,
           "month_date": "2012-02-01T00:00:00.000",
           "weather": "sun"
         },
         {
-          "__count": 3,
           "__count_end": 124,
           "__count_start": 121,
           "month_date": "2012-03-01T00:00:00.000",
           "weather": "drizzle"
         },
         {
-          "__count": 6,
           "__count_end": 121,
           "__count_start": 115,
           "month_date": "2012-03-01T00:00:00.000",
           "weather": "fog"
         },
         {
-          "__count": 73,
           "__count_end": 115,
           "__count_start": 42,
           "month_date": "2012-03-01T00:00:00.000",
           "weather": "rain"
         },
         {
-          "__count": 6,
           "__count_end": 42,
           "__count_start": 36,
           "month_date": "2012-03-01T00:00:00.000",
           "weather": "snow"
         },
         {
-          "__count": 36,
           "__count_end": 36,
           "__count_start": 0,
           "month_date": "2012-03-01T00:00:00.000",
           "weather": "sun"
         },
         {
-          "__count": 3,
           "__count_end": 120,
           "__count_start": 117,
           "month_date": "2012-04-01T00:00:00.000",
           "weather": "drizzle"
         },
         {
-          "__count": 3,
           "__count_end": 117,
           "__count_start": 114,
           "month_date": "2012-04-01T00:00:00.000",
           "weather": "fog"
         },
         {
-          "__count": 61,
           "__count_end": 114,
           "__count_start": 53,
           "month_date": "2012-04-01T00:00:00.000",
           "weather": "rain"
         },
         {
-          "__count": 1,
           "__count_end": 53,
           "__count_start": 52,
           "month_date": "2012-04-01T00:00:00.000",
           "weather": "snow"
         },
         {
-          "__count": 52,
           "__count_end": 52,
           "__count_start": 0,
           "month_date": "2012-04-01T00:00:00.000",
           "weather": "sun"
         },
         {
-          "__count": 1,
           "__count_end": 124,
           "__count_start": 123,
           "month_date": "2012-05-01T00:00:00.000",
           "weather": "drizzle"
         },
         {
-          "__count": 5,
           "__count_end": 123,
           "__count_start": 118,
           "month_date": "2012-05-01T00:00:00.000",
           "weather": "fog"
         },
         {
-          "__count": 40,
           "__count_end": 118,
           "__count_start": 78,
           "month_date": "2012-05-01T00:00:00.000",
           "weather": "rain"
         },
         {
-          "__count": 78,
           "__count_end": 78,
           "__count_start": 0,
           "month_date": "2012-05-01T00:00:00.000",
           "weather": "sun"
         },
         {
-          "__count": 2,
           "__count_end": 120,
           "__count_start": 118,
           "month_date": "2012-06-01T00:00:00.000",
           "weather": "drizzle"
         },
         {
-          "__count": 1,
           "__count_end": 118,
           "__count_start": 117,
           "month_date": "2012-06-01T00:00:00.000",
           "weather": "fog"
         },
         {
-          "__count": 42,
           "__count_end": 117,
           "__count_start": 75,
           "month_date": "2012-06-01T00:00:00.000",
           "weather": "rain"
         },
         {
-          "__count": 75,
           "__count_end": 75,
           "__count_start": 0,
           "month_date": "2012-06-01T00:00:00.000",
           "weather": "sun"
         },
         {
-          "__count": 8,
           "__count_end": 124,
           "__count_start": 116,
           "month_date": "2012-07-01T00:00:00.000",
           "weather": "drizzle"
         },
         {
-          "__count": 10,
           "__count_end": 116,
           "__count_start": 106,
           "month_date": "2012-07-01T00:00:00.000",
           "weather": "fog"
         },
         {
-          "__count": 16,
           "__count_end": 106,
           "__count_start": 90,
           "month_date": "2012-07-01T00:00:00.000",
           "weather": "rain"
         },
         {
-          "__count": 90,
           "__count_end": 90,
           "__count_start": 0,
           "month_date": "2012-07-01T00:00:00.000",
           "weather": "sun"
         },
         {
-          "__count": 8,
           "__count_end": 124,
           "__count_start": 116,
           "month_date": "2012-08-01T00:00:00.000",
           "weather": "drizzle"
         },
         {
-          "__count": 6,
           "__count_end": 116,
           "__count_start": 110,
           "month_date": "2012-08-01T00:00:00.000",
           "weather": "fog"
         },
         {
-          "__count": 24,
           "__count_end": 110,
           "__count_start": 86,
           "month_date": "2012-08-01T00:00:00.000",
           "weather": "rain"
         },
         {
-          "__count": 86,
           "__count_end": 86,
           "__count_start": 0,
           "month_date": "2012-08-01T00:00:00.000",
           "weather": "sun"
         },
         {
-          "__count": 5,
           "__count_end": 120,
           "__count_start": 115,
           "month_date": "2012-09-01T00:00:00.000",
           "weather": "drizzle"
         },
         {
-          "__count": 14,
           "__count_end": 115,
           "__count_start": 101,
           "month_date": "2012-09-01T00:00:00.000",
           "weather": "fog"
         },
         {
-          "__count": 36,
           "__count_end": 101,
           "__count_start": 65,
           "month_date": "2012-09-01T00:00:00.000",
           "weather": "rain"
         },
         {
-          "__count": 65,
           "__count_end": 65,
           "__count_start": 0,
           "month_date": "2012-09-01T00:00:00.000",
           "weather": "sun"
         },
         {
-          "__count": 4,
           "__count_end": 124,
           "__count_start": 120,
           "month_date": "2012-10-01T00:00:00.000",
           "weather": "drizzle"
         },
         {
-          "__count": 19,
           "__count_end": 120,
           "__count_start": 101,
           "month_date": "2012-10-01T00:00:00.000",
           "weather": "fog"
         },
         {
-          "__count": 62,
           "__count_end": 101,
           "__count_start": 39,
           "month_date": "2012-10-01T00:00:00.000",
           "weather": "rain"
         },
         {
-          "__count": 39,
           "__count_end": 39,
           "__count_start": 0,
           "month_date": "2012-10-01T00:00:00.000",
           "weather": "sun"
         },
         {
-          "__count": 3,
           "__count_end": 120,
           "__count_start": 117,
           "month_date": "2012-11-01T00:00:00.000",
           "weather": "drizzle"
         },
         {
-          "__count": 9,
           "__count_end": 117,
           "__count_start": 108,
           "month_date": "2012-11-01T00:00:00.000",
           "weather": "fog"
         },
         {
-          "__count": 75,
           "__count_end": 108,
           "__count_start": 33,
           "month_date": "2012-11-01T00:00:00.000",
           "weather": "rain"
         },
         {
-          "__count": 1,
           "__count_end": 33,
           "__count_start": 32,
           "month_date": "2012-11-01T00:00:00.000",
           "weather": "snow"
         },
         {
-          "__count": 32,
           "__count_end": 32,
           "__count_start": 0,
           "month_date": "2012-11-01T00:00:00.000",
           "weather": "sun"
         },
         {
-          "__count": 2,
           "__count_end": 124,
           "__count_start": 122,
           "month_date": "2012-12-01T00:00:00.000",
           "weather": "drizzle"
         },
         {
-          "__count": 8,
           "__count_end": 122,
           "__count_start": 114,
           "month_date": "2012-12-01T00:00:00.000",
           "weather": "fog"
         },
         {
-          "__count": 76,
           "__count_end": 114,
           "__count_start": 38,
           "month_date": "2012-12-01T00:00:00.000",
           "weather": "rain"
         },
         {
-          "__count": 6,
           "__count_end": 38,
           "__count_start": 32,
           "month_date": "2012-12-01T00:00:00.000",
           "weather": "snow"
         },
         {
-          "__count": 32,
           "__count_end": 32,
           "__count_start": 0,
           "month_date": "2012-12-01T00:00:00.000",
@@ -598,11 +544,7 @@ def expected_spec():
       "encode": {
         "update": {
           "x": {"field": "month_date", "scale": "x"},
-          "description": {
-            "signal": "\"Month of the year: \" + (timeFormat(datum[\"month_date\"], timeUnitSpecifier([\"month\"], {\"year-month\":\"%b %Y \",\"year-month-date\":\"%b %d, %Y \"}))) + \"; Count of Records: \" + (format(datum[\"__count\"], \"\")) + \"; Weather type: \" + (isValid(datum[\"weather\"]) ? datum[\"weather\"] : \"\"+datum[\"weather\"])"
-          },
           "fill": {"field": "weather", "scale": "color"},
-          "ariaRoleDescription": {"value": "bar"},
           "width": {"signal": "max(0.25, bandwidth('x'))"},
           "y": {"field": "__count_end", "scale": "y"},
           "y2": {"field": "__count_start", "scale": "y"}
