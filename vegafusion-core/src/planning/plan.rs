@@ -7,6 +7,7 @@ use crate::planning::projection_pushdown::projection_pushdown;
 use crate::planning::split_domain_data::split_domain_data;
 use crate::planning::stitch::{stitch_specs, CommPlan};
 use crate::planning::stringify_local_datetimes::stringify_local_datetimes;
+use crate::planning::strip_encodings::strip_encodings;
 use crate::planning::unsupported_data_warning::add_unsupported_data_warnings;
 use crate::proto::gen::pretransform::{
     pre_transform_spec_warning::WarningType, PlannerWarning, PreTransformSpecWarning,
@@ -91,6 +92,9 @@ pub struct PlannerConfig {
     pub lift_facet_aggregations: bool,
     pub client_only_vars: Vec<ScopedVariable>,
     pub keep_variables: Vec<ScopedVariable>,
+    pub strip_description_encoding: bool,
+    pub strip_aria_encoding: bool,
+    pub strip_tooltip_encoding: bool,
 }
 
 impl Default for PlannerConfig {
@@ -107,6 +111,9 @@ impl Default for PlannerConfig {
             lift_facet_aggregations: true,
             client_only_vars: Default::default(),
             keep_variables: Default::default(),
+            strip_description_encoding: true,
+            strip_aria_encoding: true,
+            strip_tooltip_encoding: false,
         }
     }
 }
@@ -216,6 +223,8 @@ impl SpecPlan {
                     &domain_dataset_fields,
                 )?;
             }
+
+            strip_encodings(&mut client_spec, config)?;
 
             Ok(Self {
                 server_spec,
