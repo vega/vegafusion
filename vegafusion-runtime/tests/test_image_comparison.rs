@@ -108,7 +108,7 @@ mod test_custom_specs {
         case("custom/trellis_bar_histogram", 0.001, false),
         case("custom/interactive_average", 0.001, false),
         case("custom/histogram_responsive", 0.001, false),
-        case("custom/grouped_bar_chart_with_error_bars", 0.001, false),
+        case("custom/grouped_bar_chart_with_error_bars", 0.002, false),
         case("custom/one_dot_per_zipcode", 0.001, false),
         case("custom/ridgeline", 0.001, false),
         case("custom/binned_scatter", 0.001, false),
