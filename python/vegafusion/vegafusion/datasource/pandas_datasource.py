@@ -23,13 +23,18 @@ class PandasDatasource(Datasource):
             if not isinstance(col, str):
                 continue
             try:
-                # We will expand categoricals (not yet supported in VegaFusion)
-                if isinstance(pd_type, pd.CategoricalDtype):
-                    cat = df[col].cat
-                    field = pa.Schema.from_pandas(pd.DataFrame({col: cat.categories})).field(col)
-                else:
-                    candidate_schema = pa.Schema.from_pandas(df.iloc[::sample_stride][[col]])
-                    field = candidate_schema.field(col)
+                try:
+                    # We will expand categoricals (not yet supported in VegaFusion)
+                    if isinstance(pd_type, pd.CategoricalDtype):
+                        cat = df[col].cat
+                        field = pa.Schema.from_pandas(pd.DataFrame({col: cat.categories})).field(col)
+                    else:
+                        candidate_schema = pa.Schema.from_pandas(df.iloc[::sample_stride][[col]])
+                        field = candidate_schema.field(col)
+                except (pa.ArrowTypeError, pa.ArrowInvalid):
+                    # If arrow fails to infer the type, fall back to string
+                    casts[col] = "str"
+                    field = pa.field(col, pa.string())
 
                 # Convert Decimal columns to float
                 if isinstance(field.type, (pa.Decimal128Type, pa.Decimal256Type)):
