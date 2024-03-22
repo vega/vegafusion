@@ -1483,6 +1483,23 @@ def test_date32_pre_transform_dataset():
         pd.Timestamp('2022-01-03 00:00:00-0500', tz='America/New_York')
     ]
 
+def test_date32_pre_transform_dataset_polars():
+    # Test to make sure that date32 columns are interpreted in the local timezone
+    dates_df = pl.DataFrame({
+        "date_col": [date(2022, 1, 1), date(2022, 1, 2), date(2022, 1, 3)],
+    })
+    spec = date_column_spec()
+
+    (output_ds,), warnings = vf.runtime.pre_transform_datasets(
+        spec, ["data_0"], "America/New_York", default_input_tz="UTC", inline_datasets=dict(dates=dates_df)
+    )
+
+    # Timestamps are in the local timezone, so they should be midnight local time
+    assert list(output_ds["date_col"]) == [
+        pd.Timestamp('2022-01-01 00:00:00-0500', tz='America/New_York'),
+        pd.Timestamp('2022-01-02 00:00:00-0500', tz='America/New_York'),
+        pd.Timestamp('2022-01-03 00:00:00-0500', tz='America/New_York')
+    ]
 
 def test_date32_in_timeunit_duckdb_crash():
     try:

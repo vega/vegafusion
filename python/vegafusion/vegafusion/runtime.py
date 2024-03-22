@@ -4,7 +4,7 @@ import pyarrow as pa
 from typing import Union
 from .connection import SqlConnection
 from .dataset import SqlDataset, DataFrameDataset
-from .datasource import PandasDatasource, DfiDatasource
+from .datasource import PandasDatasource, DfiDatasource, PyArrowDatasource
 from .evaluation import get_mark_group_for_scope
 from .transformer import import_pyarrow_interchange, to_arrow_table
 from .local_tz import get_local_tz
@@ -209,16 +209,6 @@ class VegaFusionRuntime:
                 imported_inline_datasets[name] = value
             elif isinstance(value, DataFrameDataset):
                 imported_inline_datasets[name] = value
-            elif isinstance(value, pa.Table):
-                if self._connection is not None:
-                    try:
-                        # Try registering Arrow Table if supported
-                        self._connection.register_arrow(name, value, temporary=True)
-                        continue
-                    except ValueError:
-                        pass
-
-                imported_inline_datasets[name] = DfiDatasource(value)
             elif isinstance(value, pd.DataFrame):
                 if self._connection is not None:
                     try:
@@ -230,7 +220,26 @@ class VegaFusionRuntime:
 
                 imported_inline_datasets[name] = PandasDatasource(value)
             elif hasattr(value, "__dataframe__"):
-                imported_inline_datasets[name] = DfiDatasource(value)
+                # Let polars convert to pyarrow since it has broader support than the raw dataframe interchange
+                # protocol, and "This operation is mostly zero copy."
+                try:
+                    import polars as pl
+                    if isinstance(value, pl.DataFrame):
+                        value = value.to_arrow()
+                except ImportError:
+                    pass
+
+                if isinstance(value, pa.Table):
+                    try:
+                        if self._connection is not None:
+                            # Try registering Arrow Table if supported
+                            self._connection.register_arrow(name, value, temporary=True)
+                            continue
+                    except ValueError:
+                        pass
+                    imported_inline_datasets[name] = PyArrowDatasource(value)
+                else:
+                    imported_inline_datasets[name] = DfiDatasource(value)
             else:
                 raise ValueError(f"Unsupported DataFrame type: {type(value)}")
 
