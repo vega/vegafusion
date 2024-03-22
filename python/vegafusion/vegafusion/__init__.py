@@ -59,6 +59,7 @@ def enable(mimetype="html", row_limit=10000, embed_options=None):
         Dictionary of options to pass to the vega-embed. Default
         entry is {'mode': 'vega'}.
     """
+    embed_options = embed_options if embed_options is not None else {}
     return RendererTransformerEnabler(
         renderer_ctx=alt.renderers.enable(
             'vegafusion-mime', mimetype=mimetype, row_limit=row_limit, embed_options=embed_options
