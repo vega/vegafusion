@@ -19,7 +19,7 @@ VegaFusion was developed by Jon Mease and acquired by [Hex Technologies](https:/
 VegaFusion's integration with Vega-Altair was initially developed outside of Altair in the `vegafusion` Python package. As of Vega-Altair version 5.3, all of these integrations have been incorporated into the upstream Vega-Altair package.
 
 ## Quickstart 1: Overcome `MaxRowsError` with VegaFusion
-The Vega-Altair [`"vegafusion"` data transformer](https://altair-viz.github.io/user_guide/large_datasets.html#vegafusion-data-transformer) can be used to overcome the Altair [`MaxRowsError`](https://altair-viz.github.io/user_guide/faq.html#maxrowserror-how-can-i-plot-large-datasets) by performing data-intensive aggregations on the server and pruning unused columns from the source dataset. First install the `altiar` Python package with the `all` extras enabled
+The Vega-Altair [`"vegafusion"` data transformer](https://altair-viz.github.io/user_guide/large_datasets.html#vegafusion-data-transformer) can be used to overcome the Altair [`MaxRowsError`](https://altair-viz.github.io/user_guide/faq.html#maxrowserror-how-can-i-plot-large-datasets) by performing data-intensive aggregations on the server and pruning unused columns from the source dataset. First install the `altair` Python package with the `all` extras enabled
 
 ```bash
 pip install "altair[all]>=5.3"
