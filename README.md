@@ -173,7 +173,7 @@ For datasets of a few thousand rows or fewer, this architecture results in extre
 [Apache Arrow DataFusion](https://github.com/apache/arrow-datafusion) is an SQL compatible query engine that integrates with the Rust implementation of Apache Arrow.  VegaFusion uses DataFusion to implement many of the Vega transforms, and it compiles the Vega expression language directly into the DataFusion expression language.  In addition to being quite fast, a particularly powerful characteristic of DataFusion is that it provides many interfaces that can be extended with custom Rust logic.  For example, VegaFusion defines many custom UDFs that are designed to implement the precise semantics of the Vega expression language and Vega expression functions.
 
 # License
-VegaFusion is licensed under the [BSD-3](https://opensource.org/licenses/BSD-3-Clause) license. This is the same license used by Vega, Vega-Lite, and Altair.
+VegaFusion is licensed under the [BSD-3](https://opensource.org/licenses/BSD-3-Clause) license. This is the same license used by Vega, Vega-Lite, and Vega-Altair.
 
 # About the Name
 There are two meanings behind the name "VegaFusion"
