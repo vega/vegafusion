@@ -131,11 +131,12 @@ minio = "7.1.17.*"
 psutil = "5.9.5.*"
 pyarrow = "12.0.1.*"
 pandas = "2.0.3.*"
-altair = "5.2.*"
+altair = "5.3.*"
 protobuf = "4.23.3.*"
 ipywidgets = "8.1.0.*"
 rust = "1.75.*"
 vl-convert-python = "1.3.*"
+anywidget = ">=0.9.6,<0.10"
 
 [target.osx-arm64.build-dependencies]
 # These dependencies are for building node canvas from source on apple silicon
