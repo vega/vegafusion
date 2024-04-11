@@ -4433,7 +4433,7 @@ checksum = "126e423afe2dd9ac52142e7e9d5ce4135d7e13776c529d27fd6bc49f19e3280b"
 
 [[package]]
 name = "vegafusion-common"
-version = "1.6.6"
+version = "1.6.7"
 dependencies = [
  "arrow",
  "base64",
@@ -4451,7 +4451,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-core"
-version = "1.6.6"
+version = "1.6.7"
 dependencies = [
  "bytes",
  "chrono",
@@ -4481,7 +4481,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-dataframe"
-version = "1.6.6"
+version = "1.6.7"
 dependencies = [
  "arrow",
  "async-trait",
@@ -4493,7 +4493,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-datafusion-udfs"
-version = "1.6.6"
+version = "1.6.7"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -4506,7 +4506,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-jni"
-version = "1.6.6"
+version = "1.6.7"
 dependencies = [
  "jni",
  "serde_json",
@@ -4519,7 +4519,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-python-embed"
-version = "1.6.6"
+version = "1.6.7"
 dependencies = [
  "arrow",
  "async-trait",
@@ -4543,7 +4543,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-runtime"
-version = "1.6.6"
+version = "1.6.7"
 dependencies = [
  "async-lock 2.8.0",
  "async-recursion",
@@ -4596,7 +4596,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-server"
-version = "1.6.6"
+version = "1.6.7"
 dependencies = [
  "assert_cmd",
  "clap 4.5.1",
@@ -4620,7 +4620,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-sql"
-version = "1.6.6"
+version = "1.6.7"
 dependencies = [
  "arrow",
  "async-std",
@@ -4655,7 +4655,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-wasm"
-version = "1.6.6"
+version = "1.6.7"
 dependencies = [
  "chrono",
  "console_error_panic_hook",
