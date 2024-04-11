@@ -2,11 +2,12 @@ use chrono::{NaiveDateTime, TimeZone};
 use std::any::Any;
 use std::str::FromStr;
 use std::sync::Arc;
+use vegafusion_common::arrow::compute::try_unary;
+use vegafusion_common::arrow::error::ArrowError;
 use vegafusion_common::datafusion_expr::ScalarUDFImpl;
 use vegafusion_common::{
     arrow::{
         array::{ArrayRef, Date32Array, TimestampMillisecondArray},
-        compute::unary,
         datatypes::{DataType, TimeUnit},
     },
     datafusion_common::{DataFusionError, ScalarValue},
@@ -73,7 +74,7 @@ impl ScalarUDFImpl for DateToUtcTimestampUDF {
         let s_per_day = 60 * 60 * 24_i64;
         let date_array = date_array.as_any().downcast_ref::<Date32Array>().unwrap();
 
-        let timestamp_array: TimestampMillisecondArray = unary(date_array, |v| {
+        let timestamp_array: TimestampMillisecondArray = try_unary(date_array, |v| {
             // Build naive datetime for time
             let seconds = (v as i64) * s_per_day;
             let nanoseconds = 0_u32;
@@ -84,11 +85,11 @@ impl ScalarUDFImpl for DateToUtcTimestampUDF {
             let local_datetime = tz
                 .from_local_datetime(&naive_local_datetime)
                 .earliest()
-                .unwrap();
+                .ok_or(ArrowError::ComputeError("date out of bounds".to_string()))?;
 
             // Get timestamp millis (in UTC)
-            local_datetime.timestamp_millis()
-        });
+            Ok(local_datetime.timestamp_millis())
+        })?;
         let timestamp_array = Arc::new(timestamp_array) as ArrayRef;
 
         // maybe back to scalar

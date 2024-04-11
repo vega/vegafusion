@@ -80,7 +80,7 @@ pub fn parse_datetime(
                     dt
                 } else {
                     // Handle positive timezone transition by adding 1 hour
-                    let datetime = datetime.with_hour(datetime.hour() + 1).unwrap();
+                    let datetime = datetime.with_hour(datetime.hour() + 1)?;
                     local_tz.from_local_datetime(&datetime).earliest()?
                 };
                 let dt_utc = dt.with_timezone(&chrono::Utc);

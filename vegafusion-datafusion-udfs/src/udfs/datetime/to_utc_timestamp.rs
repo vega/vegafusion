@@ -117,8 +117,7 @@ pub fn to_utc_timestamp(timestamp_array: ArrayRef, tz: Tz) -> Result<ArrayRef, D
                     } else {
                         // Try adding 1 hour to handle daylight savings boundaries
                         let hour = naive_local_datetime.hour();
-                        let new_naive_local_datetime =
-                            naive_local_datetime.with_hour(hour + 1).unwrap();
+                        let new_naive_local_datetime = naive_local_datetime.with_hour(hour + 1)?;
                         tz.from_local_datetime(&new_naive_local_datetime).earliest()
                     };
 
