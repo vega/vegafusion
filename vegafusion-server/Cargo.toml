@@ -8,6 +8,7 @@ license = "BSD-3-Clause"
 version = "1.6.7"
 edition = "2021"
 description = "VegaFusion Server"
+repository = "https://github.com/vega/vegafusion"
 
 [features]
 protobuf-src = [ "vegafusion-core/protobuf-src", "dep:protobuf-src",]
