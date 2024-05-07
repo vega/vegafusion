@@ -200,6 +200,9 @@ pub struct MarkEncodingSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub test: Option<String>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub offset: Option<EncodingOffset>,
+
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
@@ -267,4 +270,11 @@ pub struct MarkFacetAggregate {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cross: Option<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum EncodingOffset {
+    Encoding(Box<MarkEncodingSpec>),
+    Value(Value),
 }
