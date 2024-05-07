@@ -1,0 +1,20 @@
+{
+  "server_to_client": [
+    {
+      "name": "source_0",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "source_0_color_domain_Origin",
+      "namespace": "data",
+      "scope": []
+    },
+    {
+      "name": "source_0_y_domain_Miles_per_Gallon",
+      "namespace": "data",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}

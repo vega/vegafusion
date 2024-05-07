@@ -6,7 +6,9 @@ use crate::planning::dependency_graph::build_dependency_graph;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use crate::spec::chart::{ChartSpec, ChartVisitor, MutChartVisitor};
 use crate::spec::data::DataSpec;
-use crate::spec::mark::{MarkEncodeSpec, MarkEncodingField, MarkEncodingSpec, MarkSpec};
+use crate::spec::mark::{
+    EncodingOffset, MarkEncodeSpec, MarkEncodingField, MarkEncodingSpec, MarkSpec,
+};
 use crate::spec::scale::{
     ScaleDataReferenceOrSignalSpec, ScaleDataReferenceSort, ScaleDomainSpec,
     ScaleFieldReferenceSpec, ScaleRangeSpec, ScaleSpec,
@@ -147,6 +149,16 @@ impl GetDatasetsColumnUsage for MarkEncodingSpec {
                         usage = usage.with_unknown_usage(datum_var);
                     }
                 }
+            }
+
+            // Handle offset
+            if let Some(EncodingOffset::Encoding(offset)) = &self.offset {
+                usage = usage.union(&offset.datasets_column_usage(
+                    &Some(datum_var.clone()),
+                    usage_scope,
+                    task_scope,
+                    vl_selection_fields,
+                ))
             }
         }
         usage
