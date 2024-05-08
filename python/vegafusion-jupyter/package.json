@@ -59,8 +59,8 @@
     "vega": "^5.25.0",
     "vega-lite": "^5.8.0",
     "vega-themes": "^2.13.0",
-    "vegafusion-embed": "../../javascript/vegafusion-embed",
-    "vegafusion-wasm": "../../vegafusion-wasm/pkg"
+    "vegafusion-embed": "~1.6.8",
+    "vegafusion-wasm": "~1.6.8"
   },
   "devDependencies": {
     "@babel/core": "^7.5.0",
