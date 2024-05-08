@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-import pyarrow as pa
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .dfi import SqlDatasetDataFrame
+    import pyarrow as pa
 
 
 class SqlDataset(ABC):
@@ -35,12 +35,12 @@ class SqlDataset(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def table_schema(self) -> pa.Schema:
+    def table_schema(self) -> "pa.Schema":
         """Schema of source table"""
         raise NotImplementedError()
 
     @abstractmethod
-    def fetch_query(self, query: str, schema: pa.Schema) -> pa.Table:
+    def fetch_query(self, query: str, schema: "pa.Schema") -> "pa.Table":
         """
         Returns the result of evaluating the requested query. The resulting pa.Table
         should have a schema matching the provided schema

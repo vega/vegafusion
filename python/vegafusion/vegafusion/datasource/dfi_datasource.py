@@ -1,28 +1,51 @@
-from typing import Iterable
+from typing import Iterable, TYPE_CHECKING
 import re
-import pyarrow as pa
 
-from typing import Any, Dict
 from ._dfi_types import DtypeKind, DataFrame as DfiDataFrame
 from .datasource import Datasource
 
-# Taken from private pyarrow utilities
-_PYARROW_DTYPES: Dict[DtypeKind, Dict[int, Any]] = {
-    DtypeKind.INT: {8: pa.int8(),
-                    16: pa.int16(),
-                    32: pa.int32(),
-                    64: pa.int64()},
-    DtypeKind.UINT: {8: pa.uint8(),
-                     16: pa.uint16(),
-                     32: pa.uint32(),
-                     64: pa.uint64()},
-    DtypeKind.FLOAT: {16: pa.float16(),
-                      32: pa.float32(),
-                      64: pa.float64()},
-    DtypeKind.BOOL: {1: pa.bool_(),
-                     8: pa.uint8()},
-    DtypeKind.STRING: {8: pa.string()},
-}
+if TYPE_CHECKING:
+    import pyarrow as pa
+
+def get_pyarrow_dtype(kind, bit_width):
+    import pyarrow as pa
+    if kind == DtypeKind.INT:
+        if bit_width == 8:
+            return pa.int8()
+        elif bit_width == 16:
+            return pa.int16()
+        elif bit_width == 32:
+            return pa.int32()
+        elif bit_width == 64:
+            return pa.int64()
+
+    elif kind == DtypeKind.UINT:
+        if bit_width == 8:
+            return pa.uint8()
+        elif bit_width == 16:
+            return pa.uint16()
+        elif bit_width == 32:
+            return pa.uint32()
+        elif bit_width == 64:
+            return pa.uint64()
+
+    elif kind == DtypeKind.FLOAT:
+        if bit_width == 16:
+            return pa.float16()
+        elif bit_width == 32:
+            return pa.float32()
+        elif bit_width == 64:
+            return pa.float64()
+
+    elif kind == DtypeKind.BOOL:
+        if bit_width == 1:
+            return pa.bool_()
+        elif bit_width == 8:
+            return pa.uint8()
+    elif kind == DtypeKind.STRING:
+        return pa.string()
+
+    return None
 
 
 def parse_datetime_format_str(format_str):
@@ -45,13 +68,14 @@ def parse_datetime_format_str(format_str):
 
 def map_date_type(data_type):
     """Map column date type to pyarrow date type. """
+    import pyarrow as pa
     kind, bit_width, f_string, _ = data_type
 
     if kind == DtypeKind.DATETIME:
         unit, tz = parse_datetime_format_str(f_string)
         return pa.timestamp(unit, tz=tz)
     else:
-        pa_dtype = _PYARROW_DTYPES.get(kind, {}).get(bit_width, None)
+        pa_dtype = get_pyarrow_dtype(kind, bit_width)
 
         # Error if dtype is not supported
         if pa_dtype:
@@ -63,6 +87,7 @@ def map_date_type(data_type):
 
 class DfiDatasource(Datasource):
     def __init__(self, dataframe: DfiDataFrame):
+        import pyarrow as pa
         if hasattr(dataframe, "__dataframe__"):
             dataframe = dataframe.__dataframe__()
         fields = []
@@ -74,10 +99,11 @@ class DfiDatasource(Datasource):
         self._dataframe = dataframe
         self._schema = pa.schema(fields)
 
-    def schema(self) -> pa.Schema:
+    def schema(self) -> "pa.Schema":
         return self._schema
 
-    def fetch(self, columns: Iterable[str]) -> pa.Table:
+    def fetch(self, columns: Iterable[str]) -> "pa.Table":
+        import pyarrow as pa
         from pyarrow.interchange import from_dataframe
         columns = list(columns)
         projected_schema = pa.schema([f for f in self._schema if f.name in columns])

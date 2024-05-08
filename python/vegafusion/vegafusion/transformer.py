@@ -1,12 +1,10 @@
 import io
 import os
+import sys
 import pathlib
 from hashlib import sha1
 from tempfile import NamedTemporaryFile
 import uuid
-import altair as alt
-import pandas as pd
-import pyarrow as pa
 from weakref import WeakValueDictionary
 
 DATASET_PREFIXES = ("vegafusion+dataset://", "table://")
@@ -21,6 +19,7 @@ def to_arrow_table(data):
     :return: pyarrow.Table
     """
     import pyarrow as pa
+    pd = sys.modules.get("pandas")
 
     # Reset named index(ex) into a column
     if getattr(data.index, "name", None) is not None:
@@ -45,7 +44,7 @@ def to_arrow_table(data):
                 data = data.assign(**{col: data[col].astype(str)})
 
         # Expand categoricals (not yet supported in VegaFusion)
-        if isinstance(pd_type, pd.CategoricalDtype):
+        if pd is not None and isinstance(pd_type, pd.CategoricalDtype):
             cat = data[col].cat
             data = data.assign(**{col: cat.categories[cat.codes]})
 
@@ -82,9 +81,11 @@ def to_arrow_ipc_bytes(data, stream=False):
     :param stream: If True, write IPC Stream format. If False (default), write ipc file format.
     :return: bytes
     """
-    if isinstance(data, pd.DataFrame):
+    pa = sys.modules.get("pyarrow", None)
+    pd = sys.modules.get("pandas", None)
+    if pd is not None and isinstance(data, pd.DataFrame):
         table = to_arrow_table(data)
-    elif isinstance(data, pa.Table):
+    elif pa is not None and isinstance(data, pa.Table):
         table = data
     elif hasattr(data, "__dataframe__"):
         pi = import_pyarrow_interchange()
@@ -133,6 +134,7 @@ def to_feather(data, file):
 
 def feather_transformer(data, data_dir="_vegafusion_data"):
     from vegafusion import runtime
+    import altair as alt
 
     if "vegafusion" not in alt.renderers.active:
         # Use default transformer if a vegafusion renderer is not active
@@ -217,6 +219,7 @@ def get_inline_datasets_for_spec(vega_spec):
 
 
 def inline_data_transformer(data):
+    import altair as alt
     if has_geo_interface(data):
         # Use default transformer for geo interface objects
         # # (e.g. a geopandas GeoDataFrame)
@@ -231,7 +234,11 @@ def inline_data_transformer(data):
 
 
 def is_dataframe_like(data):
-    return isinstance(data, (pd.DataFrame, pa.Table)) or hasattr(data, "__dataframe__")
+    pa = sys.modules.get("pyarrow")
+    pd = sys.modules.get("pandas")
+    is_pa_table = pa is not None and isinstance(data, pa.Table)
+    is_pd_table = pd is not None and isinstance(data, pd.DataFrame)
+    return is_pa_table or is_pd_table or hasattr(data, "__dataframe__")
 
 
 def has_geo_interface(data):
@@ -243,11 +250,8 @@ def import_pyarrow_interchange():
         import pyarrow.interchange as pi
         return pi
     except ImportError:
+        import pyarrow as pa
         raise ImportError(
             "Use of the DataFrame Interchange Protocol requires at least version 11.0.0 of pyarrow\n"
             f"Found version {pa.__version__}"
         )
-
-
-alt.data_transformers.register("vegafusion-feather", feather_transformer)
-alt.data_transformers.register("vegafusion-inline", inline_data_transformer)

@@ -1,8 +1,9 @@
-import pyarrow as pa
 from functools import cached_property
-from typing import Sequence, Optional
+from typing import Sequence, Optional, TYPE_CHECKING
 from .sql import SqlDataset
 
+if TYPE_CHECKING:
+    from pyarrow import Table, Schema
 
 class SqlDatasetDataFrame:
     """An implementation of the dataframe interchange protocol.
@@ -22,7 +23,7 @@ class SqlDatasetDataFrame:
         dataset: SqlDataset,
         nan_as_null: bool = False,
         allow_copy: bool = True,
-        pyarrow_table: Optional[pa.Table] = None,
+        pyarrow_table: Optional["Table"] = None,
     ):
         self._dataset = dataset
         self._nan_as_null = nan_as_null
@@ -55,7 +56,7 @@ class SqlDatasetDataFrame:
         return schema.empty_table().__dataframe__()
 
     @property
-    def _schema(self) -> pa.Schema:
+    def _schema(self) -> "Schema":
         return self._dataset.table_schema()
 
     def _get_dtype(self, name):
