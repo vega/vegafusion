@@ -6,7 +6,7 @@ harness = false
 name = "vegafusion-runtime"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "1.6.8"
+version = "1.6.9"
 description = "VegaFusion Runtime"
 
 [features]
@@ -69,20 +69,20 @@ workspace = true
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
 features = [ "json", "sqlparser", "prettyprint", "object_store",]
-version = "1.6.8"
+version = "1.6.9"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = [ "sqlparser",]
-version = "1.6.8"
+version = "1.6.9"
 
 [dependencies.vegafusion-datafusion-udfs]
 path = "../vegafusion-datafusion-udfs"
-version = "1.6.8"
+version = "1.6.9"
 
 [dependencies.vegafusion-dataframe]
 path = "../vegafusion-dataframe"
-version = "1.6.8"
+version = "1.6.9"
 
 [dependencies.serde]
 version = "1.0.137"
@@ -123,5 +123,5 @@ features = [ "async_tokio",]
 
 [dev-dependencies.vegafusion-sql]
 path = "../vegafusion-sql"
-version = "1.6.8"
+version = "1.6.9"
 features = [ "datafusion-conn",]
