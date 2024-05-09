@@ -1,7 +1,4 @@
 from uuid import uuid4
-import altair as alt
-from altair.utils.html import spec_to_html
-
 
 class RowLimitError(ValueError):
     def __init__(self, row_limit):
@@ -33,7 +30,8 @@ def spec_to_mime_bundle(
         full_html=False,
         scale=1,
 ):
-    from . import transformer, runtime, local_tz, vegalite_compilers, altair_vl_version
+    from altair import vegalite_compilers
+    from . import transformer, runtime, local_tz, altair_vl_version
     vega_spec = vegalite_compilers.get()(spec)
 
     inline_datasets = transformer.get_inline_datasets_for_spec(vega_spec)
@@ -59,6 +57,7 @@ def spec_to_mime_bundle(
             {vega_mimetype: {"embed_options": embed_options}}
         )
     elif mimetype == "html":
+        from altair.utils.html import spec_to_html
         output_div = f"altair-viz-{uuid4().hex}"
         html = spec_to_html(
             tx_vega_spec,
@@ -82,6 +81,3 @@ def spec_to_mime_bundle(
         return {"image/png": png}
     else:
         raise ValueError(f"Unsupported mimetype: {mimetype}")
-
-
-alt.renderers.register('vegafusion-mime', vegafusion_mime_renderer)

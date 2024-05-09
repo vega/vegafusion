@@ -1,10 +1,10 @@
-from typing import Dict, Optional
-
-import pandas as pd
-import pyarrow as pa
-
+from typing import Dict, Optional, TYPE_CHECKING
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
+
+if TYPE_CHECKING:
+    from pyarrow import Schema, Table
+    from pandas import DataFrame
 
 
 @dataclass
@@ -15,7 +15,7 @@ class CsvReadOptions:
     has_header: bool
     delimeter: str
     file_extension: str
-    schema: Optional[pa.Schema]
+    schema: Optional["Schema"]
 
 
 class RegistrationNotSupportedError(RuntimeError):
@@ -46,7 +46,7 @@ class SqlConnection(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def tables(self) -> Dict[str, pa.Schema]:
+    def tables(self) -> Dict[str, "Schema"]:
         """
         Returns the names and schema for the tables that are provided by the connection.
         These are the tables that may be referenced by SQL queries passed to the
@@ -57,7 +57,7 @@ class SqlConnection(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def fetch_query(self, query: str, schema: pa.Schema) -> pa.Table:
+    def fetch_query(self, query: str, schema: "Schema") -> "Table":
         """
         Returns the result of evaluating the requested query. The resulting pa.Table
         should have a schema matching the provided schema
@@ -77,7 +77,7 @@ class SqlConnection(ABC):
         """
         return True
 
-    def register_pandas(self, name: str, df: pd.DataFrame, temporary: bool = False):
+    def register_pandas(self, name: str, df: "DataFrame", temporary: bool = False):
         """
         Register the provided pandas DataFrame as a table with the provided name
 
@@ -88,7 +88,7 @@ class SqlConnection(ABC):
         """
         raise RegistrationNotSupportedError("Connection does not support registration of pandas datasets")
 
-    def register_arrow(self, name: str, table: pa.Table, temporary: bool = False):
+    def register_arrow(self, name: str, table: "Table", temporary: bool = False):
         """
         Register the provided pyarrow Table as a table with the provided name
         :param name: Table name

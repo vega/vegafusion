@@ -1,26 +1,15 @@
-import pandas as pd
+import sys
+from typing import TypedDict, List, Literal, Any, Union, TYPE_CHECKING
+
 import psutil
-import pyarrow as pa
-from typing import Union
+
 from .connection import SqlConnection
 from .dataset import SqlDataset, DataFrameDataset
 from .datasource import PandasDatasource, DfiDatasource, PyArrowDatasource
-from .evaluation import get_mark_group_for_scope
-from .transformer import import_pyarrow_interchange, to_arrow_table
 from .local_tz import get_local_tz
 
-try:
+if TYPE_CHECKING:
     from duckdb import DuckDBPyConnection
-except ImportError:
-    DuckDBPyConnection = None
-
-try:
-    import polars as pl
-except ImportError:
-    pl = None
-
-from typing import TypedDict, List, Literal, Any
-
 
 def _all_datasets_have_type(inline_datasets, types):
     if not inline_datasets:
@@ -130,7 +119,7 @@ class VegaFusionRuntime:
             )
         return self._embedded_runtime
 
-    def set_connection(self, connection: Union[str, SqlConnection, DuckDBPyConnection] = "datafusion"):
+    def set_connection(self, connection: Union[str, SqlConnection, "DuckDBPyConnection"] = "datafusion"):
         """
         Sets the connection to use to evaluate Vega data transformations.
 
@@ -147,6 +136,9 @@ class VegaFusionRuntime:
                 - "datafusion" (default)
                 - "duckdb"
         """
+        # Don't import duckdb unless it's already loaded. If it's not loaded,
+        # then the input connection can't be a duckdb connection.
+        duckdb = sys.modules.get("duckdb", None)
         if isinstance(connection, str):
             if connection == "datafusion":
                 # Connection of None uses DataFusion
@@ -156,7 +148,7 @@ class VegaFusionRuntime:
                 connection = DuckDbConnection()
             else:
                 raise ValueError(f"Unsupported connection name: {connection}")
-        elif DuckDBPyConnection is not None and isinstance(connection, DuckDBPyConnection):
+        elif duckdb is not None and isinstance(connection, duckdb.DuckDBPyConnection):
             from vegafusion.connection.duckdb import DuckDbConnection
             connection = DuckDbConnection(connection)
         elif not isinstance(connection, SqlConnection):
@@ -202,6 +194,10 @@ class VegaFusionRuntime:
             return self.embedded_runtime.process_request_bytes(request)
 
     def _import_or_register_inline_datasets(self, inline_datasets=None):
+        pl = sys.modules.get("polars", None)
+        pa = sys.modules.get("pyarrow", None)
+        pd = sys.modules.get("pandas", None)
+
         inline_datasets = inline_datasets or dict()
         imported_inline_datasets = dict()
         for name, value in inline_datasets.items():
@@ -209,7 +205,7 @@ class VegaFusionRuntime:
                 imported_inline_datasets[name] = value
             elif isinstance(value, DataFrameDataset):
                 imported_inline_datasets[name] = value
-            elif isinstance(value, pd.DataFrame):
+            elif pd is not None and isinstance(value, pd.DataFrame):
                 if self._connection is not None:
                     try:
                         # Try registering DataFrame if supported
@@ -223,13 +219,12 @@ class VegaFusionRuntime:
                 # Let polars convert to pyarrow since it has broader support than the raw dataframe interchange
                 # protocol, and "This operation is mostly zero copy."
                 try:
-                    import polars as pl
-                    if isinstance(value, pl.DataFrame):
+                    if pl is not None and isinstance(value, pl.DataFrame):
                         value = value.to_arrow()
                 except ImportError:
                     pass
 
-                if isinstance(value, pa.Table):
+                if pa is not None and isinstance(value, pa.Table):
                     try:
                         if self._connection is not None:
                             # Try registering Arrow Table if supported
@@ -502,6 +497,8 @@ class VegaFusionRuntime:
                 if self._connection is not None:
                     self._connection.unregister_temporary_tables()
 
+            pl = sys.modules.get("polars", None)
+            pa = sys.modules.get("pyarrow", None)
             if pl is not None and _all_datasets_have_type(inline_datasets, (pl.DataFrame, pl.LazyFrame)):
                 # Deserialize values to Polars tables
                 datasets = [pl.from_arrow(value) for value in values]
@@ -515,7 +512,7 @@ class VegaFusionRuntime:
                     processed_datasets.append(df)
 
                 return processed_datasets, warnings
-            elif _all_datasets_have_type(inline_datasets, pa.Table):
+            elif pa is not None and _all_datasets_have_type(inline_datasets, pa.Table):
                 return values, warnings
             else:
                 # Deserialize values to pandas DataFrames
@@ -752,5 +749,24 @@ def parse_variables(variables):
             raise ValueError(err_msg)
     return pre_tx_vars
 
+
+def get_mark_group_for_scope(vega_spec, scope):
+    group = vega_spec
+
+    # Find group at scope
+    for scope_value in scope:
+        group_index = 0
+        child_group = None
+        for mark in group.get("marks", []):
+            if mark.get("type") == "group":
+                if group_index == scope_value:
+                    child_group = mark
+                    break
+                group_index += 1
+        if child_group is None:
+            return None
+        group = child_group
+
+    return group
 
 runtime = VegaFusionRuntime(64, psutil.virtual_memory().total // 2, psutil.cpu_count())

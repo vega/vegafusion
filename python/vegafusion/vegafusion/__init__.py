@@ -5,8 +5,7 @@ from .local_tz import set_local_tz, get_local_tz
 from .evaluation import transformed_data
 from .save import save_html, save_vega, save_png, save_svg
 from . import renderer
-from .compilers import vegalite_compilers
-import altair as alt
+
 
 from ._version import __version__
 from .utils import RendererTransformerEnabler
@@ -59,6 +58,7 @@ def enable(mimetype="html", row_limit=10000, embed_options=None):
         Dictionary of options to pass to the vega-embed. Default
         entry is {'mode': 'vega'}.
     """
+    import altair as alt
     embed_options = embed_options if embed_options is not None else {}
     return RendererTransformerEnabler(
         renderer_ctx=alt.renderers.enable(
@@ -115,6 +115,7 @@ def disable():
 
     This does not affect the behavior of VegaFusionWidget
     """
+    import altair as alt
     return RendererTransformerEnabler(
         renderer_ctx=alt.renderers.enable('default'),
         data_transformer_ctx=alt.data_transformers.enable('default'),

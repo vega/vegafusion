@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-import pyarrow as pa
-from vegafusion.proto.datafusion_pb2 import LogicalExprNode
+from typing import Optional, List, Literal, Union, Any, TYPE_CHECKING
 
-from typing import Optional, List, Literal, Union, Any
+if TYPE_CHECKING:
+    from pyarrow import Schema, Table
+    from vegafusion.proto.datafusion_pb2 import LogicalExprNode
 
 
 class DataFrameOperationNotSupportedError(RuntimeError):
@@ -19,12 +20,12 @@ class DataFrameDataset(ABC):
     """
 
     @abstractmethod
-    def schema(self) -> pa.Schema:
+    def schema(self) -> "Schema":
         """DataFrame's pyarrow schema"""
         raise NotImplementedError()
 
     @abstractmethod
-    def collect(self) -> pa.Table:
+    def collect(self) -> "Table":
         """Return DataFrame's value as a pyarrow Table"""
         raise NotImplementedError()
 
@@ -47,7 +48,7 @@ class DataFrameDataset(ABC):
         return True
 
     def sort(
-        self, exprs: List[LogicalExprNode], limit: Optional[int]
+        self, exprs: List["LogicalExprNode"], limit: Optional[int]
     ) -> "DataFrameDataset":
         """
         Sort and optionally limit dataset
@@ -58,7 +59,7 @@ class DataFrameDataset(ABC):
         """
         raise DataFrameOperationNotSupportedError()
 
-    def select(self, exprs: List[LogicalExprNode]) -> "DataFrameDataset":
+    def select(self, exprs: List["LogicalExprNode"]) -> "DataFrameDataset":
         """
         Select columns from Dataset. Selection expressions may include column names,
         column expressions, or window expressions
@@ -69,7 +70,7 @@ class DataFrameDataset(ABC):
         raise DataFrameOperationNotSupportedError()
 
     def aggregate(
-        self, group_exprs: List[LogicalExprNode], agg_exprs: List[LogicalExprNode]
+        self, group_exprs: List["LogicalExprNode"], agg_exprs: List["LogicalExprNode"]
     ) -> "DataFrameDataset":
         """
         Perform dataset aggregation. Resulting dataset includes grouping
@@ -82,7 +83,7 @@ class DataFrameDataset(ABC):
         raise DataFrameOperationNotSupportedError()
 
     def joinaggregate(
-        self, group_exprs: List[LogicalExprNode], agg_exprs: List[LogicalExprNode]
+        self, group_exprs: List["LogicalExprNode"], agg_exprs: List["LogicalExprNode"]
     ) -> "DataFrameDataset":
         """
         Perform joinaggregate dataset operation.
@@ -95,7 +96,7 @@ class DataFrameDataset(ABC):
         """
         raise DataFrameOperationNotSupportedError()
 
-    def filter(self, predicate: LogicalExprNode) -> "DataFrameDataset":
+    def filter(self, predicate: "LogicalExprNode") -> "DataFrameDataset":
         """
         Filter dataset by predicate expression
 
@@ -135,7 +136,7 @@ class DataFrameDataset(ABC):
     def stack(
         self,
         field: str,
-        orderby: List[LogicalExprNode],
+        orderby: List["LogicalExprNode"],
         groupby: List[str],
         start_field: str,
         stop_field: str,

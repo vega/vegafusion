@@ -1,12 +1,17 @@
-from typing import Iterable
+from typing import Iterable, TYPE_CHECKING
 from math import floor
-import pandas as pd
-import pyarrow as pa
 from .datasource import Datasource
+
+if TYPE_CHECKING:
+    import pandas as pd
+    import pyarrow as pa
 
 
 class PandasDatasource(Datasource):
-    def __init__(self, df: pd.DataFrame, sample_size: int = 1000, batch_size: int = 8096):
+    def __init__(self, df: "pd.DataFrame", sample_size: int = 1000, batch_size: int = 8096):
+        import pandas as pd
+        import pyarrow as pa
+
         fields = []
         casts = {}
         sample_stride = max(1, floor(len(df) / sample_size))
@@ -55,10 +60,12 @@ class PandasDatasource(Datasource):
         self._casts = casts
         self._batch_size = batch_size
 
-    def schema(self) -> pa.Schema:
+    def schema(self) -> "pa.Schema":
         return self._schema
 
-    def fetch(self, columns: Iterable[str]) -> pa.Table:
+    def fetch(self, columns: Iterable[str]) -> "pa.Table":
+        import pandas as pd
+        import pyarrow as pa
         projected = self._df[columns].copy(deep=False)
 
         for col, pd_type in projected.dtypes.items():
