@@ -10,4 +10,4 @@ def transformed_data(chart, row_limit=None, exclude=None):
         - DataFrame of transformed data for Chart input
         - list of DataFrames for LayerChart, HConcatChart, VConcatChart, ConcatChart
     """
-    chart.transformed_data(row_limit=row_limit, exclude=exclude)
+    return chart.transformed_data(row_limit=row_limit, exclude=exclude)
