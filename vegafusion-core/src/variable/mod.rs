@@ -4,9 +4,6 @@ use std::hash::{Hash, Hasher};
 
 impl Variable {
     pub fn new(ns: VariableNamespace, name: &str) -> Self {
-        if name.contains(':') {
-            panic!("Variable names may not contain colons")
-        }
         Self {
             namespace: ns as i32,
             name: String::from(name),
