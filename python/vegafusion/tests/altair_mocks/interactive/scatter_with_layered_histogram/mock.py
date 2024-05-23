@@ -2,6 +2,8 @@ import altair as alt
 import pandas as pd
 import numpy as np
 
+np.random.seed(1)
+
 # generate fake data
 source = pd.DataFrame({
     'gender': ['M']*1000 + ['F']*1000,
