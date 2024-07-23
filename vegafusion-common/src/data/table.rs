@@ -269,6 +269,11 @@ impl VegaFusionTable {
         }
     }
 
+    // TODO: when updated to latest arrow version, the below function can change to
+    // pub fn from_arrow_c_stream(table: pyo3_arrow::PyTable) -> PyResult<Self> {
+    //     let (batches, schema) = table.into_inner();
+    //     Ok(VegaFusionTable::try_new(schema, batches)?)
+    // }
     #[cfg(feature = "pyarrow")]
     pub fn from_arrow_c_stream(ob: &PyAny) -> PyResult<Self> {
         let (batches, schema) = import_arrow_c_stream(ob)?;
