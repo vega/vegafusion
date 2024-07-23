@@ -1,5 +1,8 @@
 pub mod table;
 
+#[cfg(feature = "pyarrow")]
+mod ffi;
+
 #[cfg(feature = "json")]
 pub mod json_writer;
 pub mod scalar;

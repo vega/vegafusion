@@ -8,6 +8,8 @@ use arrow::{
     record_batch::RecordBatch,
 };
 
+#[cfg(feature = "pyarrow")]
+use crate::data::ffi::import_arrow_c_stream;
 use crate::{
     data::{ORDER_COL, ORDER_COL_DTYPE},
     error::{Result, ResultWithContext, VegaFusionError},
@@ -36,7 +38,7 @@ use {
     pyo3::{
         prelude::PyModule,
         types::{PyList, PyTuple},
-        PyAny, PyErr, PyObject, Python,
+        PyAny, PyErr, PyObject, PyResult, Python,
     },
 };
 
@@ -265,6 +267,12 @@ impl VegaFusionTable {
                 "Expected JSON array, not: {value}"
             )))
         }
+    }
+
+    #[cfg(feature = "pyarrow")]
+    pub fn from_arrow_c_stream(ob: &PyAny) -> PyResult<Self> {
+        let (batches, schema) = import_arrow_c_stream(ob)?;
+        Ok(VegaFusionTable::try_new(schema, batches)?)
     }
 
     #[cfg(feature = "pyarrow")]
