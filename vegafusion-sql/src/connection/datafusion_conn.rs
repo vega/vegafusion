@@ -439,10 +439,8 @@ async fn build_csv_schema(
     ctx: &SessionContext,
 ) -> Result<Schema> {
     let table_path = ListingTableUrl::parse(uri.into().as_str())?;
-    let listing_options = csv_opts.to_listing_options(
-        &ctx.copied_config(),
-        TableOptions::default(),
-    );
+    let listing_options =
+        csv_opts.to_listing_options(&ctx.copied_config(), TableOptions::default());
 
     let inferred_schema = listing_options
         .infer_schema(&ctx.state(), &table_path)

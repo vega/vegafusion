@@ -12,7 +12,6 @@ use std::sync::Arc;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 
-
 #[async_trait]
 pub trait DataFrame: Send + Sync + 'static {
     fn as_any(&self) -> &dyn Any;
