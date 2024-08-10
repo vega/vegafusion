@@ -1585,10 +1585,12 @@ def test_nat_values():
 
 
 def test_pre_transform_dataset_dataframe_interface_protocol():
+
     try:
         import pyarrow.interchange
     except ImportError:
         pytest.skip("DataFrame interface protocol requires pyarrow 11.0.0 or later")
+    from polars.testing import assert_frame_equal
 
     n = 4050
     # Input a polars DataFrame (which follows the DataFrame Interface Protocol)
@@ -1612,7 +1614,7 @@ def test_pre_transform_dataset_dataframe_interface_protocol():
     # Result should be a polars DataFrame
     assert isinstance(result, pl.DataFrame)
     expected = pl.DataFrame({"menu_item": [0, 1, 2], "__count": [n, 2 * n, 3 * n]})
-    assert result.frame_equal(expected)
+    assert_frame_equal(result, expected)
 
 
 def test_pre_transform_dataset_duckdb_conn():
