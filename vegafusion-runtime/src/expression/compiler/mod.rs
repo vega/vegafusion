@@ -68,7 +68,7 @@ mod test_compile {
     use datafusion_common::utils::array_into_list_array;
     use datafusion_common::{DFSchema, ScalarValue};
     use datafusion_expr::expr::{BinaryExpr, Case, TryCast};
-    use datafusion_expr::{expr, lit, Expr, Operator, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, lit, not, Expr, Operator, ScalarFunctionDefinition};
     use std::collections::HashMap;
     use std::convert::TryFrom;
 
@@ -174,13 +174,13 @@ mod test_compile {
         println!("expr: {result_expr:?}");
 
         // unary not should cast numeric value to boolean
-        let expected_expr = coalesce(vec![
+        let expected_expr = not(coalesce(vec![
             Expr::TryCast(TryCast {
                 expr: Box::new(lit(32.0)),
                 data_type: DataType::Boolean,
             }),
             lit(false),
-        ]);
+        ]));
 
         assert_eq!(result_expr, expected_expr);
 
