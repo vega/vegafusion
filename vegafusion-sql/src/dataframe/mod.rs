@@ -1135,6 +1135,12 @@ impl SqlDataFrame {
         groupby: &[String],
         order_field: Option<&str>,
     ) -> Result<Arc<dyn DataFrame>> {
+        let (_, field_field) = self
+            .schema()
+            .column_with_name(field)
+            .with_context(|| format!("No field named {field}"))?;
+        let field_type = field_field.data_type();
+
         if groupby.is_empty() {
             // Value replacement for field with no groupby fields specified is equivalent to replacing
             // null values of that column with the fill value
@@ -1147,8 +1153,8 @@ impl SqlDataFrame {
 
                     Ok(if col_name == field {
                         coalesce(vec![
-                            flat_col(field).cast_to(&value.data_type(), &self.schema_df()?)?,
-                            lit(value.clone()),
+                            flat_col(field),
+                            lit(value.clone()).cast_to(&field_type, &self.schema_df()?)?,
                         ])
                         .alias(col_name)
                     } else {
@@ -1192,8 +1198,8 @@ impl SqlDataFrame {
                 .map(|col_name| {
                     Ok(if col_name == field {
                         coalesce(vec![
-                            flat_col(field).cast_to(&value.data_type(), &self.schema_df()?)?,
-                            lit(value.clone()),
+                            flat_col(field),
+                            lit(value.clone()).cast_to(&field_type, &self.schema_df()?)?,
                         ])
                         .alias(col_name)
                     } else {
@@ -1210,8 +1216,8 @@ impl SqlDataFrame {
                     .map(|col_name| {
                         let expr = if col_name == field {
                             coalesce(vec![
-                                flat_col(field).cast_to(&value.data_type(), &self.schema_df()?)?,
-                                lit(value.clone()),
+                                flat_col(field),
+                                lit(value.clone()).cast_to(&field_type, &self.schema_df()?)?,
                             ])
                             .alias(col_name)
                         } else if col_name == key {
