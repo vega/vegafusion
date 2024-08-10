@@ -18,6 +18,8 @@ pub fn is_numeric_datatype(dtype: &DataType) -> bool {
             | DataType::Float16
             | DataType::Float32
             | DataType::Float64
+            | DataType::Decimal128(_, _)
+            | DataType::Decimal256(_, _)
     )
 }
 
@@ -38,7 +40,7 @@ pub fn is_integer_datatype(dtype: &DataType) -> bool {
 pub fn is_float_datatype(dtype: &DataType) -> bool {
     matches!(
         dtype,
-        DataType::Float16 | DataType::Float32 | DataType::Float64
+        DataType::Float16 | DataType::Float32 | DataType::Float64 | DataType::Decimal128(_, _) | DataType::Decimal256(_, _)
     )
 }
 

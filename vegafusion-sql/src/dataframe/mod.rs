@@ -891,8 +891,6 @@ impl SqlDataFrame {
             .map(|f| f.name().clone())
             .collect();
 
-        // let dialect = self.dialect();
-
         // Build partitioning column expressions
         let partition_by: Vec<_> = groupby.iter().map(|group| flat_col(group)).collect();
         let numeric_field = coalesce(vec![
@@ -1140,20 +1138,23 @@ impl SqlDataFrame {
         if groupby.is_empty() {
             // Value replacement for field with no groupby fields specified is equivalent to replacing
             // null values of that column with the fill value
-            let select_columns: Vec<_> = self
+            let select_columns = self
                 .schema()
                 .fields()
                 .iter()
                 .map(|f| {
                     let col_name = f.name();
 
-                    if col_name == field {
-                        coalesce(vec![flat_col(field), lit(value.clone())]).alias(col_name)
+                    Ok(if col_name == field {
+                        coalesce(vec![
+                            flat_col(field).cast_to(&value.data_type(), &self.schema_df()?)?,
+                            lit(value.clone())
+                        ]).alias(col_name)
                     } else {
                         flat_col(col_name)
-                    }
+                    })
                 })
-                .collect();
+                .collect::<Result<Vec<_>>>()?;
 
             self.select(select_columns).await
         } else {
@@ -1185,16 +1186,19 @@ impl SqlDataFrame {
             // Build final selection
             // Finally, select all of the original DataFrame columns, filling in missing values
             // of the `field` columns
-            let select_columns: Vec<_> = original_columns
+            let select_columns = original_columns
                 .iter()
                 .map(|col_name| {
-                    if col_name == field {
-                        coalesce(vec![flat_col(field), lit(value.clone())]).alias(col_name)
+                    Ok(if col_name == field {
+                        coalesce(vec![
+                            flat_col(field).cast_to(&value.data_type(), &self.schema_df()?)?,
+                            lit(value.clone())
+                        ]).alias(col_name)
                     } else {
                         flat_col(col_name)
-                    }
+                    })
                 })
-                .collect();
+                .collect::<Result<Vec<_>>>()?;
 
             let select_column_strs: Vec<_> = if self.dialect().impute_fully_qualified {
                 // Some dialects (e.g. Clickhouse) require that references to columns in nested
@@ -1203,7 +1207,10 @@ impl SqlDataFrame {
                     .iter()
                     .map(|col_name| {
                         let expr = if col_name == field {
-                            coalesce(vec![flat_col(field), lit(value.clone())]).alias(col_name)
+                            coalesce(vec![
+                                flat_col(field).cast_to(&value.data_type(), &self.schema_df()?)?,
+                                lit(value.clone())
+                            ]).alias(col_name)
                         } else if col_name == key {
                             Expr::Column(Column {
                                 relation: Some(TableReference::bare("_key")),
