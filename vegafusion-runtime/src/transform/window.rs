@@ -4,6 +4,7 @@ use async_trait::async_trait;
 
 use datafusion_common::ScalarValue;
 use datafusion_expr::{aggregate_function, expr, lit, Expr, WindowFrame, WindowFunctionDefinition};
+use sqlparser::ast::NullTreatment;
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::{
@@ -43,7 +44,7 @@ impl TransformTrait for Window {
             .schema_df()?
             .fields()
             .iter()
-            .map(|f| flat_col(f.field().name()))
+            .map(|f| flat_col(f.name()))
             .collect();
 
         if order_by.is_empty() {
@@ -184,6 +185,7 @@ impl TransformTrait for Window {
                     partition_by: partition_by.clone(),
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 });
 
                 if let Some(alias) = self.aliases.get(i) {

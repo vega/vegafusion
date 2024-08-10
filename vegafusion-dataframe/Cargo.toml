@@ -15,6 +15,9 @@ async-trait = "0.1.73"
 path = "../vegafusion-common"
 version = "1.6.9"
 
+[dependencies.sqlparser]
+workspace = true
+
 [dependencies.datafusion-common]
 workspace = true
 
@@ -23,7 +26,7 @@ workspace = true
 
 [dependencies.arrow]
 workspace = true
-default_features = false
+default-features = false
 
 [dependencies.pyo3]
 workspace = true

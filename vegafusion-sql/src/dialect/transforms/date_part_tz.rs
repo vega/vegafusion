@@ -65,7 +65,7 @@ pub fn part_to_date_time_field(part: &str) -> Result<DateTimeField> {
     Ok(match part.to_ascii_lowercase().as_str() {
         "year" | "years" => SqlDateTimeField::Year,
         "month" | "months " => SqlDateTimeField::Month,
-        "week" | "weeks" => SqlDateTimeField::Week,
+        "week" | "weeks" => SqlDateTimeField::Week(None),
         "day" | "days" => SqlDateTimeField::Day,
         "date" => SqlDateTimeField::Date,
         "hour" | "hours" => SqlDateTimeField::Hour,

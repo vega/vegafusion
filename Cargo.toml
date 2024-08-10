@@ -14,37 +14,40 @@ members = [
 ]
 
 [workspace.dependencies]
-arrow = { version = "50.0.0", default_features = false }
-sqlparser = { version = "0.41.0" }
-chrono = { version = "0.4.31", default_features = false }
+arrow = { version = "51.0.0", default-features = false }
+sqlparser = { version = "0.45.0" }
+chrono = { version = "0.4.31", default-features = false }
 reqwest = { version = "0.11.22", default-features = false }
 tokio = { version = "1.36.0" }
 pyo3 = { version = "0.20.0" }
 pythonize = { version = "0.20.0" }
-prost = { version = "0.12.1" }
-prost-types = { version = "0.12.1" }
-object_store = { version= "0.9.0" }
+prost = { version = "0.12.3" }
+prost-types = { version = "0.12.3" }
+object_store = { version= "0.9.1" }
 
 [workspace.dependencies.datafusion]
-version = "36.0.0"
+version = "38.0.0"
 
 [workspace.dependencies.datafusion-common]
-version = "36.0.0"
+version = "38.0.0"
 
 [workspace.dependencies.datafusion-expr]
-version = "36.0.0"
+version = "38.0.0"
 
 [workspace.dependencies.datafusion-proto]
-version = "36.0.0"
+version = "38.0.0"
 
 [workspace.dependencies.datafusion-physical-expr]
-version = "36.0.0"
+version = "38.0.0"
 
 [workspace.dependencies.datafusion-optimizer]
-version = "36.0.0"
+version = "38.0.0"
 
 [workspace.dependencies.datafusion-functions]
-version = "36.0.0"
+version = "38.0.0"
+
+[workspace.dependencies.datafusion-functions-array]
+version = "38.0.0"
 
 [profile.release]
 ## Tell `rustc` to use highest performance optimization and perform Link Time Optimization

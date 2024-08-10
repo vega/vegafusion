@@ -6,16 +6,16 @@ use crate::dialect::{Dialect, ValuesMode};
 use arrow::datatypes::{DataType, Field, FieldRef, Fields, Schema, SchemaRef};
 use arrow::record_batch::RecordBatch;
 use async_trait::async_trait;
-use datafusion_common::{Column, DFSchema, OwnedTableReference, ScalarValue};
+use datafusion_common::{Column, DFSchema, ScalarValue, TableReference};
 use datafusion_expr::expr::AggregateFunctionDefinition;
 use datafusion_expr::{
-    abs, expr, is_null, lit, max, min, when, AggregateFunction, BuiltInWindowFunction,
-    BuiltinScalarFunction, Expr, ExprSchemable, ScalarFunctionDefinition, WindowFrame,
-    WindowFunctionDefinition,
+    expr, is_null, lit, max, min, when, AggregateFunction, BuiltInWindowFunction, Expr,
+    ExprSchemable, WindowFrame, WindowFunctionDefinition,
 };
+use datafusion_functions::expr_fn::{abs, coalesce};
 use sqlparser::ast::{
-    Cte, Expr as SqlExpr, GroupByExpr, Ident, Query, Select, SelectItem, SetExpr, Statement,
-    TableAlias, TableFactor, TableWithJoins, Values, WildcardAdditionalOptions, With,
+    Cte, Expr as SqlExpr, GroupByExpr, Ident, NullTreatment, Query, Select, SelectItem, SetExpr,
+    Statement, TableAlias, TableFactor, TableWithJoins, Values, WildcardAdditionalOptions, With,
 };
 use sqlparser::parser::Parser;
 use std::any::Any;
@@ -272,6 +272,7 @@ impl SqlDataFrame {
                     }
 
                     expr_selects.push(Select {
+                        value_table_mode: None,
                         distinct: None,
                         top: None,
                         projection,
@@ -395,6 +396,7 @@ impl SqlDataFrame {
                     having: None,
                     qualify: None,
                     named_window: Default::default(),
+                    value_table_mode: None,
                 }));
                 Query {
                     with: None,
@@ -591,7 +593,7 @@ impl SqlDataFrame {
             .map(|col| {
                 let col = Expr::Column(Column {
                     relation: if self.dialect().joinaggregate_fully_qualified {
-                        Some(OwnedTableReference::bare(inner_name.clone()))
+                        Some(TableReference::bare(inner_name.clone()))
                     } else {
                         None
                     },
@@ -615,7 +617,7 @@ impl SqlDataFrame {
                 } else {
                     let expr = Expr::Column(Column {
                         relation: if self.dialect().joinaggregate_fully_qualified {
-                            Some(OwnedTableReference::bare(self.parent_name()))
+                            Some(TableReference::bare(self.parent_name()))
                         } else {
                             None
                         },
@@ -845,6 +847,7 @@ impl SqlDataFrame {
                     }),
                 ],
                 window_frame: WindowFrame::new(Some(true)),
+                null_treatment: Some(NullTreatment::IgnoreNulls),
             })
             .alias(order_field);
 
@@ -888,15 +891,12 @@ impl SqlDataFrame {
             .map(|f| f.name().clone())
             .collect();
 
-        // let dialect = self.dialect();
-
         // Build partitioning column expressions
         let partition_by: Vec<_> = groupby.iter().map(|group| flat_col(group)).collect();
-
-        let numeric_field = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
-            args: vec![to_numeric(flat_col(field), &self.schema_df()?)?, lit(0.0)],
-        });
+        let numeric_field = coalesce(vec![
+            to_numeric(flat_col(field), &self.schema_df()?)?,
+            lit(0.0),
+        ]);
 
         if let StackMode::Zero = mode {
             // Build window expression
@@ -908,6 +908,7 @@ impl SqlDataFrame {
                 partition_by,
                 order_by: orderby,
                 window_frame: WindowFrame::new(Some(true)),
+                null_treatment: Some(NullTreatment::IgnoreNulls),
             })
             .alias(stop_field);
 
@@ -982,6 +983,7 @@ impl SqlDataFrame {
                 distinct: false,
                 filter: None,
                 order_by: None,
+                null_treatment: Some(NullTreatment::IgnoreNulls),
             })
             .alias("__total");
             let total_agg_str = total_agg
@@ -1034,6 +1036,7 @@ impl SqlDataFrame {
                 partition_by,
                 order_by: orderby,
                 window_frame: WindowFrame::new(Some(true)),
+                null_treatment: Some(NullTreatment::IgnoreNulls),
             })
             .alias(cumulative_field);
 
@@ -1132,35 +1135,37 @@ impl SqlDataFrame {
         groupby: &[String],
         order_field: Option<&str>,
     ) -> Result<Arc<dyn DataFrame>> {
+        let schema = self.schema(); // Store the schema in a variable
+        let (_, field_field) = schema
+            .column_with_name(field)
+            .with_context(|| format!("No field named {}", field.to_string()))?;
+        let field_type = field_field.data_type();
+
         if groupby.is_empty() {
             // Value replacement for field with no groupby fields specified is equivalent to replacing
             // null values of that column with the fill value
-            let select_columns: Vec<_> = self
-                .schema()
+            let select_columns = schema
                 .fields()
                 .iter()
                 .map(|f| {
                     let col_name = f.name();
 
-                    if col_name == field {
-                        Expr::ScalarFunction(expr::ScalarFunction {
-                            func_def: ScalarFunctionDefinition::BuiltIn(
-                                BuiltinScalarFunction::Coalesce,
-                            ),
-                            args: vec![flat_col(field), lit(value.clone())],
-                        })
+                    Ok(if col_name == field {
+                        coalesce(vec![
+                            flat_col(field),
+                            lit(value.clone()).cast_to(&field_type, &self.schema_df()?)?,
+                        ])
                         .alias(col_name)
                     } else {
                         flat_col(col_name)
-                    }
+                    })
                 })
-                .collect();
+                .collect::<Result<Vec<_>>>()?;
 
             self.select(select_columns).await
         } else {
             // Save off names of columns in the original input DataFrame
-            let original_columns: Vec<_> = self
-                .schema()
+            let original_columns: Vec<_> = schema
                 .fields()
                 .iter()
                 .map(|field| field.name().clone())
@@ -1186,22 +1191,20 @@ impl SqlDataFrame {
             // Build final selection
             // Finally, select all of the original DataFrame columns, filling in missing values
             // of the `field` columns
-            let select_columns: Vec<_> = original_columns
+            let select_columns = original_columns
                 .iter()
                 .map(|col_name| {
-                    if col_name == field {
-                        Expr::ScalarFunction(expr::ScalarFunction {
-                            func_def: ScalarFunctionDefinition::BuiltIn(
-                                BuiltinScalarFunction::Coalesce,
-                            ),
-                            args: vec![flat_col(field), lit(value.clone())],
-                        })
+                    Ok(if col_name == field {
+                        coalesce(vec![
+                            flat_col(field),
+                            lit(value.clone()).cast_to(&field_type, &self.schema_df()?)?,
+                        ])
                         .alias(col_name)
                     } else {
                         flat_col(col_name)
-                    }
+                    })
                 })
-                .collect();
+                .collect::<Result<Vec<_>>>()?;
 
             let select_column_strs: Vec<_> = if self.dialect().impute_fully_qualified {
                 // Some dialects (e.g. Clickhouse) require that references to columns in nested
@@ -1210,22 +1213,20 @@ impl SqlDataFrame {
                     .iter()
                     .map(|col_name| {
                         let expr = if col_name == field {
-                            Expr::ScalarFunction(expr::ScalarFunction {
-                                func_def: ScalarFunctionDefinition::BuiltIn(
-                                    BuiltinScalarFunction::Coalesce,
-                                ),
-                                args: vec![flat_col(field), lit(value.clone())],
-                            })
+                            coalesce(vec![
+                                flat_col(field),
+                                lit(value.clone()).cast_to(&field_type, &self.schema_df()?)?,
+                            ])
                             .alias(col_name)
                         } else if col_name == key {
                             Expr::Column(Column {
-                                relation: Some(OwnedTableReference::bare("_key")),
+                                relation: Some(TableReference::bare("_key")),
                                 name: col_name.clone(),
                             })
                             .alias(col_name)
                         } else if groupby.contains(col_name) {
                             Expr::Column(Column {
-                                relation: Some(OwnedTableReference::bare("_groups")),
+                                relation: Some(TableReference::bare("_groups")),
                                 name: col_name.clone(),
                             })
                             .alias(col_name)
@@ -1343,6 +1344,7 @@ impl SqlDataFrame {
                     partition_by: vec![],
                     order_by,
                     window_frame: WindowFrame::new(Some(true)),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias(order_field);
 
@@ -1451,6 +1453,7 @@ fn query_chain_to_cte(queries: &[Query], prefix: &str) -> Query {
                 },
                 query: Box::new(query.clone()),
                 from: None,
+                materialized: None,
             }
         })
         .collect();

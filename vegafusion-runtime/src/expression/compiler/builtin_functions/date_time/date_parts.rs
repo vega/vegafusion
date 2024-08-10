@@ -1,6 +1,7 @@
 use crate::expression::compiler::call::TzTransformFn;
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion_expr::{expr, floor, lit, Expr, ExprSchemable, ScalarFunctionDefinition};
+use datafusion_expr::{expr, lit, Expr, ExprSchemable, ScalarFunctionDefinition};
+use datafusion_functions::expr_fn::floor;
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_common::datafusion_common::DFSchema;

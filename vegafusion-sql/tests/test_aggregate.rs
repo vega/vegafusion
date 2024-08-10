@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{avg, count, expr, lit, max, min, round, sum, AggregateFunction, Expr};
+use datafusion_expr::{avg, count, expr, lit, max, min, sum, AggregateFunction, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -77,6 +77,8 @@ mod test_median_agg {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -101,6 +103,7 @@ mod test_median_agg {
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .alias("median_a"),
                 ],
@@ -128,6 +131,9 @@ mod test_variance_aggs {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions::expr_fn::round;
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -151,6 +157,7 @@ mod test_variance_aggs {
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .mul(lit(100))])
                     .div(lit(100))
@@ -163,6 +170,7 @@ mod test_variance_aggs {
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .mul(lit(100))])
                     .div(lit(100))
@@ -173,6 +181,7 @@ mod test_variance_aggs {
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .mul(lit(100))])
                     .div(lit(100))
@@ -185,6 +194,7 @@ mod test_variance_aggs {
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .mul(lit(100))])
                     .div(lit(100))

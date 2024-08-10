@@ -1,3 +1,8 @@
+fn crate_dir() -> String {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .display()
+        .to_string()
+}
 #[cfg(test)]
 mod tests {
     use crate::crate_dir;
@@ -68,7 +73,7 @@ mod tests {
         assert!(warnings.is_empty());
         assert_eq!(tx_spec.signals.len(), 1);
 
-        let signal0 = tx_spec.signals.get(0).unwrap();
+        let signal0 = tx_spec.signals.first().unwrap();
         assert_eq!(
             signal0.name,
             "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins"
@@ -94,10 +99,4 @@ mod tests {
             panic!("Expected error when keep variable does not exist")
         }
     }
-}
-
-fn crate_dir() -> String {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .display()
-        .to_string()
 }

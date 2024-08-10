@@ -1,5 +1,6 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
-use datafusion_expr::{expr, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
+use datafusion_expr::Expr;
+use datafusion_functions_array::expr_fn::make_array;
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ArrayExpression;
@@ -14,8 +15,5 @@ pub fn compile_array(
         let phys_expr = compile(el, config, Some(schema))?;
         elements.push(phys_expr);
     }
-    Ok(Expr::ScalarFunction(expr::ScalarFunction {
-        func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
-        args: elements,
-    }))
+    Ok(make_array(elements))
 }

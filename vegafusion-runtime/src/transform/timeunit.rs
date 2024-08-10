@@ -2,6 +2,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion_common::DFSchema;
+use datafusion_functions::expr_fn::floor;
 use std::collections::HashSet;
 use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
@@ -11,7 +12,7 @@ use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUn
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use datafusion_expr::expr::Cast;
-use datafusion_expr::{expr, floor, lit, Expr, ExprSchemable, ScalarFunctionDefinition};
+use datafusion_expr::{expr, lit, Expr, ExprSchemable, ScalarFunctionDefinition};
 use itertools::Itertools;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};

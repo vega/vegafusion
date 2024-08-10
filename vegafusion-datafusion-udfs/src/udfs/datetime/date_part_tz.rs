@@ -1,6 +1,6 @@
 use crate::udfs::datetime::from_utc_timestamp::from_utc_timestamp;
 use crate::udfs::datetime::to_utc_timestamp::to_timestamp_ms;
-use datafusion_physical_expr::datetime_expressions;
+use datafusion_functions::datetime::date_part;
 use std::any::Any;
 use std::str::FromStr;
 use vegafusion_common::datafusion_expr::{ScalarUDFImpl, TypeSignature};
@@ -99,7 +99,8 @@ impl ScalarUDFImpl for DatePartTzUDF {
         let timestamp_in_tz = ColumnarValue::Array(timestamp_in_tz);
 
         // Use DataFusion's built-in date_part implementation
-        datetime_expressions::date_part(&[
+        let udf = date_part();
+        udf.invoke(&[
             args[0].clone(), // Part
             timestamp_in_tz, // Timestamp converted to timezone
         ])

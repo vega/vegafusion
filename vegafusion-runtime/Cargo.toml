@@ -103,18 +103,21 @@ workspace = true
 [dependencies.datafusion-functions]
 workspace = true
 
+[dependencies.datafusion-functions-array]
+workspace = true
+
 [dependencies.tokio]
 workspace = true
 features = [ "macros", "rt-multi-thread", "fs",]
 
 [dependencies.reqwest]
 workspace = true
-default_features = false
+default-features = false
 features = [ "rustls-tls",]
 
 [dev-dependencies.reqwest]
 workspace = true
-default_features = false
+default-features = false
 features = [ "blocking", "rustls-tls",]
 
 [dev-dependencies.criterion]

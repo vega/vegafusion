@@ -23,7 +23,7 @@ optional = true
 
 [dependencies.serde_json]
 version = "1.0.91"
-default_features = false
+default-features = false
 optional = true
 
 [dependencies.arrow]
@@ -34,6 +34,9 @@ features = [ "ipc",]
 workspace = true
 
 [dependencies.datafusion-expr]
+workspace = true
+
+[dependencies.datafusion-functions]
 workspace = true
 
 [dependencies.datafusion-proto]

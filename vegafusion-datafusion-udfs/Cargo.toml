@@ -20,3 +20,6 @@ version = "1.6.9"
 
 [dependencies.datafusion-physical-expr]
 workspace = true
+
+[dependencies.datafusion-functions]
+workspace = true

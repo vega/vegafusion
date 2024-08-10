@@ -485,27 +485,16 @@ mod test_non_finite_numbers {
 #[cfg(test)]
 mod test_scalar_math_functions {
     use crate::*;
-    use datafusion_expr::{expr, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, Expr};
+    use datafusion_functions::math::expr_fn::{abs, acos, asin, tan};
     use vegafusion_common::column::flat_col;
-
-    fn make_scalar_fn1(fun: BuiltinScalarFunction, arg: &str, alias: &str) -> Expr {
-        Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::BuiltIn(fun),
-            args: vec![flat_col(arg)],
-        })
-        .alias(alias)
-    }
-
-    fn make_scalar_fn2(fun: BuiltinScalarFunction, arg1: &str, arg2: &str, alias: &str) -> Expr {
-        Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::BuiltIn(fun),
-            args: vec![flat_col(arg1), flat_col(arg2)],
-        })
-        .alias(alias)
-    }
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions::expr_fn::{
+            atan, atan2, ceil, cos, exp, floor, ln, log10, log2, power, round, sin, sqrt,
+        };
+
         println!("{dialect_name}");
         let (conn, _evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -523,24 +512,23 @@ mod test_scalar_math_functions {
         let df_result = df
             .select(vec![
                 flat_col("a"),
-                make_scalar_fn1(BuiltinScalarFunction::Abs, "b", "abs"),
-                make_scalar_fn1(BuiltinScalarFunction::Acos, "c", "acos"),
-                make_scalar_fn1(BuiltinScalarFunction::Asin, "c", "asin"),
-                make_scalar_fn1(BuiltinScalarFunction::Atan, "c", "atan"),
-                make_scalar_fn2(BuiltinScalarFunction::Atan2, "c", "a", "atan2"),
-                make_scalar_fn1(BuiltinScalarFunction::Ceil, "b", "ceil"),
-                make_scalar_fn1(BuiltinScalarFunction::Cos, "b", "cos"),
-                make_scalar_fn1(BuiltinScalarFunction::Exp, "b", "exp"),
-                make_scalar_fn1(BuiltinScalarFunction::Floor, "b", "floor"),
-                make_scalar_fn1(BuiltinScalarFunction::Ln, "c", "ln"),
-                make_scalar_fn1(BuiltinScalarFunction::Log, "c", "log"),
-                make_scalar_fn1(BuiltinScalarFunction::Log10, "c", "log10"),
-                make_scalar_fn1(BuiltinScalarFunction::Log2, "c", "log2"),
-                make_scalar_fn2(BuiltinScalarFunction::Power, "b", "a", "power"),
-                make_scalar_fn1(BuiltinScalarFunction::Round, "b", "round"),
-                make_scalar_fn1(BuiltinScalarFunction::Sin, "b", "sin"),
-                make_scalar_fn1(BuiltinScalarFunction::Sqrt, "c", "sqrt"),
-                make_scalar_fn1(BuiltinScalarFunction::Tan, "b", "tan"),
+                abs(flat_col("b")).alias("abs"),
+                acos(flat_col("c")).alias("acos"),
+                asin(flat_col("c")).alias("asin"),
+                atan(flat_col("c")).alias("atan"),
+                atan2(flat_col("c"), flat_col("a")).alias("atan2"),
+                ceil(flat_col("b")).alias("ceil"),
+                cos(flat_col("b")).alias("cos"),
+                exp(flat_col("b")).alias("exp"),
+                floor(flat_col("b")).alias("floor"),
+                ln(flat_col("c")).alias("ln"),
+                log10(flat_col("c")).alias("log10"),
+                log2(flat_col("c")).alias("log2"),
+                power(flat_col("b"), flat_col("a")).alias("power"),
+                round(vec![flat_col("b")]).alias("round"),
+                sin(flat_col("b")).alias("sin"),
+                sqrt(flat_col("c")).alias("sqrt"),
+                tan(flat_col("b")).alias("tan"),
             ])
             .await;
 
@@ -1467,11 +1455,14 @@ mod test_timestamp_to_utc_timestamp {
 #[cfg(test)]
 mod test_string_ops {
     use crate::*;
-    use datafusion_expr::{expr, lit, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, lit, Expr};
+    use datafusion_functions::string::expr_fn::{concat, lower, upper};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions::expr_fn::substring;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -1489,26 +1480,10 @@ mod test_string_ops {
                 flat_col("a"),
                 flat_col("b"),
                 flat_col("c"),
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Substr),
-                    args: vec![flat_col("b"), lit(2), lit(2)],
-                })
-                .alias("b_substr"),
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Concat),
-                    args: vec![flat_col("b"), lit(" "), flat_col("c")],
-                })
-                .alias("bc_concat"),
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Upper),
-                    args: vec![flat_col("b")],
-                })
-                .alias("b_upper"),
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Lower),
-                    args: vec![flat_col("b")],
-                })
-                .alias("b_lower"),
+                substring(flat_col("b"), lit(2), lit(2)).alias("b_substr"),
+                concat(vec![flat_col("b"), lit(" "), flat_col("c")]).alias("bc_concat"),
+                upper(flat_col("b")).alias("b_upper"),
+                lower(flat_col("b")).alias("b_lower"),
             ])
             .await;
 

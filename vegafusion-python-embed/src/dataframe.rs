@@ -1,7 +1,8 @@
 use arrow::datatypes::Schema;
 use arrow::pyarrow::FromPyArrow;
 use async_trait::async_trait;
-use datafusion_proto::protobuf::LogicalExprNode;
+use datafusion_proto::logical_plan::to_proto::serialize_expr;
+use datafusion_proto::logical_plan::DefaultLogicalExtensionCodec;
 use prost::Message;
 use pyo3::prelude::PyModule;
 use pyo3::types::{PyBytes, PyTuple};
@@ -522,10 +523,12 @@ fn exprs_to_py(py: Python, exprs: Vec<Expr>) -> Result<PyObject> {
 }
 
 fn expr_to_py(py: Python, expr: &Expr) -> Result<PyObject> {
+    let extension_codec = DefaultLogicalExtensionCodec {};
     let proto_module = PyModule::import(py, "vegafusion.proto.datafusion_pb2")?;
     let logical_expr_class = proto_module.getattr("LogicalExprNode")?;
 
-    let proto_sort_expr = LogicalExprNode::try_from(expr)?;
+    let proto_sort_expr = serialize_expr(expr, &extension_codec)?;
+
     let sort_expr_bytes: Vec<u8> = proto_sort_expr.encode_to_vec();
 
     // py_logical_expr = LogicalExprNode()

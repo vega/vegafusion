@@ -60,15 +60,15 @@ mod test_compile {
     use crate::expression::compiler::compile;
     use crate::expression::compiler::config::CompilationConfig;
     use crate::expression::compiler::utils::ExprHelpers;
+    use datafusion_functions::expr_fn::{coalesce, concat};
+    use datafusion_functions_array::expr_fn::make_array;
     use vegafusion_core::expression::parser::parse;
 
     use crate::task_graph::timezone::RuntimeTzConfig;
     use datafusion_common::utils::array_into_list_array;
     use datafusion_common::{DFSchema, ScalarValue};
     use datafusion_expr::expr::{BinaryExpr, Case, TryCast};
-    use datafusion_expr::{
-        concat, expr, lit, BuiltinScalarFunction, Expr, Operator, ScalarFunctionDefinition,
-    };
+    use datafusion_expr::{expr, lit, not, Expr, Operator, ScalarFunctionDefinition};
     use std::collections::HashMap;
     use std::convert::TryFrom;
 
@@ -174,16 +174,13 @@ mod test_compile {
         println!("expr: {result_expr:?}");
 
         // unary not should cast numeric value to boolean
-        let expected_expr = !Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
-            args: vec![
-                Expr::TryCast(TryCast {
-                    expr: Box::new(lit(32.0)),
-                    data_type: DataType::Boolean,
-                }),
-                lit(false),
-            ],
-        });
+        let expected_expr = not(coalesce(vec![
+            Expr::TryCast(TryCast {
+                expr: Box::new(lit(32.0)),
+                data_type: DataType::Boolean,
+            }),
+            lit(false),
+        ]));
 
         assert_eq!(result_expr, expected_expr);
 
@@ -200,20 +197,16 @@ mod test_compile {
         let expr = parse("32? 7: 9").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
         println!("expr: {result_expr:?}");
-
         let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
-                    args: vec![
-                        Expr::TryCast(TryCast {
-                            expr: Box::new(lit(32.0)),
-                            data_type: DataType::Boolean,
-                        }),
-                        lit(false),
-                    ],
-                })),
+                Box::new(coalesce(vec![
+                    Expr::TryCast(TryCast {
+                        expr: Box::new(lit(32.0)),
+                        data_type: DataType::Boolean,
+                    }),
+                    lit(false),
+                ])),
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),
@@ -259,16 +252,13 @@ mod test_compile {
         let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
-                    args: vec![
-                        Expr::TryCast(TryCast {
-                            expr: Box::new(lit(5.0)),
-                            data_type: DataType::Boolean,
-                        }),
-                        lit(false),
-                    ],
-                })),
+                Box::new(coalesce(vec![
+                    Expr::TryCast(TryCast {
+                        expr: Box::new(lit(5.0)),
+                        data_type: DataType::Boolean,
+                    }),
+                    lit(false),
+                ])),
                 Box::new(lit(55.0)),
             )],
             else_expr: Some(Box::new(lit(5.0))),
@@ -332,7 +322,7 @@ mod test_compile {
         let expr = parse("'2' + '4'").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = concat(&[lit("2"), lit("4")]);
+        let expected_expr = concat(vec![lit("2"), lit("4")]);
         println!("expr: {result_expr:?}");
         assert_eq!(result_expr, expected_expr);
 
@@ -391,11 +381,7 @@ mod test_compile {
     fn test_compile_array_numeric() {
         let expr = parse("[1, 2, 3]").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
-
-        let expected_expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
-            args: vec![lit(1.0), lit(2.0), lit(3.0)],
-        });
+        let expected_expr = make_array(vec![lit(1.0), lit(2.0), lit(3.0)]);
         println!("expr: {result_expr:?}");
         assert_eq!(result_expr, expected_expr);
 
@@ -415,10 +401,7 @@ mod test_compile {
         let expr = parse("[]").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
-            args: vec![],
-        });
+        let expected_expr = make_array(vec![]);
         println!("expr: {result_expr:?}");
         assert_eq!(result_expr, expected_expr);
 
@@ -436,23 +419,12 @@ mod test_compile {
         let expr = parse("[[1, 2], [3, 4], [5, 6]]").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
-        let expected_expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
-            args: vec![
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
-                    args: vec![lit(1.0), lit(2.0)],
-                }),
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
-                    args: vec![lit(3.0), lit(4.0)],
-                }),
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::MakeArray),
-                    args: vec![lit(5.0), lit(6.0)],
-                }),
-            ],
-        });
+        let expected_expr = make_array(vec![
+            make_array(vec![lit(1.0), lit(2.0)]),
+            make_array(vec![lit(3.0), lit(4.0)]),
+            make_array(vec![lit(5.0), lit(6.0)]),
+        ]);
+
         println!("expr: {result_expr:?}");
         assert_eq!(result_expr, expected_expr);
 
@@ -602,16 +574,13 @@ mod test_compile {
         let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
-                    args: vec![
-                        Expr::TryCast(TryCast {
-                            expr: Box::new(lit(32.0)),
-                            data_type: DataType::Boolean,
-                        }),
-                        lit(false),
-                    ],
-                })),
+                Box::new(coalesce(vec![
+                    Expr::TryCast(TryCast {
+                        expr: Box::new(lit(32.0)),
+                        data_type: DataType::Boolean,
+                    }),
+                    lit(false),
+                ])),
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),

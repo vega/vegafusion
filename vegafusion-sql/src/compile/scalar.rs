@@ -255,6 +255,9 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::LargeList(_) => Err(VegaFusionError::internal(
                 "LargeList cannot be converted to SQL",
             )),
+            ScalarValue::Union(_, _, _) => Err(VegaFusionError::internal(
+                "Union cannot be converted to SQL",
+            )),
         }
     }
 }
