@@ -389,7 +389,7 @@ jobs:
 
           python -m pip install $vegafusion
           python -m pip install $vegafusion_python_embed
-          python -m pip install pytest vega-datasets polars[timezone] "duckdb>=1.0" vl-convert-python scikit-image "pandas>=2.2"
+          python -m pip install pytest vega-datasets polars[timezone] "duckdb>=1.0" vl-convert-python scikit-image
       - name: Test vegafusion
         working-directory: python/vegafusion/
         run: pytest
