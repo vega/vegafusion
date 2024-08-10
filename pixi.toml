@@ -134,7 +134,7 @@ pandas = "2.0.3.*"
 altair = "5.3.*"
 protobuf = "4.23.3.*"
 ipywidgets = "8.1.0.*"
-rust = "1.75.*"
+rust = "1.80.*"
 vl-convert-python = "1.6.*"
 anywidget = ">=0.9.6,<0.10"
 
