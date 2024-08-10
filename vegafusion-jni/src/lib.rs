@@ -312,11 +312,11 @@ pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPreTrans
             }
             Ok(Err(vf_err)) => {
                 let _ = env.throw_new("io/vegafusion/VegaFusionException", vf_err.to_string());
-                return JObject::null().into_raw();
+                JObject::null().into_raw()
             }
             Err(_unwind_err) => {
                 let _ = env.throw_new("io/vegafusion/VegaFusionException", "Uncaught Error");
-                return JObject::null().into_raw();
+                JObject::null().into_raw()
             }
         }
     } else {
@@ -324,6 +324,6 @@ pub unsafe extern "system" fn Java_io_vegafusion_VegaFusionRuntime_innerPreTrans
             "io/vegafusion/VegaFusionException",
             "Failed to parse args to innerPreTransformSpec",
         );
-        return JObject::null().into_raw();
+        JObject::null().into_raw()
     }
 }

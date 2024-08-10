@@ -527,7 +527,7 @@ fn expr_to_py(py: Python, expr: &Expr) -> Result<PyObject> {
     let proto_module = PyModule::import(py, "vegafusion.proto.datafusion_pb2")?;
     let logical_expr_class = proto_module.getattr("LogicalExprNode")?;
 
-    let proto_sort_expr = serialize_expr(&expr, &extension_codec)?;
+    let proto_sort_expr = serialize_expr(expr, &extension_codec)?;
 
     let sort_expr_bytes: Vec<u8> = proto_sort_expr.encode_to_vec();
 

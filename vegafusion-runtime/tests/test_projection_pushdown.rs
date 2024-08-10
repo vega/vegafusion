@@ -1,3 +1,8 @@
+fn crate_dir() -> String {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .display()
+        .to_string()
+}
 #[cfg(test)]
 mod test_custom_specs {
     use crate::crate_dir;
@@ -52,10 +57,4 @@ mod test_custom_specs {
             panic!("Expected project transform")
         }
     }
-}
-
-fn crate_dir() -> String {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .display()
-        .to_string()
 }

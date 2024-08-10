@@ -1,3 +1,8 @@
+fn crate_dir() -> String {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .display()
+        .to_string()
+}
 #[cfg(test)]
 mod tests {
     use crate::crate_dir;
@@ -59,10 +64,4 @@ mod tests {
             panic!("Unexpected transform")
         }
     }
-}
-
-fn crate_dir() -> String {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .display()
-        .to_string()
 }

@@ -1,3 +1,18 @@
+fn crate_dir() -> String {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .display()
+        .to_string()
+}
+
+fn setup_s3_environment_vars() {
+    unsafe {
+        std::env::set_var("AWS_DEFAULT_REGION", "us-east-1");
+        std::env::set_var("AWS_ACCESS_KEY_ID", "access_key123");
+        std::env::set_var("AWS_SECRET_ACCESS_KEY", "secret_key123");
+        std::env::set_var("AWS_ENDPOINT", "http://127.0.0.1:9000");
+        std::env::set_var("AWS_ALLOW_HTTP", "true");
+    }
+}
 #[cfg(test)]
 mod tests {
     use crate::{crate_dir, setup_s3_environment_vars};
@@ -420,18 +435,4 @@ mod tests {
             assert_eq!(dataset.pretty_format(None).unwrap(), expected);
         }
     }
-}
-
-fn crate_dir() -> String {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .display()
-        .to_string()
-}
-
-fn setup_s3_environment_vars() {
-    std::env::set_var("AWS_DEFAULT_REGION", "us-east-1");
-    std::env::set_var("AWS_ACCESS_KEY_ID", "access_key123");
-    std::env::set_var("AWS_SECRET_ACCESS_KEY", "secret_key123");
-    std::env::set_var("AWS_ENDPOINT", "http://127.0.0.1:9000");
-    std::env::set_var("AWS_ALLOW_HTTP", "true");
 }

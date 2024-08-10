@@ -131,7 +131,7 @@ pub fn eval_vegafusion_transforms(
         .unwrap();
     let result_signals = result_signals
         .into_iter()
-        .map(|v| v.as_scalar().map(|v| v.clone()))
+        .map(|v| v.as_scalar().cloned())
         .collect::<Result<Vec<ScalarValue>>>()
         .unwrap();
     (result_data, result_signals)
