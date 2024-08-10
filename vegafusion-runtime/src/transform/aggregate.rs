@@ -2,6 +2,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
 use datafusion_expr::{avg, count, count_distinct, lit, max, min, sum, Expr};
+use sqlparser::ast::NullTreatment;
 use std::collections::HashMap;
 
 use async_trait::async_trait;
@@ -170,6 +171,7 @@ pub fn make_agg_expr_for_col_expr(
             args: vec![numeric_column()?],
             filter: None,
             order_by: None,
+            null_treatment: Some(NullTreatment::IgnoreNulls),
         }),
         AggregateOp::Variance => Expr::AggregateFunction(expr::AggregateFunction {
             func_def: AggregateFunctionDefinition::BuiltIn(
@@ -179,6 +181,7 @@ pub fn make_agg_expr_for_col_expr(
             args: vec![numeric_column()?],
             filter: None,
             order_by: None,
+            null_treatment: Some(NullTreatment::IgnoreNulls),
         }),
         AggregateOp::Variancep => Expr::AggregateFunction(expr::AggregateFunction {
             func_def: AggregateFunctionDefinition::BuiltIn(
@@ -188,6 +191,7 @@ pub fn make_agg_expr_for_col_expr(
             args: vec![numeric_column()?],
             filter: None,
             order_by: None,
+            null_treatment: Some(NullTreatment::IgnoreNulls),
         }),
         AggregateOp::Stdev => Expr::AggregateFunction(expr::AggregateFunction {
             func_def: AggregateFunctionDefinition::BuiltIn(
@@ -197,6 +201,7 @@ pub fn make_agg_expr_for_col_expr(
             args: vec![numeric_column()?],
             filter: None,
             order_by: None,
+            null_treatment: Some(NullTreatment::IgnoreNulls),
         }),
         AggregateOp::Stdevp => Expr::AggregateFunction(expr::AggregateFunction {
             func_def: AggregateFunctionDefinition::BuiltIn(
@@ -206,6 +211,7 @@ pub fn make_agg_expr_for_col_expr(
             args: vec![numeric_column()?],
             filter: None,
             order_by: None,
+            null_treatment: Some(NullTreatment::IgnoreNulls),
         }),
         AggregateOp::Valid => {
             let valid = Expr::Cast(expr::Cast {
@@ -235,6 +241,7 @@ pub fn make_agg_expr_for_col_expr(
             distinct: false,
             filter: None,
             order_by: None,
+            null_treatment: Some(NullTreatment::IgnoreNulls),
         }),
         AggregateOp::Q3 => Expr::AggregateFunction(expr::AggregateFunction {
             func_def: AggregateFunctionDefinition::UDF(Arc::new((*Q3_UDF).clone())),
@@ -242,6 +249,7 @@ pub fn make_agg_expr_for_col_expr(
             distinct: false,
             filter: None,
             order_by: None,
+            null_treatment: Some(NullTreatment::IgnoreNulls),
         }),
         _ => {
             return Err(VegaFusionError::specification(format!(

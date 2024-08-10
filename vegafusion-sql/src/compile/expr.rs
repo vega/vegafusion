@@ -4,7 +4,7 @@ use arrow::datatypes::DataType;
 use datafusion_common::{DFSchema, ScalarValue};
 use sqlparser::ast::{
     BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction,
-    FunctionArg as SqlFunctionArg, FunctionArg, Ident, ObjectName as SqlObjectName, ObjectName,
+    FunctionArg as SqlFunctionArg, Ident, ObjectName as SqlObjectName,
     UnaryOperator as SqlUnaryOperator, WindowFrame as SqlWindowFrame,
     WindowFrameBound as SqlWindowBound, WindowFrameUnits as SqlWindowFrameUnits,
     WindowSpec as SqlWindowSpec, WindowType,
@@ -318,6 +318,7 @@ impl ToSqlExpr for Expr {
                 partition_by,
                 order_by,
                 window_frame,
+                null_treatment: _,
             }) => {
                 // Extract function name
                 let (fun_name, supports_frame) = match fun {
@@ -441,7 +442,7 @@ impl ToSqlExpr for Expr {
                     });
 
                     let sql_fun = SqlFunction {
-                        name: ObjectName(vec![Ident {
+                        name: SqlObjectName(vec![Ident {
                             value: fun_name,
                             quote_style: None,
                         }]),
@@ -603,7 +604,7 @@ fn translate_function_args(
     args: &[Expr],
     dialect: &Dialect,
     schema: &DFSchema,
-) -> Result<Vec<FunctionArg>> {
+) -> Result<Vec<SqlFunctionArg>> {
     args.iter()
         .map(|expr| {
             Ok(SqlFunctionArg::Unnamed(
@@ -645,6 +646,7 @@ mod tests {
     use datafusion_expr::{
         expr, lit, Between, BuiltinScalarFunction, Expr, ScalarFunctionDefinition,
     };
+    use datafusion_functions::string::expr_fn::upper;
     use vegafusion_common::column::flat_col;
 
     fn schema() -> DFSchema {
@@ -676,11 +678,7 @@ mod tests {
 
     #[test]
     pub fn test3() {
-        let df_expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Upper),
-            args: vec![lit("foo")],
-        });
-
+        let df_expr = upper(lit("foo"));
         let dialect: Dialect = Dialect::datafusion();
         let sql_expr = df_expr.to_sql(&dialect, &schema()).unwrap();
         println!("{sql_expr:?}");

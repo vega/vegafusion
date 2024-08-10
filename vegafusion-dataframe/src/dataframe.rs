@@ -5,11 +5,13 @@ use arrow::record_batch::RecordBatch;
 use async_trait::async_trait;
 use datafusion_common::{DFSchema, ScalarValue};
 use datafusion_expr::{expr, BuiltInWindowFunction, Expr, WindowFrame, WindowFunctionDefinition};
+use sqlparser::ast::NullTreatment;
 use std::any::Any;
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
+
 
 #[async_trait]
 pub trait DataFrame: Send + Sync + 'static {
@@ -120,6 +122,7 @@ pub trait DataFrame: Send + Sync + 'static {
                     partition_by: vec![],
                     order_by: vec![],
                     window_frame: WindowFrame::new(Some(true)),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias(index_name),
                 Expr::Wildcard { qualifier: None },

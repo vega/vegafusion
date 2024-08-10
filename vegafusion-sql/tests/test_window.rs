@@ -22,6 +22,8 @@ mod test_simple_aggs_unbounded {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -52,6 +54,7 @@ mod test_simple_aggs_unbounded {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -60,6 +63,7 @@ mod test_simple_aggs_unbounded {
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -68,6 +72,7 @@ mod test_simple_aggs_unbounded {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -76,6 +81,7 @@ mod test_simple_aggs_unbounded {
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -84,6 +90,7 @@ mod test_simple_aggs_unbounded {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame,
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("max_b"),
             ])
@@ -115,6 +122,8 @@ mod test_simple_aggs_unbounded_groups {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -149,6 +158,7 @@ mod test_simple_aggs_unbounded_groups {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -157,6 +167,7 @@ mod test_simple_aggs_unbounded_groups {
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -165,6 +176,7 @@ mod test_simple_aggs_unbounded_groups {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -173,6 +185,7 @@ mod test_simple_aggs_unbounded_groups {
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -181,6 +194,7 @@ mod test_simple_aggs_unbounded_groups {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame,
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("max_b"),
             ])
@@ -213,6 +227,8 @@ mod test_simple_aggs_bounded {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -247,6 +263,7 @@ mod test_simple_aggs_bounded {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -255,6 +272,7 @@ mod test_simple_aggs_bounded {
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -263,6 +281,7 @@ mod test_simple_aggs_bounded {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -271,6 +290,7 @@ mod test_simple_aggs_bounded {
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -279,6 +299,7 @@ mod test_simple_aggs_bounded {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame,
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("max_b"),
             ])
@@ -310,6 +331,8 @@ mod test_simple_aggs_bounded_groups {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -344,6 +367,7 @@ mod test_simple_aggs_bounded_groups {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -352,6 +376,7 @@ mod test_simple_aggs_bounded_groups {
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -360,6 +385,7 @@ mod test_simple_aggs_bounded_groups {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -368,6 +394,7 @@ mod test_simple_aggs_bounded_groups {
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -376,6 +403,7 @@ mod test_simple_aggs_bounded_groups {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame,
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("max_b"),
             ])
@@ -422,6 +450,8 @@ mod test_simple_window_fns {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -454,6 +484,7 @@ mod test_simple_window_fns {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("row_num"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -464,6 +495,7 @@ mod test_simple_window_fns {
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("rank"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -474,6 +506,7 @@ mod test_simple_window_fns {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("d_rank"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -484,6 +517,7 @@ mod test_simple_window_fns {
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("first"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -494,6 +528,7 @@ mod test_simple_window_fns {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame,
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("last"),
             ])
@@ -525,6 +560,8 @@ mod test_advanced_window_fns {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -557,6 +594,7 @@ mod test_advanced_window_fns {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("nth1"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -567,6 +605,7 @@ mod test_advanced_window_fns {
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("cdist"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -577,6 +616,7 @@ mod test_advanced_window_fns {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("lag_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -587,6 +627,7 @@ mod test_advanced_window_fns {
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("lead_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -597,6 +638,7 @@ mod test_advanced_window_fns {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame,
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("ntile"),
             ])
@@ -628,6 +670,8 @@ mod test_unordered_row_number {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -660,6 +704,7 @@ mod test_unordered_row_number {
                     partition_by: vec![],
                     order_by: vec![],
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("row_num"),
             ])

@@ -1,4 +1,4 @@
-version: 4
+version: 5
 environments:
   default:
     channels:
@@ -295,7 +295,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/uri-template-1.3.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/urllib3-2.0.7-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/vega_datasets-0.9.0-pyhd3deb0d_0.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/vl-convert-python-1.3.0-py310h2372a71_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/vl-convert-python-1.6.0-py310h5b4e0ec_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/voila-0.5.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/watchfiles-0.21.0-py310hcb5633a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wcwidth-0.2.9-pyhd8ed1ab_0.conda
@@ -591,7 +591,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/uri-template-1.3.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/urllib3-2.0.7-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/vega_datasets-0.9.0-pyhd3deb0d_0.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/vl-convert-python-1.3.0-py310h7664a31_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/vl-convert-python-1.6.0-py310h936d840_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/voila-0.5.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/watchfiles-0.21.0-py310h0e083fb_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wcwidth-0.2.9-pyhd8ed1ab_0.conda
@@ -898,7 +898,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/uri-template-1.3.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/urllib3-2.0.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/vega_datasets-0.9.0-pyhd3deb0d_0.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/vl-convert-python-1.3.0-py310hd125d64_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/vl-convert-python-1.6.0-py310ha6dd24b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/voila-0.5.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/watchfiles-0.21.0-py310hd442715_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wcwidth-0.2.6-pyhd8ed1ab_0.conda
@@ -1173,11 +1173,11 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/uri-template-1.3.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/urllib3-2.0.7-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vc-14.3-h64f974e_17.conda
-      - conda: https://conda.anaconda.org/conda-forge/win-64/vc14_runtime-14.36.32532-hdcecf7f_17.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/vc14_runtime-14.40.33810-ha82c5b3_20.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/vega_datasets-0.9.0-pyhd3deb0d_0.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/win-64/vl-convert-python-1.3.0-py310hdc45392_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/vl-convert-python-1.6.0-py310hb47754f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/voila-0.5.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/win-64/vs2015_runtime-14.36.32532-h05e6639_17.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/vs2015_runtime-14.40.33810-h3bf8584_20.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/watchfiles-0.21.0-py310h87d50f1_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wcwidth-0.2.9-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/webcolors-1.13-pyhd8ed1ab_0.conda
@@ -15810,23 +15810,21 @@ packages:
   timestamp: 1688020629925
 - kind: conda
   name: vc14_runtime
-  version: 14.36.32532
-  build: hdcecf7f_17
-  build_number: 17
+  version: 14.40.33810
+  build: ha82c5b3_20
+  build_number: 20
   subdir: win-64
-  url: https://conda.anaconda.org/conda-forge/win-64/vc14_runtime-14.36.32532-hdcecf7f_17.conda
-  sha256: b317d49af32d5c031828e62c08d56f01d9a64cd3f40d4cccb052bc38c7a9e62e
-  md5: d0de20f2f3fc806a81b44fcdd941aaf7
+  url: https://conda.anaconda.org/conda-forge/win-64/vc14_runtime-14.40.33810-ha82c5b3_20.conda
+  sha256: af3cfa347e3d7c1277e9b964b0849a9a9f095bff61836cb3c3a89862fbc32e17
+  md5: e39cc4c34c53654ec939558993d9dc5b
   depends:
   - ucrt >=10.0.20348.0
   constrains:
-  - vs2015_runtime 14.36.32532.* *_17
-  arch: x86_64
-  platform: win
+  - vs2015_runtime 14.40.33810.* *_20
   license: LicenseRef-ProprietaryMicrosoft
   license_family: Proprietary
-  size: 739437
-  timestamp: 1694292382336
+  size: 751934
+  timestamp: 1717709031266
 - kind: conda
   name: vega_datasets
   version: 0.9.0
@@ -15849,77 +15847,80 @@ packages:
   timestamp: 1606414171959
 - kind: conda
   name: vl-convert-python
-  version: 1.3.0
-  build: py310h2372a71_0
+  version: 1.6.0
+  build: py310h5b4e0ec_0
   subdir: linux-64
-  url: https://conda.anaconda.org/conda-forge/linux-64/vl-convert-python-1.3.0-py310h2372a71_0.conda
-  sha256: 7595849fe8c89ec1898006aa56f4aa3e47b0865c2a7d6c51a9f757d9f72abcf5
-  md5: 2bfea92f6bccef4322396ef303d2b479
+  url: https://conda.anaconda.org/conda-forge/linux-64/vl-convert-python-1.6.0-py310h5b4e0ec_0.conda
+  sha256: 8e788a7c3e708748521a9e0509a978d484665bd6e5c57ac32faa86dc71549bf9
+  md5: eac355b92fe08a372c6d3cae74f15aac
   depends:
+  - __glibc >=2.17,<3.0.a0
   - libgcc-ng >=12
   - python >=3.10,<3.11.0a0
   - python_abi 3.10.* *_cp310
+  constrains:
+  - __glibc >=2.17
   license: BSD-3-Clause
   license_family: BSD
-  purls:
-  - pkg:pypi/vl-convert-python
-  size: 21548131
-  timestamp: 1710359776523
+  size: 22615432
+  timestamp: 1722901880182
 - kind: conda
   name: vl-convert-python
-  version: 1.3.0
-  build: py310h7664a31_0
+  version: 1.6.0
+  build: py310h936d840_0
   subdir: osx-64
-  url: https://conda.anaconda.org/conda-forge/osx-64/vl-convert-python-1.3.0-py310h7664a31_0.conda
-  sha256: a77c8f1f55a56d4cb75ab05a71b683d5c68093243e100627d59e3ef2d9e0fcbc
-  md5: 89fb4ef3eaf52fe9e8db31a1b6588b3e
+  url: https://conda.anaconda.org/conda-forge/osx-64/vl-convert-python-1.6.0-py310h936d840_0.conda
+  sha256: 301dbd28a46fe52f6c1d7c2c713672d8e3ce652fd3df6e97c12e161d1f748086
+  md5: 474c329abe2ac606f4cc04773cca8e55
   depends:
   - __osx >=10.13
   - python >=3.10,<3.11.0a0
   - python_abi 3.10.* *_cp310
+  constrains:
+  - __osx >=10.13
   license: BSD-3-Clause
   license_family: BSD
-  purls:
-  - pkg:pypi/vl-convert-python
-  size: 20158201
-  timestamp: 1710361604381
+  size: 21172242
+  timestamp: 1722902056741
 - kind: conda
   name: vl-convert-python
-  version: 1.3.0
-  build: py310hd125d64_0
+  version: 1.6.0
+  build: py310ha6dd24b_0
   subdir: osx-arm64
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/vl-convert-python-1.3.0-py310hd125d64_0.conda
-  sha256: a1f5bc51101f1a77baae9bd0c9a810b8e3adb717858872d49c547de647059b00
-  md5: 9d2f42d9b90f52f6940bd05abab5ca9a
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/vl-convert-python-1.6.0-py310ha6dd24b_0.conda
+  sha256: 441d5fe773854e34c3018ce982bc25a55a951e9b50b18a25689afac07e0ca54b
+  md5: 5446a027ac5a4ea7f3e95cc42717b9d4
   depends:
+  - __osx >=11.0
   - python >=3.10,<3.11.0a0
   - python >=3.10,<3.11.0a0 *_cpython
   - python_abi 3.10.* *_cp310
+  constrains:
+  - __osx >=10.13
   license: BSD-3-Clause
   license_family: BSD
-  purls:
-  - pkg:pypi/vl-convert-python
-  size: 19552349
-  timestamp: 1710359651788
+  size: 20412409
+  timestamp: 1722901289142
 - kind: conda
   name: vl-convert-python
-  version: 1.3.0
-  build: py310hdc45392_0
+  version: 1.6.0
+  build: py310hb47754f_0
   subdir: win-64
-  url: https://conda.anaconda.org/conda-forge/win-64/vl-convert-python-1.3.0-py310hdc45392_0.conda
-  sha256: 013b75d57d01f59fdff41e5da54da155dbceaa1e6f90ca5e8d60ee9e5f576bd4
-  md5: eb3372e950aaed0ef168a85fb97aa4c1
+  url: https://conda.anaconda.org/conda-forge/win-64/vl-convert-python-1.6.0-py310hb47754f_0.conda
+  sha256: fb55fad4b37b1aaa0294574c3ce0b724a3770c9d61ee9916ef79db2ef0d862d2
+  md5: 7890e67278c0dacbd5c65d5e32f7cfe4
   depends:
   - m2w64-gcc-libs
   - m2w64-gcc-libs-core
   - python >=3.10,<3.11.0a0
   - python_abi 3.10.* *_cp310
+  - ucrt >=10.0.20348.0
+  - vc >=14.3,<15
+  - vc14_runtime >=14.40.33810
   license: BSD-3-Clause
   license_family: BSD
-  purls:
-  - pkg:pypi/vl-convert-python
-  size: 20761528
-  timestamp: 1710361963411
+  size: 21875382
+  timestamp: 1722903742368
 - kind: conda
   name: voila
   version: 0.5.0
@@ -15951,21 +15952,19 @@ packages:
   timestamp: 1692275824749
 - kind: conda
   name: vs2015_runtime
-  version: 14.36.32532
-  build: h05e6639_17
-  build_number: 17
+  version: 14.40.33810
+  build: h3bf8584_20
+  build_number: 20
   subdir: win-64
-  url: https://conda.anaconda.org/conda-forge/win-64/vs2015_runtime-14.36.32532-h05e6639_17.conda
-  sha256: 5ecbd731dc7f13762d67be0eadc47eb7f14713005e430d9b5fc680e965ac0f81
-  md5: 4618046c39f7c81861e53ded842e738a
+  url: https://conda.anaconda.org/conda-forge/win-64/vs2015_runtime-14.40.33810-h3bf8584_20.conda
+  sha256: 0c2803f7a788c51f28235a7228dc2ab3f107b4b16ab0845a3e595c8c51e50a7a
+  md5: c21f1b4a3a30bbc3ef35a50957578e0e
   depends:
-  - vc14_runtime >=14.36.32532
-  arch: x86_64
-  platform: win
+  - vc14_runtime >=14.40.33810
   license: BSD-3-Clause
   license_family: BSD
-  size: 17207
-  timestamp: 1688020635322
+  size: 17395
+  timestamp: 1717709043353
 - kind: conda
   name: watchfiles
   version: 0.21.0

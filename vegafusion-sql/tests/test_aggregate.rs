@@ -77,6 +77,8 @@ mod test_median_agg {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -101,6 +103,7 @@ mod test_median_agg {
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .alias("median_a"),
                 ],
@@ -128,6 +131,8 @@ mod test_variance_aggs {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -151,6 +156,7 @@ mod test_variance_aggs {
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .mul(lit(100))])
                     .div(lit(100))
@@ -163,6 +169,7 @@ mod test_variance_aggs {
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .mul(lit(100))])
                     .div(lit(100))
@@ -173,6 +180,7 @@ mod test_variance_aggs {
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .mul(lit(100))])
                     .div(lit(100))
@@ -185,6 +193,7 @@ mod test_variance_aggs {
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .mul(lit(100))])
                     .div(lit(100))

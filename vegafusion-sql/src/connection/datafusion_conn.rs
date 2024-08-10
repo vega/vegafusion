@@ -4,6 +4,7 @@ use crate::dialect::Dialect;
 use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use arrow::ipc::reader::{FileReader, StreamReader};
 use arrow::record_batch::RecordBatch;
+use datafusion::config::TableOptions;
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::datasource::MemTable;
 use datafusion::execution::context::SessionState;
@@ -124,7 +125,11 @@ impl Connection for DataFusionConnection {
 
         let mut tables: HashMap<String, Schema> = HashMap::new();
         for table_name in schema_provider.table_names() {
-            let schema = schema_provider.table(&table_name).await.unwrap().schema();
+            let schema = schema_provider
+                .table(&table_name)
+                .await?
+                .with_context(|| format!("Failed to get table {table_name}"))?
+                .schema();
             tables.insert(table_name, schema.as_ref().clone());
         }
         Ok(tables)
@@ -434,7 +439,11 @@ async fn build_csv_schema(
     ctx: &SessionContext,
 ) -> Result<Schema> {
     let table_path = ListingTableUrl::parse(uri.into().as_str())?;
-    let listing_options = csv_opts.to_listing_options(&ctx.copied_config());
+    let listing_options = csv_opts.to_listing_options(
+        &ctx.copied_config(),
+        TableOptions::default(),
+    );
+
     let inferred_schema = listing_options
         .infer_schema(&ctx.state(), &table_path)
         .await?;

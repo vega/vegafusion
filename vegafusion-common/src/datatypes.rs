@@ -1,10 +1,8 @@
 use crate::error::{Result, ResultWithContext};
 use arrow::datatypes::DataType;
 use datafusion_common::DFSchema;
-use datafusion_expr::{
-    coalesce, expr, lit, BuiltinScalarFunction, Expr, ExprSchemable, ScalarFunctionDefinition,
-    TryCast,
-};
+use datafusion_expr::{coalesce, lit, Expr, ExprSchemable, TryCast};
+use datafusion_functions::datetime::expr_fn::to_timestamp_millis;
 
 pub fn is_numeric_datatype(dtype: &DataType) -> bool {
     matches!(
@@ -84,17 +82,13 @@ pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
 /// Cast an expression to Float64 if not already numeric. If already numeric, don't perform cast.
 pub fn to_numeric(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let dtype = data_type(&value, schema)?;
+
     let numeric_value = if is_numeric_datatype(&dtype) {
         value
     } else if matches!(dtype, DataType::Timestamp(_, _)) {
         // Convert to milliseconds
         Expr::TryCast(TryCast {
-            expr: Box::new(Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::BuiltIn(
-                    BuiltinScalarFunction::ToTimestampMillis,
-                ),
-                args: vec![value],
-            })),
+            expr: Box::new(to_timestamp_millis(vec![value])),
             data_type: DataType::Int64,
         })
     } else {

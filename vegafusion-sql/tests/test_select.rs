@@ -486,6 +486,7 @@ mod test_non_finite_numbers {
 mod test_scalar_math_functions {
     use crate::*;
     use datafusion_expr::{expr, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
+    use datafusion_functions::math::expr_fn::{abs, acos, asin, tan};
     use vegafusion_common::column::flat_col;
 
     fn make_scalar_fn1(fun: BuiltinScalarFunction, arg: &str, alias: &str) -> Expr {
@@ -523,9 +524,9 @@ mod test_scalar_math_functions {
         let df_result = df
             .select(vec![
                 flat_col("a"),
-                make_scalar_fn1(BuiltinScalarFunction::Abs, "b", "abs"),
-                make_scalar_fn1(BuiltinScalarFunction::Acos, "c", "acos"),
-                make_scalar_fn1(BuiltinScalarFunction::Asin, "c", "asin"),
+                abs(flat_col("b")).alias("abs"),
+                acos(flat_col("c")).alias("acos"),
+                asin(flat_col("c")).alias("asin"),
                 make_scalar_fn1(BuiltinScalarFunction::Atan, "c", "atan"),
                 make_scalar_fn2(BuiltinScalarFunction::Atan2, "c", "a", "atan2"),
                 make_scalar_fn1(BuiltinScalarFunction::Ceil, "b", "ceil"),
@@ -540,7 +541,7 @@ mod test_scalar_math_functions {
                 make_scalar_fn1(BuiltinScalarFunction::Round, "b", "round"),
                 make_scalar_fn1(BuiltinScalarFunction::Sin, "b", "sin"),
                 make_scalar_fn1(BuiltinScalarFunction::Sqrt, "c", "sqrt"),
-                make_scalar_fn1(BuiltinScalarFunction::Tan, "b", "tan"),
+                tan(flat_col("b")).alias("tan"),
             ])
             .await;
 
@@ -1468,6 +1469,7 @@ mod test_timestamp_to_utc_timestamp {
 mod test_string_ops {
     use crate::*;
     use datafusion_expr::{expr, lit, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
+    use datafusion_functions::string::expr_fn::{lower, upper};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -1499,16 +1501,8 @@ mod test_string_ops {
                     args: vec![flat_col("b"), lit(" "), flat_col("c")],
                 })
                 .alias("bc_concat"),
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Upper),
-                    args: vec![flat_col("b")],
-                })
-                .alias("b_upper"),
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Lower),
-                    args: vec![flat_col("b")],
-                })
-                .alias("b_lower"),
+                upper(flat_col("b")).alias("b_upper"),
+                lower(flat_col("b")).alias("b_lower"),
             ])
             .await;
 

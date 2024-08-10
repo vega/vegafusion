@@ -4,9 +4,11 @@ use async_trait::async_trait;
 use datafusion::datasource::TableProvider;
 use datafusion::execution::context::SessionState;
 use datafusion::execution::{SendableRecordBatchStream, TaskContext};
-use datafusion::physical_expr::{Partitioning, PhysicalSortExpr};
+use datafusion::physical_expr::{EquivalenceProperties, Partitioning};
 use datafusion::physical_plan::memory::MemoryStream;
-use datafusion::physical_plan::{DisplayAs, DisplayFormatType, ExecutionPlan};
+use datafusion::physical_plan::{
+    DisplayAs, DisplayFormatType, ExecutionMode, ExecutionPlan, PlanProperties,
+};
 use datafusion_common::{project_schema, DataFusionError, Statistics};
 use datafusion_expr::{Expr, TableType};
 use pyo3::types::PyTuple;
@@ -76,15 +78,28 @@ impl TableProvider for PyDatasource {
 struct PyDatasourceExec {
     db: PyDatasource,
     projected_schema: SchemaRef,
+    plan_properties: PlanProperties,
 }
 
 impl PyDatasourceExec {
     fn new(projections: Option<&Vec<usize>>, schema: SchemaRef, db: PyDatasource) -> Self {
         let projected_schema = project_schema(&schema, projections).unwrap();
+        let plan_properties = Self::compute_properties(projected_schema.clone());
         Self {
             db,
             projected_schema,
+            plan_properties,
         }
+    }
+
+    /// This function creates the cache object that stores the plan properties such as schema, equivalence properties, ordering, partitioning, etc.
+    fn compute_properties(schema: SchemaRef) -> PlanProperties {
+        let eq_properties = EquivalenceProperties::new(schema);
+        PlanProperties::new(
+            eq_properties,
+            Partitioning::UnknownPartitioning(1),
+            ExecutionMode::Bounded,
+        )
     }
 }
 
@@ -101,14 +116,6 @@ impl ExecutionPlan for PyDatasourceExec {
 
     fn schema(&self) -> SchemaRef {
         self.projected_schema.clone()
-    }
-
-    fn output_partitioning(&self) -> Partitioning {
-        Partitioning::UnknownPartitioning(1)
-    }
-
-    fn output_ordering(&self) -> Option<&[PhysicalSortExpr]> {
-        None
     }
 
     fn children(&self) -> Vec<Arc<dyn ExecutionPlan>> {
@@ -150,5 +157,9 @@ impl ExecutionPlan for PyDatasourceExec {
 
     fn statistics(&self) -> datafusion_common::Result<Statistics> {
         Ok(Statistics::new_unknown(self.schema().as_ref()))
+    }
+
+    fn properties(&self) -> &PlanProperties {
+        &self.plan_properties
     }
 }

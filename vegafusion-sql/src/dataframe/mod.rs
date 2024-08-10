@@ -9,13 +9,14 @@ use async_trait::async_trait;
 use datafusion_common::{Column, DFSchema, OwnedTableReference, ScalarValue};
 use datafusion_expr::expr::AggregateFunctionDefinition;
 use datafusion_expr::{
-    abs, expr, is_null, lit, max, min, when, AggregateFunction, BuiltInWindowFunction,
+    expr, is_null, lit, max, min, when, AggregateFunction, BuiltInWindowFunction,
     BuiltinScalarFunction, Expr, ExprSchemable, ScalarFunctionDefinition, WindowFrame,
     WindowFunctionDefinition,
 };
+use datafusion_functions::expr_fn::abs;
 use sqlparser::ast::{
-    Cte, Expr as SqlExpr, GroupByExpr, Ident, Query, Select, SelectItem, SetExpr, Statement,
-    TableAlias, TableFactor, TableWithJoins, Values, WildcardAdditionalOptions, With,
+    Cte, Expr as SqlExpr, GroupByExpr, Ident, NullTreatment, Query, Select, SelectItem, SetExpr,
+    Statement, TableAlias, TableFactor, TableWithJoins, Values, WildcardAdditionalOptions, With,
 };
 use sqlparser::parser::Parser;
 use std::any::Any;
@@ -272,6 +273,7 @@ impl SqlDataFrame {
                     }
 
                     expr_selects.push(Select {
+                        value_table_mode: None,
                         distinct: None,
                         top: None,
                         projection,
@@ -395,6 +397,7 @@ impl SqlDataFrame {
                     having: None,
                     qualify: None,
                     named_window: Default::default(),
+                    value_table_mode: None,
                 }));
                 Query {
                     with: None,
@@ -845,6 +848,7 @@ impl SqlDataFrame {
                     }),
                 ],
                 window_frame: WindowFrame::new(Some(true)),
+                null_treatment: Some(NullTreatment::IgnoreNulls),
             })
             .alias(order_field);
 
@@ -908,6 +912,7 @@ impl SqlDataFrame {
                 partition_by,
                 order_by: orderby,
                 window_frame: WindowFrame::new(Some(true)),
+                null_treatment: Some(NullTreatment::IgnoreNulls),
             })
             .alias(stop_field);
 
@@ -982,6 +987,7 @@ impl SqlDataFrame {
                 distinct: false,
                 filter: None,
                 order_by: None,
+                null_treatment: Some(NullTreatment::IgnoreNulls),
             })
             .alias("__total");
             let total_agg_str = total_agg
@@ -1034,6 +1040,7 @@ impl SqlDataFrame {
                 partition_by,
                 order_by: orderby,
                 window_frame: WindowFrame::new(Some(true)),
+                null_treatment: Some(NullTreatment::IgnoreNulls),
             })
             .alias(cumulative_field);
 
@@ -1343,6 +1350,7 @@ impl SqlDataFrame {
                     partition_by: vec![],
                     order_by,
                     window_frame: WindowFrame::new(Some(true)),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias(order_field);
 
@@ -1451,6 +1459,7 @@ fn query_chain_to_cte(queries: &[Query], prefix: &str) -> Query {
                 },
                 query: Box::new(query.clone()),
                 from: None,
+                materialized: None,
             }
         })
         .collect();

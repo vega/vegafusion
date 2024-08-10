@@ -4,7 +4,7 @@ version = "1.6.9"
 edition = "2021"
 
 [lib]
-crate_type = [ "cdylib",]
+crate-type = [ "cdylib",]
 
 [features]
 protobuf-src = [ "vegafusion-core/protobuf-src",]
