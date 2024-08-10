@@ -1135,17 +1135,16 @@ impl SqlDataFrame {
         groupby: &[String],
         order_field: Option<&str>,
     ) -> Result<Arc<dyn DataFrame>> {
-        let (_, field_field) = self
-            .schema()
+        let schema = self.schema(); // Store the schema in a variable
+        let (_, field_field) = schema
             .column_with_name(field)
-            .with_context(|| format!("No field named {field}"))?;
+            .with_context(|| format!("No field named {}", field.to_string()))?;
         let field_type = field_field.data_type();
 
         if groupby.is_empty() {
             // Value replacement for field with no groupby fields specified is equivalent to replacing
             // null values of that column with the fill value
-            let select_columns = self
-                .schema()
+            let select_columns = schema
                 .fields()
                 .iter()
                 .map(|f| {
@@ -1166,8 +1165,7 @@ impl SqlDataFrame {
             self.select(select_columns).await
         } else {
             // Save off names of columns in the original input DataFrame
-            let original_columns: Vec<_> = self
-                .schema()
+            let original_columns: Vec<_> = schema
                 .fields()
                 .iter()
                 .map(|field| field.name().clone())
