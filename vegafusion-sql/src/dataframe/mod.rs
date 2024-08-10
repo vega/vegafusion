@@ -6,14 +6,13 @@ use crate::dialect::{Dialect, ValuesMode};
 use arrow::datatypes::{DataType, Field, FieldRef, Fields, Schema, SchemaRef};
 use arrow::record_batch::RecordBatch;
 use async_trait::async_trait;
-use datafusion_common::{Column, DFSchema, OwnedTableReference, ScalarValue};
+use datafusion_common::{Column, DFSchema, ScalarValue, TableReference};
 use datafusion_expr::expr::AggregateFunctionDefinition;
 use datafusion_expr::{
-    expr, is_null, lit, max, min, when, AggregateFunction, BuiltInWindowFunction,
-    BuiltinScalarFunction, Expr, ExprSchemable, ScalarFunctionDefinition, WindowFrame,
-    WindowFunctionDefinition,
+    expr, is_null, lit, max, min, when, AggregateFunction, BuiltInWindowFunction, Expr,
+    ExprSchemable, WindowFrame, WindowFunctionDefinition,
 };
-use datafusion_functions::expr_fn::abs;
+use datafusion_functions::expr_fn::{abs, coalesce};
 use sqlparser::ast::{
     Cte, Expr as SqlExpr, GroupByExpr, Ident, NullTreatment, Query, Select, SelectItem, SetExpr,
     Statement, TableAlias, TableFactor, TableWithJoins, Values, WildcardAdditionalOptions, With,
@@ -594,7 +593,7 @@ impl SqlDataFrame {
             .map(|col| {
                 let col = Expr::Column(Column {
                     relation: if self.dialect().joinaggregate_fully_qualified {
-                        Some(OwnedTableReference::bare(inner_name.clone()))
+                        Some(TableReference::bare(inner_name.clone()))
                     } else {
                         None
                     },
@@ -618,7 +617,7 @@ impl SqlDataFrame {
                 } else {
                     let expr = Expr::Column(Column {
                         relation: if self.dialect().joinaggregate_fully_qualified {
-                            Some(OwnedTableReference::bare(self.parent_name()))
+                            Some(TableReference::bare(self.parent_name()))
                         } else {
                             None
                         },
@@ -896,11 +895,10 @@ impl SqlDataFrame {
 
         // Build partitioning column expressions
         let partition_by: Vec<_> = groupby.iter().map(|group| flat_col(group)).collect();
-
-        let numeric_field = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Coalesce),
-            args: vec![to_numeric(flat_col(field), &self.schema_df()?)?, lit(0.0)],
-        });
+        let numeric_field = coalesce(vec![
+            to_numeric(flat_col(field), &self.schema_df()?)?,
+            lit(0.0),
+        ]);
 
         if let StackMode::Zero = mode {
             // Build window expression
@@ -1150,13 +1148,7 @@ impl SqlDataFrame {
                     let col_name = f.name();
 
                     if col_name == field {
-                        Expr::ScalarFunction(expr::ScalarFunction {
-                            func_def: ScalarFunctionDefinition::BuiltIn(
-                                BuiltinScalarFunction::Coalesce,
-                            ),
-                            args: vec![flat_col(field), lit(value.clone())],
-                        })
-                        .alias(col_name)
+                        coalesce(vec![flat_col(field), lit(value.clone())]).alias(col_name)
                     } else {
                         flat_col(col_name)
                     }
@@ -1197,13 +1189,7 @@ impl SqlDataFrame {
                 .iter()
                 .map(|col_name| {
                     if col_name == field {
-                        Expr::ScalarFunction(expr::ScalarFunction {
-                            func_def: ScalarFunctionDefinition::BuiltIn(
-                                BuiltinScalarFunction::Coalesce,
-                            ),
-                            args: vec![flat_col(field), lit(value.clone())],
-                        })
-                        .alias(col_name)
+                        coalesce(vec![flat_col(field), lit(value.clone())]).alias(col_name)
                     } else {
                         flat_col(col_name)
                     }
@@ -1217,22 +1203,16 @@ impl SqlDataFrame {
                     .iter()
                     .map(|col_name| {
                         let expr = if col_name == field {
-                            Expr::ScalarFunction(expr::ScalarFunction {
-                                func_def: ScalarFunctionDefinition::BuiltIn(
-                                    BuiltinScalarFunction::Coalesce,
-                                ),
-                                args: vec![flat_col(field), lit(value.clone())],
-                            })
-                            .alias(col_name)
+                            coalesce(vec![flat_col(field), lit(value.clone())]).alias(col_name)
                         } else if col_name == key {
                             Expr::Column(Column {
-                                relation: Some(OwnedTableReference::bare("_key")),
+                                relation: Some(TableReference::bare("_key")),
                                 name: col_name.clone(),
                             })
                             .alias(col_name)
                         } else if groupby.contains(col_name) {
                             Expr::Column(Column {
-                                relation: Some(OwnedTableReference::bare("_groups")),
+                                relation: Some(TableReference::bare("_groups")),
                                 name: col_name.clone(),
                             })
                             .alias(col_name)

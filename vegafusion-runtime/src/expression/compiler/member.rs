@@ -2,7 +2,8 @@ use crate::expression::compiler::builtin_functions::array::length::length_transf
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
-use datafusion_expr::{expr, lit, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
+use datafusion_expr::{expr, lit, Expr, ScalarFunctionDefinition};
+use datafusion_functions::expr_fn::substring;
 use std::convert::TryFrom;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::Int64Array;
@@ -90,10 +91,7 @@ pub fn compile_member(
             } else if matches!(dtype, DataType::Utf8 | DataType::LargeUtf8) {
                 if let Some(index) = index {
                     // SQL substr function is 1-indexed so add one
-                    Expr::ScalarFunction(expr::ScalarFunction {
-                        func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Substr),
-                        args: vec![compiled_object, lit((index + 1) as i64), lit(1i64)],
-                    })
+                    substring(compiled_object, lit((index + 1) as i64), lit(1i64))
                 } else {
                     return Err(VegaFusionError::compilation(format!(
                         "Non-numeric element index: {property_string}"

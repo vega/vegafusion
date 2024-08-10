@@ -5,7 +5,8 @@ use std::convert::TryFrom;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion_expr::expr::Case;
-use datafusion_expr::{ceil, expr, lit, Between, Expr, ExprSchemable, ScalarFunctionDefinition};
+use datafusion_expr::{expr, lit, Between, Expr, ExprSchemable, ScalarFunctionDefinition};
+use datafusion_functions::expr_fn::ceil;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};

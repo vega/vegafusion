@@ -6,11 +6,13 @@ use crate::expression::compiler::builtin_functions::date_time::datetime::{
 use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_valid_fn;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use datafusion_expr::{expr, BuiltinScalarFunction, Expr, ScalarFunctionDefinition, ScalarUDF};
+use datafusion_expr::{expr, Expr, ScalarFunctionDefinition, ScalarUDF};
 use datafusion_functions::expr_fn::isnan;
+use datafusion_functions::math::{
+    abs, acos, asin, atan, ceil, cos, exp, floor, ln, power, round, sin, sqrt, tan,
+};
 use std::collections::HashMap;
 use std::ops::Deref;
-use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -77,16 +79,9 @@ pub enum VegaFusionCallable {
     /// produces a new expression.
     UtcTransform(TzTransformFn),
 
-    /// Runtime function that is build in to DataFusion
-    BuiltinScalarFunction {
-        function: BuiltinScalarFunction,
-        /// If Some, all arguments should be cast to provided type
-        cast: Option<DataType>,
-    },
-
     /// A custom runtime function that's not built into DataFusion
     ScalarUDF {
-        udf: ScalarUDF,
+        udf: Arc<ScalarUDF>,
         /// If Some, all arguments should be cast to provided type
         cast: Option<DataType>,
     },
@@ -138,14 +133,7 @@ pub fn compile_call(
         VegaFusionCallable::ScalarUDF { udf, cast } => {
             let args = compile_scalar_arguments(node, config, schema, cast)?;
             Ok(Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::UDF(Arc::new(udf.clone())),
-                args,
-            }))
-        }
-        VegaFusionCallable::BuiltinScalarFunction { function, cast } => {
-            let args = compile_scalar_arguments(node, config, schema, cast)?;
-            Ok(Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::BuiltIn(*function),
+                func_def: ScalarFunctionDefinition::UDF(udf.clone()),
                 args,
             }))
         }
@@ -225,30 +213,31 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     let mut callables: HashMap<String, VegaFusionCallable> = HashMap::new();
     callables.insert("if".to_string(), VegaFusionCallable::Macro(Arc::new(if_fn)));
 
-    // Numeric functions built into DataFusion with names that match Vega.
-    // Cast arguments to Float64
-    for fun_name in &[
-        "abs", "acos", "asin", "atan", "ceil", "cos", "exp", "floor", "round", "sin", "sqrt",
-        "tan", "pow",
+    // Numeric functions built into DataFusion with mapping to Vega names
+    for (fun_name, udf) in [
+        ("abs", abs()),
+        ("acos", acos()),
+        ("asin", asin()),
+        ("atan", atan()),
+        ("ceil", ceil()),
+        ("cos", cos()),
+        ("exp", exp()),
+        ("floor", floor()),
+        ("round", round()),
+        ("sin", sin()),
+        ("sqrt", sqrt()),
+        ("tan", tan()),
+        ("pow", power()),
+        ("log", ln()), // Vega log is DataFusion ln
     ] {
-        let function = BuiltinScalarFunction::from_str(fun_name).unwrap();
         callables.insert(
             fun_name.to_string(),
-            VegaFusionCallable::BuiltinScalarFunction {
-                function,
+            VegaFusionCallable::ScalarUDF {
+                udf,
                 cast: Some(DataType::Float64),
             },
         );
     }
-
-    // DataFusion ln is Vega log
-    callables.insert(
-        "log".to_string(),
-        VegaFusionCallable::BuiltinScalarFunction {
-            function: BuiltinScalarFunction::Ln,
-            cast: Some(DataType::Float64),
-        },
-    );
 
     callables.insert(
         "isNaN".to_string(),
@@ -278,7 +267,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "span".to_string(),
         VegaFusionCallable::ScalarUDF {
-            udf: ScalarUDF::from(SpanUDF::new()),
+            udf: Arc::new(ScalarUDF::from(SpanUDF::new())),
             cast: None,
         },
     );
@@ -286,7 +275,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "indexof".to_string(),
         VegaFusionCallable::ScalarUDF {
-            udf: ScalarUDF::from(IndexOfUDF::new()),
+            udf: Arc::new(ScalarUDF::from(IndexOfUDF::new())),
             cast: None,
         },
     );

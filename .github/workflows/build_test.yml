@@ -319,7 +319,7 @@ jobs:
           ls -la
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_python_embed-*manylinux_2_17_x86_64*.whl
-          python -m pip install pytest vega-datasets polars-lts-cpu duckdb==0.9.2 "vl-convert-python>=1.0.1rc1" scikit-image pandas==2.0
+          python -m pip install pytest vega-datasets polars-lts-cpu "duckdb>=1.0" "vl-convert-python>=1.0.1rc1" scikit-image "pandas>=2.2"
       - name: Test lazy imports
         working-directory: python/vegafusion/
         run: python checks/check_lazy_imports.py
@@ -353,7 +353,7 @@ jobs:
           ls -la
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_python_embed-*macosx_10_*_x86_64.whl
-          python -m pip install pytest vega-datasets polars-lts-cpu duckdb==0.9.2 vl-convert-python scikit-image pandas==2.0
+          python -m pip install pytest vega-datasets polars-lts-cpu "duckdb>=1.0" vl-convert-python scikit-image "pandas>=2.2"
           python -m pip install pyarrow==10.0 altair==5.1.2
       - name: Test vegafusion
         working-directory: python/vegafusion/
@@ -389,7 +389,7 @@ jobs:
 
           python -m pip install $vegafusion
           python -m pip install $vegafusion_python_embed
-          python -m pip install pytest vega-datasets polars[timezone] duckdb==0.9.2 vl-convert-python scikit-image
+          python -m pip install pytest vega-datasets polars[timezone] "duckdb>=1.0" vl-convert-python scikit-image "pandas>=2.2"
       - name: Test vegafusion
         working-directory: python/vegafusion/
         run: pytest

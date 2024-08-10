@@ -44,7 +44,7 @@ impl TransformTrait for Window {
             .schema_df()?
             .fields()
             .iter()
-            .map(|f| flat_col(f.field().name()))
+            .map(|f| flat_col(f.name()))
             .collect();
 
         if order_by.is_empty() {

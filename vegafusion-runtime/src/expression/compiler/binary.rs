@@ -1,6 +1,8 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion_expr::expr::BinaryExpr;
-use datafusion_expr::{coalesce, concat, lit, Expr, Operator};
+use datafusion_expr::{lit, Expr, Operator};
+use datafusion_functions::expr_fn::coalesce;
+use datafusion_functions::string::expr_fn::concat;
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_common::datatypes::{
     cast_to, data_type, is_null_literal, is_numeric_datatype, is_string_datatype, to_numeric,
@@ -110,7 +112,7 @@ pub fn compile_binary(
                 // plus is string concatenation
                 let lhs_string = to_string(lhs, schema)?;
                 let rhs_string = to_string(rhs, schema)?;
-                concat(&[lhs_string, rhs_string])
+                concat(vec![lhs_string, rhs_string])
             } else {
                 // Both sides are non-strings, use regular numeric plus operation
                 // Use result of to_numeric to handle booleans

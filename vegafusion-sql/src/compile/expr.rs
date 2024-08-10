@@ -439,6 +439,7 @@ impl ToSqlExpr for Expr {
                         partition_by,
                         order_by,
                         window_frame: sql_window_frame,
+                        window_name: None,
                     });
 
                     let sql_fun = SqlFunction {
@@ -643,9 +644,8 @@ mod tests {
     use arrow::datatypes::DataType;
     use datafusion_common::DFSchema;
     use datafusion_expr::expr::Cast;
-    use datafusion_expr::{
-        expr, lit, Between, BuiltinScalarFunction, Expr, ScalarFunctionDefinition,
-    };
+    use datafusion_expr::{lit, Between, Expr};
+    use datafusion_functions::expr_fn::sin;
     use datafusion_functions::string::expr_fn::upper;
     use vegafusion_common::column::flat_col;
 
@@ -664,10 +664,7 @@ mod tests {
 
     #[test]
     pub fn test2() {
-        let df_expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Sin),
-            args: vec![lit(1.2)],
-        }) + flat_col("B");
+        let df_expr = sin(lit(1.2)) + flat_col("B");
 
         let dialect: Dialect = Dialect::datafusion();
         let sql_expr = df_expr.to_sql(&dialect, &schema()).unwrap();

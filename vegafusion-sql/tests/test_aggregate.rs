@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{avg, count, expr, lit, max, min, round, sum, AggregateFunction, Expr};
+use datafusion_expr::{avg, count, expr, lit, max, min, sum, AggregateFunction, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -131,6 +131,7 @@ mod test_variance_aggs {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions::expr_fn::round;
         use sqlparser::ast::NullTreatment;
 
         println!("{dialect_name}");

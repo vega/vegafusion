@@ -128,7 +128,7 @@ pub fn make_aggr_expr_for_named_col(
 ) -> Result<Expr> {
     let column = if let Some(col_name) = col_name {
         let col_name = unescape_field(&col_name);
-        if schema.index_of_column_by_name(None, &col_name).is_err() {
+        if schema.index_of_column_by_name(None, &col_name).is_none() {
             // No column with specified name, short circuit to return default value
             return if matches!(op, AggregateOp::Sum | AggregateOp::Count) {
                 // return zero for sum and count

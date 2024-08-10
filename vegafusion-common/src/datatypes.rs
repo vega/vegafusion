@@ -1,8 +1,8 @@
 use crate::error::{Result, ResultWithContext};
 use arrow::datatypes::DataType;
 use datafusion_common::DFSchema;
-use datafusion_expr::{coalesce, lit, Expr, ExprSchemable, TryCast};
-use datafusion_functions::datetime::expr_fn::to_timestamp_millis;
+use datafusion_expr::{lit, Expr, ExprSchemable, TryCast};
+use datafusion_functions::{datetime::expr_fn::to_timestamp_millis, expr_fn::coalesce};
 
 pub fn is_numeric_datatype(dtype: &DataType) -> bool {
     matches!(
