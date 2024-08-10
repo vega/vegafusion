@@ -1148,8 +1148,9 @@ impl SqlDataFrame {
                     Ok(if col_name == field {
                         coalesce(vec![
                             flat_col(field).cast_to(&value.data_type(), &self.schema_df()?)?,
-                            lit(value.clone())
-                        ]).alias(col_name)
+                            lit(value.clone()),
+                        ])
+                        .alias(col_name)
                     } else {
                         flat_col(col_name)
                     })
@@ -1192,8 +1193,9 @@ impl SqlDataFrame {
                     Ok(if col_name == field {
                         coalesce(vec![
                             flat_col(field).cast_to(&value.data_type(), &self.schema_df()?)?,
-                            lit(value.clone())
-                        ]).alias(col_name)
+                            lit(value.clone()),
+                        ])
+                        .alias(col_name)
                     } else {
                         flat_col(col_name)
                     })
@@ -1209,8 +1211,9 @@ impl SqlDataFrame {
                         let expr = if col_name == field {
                             coalesce(vec![
                                 flat_col(field).cast_to(&value.data_type(), &self.schema_df()?)?,
-                                lit(value.clone())
-                            ]).alias(col_name)
+                                lit(value.clone()),
+                            ])
+                            .alias(col_name)
                         } else if col_name == key {
                             Expr::Column(Column {
                                 relation: Some(TableReference::bare("_key")),
