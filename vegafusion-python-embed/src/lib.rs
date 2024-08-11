@@ -4,6 +4,7 @@ pub mod dataframe;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyTuple};
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::{Arc, Once};
 use tokio::runtime::Runtime;
@@ -623,8 +624,8 @@ fn vegafusion_embed(_py: Python, m: &PyModule) -> PyResult<()> {
 /// Helper function to parse an input Python string or dict as a ChartSpec
 fn parse_json_spec(chart_spec: PyObject) -> PyResult<ChartSpec> {
     Python::with_gil(|py| -> PyResult<ChartSpec> {
-        if let Ok(chart_spec) = chart_spec.extract::<&str>(py) {
-            match serde_json::from_str::<ChartSpec>(chart_spec) {
+        if let Ok(chart_spec) = chart_spec.extract::<Cow<str>>(py) {
+            match serde_json::from_str::<ChartSpec>(&chart_spec) {
                 Ok(chart_spec) => Ok(chart_spec),
                 Err(err) => Err(PyValueError::new_err(format!(
                     "Failed to parse chart_spec string as Vega: {err}"
