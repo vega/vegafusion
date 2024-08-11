@@ -407,7 +407,7 @@ mod test_compile {
 
         let result_value = result_expr.eval_to_scalar().unwrap();
         let expected_value = ScalarValue::List(Arc::new(array_into_list_array(new_empty_array(
-            &DataType::Null,
+            &DataType::Int64,
         ))));
 
         println!("value: {result_value:?}");
