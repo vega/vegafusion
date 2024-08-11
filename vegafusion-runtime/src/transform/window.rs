@@ -4,7 +4,7 @@ use async_trait::async_trait;
 
 use datafusion_common::ScalarValue;
 use datafusion_expr::{aggregate_function, expr, lit, Expr, WindowFrame, WindowFunctionDefinition};
-use datafusion_functions_aggregate::variance::var_samp_udaf;
+use datafusion_functions_aggregate::variance::{var_pop_udaf, var_samp_udaf};
 use sqlparser::ast::NullTreatment;
 use std::sync::Arc;
 use vegafusion_core::error::Result;
@@ -13,7 +13,11 @@ use vegafusion_core::proto::gen::transforms::{
 };
 use vegafusion_core::task_graph::task_value::TaskValue;
 
+use datafusion_expr::test::function_stub::count_udaf;
 use datafusion_expr::{BuiltInWindowFunction, WindowFrameBound, WindowFrameUnits};
+use datafusion_functions_aggregate::average::avg_udaf;
+use datafusion_functions_aggregate::stddev::{stddev_pop_udaf, stddev_udaf};
+use datafusion_functions_aggregate::sum::sum_udaf;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::to_numeric;
@@ -113,21 +117,15 @@ impl TransformTrait for Window {
                         use AggregateOp::*;
                         match op {
                             Count => (
-                                WindowFunctionDefinition::AggregateFunction(
-                                    aggregate_function::AggregateFunction::Count,
-                                ),
+                                WindowFunctionDefinition::AggregateUDF(count_udaf()),
                                 vec![lit(true)],
                             ),
                             Sum => (
-                                WindowFunctionDefinition::AggregateFunction(
-                                    aggregate_function::AggregateFunction::Sum,
-                                ),
+                                WindowFunctionDefinition::AggregateUDF(sum_udaf()),
                                 vec![numeric_field()?],
                             ),
                             Mean | Average => (
-                                WindowFunctionDefinition::AggregateFunction(
-                                    aggregate_function::AggregateFunction::Avg,
-                                ),
+                                WindowFunctionDefinition::AggregateUDF(avg_udaf()),
                                 vec![numeric_field()?],
                             ),
                             Min => (
@@ -147,21 +145,15 @@ impl TransformTrait for Window {
                                 vec![numeric_field()?],
                             ),
                             Variancep => (
-                                WindowFunctionDefinition::AggregateFunction(
-                                    aggregate_function::AggregateFunction::VariancePop,
-                                ),
+                                WindowFunctionDefinition::AggregateUDF(var_pop_udaf()),
                                 vec![numeric_field()?],
                             ),
                             Stdev => (
-                                WindowFunctionDefinition::AggregateFunction(
-                                    aggregate_function::AggregateFunction::Stddev,
-                                ),
+                                WindowFunctionDefinition::AggregateUDF(stddev_udaf()),
                                 vec![numeric_field()?],
                             ),
                             Stdevp => (
-                                WindowFunctionDefinition::AggregateFunction(
-                                    aggregate_function::AggregateFunction::StddevPop,
-                                ),
+                                WindowFunctionDefinition::AggregateUDF(stddev_pop_udaf()),
                                 vec![numeric_field()?],
                             ),
                             // ArrayAgg only available on master right now

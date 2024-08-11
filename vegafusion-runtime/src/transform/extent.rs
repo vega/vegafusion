@@ -63,6 +63,7 @@ fn extract_extent_list(table: &VegaFusionTable) -> Result<TaskValue> {
     // Build two-element list of the extents
     let extent_list = TaskValue::Scalar(ScalarValue::List(Arc::new(array_into_list_array(
         ScalarValue::iter_to_array(vec![min_val_scalar, max_val_scalar])?,
+        true,
     ))));
     Ok(extent_list)
 }

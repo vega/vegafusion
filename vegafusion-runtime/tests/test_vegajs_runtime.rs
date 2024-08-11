@@ -124,7 +124,8 @@ fn test_evaluate_filter_transform() {
     assert_eq!(
         result_signals,
         vec![ScalarValue::List(Arc::new(array_into_list_array(
-            Arc::new(Float64Array::from(vec![6.0, 10.0]))
+            Arc::new(Float64Array::from(vec![6.0, 10.0])),
+            true
         )))]
     );
 

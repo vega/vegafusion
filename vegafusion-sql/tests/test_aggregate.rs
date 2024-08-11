@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{avg, count, expr, lit, max, min, sum, AggregateFunction, Expr};
+use datafusion_expr::{expr, lit, max, min, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -14,6 +14,7 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 #[cfg(test)]
 mod test_simple_aggs {
     use crate::*;
+    use datafusion_functions_aggregate::expr_fn::{avg, count, sum};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -73,11 +74,12 @@ mod test_simple_aggs {
 mod test_median_agg {
     use crate::*;
     use datafusion_expr::expr::AggregateFunctionDefinition;
+    use datafusion_functions_aggregate::expr_fn::count;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
-        use datafusion::functions_aggregate::median::median_udaf;
+        use datafusion_functions_aggregate::median::median_udaf;
         use sqlparser::ast::NullTreatment;
 
         println!("{dialect_name}");
@@ -127,8 +129,9 @@ mod test_median_agg {
 #[cfg(test)]
 mod test_variance_aggs {
     use crate::*;
-    use datafusion::functions_aggregate::variance::var_samp_udaf;
     use datafusion_expr::expr::AggregateFunctionDefinition;
+    use datafusion_functions_aggregate::stddev::{stddev_pop_udaf, stddev_udaf};
+    use datafusion_functions_aggregate::variance::{var_pop_udaf, var_samp_udaf};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -154,7 +157,7 @@ mod test_variance_aggs {
                 vec![flat_col("b")],
                 vec![
                     round(vec![Expr::AggregateFunction(expr::AggregateFunction {
-                        func_def: AggregateFunctionDefinition::BuiltIn(AggregateFunction::Stddev),
+                        func_def: AggregateFunctionDefinition::UDF(stddev_udaf()),
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
@@ -165,9 +168,7 @@ mod test_variance_aggs {
                     .div(lit(100))
                     .alias("stddev_a"),
                     round(vec![Expr::AggregateFunction(expr::AggregateFunction {
-                        func_def: AggregateFunctionDefinition::BuiltIn(
-                            AggregateFunction::StddevPop,
-                        ),
+                        func_def: AggregateFunctionDefinition::UDF(stddev_pop_udaf()),
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
@@ -189,9 +190,7 @@ mod test_variance_aggs {
                     .div(lit(100))
                     .alias("var_a"),
                     round(vec![Expr::AggregateFunction(expr::AggregateFunction {
-                        func_def: AggregateFunctionDefinition::BuiltIn(
-                            AggregateFunction::VariancePop,
-                        ),
+                        func_def: AggregateFunctionDefinition::UDF(var_pop_udaf()),
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,

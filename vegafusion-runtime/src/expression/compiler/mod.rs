@@ -388,9 +388,10 @@ mod test_compile {
         // Check evaluated value
         let result_value = result_expr.eval_to_scalar().unwrap();
 
-        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(Arc::new(
-            Float64Array::from(vec![1.0, 2.0, 3.0]),
-        ))));
+        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(
+            Arc::new(Float64Array::from(vec![1.0, 2.0, 3.0])),
+            true,
+        )));
 
         println!("value: {result_value:?}");
         assert_eq!(result_value, expected_value);
@@ -406,9 +407,10 @@ mod test_compile {
         assert_eq!(result_expr, expected_expr);
 
         let result_value = result_expr.eval_to_scalar().unwrap();
-        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(new_empty_array(
-            &DataType::Int64,
-        ))));
+        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(
+            new_empty_array(&DataType::Int64),
+            true,
+        )));
 
         println!("value: {result_value:?}");
         assert_eq!(result_value, expected_value);
@@ -432,17 +434,21 @@ mod test_compile {
         let result_value = result_expr.eval_to_scalar().unwrap();
         let expected_value = ScalarValue::List(Arc::new(array_into_list_array(
             ScalarValue::iter_to_array(vec![
-                ScalarValue::List(Arc::new(array_into_list_array(Arc::new(
-                    Float64Array::from(vec![1.0, 2.0]),
-                )))),
-                ScalarValue::List(Arc::new(array_into_list_array(Arc::new(
-                    Float64Array::from(vec![3.0, 4.0]),
-                )))),
-                ScalarValue::List(Arc::new(array_into_list_array(Arc::new(
-                    Float64Array::from(vec![5.0, 6.0]),
-                )))),
+                ScalarValue::List(Arc::new(array_into_list_array(
+                    Arc::new(Float64Array::from(vec![1.0, 2.0])),
+                    true,
+                ))),
+                ScalarValue::List(Arc::new(array_into_list_array(
+                    Arc::new(Float64Array::from(vec![3.0, 4.0])),
+                    true,
+                ))),
+                ScalarValue::List(Arc::new(array_into_list_array(
+                    Arc::new(Float64Array::from(vec![5.0, 6.0])),
+                    true,
+                ))),
             ])
             .unwrap(),
+            true,
         )));
 
         println!("value: {result_value:?}");

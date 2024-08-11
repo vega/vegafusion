@@ -18,6 +18,9 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 mod test_simple_aggs_unbounded {
     use crate::*;
     use datafusion_expr::WindowFunctionDefinition;
+    use datafusion_functions_aggregate::average::avg_udaf;
+    use datafusion_functions_aggregate::count::count_udaf;
+    use datafusion_functions_aggregate::sum::sum_udaf;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -49,7 +52,7 @@ mod test_simple_aggs_unbounded {
                 flat_col("b"),
                 flat_col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
+                    fun: WindowFunctionDefinition::AggregateUDF(sum_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -58,7 +61,7 @@ mod test_simple_aggs_unbounded {
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Count),
+                    fun: WindowFunctionDefinition::AggregateUDF(count_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
@@ -67,7 +70,7 @@ mod test_simple_aggs_unbounded {
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Avg),
+                    fun: WindowFunctionDefinition::AggregateUDF(avg_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -117,7 +120,10 @@ mod test_simple_aggs_unbounded {
 #[cfg(test)]
 mod test_simple_aggs_unbounded_groups {
     use crate::*;
+    use datafusion_expr::test::function_stub::avg_udaf;
     use datafusion_expr::WindowFunctionDefinition;
+    use datafusion_functions_aggregate::count::count_udaf;
+    use datafusion_functions_aggregate::sum::sum_udaf;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -153,7 +159,7 @@ mod test_simple_aggs_unbounded_groups {
                 flat_col("b"),
                 flat_col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
+                    fun: WindowFunctionDefinition::AggregateUDF(sum_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -162,7 +168,7 @@ mod test_simple_aggs_unbounded_groups {
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Count),
+                    fun: WindowFunctionDefinition::AggregateUDF(count_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
@@ -171,7 +177,7 @@ mod test_simple_aggs_unbounded_groups {
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Avg),
+                    fun: WindowFunctionDefinition::AggregateUDF(avg_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -223,6 +229,9 @@ mod test_simple_aggs_unbounded_groups {
 mod test_simple_aggs_bounded {
     use crate::*;
     use datafusion_expr::WindowFunctionDefinition;
+    use datafusion_functions_aggregate::average::avg_udaf;
+    use datafusion_functions_aggregate::count::count_udaf;
+    use datafusion_functions_aggregate::sum::sum_udaf;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -258,7 +267,7 @@ mod test_simple_aggs_bounded {
                 flat_col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
+                    fun: WindowFunctionDefinition::AggregateUDF(sum_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -267,7 +276,7 @@ mod test_simple_aggs_bounded {
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Count),
+                    fun: WindowFunctionDefinition::AggregateUDF(count_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
@@ -276,7 +285,7 @@ mod test_simple_aggs_bounded {
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Avg),
+                    fun: WindowFunctionDefinition::AggregateUDF(avg_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -328,6 +337,9 @@ mod test_simple_aggs_bounded {
 mod test_simple_aggs_bounded_groups {
     use crate::*;
     use datafusion_expr::WindowFunctionDefinition;
+    use datafusion_functions_aggregate::average::avg_udaf;
+    use datafusion_functions_aggregate::count::count_udaf;
+    use datafusion_functions_aggregate::sum::sum_udaf;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
@@ -362,7 +374,7 @@ mod test_simple_aggs_bounded_groups {
                 col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
+                    fun: WindowFunctionDefinition::AggregateUDF(sum_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -371,7 +383,7 @@ mod test_simple_aggs_bounded_groups {
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Count),
+                    fun: WindowFunctionDefinition::AggregateUDF(count_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
@@ -380,7 +392,7 @@ mod test_simple_aggs_bounded_groups {
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Avg),
+                    fun: WindowFunctionDefinition::AggregateUDF(avg_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),

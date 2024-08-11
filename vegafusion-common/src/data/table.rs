@@ -185,10 +185,14 @@ impl VegaFusionTable {
         if self.num_rows() == 0 {
             // Return empty list with (arbitrary) Float64 type
             let array = Arc::new(new_empty_array(&DataType::Float64));
-            return Ok(ScalarValue::List(Arc::new(array_into_list_array(array))));
+            return Ok(ScalarValue::List(Arc::new(array_into_list_array(
+                array, true,
+            ))));
         }
         let array = Arc::new(StructArray::from(self.to_record_batch()?)) as ArrayRef;
-        Ok(ScalarValue::List(Arc::new(array_into_list_array(array))))
+        Ok(ScalarValue::List(Arc::new(array_into_list_array(
+            array, true,
+        ))))
     }
 
     #[cfg(feature = "json")]

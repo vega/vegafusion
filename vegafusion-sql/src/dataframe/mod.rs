@@ -9,10 +9,12 @@ use async_trait::async_trait;
 use datafusion_common::{Column, DFSchema, ScalarValue, TableReference};
 use datafusion_expr::expr::AggregateFunctionDefinition;
 use datafusion_expr::{
-    expr, is_null, lit, max, min, when, AggregateFunction, BuiltInWindowFunction, Expr,
-    ExprSchemable, WindowFrame, WindowFunctionDefinition,
+    expr, is_null, lit, max, min, when, BuiltInWindowFunction, Expr, ExprSchemable, WindowFrame,
+    WindowFunctionDefinition,
 };
 use datafusion_functions::expr_fn::{abs, coalesce};
+
+use datafusion_functions_aggregate::sum::sum_udaf;
 use sqlparser::ast::{
     Cte, Expr as SqlExpr, GroupByExpr, Ident, NullTreatment, Query, Select, SelectItem, SetExpr,
     Statement, TableAlias, TableFactor, TableWithJoins, Values, WildcardAdditionalOptions, With,
@@ -908,7 +910,7 @@ impl SqlDataFrame {
 
             // Build window function to compute stacked value
             let window_expr = Expr::WindowFunction(expr::WindowFunction {
-                fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
+                fun: WindowFunctionDefinition::AggregateUDF(sum_udaf()),
                 args: vec![numeric_field.clone()],
                 partition_by,
                 order_by: orderby,
@@ -983,7 +985,7 @@ impl SqlDataFrame {
 
             // Create aggregate for total of stack value
             let total_agg = Expr::AggregateFunction(expr::AggregateFunction {
-                func_def: AggregateFunctionDefinition::BuiltIn(AggregateFunction::Sum),
+                func_def: AggregateFunctionDefinition::UDF(sum_udaf()),
                 args: vec![flat_col(stack_col_name)],
                 distinct: false,
                 filter: None,
@@ -1034,7 +1036,7 @@ impl SqlDataFrame {
 
             // Build window function to compute cumulative sum of stack column
             let cumulative_field = "_cumulative";
-            let fun = WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum);
+            let fun = WindowFunctionDefinition::AggregateUDF(sum_udaf());
             let window_expr = Expr::WindowFunction(expr::WindowFunction {
                 fun,
                 args: vec![flat_col(stack_col_name)],

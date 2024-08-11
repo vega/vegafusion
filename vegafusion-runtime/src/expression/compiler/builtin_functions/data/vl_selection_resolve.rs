@@ -119,6 +119,7 @@ pub fn vl_selection_resolve_fn(
             // Turn values into a scalar list
             let values = ScalarValue::List(Arc::new(array_into_list_array(
                 ScalarValue::iter_to_array(values)?,
+                true,
             )));
             Ok((name, values))
         })

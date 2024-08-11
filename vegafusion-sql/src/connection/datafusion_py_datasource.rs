@@ -162,4 +162,8 @@ impl ExecutionPlan for PyDatasourceExec {
     fn properties(&self) -> &PlanProperties {
         &self.plan_properties
     }
+
+    fn name(&self) -> &str {
+        "py_datasource"
+    }
 }

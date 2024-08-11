@@ -297,6 +297,15 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::Union(_, _, _) => Err(VegaFusionError::internal(
                 "Union cannot be converted to SQL",
             )),
+            ScalarValue::Utf8View(_) => Err(VegaFusionError::internal(
+                "Utf8View cannot be converted to SQL",
+            )),
+            ScalarValue::BinaryView(_) => Err(VegaFusionError::internal(
+                "BinaryView cannot be converted to SQL",
+            )),
+            ScalarValue::Map(_) => Err(VegaFusionError::internal(
+                "BinaryView cannot be converted to SQL",
+            )),
         }
     }
 }

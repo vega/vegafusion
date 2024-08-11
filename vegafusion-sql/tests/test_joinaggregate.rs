@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{avg, count, expr, max, min, sum, Expr};
+use datafusion_expr::{expr, max, min, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -13,6 +13,7 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 #[cfg(test)]
 mod test_simple_aggs {
     use crate::*;
+    use datafusion_functions_aggregate::expr_fn::{avg, count, sum};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -74,6 +75,8 @@ mod test_simple_aggs {
 #[cfg(test)]
 mod test_simple_aggs_no_grouping {
     use crate::*;
+    use datafusion_functions_aggregate::expr_fn::{avg, count};
+    use datafusion_functions_aggregate::sum::sum;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
