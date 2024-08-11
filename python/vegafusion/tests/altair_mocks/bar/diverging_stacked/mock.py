@@ -1,8 +1,9 @@
 # https://altair-viz.github.io/gallery/diverging_stacked_bar_chart.html
 
 import altair as alt
+import pandas as pd
 
-source = alt.pd.DataFrame([
+source = pd.DataFrame([
     {
         "question": "Question 1",
         "type": "Strongly disagree",
