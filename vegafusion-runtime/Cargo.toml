@@ -106,6 +106,9 @@ workspace = true
 [dependencies.datafusion-functions-array]
 workspace = true
 
+[dependencies.datafusion-functions-aggregate]
+workspace = true
+
 [dependencies.tokio]
 workspace = true
 features = [ "macros", "rt-multi-thread", "fs",]

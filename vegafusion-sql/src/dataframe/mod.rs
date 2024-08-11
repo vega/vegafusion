@@ -272,6 +272,8 @@ impl SqlDataFrame {
                     }
 
                     expr_selects.push(Select {
+                        window_before_qualify: false,
+                        connect_by: None,
                         value_table_mode: None,
                         distinct: None,
                         top: None,
@@ -354,6 +356,7 @@ impl SqlDataFrame {
                         opt_except: None,
                         opt_rename: None,
                         opt_replace: None,
+                        opt_ilike: None,
                     })];
 
                     let table_alias = TableAlias {
@@ -397,6 +400,8 @@ impl SqlDataFrame {
                     qualify: None,
                     named_window: Default::default(),
                     value_table_mode: None,
+                    window_before_qualify: false,
+                    connect_by: None,
                 }));
                 Query {
                     with: None,

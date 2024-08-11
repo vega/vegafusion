@@ -2,6 +2,8 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
 use datafusion_expr::{avg, count, count_distinct, lit, max, min, sum, Expr};
+use datafusion_functions_aggregate::median::median_udaf;
+use datafusion_functions_aggregate::variance::var_samp_udaf;
 use sqlparser::ast::NullTreatment;
 use std::collections::HashMap;
 
@@ -164,9 +166,7 @@ pub fn make_agg_expr_for_col_expr(
         AggregateOp::Max => max(column),
         AggregateOp::Sum => sum(numeric_column()?),
         AggregateOp::Median => Expr::AggregateFunction(expr::AggregateFunction {
-            func_def: AggregateFunctionDefinition::BuiltIn(
-                aggregate_function::AggregateFunction::Median,
-            ),
+            func_def: AggregateFunctionDefinition::UDF(median_udaf()),
             distinct: false,
             args: vec![numeric_column()?],
             filter: None,
@@ -174,9 +174,7 @@ pub fn make_agg_expr_for_col_expr(
             null_treatment: Some(NullTreatment::IgnoreNulls),
         }),
         AggregateOp::Variance => Expr::AggregateFunction(expr::AggregateFunction {
-            func_def: AggregateFunctionDefinition::BuiltIn(
-                aggregate_function::AggregateFunction::Variance,
-            ),
+            func_def: AggregateFunctionDefinition::UDF(var_samp_udaf()),
             distinct: false,
             args: vec![numeric_column()?],
             filter: None,

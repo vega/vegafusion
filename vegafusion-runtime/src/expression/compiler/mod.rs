@@ -68,7 +68,7 @@ mod test_compile {
     use datafusion_common::utils::array_into_list_array;
     use datafusion_common::{DFSchema, ScalarValue};
     use datafusion_expr::expr::{BinaryExpr, Case, TryCast};
-    use datafusion_expr::{expr, lit, not, Expr, Operator, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, lit, not, Expr, Operator};
     use std::collections::HashMap;
     use std::convert::TryFrom;
 
@@ -455,7 +455,7 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
         let expected_expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF(Arc::new(make_object_constructor_udf(
+            func: Arc::new(make_object_constructor_udf(
                 &["a".to_string(), "two".to_string()],
                 &[
                     DataType::Float64,
@@ -465,14 +465,14 @@ mod test_compile {
                         true,
                     )])),
                 ],
-            ))),
+            )),
             args: vec![
                 lit(1.0),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(make_object_constructor_udf(
+                    func: Arc::new(make_object_constructor_udf(
                         &["three".to_string()],
                         &[DataType::Float64],
-                    ))),
+                    )),
                     args: vec![lit(3.0)],
                 }),
             ],

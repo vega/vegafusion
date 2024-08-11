@@ -4,6 +4,7 @@ use async_trait::async_trait;
 
 use datafusion_common::ScalarValue;
 use datafusion_expr::{aggregate_function, expr, lit, Expr, WindowFrame, WindowFunctionDefinition};
+use datafusion_functions_aggregate::variance::var_samp_udaf;
 use sqlparser::ast::NullTreatment;
 use std::sync::Arc;
 use vegafusion_core::error::Result;
@@ -110,29 +111,58 @@ impl TransformTrait for Window {
                         };
 
                         use AggregateOp::*;
-                        let (agg_fn, arg) = match op {
-                            Count => (aggregate_function::AggregateFunction::Count, lit(true)),
-                            Sum => (aggregate_function::AggregateFunction::Sum, numeric_field()?),
-                            Mean | Average => {
-                                (aggregate_function::AggregateFunction::Avg, numeric_field()?)
-                            }
-                            Min => (aggregate_function::AggregateFunction::Min, numeric_field()?),
-                            Max => (aggregate_function::AggregateFunction::Max, numeric_field()?),
+                        match op {
+                            Count => (
+                                WindowFunctionDefinition::AggregateFunction(
+                                    aggregate_function::AggregateFunction::Count,
+                                ),
+                                vec![lit(true)],
+                            ),
+                            Sum => (
+                                WindowFunctionDefinition::AggregateFunction(
+                                    aggregate_function::AggregateFunction::Sum,
+                                ),
+                                vec![numeric_field()?],
+                            ),
+                            Mean | Average => (
+                                WindowFunctionDefinition::AggregateFunction(
+                                    aggregate_function::AggregateFunction::Avg,
+                                ),
+                                vec![numeric_field()?],
+                            ),
+                            Min => (
+                                WindowFunctionDefinition::AggregateFunction(
+                                    aggregate_function::AggregateFunction::Min,
+                                ),
+                                vec![numeric_field()?],
+                            ),
+                            Max => (
+                                WindowFunctionDefinition::AggregateFunction(
+                                    aggregate_function::AggregateFunction::Max,
+                                ),
+                                vec![numeric_field()?],
+                            ),
                             Variance => (
-                                aggregate_function::AggregateFunction::Variance,
-                                numeric_field()?,
+                                WindowFunctionDefinition::AggregateUDF(var_samp_udaf()),
+                                vec![numeric_field()?],
                             ),
                             Variancep => (
-                                aggregate_function::AggregateFunction::VariancePop,
-                                numeric_field()?,
+                                WindowFunctionDefinition::AggregateFunction(
+                                    aggregate_function::AggregateFunction::VariancePop,
+                                ),
+                                vec![numeric_field()?],
                             ),
                             Stdev => (
-                                aggregate_function::AggregateFunction::Stddev,
-                                numeric_field()?,
+                                WindowFunctionDefinition::AggregateFunction(
+                                    aggregate_function::AggregateFunction::Stddev,
+                                ),
+                                vec![numeric_field()?],
                             ),
                             Stdevp => (
-                                aggregate_function::AggregateFunction::StddevPop,
-                                numeric_field()?,
+                                WindowFunctionDefinition::AggregateFunction(
+                                    aggregate_function::AggregateFunction::StddevPop,
+                                ),
+                                vec![numeric_field()?],
                             ),
                             // ArrayAgg only available on master right now
                             // Values => (aggregates::AggregateFunction::ArrayAgg, unescaped_col(field)),
@@ -141,11 +171,7 @@ impl TransformTrait for Window {
                                     "Unsupported window aggregate: {op:?}"
                                 )))
                             }
-                        };
-                        (
-                            WindowFunctionDefinition::AggregateFunction(agg_fn),
-                            vec![arg],
-                        )
+                        }
                     }
                     window_transform_op::Op::WindowOp(op) => {
                         let op = WindowOp::try_from(*op).unwrap();

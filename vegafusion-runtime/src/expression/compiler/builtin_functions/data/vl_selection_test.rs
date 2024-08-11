@@ -5,7 +5,7 @@ use std::convert::TryFrom;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion_expr::expr::Case;
-use datafusion_expr::{expr, lit, Between, Expr, ExprSchemable, ScalarFunctionDefinition};
+use datafusion_expr::{expr, lit, Between, Expr, ExprSchemable};
 use datafusion_functions::expr_fn::ceil;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -133,9 +133,7 @@ impl FieldSpec {
             DataType::Timestamp(TimeUnit::Millisecond, _)
         ) {
             Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                    (*UTC_TIMESTAMP_TO_EPOCH_MS).clone(),
-                )),
+                func: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
                 args: vec![field_col],
             })
         } else {
@@ -274,15 +272,11 @@ impl FieldSpec {
                     && is_numeric_datatype(field_type) =>
             {
                 let timestamp_expr = Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        (*STR_TO_UTC_TIMESTAMP_UDF).clone(),
-                    )),
+                    func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
                     args: vec![lit(s), lit(default_input_tz)],
                 });
                 let ms_expr = Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        (*UTC_TIMESTAMP_TO_EPOCH_MS).clone(),
-                    )),
+                    func: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
                     args: vec![timestamp_expr],
                 });
                 cast_to(ms_expr, field_type, schema)

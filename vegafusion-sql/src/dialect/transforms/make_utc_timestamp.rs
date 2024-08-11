@@ -1,4 +1,5 @@
 use crate::compile::expr::ToSqlExpr;
+use crate::dialect::utils::make_utc_expr;
 use crate::dialect::{Dialect, FunctionTransformer};
 use arrow::datatypes::DataType;
 use datafusion_common::DFSchema;
@@ -6,7 +7,8 @@ use datafusion_expr::{cast, lit, Expr};
 use sqlparser::ast::{
     BinaryOperator as SqlBinaryOperator, DateTimeField as SqlDateTimeField, Expr as SqlExpr,
     Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr,
-    Ident as SqlIdent, ObjectName as SqlObjectName, Value as SqlValue,
+    FunctionArgumentList, FunctionArguments, Ident as SqlIdent, ObjectName as SqlObjectName,
+    Value as SqlValue,
 };
 use std::ops::{Add, Div};
 use std::sync::Arc;
@@ -20,7 +22,7 @@ struct MakeUtcTimestampSqlArgs {
     pub minute: SqlExpr,
     pub second: SqlExpr,
     pub millisecond: SqlExpr,
-    pub time_zone: String,
+    pub time_zone: SqlExpr,
 }
 
 fn process_make_utc_timestamp_args(
@@ -37,13 +39,6 @@ fn process_make_utc_timestamp_args(
     }
 
     let sql_tz_arg = args[7].to_sql(dialect, schema)?;
-    let time_zone = if let SqlExpr::Value(SqlValue::SingleQuotedString(time_zone)) = sql_tz_arg {
-        time_zone
-    } else {
-        return Err(VegaFusionError::sql_not_supported(
-            "Third argument to make_utc_timestamp must be a string literal",
-        ));
-    };
 
     let month = if add_one_to_month {
         // Add one so that month ranges from 1 to 12 instead of 0 to 11
@@ -75,7 +70,7 @@ fn process_make_utc_timestamp_args(
         minute: args[4].to_sql(dialect, schema)?,
         second,
         millisecond,
-        time_zone,
+        time_zone: sql_tz_arg,
     })
 }
 
@@ -99,17 +94,19 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
                 value: "date".to_string(),
                 quote_style: None,
             }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.year)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.month)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.day)),
-            ],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.year)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.month)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.day)),
+                ],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
         });
 
         let time_expr = SqlExpr::Function(SqlFunction {
@@ -117,17 +114,19 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
                 value: "time".to_string(),
                 quote_style: None,
             }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.hour)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.minute)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.second)),
-            ],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.hour)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.minute)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.second)),
+                ],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
         });
 
         let time_with_ms_expr = SqlExpr::Function(SqlFunction {
@@ -135,24 +134,26 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
                 value: "time_add".to_string(),
                 quote_style: None,
             }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(time_expr)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Interval(
-                    sqlparser::ast::Interval {
-                        value: Box::new(sql_args.millisecond),
-                        leading_field: Some(SqlDateTimeField::Millisecond),
-                        leading_precision: None,
-                        last_field: None,
-                        fractional_seconds_precision: None,
-                    },
-                ))),
-            ],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(time_expr)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Interval(
+                        sqlparser::ast::Interval {
+                            value: Box::new(sql_args.millisecond),
+                            leading_field: Some(SqlDateTimeField::Millisecond),
+                            leading_precision: None,
+                            last_field: None,
+                            fractional_seconds_precision: None,
+                        },
+                    ))),
+                ],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
         });
 
         let datetime_expr = SqlExpr::Function(SqlFunction {
@@ -160,16 +161,18 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
                 value: "datetime".to_string(),
                 quote_style: None,
             }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(date_expr)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(time_with_ms_expr)),
-            ],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(date_expr)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(time_with_ms_expr)),
+                ],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
         });
 
         let timestamp_expr = SqlExpr::Function(SqlFunction {
@@ -177,18 +180,18 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
                 value: "timestamp".to_string(),
                 quote_style: None,
             }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(datetime_expr)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                    SqlValue::SingleQuotedString(sql_args.time_zone),
-                ))),
-            ],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(datetime_expr)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.time_zone)),
+                ],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
         });
 
         Ok(timestamp_expr)
@@ -217,20 +220,22 @@ impl FunctionTransformer for MakeUtcTimestampDatabricksTransformer {
                 value: "make_timestamp".to_string(),
                 quote_style: None,
             }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.year)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.month)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.day)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.hour)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.minute)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.second)),
-            ],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.year)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.month)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.day)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.hour)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.minute)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.second)),
+                ],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
         });
 
         let date_add_expr = SqlExpr::Function(SqlFunction {
@@ -238,23 +243,28 @@ impl FunctionTransformer for MakeUtcTimestampDatabricksTransformer {
                 value: "dateadd".to_string(),
                 quote_style: None,
             }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Identifier(SqlIdent {
-                    value: "millisecond".to_string(),
-                    quote_style: None,
-                }))),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.millisecond)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(make_timestamp_expr)),
-            ],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Identifier(
+                        SqlIdent {
+                            value: "millisecond".to_string(),
+                            quote_style: None,
+                        },
+                    ))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.millisecond)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(make_timestamp_expr)),
+                ],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
         });
 
-        let ts_in_utc_expr = if sql_args.time_zone == "UTC" {
+        let utc = make_utc_expr();
+        let ts_in_utc_expr = if sql_args.time_zone == utc {
             date_add_expr
         } else {
             SqlExpr::Function(SqlFunction {
@@ -262,18 +272,18 @@ impl FunctionTransformer for MakeUtcTimestampDatabricksTransformer {
                     value: "to_utc_timestamp".to_string(),
                     quote_style: None,
                 }]),
-                args: vec![
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(date_add_expr)),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                        SqlValue::SingleQuotedString(sql_args.time_zone),
-                    ))),
-                ],
+                args: FunctionArguments::List(FunctionArgumentList {
+                    args: vec![
+                        SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(date_add_expr)),
+                        SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.time_zone)),
+                    ],
+                    duplicate_treatment: None,
+                    clauses: vec![],
+                }),
                 filter: None,
                 null_treatment: None,
                 over: None,
-                distinct: false,
-                special: false,
-                order_by: Default::default(),
+                within_group: vec![],
             })
         };
 
@@ -303,31 +313,34 @@ impl FunctionTransformer for MakeUtcTimestampDuckDbTransformer {
                 value: "make_timestamp".to_string(),
                 quote_style: None,
             }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.year)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.month)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.day)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.hour)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.minute)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.second)),
-            ],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.year)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.month)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.day)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.hour)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.minute)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.second)),
+                ],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
         });
 
-        let timestamp_in_utc_expr = if sql_args.time_zone == "UTC" {
+        let utc = make_utc_expr();
+        let timestamp_in_utc_expr = if sql_args.time_zone == utc {
             make_timestamp_expr
         } else {
             SqlExpr::AtTimeZone {
                 timestamp: Box::new(SqlExpr::AtTimeZone {
                     timestamp: Box::new(make_timestamp_expr),
-                    time_zone: sql_args.time_zone,
+                    time_zone: Box::new(sql_args.time_zone),
                 }),
-                time_zone: "UTC".to_string(),
+                time_zone: Box::new(utc),
             }
         };
 
@@ -349,34 +362,34 @@ impl MakeUtcTimestampPostgresTransformer {
 impl FunctionTransformer for MakeUtcTimestampPostgresTransformer {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
         let sql_args = process_make_utc_timestamp_args(args, dialect, schema, true, true)?;
-
+        let utc = make_utc_expr();
         let make_timestamp_expr = SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![SqlIdent {
                 value: "make_timestamptz".to_string(),
                 quote_style: None,
             }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.year)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.month)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.day)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.hour)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.minute)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.second)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                    SqlValue::SingleQuotedString(sql_args.time_zone),
-                ))),
-            ],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.year)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.month)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.day)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.hour)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.minute)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.second)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.time_zone)),
+                ],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
         });
 
         let timestamp_in_utc_expr = SqlExpr::AtTimeZone {
             timestamp: Box::new(make_timestamp_expr),
-            time_zone: "UTC".to_string(),
+            time_zone: Box::new(utc),
         };
 
         Ok(timestamp_in_utc_expr)
@@ -405,32 +418,35 @@ impl FunctionTransformer for MakeUtcTimestampSnowflakeTransformer {
                 value: "timestamp_ntz_from_parts".to_string(),
                 quote_style: None,
             }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.year)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.month)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.day)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.hour)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.minute)),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.second)),
-                // Convert ms to ns
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::BinaryOp {
-                    left: Box::new(sql_args.millisecond),
-                    op: SqlBinaryOperator::Multiply,
-                    right: Box::new(SqlExpr::Value(SqlValue::Number(
-                        "1000000".to_string(),
-                        false,
-                    ))),
-                })),
-            ],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.year)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.month)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.day)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.hour)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.minute)),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.second)),
+                    // Convert ms to ns
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::BinaryOp {
+                        left: Box::new(sql_args.millisecond),
+                        op: SqlBinaryOperator::Multiply,
+                        right: Box::new(SqlExpr::Value(SqlValue::Number(
+                            "1000000".to_string(),
+                            false,
+                        ))),
+                    })),
+                ],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
         });
 
-        let timestamp_in_utc_expr = if sql_args.time_zone == "UTC" {
+        let utc = make_utc_expr();
+        let timestamp_in_utc_expr = if sql_args.time_zone == utc {
             make_timestamp_expr
         } else {
             SqlExpr::Function(SqlFunction {
@@ -438,21 +454,23 @@ impl FunctionTransformer for MakeUtcTimestampSnowflakeTransformer {
                     value: "convert_timezone".to_string(),
                     quote_style: None,
                 }]),
-                args: vec![
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                        SqlValue::SingleQuotedString(sql_args.time_zone),
-                    ))),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                        SqlValue::SingleQuotedString("UTC".to_string()),
-                    ))),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(make_timestamp_expr)),
-                ],
+                args: FunctionArguments::List(FunctionArgumentList {
+                    args: vec![
+                        SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                            SqlValue::SingleQuotedString(sql_args.time_zone.to_string()),
+                        ))),
+                        SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                            SqlValue::SingleQuotedString("UTC".to_string()),
+                        ))),
+                        SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(make_timestamp_expr)),
+                    ],
+                    duplicate_treatment: None,
+                    clauses: vec![],
+                }),
                 filter: None,
                 null_treatment: None,
                 over: None,
-                distinct: false,
-                special: false,
-                order_by: Default::default(),
+                within_group: vec![],
             })
         };
 
