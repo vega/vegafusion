@@ -69,9 +69,7 @@ fn maybe_from_utc(ts_expr: SqlExpr, time_zone: &SqlExpr) -> SqlExpr {
             args: FunctionArguments::List(FunctionArgumentList {
                 args: vec![
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_expr)),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                        SqlValue::SingleQuotedString(time_zone.to_string()),
-                    ))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(time_zone.clone())),
                 ],
                 duplicate_treatment: None,
                 clauses: vec![],
@@ -97,9 +95,7 @@ fn maybe_to_utc(ts_expr: SqlExpr, time_zone: &SqlExpr) -> SqlExpr {
             args: FunctionArguments::List(FunctionArgumentList {
                 args: vec![
                     SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_expr)),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                        SqlValue::SingleQuotedString(time_zone.to_string()),
-                    ))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(time_zone.clone())),
                 ],
                 duplicate_treatment: None,
                 clauses: vec![],

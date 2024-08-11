@@ -8,10 +8,12 @@ description = "Custom DataFusion UDFs used by VegaFusion"
 [dependencies]
 ordered-float = "3.6.0"
 lazy_static = "^1.4.0"
-chrono-tz = "0.8.1"
 regex = "^1.5.5"
 
 [dependencies.chrono]
+workspace = true
+
+[dependencies.chrono-tz]
 workspace = true
 
 [dependencies.vegafusion-common]
