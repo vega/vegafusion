@@ -758,6 +758,7 @@ mod tests {
         let ts_nanos = ts_string
             .parse::<chrono::NaiveDateTime>()
             .unwrap()
+            .and_utc()
             .timestamp_nanos_opt()
             .unwrap();
         let ts_micros = ts_nanos / 1000;
