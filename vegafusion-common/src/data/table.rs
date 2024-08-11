@@ -34,9 +34,9 @@ use {
 use {
     arrow::pyarrow::{FromPyArrow, ToPyArrow},
     pyo3::{
-        prelude::PyModule,
+        prelude::*,
         types::{PyList, PyTuple},
-        PyAny, PyErr, PyObject, Python,
+        Bound, PyAny, PyErr, PyObject, Python,
     },
 };
 
@@ -268,18 +268,17 @@ impl VegaFusionTable {
     }
 
     #[cfg(feature = "pyarrow")]
-    pub fn from_pyarrow(py: Python, pyarrow_table: &PyAny) -> std::result::Result<Self, PyErr> {
+    pub fn from_pyarrow(pyarrow_table: &Bound<PyAny>) -> std::result::Result<Self, PyErr> {
         // Extract table.schema as a Rust Schema
-        let getattr_args = PyTuple::new(py, vec!["schema"]);
-        let schema_object = pyarrow_table.call_method1("__getattribute__", getattr_args)?;
-        let schema = Schema::from_pyarrow(schema_object)?;
+        let schema_object = pyarrow_table.getattr("schema")?;
+        let schema = Schema::from_pyarrow_bound(&schema_object)?;
 
         // Extract table.to_batches() as a Rust Vec<RecordBatch>
         let batches_object = pyarrow_table.call_method0("to_batches")?;
         let batches_list = batches_object.downcast::<PyList>()?;
         let batches = batches_list
             .iter()
-            .map(|batch_any| Ok(RecordBatch::from_pyarrow(batch_any)?))
+            .map(|batch_any| Ok(RecordBatch::from_pyarrow_bound(&batch_any)?))
             .collect::<Result<Vec<RecordBatch>>>()?;
 
         Ok(VegaFusionTable::try_new(Arc::new(schema), batches)?)
@@ -288,14 +287,16 @@ impl VegaFusionTable {
     #[cfg(feature = "pyarrow")]
     pub fn to_pyarrow(&self, py: Python) -> std::result::Result<PyObject, PyErr> {
         // Convert table's record batches into Python list of pyarrow batches
-        let pyarrow_module = PyModule::import(py, "pyarrow")?;
+
+        use pyo3::types::PyAnyMethods;
+        let pyarrow_module = PyModule::import_bound(py, "pyarrow")?;
         let table_cls = pyarrow_module.getattr("Table")?;
         let batch_objects = self
             .batches
             .iter()
             .map(|batch| Ok(batch.to_pyarrow(py)?))
             .collect::<Result<Vec<_>>>()?;
-        let batches_list = PyList::new(py, batch_objects);
+        let batches_list = PyList::new_bound(py, batch_objects);
 
         // Convert table's schema into pyarrow schema
         let schema = if let Some(batch) = self.batches.first() {
@@ -308,7 +309,7 @@ impl VegaFusionTable {
         let schema_object = schema.to_pyarrow(py)?;
 
         // Build pyarrow table
-        let args = PyTuple::new(py, vec![batches_list.as_ref(), schema_object.as_ref(py)]);
+        let args = PyTuple::new_bound(py, vec![&batches_list, schema_object.bind(py)]);
         let pa_table = table_cls.call_method1("from_batches", args)?;
         Ok(PyObject::from(pa_table))
     }

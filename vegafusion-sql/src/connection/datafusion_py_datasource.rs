@@ -28,7 +28,7 @@ impl PyDatasource {
     pub fn try_new(py_datasource: PyObject) -> Result<Self, PyErr> {
         Python::with_gil(|py| -> Result<_, PyErr> {
             let table_schema_obj = py_datasource.call_method0(py, "schema")?;
-            let schema = Arc::new(Schema::from_pyarrow(table_schema_obj.as_ref(py))?);
+            let schema = Arc::new(Schema::from_pyarrow_bound(table_schema_obj.bind(py))?);
             Ok(Self {
                 py_datasource,
                 schema,
@@ -141,9 +141,9 @@ impl ExecutionPlan for PyDatasourceExec {
                 .iter()
                 .map(|field| field.name().clone())
                 .collect::<Vec<_>>();
-            let args = PyTuple::new(py, vec![column_names.into_py(py)]);
+            let args = PyTuple::new_bound(py, vec![column_names.into_py(py)]);
             let pa_table = self.db.py_datasource.call_method1(py, "fetch", args)?;
-            let table = VegaFusionTable::from_pyarrow(py, pa_table.as_ref(py))?;
+            let table = VegaFusionTable::from_pyarrow(pa_table.bind(py))?;
             Ok(table)
         })
         .map_err(|err| DataFusionError::Execution(err.to_string()))?;
