@@ -164,7 +164,7 @@ macro_rules! set_temporal_column_as_millis_by_array_type {
             .for_each(|(i, row)| {
                 if !arr.is_null(i) {
                     if let Some(v) = arr.$cast_fn(i) {
-                        row.insert($col_name.to_string(), v.timestamp_millis().into());
+                        row.insert($col_name.to_string(), v.and_utc().timestamp_millis().into());
                     } else {
                         row.insert($col_name.to_string(), Value::Null);
                     }
@@ -811,6 +811,7 @@ mod tests {
         let ts_millis = ts_string
             .parse::<chrono::NaiveDateTime>()
             .unwrap()
+            .and_utc()
             .timestamp_millis();
 
         let arr_date32 = Date32Array::from(vec![
