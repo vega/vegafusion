@@ -488,6 +488,7 @@ pub fn make_datafusion_context() -> SessionContext {
     let session_state = SessionStateBuilder::new()
         .with_config(config)
         .with_runtime_env(runtime)
+        .with_default_features()
         .build();
 
     let ctx = SessionContext::new_with_state(session_state);

@@ -3,11 +3,11 @@ use crate::compile::scalar::ToSqlScalar;
 use arrow::datatypes::DataType;
 use datafusion_common::{DFSchema, ScalarValue};
 use sqlparser::ast::{
-    BinaryOperator as SqlBinaryOperator, CastKind, Expr as SqlExpr, Function as SqlFunction,
-    FunctionArg as SqlFunctionArg, FunctionArgumentList, FunctionArguments, Ident,
-    ObjectName as SqlObjectName, UnaryOperator as SqlUnaryOperator, WindowFrame as SqlWindowFrame,
-    WindowFrameBound as SqlWindowBound, WindowFrameUnits as SqlWindowFrameUnits,
-    WindowSpec as SqlWindowSpec, WindowType,
+    BinaryOperator as SqlBinaryOperator, CastKind, DuplicateTreatment, Expr as SqlExpr,
+    Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgumentList,
+    FunctionArguments, Ident, ObjectName as SqlObjectName, UnaryOperator as SqlUnaryOperator,
+    WindowFrame as SqlWindowFrame, WindowFrameBound as SqlWindowBound,
+    WindowFrameUnits as SqlWindowFrameUnits, WindowSpec as SqlWindowSpec, WindowType,
 };
 
 use datafusion_expr::expr::{BinaryExpr, Case, Cast, Sort};
@@ -367,11 +367,7 @@ impl ToSqlExpr for Expr {
                                 null_treatment: None,
                                 over: None,
                                 within_group: vec![],
-                                parameters: FunctionArguments::List(FunctionArgumentList {
-                                    args: vec![],
-                                    duplicate_treatment: None,
-                                    clauses: vec![],
-                                }),
+                                parameters: FunctionArguments::None,
                             }));
                         }
                         UnorderedRowNumberMode::OrderByConstant => {
@@ -463,11 +459,7 @@ impl ToSqlExpr for Expr {
                         null_treatment: None,
                         over: Some(over),
                         within_group: vec![],
-                        parameters: FunctionArguments::List(FunctionArgumentList {
-                            args: vec![],
-                            duplicate_treatment: None,
-                            clauses: vec![],
-                        }),
+                        parameters: FunctionArguments::None,
                     };
 
                     Ok(SqlExpr::Function(sql_fun))
@@ -570,11 +562,7 @@ fn translate_scalar_function(
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         }))
     } else if let Some(transformer) = dialect.scalar_transformers.get(fun_name) {
         // Supported through AST transformation
@@ -590,7 +578,7 @@ fn translate_scalar_function(
 fn translate_aggregate_function(
     fun_name: &str,
     args: &[Expr],
-    _distinct: bool, // Where should distinct go now?
+    distinct: bool,
     dialect: &Dialect,
     schema: &DFSchema,
 ) -> Result<SqlExpr> {
@@ -600,24 +588,25 @@ fn translate_aggregate_function(
             quote_style: None,
         };
         let args = translate_function_args(args, dialect, schema)?;
-
-        Ok(SqlExpr::Function(SqlFunction {
+        let fn_expr = SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![ident]),
             args: FunctionArguments::List(FunctionArgumentList {
                 args,
-                duplicate_treatment: None,
+                duplicate_treatment: if distinct {
+                    Some(DuplicateTreatment::Distinct)
+                } else {
+                    None
+                },
                 clauses: vec![],
             }),
             filter: None,
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
-        }))
+            parameters: FunctionArguments::None,
+        });
+        println!("{}", fn_expr.to_string());
+        Ok(fn_expr)
     } else if let Some(transformer) = dialect.aggregate_transformers.get(fun_name) {
         // Supported through AST transformation
         transformer.transform(args, dialect, schema)

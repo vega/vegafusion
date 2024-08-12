@@ -209,11 +209,7 @@ impl ToSqlScalar for ScalarValue {
                     null_treatment: None,
                     over: None,
                     within_group: vec![],
-                    parameters: FunctionArguments::List(FunctionArgumentList {
-                        args: vec![],
-                        duplicate_treatment: None,
-                        clauses: vec![],
-                    }),
+                    parameters: FunctionArguments::None,
                 }))
             }
             ScalarValue::Date32(v) => date32_to_date(v, dialect),
