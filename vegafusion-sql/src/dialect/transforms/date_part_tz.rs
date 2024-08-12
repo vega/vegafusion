@@ -118,11 +118,7 @@ impl FunctionTransformer for DatePartTzWithDatePartAndAtTimezoneTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         }))
     }
 }
@@ -186,11 +182,7 @@ impl FunctionTransformer for DatePartTzClickhouseTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         let part_function = match part.to_ascii_lowercase().as_str() {
@@ -225,11 +217,7 @@ impl FunctionTransformer for DatePartTzClickhouseTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         }))
     }
 }
@@ -271,11 +259,7 @@ impl FunctionTransformer for DatePartTzWithFromUtcAndDatePartTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             })
         };
 
@@ -298,11 +282,7 @@ impl FunctionTransformer for DatePartTzWithFromUtcAndDatePartTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         }))
     }
 }
@@ -341,11 +321,7 @@ impl FunctionTransformer for DatePartTzMySqlTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             })
         };
 
@@ -391,11 +367,7 @@ impl FunctionTransformer for DatePartTzSnowflakeTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             })
         };
 
@@ -418,11 +390,7 @@ impl FunctionTransformer for DatePartTzSnowflakeTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         }))
     }
 }

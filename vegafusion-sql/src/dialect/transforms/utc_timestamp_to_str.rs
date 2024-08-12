@@ -58,11 +58,7 @@ impl FunctionTransformer for UtcTimestampToStrBigQueryTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         Ok(SqlExpr::Function(SqlFunction {
@@ -84,11 +80,7 @@ impl FunctionTransformer for UtcTimestampToStrBigQueryTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         }))
     }
 }
@@ -131,11 +123,7 @@ impl FunctionTransformer for UtcTimestampToStrDatabricksTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             })
         };
 
@@ -158,11 +146,7 @@ impl FunctionTransformer for UtcTimestampToStrDatabricksTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         // There should be a better way to do this, but including the "T" directly in the format
@@ -189,11 +173,7 @@ impl FunctionTransformer for UtcTimestampToStrDatabricksTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         Ok(replace_expr)
@@ -248,11 +228,7 @@ impl FunctionTransformer for UtcTimestampToStrDuckDBTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         Ok(strftime_expr)
@@ -308,11 +284,7 @@ impl FunctionTransformer for UtcTimestampToStrPostgresTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         Ok(strftime_expr)
@@ -358,11 +330,7 @@ impl FunctionTransformer for UtcTimestampToStrSnowflakeTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             })
         };
 
@@ -385,11 +353,7 @@ impl FunctionTransformer for UtcTimestampToStrSnowflakeTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         Ok(date_format_expr)

@@ -118,11 +118,7 @@ impl FunctionTransformer for ToUtcTimestampSnowflakeTransform {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             });
 
             Ok(convert_tz_expr)
@@ -165,11 +161,7 @@ impl FunctionTransformer for ToUtcTimestampBigQueryTransform {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             });
 
             let convert_tz_expr = SqlExpr::Function(SqlFunction {
@@ -189,11 +181,7 @@ impl FunctionTransformer for ToUtcTimestampBigQueryTransform {
                 filter: None,
                 null_treatment: None,
                 over: None,
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             });
 
             Ok(convert_tz_expr)

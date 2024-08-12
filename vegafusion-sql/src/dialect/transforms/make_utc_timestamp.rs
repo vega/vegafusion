@@ -107,11 +107,7 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         let time_expr = SqlExpr::Function(SqlFunction {
@@ -132,11 +128,7 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         let time_with_ms_expr = SqlExpr::Function(SqlFunction {
@@ -164,11 +156,7 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         let datetime_expr = SqlExpr::Function(SqlFunction {
@@ -188,11 +176,7 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         let timestamp_expr = SqlExpr::Function(SqlFunction {
@@ -212,11 +196,7 @@ impl FunctionTransformer for MakeUtcTimestampBigQueryTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         Ok(timestamp_expr)
@@ -261,11 +241,7 @@ impl FunctionTransformer for MakeUtcTimestampDatabricksTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         let date_add_expr = SqlExpr::Function(SqlFunction {
@@ -291,11 +267,7 @@ impl FunctionTransformer for MakeUtcTimestampDatabricksTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         let utc = make_utc_expr();
@@ -319,11 +291,7 @@ impl FunctionTransformer for MakeUtcTimestampDatabricksTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             })
         };
 
@@ -369,11 +337,7 @@ impl FunctionTransformer for MakeUtcTimestampDuckDbTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         let utc = make_utc_expr();
@@ -430,11 +394,7 @@ impl FunctionTransformer for MakeUtcTimestampPostgresTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         let timestamp_in_utc_expr = SqlExpr::AtTimeZone {
@@ -493,11 +453,7 @@ impl FunctionTransformer for MakeUtcTimestampSnowflakeTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         let utc = make_utc_expr();
@@ -511,9 +467,7 @@ impl FunctionTransformer for MakeUtcTimestampSnowflakeTransformer {
                 }]),
                 args: FunctionArguments::List(FunctionArgumentList {
                     args: vec![
-                        SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                            SqlValue::SingleQuotedString(sql_args.time_zone.to_string()),
-                        ))),
+                        SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(sql_args.time_zone)),
                         SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
                             SqlValue::SingleQuotedString("UTC".to_string()),
                         ))),
@@ -526,11 +480,7 @@ impl FunctionTransformer for MakeUtcTimestampSnowflakeTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             })
         };
 

@@ -76,11 +76,7 @@ impl FunctionTransformer for DateTruncTzWithDateTruncAndAtTimezoneTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
         let utc = make_utc_expr();
 
@@ -140,11 +136,7 @@ impl FunctionTransformer for DateTruncTzWithTimestampTruncTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         }))
     }
 }
@@ -195,11 +187,7 @@ impl FunctionTransformer for DateTruncTzClickhouseTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
         let utc = make_utc_expr();
 
@@ -223,11 +211,7 @@ impl FunctionTransformer for DateTruncTzClickhouseTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             })
         };
 
@@ -273,11 +257,7 @@ impl FunctionTransformer for DateTruncTzWithFromUtcAndDateTruncTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             })
         };
 
@@ -300,11 +280,7 @@ impl FunctionTransformer for DateTruncTzWithFromUtcAndDateTruncTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         let date_trunc_in_utc = if time_zone == utc {
@@ -327,11 +303,7 @@ impl FunctionTransformer for DateTruncTzWithFromUtcAndDateTruncTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             })
         };
 
@@ -376,11 +348,7 @@ impl FunctionTransformer for DateTruncTzSnowflakeTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             })
         };
         let date_trunc_in_tz = SqlExpr::Function(SqlFunction {
@@ -402,11 +370,7 @@ impl FunctionTransformer for DateTruncTzSnowflakeTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         let date_trunc_in_utc = if time_zone == utc {
@@ -430,11 +394,7 @@ impl FunctionTransformer for DateTruncTzSnowflakeTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
-                parameters: FunctionArguments::List(FunctionArgumentList {
-                    args: vec![],
-                    duplicate_treatment: None,
-                    clauses: vec![],
-                }),
+                parameters: FunctionArguments::None,
             })
         };
 

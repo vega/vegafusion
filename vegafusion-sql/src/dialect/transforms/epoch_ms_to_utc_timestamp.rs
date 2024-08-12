@@ -52,11 +52,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampBigQueryTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         Ok(ts_millis_expr)
@@ -105,11 +101,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampDatabricksTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
         let from_unix_time_expr = SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![SqlIdent {
@@ -127,11 +119,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampDatabricksTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
         let dateadd_expr = SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![SqlIdent {
@@ -156,11 +144,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampDatabricksTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         Ok(dateadd_expr)
@@ -196,11 +180,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampDuckDbTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         Ok(epoch_ms_expr)
@@ -249,11 +229,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampPostgresTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
         let to_timestamp_expr = SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![SqlIdent {
@@ -271,11 +247,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampPostgresTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         let to_timestamp_at_utc_expr = SqlExpr::AtTimeZone {
@@ -343,11 +315,7 @@ impl FunctionTransformer for EpochMsToUtcTimestampSnowflakeTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
-            parameters: FunctionArguments::List(FunctionArgumentList {
-                args: vec![],
-                duplicate_treatment: None,
-                clauses: vec![],
-            }),
+            parameters: FunctionArguments::None,
         });
 
         Ok(to_timestamp_expr)
