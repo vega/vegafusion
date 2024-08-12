@@ -3,7 +3,6 @@ use crate::transform::aggregate::make_agg_expr_for_col_expr;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion_expr::{expr::Sort, lit, when, Expr};
-use datafusion_functions::expr_fn::coalesce;
 use datafusion_functions_aggregate::expr_fn::min;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::StringArray;
@@ -170,16 +169,14 @@ async fn pivot_case(
     for pivot_val in pivot_vec.iter() {
         let predicate_expr = unescaped_col(&tx.field).eq(lit(pivot_val.as_str()));
         let value_expr = unescaped_col(tx.value.as_str());
-        let agg_col = when(predicate_expr, value_expr).otherwise(lit(ScalarValue::Null))?;
+        let agg_col = when(predicate_expr, value_expr).otherwise(if fill_zero {
+            // Replace null with zero for certain aggregates
+            lit(0)
+        } else {
+            lit(ScalarValue::Null)
+        })?;
 
         let agg_expr = make_agg_expr_for_col_expr(agg_col, &agg_op, &dataframe.schema_df()?)?;
-
-        // Replace null with zero for certain aggregates
-        let agg_expr = if fill_zero {
-            coalesce(vec![agg_expr, lit(0.0)])
-        } else {
-            agg_expr
-        };
 
         // Compute pivot column name, replacing null placeholder with "null"
         let col_name = if pivot_val == NULL_PLACEHOLDER_NAME {

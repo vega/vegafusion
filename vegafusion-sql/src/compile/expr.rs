@@ -605,7 +605,6 @@ fn translate_aggregate_function(
             within_group: vec![],
             parameters: FunctionArguments::None,
         });
-        println!("{}", fn_expr.to_string());
         Ok(fn_expr)
     } else if let Some(transformer) = dialect.aggregate_transformers.get(fun_name) {
         // Supported through AST transformation
