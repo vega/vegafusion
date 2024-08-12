@@ -78,6 +78,11 @@ fn maybe_from_utc(ts_expr: SqlExpr, time_zone: &SqlExpr) -> SqlExpr {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         })
     }
 }
@@ -104,6 +109,11 @@ fn maybe_to_utc(ts_expr: SqlExpr, time_zone: &SqlExpr) -> SqlExpr {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         })
     }
 }
@@ -142,6 +152,11 @@ impl FunctionTransformer for DateAddTzBigQueryTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
 
         let date_time_field = part_to_date_time_field(&part)?;
@@ -170,6 +185,11 @@ impl FunctionTransformer for DateAddTzBigQueryTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
 
         let timestamp_expr = SqlExpr::Function(SqlFunction {
@@ -189,6 +209,11 @@ impl FunctionTransformer for DateAddTzBigQueryTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
 
         Ok(timestamp_expr)
@@ -277,6 +302,11 @@ impl FunctionTransformer for DateAddTzDatabricksTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
 
         Ok(maybe_to_utc(shifted_tz_expr, &time_zone))
@@ -369,6 +399,11 @@ impl FunctionTransformer for DateAddTzSnowflakeTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
+                parameters: FunctionArguments::List(FunctionArgumentList {
+                    args: vec![],
+                    duplicate_treatment: None,
+                    clauses: vec![],
+                }),
             })
         };
 
@@ -397,6 +432,11 @@ impl FunctionTransformer for DateAddTzSnowflakeTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
 
         let date_add_in_utc = if time_zone == utc {
@@ -420,6 +460,11 @@ impl FunctionTransformer for DateAddTzSnowflakeTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
+                parameters: FunctionArguments::List(FunctionArgumentList {
+                    args: vec![],
+                    duplicate_treatment: None,
+                    clauses: vec![],
+                }),
             })
         };
 

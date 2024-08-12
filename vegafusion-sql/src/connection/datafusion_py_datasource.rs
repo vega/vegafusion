@@ -2,7 +2,6 @@ use arrow::datatypes::{Schema, SchemaRef};
 use arrow::pyarrow::FromPyArrow;
 use async_trait::async_trait;
 use datafusion::datasource::TableProvider;
-use datafusion::execution::context::SessionState;
 use datafusion::execution::{SendableRecordBatchStream, TaskContext};
 use datafusion::physical_expr::{EquivalenceProperties, Partitioning};
 use datafusion::physical_plan::memory::MemoryStream;
@@ -65,7 +64,7 @@ impl TableProvider for PyDatasource {
 
     async fn scan(
         &self,
-        _state: &SessionState,
+        _state: &(dyn datafusion::catalog::Session),
         projection: Option<&Vec<usize>>,
         _filters: &[Expr],
         _limit: Option<usize>,

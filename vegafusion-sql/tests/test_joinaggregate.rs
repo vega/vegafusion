@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{expr, max, min, Expr};
+use datafusion_expr::{expr, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -18,6 +18,8 @@ mod test_simple_aggs {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions_aggregate::min_max::{max, min};
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -81,6 +83,8 @@ mod test_simple_aggs_no_grouping {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions_aggregate::min_max::{max, min};
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 

@@ -121,6 +121,11 @@ impl FunctionTransformer for StrToUtcTimestampWithCastFunctionAtTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
         if self.at_timezone_utc {
             Ok(SqlExpr::AtTimeZone {
@@ -169,6 +174,11 @@ impl FunctionTransformer for StrToUtcTimestampWithFunctionTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         }))
     }
 }
@@ -205,6 +215,11 @@ impl FunctionTransformer for StrToUtcTimestampClickhouseTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
 
         let to_time_zone_expr = SqlExpr::Function(SqlFunction {
@@ -226,6 +241,11 @@ impl FunctionTransformer for StrToUtcTimestampClickhouseTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
 
         Ok(to_time_zone_expr)
@@ -264,6 +284,11 @@ impl FunctionTransformer for StrToUtcTimestampMySqlTransformer {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
 
         if time_zone == utc {
@@ -290,6 +315,11 @@ impl FunctionTransformer for StrToUtcTimestampMySqlTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
+                parameters: FunctionArguments::List(FunctionArgumentList {
+                    args: vec![],
+                    duplicate_treatment: None,
+                    clauses: vec![],
+                }),
             });
 
             Ok(convert_tz_expr)
@@ -350,6 +380,11 @@ impl FunctionTransformer for StrToUtcTimestampSnowflakeTransformer {
                 null_treatment: None,
                 over: None,
                 within_group: vec![],
+                parameters: FunctionArguments::List(FunctionArgumentList {
+                    args: vec![],
+                    duplicate_treatment: None,
+                    clauses: vec![],
+                }),
             });
 
             Ok(convert_tz_expr)

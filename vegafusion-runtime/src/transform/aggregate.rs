@@ -1,7 +1,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion_expr::{lit, max, min, Expr};
+use datafusion_expr::{lit, Expr};
 use datafusion_functions_aggregate::median::median_udaf;
 use datafusion_functions_aggregate::variance::{var_pop_udaf, var_samp_udaf};
 use sqlparser::ast::NullTreatment;
@@ -9,8 +9,7 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use datafusion_expr::expr;
-use datafusion_expr::expr::AggregateFunctionDefinition;
-use datafusion_functions_aggregate::expr_fn::{avg, count, count_distinct, sum};
+use datafusion_functions_aggregate::expr_fn::{avg, count, count_distinct, max, min, sum};
 use datafusion_functions_aggregate::stddev::{stddev_pop_udaf, stddev_udaf};
 use std::sync::Arc;
 use vegafusion_common::column::{flat_col, unescaped_col};
@@ -168,7 +167,7 @@ pub fn make_agg_expr_for_col_expr(
         AggregateOp::Max => max(column),
         AggregateOp::Sum => sum(numeric_column()?),
         AggregateOp::Median => Expr::AggregateFunction(expr::AggregateFunction {
-            func_def: AggregateFunctionDefinition::UDF(median_udaf()),
+            func: median_udaf(),
             distinct: false,
             args: vec![numeric_column()?],
             filter: None,
@@ -176,7 +175,7 @@ pub fn make_agg_expr_for_col_expr(
             null_treatment: Some(NullTreatment::IgnoreNulls),
         }),
         AggregateOp::Variance => Expr::AggregateFunction(expr::AggregateFunction {
-            func_def: AggregateFunctionDefinition::UDF(var_samp_udaf()),
+            func: var_samp_udaf(),
             distinct: false,
             args: vec![numeric_column()?],
             filter: None,
@@ -184,7 +183,7 @@ pub fn make_agg_expr_for_col_expr(
             null_treatment: Some(NullTreatment::IgnoreNulls),
         }),
         AggregateOp::Variancep => Expr::AggregateFunction(expr::AggregateFunction {
-            func_def: AggregateFunctionDefinition::UDF(var_pop_udaf()),
+            func: var_pop_udaf(),
             distinct: false,
             args: vec![numeric_column()?],
             filter: None,
@@ -192,7 +191,7 @@ pub fn make_agg_expr_for_col_expr(
             null_treatment: Some(NullTreatment::IgnoreNulls),
         }),
         AggregateOp::Stdev => Expr::AggregateFunction(expr::AggregateFunction {
-            func_def: AggregateFunctionDefinition::UDF(stddev_udaf()),
+            func: stddev_udaf(),
             distinct: false,
             args: vec![numeric_column()?],
             filter: None,
@@ -200,7 +199,7 @@ pub fn make_agg_expr_for_col_expr(
             null_treatment: Some(NullTreatment::IgnoreNulls),
         }),
         AggregateOp::Stdevp => Expr::AggregateFunction(expr::AggregateFunction {
-            func_def: AggregateFunctionDefinition::UDF(stddev_pop_udaf()),
+            func: stddev_pop_udaf(),
             distinct: false,
             args: vec![numeric_column()?],
             filter: None,
@@ -230,7 +229,7 @@ pub fn make_agg_expr_for_col_expr(
             count_distinct(column) + max(missing)
         }
         AggregateOp::Q1 => Expr::AggregateFunction(expr::AggregateFunction {
-            func_def: AggregateFunctionDefinition::UDF(Arc::new((*Q1_UDF).clone())),
+            func: Arc::new((*Q1_UDF).clone()),
             args: vec![numeric_column()?],
             distinct: false,
             filter: None,
@@ -238,7 +237,7 @@ pub fn make_agg_expr_for_col_expr(
             null_treatment: Some(NullTreatment::IgnoreNulls),
         }),
         AggregateOp::Q3 => Expr::AggregateFunction(expr::AggregateFunction {
-            func_def: AggregateFunctionDefinition::UDF(Arc::new((*Q3_UDF).clone())),
+            func: Arc::new((*Q3_UDF).clone()),
             args: vec![numeric_column()?],
             distinct: false,
             filter: None,

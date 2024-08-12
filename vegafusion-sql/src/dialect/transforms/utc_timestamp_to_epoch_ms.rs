@@ -54,6 +54,11 @@ impl FunctionTransformer for UtcTimestampToEpochMsDatabricksTransform {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
         let lhs = SqlExpr::BinaryOp {
             left: Box::new(unix_timestamp_expr),
@@ -80,6 +85,11 @@ impl FunctionTransformer for UtcTimestampToEpochMsDatabricksTransform {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
         let mod_1_expr = SqlExpr::Nested(Box::new(SqlExpr::BinaryOp {
             left: Box::new(date_part_expr),
@@ -132,6 +142,11 @@ impl FunctionTransformer for UtcTimestampToEpochMsDuckdbTransform {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
         let lhs = SqlExpr::BinaryOp {
             left: Box::new(unix_timestamp_expr),
@@ -158,6 +173,11 @@ impl FunctionTransformer for UtcTimestampToEpochMsDuckdbTransform {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
         let rhs = SqlExpr::BinaryOp {
             left: Box::new(date_part_expr),
@@ -216,6 +236,11 @@ impl FunctionTransformer for UtcTimestampToEpochMsPostgresTransform {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
 
         Ok(epoch_expr)
@@ -257,6 +282,11 @@ impl FunctionTransformer for UtcTimestampToEpochMsSnowflakeTransform {
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         });
 
         Ok(date_part_expr)

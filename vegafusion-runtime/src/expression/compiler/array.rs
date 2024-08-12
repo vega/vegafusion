@@ -1,6 +1,6 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion_expr::Expr;
-use datafusion_functions_array::expr_fn::make_array;
+use datafusion_functions_nested::expr_fn::make_array;
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ArrayExpression;

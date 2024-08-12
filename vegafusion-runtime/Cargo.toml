@@ -105,10 +105,10 @@ workspace = true
 [dependencies.datafusion-functions]
 workspace = true
 
-[dependencies.datafusion-functions-array]
+[dependencies.datafusion-functions-aggregate]
 workspace = true
 
-[dependencies.datafusion-functions-aggregate]
+[dependencies.datafusion-functions-nested]
 workspace = true
 
 [dependencies.tokio]

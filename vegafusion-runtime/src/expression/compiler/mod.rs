@@ -61,7 +61,7 @@ mod test_compile {
     use crate::expression::compiler::config::CompilationConfig;
     use crate::expression::compiler::utils::ExprHelpers;
     use datafusion_functions::expr_fn::{coalesce, concat};
-    use datafusion_functions_array::expr_fn::make_array;
+    use datafusion_functions_nested::expr_fn::make_array;
     use vegafusion_core::expression::parser::parse;
 
     use crate::task_graph::timezone::RuntimeTzConfig;

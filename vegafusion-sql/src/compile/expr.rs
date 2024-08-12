@@ -304,12 +304,12 @@ impl ToSqlExpr for Expr {
                 translate_scalar_function(&fun_name, &fun.args, dialect, schema)
             }
             Expr::AggregateFunction(expr::AggregateFunction {
-                func_def,
+                func,
                 args,
                 distinct,
                 ..
             }) => translate_aggregate_function(
-                &func_def.name().to_ascii_lowercase(),
+                &func.name().to_ascii_lowercase(),
                 args.as_slice(),
                 *distinct,
                 dialect,
@@ -325,7 +325,7 @@ impl ToSqlExpr for Expr {
             }) => {
                 // Extract function name
                 let (fun_name, supports_frame) = match fun {
-                    WindowFunctionDefinition::AggregateFunction(agg) => {
+                    WindowFunctionDefinition::AggregateUDF(agg) => {
                         (agg.name().to_ascii_lowercase(), true)
                     }
                     WindowFunctionDefinition::BuiltInWindowFunction(win_fn) => {
@@ -347,9 +347,6 @@ impl ToSqlExpr for Expr {
 
                         (win_fn.to_string().to_ascii_lowercase(), supports_frame)
                     }
-                    WindowFunctionDefinition::AggregateUDF(udf) => {
-                        (udf.name().to_ascii_lowercase(), true)
-                    }
                     WindowFunctionDefinition::WindowUDF(udf) => {
                         (udf.name().to_ascii_lowercase(), true)
                     }
@@ -370,6 +367,11 @@ impl ToSqlExpr for Expr {
                                 null_treatment: None,
                                 over: None,
                                 within_group: vec![],
+                                parameters: FunctionArguments::List(FunctionArgumentList {
+                                    args: vec![],
+                                    duplicate_treatment: None,
+                                    clauses: vec![],
+                                }),
                             }));
                         }
                         UnorderedRowNumberMode::OrderByConstant => {
@@ -461,6 +463,11 @@ impl ToSqlExpr for Expr {
                         null_treatment: None,
                         over: Some(over),
                         within_group: vec![],
+                        parameters: FunctionArguments::List(FunctionArgumentList {
+                            args: vec![],
+                            duplicate_treatment: None,
+                            clauses: vec![],
+                        }),
                     };
 
                     Ok(SqlExpr::Function(sql_fun))
@@ -563,6 +570,11 @@ fn translate_scalar_function(
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         }))
     } else if let Some(transformer) = dialect.scalar_transformers.get(fun_name) {
         // Supported through AST transformation
@@ -600,6 +612,11 @@ fn translate_aggregate_function(
             null_treatment: None,
             over: None,
             within_group: vec![],
+            parameters: FunctionArguments::List(FunctionArgumentList {
+                args: vec![],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
         }))
     } else if let Some(transformer) = dialect.aggregate_transformers.get(fun_name) {
         // Supported through AST transformation

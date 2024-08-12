@@ -7,17 +7,18 @@ use arrow::datatypes::{DataType, Field, FieldRef, Fields, Schema, SchemaRef};
 use arrow::record_batch::RecordBatch;
 use async_trait::async_trait;
 use datafusion_common::{Column, DFSchema, ScalarValue, TableReference};
-use datafusion_expr::expr::AggregateFunctionDefinition;
 use datafusion_expr::{
-    expr, is_null, lit, max, min, when, BuiltInWindowFunction, Expr, ExprSchemable, WindowFrame,
+    expr, is_null, lit, when, BuiltInWindowFunction, Expr, ExprSchemable, WindowFrame,
     WindowFunctionDefinition,
 };
 use datafusion_functions::expr_fn::{abs, coalesce};
 
+use datafusion_functions_aggregate::min_max::{max, min};
 use datafusion_functions_aggregate::sum::sum_udaf;
 use sqlparser::ast::{
-    Cte, Expr as SqlExpr, GroupByExpr, Ident, NullTreatment, Query, Select, SelectItem, SetExpr,
-    Statement, TableAlias, TableFactor, TableWithJoins, Values, WildcardAdditionalOptions, With,
+    Cte, Expr as SqlExpr, GroupByExpr, Ident, NullTreatment, OrderBy, Query, Select, SelectItem,
+    SetExpr, Statement, TableAlias, TableFactor, TableWithJoins, Values, WildcardAdditionalOptions,
+    With,
 };
 use sqlparser::parser::Parser;
 use std::any::Any;
@@ -284,13 +285,14 @@ impl SqlDataFrame {
                         selection: None,
                         from: Default::default(),
                         lateral_views: Default::default(),
-                        group_by: GroupByExpr::Expressions(Vec::new()),
+                        group_by: GroupByExpr::Expressions(Vec::new(), Vec::new()),
                         cluster_by: Default::default(),
                         distribute_by: Default::default(),
                         sort_by: Default::default(),
                         having: None,
                         named_window: Default::default(),
                         qualify: None,
+                        prewhere: None,
                     });
                 }
 
@@ -331,6 +333,8 @@ impl SqlDataFrame {
                     fetch: None,
                     locks: Default::default(),
                     for_clause: None,
+                    settings: None,
+                    format_clause: None,
                 };
 
                 let (projection, table_alias) = if let ValuesMode::ValuesWithSelectColumnAliases {
@@ -394,11 +398,12 @@ impl SqlDataFrame {
                     }],
                     lateral_views: Default::default(),
                     selection: None,
-                    group_by: GroupByExpr::Expressions(Vec::new()),
+                    group_by: GroupByExpr::Expressions(Vec::new(), Vec::new()),
                     cluster_by: Default::default(),
                     distribute_by: Default::default(),
                     sort_by: Default::default(),
                     having: None,
+                    prewhere: None,
                     qualify: None,
                     named_window: Default::default(),
                     value_table_mode: None,
@@ -415,6 +420,8 @@ impl SqlDataFrame {
                     fetch: None,
                     locks: Default::default(),
                     for_clause: None,
+                    settings: None,
+                    format_clause: None,
                 }
             }
         };
@@ -473,7 +480,10 @@ impl SqlDataFrame {
             .iter()
             .map(|expr| expr.to_sql_order(self.dialect(), &self.schema_df()?))
             .collect::<Result<Vec<_>>>()?;
-        query.order_by = sql_exprs;
+        query.order_by = Some(OrderBy {
+            exprs: sql_exprs,
+            interpolate: None,
+        });
         if let Some(limit) = limit {
             query.limit = Some(
                 lit(limit)
@@ -985,7 +995,7 @@ impl SqlDataFrame {
 
             // Create aggregate for total of stack value
             let total_agg = Expr::AggregateFunction(expr::AggregateFunction {
-                func_def: AggregateFunctionDefinition::UDF(sum_udaf()),
+                func: sum_udaf(),
                 args: vec![flat_col(stack_col_name)],
                 distinct: false,
                 filter: None,

@@ -7,11 +7,9 @@ use arrow::record_batch::RecordBatch;
 use datafusion::config::TableOptions;
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::datasource::MemTable;
-use datafusion::execution::context::SessionState;
 use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
 use datafusion::execution::runtime_env::RuntimeEnv;
-use datafusion::optimizer::analyzer::inline_table_scan::InlineTableScan;
-use datafusion::optimizer::analyzer::type_coercion::TypeCoercion;
+use datafusion::execution::session_state::SessionStateBuilder;
 use datafusion::prelude::{
     CsvReadOptions as DfCsvReadOptions, ParquetReadOptions, SessionConfig, SessionContext,
 };
@@ -483,20 +481,14 @@ pub fn make_request_client() -> ClientWithMiddleware {
 }
 
 pub fn make_datafusion_context() -> SessionContext {
-    // Work around issues:
-    // - https://github.com/apache/arrow-datafusion/issues/6386
-    // - https://github.com/apache/arrow-datafusion/issues/6447
     let mut config = SessionConfig::new();
     let options = config.options_mut();
     options.optimizer.skip_failed_rules = true;
     let runtime = Arc::new(RuntimeEnv::default());
-    let session_state = SessionState::new_with_config_rt(config, runtime);
-    let session_state = session_state.with_analyzer_rules(vec![
-        Arc::new(InlineTableScan::new()),
-        Arc::new(TypeCoercion::new()),
-        // Intentionally exclude the CountWildcardRule
-        // Arc::new(CountWildcardRule::new()),
-    ]);
+    let session_state = SessionStateBuilder::new()
+        .with_config(config)
+        .with_runtime_env(runtime)
+        .build();
 
     let ctx = SessionContext::new_with_state(session_state);
 
