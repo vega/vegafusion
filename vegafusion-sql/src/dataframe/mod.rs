@@ -912,7 +912,7 @@ impl SqlDataFrame {
         let partition_by: Vec<_> = groupby.iter().map(|group| flat_col(group)).collect();
         let numeric_field = coalesce(vec![
             to_numeric(flat_col(field), &self.schema_df()?)?,
-            lit(0),
+            lit(0.0),
         ]);
 
         if let StackMode::Zero = mode {
@@ -1117,9 +1117,9 @@ impl SqlDataFrame {
                     dataframe
                 }
                 StackMode::Normalize => {
-                    let total_zero = flat_col("__total").eq(lit(0));
+                    let total_zero = flat_col("__total").eq(lit(0.0));
 
-                    let start_col = when(total_zero.clone(), lit(0))
+                    let start_col = when(total_zero.clone(), lit(0.0))
                         .otherwise(
                             flat_col(cumulative_field)
                                 .sub(flat_col(stack_col_name))
@@ -1129,7 +1129,7 @@ impl SqlDataFrame {
 
                     final_selection.push(start_col);
 
-                    let stop_col = when(total_zero, lit(0))
+                    let stop_col = when(total_zero, lit(0.0))
                         .otherwise(flat_col(cumulative_field).div(flat_col("__total")))?
                         .alias(stop_field);
 
@@ -1490,7 +1490,6 @@ fn query_chain_to_cte(queries: &[Query], prefix: &str) -> Query {
 }
 
 fn parse_sql_query(query: &str, dialect: &Dialect) -> Result<Query> {
-    println!("{}", query);
     let statements: Vec<Statement> = Parser::parse_sql(dialect.parser_dialect().as_ref(), query)?;
     if let Some(statement) = statements.first() {
         if let Statement::Query(box_query) = statement {
