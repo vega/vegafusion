@@ -201,5 +201,5 @@ async fn pivot_case(
 
 /// Test whether null values should be replaced by zero for the specified aggregation
 fn should_fill_zero(op: &AggregateOp) -> bool {
-    matches!(op, AggregateOp::Count | AggregateOp::Sum)
+    matches!(op, AggregateOp::Sum)
 }
