@@ -45,7 +45,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-test-rust
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-test-rust2
           path: |
             ~/.cargo
             target
