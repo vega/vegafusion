@@ -3,6 +3,7 @@ use crate::transform::TransformTrait;
 
 use async_trait::async_trait;
 use datafusion_expr::{expr, BuiltInWindowFunction, Expr, WindowFrame, WindowFunctionDefinition};
+use sqlparser::ast::NullTreatment;
 use std::sync::Arc;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::ORDER_COL;
@@ -29,6 +30,7 @@ impl TransformTrait for Identifier {
                 nulls_first: false,
             })],
             window_frame: WindowFrame::new(Some(true)),
+            null_treatment: Some(NullTreatment::IgnoreNulls),
         })
         .alias(&self.r#as);
 

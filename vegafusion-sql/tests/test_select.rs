@@ -485,27 +485,16 @@ mod test_non_finite_numbers {
 #[cfg(test)]
 mod test_scalar_math_functions {
     use crate::*;
-    use datafusion_expr::{expr, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, Expr};
+    use datafusion_functions::math::expr_fn::{abs, acos, asin, tan};
     use vegafusion_common::column::flat_col;
-
-    fn make_scalar_fn1(fun: BuiltinScalarFunction, arg: &str, alias: &str) -> Expr {
-        Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::BuiltIn(fun),
-            args: vec![flat_col(arg)],
-        })
-        .alias(alias)
-    }
-
-    fn make_scalar_fn2(fun: BuiltinScalarFunction, arg1: &str, arg2: &str, alias: &str) -> Expr {
-        Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::BuiltIn(fun),
-            args: vec![flat_col(arg1), flat_col(arg2)],
-        })
-        .alias(alias)
-    }
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions::expr_fn::{
+            atan, atan2, ceil, cos, exp, floor, ln, log10, log2, power, round, sin, sqrt,
+        };
+
         println!("{dialect_name}");
         let (conn, _evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -523,24 +512,23 @@ mod test_scalar_math_functions {
         let df_result = df
             .select(vec![
                 flat_col("a"),
-                make_scalar_fn1(BuiltinScalarFunction::Abs, "b", "abs"),
-                make_scalar_fn1(BuiltinScalarFunction::Acos, "c", "acos"),
-                make_scalar_fn1(BuiltinScalarFunction::Asin, "c", "asin"),
-                make_scalar_fn1(BuiltinScalarFunction::Atan, "c", "atan"),
-                make_scalar_fn2(BuiltinScalarFunction::Atan2, "c", "a", "atan2"),
-                make_scalar_fn1(BuiltinScalarFunction::Ceil, "b", "ceil"),
-                make_scalar_fn1(BuiltinScalarFunction::Cos, "b", "cos"),
-                make_scalar_fn1(BuiltinScalarFunction::Exp, "b", "exp"),
-                make_scalar_fn1(BuiltinScalarFunction::Floor, "b", "floor"),
-                make_scalar_fn1(BuiltinScalarFunction::Ln, "c", "ln"),
-                make_scalar_fn1(BuiltinScalarFunction::Log, "c", "log"),
-                make_scalar_fn1(BuiltinScalarFunction::Log10, "c", "log10"),
-                make_scalar_fn1(BuiltinScalarFunction::Log2, "c", "log2"),
-                make_scalar_fn2(BuiltinScalarFunction::Power, "b", "a", "power"),
-                make_scalar_fn1(BuiltinScalarFunction::Round, "b", "round"),
-                make_scalar_fn1(BuiltinScalarFunction::Sin, "b", "sin"),
-                make_scalar_fn1(BuiltinScalarFunction::Sqrt, "c", "sqrt"),
-                make_scalar_fn1(BuiltinScalarFunction::Tan, "b", "tan"),
+                abs(flat_col("b")).alias("abs"),
+                acos(flat_col("c")).alias("acos"),
+                asin(flat_col("c")).alias("asin"),
+                atan(flat_col("c")).alias("atan"),
+                atan2(flat_col("c"), flat_col("a")).alias("atan2"),
+                ceil(flat_col("b")).alias("ceil"),
+                cos(flat_col("b")).alias("cos"),
+                exp(flat_col("b")).alias("exp"),
+                floor(flat_col("b")).alias("floor"),
+                ln(flat_col("c")).alias("ln"),
+                log10(flat_col("c")).alias("log10"),
+                log2(flat_col("c")).alias("log2"),
+                power(flat_col("b"), flat_col("a")).alias("power"),
+                round(vec![flat_col("b")]).alias("round"),
+                sin(flat_col("b")).alias("sin"),
+                sqrt(flat_col("c")).alias("sqrt"),
+                tan(flat_col("b")).alias("tan"),
             ])
             .await;
 
@@ -577,7 +565,7 @@ mod test_is_finite {
     use arrow::array::{Float64Array, Int32Array};
     use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
     use arrow::record_batch::RecordBatch;
-    use datafusion_expr::{expr, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, Expr};
     use std::sync::Arc;
     use vegafusion_common::column::flat_col;
 
@@ -614,12 +602,12 @@ mod test_is_finite {
                 flat_col("a"),
                 flat_col("b"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(ISFINITE_UDF.clone())),
+                    func: Arc::new(ISFINITE_UDF.clone()),
                     args: vec![flat_col("a")],
                 })
                 .alias("f1"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(ISFINITE_UDF.clone())),
+                    func: Arc::new(ISFINITE_UDF.clone()),
                     args: vec![flat_col("b")],
                 })
                 .alias("f2"),
@@ -650,7 +638,7 @@ mod test_is_finite {
 #[cfg(test)]
 mod test_str_to_utc_timestamp {
     use crate::*;
-    use datafusion_expr::{expr, lit, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
     use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
@@ -675,9 +663,7 @@ mod test_str_to_utc_timestamp {
                 flat_col("a"),
                 flat_col("b"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        STR_TO_UTC_TIMESTAMP_UDF.clone(),
-                    )),
+                    func: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("b"), lit("America/New_York")],
                 })
                 .alias("b_utc"),
@@ -714,7 +700,7 @@ mod test_str_to_utc_timestamp {
 #[cfg(test)]
 mod test_date_part_tz {
     use crate::*;
-    use datafusion_expr::{expr, lit, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
     use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
@@ -740,9 +726,7 @@ mod test_date_part_tz {
                 flat_col("a"),
                 flat_col("b"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        STR_TO_UTC_TIMESTAMP_UDF.clone(),
-                    )),
+                    func: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("b"), lit("America/New_York")],
                 })
                 .alias("b_utc"),
@@ -755,17 +739,17 @@ mod test_date_part_tz {
                 flat_col("b"),
                 flat_col("b_utc"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_PART_TZ_UDF.clone())),
+                    func: Arc::new(DATE_PART_TZ_UDF.clone()),
                     args: vec![lit("hour"), flat_col("b_utc"), lit("UTC")],
                 })
                 .alias("hours_utc"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_PART_TZ_UDF.clone())),
+                    func: Arc::new(DATE_PART_TZ_UDF.clone()),
                     args: vec![lit("hour"), flat_col("b_utc"), lit("America/Los_Angeles")],
                 })
                 .alias("hours_la"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_PART_TZ_UDF.clone())),
+                    func: Arc::new(DATE_PART_TZ_UDF.clone()),
                     args: vec![lit("hour"), flat_col("b_utc"), lit("America/New_York")],
                 })
                 .alias("hours_nyc"),
@@ -805,7 +789,7 @@ mod test_date_part_tz {
 #[cfg(test)]
 mod test_date_trunc_tz {
     use crate::*;
-    use datafusion_expr::{expr, lit, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
     use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::date_trunc_tz::DATE_TRUNC_TZ_UDF;
@@ -831,9 +815,7 @@ mod test_date_trunc_tz {
                 flat_col("a"),
                 flat_col("b"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        STR_TO_UTC_TIMESTAMP_UDF.clone(),
-                    )),
+                    func: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("b"), lit("America/New_York")],
                 })
                 .alias("b_utc"),
@@ -846,17 +828,17 @@ mod test_date_trunc_tz {
                 flat_col("b"),
                 flat_col("b_utc"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_TRUNC_TZ_UDF.clone())),
+                    func: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
                     args: vec![lit("day"), flat_col("b_utc"), lit("UTC")],
                 })
                 .alias("day_utc"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_TRUNC_TZ_UDF.clone())),
+                    func: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
                     args: vec![lit("day"), flat_col("b_utc"), lit("America/Los_Angeles")],
                 })
                 .alias("day_la"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_TRUNC_TZ_UDF.clone())),
+                    func: Arc::new(DATE_TRUNC_TZ_UDF.clone()),
                     args: vec![lit("day"), flat_col("b_utc"), lit("America/New_York")],
                 })
                 .alias("day_nyc"),
@@ -896,7 +878,7 @@ mod test_date_trunc_tz {
 #[cfg(test)]
 mod test_make_timestamp_tz {
     use crate::*;
-    use datafusion_expr::{expr, lit, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
     use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
@@ -919,7 +901,7 @@ mod test_make_timestamp_tz {
             .select(vec![
                 flat_col("a"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(MAKE_UTC_TIMESTAMP.clone())),
+                    func: Arc::new(MAKE_UTC_TIMESTAMP.clone()),
                     args: vec![
                         flat_col("Y"),
                         flat_col("M"),
@@ -933,7 +915,7 @@ mod test_make_timestamp_tz {
                 })
                 .alias("ts_utc"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(MAKE_UTC_TIMESTAMP.clone())),
+                    func: Arc::new(MAKE_UTC_TIMESTAMP.clone()),
                     args: vec![
                         flat_col("Y"),
                         flat_col("M"),
@@ -947,7 +929,7 @@ mod test_make_timestamp_tz {
                 })
                 .alias("ts_nyc"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(MAKE_UTC_TIMESTAMP.clone())),
+                    func: Arc::new(MAKE_UTC_TIMESTAMP.clone()),
                     args: vec![
                         flat_col("Y"),
                         flat_col("M"),
@@ -993,7 +975,7 @@ mod test_make_timestamp_tz {
 #[cfg(test)]
 mod test_epoch_to_utc_timestamp {
     use crate::*;
-    use datafusion_expr::{expr, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, Expr};
     use std::sync::Arc;
     use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
@@ -1016,9 +998,7 @@ mod test_epoch_to_utc_timestamp {
                 flat_col("a"),
                 flat_col("t"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        EPOCH_MS_TO_UTC_TIMESTAMP_UDF.clone(),
-                    )),
+                    func: Arc::new(EPOCH_MS_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("t")],
                 })
                 .alias("t_utc"),
@@ -1055,7 +1035,7 @@ mod test_epoch_to_utc_timestamp {
 #[cfg(test)]
 mod test_utc_timestamp_to_epoch_ms {
     use crate::*;
-    use datafusion_expr::{expr, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, Expr};
     use std::sync::Arc;
     use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
@@ -1080,9 +1060,7 @@ mod test_utc_timestamp_to_epoch_ms {
                 flat_col("a"),
                 flat_col("t"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        EPOCH_MS_TO_UTC_TIMESTAMP_UDF.clone(),
-                    )),
+                    func: Arc::new(EPOCH_MS_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("t")],
                 })
                 .alias("t_utc"),
@@ -1095,9 +1073,7 @@ mod test_utc_timestamp_to_epoch_ms {
                 flat_col("t"),
                 flat_col("t_utc"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        UTC_TIMESTAMP_TO_EPOCH_MS.clone(),
-                    )),
+                    func: Arc::new(UTC_TIMESTAMP_TO_EPOCH_MS.clone()),
                     args: vec![flat_col("t_utc")],
                 })
                 .alias("epoch_millis"),
@@ -1137,7 +1113,7 @@ mod test_utc_timestamp_to_epoch_ms {
 #[cfg(test)]
 mod test_date_add_tz {
     use crate::*;
-    use datafusion_expr::{expr, lit, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
     use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
@@ -1162,9 +1138,7 @@ mod test_date_add_tz {
                 flat_col("a"),
                 flat_col("b"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        STR_TO_UTC_TIMESTAMP_UDF.clone(),
-                    )),
+                    func: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("b"), lit("UTC")],
                 })
                 .alias("b_utc"),
@@ -1177,12 +1151,12 @@ mod test_date_add_tz {
                 flat_col("b"),
                 flat_col("b_utc"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_ADD_TZ_UDF.clone())),
+                    func: Arc::new(DATE_ADD_TZ_UDF.clone()),
                     args: vec![lit("month"), lit(1), flat_col("b_utc"), lit("UTC")],
                 })
                 .alias("month_utc"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_ADD_TZ_UDF.clone())),
+                    func: Arc::new(DATE_ADD_TZ_UDF.clone()),
                     args: vec![
                         lit("month"),
                         lit(1),
@@ -1227,7 +1201,7 @@ mod test_date_add_tz {
 #[cfg(test)]
 mod test_utc_timestamp_to_str {
     use crate::*;
-    use datafusion_expr::{expr, lit, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
     use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
@@ -1253,9 +1227,7 @@ mod test_utc_timestamp_to_str {
                 flat_col("a"),
                 flat_col("b"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        STR_TO_UTC_TIMESTAMP_UDF.clone(),
-                    )),
+                    func: Arc::new(STR_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("b"), lit("UTC")],
                 })
                 .alias("b_utc"),
@@ -1268,16 +1240,12 @@ mod test_utc_timestamp_to_str {
                 flat_col("b"),
                 flat_col("b_utc"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        UTC_TIMESTAMP_TO_STR_UDF.clone(),
-                    )),
+                    func: Arc::new(UTC_TIMESTAMP_TO_STR_UDF.clone()),
                     args: vec![flat_col("b_utc"), lit("UTC")],
                 })
                 .alias("str_utc"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        UTC_TIMESTAMP_TO_STR_UDF.clone(),
-                    )),
+                    func: Arc::new(UTC_TIMESTAMP_TO_STR_UDF.clone()),
                     args: vec![flat_col("b_utc"), lit("America/New_York")],
                 })
                 .alias("str_nyc"),
@@ -1320,7 +1288,7 @@ mod test_date_to_utc_timestamp {
     use arrow::array::{ArrayRef, Date32Array, Int32Array};
     use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
     use arrow::record_batch::RecordBatch;
-    use datafusion_expr::{expr, lit, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
     use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::date_to_utc_timestamp::DATE_TO_UTC_TIMESTAMP_UDF;
@@ -1353,9 +1321,7 @@ mod test_date_to_utc_timestamp {
                 flat_col("a"),
                 flat_col("b"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        DATE_TO_UTC_TIMESTAMP_UDF.clone(),
-                    )),
+                    func: Arc::new(DATE_TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("b"), lit("America/New_York")],
                 })
                 .alias("b_utc"),
@@ -1395,7 +1361,7 @@ mod test_timestamp_to_utc_timestamp {
     use arrow::array::{ArrayRef, Int32Array, TimestampMillisecondArray};
     use arrow::datatypes::{DataType, Field, Schema, SchemaRef, TimeUnit};
     use arrow::record_batch::RecordBatch;
-    use datafusion_expr::{expr, lit, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
     use vegafusion_common::column::flat_col;
     use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
@@ -1427,7 +1393,7 @@ mod test_timestamp_to_utc_timestamp {
                 flat_col("a"),
                 flat_col("b"),
                 Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(TO_UTC_TIMESTAMP_UDF.clone())),
+                    func: Arc::new(TO_UTC_TIMESTAMP_UDF.clone()),
                     args: vec![flat_col("b"), lit("America/New_York")],
                 })
                 .alias("b_utc"),
@@ -1467,11 +1433,14 @@ mod test_timestamp_to_utc_timestamp {
 #[cfg(test)]
 mod test_string_ops {
     use crate::*;
-    use datafusion_expr::{expr, lit, BuiltinScalarFunction, Expr, ScalarFunctionDefinition};
+    use datafusion_expr::{expr, lit, Expr};
+    use datafusion_functions::string::expr_fn::{concat, lower, upper};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions::expr_fn::substring;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -1489,26 +1458,10 @@ mod test_string_ops {
                 flat_col("a"),
                 flat_col("b"),
                 flat_col("c"),
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Substr),
-                    args: vec![flat_col("b"), lit(2), lit(2)],
-                })
-                .alias("b_substr"),
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Concat),
-                    args: vec![flat_col("b"), lit(" "), flat_col("c")],
-                })
-                .alias("bc_concat"),
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Upper),
-                    args: vec![flat_col("b")],
-                })
-                .alias("b_upper"),
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::BuiltIn(BuiltinScalarFunction::Lower),
-                    args: vec![flat_col("b")],
-                })
-                .alias("b_lower"),
+                substring(flat_col("b"), lit(2), lit(2)).alias("b_substr"),
+                concat(vec![flat_col("b"), lit(" "), flat_col("c")]).alias("bc_concat"),
+                upper(flat_col("b")).alias("b_upper"),
+                lower(flat_col("b")).alias("b_lower"),
             ])
             .await;
 

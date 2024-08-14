@@ -1,10 +1,11 @@
-use datafusion_physical_expr::udf::ScalarUDF;
 use std::any::Any;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::{BooleanArray, Float32Array, Float64Array};
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
-use vegafusion_common::datafusion_expr::{ColumnarValue, ScalarUDFImpl, Signature, Volatility};
+use vegafusion_common::datafusion_expr::{
+    ColumnarValue, ScalarUDF, ScalarUDFImpl, Signature, Volatility,
+};
 
 /// `isFinite(value)`
 ///

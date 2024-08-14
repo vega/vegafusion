@@ -1,4 +1,5 @@
 pub mod transforms;
+pub mod utils;
 
 use crate::compile::expr::ToSqlExpr;
 use crate::dialect::transforms::date_add_tz::{
@@ -54,11 +55,11 @@ use datafusion_common::DFSchema;
 use datafusion_expr::{expr, lit, ExprSchemable};
 use datafusion_expr::{when, Expr, Operator};
 use sqlparser::ast::{
-    BinaryOperator as SqlBinaryOperator, DataType as SqlDataType, Expr as SqlExpr,
-    Function as SqlFunction, Function, FunctionArg as SqlFunctionArg, FunctionArg,
-    FunctionArgExpr as SqlFunctionArgExpr, FunctionArgExpr, Ident as SqlIdent, Ident,
-    ObjectName as SqlObjectName, ObjectName, TimezoneInfo, Value as SqlValue,
+    BinaryOperator as SqlBinaryOperator, CastKind, DataType as SqlDataType, Expr as SqlExpr,
+    Function, FunctionArg, FunctionArgExpr, FunctionArgumentList, FunctionArguments, Ident,
+    ObjectName, TimezoneInfo, Value as SqlValue,
 };
+
 use sqlparser::dialect::{
     BigQueryDialect, ClickHouseDialect, Dialect as SqlParserDialect, GenericDialect, MySqlDialect,
     PostgreSqlDialect, RedshiftSqlDialect, SnowflakeDialect,
@@ -1742,21 +1743,24 @@ impl BinaryOperatorTransformer for ModulusOpToFunction {
         rhs: SqlExpr,
         _dialect: &Dialect,
     ) -> Result<SqlExpr> {
-        let arg0 = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(lhs));
-        let arg1 = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(rhs));
+        let arg0 = FunctionArg::Unnamed(FunctionArgExpr::Expr(lhs));
+        let arg1 = FunctionArg::Unnamed(FunctionArgExpr::Expr(rhs));
 
-        Ok(SqlExpr::Function(SqlFunction {
-            name: SqlObjectName(vec![SqlIdent {
+        Ok(SqlExpr::Function(Function {
+            name: ObjectName(vec![Ident {
                 value: "MOD".to_string(),
                 quote_style: None,
             }]),
-            args: vec![arg0, arg1],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![arg0, arg1],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         }))
     }
 }
@@ -1770,7 +1774,7 @@ fn args_to_sql_args(
     args: &[Expr],
     dialect: &Dialect,
     schema: &DFSchema,
-) -> Result<Vec<SqlFunctionArg>> {
+) -> Result<Vec<FunctionArg>> {
     args.iter()
         .map(|arg| {
             Ok(FunctionArg::Unnamed(FunctionArgExpr::Expr(
@@ -1795,13 +1799,16 @@ impl FunctionTransformer for RenameFunctionTransformer {
                 value: self.0.clone(),
                 quote_style: None,
             }]),
-            args: sql_args,
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: sql_args,
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         }))
     }
 }
@@ -1829,13 +1836,16 @@ impl FunctionTransformer for ExpWithPowFunctionTransformer {
                 value: "pow".to_string(),
                 quote_style: None,
             }]),
-            args: sql_args,
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: sql_args,
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         }))
     }
 }
@@ -1862,6 +1872,7 @@ impl FunctionTransformer for CastArgsFunctionTransformer {
                     expr: Box::new(arg.to_sql(dialect, schema)?),
                     data_type: self.cast_dtype.clone(),
                     format: None,
+                    kind: CastKind::Cast,
                 })))
             })
             .collect::<Result<Vec<_>>>()?;
@@ -1871,13 +1882,16 @@ impl FunctionTransformer for CastArgsFunctionTransformer {
                 value: self.name.clone(),
                 quote_style: None,
             }]),
-            args: sql_args,
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: sql_args,
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         }))
     }
 }
@@ -1896,7 +1910,7 @@ impl FunctionTransformer for LogBaseTransformer {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
         let mut sql_args = args_to_sql_args(args, dialect, schema)?;
         // Append base argument
-        let base_arg = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+        let base_arg = FunctionArg::Unnamed(FunctionArgExpr::Expr(SqlExpr::Value(
             SqlValue::Number(self.base.to_string(), false),
         )));
 
@@ -1911,13 +1925,16 @@ impl FunctionTransformer for LogBaseTransformer {
                 value: "log".to_string(),
                 quote_style: None,
             }]),
-            args: sql_args,
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: sql_args,
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         }))
     }
 }
@@ -1942,6 +1959,7 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
                         expr: Box::new(arg.to_sql(dialect, schema)?),
                         data_type: cast_dtype.clone(),
                         format: None,
+                        kind: CastKind::Cast,
                     })))
                 })
                 .collect::<Result<Vec<_>>>()?
@@ -1954,16 +1972,19 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
                 value: "ln".to_string(),
                 quote_style: None,
             }]),
-            args: sql_args,
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: sql_args,
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         });
 
-        let base_arg = SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+        let base_arg = FunctionArg::Unnamed(FunctionArgExpr::Expr(SqlExpr::Value(
             SqlValue::Number(self.base.to_string(), false),
         )));
         let denominator = SqlExpr::Function(Function {
@@ -1971,13 +1992,16 @@ impl FunctionTransformer for LogBaseWithLnTransformer {
                 value: "ln".to_string(),
                 quote_style: None,
             }]),
-            args: vec![base_arg],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![base_arg],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         });
 
         Ok(SqlExpr::BinaryOp {

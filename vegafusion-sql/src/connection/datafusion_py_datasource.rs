@@ -2,11 +2,12 @@ use arrow::datatypes::{Schema, SchemaRef};
 use arrow::pyarrow::FromPyArrow;
 use async_trait::async_trait;
 use datafusion::datasource::TableProvider;
-use datafusion::execution::context::SessionState;
 use datafusion::execution::{SendableRecordBatchStream, TaskContext};
-use datafusion::physical_expr::{Partitioning, PhysicalSortExpr};
+use datafusion::physical_expr::{EquivalenceProperties, Partitioning};
 use datafusion::physical_plan::memory::MemoryStream;
-use datafusion::physical_plan::{DisplayAs, DisplayFormatType, ExecutionPlan};
+use datafusion::physical_plan::{
+    DisplayAs, DisplayFormatType, ExecutionMode, ExecutionPlan, PlanProperties,
+};
 use datafusion_common::{project_schema, DataFusionError, Statistics};
 use datafusion_expr::{Expr, TableType};
 use pyo3::types::PyTuple;
@@ -26,7 +27,7 @@ impl PyDatasource {
     pub fn try_new(py_datasource: PyObject) -> Result<Self, PyErr> {
         Python::with_gil(|py| -> Result<_, PyErr> {
             let table_schema_obj = py_datasource.call_method0(py, "schema")?;
-            let schema = Arc::new(Schema::from_pyarrow(table_schema_obj.as_ref(py))?);
+            let schema = Arc::new(Schema::from_pyarrow_bound(table_schema_obj.bind(py))?);
             Ok(Self {
                 py_datasource,
                 schema,
@@ -63,7 +64,7 @@ impl TableProvider for PyDatasource {
 
     async fn scan(
         &self,
-        _state: &SessionState,
+        _state: &(dyn datafusion::catalog::Session),
         projection: Option<&Vec<usize>>,
         _filters: &[Expr],
         _limit: Option<usize>,
@@ -76,15 +77,28 @@ impl TableProvider for PyDatasource {
 struct PyDatasourceExec {
     db: PyDatasource,
     projected_schema: SchemaRef,
+    plan_properties: PlanProperties,
 }
 
 impl PyDatasourceExec {
     fn new(projections: Option<&Vec<usize>>, schema: SchemaRef, db: PyDatasource) -> Self {
         let projected_schema = project_schema(&schema, projections).unwrap();
+        let plan_properties = Self::compute_properties(projected_schema.clone());
         Self {
             db,
             projected_schema,
+            plan_properties,
         }
+    }
+
+    /// This function creates the cache object that stores the plan properties such as schema, equivalence properties, ordering, partitioning, etc.
+    fn compute_properties(schema: SchemaRef) -> PlanProperties {
+        let eq_properties = EquivalenceProperties::new(schema);
+        PlanProperties::new(
+            eq_properties,
+            Partitioning::UnknownPartitioning(1),
+            ExecutionMode::Bounded,
+        )
     }
 }
 
@@ -103,15 +117,7 @@ impl ExecutionPlan for PyDatasourceExec {
         self.projected_schema.clone()
     }
 
-    fn output_partitioning(&self) -> Partitioning {
-        Partitioning::UnknownPartitioning(1)
-    }
-
-    fn output_ordering(&self) -> Option<&[PhysicalSortExpr]> {
-        None
-    }
-
-    fn children(&self) -> Vec<Arc<dyn ExecutionPlan>> {
+    fn children(&self) -> Vec<&Arc<(dyn ExecutionPlan + 'static)>> {
         Vec::new()
     }
 
@@ -134,9 +140,9 @@ impl ExecutionPlan for PyDatasourceExec {
                 .iter()
                 .map(|field| field.name().clone())
                 .collect::<Vec<_>>();
-            let args = PyTuple::new(py, vec![column_names.into_py(py)]);
+            let args = PyTuple::new_bound(py, vec![column_names.into_py(py)]);
             let pa_table = self.db.py_datasource.call_method1(py, "fetch", args)?;
-            let table = VegaFusionTable::from_pyarrow(py, pa_table.as_ref(py))?;
+            let table = VegaFusionTable::from_pyarrow(pa_table.bind(py))?;
             Ok(table)
         })
         .map_err(|err| DataFusionError::Execution(err.to_string()))?;
@@ -150,5 +156,13 @@ impl ExecutionPlan for PyDatasourceExec {
 
     fn statistics(&self) -> datafusion_common::Result<Statistics> {
         Ok(Statistics::new_unknown(self.schema().as_ref()))
+    }
+
+    fn properties(&self) -> &PlanProperties {
+        &self.plan_properties
+    }
+
+    fn name(&self) -> &str {
+        "py_datasource"
     }
 }

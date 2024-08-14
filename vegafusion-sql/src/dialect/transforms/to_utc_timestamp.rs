@@ -1,12 +1,13 @@
 use crate::compile::expr::ToSqlExpr;
+use crate::dialect::utils::make_utc_expr;
 use crate::dialect::{Dialect, FunctionTransformer};
 use arrow::datatypes::DataType;
 use datafusion_common::DFSchema;
 use datafusion_expr::{Expr, ExprSchemable};
 use sqlparser::ast::{
     Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg,
-    FunctionArgExpr as SqlFunctionArgExpr, Ident as SqlIdent, ObjectName as SqlObjectName,
-    Value as SqlValue,
+    FunctionArgExpr as SqlFunctionArgExpr, FunctionArgumentList, FunctionArguments,
+    Ident as SqlIdent, ObjectName as SqlObjectName, Value as SqlValue,
 };
 use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
@@ -15,7 +16,7 @@ fn process_to_utc_timestamp_args(
     args: &[Expr],
     dialect: &Dialect,
     schema: &DFSchema,
-) -> Result<(SqlExpr, String)> {
+) -> Result<(SqlExpr, SqlExpr)> {
     if args.len() != 2 {
         return Err(VegaFusionError::sql_not_supported(
             "to_utc_timestamp requires exactly two arguments",
@@ -23,14 +24,7 @@ fn process_to_utc_timestamp_args(
     }
     let sql_arg0 = args[0].to_sql(dialect, schema)?;
     let sql_arg1 = args[1].to_sql(dialect, schema)?;
-    let time_zone = if let SqlExpr::Value(SqlValue::SingleQuotedString(timezone)) = sql_arg1 {
-        timezone
-    } else {
-        return Err(VegaFusionError::sql_not_supported(
-            "Second argument to to_utc_timestamp must be a string literal",
-        ));
-    };
-    Ok((sql_arg0, time_zone))
+    Ok((sql_arg0, sql_arg1))
 }
 
 /// Convert to_utc_timestamp(ts, tz) ->
@@ -58,23 +52,24 @@ impl FunctionTransformer for ToUtcTimestampWithAtTimeZoneTransformer {
             None
         };
 
+        let utc = make_utc_expr();
         let (sql_arg0, time_zone) = process_to_utc_timestamp_args(args, dialect, schema)?;
 
         let utc_expr = if timestamps_tz.is_some() {
             SqlExpr::AtTimeZone {
                 timestamp: Box::new(sql_arg0),
-                time_zone: "UTC".to_string(),
+                time_zone: Box::new(utc.clone()),
             }
-        } else if time_zone == "UTC" {
+        } else if time_zone == utc {
             sql_arg0
         } else {
             let at_tz_expr = SqlExpr::AtTimeZone {
                 timestamp: Box::new(sql_arg0),
-                time_zone,
+                time_zone: Box::new(time_zone),
             };
             SqlExpr::AtTimeZone {
                 timestamp: Box::new(at_tz_expr),
-                time_zone: "UTC".to_string(),
+                time_zone: Box::new(utc.clone()),
             }
         };
 
@@ -98,8 +93,8 @@ impl ToUtcTimestampSnowflakeTransform {
 impl FunctionTransformer for ToUtcTimestampSnowflakeTransform {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
         let (ts_arg, time_zone) = process_to_utc_timestamp_args(args, dialect, schema)?;
-
-        if time_zone == "UTC" {
+        let utc = make_utc_expr();
+        if time_zone == utc {
             // No conversion needed
             Ok(ts_arg)
         } else {
@@ -108,21 +103,22 @@ impl FunctionTransformer for ToUtcTimestampSnowflakeTransform {
                     value: "convert_timezone".to_string(),
                     quote_style: None,
                 }]),
-                args: vec![
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                        SqlValue::SingleQuotedString(time_zone),
-                    ))),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                        SqlValue::SingleQuotedString("UTC".to_string()),
-                    ))),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_arg)),
-                ],
+                args: FunctionArguments::List(FunctionArgumentList {
+                    args: vec![
+                        SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(time_zone)),
+                        SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                            SqlValue::SingleQuotedString("UTC".to_string()),
+                        ))),
+                        SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_arg)),
+                    ],
+                    duplicate_treatment: None,
+                    clauses: vec![],
+                }),
                 filter: None,
                 null_treatment: None,
                 over: None,
-                distinct: false,
-                special: false,
-                order_by: Default::default(),
+                within_group: vec![],
+                parameters: FunctionArguments::None,
             });
 
             Ok(convert_tz_expr)
@@ -146,8 +142,8 @@ impl ToUtcTimestampBigQueryTransform {
 impl FunctionTransformer for ToUtcTimestampBigQueryTransform {
     fn transform(&self, args: &[Expr], dialect: &Dialect, schema: &DFSchema) -> Result<SqlExpr> {
         let (ts_arg, time_zone) = process_to_utc_timestamp_args(args, dialect, schema)?;
-
-        if time_zone == "UTC" {
+        let utc = make_utc_expr();
+        if time_zone == utc {
             // No conversion needed
             Ok(ts_arg)
         } else {
@@ -156,13 +152,16 @@ impl FunctionTransformer for ToUtcTimestampBigQueryTransform {
                     value: "datetime".to_string(),
                     quote_style: None,
                 }]),
-                args: vec![SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_arg))],
+                args: FunctionArguments::List(FunctionArgumentList {
+                    args: vec![SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_arg))],
+                    duplicate_treatment: None,
+                    clauses: vec![],
+                }),
                 filter: None,
                 null_treatment: None,
                 over: None,
-                distinct: false,
-                special: false,
-                order_by: Default::default(),
+                within_group: vec![],
+                parameters: FunctionArguments::None,
             });
 
             let convert_tz_expr = SqlExpr::Function(SqlFunction {
@@ -170,18 +169,19 @@ impl FunctionTransformer for ToUtcTimestampBigQueryTransform {
                     value: "timestamp".to_string(),
                     quote_style: None,
                 }]),
-                args: vec![
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(datetime_expr)),
-                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                        SqlValue::SingleQuotedString(time_zone),
-                    ))),
-                ],
+                args: FunctionArguments::List(FunctionArgumentList {
+                    args: vec![
+                        SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(datetime_expr)),
+                        SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(time_zone)),
+                    ],
+                    duplicate_treatment: None,
+                    clauses: vec![],
+                }),
+                within_group: vec![],
                 filter: None,
                 null_treatment: None,
                 over: None,
-                distinct: false,
-                special: false,
-                order_by: Default::default(),
+                parameters: FunctionArguments::None,
             });
 
             Ok(convert_tz_expr)

@@ -6,7 +6,7 @@ edition = "2021"
 description = "VegaFusion SQL dialect generation and connection implementations"
 
 [features]
-datafusion-conn = [ "datafusion", "tempfile", "reqwest", "reqwest-retry", "reqwest-middleware", "vegafusion-datafusion-udfs", "object_store", "url", "vegafusion-common/object_store",]
+datafusion-conn = [ "datafusion", "tempfile", "reqwest", "reqwest-retry", "reqwest-middleware", "vegafusion-datafusion-udfs", "object_store", "url", "vegafusion-common/object_store", "vegafusion-common/prettyprint",]
 pyarrow = [ "pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow", "vegafusion-dataframe/pyarrow",]
 
 [dependencies]
@@ -43,13 +43,19 @@ optional = true
 
 [dependencies.arrow]
 workspace = true
-default_features = false
+default-features = false
 features = [ "ipc",]
 
 [dependencies.datafusion-common]
 workspace = true
 
 [dependencies.datafusion-expr]
+workspace = true
+
+[dependencies.datafusion-functions]
+workspace = true
+
+[dependencies.datafusion-functions-aggregate]
 workspace = true
 
 [dependencies.datafusion]

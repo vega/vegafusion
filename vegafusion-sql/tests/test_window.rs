@@ -4,8 +4,7 @@ extern crate lazy_static;
 mod utils;
 use datafusion_common::ScalarValue;
 use datafusion_expr::{
-    col, expr, lit, AggregateFunction, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound,
-    WindowFrameUnits,
+    col, expr, lit, BuiltInWindowFunction, Expr, WindowFrame, WindowFrameBound, WindowFrameUnits,
 };
 use rstest::rstest;
 use rstest_reuse::{self, *};
@@ -18,10 +17,16 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 mod test_simple_aggs_unbounded {
     use crate::*;
     use datafusion_expr::WindowFunctionDefinition;
+    use datafusion_functions_aggregate::average::avg_udaf;
+    use datafusion_functions_aggregate::count::count_udaf;
+    use datafusion_functions_aggregate::sum::sum_udaf;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions_aggregate::min_max::{max_udaf, min_udaf};
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -47,43 +52,48 @@ mod test_simple_aggs_unbounded {
                 flat_col("b"),
                 flat_col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
+                    fun: WindowFunctionDefinition::AggregateUDF(sum_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Count),
+                    fun: WindowFunctionDefinition::AggregateUDF(count_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Avg),
+                    fun: WindowFunctionDefinition::AggregateUDF(avg_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Min),
+                    fun: WindowFunctionDefinition::AggregateUDF(min_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Max),
+                    fun: WindowFunctionDefinition::AggregateUDF(max_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame,
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("max_b"),
             ])
@@ -110,11 +120,17 @@ mod test_simple_aggs_unbounded {
 #[cfg(test)]
 mod test_simple_aggs_unbounded_groups {
     use crate::*;
+    use datafusion_expr::test::function_stub::avg_udaf;
     use datafusion_expr::WindowFunctionDefinition;
+    use datafusion_functions_aggregate::count::count_udaf;
+    use datafusion_functions_aggregate::sum::sum_udaf;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions_aggregate::min_max::{max_udaf, min_udaf};
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -144,43 +160,48 @@ mod test_simple_aggs_unbounded_groups {
                 flat_col("b"),
                 flat_col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
+                    fun: WindowFunctionDefinition::AggregateUDF(sum_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Count),
+                    fun: WindowFunctionDefinition::AggregateUDF(count_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Avg),
+                    fun: WindowFunctionDefinition::AggregateUDF(avg_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Min),
+                    fun: WindowFunctionDefinition::AggregateUDF(min_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![flat_col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Max),
+                    fun: WindowFunctionDefinition::AggregateUDF(max_udaf()),
                     args: vec![flat_col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame,
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("max_b"),
             ])
@@ -209,10 +230,16 @@ mod test_simple_aggs_unbounded_groups {
 mod test_simple_aggs_bounded {
     use crate::*;
     use datafusion_expr::WindowFunctionDefinition;
+    use datafusion_functions_aggregate::average::avg_udaf;
+    use datafusion_functions_aggregate::count::count_udaf;
+    use datafusion_functions_aggregate::sum::sum_udaf;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions_aggregate::min_max::{max_udaf, min_udaf};
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -242,43 +269,48 @@ mod test_simple_aggs_bounded {
                 flat_col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
+                    fun: WindowFunctionDefinition::AggregateUDF(sum_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Count),
+                    fun: WindowFunctionDefinition::AggregateUDF(count_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Avg),
+                    fun: WindowFunctionDefinition::AggregateUDF(avg_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Min),
+                    fun: WindowFunctionDefinition::AggregateUDF(min_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Max),
+                    fun: WindowFunctionDefinition::AggregateUDF(max_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame,
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("max_b"),
             ])
@@ -307,9 +339,15 @@ mod test_simple_aggs_bounded {
 mod test_simple_aggs_bounded_groups {
     use crate::*;
     use datafusion_expr::WindowFunctionDefinition;
+    use datafusion_functions_aggregate::average::avg_udaf;
+    use datafusion_functions_aggregate::count::count_udaf;
+    use datafusion_functions_aggregate::sum::sum_udaf;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions_aggregate::min_max::{max_udaf, min_udaf};
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -339,43 +377,48 @@ mod test_simple_aggs_bounded_groups {
                 col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Sum),
+                    fun: WindowFunctionDefinition::AggregateUDF(sum_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("sum_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Count),
+                    fun: WindowFunctionDefinition::AggregateUDF(count_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("count_part_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Avg),
+                    fun: WindowFunctionDefinition::AggregateUDF(avg_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("cume_mean_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Min),
+                    fun: WindowFunctionDefinition::AggregateUDF(min_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("min_b"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::AggregateFunction(AggregateFunction::Max),
+                    fun: WindowFunctionDefinition::AggregateUDF(max_udaf()),
                     args: vec![col("b")],
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame,
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("max_b"),
             ])
@@ -422,6 +465,8 @@ mod test_simple_window_fns {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -454,6 +499,7 @@ mod test_simple_window_fns {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("row_num"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -464,6 +510,7 @@ mod test_simple_window_fns {
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("rank"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -474,6 +521,7 @@ mod test_simple_window_fns {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("d_rank"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -484,6 +532,7 @@ mod test_simple_window_fns {
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("first"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -494,6 +543,7 @@ mod test_simple_window_fns {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame,
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("last"),
             ])
@@ -525,6 +575,8 @@ mod test_advanced_window_fns {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -557,6 +609,7 @@ mod test_advanced_window_fns {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("nth1"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -567,6 +620,7 @@ mod test_advanced_window_fns {
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("cdist"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -577,6 +631,7 @@ mod test_advanced_window_fns {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("lag_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -587,6 +642,7 @@ mod test_advanced_window_fns {
                     partition_by: vec![col("c")],
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("lead_b"),
                 Expr::WindowFunction(expr::WindowFunction {
@@ -597,6 +653,7 @@ mod test_advanced_window_fns {
                     partition_by: vec![],
                     order_by: order_by.clone(),
                     window_frame,
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("ntile"),
             ])
@@ -628,6 +685,8 @@ mod test_unordered_row_number {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -660,6 +719,7 @@ mod test_unordered_row_number {
                     partition_by: vec![],
                     order_by: vec![],
                     window_frame: window_frame.clone(),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
                 })
                 .alias("row_num"),
             ])

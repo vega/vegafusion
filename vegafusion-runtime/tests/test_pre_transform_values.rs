@@ -1,3 +1,18 @@
+fn crate_dir() -> String {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .display()
+        .to_string()
+}
+
+fn setup_s3_environment_vars() {
+    unsafe {
+        std::env::set_var("AWS_DEFAULT_REGION", "us-east-1");
+        std::env::set_var("AWS_ACCESS_KEY_ID", "access_key123");
+        std::env::set_var("AWS_SECRET_ACCESS_KEY", "secret_key123");
+        std::env::set_var("AWS_ENDPOINT", "http://127.0.0.1:9000");
+        std::env::set_var("AWS_ALLOW_HTTP", "true");
+    }
+}
 #[cfg(test)]
 mod tests {
     use crate::{crate_dir, setup_s3_environment_vars};
@@ -327,8 +342,8 @@ mod tests {
 +---------------------+---------------------+---------+---------+---------------+-------------+
 | yearmonth_date      | yearmonth_date_end  | weather | __count | __count_start | __count_end |
 +---------------------+---------------------+---------+---------+---------------+-------------+
-| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | rain    | 15      | 12.0          | 27.0        |
-| 2014-01-01T00:00:00 | 2014-02-01T00:00:00 | sun     | 16      | 0.0           | 16.0        |
+| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | rain    | 15      | 12.0          | 27          |
+| 2014-01-01T00:00:00 | 2014-02-01T00:00:00 | sun     | 16      | 0.0           | 16          |
 +---------------------+---------------------+---------+---------+---------------+-------------+";
         assert_eq!(click_selected.pretty_format(None).unwrap(), expected);
 
@@ -340,16 +355,16 @@ mod tests {
 +---------------------+---------------------+---------+---------+---------------+-------------+
 | yearmonth_date      | yearmonth_date_end  | weather | __count | __count_start | __count_end |
 +---------------------+---------------------+---------+---------+---------------+-------------+
-| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | sun     | 12      | 0.0           | 12.0        |
-| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | rain    | 15      | 12.0          | 27.0        |
-| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | fog     | 2       | 27.0          | 29.0        |
-| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | drizzle | 1       | 29.0          | 30.0        |
-| 2013-12-01T00:00:00 | 2014-01-01T00:00:00 | sun     | 17      | 0.0           | 17.0        |
-| 2013-12-01T00:00:00 | 2014-01-01T00:00:00 | snow    | 1       | 17.0          | 18.0        |
-| 2013-12-01T00:00:00 | 2014-01-01T00:00:00 | rain    | 13      | 18.0          | 31.0        |
-| 2014-01-01T00:00:00 | 2014-02-01T00:00:00 | sun     | 16      | 0.0           | 16.0        |
-| 2014-01-01T00:00:00 | 2014-02-01T00:00:00 | rain    | 13      | 16.0          | 29.0        |
-| 2014-01-01T00:00:00 | 2014-02-01T00:00:00 | fog     | 2       | 29.0          | 31.0        |
+| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | sun     | 12      | 0.0           | 12          |
+| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | rain    | 15      | 12.0          | 27          |
+| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | fog     | 2       | 27.0          | 29          |
+| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | drizzle | 1       | 29.0          | 30          |
+| 2013-12-01T00:00:00 | 2014-01-01T00:00:00 | sun     | 17      | 0.0           | 17          |
+| 2013-12-01T00:00:00 | 2014-01-01T00:00:00 | snow    | 1       | 17.0          | 18          |
+| 2013-12-01T00:00:00 | 2014-01-01T00:00:00 | rain    | 13      | 18.0          | 31          |
+| 2014-01-01T00:00:00 | 2014-02-01T00:00:00 | sun     | 16      | 0.0           | 16          |
+| 2014-01-01T00:00:00 | 2014-02-01T00:00:00 | rain    | 13      | 16.0          | 29          |
+| 2014-01-01T00:00:00 | 2014-02-01T00:00:00 | fog     | 2       | 29.0          | 31          |
 +---------------------+---------------------+---------+---------+---------------+-------------+";
         assert_eq!(drag_selected.pretty_format(None).unwrap(), expected);
     }
@@ -420,18 +435,4 @@ mod tests {
             assert_eq!(dataset.pretty_format(None).unwrap(), expected);
         }
     }
-}
-
-fn crate_dir() -> String {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .display()
-        .to_string()
-}
-
-fn setup_s3_environment_vars() {
-    std::env::set_var("AWS_DEFAULT_REGION", "us-east-1");
-    std::env::set_var("AWS_ACCESS_KEY_ID", "access_key123");
-    std::env::set_var("AWS_SECRET_ACCESS_KEY", "secret_key123");
-    std::env::set_var("AWS_ENDPOINT", "http://127.0.0.1:9000");
-    std::env::set_var("AWS_ALLOW_HTTP", "true");
 }

@@ -1,6 +1,6 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
 
-use datafusion_expr::{expr, Expr, ExprSchemable, ScalarFunctionDefinition};
+use datafusion_expr::{expr, Expr, ExprSchemable};
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::DFSchema;
@@ -27,7 +27,7 @@ pub fn compile_object(
     let udf = make_object_constructor_udf(keys.as_slice(), value_types.as_slice());
 
     Ok(Expr::ScalarFunction(expr::ScalarFunction {
-        func_def: ScalarFunctionDefinition::UDF(Arc::new(udf)),
+        func: Arc::new(udf),
         args: values,
     }))
 }

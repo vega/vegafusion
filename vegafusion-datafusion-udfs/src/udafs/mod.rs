@@ -19,7 +19,7 @@ pub(crate) struct PercentileContAccumulator {
 
 impl Accumulator for PercentileContAccumulator {
     fn state(&mut self) -> Result<Vec<ScalarValue>, DataFusionError> {
-        let state = ScalarValue::new_list(self.all_values.as_slice(), &self.data_type);
+        let state = ScalarValue::new_list(self.all_values.as_slice(), &self.data_type, true);
         Ok(vec![ScalarValue::List(state)])
     }
 
@@ -146,8 +146,8 @@ lazy_static! {
         Arc::new(DataType::Float64),
         Volatility::Immutable,
         // Accumulator factory
-        Arc::new(|dtype| Ok(Box::new(PercentileContAccumulator {
-            data_type: dtype.clone(),
+        Arc::new(|accum_args| Ok(Box::new(PercentileContAccumulator {
+            data_type: accum_args.data_type.clone(),
             all_values: Default::default(),
             percentile: 0.25,
         }))),
@@ -165,8 +165,8 @@ lazy_static! {
         Arc::new(DataType::Float64),
         Volatility::Immutable,
         // Accumulator factory
-        Arc::new(|dtype| Ok(Box::new(PercentileContAccumulator {
-            data_type: dtype.clone(),
+        Arc::new(|accum_args| Ok(Box::new(PercentileContAccumulator {
+            data_type: accum_args.data_type.clone(),
             all_values: Default::default(),
             percentile: 0.75,
         }))),

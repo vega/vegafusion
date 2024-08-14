@@ -1,3 +1,8 @@
+fn crate_dir() -> String {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .display()
+        .to_string()
+}
 #[cfg(test)]
 mod tests {
     use crate::crate_dir;
@@ -67,10 +72,4 @@ mod tests {
             Some(json!([{"min": 1, "max": 24}]))
         );
     }
-}
-
-fn crate_dir() -> String {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .display()
-        .to_string()
 }

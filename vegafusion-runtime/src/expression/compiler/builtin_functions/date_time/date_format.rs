@@ -1,5 +1,5 @@
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion_expr::{expr, lit, Expr, ExprSchemable, ScalarFunctionDefinition};
+use datafusion_expr::{expr, lit, Expr, ExprSchemable};
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
@@ -42,16 +42,14 @@ pub fn time_format_fn(
         // is compatible with more SQL dialects, so we want to use it if possible
         let udf_args = vec![timestamptz_expr, lit(&format_tz_str)];
         Ok(Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF(Arc::new((*UTC_TIMESTAMP_TO_STR_UDF).clone())),
+            func: Arc::new((*UTC_TIMESTAMP_TO_STR_UDF).clone()),
             args: udf_args,
         }))
     } else {
         // General case
         if format_tz_str.to_ascii_lowercase() != "utc" {
             timestamptz_expr = Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                    (*FROM_UTC_TIMESTAMP_UDF).clone(),
-                )),
+                func: Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone()),
                 args: vec![timestamptz_expr, lit(format_tz_str)],
             })
         }
@@ -59,7 +57,7 @@ pub fn time_format_fn(
         let udf_args = vec![timestamptz_expr, lit(format_str)];
 
         Ok(Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF(Arc::new((*FORMAT_TIMESTAMP_UDF).clone())),
+            func: Arc::new((*FORMAT_TIMESTAMP_UDF).clone()),
             args: udf_args,
         }))
     }
@@ -79,14 +77,14 @@ pub fn utc_format_fn(
         // is compatible with more SQL dialects, so we want to use it if possible
         let udf_args = vec![timestamptz_expr, lit("UTC")];
         Ok(Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF(Arc::new((*UTC_TIMESTAMP_TO_STR_UDF).clone())),
+            func: Arc::new((*UTC_TIMESTAMP_TO_STR_UDF).clone()),
             args: udf_args,
         }))
     } else {
         // General case
         let udf_args = vec![timestamptz_expr, lit(format_str)];
         Ok(Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF(Arc::new((*FORMAT_TIMESTAMP_UDF).clone())),
+            func: Arc::new((*FORMAT_TIMESTAMP_UDF).clone()),
             args: udf_args,
         }))
     }
@@ -104,15 +102,13 @@ fn to_timestamptz_expr(arg: &Expr, schema: &DFSchema, default_input_tz: &str) ->
         }),
         DataType::Timestamp(_, _) => arg.clone(),
         DataType::Utf8 => Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF(Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone())),
+            func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
             args: vec![arg.clone(), lit(default_input_tz)],
         }),
         DataType::Null => arg.clone(),
         dtype if is_numeric_datatype(&dtype) || matches!(dtype, DataType::Boolean) => {
             Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                    (*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone(),
-                )),
+                func: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
                 args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?],
             })
         }

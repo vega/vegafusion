@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{avg, count, expr, lit, max, min, round, sum, AggregateFunction, Expr};
+use datafusion_expr::{expr, lit, Expr};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -14,10 +14,13 @@ use vegafusion_sql::dataframe::SqlDataFrame;
 #[cfg(test)]
 mod test_simple_aggs {
     use crate::*;
+    use datafusion_functions_aggregate::expr_fn::{avg, count, sum};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(#[case] dialect_name: &str) {
+        use datafusion_functions_aggregate::min_max::{max, min};
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -72,11 +75,14 @@ mod test_simple_aggs {
 #[cfg(test)]
 mod test_median_agg {
     use crate::*;
-    use datafusion_expr::expr::AggregateFunctionDefinition;
+    use datafusion_functions_aggregate::expr_fn::count;
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions_aggregate::median::median_udaf;
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -96,11 +102,12 @@ mod test_median_agg {
                 vec![
                     count(flat_col("a")).alias("count_a"),
                     Expr::AggregateFunction(expr::AggregateFunction {
-                        func_def: AggregateFunctionDefinition::BuiltIn(AggregateFunction::Median),
+                        func: median_udaf(),
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .alias("median_a"),
                 ],
@@ -123,11 +130,15 @@ mod test_median_agg {
 #[cfg(test)]
 mod test_variance_aggs {
     use crate::*;
-    use datafusion_expr::expr::AggregateFunctionDefinition;
+    use datafusion_functions_aggregate::stddev::{stddev_pop_udaf, stddev_udaf};
+    use datafusion_functions_aggregate::variance::{var_pop_udaf, var_samp_udaf};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use datafusion_functions::expr_fn::round;
+        use sqlparser::ast::NullTreatment;
+
         println!("{dialect_name}");
         let (conn, evaluable) = TOKIO_RUNTIME.block_on(make_connection(dialect_name));
 
@@ -146,45 +157,45 @@ mod test_variance_aggs {
                 vec![flat_col("b")],
                 vec![
                     round(vec![Expr::AggregateFunction(expr::AggregateFunction {
-                        func_def: AggregateFunctionDefinition::BuiltIn(AggregateFunction::Stddev),
+                        func: stddev_udaf(),
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .mul(lit(100))])
                     .div(lit(100))
                     .alias("stddev_a"),
                     round(vec![Expr::AggregateFunction(expr::AggregateFunction {
-                        func_def: AggregateFunctionDefinition::BuiltIn(
-                            AggregateFunction::StddevPop,
-                        ),
+                        func: stddev_pop_udaf(),
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .mul(lit(100))])
                     .div(lit(100))
                     .alias("stddev_pop_a"),
                     round(vec![Expr::AggregateFunction(expr::AggregateFunction {
-                        func_def: AggregateFunctionDefinition::BuiltIn(AggregateFunction::Variance),
+                        func: var_samp_udaf(),
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .mul(lit(100))])
                     .div(lit(100))
                     .alias("var_a"),
                     round(vec![Expr::AggregateFunction(expr::AggregateFunction {
-                        func_def: AggregateFunctionDefinition::BuiltIn(
-                            AggregateFunction::VariancePop,
-                        ),
+                        func: var_pop_udaf(),
                         args: vec![flat_col("a")],
                         distinct: false,
                         filter: None,
                         order_by: None,
+                        null_treatment: Some(NullTreatment::IgnoreNulls),
                     })
                     .mul(lit(100))])
                     .div(lit(100))

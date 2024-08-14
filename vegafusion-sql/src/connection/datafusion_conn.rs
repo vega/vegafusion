@@ -4,13 +4,12 @@ use crate::dialect::Dialect;
 use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
 use arrow::ipc::reader::{FileReader, StreamReader};
 use arrow::record_batch::RecordBatch;
+use datafusion::config::TableOptions;
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::datasource::MemTable;
-use datafusion::execution::context::SessionState;
 use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
 use datafusion::execution::runtime_env::RuntimeEnv;
-use datafusion::optimizer::analyzer::inline_table_scan::InlineTableScan;
-use datafusion::optimizer::analyzer::type_coercion::TypeCoercion;
+use datafusion::execution::session_state::SessionStateBuilder;
 use datafusion::prelude::{
     CsvReadOptions as DfCsvReadOptions, ParquetReadOptions, SessionConfig, SessionContext,
 };
@@ -124,7 +123,11 @@ impl Connection for DataFusionConnection {
 
         let mut tables: HashMap<String, Schema> = HashMap::new();
         for table_name in schema_provider.table_names() {
-            let schema = schema_provider.table(&table_name).await.unwrap().schema();
+            let schema = schema_provider
+                .table(&table_name)
+                .await?
+                .with_context(|| format!("Failed to get table {table_name}"))?
+                .schema();
             tables.insert(table_name, schema.as_ref().clone());
         }
         Ok(tables)
@@ -380,7 +383,7 @@ impl SqlConnection for DataFusionConnection {
             .schema()
             .fields()
             .iter()
-            .map(|f| f.field().as_ref().clone().with_nullable(true))
+            .map(|f| f.as_ref().clone().with_nullable(true))
             .collect();
         let expected_fields: Vec<_> = schema
             .fields
@@ -434,7 +437,9 @@ async fn build_csv_schema(
     ctx: &SessionContext,
 ) -> Result<Schema> {
     let table_path = ListingTableUrl::parse(uri.into().as_str())?;
-    let listing_options = csv_opts.to_listing_options(&ctx.copied_config());
+    let listing_options =
+        csv_opts.to_listing_options(&ctx.copied_config(), TableOptions::default());
+
     let inferred_schema = listing_options
         .infer_schema(&ctx.state(), &table_path)
         .await?;
@@ -476,20 +481,15 @@ pub fn make_request_client() -> ClientWithMiddleware {
 }
 
 pub fn make_datafusion_context() -> SessionContext {
-    // Work around issues:
-    // - https://github.com/apache/arrow-datafusion/issues/6386
-    // - https://github.com/apache/arrow-datafusion/issues/6447
     let mut config = SessionConfig::new();
     let options = config.options_mut();
     options.optimizer.skip_failed_rules = true;
     let runtime = Arc::new(RuntimeEnv::default());
-    let session_state = SessionState::new_with_config_rt(config, runtime);
-    let session_state = session_state.with_analyzer_rules(vec![
-        Arc::new(InlineTableScan::new()),
-        Arc::new(TypeCoercion::new()),
-        // Intentionally exclude the CountWildcardRule
-        // Arc::new(CountWildcardRule::new()),
-    ]);
+    let session_state = SessionStateBuilder::new()
+        .with_config(config)
+        .with_runtime_env(runtime)
+        .with_default_features()
+        .build();
 
     let ctx = SessionContext::new_with_state(session_state);
 

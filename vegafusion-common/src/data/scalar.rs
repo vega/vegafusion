@@ -1,13 +1,14 @@
 use crate::error::{Result, VegaFusionError};
-use arrow::array::{new_empty_array, Array, ArrayRef, ListArray};
+use arrow::array::{Array, ArrayRef, ListArray};
 use datafusion_common::DataFusionError;
 
 use arrow::datatypes::DataType;
-use datafusion_common::utils::array_into_list_array;
 pub use datafusion_common::ScalarValue;
 
 #[cfg(feature = "json")]
 use {
+    arrow::array::new_empty_array,
+    datafusion_common::utils::array_into_list_array,
     serde_json::{Map, Value},
     std::ops::Deref,
     std::sync::Arc,
@@ -67,14 +68,14 @@ impl ScalarValueHelpers for ScalarValue {
             }
             Value::Array(elements) => {
                 let array: ListArray = if elements.is_empty() {
-                    array_into_list_array(Arc::new(new_empty_array(&DataType::Float64)))
+                    array_into_list_array(Arc::new(new_empty_array(&DataType::Float64)), true)
                 } else {
                     let elements: Vec<_> = elements
                         .iter()
                         .map(ScalarValue::from_json)
                         .collect::<Result<Vec<ScalarValue>>>()?;
 
-                    array_into_list_array(ScalarValue::iter_to_array(elements)?)
+                    array_into_list_array(ScalarValue::iter_to_array(elements)?, true)
                 };
 
                 ScalarValue::List(Arc::new(array))

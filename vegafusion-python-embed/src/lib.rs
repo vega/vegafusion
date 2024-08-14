@@ -4,6 +4,7 @@ pub mod dataframe;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyTuple};
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::{Arc, Once};
 use tokio::runtime::Runtime;
@@ -15,7 +16,7 @@ use vegafusion_runtime::task_graph::runtime::{ChartState as RsChartState, VegaFu
 use crate::connection::{PySqlConnection, PySqlDataset};
 use crate::dataframe::PyDataFrame;
 use env_logger::{Builder, Target};
-use pythonize::{depythonize, pythonize};
+use pythonize::{depythonize_bound, pythonize};
 use serde_json::json;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::patch::patch_pre_transformed_spec;
@@ -78,7 +79,7 @@ impl PyChartState {
     pub fn update(&self, py: Python, updates: Vec<PyObject>) -> PyResult<Vec<PyObject>> {
         let updates = updates
             .into_iter()
-            .map(|el| Ok(depythonize::<ExportUpdateJSON>(el.as_ref(py))?))
+            .map(|el| Ok(depythonize_bound::<ExportUpdateJSON>(el.bind(py).clone())?))
             .collect::<PyResult<Vec<_>>>()?;
 
         let result_updates = py.allow_threads(|| {
@@ -141,27 +142,30 @@ struct PyVegaFusionRuntime {
 impl PyVegaFusionRuntime {
     fn process_inline_datasets(
         &self,
-        inline_datasets: Option<&PyDict>,
+        inline_datasets: Option<&Bound<PyDict>>,
     ) -> PyResult<(HashMap<String, VegaFusionDataset>, bool)> {
         let mut any_main_thread = false;
         if let Some(inline_datasets) = inline_datasets {
             Python::with_gil(|py| -> PyResult<_> {
-                let vegafusion_dataset_module = PyModule::import(py, "vegafusion.dataset")?;
+                let vegafusion_dataset_module = PyModule::import_bound(py, "vegafusion.dataset")?;
                 let sql_dataset_type = vegafusion_dataset_module.getattr("SqlDataset")?;
                 let df_dataset_type = vegafusion_dataset_module.getattr("DataFrameDataset")?;
 
-                let vegafusion_datasource_module = PyModule::import(py, "vegafusion.datasource")?;
+                let vegafusion_datasource_module =
+                    PyModule::import_bound(py, "vegafusion.datasource")?;
                 let datasource_type = vegafusion_datasource_module.getattr("Datasource")?;
 
                 let imported_datasets = inline_datasets
                     .iter()
                     .map(|(name, inline_dataset)| {
-                        let dataset = if inline_dataset.is_instance(sql_dataset_type)? {
+                        let inline_dataset = inline_dataset.to_object(py);
+                        let inline_dataset = inline_dataset.bind(py);
+                        let dataset = if inline_dataset.is_instance(&sql_dataset_type)? {
                             let main_thread = inline_dataset
                                 .call_method0("main_thread")?
                                 .extract::<bool>()?;
                             any_main_thread = any_main_thread || main_thread;
-                            let sql_dataset = PySqlDataset::new(inline_dataset.into_py(py))?;
+                            let sql_dataset = PySqlDataset::new(inline_dataset.to_object(py))?;
                             let rt = if main_thread {
                                 &self.tokio_runtime_current_thread
                             } else {
@@ -171,15 +175,15 @@ impl PyVegaFusionRuntime {
                                 rt.block_on(sql_dataset.scan_table(&sql_dataset.table_name))
                             })?;
                             VegaFusionDataset::DataFrame(df)
-                        } else if inline_dataset.is_instance(df_dataset_type)? {
+                        } else if inline_dataset.is_instance(&df_dataset_type)? {
                             let main_thread = inline_dataset
                                 .call_method0("main_thread")?
                                 .extract::<bool>()?;
                             any_main_thread = any_main_thread || main_thread;
 
-                            let df = Arc::new(PyDataFrame::new(inline_dataset.into_py(py))?);
+                            let df = Arc::new(PyDataFrame::new(inline_dataset.to_object(py))?);
                             VegaFusionDataset::DataFrame(df)
-                        } else if inline_dataset.is_instance(datasource_type)? {
+                        } else if inline_dataset.is_instance(&datasource_type)? {
                             let df = self.tokio_runtime_connection.block_on(
                                 self.runtime
                                     .conn
@@ -195,7 +199,7 @@ impl PyVegaFusionRuntime {
                             // We convert to ipc bytes for two reasons:
                             // - It allows VegaFusionDataset to compute an accurate hash of the table
                             // - It works around https://github.com/hex-inc/vegafusion/issues/268
-                            let table = VegaFusionTable::from_pyarrow(py, inline_dataset)?;
+                            let table = VegaFusionTable::from_pyarrow(inline_dataset)?;
                             VegaFusionDataset::from_table_ipc_bytes(&table.to_ipc_bytes()?)?
                         };
 
@@ -263,7 +267,7 @@ impl PyVegaFusionRuntime {
         local_tz: String,
         default_input_tz: Option<String>,
         row_limit: Option<u32>,
-        inline_datasets: Option<&PyDict>,
+        inline_datasets: Option<&Bound<PyDict>>,
     ) -> PyResult<PyChartState> {
         let spec = parse_json_spec(spec)?;
         let tz_config = TzConfig {
@@ -294,13 +298,17 @@ impl PyVegaFusionRuntime {
         })
     }
 
-    pub fn process_request_bytes(&self, py: Python, request_bytes: &PyBytes) -> PyResult<PyObject> {
+    pub fn process_request_bytes(
+        &self,
+        py: Python,
+        request_bytes: &Bound<PyBytes>,
+    ) -> PyResult<PyObject> {
         let request_bytes = request_bytes.as_bytes();
         let response_bytes = py.allow_threads(|| {
             self.tokio_runtime_connection
                 .block_on(self.runtime.query_request_bytes(request_bytes))
         })?;
-        Ok(PyBytes::new(py, &response_bytes).into())
+        Ok(PyBytes::new_bound(py, &response_bytes).into())
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -351,7 +359,7 @@ impl PyVegaFusionRuntime {
         default_input_tz: Option<String>,
         row_limit: Option<u32>,
         preserve_interactivity: Option<bool>,
-        inline_datasets: Option<&PyDict>,
+        inline_datasets: Option<&Bound<PyDict>>,
         keep_signals: Option<Vec<(String, Vec<u32>)>>,
         keep_datasets: Option<Vec<(String, Vec<u32>)>>,
     ) -> PyResult<(PyObject, PyObject)> {
@@ -410,7 +418,7 @@ impl PyVegaFusionRuntime {
         local_tz: String,
         default_input_tz: Option<String>,
         row_limit: Option<u32>,
-        inline_datasets: Option<&PyDict>,
+        inline_datasets: Option<&Bound<PyDict>>,
     ) -> PyResult<(PyObject, PyObject)> {
         let (inline_datasets, any_main_thread_sources) =
             self.process_inline_datasets(inline_datasets)?;
@@ -460,7 +468,7 @@ impl PyVegaFusionRuntime {
             .collect();
 
         Python::with_gil(|py| -> PyResult<(PyObject, PyObject)> {
-            let py_response_list = PyList::empty(py);
+            let py_response_list = PyList::empty_bound(py);
             for value in values {
                 let pytable: PyObject = if let TaskValue::Table(table) = value {
                     table.to_pyarrow(py)?
@@ -487,7 +495,7 @@ impl PyVegaFusionRuntime {
         preserve_interactivity: Option<bool>,
         extract_threshold: Option<usize>,
         extracted_format: Option<String>,
-        inline_datasets: Option<&PyDict>,
+        inline_datasets: Option<&Bound<PyDict>>,
         keep_signals: Option<Vec<(String, Vec<u32>)>>,
         keep_datasets: Option<Vec<(String, Vec<u32>)>>,
     ) -> PyResult<(PyObject, Vec<PyObject>, PyObject)> {
@@ -548,7 +556,7 @@ impl PyVegaFusionRuntime {
                     let table = match extracted_format.as_str() {
                         "pyarrow" => table.to_pyarrow(py)?,
                         "arrow-ipc" => {
-                            PyBytes::new(py, table.to_ipc_bytes()?.as_slice()).to_object(py)
+                            PyBytes::new_bound(py, table.to_ipc_bytes()?.as_slice()).to_object(py)
                         }
                         "arrow-ipc-base64" => table.to_ipc_base64()?.into_py(py),
                         _ => {
@@ -559,7 +567,8 @@ impl PyVegaFusionRuntime {
                         }
                     };
 
-                    let dataset: PyObject = PyTuple::new(py, &[name, scope, table]).into_py(py);
+                    let dataset: PyObject =
+                        PyTuple::new_bound(py, &[name, scope, table]).into_py(py);
                     Ok(dataset)
                 })
                 .collect::<PyResult<Vec<_>>>()?;
@@ -617,7 +626,7 @@ impl PyVegaFusionRuntime {
 /// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
 /// import the module.
 #[pymodule]
-fn vegafusion_embed(_py: Python, m: &PyModule) -> PyResult<()> {
+fn vegafusion_embed(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     m.add_class::<PyVegaFusionRuntime>()?;
     m.add_class::<PySqlConnection>()?;
     m.add_class::<PyChartState>()?;
@@ -627,15 +636,15 @@ fn vegafusion_embed(_py: Python, m: &PyModule) -> PyResult<()> {
 /// Helper function to parse an input Python string or dict as a ChartSpec
 fn parse_json_spec(chart_spec: PyObject) -> PyResult<ChartSpec> {
     Python::with_gil(|py| -> PyResult<ChartSpec> {
-        if let Ok(chart_spec) = chart_spec.extract::<&str>(py) {
-            match serde_json::from_str::<ChartSpec>(chart_spec) {
+        if let Ok(chart_spec) = chart_spec.extract::<Cow<str>>(py) {
+            match serde_json::from_str::<ChartSpec>(&chart_spec) {
                 Ok(chart_spec) => Ok(chart_spec),
                 Err(err) => Err(PyValueError::new_err(format!(
                     "Failed to parse chart_spec string as Vega: {err}"
                 ))),
             }
-        } else if let Ok(chart_spec) = chart_spec.downcast::<PyDict>(py) {
-            match depythonize(chart_spec) {
+        } else if let Ok(chart_spec) = chart_spec.downcast_bound::<PyAny>(py) {
+            match depythonize_bound::<ChartSpec>(chart_spec.clone()) {
                 Ok(chart_spec) => Ok(chart_spec),
                 Err(err) => Err(PyValueError::new_err(format!(
                     "Failed to parse chart_spec dict as Vega: {err}"

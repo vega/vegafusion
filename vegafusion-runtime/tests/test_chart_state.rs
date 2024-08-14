@@ -1,3 +1,8 @@
+fn crate_dir() -> String {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .display()
+        .to_string()
+}
 #[cfg(test)]
 mod tests {
     use crate::crate_dir;
@@ -137,10 +142,4 @@ mod tests {
 
         assert_eq!(response_updates, expected_updates)
     }
-}
-
-fn crate_dir() -> String {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .display()
-        .to_string()
 }

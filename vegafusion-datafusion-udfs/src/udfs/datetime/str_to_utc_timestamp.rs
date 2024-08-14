@@ -117,14 +117,14 @@ pub fn parse_datetime_fallback(
     date_str: &str,
     default_input_tz: &Option<chrono_tz::Tz>,
 ) -> Option<DateTime<Utc>> {
-    let mut date_tokens = vec![String::from(""), String::from(""), String::from("")];
-    let mut time_tokens = vec![
+    let mut date_tokens = [String::from(""), String::from(""), String::from("")];
+    let mut time_tokens = [
         String::from(""),
         String::from(""),
         String::from(""),
         String::from(""),
     ];
-    let mut timezone_tokens = vec![String::from(""), String::from("")];
+    let mut timezone_tokens = [String::from(""), String::from("")];
     let mut timezone_sign = ' ';
     let mut date_ind = 0;
     let mut time_ind = 0;

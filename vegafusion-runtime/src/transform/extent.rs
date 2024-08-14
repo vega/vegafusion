@@ -4,7 +4,8 @@ use async_trait::async_trait;
 
 use datafusion_common::utils::array_into_list_array;
 use datafusion_common::{DFSchema, ScalarValue};
-use datafusion_expr::{max, min, Expr};
+use datafusion_expr::Expr;
+use datafusion_functions_aggregate::expr_fn::{max, min};
 use std::sync::Arc;
 use vegafusion_common::column::unescaped_col;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -63,6 +64,7 @@ fn extract_extent_list(table: &VegaFusionTable) -> Result<TaskValue> {
     // Build two-element list of the extents
     let extent_list = TaskValue::Scalar(ScalarValue::List(Arc::new(array_into_list_array(
         ScalarValue::iter_to_array(vec![min_val_scalar, max_val_scalar])?,
+        true,
     ))));
     Ok(extent_list)
 }
