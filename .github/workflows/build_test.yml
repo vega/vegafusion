@@ -327,7 +327,7 @@ jobs:
 #        run: pytest
 
   test-vegafusion-python-osx-arm64:
-    runs-on: macos-12
+    runs-on: macos-14
     needs: [build-vegafusion-python-embed-osx-arm64, build-vegafusion-packages]
     steps:
       - name: Check out repository code
