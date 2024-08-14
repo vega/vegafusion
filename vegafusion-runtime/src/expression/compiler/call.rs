@@ -6,7 +6,7 @@ use crate::expression::compiler::builtin_functions::date_time::datetime::{
 use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_valid_fn;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
-use datafusion_expr::{expr, Expr, ScalarFunctionDefinition, ScalarUDF};
+use datafusion_expr::{expr, Expr, ScalarUDF};
 use datafusion_functions::expr_fn::isnan;
 use datafusion_functions::math::{
     abs, acos, asin, atan, ceil, cos, exp, floor, ln, power, round, sin, sqrt, tan,
@@ -133,7 +133,7 @@ pub fn compile_call(
         VegaFusionCallable::ScalarUDF { udf, cast } => {
             let args = compile_scalar_arguments(node, config, schema, cast)?;
             Ok(Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::UDF(udf.clone()),
+                func: udf.clone(),
                 args,
             }))
         }

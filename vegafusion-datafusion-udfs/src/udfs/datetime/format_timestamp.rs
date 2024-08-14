@@ -1,5 +1,5 @@
 use crate::udfs::datetime::to_utc_timestamp::to_timestamp_ms;
-use chrono::NaiveDateTime;
+use chrono::DateTime;
 use std::any::Any;
 use std::sync::Arc;
 use vegafusion_common::datafusion_expr::ScalarUDFImpl;
@@ -100,16 +100,16 @@ impl ScalarUDFImpl for FormatTimestampUDF {
 
         let formatted = Arc::new(StringArray::from_iter(utc_millis_array.iter().map(
             |utc_millis| {
-                utc_millis.map(|utc_millis| {
+                utc_millis.and_then(|utc_millis| {
                     // Load as UTC datetime
                     let utc_seconds = utc_millis / 1_000;
                     let utc_nanos = (utc_millis % 1_000 * 1_000_000) as u32;
-                    let naive_datetime = NaiveDateTime::from_timestamp_opt(utc_seconds, utc_nanos)
-                        .expect("invalid or out-of-range datetime");
+                    let naive_datetime =
+                        DateTime::from_timestamp(utc_seconds, utc_nanos)?.naive_utc();
 
                     // Format as string
                     let formatted = naive_datetime.format(&format_str);
-                    formatted.to_string()
+                    Some(formatted.to_string())
                 })
             },
         ))) as ArrayRef;

@@ -3,11 +3,11 @@ use crate::compile::scalar::ToSqlScalar;
 use arrow::datatypes::DataType;
 use datafusion_common::{DFSchema, ScalarValue};
 use sqlparser::ast::{
-    BinaryOperator as SqlBinaryOperator, Expr as SqlExpr, Function as SqlFunction,
-    FunctionArg as SqlFunctionArg, Ident, ObjectName as SqlObjectName,
-    UnaryOperator as SqlUnaryOperator, WindowFrame as SqlWindowFrame,
-    WindowFrameBound as SqlWindowBound, WindowFrameUnits as SqlWindowFrameUnits,
-    WindowSpec as SqlWindowSpec, WindowType,
+    BinaryOperator as SqlBinaryOperator, CastKind, DuplicateTreatment, Expr as SqlExpr,
+    Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgumentList,
+    FunctionArguments, Ident, ObjectName as SqlObjectName, UnaryOperator as SqlUnaryOperator,
+    WindowFrame as SqlWindowFrame, WindowFrameBound as SqlWindowBound,
+    WindowFrameUnits as SqlWindowFrameUnits, WindowSpec as SqlWindowSpec, WindowType,
 };
 
 use datafusion_expr::expr::{BinaryExpr, Case, Cast, Sort};
@@ -146,9 +146,6 @@ impl ToSqlExpr for Expr {
                 op: SqlUnaryOperator::Minus,
                 expr: Box::new(expr.to_sql(dialect, schema)?),
             }))),
-            Expr::GetIndexedField { .. } => Err(VegaFusionError::internal(
-                "GetIndexedField cannot be converted to SQL",
-            )),
             Expr::Between(Between {
                 expr,
                 negated,
@@ -208,6 +205,7 @@ impl ToSqlExpr for Expr {
                         expr: Box::new(expr.to_sql(dialect, schema)?),
                         data_type: sql_data_type,
                         format: None,
+                        kind: CastKind::Cast,
                     }
                 };
 
@@ -238,28 +236,32 @@ impl ToSqlExpr for Expr {
                     transformer.transform(expr.as_ref(), dialect, schema)?
                 } else {
                     match &dialect.try_cast_mode {
-                        TryCastMode::Supported => SqlExpr::TryCast {
+                        TryCastMode::Supported => SqlExpr::Cast {
                             expr: Box::new(expr.to_sql(dialect, schema)?),
                             data_type: sql_data_type,
                             format: None,
+                            kind: CastKind::TryCast,
                         },
                         TryCastMode::JustUseCast => SqlExpr::Cast {
                             expr: Box::new(expr.to_sql(dialect, schema)?),
                             data_type: sql_data_type,
                             format: None,
+                            kind: CastKind::Cast,
                         },
-                        TryCastMode::SafeCast => SqlExpr::SafeCast {
+                        TryCastMode::SafeCast => SqlExpr::Cast {
                             expr: Box::new(expr.to_sql(dialect, schema)?),
                             data_type: sql_data_type,
                             format: None,
+                            kind: CastKind::SafeCast,
                         },
                         TryCastMode::SupportedOnStringsOtherwiseJustCast => {
                             if let DataType::Utf8 | DataType::LargeUtf8 = from_dtype {
                                 // TRY_CAST is supported
-                                SqlExpr::TryCast {
+                                SqlExpr::Cast {
                                     expr: Box::new(expr.to_sql(dialect, schema)?),
                                     data_type: sql_data_type,
                                     format: None,
+                                    kind: CastKind::TryCast,
                                 }
                             } else {
                                 // Fall back to regular CAST
@@ -267,6 +269,7 @@ impl ToSqlExpr for Expr {
                                     expr: Box::new(expr.to_sql(dialect, schema)?),
                                     data_type: sql_data_type,
                                     format: None,
+                                    kind: CastKind::Cast,
                                 }
                             }
                         }
@@ -301,12 +304,12 @@ impl ToSqlExpr for Expr {
                 translate_scalar_function(&fun_name, &fun.args, dialect, schema)
             }
             Expr::AggregateFunction(expr::AggregateFunction {
-                func_def,
+                func,
                 args,
                 distinct,
                 ..
             }) => translate_aggregate_function(
-                &func_def.name().to_ascii_lowercase(),
+                &func.name().to_ascii_lowercase(),
                 args.as_slice(),
                 *distinct,
                 dialect,
@@ -322,7 +325,7 @@ impl ToSqlExpr for Expr {
             }) => {
                 // Extract function name
                 let (fun_name, supports_frame) = match fun {
-                    WindowFunctionDefinition::AggregateFunction(agg) => {
+                    WindowFunctionDefinition::AggregateUDF(agg) => {
                         (agg.name().to_ascii_lowercase(), true)
                     }
                     WindowFunctionDefinition::BuiltInWindowFunction(win_fn) => {
@@ -344,9 +347,6 @@ impl ToSqlExpr for Expr {
 
                         (win_fn.to_string().to_ascii_lowercase(), supports_frame)
                     }
-                    WindowFunctionDefinition::AggregateUDF(udf) => {
-                        (udf.name().to_ascii_lowercase(), true)
-                    }
                     WindowFunctionDefinition::WindowUDF(udf) => {
                         (udf.name().to_ascii_lowercase(), true)
                     }
@@ -358,14 +358,17 @@ impl ToSqlExpr for Expr {
                         UnorderedRowNumberMode::AlternateScalarFunction(alt_fun) => {
                             return Ok(SqlExpr::Function(SqlFunction {
                                 name: SqlObjectName(vec![Ident::new(alt_fun)]),
-                                args: vec![],
+                                args: FunctionArguments::List(FunctionArgumentList {
+                                    args: vec![],
+                                    duplicate_treatment: None,
+                                    clauses: vec![],
+                                }),
                                 filter: None,
                                 null_treatment: None,
                                 over: None,
-                                distinct: false,
-                                special: false,
-                                order_by: vec![],
-                            }))
+                                within_group: vec![],
+                                parameters: FunctionArguments::None,
+                            }));
                         }
                         UnorderedRowNumberMode::OrderByConstant => {
                             vec![Expr::Sort(Sort {
@@ -447,13 +450,16 @@ impl ToSqlExpr for Expr {
                             value: fun_name,
                             quote_style: None,
                         }]),
-                        args,
+                        args: FunctionArguments::List(FunctionArgumentList {
+                            args,
+                            duplicate_treatment: None,
+                            clauses: vec![],
+                        }),
                         filter: None,
                         null_treatment: None,
                         over: Some(over),
-                        distinct: false,
-                        special: false,
-                        order_by: Default::default(),
+                        within_group: vec![],
+                        parameters: FunctionArguments::None,
                     };
 
                     Ok(SqlExpr::Function(sql_fun))
@@ -547,13 +553,16 @@ fn translate_scalar_function(
 
         Ok(SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![ident]),
-            args,
+            args: FunctionArguments::List(FunctionArgumentList {
+                args,
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         }))
     } else if let Some(transformer) = dialect.scalar_transformers.get(fun_name) {
         // Supported through AST transformation
@@ -579,17 +588,24 @@ fn translate_aggregate_function(
             quote_style: None,
         };
         let args = translate_function_args(args, dialect, schema)?;
-
-        Ok(SqlExpr::Function(SqlFunction {
+        let fn_expr = SqlExpr::Function(SqlFunction {
             name: SqlObjectName(vec![ident]),
-            args,
+            args: FunctionArguments::List(FunctionArgumentList {
+                args,
+                duplicate_treatment: if distinct {
+                    Some(DuplicateTreatment::Distinct)
+                } else {
+                    None
+                },
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct,
-            special: false,
-            order_by: Default::default(),
-        }))
+            within_group: vec![],
+            parameters: FunctionArguments::None,
+        });
+        Ok(fn_expr)
     } else if let Some(transformer) = dialect.aggregate_transformers.get(fun_name) {
         // Supported through AST transformation
         transformer.transform(args, dialect, schema)

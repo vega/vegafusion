@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::DateTime;
 use chrono::TimeZone;
 use chrono_tz::Tz;
 use std::any::Any;
@@ -113,20 +113,19 @@ pub fn from_utc_timestamp(timestamp_array: ArrayRef, tz: Tz) -> Result<ArrayRef,
         timestamp_array
             .iter()
             .map(|v| {
-                v.map(|v| {
+                v.and_then(|v| {
                     // Build naive datetime for time
                     let seconds = v / 1000;
                     let milliseconds = v % 1000;
                     let nanoseconds = (milliseconds * 1_000_000) as u32;
                     let naive_utc_datetime =
-                        NaiveDateTime::from_timestamp_opt(seconds, nanoseconds)
-                            .expect("invalid or out-of-range datetime");
+                        DateTime::from_timestamp(seconds, nanoseconds)?.naive_utc();
 
                     // Create local datetime, interpreting the naive datetime as utc
                     let local_datetime = tz.from_utc_datetime(&naive_utc_datetime);
                     let naive_local_datetime = local_datetime.naive_local();
 
-                    naive_local_datetime.timestamp_millis()
+                    Some(naive_local_datetime.and_utc().timestamp_millis())
                 })
             })
             .collect::<Vec<Option<_>>>(),

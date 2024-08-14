@@ -5,7 +5,7 @@ use datafusion_proto::logical_plan::to_proto::serialize_expr;
 use datafusion_proto::logical_plan::DefaultLogicalExtensionCodec;
 use prost::Message;
 use pyo3::prelude::PyModule;
-use pyo3::types::{PyBytes, PyTuple};
+use pyo3::types::{PyAnyMethods, PyBytes, PyTuple, PyTypeMethods};
 use pyo3::{pyclass, pymethods, IntoPy, PyErr, PyObject, Python};
 use serde_json::Value;
 use std::any::Any;
@@ -48,7 +48,7 @@ impl DataFrame for PyDataFrame {
     fn schema(&self) -> Schema {
         Python::with_gil(|py| -> std::result::Result<_, PyErr> {
             let schema_obj = self.dataframe.call_method0(py, "schema")?;
-            let schema = Schema::from_pyarrow(schema_obj.as_ref(py))?;
+            let schema = Schema::from_pyarrow_bound(schema_obj.bind(py))?;
             Ok(schema)
         })
         .expect("Failed to return Schema of DataFrameDatasource")
@@ -72,7 +72,7 @@ impl DataFrame for PyDataFrame {
     async fn collect(&self) -> Result<VegaFusionTable> {
         let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
             let table_object = self.dataframe.call_method0(py, "collect")?;
-            VegaFusionTable::from_pyarrow(py, table_object.as_ref(py))
+            VegaFusionTable::from_pyarrow(table_object.bind(py))
         })?;
         Ok(table)
     }
@@ -85,12 +85,13 @@ impl DataFrame for PyDataFrame {
             let py_limit = limit.into_py(py);
 
             // Build arguments for Python sort method
-            let args = PyTuple::new(py, vec![py_exprs, py_limit]);
+            let args = PyTuple::new_bound(py, vec![py_exprs, py_limit]);
 
-            let new_py_df = match self.dataframe.call_method(py, "sort", args, None) {
+            let new_py_df = match self.dataframe.call_method_bound(py, "sort", args, None) {
                 Ok(new_py_df) => new_py_df,
                 Err(err) => {
-                    let exception_name = err.get_type(py).name()?;
+                    let err_bound = err.get_type_bound(py);
+                    let exception_name = err_bound.name()?;
                     if exception_name == "DataFrameOperationNotSupportedError" {
                         // Should fall back to fallback connection below
                         return Ok(None);
@@ -112,7 +113,7 @@ impl DataFrame for PyDataFrame {
             // Fallback
             let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
                 let table = self.dataframe.call_method0(py, "collect")?;
-                VegaFusionTable::from_pyarrow(py, table.as_ref(py))
+                VegaFusionTable::from_pyarrow(table.bind(py))
             })?;
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
@@ -125,12 +126,13 @@ impl DataFrame for PyDataFrame {
         let new_df = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
             let py_exprs = exprs_to_py(py, exprs.clone())?;
             // Build arguments for Python sort method
-            let args = PyTuple::new(py, vec![py_exprs]);
+            let args = PyTuple::new_bound(py, vec![py_exprs]);
 
-            let new_py_df = match self.dataframe.call_method(py, "select", args, None) {
+            let new_py_df = match self.dataframe.call_method_bound(py, "select", args, None) {
                 Ok(new_py_df) => new_py_df,
                 Err(err) => {
-                    let exception_name = err.get_type(py).name()?;
+                    let err_bound = err.get_type_bound(py);
+                    let exception_name = err_bound.name()?;
                     if exception_name == "DataFrameOperationNotSupportedError" {
                         // Should fall back to fallback connection below
                         return Ok(None);
@@ -152,7 +154,7 @@ impl DataFrame for PyDataFrame {
             // Fallback
             let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
                 let table = self.dataframe.call_method0(py, "collect")?;
-                VegaFusionTable::from_pyarrow(py, table.as_ref(py))
+                VegaFusionTable::from_pyarrow(table.bind(py))
             })?;
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
@@ -171,12 +173,16 @@ impl DataFrame for PyDataFrame {
             let py_aggr_exprs = exprs_to_py(py, aggr_exprs.clone())?;
 
             // Build arguments for Python sort method
-            let args = PyTuple::new(py, vec![py_group_exprs, py_aggr_exprs]);
+            let args = PyTuple::new_bound(py, vec![py_group_exprs, py_aggr_exprs]);
 
-            let new_py_df = match self.dataframe.call_method(py, "aggregate", args, None) {
+            let new_py_df = match self
+                .dataframe
+                .call_method_bound(py, "aggregate", args, None)
+            {
                 Ok(new_py_df) => new_py_df,
                 Err(err) => {
-                    let exception_name = err.get_type(py).name()?;
+                    let err_bound = err.get_type_bound(py);
+                    let exception_name = err_bound.name()?;
                     if exception_name == "DataFrameOperationNotSupportedError" {
                         // Should fall back to fallback connection below
                         return Ok(None);
@@ -198,7 +204,7 @@ impl DataFrame for PyDataFrame {
             // Fallback
             let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
                 let table = self.dataframe.call_method0(py, "collect")?;
-                VegaFusionTable::from_pyarrow(py, table.as_ref(py))
+                VegaFusionTable::from_pyarrow(table.bind(py))
             })?;
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
@@ -217,12 +223,16 @@ impl DataFrame for PyDataFrame {
             let py_aggr_exprs = exprs_to_py(py, aggr_exprs.clone())?;
 
             // Build arguments for Python sort method
-            let args = PyTuple::new(py, vec![py_group_exprs, py_aggr_exprs]);
+            let args = PyTuple::new_bound(py, vec![py_group_exprs, py_aggr_exprs]);
 
-            let new_py_df = match self.dataframe.call_method(py, "joinaggregate", args, None) {
+            let new_py_df = match self
+                .dataframe
+                .call_method_bound(py, "joinaggregate", args, None)
+            {
                 Ok(new_py_df) => new_py_df,
                 Err(err) => {
-                    let exception_name = err.get_type(py).name()?;
+                    let err_bound = err.get_type_bound(py);
+                    let exception_name = err_bound.name()?;
                     if exception_name == "DataFrameOperationNotSupportedError" {
                         // Should fall back to fallback connection below
                         return Ok(None);
@@ -244,7 +254,7 @@ impl DataFrame for PyDataFrame {
             // Fallback
             let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
                 let table = self.dataframe.call_method0(py, "collect")?;
-                VegaFusionTable::from_pyarrow(py, table.as_ref(py))
+                VegaFusionTable::from_pyarrow(table.bind(py))
             })?;
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
@@ -257,12 +267,13 @@ impl DataFrame for PyDataFrame {
         let new_df = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
             let py_exprs = expr_to_py(py, &predicate)?;
             // Build arguments for Python sort method
-            let args = PyTuple::new(py, vec![py_exprs]);
+            let args = PyTuple::new_bound(py, vec![py_exprs]);
 
-            let new_py_df = match self.dataframe.call_method(py, "filter", args, None) {
+            let new_py_df = match self.dataframe.call_method_bound(py, "filter", args, None) {
                 Ok(new_py_df) => new_py_df,
                 Err(err) => {
-                    let exception_name = err.get_type(py).name()?;
+                    let err_bound = err.get_type_bound(py);
+                    let exception_name = err_bound.name()?;
                     if exception_name == "DataFrameOperationNotSupportedError" {
                         // Should fall back to fallback connection below
                         return Ok(None);
@@ -284,7 +295,7 @@ impl DataFrame for PyDataFrame {
             // Fallback
             let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
                 let table = self.dataframe.call_method0(py, "collect")?;
-                VegaFusionTable::from_pyarrow(py, table.as_ref(py))
+                VegaFusionTable::from_pyarrow(table.bind(py))
             })?;
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
@@ -299,12 +310,13 @@ impl DataFrame for PyDataFrame {
             let py_limit = limit.into_py(py);
 
             // Build arguments for Python sort method
-            let args = PyTuple::new(py, vec![py_limit]);
+            let args = PyTuple::new_bound(py, vec![py_limit]);
 
-            let new_py_df = match self.dataframe.call_method(py, "limit", args, None) {
+            let new_py_df = match self.dataframe.call_method_bound(py, "limit", args, None) {
                 Ok(new_py_df) => new_py_df,
                 Err(err) => {
-                    let exception_name = err.get_type(py).name()?;
+                    let err_bound = err.get_type_bound(py);
+                    let exception_name = err_bound.name()?;
                     if exception_name == "DataFrameOperationNotSupportedError" {
                         // Should fall back to fallback connection below
                         return Ok(None);
@@ -326,7 +338,7 @@ impl DataFrame for PyDataFrame {
             // Fallback
             let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
                 let table = self.dataframe.call_method0(py, "collect")?;
-                VegaFusionTable::from_pyarrow(py, table.as_ref(py))
+                VegaFusionTable::from_pyarrow(table.bind(py))
             })?;
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
@@ -350,15 +362,16 @@ impl DataFrame for PyDataFrame {
             let py_order_field = order_field.into_py(py);
 
             // Build arguments for Python sort method
-            let args = PyTuple::new(
+            let args = PyTuple::new_bound(
                 py,
                 vec![py_fields, py_value_col, py_key_col, py_order_field],
             );
 
-            let new_py_df = match self.dataframe.call_method(py, "fold", args, None) {
+            let new_py_df = match self.dataframe.call_method_bound(py, "fold", args, None) {
                 Ok(new_py_df) => new_py_df,
                 Err(err) => {
-                    let exception_name = err.get_type(py).name()?;
+                    let err_bound = err.get_type_bound(py);
+                    let exception_name = err_bound.name()?;
                     if exception_name == "DataFrameOperationNotSupportedError" {
                         // Should fall back to fallback connection below
                         return Ok(None);
@@ -380,7 +393,7 @@ impl DataFrame for PyDataFrame {
             // Fallback
             let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
                 let table = self.dataframe.call_method0(py, "collect")?;
-                VegaFusionTable::from_pyarrow(py, table.as_ref(py))
+                VegaFusionTable::from_pyarrow(table.bind(py))
             })?;
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
@@ -408,7 +421,7 @@ impl DataFrame for PyDataFrame {
             let py_mode = mode.to_string().to_ascii_lowercase().into_py(py);
 
             // Build arguments for Python sort method
-            let args = PyTuple::new(
+            let args = PyTuple::new_bound(
                 py,
                 vec![
                     py_field,
@@ -420,10 +433,11 @@ impl DataFrame for PyDataFrame {
                 ],
             );
 
-            let new_py_df = match self.dataframe.call_method(py, "stack", args, None) {
+            let new_py_df = match self.dataframe.call_method_bound(py, "stack", args, None) {
                 Ok(new_py_df) => new_py_df,
                 Err(err) => {
-                    let exception_name = err.get_type(py).name()?;
+                    let err_bound = err.get_type_bound(py);
+                    let exception_name = err_bound.name()?;
                     if exception_name == "DataFrameOperationNotSupportedError" {
                         // Should fall back to fallback connection below
                         return Ok(None);
@@ -445,7 +459,7 @@ impl DataFrame for PyDataFrame {
             // Fallback
             let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
                 let table = self.dataframe.call_method0(py, "collect")?;
-                VegaFusionTable::from_pyarrow(py, table.as_ref(py))
+                VegaFusionTable::from_pyarrow(table.bind(py))
             })?;
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
@@ -473,15 +487,16 @@ impl DataFrame for PyDataFrame {
             let py_order_field = order_field.into_py(py);
 
             // Build arguments for Python sort method
-            let args = PyTuple::new(
+            let args = PyTuple::new_bound(
                 py,
                 vec![py_field, py_value, py_key, py_groupby, py_order_field],
             );
 
-            let new_py_df = match self.dataframe.call_method(py, "impute", args, None) {
+            let new_py_df = match self.dataframe.call_method_bound(py, "impute", args, None) {
                 Ok(new_py_df) => new_py_df,
                 Err(err) => {
-                    let exception_name = err.get_type(py).name()?;
+                    let err_bound = err.get_type_bound(py);
+                    let exception_name = err_bound.name()?;
                     if exception_name == "DataFrameOperationNotSupportedError" {
                         // Should fall back to fallback connection below
                         return Ok(None);
@@ -503,7 +518,7 @@ impl DataFrame for PyDataFrame {
             // Fallback
             let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
                 let table = self.dataframe.call_method0(py, "collect")?;
-                VegaFusionTable::from_pyarrow(py, table.as_ref(py))
+                VegaFusionTable::from_pyarrow(table.bind(py))
             })?;
 
             let new_df: Arc<dyn DataFrame> = self.fallback_conn.scan_arrow(table).await?;
@@ -524,7 +539,7 @@ fn exprs_to_py(py: Python, exprs: Vec<Expr>) -> Result<PyObject> {
 
 fn expr_to_py(py: Python, expr: &Expr) -> Result<PyObject> {
     let extension_codec = DefaultLogicalExtensionCodec {};
-    let proto_module = PyModule::import(py, "vegafusion.proto.datafusion_pb2")?;
+    let proto_module = PyModule::import_bound(py, "vegafusion.proto.datafusion_pb2")?;
     let logical_expr_class = proto_module.getattr("LogicalExprNode")?;
 
     let proto_sort_expr = serialize_expr(expr, &extension_codec)?;
@@ -532,11 +547,11 @@ fn expr_to_py(py: Python, expr: &Expr) -> Result<PyObject> {
     let sort_expr_bytes: Vec<u8> = proto_sort_expr.encode_to_vec();
 
     // py_logical_expr = LogicalExprNode()
-    let py_logical_expr = logical_expr_class.call(PyTuple::empty(py), None)?;
+    let py_logical_expr = logical_expr_class.call(PyTuple::empty_bound(py), None)?;
 
     // py_logical_expr.ParseFromString(sort_expr_bytes)
-    let py_bytes = PyBytes::new(py, sort_expr_bytes.as_slice());
-    let args = PyTuple::new(py, vec![py_bytes]);
+    let py_bytes = PyBytes::new_bound(py, sort_expr_bytes.as_slice());
+    let args = PyTuple::new_bound(py, vec![py_bytes]);
     py_logical_expr.call_method("ParseFromString", args, None)?;
 
     // From &PyAny to PyObject to maintain ownership

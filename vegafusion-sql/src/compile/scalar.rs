@@ -5,16 +5,17 @@ use arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::DFSchema;
 use datafusion_expr::{
-    expr, lit, ColumnarValue, Expr, ScalarFunctionDefinition, ScalarUDF, ScalarUDFImpl, Signature,
-    Volatility,
+    expr, lit, ColumnarValue, Expr, ScalarUDF, ScalarUDFImpl, Signature, Volatility,
 };
 use sqlparser::ast::{
-    Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr,
-    Ident, ObjectName as SqlObjectName, Value as SqlValue,
+    CastKind, Expr as SqlExpr, Function as SqlFunction, FunctionArg as SqlFunctionArg,
+    FunctionArgExpr, FunctionArgumentList, FunctionArguments, Ident, ObjectName as SqlObjectName,
+    Value as SqlValue,
 };
 use std::any::Any;
 use std::ops::Add;
 use std::sync::Arc;
+
 use vegafusion_common::data::scalar::ArrayRefHelpers;
 use vegafusion_common::error::{Result, VegaFusionError};
 
@@ -29,6 +30,40 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::Boolean(v) => Ok(SqlExpr::Value(
                 v.map(SqlValue::Boolean).unwrap_or(SqlValue::Null),
             )),
+            ScalarValue::Float16(v) => v
+                .map(|v| {
+                    let repr = if !v.is_finite() {
+                        // Wrap inf, -inf, and nan in explicit cast
+                        return if dialect.supports_non_finite_floats {
+                            let cast_dtype = if let Some(dtype) =
+                                dialect.cast_datatypes.get(&DataType::Float16)
+                            {
+                                dtype.clone()
+                            } else {
+                                return Err(VegaFusionError::sql_not_supported(
+                                    "Dialect does not support a Float16 data type",
+                                ));
+                            };
+                            Ok(SqlExpr::Cast {
+                                expr: Box::new(SqlExpr::Value(SqlValue::Number(
+                                    format!("'{v}'"),
+                                    false,
+                                ))),
+                                data_type: cast_dtype,
+                                format: None,
+                                kind: CastKind::Cast,
+                            })
+                        } else {
+                            Ok(SqlExpr::Value(SqlValue::Null))
+                        };
+                    } else if v.to_f32().fract() == 0.0 {
+                        format!("{v:.1}")
+                    } else {
+                        v.to_string()
+                    };
+                    Ok(SqlExpr::Value(SqlValue::Number(repr, false)))
+                })
+                .unwrap_or(Ok(SqlExpr::Value(SqlValue::Null))),
             ScalarValue::Float32(v) => v
                 .map(|v| {
                     let repr = if !v.is_finite() {
@@ -50,6 +85,7 @@ impl ToSqlScalar for ScalarValue {
                                 ))),
                                 data_type: cast_dtype,
                                 format: None,
+                                kind: CastKind::Cast,
                             })
                         } else {
                             Ok(SqlExpr::Value(SqlValue::Null))
@@ -83,6 +119,7 @@ impl ToSqlScalar for ScalarValue {
                                 ))),
                                 data_type: cast_dtype,
                                 format: None,
+                                kind: CastKind::Cast,
                             })
                         } else {
                             Ok(SqlExpr::Value(SqlValue::Null))
@@ -163,13 +200,16 @@ impl ToSqlScalar for ScalarValue {
 
                 Ok(SqlExpr::Function(SqlFunction {
                     name: SqlObjectName(vec![function_ident]),
-                    args,
+                    args: FunctionArguments::List(FunctionArgumentList {
+                        args,
+                        duplicate_treatment: None,
+                        clauses: vec![],
+                    }),
                     filter: None,
                     null_treatment: None,
                     over: None,
-                    distinct: false,
-                    special: false,
-                    order_by: Default::default(),
+                    within_group: vec![],
+                    parameters: FunctionArguments::None,
                 }))
             }
             ScalarValue::Date32(v) => date32_to_date(v, dialect),
@@ -258,6 +298,15 @@ impl ToSqlScalar for ScalarValue {
             ScalarValue::Union(_, _, _) => Err(VegaFusionError::internal(
                 "Union cannot be converted to SQL",
             )),
+            ScalarValue::Utf8View(_) => Err(VegaFusionError::internal(
+                "Utf8View cannot be converted to SQL",
+            )),
+            ScalarValue::BinaryView(_) => Err(VegaFusionError::internal(
+                "BinaryView cannot be converted to SQL",
+            )),
+            ScalarValue::Map(_) => Err(VegaFusionError::internal(
+                "BinaryView cannot be converted to SQL",
+            )),
         }
     }
 }
@@ -265,9 +314,7 @@ impl ToSqlScalar for ScalarValue {
 fn ms_to_timestamp(v: i64, dialect: &Dialect) -> Result<SqlExpr> {
     // Hack to recursively transform the epoch_ms_to_utc_timestamp
     Expr::ScalarFunction(expr::ScalarFunction {
-        func_def: ScalarFunctionDefinition::UDF(Arc::new(ScalarUDF::from(
-            EpochMsToUtcTimestampUDF::new(),
-        ))),
+        func: Arc::new(ScalarUDF::from(EpochMsToUtcTimestampUDF::new())),
         args: vec![lit(v)],
     })
     .to_sql(dialect, &DFSchema::empty())
@@ -321,6 +368,7 @@ fn date32_to_date(days: &Option<i32>, dialect: &Dialect) -> Result<SqlExpr> {
             expr: Box::new(ScalarValue::Utf8(None).to_sql(dialect)?),
             data_type: DataType::Date32.to_sql(dialect)?,
             format: None,
+            kind: CastKind::Cast,
         }),
         Some(days) => {
             let date = epoch.add(chrono::Duration::days(*days as i64));
@@ -329,6 +377,7 @@ fn date32_to_date(days: &Option<i32>, dialect: &Dialect) -> Result<SqlExpr> {
                 expr: Box::new(ScalarValue::from(date_str.as_str()).to_sql(dialect)?),
                 data_type: DataType::Date32.to_sql(dialect)?,
                 format: None,
+                kind: CastKind::Cast,
             })
         }
     }

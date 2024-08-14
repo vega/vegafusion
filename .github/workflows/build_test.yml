@@ -35,7 +35,7 @@ jobs:
         os:
           - ubuntu-20.04
           - windows-2022
-          - macos-11
+          - macos-14
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
@@ -45,7 +45,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-test-rust
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-test-rust2
           path: |
             ~/.cargo
             target
@@ -179,7 +179,7 @@ jobs:
             target/wheels/*.whl
 
   build-vegafusion-python-embed-osx-64:
-    runs-on: macos-11
+    runs-on: macos-12
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
@@ -206,7 +206,7 @@ jobs:
             target/wheels/*.whl
 
   build-vegafusion-python-embed-osx-arm64:
-    runs-on: macos-11
+    runs-on: macos-14
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
@@ -221,9 +221,8 @@ jobs:
             ~/.cargo
             target
             .pixi
-      - name: Build vegafusion-server
+      - name: Build vegafusion-python-embed
         run: |
-          pixi run python automation/download_rust_target.py aarch64-apple-darwin
           pixi run build-py-embed --target aarch64-apple-darwin
       - name: Upload artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
@@ -327,9 +326,9 @@ jobs:
         working-directory: python/vegafusion/
         run: pytest
 
-  test-vegafusion-python-osx-64:
-    runs-on: macos-11
-    needs: [build-vegafusion-python-embed-osx-64, build-vegafusion-packages]
+  test-vegafusion-python-osx-arm64:
+    runs-on: macos-14
+    needs: [build-vegafusion-python-embed-osx-arm64, build-vegafusion-packages]
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
@@ -352,9 +351,8 @@ jobs:
         run: |
           ls -la
           python -m pip install vegafusion-*.whl
-          python -m pip install vegafusion_python_embed-*macosx_10_*_x86_64.whl
-          python -m pip install pytest vega-datasets polars-lts-cpu "duckdb>=1.0" vl-convert-python scikit-image "pandas>=2.2"
-          python -m pip install pyarrow==10.0 altair==5.1.2
+          python -m pip install vegafusion_python_embed-*macosx_11_*_arm64.whl
+          python -m pip install pytest vega-datasets polars "duckdb>=1.0" vl-convert-python scikit-image "pandas>=2.2"
       - name: Test vegafusion
         working-directory: python/vegafusion/
         run: pytest
@@ -389,7 +387,7 @@ jobs:
 
           python -m pip install $vegafusion
           python -m pip install $vegafusion_python_embed
-          python -m pip install pytest vega-datasets polars[timezone] "duckdb>=1.0" vl-convert-python scikit-image
+          python -m pip install pytest pyarrow==10.0 altair==5.1.2 vega-datasets polars[timezone] "duckdb>=1.0" vl-convert-python scikit-image
       - name: Test vegafusion
         working-directory: python/vegafusion/
         run: pytest
@@ -592,7 +590,7 @@ jobs:
             vegafusion-server-*
 
   build-vegafusion-server-osx-64:
-    runs-on: macos-11
+    runs-on: macos-13
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
@@ -623,7 +621,7 @@ jobs:
             vegafusion-server-*
 
   build-vegafusion-server-osx-arm64:
-    runs-on: macos-11
+    runs-on: macos-14
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
@@ -640,7 +638,6 @@ jobs:
             .pixi
       - name: Build vegafusion-server
         run: |
-          pixi run python automation/download_rust_target.py aarch64-apple-darwin
           pixi run build-rs-vegafusion-server --target aarch64-apple-darwin
       - name: zip executable
         uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1

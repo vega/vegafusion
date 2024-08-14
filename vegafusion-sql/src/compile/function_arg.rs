@@ -23,10 +23,16 @@ impl ToSqlFunctionArg for Expr {
             Expr::Wildcard { qualifier: None } => SqlFunctionArgExpr::Wildcard,
             Expr::Wildcard {
                 qualifier: Some(qualifier),
-            } => SqlFunctionArgExpr::QualifiedWildcard(ObjectName(vec![Ident {
-                value: qualifier.clone(),
-                quote_style: None,
-            }])),
+            } => SqlFunctionArgExpr::QualifiedWildcard(ObjectName(
+                qualifier
+                    .to_vec()
+                    .into_iter()
+                    .map(|value| Ident {
+                        value,
+                        quote_style: None,
+                    })
+                    .collect(),
+            )),
             expr => SqlFunctionArgExpr::Expr(expr.to_sql(dialect, schema)?),
         })
     }

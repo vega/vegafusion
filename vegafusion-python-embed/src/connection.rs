@@ -49,13 +49,13 @@ fn get_dialect_and_fallback_connection(
 
 fn perform_fetch_query(query: &str, schema: &Schema, conn: &PyObject) -> Result<VegaFusionTable> {
     let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
-        let query_object = PyString::new(py, query);
+        let query_object = PyString::new_bound(py, query);
         let query_object = query_object.as_ref();
         let schema_object = schema.to_pyarrow(py)?;
-        let schema_object = schema_object.as_ref(py);
-        let args = PyTuple::new(py, vec![query_object, schema_object]);
-        let table_object = conn.call_method(py, "fetch_query", args, None)?;
-        VegaFusionTable::from_pyarrow(py, table_object.as_ref(py))
+        let schema_object = schema_object.bind(py);
+        let args = PyTuple::new_bound(py, vec![query_object, schema_object]);
+        let table_object = conn.call_method_bound(py, "fetch_query", args, None)?;
+        VegaFusionTable::from_pyarrow(table_object.bind(py))
     })?;
     Ok(table)
 }
@@ -91,14 +91,14 @@ impl Connection for PySqlConnection {
     async fn tables(&self) -> Result<HashMap<String, Schema>> {
         let tables = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
             let tables_object = self.conn.call_method0(py, "tables")?;
-            let tables_dict = tables_object.downcast::<PyDict>(py)?;
+            let tables_dict = tables_object.downcast_bound::<PyDict>(py)?;
 
             let mut tables: HashMap<String, Schema> = HashMap::new();
 
             for key in tables_dict.keys() {
-                let value = tables_dict.get_item(key)?.unwrap();
+                let value = tables_dict.get_item(key.clone())?.unwrap();
                 let key_string = key.extract::<String>()?;
-                let value_schema = Schema::from_pyarrow(value)?;
+                let value_schema = Schema::from_pyarrow_bound(&value)?;
                 tables.insert(key_string, value_schema);
             }
             Ok(tables)
@@ -130,12 +130,14 @@ impl Connection for PySqlConnection {
             // Register table with Python connection
             let table_name_object = table_name.clone().into_py(py);
             let is_temporary_object = true.into_py(py);
-            let args = PyTuple::new(py, vec![table_name_object, pa_table, is_temporary_object]);
+            let args =
+                PyTuple::new_bound(py, vec![table_name_object, pa_table, is_temporary_object]);
 
             match self.conn.call_method1(py, "register_arrow", args) {
                 Ok(_) => {}
                 Err(err) => {
-                    let exception_name = err.get_type(py).name()?;
+                    let err_bound = err.get_type_bound(py);
+                    let exception_name = err_bound.name()?;
 
                     // Check if we have a fallback connection and this is a RegistrationNotSupportedError
                     if let Some(fallback_connection) = &self.fallback_conn {
@@ -172,7 +174,7 @@ impl Connection for PySqlConnection {
         let inner_opts = opts.clone();
         let fallback_connection = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
             // Build Python CsvReadOptions
-            let vegafusion_module = PyModule::import(py, "vegafusion.connection")?;
+            let vegafusion_module = PyModule::import_bound(py, "vegafusion.connection")?;
             let csv_opts_class = vegafusion_module.getattr("CsvReadOptions")?;
 
             let pyschema = inner_opts
@@ -188,28 +190,29 @@ impl Connection for PySqlConnection {
                 ("file_extension", inner_opts.file_extension.into_py(py)),
                 ("schema", pyschema),
             ]
-            .into_py_dict(py);
-            let args = PyTuple::empty(py);
-            let csv_opts = csv_opts_class.call(args, Some(kwargs))?;
+            .into_py_dict_bound(py);
+            let args = PyTuple::empty_bound(py);
+            let csv_opts = csv_opts_class.call(args, Some(&kwargs))?;
 
             // Register table with Python connection
             let table_name_object = table_name.clone().into_py(py);
             let path_name_object = url.to_string().into_py(py);
             let is_temporary_object = true.into_py(py);
-            let args = PyTuple::new(
+            let args = PyTuple::new_bound(
                 py,
                 vec![
-                    table_name_object.as_ref(py),
-                    path_name_object.as_ref(py),
-                    csv_opts,
-                    is_temporary_object.as_ref(py),
+                    table_name_object.bind(py),
+                    path_name_object.bind(py),
+                    &csv_opts,
+                    is_temporary_object.bind(py),
                 ],
             );
 
             match self.conn.call_method1(py, "register_csv", args) {
                 Ok(_) => {}
                 Err(err) => {
-                    let exception_name = err.get_type(py).name()?;
+                    let err_bound = err.get_type_bound(py);
+                    let exception_name = err_bound.name()?;
 
                     // Check if we have a fallback connection and this is a RegistrationNotSupportedError
                     if let Some(fallback_connection) = &self.fallback_conn {
@@ -249,18 +252,19 @@ impl Connection for PySqlConnection {
             let path_name_object = path.to_string().into_py(py);
             let is_temporary_object = true.into_py(py);
 
-            let args = PyTuple::new(
+            let args = PyTuple::new_bound(
                 py,
                 vec![
-                    table_name_object.as_ref(py),
-                    path_name_object.as_ref(py),
-                    is_temporary_object.as_ref(py),
+                    table_name_object.bind(py),
+                    path_name_object.bind(py),
+                    is_temporary_object.bind(py),
                 ],
             );
             match self.conn.call_method1(py, "register_arrow_file", args) {
                 Ok(_) => {}
                 Err(err) => {
-                    let exception_name = err.get_type(py).name()?;
+                    let err_bound = err.get_type_bound(py);
+                    let exception_name = err_bound.name()?;
 
                     // Check if we have a fallback connection and this is a RegistrationNotSupportedError
                     if let Some(fallback_connection) = &self.fallback_conn {
@@ -300,18 +304,19 @@ impl Connection for PySqlConnection {
             let path_name_object = path.to_string().into_py(py);
             let is_temporary_object = true.into_py(py);
 
-            let args = PyTuple::new(
+            let args = PyTuple::new_bound(
                 py,
                 vec![
-                    table_name_object.as_ref(py),
-                    path_name_object.as_ref(py),
-                    is_temporary_object.as_ref(py),
+                    table_name_object.bind(py),
+                    path_name_object.bind(py),
+                    is_temporary_object.bind(py),
                 ],
             );
             match self.conn.call_method1(py, "register_parquet", args) {
                 Ok(_) => {}
                 Err(err) => {
-                    let exception_name = err.get_type(py).name()?;
+                    let err_bound = err.get_type_bound(py);
+                    let exception_name = err_bound.name()?;
 
                     // Check if we have a fallback connection and this is a RegistrationNotSupportedError
                     if let Some(fallback_connection) = &self.fallback_conn {
@@ -377,7 +382,7 @@ impl PySqlDataset {
             let table_name = table_name_obj.extract::<String>(py)?;
 
             let table_schema_obj = dataset.call_method0(py, "table_schema")?;
-            let table_schema = Schema::from_pyarrow(table_schema_obj.as_ref(py))?;
+            let table_schema = Schema::from_pyarrow_bound(table_schema_obj.bind(py))?;
             Ok((table_name, table_schema))
         })?;
 

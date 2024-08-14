@@ -1,5 +1,5 @@
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion_expr::{expr, lit, Expr, ExprSchemable, ScalarFunctionDefinition};
+use datafusion_expr::{expr, lit, Expr, ExprSchemable};
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::DFSchema;
@@ -24,9 +24,7 @@ pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema) ->
     let expr = match arg.get_type(schema)? {
         DataType::Timestamp(_, _) | DataType::Date32 | DataType::Date64 => {
             Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                    (*UTC_TIMESTAMP_TO_EPOCH_MS).clone(),
-                )),
+                func: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
                 args: vec![arg.clone()],
             })
         }
@@ -34,13 +32,9 @@ pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema) ->
             let mut udf_args = vec![lit(tz_config.default_input_tz.to_string())];
             udf_args.extend(Vec::from(args));
             Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                    (*UTC_TIMESTAMP_TO_EPOCH_MS).clone(),
-                )),
+                func: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
                 args: vec![Expr::ScalarFunction(expr::ScalarFunction {
-                    func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                        (*STR_TO_UTC_TIMESTAMP_UDF).clone(),
-                    )),
+                    func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
                     args: vec![arg.clone(), lit(tz_config.default_input_tz.to_string())],
                 })],
             })

@@ -1,6 +1,6 @@
 use crate::udfs::datetime::from_utc_timestamp::from_utc_timestamp;
 use crate::udfs::datetime::to_utc_timestamp::to_timestamp_ms;
-use chrono::NaiveDateTime;
+use chrono::DateTime;
 use std::any::Any;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -110,12 +110,10 @@ impl ScalarUDFImpl for UtcTimestampToStrUDF {
                     // Load as UTC datetime
                     let utc_seconds = utc_millis / 1_000;
                     let utc_nanos = (utc_millis % 1_000 * 1_000_000) as u32;
-                    NaiveDateTime::from_timestamp_opt(utc_seconds, utc_nanos).map(
-                        |naive_datetime| {
-                            let formatted = naive_datetime.format("%Y-%m-%dT%H:%M:%S.%3f");
-                            formatted.to_string()
-                        },
-                    )
+                    DateTime::from_timestamp(utc_seconds, utc_nanos).map(|datetime| {
+                        let formatted = datetime.naive_utc().format("%Y-%m-%dT%H:%M:%S.%3f");
+                        formatted.to_string()
+                    })
                 })
             },
         ))) as ArrayRef;

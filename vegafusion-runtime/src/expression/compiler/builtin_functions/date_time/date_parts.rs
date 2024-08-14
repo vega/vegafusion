@@ -1,6 +1,6 @@
 use crate::expression::compiler::call::TzTransformFn;
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion_expr::{expr, lit, Expr, ExprSchemable, ScalarFunctionDefinition};
+use datafusion_expr::{expr, lit, Expr, ExprSchemable};
 use datafusion_functions::expr_fn::floor;
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
@@ -21,7 +21,7 @@ pub fn make_local_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -
             extract_timestamp_arg(&part, args, schema, &tz_config.default_input_tz.to_string())?;
         let udf_args = vec![lit(part.clone()), arg, lit(tz_config.local_tz.to_string())];
         let mut expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_PART_TZ_UDF.clone())),
+            func: Arc::new(DATE_PART_TZ_UDF.clone()),
             args: udf_args,
         });
 
@@ -44,7 +44,7 @@ pub fn make_utc_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -> 
             extract_timestamp_arg(&part, args, schema, &tz_config.default_input_tz.to_string())?;
         let udf_args = vec![lit(part.clone()), arg, lit("UTC")];
         let mut expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func_def: ScalarFunctionDefinition::UDF(Arc::new(DATE_PART_TZ_UDF.clone())),
+            func: Arc::new(DATE_PART_TZ_UDF.clone()),
             args: udf_args,
         });
 
@@ -75,15 +75,11 @@ fn extract_timestamp_arg(
             }),
             DataType::Timestamp(_, _) => arg.clone(),
             DataType::Utf8 => Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                    (*STR_TO_UTC_TIMESTAMP_UDF).clone(),
-                )),
+                func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
                 args: vec![arg.clone(), lit(default_input_tz)],
             }),
             dtype if is_numeric_datatype(&dtype) => Expr::ScalarFunction(expr::ScalarFunction {
-                func_def: ScalarFunctionDefinition::UDF(Arc::new(
-                    (*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone(),
-                )),
+                func: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
                 args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?],
             }),
             dtype => {

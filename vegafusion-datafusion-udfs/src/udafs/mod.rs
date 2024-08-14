@@ -19,7 +19,7 @@ pub(crate) struct PercentileContAccumulator {
 
 impl Accumulator for PercentileContAccumulator {
     fn state(&mut self) -> Result<Vec<ScalarValue>, DataFusionError> {
-        let state = ScalarValue::new_list(self.all_values.as_slice(), &self.data_type);
+        let state = ScalarValue::new_list(self.all_values.as_slice(), &self.data_type, true);
         Ok(vec![ScalarValue::List(state)])
     }
 

@@ -5,7 +5,7 @@ use datafusion_expr::Expr;
 use sqlparser::ast::{
     BinaryOperator as SqlBinaryOperator, DateTimeField as SqlDateTimeField, Expr as SqlExpr,
     Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr,
-    Ident as SqlIdent, Ident, ObjectName as SqlObjectName, Value as SqlValue,
+    FunctionArgumentList, FunctionArguments, Ident, ObjectName as SqlObjectName, Value as SqlValue,
 };
 use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
@@ -39,19 +39,22 @@ impl FunctionTransformer for UtcTimestampToEpochMsDatabricksTransform {
         let ts_expr = process_utc_timestamp_to_epoch_ms_args(args, dialect, schema)?;
 
         let unix_timestamp_expr = SqlExpr::Function(SqlFunction {
-            name: SqlObjectName(vec![SqlIdent {
+            name: SqlObjectName(vec![Ident {
                 value: "unix_timestamp".to_string(),
                 quote_style: None,
             }]),
-            args: vec![SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(
-                ts_expr.clone(),
-            ))],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(
+                    ts_expr.clone(),
+                ))],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         });
         let lhs = SqlExpr::BinaryOp {
             left: Box::new(unix_timestamp_expr),
@@ -60,22 +63,25 @@ impl FunctionTransformer for UtcTimestampToEpochMsDatabricksTransform {
         };
 
         let date_part_expr = SqlExpr::Function(SqlFunction {
-            name: SqlObjectName(vec![SqlIdent {
+            name: SqlObjectName(vec![Ident {
                 value: "date_part".to_string(),
                 quote_style: None,
             }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                    SqlValue::SingleQuotedString("second".to_string()),
-                ))),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_expr)),
-            ],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString("second".to_string()),
+                    ))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_expr)),
+                ],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         });
         let mod_1_expr = SqlExpr::Nested(Box::new(SqlExpr::BinaryOp {
             left: Box::new(date_part_expr),
@@ -113,19 +119,22 @@ impl FunctionTransformer for UtcTimestampToEpochMsDuckdbTransform {
         let ts_expr = process_utc_timestamp_to_epoch_ms_args(args, dialect, schema)?;
 
         let unix_timestamp_expr = SqlExpr::Function(SqlFunction {
-            name: SqlObjectName(vec![SqlIdent {
+            name: SqlObjectName(vec![Ident {
                 value: "epoch".to_string(),
                 quote_style: None,
             }]),
-            args: vec![SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(
-                ts_expr.clone(),
-            ))],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(
+                    ts_expr.clone(),
+                ))],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         });
         let lhs = SqlExpr::BinaryOp {
             left: Box::new(unix_timestamp_expr),
@@ -134,22 +143,25 @@ impl FunctionTransformer for UtcTimestampToEpochMsDuckdbTransform {
         };
 
         let date_part_expr = SqlExpr::Function(SqlFunction {
-            name: SqlObjectName(vec![SqlIdent {
+            name: SqlObjectName(vec![Ident {
                 value: "date_part".to_string(),
                 quote_style: None,
             }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
-                    SqlValue::SingleQuotedString("millisecond".to_string()),
-                ))),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_expr)),
-            ],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Value(
+                        SqlValue::SingleQuotedString("millisecond".to_string()),
+                    ))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_expr)),
+                ],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         });
         let rhs = SqlExpr::BinaryOp {
             left: Box::new(date_part_expr),
@@ -186,23 +198,29 @@ impl FunctionTransformer for UtcTimestampToEpochMsPostgresTransform {
         };
 
         let epoch_expr = SqlExpr::Function(SqlFunction {
-            name: SqlObjectName(vec![SqlIdent {
+            name: SqlObjectName(vec![Ident {
                 value: "floor".to_string(),
                 quote_style: None,
             }]),
-            args: vec![SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(
-                SqlExpr::BinaryOp {
-                    left: Box::new(extract_expr),
-                    op: SqlBinaryOperator::Multiply,
-                    right: Box::new(SqlExpr::Value(SqlValue::Number("1000".to_string(), false))),
-                },
-            ))],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(
+                    SqlExpr::BinaryOp {
+                        left: Box::new(extract_expr),
+                        op: SqlBinaryOperator::Multiply,
+                        right: Box::new(SqlExpr::Value(SqlValue::Number(
+                            "1000".to_string(),
+                            false,
+                        ))),
+                    },
+                ))],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         });
 
         Ok(epoch_expr)
@@ -225,23 +243,26 @@ impl FunctionTransformer for UtcTimestampToEpochMsSnowflakeTransform {
         let ts_expr = process_utc_timestamp_to_epoch_ms_args(args, dialect, schema)?;
 
         let date_part_expr = SqlExpr::Function(SqlFunction {
-            name: SqlObjectName(vec![SqlIdent {
+            name: SqlObjectName(vec![Ident {
                 value: "date_part".to_string(),
                 quote_style: None,
             }]),
-            args: vec![
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Identifier(Ident {
-                    value: "epoch_millisecond".to_string(),
-                    quote_style: None,
-                }))),
-                SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_expr)),
-            ],
+            args: FunctionArguments::List(FunctionArgumentList {
+                args: vec![
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(SqlExpr::Identifier(Ident {
+                        value: "epoch_millisecond".to_string(),
+                        quote_style: None,
+                    }))),
+                    SqlFunctionArg::Unnamed(SqlFunctionArgExpr::Expr(ts_expr)),
+                ],
+                duplicate_treatment: None,
+                clauses: vec![],
+            }),
             filter: None,
             null_treatment: None,
             over: None,
-            distinct: false,
-            special: false,
-            order_by: Default::default(),
+            within_group: vec![],
+            parameters: FunctionArguments::None,
         });
 
         Ok(date_part_expr)

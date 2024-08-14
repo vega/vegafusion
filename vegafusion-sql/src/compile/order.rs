@@ -38,6 +38,7 @@ impl ToSqlOrderByExpr for Expr {
                     })?,
                     asc: Some(*asc),
                     nulls_first,
+                    with_fill: None,
                 })
             }
             _ => Err(VegaFusionError::internal(

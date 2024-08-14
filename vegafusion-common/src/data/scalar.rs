@@ -68,14 +68,14 @@ impl ScalarValueHelpers for ScalarValue {
             }
             Value::Array(elements) => {
                 let array: ListArray = if elements.is_empty() {
-                    array_into_list_array(Arc::new(new_empty_array(&DataType::Float64)))
+                    array_into_list_array(Arc::new(new_empty_array(&DataType::Float64)), true)
                 } else {
                     let elements: Vec<_> = elements
                         .iter()
                         .map(ScalarValue::from_json)
                         .collect::<Result<Vec<ScalarValue>>>()?;
 
-                    array_into_list_array(ScalarValue::iter_to_array(elements)?)
+                    array_into_list_array(ScalarValue::iter_to_array(elements)?, true)
                 };
 
                 ScalarValue::List(Arc::new(array))

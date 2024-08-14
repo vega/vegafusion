@@ -1,5 +1,5 @@
-use chrono::TimeZone;
-use chrono::{NaiveDateTime, Timelike};
+use chrono::Timelike;
+use chrono::{DateTime, TimeZone};
 use chrono_tz::Tz;
 use std::any::Any;
 use std::str::FromStr;
@@ -107,7 +107,7 @@ pub fn to_utc_timestamp(timestamp_array: ArrayRef, tz: Tz) -> Result<ArrayRef, D
                     let milliseconds = v % 1000;
                     let nanoseconds = (milliseconds * 1_000_000) as u32;
                     let naive_local_datetime =
-                        NaiveDateTime::from_timestamp_opt(seconds, nanoseconds)?;
+                        DateTime::from_timestamp(seconds, nanoseconds)?.naive_utc();
 
                     // Get UTC offset when the naive datetime is considered to be in local time
                     let local_datetime = if let Some(local_datetime) =

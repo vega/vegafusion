@@ -55,6 +55,9 @@ workspace = true
 [dependencies.datafusion-functions]
 workspace = true
 
+[dependencies.datafusion-functions-aggregate]
+workspace = true
+
 [dependencies.datafusion]
 workspace = true
 optional = true

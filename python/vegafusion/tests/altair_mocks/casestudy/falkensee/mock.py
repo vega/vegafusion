@@ -1,6 +1,7 @@
 # https://altair-viz.github.io/gallery/falkensee.html
 
 import altair as alt
+import pandas as pd
 
 source = [
     {"year": "1875", "population": 1309},
@@ -55,8 +56,8 @@ source2 = [{
     }]
 
 
-source = alt.pd.DataFrame(source)
-source2 = alt.pd.DataFrame(source2)
+source = pd.DataFrame(source)
+source2 = pd.DataFrame(source2)
 
 
 line = alt.Chart(source).mark_line(color='#333').encode(
