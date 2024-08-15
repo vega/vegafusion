@@ -8,8 +8,6 @@ use arrow::{
     record_batch::RecordBatch,
 };
 
-#[cfg(feature = "pyarrow")]
-use crate::data::ffi::import_arrow_c_stream;
 use crate::{
     data::{ORDER_COL, ORDER_COL_DTYPE},
     error::{Result, ResultWithContext, VegaFusionError},
@@ -45,6 +43,7 @@ use {
 #[cfg(feature = "base64")]
 use base64::{engine::general_purpose, Engine as _};
 use datafusion_common::utils::array_into_list_array;
+use pyo3::conversion::FromPyObjectBound;
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
@@ -273,14 +272,10 @@ impl VegaFusionTable {
         }
     }
 
-    // TODO: when updated to latest arrow version, the below function can change to
-    // pub fn from_arrow_c_stream(table: pyo3_arrow::PyTable) -> PyResult<Self> {
-    //     let (batches, schema) = table.into_inner();
-    //     Ok(VegaFusionTable::try_new(schema, batches)?)
-    // }
     #[cfg(feature = "pyarrow")]
-    pub fn from_arrow_c_stream(ob: &PyAny) -> PyResult<Self> {
-        let (batches, schema) = import_arrow_c_stream(ob)?;
+    pub fn from_arrow_c_stream(table: &Bound<PyAny>) -> PyResult<Self> {
+        let pytable = pyo3_arrow::PyTable::from_py_object_bound(table.as_borrowed())?;
+        let (batches, schema) = pytable.into_inner();
         Ok(VegaFusionTable::try_new(schema, batches)?)
     }
 
