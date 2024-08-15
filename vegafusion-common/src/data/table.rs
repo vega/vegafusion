@@ -34,9 +34,9 @@ use {
 use {
     arrow::pyarrow::{FromPyArrow, ToPyArrow},
     pyo3::{
+        conversion::FromPyObjectBound,
         prelude::*,
         types::{PyList, PyTuple},
-        conversion::FromPyObjectBound,
         Bound, PyAny, PyErr, PyObject, PyResult, Python,
     },
 };
