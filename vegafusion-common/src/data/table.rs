@@ -34,9 +34,10 @@ use {
 use {
     arrow::pyarrow::{FromPyArrow, ToPyArrow},
     pyo3::{
+        conversion::FromPyObjectBound,
         prelude::*,
         types::{PyList, PyTuple},
-        Bound, PyAny, PyErr, PyObject, Python,
+        Bound, PyAny, PyErr, PyObject, PyResult, Python,
     },
 };
 
@@ -269,6 +270,13 @@ impl VegaFusionTable {
                 "Expected JSON array, not: {value}"
             )))
         }
+    }
+
+    #[cfg(feature = "pyarrow")]
+    pub fn from_arrow_c_stream(table: &Bound<PyAny>) -> PyResult<Self> {
+        let pytable = pyo3_arrow::PyTable::from_py_object_bound(table.as_borrowed())?;
+        let (batches, schema) = pytable.into_inner();
+        Ok(VegaFusionTable::try_new(schema, batches)?)
     }
 
     #[cfg(feature = "pyarrow")]

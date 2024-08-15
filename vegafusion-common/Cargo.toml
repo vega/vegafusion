@@ -6,7 +6,7 @@ description = "Common components required by multiple VegaFusion crates"
 license = "BSD-3-Clause"
 
 [features]
-pyarrow = [ "pyo3", "arrow/pyarrow",]
+pyarrow = [ "pyo3", "arrow/pyarrow", "pyo3-arrow"]
 json = [ "serde_json/preserve_order", "arrow/json", "chrono",]
 prettyprint = [ "arrow/prettyprint",]
 proto = ["datafusion-proto", "datafusion-proto-common"]
@@ -49,6 +49,10 @@ workspace = true
 optional = true
 
 [dependencies.pyo3]
+workspace = true
+optional = true
+
+[dependencies.pyo3-arrow]
 workspace = true
 optional = true
 

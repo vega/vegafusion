@@ -215,6 +215,8 @@ class VegaFusionRuntime:
                         pass
 
                 imported_inline_datasets[name] = PandasDatasource(value)
+            elif hasattr(value, "__arrow_c_stream__"):
+                imported_inline_datasets[name] = value
             elif hasattr(value, "__dataframe__"):
                 # Let polars convert to pyarrow since it has broader support than the raw dataframe interchange
                 # protocol, and "This operation is mostly zero copy."
