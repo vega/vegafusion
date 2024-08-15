@@ -36,6 +36,7 @@ use {
     pyo3::{
         prelude::*,
         types::{PyList, PyTuple},
+        conversion::FromPyObjectBound,
         Bound, PyAny, PyErr, PyObject, PyResult, Python,
     },
 };
@@ -43,7 +44,6 @@ use {
 #[cfg(feature = "base64")]
 use base64::{engine::general_purpose, Engine as _};
 use datafusion_common::utils::array_into_list_array;
-use pyo3::conversion::FromPyObjectBound;
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
