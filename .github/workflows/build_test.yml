@@ -269,6 +269,10 @@ jobs:
         uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
         with:
           python-version: '3.11'
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
+        with:
+          chrome-version: stable
       - name: Install fonts on Linux
         if: runner.os == 'Linux'
         run: |
@@ -290,7 +294,12 @@ jobs:
           ls -la
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_python_embed-*manylinux_2_17_x86_64*.whl
-          python -m pip install pytest vega-datasets polars-lts-cpu "duckdb>=1.0" "vl-convert-python>=1.0.1rc1" scikit-image "pandas>=2.2"
+
+          # Optional dependencies
+          python -m pip install polars-lts-cpu "duckdb>=1.0" "vl-convert-python>=1.0.1rc1" scikit-image "pandas>=2.2" jupytext voila anywidget ipywidgets chromedriver-binary-auto
+
+          # Test dependencies
+          python -m pip install pytest vega-datasets scikit-image jupytext voila anywidget ipywidgets selenium flaky tenacity chromedriver-binary-auto 
       - name: Test lazy imports
         working-directory: python/vegafusion/
         run: python checks/check_lazy_imports.py
@@ -317,6 +326,10 @@ jobs:
         uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
         with:
           python-version: '3.10'
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
+        with:
+          chrome-version: stable
       - name: Download vegafusion-python-embed wheel
         uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
         with:
@@ -333,7 +346,13 @@ jobs:
           ls -la
           python -m pip install vegafusion-*.whl
           python -m pip install vegafusion_python_embed-*macosx_11_*_arm64.whl
-          python -m pip install pytest vega-datasets polars "duckdb>=1.0" vl-convert-python scikit-image "pandas>=2.2"
+          
+          # Optional dependencies
+          python -m pip install polars "duckdb>=1.0" vl-convert-python "pandas>=2.2"
+
+          # Test dependencies
+          python -m pip install pytest vega-datasets scikit-image jupytext voila anywidget ipywidgets selenium flaky tenacity chromedriver-binary-auto 
+
       - name: Test vegafusion
         working-directory: python/vegafusion/
         env:
@@ -357,6 +376,10 @@ jobs:
         uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
         with:
           python-version: '3.8'
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
+        with:
+          chrome-version: stable
       - name: Download vegafusion-python-embed wheel
         uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
         with:
@@ -377,7 +400,12 @@ jobs:
 
           python -m pip install $vegafusion
           python -m pip install $vegafusion_python_embed
-          python -m pip install pytest pyarrow==10.0 altair==5.1.2 vega-datasets polars[timezone] "duckdb>=1.0" vl-convert-python scikit-image
+
+          # Optional dependencies
+          python -m pip install pyarrow==10.0 altair==5.1.2 polars[timezone] "duckdb>=1.0" vl-convert-python 
+          
+          # Test dependencies
+          python -m pip install pytest vega-datasets scikit-image jupytext voila anywidget ipywidgets selenium flaky tenacity chromedriver-binary-auto 
       - name: Test vegafusion
         working-directory: python/vegafusion/
         env:
