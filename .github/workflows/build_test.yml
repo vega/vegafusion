@@ -307,7 +307,7 @@ jobs:
         working-directory: python/vegafusion/
         env:
           VEGAFUSION_TEST_HEADLESS: 1
-        run: pytest -k tests/test_altair_mocks.py
+        run: pytest -k test_altair_mocks
       - name: Upload test artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         if: always()
