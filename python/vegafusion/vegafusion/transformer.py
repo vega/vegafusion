@@ -132,51 +132,6 @@ def to_feather(data, file):
             f.write(file_bytes)
 
 
-def feather_transformer(data, data_dir="_vegafusion_data"):
-    from vegafusion import runtime
-    import altair as alt
-
-    if "vegafusion" not in alt.renderers.active:
-        # Use default transformer if a vegafusion renderer is not active
-        return alt.default_data_transformer(data)
-    elif has_geo_interface(data):
-        # Use default transformer for geo interface objects
-        # (e.g. a geopandas GeoDataFrame)
-        return alt.default_data_transformer(data)
-    elif is_dataframe_like(data):
-        if runtime.using_grpc:
-            raise ValueError(
-                "DataFrame data sources are not yet supported by the gRPC runtime"
-            )
-
-        bytes_buffer = io.BytesIO()
-        to_feather(data, bytes_buffer)
-        file_bytes = bytes_buffer.getvalue()
-
-        # Hash bytes to generate unique file name
-        hasher = sha1()
-        hasher.update(file_bytes)
-        hashstr = hasher.hexdigest()
-        fname = f"vegafusion-{hashstr}.feather"
-
-        # Check if file already exists
-        tmp_dir = pathlib.Path(data_dir) / "tmp"
-        os.makedirs(tmp_dir, exist_ok=True)
-        path = pathlib.Path(data_dir) / fname
-        if not path.is_file():
-            # Write to temporary file then move (os.replace) to final destination. This is more resistant
-            # to race conditions
-            with NamedTemporaryFile(dir=tmp_dir, delete=False) as tmp_file:
-                tmp_file.write(file_bytes)
-                tmp_name = tmp_file.name
-
-            os.replace(tmp_name, path)
-
-        return {"url": path.as_posix()}
-    else:
-        # Use default transformer if we don't recognize data
-        return alt.default_data_transformer(data)
-
 
 def get_inline_dataset_names(vega_spec):
     """
@@ -216,21 +171,6 @@ def get_inline_datasets_for_spec(vega_spec):
             # named dataset that was provided by the user
             pass
     return datasets
-
-
-def inline_data_transformer(data):
-    import altair as alt
-    if has_geo_interface(data):
-        # Use default transformer for geo interface objects
-        # # (e.g. a geopandas GeoDataFrame)
-        return alt.default_data_transformer(data)
-    elif is_dataframe_like(data):
-        table_name = f"table_{uuid.uuid4()}".replace("-", "_")
-        __inline_tables[table_name] = data
-        return {"url": DATASET_PREFIXES[0] + table_name}
-    else:
-        # Use default transformer if we don't recognize data
-        return alt.default_data_transformer(data)
 
 
 def is_dataframe_like(data):
