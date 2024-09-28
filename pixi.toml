@@ -139,6 +139,7 @@ ipywidgets = "8.1.0.*"
 rust = "1.80.*"
 vl-convert-python = "1.6.*"
 anywidget = ">=0.9.6,<0.10"
+polars = "1.8.*"
 
 [target.osx-arm64.build-dependencies]
 # These dependencies are for building node canvas from source on apple silicon

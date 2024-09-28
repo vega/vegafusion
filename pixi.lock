@@ -816,7 +816,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/pkgutil-resolve-name-1.3.10-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-3.10.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pluggy-1.2.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/polars-0.18.15-py310had9acf8_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/polars-0.18.15-py310h49106b5_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pooch-1.7.0-pyha770c72_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prometheus_client-0.17.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prompt-toolkit-3.0.39-pyha770c72_0.conda
@@ -12051,16 +12051,34 @@ packages:
   depends:
   - libgcc-ng >=12
   - numpy >=1.16.0
-  - packaging *
+  - packaging
   - python >=3.10,<3.11.0a0
   - python_abi 3.10.* *_cp310
   - typing_extensions >=4.0.0
-  arch: x86_64
-  platform: linux
   license: MIT
   license_family: MIT
   size: 16057056
   timestamp: 1692688547644
+- kind: conda
+  name: polars
+  version: 0.18.15
+  build: py310h49106b5_1
+  build_number: 1
+  subdir: osx-arm64
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/polars-0.18.15-py310h49106b5_1.conda
+  sha256: ebc61b1e954585f492e777cd5d2caa06c2e0e28c0be364ab0c412294b72fe13b
+  md5: 51481d96d1b4c863662e81d075ad5d79
+  depends:
+  - numpy >=1.16.0
+  - packaging
+  - python >=3.10,<3.11.0a0
+  - python >=3.10,<3.11.0a0 *_cpython
+  - python_abi 3.10.* *_cp310
+  - typing_extensions >=4.0.0
+  license: MIT
+  license_family: MIT
+  size: 12963300
+  timestamp: 1692690752488
 - kind: conda
   name: polars
   version: 0.18.15
@@ -12072,36 +12090,14 @@ packages:
   md5: ca50abd3aa922d6d8d8f1a3ff0dda332
   depends:
   - numpy >=1.16.0
-  - packaging *
+  - packaging
   - python >=3.10,<3.11.0a0
   - python_abi 3.10.* *_cp310
   - typing_extensions >=4.0.0
-  arch: x86_64
-  platform: osx
   license: MIT
   license_family: MIT
   size: 13970392
   timestamp: 1692690680600
-- kind: conda
-  name: polars
-  version: 0.18.15
-  build: py310had9acf8_0
-  subdir: osx-arm64
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/polars-0.18.15-py310had9acf8_0.conda
-  sha256: 9d50cec48ac801a5ec4b44fb3c00d761ce55d1e1af479cef1d9cff3dd7c66dfa
-  md5: 9fb570a944037614daba1b125648588d
-  depends:
-  - numpy >=1.16.0
-  - python >=3.10,<3.11.0a0 *_cpython
-  - python_abi 3.10.* *_cp310
-  - typing_extensions >=4.0.0
-  - packaging *
-  arch: aarch64
-  platform: osx
-  license: MIT
-  license_family: MIT
-  size: 12977174
-  timestamp: 1692100866706
 - kind: conda
   name: polars
   version: 0.18.15
@@ -12113,15 +12109,13 @@ packages:
   md5: 14eed67eba855b1ddcffb7f89586875e
   depends:
   - numpy >=1.16.0
-  - packaging *
+  - packaging
   - python >=3.10,<3.11.0a0
   - python_abi 3.10.* *_cp310
   - typing_extensions >=4.0.0
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
-  arch: x86_64
-  platform: win
   license: MIT
   license_family: MIT
   size: 14328233
