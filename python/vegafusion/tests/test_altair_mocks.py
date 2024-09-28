@@ -24,12 +24,12 @@ except ImportError:
     pass
 
 here = Path(__file__).parent
-altair_mocks_dir = here / ".." / ".." / "vegafusion" / "tests" / "altair_mocks"
-temp_notebooks_dir = here / "temp_notebooks"
-temp_screenshots_dir = here / "temp_screenshot"
-failure_output = here / "failures"
+altair_mocks_dir = here / "altair_mocks"
+temp_notebooks_dir = here / "output" / "temp_notebooks"
+temp_screenshots_dir = here / "output" / "temp_screenshot"
+failure_output = here / "output" / "failures"
 
-altair_markdown_template = r"""
+altair_default_template = r"""
 ```python
 import altair as alt
 alt.renderers.enable('default', embed_options={'actions': False});
@@ -45,11 +45,11 @@ assert(alt.data_transformers.active == 'default')
 ```
 """
 
-vegafusion_mime_markdown_template = r"""
+altair_vegafusion_jupyter_template = r"""
 ```python
 import altair as alt
-import vegafusion as vf
-vf.enable(mimetype="html", row_limit=None, embed_options={'actions': False});
+alt.renderers.enable('jupyter', embed_options={'actions': False});
+alt.data_transformers.enable('vegafusion');
 ```
 
 ```python
@@ -57,10 +57,11 @@ vf.enable(mimetype="html", row_limit=None, embed_options={'actions': False});
 ```
 
 ```python
-assert(alt.renderers.active == "vegafusion-mime")
-assert(alt.data_transformers.active == 'vegafusion-inline')
+assert(alt.renderers.active == "jupyter")
+assert(alt.data_transformers.active == 'vegafusion')
 ```
 """
+
 
 def setup_module(module):
     """ setup any state specific to the execution of the given module."""
@@ -151,7 +152,9 @@ def setup_module(module):
         ("interactive/brush", 1.0, 1),
         ("interactive/multiline_tooltip", 1.0, 1),
         ("interactive/scatter_linked_brush", 1.0, 1),
-        ("interactive/casestudy-us_population_pyramid_over_time", 1.0, 1),
+        # Placement of slider is different
+        # ("interactive/casestudy-us_population_pyramid_over_time", 1.0, 1),
+        # ("interactive/casestudy-us_population_over_time", 1.0, 1),
         ("interactive/multiline_highlight", 1.0, 1),
         ("interactive/scatter-with_minimap", 1.0, 1),
         ("interactive/select_mark_area", 1.0, 1),
@@ -161,7 +164,6 @@ def setup_module(module):
         ("interactive/scatter-with_linked_table", 1.0, 1),
         ("interactive/scatter_with_layered_histogram", 1.0, 1),
         ("interactive/casestudy-seattle_weather_interactive", 1.0, 1),
-        ("interactive/casestudy-us_population_over_time", 1.0, 1),
         ("interactive/scatter-href", 1.0, 1),
         ("interactive/other-image_tooltip", 1.0, 1),
         ("interactive/casestudy-weather_heatmap", 0.999, 2),
@@ -244,12 +246,12 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     actions = load_actions(mock_name)
 
     mock_code = mock_path.read_text()
-    altair_markdown = altair_markdown_template.replace("{code}", mock_code)
-    vegafusion_mime_markdown = vegafusion_mime_markdown_template.replace("{code}", mock_code)
+    altair_default_markdown = altair_default_template.replace("{code}", mock_code)
+    vegafusion_jupyter_markdown = altair_vegafusion_jupyter_template.replace("{code}", mock_code)
 
     # Use jupytext to convert markdown to an ipynb file
-    altair_notebook = jupytext.read(io.StringIO(altair_markdown), fmt="markdown")
-    vegafusion_mime_notebook = jupytext.read(io.StringIO(vegafusion_mime_markdown), fmt="markdown")
+    altair_default_notebook = jupytext.read(io.StringIO(altair_default_markdown), fmt="markdown")
+    vegafusion_jupyter_notebook = jupytext.read(io.StringIO(vegafusion_jupyter_markdown), fmt="markdown")
 
     # Create selenium Chrome instance
     chrome_opts = webdriver.ChromeOptions()
@@ -274,10 +276,10 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     try:
         name = mock_name.replace("/", "-")
         altair_imgs = export_image_sequence(
-            chrome_driver, altair_notebook, name + "_altair", actions, delay
+            chrome_driver, altair_default_notebook, name + "_altair", actions, delay
         )
         vegafusion_mime_imgs = export_image_sequence(
-            chrome_driver, vegafusion_mime_notebook, name + "_vegafusion_mime", actions, delay
+            chrome_driver, vegafusion_jupyter_notebook, name + "_vegafusion_mime", actions, delay
         )
 
         for i in range(len(altair_imgs)):
