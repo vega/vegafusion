@@ -117,7 +117,7 @@ def test_transformed_data_for_mock(mock_name, expected_len, expected_cols, conne
     mock_path = altair_mocks_dir / mock_name / "mock.py"
     mock_src = mock_path.read_text("utf8")
     chart = eval_block(mock_src)
-    df = vf.transformed_data(chart)
+    df = chart.transformed_data()
 
     # Check that a DataFrame was returned
     assert isinstance(df, pd.DataFrame)
@@ -182,7 +182,7 @@ def test_multi_transformed_data_for_mock(mock_name, expected_lens, all_expected_
     mock_path = altair_mocks_dir / mock_name / "mock.py"
     mock_src = mock_path.read_text("utf8")
     chart = eval_block(mock_src)
-    dfs = vf.transformed_data(chart)
+    dfs = chart.transformed_data()
 
     for df, expected_len, expected_cols in zip(dfs, expected_lens, all_expected_cols):
         # Check that a DataFrame was returned
@@ -211,7 +211,7 @@ def test_transformed_data_exclude():
     )
 
     chart = (bar + rule + some_annotation).properties(width=600)
-    datasets = vf.transformed_data(chart, exclude=["some_annotation"])
+    datasets = chart.transformed_data(exclude=["some_annotation"])
 
     assert len(datasets) == 2
     assert len(datasets[0]) == 52
@@ -234,7 +234,7 @@ def test_gh_286():
         y='count():Q',
         color='weather:N'
     )
-    transformed = vf.transformed_data(chart)
+    transformed = chart.transformed_data()
     assert isinstance(transformed, pl.DataFrame)
     assert len(transformed) == 53
 
@@ -251,6 +251,6 @@ def test_categorical_columns(connection):
     chart = alt.Chart(df).mark_bar().encode(
         alt.X("categorical:N"), alt.Y("sum(a):Q")
     )
-    transformed = vf.transformed_data(chart)
+    transformed = chart.transformed_data()
     expected = pd.DataFrame({"categorical": ["A", "BB"], "sum_a": [7, 8]})
     pd.testing.assert_frame_equal(transformed, expected)
