@@ -392,7 +392,7 @@ jobs:
           python -m pip install pyarrow==10.0 altair==5.1.2 polars[timezone] "duckdb>=1.0" vl-convert-python 
           
           # Test dependencies
-          python -m pip install pytest vega-datasets scikit-image jupytext voila anywidget ipywidgets selenium flaky tenacity chromedriver-binary-auto 
+          python -m pip install pytest vega-datasets scikit-image
       - name: Test vegafusion
         working-directory: python/vegafusion/
         run: pytest --ignore=tests/test_altair_mocks.py
