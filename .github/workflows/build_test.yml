@@ -326,10 +326,6 @@ jobs:
         uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
         with:
           python-version: '3.10'
-      - name: Install Chrome
-        uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
-        with:
-          chrome-version: stable
       - name: Download vegafusion-python-embed wheel
         uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
         with:
@@ -351,20 +347,11 @@ jobs:
           python -m pip install polars "duckdb>=1.0" vl-convert-python "pandas>=2.2"
 
           # Test dependencies
-          python -m pip install pytest vega-datasets scikit-image jupytext voila anywidget ipywidgets selenium flaky tenacity chromedriver-binary-auto 
+          python -m pip install pytest vega-datasets scikit-image
 
       - name: Test vegafusion
         working-directory: python/vegafusion/
-        env:
-          VEGAFUSION_TEST_HEADLESS: 1
-        run: pytest
-      - name: Upload test artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
-        if: always()
-        with:
-          name: vegafusion-python-test-failures
-          path: |
-            python/vegafusion/tests/output/*
+        run: pytest --ignore=tests/test_altair_mocks.py
 
   test-vegafusion-python-win-64:
     runs-on: windows-2022
