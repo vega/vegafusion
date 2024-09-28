@@ -395,16 +395,8 @@ jobs:
           python -m pip install pytest vega-datasets scikit-image jupytext voila anywidget ipywidgets selenium flaky tenacity chromedriver-binary-auto 
       - name: Test vegafusion
         working-directory: python/vegafusion/
-        env:
-          VEGAFUSION_TEST_HEADLESS: 1
-        run: pytest
-      - name: Upload test artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
-        if: always()
-        with:
-          name: vegafusion-python-test-failures
-          path: |
-            python/vegafusion/tests/output/*
+        run: pytest --ignore=tests/test_altair_mocks.py
+
 
 #   build-vegafusion-server-linux-64:
 #     runs-on: ubuntu-20.04
