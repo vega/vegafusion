@@ -20,18 +20,18 @@ bump-version = "python automation/bump_version.py $1"
 # setup python dev packages
 dev-py-embed = { cmd = ["maturin", "develop", "-m", "vegafusion-python-embed/Cargo.toml", "--release"]}
 dev-py-vegafusion = { cmd = "cd python/vegafusion && pip install -e . --no-deps", depends_on = ["dev-py-embed"] }
-dev-py-jupyter = { cmd = "cd python/vegafusion-jupyter && npm install && npm run build:dev", depends_on = ["dev-py-vegafusion", "dev-py-embed", "build-js-embed"] }
 
 # Build Python packages
 build-py-embed = {cmd = "maturin build -m vegafusion-python-embed/Cargo.toml --release --strip --sdist $0"}
 build-py-vegafusion = {cmd = "cd python/vegafusion && python -m build $0"}
-build-py-jupyter = {cmd = "cd python/vegafusion-jupyter && npm install && python -m build $0", depends_on = ["build-js-embed"]}
 
 # test python
+install-chromedriver-auto = """
+pip cache remove chromedriver-binary-auto &&
+pip install -U chromedriver-binary-auto --force-reinstall
+"""
 test-py-vegafusion = { cmd = "cd python/vegafusion && pytest $0", depends_on = ["dev-py-vegafusion"]}
-install-chromedriver-auto = "pip install -U chromedriver-binary-auto"
-test-py-jupyter = { cmd = "cd python/vegafusion-jupyter && pytest $0", depends_on = ["dev-py-jupyter", "install-chromedriver-auto"]}
-test-py-jupyter-headless = { cmd = "export VEGAFUSION_TEST_HEADLESS=1 && cd python/vegafusion-jupyter && pytest $0", depends_on = ["dev-py-jupyter", "install-chromedriver-auto"]}
+test-py-vegafusion-headless = { cmd = "cd python/vegafusion && VEGAFUSION_TEST_HEADLESS=1 pytest $0", depends_on = ["dev-py-vegafusion", "install-chromedriver-auto"]}
 
 # Test rust
 build-vegajs-runtime = { cmd = "cd vegafusion-runtime/tests/util/vegajs_runtime && npm install" }
@@ -115,7 +115,6 @@ toml = "0.10.2.*"
 pytest = ">=4.6"
 click = "8.1.6.*"
 python-duckdb = "1.0"
-jupyter-packaging = "0.12.3.*"
 pip = "23.2.1.*"
 voila = "0.5.0.*"
 polars = "0.18.15.*"
@@ -134,7 +133,7 @@ minio = "7.1.17.*"
 psutil = "5.9.5.*"
 pyarrow = "12.0.1.*"
 pandas = "2.0.3.*"
-altair = "5.3.*"
+altair = "5.4.*"
 protobuf = "4.23.3.*"
 ipywidgets = "8.1.0.*"
 rust = "1.80.*"
