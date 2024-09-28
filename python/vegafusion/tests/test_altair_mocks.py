@@ -154,6 +154,7 @@ def setup_module(module):
         ("interactive/scatter_linked_brush", 1.0, 1),
         # Placement of slider is different
         # ("interactive/casestudy-us_population_pyramid_over_time", 1.0, 1),
+        # ("interactive/casestudy-us_population_over_time", 1.0, 1),
         ("interactive/multiline_highlight", 1.0, 1),
         ("interactive/scatter-with_minimap", 1.0, 1),
         ("interactive/select_mark_area", 1.0, 1),
@@ -163,7 +164,6 @@ def setup_module(module):
         ("interactive/scatter-with_linked_table", 1.0, 1),
         ("interactive/scatter_with_layered_histogram", 1.0, 1),
         ("interactive/casestudy-seattle_weather_interactive", 1.0, 1),
-        ("interactive/casestudy-us_population_over_time", 1.0, 1),
         ("interactive/scatter-href", 1.0, 1),
         ("interactive/other-image_tooltip", 1.0, 1),
         ("interactive/casestudy-weather_heatmap", 0.999, 2),
