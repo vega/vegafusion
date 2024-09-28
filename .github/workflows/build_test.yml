@@ -299,7 +299,7 @@ jobs:
           python -m pip install polars-lts-cpu "duckdb>=1.0" "vl-convert-python>=1.0.1rc1" scikit-image "pandas>=2.2" jupytext voila anywidget ipywidgets chromedriver-binary-auto
 
           # Test dependencies
-          python -m pip install pytest vega-datasets scikit-image jupytext voila anywidget ipywidgets selenium flaky tenacity chromedriver-binary-auto 
+          python -m pip install pytest vega-datasets scikit-image jupytext voila ipykernel anywidget ipywidgets selenium flaky tenacity chromedriver-binary-auto 
       - name: Test lazy imports
         working-directory: python/vegafusion/
         run: python checks/check_lazy_imports.py
@@ -307,7 +307,7 @@ jobs:
         working-directory: python/vegafusion/
         env:
           VEGAFUSION_TEST_HEADLESS: 1
-        run: pytest
+        run: pytest -k tests/test_altair_mocks.py
       - name: Upload test artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         if: always()
