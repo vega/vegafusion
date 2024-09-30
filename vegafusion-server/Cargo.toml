@@ -11,7 +11,7 @@ description = "VegaFusion Server"
 repository = "https://github.com/vega/vegafusion"
 
 [features]
-protobuf-src = [ "vegafusion-core/protobuf-src", "dep:protobuf-src",]
+protobuf-src = ["vegafusion-core/protobuf-src", "dep:protobuf-src"]
 
 [dependencies]
 futures-util = "0.3.21"
@@ -36,7 +36,7 @@ version = "1.6.9"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
-features = [ "tonic_support",]
+features = ["tonic_support"]
 version = "1.6.9"
 
 [dependencies.vegafusion-runtime]
@@ -46,22 +46,22 @@ version = "1.6.9"
 [dependencies.vegafusion-sql]
 path = "../vegafusion-sql"
 version = "1.6.9"
-features = [ "datafusion-conn",]
+features = ["datafusion-conn"]
 
 [dependencies.tokio]
 workspace = true
-features = [ "rt-multi-thread", "macros",]
+features = ["rt-multi-thread", "macros"]
 
 [dependencies.tonic-web]
 version = "0.10.2"
 
 [dependencies.tonic]
 version = "0.10.2"
-features = [ "tls",]
+features = ["tls"]
 
 [dependencies.clap]
 version = "4.2.1"
-features = [ "derive",]
+features = ["derive"]
 
 [build-dependencies.protobuf-src]
 version = "1.1.0"

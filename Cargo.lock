@@ -4845,6 +4845,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "126e423afe2dd9ac52142e7e9d5ce4135d7e13776c529d27fd6bc49f19e3280b"
 
 [[package]]
+name = "vegafusion"
+version = "1.6.9"
+dependencies = [
+ "arrow",
+ "async-trait",
+ "datafusion-proto",
+ "deterministic-hash",
+ "env_logger",
+ "log",
+ "prost",
+ "pyo3",
+ "pythonize",
+ "serde",
+ "serde_json",
+ "tokio",
+ "uuid",
+ "vegafusion-common",
+ "vegafusion-core",
+ "vegafusion-dataframe",
+ "vegafusion-runtime",
+ "vegafusion-sql",
+]
+
+[[package]]
 name = "vegafusion-common"
 version = "1.6.9"
 dependencies = [
@@ -4930,30 +4954,6 @@ dependencies = [
  "tokio",
  "vegafusion-common",
  "vegafusion-core",
- "vegafusion-runtime",
- "vegafusion-sql",
-]
-
-[[package]]
-name = "vegafusion-python-embed"
-version = "1.6.9"
-dependencies = [
- "arrow",
- "async-trait",
- "datafusion-proto",
- "deterministic-hash",
- "env_logger",
- "log",
- "prost",
- "pyo3",
- "pythonize",
- "serde",
- "serde_json",
- "tokio",
- "uuid",
- "vegafusion-common",
- "vegafusion-core",
- "vegafusion-dataframe",
  "vegafusion-runtime",
  "vegafusion-sql",
 ]
