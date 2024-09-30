@@ -77,32 +77,6 @@ build-rs-vegafusion-server = { cmd = "cargo build -p vegafusion-server --release
 # minio
 start-minio = "python automation/start_minio.py"
 
-# Java
-build-jni = "cargo build -p vegafusion-jni --release $0"
-build-jar = "cd java && ./gradlew jar"
-build-jar-win = "cd java && ./gradlew.bat jar"
-
-[tasks.test-java]
-cmd = """
-export VEGAFUSION_JNI_LIBRARY=$(python automation/find_file.py $PIXI_PACKAGE_ROOT/target/release/ \"libvegafusion_jni\\.(so|dylib)$\") &&
-cd java &&
-./gradlew test $0
-"""
-depends_on = ["build-jni"]
-
-[tasks.test-java-win]
-cmd = """
-export VEGAFUSION_JNI_LIBRARY=$PIXI_PACKAGE_ROOT/target/release/vegafusion_jni.dll &&
-cd java &&
-./gradlew.bat test $0
-"""
-depends_on = ["build-jni"]
-
-[tasks.publish-java]
-cmd = """
-cd java/ &&
-./gradlew publish
-"""
 
 # Note: the `--no-verify` flag below for `vegafusion-core` is due to this cargo publish error:
 #

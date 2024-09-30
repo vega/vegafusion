@@ -74,14 +74,6 @@ Then launch JupyterLab
 pixi run jupyter-lab
 ```
 
-## Build and test Java
-Build and test the VegaFusion Java package with
-
-```
-pixi run test-java
-```
-
-
 ## Build Python packages for distribution
 To build Python wheels for the current platform, the `build-py-embed`, `build-py-vegafusion`, and `build-py-jupyter` tasks may be used
 
