@@ -256,17 +256,11 @@ jobs:
         with:
           name: vegafusion-python-wheels
           path: target/wheels/
-      - name: Download vegafusion wheel
-        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
-        with:
-          name: vegafusion-packages
-          path: target/wheels/
       - name: install wheels
         working-directory: target/wheels/
         run: |
           ls -la
           python -m pip install vegafusion-*.whl
-          python -m pip install vegafusion_python_embed-*manylinux_2_17_x86_64*.whl
 
           # Optional dependencies
           python -m pip install polars-lts-cpu "duckdb>=1.0" "vl-convert-python>=1.0.1rc1" scikit-image "pandas>=2.2" jupytext voila anywidget ipywidgets chromedriver-binary-auto
@@ -304,17 +298,11 @@ jobs:
         with:
           name: vegafusion-python-wheels
           path: target/wheels/
-      - name: Download vegafusion wheel
-        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
-        with:
-          name: vegafusion-packages
-          path: target/wheels/
       - name: install wheels
         working-directory: target/wheels/
         run: |
           ls -la
           python -m pip install vegafusion-*.whl
-          python -m pip install vegafusion_python_embed-*macosx_11_*_arm64.whl
           
           # Optional dependencies
           python -m pip install polars "duckdb>=1.0" vl-convert-python "pandas>=2.2"
@@ -345,21 +333,14 @@ jobs:
         with:
           name: vegafusion-python-wheels
           path: target/wheels/
-      - name: Download vegafusion wheel
-        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
-        with:
-          name: vegafusion-packages
-          path: target/wheels/
       - name: install wheels
         working-directory: target/wheels/
         shell: powershell
         run: |
           Get-ChildItem -Force
           $vegafusion = Get-ChildItem -Name "vegafusion-*.whl" | Select-Object -First 1
-          $vegafusion_python_embed = Get-ChildItem -Name "vegafusion_python_embed-*win_amd64.whl" | Select-Object -First 1
 
           python -m pip install $vegafusion
-          python -m pip install $vegafusion_python_embed
 
           # Optional dependencies
           python -m pip install pyarrow==10.0 altair==5.1.2 polars[timezone] "duckdb>=1.0" vl-convert-python 
