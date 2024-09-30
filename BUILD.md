@@ -119,8 +119,8 @@ Then Python bindings should be generated using `protoc`
 
 ```
 pixi shell
-cd python/vegafusion
+cd vegafusion-python
 protoc --python_out=vegafusion ./proto/datafusion.proto
 ```
 
-This will update the `python/vegafusion/vegafusion/proto/datafusion_pb2.py` file.
+This will update the `vegafusion-python/vegafusion/proto/datafusion_pb2.py` file.

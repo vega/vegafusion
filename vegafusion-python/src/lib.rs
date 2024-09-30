@@ -622,10 +622,11 @@ impl PyVegaFusionRuntime {
 /// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
 /// import the module.
 #[pymodule]
-fn vegafusion_embed(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
+fn _vegafusion(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     m.add_class::<PyVegaFusionRuntime>()?;
     m.add_class::<PySqlConnection>()?;
     m.add_class::<PyChartState>()?;
+    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
 }
 

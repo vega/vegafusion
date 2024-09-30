@@ -10,8 +10,8 @@ version = "1.6.9"
 description = "VegaFusion Runtime"
 
 [features]
-pyarrow = [ "vegafusion-core/pyarrow",]
-protobuf-src = [ "vegafusion-core/protobuf-src",]
+pyarrow = ["vegafusion-core/pyarrow"]
+protobuf-src = ["vegafusion-core/protobuf-src"]
 
 [dependencies]
 regex = "^1.5.5"
@@ -47,7 +47,7 @@ lodepng = "3.6.1"
 
 [dependencies.object_store]
 workspace = true
-features = [ "aws",]
+features = ["aws"]
 
 [dependencies.chrono]
 workspace = true
@@ -63,19 +63,19 @@ workspace = true
 
 [dependencies.uuid]
 version = "^1.2"
-features = [ "v4",]
+features = ["v4"]
 
 [dependencies.sqlparser]
 workspace = true
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-features = [ "json", "sqlparser", "prettyprint", "object_store",]
+features = ["json", "sqlparser", "prettyprint", "object_store"]
 version = "1.6.9"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
-features = [ "sqlparser",]
+features = ["sqlparser"]
 version = "1.6.9"
 
 [dependencies.vegafusion-datafusion-udfs]
@@ -88,7 +88,7 @@ version = "1.6.9"
 
 [dependencies.serde]
 version = "1.0.137"
-features = [ "derive",]
+features = ["derive"]
 
 [dependencies.datafusion-common]
 workspace = true
@@ -113,23 +113,23 @@ workspace = true
 
 [dependencies.tokio]
 workspace = true
-features = [ "macros", "rt-multi-thread", "fs",]
+features = ["macros", "rt-multi-thread", "fs"]
 
 [dependencies.reqwest]
 workspace = true
 default-features = false
-features = [ "rustls-tls",]
+features = ["rustls-tls"]
 
 [dev-dependencies.reqwest]
 workspace = true
 default-features = false
-features = [ "blocking", "rustls-tls",]
+features = ["blocking", "rustls-tls"]
 
 [dev-dependencies.criterion]
 version = "0.4.0"
-features = [ "async_tokio",]
+features = ["async_tokio"]
 
 [dev-dependencies.vegafusion-sql]
 path = "../vegafusion-sql"
 version = "1.6.9"
-features = [ "datafusion-conn",]
+features = ["datafusion-conn"]

@@ -10,7 +10,7 @@ from skimage.metrics import structural_similarity as ssim
 import pytest
 here = Path(__file__).parent
 
-spec_dir = here / ".." / ".." / ".." / "vegafusion-runtime" / "tests" / "specs"
+spec_dir = here / ".." / ".." / "vegafusion-runtime" / "tests" / "specs"
 
 
 def load_test_cases():
@@ -59,7 +59,6 @@ def maybe_skip(category, name):
         pytest.skip("Non-deterministic specification")
 
 
-@pytest.mark.duckdb
 @pytest.mark.parametrize(
     "category,name", load_test_cases())
 def test_it(category, name):

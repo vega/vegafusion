@@ -18,38 +18,58 @@ check-rs-clippy = "cargo clippy -- -A clippy::borrow_deref_ref"
 bump-version = "python automation/bump_version.py $1"
 
 # setup python dev packages
-dev-py-embed = { cmd = ["maturin", "develop", "-m", "vegafusion-python-embed/Cargo.toml", "--release"]}
-dev-py-vegafusion = { cmd = "cd python/vegafusion && pip install -e . --no-deps", depends_on = ["dev-py-embed"] }
+dev-py = { cmd = [
+  "maturin",
+  "develop",
+  "-m",
+  "vegafusion-python/Cargo.toml",
+  "--release",
+] }
 
 # Build Python packages
-build-py-embed = {cmd = "maturin build -m vegafusion-python-embed/Cargo.toml --release --strip --sdist $0"}
-build-py-vegafusion = {cmd = "cd python/vegafusion && python -m build $0"}
+build-py = { cmd = "maturin build -m vegafusion-python/Cargo.toml --release --strip --sdist $0" }
 
 # test python
 install-chromedriver-auto = """
 pip cache remove chromedriver-binary-auto &&
 pip install -U chromedriver-binary-auto --force-reinstall
 """
-test-py-vegafusion = { cmd = "cd python/vegafusion && pytest $0", depends_on = ["dev-py-vegafusion"]}
-test-py-vegafusion-headless = { cmd = "cd python/vegafusion && VEGAFUSION_TEST_HEADLESS=1 pytest $0", depends_on = ["dev-py-vegafusion", "install-chromedriver-auto"]}
+test-py = { cmd = "pytest $0", cwd="vegafusion-python", depends_on = ["dev-py"] }
+test-py-headless = { cmd = "VEGAFUSION_TEST_HEADLESS=1 pytest $0", cwd="vegafusion-python", depends_on = [
+  "dev-py",
+  "install-chromedriver-auto",
+] }
 
 # Test rust
 build-vegajs-runtime = { cmd = "cd vegafusion-runtime/tests/util/vegajs_runtime && npm install" }
 test-rs-core = "cargo test -p vegafusion-core $0"
-test-rs-runtime = { cmd="cargo test -p vegafusion-runtime $0",  depends_on = ["build-vegajs-runtime"] }
-test-rs-runtime-s3 = { cmd="VEGAFUSION_S3_TESTS=1 cargo test -p vegafusion-runtime $0",  depends_on = ["build-vegajs-runtime"] }
+test-rs-runtime = { cmd = "cargo test -p vegafusion-runtime $0", depends_on = [
+  "build-vegajs-runtime",
+] }
+test-rs-runtime-s3 = { cmd = "VEGAFUSION_S3_TESTS=1 cargo test -p vegafusion-runtime $0", depends_on = [
+  "build-vegajs-runtime",
+] }
 test-rs-server = "cargo test -p vegafusion-server $0"
 test-rs-sql = "cargo test -p vegafusion-sql $0"
-test-rs = { cmd = "cargo test --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm $0", depends_on = ["build-vegajs-runtime"] }
+test-rs = { cmd = "cargo test --workspace --exclude vegafusion-python-embed --exclude vegafusion-wasm $0", depends_on = [
+  "build-vegajs-runtime",
+] }
 
 # Build Wasm
 install-wasm-toolchain = "python automation/download_rust_target.py wasm32-unknown-unknown"
 install-wasm-pack = "export CARGO_HOME=$PIXI_PROJECT_ROOT/.pixi/envs/default && cargo install wasm-pack"
-build-wasm = { cmd = "cd vegafusion-wasm && npm install && wasm-pack build --release && cp package.json pkg/", depends_on = ["install-wasm-toolchain", "install-wasm-pack"] }
-pack-wasm = { cmd = "cd vegafusion-wasm && wasm-pack pack", depends_on=["build-wasm"] }
+build-wasm = { cmd = "cd vegafusion-wasm && npm install && wasm-pack build --release && cp package.json pkg/", depends_on = [
+  "install-wasm-toolchain",
+  "install-wasm-pack",
+] }
+pack-wasm = { cmd = "cd vegafusion-wasm && wasm-pack pack", depends_on = [
+  "build-wasm",
+] }
 
 # Install Javascript
-build-js-embed = { cmd = "cd javascript/vegafusion-embed && npm install && npm run build", depends_on = ["build-wasm"] }
+build-js-embed = { cmd = "cd javascript/vegafusion-embed && npm install && npm run build", depends_on = [
+  "build-wasm",
+] }
 
 # VegaFusion Server
 build-rs-vegafusion-server = { cmd = "cargo build -p vegafusion-server --release $0" }
@@ -140,6 +160,7 @@ rust = "1.80.*"
 vl-convert-python = "1.6.*"
 anywidget = ">=0.9.6,<0.10"
 polars = "1.8.*"
+taplo = ">=0.9.3,<0.10"
 
 [target.osx-arm64.build-dependencies]
 # These dependencies are for building node canvas from source on apple silicon

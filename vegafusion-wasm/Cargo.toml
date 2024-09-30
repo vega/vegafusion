@@ -6,11 +6,11 @@ edition = "2021"
 description = "VegaFusion WASM package for embedding Vega charts in the browser with a connection to a VegaFusion Runtime\n"
 
 [lib]
-crate-type = [ "cdylib", "rlib",]
+crate-type = ["cdylib", "rlib"]
 
 [features]
-default = [ "console_error_panic_hook",]
-protobuf-src = [ "vegafusion-core/protobuf-src",]
+default = ["console_error_panic_hook"]
+protobuf-src = ["vegafusion-core/protobuf-src"]
 
 [dependencies]
 serde_json = "1.0.91"
@@ -29,7 +29,7 @@ workspace = true
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-features = [ "json",]
+features = ["json"]
 version = "1.6.9"
 
 [dependencies.vegafusion-core]
@@ -38,18 +38,18 @@ version = "1.6.9"
 
 [dependencies.serde]
 version = "1.0.137"
-features = [ "derive",]
+features = ["derive"]
 
 [dependencies.wasm-bindgen]
 version = "0.2.78"
 
 [dependencies.getrandom]
 version = "0.2.8"
-features = [ "js",]
+features = ["js"]
 
 [dependencies.chrono]
 version = "0.4.31"
-features = [ "wasmbind",]
+features = ["wasmbind"]
 
 [dependencies.console_error_panic_hook]
 version = "0.1.6"
@@ -57,10 +57,10 @@ optional = true
 
 [dependencies.web-sys]
 version = "0.3.55"
-features = [ "Document", "Element", "HtmlElement", "Node", "Window",]
+features = ["Document", "Element", "HtmlElement", "Node", "Window"]
 
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = [ "-Os",]
+wasm-opt = ["-Os"]
 
 [package.metadata.wasm-pack.profile.dev]
 wasm-opt = false

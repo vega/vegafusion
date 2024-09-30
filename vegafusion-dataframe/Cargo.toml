@@ -6,7 +6,7 @@ edition = "2021"
 description = "VegaFusion's DataFrame and Connection traits"
 
 [features]
-pyarrow = [ "pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow",]
+pyarrow = ["pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow"]
 
 [dependencies]
 async-trait = "0.1.73"

@@ -6,8 +6,8 @@ version = "1.6.9"
 description = "Core components required by multiple VegaFusion crates, with WASM compatibility"
 
 [features]
-tonic_support = [ "tonic", "tonic-build",]
-pyarrow = [ "pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow",]
+tonic_support = ["tonic", "tonic-build"]
+pyarrow = ["pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow"]
 
 [dependencies]
 thiserror = "^1.0.29"
@@ -35,11 +35,11 @@ optional = true
 
 [dependencies.serde_json]
 version = "1.0.91"
-features = [ "preserve_order",]
+features = ["preserve_order"]
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-features = [ "json", "sqlparser",]
+features = ["json", "sqlparser"]
 version = "1.6.9"
 
 [dependencies.datafusion-common]
@@ -51,7 +51,7 @@ optional = true
 
 [dependencies.serde]
 version = "1.0.137"
-features = [ "derive",]
+features = ["derive"]
 
 [dependencies.tonic]
 version = "0.10.2"
