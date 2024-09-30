@@ -260,7 +260,8 @@ jobs:
         working-directory: target/wheels/
         run: |
           ls -la
-          python -m pip install vegafusion-*.whl
+          python -m pip install vegafusion-*manylinux_2_17_x86_64*.whl
+
 
           # Optional dependencies
           python -m pip install polars-lts-cpu "duckdb>=1.0" "vl-convert-python>=1.0.1rc1" scikit-image "pandas>=2.2" jupytext voila anywidget ipywidgets chromedriver-binary-auto
@@ -302,7 +303,8 @@ jobs:
         working-directory: target/wheels/
         run: |
           ls -la
-          python -m pip install vegafusion-*.whl
+          python -m pip install vegafusion-*macosx_11_*_arm64.whl
+
           
           # Optional dependencies
           python -m pip install polars "duckdb>=1.0" vl-convert-python "pandas>=2.2"
@@ -338,7 +340,7 @@ jobs:
         shell: powershell
         run: |
           Get-ChildItem -Force
-          $vegafusion = Get-ChildItem -Name "vegafusion-*.whl" | Select-Object -First 1
+          $vegafusion = Get-ChildItem -Name "vegafusion-*win_amd64.whl" | Select-Object -First 1
 
           python -m pip install $vegafusion
 
