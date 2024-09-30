@@ -4946,19 +4946,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "vegafusion-jni"
-version = "1.6.9"
-dependencies = [
- "jni",
- "serde_json",
- "tokio",
- "vegafusion-common",
- "vegafusion-core",
- "vegafusion-runtime",
- "vegafusion-sql",
-]
-
-[[package]]
 name = "vegafusion-runtime"
 version = "1.6.9"
 dependencies = [
