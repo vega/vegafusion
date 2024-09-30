@@ -3,6 +3,7 @@ from pathlib import Path
 import toml
 import json
 import configparser
+import subprocess
 
 root = Path(__file__).parent.parent.absolute()
 
@@ -21,7 +22,7 @@ def bump_version(version):
         "vegafusion-dataframe",
         "vegafusion-sql",
         "vegafusion-runtime",
-        "vegafusion-python-embed",
+        "vegafusion-python",
         "vegafusion-server",
         "vegafusion-wasm",
         "vegafusion-jni",
@@ -53,8 +54,7 @@ def bump_version(version):
     # Handle package.json files
     package_json_dirs = [
         root / "vegafusion-wasm",
-        root / "javascript" / "vegafusion-embed",
-        root / "python" / "vegafusion-jupyter"
+        root / "javascript" / "vegafusion-embed"
     ]
     for package_json_dir in package_json_dirs:
         for fname in ["package.json", "package-lock.json"]:
@@ -64,64 +64,34 @@ def bump_version(version):
             package_json_path.write_text(json.dumps(package_json, indent=2))
             print(f"Updated version in {package_json_path}")
 
-    # Handle _version.py files
-    version_py_dirs = [
-        root / "python" / "vegafusion" / "vegafusion",
-        root / "python" / "vegafusion-jupyter" / "vegafusion_jupyter",
-        ]
-    for version_py_dir in version_py_dirs:
-        version_py_path = version_py_dir / "_version.py"
-        version_py_path.write_text(f'__version__ = {repr(version)}\n')
-        print(f"Updated version in {version_py_path}")
 
-    # Handle cfg files
-    cfg_dirs = [
-        root / "python" / "vegafusion",
-        root / "python" / "vegafusion-jupyter",
+    # Handle pyproject.toml files
+    pyproject_toml_dirs = [
+        root / "vegafusion-python",
     ]
-    for cfg_dir in cfg_dirs:
-        cgf_path = cfg_dir / "setup.cfg"
-        parser = configparser.ConfigParser()
-        parser.read_string(cgf_path.read_text())
-
-        # Set package version
-        parser.set("metadata", "version", version)
-
-        # Check for embed dependencies
-        if parser.has_option("options.extras_require", "embed"):
-            deps = parser.get("options.extras_require", "embed").split("\n")
-            new_deps = []
-            for dep in deps:
-                if dep.strip().startswith("vegafusion-python-embed"):
-                    new_deps.append(f"vegafusion-python-embed=={version}")
-                elif dep.strip().startswith("vegafusion"):
-                    new_deps.append(f"vegafusion=={version}")
-                else:
-                    new_deps.append(dep)
-
-            deps_str = "\n".join(new_deps)
-            parser.set("options.extras_require", "embed", deps_str)
-
-        with cgf_path.open("wt") as f:
-            parser.write(f)
-        print(f"Updated version in {cgf_path}")
-
-    # Handle _frontend.py
-    frontend_py_path = root / "python" / "vegafusion-jupyter" / "vegafusion_jupyter" / "_frontend.py"
-    frontend_py_path.write_text(f"""\
-\"\"\"
-Information about the frontend package of the widgets.
-\"\"\"    
-module_name = "vegafusion-jupyter"
-module_version = "^{version}"
-""")
-    print(f"Updated version in {frontend_py_path}")
+    for pyproject_toml_dir in pyproject_toml_dirs:
+        for fname in ["pyproject.toml"]:
+            pyproject_toml_path = pyproject_toml_dir / fname
+            pyproject_toml = toml.loads(pyproject_toml_path.read_text())
+            pyproject_toml["project"]["version"] = version
+            pyproject_toml_path.write_text(toml.dumps(pyproject_toml))
+            print(f"Updated version in {pyproject_toml_path}")
 
     # Handle java/version.txt
     version_txt_path = root / "java" / "version.txt"
     with open(version_txt_path, "wt") as f:
         f.write(version)
     print(f"Updated version in {version_txt_path}")
+
+    # Run taplo fmt *.toml
+    print("Formatting TOML files...")
+    try:
+        subprocess.run(["taplo", "fmt", "vegafusion-*/**/*.toml"], cwd=root, check=True)
+        print("TOML files formatted successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error formatting TOML files: {e}")
+    except FileNotFoundError:
+        print("taplo command not found. Make sure it's installed and in your PATH.")
 
 
 if __name__ == '__main__':

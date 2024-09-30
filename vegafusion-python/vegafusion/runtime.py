@@ -113,7 +113,7 @@ class VegaFusionRuntime:
     def embedded_runtime(self):
         if self._embedded_runtime is None:
             # Try to initialize an embedded runtime
-            from vegafusion_embed import PyVegaFusionRuntime
+            from vegafusion._vegafusion import PyVegaFusionRuntime
             self._embedded_runtime = PyVegaFusionRuntime(
                 self.cache_capacity, self.memory_limit, self.worker_threads, connection=self._connection
             )

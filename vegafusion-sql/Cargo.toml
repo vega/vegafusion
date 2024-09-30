@@ -6,8 +6,24 @@ edition = "2021"
 description = "VegaFusion SQL dialect generation and connection implementations"
 
 [features]
-datafusion-conn = [ "datafusion", "tempfile", "reqwest", "reqwest-retry", "reqwest-middleware", "vegafusion-datafusion-udfs", "object_store", "url", "vegafusion-common/object_store", "vegafusion-common/prettyprint",]
-pyarrow = [ "pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow", "vegafusion-dataframe/pyarrow",]
+datafusion-conn = [
+  "datafusion",
+  "tempfile",
+  "reqwest",
+  "reqwest-retry",
+  "reqwest-middleware",
+  "vegafusion-datafusion-udfs",
+  "object_store",
+  "url",
+  "vegafusion-common/object_store",
+  "vegafusion-common/prettyprint",
+]
+pyarrow = [
+  "pyo3",
+  "datafusion-common/pyarrow",
+  "vegafusion-common/pyarrow",
+  "vegafusion-dataframe/pyarrow",
+]
 
 [dependencies]
 async-trait = "0.1.73"
@@ -30,7 +46,7 @@ workspace = true
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
 version = "1.6.9"
-features = [ "sqlparser",]
+features = ["sqlparser"]
 
 [dependencies.vegafusion-dataframe]
 path = "../vegafusion-dataframe"
@@ -44,7 +60,7 @@ optional = true
 [dependencies.arrow]
 workspace = true
 default-features = false
-features = [ "ipc",]
+features = ["ipc"]
 
 [dependencies.datafusion-common]
 workspace = true
@@ -69,7 +85,7 @@ optional = true
 [dependencies.reqwest]
 workspace = true
 default-features = false
-features = [ "rustls-tls",]
+features = ["rustls-tls"]
 optional = true
 
 [dependencies.reqwest-retry]
@@ -87,7 +103,7 @@ optional = true
 [dependencies.object_store]
 workspace = true
 optional = true
-features = [ "aws",]
+features = ["aws"]
 
 [dependencies.url]
 version = "2.3.1"
@@ -99,11 +115,11 @@ optional = true
 
 [dev-dependencies.async-std]
 version = "1.12.0"
-features = [ "attributes",]
+features = ["attributes"]
 
 [dev-dependencies.serde_json]
 version = "1.0.91"
-features = [ "preserve_order",]
+features = ["preserve_order"]
 
 [dev-dependencies.vegafusion-datafusion-udfs]
 path = "../vegafusion-datafusion-udfs"
@@ -112,12 +128,12 @@ version = "1.6.9"
 [dev-dependencies.vegafusion-common]
 path = "../vegafusion-common"
 version = "1.6.9"
-features = [ "sqlparser", "json", "prettyprint",]
+features = ["sqlparser", "json", "prettyprint"]
 
 [dev-dependencies.tokio]
 workspace = true
-features = [ "macros", "rt-multi-thread",]
+features = ["macros", "rt-multi-thread"]
 
 [dev-dependencies.serde]
 version = "1.0.137"
-features = [ "derive",]
+features = ["derive"]

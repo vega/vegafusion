@@ -47,6 +47,7 @@ assert(alt.data_transformers.active == 'default')
 
 altair_vegafusion_jupyter_template = r"""
 ```python
+import vegafusion
 import altair as alt
 alt.renderers.enable('jupyter', embed_options={'actions': False});
 alt.data_transformers.enable('vegafusion');
