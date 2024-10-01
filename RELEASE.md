@@ -70,30 +70,6 @@ npm run build:prod
 npm publish
 ```
 
-### Publish Java library
-First, download and unzip the `jni-native` CI artifact. This artifact contains the compiled JNI libraries for each supported operating system and architecture.
-
-Set the `VEGAFUSION_JNI_LIBRARIES` environment variable to the unzipped `jni-native` directory and publish the jar with `pixi run publish-java`:
-
-```
-VEGAFUSION_JNI_LIBRARIES=/path/to/jni-native pixi run publish-java
-```
-
-This publishes the jar files to OSSRH at https://s01.oss.sonatype.org/. In order to sync these files to the public maven central repository, follow the steps described in https://central.sonatype.org/publish/release/.
-
-#### Java publication config
-Publishing the Java library to maven central requires configuring the `~/.gradle/gradle.properties` file with:
-```
-signing.keyId=YourKeyId
-signing.password=YourPublicKeyPassword
-signing.secretKeyRingFile=PathToYourKeyRingFile
-
-ossrhUsername=your-jira-id
-ossrhPassword=your-jira-password
-```
-
-
-
 ### Publish Rust crates
 The Rust crates should be published in the following order
 

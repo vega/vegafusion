@@ -10,7 +10,6 @@ members = [
   "vegafusion-python",
   "vegafusion-wasm",
   "vegafusion-server",
-  "vegafusion-jni",
 ]
 
 [workspace.dependencies]

@@ -1,2 +1,0 @@
-# vegafusion-jni
-This crate uses the [jni-rs](https://github.com/jni-rs/jni-rs) crate to provide a Java JNI interface to VegaFusion. This crate is pure Rust and builds the shared library that is loaded by the pure Java logic in the [java](../java) directory.
