@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{expr, Expr};
+use datafusion_expr::expr;
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -37,16 +37,16 @@ mod test_default_null_ordering {
         let df_result = df
             .sort(
                 vec![
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("a")),
+                    expr::Sort {
+                        expr: flat_col("a"),
                         asc: false,
                         nulls_first: false,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("c")),
+                    },
+                    expr::Sort {
+                        expr: flat_col("c"),
                         asc: true,
                         nulls_first: true,
-                    }),
+                    },
                 ],
                 None,
             )
@@ -89,16 +89,16 @@ mod test_custom_null_ordering {
         let sort_res = df
             .sort(
                 vec![
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("a")),
+                    expr::Sort {
+                        expr: flat_col("a"),
                         asc: false,
                         nulls_first: true,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("c")),
+                    },
+                    expr::Sort {
+                        expr: flat_col("c"),
                         asc: true,
                         nulls_first: false,
-                    }),
+                    },
                 ],
                 None,
             )
@@ -139,16 +139,16 @@ mod test_order_with_limit {
         let df_result = df
             .sort(
                 vec![
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("c")),
+                    expr::Sort {
+                        expr: flat_col("c"),
                         asc: true,
                         nulls_first: true,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("b")),
+                    },
+                    expr::Sort {
+                        expr: flat_col("b"),
                         asc: true,
                         nulls_first: true,
-                    }),
+                    },
                 ],
                 Some(4),
             )
