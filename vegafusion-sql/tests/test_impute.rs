@@ -3,7 +3,7 @@ extern crate lazy_static;
 
 mod utils;
 use datafusion_common::ScalarValue;
-use datafusion_expr::{expr, Expr};
+use datafusion_expr::expr;
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;

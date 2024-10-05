@@ -10,7 +10,7 @@ use wasm_bindgen::prelude::*;
 use js_sys::Promise;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use vegafusion_common::data::table::VegaFusionTable;
 
 use vegafusion_core::planning::stitch::CommPlan;

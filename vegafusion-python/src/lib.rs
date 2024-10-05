@@ -400,6 +400,7 @@ impl PyVegaFusionRuntime {
     }
 
     #[pyo3(signature = (spec, variables, local_tz, default_input_tz=None, row_limit=None, inline_datasets=None))]
+    #[allow(clippy::too_many_arguments)]
     pub fn pre_transform_datasets(
         &self,
         py: Python,
