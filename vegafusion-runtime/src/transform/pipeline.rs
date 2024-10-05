@@ -98,10 +98,7 @@ impl TransformPipelineUtils for TransformPipeline {
             )
             .await?;
 
-        // Remove ordering column
-        result_sql_df = remove_order_col(result_sql_df).await?;
-
-        let table = result_sql_df.collect().await?;
+        let table = result_sql_df.collect().await?.without_ordering()?;
 
         // Sort result signal value by signal name
         let (_, signals_values): (Vec<_>, Vec<_>) = result_outputs
@@ -111,26 +108,4 @@ impl TransformPipelineUtils for TransformPipeline {
 
         Ok((table, signals_values))
     }
-}
-
-pub async fn remove_order_col(result_sql_df: Arc<dyn DataFrame>) -> Result<Arc<dyn DataFrame>> {
-    let mut selection = result_sql_df
-        .schema()
-        .fields
-        .iter()
-        .filter_map(|field| {
-            if field.name() == ORDER_COL {
-                None
-            } else {
-                Some(flat_col(field.name()))
-            }
-        })
-        .collect::<Vec<_>>();
-
-    // Add arbitrary column so that SELECT succeeds
-    if selection.is_empty() {
-        selection.push(lit(0).alias("_empty"))
-    }
-
-    result_sql_df.select(selection).await
 }

@@ -120,6 +120,46 @@ impl VegaFusionTable {
         VegaFusionTable::from(empty_record_batch)
     }
 
+    pub fn without_ordering(self) -> Result<Self> {
+        let mut new_fields = self.schema.fields.to_vec();
+        let order_col_index = self
+            .schema
+            .fields
+            .iter()
+            .enumerate()
+            .find(|(_i, field)| field.name() == ORDER_COL)
+            .map(|(i, _)| i);
+
+        if let Some(order_col_index) = order_col_index {
+            if new_fields.len() == 1 {
+                // If ORDER_COL is the only column, rename it to "_empty"
+                let empty_field = Field::new("_empty", ORDER_COL_DTYPE, true);
+                new_fields[0] = Arc::new(empty_field);
+            } else {
+                // Otherwise, remove the ORDER_COL
+                new_fields.remove(order_col_index);
+            }
+
+            let new_schema = Arc::new(Schema::new(new_fields)) as SchemaRef;
+            let new_batches = self
+                .batches
+                .into_iter()
+                .map(|batch| {
+                    let mut new_columns = Vec::from(batch.columns());
+                    if new_schema.fields.len() > 1 {
+                        // Remove the ORDER_COL
+                        new_columns.remove(order_col_index);
+                    }
+                    Ok(RecordBatch::try_new(new_schema.clone(), new_columns)?)
+                })
+                .collect::<Result<Vec<_>>>()?;
+
+            Self::try_new(new_schema, new_batches)
+        } else {
+            Ok(self)
+        }
+    }
+
     pub fn with_ordering(self) -> Result<Self> {
         // Build new schema with leading ORDER_COL
         let mut new_fields = self.schema.fields.to_vec();
