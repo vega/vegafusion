@@ -19,6 +19,7 @@ use datafusion_functions_aggregate::average::avg_udaf;
 use datafusion_functions_aggregate::min_max::{max_udaf, min_udaf};
 use datafusion_functions_aggregate::stddev::{stddev_pop_udaf, stddev_udaf};
 use datafusion_functions_aggregate::sum::sum_udaf;
+use datafusion_functions_window::row_number::RowNumber;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::to_numeric;
@@ -37,12 +38,10 @@ impl TransformTrait for Window {
             .sort_fields
             .iter()
             .zip(&self.sort)
-            .map(|(field, order)| {
-                Expr::Sort(expr::Sort {
-                    expr: Box::new(unescaped_col(field)),
-                    asc: *order == SortOrder::Ascending as i32,
-                    nulls_first: *order == SortOrder::Ascending as i32,
-                })
+            .map(|(field, order)| expr::Sort {
+                expr: unescaped_col(field),
+                asc: *order == SortOrder::Ascending as i32,
+                nulls_first: *order == SortOrder::Ascending as i32,
             })
             .collect();
 
@@ -55,11 +54,11 @@ impl TransformTrait for Window {
 
         if order_by.is_empty() {
             // Order by input row if no ordering specified
-            order_by.push(Expr::Sort(expr::Sort {
-                expr: Box::new(flat_col(ORDER_COL)),
+            order_by.push(expr::Sort {
+                expr: flat_col(ORDER_COL),
                 asc: true,
                 nulls_first: true,
-            }));
+            });
         };
 
         let partition_by: Vec<_> = self
@@ -167,30 +166,55 @@ impl TransformTrait for Window {
                         let _param = self.params.get(i);
 
                         let (window_fn, args) = match op {
-                            WindowOp::RowNumber => (BuiltInWindowFunction::RowNumber, Vec::new()),
-                            WindowOp::Rank => (BuiltInWindowFunction::Rank, Vec::new()),
-                            WindowOp::DenseRank => (BuiltInWindowFunction::DenseRank, Vec::new()),
-                            WindowOp::PercentileRank => {
-                                (BuiltInWindowFunction::PercentRank, vec![])
-                            }
-                            WindowOp::CumeDist => (BuiltInWindowFunction::CumeDist, vec![]),
+                            WindowOp::RowNumber => (
+                                WindowFunctionDefinition::WindowUDF(Arc::new(
+                                    RowNumber::new().into(),
+                                )),
+                                Vec::new(),
+                            ),
+                            WindowOp::Rank => (
+                                WindowFunctionDefinition::BuiltInWindowFunction(
+                                    BuiltInWindowFunction::Rank,
+                                ),
+                                Vec::new(),
+                            ),
+                            WindowOp::DenseRank => (
+                                WindowFunctionDefinition::BuiltInWindowFunction(
+                                    BuiltInWindowFunction::DenseRank,
+                                ),
+                                Vec::new(),
+                            ),
+                            WindowOp::PercentileRank => (
+                                WindowFunctionDefinition::BuiltInWindowFunction(
+                                    BuiltInWindowFunction::PercentRank,
+                                ),
+                                vec![],
+                            ),
+                            WindowOp::CumeDist => (
+                                WindowFunctionDefinition::BuiltInWindowFunction(
+                                    BuiltInWindowFunction::CumeDist,
+                                ),
+                                vec![],
+                            ),
                             WindowOp::FirstValue => (
-                                BuiltInWindowFunction::FirstValue,
+                                WindowFunctionDefinition::BuiltInWindowFunction(
+                                    BuiltInWindowFunction::FirstValue,
+                                ),
                                 vec![unescaped_col(field)],
                             ),
-                            WindowOp::LastValue => {
-                                (BuiltInWindowFunction::LastValue, vec![unescaped_col(field)])
-                            }
+                            WindowOp::LastValue => (
+                                WindowFunctionDefinition::BuiltInWindowFunction(
+                                    BuiltInWindowFunction::LastValue,
+                                ),
+                                vec![unescaped_col(field)],
+                            ),
                             _ => {
                                 return Err(VegaFusionError::compilation(format!(
                                     "Unsupported window function: {op:?}"
                                 )))
                             }
                         };
-                        (
-                            WindowFunctionDefinition::BuiltInWindowFunction(window_fn),
-                            args,
-                        )
+                        (window_fn, args)
                     }
                 };
 

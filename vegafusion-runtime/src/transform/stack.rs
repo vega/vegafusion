@@ -1,7 +1,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion_expr::{expr, Expr};
+use datafusion_expr::expr;
 use std::sync::Arc;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
@@ -29,21 +29,19 @@ impl TransformTrait for Stack {
             .sort_fields
             .iter()
             .zip(&self.sort)
-            .map(|(field, order)| {
-                Expr::Sort(expr::Sort {
-                    expr: Box::new(unescaped_col(field)),
-                    asc: *order == SortOrder::Ascending as i32,
-                    nulls_first: *order == SortOrder::Ascending as i32,
-                })
+            .map(|(field, order)| expr::Sort {
+                expr: unescaped_col(field),
+                asc: *order == SortOrder::Ascending as i32,
+                nulls_first: *order == SortOrder::Ascending as i32,
             })
             .collect();
 
         // Order by input row ordering last
-        order_by.push(Expr::Sort(expr::Sort {
-            expr: Box::new(flat_col(ORDER_COL)),
+        order_by.push(expr::Sort {
+            expr: flat_col(ORDER_COL),
             asc: true,
             nulls_first: true,
-        }));
+        });
 
         let offset = StackOffset::try_from(self.offset).expect("Failed to convert stack offset");
         let mode = match offset {

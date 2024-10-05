@@ -4,7 +4,7 @@ from typing import TypedDict, List, Literal, Any, Union, TYPE_CHECKING
 import psutil
 
 from .connection import SqlConnection
-from .dataset import SqlDataset, DataFrameDataset
+from .dataset import SqlDataset
 from .datasource import PandasDatasource, DfiDatasource, PyArrowDatasource
 from .local_tz import get_local_tz
 
@@ -202,8 +202,6 @@ class VegaFusionRuntime:
         imported_inline_datasets = dict()
         for name, value in inline_datasets.items():
             if isinstance(value, SqlDataset):
-                imported_inline_datasets[name] = value
-            elif isinstance(value, DataFrameDataset):
                 imported_inline_datasets[name] = value
             elif pd is not None and isinstance(value, pd.DataFrame):
                 if self._connection is not None:

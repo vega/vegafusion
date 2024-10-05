@@ -1,5 +1,4 @@
 pub mod connection;
-pub mod dataframe;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -14,9 +13,8 @@ use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::War
 use vegafusion_runtime::task_graph::runtime::{ChartState as RsChartState, VegaFusionRuntime};
 
 use crate::connection::{PySqlConnection, PySqlDataset};
-use crate::dataframe::PyDataFrame;
 use env_logger::{Builder, Target};
-use pythonize::{depythonize_bound, pythonize};
+use pythonize::{depythonize, pythonize};
 use serde_json::json;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::patch::patch_pre_transformed_spec;
@@ -79,7 +77,7 @@ impl PyChartState {
     pub fn update(&self, py: Python, updates: Vec<PyObject>) -> PyResult<Vec<PyObject>> {
         let updates = updates
             .into_iter()
-            .map(|el| Ok(depythonize_bound::<ExportUpdateJSON>(el.bind(py).clone())?))
+            .map(|el| Ok(depythonize::<ExportUpdateJSON>(&el.bind(py).clone())?))
             .collect::<PyResult<Vec<_>>>()?;
 
         let result_updates = py.allow_threads(|| {
@@ -89,35 +87,35 @@ impl PyChartState {
 
         let a = result_updates
             .into_iter()
-            .map(|el| Ok(pythonize(py, &el)?))
-            .collect::<PyResult<Vec<_>>>()?;
+            .map(|el| Ok(pythonize(py, &el)?.into()))
+            .collect::<PyResult<Vec<PyObject>>>()?;
         Ok(a)
     }
 
     /// Get ChartState's initial input spec
     pub fn get_input_spec(&self, py: Python) -> PyResult<PyObject> {
-        Ok(pythonize(py, self.state.get_input_spec())?)
+        Ok(pythonize(py, self.state.get_input_spec())?.into())
     }
 
     /// Get ChartState's server spec
     pub fn get_server_spec(&self, py: Python) -> PyResult<PyObject> {
-        Ok(pythonize(py, self.state.get_server_spec())?)
+        Ok(pythonize(py, self.state.get_server_spec())?.into())
     }
 
     /// Get ChartState's client spec
     pub fn get_client_spec(&self, py: Python) -> PyResult<PyObject> {
-        Ok(pythonize(py, self.state.get_client_spec())?)
+        Ok(pythonize(py, self.state.get_client_spec())?.into())
     }
 
     /// Get ChartState's initial transformed spec
     pub fn get_transformed_spec(&self, py: Python) -> PyResult<PyObject> {
-        Ok(pythonize(py, self.state.get_transformed_spec())?)
+        Ok(pythonize(py, self.state.get_transformed_spec())?.into())
     }
 
     /// Get ChartState's watch plan
     pub fn get_watch_plan(&self, py: Python) -> PyResult<PyObject> {
         let watch_plan = WatchPlan::from(self.state.get_comm_plan().clone());
-        Ok(pythonize(py, &watch_plan)?)
+        Ok(pythonize(py, &watch_plan)?.into())
     }
 
     /// Get list of transform warnings
@@ -128,7 +126,7 @@ impl PyChartState {
             .iter()
             .map(PreTransformSpecWarningSpec::from)
             .collect();
-        Ok(pythonize::pythonize(py, &warnings)?)
+        Ok(pythonize::pythonize(py, &warnings)?.into())
     }
 }
 
@@ -149,7 +147,6 @@ impl PyVegaFusionRuntime {
             Python::with_gil(|py| -> PyResult<_> {
                 let vegafusion_dataset_module = PyModule::import_bound(py, "vegafusion.dataset")?;
                 let sql_dataset_type = vegafusion_dataset_module.getattr("SqlDataset")?;
-                let df_dataset_type = vegafusion_dataset_module.getattr("DataFrameDataset")?;
 
                 let vegafusion_datasource_module =
                     PyModule::import_bound(py, "vegafusion.datasource")?;
@@ -174,14 +171,6 @@ impl PyVegaFusionRuntime {
                             let df = py.allow_threads(|| {
                                 rt.block_on(sql_dataset.scan_table(&sql_dataset.table_name))
                             })?;
-                            VegaFusionDataset::DataFrame(df)
-                        } else if inline_dataset.is_instance(&df_dataset_type)? {
-                            let main_thread = inline_dataset
-                                .call_method0("main_thread")?
-                                .extract::<bool>()?;
-                            any_main_thread = any_main_thread || main_thread;
-
-                            let df = Arc::new(PyDataFrame::new(inline_dataset.to_object(py))?);
                             VegaFusionDataset::DataFrame(df)
                         } else if inline_dataset.is_instance(&datasource_type)? {
                             let df = self.tokio_runtime_connection.block_on(
@@ -213,6 +202,7 @@ impl PyVegaFusionRuntime {
 #[pymethods]
 impl PyVegaFusionRuntime {
     #[new]
+    #[pyo3(signature = (max_capacity=None, memory_limit=None, worker_threads=None, connection=None))]
     pub fn new(
         max_capacity: Option<usize>,
         memory_limit: Option<usize>,
@@ -256,6 +246,7 @@ impl PyVegaFusionRuntime {
         })
     }
 
+    #[pyo3(signature = (spec, local_tz, default_input_tz=None, row_limit=None, inline_datasets=None))]
     pub fn new_chart_state(
         &self,
         py: Python,
@@ -308,6 +299,7 @@ impl PyVegaFusionRuntime {
     }
 
     #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (spec, preserve_interactivity=None, keep_signals=None, keep_datasets=None))]
     pub fn build_pre_transform_spec_plan(
         &self,
         spec: PyObject,
@@ -342,11 +334,12 @@ impl PyVegaFusionRuntime {
 
         Python::with_gil(|py| -> PyResult<PyObject> {
             let py_plan = pythonize::pythonize(py, &json_plan)?;
-            Ok(py_plan)
+            Ok(py_plan.into())
         })
     }
 
     #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (spec, local_tz, default_input_tz=None, row_limit=None, preserve_interactivity=None, inline_datasets=None, keep_signals=None, keep_datasets=None))]
     pub fn pre_transform_spec(
         &self,
         py: Python,
@@ -402,10 +395,11 @@ impl PyVegaFusionRuntime {
         Python::with_gil(|py| -> PyResult<(PyObject, PyObject)> {
             let py_spec = pythonize::pythonize(py, &spec)?;
             let py_warnings = pythonize::pythonize(py, &warnings)?;
-            Ok((py_spec, py_warnings))
+            Ok((py_spec.into(), py_warnings.into()))
         })
     }
 
+    #[pyo3(signature = (spec, variables, local_tz, default_input_tz=None, row_limit=None, inline_datasets=None))]
     pub fn pre_transform_datasets(
         &self,
         py: Python,
@@ -477,11 +471,12 @@ impl PyVegaFusionRuntime {
             }
 
             let py_warnings = pythonize::pythonize(py, &warnings)?;
-            Ok((py_response_list.into(), py_warnings))
+            Ok((py_response_list.into(), py_warnings.into()))
         })
     }
 
     #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (spec, local_tz, default_input_tz=None, preserve_interactivity=None, extract_threshold=None, extracted_format=None, inline_datasets=None, keep_signals=None, keep_datasets=None))]
     pub fn pre_transform_extract(
         &self,
         py: Python,
@@ -571,7 +566,7 @@ impl PyVegaFusionRuntime {
 
             let warnings = pythonize::pythonize(py, &warnings)?;
 
-            Ok((tx_spec, datasets, warnings))
+            Ok((tx_spec.into(), datasets.into(), warnings.into()))
         })
     }
 
@@ -587,9 +582,9 @@ impl PyVegaFusionRuntime {
         Python::with_gil(|py| {
             match patch_pre_transformed_spec(&spec1, &pre_transformed_spec1, &spec2)? {
                 None => Ok(None),
-                Some(pre_transformed_spec2) => {
-                    Ok(Some(pythonize::pythonize(py, &pre_transformed_spec2)?))
-                }
+                Some(pre_transformed_spec2) => Ok(Some(
+                    pythonize::pythonize(py, &pre_transformed_spec2)?.into(),
+                )),
             }
         })
     }
@@ -641,7 +636,7 @@ fn parse_json_spec(chart_spec: PyObject) -> PyResult<ChartSpec> {
                 ))),
             }
         } else if let Ok(chart_spec) = chart_spec.downcast_bound::<PyAny>(py) {
-            match depythonize_bound::<ChartSpec>(chart_spec.clone()) {
+            match depythonize::<ChartSpec>(&chart_spec.clone()) {
                 Ok(chart_spec) => Ok(chart_spec),
                 Err(err) => Err(PyValueError::new_err(format!(
                     "Failed to parse chart_spec dict as Vega: {err}"

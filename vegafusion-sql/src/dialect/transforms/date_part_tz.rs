@@ -4,7 +4,7 @@ use crate::dialect::{Dialect, FunctionTransformer};
 use datafusion_common::DFSchema;
 use datafusion_expr::Expr;
 use sqlparser::ast::{
-    DateTimeField as SqlDateTimeField, Expr as SqlExpr, Function as SqlFunction,
+    DateTimeField as SqlDateTimeField, Expr as SqlExpr, ExtractSyntax, Function as SqlFunction,
     FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr, FunctionArgumentList,
     FunctionArguments, Ident as SqlIdent, ObjectName as SqlObjectName, Value as SqlValue,
 };
@@ -146,6 +146,7 @@ impl FunctionTransformer for DatePartTzWithExtractAndAtTimezoneTransformer {
         let field = part_to_date_time_field(&part)?;
         Ok(SqlExpr::Extract {
             field,
+            syntax: ExtractSyntax::From,
             expr: Box::new(timestamp_in_tz),
         })
     }
@@ -328,6 +329,7 @@ impl FunctionTransformer for DatePartTzMySqlTransformer {
         let field = part_to_date_time_field(&part)?;
         Ok(SqlExpr::Extract {
             field,
+            syntax: ExtractSyntax::From,
             expr: Box::new(timestamp_in_tz),
         })
     }

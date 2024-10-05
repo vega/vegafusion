@@ -4,8 +4,9 @@ use datafusion_common::DFSchema;
 use datafusion_expr::Expr;
 use sqlparser::ast::{
     BinaryOperator as SqlBinaryOperator, DateTimeField as SqlDateTimeField, Expr as SqlExpr,
-    Function as SqlFunction, FunctionArg as SqlFunctionArg, FunctionArgExpr as SqlFunctionArgExpr,
-    FunctionArgumentList, FunctionArguments, Ident, ObjectName as SqlObjectName, Value as SqlValue,
+    ExtractSyntax, Function as SqlFunction, FunctionArg as SqlFunctionArg,
+    FunctionArgExpr as SqlFunctionArgExpr, FunctionArgumentList, FunctionArguments, Ident,
+    ObjectName as SqlObjectName, Value as SqlValue,
 };
 use std::sync::Arc;
 use vegafusion_common::error::{Result, VegaFusionError};
@@ -194,6 +195,7 @@ impl FunctionTransformer for UtcTimestampToEpochMsPostgresTransform {
 
         let extract_expr = SqlExpr::Extract {
             field: SqlDateTimeField::Epoch,
+            syntax: ExtractSyntax::From,
             expr: Box::new(ts_expr),
         };
 

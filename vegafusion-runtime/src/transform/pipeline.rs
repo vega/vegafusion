@@ -5,7 +5,7 @@ use itertools::Itertools;
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use datafusion_expr::{expr, lit, Expr};
+use datafusion_expr::{expr, lit};
 use std::sync::Arc;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -89,11 +89,11 @@ impl TransformPipelineUtils for TransformPipeline {
         // Sort by ordering column at the end
         result_sql_df = result_sql_df
             .sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col(ORDER_COL)),
+                vec![expr::Sort {
+                    expr: flat_col(ORDER_COL),
                     asc: true,
                     nulls_first: false,
-                })],
+                }],
                 None,
             )
             .await?;

@@ -59,7 +59,6 @@ optional = true
 
 [dependencies.arrow]
 workspace = true
-default-features = false
 features = ["ipc"]
 
 [dependencies.datafusion-common]

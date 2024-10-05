@@ -292,10 +292,6 @@ impl ToSqlExpr for Expr {
                     }
                 })
             }
-            Expr::Sort { .. } => {
-                // Sort expressions need to be handled at a higher level
-                Err(VegaFusionError::internal("Sort cannot be converted to SQL"))
-            }
             Expr::ScalarFunction(fun) => {
                 let fun_name = match fun.name().to_ascii_lowercase().as_str() {
                     "power" => "pow".to_string(),
@@ -371,11 +367,11 @@ impl ToSqlExpr for Expr {
                             }));
                         }
                         UnorderedRowNumberMode::OrderByConstant => {
-                            vec![Expr::Sort(Sort {
-                                expr: Box::new(lit(1)),
+                            vec![Sort {
+                                expr: lit(1),
                                 asc: false,
                                 nulls_first: false,
-                            })]
+                            }]
                         }
                         _ => order_by.clone(),
                     }
