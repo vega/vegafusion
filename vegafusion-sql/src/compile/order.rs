@@ -28,7 +28,10 @@ impl ToSqlOrderByExpr for SortExpr {
 
         Ok(SqlOrderByExpr {
             expr: self.expr.to_sql(dialect, schema).with_context(|| {
-                format!("Expression cannot be used as order by expression: {expr:?}", expr=self.expr)
+                format!(
+                    "Expression cannot be used as order by expression: {expr:?}",
+                    expr = self.expr
+                )
             })?,
             asc: Some(self.asc),
             nulls_first,

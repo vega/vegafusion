@@ -197,7 +197,7 @@ macro_rules! set_temporal_column_by_array_type {
     };
 }
 
-fn set_column_by_primitive_type<T: ArrowPrimitiveType>(
+fn set_column_by_primitive_type<T>(
     rows: &mut [JsonMap<String, Value>],
     row_count: usize,
     array: &ArrayRef,

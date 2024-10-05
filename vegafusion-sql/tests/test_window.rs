@@ -495,9 +495,7 @@ mod test_simple_window_fns {
                 col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::WindowUDF(
-                        Arc::new(RowNumber::new().into()),
-                    ),
+                    fun: WindowFunctionDefinition::WindowUDF(Arc::new(RowNumber::new().into())),
                     args: vec![],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -718,9 +716,7 @@ mod test_unordered_row_number {
                 col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::WindowUDF(
-                        Arc::new(RowNumber::new().into()),
-                    ),
+                    fun: WindowFunctionDefinition::WindowUDF(Arc::new(RowNumber::new().into())),
                     args: vec![],
                     partition_by: vec![],
                     order_by: vec![],

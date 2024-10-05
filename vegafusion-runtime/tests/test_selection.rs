@@ -12,7 +12,7 @@ use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_runtime::expression::compiler::config::CompilationConfig;
 use vegafusion_runtime::task_graph::timezone::RuntimeTzConfig;
 
-fn make_brush_r(ranges: &Vec<Vec<(&str, &str, [f64; 2])>>, typ: &str) -> VegaFusionTable {
+fn make_brush_r(ranges: &[Vec<(&str, &str, [f64; 2])>], typ: &str) -> VegaFusionTable {
     let mut rows: Vec<Value> = Vec::new();
     for (i, row_ranges) in ranges.iter().enumerate() {
         let mut field_elements: Vec<Value> = Vec::new();
