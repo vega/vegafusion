@@ -41,11 +41,11 @@ mod test_simple_gte {
             .unwrap();
         let df_result = df
             .sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await;
