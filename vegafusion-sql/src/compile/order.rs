@@ -41,7 +41,7 @@ impl ToSqlOrderByExpr for SortExpr {
 mod tests {
     use crate::compile::order::ToSqlOrderByExpr;
     use datafusion_common::DFSchema;
-    use datafusion_expr::{expr, Expr};
+    use datafusion_expr::expr;
     use vegafusion_common::column::flat_col;
 
     fn schema() -> DFSchema {

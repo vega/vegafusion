@@ -1181,7 +1181,7 @@ impl SqlDataFrame {
         let schema = self.schema(); // Store the schema in a variable
         let (_, field_field) = schema
             .column_with_name(field)
-            .with_context(|| format!("No field named {}", field.to_string()))?;
+            .with_context(|| format!("No field named {}", field))?;
         let field_type = field_field.data_type();
 
         if groupby.is_empty() {
@@ -1196,7 +1196,7 @@ impl SqlDataFrame {
                     Ok(if col_name == field {
                         coalesce(vec![
                             flat_col(field),
-                            lit(value.clone()).cast_to(&field_type, &self.schema_df()?)?,
+                            lit(value.clone()).cast_to(field_type, &self.schema_df()?)?,
                         ])
                         .alias(col_name)
                     } else {
@@ -1240,7 +1240,7 @@ impl SqlDataFrame {
                     Ok(if col_name == field {
                         coalesce(vec![
                             flat_col(field),
-                            lit(value.clone()).cast_to(&field_type, &self.schema_df()?)?,
+                            lit(value.clone()).cast_to(field_type, &self.schema_df()?)?,
                         ])
                         .alias(col_name)
                     } else {
@@ -1258,7 +1258,7 @@ impl SqlDataFrame {
                         let expr = if col_name == field {
                             coalesce(vec![
                                 flat_col(field),
-                                lit(value.clone()).cast_to(&field_type, &self.schema_df()?)?,
+                                lit(value.clone()).cast_to(field_type, &self.schema_df()?)?,
                             ])
                             .alias(col_name)
                         } else if col_name == key {
