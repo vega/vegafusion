@@ -1,7 +1,7 @@
 use crate::compile::expr::ToSqlExpr;
 use crate::dialect::Dialect;
 use datafusion_common::DFSchema;
-use datafusion_expr::{expr::Sort, SortExpr};
+use datafusion_expr::SortExpr;
 use sqlparser::ast::OrderByExpr as SqlOrderByExpr;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 
@@ -28,7 +28,7 @@ impl ToSqlOrderByExpr for SortExpr {
 
         Ok(SqlOrderByExpr {
             expr: self.expr.to_sql(dialect, schema).with_context(|| {
-                format!("Expression cannot be used as order by expression: {expr:?}")
+                format!("Expression cannot be used as order by expression: {expr:?}", expr=self.expr)
             })?,
             asc: Some(self.asc),
             nulls_first,
