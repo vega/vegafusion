@@ -566,7 +566,7 @@ impl PyVegaFusionRuntime {
 
             let warnings = pythonize::pythonize(py, &warnings)?;
 
-            Ok((tx_spec.into(), datasets.into(), warnings.into()))
+            Ok((tx_spec.into(), datasets, warnings.into()))
         })
     }
 

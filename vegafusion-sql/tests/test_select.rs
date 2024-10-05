@@ -84,7 +84,7 @@ mod test_numeric_operators {
 #[cfg(test)]
 mod test_logical_operators {
     use crate::*;
-    use datafusion_expr::{expr, lit, Expr};
+    use datafusion_expr::{expr, lit};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -211,7 +211,7 @@ mod test_between {
 mod test_cast_numeric {
     use crate::*;
     use arrow::datatypes::DataType;
-    use datafusion_expr::{cast, expr, Expr};
+    use datafusion_expr::{cast, expr};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -266,7 +266,7 @@ mod test_cast_numeric {
 mod test_try_cast_numeric {
     use crate::*;
     use arrow::datatypes::DataType;
-    use datafusion_expr::{expr, try_cast, Expr};
+    use datafusion_expr::{expr, try_cast};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -327,7 +327,7 @@ mod test_try_cast_numeric {
 mod test_cast_string {
     use crate::*;
     use arrow::datatypes::DataType;
-    use datafusion_expr::{cast, expr, Expr};
+    use datafusion_expr::{cast, expr};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -377,7 +377,7 @@ mod test_cast_string {
 mod test_try_cast_string {
     use crate::*;
     use arrow::datatypes::DataType;
-    use datafusion_expr::{expr, try_cast, Expr};
+    use datafusion_expr::{expr, try_cast};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -432,7 +432,7 @@ mod test_try_cast_string {
 #[cfg(test)]
 mod test_non_finite_numbers {
     use crate::*;
-    use datafusion_expr::{expr, lit, Expr};
+    use datafusion_expr::{expr, lit};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -485,7 +485,7 @@ mod test_non_finite_numbers {
 #[cfg(test)]
 mod test_scalar_math_functions {
     use crate::*;
-    use datafusion_expr::{expr, Expr};
+    use datafusion_expr::expr;
     use datafusion_functions::math::expr_fn::{abs, acos, asin, tan};
     use vegafusion_common::column::flat_col;
 
@@ -1433,7 +1433,7 @@ mod test_timestamp_to_utc_timestamp {
 #[cfg(test)]
 mod test_string_ops {
     use crate::*;
-    use datafusion_expr::{expr, lit, Expr};
+    use datafusion_expr::{expr, lit};
     use datafusion_functions::string::expr_fn::{concat, lower, upper};
     use vegafusion_common::column::flat_col;
 
