@@ -1047,7 +1047,7 @@ impl SqlDataFrame {
 
                 dataframe.chain_query_str(
                     &format!(
-                        "SELECT * FROM {parent} INNER JOIN \
+                        "SELECT {parent}.*, __total FROM {parent} INNER JOIN \
                         (SELECT {partition_by_csv}, {total_agg_str} from {parent} GROUP BY {partition_by_csv}) as __inner \
                         USING ({partition_by_csv})",
                         parent = dataframe.parent_name(),
