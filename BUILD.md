@@ -103,16 +103,3 @@ pixi add my-new-package --build
 ```
 
 This will install the package and update the pixi.lock file with the new environment solution.
-
-## Updating DataFusion protobuf
-When updating the version of DataFusion that VegaFusion depends on, the protobuf definition file at `python/vegafusion/proto/datafusion.proto` must be updated to match. This file should be downloaded from GitHub from https://raw.githubusercontent.com/apache/arrow-datafusion/27.0.0/datafusion/proto/proto/datafusion.proto, replacing `27.0.0` with the matching version of DataFusion.
-
-Then Python bindings should be generated using `protoc`
-
-```
-pixi shell
-cd vegafusion-python
-protoc --python_out=vegafusion ./proto/datafusion.proto
-```
-
-This will update the `vegafusion-python/vegafusion/proto/datafusion_pb2.py` file.

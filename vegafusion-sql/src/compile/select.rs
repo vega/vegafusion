@@ -21,9 +21,13 @@ impl ToSqlSelectItem for Expr {
                     quote_style: Some(dialect.quote_style),
                 },
             },
-            Expr::Wildcard { qualifier: None } => SqlSelectItem::Wildcard(Default::default()),
+            Expr::Wildcard {
+                qualifier: None,
+                options: _,
+            } => SqlSelectItem::Wildcard(Default::default()),
             Expr::Wildcard {
                 qualifier: Some(qualifier),
+                options: _,
             } => SqlSelectItem::QualifiedWildcard(
                 ObjectName(vec![Ident {
                     value: qualifier.to_string(),
@@ -41,6 +45,7 @@ mod tests {
     use crate::compile::select::ToSqlSelectItem;
     use crate::dialect::Dialect;
     use datafusion_common::DFSchema;
+    use datafusion_expr::expr::WildcardOptions;
     use datafusion_expr::{lit, Expr};
     use std::ops::Add;
     use vegafusion_common::column::flat_col;
@@ -51,7 +56,10 @@ mod tests {
 
     #[test]
     pub fn test_select_wildcard() {
-        let expr = Expr::Wildcard { qualifier: None };
+        let expr = Expr::Wildcard {
+            qualifier: None,
+            options: WildcardOptions::default(),
+        };
         let sql_expr = expr
             .to_sql_select(&Dialect::datafusion(), &schema())
             .unwrap();

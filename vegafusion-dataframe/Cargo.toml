@@ -24,9 +24,11 @@ workspace = true
 [dependencies.datafusion-expr]
 workspace = true
 
+[dependencies.datafusion-functions-window]
+workspace = true
+
 [dependencies.arrow]
 workspace = true
-default-features = false
 
 [dependencies.pyo3]
 workspace = true

@@ -9,7 +9,8 @@ use wasm_bindgen::prelude::*;
 
 use js_sys::Promise;
 use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, Mutex};
+use std::rc::Rc;
+use std::sync::Mutex;
 use vegafusion_common::data::table::VegaFusionTable;
 
 use vegafusion_core::planning::stitch::CommPlan;
@@ -46,14 +47,14 @@ extern "C" {
 #[wasm_bindgen]
 #[derive(Clone)]
 pub struct MsgReceiver {
-    spec: Arc<ChartSpec>,
-    server_spec: Arc<ChartSpec>,
+    spec: Rc<ChartSpec>,
+    server_spec: Rc<ChartSpec>,
     comm_plan: CommPlan,
-    send_msg_fn: Arc<js_sys::Function>,
-    task_graph: Arc<Mutex<TaskGraph>>,
-    task_graph_mapping: Arc<HashMap<ScopedVariable, NodeValueIndex>>,
-    server_to_client_value_indices: Arc<HashSet<NodeValueIndex>>,
-    view: Arc<View>,
+    send_msg_fn: Rc<js_sys::Function>,
+    task_graph: Rc<Mutex<TaskGraph>>,
+    task_graph_mapping: Rc<HashMap<ScopedVariable, NodeValueIndex>>,
+    server_to_client_value_indices: Rc<HashSet<NodeValueIndex>>,
+    view: Rc<View>,
     verbose: bool,
     debounce_wait: f64,
     debounce_max_wait: Option<f64>,
@@ -77,7 +78,7 @@ impl MsgReceiver {
 
         let task_graph_mapping = task_graph.build_mapping();
 
-        let server_to_client_value_indices: Arc<HashSet<_>> = Arc::new(
+        let server_to_client_value_indices: Rc<HashSet<_>> = Rc::new(
             comm_plan
                 .server_to_client
                 .iter()
@@ -101,14 +102,14 @@ impl MsgReceiver {
         setup_tooltip(&view);
 
         let this = Self {
-            spec: Arc::new(spec),
-            server_spec: Arc::new(server_spec),
+            spec: Rc::new(spec),
+            server_spec: Rc::new(server_spec),
             comm_plan,
-            task_graph: Arc::new(Mutex::new(task_graph)),
-            task_graph_mapping: Arc::new(task_graph_mapping),
-            send_msg_fn: Arc::new(send_msg_fn),
+            task_graph: Rc::new(Mutex::new(task_graph)),
+            task_graph_mapping: Rc::new(task_graph_mapping),
+            send_msg_fn: Rc::new(send_msg_fn),
             server_to_client_value_indices,
-            view: Arc::new(view),
+            view: Rc::new(view),
             verbose,
             debounce_wait,
             debounce_max_wait,
@@ -345,8 +346,7 @@ impl MsgReceiver {
     }
 
     fn send_request(&self, send_msg_fn: &js_sys::Function, request_msg: QueryRequest) {
-        let mut buf: Vec<u8> = Vec::new();
-        buf.reserve(request_msg.encoded_len());
+        let mut buf: Vec<u8> = Vec::with_capacity(request_msg.encoded_len());
         request_msg.encode(&mut buf).unwrap();
 
         let context =

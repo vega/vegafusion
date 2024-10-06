@@ -5,7 +5,7 @@ use itertools::Itertools;
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use datafusion_expr::{expr, lit, Expr};
+use datafusion_expr::expr;
 use std::sync::Arc;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -89,19 +89,16 @@ impl TransformPipelineUtils for TransformPipeline {
         // Sort by ordering column at the end
         result_sql_df = result_sql_df
             .sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col(ORDER_COL)),
+                vec![expr::Sort {
+                    expr: flat_col(ORDER_COL),
                     asc: true,
                     nulls_first: false,
-                })],
+                }],
                 None,
             )
             .await?;
 
-        // Remove ordering column
-        result_sql_df = remove_order_col(result_sql_df).await?;
-
-        let table = result_sql_df.collect().await?;
+        let table = result_sql_df.collect().await?.without_ordering()?;
 
         // Sort result signal value by signal name
         let (_, signals_values): (Vec<_>, Vec<_>) = result_outputs
@@ -111,26 +108,4 @@ impl TransformPipelineUtils for TransformPipeline {
 
         Ok((table, signals_values))
     }
-}
-
-pub async fn remove_order_col(result_sql_df: Arc<dyn DataFrame>) -> Result<Arc<dyn DataFrame>> {
-    let mut selection = result_sql_df
-        .schema()
-        .fields
-        .iter()
-        .filter_map(|field| {
-            if field.name() == ORDER_COL {
-                None
-            } else {
-                Some(flat_col(field.name()))
-            }
-        })
-        .collect::<Vec<_>>();
-
-    // Add arbitrary column so that SELECT succeeds
-    if selection.is_empty() {
-        selection.push(lit(0).alias("_empty"))
-    }
-
-    result_sql_df.select(selection).await
 }

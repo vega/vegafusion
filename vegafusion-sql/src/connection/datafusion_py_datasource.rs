@@ -19,7 +19,7 @@ use vegafusion_common::data::table::VegaFusionTable;
 
 #[derive(Debug, Clone)]
 pub struct PyDatasource {
-    py_datasource: PyObject,
+    py_datasource: Arc<PyObject>,
     schema: SchemaRef,
 }
 
@@ -29,7 +29,7 @@ impl PyDatasource {
             let table_schema_obj = py_datasource.call_method0(py, "schema")?;
             let schema = Arc::new(Schema::from_pyarrow_bound(table_schema_obj.bind(py))?);
             Ok(Self {
-                py_datasource,
+                py_datasource: Arc::new(py_datasource),
                 schema,
             })
         })

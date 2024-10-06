@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{expr, Expr};
+use datafusion_expr::expr;
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -43,16 +43,16 @@ mod test_simple_fold {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("country")),
+                    expr::Sort {
+                        expr: flat_col("country"),
                         asc: true,
                         nulls_first: true,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("key")),
+                    },
+                    expr::Sort {
+                        expr: flat_col("key"),
                         asc: true,
                         nulls_first: true,
-                    }),
+                    },
                 ],
                 None,
             )
@@ -100,11 +100,11 @@ mod test_ordered_fold {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("_order")),
+                vec![expr::Sort {
+                    expr: flat_col("_order"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await

@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{expr, lit, Expr};
+use datafusion_expr::{expr, lit};
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -36,11 +36,11 @@ async fn make_stack_for_mode(
 ) -> Result<Arc<dyn DataFrame>> {
     df.stack(
         "a",
-        vec![Expr::Sort(expr::Sort {
-            expr: Box::new(flat_col("b")),
+        vec![expr::Sort {
+            expr: flat_col("b"),
             asc: true,
             nulls_first: true,
-        })],
+        }],
         &["c".to_string()],
         "start",
         "end",
@@ -50,16 +50,16 @@ async fn make_stack_for_mode(
     .unwrap()
     .sort(
         vec![
-            Expr::Sort(expr::Sort {
-                expr: Box::new(flat_col("c")),
+            expr::Sort {
+                expr: flat_col("c"),
                 asc: true,
                 nulls_first: true,
-            }),
-            Expr::Sort(expr::Sort {
-                expr: Box::new(flat_col("end")),
+            },
+            expr::Sort {
+                expr: flat_col("end"),
                 asc: true,
                 nulls_first: true,
-            }),
+            },
         ],
         None,
     )
@@ -126,7 +126,18 @@ mod test_mode_normalized {
                     .div(lit(100))
                     .alias("trunc_end"),
             ])
+            .await
+            .unwrap()
+            .sort(
+                vec![expr::Sort {
+                    expr: flat_col("c"),
+                    asc: true,
+                    nulls_first: true,
+                }],
+                None,
+            )
             .await;
+
         check_dataframe_query(
             df_result,
             "stack",

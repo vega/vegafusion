@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 mod utils;
-use datafusion_expr::{expr, Expr};
+use datafusion_expr::expr;
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -49,11 +49,11 @@ mod test_simple_aggs {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -114,11 +114,11 @@ mod test_simple_aggs_no_grouping {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await

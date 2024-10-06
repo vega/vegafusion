@@ -7,10 +7,6 @@ import importlib.metadata
 
 from ._vegafusion import __version__
 
-
-# Match the version of the vegafusion package
-from vegafusion import __version__
-
 def patched_version(distribution_name):
     """
     Fake the version of the vegafusion-python-embed package to match the version of the

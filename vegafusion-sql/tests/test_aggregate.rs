@@ -50,11 +50,11 @@ mod test_simple_aggs {
             .unwrap();
         let df_result = df
             .sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("b")),
+                vec![expr::Sort {
+                    expr: flat_col("b"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await;
@@ -205,11 +205,11 @@ mod test_variance_aggs {
             .await;
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("b")),
+                vec![expr::Sort {
+                    expr: flat_col("b"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await

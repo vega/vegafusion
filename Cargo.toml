@@ -13,8 +13,9 @@ members = [
 ]
 
 [workspace.dependencies]
-arrow = { version = "52.2.0", default-features = false }
-sqlparser = { version = "0.49.0" }
+arrow = { version = "53.1.0", default-features = false }
+
+sqlparser = { version = "0.50.0" }
 chrono = { version = "0.4.35", default-features = false }
 chrono-tz = { version = "0.9.0", features = [
   "case-insensitive",
@@ -22,41 +23,44 @@ chrono-tz = { version = "0.9.0", features = [
 ] }
 reqwest = { version = "0.11.22", default-features = false }
 tokio = { version = "1.36.0" }
-pyo3 = { version = "0.21.1" }
-pythonize = { version = "0.21.1" }
+pyo3 = { version = "0.22" }
+pythonize = { version = "0.22" }
 prost = { version = "0.12.3" }
 prost-types = { version = "0.12.3" }
-object_store = { version = "0.10.1" }
+object_store = { version = "0.11.0" }
 
 [workspace.dependencies.datafusion]
-version = "41.0.0"
+version = "42.0.0"
 
 [workspace.dependencies.datafusion-common]
-version = "41.0.0"
+version = "42.0.0"
 
 [workspace.dependencies.datafusion-expr]
-version = "41.0.0"
+version = "42.0.0"
 
 [workspace.dependencies.datafusion-proto]
-version = "41.0.0"
+version = "42.0.0"
 
 [workspace.dependencies.datafusion-proto-common]
-version = "41.0.0"
+version = "42.0.0"
 
 [workspace.dependencies.datafusion-physical-expr]
-version = "41.0.0"
+version = "42.0.0"
 
 [workspace.dependencies.datafusion-optimizer]
-version = "41.0.0"
+version = "42.0.0"
 
 [workspace.dependencies.datafusion-functions]
-version = "41.0.0"
+version = "42.0.0"
 
 [workspace.dependencies.datafusion-functions-nested]
-version = "41.0.0"
+version = "42.0.0"
 
 [workspace.dependencies.datafusion-functions-aggregate]
-version = "41.0.0"
+version = "42.0.0"
+
+[workspace.dependencies.datafusion-functions-window]
+version = "42.0.0"
 
 [profile.release]
 ## Tell `rustc` to use highest performance optimization and perform Link Time Optimization

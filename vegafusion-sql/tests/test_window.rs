@@ -40,11 +40,11 @@ mod test_simple_aggs_unbounded {
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
-        let order_by = vec![Expr::Sort(expr::Sort {
-            expr: Box::new(flat_col("a")),
+        let order_by = vec![expr::Sort {
+            expr: flat_col("a"),
             asc: true,
             nulls_first: true,
-        })];
+        }];
         let window_frame = WindowFrame::new(Some(true));
         let df_result = df
             .select(vec![
@@ -144,11 +144,11 @@ mod test_simple_aggs_unbounded_groups {
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
-        let order_by = vec![Expr::Sort(expr::Sort {
-            expr: Box::new(flat_col("a")),
+        let order_by = vec![expr::Sort {
+            expr: flat_col("a"),
             asc: true,
             nulls_first: true,
-        })];
+        }];
         let window_frame = WindowFrame::new_bounds(
             WindowFrameUnits::Groups,
             WindowFrameBound::Preceding(ScalarValue::Null),
@@ -253,11 +253,11 @@ mod test_simple_aggs_bounded {
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
-        let order_by = vec![Expr::Sort(expr::Sort {
-            expr: Box::new(flat_col("a")),
+        let order_by = vec![expr::Sort {
+            expr: flat_col("a"),
             asc: true,
             nulls_first: true,
-        })];
+        }];
         let window_frame = WindowFrame::new_bounds(
             WindowFrameUnits::Rows,
             WindowFrameBound::Preceding(ScalarValue::from(1)),
@@ -361,11 +361,11 @@ mod test_simple_aggs_bounded_groups {
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
-        let order_by = vec![Expr::Sort(expr::Sort {
-            expr: Box::new(col("a")),
+        let order_by = vec![expr::Sort {
+            expr: col("a"),
             asc: true,
             nulls_first: true,
-        })];
+        }];
         let window_frame = WindowFrame::new_bounds(
             WindowFrameUnits::Groups,
             WindowFrameBound::Preceding(ScalarValue::from(1)),
@@ -427,16 +427,16 @@ mod test_simple_aggs_bounded_groups {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(col("a")),
+                    expr::Sort {
+                        expr: col("a"),
                         asc: true,
                         nulls_first: true,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(col("b")),
+                    },
+                    expr::Sort {
+                        expr: col("b"),
                         asc: true,
                         nulls_first: true,
-                    }),
+                    },
                 ],
                 None,
             )
@@ -465,6 +465,9 @@ mod test_simple_window_fns {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use std::sync::Arc;
+
+        use datafusion_functions_window::row_number::RowNumber;
         use sqlparser::ast::NullTreatment;
 
         println!("{dialect_name}");
@@ -480,11 +483,11 @@ mod test_simple_window_fns {
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
-        let order_by = vec![Expr::Sort(expr::Sort {
-            expr: Box::new(col("a")),
+        let order_by = vec![expr::Sort {
+            expr: col("a"),
             asc: true,
             nulls_first: true,
-        })];
+        }];
         let window_frame = WindowFrame::new(Some(true));
         let df_result = df
             .select(vec![
@@ -492,9 +495,7 @@ mod test_simple_window_fns {
                 col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
-                        BuiltInWindowFunction::RowNumber,
-                    ),
+                    fun: WindowFunctionDefinition::WindowUDF(Arc::new(RowNumber::new().into())),
                     args: vec![],
                     partition_by: vec![],
                     order_by: order_by.clone(),
@@ -590,11 +591,11 @@ mod test_advanced_window_fns {
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
-        let order_by = vec![Expr::Sort(expr::Sort {
-            expr: Box::new(col("a")),
+        let order_by = vec![expr::Sort {
+            expr: col("a"),
             asc: true,
             nulls_first: true,
-        })];
+        }];
         let window_frame = WindowFrame::new(Some(true));
         let df_result = df
             .select(vec![
@@ -685,6 +686,9 @@ mod test_unordered_row_number {
 
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
+        use std::sync::Arc;
+
+        use datafusion_functions_window::row_number::RowNumber;
         use sqlparser::ast::NullTreatment;
 
         println!("{dialect_name}");
@@ -700,11 +704,11 @@ mod test_unordered_row_number {
         .unwrap();
 
         let df = SqlDataFrame::from_values(&table, conn, Default::default()).unwrap();
-        let order_by = vec![Expr::Sort(expr::Sort {
-            expr: Box::new(col("a")),
+        let order_by = vec![expr::Sort {
+            expr: col("a"),
             asc: true,
             nulls_first: true,
-        })];
+        }];
         let window_frame = WindowFrame::new(Some(true));
         let df_result = df
             .select(vec![
@@ -712,9 +716,7 @@ mod test_unordered_row_number {
                 col("b"),
                 col("c"),
                 Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
-                        BuiltInWindowFunction::RowNumber,
-                    ),
+                    fun: WindowFunctionDefinition::WindowUDF(Arc::new(RowNumber::new().into())),
                     args: vec![],
                     partition_by: vec![],
                     order_by: vec![],

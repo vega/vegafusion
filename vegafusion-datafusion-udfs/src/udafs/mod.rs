@@ -147,7 +147,7 @@ lazy_static! {
         Volatility::Immutable,
         // Accumulator factory
         Arc::new(|accum_args| Ok(Box::new(PercentileContAccumulator {
-            data_type: accum_args.data_type.clone(),
+            data_type: accum_args.return_type.clone(),
             all_values: Default::default(),
             percentile: 0.25,
         }))),
@@ -166,7 +166,7 @@ lazy_static! {
         Volatility::Immutable,
         // Accumulator factory
         Arc::new(|accum_args| Ok(Box::new(PercentileContAccumulator {
-            data_type: accum_args.data_type.clone(),
+            data_type: accum_args.return_type.clone(),
             all_values: Default::default(),
             percentile: 0.75,
         }))),

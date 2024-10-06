@@ -63,7 +63,7 @@ fn perform_fetch_query(query: &str, schema: &Schema, conn: &PyObject) -> Result<
 #[pyclass]
 #[derive(Clone)]
 pub struct PySqlConnection {
-    conn: PyObject,
+    conn: Arc<PyObject>,
     dialect: Dialect,
     fallback_conn: Option<Arc<dyn SqlConnection>>,
 }
@@ -75,7 +75,7 @@ impl PySqlConnection {
         let (dialect, fallback_conn) = get_dialect_and_fallback_connection(&conn)?;
 
         Ok(Self {
-            conn,
+            conn: Arc::new(conn),
             dialect,
             fallback_conn,
         })
@@ -365,7 +365,7 @@ impl SqlConnection for PySqlConnection {
 #[pyclass]
 #[derive(Clone)]
 pub struct PySqlDataset {
-    pub dataset: PyObject,
+    pub dataset: Arc<PyObject>,
     pub dialect: Dialect,
     pub table_name: String,
     pub table_schema: Schema,
@@ -387,7 +387,7 @@ impl PySqlDataset {
         })?;
 
         Ok(Self {
-            dataset,
+            dataset: Arc::new(dataset),
             dialect,
             table_name,
             table_schema,
