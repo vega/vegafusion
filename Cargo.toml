@@ -13,8 +13,7 @@ members = [
 ]
 
 [workspace.dependencies]
-# arrow = { version = "53.1.0", default-features = false }
-arrow = { git = "https://github.com/apache/arrow-rs.git", rev = "53.1.0" }
+arrow = { version = "53.1.0", default-features = false }
 
 sqlparser = { version = "0.50.0" }
 chrono = { version = "0.4.35", default-features = false }
@@ -67,16 +66,3 @@ version = "42.0.0"
 ## Tell `rustc` to use highest performance optimization and perform Link Time Optimization
 opt-level = 3
 # lto = true
-
-[patch.crates-io]
-arrow = { git = "https://github.com/apache/arrow-rs.git", rev = "53.1.0" }
-arrow-array = { git = "https://github.com/apache/arrow-rs.git", rev = "53.1.0" }
-arrow-buffer = { git = "https://github.com/apache/arrow-rs.git", rev = "53.1.0" }
-arrow-data = { git = "https://github.com/apache/arrow-rs.git", rev = "53.1.0" }
-arrow-schema = { git = "https://github.com/apache/arrow-rs.git", rev = "53.1.0" }
-arrow-ord = { git = "https://github.com/apache/arrow-rs.git", rev = "53.1.0" }
-arrow-select = { git = "https://github.com/apache/arrow-rs.git", rev = "53.1.0" }
-arrow-string = { git = "https://github.com/apache/arrow-rs.git", rev = "53.1.0" }
-arrow-ipc = { git = "https://github.com/apache/arrow-rs.git", rev = "53.1.0" }
-arrow-cast = { git = "https://github.com/apache/arrow-rs.git", rev = "53.1.0" }
-parquet = { git = "https://github.com/apache/arrow-rs.git", rev = "53.1.0" }
