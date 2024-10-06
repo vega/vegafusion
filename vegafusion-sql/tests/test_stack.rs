@@ -129,15 +129,14 @@ mod test_mode_normalized {
             .await
             .unwrap()
             .sort(
-                vec![
-                    expr::Sort {
-                        expr: flat_col("c"),
-                        asc: true,
-                        nulls_first: true,
-                    },
-                ],
+                vec![expr::Sort {
+                    expr: flat_col("c"),
+                    asc: true,
+                    nulls_first: true,
+                }],
                 None,
-            ).await;
+            )
+            .await;
 
         check_dataframe_query(
             df_result,
