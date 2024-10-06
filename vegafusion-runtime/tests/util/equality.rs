@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use datafusion_common::ScalarValue;
-use datafusion_expr::{expr, Expr};
+use datafusion_expr::expr;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::{ArrayRef, StructArray};
 use vegafusion_common::arrow::record_batch::RecordBatch;
@@ -99,11 +99,11 @@ pub fn assert_tables_equal(
                 if f.name() == ORDER_COL {
                     None
                 } else {
-                    Some(Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col(f.name())),
+                    Some(expr::Sort {
+                        expr: flat_col(f.name()),
                         asc: false,
                         nulls_first: false,
-                    }))
+                    })
                 }
             })
             .collect();

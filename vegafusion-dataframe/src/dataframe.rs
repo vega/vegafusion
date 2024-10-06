@@ -4,8 +4,9 @@ use arrow::datatypes::{Schema, SchemaRef};
 use arrow::record_batch::RecordBatch;
 use async_trait::async_trait;
 use datafusion_common::{DFSchema, ScalarValue};
-use datafusion_expr::{expr, BuiltInWindowFunction, Expr, WindowFrame, WindowFunctionDefinition};
-use sqlparser::ast::NullTreatment;
+use datafusion_expr::expr::WildcardOptions;
+use datafusion_expr::{Expr, SortExpr};
+use datafusion_functions_window::row_number::row_number;
 use std::any::Any;
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
@@ -38,7 +39,7 @@ pub trait DataFrame: Send + Sync + 'static {
             .with_context(|| String::from("Failed to concatenate RecordBatches"))
     }
 
-    async fn sort(&self, _exprs: Vec<Expr>, _limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+    async fn sort(&self, _exprs: Vec<SortExpr>, _limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported("sort not supported"))
     }
 
@@ -87,7 +88,7 @@ pub trait DataFrame: Send + Sync + 'static {
     async fn stack(
         &self,
         _field: &str,
-        _orderby: Vec<Expr>,
+        _orderby: Vec<SortExpr>,
         _groupby: &[String],
         _start_field: &str,
         _stop_field: &str,
@@ -110,21 +111,18 @@ pub trait DataFrame: Send + Sync + 'static {
     async fn with_index(&self, index_name: &str) -> Result<Arc<dyn DataFrame>> {
         if self.schema().column_with_name(index_name).is_some() {
             // Column is already present, don't overwrite
-            self.select(vec![Expr::Wildcard { qualifier: None }]).await
+            self.select(vec![Expr::Wildcard {
+                qualifier: None,
+                options: WildcardOptions::default(),
+            }])
+            .await
         } else {
             let selections = vec![
-                Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
-                        BuiltInWindowFunction::RowNumber,
-                    ),
-                    args: vec![],
-                    partition_by: vec![],
-                    order_by: vec![],
-                    window_frame: WindowFrame::new(Some(true)),
-                    null_treatment: Some(NullTreatment::IgnoreNulls),
-                })
-                .alias(index_name),
-                Expr::Wildcard { qualifier: None },
+                row_number().alias(index_name),
+                Expr::Wildcard {
+                    qualifier: None,
+                    options: WildcardOptions::default(),
+                },
             ];
             self.select(selections).await
         }

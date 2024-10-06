@@ -2,7 +2,7 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::aggregate::make_agg_expr_for_col_expr;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion_expr::{expr::Sort, lit, when, Expr};
+use datafusion_expr::{lit, when};
 use datafusion_functions_aggregate::expr_fn::min;
 use std::sync::Arc;
 use vegafusion_common::arrow::array::StringArray;
@@ -120,14 +120,7 @@ async fn extract_sorted_pivot_values(
     };
 
     let sorted_query = agg_query
-        .sort(
-            vec![Expr::Sort(Sort {
-                expr: Box::new(unescaped_col(&tx.field)),
-                asc: true,
-                nulls_first: false,
-            })],
-            limit,
-        )
+        .sort(vec![unescaped_col(&tx.field).sort(true, false)], limit)
         .await?;
 
     let pivot_result = sorted_query.collect().await?;

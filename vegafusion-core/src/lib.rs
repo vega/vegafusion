@@ -29,8 +29,7 @@ mod tests {
             value: Some(expression::literal::Value::Number(23.5)),
         };
 
-        let mut buf = Vec::new();
-        buf.reserve(lit.encoded_len());
+        let mut buf = Vec::with_capacity(lit.encoded_len());
         // Unwrap is safe, since we have reserved sufficient capacity in the vector.
         lit.encode(&mut buf).unwrap();
 

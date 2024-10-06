@@ -56,11 +56,11 @@ mod test_numeric_operators {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -84,7 +84,7 @@ mod test_numeric_operators {
 #[cfg(test)]
 mod test_logical_operators {
     use crate::*;
-    use datafusion_expr::{expr, lit, Expr};
+    use datafusion_expr::{expr, lit};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -119,11 +119,11 @@ mod test_logical_operators {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("i")),
+                vec![expr::Sort {
+                    expr: flat_col("i"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -188,11 +188,11 @@ mod test_between {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -211,7 +211,7 @@ mod test_between {
 mod test_cast_numeric {
     use crate::*;
     use arrow::datatypes::DataType;
-    use datafusion_expr::{cast, expr, Expr};
+    use datafusion_expr::{cast, expr};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -243,11 +243,11 @@ mod test_cast_numeric {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -266,7 +266,7 @@ mod test_cast_numeric {
 mod test_try_cast_numeric {
     use crate::*;
     use arrow::datatypes::DataType;
-    use datafusion_expr::{expr, try_cast, Expr};
+    use datafusion_expr::{expr, try_cast};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -298,11 +298,11 @@ mod test_try_cast_numeric {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -327,7 +327,7 @@ mod test_try_cast_numeric {
 mod test_cast_string {
     use crate::*;
     use arrow::datatypes::DataType;
-    use datafusion_expr::{cast, expr, Expr};
+    use datafusion_expr::{cast, expr};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -354,11 +354,11 @@ mod test_cast_string {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -377,7 +377,7 @@ mod test_cast_string {
 mod test_try_cast_string {
     use crate::*;
     use arrow::datatypes::DataType;
-    use datafusion_expr::{expr, try_cast, Expr};
+    use datafusion_expr::{expr, try_cast};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -404,11 +404,11 @@ mod test_try_cast_string {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -432,7 +432,7 @@ mod test_try_cast_string {
 #[cfg(test)]
 mod test_non_finite_numbers {
     use crate::*;
-    use datafusion_expr::{expr, lit, Expr};
+    use datafusion_expr::{expr, lit};
     use vegafusion_common::column::flat_col;
 
     #[apply(dialect_names)]
@@ -457,11 +457,11 @@ mod test_non_finite_numbers {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -485,7 +485,7 @@ mod test_non_finite_numbers {
 #[cfg(test)]
 mod test_scalar_math_functions {
     use crate::*;
-    use datafusion_expr::{expr, Expr};
+    use datafusion_expr::expr;
     use datafusion_functions::math::expr_fn::{abs, acos, asin, tan};
     use vegafusion_common::column::flat_col;
 
@@ -534,11 +534,11 @@ mod test_scalar_math_functions {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -616,11 +616,11 @@ mod test_is_finite {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -672,11 +672,11 @@ mod test_str_to_utc_timestamp {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -761,11 +761,11 @@ mod test_date_part_tz {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -850,11 +850,11 @@ mod test_date_trunc_tz {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -947,11 +947,11 @@ mod test_make_timestamp_tz {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -1007,11 +1007,11 @@ mod test_epoch_to_utc_timestamp {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -1085,11 +1085,11 @@ mod test_utc_timestamp_to_epoch_ms {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -1173,11 +1173,11 @@ mod test_date_add_tz {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -1257,11 +1257,11 @@ mod test_utc_timestamp_to_str {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -1330,11 +1330,11 @@ mod test_date_to_utc_timestamp {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -1405,11 +1405,11 @@ mod test_timestamp_to_utc_timestamp {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -1433,7 +1433,7 @@ mod test_timestamp_to_utc_timestamp {
 #[cfg(test)]
 mod test_string_ops {
     use crate::*;
-    use datafusion_expr::{expr, lit, Expr};
+    use datafusion_expr::{expr, lit};
     use datafusion_functions::string::expr_fn::{concat, lower, upper};
     use vegafusion_common::column::flat_col;
 
@@ -1467,11 +1467,11 @@ mod test_string_ops {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("a")),
+                vec![expr::Sort {
+                    expr: flat_col("a"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await

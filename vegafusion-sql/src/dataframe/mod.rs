@@ -8,11 +8,12 @@ use arrow::record_batch::RecordBatch;
 use async_trait::async_trait;
 use datafusion_common::{Column, DFSchema, ScalarValue, TableReference};
 use datafusion_expr::{
-    expr, is_null, lit, when, BuiltInWindowFunction, Expr, ExprSchemable, WindowFrame,
-    WindowFunctionDefinition,
+    expr, is_null, lit, when, Expr, ExprSchemable, SortExpr, WindowFrame, WindowFunctionDefinition,
 };
 use datafusion_functions::expr_fn::{abs, coalesce};
+use datafusion_functions_window::row_number::RowNumber;
 
+use datafusion_expr::expr::WildcardOptions;
 use datafusion_functions_aggregate::min_max::{max, min};
 use datafusion_functions_aggregate::sum::sum_udaf;
 use sqlparser::ast::{
@@ -101,7 +102,7 @@ impl DataFrame for SqlDataFrame {
             .and_then(pre_process_column_types)
     }
 
-    async fn sort(&self, exprs: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+    async fn sort(&self, exprs: Vec<SortExpr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
         fallback_operation!(self, sort, _sort, exprs, limit)
     }
 
@@ -146,7 +147,7 @@ impl DataFrame for SqlDataFrame {
     async fn stack(
         &self,
         field: &str,
-        orderby: Vec<Expr>,
+        orderby: Vec<SortExpr>,
         groupby: &[String],
         start_field: &str,
         stop_field: &str,
@@ -474,7 +475,7 @@ impl SqlDataFrame {
         .unwrap()
     }
 
-    async fn _sort(&self, exprs: Vec<Expr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
+    async fn _sort(&self, exprs: Vec<SortExpr>, limit: Option<i32>) -> Result<Arc<dyn DataFrame>> {
         let mut query = self.make_select_star();
         let sql_exprs = exprs
             .iter()
@@ -589,7 +590,7 @@ impl SqlDataFrame {
         let inner_name = format!("{}_inner", self.parent_name());
         let new_col_names = aggr_expr
             .iter()
-            .map(|col| Ok(col.display_name()?))
+            .map(|col| Ok(col.schema_name().to_string()))
             .collect::<Result<HashSet<_>>>()?;
 
         // Build csv str of input columns
@@ -614,9 +615,9 @@ impl SqlDataFrame {
                     } else {
                         None
                     },
-                    name: col.display_name()?,
+                    name: col.schema_name().to_string(),
                 })
-                .alias(col.display_name()?);
+                .alias(col.schema_name().to_string());
                 Ok(col
                     .to_sql_select(self.dialect(), &self.schema_df()?)?
                     .to_string())
@@ -846,22 +847,20 @@ impl SqlDataFrame {
             // 2. field index
             let field_order_col = format!("{order_field}_field");
             let order_col = Expr::WindowFunction(expr::WindowFunction {
-                fun: WindowFunctionDefinition::BuiltInWindowFunction(
-                    BuiltInWindowFunction::RowNumber,
-                ),
+                fun: WindowFunctionDefinition::WindowUDF(Arc::new(RowNumber::new().into())),
                 args: vec![],
                 partition_by: vec![],
                 order_by: vec![
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col(order_field)),
+                    expr::Sort {
+                        expr: flat_col(order_field),
                         asc: true,
                         nulls_first: true,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col(&field_order_col)),
+                    },
+                    expr::Sort {
+                        expr: flat_col(&field_order_col),
                         asc: true,
                         nulls_first: true,
-                    }),
+                    },
                 ],
                 window_frame: WindowFrame::new(Some(true)),
                 null_treatment: Some(NullTreatment::IgnoreNulls),
@@ -894,7 +893,7 @@ impl SqlDataFrame {
     async fn _stack(
         &self,
         field: &str,
-        orderby: Vec<Expr>,
+        orderby: Vec<SortExpr>,
         groupby: &[String],
         start_field: &str,
         stop_field: &str,
@@ -937,7 +936,13 @@ impl SqlDataFrame {
             // then union the results. This is required to make sure stacks do not overlap. Negative
             // values stack in the negative direction and positive values stack in the positive
             // direction.
-            let schema_exprs = vec![Expr::Wildcard { qualifier: None }, window_expr];
+            let schema_exprs = vec![
+                Expr::Wildcard {
+                    qualifier: None,
+                    options: WildcardOptions::default(),
+                },
+                window_expr,
+            ];
             let new_schema = make_new_schema_from_exprs(
                 self.schema.as_ref(),
                 schema_exprs.as_slice(),
@@ -982,7 +987,10 @@ impl SqlDataFrame {
             let stack_col_name = "__stack";
             let dataframe = self
                 .select(vec![
-                    Expr::Wildcard { qualifier: None },
+                    Expr::Wildcard {
+                        qualifier: None,
+                        options: WildcardOptions::default(),
+                    },
                     numeric_field.alias(stack_col_name),
                 ])
                 .await?;
@@ -1008,7 +1016,13 @@ impl SqlDataFrame {
                 .to_string();
 
             // Add __total column with total or total per partition
-            let schema_exprs = vec![Expr::Wildcard { qualifier: None }, total_agg];
+            let schema_exprs = vec![
+                Expr::Wildcard {
+                    qualifier: None,
+                    options: WildcardOptions::default(),
+                },
+                total_agg,
+            ];
             let new_schema = make_new_schema_from_exprs(
                 &dataframe.schema(),
                 schema_exprs.as_slice(),
@@ -1033,7 +1047,7 @@ impl SqlDataFrame {
 
                 dataframe.chain_query_str(
                     &format!(
-                        "SELECT * FROM {parent} INNER JOIN \
+                        "SELECT {parent}.*, __total FROM {parent} INNER JOIN \
                         (SELECT {partition_by_csv}, {total_agg_str} from {parent} GROUP BY {partition_by_csv}) as __inner \
                         USING ({partition_by_csv})",
                         parent = dataframe.parent_name(),
@@ -1059,7 +1073,13 @@ impl SqlDataFrame {
 
             // Perform selection to add new field value
             let dataframe = dataframe
-                .select(vec![Expr::Wildcard { qualifier: None }, window_expr])
+                .select(vec![
+                    Expr::Wildcard {
+                        qualifier: None,
+                        options: WildcardOptions::default(),
+                    },
+                    window_expr,
+                ])
                 .await?;
 
             // Build final_selection
@@ -1083,7 +1103,13 @@ impl SqlDataFrame {
                         .to_string();
 
                     // Compute new schema
-                    let schema_exprs = vec![Expr::Wildcard { qualifier: None }, max_total];
+                    let schema_exprs = vec![
+                        Expr::Wildcard {
+                            qualifier: None,
+                            options: WildcardOptions::default(),
+                        },
+                        max_total,
+                    ];
                     let new_schema = make_new_schema_from_exprs(
                         &dataframe.schema(),
                         schema_exprs.as_slice(),
@@ -1155,7 +1181,7 @@ impl SqlDataFrame {
         let schema = self.schema(); // Store the schema in a variable
         let (_, field_field) = schema
             .column_with_name(field)
-            .with_context(|| format!("No field named {}", field.to_string()))?;
+            .with_context(|| format!("No field named {}", field))?;
         let field_type = field_field.data_type();
 
         if groupby.is_empty() {
@@ -1170,7 +1196,7 @@ impl SqlDataFrame {
                     Ok(if col_name == field {
                         coalesce(vec![
                             flat_col(field),
-                            lit(value.clone()).cast_to(&field_type, &self.schema_df()?)?,
+                            lit(value.clone()).cast_to(field_type, &self.schema_df()?)?,
                         ])
                         .alias(col_name)
                     } else {
@@ -1214,7 +1240,7 @@ impl SqlDataFrame {
                     Ok(if col_name == field {
                         coalesce(vec![
                             flat_col(field),
-                            lit(value.clone()).cast_to(&field_type, &self.schema_df()?)?,
+                            lit(value.clone()).cast_to(field_type, &self.schema_df()?)?,
                         ])
                         .alias(col_name)
                     } else {
@@ -1232,7 +1258,7 @@ impl SqlDataFrame {
                         let expr = if col_name == field {
                             coalesce(vec![
                                 flat_col(field),
-                                lit(value.clone()).cast_to(&field_type, &self.schema_df()?)?,
+                                lit(value.clone()).cast_to(field_type, &self.schema_df()?)?,
                             ])
                             .alias(col_name)
                         } else if col_name == key {
@@ -1307,56 +1333,54 @@ impl SqlDataFrame {
                 let order_by = if self.dialect().supports_null_ordering {
                     vec![
                         // Sort first by the original row order, pushing imputed rows to the end
-                        Expr::Sort(expr::Sort {
-                            expr: Box::new(flat_col(order_field)),
+                        expr::Sort {
+                            expr: flat_col(order_field),
                             asc: true,
                             nulls_first: false,
-                        }),
+                        },
                         // Sort imputed rows by first row that resides group
                         // then by first row that matches a key
-                        Expr::Sort(expr::Sort {
-                            expr: Box::new(flat_col(&format!("{order_field}_groups"))),
+                        expr::Sort {
+                            expr: flat_col(&format!("{order_field}_groups")),
                             asc: true,
                             nulls_first: true,
-                        }),
-                        Expr::Sort(expr::Sort {
-                            expr: Box::new(flat_col(&format!("{order_field}_key"))),
+                        },
+                        expr::Sort {
+                            expr: flat_col(&format!("{order_field}_key")),
                             asc: true,
                             nulls_first: true,
-                        }),
+                        },
                     ]
                 } else {
                     vec![
                         // Sort first by the original row order, pushing imputed rows to the end
-                        Expr::Sort(expr::Sort {
-                            expr: Box::new(is_null(flat_col(order_field))),
+                        expr::Sort {
+                            expr: is_null(flat_col(order_field)),
                             asc: true,
                             nulls_first: true,
-                        }),
-                        Expr::Sort(expr::Sort {
-                            expr: Box::new(flat_col(order_field)),
+                        },
+                        expr::Sort {
+                            expr: flat_col(order_field),
                             asc: true,
                             nulls_first: true,
-                        }),
+                        },
                         // Sort imputed rows by first row that resides group
                         // then by first row that matches a key
-                        Expr::Sort(expr::Sort {
-                            expr: Box::new(flat_col(&format!("{order_field}_groups"))),
+                        expr::Sort {
+                            expr: flat_col(&format!("{order_field}_groups")),
                             asc: true,
                             nulls_first: true,
-                        }),
-                        Expr::Sort(expr::Sort {
-                            expr: Box::new(flat_col(&format!("{order_field}_key"))),
+                        },
+                        expr::Sort {
+                            expr: flat_col(&format!("{order_field}_key")),
                             asc: true,
                             nulls_first: true,
-                        }),
+                        },
                     ]
                 };
 
                 let order_col = Expr::WindowFunction(expr::WindowFunction {
-                    fun: WindowFunctionDefinition::BuiltInWindowFunction(
-                        BuiltInWindowFunction::RowNumber,
-                    ),
+                    fun: WindowFunctionDefinition::WindowUDF(Arc::new(RowNumber::new().into())),
                     args: vec![],
                     partition_by: vec![],
                     order_by,
@@ -1420,7 +1444,7 @@ fn make_new_schema_from_exprs(
             // Add field for expression
             let schema_df = DFSchema::try_from(schema.clone())?;
             let dtype = expr.get_type(&schema_df)?;
-            let name = expr.display_name()?;
+            let name = expr.schema_name().to_string();
             fields.push(Field::new(name, dtype, true));
         }
     }

@@ -195,8 +195,7 @@ impl VegaFusionRuntime {
         let request = QueryRequest::decode(request_bytes).unwrap();
         let response_msg = self.query_request_message(request).await?;
 
-        let mut buf: Vec<u8> = Vec::new();
-        buf.reserve(response_msg.encoded_len());
+        let mut buf: Vec<u8> = Vec::with_capacity(response_msg.encoded_len());
         response_msg
             .encode(&mut buf)
             .external("Failed to encode response")?;
@@ -1027,9 +1026,14 @@ impl ChartState {
             .cloned()
             .collect();
 
+        let cloned_task_graph = task_graph.clone();
+
+        // Drop the MutexGuard before await call to avoid warning
+        drop(task_graph);
+
         let response_task_values = runtime
             .query_request(
-                Arc::new(task_graph.clone()),
+                Arc::new(cloned_task_graph),
                 indices.as_slice(),
                 &self.inline_datasets,
             )

@@ -111,6 +111,9 @@ workspace = true
 [dependencies.datafusion-functions-nested]
 workspace = true
 
+[dependencies.datafusion-functions-window]
+workspace = true
+
 [dependencies.tokio]
 workspace = true
 features = ["macros", "rt-multi-thread", "fs"]

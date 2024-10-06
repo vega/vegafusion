@@ -3,7 +3,7 @@ extern crate lazy_static;
 
 mod utils;
 use datafusion_common::ScalarValue;
-use datafusion_expr::{expr, Expr};
+use datafusion_expr::expr;
 use rstest::rstest;
 use rstest_reuse::{self, *};
 use serde_json::json;
@@ -60,16 +60,16 @@ mod test_unordered_no_groups {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("a")),
+                    expr::Sort {
+                        expr: flat_col("a"),
                         asc: true,
                         nulls_first: true,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("b")),
+                    },
+                    expr::Sort {
+                        expr: flat_col("b"),
                         asc: true,
                         nulls_first: true,
-                    }),
+                    },
                 ],
                 None,
             )
@@ -110,16 +110,16 @@ mod test_unordered_one_group {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("a")),
+                    expr::Sort {
+                        expr: flat_col("a"),
                         asc: true,
                         nulls_first: true,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("b")),
+                    },
+                    expr::Sort {
+                        expr: flat_col("b"),
                         asc: true,
                         nulls_first: true,
-                    }),
+                    },
                 ],
                 None,
             )
@@ -166,26 +166,26 @@ mod test_unordered_two_groups {
         let df_result = if let Ok(df) = df_result {
             df.sort(
                 vec![
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("a")),
+                    expr::Sort {
+                        expr: flat_col("a"),
                         asc: true,
                         nulls_first: true,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("b")),
+                    },
+                    expr::Sort {
+                        expr: flat_col("b"),
                         asc: true,
                         nulls_first: true,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("c")),
+                    },
+                    expr::Sort {
+                        expr: flat_col("c"),
                         asc: true,
                         nulls_first: true,
-                    }),
-                    Expr::Sort(expr::Sort {
-                        expr: Box::new(flat_col("d")),
+                    },
+                    expr::Sort {
+                        expr: flat_col("d"),
                         asc: true,
                         nulls_first: true,
-                    }),
+                    },
                 ],
                 None,
             )
@@ -225,11 +225,11 @@ mod test_ordered_no_groups {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("_order")),
+                vec![expr::Sort {
+                    expr: flat_col("_order"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -274,11 +274,11 @@ mod test_ordered_one_group {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("_order")),
+                vec![expr::Sort {
+                    expr: flat_col("_order"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await
@@ -323,11 +323,11 @@ mod test_ordered_two_groups {
 
         let df_result = if let Ok(df) = df_result {
             df.sort(
-                vec![Expr::Sort(expr::Sort {
-                    expr: Box::new(flat_col("_order")),
+                vec![expr::Sort {
+                    expr: flat_col("_order"),
                     asc: true,
                     nulls_first: true,
-                })],
+                }],
                 None,
             )
             .await

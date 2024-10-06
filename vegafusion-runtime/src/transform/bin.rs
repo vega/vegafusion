@@ -4,6 +4,7 @@ use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
+use datafusion_expr::expr::WildcardOptions;
 use datafusion_expr::lit;
 
 use datafusion_common::scalar::ScalarValue;
@@ -54,7 +55,13 @@ impl TransformTrait for Bin {
             floor((numeric_field.clone().sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
                 .alias(bin_index_name);
         let sql_df = sql_df
-            .select(vec![Expr::Wildcard { qualifier: None }, bin_index])
+            .select(vec![
+                Expr::Wildcard {
+                    qualifier: None,
+                    options: WildcardOptions::default(),
+                },
+                bin_index,
+            ])
             .await?;
 
         // Add column with bin start

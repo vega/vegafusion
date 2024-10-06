@@ -34,15 +34,6 @@ fn load_updates(spec_name: &str) -> Vec<ExportUpdateBatch> {
     }
 }
 
-async fn eval_spec_sequence_from_files(spec_name: &str) {
-    // Load spec
-    let full_spec = load_spec(spec_name);
-
-    // Load updates
-    let full_updates = load_updates(spec_name);
-    eval_spec_sequence(full_spec, full_updates).await
-}
-
 async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> QueryResult {
     let tz_config = TzConfig {
         local_tz: "America/New_York".to_string(),

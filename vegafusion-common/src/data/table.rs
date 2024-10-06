@@ -120,6 +120,41 @@ impl VegaFusionTable {
         VegaFusionTable::from(empty_record_batch)
     }
 
+    pub fn without_ordering(self) -> Result<Self> {
+        let mut new_fields = self.schema.fields.to_vec();
+        if new_fields.len() == 1 {
+            // Only one column, so we can't remove it, even if it's an ordering column
+            return Ok(self);
+        }
+        let order_col_index = self
+            .schema
+            .fields
+            .iter()
+            .enumerate()
+            .find(|(_i, field)| field.name() == ORDER_COL)
+            .map(|(i, _)| i);
+
+        if let Some(order_col_index) = order_col_index {
+            new_fields.remove(order_col_index);
+
+            let new_schema = Arc::new(Schema::new(new_fields)) as SchemaRef;
+            let new_batches = self
+                .batches
+                .into_iter()
+                .map(|batch| {
+                    let mut new_columns = Vec::from(batch.columns());
+                    new_columns.remove(order_col_index);
+                    Ok(RecordBatch::try_new(new_schema.clone(), new_columns)?)
+                })
+                .collect::<Result<Vec<_>>>()?;
+
+            Self::try_new(new_schema, new_batches)
+        } else {
+            // Not ordering column present, return as-is
+            Ok(self)
+        }
+    }
+
     pub fn with_ordering(self) -> Result<Self> {
         // Build new schema with leading ORDER_COL
         let mut new_fields = self.schema.fields.to_vec();

@@ -14,7 +14,7 @@ use tokio::io::AsyncReadExt;
 
 use crate::data::dataset::VegaFusionDataset;
 use crate::task_graph::timezone::RuntimeTzConfig;
-use crate::transform::pipeline::{remove_order_col, TransformPipelineUtils};
+use crate::transform::pipeline::TransformPipelineUtils;
 
 use vegafusion_common::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_common::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
@@ -186,8 +186,7 @@ async fn eval_sql_df(
         pipeline.eval_sql(sql_df, config).await?
     } else {
         // No transforms, just remove any ordering column
-        let sql_df = remove_order_col(sql_df).await?;
-        (sql_df.collect().await?, Vec::new())
+        (sql_df.collect().await?.without_ordering()?, Vec::new())
     };
 
     let table_value = TaskValue::Table(transformed_df);

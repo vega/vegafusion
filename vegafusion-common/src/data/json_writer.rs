@@ -197,7 +197,7 @@ macro_rules! set_temporal_column_by_array_type {
     };
 }
 
-fn set_column_by_primitive_type<T: ArrowPrimitiveType>(
+fn set_column_by_primitive_type<T>(
     rows: &mut [JsonMap<String, Value>],
     row_count: usize,
     array: &ArrayRef,
@@ -1015,7 +1015,7 @@ mod tests {
 
         let a_values = StringArray::from(vec!["a", "a1", "b", "c", "d", "e"]);
         // list column rows: ["a", "a1"], ["b"], ["c"], ["d"], ["e"]
-        let a_value_offsets = Buffer::from(&[0, 2, 3, 4, 5, 6].to_byte_slice());
+        let a_value_offsets = Buffer::from([0, 2, 3, 4, 5, 6].to_byte_slice());
         let a_list_data = ArrayData::builder(field_c1.data_type().clone())
             .len(5)
             .add_buffer(a_value_offsets)
@@ -1064,7 +1064,7 @@ mod tests {
         // list column rows: [[1, 2], [3]], [], [[4, 5, 6]]
         let a_values = Int32Array::from(vec![1, 2, 3, 4, 5, 6]);
 
-        let a_value_offsets = Buffer::from(&[0, 2, 3, 6].to_byte_slice());
+        let a_value_offsets = Buffer::from([0, 2, 3, 6].to_byte_slice());
         // Construct a list array from the above two
         let a_list_data = ArrayData::builder(list_inner_type.data_type().clone())
             .len(3)
@@ -1074,7 +1074,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let c1_value_offsets = Buffer::from(&[0, 2, 2, 3].to_byte_slice());
+        let c1_value_offsets = Buffer::from([0, 2, 2, 3].to_byte_slice());
         let c1_list_data = ArrayData::builder(field_c1.data_type().clone())
             .len(3)
             .add_buffer(c1_value_offsets)
@@ -1155,7 +1155,7 @@ mod tests {
         // [{"c11": 1, "c12": {"c121": "e"}}, {"c12": {"c121": "f"}}],
         // null,
         // [{"c11": 5, "c12": {"c121": "g"}}]
-        let c1_value_offsets = Buffer::from(&[0, 2, 2, 3].to_byte_slice());
+        let c1_value_offsets = Buffer::from([0, 2, 2, 3].to_byte_slice());
         let c1_list_data = ArrayData::builder(field_c1.data_type().clone())
             .len(3)
             .add_buffer(c1_value_offsets)
