@@ -467,7 +467,7 @@ mod test_simple_window_fns {
     async fn test(dialect_name: &str) {
         use std::sync::Arc;
 
-        use datafusion::functions_window::row_number::RowNumber;
+        use datafusion_functions_window::row_number::RowNumber;
         use sqlparser::ast::NullTreatment;
 
         println!("{dialect_name}");
@@ -688,7 +688,7 @@ mod test_unordered_row_number {
     async fn test(dialect_name: &str) {
         use std::sync::Arc;
 
-        use datafusion::functions_window::row_number::RowNumber;
+        use datafusion_functions_window::row_number::RowNumber;
         use sqlparser::ast::NullTreatment;
 
         println!("{dialect_name}");

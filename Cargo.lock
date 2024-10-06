@@ -4996,6 +4996,7 @@ dependencies = [
  "datafusion-expr",
  "datafusion-functions",
  "datafusion-functions-aggregate",
+ "datafusion-functions-window",
  "deterministic-hash",
  "lazy_static",
  "log",

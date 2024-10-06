@@ -11,8 +11,8 @@ use datafusion_expr::{
     expr, is_null, lit, when, Expr, ExprSchemable, SortExpr, WindowFrame, WindowFunctionDefinition,
 };
 use datafusion_functions::expr_fn::{abs, coalesce};
+use datafusion_functions_window::row_number::RowNumber;
 
-use datafusion::functions_window::row_number::RowNumber;
 use datafusion_expr::expr::WildcardOptions;
 use datafusion_functions_aggregate::min_max::{max, min};
 use datafusion_functions_aggregate::sum::sum_udaf;
