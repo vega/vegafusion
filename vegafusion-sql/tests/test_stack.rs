@@ -126,7 +126,19 @@ mod test_mode_normalized {
                     .div(lit(100))
                     .alias("trunc_end"),
             ])
-            .await;
+            .await
+            .unwrap()
+            .sort(
+                vec![
+                    expr::Sort {
+                        expr: flat_col("c"),
+                        asc: true,
+                        nulls_first: true,
+                    },
+                ],
+                None,
+            ).await;
+
         check_dataframe_query(
             df_result,
             "stack",
