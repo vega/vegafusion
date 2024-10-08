@@ -348,7 +348,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
         with:
-          python-version: '3.8'
+          python-version: '3.9'
       - name: Install Chrome
         uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
         with:
