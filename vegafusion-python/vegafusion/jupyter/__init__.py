@@ -1,4 +1,5 @@
-# mypy: disable-error-code="no-untyped-call,misc"
+# Ignore all mypy errors for now since traitlets aren't well typed
+# type: ignore
 from __future__ import annotations
 
 import pathlib
