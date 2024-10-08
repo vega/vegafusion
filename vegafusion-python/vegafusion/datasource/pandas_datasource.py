@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Iterable
 from math import floor
 from typing import TYPE_CHECKING
@@ -11,7 +13,7 @@ if TYPE_CHECKING:
 
 class PandasDatasource(Datasource):
     def __init__(
-        self, df: "pd.DataFrame", sample_size: int = 1000, batch_size: int = 8096
+        self, df: pd.DataFrame, sample_size: int = 1000, batch_size: int = 8096
     ) -> None:
         import pandas as pd
         import pyarrow as pa
@@ -68,10 +70,10 @@ class PandasDatasource(Datasource):
         self._casts = casts
         self._batch_size = batch_size
 
-    def schema(self) -> "pa.Schema":
+    def schema(self) -> pa.Schema:
         return self._schema
 
-    def fetch(self, columns: Iterable[str]) -> "pa.Table":
+    def fetch(self, columns: Iterable[str]) -> pa.Table:
         import pandas as pd
         import pyarrow as pa
 

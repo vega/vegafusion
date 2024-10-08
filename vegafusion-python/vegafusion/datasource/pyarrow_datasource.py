@@ -17,6 +17,8 @@ class PyArrowDatasource(Datasource):
         return self._table.schema
 
     def fetch(self, columns: Iterable[str]) -> pa.Table:
+        import pyarrow as pa
+
         return pa.Table.from_arrays(
             [self._table[c] for c in columns], names=list(columns)
         )
