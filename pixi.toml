@@ -30,7 +30,7 @@ dev-py = { cmd = [
 build-py = { cmd = "maturin build -m vegafusion-python/Cargo.toml --release --strip --sdist $0" }
 
 fmt-py = { cmd = "ruff format", cwd="vegafusion-python" }
-lint-fix-py = { cmd = "ruff check --fix", cwd="vegafusion-python" }
+lint-fix-py = { cmd = "ruff format && ruff check --fix", cwd="vegafusion-python" }
 
 # test python
 install-chromedriver-auto = """
@@ -139,6 +139,7 @@ ipywidgets = "8.1.0.*"
 vl-convert-python = "1.6.*"
 anywidget = ">=0.9.6,<0.10"
 polars = "1.8.*"
+grpcio = ">=1.56.2,<2"
 
 [target.osx-arm64.build-dependencies]
 # These dependencies are for building node canvas from source on apple silicon

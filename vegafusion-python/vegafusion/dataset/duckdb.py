@@ -13,7 +13,7 @@ class DuckDbDataset(SqlDataset):
 
     def __init__(
         self, relation: DuckDBPyRelation, fallback: bool = True, verbose: bool = False
-    ):
+    ) -> None:
         self._relation = relation
         self._fallback = fallback
         self._verbose = verbose

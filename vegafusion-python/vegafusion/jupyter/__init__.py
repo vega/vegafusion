@@ -1,4 +1,5 @@
-import json
+from __future__ import annotations
+
 import pathlib
 from typing import Any
 
@@ -6,6 +7,8 @@ import anywidget
 import traitlets
 
 from vegafusion import runtime
+from vegafusion.runtime import PreTransformWarning
+from vegafusion.transformer import DataFrameLike
 
 _here = pathlib.Path(__file__).parent
 
@@ -49,17 +52,14 @@ class VegaFusionWidget(anywidget.AnyWidget):
     _is_offline = False
 
     @classmethod
-    def enable_offline(cls, offline: bool = True):
-        """
-        Configure VegaFusionWidget's offline behavior
+    def enable_offline(cls, offline: bool = True) -> None:
+        """Configure VegaFusionWidget's offline behavior.
 
-        Parameters
-        ----------
-        offline: bool
-            If True, configure VegaFusionWidget to operate in offline mode where JavaScript
-            dependencies are loaded from vl-convert.
-            If False, configure it to operate in online mode where JavaScript dependencies
-            are loaded from CDN dynamically. This is the default behavior.
+        Args:
+            offline: If True, configure VegaFusionWidget to operate in offline mode
+                where JavaScript dependencies are loaded from vl-convert. If False,
+                configure it to operate in online mode where JavaScript dependencies
+                are loaded from CDN dynamically. This is the default behavior.
         """
         import vl_convert as vlc
 
@@ -80,9 +80,10 @@ class VegaFusionWidget(anywidget.AnyWidget):
 
             src = "\n".join(src_lines)
 
-            # vl-convert's javascript_bundle function creates a self-contained JavaScript bundle
-            # for JavaScript snippets that import from a small set of dependencies that
-            # vl-convert includes. To see the available imports and their imported names, run
+            # vl-convert's javascript_bundle function creates a self-contained
+            # JavaScript bundle for JavaScript snippets that import from a small
+            # set of dependencies that vl-convert includes. To see the available
+            # imports and their imported names, run
             #       import vl_convert as vlc
             #       help(vlc.javascript_bundle)
             bundled_src = vlc.javascript_bundle(src)
@@ -94,43 +95,39 @@ class VegaFusionWidget(anywidget.AnyWidget):
 
     def __init__(
         self,
-        spec: dict,
-        inline_datasets: dict | None = None,
+        spec: dict[str, Any],
+        inline_datasets: dict[str, DataFrameLike] | None = None,
         debounce_wait: int = 10,
         max_wait: bool = True,
         debug: bool = False,
-        embed_options: dict | None = None,
+        embed_options: dict[str, Any] | None = None,
         local_tz: str | None = None,
         row_limit: int = 100000,
-        **kwargs: Any,
-    ):
-        """
-        Jupyter Widget for displaying Vega chart specifications, using VegaFusion
+        **kwargs: Any,  # noqa: ANN401
+    ) -> None:
+        """Jupyter Widget for displaying Vega chart specifications, using VegaFusion
         for server-side scaling.
 
-        Parameters
-        ----------
-        spec: dict
-            Vega chart specification
-        inline_datasets: dict | None
-            Datasets referenced in the Vega spec in vegafusion+dataset:// URLs
-        debounce_wait: int
-             Debouncing wait time in milliseconds. Updates will be sent from the client to the kernel
-             after debounce_wait milliseconds of no chart interactions.
-        max_wait: bool
-             If True (default), updates will be sent from the client to the kernel every debounce_wait
-             milliseconds even if there are ongoing chart interactions. If False, updates will not be
-             sent until chart interactions have completed.
-        debug: bool
-             If True, debug messages will be printed
-        embed_options: dict
-             Options to pass to vega-embed.
-             See https://github.com/vega/vega-embed?tab=readme-ov-file#options
-        local_tz: str | None
-            Timezone to use for the chart. If None, the chart will use the browser's local timezone.
-        row_limit: int
-            Maximum number of rows to send to the browser, after VegaFusion has performed is transformations.
-            A RowLimitError will be raised if the VegaFusion operation results in more than row_limit rows.
+        Args:
+            spec: Vega chart specification.
+            inline_datasets: Datasets referenced in the Vega spec in
+                vegafusion+dataset:// URLs.
+            debounce_wait: Debouncing wait time in milliseconds. Updates will be
+                sent from the client to the kernel after debounce_wait
+                milliseconds of no chart interactions.
+            max_wait: If True (default), updates will be sent from the client to
+                the kernel every debounce_wait milliseconds even if there are
+                ongoing chart interactions. If False, updates will not be sent
+                until chart interactions have completed.
+            debug: If True, debug messages will be printed.
+            embed_options: Options to pass to vega-embed. See
+                https://github.com/vega/vega-embed?tab=readme-ov-file#options
+            local_tz: Timezone to use for the chart. If None, the chart will use
+                the browser's local timezone.
+            row_limit: Maximum number of rows to send to the browser, after
+                VegaFusion has performed its transformations. A RowLimitError
+                will be raised if the VegaFusion operation results in more than
+                row_limit rows.
         """
         super().__init__(
             spec=spec,
@@ -146,12 +143,12 @@ class VegaFusionWidget(anywidget.AnyWidget):
         self.on_msg(self._handle_custom_msg)
 
     @traitlets.observe("spec")
-    def _on_change_spec(self, change):
+    def _on_change_spec(self, change: dict[str, Any]) -> None:
         """
         Internal callback function that updates the widgets's internal
         state when the Vega chart specification changes
         """
-        new_spec = change.new
+        new_spec = change["new"]
 
         if new_spec is None:
             # Clear state
@@ -163,7 +160,7 @@ class VegaFusionWidget(anywidget.AnyWidget):
 
         if self.local_tz is None:
 
-            def on_local_tz_change(change):
+            def on_local_tz_change(change: dict[str, Any]) -> None:
                 self._init_chart_state(change["new"])
 
             self.observe(on_local_tz_change, ["local_tz"])
@@ -171,18 +168,18 @@ class VegaFusionWidget(anywidget.AnyWidget):
             self._init_chart_state(self.local_tz)
 
     @traitlets.observe("inline_datasets")
-    def _on_change_inline_datasets(self, change):
+    def _on_change_inline_datasets(self, change: dict[str, Any]) -> None:
         """
         Internal callback function that updates the widgets's internal
         state when the inline datasets change
         """
         self._init_chart_state(self.local_tz)
 
-    def _handle_custom_msg(self, content, buffers):
+    def _handle_custom_msg(self, content: dict[str, Any], buffers: Any) -> None:  # noqa: ANN401
         if content.get("type") == "update_state":
             self._handle_update_state(content.get("updates", []))
 
-    def _handle_update_state(self, updates):
+    def _handle_update_state(self, updates: list[dict[str, Any]]) -> None:
         """
         Handle the 'update_state' message from JavaScript
         """
@@ -200,10 +197,11 @@ class VegaFusionWidget(anywidget.AnyWidget):
             self.send({"type": "update_view", "updates": processed_updates})
         else:
             print(
-                "Warning: Received update_state message, but chart state is not initialized."
+                "Warning: Received update_state message, but chart state is not "
+                "initialized."
             )
 
-    def _init_chart_state(self, local_tz: str):
+    def _init_chart_state(self, local_tz: str) -> None:
         if self.spec is not None:
             with self.hold_sync():
                 # Build the chart state
@@ -227,24 +225,27 @@ class VegaFusionWidget(anywidget.AnyWidget):
                 self.warnings = self._chart_state.get_warnings()
 
 
-def handle_row_limit_exceeded(row_limit: int, warnings: list):
+def handle_row_limit_exceeded(
+    row_limit: int, warnings: list[PreTransformWarning]
+) -> None:
     for warning in warnings:
-        if warning.get("type") == "RowLimitExceeded":
+        if warning["type"] == "RowLimitExceeded":
             msg = (
-                "The number of dataset rows after filtering and aggregation exceeds\n"
-                f"the current limit of {row_limit}. Try adding an aggregation to reduce\n"
-                "the size of the dataset that must be loaded into the browser. Or, disable\n"
-                "the limit by setting the row_limit traitlet to None. Note that\n"
-                "disabling this limit may cause the browser to freeze or crash."
+                "The number of dataset rows after filtering and aggregation\n"
+                f"exceeds the current limit of {row_limit}. Try adding an\n"
+                "aggregation to reduce the size of the dataset that must be\n"
+                "loaded into the browser. Or, disable the limit by setting the\n"
+                "row_limit traitlet to None. Note that disabling this limit may\n"
+                "cause the browser to freeze or crash."
             )
             raise RowLimitExceededError(msg)
 
 
 class RowLimitExceededError(Exception):
     """
-    Exception raised when the number of dataset rows after filtering and aggregation exceeds
-    the current limit.
+    Exception raised when the number of dataset rows after filtering and aggregation
+    exceeds the current limit.
     """
 
-    def __init__(self, message: str):
+    def __init__(self, message: str) -> None:
         super().__init__(message)

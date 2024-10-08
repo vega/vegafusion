@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     import pyarrow as pa
@@ -36,12 +38,12 @@ class SqlDataset(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def table_schema(self) -> "pa.Schema":
+    def table_schema(self) -> pa.Schema:
         """Schema of source table"""
         raise NotImplementedError()
 
     @abstractmethod
-    def fetch_query(self, query: str, schema: "pa.Schema") -> "pa.Table":
+    def fetch_query(self, query: str, schema: pa.Schema) -> pa.Table:
         """
         Returns the result of evaluating the requested query. The resulting pa.Table
         should have a schema matching the provided schema
@@ -71,8 +73,11 @@ class SqlDataset(ABC):
         return True
 
     def __dataframe__(
-        self, nan_as_null: bool = False, allow_copy: bool = True, **kwargs
-    ) -> "SqlDatasetDataFrame":
+        self,
+        nan_as_null: bool = False,
+        allow_copy: bool = True,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> SqlDatasetDataFrame:
         """DataFrame interchange protocol support"""
         from .dfi import SqlDatasetDataFrame
 

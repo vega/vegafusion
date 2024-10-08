@@ -19,7 +19,7 @@ from skimage.metrics import structural_similarity as ssim
 from tenacity import retry, stop, wait
 
 try:
-    import chromedriver_binary
+    import chromedriver_binary  # noqa: F401 (Side effect import)
 except ImportError:
     # chromedriver not provided through chromedriver_binary package
     pass
@@ -312,7 +312,7 @@ chart = alt.layer(bars, line, data=source)
 """
 
     # Convert to Vega spec and use VegaFusionWidget
-    notebook_text_vf = r""" 
+    notebook_text_vf = r"""
 ```python
 {altair_chart_str}
 
@@ -320,7 +320,7 @@ vega_spec_inline = chart.to_dict(format="vega")
 vega_spec_inline["data"][1]["url"] = "vegafusion+dataset://weather"
 
 widget = VegaFusionWidget(
-    spec=vega_spec_inline, 
+    spec=vega_spec_inline,
     inline_datasets={"weather": data.seattle_weather()}
 )
 widget
@@ -330,7 +330,7 @@ widget
     notebook_vf = jupytext.read(io.StringIO(notebook_text_vf), fmt="markdown")
 
     # Display with default altair renderer
-    notebook_text_alt = f""" 
+    notebook_text_alt = f"""
 ```python
 {altair_chart_str}
 

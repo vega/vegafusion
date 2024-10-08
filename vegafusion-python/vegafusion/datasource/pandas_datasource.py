@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 class PandasDatasource(Datasource):
     def __init__(
         self, df: "pd.DataFrame", sample_size: int = 1000, batch_size: int = 8096
-    ):
+    ) -> None:
         import pandas as pd
         import pyarrow as pa
 

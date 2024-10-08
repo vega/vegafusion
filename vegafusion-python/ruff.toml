@@ -1,6 +1,7 @@
 line-length = 88
 indent-width = 4
 include = ["vegafusion/**/*.py", "tests/**/*.py"]
+exclude = ["vegafusion/datasource/_dfi_types.py", "tests/altair_mocks/**/*.py"]
 target-version = "py39"
 
 [lint]
@@ -29,10 +30,18 @@ ignore = [
   # Rules that conflict with other rules
   "D211", # No blank lines allowed before class docstring (no-blank-line-before-class-docstring)
   "D213", # Multi-line docstring summary should start at the second line (multi-line-docstring-summary-start)
+  "EM101", # Exception must not use an string literal
+  "EM102",  # Exception must not use an f-string literal
+
+  # Not compatible with Python 3.9. Re-enable when upgrading to Python 3.10+
+  "UP007", # Using old-style union syntax (e.g., Union[int, str] instead of int | str)
+  "UP018", # Using non-native literals (e.g., using 'int' instead of 'Literal[int]')
 
   # Deprecated and not useful
   "ANN101", # Missing type annotation for self in method (missing-type-annotation-for-self)
   "ANN102", # Missing type annotation for class (missing-type-cls)
+
+  "S608", # SQL injection
 
   # Conflicting lint rules with Ruff formatter
   "W191",   # Tab indentation
@@ -50,3 +59,7 @@ ignore = [
   "ISC001", # Single-line implicit string concatenation
   "ISC002", # Multi-line implicit string concatenation
 ]
+
+[lint.per-file-ignores]
+# Ignore some lint checks in test directory
+"tests/*" = ["D", "ANN", "S", "I", "E501"]

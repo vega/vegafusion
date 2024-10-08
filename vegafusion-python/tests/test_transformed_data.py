@@ -18,12 +18,11 @@ altair_mocks_dir = here / "altair_mocks"
 
 def get_connections():
     connections = ["datafusion"]
-    try:
-        import duckdb
 
+    from importlib.util import find_spec
+
+    if find_spec("duckdb") is not None:
         connections.append("duckdb")
-    except ImportError:
-        pass
 
     return connections
 

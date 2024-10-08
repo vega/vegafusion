@@ -98,7 +98,7 @@ def test_pretransform_extract():
     spec = json.loads(spec_file.read_text("utf8"))
 
     vf.runtime.set_connection("datafusion")
-    (transformed, datasets, warnings) = vf.runtime.pre_transform_extract(spec, "UTC")
+    (_transformed, datasets, warnings) = vf.runtime.pre_transform_extract(spec, "UTC")
 
     assert len(warnings) == 0
     assert len(datasets) == 1

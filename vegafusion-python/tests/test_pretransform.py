@@ -2,6 +2,7 @@ import base64
 import decimal
 import json
 from datetime import date
+from importlib.util import find_spec
 
 import pandas as pd
 import polars as pl
@@ -19,9 +20,8 @@ def setup_module(module):
 def get_connections():
     connections = ["datafusion"]
     try:
-        import duckdb
-
-        connections.append("duckdb")
+        if find_spec("duckdb") is not None:
+            connections.append("duckdb")
     except ImportError:
         pass
 
@@ -523,7 +523,7 @@ def standalone_aggregate_spec(agg="count"):
   "usermeta": {
     "warnings": []
   }
-}    
+}
     """
     )
 
@@ -702,7 +702,7 @@ def period_in_col_name_spec():
       "zindex": 0
     }
   ]
-} 
+}
     """)
 
 
@@ -1014,7 +1014,7 @@ def date32_timeunit_spec():
 
 
 def gh_268_hang_spec():
-    return json.loads(r""" 
+    return json.loads(r"""
     {
       "$schema": "https://vega.github.io/schema/vega/v5.json",
       "data": [
@@ -1388,20 +1388,20 @@ def test_pre_transform_multi_partition():
     order_items = pd.DataFrame({"menu_item": [0] * n + [1] * n})
 
     vega_spec = order_items_spec()
-    new_spec, warnings = vf.runtime.pre_transform_spec(
+    new_spec, _warnings = vf.runtime.pre_transform_spec(
         vega_spec,
         inline_datasets={
             "order_items": order_items,
         },
     )
 
-    assert new_spec["data"][1] == dict(
-        name="data_0",
-        values=[
+    assert new_spec["data"][1] == {
+        "name": "data_0",
+        "values": [
             {"menu_item": 0, "__count": n},
             {"menu_item": 1, "__count": n},
         ],
-    )
+    }
 
 
 def test_pre_transform_cache_cleared():
@@ -1410,20 +1410,20 @@ def test_pre_transform_cache_cleared():
         order_items = pd.DataFrame({"menu_item": [0] * n + [1] * n})
 
         vega_spec = order_items_spec()
-        new_spec, warnings = vf.runtime.pre_transform_spec(
+        new_spec, _warnings = vf.runtime.pre_transform_spec(
             vega_spec,
             inline_datasets={
                 "order_items": order_items,
             },
         )
 
-        assert new_spec["data"][1] == dict(
-            name="data_0",
-            values=[
+        assert new_spec["data"][1] == {
+            "name": "data_0",
+            "values": [
                 {"menu_item": 0, "__count": n},
                 {"menu_item": 1, "__count": n},
             ],
-        )
+        }
 
     check(16)
     check(32)
@@ -1452,12 +1452,12 @@ def test_pre_transform_datasets():
 def test_pre_transform_planner_warning1():
     # Pre-transform with supported aggregate function should result in no warnings
     vega_spec = movies_histogram_spec("mean")
-    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
+    _datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
     assert len(warnings) == 0
 
     # Pre-transform with unsupported aggregate function should result in one warning
     vega_spec = movies_histogram_spec("ci0")
-    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
+    _datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
     assert len(warnings) == 1
 
     warning = warnings[0]
@@ -1468,12 +1468,12 @@ def test_pre_transform_planner_warning1():
 def test_pre_transform_planner_warning2():
     # Pre-transform with supported aggregate function should result in no warnings
     vega_spec = standalone_aggregate_spec("mean")
-    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
+    _datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
     assert len(warnings) == 0
 
     # Pre-transform with unsupported aggregate function should result in one warning
     vega_spec = standalone_aggregate_spec("ci0")
-    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
+    _datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
     assert len(warnings) == 1
 
     warning = warnings[0]
@@ -1490,12 +1490,12 @@ def test_date32_pre_transform_dataset():
     )
     spec = date_column_spec()
 
-    (output_ds,), warnings = vf.runtime.pre_transform_datasets(
+    (output_ds,), _warnings = vf.runtime.pre_transform_datasets(
         spec,
         ["data_0"],
         "America/New_York",
         default_input_tz="UTC",
-        inline_datasets=dict(dates=dates_df),
+        inline_datasets={"dates": dates_df},
     )
 
     # Timestamps are in the local timezone, so they should be midnight local time
@@ -1515,12 +1515,12 @@ def test_date32_pre_transform_dataset_polars():
     )
     spec = date_column_spec()
 
-    (output_ds,), warnings = vf.runtime.pre_transform_datasets(
+    (output_ds,), _warnings = vf.runtime.pre_transform_datasets(
         spec,
         ["data_0"],
         "America/New_York",
         default_input_tz="UTC",
-        inline_datasets=dict(dates=dates_df),
+        inline_datasets={"dates": dates_df},
     )
 
     # Timestamps are in the local timezone, so they should be midnight local time
@@ -1546,7 +1546,7 @@ def test_date32_in_timeunit_duckdb_crash():
         )
 
         datasets, warnings = vf.runtime.pre_transform_datasets(
-            vega_spec, ["data_1"], inline_datasets=dict(dataframe=dataframe)
+            vega_spec, ["data_1"], inline_datasets={"dataframe": dataframe}
         )
         assert len(warnings) == 0
         assert len(datasets) == 1
@@ -1559,7 +1559,7 @@ def test_period_in_column_name():
     df_period = pd.DataFrame([[1, 2]], columns=["normal", "a.b"])
     spec = period_in_col_name_spec()
     datasets, warnings = vf.runtime.pre_transform_datasets(
-        spec, ["data_0"], inline_datasets=dict(df_period=df_period)
+        spec, ["data_0"], inline_datasets={"df_period": df_period}
     )
     assert len(warnings) == 0
     assert len(datasets) == 1
@@ -1615,7 +1615,7 @@ def test_nat_values():
     spec = nat_bar_spec()
 
     datasets, warnings = vf.runtime.pre_transform_datasets(
-        spec, ["dataframe"], inline_datasets=dict(dataframe=dataframe)
+        spec, ["dataframe"], inline_datasets={"dataframe": dataframe}
     )
     assert len(warnings) == 0
     assert len(datasets) == 1
@@ -1631,10 +1631,9 @@ def test_nat_values():
 
 
 def test_pre_transform_dataset_dataframe_interface_protocol():
-    try:
-        import pyarrow.interchange
-    except ImportError:
+    if find_spec("pyarrow.interchange") is None:
         pytest.skip("DataFrame interface protocol requires pyarrow 11.0.0 or later")
+
     from polars.testing import assert_frame_equal
 
     n = 4050
@@ -1747,12 +1746,12 @@ def test_duckdb_timestamp_with_timezone():
         dates_df["date_col"] = pd.to_datetime(dates_df.date_col).dt.tz_localize("UTC")
         spec = date_column_spec()
 
-        (output_ds,), warnings = vf.runtime.pre_transform_datasets(
+        (output_ds,), _warnings = vf.runtime.pre_transform_datasets(
             spec,
             ["data_0"],
             "America/New_York",
             default_input_tz="UTC",
-            inline_datasets=dict(dates=dates_df),
+            inline_datasets={"dates": dates_df},
         )
 
         # Timestamps are in the local timezone, so they should be midnight local time
@@ -1778,7 +1777,7 @@ def test_gh_268_hang():
         # Break cache by removing one row each iteration
         movies_inner = movies.iloc[i:]
         vf.runtime.pre_transform_datasets(
-            spec, ["data_3"], inline_datasets=dict(movies_clean=movies_inner)
+            spec, ["data_3"], inline_datasets={"movies_clean": movies_inner}
         )
 
 
@@ -1791,9 +1790,9 @@ def test_repeat_duckdb():
         "https://raw.githubusercontent.com/vega/vega-datasets/main/data/movies.json"
     )
     spec = gh_268_hang_spec()
-    for i in range(2):
+    for _ in range(2):
         vf.runtime.pre_transform_datasets(
-            spec, ["data_3"], inline_datasets=dict(movies_clean=movies)
+            spec, ["data_3"], inline_datasets={"movies_clean": movies}
         )
 
 
@@ -1834,11 +1833,11 @@ def test_pivot_mixed_case(connection):
       ]
     }
   ]
-}   
+}
     """)
 
-    datasets, warnings = vf.runtime.pre_transform_datasets(
-        spec, ["data_0"], inline_datasets=dict(source_0=source_0)
+    datasets, _warnings = vf.runtime.pre_transform_datasets(
+        spec, ["data_0"], inline_datasets={"source_0": source_0}
     )
 
     assert set(datasets[0].columns.tolist()) == {
@@ -1854,11 +1853,11 @@ def test_keep_signals():
     spec = manual_histogram_spec()
 
     # pre-transform without keep_signals. No signals should be present in pre-transformed spec
-    tx_spec, warnings = vf.runtime.pre_transform_spec(spec)
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(spec)
     assert len(tx_spec.get("signals", [])) == 0
 
     # Specify single keep_signal as a string
-    tx_spec, warnings = vf.runtime.pre_transform_spec(
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(
         spec, keep_signals="layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins"
     )
     assert len(tx_spec.get("signals", [])) == 1
@@ -1867,7 +1866,7 @@ def test_keep_signals():
     assert sig0["value"]["step"] == 1.0
 
     # Specify multiple keep_signals as a list
-    tx_spec, warnings = vf.runtime.pre_transform_spec(
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(
         spec,
         keep_signals=[
             "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins",
@@ -1886,8 +1885,8 @@ def test_keep_signals():
 def test_empty_histogram():
     spec = empty_histogram_spec()
     empty_df = pd.DataFrame({"col": []})
-    (data_0,), warnings = vf.runtime.pre_transform_datasets(
-        spec, ["data_0"], inline_datasets=dict(empty_df=empty_df)
+    (data_0,), _warnings = vf.runtime.pre_transform_datasets(
+        spec, ["data_0"], inline_datasets={"empty_df": empty_df}
     )
     assert data_0.empty
     assert data_0.columns.tolist() == [
@@ -1903,7 +1902,7 @@ def test_pre_transform_spec_encoded_datasets():
     vega_spec = movies_histogram_spec()
 
     # default list of dict format
-    tx_spec, warnings = vf.runtime.pre_transform_spec(
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(
         vega_spec, data_encoding_threshold=10, data_encoding_format="pyarrow"
     )
 
@@ -1912,7 +1911,7 @@ def test_pre_transform_spec_encoded_datasets():
     assert len(values) == 9
 
     # pyarrow format
-    tx_spec, warnings = vf.runtime.pre_transform_spec(
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(
         vega_spec, data_encoding_threshold=0, data_encoding_format="pyarrow"
     )
 
@@ -1923,7 +1922,7 @@ def test_pre_transform_spec_encoded_datasets():
     assert values_df.columns[0] == "bin_maxbins_10_IMDB Rating"
 
     # arrow-ipc format
-    tx_spec, warnings = vf.runtime.pre_transform_spec(
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(
         vega_spec, data_encoding_threshold=0, data_encoding_format="arrow-ipc"
     )
 
@@ -1934,7 +1933,7 @@ def test_pre_transform_spec_encoded_datasets():
     assert values_df.columns[0] == "bin_maxbins_10_IMDB Rating"
 
     # arrow-ipc-base64 format
-    tx_spec, warnings = vf.runtime.pre_transform_spec(
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(
         vega_spec, data_encoding_threshold=0, data_encoding_format="arrow-ipc-base64"
     )
 

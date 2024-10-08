@@ -6,7 +6,7 @@ import vegafusion as vf
 
 
 def test_input_utc():
-    (pre_transformed, warnings) = vf.runtime.pre_transform_spec(
+    (pre_transformed, _warnings) = vf.runtime.pre_transform_spec(
         input_spec(), "UTC", "UTC", inline_datasets={"seattle_weather": load_dataset()}
     )
     print(json.dumps(pre_transformed, indent=2))

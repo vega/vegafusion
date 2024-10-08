@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
@@ -10,7 +12,7 @@ if TYPE_CHECKING:
     import pyarrow as pa
 
 
-def get_pyarrow_dtype(kind, bit_width):
+def get_pyarrow_dtype(kind: DtypeKind, bit_width: int) -> pa.DataType:
     import pyarrow as pa
 
     if kind == DtypeKind.INT:
@@ -52,7 +54,7 @@ def get_pyarrow_dtype(kind, bit_width):
     return None
 
 
-def parse_datetime_format_str(format_str):
+def parse_datetime_format_str(format_str: str) -> tuple[str, str]:
     """Parse datetime `format_str` to interpret the `data`."""
 
     # timestamp 'ts{unit}:tz'
@@ -70,7 +72,7 @@ def parse_datetime_format_str(format_str):
     raise NotImplementedError(f"DateTime kind is not supported: {format_str}")
 
 
-def map_date_type(data_type):
+def map_date_type(data_type: tuple[DtypeKind, int, str, str]) -> pa.DataType:
     """Map column date type to pyarrow date type."""
     import pyarrow as pa
 
@@ -92,7 +94,7 @@ def map_date_type(data_type):
 
 
 class DfiDatasource(Datasource):
-    def __init__(self, dataframe: DfiDataFrame):
+    def __init__(self, dataframe: DfiDataFrame) -> None:
         import pyarrow as pa
 
         if hasattr(dataframe, "__dataframe__"):
@@ -106,10 +108,10 @@ class DfiDatasource(Datasource):
         self._dataframe = dataframe
         self._schema = pa.schema(fields)
 
-    def schema(self) -> "pa.Schema":
+    def schema(self) -> pa.Schema:
         return self._schema
 
-    def fetch(self, columns: Iterable[str]) -> "pa.Table":
+    def fetch(self, columns: Iterable[str]) -> pa.Table:
         import pyarrow as pa
         from pyarrow.interchange import from_dataframe
 

@@ -1,7 +1,7 @@
-__tz_config = dict(local_tz=None)
+__tz_config = {"local_tz": None}
 
 
-def get_local_tz():
+def get_local_tz() -> str:
     """
     Get the named local timezone that the VegaFusion mimetype renderer
     will use for calculations.
@@ -19,17 +19,18 @@ def get_local_tz():
             import vl_convert as vlc
 
             __tz_config["local_tz"] = vlc.get_local_tz() or "UTC"
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
-                "vl-convert is not installed and so the local system timezone cannot be determined.\n"
-                "Either install the vl-convert-python package or set the local timezone manually using\n"
-                "the vegafusion.set_local_tz function"
-            )
+                "vl-convert is not installed and so the local system timezone cannot "
+                "be determined.\nEither install the vl-convert-python package or set "
+                "the local timezone manually using\nthe vegafusion.set_local_tz "
+                "function"
+            ) from e
 
     return __tz_config["local_tz"]
 
 
-def set_local_tz(local_tz):
+def set_local_tz(local_tz: str) -> None:
     """
     Set the named local timezone that the VegaFusion mimetype renderer
     will use for calculations.
