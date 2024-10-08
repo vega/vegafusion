@@ -1,3 +1,4 @@
+# mypy: disable-error-code="no-untyped-call,misc"
 from __future__ import annotations
 
 import pathlib

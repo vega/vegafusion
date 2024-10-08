@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from .sql import SqlDataset
 
@@ -73,7 +73,7 @@ class SqlDatasetDataFrame:
         return len(self._schema.names)
 
     def column_names(self) -> list[str]:
-        return self._schema.names
+        return cast(list[str], self._schema.names)
 
     def get_column(self, i: int) -> DatasetColumn:
         name = self._schema.names[i]
@@ -90,7 +90,7 @@ class SqlDatasetDataFrame:
         return self.select_columns_by_name(names)
 
     def select_columns_by_name(self, names: Sequence[str]) -> SqlDatasetDataFrame:
-        return self._pyarrow_df.select_columns_by_name(names)
+        return cast(SqlDatasetDataFrame, self._pyarrow_df.select_columns_by_name(names))
 
     def __dataframe__(
         self, nan_as_null: bool = False, allow_copy: bool = True
@@ -108,10 +108,10 @@ class SqlDatasetDataFrame:
         return self._pyarrow_df.metadata
 
     def num_rows(self) -> Optional[int]:
-        return self._pyarrow_df.num_rows()
+        return cast(Optional[int], self._pyarrow_df.num_rows())
 
     def num_chunks(self) -> int:
-        return self._pyarrow_df.num_chunks()
+        return cast(int, self._pyarrow_df.num_chunks())
 
     def get_chunks(self, n_chunks: Optional[int] = None) -> Any:  # noqa: ANN401
         return self._pyarrow_df.get_chunks(n_chunks=n_chunks)
@@ -137,7 +137,7 @@ class DatasetColumn:
 
     # These methods require executing the query
     def size(self) -> int:
-        return self._pyarrow_col.size()
+        return cast(int, self._pyarrow_col.size())
 
     @property
     def describe_categorical(self) -> Any:  # noqa: ANN401
@@ -145,7 +145,7 @@ class DatasetColumn:
 
     @property
     def offset(self) -> int:
-        return self._pyarrow_col.offset
+        return cast(int, self._pyarrow_col.offset)
 
     @property
     def describe_null(self) -> Any:  # noqa: ANN401
@@ -153,14 +153,14 @@ class DatasetColumn:
 
     @property
     def null_count(self) -> int:
-        return self._pyarrow_col.null_count
+        return cast(int, self._pyarrow_col.null_count)
 
     @property
     def metadata(self) -> Any:  # noqa: ANN401
         return self._pyarrow_col.metadata
 
     def num_chunks(self) -> int:
-        return self._pyarrow_col.num_chunks()
+        return cast(int, self._pyarrow_col.num_chunks())
 
     def get_chunks(self, n_chunks: Optional[int] = None) -> Any:  # noqa: ANN401
         return self._pyarrow_col.get_chunks(n_chunks=n_chunks)

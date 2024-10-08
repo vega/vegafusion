@@ -1,5 +1,6 @@
 import importlib.metadata
 from importlib.metadata import version as _original_version
+from typing import cast
 
 from ._vegafusion import __version__
 from .local_tz import get_local_tz, set_local_tz
@@ -12,7 +13,7 @@ def patched_version(distribution_name: str) -> str:
     vegafusion package. This is just to satisfy Altair's version check.
     """
     if distribution_name == "vegafusion-python-embed":
-        return __version__
+        return cast(str, __version__)
     return _original_version(distribution_name)
 
 

@@ -17,7 +17,7 @@ class PandasDatasource(Datasource):
         import pyarrow as pa
 
         fields = []
-        casts = {}
+        casts: dict[str, str] = {}
         sample_stride = max(1, floor(len(df) / sample_size))
 
         # Shallow copy and add named index levels as columns
@@ -60,7 +60,7 @@ class PandasDatasource(Datasource):
             except pa.ArrowTypeError:
                 if pd_type.kind == "O":
                     fields.append(pa.field(col, pa.string()))
-                    casts[col] = str
+                    casts[col] = "str"
                 else:
                     raise
         self._df = df

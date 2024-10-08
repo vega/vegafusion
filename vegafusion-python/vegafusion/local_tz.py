@@ -1,4 +1,6 @@
-__tz_config = {"local_tz": None}
+from __future__ import annotations
+
+__tz_config: dict[str, str | None] = {"local_tz": None}
 
 
 def get_local_tz() -> str:
@@ -13,12 +15,14 @@ def get_local_tz() -> str:
 
     :return: named timezone string
     """
-    if __tz_config["local_tz"] is None:
+    local_tz = __tz_config["local_tz"]
+    if local_tz is None:
         # Fall back to getting local_tz from vl-convert if not set
         try:
             import vl_convert as vlc
 
-            __tz_config["local_tz"] = vlc.get_local_tz() or "UTC"
+            local_tz = vlc.get_local_tz() or "UTC"
+            __tz_config["local_tz"] = local_tz
         except ImportError as e:
             raise ImportError(
                 "vl-convert is not installed and so the local system timezone cannot "
@@ -27,7 +31,7 @@ def get_local_tz() -> str:
                 "function"
             ) from e
 
-    return __tz_config["local_tz"]
+    return local_tz
 
 
 def set_local_tz(local_tz: str) -> None:

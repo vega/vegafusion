@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+
 # DataFrame Interchange Protocol Types
 # Copied from https://data-apis.org/dataframe-protocol/latest/API.html
 #

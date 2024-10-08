@@ -5,8 +5,10 @@ import re
 import uuid
 import warnings
 from distutils.version import LooseVersion
+from typing import Any
 
 import duckdb
+import duckdb.typing
 import pandas as pd
 import pyarrow as pa
 import pyarrow.feather
@@ -17,8 +19,10 @@ from . import CsvReadOptions, SqlConnection
 RAW_PREFIX = "_vf_raw_"
 
 
-def duckdb_type_name_to_pyarrow_type(duckdb_type: str) -> pa.DataType:
-    duckdb_type = str(duckdb_type).upper()
+def duckdb_type_name_to_pyarrow_type(
+    duckdb_type: str,
+) -> pa.DataType:
+    duckdb_type = duckdb_type.upper()
     if duckdb_type in ("VARCHAR", "JSON", "CHAR", "CATEGORICAL"):
         return pa.string()
     elif duckdb_type in ("REAL", "FLOAT4", "FLOAT"):
@@ -64,7 +68,7 @@ def duckdb_relation_to_schema(rel: duckdb.DuckDBPyRelation) -> pa.Schema:
     schema_fields = {}
     for col, type_name in zip(rel.columns, rel.dtypes):
         try:
-            type_ = duckdb_type_name_to_pyarrow_type(type_name)
+            type_ = duckdb_type_name_to_pyarrow_type(str(type_name))
             schema_fields[col] = type_
         except ValueError:
             # Skip columns with unrecognized types
@@ -148,7 +152,7 @@ class DuckDbConnection(SqlConnection):
 
         self._fallback = fallback
         self._verbose = verbose
-        self._temp_tables = set()
+        self._temp_tables: set[str] = set()
 
         if connection is None:
             connection = duckdb.connect()
@@ -175,7 +179,7 @@ class DuckDbConnection(SqlConnection):
         self.conn = connection
         self.logger = logging.getLogger("DuckDbConnection")
 
-        self._registered_table_schemas = {}
+        self._registered_table_schemas: dict[str, Any] = {}
 
         # Call self.tables to warm the cache of table schemas
         self.tables()
@@ -197,7 +201,7 @@ class DuckDbConnection(SqlConnection):
         for col, type_name in zip(rel.columns, rel.dtypes):
             quoted_col_name = quote_column(col)
             try:
-                duckdb_type_name_to_pyarrow_type(type_name)
+                duckdb_type_name_to_pyarrow_type(str(type_name))
                 # Skip columns with supported types
             except ValueError:
                 # Convert unsupported types to strings (except struct)

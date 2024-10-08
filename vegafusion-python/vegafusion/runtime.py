@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union, cast
 
 import psutil
 
@@ -85,7 +85,7 @@ class ChartState:
         Returns:
             list of VariableUpdates that should be pushed to the client.
         """
-        return self._chart_state.update(client_updates)
+        return cast(list[VariableUpdate], self._chart_state.update(client_updates))
 
     def get_watch_plan(self) -> WatchPlan:
         """
@@ -96,9 +96,9 @@ class ChartState:
             between ChartState and client to preserve the input Vega spec's
             interactivity.
         """
-        return self._chart_state.get_watch_plan()
+        return cast(WatchPlan, self._chart_state.get_watch_plan())
 
-    def get_transformed_spec(self) -> dict:
+    def get_transformed_spec(self) -> dict[str, Any]:
         """
         Get initial transformed spec.
 
@@ -106,7 +106,7 @@ class ChartState:
             The initial transformed spec, equivalent to the spec produced by
             vf.runtime.pre_transform_spec().
         """
-        return self._chart_state.get_transformed_spec()
+        return cast(dict[str, Any], self._chart_state.get_transformed_spec())
 
     def get_warnings(self) -> list[PreTransformWarning]:
         """Get transformed spec warnings
@@ -124,23 +124,23 @@ class ChartState:
                     'Unsupported': No transforms in the provided Vega specification were
                         eligible for pre-transforming
         """
-        return self._chart_state.get_warnings()
+        return cast(list[PreTransformWarning], self._chart_state.get_warnings())
 
-    def get_server_spec(self) -> dict:
+    def get_server_spec(self) -> dict[str, Any]:
         """
         Returns:
             dict: The server spec.
         """
-        return self._chart_state.get_server_spec()
+        return cast(dict[str, Any], self._chart_state.get_server_spec())
 
-    def get_client_spec(self) -> dict:
+    def get_client_spec(self) -> dict[str, Any]:
         """
         Get client spec.
 
         Returns:
             dict: The client spec.
         """
-        return self._chart_state.get_client_spec()
+        return cast(dict[str, Any], self._chart_state.get_client_spec())
 
 
 class VegaFusionRuntime:
@@ -192,7 +192,8 @@ class VegaFusionRuntime:
         self,
         connection: Literal["datafusion", "duckdb"]
         | SqlConnection
-        | DuckDBPyConnection = "datafusion",
+        | DuckDBPyConnection
+        | None = "datafusion",
     ) -> None:
         """
         Sets the connection to use to evaluate Vega data transformations.
@@ -294,11 +295,11 @@ class VegaFusionRuntime:
             return self.grpc_query(request)
         else:
             # No grpc channel, get or initialize an embedded runtime
-            return self.embedded_runtime.process_request_bytes(request)
+            return cast(bytes, self.embedded_runtime.process_request_bytes(request))
 
     def _import_or_register_inline_datasets(
         self, inline_datasets: dict[str, DataFrameLike] | None = None
-    ) -> dict[str, Datasource]:
+    ) -> dict[str, Datasource | SqlDataset]:
         """
         Import or register inline datasets.
 
@@ -313,7 +314,7 @@ class VegaFusionRuntime:
         pd = sys.modules.get("pandas", None)
 
         inline_datasets = inline_datasets or {}
-        imported_inline_datasets = {}
+        imported_inline_datasets: dict[str, Datasource | SqlDataset] = {}
         for name, value in inline_datasets.items():
             if isinstance(value, SqlDataset):
                 imported_inline_datasets[name] = value
@@ -355,10 +356,10 @@ class VegaFusionRuntime:
 
     def build_pre_transform_spec_plan(
         self,
-        spec: Union[dict[str, Any], str],
+        spec: dict[str, Any] | str,
         preserve_interactivity: bool = True,
-        keep_signals: list[Union[str, tuple[str, list[int]]]] | None = None,
-        keep_datasets: list[Union[str, tuple[str, list[int]]]] | None = None,
+        keep_signals: list[str | tuple[str, list[int]]] | None = None,
+        keep_datasets: list[str | tuple[str, list[int]]] | None = None,
     ) -> dict[str, Any]:
         """
         Diagnostic function that returns the plan used by the pre_transform_spec method
@@ -396,15 +397,13 @@ class VegaFusionRuntime:
                 "build_pre_transform_spec_plan not yet supported over gRPC"
             )
         else:
-            # Parse input keep signals and datasets
-            keep_signals = parse_variables(keep_signals)
-            keep_datasets = parse_variables(keep_datasets)
-            return self.embedded_runtime.build_pre_transform_spec_plan(
+            plan = self.embedded_runtime.build_pre_transform_spec_plan(
                 spec,
                 preserve_interactivity=preserve_interactivity,
-                keep_signals=keep_signals,
-                keep_datasets=keep_datasets,
+                keep_signals=parse_variables(keep_signals),
+                keep_datasets=parse_variables(keep_datasets),
             )
+            return cast(dict[str, Any], plan)
 
     def pre_transform_spec(
         self,
@@ -493,9 +492,6 @@ class VegaFusionRuntime:
                 inline_datasets
             )
 
-            # Parse input keep signals and datasets
-            keep_signals = parse_variables(keep_signals)
-            keep_datasets = parse_variables(keep_datasets)
             try:
                 if data_encoding_threshold is None:
                     new_spec, warnings = self.embedded_runtime.pre_transform_spec(
@@ -505,8 +501,8 @@ class VegaFusionRuntime:
                         row_limit=row_limit,
                         preserve_interactivity=preserve_interactivity,
                         inline_datasets=imported_inline_dataset,
-                        keep_signals=keep_signals,
-                        keep_datasets=keep_datasets,
+                        keep_signals=parse_variables(keep_signals),
+                        keep_datasets=parse_variables(keep_datasets),
                     )
                 else:
                     # Use pre_transform_extract to extract large datasets
@@ -519,14 +515,14 @@ class VegaFusionRuntime:
                             extract_threshold=data_encoding_threshold,
                             extracted_format=data_encoding_format,
                             inline_datasets=imported_inline_dataset,
-                            keep_signals=keep_signals,
-                            keep_datasets=keep_datasets,
+                            keep_signals=parse_variables(keep_signals),
+                            keep_datasets=parse_variables(keep_datasets),
                         )
                     )
 
                     # Insert encoded datasets back into spec
                     for name, scope, tbl in datasets:
-                        group = get_mark_group_for_scope(new_spec, scope)
+                        group = get_mark_group_for_scope(new_spec, scope) or {}
                         for data in group.get("data", []):
                             if data.get("name", None) == name:
                                 data["values"] = tbl
@@ -653,12 +649,15 @@ class VegaFusionRuntime:
             if pl is not None and _all_datasets_have_type(
                 inline_datasets, (pl.DataFrame, pl.LazyFrame)
             ):
+                if TYPE_CHECKING:
+                    import polars as pl
+
                 # Deserialize values to Polars tables
-                datasets = [pl.from_arrow(value) for value in values]
+                pl_dataframes = [pl.from_arrow(value) for value in values]
 
                 # Localize datetime columns to UTC
                 processed_datasets = []
-                for df in datasets:
+                for df in pl_dataframes:
                     for name, dtype in zip(df.columns, df.dtypes):
                         if dtype == pl.Datetime:
                             df = df.with_columns(
@@ -816,7 +815,7 @@ class VegaFusionRuntime:
             pre_transformed_spec2 = self.embedded_runtime.patch_pre_transformed_spec(
                 spec1, pre_transformed_spec1, spec2
             )
-            return pre_transformed_spec2
+            return cast(dict[str, Any], pre_transformed_spec2)
 
     @property
     def worker_threads(self) -> int:
@@ -873,7 +872,7 @@ class VegaFusionRuntime:
         return self._memory_limit
 
     @memory_limit.setter
-    def memory_limit(self, value: int | None) -> None:
+    def memory_limit(self, value: int) -> None:
         """
         Restart the runtime with the specified memory limit
 
@@ -916,7 +915,7 @@ class VegaFusionRuntime:
 
 
 def parse_variables(
-    variables: list[str | tuple[str, list[int]]],
+    variables: list[str | tuple[str, list[int]]] | None,
 ) -> list[tuple[str, list[int]]]:
     """
     Parse VegaFusion variables.
@@ -928,7 +927,7 @@ def parse_variables(
         List of parsed VegaFusion variables.
     """
     # Build input variables
-    pre_tx_vars = []
+    pre_tx_vars: list[tuple[str, list[int]]] = []
     if variables is None:
         return []
 
@@ -941,7 +940,7 @@ def parse_variables(
             pre_tx_vars.append((var, []))
         elif isinstance(var, (list, tuple)):
             if len(var) == 2:
-                pre_tx_vars.append(tuple(var))
+                pre_tx_vars.append((var[0], list(var[1])))
             else:
                 raise ValueError(err_msg)
         else:
