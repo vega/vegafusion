@@ -84,18 +84,6 @@ async function render({ model, el }) {
             }
         }
 
-        // // Add signal/data updaters
-        // model.on('change:_py_to_js_updates', async (updates) => {
-        //     for (const update of updates.changed._py_to_js_updates ?? []) {
-        //         if (update.namespace === "signal") {
-        //             setSignalValue(api.view, update.name, update.scope, update.value);
-        //         } else if (update.namespace === "data") {
-        //             setDataValue(api.view, update.name, update.scope, update.value);
-        //         }
-        //     }
-        //     await api.view.runAsync();
-        // });
-
         // Add signal/data updaters as messages
         model.on("msg:custom", msg => {
             if (msg.type === "update_view") {
