@@ -254,6 +254,105 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     altair_default_notebook = jupytext.read(io.StringIO(altair_default_markdown), fmt="markdown")
     vegafusion_jupyter_notebook = jupytext.read(io.StringIO(vegafusion_jupyter_markdown), fmt="markdown")
 
+    voila_proc, chrome_driver = launch_voila()
+
+    try:
+        name = mock_name.replace("/", "-")
+        altair_imgs = export_image_sequence(
+            chrome_driver, altair_default_notebook, name + "_altair", actions, delay
+        )
+        vegafusion_mime_imgs = export_image_sequence(
+            chrome_driver, vegafusion_jupyter_notebook, name + "_vegafusion_mime", actions, delay
+        )
+
+        compare_images(altair_imgs, vegafusion_mime_imgs, img_tolerance * 0.99)
+
+    finally:
+        voila_proc.kill()
+        chrome_driver.close()
+        time.sleep(0.25)
+
+
+def test_vegafusion_widget():
+
+    altair_chart_str = """
+from vegafusion.jupyter import VegaFusionWidget
+
+import altair as alt
+from vega_datasets import data
+
+source = data.seattle_weather.url
+brush = alt.selection_interval(encodings=['x'])
+
+bars = alt.Chart().mark_bar().encode(
+    x='month(date):O',
+    y='mean(precipitation):Q',
+    opacity=alt.condition(brush, alt.OpacityValue(1), alt.OpacityValue(0.7)),
+).add_params(
+    brush
+)
+
+line = alt.Chart().mark_rule(color='firebrick').encode(
+    y='mean(precipitation):Q',
+    size=alt.SizeValue(3)
+).transform_filter(
+    brush
+)
+
+chart = alt.layer(bars, line, data=source)
+"""
+
+    # Convert to Vega spec and use VegaFusionWidget
+    notebook_text_vf = r""" 
+```python
+{altair_chart_str}
+
+vega_spec_inline = chart.to_dict(format="vega")
+vega_spec_inline["data"][1]["url"] = "vegafusion+dataset://weather"
+
+widget = VegaFusionWidget(
+    spec=vega_spec_inline, 
+    inline_datasets={"weather": data.seattle_weather()}
+)
+widget
+```
+""".replace("{altair_chart_str}", altair_chart_str)
+
+    notebook_vf = jupytext.read(io.StringIO(notebook_text_vf), fmt="markdown")
+    
+    # Display with default altair renderer
+    notebook_text_alt = f""" 
+```python
+{altair_chart_str}
+
+chart
+```
+"""
+    notebook_alt = jupytext.read(io.StringIO(notebook_text_alt), fmt="markdown")
+    
+    # Define actions to perform a selection
+    actions = [
+        {"type": "snapshot"},
+        {"type": "move_to", "coords": [150, 150]},
+        {"type": "click_and_hold"},
+        {"type": "move_to", "coords": [200, 200]},
+        {"type": "release"},
+        {"type": "snapshot"}
+    ]
+
+    voila_proc, chrome_driver = launch_voila()
+
+    try:
+        imgs_alt = export_image_sequence(chrome_driver, notebook_alt, "vegafusion_widget_alt", actions=actions, delay=0.25)
+        imgs_vf = export_image_sequence(chrome_driver, notebook_vf, "vegafusion_widget_vf", actions=actions, delay=0.25)
+
+        compare_images(imgs_alt, imgs_vf, 0.99)
+    finally:
+        voila_proc.kill()
+        chrome_driver.close()
+        time.sleep(0.25)
+
+def launch_voila():
     # Create selenium Chrome instance
     chrome_opts = webdriver.ChromeOptions()
 
@@ -274,33 +373,17 @@ def test_altair_mock(mock_name, img_tolerance, delay):
     # Sleep to allow Voila itself to start (this does not include loading a particular dashboard).
     time.sleep(1.0)
 
-    try:
-        name = mock_name.replace("/", "-")
-        altair_imgs = export_image_sequence(
-            chrome_driver, altair_default_notebook, name + "_altair", actions, delay
-        )
-        vegafusion_mime_imgs = export_image_sequence(
-            chrome_driver, vegafusion_jupyter_notebook, name + "_vegafusion_mime", actions, delay
-        )
+    return voila_proc, chrome_driver
 
-        for i in range(len(altair_imgs)):
-            altair_img = altair_imgs[i]
-            vegafusion_mime_img = vegafusion_mime_imgs[i]
+def compare_images(baseline_imgs, test_imgs, img_tolerance):
 
-            assert altair_img.shape == vegafusion_mime_img.shape, "Size mismatch with mime renderer"
+    for i, (baseline_img, test_img) in enumerate(zip(baseline_imgs, test_imgs)):
+        assert baseline_img.shape == test_img.shape, "Size mismatch"
 
-            similarity_mime_value = ssim(altair_img, vegafusion_mime_img, channel_axis=2)
-            print(f"({i}) similarity_mime_value={similarity_mime_value}")
+        similarity_mime_value = ssim(baseline_img, test_img, channel_axis=2)
+        print(f"({i}) similarity_mime_value={similarity_mime_value}")
 
-            # Allow slightly more image tolerance for mime renderer as floating point differences may
-            # be introduced by pre-transform process
-            mime_image_tolerance = img_tolerance * 0.99
-            assert similarity_mime_value >= mime_image_tolerance, f"Similarity failed with mime renderer on image {i}"
-
-    finally:
-        voila_proc.kill()
-        chrome_driver.close()
-        time.sleep(0.25)
+        assert similarity_mime_value >= img_tolerance, f"Similarity failed with mime renderer on image {i}"
 
 
 def load_actions(mock_name):
