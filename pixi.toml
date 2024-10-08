@@ -31,6 +31,7 @@ build-py = { cmd = "maturin build -m vegafusion-python/Cargo.toml --release --st
 
 fmt-py = { cmd = "ruff format", cwd="vegafusion-python" }
 lint-fix-py = { cmd = "ruff format && ruff check --fix", cwd="vegafusion-python" }
+lint-check-py = { cmd = "ruff format --check && ruff check", cwd="vegafusion-python" }
 type-check-py = { cmd = "mypy", cwd="vegafusion-python" }
 
 # test python
