@@ -314,7 +314,7 @@ jobs:
 
       - name: Test vegafusion
         working-directory: vegafusion-python/
-        run: pytest --ignore=tests/test_altair_mocks.py
+        run: pytest --ignore=tests/test_jupyter_widget.py
 
   test-vegafusion-python-win-64:
     runs-on: windows-2022
@@ -351,7 +351,7 @@ jobs:
           python -m pip install pytest altair vega-datasets scikit-image
       - name: Test vegafusion
         working-directory: vegafusion-python/
-        run: pytest --ignore=tests/test_altair_mocks.py
+        run: pytest --ignore=tests/test_jupyter_widget.py
 
 
   build-vegafusion-server-linux-64:
