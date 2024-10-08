@@ -1,7 +1,6 @@
 # https://altair-viz.github.io/gallery/ridgeline_plot.html
 
 import altair as alt
-from vega_datasets import data
 
 source = "https://raw.githubusercontent.com/vega/vega-datasets/v1.31.1/data/seattle-weather.csv"
 

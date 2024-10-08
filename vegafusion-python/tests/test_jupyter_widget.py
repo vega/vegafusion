@@ -1,21 +1,22 @@
-from pathlib import Path
-import jupytext
 import io
+import json
+import os
+import platform
+import shutil
 import tempfile
-from subprocess import Popen
-import pytest
-from selenium.webdriver import ActionChains
-from selenium import webdriver
 import time
 from io import BytesIO
+from pathlib import Path
+from subprocess import Popen
+
+import jupytext
+import pytest
+from flaky import flaky
+from selenium import webdriver
+from selenium.webdriver import ActionChains
 from skimage.io import imread
 from skimage.metrics import structural_similarity as ssim
-import shutil
-from tenacity import retry, wait, stop
-import os
-from flaky import flaky
-import json
-import platform
+from tenacity import retry, stop, wait
 
 try:
     import chromedriver_binary
@@ -472,13 +473,13 @@ def export_image_sequence(
             )
 
             # Write logs
-            with open(failure_output / f"{name}_console.log", "wt") as f:
+            with open(failure_output / f"{name}_console.log", "w") as f:
                 for log in chrome_driver.get_log("browser"):
                     f.write(json.dumps(log) + "\n")
 
             # Write html dump
             root = chrome_driver.find_element("xpath", "//html")
-            with open(failure_output / f"{name}_page.html", "wt") as f:
+            with open(failure_output / f"{name}_page.html", "w") as f:
                 f.write(root.get_attribute("innerHTML"))
 
             raise

@@ -30,6 +30,7 @@ dev-py = { cmd = [
 build-py = { cmd = "maturin build -m vegafusion-python/Cargo.toml --release --strip --sdist $0" }
 
 fmt-py = { cmd = "ruff format", cwd="vegafusion-python" }
+lint-fix-py = { cmd = "ruff check --fix", cwd="vegafusion-python" }
 
 # test python
 install-chromedriver-auto = """

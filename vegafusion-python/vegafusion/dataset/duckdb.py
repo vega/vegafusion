@@ -1,8 +1,10 @@
 import logging
+
 import pyarrow as pa
 from duckdb import DuckDBPyRelation
-from .sql import SqlDataset
+
 from ..connection.duckdb import duckdb_relation_to_schema
+from .sql import SqlDataset
 
 
 class DuckDbDataset(SqlDataset):

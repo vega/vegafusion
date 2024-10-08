@@ -1,8 +1,10 @@
 import json
 import pathlib
 from typing import Any
+
 import anywidget
 import traitlets
+
 from vegafusion import runtime
 
 _here = pathlib.Path(__file__).parent

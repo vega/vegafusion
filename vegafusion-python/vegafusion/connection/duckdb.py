@@ -1,17 +1,16 @@
+import logging
 import re
+import uuid
 import warnings
-
-from . import SqlConnection, CsvReadOptions
-
-from typing import Dict, Optional
 from distutils.version import LooseVersion
+from typing import Dict, Optional
 
 import duckdb
+import pandas as pd
 import pyarrow as pa
 import pyarrow.feather
-import pandas as pd
-import logging
-import uuid
+
+from . import CsvReadOptions, SqlConnection
 
 # Table suffix name to use for raw registered table
 RAW_PREFIX = "_vf_raw_"
@@ -158,7 +157,7 @@ class DuckDbConnection(SqlConnection):
             try:
                 connection.install_extension("httpfs")
                 connection.load_extension("httpfs")
-            except (IOError, duckdb.IOException, duckdb.InvalidInputException) as e:
+            except (OSError, duckdb.IOException, duckdb.InvalidInputException) as e:
                 warnings.warn(
                     f"Failed to install and load the DuckDB httpfs extension:\n{e}"
                 )

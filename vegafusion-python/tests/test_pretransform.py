@@ -1,13 +1,15 @@
-import pandas as pd
-import pytest
-from pandas import Timestamp, NaT
-import pyarrow as pa
-import vegafusion as vf
-import json
-import polars as pl
-from datetime import date
-import decimal
 import base64
+import decimal
+import json
+from datetime import date
+
+import pandas as pd
+import polars as pl
+import pyarrow as pa
+import pytest
+from pandas import NaT, Timestamp
+
+import vegafusion as vf
 
 
 def setup_module(module):

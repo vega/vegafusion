@@ -1,4 +1,6 @@
-from typing import Iterable, TYPE_CHECKING
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
+
 from .datasource import Datasource
 
 if TYPE_CHECKING:

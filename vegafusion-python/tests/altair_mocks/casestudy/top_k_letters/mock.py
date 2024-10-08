@@ -2,8 +2,8 @@
 # Added sort of initial data frame for consistent order of tie breakers
 
 import altair as alt
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 # Excerpt from A Tale of Two Cities; public domain text
 text = """

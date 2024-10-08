@@ -1,7 +1,7 @@
 # https://altair-viz.github.io/gallery/radial_chart.html
 
-import pandas as pd
 import altair as alt
+import pandas as pd
 
 source = pd.DataFrame({"values": [12, 23, 47, 6, 52, 19]})
 

@@ -1,8 +1,8 @@
 # https://altair-viz.github.io/gallery/layered_histogram.html
 
-import pandas as pd
 import altair as alt
 import numpy as np
+import pandas as pd
 
 np.random.seed(42)
 

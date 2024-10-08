@@ -1,13 +1,14 @@
-from pathlib import Path
 import json
-import vegafusion as vf
-from vl_convert import vega_to_png
-
 from io import BytesIO
+from pathlib import Path
+
 import pyarrow as pa
+import pytest
 from skimage.io import imread
 from skimage.metrics import structural_similarity as ssim
-import pytest
+from vl_convert import vega_to_png
+
+import vegafusion as vf
 
 here = Path(__file__).parent
 
@@ -89,7 +90,7 @@ def test_it(category, name):
     print(similarity)
     assert (
         similarity >= 0.998
-    ), f"Similarity failed between datafusion and duckdb connections"
+    ), "Similarity failed between datafusion and duckdb connections"
 
 
 def test_pretransform_extract():

@@ -1,15 +1,16 @@
 from pathlib import Path
 
+import altair as alt
 import pandas as pd
+import polars as pl
 import pyarrow as pa
 import pytest
 from altair.utils.execeval import eval_block
-import vegafusion as vf
 from vega_datasets import data
-import polars as pl
-import altair as alt
 
-pa_major_minor = tuple((int(v) for v in pa.__version__.split(".")[:2]))
+import vegafusion as vf
+
+pa_major_minor = tuple(int(v) for v in pa.__version__.split(".")[:2])
 
 here = Path(__file__).parent
 altair_mocks_dir = here / "altair_mocks"

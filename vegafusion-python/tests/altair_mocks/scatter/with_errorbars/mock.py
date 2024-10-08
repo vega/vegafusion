@@ -1,8 +1,8 @@
 # https://altair-viz.github.io/gallery/simple_scatter_with_errorbars.html
 
 import altair as alt
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 # generate some data points with uncertainties
 np.random.seed(0)

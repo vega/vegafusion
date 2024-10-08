@@ -1,6 +1,8 @@
+from decimal import Decimal
+
 import pandas as pd
 import pyarrow as pa
-from decimal import Decimal
+
 from vegafusion.transformer import to_arrow_table
 
 

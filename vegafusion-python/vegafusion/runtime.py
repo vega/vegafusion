@@ -1,11 +1,11 @@
 import sys
-from typing import TypedDict, List, Literal, Any, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Literal, TypedDict, Union
 
 import psutil
 
 from .connection import SqlConnection
 from .dataset import SqlDataset
-from .datasource import PandasDatasource, DfiDatasource, PyArrowDatasource
+from .datasource import DfiDatasource, PandasDatasource, PyArrowDatasource
 from .local_tz import get_local_tz
 
 if TYPE_CHECKING:

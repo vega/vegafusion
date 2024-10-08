@@ -1,9 +1,11 @@
+from collections.abc import Sequence
 from functools import cached_property
-from typing import Sequence, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+
 from .sql import SqlDataset
 
 if TYPE_CHECKING:
-    from pyarrow import Table, Schema
+    from pyarrow import Schema, Table
 
 
 class SqlDatasetDataFrame:

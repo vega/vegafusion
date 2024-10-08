@@ -1,8 +1,8 @@
 # https://altair-viz.github.io/gallery/stem_and_leaf.html
 
 import altair as alt
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 np.random.seed(42)
 

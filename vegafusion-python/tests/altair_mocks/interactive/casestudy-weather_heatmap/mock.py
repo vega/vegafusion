@@ -1,7 +1,6 @@
 # https://altair-viz.github.io/gallery/weather_heatmap.html
 
 import altair as alt
-from vega_datasets import data
 
 # Since the data is more than 5,000 rows we'll import it from a URL
 source = "https://raw.githubusercontent.com/vega/vega-datasets/v1.31.1/data/seattle-temps.csv"

@@ -1,7 +1,6 @@
 # https://altair-viz.github.io/gallery/natural_disasters.html
 
 import altair as alt
-from vega_datasets import data
 
 source = "https://raw.githubusercontent.com/vega/vega-datasets/main/data/disasters.csv"
 

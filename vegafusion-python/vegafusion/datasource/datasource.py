@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Iterable, TYPE_CHECKING
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import pyarrow as pa

@@ -18,4 +18,4 @@ alt.Chart(
         alt.SortField("IMDB_Rating", order="descending"),
         alt.SortField("Title", order="ascending"),
     ],
-).transform_filter((alt.datum.rank < 10))
+).transform_filter(alt.datum.rank < 10)

@@ -1,10 +1,10 @@
-from typing import Dict, Optional, TYPE_CHECKING
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Dict, Optional
 
 if TYPE_CHECKING:
-    from pyarrow import Schema, Table
     from pandas import DataFrame
+    from pyarrow import Schema, Table
 
 
 @dataclass

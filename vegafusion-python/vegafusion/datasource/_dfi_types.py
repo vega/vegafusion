@@ -2,17 +2,16 @@
 # Copied from https://data-apis.org/dataframe-protocol/latest/API.html
 #
 # These classes are only for use in type signatures
+import enum
 from abc import (
     ABC,
     abstractmethod,
 )
-import enum
+from collections.abc import Iterable, Sequence
 from typing import (
     Any,
     Dict,
-    Iterable,
     Optional,
-    Sequence,
     Tuple,
     TypedDict,
 )

@@ -1,8 +1,8 @@
 # https://altair-viz.github.io/gallery/normed_parallel_coordinates.html
 
 import altair as alt
-from vega_datasets import data
 from altair import datum
+from vega_datasets import data
 
 source = data.iris()
 

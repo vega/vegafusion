@@ -1,7 +1,9 @@
-from typing import Iterable, TYPE_CHECKING
 import re
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
-from ._dfi_types import DtypeKind, DataFrame as DfiDataFrame
+from ._dfi_types import DataFrame as DfiDataFrame
+from ._dfi_types import DtypeKind
 from .datasource import Datasource
 
 if TYPE_CHECKING:

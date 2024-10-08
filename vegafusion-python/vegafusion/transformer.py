@@ -1,10 +1,5 @@
 import io
-import os
 import sys
-import pathlib
-from hashlib import sha1
-from tempfile import NamedTemporaryFile
-import uuid
 from weakref import WeakValueDictionary
 
 DATASET_PREFIXES = ("vegafusion+dataset://", "table://")

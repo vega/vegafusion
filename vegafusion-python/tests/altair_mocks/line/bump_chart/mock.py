@@ -2,8 +2,8 @@
 # Width set to 500
 
 import altair as alt
-from vega_datasets import data
 import pandas as pd
+from vega_datasets import data
 
 stocks = data.stocks()
 source = (

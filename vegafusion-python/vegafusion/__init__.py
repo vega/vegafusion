@@ -1,11 +1,11 @@
-from .runtime import runtime
-from .transformer import to_feather, get_inline_datasets_for_spec
-from .local_tz import set_local_tz, get_local_tz
-from importlib.abc import MetaPathFinder, Loader
-from importlib.metadata import version as _original_version
 import importlib.metadata
+from importlib.abc import Loader, MetaPathFinder
+from importlib.metadata import version as _original_version
 
 from ._vegafusion import __version__
+from .local_tz import get_local_tz, set_local_tz
+from .runtime import runtime
+from .transformer import get_inline_datasets_for_spec, to_feather
 
 
 def patched_version(distribution_name):

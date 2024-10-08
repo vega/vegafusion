@@ -1,11 +1,12 @@
 import logging
-import pyarrow as pa
-from .sql import SqlDataset
-from snowflake.snowpark import Table as SnowparkTable
-from snowflake.snowpark.types import DataType as SnowparkDataType
 from typing import Dict
 
+import pyarrow as pa
+from snowflake.snowpark import Table as SnowparkTable
+from snowflake.snowpark.types import DataType as SnowparkDataType
+
 from ..transformer import to_arrow_table
+from .sql import SqlDataset
 
 SNOWPARK_TO_PYARROW_TYPES: Dict[SnowparkDataType, pa.DataType] = {}
 

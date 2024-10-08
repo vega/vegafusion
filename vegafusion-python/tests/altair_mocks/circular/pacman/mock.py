@@ -1,7 +1,7 @@
 # https://altair-viz.github.io/gallery/pacman_chart.html
 
-import numpy as np
 import altair as alt
+import numpy as np
 
 alt.Chart().mark_arc(color="gold").encode(
     theta=alt.datum((5 / 8) * np.pi, scale=None),

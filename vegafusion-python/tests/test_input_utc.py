@@ -1,6 +1,8 @@
-import vegafusion as vf
-import pandas as pd
 import json
+
+import pandas as pd
+
+import vegafusion as vf
 
 
 def test_input_utc():

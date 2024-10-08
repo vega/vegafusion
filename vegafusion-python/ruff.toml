@@ -1,0 +1,52 @@
+line-length = 88
+indent-width = 4
+include = ["vegafusion/**/*.py", "tests/**/*.py"]
+target-version = "py39"
+
+[lint]
+select = [
+  "E",   # pycodestyle Error
+  "F",   # Pyflakes
+  "W",   # pycodestyle Warning
+  "I",   # isort
+  "N",   # PEP8 Naming
+  "UP",  # pyupgrade
+  "YTT", # flake8-2020
+  "ANN", # flake8-annotations
+  "S",   # flake8-bandit
+  "BLE", # flake8-blind-except
+  "B",   # flake8-bugbear
+  "A",   # flake8-annotations-complexity
+  "C4",  # flake8-comprehensions
+  "EM",  # flake8-errmsg
+  "FA",  # flake8-future-annotations
+]
+
+ignore = [
+  # Allow assert statements
+  "S101",
+
+  # Rules that conflict with other rules
+  "D211", # No blank lines allowed before class docstring (no-blank-line-before-class-docstring)
+  "D213", # Multi-line docstring summary should start at the second line (multi-line-docstring-summary-start)
+
+  # Deprecated and not useful
+  "ANN101", # Missing type annotation for self in method (missing-type-annotation-for-self)
+  "ANN102", # Missing type annotation for class (missing-type-cls)
+
+  # Conflicting lint rules with Ruff formatter
+  "W191",   # Tab indentation
+  "E111",   # Indentation with invalid multiple
+  "E114",   # Indentation with invalid multiple comment
+  "E117",   # Over-indented
+  "D206",   # Indent with spaces
+  "D300",   # Triple single quotes
+  "Q000",   # Bad quotes inline string
+  "Q001",   # Bad quotes multiline string
+  "Q002",   # Bad quotes docstring
+  "Q003",   # Avoidable escaped quote
+  "COM812", # Missing trailing comma
+  "COM819", # Prohibited trailing comma
+  "ISC001", # Single-line implicit string concatenation
+  "ISC002", # Multi-line implicit string concatenation
+]

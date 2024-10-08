@@ -1,8 +1,8 @@
 # https://altair-viz.github.io/gallery/poly_fit_regression.html
 
+import altair as alt
 import numpy as np
 import pandas as pd
-import altair as alt
 
 # Generate some random data
 np.random.seed(42)
