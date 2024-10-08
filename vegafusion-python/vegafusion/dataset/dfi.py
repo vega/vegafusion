@@ -5,6 +5,7 @@ from .sql import SqlDataset
 if TYPE_CHECKING:
     from pyarrow import Table, Schema
 
+
 class SqlDatasetDataFrame:
     """An implementation of the dataframe interchange protocol.
     Based on https://github.com/ibis-project/ibis/pull/6733

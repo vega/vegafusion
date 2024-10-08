@@ -8,6 +8,7 @@ import pyarrow as pa
 from skimage.io import imread
 from skimage.metrics import structural_similarity as ssim
 import pytest
+
 here = Path(__file__).parent
 
 spec_dir = here / ".." / ".." / "vegafusion-runtime" / "tests" / "specs"
@@ -59,10 +60,8 @@ def maybe_skip(category, name):
         pytest.skip("Non-deterministic specification")
 
 
-@pytest.mark.parametrize(
-    "category,name", load_test_cases())
+@pytest.mark.parametrize("category,name", load_test_cases())
 def test_it(category, name):
-
     maybe_skip(category, name)
 
     # Load spec into dict
@@ -83,10 +82,14 @@ def test_it(category, name):
     img_duckdb = imread(BytesIO(vega_to_png(transformed)))
 
     # Compare images
-    assert img_datafusion.shape == img_duckdb.shape, "Size mismatch between datafusion and duckdb connections"
+    assert (
+        img_datafusion.shape == img_duckdb.shape
+    ), "Size mismatch between datafusion and duckdb connections"
     similarity = ssim(img_datafusion, img_duckdb, channel_axis=2)
     print(similarity)
-    assert similarity >= 0.998, f"Similarity failed between datafusion and duckdb connections"
+    assert (
+        similarity >= 0.998
+    ), f"Similarity failed between datafusion and duckdb connections"
 
 
 def test_pretransform_extract():
@@ -99,7 +102,7 @@ def test_pretransform_extract():
     assert len(warnings) == 0
     assert len(datasets) == 1
 
-    (name, scope, table)= datasets[0]
+    (name, scope, table) = datasets[0]
     assert name == "source_0"
     assert scope == []
     assert isinstance(table, pa.Table)

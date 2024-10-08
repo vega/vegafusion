@@ -8,7 +8,9 @@ if TYPE_CHECKING:
 
 
 class PandasDatasource(Datasource):
-    def __init__(self, df: "pd.DataFrame", sample_size: int = 1000, batch_size: int = 8096):
+    def __init__(
+        self, df: "pd.DataFrame", sample_size: int = 1000, batch_size: int = 8096
+    ):
         import pandas as pd
         import pyarrow as pa
 
@@ -32,9 +34,13 @@ class PandasDatasource(Datasource):
                     # We will expand categoricals (not yet supported in VegaFusion)
                     if isinstance(pd_type, pd.CategoricalDtype):
                         cat = df[col].cat
-                        field = pa.Schema.from_pandas(pd.DataFrame({col: cat.categories})).field(col)
+                        field = pa.Schema.from_pandas(
+                            pd.DataFrame({col: cat.categories})
+                        ).field(col)
                     else:
-                        candidate_schema = pa.Schema.from_pandas(df.iloc[::sample_stride][[col]])
+                        candidate_schema = pa.Schema.from_pandas(
+                            df.iloc[::sample_stride][[col]]
+                        )
                         field = candidate_schema.field(col)
                 except (pa.ArrowTypeError, pa.ArrowInvalid):
                     # If arrow fails to infer the type, fall back to string
@@ -66,6 +72,7 @@ class PandasDatasource(Datasource):
     def fetch(self, columns: Iterable[str]) -> "pa.Table":
         import pandas as pd
         import pyarrow as pa
+
         projected = self._df[columns].copy(deep=False)
 
         for col, pd_type in projected.dtypes.items():

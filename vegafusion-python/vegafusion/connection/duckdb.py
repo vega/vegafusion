@@ -132,7 +132,12 @@ def pyarrow_schema_to_select_replace(schema: pa.Schema, table_name: str) -> str:
 
 
 class DuckDbConnection(SqlConnection):
-    def __init__(self, connection: duckdb.DuckDBPyConnection = None, fallback: bool = True, verbose: bool = False):
+    def __init__(
+        self,
+        connection: duckdb.DuckDBPyConnection = None,
+        fallback: bool = True,
+        verbose: bool = False,
+    ):
         # Validate duckdb version
         if LooseVersion(duckdb.__version__) < LooseVersion("0.7.0"):
             raise ImportError(
@@ -154,7 +159,9 @@ class DuckDbConnection(SqlConnection):
                 connection.install_extension("httpfs")
                 connection.load_extension("httpfs")
             except (IOError, duckdb.IOException, duckdb.InvalidInputException) as e:
-                warnings.warn(f"Failed to install and load the DuckDB httpfs extension:\n{e}")
+                warnings.warn(
+                    f"Failed to install and load the DuckDB httpfs extension:\n{e}"
+                )
 
             # Use a less round number for pandas_analyze_sample (default is 1000)
             connection.execute("SET GLOBAL pandas_analyze_sample=1007")
@@ -205,9 +212,11 @@ class DuckDbConnection(SqlConnection):
 
     def tables(self) -> Dict[str, pa.Schema]:
         result = {}
-        table_names = self.conn.query(
-            "select table_name from information_schema.tables"
-        ).to_df()["table_name"].tolist()
+        table_names = (
+            self.conn.query("select table_name from information_schema.tables")
+            .to_df()["table_name"]
+            .tolist()
+        )
 
         for table_name in table_names:
             if table_name in self._registered_table_schemas:
@@ -281,7 +290,9 @@ class DuckDbConnection(SqlConnection):
         self._update_temp_names(name, temporary)
         self._registered_table_schemas[name] = self._schema_for_table(name)
 
-    def register_csv(self, name: str, path: str, options: CsvReadOptions, temporary: bool = False):
+    def register_csv(
+        self, name: str, path: str, options: CsvReadOptions, temporary: bool = False
+    ):
         relation = self.conn.read_csv(
             path,
             header=options.has_header,

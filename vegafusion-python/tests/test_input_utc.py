@@ -16,7 +16,9 @@ def load_dataset():
     """
     Load seattle-weather dataset with the date column localized as UTC
     """
-    seattle_weather = pd.read_csv("https://raw.githubusercontent.com/vega/vega-datasets/next/data/seattle-weather.csv")
+    seattle_weather = pd.read_csv(
+        "https://raw.githubusercontent.com/vega/vega-datasets/next/data/seattle-weather.csv"
+    )
     seattle_weather["date"] = pd.to_datetime(seattle_weather["date"])
     seattle_weather = seattle_weather.set_index("date").tz_localize("UTC").reset_index()
     return seattle_weather

@@ -6,7 +6,4 @@ from vega_datasets import data
 
 source = data.wheat()
 
-alt.Chart(source).mark_bar().encode(
-    x='wheat:Q',
-    y="year:O"
-).properties(height=500)
+alt.Chart(source).mark_bar().encode(x="wheat:Q", y="year:O").properties(height=500)

@@ -7,23 +7,18 @@ source = data.barley()
 
 alt.Chart(source, title="The Morris Mistake").mark_point().encode(
     alt.X(
-        'yield:Q',
+        "yield:Q",
         title="Barley Yield (bushels/acre)",
         scale=alt.Scale(zero=False),
-        axis=alt.Axis(grid=False)
+        axis=alt.Axis(grid=False),
     ),
-    alt.Y(
-        'variety:N',
-        title="",
-        sort='-x',
-        axis=alt.Axis(grid=True)
-    ),
-    color=alt.Color('year:N', legend=alt.Legend(title="Year")),
+    alt.Y("variety:N", title="", sort="-x", axis=alt.Axis(grid=True)),
+    color=alt.Color("year:N", legend=alt.Legend(title="Year")),
     facet=alt.Facet(
-        'site:N',
+        "site:N",
         columns=2,
         title="",
-        sort=alt.EncodingSortField(field='yield', op='sum', order='descending')
+        sort=alt.EncodingSortField(field="yield", op="sum", order="descending"),
     ),
 ).properties(
     width=200,

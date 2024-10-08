@@ -5,11 +5,9 @@ from vega_datasets import data
 
 source = data.stocks()
 
-alt.Chart(source).transform_filter(
-    alt.datum.symbol != 'GOOG'
-).mark_area().encode(
-    x='date:T',
-    y='price:Q',
-    color='symbol:N',
-    row=alt.Row('symbol:N', sort=['MSFT', 'AAPL', 'IBM', 'AMZN'])
+alt.Chart(source).transform_filter(alt.datum.symbol != "GOOG").mark_area().encode(
+    x="date:T",
+    y="price:Q",
+    color="symbol:N",
+    row=alt.Row("symbol:N", sort=["MSFT", "AAPL", "IBM", "AMZN"]),
 ).properties(height=50, width=400)

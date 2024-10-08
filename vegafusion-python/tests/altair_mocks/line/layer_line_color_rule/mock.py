@@ -7,16 +7,8 @@ source = data.stocks()
 
 base = alt.Chart(source).properties(width=550)
 
-line = base.mark_line().encode(
-    x='date',
-    y='price',
-    color='symbol'
-)
+line = base.mark_line().encode(x="date", y="price", color="symbol")
 
-rule = base.mark_rule().encode(
-    y='average(price)',
-    color='symbol',
-    size=alt.value(2)
-)
+rule = base.mark_rule().encode(y="average(price)", color="symbol", size=alt.value(2))
 
 line + rule

@@ -74,4 +74,5 @@ class SqlDataset(ABC):
     ) -> "SqlDatasetDataFrame":
         """DataFrame interchange protocol support"""
         from .dfi import SqlDatasetDataFrame
+
         return SqlDatasetDataFrame(self, nan_as_null=nan_as_null, allow_copy=allow_copy)

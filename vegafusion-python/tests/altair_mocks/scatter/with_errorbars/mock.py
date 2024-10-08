@@ -15,25 +15,16 @@ source = pd.DataFrame({"x": x, "y": y, "yerr": yerr})
 
 # the base chart
 base = alt.Chart(source).transform_calculate(
-    ymin="datum.y-datum.yerr",
-    ymax="datum.y+datum.yerr"
+    ymin="datum.y-datum.yerr", ymax="datum.y+datum.yerr"
 )
 
 # generate the points
-points = base.mark_point(
-    filled=True,
-    size=50,
-    color='black'
-).encode(
-    x=alt.X('x', scale=alt.Scale(domain=(0, 6))),
-    y=alt.Y('y', scale=alt.Scale(zero=False))
+points = base.mark_point(filled=True, size=50, color="black").encode(
+    x=alt.X("x", scale=alt.Scale(domain=(0, 6))),
+    y=alt.Y("y", scale=alt.Scale(zero=False)),
 )
 
 # generate the error bars
-errorbars = base.mark_errorbar().encode(
-    x="x",
-    y="ymin:Q",
-    y2="ymax:Q"
-)
+errorbars = base.mark_errorbar().encode(x="x", y="ymin:Q", y2="ymax:Q")
 
 points + errorbars

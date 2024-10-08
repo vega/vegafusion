@@ -6,9 +6,9 @@ from vega_datasets import data
 source = data.population()
 
 alt.Chart(source).mark_line().encode(
-    x='year:O',
+    x="year:O",
     y=alt.Y(
-        'sum(people)',
-        scale=alt.Scale(type="log")  # Here the scale is applied
-    )
+        "sum(people)",
+        scale=alt.Scale(type="log"),  # Here the scale is applied
+    ),
 )

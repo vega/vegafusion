@@ -5,12 +5,10 @@ from vega_datasets import data
 
 source = data.wheat()
 
-base = alt.Chart(source).encode(x='year:O')
+base = alt.Chart(source).encode(x="year:O")
 
-bar = base.mark_bar().encode(y='wheat:Q')
+bar = base.mark_bar().encode(y="wheat:Q")
 
-line =  base.mark_line(color='red').encode(
-    y='wages:Q'
-)
+line = base.mark_line(color="red").encode(y="wages:Q")
 
 (bar + line).properties(width=600)

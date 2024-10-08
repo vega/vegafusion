@@ -31,7 +31,7 @@ class VegaFusionWidget(anywidget.AnyWidget):
     embed_options = traitlets.Dict(default_value=None, allow_none=True).tag(sync=True)
     debug = traitlets.Bool(default_value=False)
     row_limit = traitlets.Int(default_value=100000).tag(sync=True)
-    
+
     # Public output traitlets
     warnings = traitlets.List(allow_none=True)
 
@@ -89,7 +89,6 @@ class VegaFusionWidget(anywidget.AnyWidget):
         else:
             cls._esm = load_js_src()
             cls._is_offline = False
-
 
     def __init__(
         self,
@@ -159,8 +158,9 @@ class VegaFusionWidget(anywidget.AnyWidget):
                 self._chart_state = None
                 self._js_watch_plan = None
             return
-        
+
         if self.local_tz is None:
+
             def on_local_tz_change(change):
                 self._init_chart_state(change["new"])
 
@@ -177,8 +177,8 @@ class VegaFusionWidget(anywidget.AnyWidget):
         self._init_chart_state(self.local_tz)
 
     def _handle_custom_msg(self, content, buffers):
-        if content.get('type') == 'update_state':
-            self._handle_update_state(content.get('updates', []))
+        if content.get("type") == "update_state":
+            self._handle_update_state(content.get("updates", []))
 
     def _handle_update_state(self, updates):
         """
@@ -186,24 +186,24 @@ class VegaFusionWidget(anywidget.AnyWidget):
         """
         if self.debug:
             print(f"Received update_state message from JavaScript:\n{updates}")
-        
+
         # Process the updates using the chart state
         if self._chart_state is not None:
             processed_updates = self._chart_state.update(updates)
-            
+
             if self.debug:
                 print(f"Processed updates:\n{processed_updates}")
-            
+
             # Send the processed updates back to JavaScript
             self.send({"type": "update_view", "updates": processed_updates})
         else:
-            print("Warning: Received update_state message, but chart state is not initialized.")
-
+            print(
+                "Warning: Received update_state message, but chart state is not initialized."
+            )
 
     def _init_chart_state(self, local_tz: str):
         if self.spec is not None:
             with self.hold_sync():
-
                 # Build the chart state
                 self._chart_state = runtime.new_chart_state(
                     self.spec,
@@ -213,7 +213,9 @@ class VegaFusionWidget(anywidget.AnyWidget):
                 )
 
                 # Check if the row limit was exceeded
-                handle_row_limit_exceeded(self.row_limit, self._chart_state.get_warnings())
+                handle_row_limit_exceeded(
+                    self.row_limit, self._chart_state.get_warnings()
+                )
 
                 # Get the watch plan and transformed spec
                 self._js_watch_plan = self._chart_state.get_watch_plan()[
@@ -241,6 +243,6 @@ class RowLimitExceededError(Exception):
     Exception raised when the number of dataset rows after filtering and aggregation exceeds
     the current limit.
     """
+
     def __init__(self, message: str):
         super().__init__(message)
-

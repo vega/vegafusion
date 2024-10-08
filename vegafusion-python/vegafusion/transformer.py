@@ -19,6 +19,7 @@ def to_arrow_table(data):
     :return: pyarrow.Table
     """
     import pyarrow as pa
+
     pd = sys.modules.get("pandas")
 
     # Reset named index(ex) into a column
@@ -132,7 +133,6 @@ def to_feather(data, file):
             f.write(file_bytes)
 
 
-
 def get_inline_dataset_names(vega_spec):
     """
     Get set of the inline datasets names in the provided spec
@@ -145,7 +145,7 @@ def get_inline_dataset_names(vega_spec):
         url = data.get("url", "")
         for prefix in DATASET_PREFIXES:
             if url.startswith(prefix):
-                name = url[len(prefix):]
+                name = url[len(prefix) :]
                 table_names.add(name)
 
     for mark in vega_spec.get("marks", []):
@@ -188,9 +188,11 @@ def has_geo_interface(data):
 def import_pyarrow_interchange():
     try:
         import pyarrow.interchange as pi
+
         return pi
     except ImportError:
         import pyarrow as pa
+
         raise ImportError(
             "Use of the DataFrame Interchange Protocol requires at least version 11.0.0 of pyarrow\n"
             f"Found version {pa.__version__}"

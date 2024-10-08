@@ -9,16 +9,13 @@ source = data.movies.url
 alt.Chart(
     source,
 ).mark_bar().encode(
-    x=alt.X('Title:N', sort='-y'),
-    y=alt.Y('IMDB_Rating:Q'),
-    color=alt.Color('IMDB_Rating:Q')
-
+    x=alt.X("Title:N", sort="-y"),
+    y=alt.Y("IMDB_Rating:Q"),
+    color=alt.Color("IMDB_Rating:Q"),
 ).transform_window(
-    rank='rank(IMDB_Rating)',
+    rank="rank(IMDB_Rating)",
     sort=[
-        alt.SortField('IMDB_Rating', order='descending'),
-        alt.SortField('Title', order='ascending'),
-    ]
-).transform_filter(
-    (alt.datum.rank < 10)
-)
+        alt.SortField("IMDB_Rating", order="descending"),
+        alt.SortField("Title", order="ascending"),
+    ],
+).transform_filter((alt.datum.rank < 10))

@@ -9,7 +9,9 @@ class DuckDbDataset(SqlDataset):
     def dialect(self) -> str:
         return "duckdb"
 
-    def __init__(self, relation: DuckDBPyRelation, fallback: bool = True, verbose: bool = False):
+    def __init__(
+        self, relation: DuckDBPyRelation, fallback: bool = True, verbose: bool = False
+    ):
         self._relation = relation
         self._fallback = fallback
         self._verbose = verbose

@@ -15,20 +15,10 @@ person = (
     "-0.6 -0.4 -0.6z"
 )
 
-alt.Chart(data).transform_calculate(
-    row="ceil(datum.id/10)"
-).transform_calculate(
+alt.Chart(data).transform_calculate(row="ceil(datum.id/10)").transform_calculate(
     col="datum.id - datum.row*10"
-).mark_point(
-    filled=True,
-    size=50
-).encode(
+).mark_point(filled=True, size=50).encode(
     x=alt.X("col:O", axis=None),
     y=alt.Y("row:O", axis=None),
-    shape=alt.ShapeValue(person)
-).properties(
-    width=400,
-    height=400
-).configure_view(
-    strokeWidth=0
-)
+    shape=alt.ShapeValue(person),
+).properties(width=400, height=400).configure_view(strokeWidth=0)

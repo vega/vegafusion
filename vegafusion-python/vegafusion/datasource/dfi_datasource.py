@@ -7,8 +7,10 @@ from .datasource import Datasource
 if TYPE_CHECKING:
     import pyarrow as pa
 
+
 def get_pyarrow_dtype(kind, bit_width):
     import pyarrow as pa
+
     if kind == DtypeKind.INT:
         if bit_width == 8:
             return pa.int8()
@@ -67,8 +69,9 @@ def parse_datetime_format_str(format_str):
 
 
 def map_date_type(data_type):
-    """Map column date type to pyarrow date type. """
+    """Map column date type to pyarrow date type."""
     import pyarrow as pa
+
     kind, bit_width, f_string, _ = data_type
 
     if kind == DtypeKind.DATETIME:
@@ -82,12 +85,14 @@ def map_date_type(data_type):
             return pa_dtype
         else:
             raise NotImplementedError(
-                f"Conversion for {data_type} is not yet supported.")
+                f"Conversion for {data_type} is not yet supported."
+            )
 
 
 class DfiDatasource(Datasource):
     def __init__(self, dataframe: DfiDataFrame):
         import pyarrow as pa
+
         if hasattr(dataframe, "__dataframe__"):
             dataframe = dataframe.__dataframe__()
         fields = []
@@ -105,6 +110,7 @@ class DfiDatasource(Datasource):
     def fetch(self, columns: Iterable[str]) -> "pa.Table":
         import pyarrow as pa
         from pyarrow.interchange import from_dataframe
+
         columns = list(columns)
         projected_schema = pa.schema([f for f in self._schema if f.name in columns])
         table = from_dataframe(self._dataframe.select_columns_by_name(columns))

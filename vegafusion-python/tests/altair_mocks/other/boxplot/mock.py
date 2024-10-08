@@ -5,7 +5,4 @@ from vega_datasets import data
 
 source = data.population.url
 
-alt.Chart(source).mark_boxplot(extent='min-max').encode(
-    x='age:O',
-    y='people:Q'
-)
+alt.Chart(source).mark_boxplot(extent="min-max").encode(x="age:O", y="people:Q")

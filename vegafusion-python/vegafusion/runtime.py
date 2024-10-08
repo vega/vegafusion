@@ -11,6 +11,7 @@ from .local_tz import get_local_tz
 if TYPE_CHECKING:
     from duckdb import DuckDBPyConnection
 
+
 def _all_datasets_have_type(inline_datasets, types):
     if not inline_datasets:
         # If there are no inline datasets, return false
@@ -114,12 +115,18 @@ class VegaFusionRuntime:
         if self._embedded_runtime is None:
             # Try to initialize an embedded runtime
             from vegafusion._vegafusion import PyVegaFusionRuntime
+
             self._embedded_runtime = PyVegaFusionRuntime(
-                self.cache_capacity, self.memory_limit, self.worker_threads, connection=self._connection
+                self.cache_capacity,
+                self.memory_limit,
+                self.worker_threads,
+                connection=self._connection,
             )
         return self._embedded_runtime
 
-    def set_connection(self, connection: Union[str, SqlConnection, "DuckDBPyConnection"] = "datafusion"):
+    def set_connection(
+        self, connection: Union[str, SqlConnection, "DuckDBPyConnection"] = "datafusion"
+    ):
         """
         Sets the connection to use to evaluate Vega data transformations.
 
@@ -145,11 +152,13 @@ class VegaFusionRuntime:
                 connection = None
             elif connection == "duckdb":
                 from vegafusion.connection.duckdb import DuckDbConnection
+
                 connection = DuckDbConnection()
             else:
                 raise ValueError(f"Unsupported connection name: {connection}")
         elif duckdb is not None and isinstance(connection, duckdb.DuckDBPyConnection):
             from vegafusion.connection.duckdb import DuckDbConnection
+
             connection = DuckDbConnection(connection)
         elif not isinstance(connection, SqlConnection):
             raise ValueError(
@@ -182,7 +191,7 @@ class VegaFusionRuntime:
 
         if self._grpc_query is None:
             self._grpc_query = self._grpc_channel.unary_unary(
-                '/services.VegaFusionRuntime/TaskGraphQuery',
+                "/services.VegaFusionRuntime/TaskGraphQuery",
             )
         return self._grpc_query
 
@@ -239,11 +248,11 @@ class VegaFusionRuntime:
         return imported_inline_datasets
 
     def build_pre_transform_spec_plan(
-            self,
-            spec,
-            preserve_interactivity=True,
-            keep_signals=None,
-            keep_datasets=None,
+        self,
+        spec,
+        preserve_interactivity=True,
+        keep_signals=None,
+        keep_datasets=None,
     ):
         """
         Diagnostic function that returns the plan used by the pre_transform_spec method
@@ -272,7 +281,9 @@ class VegaFusionRuntime:
                 - "warnings": List of planner warnings
         """
         if self._grpc_channel:
-            raise ValueError("build_pre_transform_spec_plan not yet supported over gRPC")
+            raise ValueError(
+                "build_pre_transform_spec_plan not yet supported over gRPC"
+            )
         else:
             # Parse input keep signals and datasets
             keep_signals = parse_variables(keep_signals)
@@ -359,7 +370,9 @@ class VegaFusionRuntime:
             raise ValueError("pre_transform_spec not yet supported over gRPC")
         else:
             local_tz = local_tz or get_local_tz()
-            imported_inline_dataset = self._import_or_register_inline_datasets(inline_datasets)
+            imported_inline_dataset = self._import_or_register_inline_datasets(
+                inline_datasets
+            )
 
             # Parse input keep signals and datasets
             keep_signals = parse_variables(keep_signals)
@@ -378,20 +391,22 @@ class VegaFusionRuntime:
                     )
                 else:
                     # Use pre_transform_extract to extract large datasets
-                    new_spec, datasets, warnings = self.embedded_runtime.pre_transform_extract(
-                        spec,
-                        local_tz=local_tz,
-                        default_input_tz=default_input_tz,
-                        preserve_interactivity=preserve_interactivity,
-                        extract_threshold=data_encoding_threshold,
-                        extracted_format=data_encoding_format,
-                        inline_datasets=imported_inline_dataset,
-                        keep_signals=keep_signals,
-                        keep_datasets=keep_datasets,
+                    new_spec, datasets, warnings = (
+                        self.embedded_runtime.pre_transform_extract(
+                            spec,
+                            local_tz=local_tz,
+                            default_input_tz=default_input_tz,
+                            preserve_interactivity=preserve_interactivity,
+                            extract_threshold=data_encoding_threshold,
+                            extracted_format=data_encoding_format,
+                            inline_datasets=imported_inline_dataset,
+                            keep_signals=keep_signals,
+                            keep_datasets=keep_datasets,
+                        )
                     )
 
                     # Insert encoded datasets back into spec
-                    for (name, scope, tbl) in datasets:
+                    for name, scope, tbl in datasets:
                         group = get_mark_group_for_scope(new_spec, scope)
                         for data in group.get("data", []):
                             if data.get("name", None) == name:
@@ -405,7 +420,12 @@ class VegaFusionRuntime:
             return new_spec, warnings
 
     def new_chart_state(
-        self, spec, local_tz=None, default_input_tz=None, row_limit=None, inline_datasets=None
+        self,
+        spec,
+        local_tz=None,
+        default_input_tz=None,
+        row_limit=None,
+        inline_datasets=None,
     ) -> ChartState:
         """
         Construct new ChartState object
@@ -429,9 +449,13 @@ class VegaFusionRuntime:
             raise ValueError("new_chart_state not yet supported over gRPC")
         else:
             local_tz = local_tz or get_local_tz()
-            inline_arrow_dataset = self._import_or_register_inline_datasets(inline_datasets)
+            inline_arrow_dataset = self._import_or_register_inline_datasets(
+                inline_datasets
+            )
             return ChartState(
-                self.embedded_runtime.new_chart_state(spec, local_tz, default_input_tz, row_limit, inline_arrow_dataset)
+                self.embedded_runtime.new_chart_state(
+                    spec, local_tz, default_input_tz, row_limit, inline_arrow_dataset
+                )
             )
 
     def pre_transform_datasets(
@@ -441,7 +465,7 @@ class VegaFusionRuntime:
         local_tz=None,
         default_input_tz=None,
         row_limit=None,
-        inline_datasets=None
+        inline_datasets=None,
     ):
         """
         Extract the fully evaluated form of the requested datasets from a Vega specification
@@ -480,7 +504,9 @@ class VegaFusionRuntime:
             pre_tx_vars = parse_variables(datasets)
 
             # Serialize inline datasets
-            inline_arrow_dataset = self._import_or_register_inline_datasets(inline_datasets)
+            inline_arrow_dataset = self._import_or_register_inline_datasets(
+                inline_datasets
+            )
             try:
                 values, warnings = self.embedded_runtime.pre_transform_datasets(
                     spec,
@@ -488,7 +514,7 @@ class VegaFusionRuntime:
                     local_tz=local_tz,
                     default_input_tz=default_input_tz,
                     row_limit=row_limit,
-                    inline_datasets=inline_arrow_dataset
+                    inline_datasets=inline_arrow_dataset,
                 )
             finally:
                 # Clean up registered tables (both inline and internal temporary tables)
@@ -497,7 +523,9 @@ class VegaFusionRuntime:
 
             pl = sys.modules.get("polars", None)
             pa = sys.modules.get("pyarrow", None)
-            if pl is not None and _all_datasets_have_type(inline_datasets, (pl.DataFrame, pl.LazyFrame)):
+            if pl is not None and _all_datasets_have_type(
+                inline_datasets, (pl.DataFrame, pl.LazyFrame)
+            ):
                 # Deserialize values to Polars tables
                 datasets = [pl.from_arrow(value) for value in values]
 
@@ -506,7 +534,11 @@ class VegaFusionRuntime:
                 for df in datasets:
                     for name, dtype in zip(df.columns, df.dtypes):
                         if dtype == pl.Datetime:
-                            df = df.with_columns(df[name].dt.replace_time_zone("UTC").dt.convert_time_zone(local_tz))
+                            df = df.with_columns(
+                                df[name]
+                                .dt.replace_time_zone("UTC")
+                                .dt.convert_time_zone(local_tz)
+                            )
                     processed_datasets.append(df)
 
                 return processed_datasets, warnings
@@ -520,7 +552,9 @@ class VegaFusionRuntime:
                 for df in datasets:
                     for name, dtype in df.dtypes.items():
                         if dtype.kind == "M":
-                            df[name] = df[name].dt.tz_localize("UTC").dt.tz_convert(local_tz)
+                            df[name] = (
+                                df[name].dt.tz_localize("UTC").dt.tz_convert(local_tz)
+                            )
 
                 return datasets, warnings
 
@@ -591,18 +625,22 @@ class VegaFusionRuntime:
         else:
             local_tz = local_tz or get_local_tz()
 
-            inline_arrow_dataset = self._import_or_register_inline_datasets(inline_datasets)
+            inline_arrow_dataset = self._import_or_register_inline_datasets(
+                inline_datasets
+            )
             try:
-                new_spec, datasets, warnings = self.embedded_runtime.pre_transform_extract(
-                    spec,
-                    local_tz=local_tz,
-                    default_input_tz=default_input_tz,
-                    preserve_interactivity=preserve_interactivity,
-                    extract_threshold=extract_threshold,
-                    extracted_format=extracted_format,
-                    inline_datasets=inline_arrow_dataset,
-                    keep_signals=keep_signals,
-                    keep_datasets=keep_datasets,
+                new_spec, datasets, warnings = (
+                    self.embedded_runtime.pre_transform_extract(
+                        spec,
+                        local_tz=local_tz,
+                        default_input_tz=default_input_tz,
+                        preserve_interactivity=preserve_interactivity,
+                        extract_threshold=extract_threshold,
+                        extracted_format=extracted_format,
+                        inline_datasets=inline_arrow_dataset,
+                        keep_signals=keep_signals,
+                        keep_datasets=keep_datasets,
+                    )
                 )
             finally:
                 # Clean up temporary tables
@@ -766,5 +804,6 @@ def get_mark_group_for_scope(vega_spec, scope):
         group = child_group
 
     return group
+
 
 runtime = VegaFusionRuntime(64, psutil.virtual_memory().total // 2, psutil.cpu_count())

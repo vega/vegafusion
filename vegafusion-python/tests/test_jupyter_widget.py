@@ -65,7 +65,7 @@ assert(alt.data_transformers.active == 'vegafusion')
 
 
 def setup_module(module):
-    """ setup any state specific to the execution of the given module."""
+    """setup any state specific to the execution of the given module."""
     # Initialize notebooks and screenshots to empty directories
     shutil.rmtree(temp_notebooks_dir, ignore_errors=True)
     temp_notebooks_dir.mkdir(parents=True, exist_ok=True)
@@ -79,7 +79,8 @@ def setup_module(module):
 
 @flaky(max_runs=2)
 @pytest.mark.parametrize(
-    "mock_name,img_tolerance,delay", [
+    "mock_name,img_tolerance,delay",
+    [
         ("area/cumulative_count", 1.0, 0.25),
         ("area/density_facet", 1.0, 0.25),
         ("area/gradient", 1.0, 0.25),
@@ -126,7 +127,6 @@ def setup_module(module):
         ("casestudy/falkensee", 1.0, 0.25),
         ("casestudy/us_employment", 1.0, 0.25),
         ("casestudy/top_k_items", 1.0, 0.25),
-
         # Different order of ticks for equal bar lengths
         ("casestudy/top_k_letters", 0.995, 0.25),
         ("casestudy/isotype", 1.0, 0.25),
@@ -234,25 +234,30 @@ def setup_module(module):
         ("simple/line_chart", 1.0, 0.25),
         ("simple/scatter_tooltips", 1.0, 0.25),
         ("simple/strip_chart", 1.0, 0.25),
-
         # Non-deterministic mocks have lower image tolerance
         ("other/errorbars_with_ci", 0.8, 0.25),
         ("other/sorted_error_bars_with_ci", 0.8, 0.25),
-        ("scatter/stripplot", 0.8, 0.25)  # random()
-    ])
+        ("scatter/stripplot", 0.8, 0.25),  # random()
+    ],
+)
 def test_altair_mock(mock_name, img_tolerance, delay):
-
     # Build Jupytext Markdown text containing the mock's code
     mock_path = altair_mocks_dir / mock_name / "mock.py"
     actions = load_actions(mock_name)
 
     mock_code = mock_path.read_text()
     altair_default_markdown = altair_default_template.replace("{code}", mock_code)
-    vegafusion_jupyter_markdown = altair_vegafusion_jupyter_template.replace("{code}", mock_code)
+    vegafusion_jupyter_markdown = altair_vegafusion_jupyter_template.replace(
+        "{code}", mock_code
+    )
 
     # Use jupytext to convert markdown to an ipynb file
-    altair_default_notebook = jupytext.read(io.StringIO(altair_default_markdown), fmt="markdown")
-    vegafusion_jupyter_notebook = jupytext.read(io.StringIO(vegafusion_jupyter_markdown), fmt="markdown")
+    altair_default_notebook = jupytext.read(
+        io.StringIO(altair_default_markdown), fmt="markdown"
+    )
+    vegafusion_jupyter_notebook = jupytext.read(
+        io.StringIO(vegafusion_jupyter_markdown), fmt="markdown"
+    )
 
     voila_proc, chrome_driver = launch_voila()
 
@@ -262,7 +267,11 @@ def test_altair_mock(mock_name, img_tolerance, delay):
             chrome_driver, altair_default_notebook, name + "_altair", actions, delay
         )
         vegafusion_mime_imgs = export_image_sequence(
-            chrome_driver, vegafusion_jupyter_notebook, name + "_vegafusion_mime", actions, delay
+            chrome_driver,
+            vegafusion_jupyter_notebook,
+            name + "_vegafusion_mime",
+            actions,
+            delay,
         )
 
         compare_images(altair_imgs, vegafusion_mime_imgs, img_tolerance * 0.99)
@@ -274,7 +283,6 @@ def test_altair_mock(mock_name, img_tolerance, delay):
 
 
 def test_vegafusion_widget():
-
     altair_chart_str = """
 from vegafusion.jupyter import VegaFusionWidget
 
@@ -319,7 +327,7 @@ widget
 """.replace("{altair_chart_str}", altair_chart_str)
 
     notebook_vf = jupytext.read(io.StringIO(notebook_text_vf), fmt="markdown")
-    
+
     # Display with default altair renderer
     notebook_text_alt = f""" 
 ```python
@@ -329,7 +337,7 @@ chart
 ```
 """
     notebook_alt = jupytext.read(io.StringIO(notebook_text_alt), fmt="markdown")
-    
+
     # Define actions to perform a selection
     actions = [
         {"type": "snapshot"},
@@ -337,20 +345,33 @@ chart
         {"type": "click_and_hold"},
         {"type": "move_to", "coords": [200, 200]},
         {"type": "release"},
-        {"type": "snapshot"}
+        {"type": "snapshot"},
     ]
 
     voila_proc, chrome_driver = launch_voila()
 
     try:
-        imgs_alt = export_image_sequence(chrome_driver, notebook_alt, "vegafusion_widget_alt", actions=actions, delay=0.25)
-        imgs_vf = export_image_sequence(chrome_driver, notebook_vf, "vegafusion_widget_vf", actions=actions, delay=0.25)
+        imgs_alt = export_image_sequence(
+            chrome_driver,
+            notebook_alt,
+            "vegafusion_widget_alt",
+            actions=actions,
+            delay=0.25,
+        )
+        imgs_vf = export_image_sequence(
+            chrome_driver,
+            notebook_vf,
+            "vegafusion_widget_vf",
+            actions=actions,
+            delay=0.25,
+        )
 
         compare_images(imgs_alt, imgs_vf, 0.99)
     finally:
         voila_proc.kill()
         chrome_driver.close()
         time.sleep(0.25)
+
 
 def launch_voila():
     # Create selenium Chrome instance
@@ -363,27 +384,31 @@ def launch_voila():
         chrome_opts.add_argument("--disable-dev-shm-usage")
         chrome_opts.add_argument("--no-sandbox")
 
-    chrome_opts.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
+    chrome_opts.set_capability("goog:loggingPrefs", {"browser": "ALL"})
     chrome_driver = webdriver.Chrome(options=chrome_opts)
     chrome_driver.set_window_size(800, 800)
 
     # Launch Voila server
-    voila_proc = Popen(["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir)
+    voila_proc = Popen(
+        ["voila", "--no-browser", "--enable_nbextensions=True"], cwd=temp_notebooks_dir
+    )
 
     # Sleep to allow Voila itself to start (this does not include loading a particular dashboard).
     time.sleep(1.0)
 
     return voila_proc, chrome_driver
 
-def compare_images(baseline_imgs, test_imgs, img_tolerance):
 
+def compare_images(baseline_imgs, test_imgs, img_tolerance):
     for i, (baseline_img, test_img) in enumerate(zip(baseline_imgs, test_imgs)):
         assert baseline_img.shape == test_img.shape, "Size mismatch"
 
         similarity_mime_value = ssim(baseline_img, test_img, channel_axis=2)
         print(f"({i}) similarity_mime_value={similarity_mime_value}")
 
-        assert similarity_mime_value >= img_tolerance, f"Similarity failed with mime renderer on image {i}"
+        assert (
+            similarity_mime_value >= img_tolerance
+        ), f"Similarity failed with mime renderer on image {i}"
 
 
 def load_actions(mock_name):
@@ -395,17 +420,19 @@ def load_actions(mock_name):
 
 
 def export_image_sequence(
-        chrome_driver: webdriver.Chrome,
-        notebook: jupytext.jupytext.NotebookNode,
-        name,
-        actions,
-        delay,
-        voila_url_base: str = "http://localhost:8866/voila/render/",
+    chrome_driver: webdriver.Chrome,
+    notebook: jupytext.jupytext.NotebookNode,
+    name,
+    actions,
+    delay,
+    voila_url_base: str = "http://localhost:8866/voila/render/",
 ):
     imgs = []
 
     with tempfile.NamedTemporaryFile(
-            mode="wt", dir=temp_notebooks_dir, suffix=".ipynb",
+        mode="wt",
+        dir=temp_notebooks_dir,
+        suffix=".ipynb",
     ) as f:
         jupytext.write(notebook, f, fmt="ipynb")
         f.file.flush()
@@ -420,11 +447,14 @@ def export_image_sequence(
         @retry(wait=wait.wait_fixed(0.5), stop=stop.stop_after_delay(10))
         def get_url():
             return chrome_driver.get(url)
+
         get_url()
 
         # Remove padding, margins, and standardize line height.
-        css = ("body, .jp-Cell, .jp-Notebook, .jupyter-widgets, .jp-RenderedHTMLCommon "
-               "{margin: 0 !important; padding: 0 !important; line-height: 1.3 !important;}")
+        css = (
+            "body, .jp-Cell, .jp-Notebook, .jupyter-widgets, .jp-RenderedHTMLCommon "
+            "{margin: 0 !important; padding: 0 !important; line-height: 1.3 !important;}"
+        )
         script = 'document.styleSheets[0].insertRule("' + css + '", 0 )'
         chrome_driver.execute_script(script)
 
@@ -437,7 +467,9 @@ def export_image_sequence(
             canvas = get_canvas()
         except:
             # Write screenshot
-            chrome_driver.get_screenshot_as_file(str(failure_output / f"{name}_here.png"))
+            chrome_driver.get_screenshot_as_file(
+                str(failure_output / f"{name}_here.png")
+            )
 
             # Write logs
             with open(failure_output / f"{name}_console.log", "wt") as f:
@@ -447,7 +479,7 @@ def export_image_sequence(
             # Write html dump
             root = chrome_driver.find_element("xpath", "//html")
             with open(failure_output / f"{name}_page.html", "wt") as f:
-                f.write(root.get_attribute('innerHTML'))
+                f.write(root.get_attribute("innerHTML"))
 
             raise
         time.sleep(delay)
@@ -461,7 +493,7 @@ def export_image_sequence(
                 chain.perform()
                 time.sleep(0.25)
 
-                img_path = (temp_screenshots_dir / f"{name}_{i}.png").as_posix();
+                img_path = (temp_screenshots_dir / f"{name}_{i}.png").as_posix()
                 print(f"img_path: {img_path}")
                 if action_type == "snapshot":
                     img_bytes = canvas.screenshot_as_png
@@ -488,7 +520,9 @@ def export_image_sequence(
                 # Origin of element center
                 xoffset = canvas.size["width"] / 2
                 yoffset = canvas.size["height"] / 2
-                chain = chain.move_to_element_with_offset(canvas, coords[0] - xoffset, coords[1] - yoffset)
+                chain = chain.move_to_element_with_offset(
+                    canvas, coords[0] - xoffset, coords[1] - yoffset
+                )
             elif action_type == "move_by":
                 coords = action["coords"]
                 chain = chain.move_by_offset(coords[0], coords[1])
