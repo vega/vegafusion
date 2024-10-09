@@ -18,8 +18,9 @@ use crate::spec::transform::project::ProjectTransformSpec;
 use crate::spec::transform::{TransformColumns, TransformSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
-use itertools::sorted;
+use itertools::{sorted, Itertools};
 use petgraph::algo::toposort;
+use std::collections::HashMap;
 use vegafusion_common::arrow::array::StringArray;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::Result;
@@ -49,6 +50,88 @@ pub fn projection_pushdown(chart_spec: &mut ChartSpec) -> Result<()> {
     let mut visitor = InsertProjectionVisitor::new(&datasets_column_usage);
     chart_spec.walk_mut(&mut visitor)?;
     Ok(())
+}
+
+/// Get column usage info for the top-level root datasets of a Vega spec
+/// Returns map from dataset name to either:
+///   - None if column usage could not be determined
+///   - Vec<String> of the referenced columns if column usage could be determined precisely
+pub fn get_column_usage(chart_spec: &ChartSpec) -> Result<HashMap<String, Option<Vec<String>>>> {
+    let mut chart_spec = chart_spec.clone();
+
+    // split root nodes that have transforms so that the usage we compute refers to the source
+    // data, not the result after transforms
+    let mut new_data_specs: Vec<DataSpec> = Vec::new();
+    let suffix = "__column_usage_root";
+    for data_spec in &mut chart_spec.data {
+        if data_spec.source.is_none() && !data_spec.transform.is_empty() {
+            // This is a root dataset that has transforms, so we split it
+            let name = data_spec.name.clone();
+            let mut transforms = Vec::new();
+            transforms.append(&mut data_spec.transform);
+            let root_name = format!("{name}{suffix}");
+            data_spec.name = root_name.clone();
+
+            let new_spec = DataSpec {
+                name: name.clone(),
+                source: Some(root_name),
+                transform: transforms,
+                ..Default::default()
+            };
+
+            new_data_specs.push(new_spec);
+        }
+    }
+
+    chart_spec.data.append(&mut new_data_specs);
+
+    let datum_var = None;
+    let usage_scope = Vec::new();
+    let task_scope = chart_spec.to_task_scope()?;
+
+    // Collect field usage for vlSelectionTest datasets
+    let mut vl_selection_visitor = CollectVlSelectionTestFieldsVisitor::new(task_scope.clone());
+    chart_spec.walk(&mut vl_selection_visitor)?;
+    let vl_selection_fields = vl_selection_visitor.vl_selection_fields;
+
+    let datasets_column_usage = chart_spec.datasets_column_usage(
+        &datum_var,
+        usage_scope.as_slice(),
+        &task_scope,
+        &vl_selection_fields,
+    );
+
+    let mut root_dataset_columns: HashMap<String, Option<Vec<String>>> = HashMap::new();
+    for data_spec in &chart_spec.data {
+        if data_spec.source.is_none() {
+            let var = Variable::new(VariableNamespace::Data, &data_spec.name);
+            let scoped_var = (var, Vec::new());
+            let column_usage = datasets_column_usage
+                .usages
+                .get(&scoped_var)
+                .unwrap_or(&ColumnUsage::Unknown);
+
+            // Remove root dataset suffix that was added above
+            let original_name = data_spec
+                .name
+                .strip_suffix(suffix)
+                .unwrap_or(&data_spec.name)
+                .to_string();
+
+            match column_usage {
+                ColumnUsage::Unknown => {
+                    root_dataset_columns.insert(original_name.clone(), None);
+                }
+                ColumnUsage::Known(used) => {
+                    root_dataset_columns.insert(
+                        original_name.clone(),
+                        Some(used.iter().cloned().sorted().collect()),
+                    );
+                }
+            }
+        }
+    }
+    Ok(root_dataset_columns)
 }
 
 impl GetDatasetsColumnUsage for MarkEncodingField {
