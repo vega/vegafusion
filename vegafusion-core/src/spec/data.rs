@@ -12,7 +12,7 @@ use std::collections::{HashMap, HashSet};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::VegaFusionError;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct DataSpec {
     pub name: String,
 

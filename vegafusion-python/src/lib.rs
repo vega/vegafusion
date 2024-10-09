@@ -1,5 +1,6 @@
 pub mod connection;
 
+use pyo3;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyTuple};
@@ -19,6 +20,7 @@ use serde_json::json;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::patch::patch_pre_transformed_spec;
 use vegafusion_core::planning::plan::{PlannerConfig, PreTransformSpecWarningSpec, SpecPlan};
+use vegafusion_core::planning::projection_pushdown::get_column_usage as rs_get_column_usage;
 use vegafusion_core::planning::watch::{ExportUpdateJSON, WatchPlan};
 use vegafusion_core::proto::gen::tasks::{TzConfig, Variable};
 use vegafusion_core::spec::chart::ChartSpec;
@@ -614,6 +616,14 @@ impl PyVegaFusionRuntime {
     }
 }
 
+#[pyfunction]
+#[pyo3(signature = (spec))]
+pub fn get_column_usage(py: Python, spec: PyObject) -> PyResult<PyObject> {
+    let spec = parse_json_spec(spec)?;
+    let usage = rs_get_column_usage(&spec)?;
+    Ok(pythonize::pythonize(py, &usage)?.into())
+}
+
 /// A Python module implemented in Rust. The name of this function must match
 /// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
 /// import the module.
@@ -622,6 +632,7 @@ fn _vegafusion(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     m.add_class::<PyVegaFusionRuntime>()?;
     m.add_class::<PySqlConnection>()?;
     m.add_class::<PyChartState>()?;
+    m.add_function(wrap_pyfunction!(get_column_usage, m)?)?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
 }
