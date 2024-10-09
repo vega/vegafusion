@@ -5,6 +5,7 @@ from typing import cast
 from ._vegafusion import __version__
 from .local_tz import get_local_tz, set_local_tz
 from .runtime import runtime
+from .utils import get_column_usage
 
 
 def patched_version(distribution_name: str) -> str:
@@ -20,8 +21,10 @@ def patched_version(distribution_name: str) -> str:
 # Patch importlib.metadata.version to handle our dummy package
 importlib.metadata.version = patched_version
 
+
 __all__ = [
     "runtime",
     "set_local_tz",
     "get_local_tz",
+    "get_column_usage",
 ]
