@@ -1,6 +1,7 @@
-from vegafusion.dataset.duckdb import DuckDbDataset
 import duckdb
 import pytest
+
+from vegafusion.dataset.duckdb import DuckDbDataset
 
 
 def test_sql_dataset_dfi():

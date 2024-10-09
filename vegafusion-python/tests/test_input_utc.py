@@ -1,10 +1,12 @@
-import vegafusion as vf
-import pandas as pd
 import json
+
+import pandas as pd
+
+import vegafusion as vf
 
 
 def test_input_utc():
-    (pre_transformed, warnings) = vf.runtime.pre_transform_spec(
+    (pre_transformed, _warnings) = vf.runtime.pre_transform_spec(
         input_spec(), "UTC", "UTC", inline_datasets={"seattle_weather": load_dataset()}
     )
     print(json.dumps(pre_transformed, indent=2))
@@ -16,7 +18,9 @@ def load_dataset():
     """
     Load seattle-weather dataset with the date column localized as UTC
     """
-    seattle_weather = pd.read_csv("https://raw.githubusercontent.com/vega/vega-datasets/next/data/seattle-weather.csv")
+    seattle_weather = pd.read_csv(
+        "https://raw.githubusercontent.com/vega/vega-datasets/next/data/seattle-weather.csv"
+    )
     seattle_weather["date"] = pd.to_datetime(seattle_weather["date"])
     seattle_weather = seattle_weather.set_index("date").tz_localize("UTC").reset_index()
     return seattle_weather

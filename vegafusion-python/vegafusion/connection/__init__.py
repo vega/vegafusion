@@ -1,10 +1,12 @@
-from typing import Dict, Optional, TYPE_CHECKING
-from dataclasses import dataclass
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyarrow import Schema, Table
     from pandas import DataFrame
+    from pyarrow import Schema, Table
 
 
 @dataclass
@@ -12,10 +14,11 @@ class CsvReadOptions:
     """
     CSV Read configuration options
     """
+
     has_header: bool
     delimeter: str
     file_extension: str
-    schema: Optional["Schema"]
+    schema: Schema | None
 
 
 class RegistrationNotSupportedError(RuntimeError):
@@ -26,6 +29,7 @@ class SqlConnection(ABC):
     """
     Python interface for SQL connections
     """
+
     @classmethod
     def dialect(cls) -> str:
         """
@@ -46,7 +50,7 @@ class SqlConnection(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def tables(self) -> Dict[str, "Schema"]:
+    def tables(self) -> dict[str, Schema]:
         """
         Returns the names and schema for the tables that are provided by the connection.
         These are the tables that may be referenced by SQL queries passed to the
@@ -57,7 +61,7 @@ class SqlConnection(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def fetch_query(self, query: str, schema: "Schema") -> "Table":
+    def fetch_query(self, query: str, schema: Schema) -> Table:
         """
         Returns the result of evaluating the requested query. The resulting pa.Table
         should have a schema matching the provided schema
@@ -77,7 +81,9 @@ class SqlConnection(ABC):
         """
         return True
 
-    def register_pandas(self, name: str, df: "DataFrame", temporary: bool = False):
+    def register_pandas(
+        self, name: str, df: DataFrame, temporary: bool = False
+    ) -> None:
         """
         Register the provided pandas DataFrame as a table with the provided name
 
@@ -86,9 +92,11 @@ class SqlConnection(ABC):
         :param temporary: Whether table is considered temporary,
             and should be removed by unregister_temporary_tables
         """
-        raise RegistrationNotSupportedError("Connection does not support registration of pandas datasets")
+        raise RegistrationNotSupportedError(
+            "Connection does not support registration of pandas datasets"
+        )
 
-    def register_arrow(self, name: str, table: "Table", temporary: bool = False):
+    def register_arrow(self, name: str, table: Table, temporary: bool = False) -> None:
         """
         Register the provided pyarrow Table as a table with the provided name
         :param name: Table name
@@ -96,9 +104,11 @@ class SqlConnection(ABC):
         :param temporary: Whether table is considered temporary,
             and should be removed by unregister_temporary_tables
         """
-        raise RegistrationNotSupportedError("Connection does not support registration of arrow datasets")
+        raise RegistrationNotSupportedError(
+            "Connection does not support registration of arrow datasets"
+        )
 
-    def register_json(self, name: str, path: str, temporary: bool = False):
+    def register_json(self, name: str, path: str, temporary: bool = False) -> None:
         """
         Register the JSON file at the provided path as a table with the provided name
         :param name: Table name
@@ -106,9 +116,13 @@ class SqlConnection(ABC):
         :param temporary: Whether table is considered temporary,
             and should be removed by unregister_temporary_tables
         """
-        raise RegistrationNotSupportedError("Connection does not support registration of json datasets")
+        raise RegistrationNotSupportedError(
+            "Connection does not support registration of json datasets"
+        )
 
-    def register_csv(self, name: str, path: str, options: CsvReadOptions, temporary: bool = False):
+    def register_csv(
+        self, name: str, path: str, options: CsvReadOptions, temporary: bool = False
+    ) -> None:
         """
         Register the CSV file at the provided path as a table with the provided name
         :param name: Table name
@@ -117,9 +131,11 @@ class SqlConnection(ABC):
         :param temporary: Whether table is considered temporary,
             and should be removed by unregister_temporary_tables
         """
-        raise RegistrationNotSupportedError("Connection does not support registration of csv datasets")
+        raise RegistrationNotSupportedError(
+            "Connection does not support registration of csv datasets"
+        )
 
-    def register_parquet(self, name: str, path: str, temporary: bool = False):
+    def register_parquet(self, name: str, path: str, temporary: bool = False) -> None:
         """
         Register the Parquet file at the provided path as a table with the provided name
         :param name: Table name
@@ -127,9 +143,13 @@ class SqlConnection(ABC):
         :param temporary: Whether table is considered temporary,
             and should be removed by unregister_temporary_tables
         """
-        raise RegistrationNotSupportedError("Connection does not support registration of parquet datasets")
+        raise RegistrationNotSupportedError(
+            "Connection does not support registration of parquet datasets"
+        )
 
-    def register_arrow_file(self, name: str, path: str, temporary: bool = False):
+    def register_arrow_file(
+        self, name: str, path: str, temporary: bool = False
+    ) -> None:
         """
         Register the Arrow file at the provided path as a table with the provided name
         :param name: Table name
@@ -137,17 +157,23 @@ class SqlConnection(ABC):
         :param temporary: Whether table is considered temporary,
             and should be removed by unregister_temporary_tables
         """
-        raise RegistrationNotSupportedError("Connection does not support registration of arrow file datasets")
+        raise RegistrationNotSupportedError(
+            "Connection does not support registration of arrow file datasets"
+        )
 
-    def unregister(self, name: str):
+    def unregister(self, name: str) -> None:
         """
         Unregister a table (temporary or otherwise) by name
         :param name: Table name
         """
-        raise RegistrationNotSupportedError("Connection does not support unregistration")
+        raise RegistrationNotSupportedError(
+            "Connection does not support unregistration"
+        )
 
-    def unregister_temporary_tables(self):
+    def unregister_temporary_tables(self) -> None:
         """
         Unregister all dynamically registered tables
         """
-        raise RegistrationNotSupportedError("Connection does not support unregistering temporary tables")
+        raise RegistrationNotSupportedError(
+            "Connection does not support unregistering temporary tables"
+        )

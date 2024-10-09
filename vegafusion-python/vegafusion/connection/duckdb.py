@@ -1,24 +1,28 @@
+from __future__ import annotations
+
+import logging
 import re
+import uuid
 import warnings
-
-from . import SqlConnection, CsvReadOptions
-
-from typing import Dict, Optional
 from distutils.version import LooseVersion
+from typing import Any
 
 import duckdb
+import duckdb.typing
+import pandas as pd
 import pyarrow as pa
 import pyarrow.feather
-import pandas as pd
-import logging
-import uuid
+
+from . import CsvReadOptions, SqlConnection
 
 # Table suffix name to use for raw registered table
 RAW_PREFIX = "_vf_raw_"
 
 
-def duckdb_type_name_to_pyarrow_type(duckdb_type: str) -> pa.DataType:
-    duckdb_type = str(duckdb_type).upper()
+def duckdb_type_name_to_pyarrow_type(
+    duckdb_type: str,
+) -> pa.DataType:
+    duckdb_type = duckdb_type.upper()
     if duckdb_type in ("VARCHAR", "JSON", "CHAR", "CATEGORICAL"):
         return pa.string()
     elif duckdb_type in ("REAL", "FLOAT4", "FLOAT"):
@@ -64,7 +68,7 @@ def duckdb_relation_to_schema(rel: duckdb.DuckDBPyRelation) -> pa.Schema:
     schema_fields = {}
     for col, type_name in zip(rel.columns, rel.dtypes):
         try:
-            type_ = duckdb_type_name_to_pyarrow_type(type_name)
+            type_ = duckdb_type_name_to_pyarrow_type(str(type_name))
             schema_fields[col] = type_
         except ValueError:
             # Skip columns with unrecognized types
@@ -72,7 +76,7 @@ def duckdb_relation_to_schema(rel: duckdb.DuckDBPyRelation) -> pa.Schema:
     return pa.schema(schema_fields)
 
 
-def pyarrow_type_to_duckdb_type_name(field_type: pa.Schema) -> Optional[str]:
+def pyarrow_type_to_duckdb_type_name(field_type: pa.Schema) -> str | None:
     if field_type in (pa.utf8(), pa.large_utf8()):
         return "VARCHAR"
     elif field_type in (pa.float16(), pa.float32()):
@@ -132,29 +136,39 @@ def pyarrow_schema_to_select_replace(schema: pa.Schema, table_name: str) -> str:
 
 
 class DuckDbConnection(SqlConnection):
-    def __init__(self, connection: duckdb.DuckDBPyConnection = None, fallback: bool = True, verbose: bool = False):
+    def __init__(
+        self,
+        connection: duckdb.DuckDBPyConnection | None = None,
+        fallback: bool = True,
+        verbose: bool = False,
+    ) -> None:
         # Validate duckdb version
         if LooseVersion(duckdb.__version__) < LooseVersion("0.7.0"):
             raise ImportError(
-                f"The VegaFusion DuckDB connection requires at least DuckDB version 0.7.0\n"
+                "The VegaFusion DuckDB connection requires at least DuckDB "
+                "version 0.7.0\n"
                 f"Found version {duckdb.__version__}"
             )
 
         self._fallback = fallback
         self._verbose = verbose
-        self._temp_tables = set()
+        self._temp_tables: set[str] = set()
 
         if connection is None:
             connection = duckdb.connect()
 
-            # Install and load the httpfs extension only if we are creating the duckdb connection
-            # here. If a connection was passed in, don't assume it has internet access and the
-            # ability to install extensions
+            # Install and load the httpfs extension only if we are creating
+            # the duckdb connection here. If a connection was passed in, don't
+            # assume it has internet access and the ability to install
+            # extensions
             try:
                 connection.install_extension("httpfs")
                 connection.load_extension("httpfs")
-            except (IOError, duckdb.IOException, duckdb.InvalidInputException) as e:
-                warnings.warn(f"Failed to install and load the DuckDB httpfs extension:\n{e}")
+            except (OSError, duckdb.IOException, duckdb.InvalidInputException) as e:
+                warnings.warn(
+                    f"Failed to install and load the DuckDB httpfs extension:\n{e}",
+                    stacklevel=2,
+                )
 
             # Use a less round number for pandas_analyze_sample (default is 1000)
             connection.execute("SET GLOBAL pandas_analyze_sample=1007")
@@ -165,7 +179,8 @@ class DuckDbConnection(SqlConnection):
         self.conn = connection
         self.logger = logging.getLogger("DuckDbConnection")
 
-        self._registered_table_schemas = dict()
+        self._registered_table_schemas: dict[str, Any] = {}
+
         # Call self.tables to warm the cache of table schemas
         self.tables()
 
@@ -176,7 +191,7 @@ class DuckDbConnection(SqlConnection):
     def fallback(self) -> bool:
         return self._fallback
 
-    def _replace_query_for_table(self, table_name: str):
+    def _replace_query_for_table(self, table_name: str) -> str:
         """
         Build a `SELECT * REPLACE(...) FROM table_name` query for a table
         that converts unsupported column types to varchar columns
@@ -186,7 +201,7 @@ class DuckDbConnection(SqlConnection):
         for col, type_name in zip(rel.columns, rel.dtypes):
             quoted_col_name = quote_column(col)
             try:
-                duckdb_type_name_to_pyarrow_type(type_name)
+                duckdb_type_name_to_pyarrow_type(str(type_name))
                 # Skip columns with supported types
             except ValueError:
                 # Convert unsupported types to strings (except struct)
@@ -199,24 +214,26 @@ class DuckDbConnection(SqlConnection):
         else:
             return f"SELECT * FROM {table_name}"
 
-    def _schema_for_table(self, table_name: str):
+    def _schema_for_table(self, table_name: str) -> pa.Schema:
         rel = self.conn.query(f'select * from "{table_name}" limit 1')
         return duckdb_relation_to_schema(rel)
 
-    def tables(self) -> Dict[str, pa.Schema]:
+    def tables(self) -> dict[str, pa.Schema]:
         result = {}
-        table_names = self.conn.query(
-            "select table_name from information_schema.tables"
-        ).to_df()["table_name"].tolist()
+        table_names = (
+            self.conn.query("select table_name from information_schema.tables")
+            .to_df()["table_name"]
+            .tolist()
+        )
 
         for table_name in table_names:
             if table_name in self._registered_table_schemas:
-                # Registered tables are expected to only change when self.register_* is called,
-                # so use the cached version
+                # Registered tables are expected to only change when
+                # self.register_* is called, so use the cached version
                 result[table_name] = self._registered_table_schemas[table_name]
             elif not table_name.startswith(RAW_PREFIX):
-                # Dynamically look up schema for tables that are registered with duckdb but not with
-                # the self.register_* methods. Skip raw tables
+                # Dynamically look up schema for tables that are registered with
+                # duckdb but not with the self.register_* methods. Skip raw tables
                 result[table_name] = self._schema_for_table(table_name)
 
         return result
@@ -240,15 +257,17 @@ class DuckDbConnection(SqlConnection):
 
         return result
 
-    def _update_temp_names(self, name: str, temporary: bool):
+    def _update_temp_names(self, name: str, temporary: bool) -> None:
         if temporary:
             self._temp_tables.add(name)
         elif name in self._temp_tables:
             self._temp_tables.remove(name)
 
-    def register_pandas(self, name: str, df: pd.DataFrame, temporary: bool = False):
-        # Add _vf_order column to avoid the more expensive operation of computing it with a
-        # ROW_NUMBER function in duckdb
+    def register_pandas(
+        self, name: str, df: pd.DataFrame, temporary: bool = False
+    ) -> None:
+        # Add _vf_order column to avoid the more expensive operation of computing it
+        # with a ROW_NUMBER function in duckdb
         df = df.copy(deep=False)
         df["_vf_order"] = range(0, len(df))
 
@@ -263,7 +282,9 @@ class DuckDbConnection(SqlConnection):
         self._update_temp_names(name, temporary)
         self._registered_table_schemas[name] = self._schema_for_table(name)
 
-    def register_arrow(self, name: str, table: pa.Table, temporary: bool = False):
+    def register_arrow(
+        self, name: str, table: pa.Table, temporary: bool = False
+    ) -> None:
         # Register raw table under name with prefix
         raw_name = RAW_PREFIX + name
         self.conn.register(raw_name, table)
@@ -275,13 +296,15 @@ class DuckDbConnection(SqlConnection):
         self._update_temp_names(name, temporary)
         self._registered_table_schemas[name] = table.schema
 
-    def register_json(self, name: str, path: str, temporary: bool = False):
+    def register_json(self, name: str, path: str, temporary: bool = False) -> None:
         relation = self.conn.read_json(path)
         relation.to_view(name)
         self._update_temp_names(name, temporary)
         self._registered_table_schemas[name] = self._schema_for_table(name)
 
-    def register_csv(self, name: str, path: str, options: CsvReadOptions, temporary: bool = False):
+    def register_csv(
+        self, name: str, path: str, options: CsvReadOptions, temporary: bool = False
+    ) -> None:
         relation = self.conn.read_csv(
             path,
             header=options.has_header,
@@ -310,7 +333,7 @@ class DuckDbConnection(SqlConnection):
         self._update_temp_names(name, temporary)
         self._registered_table_schemas[name] = self._schema_for_table(name)
 
-    def register_parquet(self, name: str, path: str, temporary: bool = False):
+    def register_parquet(self, name: str, path: str, temporary: bool = False) -> None:
         # Register raw table under name with prefix
         raw_name = RAW_PREFIX + name
         self.conn.read_parquet(path).to_view(raw_name)
@@ -322,22 +345,24 @@ class DuckDbConnection(SqlConnection):
         self._update_temp_names(name, temporary)
         self._registered_table_schemas[name] = self._schema_for_table(name)
 
-    def register_arrow_file(self, name: str, path: str, temporary: bool = False):
+    def register_arrow_file(
+        self, name: str, path: str, temporary: bool = False
+    ) -> None:
         arrow_table = pa.feather.read_table(path)
         self.register_arrow(name, arrow_table, temporary)
 
-    def unregister(self, name: str):
+    def unregister(self, name: str) -> None:
         for view_name in [name, RAW_PREFIX + name]:
             self.conn.unregister(view_name)
             if view_name in self._temp_tables:
                 self._temp_tables.remove(view_name)
             self._registered_table_schemas.pop(view_name, None)
 
-    def unregister_temporary_tables(self):
+    def unregister_temporary_tables(self) -> None:
         for name in list(self._temp_tables):
             self.conn.unregister(name)
             self._temp_tables.remove(name)
 
 
-def quote_column(name: str):
+def quote_column(name: str) -> str:
     return '"' + name.replace('"', '""') + '"'

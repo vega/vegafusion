@@ -7,7 +7,5 @@ from vega_datasets import data
 source = data.cars()
 
 alt.Chart(source).mark_bar().encode(
-    alt.X("Horsepower:Q", bin=True),
-    y='count()',
-    row='Origin'
+    alt.X("Horsepower:Q", bin=True), y="count()", row="Origin"
 ).properties(height=100)

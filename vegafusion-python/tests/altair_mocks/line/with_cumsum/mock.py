@@ -7,14 +7,14 @@ source = data.wheat()
 
 alt.Chart(source).mark_line().transform_window(
     # Sort the data chronologically
-    sort=[{'field': 'year'}],
+    sort=[{"field": "year"}],
     # Include all previous records before the current record and none after
     # (This is the default value so you could skip it and it would still work.)
     frame=[None, 0],
     # What to add up as you go
-    cumulative_wheat='sum(wheat)'
+    cumulative_wheat="sum(wheat)",
 ).encode(
-    x='year:O',
+    x="year:O",
     # Plot the calculated field created by the transformation
-    y='cumulative_wheat:Q'
+    y="cumulative_wheat:Q",
 ).properties(width=600)

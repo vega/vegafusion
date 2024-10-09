@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Iterable, TYPE_CHECKING
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import pyarrow as pa
@@ -7,9 +10,9 @@ if TYPE_CHECKING:
 
 class Datasource(ABC):
     @abstractmethod
-    def schema(self) -> "pa.Schema":
+    def schema(self) -> pa.Schema:
         raise NotImplementedError()
 
     @abstractmethod
-    def fetch(self, columns: Iterable[str]) -> "pa.Table":
+    def fetch(self, columns: Iterable[str]) -> pa.Table:
         raise NotImplementedError()

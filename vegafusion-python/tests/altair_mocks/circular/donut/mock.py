@@ -1,7 +1,7 @@
 # https://altair-viz.github.io/gallery/donut_chart.html
 
-import pandas as pd
 import altair as alt
+import pandas as pd
 
 source = pd.DataFrame({"category": [1, 2, 3, 4, 5, 6], "value": [4, 6, 10, 3, 7, 8]})
 

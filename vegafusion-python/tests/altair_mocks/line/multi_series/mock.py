@@ -6,8 +6,8 @@ from vega_datasets import data
 source = data.stocks()
 
 alt.Chart(source).mark_line().encode(
-    x='date',
-    y='price',
-    color='symbol',
-    strokeDash='symbol',
+    x="date",
+    y="price",
+    color="symbol",
+    strokeDash="symbol",
 )

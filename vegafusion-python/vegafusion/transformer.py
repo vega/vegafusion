@@ -1,24 +1,32 @@
+from __future__ import annotations
+
 import io
-import os
 import sys
-import pathlib
-from hashlib import sha1
-from tempfile import NamedTemporaryFile
-import uuid
-from weakref import WeakValueDictionary
+from typing import TYPE_CHECKING, Any, Union
 
-DATASET_PREFIXES = ("vegafusion+dataset://", "table://")
-BATCH_SIZE = 8096
+if TYPE_CHECKING:
+    import pyarrow as pa
+    import pyarrow.interchange as pi
 
 
-def to_arrow_table(data):
+DATASET_PREFIXES: tuple[str, ...] = ("vegafusion+dataset://", "table://")
+BATCH_SIZE: int = 8096
+
+DataFrameLike = Any
+
+
+def to_arrow_table(data: DataFrameLike) -> pa.Table:
     """
-    Helper to convert a Pandas DataFrame to a PyArrow Table
+    Helper to convert a pandas DataFrame to a PyArrow Table.
 
-    :param data: Pandas DataFrame
-    :return: pyarrow.Table
+    Args:
+        data: pandas DataFrame.
+
+    Returns:
+        pyarrow.Table: The converted PyArrow Table.
     """
     import pyarrow as pa
+
     pd = sys.modules.get("pandas")
 
     # Reset named index(ex) into a column
@@ -72,14 +80,21 @@ def to_arrow_table(data):
     return table
 
 
-def to_arrow_ipc_bytes(data, stream=False):
+def to_arrow_ipc_bytes(data: DataFrameLike, stream: bool = False) -> bytes:
     """
-    Helper to convert a DataFrame to the Arrow IPC binary format
+    Helper to convert a DataFrame to the Arrow IPC binary format.
 
-    :param data: Pandas DataFrame, pyarrow Table, or object that supports
-        the DataFrame Interchange Protocol
-    :param stream: If True, write IPC Stream format. If False (default), write ipc file format.
-    :return: bytes
+    Args:
+        data: Pandas DataFrame, pyarrow Table, or object that supports
+            the DataFrame Interchange Protocol.
+        stream: If True, write IPC Stream format. If False (default), write ipc
+            file format.
+
+    Returns:
+        bytes: The Arrow IPC binary format data.
+
+    Raises:
+        ValueError: If the input data type is unsupported.
     """
     pa = sys.modules.get("pyarrow", None)
     pd = sys.modules.get("pandas", None)
@@ -95,7 +110,7 @@ def to_arrow_ipc_bytes(data, stream=False):
     return arrow_table_to_ipc_bytes(table, stream=stream)
 
 
-def arrow_table_to_ipc_bytes(table, stream=False):
+def arrow_table_to_ipc_bytes(table: pa.Table, stream: bool = False) -> bytes:
     import pyarrow as pa
 
     # Next we write the Arrow table as a feather file (The Arrow IPC format on disk).
@@ -112,15 +127,15 @@ def arrow_table_to_ipc_bytes(table, stream=False):
     return bytes_buffer.getvalue()
 
 
-def to_feather(data, file):
+def to_feather(data: DataFrameLike, file: Union[str, io.IOBase]) -> None:
     """
     Helper to convert a Pandas DataFrame to a feather file that is optimized for
-    use as a VegaFusion data source
+    use as a VegaFusion data source.
 
-    :param data: Pandas DataFrame, pyarrow Table, or object that supports
-        the DataFrame Interchange Protocol
-    :param file: File path string or writable file-like object
-    :return: None
+    Args:
+        data: Pandas DataFrame, pyarrow Table, or object that supports
+            the DataFrame Interchange Protocol.
+        file: File path string or writable file-like object.
     """
     file_bytes = to_arrow_ipc_bytes(data, stream=False)
 
@@ -132,66 +147,24 @@ def to_feather(data, file):
             f.write(file_bytes)
 
 
-
-def get_inline_dataset_names(vega_spec):
+def import_pyarrow_interchange() -> pi:
     """
-    Get set of the inline datasets names in the provided spec
+    Import pyarrow.interchange module.
 
-    :param vega_spec: Vega spec
-    :return: set of inline dataset names
+    Returns:
+        pyarrow.interchange: The pyarrow.interchange module.
+
+    Raises:
+        ImportError: If pyarrow version is less than 11.0.0.
     """
-    table_names = set()
-    for data in vega_spec.get("data", []):
-        url = data.get("url", "")
-        for prefix in DATASET_PREFIXES:
-            if url.startswith(prefix):
-                name = url[len(prefix):]
-                table_names.add(name)
-
-    for mark in vega_spec.get("marks", []):
-        table_names.update(get_inline_dataset_names(mark))
-
-    return table_names
-
-
-__inline_tables = WeakValueDictionary()
-
-
-def get_inline_dataset_table(table_name):
-    return __inline_tables.pop(table_name)
-
-
-def get_inline_datasets_for_spec(vega_spec):
-    table_names = get_inline_dataset_names(vega_spec)
-    datasets = {}
-    for table_name in table_names:
-        try:
-            datasets[table_name] = get_inline_dataset_table(table_name)
-        except KeyError:
-            # named dataset that was provided by the user
-            pass
-    return datasets
-
-
-def is_dataframe_like(data):
-    pa = sys.modules.get("pyarrow")
-    pd = sys.modules.get("pandas")
-    is_pa_table = pa is not None and isinstance(data, pa.Table)
-    is_pd_table = pd is not None and isinstance(data, pd.DataFrame)
-    return is_pa_table or is_pd_table or hasattr(data, "__dataframe__")
-
-
-def has_geo_interface(data):
-    return hasattr(data, "__geo_interface__")
-
-
-def import_pyarrow_interchange():
     try:
         import pyarrow.interchange as pi
+
         return pi
-    except ImportError:
+    except ImportError as e:
         import pyarrow as pa
+
         raise ImportError(
-            "Use of the DataFrame Interchange Protocol requires at least version 11.0.0 of pyarrow\n"
-            f"Found version {pa.__version__}"
-        )
+            "Use of the DataFrame Interchange Protocol requires at least "
+            f"version 11.0.0 of pyarrow\nFound version {pa.__version__}"
+        ) from e

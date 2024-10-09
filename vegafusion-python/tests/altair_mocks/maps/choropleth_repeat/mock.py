@@ -3,22 +3,14 @@
 import altair as alt
 from vega_datasets import data
 
-states = alt.topo_feature(data.us_10m.url, 'states')
+states = alt.topo_feature(data.us_10m.url, "states")
 source = data.population_engineers_hurricanes.url
-variable_list = ['population', 'engineers', 'hurricanes']
+variable_list = ["population", "engineers", "hurricanes"]
 
 alt.Chart(states).mark_geoshape().encode(
-    alt.Color(alt.repeat('row'), type='quantitative')
+    alt.Color(alt.repeat("row"), type="quantitative")
 ).transform_lookup(
-    lookup='id',
-    from_=alt.LookupData(source, 'id', variable_list)
-).properties(
-    width=500,
-    height=150
-).project(
-    type='albersUsa'
-).repeat(
+    lookup="id", from_=alt.LookupData(source, "id", variable_list)
+).properties(width=500, height=150).project(type="albersUsa").repeat(
     row=variable_list
-).resolve_scale(
-    color='independent'
-)
+).resolve_scale(color="independent")

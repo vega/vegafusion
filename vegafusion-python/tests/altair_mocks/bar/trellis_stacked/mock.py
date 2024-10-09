@@ -6,8 +6,5 @@ from vega_datasets import data
 source = data.barley()
 
 alt.Chart(source).mark_bar().encode(
-    column='year',
-    x='yield',
-    y='variety',
-    color='site'
+    column="year", x="yield", y="variety", color="site"
 ).properties(width=220)

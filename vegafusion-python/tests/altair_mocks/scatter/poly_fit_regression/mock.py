@@ -1,8 +1,8 @@
 # https://altair-viz.github.io/gallery/poly_fit_regression.html
 
+import altair as alt
 import numpy as np
 import pandas as pd
-import altair as alt
 
 # Generate some random data
 np.random.seed(42)
@@ -14,17 +14,15 @@ source = pd.DataFrame({"x": x, "y": y})
 # Define the degree of the polynomial fits
 degree_list = [1, 3, 5]
 
-base = alt.Chart(source).mark_circle(color="black").encode(
-    alt.X("x"), alt.Y("y")
-)
+base = alt.Chart(source).mark_circle(color="black").encode(alt.X("x"), alt.Y("y"))
 
 polynomial_fit = [
     base.transform_regression(
         "x", "y", method="poly", order=order, as_=["x", str(order)]
     )
-        .mark_line()
-        .transform_fold([str(order)], as_=["degree", "y"])
-        .encode(alt.Color("degree:N"))
+    .mark_line()
+    .transform_fold([str(order)], as_=["degree", "y"])
+    .encode(alt.Color("degree:N"))
     for order in degree_list
 ]
 
