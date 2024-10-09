@@ -5,8 +5,4 @@ from vega_datasets import data
 
 source = data.barley()
 
-alt.Chart(source).mark_bar().encode(
-    x='variety',
-    y='sum(yield)',
-    color='site'
-)
+alt.Chart(source).mark_bar().encode(x="variety", y="sum(yield)", color="site")

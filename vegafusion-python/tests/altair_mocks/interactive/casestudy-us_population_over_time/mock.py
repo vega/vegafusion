@@ -19,15 +19,8 @@ alt.Chart(source).mark_bar().encode(
         title="Sex",
     ),
     column=alt.Column("age:O", title="Age"),
-).properties(
-    width=20,
-    title="U.S. Population by Age and Sex"
-).add_params(
+).properties(width=20, title="U.S. Population by Age and Sex").add_params(
     select_year
 ).transform_calculate(
     "sex", alt.expr.if_(alt.datum.sex == 1, "Male", "Female")
-).transform_filter(
-    select_year
-).configure_facet(
-    spacing=8
-)
+).transform_filter(select_year).configure_facet(spacing=8)

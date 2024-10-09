@@ -11,6 +11,6 @@ alt.Chart(source).mark_bar().encode(
     color=alt.condition(
         alt.datum.nonfarm_change > 0,
         alt.value("steelblue"),  # The positive color
-        alt.value("orange")  # The negative color
-    )
+        alt.value("orange"),  # The negative color
+    ),
 ).properties(width=600)

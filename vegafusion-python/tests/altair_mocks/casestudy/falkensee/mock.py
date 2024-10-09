@@ -41,39 +41,28 @@ source = [
     {"year": "2011", "population": 40465},
     {"year": "2012", "population": 40905},
     {"year": "2013", "population": 41258},
-    {"year": "2014", "population": 41777}
+    {"year": "2014", "population": 41777},
 ]
 
-source2 = [{
-    "start": "1933",
-    "end": "1945",
-    "event": "Nazi Rule"
-},
-    {
-        "start": "1948",
-        "end": "1989",
-        "event": "GDR (East Germany)"
-    }]
+source2 = [
+    {"start": "1933", "end": "1945", "event": "Nazi Rule"},
+    {"start": "1948", "end": "1989", "event": "GDR (East Germany)"},
+]
 
 
 source = pd.DataFrame(source)
 source2 = pd.DataFrame(source2)
 
 
-line = alt.Chart(source).mark_line(color='#333').encode(
-    alt.X('year:T', axis=alt.Axis(format='%Y')),
-    y='population'
-).properties(
-    width=500,
-    height=300
+line = (
+    alt.Chart(source)
+    .mark_line(color="#333")
+    .encode(alt.X("year:T", axis=alt.Axis(format="%Y")), y="population")
+    .properties(width=500, height=300)
 )
 
-point = line.mark_point(color='#333')
+point = line.mark_point(color="#333")
 
-rect = alt.Chart(source2).mark_rect().encode(
-    x='start:T',
-    x2='end:T',
-    color='event:N'
-)
+rect = alt.Chart(source2).mark_rect().encode(x="start:T", x2="end:T", color="event:N")
 
 rect + line + point

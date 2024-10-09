@@ -1,14 +1,14 @@
+from decimal import Decimal
+
 import pandas as pd
 import pyarrow as pa
-from decimal import Decimal
+
 from vegafusion.transformer import to_arrow_table
+
 
 def test_to_arrow_expands_categoricals():
     # Build DataFrame with one categorical column
-    df = pd.DataFrame({
-        "a": [1, 2, 3],
-        "b": ["One", "One", "Two"]
-    })
+    df = pd.DataFrame({"a": [1, 2, 3], "b": ["One", "One", "Two"]})
     df["b"] = df["b"].astype("category")
     assert isinstance(df["b"].dtype, pd.CategoricalDtype)
 
@@ -22,10 +22,9 @@ def test_to_arrow_expands_categoricals():
 
 def test_to_table_converts_decimals():
     # Build DataFrame with one Decimal column
-    df = pd.DataFrame({
-        "a": [1, 2, 3],
-        "b": [Decimal("3.12"), Decimal("4.9"), Decimal("6")]
-    })
+    df = pd.DataFrame(
+        {"a": [1, 2, 3], "b": [Decimal("3.12"), Decimal("4.9"), Decimal("6")]}
+    )
     assert df["b"].dtype.kind == "O"
 
     # Convert to pyarrow table
@@ -38,10 +37,7 @@ def test_to_table_converts_decimals():
 
 def test_to_table_with_mixed_string_int_column():
     # Build DataFrame with one Decimal column
-    df = pd.DataFrame({
-        "a": [1, 2, 3],
-        "b": ["A", "B", 3]
-    })
+    df = pd.DataFrame({"a": [1, 2, 3], "b": ["A", "B", 3]})
     assert df["b"].dtype.kind == "O"
 
     # Convert to pyarrow table
@@ -53,12 +49,14 @@ def test_to_table_with_mixed_string_int_column():
 
 
 def test_to_table_with_all_conversions():
-    df = pd.DataFrame({
-        "a": [1, 2, 3],
-        "b": ["One", "One", "Two"],
-        "c": [Decimal("3.12"), Decimal("4.9"), Decimal("6")],
-        "d": ["A", "B", 3]
-    })
+    df = pd.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": ["One", "One", "Two"],
+            "c": [Decimal("3.12"), Decimal("4.9"), Decimal("6")],
+            "d": ["A", "B", 3],
+        }
+    )
     df["b"] = df["b"].astype("category")
 
     # Check initial pandas column types

@@ -2,8 +2,8 @@
 # Added sort of initial data frame for consistent order of tie breakers
 
 import altair as alt
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 # Excerpt from A Tale of Two Cities; public domain text
 text = """
@@ -17,21 +17,16 @@ that some of its noisiest authorities insisted on its being received, for good
 or for evil, in the superlative degree of comparison only.
 """
 
-source = pd.DataFrame(
-    {'letters': np.array([c for c in text if c.isalpha()])}
-)
+source = pd.DataFrame({"letters": np.array([c for c in text if c.isalpha()])})
 
 alt.Chart(source).transform_aggregate(
-    count='count()',
-    groupby=['letters']
+    count="count()", groupby=["letters"]
 ).transform_window(
-    rank='rank(count)',
+    rank="rank(count)",
     sort=[
-        alt.SortField('count', order='descending'),
-    ]
-).transform_filter(
-    alt.datum.rank < 10
-).mark_bar().encode(
-    y=alt.Y('letters:N', sort='-x'),
-    x='count:Q',
+        alt.SortField("count", order="descending"),
+    ],
+).transform_filter(alt.datum.rank < 10).mark_bar().encode(
+    y=alt.Y("letters:N", sort="-x"),
+    x="count:Q",
 )

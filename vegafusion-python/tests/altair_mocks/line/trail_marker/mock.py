@@ -8,8 +8,4 @@ from vega_datasets import data
 source = data.wheat()
 source["year"] = source.year.astype(str)
 
-alt.Chart(source).mark_trail().encode(
-    x='year:T',
-    y='wheat:Q',
-    size='wheat:Q'
-)
+alt.Chart(source).mark_trail().encode(x="year:T", y="wheat:Q", size="wheat:Q")

@@ -1,5 +1,9 @@
-from typing import Iterable, TYPE_CHECKING
+from __future__ import annotations
+
+from collections.abc import Iterable
 from math import floor
+from typing import TYPE_CHECKING
+
 from .datasource import Datasource
 
 if TYPE_CHECKING:
@@ -8,12 +12,14 @@ if TYPE_CHECKING:
 
 
 class PandasDatasource(Datasource):
-    def __init__(self, df: "pd.DataFrame", sample_size: int = 1000, batch_size: int = 8096):
+    def __init__(
+        self, df: pd.DataFrame, sample_size: int = 1000, batch_size: int = 8096
+    ) -> None:
         import pandas as pd
         import pyarrow as pa
 
         fields = []
-        casts = {}
+        casts: dict[str, str] = {}
         sample_stride = max(1, floor(len(df) / sample_size))
 
         # Shallow copy and add named index levels as columns
@@ -32,9 +38,13 @@ class PandasDatasource(Datasource):
                     # We will expand categoricals (not yet supported in VegaFusion)
                     if isinstance(pd_type, pd.CategoricalDtype):
                         cat = df[col].cat
-                        field = pa.Schema.from_pandas(pd.DataFrame({col: cat.categories})).field(col)
+                        field = pa.Schema.from_pandas(
+                            pd.DataFrame({col: cat.categories})
+                        ).field(col)
                     else:
-                        candidate_schema = pa.Schema.from_pandas(df.iloc[::sample_stride][[col]])
+                        candidate_schema = pa.Schema.from_pandas(
+                            df.iloc[::sample_stride][[col]]
+                        )
                         field = candidate_schema.field(col)
                 except (pa.ArrowTypeError, pa.ArrowInvalid):
                     # If arrow fails to infer the type, fall back to string
@@ -52,7 +62,7 @@ class PandasDatasource(Datasource):
             except pa.ArrowTypeError:
                 if pd_type.kind == "O":
                     fields.append(pa.field(col, pa.string()))
-                    casts[col] = str
+                    casts[col] = "str"
                 else:
                     raise
         self._df = df
@@ -60,12 +70,13 @@ class PandasDatasource(Datasource):
         self._casts = casts
         self._batch_size = batch_size
 
-    def schema(self) -> "pa.Schema":
+    def schema(self) -> pa.Schema:
         return self._schema
 
-    def fetch(self, columns: Iterable[str]) -> "pa.Table":
+    def fetch(self, columns: Iterable[str]) -> pa.Table:
         import pandas as pd
         import pyarrow as pa
+
         projected = self._df[columns].copy(deep=False)
 
         for col, pd_type in projected.dtypes.items():

@@ -29,6 +29,11 @@ dev-py = { cmd = [
 # Build Python packages
 build-py = { cmd = "maturin build -m vegafusion-python/Cargo.toml --release --strip --sdist $0" }
 
+fmt-py = { cmd = "ruff format", cwd="vegafusion-python" }
+lint-fix-py = { cmd = "ruff format && ruff check --fix", cwd="vegafusion-python" }
+lint-check-py = { cmd = "ruff format --check && ruff check", cwd="vegafusion-python" }
+type-check-py = { cmd = "mypy", cwd="vegafusion-python" }
+
 # test python
 install-chromedriver-auto = """
 pip cache remove chromedriver-binary-auto &&
@@ -121,6 +126,10 @@ openjdk = "20.0.0.*"
 build = "0.7.0.*"
 minio-server = "2023.9.23.3.47.50.*"
 minio = "7.1.17.*"
+rust = "1.80.*"
+taplo = ">=0.9.3,<0.10"
+ruff = ">=0.6.9,<0.7"
+mypy = ">=1.11.2,<2"
 
 # Dependencies are those required at runtime by the Python packages
 [dependencies]
@@ -130,11 +139,10 @@ pandas = "2.0.3.*"
 altair = "5.4.*"
 protobuf = "4.23.3.*"
 ipywidgets = "8.1.0.*"
-rust = "1.80.*"
-vl-convert-python = "1.6.*"
+vl-convert-python = "1.7.*"
 anywidget = ">=0.9.6,<0.10"
 polars = "1.8.*"
-taplo = ">=0.9.3,<0.10"
+grpcio = ">=1.56.2,<2"
 
 [target.osx-arm64.build-dependencies]
 # These dependencies are for building node canvas from source on apple silicon

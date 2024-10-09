@@ -1,15 +1,19 @@
 import logging
+
 import pyarrow as pa
 from duckdb import DuckDBPyRelation
-from .sql import SqlDataset
+
 from ..connection.duckdb import duckdb_relation_to_schema
+from .sql import SqlDataset
 
 
 class DuckDbDataset(SqlDataset):
     def dialect(self) -> str:
         return "duckdb"
 
-    def __init__(self, relation: DuckDBPyRelation, fallback: bool = True, verbose: bool = False):
+    def __init__(
+        self, relation: DuckDBPyRelation, fallback: bool = True, verbose: bool = False
+    ) -> None:
         self._relation = relation
         self._fallback = fallback
         self._verbose = verbose

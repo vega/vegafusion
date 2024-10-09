@@ -1,13 +1,17 @@
-import pandas as pd
-import pytest
-from pandas import Timestamp, NaT
-import pyarrow as pa
-import vegafusion as vf
-import json
-import polars as pl
-from datetime import date
-import decimal
 import base64
+import decimal
+import json
+from datetime import date
+from importlib.util import find_spec
+
+import pandas as pd
+import polars as pl
+import pyarrow as pa
+import pytest
+from pandas import NaT, Timestamp
+
+import vegafusion as vf
+
 
 def setup_module(module):
     vf.set_local_tz("UTC")
@@ -16,8 +20,8 @@ def setup_module(module):
 def get_connections():
     connections = ["datafusion"]
     try:
-        import duckdb
-        connections.append("duckdb")
+        if find_spec("duckdb") is not None:
+            connections.append("duckdb")
     except ImportError:
         pass
 
@@ -100,7 +104,8 @@ def order_items_spec():
 
 
 def movies_histogram_spec(agg="count"):
-    return json.loads("""
+    return json.loads(
+        """
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
   "background": "white",
@@ -136,7 +141,11 @@ def movies_histogram_spec(agg="count"):
             "bin_maxbins_10_IMDB Rating",
             "bin_maxbins_10_IMDB Rating_end"
           ],
-          "ops": [""" + '"' + agg + '"' + r"""],
+          "ops": ["""
+        + '"'
+        + agg
+        + '"'
+        + r"""],
           "fields": ["Worldwide Gross"],
           "as": ["median_Worldwide Gross"]
         },
@@ -227,11 +236,13 @@ def movies_histogram_spec(agg="count"):
       "zindex": 0
     }
   ]
-}""")
+}"""
+    )
 
 
 def standalone_aggregate_spec(agg="count"):
-    return json.loads("""
+    return json.loads(
+        """
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
   "data": [
@@ -265,7 +276,11 @@ def standalone_aggregate_spec(agg="count"):
             "y"
           ],
           "ops": [
-            """ + '"' + agg + '"' + """
+            """
+        + '"'
+        + agg
+        + '"'
+        + """
           ],
           "as": [
             "median_y"
@@ -508,8 +523,9 @@ def standalone_aggregate_spec(agg="count"):
   "usermeta": {
     "warnings": []
   }
-}    
-    """)
+}
+    """
+    )
 
 
 def date_column_spec():
@@ -686,7 +702,7 @@ def period_in_col_name_spec():
       "zindex": 0
     }
   ]
-} 
+}
     """)
 
 
@@ -998,7 +1014,7 @@ def date32_timeunit_spec():
 
 
 def gh_268_hang_spec():
-    return json.loads(r""" 
+    return json.loads(r"""
     {
       "$schema": "https://vega.github.io/schema/vega/v5.json",
       "data": [
@@ -1369,43 +1385,45 @@ def empty_histogram_spec():
 
 def test_pre_transform_multi_partition():
     n = 4050
-    order_items = pd.DataFrame({
-        "menu_item": [0] * n + [1] * n
-    })
+    order_items = pd.DataFrame({"menu_item": [0] * n + [1] * n})
 
     vega_spec = order_items_spec()
-    new_spec, warnings = vf.runtime.pre_transform_spec(vega_spec, inline_datasets={
-        "order_items": order_items,
-    })
+    new_spec, _warnings = vf.runtime.pre_transform_spec(
+        vega_spec,
+        inline_datasets={
+            "order_items": order_items,
+        },
+    )
 
-    assert new_spec["data"][1] == dict(
-        name="data_0",
-        values=[
+    assert new_spec["data"][1] == {
+        "name": "data_0",
+        "values": [
             {"menu_item": 0, "__count": n},
             {"menu_item": 1, "__count": n},
-        ]
-    )
+        ],
+    }
 
 
 def test_pre_transform_cache_cleared():
     # Make sure that result changes when input DataFrame changes
     def check(n):
-        order_items = pd.DataFrame({
-            "menu_item": [0] * n + [1] * n
-        })
+        order_items = pd.DataFrame({"menu_item": [0] * n + [1] * n})
 
         vega_spec = order_items_spec()
-        new_spec, warnings = vf.runtime.pre_transform_spec(vega_spec, inline_datasets={
-            "order_items": order_items,
-        })
+        new_spec, _warnings = vf.runtime.pre_transform_spec(
+            vega_spec,
+            inline_datasets={
+                "order_items": order_items,
+            },
+        )
 
-        assert new_spec["data"][1] == dict(
-            name="data_0",
-            values=[
+        assert new_spec["data"][1] == {
+            "name": "data_0",
+            "values": [
                 {"menu_item": 0, "__count": n},
                 {"menu_item": 1, "__count": n},
-            ]
-        )
+            ],
+        }
 
     check(16)
     check(32)
@@ -1413,9 +1431,7 @@ def test_pre_transform_cache_cleared():
 
 def test_pre_transform_datasets():
     n = 4050
-    order_items = pd.DataFrame({
-        "menu_item": [0] * n + [1] * (2 * n) + [2] * (3 * n)
-    })
+    order_items = pd.DataFrame({"menu_item": [0] * n + [1] * (2 * n) + [2] * (3 * n)})
 
     vega_spec = order_items_spec()
     datasets, warnings = vf.runtime.pre_transform_datasets(
@@ -1423,7 +1439,7 @@ def test_pre_transform_datasets():
         ["data_0"],
         inline_datasets={
             "order_items": order_items,
-        }
+        },
     )
     assert len(warnings) == 0
     assert len(datasets) == 1
@@ -1436,12 +1452,12 @@ def test_pre_transform_datasets():
 def test_pre_transform_planner_warning1():
     # Pre-transform with supported aggregate function should result in no warnings
     vega_spec = movies_histogram_spec("mean")
-    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
+    _datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
     assert len(warnings) == 0
 
     # Pre-transform with unsupported aggregate function should result in one warning
     vega_spec = movies_histogram_spec("ci0")
-    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
+    _datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
     assert len(warnings) == 1
 
     warning = warnings[0]
@@ -1452,12 +1468,12 @@ def test_pre_transform_planner_warning1():
 def test_pre_transform_planner_warning2():
     # Pre-transform with supported aggregate function should result in no warnings
     vega_spec = standalone_aggregate_spec("mean")
-    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
+    _datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
     assert len(warnings) == 0
 
     # Pre-transform with unsupported aggregate function should result in one warning
     vega_spec = standalone_aggregate_spec("ci0")
-    datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
+    _datasets, warnings = vf.runtime.pre_transform_spec(vega_spec)
     assert len(warnings) == 1
 
     warning = warnings[0]
@@ -1467,39 +1483,53 @@ def test_pre_transform_planner_warning2():
 
 def test_date32_pre_transform_dataset():
     # Test to make sure that date32 columns are interpreted in the local timezone
-    dates_df = pd.DataFrame({
-        "date_col": [date(2022, 1, 1), date(2022, 1, 2), date(2022, 1, 3)],
-    })
+    dates_df = pd.DataFrame(
+        {
+            "date_col": [date(2022, 1, 1), date(2022, 1, 2), date(2022, 1, 3)],
+        }
+    )
     spec = date_column_spec()
 
-    (output_ds,), warnings = vf.runtime.pre_transform_datasets(
-        spec, ["data_0"], "America/New_York", default_input_tz="UTC", inline_datasets=dict(dates=dates_df)
+    (output_ds,), _warnings = vf.runtime.pre_transform_datasets(
+        spec,
+        ["data_0"],
+        "America/New_York",
+        default_input_tz="UTC",
+        inline_datasets={"dates": dates_df},
     )
 
     # Timestamps are in the local timezone, so they should be midnight local time
     assert list(output_ds.date_col) == [
-        pd.Timestamp('2022-01-01 00:00:00-0500', tz='America/New_York'),
-        pd.Timestamp('2022-01-02 00:00:00-0500', tz='America/New_York'),
-        pd.Timestamp('2022-01-03 00:00:00-0500', tz='America/New_York')
+        pd.Timestamp("2022-01-01 00:00:00-0500", tz="America/New_York"),
+        pd.Timestamp("2022-01-02 00:00:00-0500", tz="America/New_York"),
+        pd.Timestamp("2022-01-03 00:00:00-0500", tz="America/New_York"),
     ]
+
 
 def test_date32_pre_transform_dataset_polars():
     # Test to make sure that date32 columns are interpreted in the local timezone
-    dates_df = pl.DataFrame({
-        "date_col": [date(2022, 1, 1), date(2022, 1, 2), date(2022, 1, 3)],
-    })
+    dates_df = pl.DataFrame(
+        {
+            "date_col": [date(2022, 1, 1), date(2022, 1, 2), date(2022, 1, 3)],
+        }
+    )
     spec = date_column_spec()
 
-    (output_ds,), warnings = vf.runtime.pre_transform_datasets(
-        spec, ["data_0"], "America/New_York", default_input_tz="UTC", inline_datasets=dict(dates=dates_df)
+    (output_ds,), _warnings = vf.runtime.pre_transform_datasets(
+        spec,
+        ["data_0"],
+        "America/New_York",
+        default_input_tz="UTC",
+        inline_datasets={"dates": dates_df},
     )
 
     # Timestamps are in the local timezone, so they should be midnight local time
     assert list(output_ds["date_col"]) == [
-        pd.Timestamp('2022-01-01 00:00:00-0500', tz='America/New_York'),
-        pd.Timestamp('2022-01-02 00:00:00-0500', tz='America/New_York'),
-        pd.Timestamp('2022-01-03 00:00:00-0500', tz='America/New_York')
+        pd.Timestamp("2022-01-01 00:00:00-0500", tz="America/New_York"),
+        pd.Timestamp("2022-01-02 00:00:00-0500", tz="America/New_York"),
+        pd.Timestamp("2022-01-03 00:00:00-0500", tz="America/New_York"),
     ]
+
 
 def test_date32_in_timeunit_duckdb_crash():
     try:
@@ -1508,15 +1538,15 @@ def test_date32_in_timeunit_duckdb_crash():
 
         # order_items includes a table://order_items data url
         vega_spec = date32_timeunit_spec()
-        dataframe = pd.DataFrame({
-            "GO_LIVE_MONTH": [date(2021, 1, 1), date(2021, 2, 1)],
-            "PERCENT_GO_LIVES": [0.2, 0.3],
-        })
+        dataframe = pd.DataFrame(
+            {
+                "GO_LIVE_MONTH": [date(2021, 1, 1), date(2021, 2, 1)],
+                "PERCENT_GO_LIVES": [0.2, 0.3],
+            }
+        )
 
         datasets, warnings = vf.runtime.pre_transform_datasets(
-            vega_spec,
-            ["data_1"],
-            inline_datasets=dict(dataframe=dataframe)
+            vega_spec, ["data_1"], inline_datasets={"dataframe": dataframe}
         )
         assert len(warnings) == 0
         assert len(datasets) == 1
@@ -1526,11 +1556,11 @@ def test_date32_in_timeunit_duckdb_crash():
 
 
 def test_period_in_column_name():
-    df_period = pd.DataFrame([[1, 2]], columns=['normal', 'a.b'])
+    df_period = pd.DataFrame([[1, 2]], columns=["normal", "a.b"])
     spec = period_in_col_name_spec()
-    datasets, warnings = vf.runtime.pre_transform_datasets(spec, ["data_0"], inline_datasets=dict(
-        df_period=df_period
-    ))
+    datasets, warnings = vf.runtime.pre_transform_datasets(
+        spec, ["data_0"], inline_datasets={"df_period": df_period}
+    )
     assert len(warnings) == 0
     assert len(datasets) == 1
 
@@ -1539,64 +1569,76 @@ def test_period_in_column_name():
 
 
 def test_nat_values():
-    dataframe = pd.DataFrame([
-        {'ORDER_DATE': date(2011, 3, 1),
-         'SALES': 457.568,
-         'NULL_TEST': Timestamp('2011-03-01 00:00:00+0000', tz="UTC")},
-        {'ORDER_DATE': date(2011, 3, 1),
-         'SALES': 376.509,
-         'NULL_TEST': Timestamp('2011-03-01 00:00:00+0000', tz="UTC")},
-        {'ORDER_DATE': date(2011, 3, 1),
-         'SALES': 362.25,
-         'NULL_TEST': Timestamp('2011-03-01 00:00:00+0000', tz="UTC")},
-        {'ORDER_DATE': date(2011, 3, 1),
-         'SALES': 129.552,
-         'NULL_TEST': Timestamp('2011-03-01 00:00:00+0000', tz="UTC")},
-        {'ORDER_DATE': date(2011, 3, 1), 'SALES': 18.84, 'NULL_TEST': NaT},
-        {'ORDER_DATE': date(2011, 4, 1),
-         'SALES': 66.96,
-         'NULL_TEST': Timestamp('2011-04-01 00:00:00+0000', tz="UTC")},
-        {'ORDER_DATE': date(2011, 4, 1), 'SALES': 6.24, 'NULL_TEST': NaT},
-        {'ORDER_DATE': date(2011, 6, 1),
-         'SALES': 881.93,
-         'NULL_TEST': Timestamp('2011-06-01 00:00:00+0000', tz="UTC")},
-        {'ORDER_DATE': date(2011, 6, 1),
-         'SALES': 166.72,
-         'NULL_TEST': Timestamp('2011-06-01 00:00:00+0000', tz="UTC")},
-        {'ORDER_DATE': date(2011, 6, 1), 'SALES': 25.92, 'NULL_TEST': NaT}
-    ])
+    dataframe = pd.DataFrame(
+        [
+            {
+                "ORDER_DATE": date(2011, 3, 1),
+                "SALES": 457.568,
+                "NULL_TEST": Timestamp("2011-03-01 00:00:00+0000", tz="UTC"),
+            },
+            {
+                "ORDER_DATE": date(2011, 3, 1),
+                "SALES": 376.509,
+                "NULL_TEST": Timestamp("2011-03-01 00:00:00+0000", tz="UTC"),
+            },
+            {
+                "ORDER_DATE": date(2011, 3, 1),
+                "SALES": 362.25,
+                "NULL_TEST": Timestamp("2011-03-01 00:00:00+0000", tz="UTC"),
+            },
+            {
+                "ORDER_DATE": date(2011, 3, 1),
+                "SALES": 129.552,
+                "NULL_TEST": Timestamp("2011-03-01 00:00:00+0000", tz="UTC"),
+            },
+            {"ORDER_DATE": date(2011, 3, 1), "SALES": 18.84, "NULL_TEST": NaT},
+            {
+                "ORDER_DATE": date(2011, 4, 1),
+                "SALES": 66.96,
+                "NULL_TEST": Timestamp("2011-04-01 00:00:00+0000", tz="UTC"),
+            },
+            {"ORDER_DATE": date(2011, 4, 1), "SALES": 6.24, "NULL_TEST": NaT},
+            {
+                "ORDER_DATE": date(2011, 6, 1),
+                "SALES": 881.93,
+                "NULL_TEST": Timestamp("2011-06-01 00:00:00+0000", tz="UTC"),
+            },
+            {
+                "ORDER_DATE": date(2011, 6, 1),
+                "SALES": 166.72,
+                "NULL_TEST": Timestamp("2011-06-01 00:00:00+0000", tz="UTC"),
+            },
+            {"ORDER_DATE": date(2011, 6, 1), "SALES": 25.92, "NULL_TEST": NaT},
+        ]
+    )
 
     spec = nat_bar_spec()
 
-    datasets, warnings = vf.runtime.pre_transform_datasets(spec, ["dataframe"], inline_datasets=dict(
-        dataframe=dataframe
-    ))
+    datasets, warnings = vf.runtime.pre_transform_datasets(
+        spec, ["dataframe"], inline_datasets={"dataframe": dataframe}
+    )
     assert len(warnings) == 0
     assert len(datasets) == 1
 
     dataset = datasets[0]
     assert dataset.to_dict("records")[0] == {
-        'NULL_TEST': pd.Timestamp('2011-03-01 00:00:00+0000', tz="UTC"),
-        'ORDER_DATE': Timestamp('2011-03-01 00:00:00+0000', tz="UTC"),
-        'SALES': 457.568,
-        'SALES_end': 457.568,
-        'SALES_start': 0.0,
+        "NULL_TEST": pd.Timestamp("2011-03-01 00:00:00+0000", tz="UTC"),
+        "ORDER_DATE": Timestamp("2011-03-01 00:00:00+0000", tz="UTC"),
+        "SALES": 457.568,
+        "SALES_end": 457.568,
+        "SALES_start": 0.0,
     }
 
 
 def test_pre_transform_dataset_dataframe_interface_protocol():
-
-    try:
-        import pyarrow.interchange
-    except ImportError:
+    if find_spec("pyarrow.interchange") is None:
         pytest.skip("DataFrame interface protocol requires pyarrow 11.0.0 or later")
+
     from polars.testing import assert_frame_equal
 
     n = 4050
     # Input a polars DataFrame (which follows the DataFrame Interface Protocol)
-    order_items = pl.DataFrame({
-        "menu_item": [0] * n + [1] * (2 * n) + [2] * (3 * n)
-    })
+    order_items = pl.DataFrame({"menu_item": [0] * n + [1] * (2 * n) + [2] * (3 * n)})
 
     vega_spec = order_items_spec()
     datasets, warnings = vf.runtime.pre_transform_datasets(
@@ -1604,7 +1646,7 @@ def test_pre_transform_dataset_dataframe_interface_protocol():
         ["data_0"],
         inline_datasets={
             "order_items": order_items,
-        }
+        },
     )
     assert len(warnings) == 0
     assert len(datasets) == 1
@@ -1622,9 +1664,7 @@ def test_pre_transform_dataset_duckdb_conn():
 
     n = 4050
     # Input a polars DataFrame (which follows the DataFrame Interface Protocol)
-    order_items = pd.DataFrame({
-        "menu_item": [0] * n + [1] * (2 * n) + [2] * (3 * n)
-    })
+    order_items = pd.DataFrame({"menu_item": [0] * n + [1] * (2 * n) + [2] * (3 * n)})
 
     try:
         # Create duckdb connection and register order_items with duckdb
@@ -1655,9 +1695,9 @@ def test_pre_transform_dataset_duckdb_with_decimal_conn():
 
     n = 4050
     # Input a polars DataFrame (which follows the DataFrame Interface Protocol)
-    order_items = pd.DataFrame({
-        "menu_item_int": [0] * n + [1] * (2 * n) + [2] * (3 * n)
-    })
+    order_items = pd.DataFrame(
+        {"menu_item_int": [0] * n + [1] * (2 * n) + [2] * (3 * n)}
+    )
 
     try:
         # Create duckdb connection and register order_items with duckdb
@@ -1680,10 +1720,16 @@ def test_pre_transform_dataset_duckdb_with_decimal_conn():
         assert len(datasets) == 1
 
         result = datasets[0]
-        expected = pd.DataFrame({
-            "menu_item": [decimal.Decimal(0), decimal.Decimal(1), decimal.Decimal(2)],
-            "__count": [n, 2 * n, 3 * n]
-        })
+        expected = pd.DataFrame(
+            {
+                "menu_item": [
+                    decimal.Decimal(0),
+                    decimal.Decimal(1),
+                    decimal.Decimal(2),
+                ],
+                "__count": [n, 2 * n, 3 * n],
+            }
+        )
         pd.testing.assert_frame_equal(result, expected)
     finally:
         vf.runtime.set_connection("datafusion")
@@ -1692,21 +1738,27 @@ def test_pre_transform_dataset_duckdb_with_decimal_conn():
 def test_duckdb_timestamp_with_timezone():
     try:
         vf.runtime.set_connection("duckdb")
-        dates_df = pd.DataFrame({
-            "date_col": [date(2022, 1, 1), date(2022, 1, 2), date(2022, 1, 3)],
-        })
+        dates_df = pd.DataFrame(
+            {
+                "date_col": [date(2022, 1, 1), date(2022, 1, 2), date(2022, 1, 3)],
+            }
+        )
         dates_df["date_col"] = pd.to_datetime(dates_df.date_col).dt.tz_localize("UTC")
         spec = date_column_spec()
 
-        (output_ds,), warnings = vf.runtime.pre_transform_datasets(
-            spec, ["data_0"], "America/New_York", default_input_tz="UTC", inline_datasets=dict(dates=dates_df)
+        (output_ds,), _warnings = vf.runtime.pre_transform_datasets(
+            spec,
+            ["data_0"],
+            "America/New_York",
+            default_input_tz="UTC",
+            inline_datasets={"dates": dates_df},
         )
 
         # Timestamps are in the local timezone, so they should be midnight local time
         assert list(output_ds.date_col) == [
-            pd.Timestamp('2022-01-01 00:00:00', tz='UTC'),
-            pd.Timestamp('2022-01-02 00:00:00', tz='UTC'),
-            pd.Timestamp('2022-01-03 00:00:00', tz='UTC')
+            pd.Timestamp("2022-01-01 00:00:00", tz="UTC"),
+            pd.Timestamp("2022-01-02 00:00:00", tz="UTC"),
+            pd.Timestamp("2022-01-03 00:00:00", tz="UTC"),
         ]
     finally:
         vf.runtime.set_connection("datafusion")
@@ -1717,12 +1769,16 @@ def test_gh_268_hang():
     Tests for hang reported in https://github.com/hex-inc/vegafusion/issues/268
     """
     vf.runtime.set_connection("datafusion")
-    movies = pd.read_json("https://raw.githubusercontent.com/vega/vega-datasets/main/data/movies.json")
+    movies = pd.read_json(
+        "https://raw.githubusercontent.com/vega/vega-datasets/main/data/movies.json"
+    )
     spec = gh_268_hang_spec()
     for i in range(20):
         # Break cache by removing one row each iteration
         movies_inner = movies.iloc[i:]
-        vf.runtime.pre_transform_datasets(spec, ["data_3"], inline_datasets=dict(movies_clean=movies_inner))
+        vf.runtime.pre_transform_datasets(
+            spec, ["data_3"], inline_datasets={"movies_clean": movies_inner}
+        )
 
 
 def test_repeat_duckdb():
@@ -1730,26 +1786,32 @@ def test_repeat_duckdb():
     Tests for hang reported in https://github.com/hex-inc/vegafusion/issues/268
     """
     vf.runtime.set_connection("duckdb")
-    movies = pd.read_json("https://raw.githubusercontent.com/vega/vega-datasets/main/data/movies.json")
+    movies = pd.read_json(
+        "https://raw.githubusercontent.com/vega/vega-datasets/main/data/movies.json"
+    )
     spec = gh_268_hang_spec()
-    for i in range(2):
-        vf.runtime.pre_transform_datasets(spec, ["data_3"], inline_datasets=dict(movies_clean=movies))
+    for _ in range(2):
+        vf.runtime.pre_transform_datasets(
+            spec, ["data_3"], inline_datasets={"movies_clean": movies}
+        )
 
 
 @pytest.mark.parametrize("connection", get_connections())
 def test_pivot_mixed_case(connection):
     vf.runtime.set_connection(connection)
-    source_0 = pd.DataFrame.from_records([
-        {"country": "Norway", "type": "gold", "count": 14},
-        {"country": "Norway", "type": "silver", "count": 14},
-        {"country": "Norway", "type": "Gold", "count": 11},
-        {"country": "Germany", "type": "gold", "count": 14},
-        {"country": "Germany", "type": "silver", "count": 10},
-        {"country": "Germany", "type": "bronze", "count": 7},
-        {"country": "Canada", "type": "gold", "count": 11},
-        {"country": "Canada", "type": "silver", "count": 8},
-        {"country": "Canada", "type": "bronze", "count": 10}
-    ])
+    source_0 = pd.DataFrame.from_records(
+        [
+            {"country": "Norway", "type": "gold", "count": 14},
+            {"country": "Norway", "type": "silver", "count": 14},
+            {"country": "Norway", "type": "Gold", "count": 11},
+            {"country": "Germany", "type": "gold", "count": 14},
+            {"country": "Germany", "type": "silver", "count": 10},
+            {"country": "Germany", "type": "bronze", "count": 7},
+            {"country": "Canada", "type": "gold", "count": 11},
+            {"country": "Canada", "type": "silver", "count": 8},
+            {"country": "Canada", "type": "bronze", "count": 10},
+        ]
+    )
     spec = json.loads(r"""
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -1771,27 +1833,32 @@ def test_pivot_mixed_case(connection):
       ]
     }
   ]
-}   
+}
     """)
 
-    datasets, warnings = vf.runtime.pre_transform_datasets(
-        spec, ["data_0"], inline_datasets=dict(source_0=source_0)
+    datasets, _warnings = vf.runtime.pre_transform_datasets(
+        spec, ["data_0"], inline_datasets={"source_0": source_0}
     )
 
-    assert set(datasets[0].columns.tolist()) == {"gold", "Gold", "silver", "bronze", "country"}
+    assert set(datasets[0].columns.tolist()) == {
+        "gold",
+        "Gold",
+        "silver",
+        "bronze",
+        "country",
+    }
 
 
 def test_keep_signals():
     spec = manual_histogram_spec()
 
     # pre-transform without keep_signals. No signals should be present in pre-transformed spec
-    tx_spec, warnings = vf.runtime.pre_transform_spec(spec)
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(spec)
     assert len(tx_spec.get("signals", [])) == 0
 
     # Specify single keep_signal as a string
-    tx_spec, warnings = vf.runtime.pre_transform_spec(
-        spec,
-        keep_signals="layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins"
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(
+        spec, keep_signals="layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins"
     )
     assert len(tx_spec.get("signals", [])) == 1
     sig0 = tx_spec["signals"][0]
@@ -1799,12 +1866,12 @@ def test_keep_signals():
     assert sig0["value"]["step"] == 1.0
 
     # Specify multiple keep_signals as a list
-    tx_spec, warnings = vf.runtime.pre_transform_spec(
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(
         spec,
         keep_signals=[
             "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins",
-            ("layer_0_layer_0_bin_maxbins_10_IMDB_Rating_extent", [])
-        ]
+            ("layer_0_layer_0_bin_maxbins_10_IMDB_Rating_extent", []),
+        ],
     )
     assert len(tx_spec.get("signals", [])) == 2
     sig0 = tx_spec["signals"][0]
@@ -1817,12 +1884,17 @@ def test_keep_signals():
 
 def test_empty_histogram():
     spec = empty_histogram_spec()
-    empty_df = pd.DataFrame({ 'col': []})
-    (data_0,), warnings = vf.runtime.pre_transform_datasets(
-        spec, ["data_0"], inline_datasets=dict(empty_df=empty_df)
+    empty_df = pd.DataFrame({"col": []})
+    (data_0,), _warnings = vf.runtime.pre_transform_datasets(
+        spec, ["data_0"], inline_datasets={"empty_df": empty_df}
     )
     assert data_0.empty
-    assert data_0.columns.tolist() == ["__bin_field_name", "__bin_field_name_end", "__count", "__bin_range"]
+    assert data_0.columns.tolist() == [
+        "__bin_field_name",
+        "__bin_field_name_end",
+        "__count",
+        "__bin_range",
+    ]
 
 
 def test_pre_transform_spec_encoded_datasets():
@@ -1830,7 +1902,7 @@ def test_pre_transform_spec_encoded_datasets():
     vega_spec = movies_histogram_spec()
 
     # default list of dict format
-    tx_spec, warnings = vf.runtime.pre_transform_spec(
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(
         vega_spec, data_encoding_threshold=10, data_encoding_format="pyarrow"
     )
 
@@ -1839,7 +1911,7 @@ def test_pre_transform_spec_encoded_datasets():
     assert len(values) == 9
 
     # pyarrow format
-    tx_spec, warnings = vf.runtime.pre_transform_spec(
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(
         vega_spec, data_encoding_threshold=0, data_encoding_format="pyarrow"
     )
 
@@ -1850,7 +1922,7 @@ def test_pre_transform_spec_encoded_datasets():
     assert values_df.columns[0] == "bin_maxbins_10_IMDB Rating"
 
     # arrow-ipc format
-    tx_spec, warnings = vf.runtime.pre_transform_spec(
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(
         vega_spec, data_encoding_threshold=0, data_encoding_format="arrow-ipc"
     )
 
@@ -1861,7 +1933,7 @@ def test_pre_transform_spec_encoded_datasets():
     assert values_df.columns[0] == "bin_maxbins_10_IMDB Rating"
 
     # arrow-ipc-base64 format
-    tx_spec, warnings = vf.runtime.pre_transform_spec(
+    tx_spec, _warnings = vf.runtime.pre_transform_spec(
         vega_spec, data_encoding_threshold=0, data_encoding_format="arrow-ipc-base64"
     )
 
@@ -1870,4 +1942,3 @@ def test_pre_transform_spec_encoded_datasets():
     values_df = pa.ipc.deserialize_pandas(base64.standard_b64decode(values))
     assert len(values_df) == 9
     assert values_df.columns[0] == "bin_maxbins_10_IMDB Rating"
-

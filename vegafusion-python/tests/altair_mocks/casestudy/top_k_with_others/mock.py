@@ -13,10 +13,10 @@ alt.Chart(source).mark_bar().encode(
         title=None,
     ),
 ).transform_aggregate(
-    aggregate_gross='mean(Worldwide_Gross)',
+    aggregate_gross="mean(Worldwide_Gross)",
     groupby=["Director"],
 ).transform_window(
-    rank='row_number()',
+    rank="row_number()",
     sort=[alt.SortField("aggregate_gross", order="descending")],
 ).transform_calculate(
     ranked_director="datum.rank < 10 ? datum.Director : 'All Others'"
