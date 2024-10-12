@@ -316,7 +316,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
         with:
-          python-version: '3.10'
+          python-version: '3.11'
       - name: Download vegafusion-python wheel
         uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
         with:
@@ -348,7 +348,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
         with:
-          python-version: '3.9'
+          python-version: '3.11'
       - name: Install Chrome
         uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
         with:
