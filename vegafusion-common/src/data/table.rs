@@ -38,7 +38,7 @@ use {
         types::{PyList, PyTuple},
         Bound, PyAny, PyErr, PyObject, Python,
     },
-    pyo3_arrow::PyTable
+    pyo3_arrow::PyTable,
 };
 
 #[cfg(feature = "base64")]
