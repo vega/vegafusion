@@ -181,6 +181,10 @@ impl PyVegaFusionRuntime {
                                     .scan_py_datasource(inline_dataset.to_object(py)),
                             )?;
                             VegaFusionDataset::DataFrame(df)
+                        } else if inline_dataset.hasattr("__arrow_c_stream__")? {
+                            // Import via Arrow PyCapsule Interface
+                            let table = VegaFusionTable::from_pyarrow(inline_dataset)?;
+                            VegaFusionDataset::from_table(table)?
                         } else {
                             // Assume PyArrow Table
                             // We convert to ipc bytes for two reasons:

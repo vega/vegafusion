@@ -16,12 +16,12 @@ use crate::{
 use arrow::array::new_empty_array;
 #[cfg(feature = "prettyprint")]
 use arrow::util::pretty::pretty_format_batches;
+use std::hash::DefaultHasher;
 use std::{
     hash::{Hash, Hasher},
     io::Cursor,
     sync::Arc,
 };
-
 #[cfg(feature = "json")]
 use {
     crate::data::json_writer::record_batches_to_json_rows,
@@ -38,6 +38,7 @@ use {
         types::{PyList, PyTuple},
         Bound, PyAny, PyErr, PyObject, Python,
     },
+    pyo3_arrow::PyTable
 };
 
 #[cfg(feature = "base64")]
@@ -307,20 +308,27 @@ impl VegaFusionTable {
     }
 
     #[cfg(feature = "pyarrow")]
-    pub fn from_pyarrow(pyarrow_table: &Bound<PyAny>) -> std::result::Result<Self, PyErr> {
-        // Extract table.schema as a Rust Schema
-        let schema_object = pyarrow_table.getattr("schema")?;
-        let schema = Schema::from_pyarrow_bound(&schema_object)?;
+    pub fn from_pyarrow(data: &Bound<PyAny>) -> std::result::Result<Self, PyErr> {
+        if let Ok(table) = data.extract::<PyTable>() {
+            // data implements the arrow_c_stream API
+            let (batches, schema) = table.into_inner();
+            Ok(VegaFusionTable::try_new(schema, batches)?)
+        } else {
+            // Assume data is a pyarrow Table
+            // Extract table.schema as a Rust Schema
+            let schema_object = data.getattr("schema")?;
+            let schema = Schema::from_pyarrow_bound(&schema_object)?;
 
-        // Extract table.to_batches() as a Rust Vec<RecordBatch>
-        let batches_object = pyarrow_table.call_method0("to_batches")?;
-        let batches_list = batches_object.downcast::<PyList>()?;
-        let batches = batches_list
-            .iter()
-            .map(|batch_any| Ok(RecordBatch::from_pyarrow_bound(&batch_any)?))
-            .collect::<Result<Vec<RecordBatch>>>()?;
+            // Extract table.to_batches() as a Rust Vec<RecordBatch>
+            let batches_object = data.call_method0("to_batches")?;
+            let batches_list = batches_object.downcast::<PyList>()?;
+            let batches = batches_list
+                .iter()
+                .map(|batch_any| Ok(RecordBatch::from_pyarrow_bound(&batch_any)?))
+                .collect::<Result<Vec<RecordBatch>>>()?;
 
-        Ok(VegaFusionTable::try_new(Arc::new(schema), batches)?)
+            Ok(VegaFusionTable::try_new(Arc::new(schema), batches)?)
+        }
     }
 
     #[cfg(feature = "pyarrow")]
@@ -401,6 +409,12 @@ impl VegaFusionTable {
                 .with_context(|| String::from("Failed to pretty print"))
                 .map(|s| s.to_string())
         }
+    }
+
+    pub fn get_hash(&self) -> u64 {
+        let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
+        self.hash(&mut hasher);
+        hasher.finish()
     }
 }
 

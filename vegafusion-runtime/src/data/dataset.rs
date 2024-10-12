@@ -19,6 +19,11 @@ impl VegaFusionDataset {
         }
     }
 
+    pub fn from_table(table: VegaFusionTable) -> Result<Self> {
+        let hash = table.get_hash();
+        Ok(Self::Table { table, hash })
+    }
+
     pub fn from_table_ipc_bytes(ipc_bytes: &[u8]) -> Result<Self> {
         // Hash ipc bytes
         let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
