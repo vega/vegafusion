@@ -134,8 +134,6 @@ mypy = ">=1.11.2,<2"
 # Dependencies are those required at runtime by the Python packages
 [dependencies]
 psutil = "5.9.5.*"
-pyarrow = "12.0.1.*"
-pandas = "2.0.3.*"
 altair = "5.4.*"
 protobuf = "4.23.3.*"
 ipywidgets = "8.1.0.*"

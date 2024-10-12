@@ -1,19 +1,23 @@
 from __future__ import annotations
 
+import json
 import sys
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union, cast
 
+import narwhals as nw
 import psutil
+from arro3.core import Table
+from narwhals.typing import IntoFrame
 
-from vegafusion.datasource.datasource import Datasource
 from vegafusion.transformer import DataFrameLike
+from vegafusion.utils import get_column_usage
 
 from .connection import SqlConnection
 from .dataset import SqlDataset
-from .datasource import DfiDatasource, PandasDatasource, PyArrowDatasource
 from .local_tz import get_local_tz
 
 if TYPE_CHECKING:
+    import pandas as pd
     import pyarrow as pa
     from duckdb import DuckDBPyConnection
     from grpc import Channel
@@ -298,8 +302,10 @@ class VegaFusionRuntime:
             return cast(bytes, self.embedded_runtime.process_request_bytes(request))
 
     def _import_or_register_inline_datasets(
-        self, inline_datasets: dict[str, DataFrameLike] | None = None
-    ) -> dict[str, Datasource | SqlDataset]:
+        self,
+        inline_datasets: dict[str, IntoFrame | pd.DataFrame | SqlDataset] | None = None,
+        inline_dataset_usage: dict[str, list[str]] | None = None,
+    ) -> dict[str, Table | SqlDataset]:
         """
         Import or register inline datasets.
 
@@ -309,16 +315,45 @@ class VegaFusionRuntime:
                 specification using the following url syntax
                 'vegafusion+dataset://{dataset_name}' or 'table://{dataset_name}'.
         """
-        pl = sys.modules.get("polars", None)
-        pa = sys.modules.get("pyarrow", None)
-        pd = sys.modules.get("pandas", None)
+        pd: pd = sys.modules.get("pandas", None)
 
         inline_datasets = inline_datasets or {}
-        imported_inline_datasets: dict[str, Datasource | SqlDataset] = {}
+        inline_dataset_usage = inline_dataset_usage or {}
+        imported_inline_datasets: dict[str, SqlDataset | Table] = {}
         for name, value in inline_datasets.items():
+            columns = inline_dataset_usage.get(name)
             if isinstance(value, SqlDataset):
                 imported_inline_datasets[name] = value
             elif pd is not None and isinstance(value, pd.DataFrame):
+                import pyarrow as pa
+
+                # Project down columns if possible
+                if columns is not None:
+                    value = value[columns]
+
+                # Convert problematic object columns to strings
+                for col, dtype in value.dtypes.items():
+                    if dtype.kind == "O":
+                        try:
+                            # See if the Table constructor can handle column by itself
+                            col_tbl = Table(value[[col]])
+
+                            # If so, keep the arrow version so that it's more efficient
+                            # to convert as part of the whole table later
+                            value = value.assign(
+                                **{
+                                    col: pd.arrays.ArrowExtensionArray(
+                                        pa.chunked_array(col_tbl.column(0))
+                                    )
+                                }
+                            )
+                        except TypeError:
+                            # If the Table constructor can't handle the object column,
+                            # convert the column to pyarrow strings
+                            value = value.assign(
+                                **{col: value[col].astype("string[pyarrow]")}
+                            )
+
                 if self._connection is not None:
                     try:
                         # Try registering DataFrame if supported
@@ -326,36 +361,16 @@ class VegaFusionRuntime:
                         continue
                     except ValueError:
                         pass
-
-                imported_inline_datasets[name] = PandasDatasource(value)
-            elif hasattr(value, "__arrow_c_stream__"):
-                from arro3.core import Table
-
-                # Arrow PyCapsule interface, wrapped in arro3 Table
                 imported_inline_datasets[name] = Table(value)
-            elif hasattr(value, "__dataframe__"):
-                # Let polars convert to pyarrow since it has broader support than the
-                # raw dataframe interchange protocol, and "This operation is mostly
-                # zero copy."
-                try:
-                    if pl is not None and isinstance(value, pl.DataFrame):
-                        value = value.to_arrow()
-                except ImportError:
-                    pass
-
-                if pa is not None and isinstance(value, pa.Table):
-                    try:
-                        if self._connection is not None:
-                            # Try registering Arrow Table if supported
-                            self._connection.register_arrow(name, value, temporary=True)
-                            continue
-                    except ValueError:
-                        pass
-                    imported_inline_datasets[name] = PyArrowDatasource(value)
-                else:
-                    imported_inline_datasets[name] = DfiDatasource(value)
             else:
-                raise ValueError(f"Unsupported DataFrame type: {type(value)}")
+                # Import through PyCapsule interface, through narwhals
+                df_nw = nw.from_native(value)
+                # Project down columns if possible
+                if columns is not None:
+                    # TODO: Nice error message when column is not found
+                    df_nw = df_nw[columns]
+
+                imported_inline_datasets[name] = Table(df_nw)
 
         return imported_inline_datasets
 
@@ -494,7 +509,7 @@ class VegaFusionRuntime:
         else:
             local_tz = local_tz or get_local_tz()
             imported_inline_dataset = self._import_or_register_inline_datasets(
-                inline_datasets
+                inline_datasets, get_inline_column_usage(spec)
             )
 
             try:
@@ -573,7 +588,7 @@ class VegaFusionRuntime:
         else:
             local_tz = local_tz or get_local_tz()
             inline_arrow_dataset = self._import_or_register_inline_datasets(
-                inline_datasets
+                inline_datasets, get_inline_column_usage(spec)
             )
             return ChartState(
                 self.embedded_runtime.new_chart_state(
@@ -589,6 +604,7 @@ class VegaFusionRuntime:
         default_input_tz: str | None = None,
         row_limit: int | None = None,
         inline_datasets: dict[str, DataFrameLike] | None = None,
+        trim_unused_columns: bool = True,
     ) -> tuple[list[DataFrameLike], list[dict[str, str]]]:
         """Extract the fully evaluated form of the requested datasets from a Vega
         specification.
@@ -615,6 +631,8 @@ class VegaFusionRuntime:
                 Tables. Inline datasets may be referenced by the input specification
                 using the following url syntax 'vegafusion+dataset://{dataset_name}'
                 or 'table://{dataset_name}'.
+            trim_unused_columns: If True (default), unused columns are removed from
+                returned datasets.
 
         Returns:
             A tuple containing:
@@ -632,8 +650,13 @@ class VegaFusionRuntime:
             pre_tx_vars = parse_variables(datasets)
 
             # Serialize inline datasets
+            # Don't include inline_dataset_usage so that we keep all columns instead
+            # of removing those that aren't referenced.
             inline_arrow_dataset = self._import_or_register_inline_datasets(
-                inline_datasets
+                inline_datasets,
+                inline_dataset_usage=get_inline_column_usage(spec)
+                if trim_unused_columns
+                else None,
             )
             try:
                 values, warnings = self.embedded_runtime.pre_transform_datasets(
@@ -765,7 +788,7 @@ class VegaFusionRuntime:
             local_tz = local_tz or get_local_tz()
 
             inline_arrow_dataset = self._import_or_register_inline_datasets(
-                inline_datasets
+                inline_datasets, get_inline_column_usage(spec)
             )
             try:
                 new_spec, datasets, warnings = (
@@ -973,6 +996,38 @@ def get_mark_group_for_scope(
         group = child_group
 
     return group
+
+
+def get_inline_column_usage(
+    spec: dict[str, Any] | str,
+) -> dict[str, list[str]]:
+    """
+    Get the columns used by each inline dataset, if known
+    """
+    if isinstance(spec, str):
+        spec_dict = cast("dict[str, Any]", json.loads(spec))
+    else:
+        spec_dict = spec
+
+    # Build mapping from inline_dataset name to Vega dataset name
+    inline_dataset_mapping: dict[str, str] = {}
+    for dataset in spec_dict.get("data", []):
+        url = cast("str | None", dataset.get("url", None))
+        if url and (
+            url.startswith("vegafusion+dataset://") or url.startswith("table://")
+        ):
+            parts = url.split("//")
+            if len(parts) == 2:
+                inline_dataset_name = parts[1]
+                inline_dataset_mapping[inline_dataset_name] = dataset["name"]
+
+    # Compute column usage
+    usage = get_column_usage(spec_dict)
+    return {
+        inline_dataset_name: columns
+        for inline_dataset_name in inline_dataset_mapping
+        if (columns := usage[inline_dataset_mapping[inline_dataset_name]]) is not None
+    }
 
 
 runtime = VegaFusionRuntime(64, psutil.virtual_memory().total // 2, psutil.cpu_count())
