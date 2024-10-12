@@ -179,6 +179,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+      - name: Setup Python
+        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
+        with:
+          python-version: '3.11'
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.30.0
