@@ -19,8 +19,8 @@ impl VegaFusionDataset {
         }
     }
 
-    pub fn from_table(table: VegaFusionTable) -> Result<Self> {
-        let hash = table.get_hash();
+    pub fn from_table(table: VegaFusionTable, hash: Option<u64>) -> Result<Self> {
+        let hash = hash.unwrap_or_else(|| table.get_hash());
         Ok(Self::Table { table, hash })
     }
 

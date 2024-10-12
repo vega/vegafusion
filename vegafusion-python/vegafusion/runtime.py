@@ -329,8 +329,9 @@ class VegaFusionRuntime:
 
                 imported_inline_datasets[name] = PandasDatasource(value)
             elif hasattr(value, "__arrow_c_stream__"):
-                # Arrow PyCapsule interface
-                imported_inline_datasets[name] = value
+                from arro3.core import Table
+                # Arrow PyCapsule interface, wrapped in arro3 Table
+                imported_inline_datasets[name] = Table(value)
             elif hasattr(value, "__dataframe__"):
                 # Let polars convert to pyarrow since it has broader support than the
                 # raw dataframe interchange protocol, and "This operation is mostly

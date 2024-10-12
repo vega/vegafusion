@@ -183,14 +183,15 @@ impl PyVegaFusionRuntime {
                             VegaFusionDataset::DataFrame(df)
                         } else if inline_dataset.hasattr("__arrow_c_stream__")? {
                             // Import via Arrow PyCapsule Interface
-                            let table = VegaFusionTable::from_pyarrow(inline_dataset)?;
-                            VegaFusionDataset::from_table(table)?
+                            let (table, hash) =
+                                VegaFusionTable::from_pyarrow_with_hash(py, inline_dataset)?;
+                            VegaFusionDataset::from_table(table, Some(hash))?
                         } else {
                             // Assume PyArrow Table
                             // We convert to ipc bytes for two reasons:
                             // - It allows VegaFusionDataset to compute an accurate hash of the table
                             // - It works around https://github.com/hex-inc/vegafusion/issues/268
-                            let table = VegaFusionTable::from_pyarrow(inline_dataset)?;
+                            let table = VegaFusionTable::from_pyarrow(py, inline_dataset)?;
                             VegaFusionDataset::from_table_ipc_bytes(&table.to_ipc_bytes()?)?
                         };
 

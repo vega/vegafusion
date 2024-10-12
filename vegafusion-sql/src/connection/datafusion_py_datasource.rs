@@ -142,7 +142,7 @@ impl ExecutionPlan for PyDatasourceExec {
                 .collect::<Vec<_>>();
             let args = PyTuple::new_bound(py, vec![column_names.into_py(py)]);
             let pa_table = self.db.py_datasource.call_method1(py, "fetch", args)?;
-            let table = VegaFusionTable::from_pyarrow(pa_table.bind(py))?;
+            let table = VegaFusionTable::from_pyarrow(py, pa_table.bind(py))?;
             Ok(table)
         })
         .map_err(|err| DataFusionError::Execution(err.to_string()))?;

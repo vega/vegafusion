@@ -55,7 +55,7 @@ fn perform_fetch_query(query: &str, schema: &Schema, conn: &PyObject) -> Result<
         let schema_object = schema_object.bind(py);
         let args = PyTuple::new_bound(py, vec![query_object, schema_object]);
         let table_object = conn.call_method_bound(py, "fetch_query", args, None)?;
-        VegaFusionTable::from_pyarrow(table_object.bind(py))
+        VegaFusionTable::from_pyarrow(py, table_object.bind(py))
     })?;
     Ok(table)
 }
