@@ -186,10 +186,12 @@ fn to_timestamp_col(field: &str, schema: &DFSchema, default_input_tz: &String) -
             &DataType::Timestamp(ArrowTimeUnit::Millisecond, None),
             schema,
         )?,
-        DataType::Utf8 => Expr::ScalarFunction(expr::ScalarFunction {
-            func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
-            args: vec![field_col, lit(default_input_tz)],
-        }),
+        DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View => {
+            Expr::ScalarFunction(expr::ScalarFunction {
+                func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
+                args: vec![field_col, lit(default_input_tz)],
+            })
+        }
         dtype if is_numeric_datatype(&dtype) => Expr::ScalarFunction(expr::ScalarFunction {
             func: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
             args: vec![cast_to(field_col, &DataType::Int64, schema)?],

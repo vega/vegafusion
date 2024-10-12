@@ -368,7 +368,7 @@ jobs:
           python -m pip install $vegafusion
 
           # Optional dependencies
-          python -m pip install pyarrow==10.0 altair==5.1.2 "numpy<2" polars[timezone] "duckdb>=1.0" vl-convert-python 
+          python -m pip install "numpy<2" polars[timezone] "duckdb>=1.0" vl-convert-python 
           
           # Test dependencies
           python -m pip install pytest altair vega-datasets scikit-image
