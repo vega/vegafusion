@@ -330,6 +330,7 @@ class VegaFusionRuntime:
                 imported_inline_datasets[name] = PandasDatasource(value)
             elif hasattr(value, "__arrow_c_stream__"):
                 from arro3.core import Table
+
                 # Arrow PyCapsule interface, wrapped in arro3 Table
                 imported_inline_datasets[name] = Table(value)
             elif hasattr(value, "__dataframe__"):
