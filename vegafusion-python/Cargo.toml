@@ -36,7 +36,6 @@ version = "1.0.79"
 
 [dependencies.arrow]
 workspace = true
-features = ["pyarrow"]
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"

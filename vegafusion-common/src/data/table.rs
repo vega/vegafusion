@@ -43,11 +43,11 @@ use {
 
 #[cfg(feature = "pyarrow")]
 use {
-    arrow::pyarrow::{FromPyArrow, ToPyArrow},
+    arrow::pyarrow::FromPyArrow,
     pyo3::{
         prelude::*,
-        types::{PyList, PyTuple},
-        Bound, PyAny, PyErr, PyObject, Python,
+        types::PyList,
+        Bound, PyAny, PyErr, Python,
     },
     pyo3_arrow::PyTable,
 };
@@ -370,20 +370,8 @@ impl VegaFusionTable {
     }
 
     #[cfg(feature = "pyarrow")]
-    pub fn to_pyarrow(&self, py: Python) -> std::result::Result<PyObject, PyErr> {
+    pub fn to_pyo3_arrow(&self) -> std::result::Result<PyTable, PyErr> {
         // Convert table's record batches into Python list of pyarrow batches
-
-        use pyo3::types::PyAnyMethods;
-        let pyarrow_module = PyModule::import_bound(py, "pyarrow")?;
-        let table_cls = pyarrow_module.getattr("Table")?;
-        let batch_objects = self
-            .batches
-            .iter()
-            .map(|batch| Ok(batch.to_pyarrow(py)?))
-            .collect::<Result<Vec<_>>>()?;
-        let batches_list = PyList::new_bound(py, batch_objects);
-
-        // Convert table's schema into pyarrow schema
         let schema = if let Some(batch) = self.batches.first() {
             // Get schema from first batch if present
             batch.schema()
@@ -391,12 +379,9 @@ impl VegaFusionTable {
             self.schema.clone()
         };
 
-        let schema_object = schema.to_pyarrow(py)?;
+        let py_table = pyo3_arrow::PyTable::try_new(self.batches.clone(), schema)?;
 
-        // Build pyarrow table
-        let args = PyTuple::new_bound(py, vec![&batches_list, schema_object.bind(py)]);
-        let pa_table = table_cls.call_method1("from_batches", args)?;
-        Ok(PyObject::from(pa_table))
+        Ok(py_table)
     }
 
     // Serialize to bytes using Arrow IPC format

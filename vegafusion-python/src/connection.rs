@@ -125,7 +125,7 @@ impl Connection for PySqlConnection {
         let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
         let table_name = format!("arrow_{random_id}");
         let fallback_connection = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
-            let pa_table = table.to_pyarrow(py)?;
+            let pa_table = table.to_pyo3_arrow()?.to_pyarrow(py)?;
 
             // Register table with Python connection
             let table_name_object = table_name.clone().into_py(py);

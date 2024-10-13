@@ -469,7 +469,7 @@ impl PyVegaFusionRuntime {
             let py_response_list = PyList::empty_bound(py);
             for value in values {
                 let pytable: PyObject = if let TaskValue::Table(table) = value {
-                    table.to_pyarrow(py)?
+                    table.to_pyo3_arrow()?.into_py(py)
                 } else {
                     return Err(PyErr::from(VegaFusionError::internal(
                         "Unexpected value type",
@@ -553,7 +553,7 @@ impl PyVegaFusionRuntime {
                     let name = name.into_py(py);
                     let scope = scope.into_py(py);
                     let table = match extracted_format.as_str() {
-                        "pyarrow" => table.to_pyarrow(py)?,
+                        "pyarrow" => table.to_pyo3_arrow()?.into_py(py),
                         "arrow-ipc" => {
                             PyBytes::new_bound(py, table.to_ipc_bytes()?.as_slice()).to_object(py)
                         }

@@ -1,3 +1,4 @@
+import vegafusion as vf
 from pathlib import Path
 
 import altair as alt
@@ -7,8 +8,6 @@ import pyarrow as pa
 import pytest
 from altair.utils.execeval import eval_block
 from vega_datasets import data
-
-import vegafusion as vf
 
 pa_major_minor = tuple(int(v) for v in pa.__version__.split(".")[:2])
 

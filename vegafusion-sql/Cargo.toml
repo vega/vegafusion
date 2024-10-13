@@ -21,7 +21,6 @@ datafusion-conn = [
 pyarrow = [
   "pyo3",
   "datafusion-common/pyarrow",
-  "vegafusion-common/pyarrow",
   "vegafusion-dataframe/pyarrow",
 ]
 

@@ -604,7 +604,7 @@ class VegaFusionRuntime:
         default_input_tz: str | None = None,
         row_limit: int | None = None,
         inline_datasets: dict[str, DataFrameLike] | None = None,
-        trim_unused_columns: bool = True,
+        trim_unused_columns: bool = False,
     ) -> tuple[list[DataFrameLike], list[dict[str, str]]]:
         """Extract the fully evaluated form of the requested datasets from a Vega
         specification.
@@ -631,8 +631,8 @@ class VegaFusionRuntime:
                 Tables. Inline datasets may be referenced by the input specification
                 using the following url syntax 'vegafusion+dataset://{dataset_name}'
                 or 'table://{dataset_name}'.
-            trim_unused_columns: If True (default), unused columns are removed from
-                returned datasets.
+            trim_unused_columns: If True, unused columns are removed from returned
+                datasets.
 
         Returns:
             A tuple containing:
@@ -681,7 +681,7 @@ class VegaFusionRuntime:
                     import polars as pl
 
                 # Deserialize values to Polars tables
-                pl_dataframes = [pl.from_arrow(value) for value in values]
+                pl_dataframes = [pl.DataFrame(value) for value in values]
 
                 # Localize datetime columns to UTC
                 processed_datasets = []
@@ -699,8 +699,8 @@ class VegaFusionRuntime:
             elif pa is not None and _all_datasets_have_type(inline_datasets, pa.Table):
                 return values, warnings
             else:
-                # Deserialize values to pandas DataFrames
-                datasets = [value.to_pandas() for value in values]
+                # Deserialize values to pandas through pyarrow
+                datasets = [pa.table(value).to_pandas() for value in values]
 
                 # Localize datetime columns to UTC
                 for df in datasets:
