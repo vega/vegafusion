@@ -18,10 +18,10 @@ datafusion-conn = [
   "vegafusion-common/object_store",
   "vegafusion-common/prettyprint",
 ]
-pyarrow = [
+py = [
   "pyo3",
   "pyo3-arrow",
-  "vegafusion-dataframe/pyarrow",
+  "vegafusion-dataframe/py",
 ]
 
 [dependencies]

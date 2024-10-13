@@ -48,7 +48,7 @@ use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_epoch::UTC_TIME
 use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_str::UTC_TIMESTAMP_TO_STR_UDF;
 use vegafusion_datafusion_udfs::udfs::math::isfinite::IsFiniteUDF;
 
-#[cfg(feature = "pyarrow")]
+#[cfg(feature = "py")]
 use {crate::connection::datafusion_py_datasource::PyDatasource, pyo3::PyObject};
 
 #[derive(Clone)]
@@ -356,7 +356,7 @@ impl Connection for DataFusionConnection {
         }
     }
 
-    #[cfg(feature = "pyarrow")]
+    #[cfg(feature = "py")]
     async fn scan_py_datasource(&self, datasource: PyObject) -> Result<Arc<dyn DataFrame>> {
         let (sql_conn, table_name) = Python::with_gil(|py| -> Result<_> {
             let datasource_bound = datasource.bind(py);

@@ -13,7 +13,7 @@ pub use vegafusion_dataframe::connection::Connection;
 pub mod datafusion_conn;
 
 #[cfg(feature = "datafusion-conn")]
-#[cfg(feature = "pyarrow")]
+#[cfg(feature = "py")]
 pub mod datafusion_py_datasource;
 
 #[async_trait]

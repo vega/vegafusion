@@ -7,7 +7,7 @@ use std::sync::Arc;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::{Result, VegaFusionError};
 
-#[cfg(feature = "pyarrow")]
+#[cfg(feature = "py")]
 use pyo3::PyObject;
 
 #[async_trait]
@@ -52,7 +52,7 @@ pub trait Connection: Send + Sync + 'static {
         ))
     }
 
-    #[cfg(feature = "pyarrow")]
+    #[cfg(feature = "py")]
     async fn scan_py_datasource(&self, _datasource: PyObject) -> Result<Arc<dyn DataFrame>> {
         Err(VegaFusionError::sql_not_supported(
             "scan_py_datasource not supported by connection",

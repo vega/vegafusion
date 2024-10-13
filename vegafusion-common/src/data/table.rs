@@ -41,7 +41,7 @@ use {
     std::{borrow::Cow, convert::TryFrom},
 };
 
-#[cfg(feature = "pyarrow")]
+#[cfg(feature = "py")]
 use {
     pyo3::{
         prelude::*,
@@ -317,13 +317,13 @@ impl VegaFusionTable {
         }
     }
 
-    #[cfg(feature = "pyarrow")]
+    #[cfg(feature = "py")]
     pub fn from_pyarrow(py: Python, data: &Bound<PyAny>) -> std::result::Result<Self, PyErr> {
         Ok(Self::from_pyarrow_with_hash(py, data)?.0)
     }
 
     /// Build a VegaFusion table and hash value suitable for use in VegaFusionDataset
-    #[cfg(feature = "pyarrow")]
+    #[cfg(feature = "py")]
     pub fn from_pyarrow_with_hash(
         py: Python,
         data: &Bound<PyAny>,
@@ -368,7 +368,7 @@ impl VegaFusionTable {
         }
     }
 
-    #[cfg(feature = "pyarrow")]
+    #[cfg(feature = "py")]
     pub fn to_pyo3_arrow(&self) -> std::result::Result<PyTable, PyErr> {
         // Convert table's record batches into Python list of pyarrow batches
         let schema = if let Some(batch) = self.batches.first() {

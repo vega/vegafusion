@@ -7,7 +7,7 @@ description = "Core components required by multiple VegaFusion crates, with WASM
 
 [features]
 tonic_support = ["tonic", "tonic-build"]
-pyarrow = ["pyo3", "vegafusion-common/pyarrow"]
+py = ["pyo3", "vegafusion-common/py"]
 
 [dependencies]
 thiserror = "^1.0.29"
