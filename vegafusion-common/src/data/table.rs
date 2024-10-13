@@ -43,19 +43,17 @@ use {
 
 #[cfg(feature = "pyarrow")]
 use {
-    arrow::pyarrow::FromPyArrow,
     pyo3::{
         prelude::*,
-        types::PyList,
+        types::{PyDict, PyList},
         Bound, PyAny, PyErr, Python,
     },
-    pyo3_arrow::PyTable,
+    pyo3_arrow::{PyRecordBatch, PySchema, PyTable},
 };
 
 #[cfg(feature = "base64")]
 use base64::{engine::general_purpose, Engine as _};
 use datafusion_common::utils::array_into_list_array;
-use pyo3::types::PyDict;
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
@@ -353,17 +351,18 @@ impl VegaFusionTable {
             // Assume data is a pyarrow Table
             // Extract table.schema as a Rust Schema
             let schema_object = data.getattr("schema")?;
-            let schema = Schema::from_pyarrow_bound(&schema_object)?;
+            let pyschema = schema_object.extract::<PySchema>()?;
+            let schema = pyschema.into_inner();
 
             // Extract table.to_batches() as a Rust Vec<RecordBatch>
             let batches_object = data.call_method0("to_batches")?;
             let batches_list = batches_object.downcast::<PyList>()?;
             let batches = batches_list
                 .iter()
-                .map(|batch_any| Ok(RecordBatch::from_pyarrow_bound(&batch_any)?))
+                .map(|batch_any| Ok(batch_any.extract::<PyRecordBatch>()?.into_inner()))
                 .collect::<Result<Vec<RecordBatch>>>()?;
 
-            let vf_table = VegaFusionTable::try_new(Arc::new(schema), batches)?;
+            let vf_table = VegaFusionTable::try_new(schema, batches)?;
             let hash = vf_table.get_hash();
             Ok((vf_table, hash))
         }

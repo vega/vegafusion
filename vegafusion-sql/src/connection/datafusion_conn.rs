@@ -16,6 +16,7 @@ use datafusion::prelude::{
 use datafusion_expr::ScalarUDF;
 use log::Level;
 use object_store::aws::AmazonS3Builder;
+use pyo3::Python;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::policies::ExponentialBackoff;
 use reqwest_retry::RetryTransientMiddleware;
@@ -357,16 +358,19 @@ impl Connection for DataFusionConnection {
 
     #[cfg(feature = "pyarrow")]
     async fn scan_py_datasource(&self, datasource: PyObject) -> Result<Arc<dyn DataFrame>> {
-        let datasource = PyDatasource::try_new(datasource)?;
-        let ctx = make_datafusion_context();
+        let (sql_conn, table_name) = Python::with_gil(|py| -> Result<_> {
+            let datasource_bound = datasource.bind(py);
+            let datasource = PyDatasource::try_new(datasource_bound)?;
+            let ctx = make_datafusion_context();
 
-        // Use random id in table name to break cache in cse backing datasource is modified
-        let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
-        let table_name = format!("py_table_{random_id}");
+            // Use random id in table name to break cache in cse backing datasource is modified
+            let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
+            let table_name = format!("py_table_{random_id}");
 
-        ctx.register_table(&table_name, Arc::new(datasource))?;
+            ctx.register_table(&table_name, Arc::new(datasource))?;
 
-        let sql_conn = DataFusionConnection::new(Arc::new(ctx));
+            Ok((DataFusionConnection::new(Arc::new(ctx)), table_name))
+        })?;
         Ok(Arc::new(
             SqlDataFrame::try_new(Arc::new(sql_conn), &table_name, Default::default()).await?,
         ))

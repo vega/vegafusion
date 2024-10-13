@@ -71,3 +71,6 @@ features = ["macros", "rt-multi-thread"]
 [dependencies.pyo3]
 workspace = true
 features = ["extension-module", "abi3-py311"]
+
+[dependencies.pyo3-arrow]
+workspace = true

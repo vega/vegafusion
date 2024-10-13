@@ -1,11 +1,11 @@
+use arrow::datatypes::SchemaRef;
+use async_trait::async_trait;
 use pyo3::prelude::*;
+use pyo3::types::{IntoPyDict, PyDict, PyString, PyTuple};
+use pyo3_arrow::PySchema;
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
-
-use arrow::pyarrow::{FromPyArrow, ToPyArrow};
-use async_trait::async_trait;
-use pyo3::types::{IntoPyDict, PyDict, PyString, PyTuple};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::{arrow::datatypes::Schema, error::Result};
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
@@ -51,9 +51,8 @@ fn perform_fetch_query(query: &str, schema: &Schema, conn: &PyObject) -> Result<
     let table = Python::with_gil(|py| -> std::result::Result<_, PyErr> {
         let query_object = PyString::new_bound(py, query);
         let query_object = query_object.as_ref();
-        let schema_object = schema.to_pyarrow(py)?;
-        let schema_object = schema_object.bind(py);
-        let args = PyTuple::new_bound(py, vec![query_object, schema_object]);
+        let pyschema = PySchema::new(Arc::new(schema.clone()));
+        let args = PyTuple::new_bound(py, vec![query_object, pyschema.to_pyarrow(py)?.bind(py)]);
         let table_object = conn.call_method_bound(py, "fetch_query", args, None)?;
         VegaFusionTable::from_pyarrow(py, table_object.bind(py))
     })?;
@@ -97,9 +96,9 @@ impl Connection for PySqlConnection {
 
             for key in tables_dict.keys() {
                 let value = tables_dict.get_item(key.clone())?.unwrap();
+                let pyschema = value.extract::<PySchema>()?;
                 let key_string = key.extract::<String>()?;
-                let value_schema = Schema::from_pyarrow_bound(&value)?;
-                tables.insert(key_string, value_schema);
+                tables.insert(key_string, pyschema.into_inner().as_ref().clone());
             }
             Ok(tables)
         })?;
@@ -179,7 +178,7 @@ impl Connection for PySqlConnection {
 
             let pyschema = inner_opts
                 .schema
-                .and_then(|schema| schema.to_pyarrow(py).ok())
+                .and_then(|schema| PySchema::new(Arc::new(schema)).to_pyarrow(py).ok())
                 .into_py(py);
             let kwargs = vec![
                 ("has_header", inner_opts.has_header.into_py(py)),
@@ -368,7 +367,7 @@ pub struct PySqlDataset {
     pub dataset: Arc<PyObject>,
     pub dialect: Dialect,
     pub table_name: String,
-    pub table_schema: Schema,
+    pub table_schema: SchemaRef,
     pub fallback_conn: Option<Arc<dyn SqlConnection>>,
 }
 
@@ -382,8 +381,8 @@ impl PySqlDataset {
             let table_name = table_name_obj.extract::<String>(py)?;
 
             let table_schema_obj = dataset.call_method0(py, "table_schema")?;
-            let table_schema = Schema::from_pyarrow_bound(table_schema_obj.bind(py))?;
-            Ok((table_name, table_schema))
+            let pyschema = table_schema_obj.extract::<PySchema>(py)?;
+            Ok((table_name, pyschema.into_inner()))
         })?;
 
         Ok(Self {
@@ -405,9 +404,11 @@ impl Connection for PySqlDataset {
     }
 
     async fn tables(&self) -> Result<HashMap<String, Schema>> {
-        Ok(vec![(self.table_name.clone(), self.table_schema.clone())]
-            .into_iter()
-            .collect())
+        Ok(
+            vec![(self.table_name.clone(), self.table_schema.as_ref().clone())]
+                .into_iter()
+                .collect(),
+        )
     }
 
     async fn scan_table(&self, name: &str) -> Result<Arc<dyn DataFrame>> {

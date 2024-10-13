@@ -193,6 +193,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/pickleshare-0.7.5-py_1003.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pillow-10.0.1-py311h8aef010_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pip-23.2.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pixi-pycharm-0.0.8-unix_1234567_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pixman-0.42.2-h59595ed_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pkgutil-resolve-name-1.3.10-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-3.11.0-pyhd8ed1ab_0.conda
@@ -234,7 +235,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ruff-0.6.9-py311hef32070_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/rust-1.80.1-h0a17960_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/rust-std-x86_64-unknown-linux-gnu-1.80.1-h2c6d0dc_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/scikit-image-0.21.0-py311hb755f60_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/scikit-image-0.24.0-py311h044e617_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/scipy-1.14.1-py311he1f765f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/selenium-4.11.2-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/selenium-manager-4.11.0-he8a937b_0.conda
@@ -464,6 +465,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/pickleshare-0.7.5-py_1003.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/osx-64/pillow-10.3.0-py311h1b85569_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pip-23.2.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pixi-pycharm-0.0.8-unix_1234567_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pkgutil-resolve-name-1.3.10-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-3.11.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pluggy-1.3.0-pyhd8ed1ab_0.conda
@@ -506,7 +508,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/ruff-0.6.9-py311h8c6096b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/rust-1.80.1-h6c54e5d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/rust-std-x86_64-apple-darwin-1.80.1-h38e4360_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/scikit-image-0.21.0-py311hdf8f085_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/scikit-image-0.24.0-py311hfdcbad3_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/scipy-1.14.1-py311hb3ed397_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/selenium-4.11.2-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/selenium-manager-4.11.0-h7205ca4_0.conda
@@ -684,8 +686,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libev-4.33-h642e427_1.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libexpat-2.6.3-hf9b8971_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libffi-3.4.2-h3422bc3_5.tar.bz2
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgfortran-5.0.0-12_2_0_hd922786_32.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgfortran5-12.2.0-h0eea778_32.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgfortran-5.0.0-13_2_0_hd922786_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgfortran5-13.2.0-hf226fd6_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libglib-2.76.4-h24e9cb9_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgrpc-1.56.2-h9075ed4_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libiconv-1.17-he4db4b2_0.tar.bz2
@@ -748,13 +750,13 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/pickleshare-0.7.5-py_1003.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pillow-9.4.0-py311h627eb56_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pip-23.2.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pixi-pycharm-0.0.8-unix_1234567_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pixman-0.40.0-h27ca646_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pkg-config-0.29.2-hab62308_1008.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/pkgutil-resolve-name-1.3.10-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-3.10.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pluggy-1.2.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/polars-1.8.2-py311h749c62c_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/pooch-1.7.0-pyha770c72_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prometheus_client-0.17.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prompt-toolkit-3.0.39-pyha770c72_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prompt_toolkit-3.0.39-hd8ed1ab_0.conda
@@ -792,8 +794,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/ruff-0.6.9-py311h2cf8269_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/rust-1.80.1-h4ff7c5d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/rust-std-aarch64-apple-darwin-1.80.1-hf6ec828_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/scikit-image-0.21.0-py311ha891d26_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/scipy-1.11.1-py311h93d07a4_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/scikit-image-0.24.0-py311h4b4568b_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/scipy-1.14.1-py311h2929bc6_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/selenium-4.11.2-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/selenium-manager-4.11.0-h69fbcac_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/send2trash-1.8.2-pyhd1c38e8_0.conda
@@ -1001,6 +1003,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/pickleshare-0.7.5-py_1003.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/win-64/pillow-10.4.0-py311h5592be9_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pip-23.2.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pixi-pycharm-0.0.8-win_1234567_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pkgutil-resolve-name-1.3.10-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-3.11.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pluggy-1.3.0-pyhd8ed1ab_0.conda
@@ -1042,7 +1045,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/ruff-0.6.9-py311heeab51b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/rust-1.80.1-hf8d6059_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/rust-std-x86_64-pc-windows-msvc-1.80.1-h17fc481_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/win-64/scikit-image-0.21.0-py311h12c1d0e_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/scikit-image-0.24.0-py311hcf9f919_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/scipy-1.14.1-py311hd4686c6_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/selenium-4.11.2-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/selenium-manager-4.11.0-h975169c_0.conda
@@ -6448,23 +6451,6 @@ packages:
 - kind: conda
   name: libgfortran
   version: 5.0.0
-  build: 12_2_0_hd922786_32
-  build_number: 32
-  subdir: osx-arm64
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/libgfortran-5.0.0-12_2_0_hd922786_32.conda
-  sha256: 4451dca401842f1d4b7b1a61d362c2a7f4fb640e4016043392d37d0a75e80fbe
-  md5: 9ec41d43d48cbff635a81ea4ff11dc44
-  depends:
-  - libgfortran5 *
-  arch: aarch64
-  platform: osx
-  license: GPL-3.0-only WITH GCC-exception-3.1
-  license_family: GPL
-  size: 161523
-  timestamp: 1689887373568
-- kind: conda
-  name: libgfortran
-  version: 5.0.0
   build: 13_2_0_h97931a8_1
   build_number: 1
   subdir: osx-64
@@ -6479,6 +6465,21 @@ packages:
   license_family: GPL
   size: 109855
   timestamp: 1694165674845
+- kind: conda
+  name: libgfortran
+  version: 5.0.0
+  build: 13_2_0_hd922786_3
+  build_number: 3
+  subdir: osx-arm64
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/libgfortran-5.0.0-13_2_0_hd922786_3.conda
+  sha256: 44e541b4821c96b28b27fef5630883a60ce4fee91fd9c79f25a199f8f73f337b
+  md5: 4a55d9e169114b2b90d3ec4604cd7bbf
+  depends:
+  - libgfortran5 13.2.0 hf226fd6_3
+  license: GPL-3.0-only WITH GCC-exception-3.1
+  license_family: GPL
+  size: 110233
+  timestamp: 1707330749033
 - kind: conda
   name: libgfortran
   version: 14.1.0
@@ -6513,25 +6514,6 @@ packages:
   timestamp: 1724802086021
 - kind: conda
   name: libgfortran5
-  version: 12.2.0
-  build: h0eea778_32
-  build_number: 32
-  subdir: osx-arm64
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/libgfortran5-12.2.0-h0eea778_32.conda
-  sha256: 592f92703c5a12bac72adcfff3b2a81bee63e1992184641b23eaa43120e5e938
-  md5: 6ff3d891096576d250fd84bf8b85cf19
-  depends:
-  - llvm-openmp >=8.0.0
-  constrains:
-  - libgfortran 5.0.0 *_32
-  arch: aarch64
-  platform: osx
-  license: GPL-3.0-only WITH GCC-exception-3.1
-  license_family: GPL
-  size: 1049851
-  timestamp: 1689887312084
-- kind: conda
-  name: libgfortran5
   version: 13.2.0
   build: h2873a65_1
   build_number: 1
@@ -6549,6 +6531,23 @@ packages:
   license_family: GPL
   size: 1571764
   timestamp: 1694165583047
+- kind: conda
+  name: libgfortran5
+  version: 13.2.0
+  build: hf226fd6_3
+  build_number: 3
+  subdir: osx-arm64
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/libgfortran5-13.2.0-hf226fd6_3.conda
+  sha256: bafc679eedb468a86aa4636061c55966186399ee0a04b605920d208d97ac579a
+  md5: 66ac81d54e95c534ae488726c1f698ea
+  depends:
+  - llvm-openmp >=8.0.0
+  constrains:
+  - libgfortran 5.0.0 13_2_0_*_3
+  license: GPL-3.0-only WITH GCC-exception-3.1
+  license_family: GPL
+  size: 997381
+  timestamp: 1707330687590
 - kind: conda
   name: libgfortran5
   version: 14.1.0
@@ -9820,6 +9819,38 @@ packages:
   size: 1386212
   timestamp: 1690024763393
 - kind: conda
+  name: pixi-pycharm
+  version: 0.0.8
+  build: unix_1234567_0
+  subdir: noarch
+  noarch: generic
+  url: https://conda.anaconda.org/conda-forge/noarch/pixi-pycharm-0.0.8-unix_1234567_0.conda
+  sha256: 1d59b9dc7d922846f594fc17d9ea034f569d7e6946eaa06a98474bee2f413b66
+  md5: 94373edcca5bd8582588c658859b8f70
+  depends:
+  - __unix
+  - python >=3.8
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 8861
+  timestamp: 1728816803073
+- kind: conda
+  name: pixi-pycharm
+  version: 0.0.8
+  build: win_1234567_0
+  subdir: noarch
+  noarch: generic
+  url: https://conda.anaconda.org/conda-forge/noarch/pixi-pycharm-0.0.8-win_1234567_0.conda
+  sha256: 6ee9dbad2c363faefea73e21370301e16290a2a88230787267e4f34b67ca40e8
+  md5: 352a583506f7ac90d984e9a501e500f7
+  depends:
+  - __win
+  - python >=3.8
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 8671
+  timestamp: 1728816803806
+- kind: conda
   name: pixman
   version: 0.40.0
   build: h27ca646_0
@@ -10065,27 +10096,6 @@ packages:
   license_family: MIT
   size: 21821797
   timestamp: 1727243582468
-- kind: conda
-  name: pooch
-  version: 1.7.0
-  build: pyha770c72_3
-  build_number: 3
-  subdir: osx-arm64
-  noarch: python
-  url: https://conda.anaconda.org/conda-forge/noarch/pooch-1.7.0-pyha770c72_3.conda
-  sha256: 64e4d633803df2e36fd141d9bf269568fbe179a313248e1dac4d364c02debdef
-  md5: 5936894aade8240c867d292aa0d980c6
-  depends:
-  - python >=3.7
-  - requests >=2.19.0
-  - platformdirs >=2.5.0
-  - packaging >=20.0
-  arch: aarch64
-  platform: osx
-  license: BSD-3-Clause
-  license_family: BSD
-  size: 50857
-  timestamp: 1679580483278
 - kind: conda
   name: prometheus_client
   version: 0.17.1
@@ -11863,17 +11873,94 @@ packages:
   timestamp: 1723153507938
 - kind: conda
   name: scikit-image
-  version: 0.21.0
-  build: py311h12c1d0e_0
+  version: 0.24.0
+  build: py311h044e617_2
+  build_number: 2
+  subdir: linux-64
+  url: https://conda.anaconda.org/conda-forge/linux-64/scikit-image-0.24.0-py311h044e617_2.conda
+  sha256: b46be2b044eb8ea10e710ac6809dc094c08285181ce2a51ed8bb254035d3a098
+  md5: 5ea04101a9da03787ba90e9c741eb818
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - imageio >=2.27
+  - lazy_loader >=0.2
+  - libgcc-ng >=12
+  - libstdcxx-ng >=12
+  - networkx >=2.8
+  - numpy >=1.19,<3
+  - packaging >=21
+  - pillow >=9.0.1
+  - python >=3.11,<3.12.0a0
+  - python_abi 3.11.* *_cp311
+  - pywavelets >=1.1.1
+  - scipy >=1.8
+  - tifffile >=2022.8.12
+  constrains:
+  - pooch >=1.6.0
+  - matplotlib-base >=3.5
+  - cloudpickle >=0.2.1
+  - astropy >=5.0
+  - dask-core >=2021.1.0
+  - numpy >=1.23
+  - scikit-learn >=1.0
+  - cytoolz >=0.11.0
+  - toolz >=0.10.0
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 11207805
+  timestamp: 1723842808374
+- kind: conda
+  name: scikit-image
+  version: 0.24.0
+  build: py311h4b4568b_2
+  build_number: 2
+  subdir: osx-arm64
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/scikit-image-0.24.0-py311h4b4568b_2.conda
+  sha256: 23a7cee3497cb2aac15e5e68216117897f8a4e912faf6d4252f155e2aab7a72f
+  md5: 1307ae0311e51a5770aebdaa135f72c8
+  depends:
+  - __osx >=11.0
+  - imageio >=2.27
+  - lazy_loader >=0.2
+  - libcxx >=16
+  - networkx >=2.8
+  - numpy >=1.19,<3
+  - packaging >=21
+  - pillow >=9.0.1
+  - python >=3.11,<3.12.0a0
+  - python >=3.11,<3.12.0a0 *_cpython
+  - python_abi 3.11.* *_cp311
+  - pywavelets >=1.1.1
+  - scipy >=1.8
+  - tifffile >=2022.8.12
+  constrains:
+  - numpy >=1.23
+  - dask-core >=2021.1.0
+  - pooch >=1.6.0
+  - toolz >=0.10.0
+  - astropy >=5.0
+  - cloudpickle >=0.2.1
+  - cytoolz >=0.11.0
+  - matplotlib-base >=3.5
+  - scikit-learn >=1.0
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 10661713
+  timestamp: 1723842876469
+- kind: conda
+  name: scikit-image
+  version: 0.24.0
+  build: py311hcf9f919_2
+  build_number: 2
   subdir: win-64
-  url: https://conda.anaconda.org/conda-forge/win-64/scikit-image-0.21.0-py311h12c1d0e_0.conda
-  sha256: 797550a30a5460c9e0756ee20ac9c63761079598d6bef984d2c238dbac1ac7e6
-  md5: d92d8466f4cb90486bdd863d1a81b62a
+  url: https://conda.anaconda.org/conda-forge/win-64/scikit-image-0.24.0-py311hcf9f919_2.conda
+  sha256: 9cf0bf535e48ac4691349a50e99dd0d311fa9d112b5671a29c78dc068b4c7663
+  md5: 84f3a41eb789b28e01079fa06c8e1cec
   depends:
   - imageio >=2.27
   - lazy_loader >=0.2
   - networkx >=2.8
-  - numpy >=1.23.5,<2.0a0
+  - numpy >=1.19,<3
   - packaging >=21
   - pillow >=9.0.1
   - python >=3.11,<3.12.0a0
@@ -11885,102 +11972,35 @@ packages:
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
   constrains:
-  - pooch >=1.6.0
-  - toolz >=0.10.0
-  - scikit-learn >=1.0
   - dask-core >=2021.1.0
-  - cloudpickle >=0.2.1
   - cytoolz >=0.11.0
+  - toolz >=0.10.0
+  - numpy >=1.23
+  - cloudpickle >=0.2.1
   - matplotlib-base >=3.5
+  - pooch >=1.6.0
+  - scikit-learn >=1.0
   - astropy >=5.0
   license: BSD-3-Clause
   license_family: BSD
-  size: 10079358
-  timestamp: 1688805629626
+  size: 10442607
+  timestamp: 1723843323209
 - kind: conda
   name: scikit-image
-  version: 0.21.0
-  build: py311ha891d26_0
-  subdir: osx-arm64
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/scikit-image-0.21.0-py311ha891d26_0.conda
-  sha256: a1425bb294b3d06235c0a18a0ec6be45ab8c218665106313a8db5a4260df0a06
-  md5: b217185dcafff1325299d61034546460
-  depends:
-  - imageio >=2.27
-  - lazy_loader >=0.2
-  - libcxx >=15.0.7
-  - networkx >=2.8
-  - numpy >=1.23.5,<2.0a0
-  - packaging >=21
-  - pillow >=9.0.1
-  - python >=3.11,<3.12.0a0
-  - python >=3.11,<3.12.0a0 *_cpython
-  - python_abi 3.11.* *_cp311
-  - pywavelets >=1.1.1
-  - scipy >=1.8
-  - tifffile >=2022.8.12
-  constrains:
-  - scikit-learn >=1.0
-  - toolz >=0.10.0
-  - cloudpickle >=0.2.1
-  - astropy >=5.0
-  - pooch >=1.6.0
-  - matplotlib-base >=3.5
-  - cytoolz >=0.11.0
-  - dask-core >=2021.1.0
-  license: BSD-3-Clause
-  license_family: BSD
-  size: 10612625
-  timestamp: 1688805642862
-- kind: conda
-  name: scikit-image
-  version: 0.21.0
-  build: py311hb755f60_0
-  subdir: linux-64
-  url: https://conda.anaconda.org/conda-forge/linux-64/scikit-image-0.21.0-py311hb755f60_0.conda
-  sha256: ea8f443a59897c5447f3e14bdf33d2ad88f8b44ae88aee53eace270439d2ff6d
-  md5: 0a8cbf18f7e57e43b8e106630a0ca7df
-  depends:
-  - imageio >=2.27
-  - lazy_loader >=0.2
-  - libgcc-ng >=12
-  - libstdcxx-ng >=12
-  - networkx >=2.8
-  - numpy >=1.23.5,<2.0a0
-  - packaging >=21
-  - pillow >=9.0.1
-  - python >=3.11,<3.12.0a0
-  - python_abi 3.11.* *_cp311
-  - pywavelets >=1.1.1
-  - scipy >=1.8
-  - tifffile >=2022.8.12
-  constrains:
-  - scikit-learn >=1.0
-  - astropy >=5.0
-  - dask-core >=2021.1.0
-  - pooch >=1.6.0
-  - cytoolz >=0.11.0
-  - cloudpickle >=0.2.1
-  - toolz >=0.10.0
-  - matplotlib-base >=3.5
-  license: BSD-3-Clause
-  license_family: BSD
-  size: 10839081
-  timestamp: 1688804944260
-- kind: conda
-  name: scikit-image
-  version: 0.21.0
-  build: py311hdf8f085_0
+  version: 0.24.0
+  build: py311hfdcbad3_2
+  build_number: 2
   subdir: osx-64
-  url: https://conda.anaconda.org/conda-forge/osx-64/scikit-image-0.21.0-py311hdf8f085_0.conda
-  sha256: 6f4ec7efd11722e4c14ed15f2a8f679cad032de758eb11c3df4cd91635a327ae
-  md5: 9e0625e7beb9bdaa462942f4b56c1ee2
+  url: https://conda.anaconda.org/conda-forge/osx-64/scikit-image-0.24.0-py311hfdcbad3_2.conda
+  sha256: 1e4ad10b6d1e908d4d5bf0209c91f209b713cda296acc258c8f7b2efad1fa6fc
+  md5: e25466bcfdf3478c8e98566cfda66116
   depends:
+  - __osx >=10.13
   - imageio >=2.27
   - lazy_loader >=0.2
-  - libcxx >=15.0.7
+  - libcxx >=16
   - networkx >=2.8
-  - numpy >=1.23.5,<2.0a0
+  - numpy >=1.19,<3
   - packaging >=21
   - pillow >=9.0.1
   - python >=3.11,<3.12.0a0
@@ -11989,45 +12009,45 @@ packages:
   - scipy >=1.8
   - tifffile >=2022.8.12
   constrains:
-  - pooch >=1.6.0
-  - cloudpickle >=0.2.1
-  - toolz >=0.10.0
   - matplotlib-base >=3.5
-  - dask-core >=2021.1.0
-  - astropy >=5.0
-  - cytoolz >=0.11.0
   - scikit-learn >=1.0
+  - dask-core >=2021.1.0
+  - cytoolz >=0.11.0
+  - toolz >=0.10.0
+  - numpy >=1.23
+  - cloudpickle >=0.2.1
+  - pooch >=1.6.0
+  - astropy >=5.0
   license: BSD-3-Clause
   license_family: BSD
-  size: 10475573
-  timestamp: 1688805369885
+  size: 10595393
+  timestamp: 1723842941745
 - kind: conda
   name: scipy
-  version: 1.11.1
-  build: py311h93d07a4_0
+  version: 1.14.1
+  build: py311h2929bc6_0
   subdir: osx-arm64
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/scipy-1.11.1-py311h93d07a4_0.conda
-  sha256: f9b3fcc7c6d87d6603a7d7d6698c7ae8a0172b73241f2f13d16551a135643c84
-  md5: a62203d2445e563437b3d80327dee0eb
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/scipy-1.14.1-py311h2929bc6_0.conda
+  sha256: 6671f59afbecbaabafaa84f607ad035153f6ad1b7baa26682c5edd86f5cfd1f8
+  md5: 766c008c3537b86fab76fea7f7de1afc
   depends:
+  - __osx >=11.0
   - libblas >=3.9.0,<4.0a0
   - libcblas >=3.9.0,<4.0a0
-  - libcxx >=15.0.7
+  - libcxx >=17
   - libgfortran 5.*
-  - libgfortran5 >=12.2.0
+  - libgfortran5 >=13.2.0
   - liblapack >=3.9.0,<4.0a0
-  - numpy >=1.23.5,<1.28
-  - numpy >=1.23.5,<2.0a0
-  - pooch
+  - numpy <2.3
+  - numpy >=1.19,<3
+  - numpy >=1.23.5
   - python >=3.11,<3.12.0a0
   - python >=3.11,<3.12.0a0 *_cpython
   - python_abi 3.11.* *_cp311
-  constrains:
-  - libopenblas <0.3.26
   license: BSD-3-Clause
   license_family: BSD
-  size: 14968676
-  timestamp: 1687997669337
+  size: 15374158
+  timestamp: 1724328343933
 - kind: conda
   name: scipy
   version: 1.14.1

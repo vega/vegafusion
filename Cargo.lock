@@ -180,7 +180,6 @@ dependencies = [
  "arrow-schema",
  "arrow-select",
  "arrow-string",
- "pyo3",
 ]
 
 [[package]]
@@ -1335,7 +1334,6 @@ dependencies = [
  "object_store",
  "parquet",
  "paste",
- "pyo3",
  "sqlparser",
  "tokio",
 ]
@@ -4906,6 +4904,7 @@ dependencies = [
  "log",
  "prost 0.12.6",
  "pyo3",
+ "pyo3-arrow",
  "pythonize",
  "serde",
  "serde_json",
@@ -5097,6 +5096,7 @@ dependencies = [
  "log",
  "object_store",
  "pyo3",
+ "pyo3-arrow",
  "regex",
  "reqwest 0.11.27",
  "reqwest-middleware",

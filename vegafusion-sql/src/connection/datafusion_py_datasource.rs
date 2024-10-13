@@ -1,5 +1,4 @@
-use arrow::datatypes::{Schema, SchemaRef};
-use arrow::pyarrow::FromPyArrow;
+use arrow::datatypes::SchemaRef;
 use async_trait::async_trait;
 use datafusion::datasource::TableProvider;
 use datafusion::execution::{SendableRecordBatchStream, TaskContext};
@@ -10,8 +9,10 @@ use datafusion::physical_plan::{
 };
 use datafusion_common::{project_schema, DataFusionError, Statistics};
 use datafusion_expr::{Expr, TableType};
+use pyo3::prelude::PyAnyMethods;
 use pyo3::types::PyTuple;
-use pyo3::{IntoPy, PyErr, PyObject, Python};
+use pyo3::{Bound, IntoPy, PyAny, PyErr, PyObject, Python, ToPyObject};
+use pyo3_arrow::PySchema;
 use std::any::Any;
 use std::fmt::Formatter;
 use std::sync::Arc;
@@ -24,13 +25,14 @@ pub struct PyDatasource {
 }
 
 impl PyDatasource {
-    pub fn try_new(py_datasource: PyObject) -> Result<Self, PyErr> {
+    pub fn try_new(py_datasource: &Bound<PyAny>) -> Result<Self, PyErr> {
         Python::with_gil(|py| -> Result<_, PyErr> {
-            let table_schema_obj = py_datasource.call_method0(py, "schema")?;
-            let schema = Arc::new(Schema::from_pyarrow_bound(table_schema_obj.bind(py))?);
+            let table_schema_obj = py_datasource.call_method0("schema")?;
+            let schema = table_schema_obj.extract::<PySchema>()?;
+
             Ok(Self {
-                py_datasource: Arc::new(py_datasource),
-                schema,
+                py_datasource: Arc::new(py_datasource.to_object(py)),
+                schema: schema.into_inner(),
             })
         })
     }
