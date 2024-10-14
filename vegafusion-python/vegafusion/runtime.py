@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union, cast
 
 import narwhals as nw
@@ -30,38 +31,29 @@ UnaryUnaryMultiCallable = Any
 
 def _get_common_namespace(inline_datasets: dict[str, Any] | None) -> str | None:
     namespaces = set()
-    if inline_datasets is not None:
-        for df in inline_datasets.values():
-            namespaces.add(nw.get_native_namespace(nw.from_native(df)))
+    try:
+        if inline_datasets is not None:
+            for df in inline_datasets.values():
+                namespaces.add(nw.get_native_namespace(nw.from_native(df)))
 
-    if len(namespaces) == 1:
-        return next(iter(namespaces)).__name__
-    else:
+        if len(namespaces) == 1:
+            return next(iter(namespaces)).__name__
+        else:
+            return None
+    except TypeError:
+        # Types not compatible with Narwhals
         return None
 
-
-def _all_datasets_have_type(
-    inline_datasets: dict[str, Any] | None, types: tuple[type, ...]
-) -> bool:
-    """
-    Check if all datasets in inline_datasets are instances of the given types.
-
-    Args:
-        inline_datasets: A dictionary of inline datasets.
-        types: A tuple of types to check against.
-
-    Returns:
-        bool: True if all datasets are instances of the given types, False otherwise.
-    """
-    if not inline_datasets:
-        # If there are no inline datasets, return false
-        # (we want the default pandas behavior in this case)
-        return False
+def _get_default_namespace() -> ModuleType:
+    # Returns a default narwhals namespace, based on what is installed
+    if pd := sys.modules.get("pandas") and sys.modules.get("pyarrow"):
+        return pd
+    elif pl := sys.modules.get("polars"):
+        return pl
+    elif pa := sys.modules.get("pyarrow"):
+        return pa
     else:
-        for dataset in inline_datasets.values():
-            if not isinstance(dataset, types):
-                return False
-        return True
+        raise ImportError("Could not determine default narwhals namespace")
 
 
 class VariableUpdate(TypedDict):
@@ -374,15 +366,26 @@ class VegaFusionRuntime:
                     except ValueError:
                         pass
                 imported_inline_datasets[name] = Table(value)
-            else:
-                # Import through PyCapsule interface, through narwhals
-                df_nw = nw.from_native(value)
-                # Project down columns if possible
-                if columns is not None:
-                    # TODO: Nice error message when column is not found
-                    df_nw = df_nw[columns]
-
+            elif isinstance(value, dict):
+                # Let narwhals import the dict using a default backend
+                df_nw = nw.from_dict(value, native_namespace=_get_default_namespace())
                 imported_inline_datasets[name] = Table(df_nw)
+            else:
+                # Import through PyCapsule interface on narwhals
+                try:
+                    df_nw = nw.from_native(value)
+                    # Project down columns if possible
+                    if columns is not None:
+                        # TODO: Nice error message when column is not found
+                        df_nw = df_nw[columns]
+
+                    imported_inline_datasets[name] = Table(df_nw)
+                except TypeError:
+                    # Not supported by Narwhals, try pycapsule interface directly
+                    if hasattr(value, "__arrow_c_stream__"):
+                        imported_inline_datasets[name] = Table(value)
+                    else:
+                        raise
 
         return imported_inline_datasets
 
