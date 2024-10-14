@@ -104,6 +104,9 @@ jobs:
             ~/.cargo
             target
             .pixi
+      - name: Dev python
+        run: |
+          pixi run dev-py
       - name: Check format and lint
         run: |
           pixi run lint-check-py
