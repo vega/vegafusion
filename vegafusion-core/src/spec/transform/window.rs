@@ -162,7 +162,10 @@ impl TransformSpecTrait for WindowTransformSpec {
                 .map(|field| unescape_field(&field.field()))
                 .collect();
             for field in self.fields.iter().flatten() {
-                usage_cols.push(unescape_field(&field.field()))
+                // Ignore empty fields, which vega-lite sometimes produces instead of null
+                if !field.field().trim().is_empty() {
+                    usage_cols.push(unescape_field(&field.field()))
+                }
             }
             if let Some(sort) = &self.sort {
                 let unescaped_sort_fields: Vec<_> = sort
