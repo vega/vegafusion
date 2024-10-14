@@ -433,5 +433,14 @@ def test_categorical_columns(connection):
 
     chart = alt.Chart(df).mark_bar().encode(alt.X("categorical:N"), alt.Y("sum(a):Q"))
     transformed = chart.transformed_data()
-    expected = pd.DataFrame({"categorical": ["A", "BB"], "sum_a": [7, 8]})
+    expected = pd.DataFrame(
+        {
+            "categorical": (
+                pd.Series(["A", "BB"], dtype="category")
+                if connection == "datafusion"
+                else ["A", "BB"]
+            ),
+            "sum_a": [7, 8],
+        }
+    )
     pd.testing.assert_frame_equal(transformed, expected)

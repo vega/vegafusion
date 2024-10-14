@@ -28,6 +28,17 @@ if TYPE_CHECKING:
 UnaryUnaryMultiCallable = Any
 
 
+def _get_common_namespace(inline_datasets: dict[str, Any]) -> str | None:
+    namespaces = set()
+    for df in inline_datasets.values():
+        namespaces.add(nw.get_native_namespace(nw.from_native(df)))
+
+    if len(namespaces) == 1:
+        return next(iter(namespaces)).__name__
+    else:
+        return None
+
+
 def _all_datasets_have_type(
     inline_datasets: dict[str, Any] | None, types: tuple[type, ...]
 ) -> bool:
@@ -644,14 +655,16 @@ class VegaFusionRuntime:
         if self._grpc_channel:
             raise ValueError("pre_transform_datasets not yet supported over gRPC")
         else:
+            pl = sys.modules.get("polars", None)
+            pa = sys.modules.get("pyarrow", None)
+            pd = sys.modules.get("pandas", None)
+
             local_tz = local_tz or get_local_tz()
 
             # Build input variables
             pre_tx_vars = parse_variables(datasets)
 
             # Serialize inline datasets
-            # Don't include inline_dataset_usage so that we keep all columns instead
-            # of removing those that aren't referenced.
             inline_arrow_dataset = self._import_or_register_inline_datasets(
                 inline_datasets,
                 inline_dataset_usage=get_inline_column_usage(spec)
@@ -672,45 +685,51 @@ class VegaFusionRuntime:
                 if self._connection is not None:
                     self._connection.unregister_temporary_tables()
 
-            pl = sys.modules.get("polars", None)
-            pa = sys.modules.get("pyarrow", None)
-            if pl is not None and _all_datasets_have_type(
-                inline_datasets, (pl.DataFrame, pl.LazyFrame)
-            ):
-                if TYPE_CHECKING:
-                    import polars as pl
-
-                # Deserialize values to Polars tables
-                pl_dataframes = [pl.DataFrame(value) for value in values]
-
-                # Localize datetime columns to UTC
-                processed_datasets = []
-                for df in pl_dataframes:
-                    for name, dtype in zip(df.columns, df.dtypes):
-                        if dtype == pl.Datetime:
-                            df = df.with_columns(
-                                df[name]
-                                .dt.replace_time_zone("UTC")
-                                .dt.convert_time_zone(local_tz)
-                            )
-                    processed_datasets.append(df)
-
-                return processed_datasets, warnings
-            elif pa is not None and _all_datasets_have_type(inline_datasets, pa.Table):
-                return values, warnings
+            # Wrap result dataframes in native format, then with Narwhals so that
+            # we can manipulate them with a uniform API
+            namespace = _get_common_namespace(inline_datasets)
+            if namespace == "polars" and pl is not None:
+                nw_dataframes = [
+                    nw.from_native(pl.DataFrame(value)) for value in values
+                ]
+            elif namespace == "pyarrow" and pa is not None:
+                nw_dataframes = [nw.from_native(pa.table(value)) for value in values]
+            elif namespace == "pandas" and pd is not None and pa is not None:
+                nw_dataframes = [
+                    nw.from_native(pa.table(value).to_pandas()) for value in values
+                ]
             else:
-                # Deserialize values to pandas through pyarrow
-                datasets = [pa.table(value).to_pandas() for value in values]
+                # Either no inline datasets, inline datasets with mixed or unrecognized types
+                if pl is not None:
+                    nw_dataframes = [
+                        nw.from_native(pl.DataFrame(value)) for value in values
+                    ]
+                elif pa is not None and pd is not None:
+                    nw_dataframes = [
+                        nw.from_native(pa.table(value).to_pandas()) for value in values
+                    ]
+                else:
+                    # Hopefully narwhals will eventually help us fall back to whatever
+                    # is installed here
+                    raise ValueError(
+                        "Either polars or pandas must be installed to extract transformed data"
+                    )
 
-                # Localize datetime columns to UTC
-                for df in datasets:
-                    for name, dtype in df.dtypes.items():
-                        if dtype.kind == "M":
-                            df[name] = (
-                                df[name].dt.tz_localize("UTC").dt.tz_convert(local_tz)
-                            )
+            # Localize datetime columns to UTC, then extract the native DataFrame
+            # to return
+            processed_datasets = []
+            for df in nw_dataframes:
+                for name in df.columns:
+                    dtype = df[name].dtype
+                    if dtype == nw.Datetime:
+                        df = df.with_columns(
+                            df[name]
+                            .dt.replace_time_zone("UTC")
+                            .dt.convert_time_zone(local_tz)
+                        )
+                processed_datasets.append(df.to_native())
 
-                return datasets, warnings
+            return processed_datasets, warnings
 
     def pre_transform_extract(
         self,
@@ -749,6 +768,7 @@ class VegaFusionRuntime:
             extract_threshold: Datasets with length below extract_threshold will be
                 inlined.
             extracted_format: The format for the extracted datasets. Options are:
+                - "arro3": arro3.Table
                 - "pyarrow": pyarrow.Table
                 - "arrow-ipc": bytes in arrow IPC format
                 - "arrow-ipc-base64": base64 encoded arrow IPC format

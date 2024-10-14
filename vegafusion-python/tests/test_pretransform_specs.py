@@ -2,7 +2,6 @@ import json
 from io import BytesIO
 from pathlib import Path
 
-import pyarrow as pa
 import pytest
 from skimage.io import imread
 from skimage.metrics import structural_similarity as ssim

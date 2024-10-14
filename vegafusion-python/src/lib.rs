@@ -553,7 +553,8 @@ impl PyVegaFusionRuntime {
                     let name = name.into_py(py);
                     let scope = scope.into_py(py);
                     let table = match extracted_format.as_str() {
-                        "pyarrow" => table.to_pyo3_arrow()?.into_py(py),
+                        "arro3" => table.to_pyo3_arrow()?.into_py(py),
+                        "pyarrow" => table.to_pyo3_arrow()?.to_pyarrow(py)?.into_py(py),
                         "arrow-ipc" => {
                             PyBytes::new_bound(py, table.to_ipc_bytes()?.as_slice()).to_object(py)
                         }
