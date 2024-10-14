@@ -28,10 +28,11 @@ if TYPE_CHECKING:
 UnaryUnaryMultiCallable = Any
 
 
-def _get_common_namespace(inline_datasets: dict[str, Any]) -> str | None:
+def _get_common_namespace(inline_datasets: dict[str, Any] | None) -> str | None:
     namespaces = set()
-    for df in inline_datasets.values():
-        namespaces.add(nw.get_native_namespace(nw.from_native(df)))
+    if inline_datasets is not None:
+        for df in inline_datasets.values():
+            namespaces.add(nw.get_native_namespace(nw.from_native(df)))
 
     if len(namespaces) == 1:
         return next(iter(namespaces)).__name__
@@ -700,13 +701,13 @@ class VegaFusionRuntime:
                 ]
             else:
                 # Either no inline datasets, inline datasets with mixed or unrecognized types
-                if pl is not None:
-                    nw_dataframes = [
-                        nw.from_native(pl.DataFrame(value)) for value in values
-                    ]
-                elif pa is not None and pd is not None:
+                if pa is not None and pd is not None:
                     nw_dataframes = [
                         nw.from_native(pa.table(value).to_pandas()) for value in values
+                    ]
+                elif pl is not None:
+                    nw_dataframes = [
+                        nw.from_native(pl.DataFrame(value)) for value in values
                     ]
                 else:
                     # Hopefully narwhals will eventually help us fall back to whatever

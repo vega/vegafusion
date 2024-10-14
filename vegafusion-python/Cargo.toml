@@ -49,13 +49,12 @@ version = "1.6.9"
 
 [dependencies.vegafusion-runtime]
 path = "../vegafusion-runtime"
-features = ["py"]
 version = "1.6.9"
 
 [dependencies.vegafusion-sql]
 path = "../vegafusion-sql"
 version = "1.6.9"
-features = ["datafusion-conn", "py"]
+features = ["datafusion-conn"]
 
 [dependencies.vegafusion-dataframe]
 path = "../vegafusion-dataframe"

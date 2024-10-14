@@ -16,7 +16,6 @@ use datafusion::prelude::{
 use datafusion_expr::ScalarUDF;
 use log::Level;
 use object_store::aws::AmazonS3Builder;
-use pyo3::Python;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::policies::ExponentialBackoff;
 use reqwest_retry::RetryTransientMiddleware;
@@ -47,9 +46,6 @@ use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTA
 use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_epoch::UTC_TIMESTAMP_TO_EPOCH_MS;
 use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_str::UTC_TIMESTAMP_TO_STR_UDF;
 use vegafusion_datafusion_udfs::udfs::math::isfinite::IsFiniteUDF;
-
-#[cfg(feature = "py")]
-use {crate::connection::datafusion_py_datasource::PyDatasource, pyo3::PyObject};
 
 #[derive(Clone)]
 pub struct DataFusionConnection {
@@ -354,26 +350,6 @@ impl Connection for DataFusionConnection {
                     .await?,
             ))
         }
-    }
-
-    #[cfg(feature = "py")]
-    async fn scan_py_datasource(&self, datasource: PyObject) -> Result<Arc<dyn DataFrame>> {
-        let (sql_conn, table_name) = Python::with_gil(|py| -> Result<_> {
-            let datasource_bound = datasource.bind(py);
-            let datasource = PyDatasource::try_new(datasource_bound)?;
-            let ctx = make_datafusion_context();
-
-            // Use random id in table name to break cache in cse backing datasource is modified
-            let random_id = uuid::Uuid::new_v4().to_string().replace('-', "_");
-            let table_name = format!("py_table_{random_id}");
-
-            ctx.register_table(&table_name, Arc::new(datasource))?;
-
-            Ok((DataFusionConnection::new(Arc::new(ctx)), table_name))
-        })?;
-        Ok(Arc::new(
-            SqlDataFrame::try_new(Arc::new(sql_conn), &table_name, Default::default()).await?,
-        ))
     }
 }
 

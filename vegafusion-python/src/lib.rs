@@ -149,11 +149,6 @@ impl PyVegaFusionRuntime {
             Python::with_gil(|py| -> PyResult<_> {
                 let vegafusion_dataset_module = PyModule::import_bound(py, "vegafusion.dataset")?;
                 let sql_dataset_type = vegafusion_dataset_module.getattr("SqlDataset")?;
-
-                let vegafusion_datasource_module =
-                    PyModule::import_bound(py, "vegafusion.datasource")?;
-                let datasource_type = vegafusion_datasource_module.getattr("Datasource")?;
-
                 let imported_datasets = inline_datasets
                     .iter()
                     .map(|(name, inline_dataset)| {
@@ -173,13 +168,6 @@ impl PyVegaFusionRuntime {
                             let df = py.allow_threads(|| {
                                 rt.block_on(sql_dataset.scan_table(&sql_dataset.table_name))
                             })?;
-                            VegaFusionDataset::DataFrame(df)
-                        } else if inline_dataset.is_instance(&datasource_type)? {
-                            let df = self.tokio_runtime_connection.block_on(
-                                self.runtime
-                                    .conn
-                                    .scan_py_datasource(inline_dataset.to_object(py)),
-                            )?;
                             VegaFusionDataset::DataFrame(df)
                         } else if inline_dataset.hasattr("__arrow_c_stream__")? {
                             // Import via Arrow PyCapsule Interface

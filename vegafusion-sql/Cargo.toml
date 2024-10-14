@@ -18,11 +18,6 @@ datafusion-conn = [
   "vegafusion-common/object_store",
   "vegafusion-common/prettyprint",
 ]
-py = [
-  "pyo3",
-  "pyo3-arrow",
-  "vegafusion-dataframe/py",
-]
 
 [dependencies]
 async-trait = "0.1.73"
