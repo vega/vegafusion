@@ -451,7 +451,7 @@ class VegaFusionRuntime:
         keep_signals: list[Union[str, tuple[str, list[int]]]] | None = None,
         keep_datasets: list[Union[str, tuple[str, list[int]]]] | None = None,
         data_encoding_threshold: int | None = None,
-        data_encoding_format: str = "pyarrow",
+        data_encoding_format: str = "arro3",
     ) -> tuple[Union[dict[str, Any], str], list[dict[str, str]]]:
         """
         Evaluate supported transforms in an input Vega specification
@@ -499,6 +499,7 @@ class VegaFusionRuntime:
                 JSON compatible lists of dictionaries.
             data_encoding_format: format of encoded datasets. Format to use to encode
                 datasets with length exceeding the data_encoding_threshold argument.
+                - "arro3": Encode datasets as arro3 Tables. Not JSON compatible.
                 - "pyarrow": Encode datasets as pyarrow Tables. Not JSON compatible.
                 - "arrow-ipc": Encode datasets as bytes in Arrow IPC format. Not JSON
                   compatible.
@@ -742,7 +743,7 @@ class VegaFusionRuntime:
         default_input_tz: str | None = None,
         preserve_interactivity: bool = True,
         extract_threshold: int = 20,
-        extracted_format: str = "pyarrow",
+        extracted_format: str = "arro3",
         inline_datasets: dict[str, DataFrameLike] | None = None,
         keep_signals: list[str | tuple[str, list[int]]] | None = None,
         keep_datasets: list[str | tuple[str, list[int]]] | None = None,
