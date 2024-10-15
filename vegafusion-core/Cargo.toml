@@ -7,7 +7,7 @@ description = "Core components required by multiple VegaFusion crates, with WASM
 
 [features]
 tonic_support = ["tonic", "tonic-build"]
-pyarrow = ["pyo3", "datafusion-common/pyarrow", "vegafusion-common/pyarrow"]
+py = ["pyo3", "vegafusion-common/py"]
 
 [dependencies]
 thiserror = "^1.0.29"
@@ -17,11 +17,13 @@ lazy_static = "^1.4.0"
 regex = "^1.5.5"
 ordered-float = "3.6.0"
 petgraph = "0.6.0"
-deterministic-hash = "1.0.1"
 chrono = "0.4.23"
 num-complex = "0.4.2"
 rand = "0.8.5"
 json-patch = "1.0.0"
+
+[dependencies.deterministic-hash]
+ workspace = true
 
 [dependencies.prost]
 workspace = true

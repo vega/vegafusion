@@ -1,3 +1,4 @@
+import vegafusion as vf
 from pathlib import Path
 
 import altair as alt
@@ -7,8 +8,6 @@ import pyarrow as pa
 import pytest
 from altair.utils.execeval import eval_block
 from vega_datasets import data
-
-import vegafusion as vf
 
 pa_major_minor = tuple(int(v) for v in pa.__version__.split(".")[:2])
 
@@ -434,5 +433,21 @@ def test_categorical_columns(connection):
 
     chart = alt.Chart(df).mark_bar().encode(alt.X("categorical:N"), alt.Y("sum(a):Q"))
     transformed = chart.transformed_data()
-    expected = pd.DataFrame({"categorical": ["A", "BB"], "sum_a": [7, 8]})
+
+    # Normalize the order of the categories to match the expected output
+    if connection == "datafusion":
+        transformed["categorical"] = pd.Series(
+            transformed["categorical"].tolist(), dtype="category"
+        )
+
+    expected = pd.DataFrame(
+        {
+            "categorical": (
+                pd.Series(["A", "BB"], dtype="category")
+                if connection == "datafusion"
+                else ["A", "BB"]
+            ),
+            "sum_a": [7, 8],
+        }
+    )
     pd.testing.assert_frame_equal(transformed, expected)

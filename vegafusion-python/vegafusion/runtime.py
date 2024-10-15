@@ -1,22 +1,29 @@
 from __future__ import annotations
 
+import json
 import sys
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union, cast
 
+import narwhals as nw
 import psutil
+from arro3.core import Table
 
-from vegafusion.datasource.datasource import Datasource
 from vegafusion.transformer import DataFrameLike
+from vegafusion.utils import get_column_usage
 
 from .connection import SqlConnection
 from .dataset import SqlDataset
-from .datasource import DfiDatasource, PandasDatasource, PyArrowDatasource
 from .local_tz import get_local_tz
 
 if TYPE_CHECKING:
+    import duckdb  # noqa: F401
+    import pandas as pd
+    import polars as pl  # noqa: F401
     import pyarrow as pa
     from duckdb import DuckDBPyConnection
     from grpc import Channel
+    from narwhals.typing import IntoFrameT
 
     from vegafusion._vegafusion import PyChartState, PyVegaFusionRuntime
 
@@ -24,28 +31,32 @@ if TYPE_CHECKING:
 UnaryUnaryMultiCallable = Any
 
 
-def _all_datasets_have_type(
-    inline_datasets: dict[str, Any] | None, types: tuple[type, ...]
-) -> bool:
-    """
-    Check if all datasets in inline_datasets are instances of the given types.
+def _get_common_namespace(inline_datasets: dict[str, Any] | None) -> str | None:
+    namespaces = set()
+    try:
+        if inline_datasets is not None:
+            for df in inline_datasets.values():
+                namespaces.add(nw.get_native_namespace(nw.from_native(df)))
 
-    Args:
-        inline_datasets: A dictionary of inline datasets.
-        types: A tuple of types to check against.
+        if len(namespaces) == 1:
+            return str(next(iter(namespaces)).__name__)
+        else:
+            return None
+    except TypeError:
+        # Types not compatible with Narwhals
+        return None
 
-    Returns:
-        bool: True if all datasets are instances of the given types, False otherwise.
-    """
-    if not inline_datasets:
-        # If there are no inline datasets, return false
-        # (we want the default pandas behavior in this case)
-        return False
+
+def _get_default_namespace() -> ModuleType:
+    # Returns a default narwhals namespace, based on what is installed
+    if pd := sys.modules.get("pandas") and sys.modules.get("pyarrow"):
+        return pd
+    elif pl := sys.modules.get("polars"):
+        return pl
+    elif pa := sys.modules.get("pyarrow"):
+        return pa
     else:
-        for dataset in inline_datasets.values():
-            if not isinstance(dataset, types):
-                return False
-        return True
+        raise ImportError("Could not determine default narwhals namespace")
 
 
 class VariableUpdate(TypedDict):
@@ -214,7 +225,9 @@ class VegaFusionRuntime:
         """
         # Don't import duckdb unless it's already loaded. If it's not loaded,
         # then the input connection can't be a duckdb connection.
-        duckdb = sys.modules.get("duckdb", None)
+        if not TYPE_CHECKING:
+            duckdb = sys.modules.get("duckdb", None)
+
         if isinstance(connection, str):
             if connection == "datafusion":
                 # Connection of None uses DataFusion
@@ -298,8 +311,10 @@ class VegaFusionRuntime:
             return cast(bytes, self.embedded_runtime.process_request_bytes(request))
 
     def _import_or_register_inline_datasets(
-        self, inline_datasets: dict[str, DataFrameLike] | None = None
-    ) -> dict[str, Datasource | SqlDataset]:
+        self,
+        inline_datasets: dict[str, IntoFrameT | SqlDataset] | None = None,
+        inline_dataset_usage: dict[str, list[str]] | None = None,
+    ) -> dict[str, Table | SqlDataset]:
         """
         Import or register inline datasets.
 
@@ -309,48 +324,81 @@ class VegaFusionRuntime:
                 specification using the following url syntax
                 'vegafusion+dataset://{dataset_name}' or 'table://{dataset_name}'.
         """
-        pl = sys.modules.get("polars", None)
-        pa = sys.modules.get("pyarrow", None)
-        pd = sys.modules.get("pandas", None)
+        if not TYPE_CHECKING:
+            pd = sys.modules.get("pandas", None)
+            pa = sys.modules.get("pyarrow", None)
 
         inline_datasets = inline_datasets or {}
-        imported_inline_datasets: dict[str, Datasource | SqlDataset] = {}
+        inline_dataset_usage = inline_dataset_usage or {}
+        imported_inline_datasets: dict[str, SqlDataset | Table] = {}
         for name, value in inline_datasets.items():
+            columns = inline_dataset_usage.get(name)
             if isinstance(value, SqlDataset):
                 imported_inline_datasets[name] = value
-            elif pd is not None and isinstance(value, pd.DataFrame):
+            # elif pd is not None and isinstance(value, pd.DataFrame):
+            elif isinstance(value, pd.DataFrame):
+                # rename to help mypy
+                inner_value: pd.DataFrame = value
+                del value
+
+                # Project down columns if possible
+                if columns is not None:
+                    inner_value = inner_value[columns]
+
+                # Convert problematic object columns to strings
+                for col, dtype in inner_value.dtypes.items():
+                    if dtype.kind == "O":
+                        try:
+                            # See if the Table constructor can handle column by itself
+                            col_tbl = Table(inner_value[[col]])
+
+                            # If so, keep the arrow version so that it's more efficient
+                            # to convert as part of the whole table later
+                            inner_value = inner_value.assign(
+                                **{
+                                    col: pd.arrays.ArrowExtensionArray(
+                                        pa.chunked_array(col_tbl.column(0))
+                                    )
+                                }
+                            )
+                        except TypeError:
+                            # If the Table constructor can't handle the object column,
+                            # convert the column to pyarrow strings
+                            inner_value = inner_value.assign(
+                                **{col: inner_value[col].astype("string[pyarrow]")}
+                            )
+
                 if self._connection is not None:
                     try:
                         # Try registering DataFrame if supported
-                        self._connection.register_pandas(name, value, temporary=True)
+                        self._connection.register_pandas(
+                            name, inner_value, temporary=True
+                        )
                         continue
                     except ValueError:
                         pass
-
-                imported_inline_datasets[name] = PandasDatasource(value)
-            elif hasattr(value, "__dataframe__"):
-                # Let polars convert to pyarrow since it has broader support than the
-                # raw dataframe interchange protocol, and "This operation is mostly
-                # zero copy."
-                try:
-                    if pl is not None and isinstance(value, pl.DataFrame):
-                        value = value.to_arrow()
-                except ImportError:
-                    pass
-
-                if pa is not None and isinstance(value, pa.Table):
-                    try:
-                        if self._connection is not None:
-                            # Try registering Arrow Table if supported
-                            self._connection.register_arrow(name, value, temporary=True)
-                            continue
-                    except ValueError:
-                        pass
-                    imported_inline_datasets[name] = PyArrowDatasource(value)
-                else:
-                    imported_inline_datasets[name] = DfiDatasource(value)
+                imported_inline_datasets[name] = Table(inner_value)
+            elif isinstance(value, dict):
+                # Let narwhals import the dict using a default backend
+                df_nw = nw.from_dict(value, native_namespace=_get_default_namespace())
+                imported_inline_datasets[name] = Table(df_nw)
             else:
-                raise ValueError(f"Unsupported DataFrame type: {type(value)}")
+                # Import through PyCapsule interface on narwhals
+                try:
+                    df_nw = nw.from_native(value)
+
+                    # Project down columns if possible
+                    if columns is not None:
+                        # TODO: Nice error message when column is not found
+                        df_nw = df_nw[columns]  # type: ignore[index]
+
+                    imported_inline_datasets[name] = Table(df_nw)  # type: ignore[arg-type]
+                except TypeError:
+                    # Not supported by Narwhals, try pycapsule interface directly
+                    if hasattr(value, "__arrow_c_stream__"):
+                        imported_inline_datasets[name] = Table(value)  # type: ignore[arg-type]
+                    else:
+                        raise
 
         return imported_inline_datasets
 
@@ -416,7 +464,7 @@ class VegaFusionRuntime:
         keep_signals: list[Union[str, tuple[str, list[int]]]] | None = None,
         keep_datasets: list[Union[str, tuple[str, list[int]]]] | None = None,
         data_encoding_threshold: int | None = None,
-        data_encoding_format: str = "pyarrow",
+        data_encoding_format: str = "arro3",
     ) -> tuple[Union[dict[str, Any], str], list[dict[str, str]]]:
         """
         Evaluate supported transforms in an input Vega specification
@@ -464,6 +512,7 @@ class VegaFusionRuntime:
                 JSON compatible lists of dictionaries.
             data_encoding_format: format of encoded datasets. Format to use to encode
                 datasets with length exceeding the data_encoding_threshold argument.
+                - "arro3": Encode datasets as arro3 Tables. Not JSON compatible.
                 - "pyarrow": Encode datasets as pyarrow Tables. Not JSON compatible.
                 - "arrow-ipc": Encode datasets as bytes in Arrow IPC format. Not JSON
                   compatible.
@@ -489,7 +538,7 @@ class VegaFusionRuntime:
         else:
             local_tz = local_tz or get_local_tz()
             imported_inline_dataset = self._import_or_register_inline_datasets(
-                inline_datasets
+                inline_datasets, get_inline_column_usage(spec)
             )
 
             try:
@@ -568,7 +617,7 @@ class VegaFusionRuntime:
         else:
             local_tz = local_tz or get_local_tz()
             inline_arrow_dataset = self._import_or_register_inline_datasets(
-                inline_datasets
+                inline_datasets, get_inline_column_usage(spec)
             )
             return ChartState(
                 self.embedded_runtime.new_chart_state(
@@ -584,6 +633,7 @@ class VegaFusionRuntime:
         default_input_tz: str | None = None,
         row_limit: int | None = None,
         inline_datasets: dict[str, DataFrameLike] | None = None,
+        trim_unused_columns: bool = False,
     ) -> tuple[list[DataFrameLike], list[dict[str, str]]]:
         """Extract the fully evaluated form of the requested datasets from a Vega
         specification.
@@ -610,6 +660,8 @@ class VegaFusionRuntime:
                 Tables. Inline datasets may be referenced by the input specification
                 using the following url syntax 'vegafusion+dataset://{dataset_name}'
                 or 'table://{dataset_name}'.
+            trim_unused_columns: If True, unused columns are removed from returned
+                datasets.
 
         Returns:
             A tuple containing:
@@ -621,6 +673,11 @@ class VegaFusionRuntime:
         if self._grpc_channel:
             raise ValueError("pre_transform_datasets not yet supported over gRPC")
         else:
+            if not TYPE_CHECKING:
+                pl = sys.modules.get("polars", None)
+                pa = sys.modules.get("pyarrow", None)
+                pd = sys.modules.get("pandas", None)
+
             local_tz = local_tz or get_local_tz()
 
             # Build input variables
@@ -628,7 +685,10 @@ class VegaFusionRuntime:
 
             # Serialize inline datasets
             inline_arrow_dataset = self._import_or_register_inline_datasets(
-                inline_datasets
+                inline_datasets,
+                inline_dataset_usage=get_inline_column_usage(spec)
+                if trim_unused_columns
+                else None,
             )
             try:
                 values, warnings = self.embedded_runtime.pre_transform_datasets(
@@ -644,45 +704,54 @@ class VegaFusionRuntime:
                 if self._connection is not None:
                     self._connection.unregister_temporary_tables()
 
-            pl = sys.modules.get("polars", None)
-            pa = sys.modules.get("pyarrow", None)
-            if pl is not None and _all_datasets_have_type(
-                inline_datasets, (pl.DataFrame, pl.LazyFrame)
-            ):
-                if TYPE_CHECKING:
-                    import polars as pl
+            # Wrap result dataframes in native format, then with Narwhals so that
+            # we can manipulate them with a uniform API
+            namespace = _get_common_namespace(inline_datasets)
+            if namespace == "polars" and pl is not None:
+                nw_dataframes = [
+                    nw.from_native(pl.DataFrame(value)) for value in values
+                ]
 
-                # Deserialize values to Polars tables
-                pl_dataframes = [pl.from_arrow(value) for value in values]
-
-                # Localize datetime columns to UTC
-                processed_datasets = []
-                for df in pl_dataframes:
-                    for name, dtype in zip(df.columns, df.dtypes):
-                        if dtype == pl.Datetime:
-                            df = df.with_columns(
-                                df[name]
-                                .dt.replace_time_zone("UTC")
-                                .dt.convert_time_zone(local_tz)
-                            )
-                    processed_datasets.append(df)
-
-                return processed_datasets, warnings
-            elif pa is not None and _all_datasets_have_type(inline_datasets, pa.Table):
-                return values, warnings
+            elif namespace == "pyarrow" and pa is not None:
+                nw_dataframes = [nw.from_native(pa.table(value)) for value in values]
+            elif namespace == "pandas" and pd is not None and pa is not None:
+                nw_dataframes = [
+                    nw.from_native(pa.table(value).to_pandas()) for value in values
+                ]
             else:
-                # Deserialize values to pandas DataFrames
-                datasets = [value.to_pandas() for value in values]
+                # Either no inline datasets, inline datasets with mixed or
+                # unrecognized types
+                if pa is not None and pd is not None:
+                    nw_dataframes = [
+                        nw.from_native(pa.table(value).to_pandas()) for value in values
+                    ]
+                elif pl is not None:
+                    nw_dataframes = [
+                        nw.from_native(pl.DataFrame(value)) for value in values
+                    ]
+                else:
+                    # Hopefully narwhals will eventually help us fall back to whatever
+                    # is installed here
+                    raise ValueError(
+                        "Either polars or pandas must be installed to extract "
+                        "transformed data"
+                    )
 
-                # Localize datetime columns to UTC
-                for df in datasets:
-                    for name, dtype in df.dtypes.items():
-                        if dtype.kind == "M":
-                            df[name] = (
-                                df[name].dt.tz_localize("UTC").dt.tz_convert(local_tz)
-                            )
+            # Localize datetime columns to UTC, then extract the native DataFrame
+            # to return
+            processed_datasets = []
+            for df in nw_dataframes:
+                for name in df.columns:
+                    dtype = df[name].dtype
+                    if dtype == nw.Datetime:
+                        df = df.with_columns(
+                            df[name]
+                            .dt.replace_time_zone("UTC")
+                            .dt.convert_time_zone(local_tz)
+                        )
+                processed_datasets.append(df.to_native())
 
-                return datasets, warnings
+            return processed_datasets, warnings
 
     def pre_transform_extract(
         self,
@@ -691,7 +760,7 @@ class VegaFusionRuntime:
         default_input_tz: str | None = None,
         preserve_interactivity: bool = True,
         extract_threshold: int = 20,
-        extracted_format: str = "pyarrow",
+        extracted_format: str = "arro3",
         inline_datasets: dict[str, DataFrameLike] | None = None,
         keep_signals: list[str | tuple[str, list[int]]] | None = None,
         keep_datasets: list[str | tuple[str, list[int]]] | None = None,
@@ -721,6 +790,7 @@ class VegaFusionRuntime:
             extract_threshold: Datasets with length below extract_threshold will be
                 inlined.
             extracted_format: The format for the extracted datasets. Options are:
+                - "arro3": arro3.Table
                 - "pyarrow": pyarrow.Table
                 - "arrow-ipc": bytes in arrow IPC format
                 - "arrow-ipc-base64": base64 encoded arrow IPC format
@@ -760,7 +830,7 @@ class VegaFusionRuntime:
             local_tz = local_tz or get_local_tz()
 
             inline_arrow_dataset = self._import_or_register_inline_datasets(
-                inline_datasets
+                inline_datasets, get_inline_column_usage(spec)
             )
             try:
                 new_spec, datasets, warnings = (
@@ -968,6 +1038,38 @@ def get_mark_group_for_scope(
         group = child_group
 
     return group
+
+
+def get_inline_column_usage(
+    spec: dict[str, Any] | str,
+) -> dict[str, list[str]]:
+    """
+    Get the columns used by each inline dataset, if known
+    """
+    if isinstance(spec, str):
+        spec_dict = cast("dict[str, Any]", json.loads(spec))
+    else:
+        spec_dict = spec
+
+    # Build mapping from inline_dataset name to Vega dataset name
+    inline_dataset_mapping: dict[str, str] = {}
+    for dataset in spec_dict.get("data", []):
+        url = cast("str | None", dataset.get("url", None))
+        if url and (
+            url.startswith("vegafusion+dataset://") or url.startswith("table://")
+        ):
+            parts = url.split("//")
+            if len(parts) == 2:
+                inline_dataset_name = parts[1]
+                inline_dataset_mapping[inline_dataset_name] = dataset["name"]
+
+    # Compute column usage
+    usage = get_column_usage(spec_dict)
+    return {
+        inline_dataset_name: columns
+        for inline_dataset_name in inline_dataset_mapping
+        if (columns := usage[inline_dataset_mapping[inline_dataset_name]]) is not None
+    }
 
 
 runtime = VegaFusionRuntime(64, psutil.virtual_memory().total // 2, psutil.cpu_count())

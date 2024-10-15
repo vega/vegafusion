@@ -36,7 +36,6 @@ version = "1.0.79"
 
 [dependencies.arrow]
 workspace = true
-features = ["pyarrow"]
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
@@ -45,18 +44,17 @@ version = "1.6.9"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
-features = ["pyarrow"]
+features = ["py"]
 version = "1.6.9"
 
 [dependencies.vegafusion-runtime]
 path = "../vegafusion-runtime"
-features = ["pyarrow"]
 version = "1.6.9"
 
 [dependencies.vegafusion-sql]
 path = "../vegafusion-sql"
 version = "1.6.9"
-features = ["datafusion-conn", "pyarrow"]
+features = ["datafusion-conn"]
 
 [dependencies.vegafusion-dataframe]
 path = "../vegafusion-dataframe"
@@ -71,4 +69,7 @@ features = ["macros", "rt-multi-thread"]
 
 [dependencies.pyo3]
 workspace = true
-features = ["extension-module", "abi3-py38"]
+features = ["extension-module", "abi3-py39"]
+
+[dependencies.pyo3-arrow]
+workspace = true

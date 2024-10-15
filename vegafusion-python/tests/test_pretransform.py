@@ -1769,13 +1769,20 @@ def test_gh_268_hang():
     Tests for hang reported in https://github.com/hex-inc/vegafusion/issues/268
     """
     vf.runtime.set_connection("datafusion")
+
+    # Load movies into polars
     movies = pd.read_json(
         "https://raw.githubusercontent.com/vega/vega-datasets/main/data/movies.json"
     )
     spec = gh_268_hang_spec()
-    for i in range(20):
-        # Break cache by removing one row each iteration
-        movies_inner = movies.iloc[i:]
+    movies["Title"] = movies["Title"].astype(str)
+    movies = pl.from_pandas(movies)
+
+    # Call pre_transform_datasets repeatedly, with polars transfer going through
+    # Arrow PyCapsule API
+    for i in range(1, 30):
+        # Break cache by adding one row each iteration
+        movies_inner = movies.head(i)
         vf.runtime.pre_transform_datasets(
             spec, ["data_3"], inline_datasets={"movies_clean": movies_inner}
         )

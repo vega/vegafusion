@@ -4,7 +4,6 @@ import logging
 import re
 import uuid
 import warnings
-from distutils.version import LooseVersion
 from typing import Any
 
 import duckdb
@@ -12,6 +11,7 @@ import duckdb.typing
 import pandas as pd
 import pyarrow as pa
 import pyarrow.feather
+from packaging.version import Version
 
 from . import CsvReadOptions, SqlConnection
 
@@ -143,7 +143,7 @@ class DuckDbConnection(SqlConnection):
         verbose: bool = False,
     ) -> None:
         # Validate duckdb version
-        if LooseVersion(duckdb.__version__) < LooseVersion("0.7.0"):
+        if Version(duckdb.__version__) < Version("0.7.0"):
             raise ImportError(
                 "The VegaFusion DuckDB connection requires at least DuckDB "
                 "version 0.7.0\n"

@@ -28,7 +28,7 @@ dev-py = { cmd = [
 ] }
 
 # Build Python packages
-build-py = { cmd = "maturin build -m vegafusion-python/Cargo.toml --release --strip --sdist $0" }
+build-py = { cmd = "rm -rf target/wheels && maturin build -m vegafusion-python/Cargo.toml --release --strip --sdist $0" }
 
 fmt-py = { cmd = "ruff format", cwd="vegafusion-python" }
 lint-fix-py = { cmd = "ruff format && ruff check --fix", cwd="vegafusion-python" }
@@ -110,14 +110,13 @@ yarn = "3.6.1.*"
 jupyterlab = "4.0.5.*"
 nbval = "0.9.6.*"
 selenium = "4.11.2.*"
-scikit-image = "0.21.0.*"
+scikit-image = "0.24.*"
 toml = "0.10.2.*"
 pytest = ">=4.6"
 click = "8.1.6.*"
 python-duckdb = "1.0"
 pip = "23.2.1.*"
 voila = "0.5.0.*"
-polars = "0.18.15.*"
 tenacity = "8.2.3.*"
 pytest-cov = "4.1.0.*"
 flaky = "3.7.0.*"
@@ -131,12 +130,12 @@ rust = "1.80.*"
 taplo = ">=0.9.3,<0.10"
 ruff = ">=0.6.9,<0.7"
 mypy = ">=1.11.2,<2"
+pixi-pycharm = ">=0.0.8,<0.0.9"
+scipy = "1.14.1.*"
 
 # Dependencies are those required at runtime by the Python packages
 [dependencies]
 psutil = "5.9.5.*"
-pyarrow = "12.0.1.*"
-pandas = "2.0.3.*"
 altair = "5.4.*"
 protobuf = "4.23.3.*"
 ipywidgets = "8.1.0.*"
