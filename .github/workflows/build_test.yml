@@ -15,7 +15,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-check-rust
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-check-rust
           path: |
             ~/.cargo
             target
@@ -45,7 +45,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-test-rust2
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-test-rust2
           path: |
             ~/.cargo
             target
@@ -74,7 +74,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-wasm
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-wasm
           path: |
             ~/.cargo
             target
@@ -99,7 +99,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-wasm
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-wasm
           path: |
             ~/.cargo
             target
@@ -130,6 +130,8 @@ jobs:
         uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
         with:
           cache-on-failure: True
+      - name: Clear target/wheels
+        run: rm -rf target/wheels
       - name: Build wheels (Linux)
         uses: messense/maturin-action@60d11847b29f81ca5375519a8eb33cc336ba4bfa # pin@v1.41.1
         with:
@@ -162,6 +164,8 @@ jobs:
       - name: Download arm64 toolchain
         run: |
           rustup target add aarch64-unknown-linux-gnu
+      - name: Clear target/wheels
+        run: rm -rf target/wheels
       - name: Build arm64 wheels
         uses: messense/maturin-action@60d11847b29f81ca5375519a8eb33cc336ba4bfa # pin@v1.41.1
         with:
@@ -192,7 +196,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-python-win-64
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-python-win-64
           path: |
             ~/.cargo
             target
@@ -219,7 +223,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-python-osx-64
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-python-osx-64
           path: |
             ~/.cargo
             target
@@ -246,7 +250,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: osx-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-python-osx-arm64
+          key: osx-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-python-osx-arm64
           path: |
             ~/.cargo
             target
@@ -393,7 +397,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-server-linux-64
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-linux-64
           path: |
             ~/.cargo
             target
@@ -427,7 +431,7 @@ jobs:
 #      - name: Cache
 #        uses: actions/cache@v3
 #        with:
-#          key: linux-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-server
+#          key: linux-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-server
 #          path: |
 #            ~/.cargo
 #            target
@@ -502,7 +506,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-server-win-64b
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-win-64b
           path: |
             ~/.cargo
             target
@@ -534,7 +538,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-server-osx-64
+          key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-osx-64
           path: |
             ~/.cargo
             target
@@ -565,7 +569,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          key: osx-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock') }}-build-vegafusion-server-osx-arm64
+          key: osx-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-osx-arm64
           path: |
             ~/.cargo
             target
