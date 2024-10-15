@@ -140,7 +140,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
-          name: vegafusion-python-wheels
+          name: python-wheels
           path: |
             target/wheels/*.tar.gz
             target/wheels/*.whl
@@ -172,7 +172,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
-          name: vegafusion-python-wheels
+          name: python-wheels
           path: |
             target/wheels/*.tar.gz
             target/wheels/*.whl
@@ -203,7 +203,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
-          name: vegafusion-python-wheels
+          name: python-wheels
           path: |
             target/wheels/*.tar.gz
             target/wheels/*.whl
@@ -230,7 +230,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
-          name: vegafusion-python-wheels
+          name: python-wheels
           path: |
             target/wheels/*.tar.gz
             target/wheels/*.whl
@@ -257,7 +257,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
-          name: vegafusion-python-wheels
+          name: python-wheels
           path: |
             target/wheels/*.tar.gz
             target/wheels/*.whl
@@ -284,7 +284,7 @@ jobs:
       - name: Download vegafusion-python wheel
         uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
         with:
-          name: vegafusion-python-wheels
+          name: python-wheels
           path: target/wheels/
       - name: install wheels
         working-directory: target/wheels/
@@ -326,7 +326,7 @@ jobs:
       - name: Download vegafusion-python wheel
         uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
         with:
-          name: vegafusion-python-wheels
+          name: python-wheels
           path: target/wheels/
       - name: install wheels
         working-directory: target/wheels/
@@ -361,7 +361,7 @@ jobs:
       - name: Download vegafusion-python wheel
         uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
         with:
-          name: vegafusion-python-wheels
+          name: python-wheels
           path: target/wheels/
       - name: install wheels
         working-directory: target/wheels/
