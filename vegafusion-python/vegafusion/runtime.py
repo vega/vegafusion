@@ -6,9 +6,9 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union, cast
 
 import narwhals as nw
-import psutil
 from arro3.core import Table
 
+from vegafusion._vegafusion import get_cpu_count, get_virtual_memory
 from vegafusion.transformer import DataFrameLike
 from vegafusion.utils import get_column_usage
 
@@ -1072,4 +1072,4 @@ def get_inline_column_usage(
     }
 
 
-runtime = VegaFusionRuntime(64, psutil.virtual_memory().total // 2, psutil.cpu_count())
+runtime = VegaFusionRuntime(64, get_virtual_memory() // 2, get_cpu_count())

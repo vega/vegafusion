@@ -28,8 +28,10 @@ uuid = "1.4.1"
 [dev-dependencies]
 rstest = "0.18.2"
 rstest_reuse = "0.6.0"
-lazy_static = "^1.4.0"
 toml = "0.7.2"
+
+[dev-dependencies.lazy_static]
+workspace = true
 
 [dependencies.chrono]
 workspace = true

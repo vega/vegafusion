@@ -1,5 +1,6 @@
 pub mod connection;
 
+use lazy_static::lazy_static;
 use pyo3;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -40,6 +41,10 @@ pub fn initialize_logging() {
         builder.target(Target::Stdout);
         builder.init();
     });
+}
+
+lazy_static! {
+    static ref SYSTEM_INSTANCE: sysinfo::System = sysinfo::System::new_all();
 }
 
 #[pyclass]
@@ -611,6 +616,18 @@ impl PyVegaFusionRuntime {
 }
 
 #[pyfunction]
+#[pyo3(signature = ())]
+pub fn get_virtual_memory() -> u64 {
+    SYSTEM_INSTANCE.total_memory()
+}
+
+#[pyfunction]
+#[pyo3(signature = ())]
+pub fn get_cpu_count() -> u64 {
+    SYSTEM_INSTANCE.cpus().len() as u64
+}
+
+#[pyfunction]
 #[pyo3(signature = (spec))]
 pub fn get_column_usage(py: Python, spec: PyObject) -> PyResult<PyObject> {
     let spec = parse_json_spec(spec)?;
@@ -627,6 +644,8 @@ fn _vegafusion(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     m.add_class::<PySqlConnection>()?;
     m.add_class::<PyChartState>()?;
     m.add_function(wrap_pyfunction!(get_column_usage, m)?)?;
+    m.add_function(wrap_pyfunction!(get_virtual_memory, m)?)?;
+    m.add_function(wrap_pyfunction!(get_cpu_count, m)?)?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
 }

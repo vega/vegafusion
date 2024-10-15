@@ -14,7 +14,7 @@ classifiers = [
   "License :: OSI Approved :: BSD License",
   "Topic :: Scientific/Engineering :: Visualization",
 ]
-dependencies = ["pyarrow>=16", "arro3-core", "pandas", "psutil", "protobuf", "packaging", "narwhals>=1.9"]
+dependencies = ["arro3-core", "packaging", "narwhals>=1.9"]
 [[project.authors]]
 name = "VegaFusion Contributors"
 
