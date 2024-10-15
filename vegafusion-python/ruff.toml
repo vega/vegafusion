@@ -1,7 +1,7 @@
 line-length = 88
 indent-width = 4
-include = ["vegafusion/**/*.py", "tests/**/*.py"]
-exclude = ["vegafusion/datasource/_dfi_types.py", "tests/altair_mocks/**/*.py"]
+include = ["vegafusion/**/*.py", "tests/**/*.py", "checks/**/*.py"]
+exclude = ["tests/altair_mocks/**/*.py"]
 target-version = "py39"
 
 [lint]

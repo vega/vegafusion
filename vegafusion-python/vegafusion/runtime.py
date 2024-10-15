@@ -335,8 +335,7 @@ class VegaFusionRuntime:
             columns = inline_dataset_usage.get(name)
             if isinstance(value, SqlDataset):
                 imported_inline_datasets[name] = value
-            # elif pd is not None and isinstance(value, pd.DataFrame):
-            elif isinstance(value, pd.DataFrame):
+            elif pd is not None and isinstance(value, pd.DataFrame):
                 # rename to help mypy
                 inner_value: pd.DataFrame = value
                 del value
