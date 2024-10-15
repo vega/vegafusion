@@ -433,6 +433,13 @@ def test_categorical_columns(connection):
 
     chart = alt.Chart(df).mark_bar().encode(alt.X("categorical:N"), alt.Y("sum(a):Q"))
     transformed = chart.transformed_data()
+
+    # Normalize the order of the categories to match the expected output
+    if connection == "datafusion":
+        transformed["categorical"] = pd.Series(
+            transformed["categorical"].tolist(), dtype="category"
+        )
+
     expected = pd.DataFrame(
         {
             "categorical": (
