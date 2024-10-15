@@ -149,11 +149,6 @@ impl PyVegaFusionRuntime {
             Python::with_gil(|py| -> PyResult<_> {
                 let vegafusion_dataset_module = PyModule::import_bound(py, "vegafusion.dataset")?;
                 let sql_dataset_type = vegafusion_dataset_module.getattr("SqlDataset")?;
-
-                let vegafusion_datasource_module =
-                    PyModule::import_bound(py, "vegafusion.datasource")?;
-                let datasource_type = vegafusion_datasource_module.getattr("Datasource")?;
-
                 let imported_datasets = inline_datasets
                     .iter()
                     .map(|(name, inline_dataset)| {
@@ -174,19 +169,17 @@ impl PyVegaFusionRuntime {
                                 rt.block_on(sql_dataset.scan_table(&sql_dataset.table_name))
                             })?;
                             VegaFusionDataset::DataFrame(df)
-                        } else if inline_dataset.is_instance(&datasource_type)? {
-                            let df = self.tokio_runtime_connection.block_on(
-                                self.runtime
-                                    .conn
-                                    .scan_py_datasource(inline_dataset.to_object(py)),
-                            )?;
-                            VegaFusionDataset::DataFrame(df)
+                        } else if inline_dataset.hasattr("__arrow_c_stream__")? {
+                            // Import via Arrow PyCapsule Interface
+                            let (table, hash) =
+                                VegaFusionTable::from_pyarrow_with_hash(py, inline_dataset)?;
+                            VegaFusionDataset::from_table(table, Some(hash))?
                         } else {
                             // Assume PyArrow Table
                             // We convert to ipc bytes for two reasons:
                             // - It allows VegaFusionDataset to compute an accurate hash of the table
                             // - It works around https://github.com/hex-inc/vegafusion/issues/268
-                            let table = VegaFusionTable::from_pyarrow(inline_dataset)?;
+                            let table = VegaFusionTable::from_pyarrow(py, inline_dataset)?;
                             VegaFusionDataset::from_table_ipc_bytes(&table.to_ipc_bytes()?)?
                         };
 
@@ -464,7 +457,7 @@ impl PyVegaFusionRuntime {
             let py_response_list = PyList::empty_bound(py);
             for value in values {
                 let pytable: PyObject = if let TaskValue::Table(table) = value {
-                    table.to_pyarrow(py)?
+                    table.to_pyo3_arrow()?.into_py(py)
                 } else {
                     return Err(PyErr::from(VegaFusionError::internal(
                         "Unexpected value type",
@@ -548,7 +541,8 @@ impl PyVegaFusionRuntime {
                     let name = name.into_py(py);
                     let scope = scope.into_py(py);
                     let table = match extracted_format.as_str() {
-                        "pyarrow" => table.to_pyarrow(py)?,
+                        "arro3" => table.to_pyo3_arrow()?.into_py(py),
+                        "pyarrow" => table.to_pyo3_arrow()?.to_pyarrow(py)?.into_py(py),
                         "arrow-ipc" => {
                             PyBytes::new_bound(py, table.to_ipc_bytes()?.as_slice()).to_object(py)
                         }

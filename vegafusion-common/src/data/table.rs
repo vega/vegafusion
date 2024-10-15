@@ -1,7 +1,7 @@
 use datafusion_common::ScalarValue;
 
 use arrow::{
-    array::{ArrayRef, StructArray, UInt32Array},
+    array::{ArrayData, ArrayRef, StructArray, UInt32Array},
     compute::concat_batches,
     datatypes::{DataType, Field, Schema, SchemaRef},
     ipc::{reader::StreamReader, writer::StreamWriter},
@@ -13,15 +13,26 @@ use crate::{
     error::{Result, ResultWithContext, VegaFusionError},
 };
 
-use arrow::array::new_empty_array;
+use arrow::array::{
+    new_empty_array, Array, ArrowPrimitiveType, AsArray, BinaryViewArray, GenericBinaryArray,
+    GenericStringArray, NullArray, OffsetSizeTrait, PrimitiveArray, StringViewArray,
+};
 #[cfg(feature = "prettyprint")]
 use arrow::util::pretty::pretty_format_batches;
+use std::hash::DefaultHasher;
 use std::{
     hash::{Hash, Hasher},
     io::Cursor,
     sync::Arc,
 };
 
+use arrow::datatypes::{
+    Date32Type, Date64Type, Decimal128Type, Decimal256Type, Float16Type, Float32Type, Float64Type,
+    Int16Type, Int32Type, Int64Type, Int8Type, Time32MillisecondType, Time32SecondType,
+    Time64MicrosecondType, Time64NanosecondType, TimeUnit, TimestampMicrosecondType,
+    TimestampMillisecondType, TimestampNanosecondType, TimestampSecondType, ToByteSlice,
+    UInt16Type, UInt32Type, UInt64Type, UInt8Type,
+};
 #[cfg(feature = "json")]
 use {
     crate::data::json_writer::record_batches_to_json_rows,
@@ -30,14 +41,14 @@ use {
     std::{borrow::Cow, convert::TryFrom},
 };
 
-#[cfg(feature = "pyarrow")]
+#[cfg(feature = "py")]
 use {
-    arrow::pyarrow::{FromPyArrow, ToPyArrow},
     pyo3::{
         prelude::*,
-        types::{PyList, PyTuple},
-        Bound, PyAny, PyErr, PyObject, Python,
+        types::{PyDict, PyList},
+        Bound, PyAny, PyErr, Python,
     },
+    pyo3_arrow::{PyRecordBatch, PySchema, PyTable},
 };
 
 #[cfg(feature = "base64")]
@@ -306,38 +317,60 @@ impl VegaFusionTable {
         }
     }
 
-    #[cfg(feature = "pyarrow")]
-    pub fn from_pyarrow(pyarrow_table: &Bound<PyAny>) -> std::result::Result<Self, PyErr> {
-        // Extract table.schema as a Rust Schema
-        let schema_object = pyarrow_table.getattr("schema")?;
-        let schema = Schema::from_pyarrow_bound(&schema_object)?;
-
-        // Extract table.to_batches() as a Rust Vec<RecordBatch>
-        let batches_object = pyarrow_table.call_method0("to_batches")?;
-        let batches_list = batches_object.downcast::<PyList>()?;
-        let batches = batches_list
-            .iter()
-            .map(|batch_any| Ok(RecordBatch::from_pyarrow_bound(&batch_any)?))
-            .collect::<Result<Vec<RecordBatch>>>()?;
-
-        Ok(VegaFusionTable::try_new(Arc::new(schema), batches)?)
+    #[cfg(feature = "py")]
+    pub fn from_pyarrow(py: Python, data: &Bound<PyAny>) -> std::result::Result<Self, PyErr> {
+        Ok(Self::from_pyarrow_with_hash(py, data)?.0)
     }
 
-    #[cfg(feature = "pyarrow")]
-    pub fn to_pyarrow(&self, py: Python) -> std::result::Result<PyObject, PyErr> {
+    /// Build a VegaFusion table and hash value suitable for use in VegaFusionDataset
+    #[cfg(feature = "py")]
+    pub fn from_pyarrow_with_hash(
+        py: Python,
+        data: &Bound<PyAny>,
+    ) -> std::result::Result<(Self, u64), PyErr> {
+        let arro3_core = PyModule::import_bound(py, "arro3.core")?;
+        let arro3_table_type = arro3_core.getattr("Table")?;
+        if data.is_instance(&arro3_table_type)? {
+            // Extract original table for single-threaded hashing
+            let table = data.extract::<PyTable>().unwrap();
+            let (batches, schema) = table.into_inner();
+            let vf_table = VegaFusionTable::try_new(schema, batches)?;
+            let hash = vf_table.get_hash();
+
+            // Now rechunk for better multithreaded efficiency with DataFusion
+            let seq = PyList::new_bound(py, vec![("max_chunksize", 8096)]);
+            let kwargs = PyDict::from_sequence_bound(seq.as_any())?;
+
+            let rechunked_table = data
+                .call_method("rechunk", (), Some(&kwargs))?
+                .extract::<PyTable>()
+                .unwrap();
+            let (batches, schema) = rechunked_table.into_inner();
+            Ok((VegaFusionTable::try_new(schema, batches)?, hash))
+        } else {
+            // Assume data is a pyarrow Table
+            // Extract table.schema as a Rust Schema
+            let schema_object = data.getattr("schema")?;
+            let pyschema = schema_object.extract::<PySchema>()?;
+            let schema = pyschema.into_inner();
+
+            // Extract table.to_batches() as a Rust Vec<RecordBatch>
+            let batches_object = data.call_method0("to_batches")?;
+            let batches_list = batches_object.downcast::<PyList>()?;
+            let batches = batches_list
+                .iter()
+                .map(|batch_any| Ok(batch_any.extract::<PyRecordBatch>()?.into_inner()))
+                .collect::<Result<Vec<RecordBatch>>>()?;
+
+            let vf_table = VegaFusionTable::try_new(schema, batches)?;
+            let hash = vf_table.get_hash();
+            Ok((vf_table, hash))
+        }
+    }
+
+    #[cfg(feature = "py")]
+    pub fn to_pyo3_arrow(&self) -> std::result::Result<PyTable, PyErr> {
         // Convert table's record batches into Python list of pyarrow batches
-
-        use pyo3::types::PyAnyMethods;
-        let pyarrow_module = PyModule::import_bound(py, "pyarrow")?;
-        let table_cls = pyarrow_module.getattr("Table")?;
-        let batch_objects = self
-            .batches
-            .iter()
-            .map(|batch| Ok(batch.to_pyarrow(py)?))
-            .collect::<Result<Vec<_>>>()?;
-        let batches_list = PyList::new_bound(py, batch_objects);
-
-        // Convert table's schema into pyarrow schema
         let schema = if let Some(batch) = self.batches.first() {
             // Get schema from first batch if present
             batch.schema()
@@ -345,12 +378,9 @@ impl VegaFusionTable {
             self.schema.clone()
         };
 
-        let schema_object = schema.to_pyarrow(py)?;
+        let py_table = pyo3_arrow::PyTable::try_new(self.batches.clone(), schema)?;
 
-        // Build pyarrow table
-        let args = PyTuple::new_bound(py, vec![&batches_list, schema_object.bind(py)]);
-        let pa_table = table_cls.call_method1("from_batches", args)?;
-        Ok(PyObject::from(pa_table))
+        Ok(py_table)
     }
 
     // Serialize to bytes using Arrow IPC format
@@ -402,6 +432,12 @@ impl VegaFusionTable {
                 .map(|s| s.to_string())
         }
     }
+
+    pub fn get_hash(&self) -> u64 {
+        let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
+        self.hash(&mut hasher);
+        hasher.finish()
+    }
 }
 
 impl From<RecordBatch> for VegaFusionTable {
@@ -415,7 +451,161 @@ impl From<RecordBatch> for VegaFusionTable {
 
 impl Hash for VegaFusionTable {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.to_ipc_bytes().unwrap().hash(state)
+        // Hash the schema
+        self.schema.hash(state);
+
+        // Hash each batch
+        for batch in &self.batches {
+            // Hash the number of rows in the batch
+            batch.num_rows().hash(state);
+
+            // Hash each column in the batch
+            for column in batch.columns() {
+                hash_array(column, state);
+            }
+        }
+    }
+}
+
+fn hash_array<H: Hasher>(array: &ArrayRef, state: &mut H) {
+    // Hash the array type
+    std::mem::discriminant(array.data_type()).hash(state);
+
+    // Hash the validity bitmap if present
+    if let Some(nulls) = array.nulls() {
+        nulls.buffer().hash(state);
+    }
+
+    match array.data_type() {
+        DataType::Null => hash_null_array(array, state),
+        DataType::Boolean => array.as_boolean().values().values().hash(state),
+        DataType::Int8 => hash_primitive_array::<Int8Type, H>(array, state),
+        DataType::Int16 => hash_primitive_array::<Int16Type, H>(array, state),
+        DataType::Int32 => hash_primitive_array::<Int32Type, H>(array, state),
+        DataType::Int64 => hash_primitive_array::<Int64Type, H>(array, state),
+        DataType::UInt8 => hash_primitive_array::<UInt8Type, H>(array, state),
+        DataType::UInt16 => hash_primitive_array::<UInt16Type, H>(array, state),
+        DataType::UInt32 => hash_primitive_array::<UInt32Type, H>(array, state),
+        DataType::UInt64 => hash_primitive_array::<UInt64Type, H>(array, state),
+        DataType::Float16 => hash_primitive_array::<Float16Type, H>(array, state),
+        DataType::Float32 => hash_primitive_array::<Float32Type, H>(array, state),
+        DataType::Float64 => hash_primitive_array::<Float64Type, H>(array, state),
+        DataType::Date32 => hash_primitive_array::<Date32Type, H>(array, state),
+        DataType::Date64 => hash_primitive_array::<Date64Type, H>(array, state),
+        DataType::Time32(TimeUnit::Second) => {
+            hash_primitive_array::<Time32SecondType, H>(array, state)
+        }
+        DataType::Time32(TimeUnit::Millisecond) => {
+            hash_primitive_array::<Time32MillisecondType, H>(array, state)
+        }
+        DataType::Time64(TimeUnit::Microsecond) => {
+            hash_primitive_array::<Time64MicrosecondType, H>(array, state)
+        }
+        DataType::Time64(TimeUnit::Nanosecond) => {
+            hash_primitive_array::<Time64NanosecondType, H>(array, state)
+        }
+        DataType::Timestamp(time_unit, tz) => {
+            match time_unit {
+                TimeUnit::Second => hash_primitive_array::<TimestampSecondType, H>(array, state),
+                TimeUnit::Millisecond => {
+                    hash_primitive_array::<TimestampMillisecondType, H>(array, state)
+                }
+                TimeUnit::Microsecond => {
+                    hash_primitive_array::<TimestampMicrosecondType, H>(array, state)
+                }
+                TimeUnit::Nanosecond => {
+                    hash_primitive_array::<TimestampNanosecondType, H>(array, state)
+                }
+            }
+            tz.hash(state);
+        }
+        DataType::Utf8 => hash_string_array::<i32, H>(array, state),
+        DataType::LargeUtf8 => hash_string_array::<i64, H>(array, state),
+        DataType::Utf8View => hash_string_view_array::<H>(array, state),
+        DataType::Binary => hash_binary_array::<i32, H>(array, state),
+        DataType::LargeBinary => hash_binary_array::<i64, H>(array, state),
+        DataType::BinaryView => hash_binary_view_array::<H>(array, state),
+        DataType::Decimal128(a, b) => {
+            (*a).hash(state);
+            (*b).hash(state);
+            hash_primitive_array::<Decimal128Type, H>(array, state);
+        }
+        DataType::Decimal256(a, b) => {
+            (*a).hash(state);
+            (*b).hash(state);
+            hash_primitive_array::<Decimal256Type, H>(array, state);
+        }
+        _ => {
+            // Fallback that requires cloning the array data
+            let array_data = array.to_data();
+            hash_array_data(&array_data, state);
+        }
+    }
+}
+
+fn hash_null_array<H: Hasher>(array: &ArrayRef, state: &mut H) {
+    let array = array.as_any().downcast_ref::<NullArray>().unwrap();
+    if let Some(nulls) = array.logical_nulls() {
+        nulls.buffer().hash(state);
+    }
+}
+
+fn hash_primitive_array<T: ArrowPrimitiveType, H: Hasher>(array: &ArrayRef, state: &mut H) {
+    let array = array.as_any().downcast_ref::<PrimitiveArray<T>>().unwrap();
+    array.values().to_byte_slice().hash(state);
+}
+
+fn hash_string_array<S: OffsetSizeTrait, H: Hasher>(array: &ArrayRef, state: &mut H) {
+    let array = array
+        .as_any()
+        .downcast_ref::<GenericStringArray<S>>()
+        .unwrap();
+    array.value_offsets().to_byte_slice().hash(state);
+    array.value_data().to_byte_slice().hash(state);
+}
+
+fn hash_string_view_array<H: Hasher>(array: &ArrayRef, state: &mut H) {
+    let array = array.as_any().downcast_ref::<StringViewArray>().unwrap();
+
+    // Hash view buffer
+    array.views().hash(state);
+
+    // Hash data buffers
+    for buffer in array.data_buffers() {
+        buffer.hash(state);
+    }
+}
+
+fn hash_binary_array<S: OffsetSizeTrait, H: Hasher>(array: &ArrayRef, state: &mut H) {
+    let array = array
+        .as_any()
+        .downcast_ref::<GenericBinaryArray<S>>()
+        .unwrap();
+    array.value_offsets().to_byte_slice().hash(state);
+    array.value_data().to_byte_slice().hash(state);
+}
+
+fn hash_binary_view_array<H: Hasher>(array: &ArrayRef, state: &mut H) {
+    let array = array.as_any().downcast_ref::<BinaryViewArray>().unwrap();
+
+    // Hash view buffer
+    array.views().hash(state);
+
+    // Hash data buffers
+    for buffer in array.data_buffers() {
+        buffer.hash(state);
+    }
+}
+
+fn hash_array_data<H: Hasher>(array_data: &ArrayData, state: &mut H) {
+    for buffer in array_data.buffers() {
+        buffer.hash(state);
+    }
+
+    // For nested types (list, struct), recursively hash child arrays
+    let child_data = array_data.child_data();
+    for child in child_data {
+        hash_array_data(&child, state);
     }
 }
 

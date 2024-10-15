@@ -10,7 +10,7 @@ version = "1.6.9"
 description = "VegaFusion Runtime"
 
 [features]
-pyarrow = ["vegafusion-core/pyarrow"]
+py = ["vegafusion-core/py"]
 protobuf-src = ["vegafusion-core/protobuf-src"]
 
 [dependencies]

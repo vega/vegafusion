@@ -2,7 +2,6 @@ import json
 from io import BytesIO
 from pathlib import Path
 
-import pyarrow as pa
 import pytest
 from skimage.io import imread
 from skimage.metrics import structural_similarity as ssim
@@ -106,5 +105,5 @@ def test_pretransform_extract():
     (name, scope, table) = datasets[0]
     assert name == "source_0"
     assert scope == []
-    assert isinstance(table, pa.Table)
+    # assert isinstance(table, pa.Table)
     assert table.shape == (379, 5)
