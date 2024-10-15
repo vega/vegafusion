@@ -103,7 +103,7 @@ cargo publish -p vegafusion-server
 
 # Build dependencies are those required to build and test all packages
 [build-dependencies]
-python = "3.11.*"
+python = "3.10.*"
 nodejs = "20.5.1.*"
 maturin = "1.2.3.*"
 yarn = "3.6.1.*"

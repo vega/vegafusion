@@ -292,7 +292,6 @@ jobs:
           ls -la
           python -m pip install vegafusion-*manylinux_2_17_x86_64*.whl
 
-
           # Optional dependencies
           python -m pip install polars-lts-cpu "duckdb>=1.0" "vl-convert-python>=1.0.1rc1" scikit-image "pandas>=2.2" jupytext voila anywidget ipywidgets chromedriver-binary-auto
 
@@ -323,7 +322,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
         with:
-          python-version: '3.11'
+          python-version: '3.10'
       - name: Download vegafusion-python wheel
         uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
         with:
@@ -335,7 +334,6 @@ jobs:
           ls -la
           python -m pip install vegafusion-*macosx_11_*_arm64.whl
 
-          
           # Optional dependencies
           python -m pip install polars "duckdb>=1.0" vl-convert-python "pandas>=2.2"
 
@@ -355,7 +353,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
         with:
-          python-version: '3.11'
+          python-version: '3.9'
       - name: Install Chrome
         uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
         with:
