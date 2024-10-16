@@ -8,20 +8,17 @@ use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
-use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 use vegafusion_core::planning::apply_pre_transform::apply_pre_transform_datasets;
 use vegafusion_core::planning::destringify_selection_datetimes::destringify_selection_datetimes;
 use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
-use vegafusion_core::planning::stitch::CommPlan;
 use vegafusion_core::planning::watch::{
-    ExportUpdateArrow, ExportUpdateJSON, ExportUpdateNamespace,
+    ExportUpdateArrow, ExportUpdateNamespace,
 };
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
-use vegafusion_core::proto::gen::pretransform::pre_transform_spec_warning::WarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
 use vegafusion_core::proto::gen::pretransform::{
     pre_transform_extract_warning, PlannerWarning,
@@ -30,8 +27,8 @@ use vegafusion_core::proto::gen::pretransform::{
     PreTransformValuesRequest, PreTransformValuesResponse, PreTransformValuesWarning,
 };
 use vegafusion_core::proto::gen::pretransform::{
-    PreTransformBrokenInteractivityWarning, PreTransformRowLimitWarning, PreTransformSpecRequest,
-    PreTransformSpecResponse, PreTransformUnsupportedWarning,
+    PreTransformRowLimitWarning, PreTransformSpecRequest,
+    PreTransformSpecResponse,
 };
 use vegafusion_core::proto::gen::services::{
     pre_transform_extract_result, pre_transform_spec_result, pre_transform_values_result,
@@ -40,7 +37,7 @@ use vegafusion_core::proto::gen::services::{
 };
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, InlineDataset, NodeValueIndex, ResponseTaskValue, TaskGraph,
-    TaskGraphValueResponse, TaskValue as ProtoTaskValue, TzConfig, Variable, VariableNamespace,
+    TaskGraphValueResponse, TaskValue as ProtoTaskValue, TzConfig, VariableNamespace,
 };
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::spec::chart::ChartSpec;

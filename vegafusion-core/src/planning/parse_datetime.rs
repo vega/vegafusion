@@ -3,14 +3,8 @@ use chrono::{
     {DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Offset, TimeZone, Timelike, Utc},
 };
 use regex::Regex;
-use std::any::Any;
-use std::{str::FromStr, sync::Arc};
+use std::sync::Arc;
 use vegafusion_common::arrow::array::{ArrayRef, StringArray, TimestampMillisecondArray};
-use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
-use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
-use vegafusion_common::datafusion_expr::{
-    ColumnarValue, ScalarUDF, ScalarUDFImpl, Signature, Volatility,
-};
 
 lazy_static! {
     pub static ref ALL_STRF_DATETIME_ITEMS: Vec<StrftimeItems<'static>> = vec![

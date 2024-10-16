@@ -1,8 +1,3 @@
-use chrono::{
-    format::{parse, Parsed, StrftimeItems},
-    {DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Offset, TimeZone, Timelike, Utc},
-};
-use regex::Regex;
 use std::any::Any;
 use std::{str::FromStr, sync::Arc};
 use vegafusion_common::arrow::array::{ArrayRef, StringArray, TimestampMillisecondArray};
@@ -119,38 +114,43 @@ lazy_static! {
     pub static ref STR_TO_UTC_TIMESTAMP_UDF: ScalarUDF =
         ScalarUDF::from(StrToUtcTimestampUDF::new());
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
 
-#[test]
-fn test_parse_datetime() {
-    let local_tz = Some(chrono_tz::Tz::America__New_York);
-    let utc = Some(chrono_tz::Tz::UTC);
-    let res = parse_datetime("2020-05-16T09:30:00+05:00", &utc).unwrap();
-    let utc_res = res.with_timezone(&Utc);
-    println!("res: {res}");
-    println!("utc_res: {utc_res}");
+    #[test]
+    fn test_parse_datetime() {
+        let local_tz = Some(chrono_tz::Tz::America__New_York);
+        let utc = Some(chrono_tz::Tz::UTC);
+        let res = parse_datetime("2020-05-16T09:30:00+05:00", &utc).unwrap();
+        let utc_res = res.with_timezone(&Utc);
+        println!("res: {res}");
+        println!("utc_res: {utc_res}");
 
-    let res = parse_datetime("2020-05-16T09:30:00", &utc).unwrap();
-    let utc_res = res.with_timezone(&Utc);
-    println!("res: {res}");
-    println!("utc_res: {utc_res}");
+        let res = parse_datetime("2020-05-16T09:30:00", &utc).unwrap();
+        let utc_res = res.with_timezone(&Utc);
+        println!("res: {res}");
+        println!("utc_res: {utc_res}");
 
-    let res = parse_datetime("2020-05-16T09:30:00", &local_tz).unwrap();
-    let utc_res = res.with_timezone(&Utc);
-    println!("res: {res}");
-    println!("utc_res: {utc_res}");
+        let res = parse_datetime("2020-05-16T09:30:00", &local_tz).unwrap();
+        let utc_res = res.with_timezone(&Utc);
+        println!("res: {res}");
+        println!("utc_res: {utc_res}");
 
-    let res = parse_datetime("2001/02/05 06:20", &local_tz).unwrap();
-    let utc_res = res.with_timezone(&Utc);
-    println!("res: {res}");
-    println!("utc_res: {utc_res}");
+        let res = parse_datetime("2001/02/05 06:20", &local_tz).unwrap();
+        let utc_res = res.with_timezone(&Utc);
+        println!("res: {res}");
+        println!("utc_res: {utc_res}");
 
-    let res = parse_datetime("2001/02/05 06:20", &utc).unwrap();
-    let utc_res = res.with_timezone(&Utc);
-    println!("res: {res}");
-    println!("utc_res: {utc_res}");
+        let res = parse_datetime("2001/02/05 06:20", &utc).unwrap();
+        let utc_res = res.with_timezone(&Utc);
+        println!("res: {res}");
+        println!("utc_res: {utc_res}");
 
-    let res = parse_datetime("2000-01-01T08:00:00.000Z", &utc).unwrap();
-    let utc_res = res.with_timezone(&Utc);
-    println!("res: {res}");
-    println!("utc_res: {utc_res}");
+        let res = parse_datetime("2000-01-01T08:00:00.000Z", &utc).unwrap();
+        let utc_res = res.with_timezone(&Utc);
+        println!("res: {res}");
+        println!("utc_res: {utc_res}");
+    }
 }
