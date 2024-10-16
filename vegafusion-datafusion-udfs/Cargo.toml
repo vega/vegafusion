@@ -7,8 +7,10 @@ description = "Custom DataFusion UDFs used by VegaFusion"
 
 [dependencies]
 ordered-float = "3.6.0"
-lazy_static = "^1.4.0"
 regex = "^1.5.5"
+
+[dependencies.lazy_static]
+workspace = true
 
 [dependencies.chrono]
 workspace = true
