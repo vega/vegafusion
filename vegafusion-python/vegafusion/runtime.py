@@ -191,6 +191,11 @@ class VegaFusionRuntime:
             # Try to initialize an embedded runtime
             from vegafusion._vegafusion import PyVegaFusionRuntime
 
+            if self.memory_limit is None:
+                self.memory_limit = get_virtual_memory() // 2
+            if self.worker_threads is None:
+                self.worker_threads = get_cpu_count()
+
             self._embedded_runtime = PyVegaFusionRuntime(
                 self.cache_capacity,
                 self.memory_limit,
@@ -335,7 +340,7 @@ class VegaFusionRuntime:
             columns = inline_dataset_usage.get(name)
             if isinstance(value, SqlDataset):
                 imported_inline_datasets[name] = value
-            elif pd is not None and isinstance(value, pd.DataFrame):
+            elif pd is not None and pa is not None and isinstance(value, pd.DataFrame):
                 # rename to help mypy
                 inner_value: pd.DataFrame = value
                 del value
@@ -366,7 +371,6 @@ class VegaFusionRuntime:
                             inner_value = inner_value.assign(
                                 **{col: inner_value[col].astype("string[pyarrow]")}
                             )
-
                 if self._connection is not None:
                     try:
                         # Try registering DataFrame if supported
@@ -376,7 +380,14 @@ class VegaFusionRuntime:
                         continue
                     except ValueError:
                         pass
-                imported_inline_datasets[name] = Table(inner_value)
+                if hasattr(inner_value, "__arrow_c_stream__"):
+                    # TODO: this requires pyarrow 14.0.0 or later
+                    imported_inline_datasets[name] = Table(inner_value)  # type: ignore[arg-type]
+                else:
+                    # Older pandas, convert through pyarrow
+                    imported_inline_datasets[name] = Table(  # type: ignore[arg-type]
+                        pa.from_pandas(inner_value)
+                    )
             elif isinstance(value, dict):
                 # Let narwhals import the dict using a default backend
                 df_nw = nw.from_dict(value, native_namespace=_get_default_namespace())
@@ -1071,4 +1082,4 @@ def get_inline_column_usage(
     }
 
 
-runtime = VegaFusionRuntime(64, get_virtual_memory() // 2, get_cpu_count())
+runtime = VegaFusionRuntime(64, None, None)
