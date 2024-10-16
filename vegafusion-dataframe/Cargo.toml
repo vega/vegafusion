@@ -5,8 +5,9 @@ version = "1.6.9"
 edition = "2021"
 description = "VegaFusion's DataFrame and Connection traits"
 
-[dependencies]
-async-trait = "0.1.73"
+
+[dependencies.async-trait]
+workspace = true
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
