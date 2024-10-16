@@ -157,9 +157,9 @@ class ChartState:
 class VegaFusionRuntime:
     def __init__(
         self,
-        cache_capacity: int,
-        memory_limit: int,
-        worker_threads: int,
+        cache_capacity: int = 64,
+        memory_limit: int | None = None,
+        worker_threads: int | None = None,
         connection: SqlConnection | None = None,
     ) -> None:
         """
@@ -382,12 +382,10 @@ class VegaFusionRuntime:
                         pass
                 if hasattr(inner_value, "__arrow_c_stream__"):
                     # TODO: this requires pyarrow 14.0.0 or later
-                    imported_inline_datasets[name] = Table(inner_value)  # type: ignore[arg-type]
+                    imported_inline_datasets[name] = Table(inner_value)
                 else:
                     # Older pandas, convert through pyarrow
-                    imported_inline_datasets[name] = Table(  # type: ignore[arg-type]
-                        pa.from_pandas(inner_value)
-                    )
+                    imported_inline_datasets[name] = Table(pa.from_pandas(inner_value))
             elif isinstance(value, dict):
                 # Let narwhals import the dict using a default backend
                 df_nw = nw.from_dict(value, native_namespace=_get_default_namespace())
@@ -898,7 +896,7 @@ class VegaFusionRuntime:
             return cast(dict[str, Any], pre_transformed_spec2)
 
     @property
-    def worker_threads(self) -> int:
+    def worker_threads(self) -> int | None:
         """
         Get the number of worker threads for the runtime.
 
