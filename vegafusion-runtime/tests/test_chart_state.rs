@@ -9,10 +9,11 @@ mod tests {
     use serde_json::json;
     use std::fs;
     use std::sync::Arc;
+    use vegafusion_core::chart_state::ChartState;
     use vegafusion_core::planning::watch::{ExportUpdateJSON, ExportUpdateNamespace};
     use vegafusion_core::proto::gen::tasks::TzConfig;
     use vegafusion_core::spec::chart::ChartSpec;
-    use vegafusion_runtime::task_graph::runtime::{ChartState, VegaFusionRuntime};
+    use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
     #[tokio::test]

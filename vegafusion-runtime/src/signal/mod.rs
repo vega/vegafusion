@@ -5,8 +5,8 @@ use crate::task_graph::task::TaskCall;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
+use vegafusion_core::data::dataset::VegaFusionDataset;
 
-use crate::data::dataset::VegaFusionDataset;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::tasks::SignalTask;
