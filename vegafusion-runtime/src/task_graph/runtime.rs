@@ -14,9 +14,7 @@ use vegafusion_core::error::{Result, ResultWithContext, ToExternalError, VegaFus
 use vegafusion_core::planning::apply_pre_transform::apply_pre_transform_datasets;
 use vegafusion_core::planning::destringify_selection_datetimes::destringify_selection_datetimes;
 use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
-use vegafusion_core::planning::watch::{
-    ExportUpdateArrow, ExportUpdateNamespace,
-};
+use vegafusion_core::planning::watch::{ExportUpdateArrow, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::errors::error::Errorkind;
 use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
@@ -27,8 +25,7 @@ use vegafusion_core::proto::gen::pretransform::{
     PreTransformValuesRequest, PreTransformValuesResponse, PreTransformValuesWarning,
 };
 use vegafusion_core::proto::gen::pretransform::{
-    PreTransformRowLimitWarning, PreTransformSpecRequest,
-    PreTransformSpecResponse,
+    PreTransformRowLimitWarning, PreTransformSpecRequest, PreTransformSpecResponse,
 };
 use vegafusion_core::proto::gen::services::{
     pre_transform_extract_result, pre_transform_spec_result, pre_transform_values_result,
