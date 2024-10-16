@@ -15,7 +15,6 @@ protobuf-src = ["vegafusion-core/protobuf-src"]
 
 [dependencies]
 regex = "^1.5.5"
-lazy_static = "^1.4.0"
 serde_json = "1.0.91"
 num-traits = "0.2.15"
 itertools = "0.11.0"
@@ -44,6 +43,9 @@ base64 = "0.21.0"
 pixelmatch = "0.1.0"
 rgb = "0.8.32"
 lodepng = "3.6.1"
+
+[dependencies.lazy_static]
+workspace = true
 
 [dependencies.object_store]
 workspace = true

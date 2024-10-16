@@ -6,9 +6,9 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union, cast
 
 import narwhals as nw
-import psutil
 from arro3.core import Table
 
+from vegafusion._vegafusion import get_cpu_count, get_virtual_memory
 from vegafusion.transformer import DataFrameLike
 from vegafusion.utils import get_column_usage
 
@@ -335,8 +335,7 @@ class VegaFusionRuntime:
             columns = inline_dataset_usage.get(name)
             if isinstance(value, SqlDataset):
                 imported_inline_datasets[name] = value
-            # elif pd is not None and isinstance(value, pd.DataFrame):
-            elif isinstance(value, pd.DataFrame):
+            elif pd is not None and isinstance(value, pd.DataFrame):
                 # rename to help mypy
                 inner_value: pd.DataFrame = value
                 del value
@@ -1072,4 +1071,4 @@ def get_inline_column_usage(
     }
 
 
-runtime = VegaFusionRuntime(64, psutil.virtual_memory().total // 2, psutil.cpu_count())
+runtime = VegaFusionRuntime(64, get_virtual_memory() // 2, get_cpu_count())
