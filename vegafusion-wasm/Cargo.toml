@@ -18,6 +18,7 @@ wasm-bindgen-futures = "0.4.28"
 js-sys = "0.3.55"
 indexmap = "1.9.2"
 
+
 [dev-dependencies]
 wasm-bindgen-test = "0.3.13"
 
@@ -25,6 +26,9 @@ wasm-bindgen-test = "0.3.13"
 workspace = true
 
 [dependencies.prost-types]
+workspace = true
+
+[dependencies.futures]
 workspace = true
 
 [dependencies.vegafusion-common]
@@ -58,6 +62,9 @@ optional = true
 [dependencies.web-sys]
 version = "0.3.55"
 features = ["Document", "Element", "HtmlElement", "Node", "Window"]
+
+[dependencies.async-trait]
+workspace = true
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = ["-Os"]

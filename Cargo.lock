@@ -5149,8 +5149,10 @@ dependencies = [
 name = "vegafusion-wasm"
 version = "1.6.9"
 dependencies = [
+ "async-trait",
  "chrono",
  "console_error_panic_hook",
+ "futures",
  "getrandom",
  "indexmap 1.9.3",
  "js-sys",

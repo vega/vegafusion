@@ -1,20 +1,26 @@
+use futures::{SinkExt, StreamExt};
 use prost::Message;
 
 use vegafusion_common::data::scalar::{ScalarValue, ScalarValueHelpers};
-use vegafusion_core::proto::gen::tasks::{
-    NodeValueIndex, TaskGraph, TaskGraphValueRequest, TzConfig, VariableNamespace,
-};
+use vegafusion_core::proto::gen::tasks::{NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueRequest, TzConfig, VariableNamespace};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use wasm_bindgen::prelude::*;
 
 use js_sys::Promise;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+// use std::sync::mpsc;
+use futures::channel::{oneshot, mpsc as async_mpsc};
+
+use wasm_bindgen_futures::{future_to_promise, JsFuture};
+
+use serde_json::Value;
+use wasm_bindgen_futures::spawn_local;
 use vegafusion_common::data::table::VegaFusionTable;
 
 use vegafusion_core::planning::stitch::CommPlan;
-use vegafusion_core::planning::watch::WatchPlan;
+use vegafusion_core::planning::watch::{ExportUpdateJSON, ExportUpdateNamespace, WatchPlan};
 
 use vegafusion_core::proto::gen::services::{
     query_request, query_result, QueryRequest, QueryResult,
@@ -24,6 +30,9 @@ use vegafusion_core::task_graph::graph::ScopedVariable;
 
 use vegafusion_core::planning::plan::SpecPlan;
 use web_sys::Element;
+use vegafusion_core::chart_state::ChartState;
+use vegafusion_core::data::dataset::VegaFusionDataset;
+use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 
 pub fn set_panic_hook() {
     // When the `console_error_panic_hook` feature is enabled, we can call the
@@ -44,80 +53,88 @@ extern "C" {
     fn log(s: &str);
 }
 
+pub struct VegaFusionWasmRuntime {
+    sender: async_mpsc::Sender<(QueryRequest, oneshot::Sender<vegafusion_common::error::Result<Vec<ResponseTaskValue>>>)>
+}
+
+impl VegaFusionWasmRuntime {
+    pub fn new(query_fn: js_sys::Function) -> Self {
+        let (sender, mut receiver) = async_mpsc::channel::<(QueryRequest, oneshot::Sender<vegafusion_common::error::Result<Vec<ResponseTaskValue>>>)>(32);
+
+        // Spawn a task to process incoming requests
+        spawn_local(async move {
+            while let Some((request_msg, response_tx)) = receiver.next().await {
+
+                let mut buf: Vec<u8> = Vec::with_capacity(request_msg.encoded_len());
+                request_msg.encode(&mut buf).unwrap();
+        
+                let context =
+                    js_sys::JSON::parse(&serde_json::to_string(&serde_json::Value::Null).unwrap()).unwrap();
+        
+                let js_buffer = js_sys::Uint8Array::from(buf.as_slice());
+                let promise = query_fn
+                    .call1(&context, &js_buffer)
+                    .expect("query_fn function call failed");
+                let promise = promise.dyn_into::<Promise>().unwrap();
+                let response = JsFuture::from(promise).await.unwrap();
+                let response_array = response.dyn_into::<js_sys::Uint8Array>().unwrap();
+                let response_bytes = response_array.to_vec();
+
+                let response = QueryResult::decode(response_bytes.as_slice()).unwrap();
+
+                match response.response.unwrap() {
+                    query_result::Response::Error(error) => {
+                        response_tx.send(Err(vegafusion_common::error::VegaFusionError::internal(format!("{error:?}")))).unwrap();
+                    },
+                    query_result::Response::TaskGraphValues(task_graph_value_response) => {
+                        response_tx.send(Ok(task_graph_value_response.response_values)).unwrap();
+                    },
+                }
+            }
+        });
+
+        VegaFusionWasmRuntime {
+            sender
+        }
+    }
+}
+#[async_trait::async_trait]
+impl VegaFusionRuntimeTrait for VegaFusionWasmRuntime {
+    async fn query_request(&self, task_graph: Arc<TaskGraph>, indices: &[NodeValueIndex], _inline_datasets: &HashMap<String, VegaFusionDataset>) -> vegafusion_common::error::Result<Vec<ResponseTaskValue>> {
+        // Request initial values
+        let request_msg = QueryRequest {
+            request: Some(query_request::Request::TaskGraphValues(
+                TaskGraphValueRequest {
+                    task_graph: Some(task_graph.as_ref().clone()),
+                    indices: Vec::from(indices),
+                    inline_datasets: vec![],  // TODO: inline datasets
+                },
+            )),
+        };
+
+        let (tx, rx) = oneshot::channel();
+        self.sender.clone().send((request_msg, tx)).await.unwrap();
+        let response = rx.await.unwrap();
+
+        response
+    }
+}
+
 #[wasm_bindgen]
 #[derive(Clone)]
-pub struct MsgReceiver {
-    spec: Rc<ChartSpec>,
-    server_spec: Rc<ChartSpec>,
-    comm_plan: CommPlan,
-    send_msg_fn: Rc<js_sys::Function>,
-    task_graph: Rc<Mutex<TaskGraph>>,
-    task_graph_mapping: Rc<HashMap<ScopedVariable, NodeValueIndex>>,
-    server_to_client_value_indices: Rc<HashSet<NodeValueIndex>>,
+pub struct ChartHandle {
+    state: ChartState,
     view: Rc<View>,
     verbose: bool,
     debounce_wait: f64,
     debounce_max_wait: Option<f64>,
+    sender: async_mpsc::Sender<ExportUpdateJSON>,
 }
 
 #[wasm_bindgen]
-impl MsgReceiver {
-    #[allow(clippy::too_many_arguments)]
-    fn new(
-        element: Element,
-        spec: ChartSpec,
-        server_spec: ChartSpec,
-        comm_plan: CommPlan,
-        task_graph: TaskGraph,
-        send_msg_fn: js_sys::Function,
-        verbose: bool,
-        debounce_wait: f64,
-        debounce_max_wait: Option<f64>,
-    ) -> Self {
-        set_panic_hook();
-
-        let task_graph_mapping = task_graph.build_mapping();
-
-        let server_to_client_value_indices: Rc<HashSet<_>> = Rc::new(
-            comm_plan
-                .server_to_client
-                .iter()
-                .map(|scoped_var| task_graph_mapping.get(scoped_var).unwrap().clone())
-                .collect(),
-        );
-
-        // Mount vega chart
-        let window = web_sys::window().expect("no global `window` exists");
-        let _document = window.document().expect("should have a document on window");
-        let dataflow = parse(
-            js_sys::JSON::parse(
-                &serde_json::to_string(&spec).expect("Failed to parse spec as JSON"),
-            )
-            .unwrap(),
-        );
-
-        let view = View::new(dataflow);
-        view.initialize(element);
-        view.hover();
-        setup_tooltip(&view);
-
-        let this = Self {
-            spec: Rc::new(spec),
-            server_spec: Rc::new(server_spec),
-            comm_plan,
-            task_graph: Rc::new(Mutex::new(task_graph)),
-            task_graph_mapping: Rc::new(task_graph_mapping),
-            send_msg_fn: Rc::new(send_msg_fn),
-            server_to_client_value_indices,
-            view: Rc::new(view),
-            verbose,
-            debounce_wait,
-            debounce_max_wait,
-        };
-
-        this.register_callbacks();
-
-        this
+impl ChartHandle {
+    fn view(&self) -> &View {
+        &self.view
     }
 
     pub fn get_signal(&self, name: &str, scope: &[u32]) -> JsValue {
@@ -174,83 +191,44 @@ impl MsgReceiver {
         );
     }
 
-    pub fn receive(&mut self, bytes: Vec<u8>) {
-        // Decode message
-        let response = QueryResult::decode(bytes.as_slice()).unwrap();
-
-        if let Some(response) = response.response {
-            match response {
-                query_result::Response::TaskGraphValues(task_graph_vals) => {
-                    for (var, scope, value) in task_graph_vals
-                        .deserialize()
-                        .expect("Failed to deserialize response")
-                    {
-                        match &value {
-                            TaskValue::Scalar(value) => {
-                                let json = value.to_json().unwrap();
-                                if self.verbose {
-                                    log(&format!("VegaFusion(wasm): Received {}", var.name));
-                                    log(&serde_json::to_string_pretty(&json).unwrap());
-                                    log(&format!("DataType: {:#?}", &value.data_type()));
-                                }
-
-                                let js_value =
-                                    js_sys::JSON::parse(&serde_json::to_string(&json).unwrap())
-                                        .unwrap();
-                                self.set_signal(&var.name, scope.as_slice(), js_value);
-                            }
-                            TaskValue::Table(value) => {
-                                let json = value.to_json().expect("Failed to serialize table");
-                                if self.verbose {
-                                    log(&format!("VegaFusion(wasm): Received {}", var.name));
-                                    log(&serde_json::to_string_pretty(&json).unwrap());
-                                    log(&format!("Schema: {:#?}", &value.schema));
-                                }
-
-                                let js_value =
-                                    js_sys::JSON::parse(&serde_json::to_string(&json).unwrap())
-                                        .unwrap();
-                                self.set_data(&var.name, scope.as_slice(), js_value);
-                            }
-                        }
-                    }
-                    let view = self.view();
-                    view.run();
+    fn update_view(&self, updates: &[ExportUpdateJSON]) {
+        for update in updates {
+            match update.namespace {
+                ExportUpdateNamespace::Signal => {
+                    let js_value =
+                        js_sys::JSON::parse(&serde_json::to_string(&update.value).unwrap())
+                            .unwrap();
+                    self.set_signal(&update.name, update.scope.as_slice(), js_value);
                 }
-                query_result::Response::Error(error) => {
-                    log(&format!("{error:?}"));
+                ExportUpdateNamespace::Data => {
+                    let js_value =
+                        js_sys::JSON::parse(&serde_json::to_string(&update.value).unwrap())
+                            .unwrap();
+                    self.set_data(&update.name, update.scope.as_slice(), js_value);
                 }
             }
         }
     }
 
-    fn view(&self) -> &View {
-        &self.view
-    }
-
-    fn register_callbacks(&self) {
-        for scoped_var in &self.comm_plan.client_to_server {
+    pub fn register_callbacks(&self) {
+        for scoped_var in &self.state.get_comm_plan().client_to_server {
             let var_name = scoped_var.0.name.clone();
-            let scope = scoped_var.1.as_slice();
-            let node_value_index = self.task_graph_mapping.get(scoped_var).unwrap().clone();
-            let server_to_client = self.server_to_client_value_indices.clone();
+            let scope = Vec::from(scoped_var.1.as_slice());
 
-            let task_graph = self.task_graph.clone();
-            let send_msg_fn = self.send_msg_fn.clone();
+            let sender = self.sender.clone();
             let verbose = self.verbose;
-
-            // Register callbacks
-            let this = self.clone();
+            // let this = self.clone();
             match scoped_var.0.namespace() {
                 VariableNamespace::Signal => {
                     let closure = Closure::wrap(Box::new(move |name: String, val: JsValue| {
-                        let val: serde_json::Value = if val.is_undefined() {
-                            serde_json::Value::Null
+                        let mut sender = sender.clone();
+                        let val: Value = if val.is_undefined() {
+                            Value::Null
                         } else {
                             serde_json::from_str(
                                 &js_sys::JSON::stringify(&val).unwrap().as_string().unwrap(),
                             )
-                            .unwrap()
+                                .unwrap()
                         };
 
                         if verbose {
@@ -258,124 +236,67 @@ impl MsgReceiver {
                             log(&serde_json::to_string_pretty(&val).unwrap());
                         }
 
-                        let mut task_graph = task_graph.lock().unwrap();
-                        let updated_nodes = &task_graph
-                            .update_value(
-                                node_value_index.node_index as usize,
-                                TaskValue::Scalar(ScalarValue::from_json(&val).unwrap()),
-                            )
-                            .unwrap();
-
-                        // Filter to update nodes in the comm plan
-                        let updated_nodes: Vec<_> = updated_nodes
-                            .iter()
-                            .filter(|&node| server_to_client.contains(node))
-                            .cloned()
-                            .collect();
-
-                        let request_msg = QueryRequest {
-                            request: Some(query_request::Request::TaskGraphValues(
-                                TaskGraphValueRequest {
-                                    task_graph: Some(task_graph.clone()),
-                                    indices: updated_nodes,
-                                    inline_datasets: vec![],
-                                },
-                            )),
+                        let update = ExportUpdateJSON {
+                            namespace: ExportUpdateNamespace::Signal,
+                            name,
+                            scope: scope.clone(),
+                            value: val,
                         };
-
-                        this.send_request(send_msg_fn.as_ref(), request_msg);
+                        spawn_local(async move {
+                            sender.send(update).await.unwrap();
+                        });
                     })
                         as Box<dyn FnMut(String, JsValue)>);
 
                     let ret_cb = closure.as_ref().clone();
                     closure.forget();
 
-                    self.add_signal_listener(&var_name, scope, ret_cb);
+                    self.add_signal_listener(&var_name, scoped_var.1.as_slice(), ret_cb);
                 }
                 VariableNamespace::Data => {
                     let closure = Closure::wrap(Box::new(move |name: String, val: JsValue| {
+                        let mut sender = sender.clone();
                         let val: serde_json::Value = serde_json::from_str(
                             &js_sys::JSON::stringify(&val).unwrap().as_string().unwrap(),
                         )
-                        .unwrap();
+                            .unwrap();
                         if verbose {
                             log(&format!("VegaFusion(wasm): Sending data {name}"));
                             log(&serde_json::to_string_pretty(&val).unwrap());
                         }
 
-                        let mut task_graph = task_graph.lock().expect("lock task graph");
-
-                        let updated_nodes = &task_graph
-                            .update_value(
-                                node_value_index.node_index as usize,
-                                TaskValue::Table(VegaFusionTable::from_json(&val).unwrap()),
-                            )
-                            .unwrap();
-
-                        // Filter to update nodes in the comm plan
-                        let updated_nodes: Vec<_> = updated_nodes
-                            .iter()
-                            .filter(|&node| server_to_client.contains(node))
-                            .cloned()
-                            .collect();
-
-                        if !updated_nodes.is_empty() {
-                            let request_msg = QueryRequest {
-                                request: Some(query_request::Request::TaskGraphValues(
-                                    TaskGraphValueRequest {
-                                        task_graph: Some(task_graph.clone()),
-                                        indices: updated_nodes,
-                                        inline_datasets: vec![],
-                                    },
-                                )),
-                            };
-
-                            this.send_request(send_msg_fn.as_ref(), request_msg);
-                        }
+                        let update = ExportUpdateJSON {
+                            namespace: ExportUpdateNamespace::Data,
+                            name,
+                            scope: scope.clone(),
+                            value: val,
+                        };
+                        spawn_local(async move {
+                            sender.send(update).await.unwrap();
+                        });
                     })
                         as Box<dyn FnMut(String, JsValue)>);
 
                     let ret_cb = closure.as_ref().clone();
                     closure.forget();
 
-                    self.add_data_listener(&var_name, scope, ret_cb);
+                    self.add_data_listener(&var_name, scoped_var.1.as_slice(), ret_cb);
                 }
                 VariableNamespace::Scale => {}
             }
         }
     }
 
-    fn send_request(&self, send_msg_fn: &js_sys::Function, request_msg: QueryRequest) {
-        let mut buf: Vec<u8> = Vec::with_capacity(request_msg.encoded_len());
-        request_msg.encode(&mut buf).unwrap();
-
-        let context =
-            js_sys::JSON::parse(&serde_json::to_string(&serde_json::Value::Null).unwrap()).unwrap();
-
-        let js_buffer = js_sys::Uint8Array::from(buf.as_slice());
-        send_msg_fn
-            .call2(&context, &js_buffer, &self.clone().into())
-            .expect("send_request function call failed");
-    }
-
-    fn initial_node_value_indices(&self) -> Vec<NodeValueIndex> {
-        self.comm_plan
-            .server_to_client
-            .iter()
-            .map(|scoped_var| self.task_graph_mapping.get(scoped_var).unwrap().clone())
-            .collect()
-    }
-
     pub fn client_spec_json(&self) -> String {
-        serde_json::to_string_pretty(self.spec.as_ref()).unwrap()
+        serde_json::to_string_pretty(self.state.get_client_spec()).unwrap()
     }
 
     pub fn server_spec_json(&self) -> String {
-        serde_json::to_string_pretty(self.server_spec.as_ref()).unwrap()
+        serde_json::to_string_pretty(self.state.get_server_spec()).unwrap()
     }
 
     pub fn comm_plan_json(&self) -> String {
-        serde_json::to_string_pretty(&WatchPlan::from(self.comm_plan.clone())).unwrap()
+        serde_json::to_string_pretty(&WatchPlan::from(self.state.get_comm_plan().clone())).unwrap()
     }
 
     pub fn to_image_url(&self, img_type: &str, scale_factor: Option<f64>) -> Promise {
@@ -385,63 +306,60 @@ impl MsgReceiver {
 }
 
 #[wasm_bindgen]
-pub fn render_vegafusion(
+pub async fn render_vegafusion(
     element: Element,
     spec_str: &str,
     verbose: bool,
     debounce_wait: f64,
     debounce_max_wait: Option<f64>,
-    send_msg_fn: js_sys::Function,
-) -> MsgReceiver {
+    query_fn: js_sys::Function,
+) -> ChartHandle {
+    set_panic_hook();
     let spec: ChartSpec = serde_json::from_str(spec_str).unwrap();
-    let spec_plan = SpecPlan::try_new(&spec, &Default::default()).unwrap();
-
-    let task_scope = spec_plan
-        .server_spec
-        .to_task_scope()
-        .expect("Failed to create task scope for server spec");
 
     let local_tz = local_timezone();
     let tz_config = TzConfig {
         local_tz,
         default_input_tz: None,
     };
-    let tasks = spec_plan
-        .server_spec
-        .to_tasks(&tz_config, &Default::default())
-        .unwrap();
-    let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
 
-    // Create closure to update chart from received messages
-    let receiver = MsgReceiver::new(
-        element,
-        spec_plan.client_spec,
-        spec_plan.server_spec,
-        spec_plan.comm_plan,
-        task_graph.clone(),
-        send_msg_fn,
-        verbose,
-        debounce_wait,
-        debounce_max_wait,
+    let runtime = VegaFusionWasmRuntime::new(query_fn);
+    let chart_state = ChartState::try_new(&runtime, spec, Default::default(), tz_config, None).await.unwrap();
+    // Mount vega chart
+    let dataflow = parse(
+        js_sys::JSON::parse(
+            &serde_json::to_string(chart_state.get_transformed_spec()).expect("Failed to parse spec as JSON"),
+        )
+            .unwrap(),
     );
 
-    // Request initial values
-    let updated_node_indices: Vec<_> = receiver.initial_node_value_indices();
+    let view = View::new(dataflow);
+    view.initialize(element);
+    view.hover();
+    setup_tooltip(&view);
 
-    let request_msg = QueryRequest {
-        request: Some(query_request::Request::TaskGraphValues(
-            TaskGraphValueRequest {
-                task_graph: Some(task_graph),
-                indices: updated_node_indices,
-                inline_datasets: vec![],
-            },
-        )),
+    let (sender, mut receiver) = async_mpsc::channel::<ExportUpdateJSON>(16);
+
+    let view_rc = Rc::new(view);
+    let handle = ChartHandle {
+        state: chart_state, view: view_rc.clone(), verbose, debounce_wait, debounce_max_wait, sender
     };
+    handle.register_callbacks();
+    let inner_handle = handle.clone();
+    
+    // listen for callback updates
+    spawn_local(async move {
+        while let Some(update) = receiver.next().await {
+            let response_update = inner_handle.state.update(&runtime, vec![update]).await.unwrap();
+            inner_handle.update_view(&response_update);
+        }
+    });
 
-    receiver.send_request(receiver.send_msg_fn.as_ref(), request_msg);
+    view_rc.run();
 
-    receiver
+    handle
 }
+
 
 #[wasm_bindgen]
 pub fn vega_version() -> String {
