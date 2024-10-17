@@ -8,11 +8,11 @@ use async_trait::async_trait;
 use datafusion_expr::{expr, lit, Expr};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
-use vegafusion_core::data::dataset::VegaFusionDataset;
 
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 
+use crate::data::dataset::VegaFusionDataset;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use crate::transform::pipeline::TransformPipelineUtils;
 

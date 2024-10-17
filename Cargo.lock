@@ -4968,10 +4968,8 @@ dependencies = [
 name = "vegafusion-core"
 version = "1.6.9"
 dependencies = [
- "async-trait",
  "bytes",
  "chrono",
- "chrono-tz 0.9.0",
  "datafusion-common",
  "deterministic-hash",
  "itertools 0.10.5",
@@ -4994,7 +4992,6 @@ dependencies = [
  "tonic",
  "tonic-build",
  "vegafusion-common",
- "vegafusion-dataframe",
 ]
 
 [[package]]
@@ -5023,7 +5020,6 @@ dependencies = [
  "ordered-float 3.9.2",
  "regex",
  "vegafusion-common",
- "vegafusion-core",
 ]
 
 [[package]]

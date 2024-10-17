@@ -23,11 +23,11 @@ mod tests {
     use std::sync::Arc;
     use vegafusion_common::data::table::VegaFusionTable;
     use vegafusion_common::error::VegaFusionError;
-    use vegafusion_core::data::dataset::VegaFusionDataset;
     use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType;
     use vegafusion_core::proto::gen::tasks::Variable;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_core::spec::values::StringOrSignalSpec;
+    use vegafusion_runtime::data::dataset::VegaFusionDataset;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
