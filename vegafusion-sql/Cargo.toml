@@ -20,7 +20,6 @@ datafusion-conn = [
 ]
 
 [dependencies]
-async-trait = "0.1.73"
 deterministic-hash = "1.0.1"
 log = "0.4.17"
 uuid = "1.4.1"
@@ -31,6 +30,9 @@ rstest_reuse = "0.6.0"
 toml = "0.7.2"
 
 [dev-dependencies.lazy_static]
+workspace = true
+
+[dependencies.async-trait]
 workspace = true
 
 [dependencies.chrono]
