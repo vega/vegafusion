@@ -123,7 +123,7 @@ function trap(view, fn) {
 
 // Other utility functions
 export function make_grpc_send_message_fn(client, hostname) {
-    let send_message_grpc = (send_msg_bytes, receiver) => {
+    let send_message_grpc = async (send_msg_bytes, receiver) => {
         let grpc_route = '/services.VegaFusionRuntime/TaskGraphQuery'
 
         // Make custom MethodDescriptor that does not perform serialization
@@ -136,15 +136,12 @@ export function make_grpc_send_message_fn(client, hostname) {
             (v) => v,
         );
 
-        let promise = client.unaryCall(
+        return await client.unaryCall(
             hostname + grpc_route,
             send_msg_bytes,
             {},
             methodDescriptor,
-        );
-        promise.then((response) => {
-            receiver.receive(response)
-        })
+        )
     }
     return send_message_grpc
 }

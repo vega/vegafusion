@@ -1,11 +1,11 @@
+use crate::error::Result;
+use crate::planning::parse_datetime::parse_datetime;
+use crate::spec::chart::{ChartSpec, MutChartVisitor};
+use crate::spec::data::DataSpec;
+use crate::spec::transform::formula::FormulaTransformSpec;
+use crate::spec::transform::TransformSpec;
 use serde_json::Value;
 use std::collections::HashSet;
-use vegafusion_core::error::Result;
-use vegafusion_core::spec::chart::{ChartSpec, MutChartVisitor};
-use vegafusion_core::spec::data::DataSpec;
-use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
-use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::parse_datetime;
 
 /// Post pre-transform transformation that detects the use of datetime strings in
 /// Vega-Lite style selection "_store" datasets, and adds a transform to convert

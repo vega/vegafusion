@@ -1,8 +1,11 @@
+pub mod apply_pre_transform;
 pub mod dependency_graph;
+pub mod destringify_selection_datetimes;
 pub mod extract;
 pub mod fuse;
 pub mod lift_facet_aggregations;
 pub mod optimize_server;
+pub mod parse_datetime;
 pub mod plan;
 pub mod projection_pushdown;
 pub mod split_domain_data;

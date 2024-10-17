@@ -1,5 +1,5 @@
 import {MODULE_NAME, MODULE_VERSION} from './version';
-import {MsgReceiver} from 'vegafusion-wasm'
+import {ChartHandle} from 'vegafusion-wasm'
 const { render_vegafusion } = await import("vegafusion-wasm");
 
 import '../css/vegafusion-embed.css';
@@ -29,12 +29,12 @@ const defaultEmbedConfig: EmbedConfig = {
     verbose: false, debounce_wait: 30, debounce_max_wait: 60
 }
 
-export function embedVegaFusion(
+export async function embedVegaFusion(
     element: Element,
     spec_str: string,
-    send_msg_fn: Function,
+    query_fn: Function,
     config: EmbedConfig | undefined,
-): MsgReceiver {
+): Promise<ChartHandle> {
     // Clear existing children from element
     // Eventually we should detect when element is already setup and just make the necessary
     // changes
@@ -48,26 +48,27 @@ export function embedVegaFusion(
     // Handle null config
     config = config || defaultEmbedConfig;
 
-    // Render to chart element
-    let receiver = render_vegafusion(
-        chartElement, spec_str,
-        config.verbose || defaultEmbedConfig.verbose,
-        config.debounce_wait || defaultEmbedConfig.debounce_wait,
-        config.debounce_max_wait || defaultEmbedConfig.debounce_max_wait,
-        send_msg_fn
-    );
-
     // Build container element that will hold the vegafusion chart
     let containerElement = document.createElement("div");
     containerElement.appendChild(chartElement)
     containerElement.classList.add(CHART_WRAPPER_CLASS);
 
+    // Add children to top-level element
+    element.appendChild(containerElement);
+
+    // Render to chart element
+    let receiver = await render_vegafusion(
+        chartElement, spec_str,
+        config.verbose || defaultEmbedConfig.verbose,
+        config.debounce_wait || defaultEmbedConfig.debounce_wait,
+        config.debounce_max_wait || defaultEmbedConfig.debounce_max_wait,
+        query_fn
+    );
+
     // Element that holds the dropdown menu
     let menuElement = document.createElement("div");
     menuElement.appendChild(buildMenu(receiver));
 
-    // Add children to top-level element
-    element.appendChild(containerElement);
     element.appendChild(menuElement);
     element.classList.add("vegafusion-embed");
     element.classList.add("has-actions");
@@ -75,7 +76,7 @@ export function embedVegaFusion(
     return receiver
 }
 
-function buildMenu(receiver: MsgReceiver): Element {
+function buildMenu(receiver: ChartHandle): Element {
     const details = document.createElement('details');
     details.title = I18N.CLICK_TO_VIEW_ACTIONS;
 
