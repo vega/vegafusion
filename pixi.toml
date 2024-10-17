@@ -132,8 +132,6 @@ ruff = ">=0.6.9,<0.7"
 mypy = ">=1.11.2,<2"
 pixi-pycharm = ">=0.0.8,<0.0.9"
 scipy = "1.14.1.*"
-pandas = ">=2.2.3,<3"
-pyarrow = ">=13.0.0,<14"
 
 # Dependencies are those required at runtime by the Python packages
 [dependencies]

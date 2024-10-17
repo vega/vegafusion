@@ -18,12 +18,13 @@ use vegafusion_common::datatypes::{
     cast_to, is_float_datatype, is_integer_datatype, is_numeric_datatype, is_string_datatype,
 };
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
-use vegafusion_core::planning::parse_datetime::parse_datetime;
 use vegafusion_core::proto::gen::expression::literal::Value;
 use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
+use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::{
+    parse_datetime, STR_TO_UTC_TIMESTAMP_UDF,
+};
 use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_epoch::UTC_TIMESTAMP_TO_EPOCH_MS;
 
 /// Op

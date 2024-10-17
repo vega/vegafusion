@@ -9,18 +9,16 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::{Arc, Once};
 use tokio::runtime::Runtime;
-use vegafusion_core::chart_state::ChartState as RsChartState;
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_extract_warning::WarningType as ExtractWarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
-use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
+use vegafusion_runtime::task_graph::runtime::{ChartState as RsChartState, VegaFusionRuntime};
 
 use crate::connection::{PySqlConnection, PySqlDataset};
 use env_logger::{Builder, Target};
 use pythonize::{depythonize, pythonize};
 use serde_json::json;
 use vegafusion_common::data::table::VegaFusionTable;
-use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::patch::patch_pre_transformed_spec;
 use vegafusion_core::planning::plan::{PlannerConfig, PreTransformSpecWarningSpec, SpecPlan};
 use vegafusion_core::planning::projection_pushdown::get_column_usage as rs_get_column_usage;
@@ -29,6 +27,7 @@ use vegafusion_core::proto::gen::tasks::{TzConfig, Variable};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_runtime::data::dataset::VegaFusionDataset;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 use vegafusion_sql::connection::Connection;
@@ -65,7 +64,7 @@ impl PyChartState {
         row_limit: Option<u32>,
     ) -> PyResult<Self> {
         let state = tokio_runtime.block_on(RsChartState::try_new(
-            runtime.as_ref(),
+            &runtime,
             spec,
             inline_datasets,
             tz_config,
@@ -90,7 +89,7 @@ impl PyChartState {
 
         let result_updates = py.allow_threads(|| {
             self.tokio_runtime
-                .block_on(self.state.update(self.runtime.as_ref(), updates))
+                .block_on(self.state.update(&self.runtime, updates))
         })?;
 
         let a = result_updates
