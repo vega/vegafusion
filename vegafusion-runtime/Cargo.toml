@@ -21,6 +21,7 @@ itertools = "0.11.0"
 float-cmp = "0.9.0"
 lru = "0.11.1"
 futures = "0.3.21"
+async-trait = "0.1.73"
 async-recursion = "1.0.5"
 async-lock = "2.8.0"
 tempfile = "3.3.0"
@@ -42,9 +43,6 @@ base64 = "0.21.0"
 pixelmatch = "0.1.0"
 rgb = "0.8.32"
 lodepng = "3.6.1"
-
-[dependencies.async-trait]
-workspace = true
 
 [dependencies.lazy_static]
 workspace = true
