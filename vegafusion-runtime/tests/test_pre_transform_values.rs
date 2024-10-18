@@ -17,6 +17,8 @@ fn setup_s3_environment_vars() {
 mod tests {
     use crate::{crate_dir, setup_s3_environment_vars};
     use serde_json::json;
+    use vegafusion_core::proto::gen::pretransform::PreTransformValuesOpts;
+    use vegafusion_core::proto::gen::pretransform::PreTransformVariable;
     use std::collections::HashMap;
     use std::env;
     use std::fs;
@@ -30,6 +32,7 @@ mod tests {
     use vegafusion_core::spec::values::StringOrSignalSpec;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
+    use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 
     #[tokio::test]
     async fn test_pre_transform_dataset() {
@@ -48,11 +51,16 @@ mod tests {
         let (values, warnings) = runtime
             .pre_transform_values(
                 &spec,
-                &[(Variable::new_data("source_0"), vec![])],
-                "UTC",
-                &None,
-                None,
-                Default::default(),
+                &Default::default(),
+                &PreTransformValuesOpts {
+                    variables: vec![PreTransformVariable {
+                        variable: Some(Variable::new_data("source_0")),
+                        scope: vec![],
+                    }],
+                    row_limit: None,
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                },
             )
             .await
             .unwrap();
@@ -99,11 +107,16 @@ mod tests {
         let (values, warnings) = runtime
             .pre_transform_values(
                 &spec,
-                &[(Variable::new_data("source_0"), vec![])],
-                "UTC",
-                &None,
-                Some(3),
-                Default::default(),
+                &Default::default(),
+                &PreTransformValuesOpts {
+                    variables: vec![PreTransformVariable {
+                        variable: Some(Variable::new_data("source_0")),
+                        scope: vec![],
+                    }],
+                    row_limit: Some(3),
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                },
             )
             .await
             .unwrap();
@@ -151,11 +164,16 @@ mod tests {
         let result = runtime
             .pre_transform_values(
                 &spec,
-                &[(Variable::new_data("source_0"), vec![])],
-                "UTC",
-                &None,
-                None,
-                Default::default(),
+                &Default::default(),
+                &PreTransformValuesOpts {
+                    variables: vec![PreTransformVariable {
+                        variable: Some(Variable::new_data("source_0")),
+                        scope: vec![],
+                    }],
+                    row_limit: None,
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                },
             )
             .await;
 
@@ -173,11 +191,16 @@ mod tests {
         let result = runtime
             .pre_transform_values(
                 &spec,
-                &[(Variable::new_data("bogus_0"), vec![])],
-                "UTC",
-                &None,
-                None,
-                Default::default(),
+                &Default::default(),
+                &PreTransformValuesOpts {
+                    variables: vec![PreTransformVariable {
+                        variable: Some(Variable::new_data("bogus_0")),
+                        scope: vec![],
+                    }],
+                    row_limit: None,
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                },
             )
             .await;
 
@@ -218,11 +241,16 @@ mod tests {
         let (values, warnings) = runtime
             .pre_transform_values(
                 &spec,
-                &[(Variable::new_data("source_0"), vec![])],
-                "UTC",
-                &None,
-                None,
-                inline_datasets,
+                &inline_datasets,
+                &PreTransformValuesOpts {
+                    variables: vec![PreTransformVariable {
+                        variable: Some(Variable::new_data("source_0")),
+                        scope: vec![],
+                    }],
+                    row_limit: None,
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                },
             )
             .await
             .unwrap();
@@ -266,11 +294,16 @@ mod tests {
         let (values, warnings) = runtime
             .pre_transform_values(
                 &spec,
-                &[(Variable::new_data("data_3"), vec![])],
-                "UTC",
-                &None,
-                None,
-                Default::default(),
+                &Default::default(),
+                &PreTransformValuesOpts {
+                    variables: vec![PreTransformVariable {
+                        variable: Some(Variable::new_data("data_3")),
+                        scope: vec![],
+                    }],
+                    row_limit: None,
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                },
             )
             .await
             .unwrap();
@@ -315,14 +348,20 @@ mod tests {
         let (values, warnings) = runtime
             .pre_transform_values(
                 &spec,
-                &[
-                    (Variable::new_data("click_selected"), vec![]),
-                    (Variable::new_data("drag_selected"), vec![]),
-                ],
-                "UTC",
-                &None,
-                None,
-                Default::default(),
+                &Default::default(),
+                &PreTransformValuesOpts {
+                    variables: vec![PreTransformVariable {
+                        variable: Some(Variable::new_data("click_selected")),
+                        scope: vec![],
+                    },
+                    PreTransformVariable {
+                        variable: Some(Variable::new_data("drag_selected")),
+                        scope: vec![],
+                    }],
+                    row_limit: None,
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                },
             )
             .await
             .unwrap();
@@ -401,11 +440,16 @@ mod tests {
             let (values, warnings) = runtime
                 .pre_transform_values(
                     &spec,
-                    &[(Variable::new_data("source_0"), vec![])],
-                    "UTC",
-                    &None,
-                    None,
-                    Default::default(),
+                    &Default::default(),
+                    &PreTransformValuesOpts {
+                        variables: vec![PreTransformVariable {
+                            variable: Some(Variable::new_data("source_0")),
+                            scope: vec![],
+                        }],
+                        row_limit: None,
+                        local_tz: "UTC".to_string(),
+                        default_input_tz: None,
+                    },
                 )
                 .await
                 .unwrap();

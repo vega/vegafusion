@@ -7,6 +7,7 @@ use std::sync::Once;
 use crate::util::vegajs_runtime::{vegajs_runtime, ExportImageFormat};
 use datafusion_common::ScalarValue;
 use rstest::rstest;
+use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fs;
@@ -20,8 +21,7 @@ use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 use vegafusion_core::planning::watch::{
     ExportUpdateBatch, ExportUpdateJSON, ExportUpdateNamespace, Watch, WatchNamespace, WatchPlan,
 };
-use vegafusion_core::proto::gen::pretransform::{PreTransformSpecOpts, PreTransformSpecRequest};
-use vegafusion_core::proto::gen::services::pre_transform_spec_result;
+use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
 use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
@@ -1174,7 +1174,7 @@ mod test_image_comparison_window {
 mod test_pre_transform_inline {
     use super::*;
     use crate::util::datasets::vega_json_dataset_async;
-    use vegafusion_core::proto::gen::tasks::InlineDataset;
+    use vegafusion_core::{data::dataset::VegaFusionDataset, runtime::VegaFusionRuntimeTrait};
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
     #[tokio::test]
@@ -1199,35 +1199,22 @@ mod test_pre_transform_inline {
 
         // Load csv file as inline dataset
         let movies_table = vega_json_dataset_async("movies").await;
-        let inline_datasets = vec![InlineDataset {
-            name: "movies".to_string(),
-            table: movies_table.to_ipc_bytes().unwrap(),
-        }];
+        let inline_datasets = HashMap::from([
+            ("movies".to_string(), VegaFusionDataset::from_table(movies_table, None).unwrap())]
+        );
 
         // Pre-transform specs
         let opts = PreTransformSpecOpts {
+            local_tz,
+            default_input_tz: None,
             row_limit: None,
-            inline_datasets,
             preserve_interactivity: true,
             ..Default::default()
         };
-        let request = PreTransformSpecRequest {
-            spec: serde_json::to_string(&inline_spec).unwrap(),
-            local_tz,
-            output_tz: None,
-            opts: Some(opts),
-        };
-        let response = runtime.pre_transform_spec_request(request).await.unwrap();
 
-        let pre_transform_spec: ChartSpec = match response.result.unwrap() {
-            pre_transform_spec_result::Result::Error(_) => {
-                panic!("Pre-transform error")
-            }
-            pre_transform_spec_result::Result::Response(response) => {
-                // println!("Warnings: {:#?}", response.warnings);
-                serde_json::from_str(&response.spec).unwrap()
-            }
-        };
+        let response = runtime.pre_transform_spec(&inline_spec, &inline_datasets, &opts).await.unwrap();
+
+        let pre_transform_spec: ChartSpec = response.0;
 
         // println!(
         //     "pre-transformed: {}",
@@ -1360,28 +1347,16 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
 
     // Pre-transform specs
     let opts = PreTransformSpecOpts {
+        local_tz,
+        default_input_tz: None,
         row_limit: None,
-        inline_datasets: vec![],
         preserve_interactivity: true,
         ..Default::default()
     };
-    let request = PreTransformSpecRequest {
-        spec: serde_json::to_string(&full_spec).unwrap(),
-        local_tz,
-        output_tz: None,
-        opts: Some(opts),
-    };
-    let response = runtime.pre_transform_spec_request(request).await.unwrap();
 
-    let pre_transform_spec: ChartSpec = match response.result.unwrap() {
-        pre_transform_spec_result::Result::Error(_) => {
-            panic!("Pre-transform error")
-        }
-        pre_transform_spec_result::Result::Response(response) => {
-            // println!("Warnings: {:#?}", response.warnings);
-            serde_json::from_str(&response.spec).unwrap()
-        }
-    };
+    let (pre_transform_spec, _warnings) = runtime.pre_transform_spec(
+        &full_spec, &Default::default(), &opts
+    ).await.unwrap();
 
     // println!(
     //     "pre-transformed: {}",

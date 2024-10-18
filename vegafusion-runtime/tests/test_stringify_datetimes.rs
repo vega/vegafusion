@@ -14,11 +14,13 @@ lazy_static! {
 mod test_stringify_datetimes {
     use crate::{crate_dir, TOKIO_RUNTIME};
     use rstest::rstest;
+    use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
     use std::fs;
     use std::sync::Arc;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
+    use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 
     #[rstest(
         local_tz,
@@ -90,12 +92,14 @@ mod test_stringify_datetimes {
         let (spec, _warnings) = runtime
             .pre_transform_spec(
                 &spec,
-                &local_tz,
-                &Some(default_input_tz.to_string()),
-                None,
-                true,
-                Default::default(),
-                Default::default(),
+                &Default::default(),
+                &PreTransformSpecOpts {
+                    local_tz: local_tz.to_string(),
+                    default_input_tz: Some(default_input_tz.to_string()),
+                    keep_variables: vec![],
+                    row_limit: None,
+                    preserve_interactivity: true,
+                },
             )
             .await
             .unwrap();
@@ -147,12 +151,14 @@ mod test_stringify_datetimes {
         let (spec, _warnings) = runtime
             .pre_transform_spec(
                 &spec,
-                &local_tz,
-                &Some(default_input_tz),
-                None,
-                true,
-                Default::default(),
-                Default::default(),
+                &Default::default(),
+                &PreTransformSpecOpts {
+                    local_tz: local_tz.to_string(),
+                    default_input_tz: Some(default_input_tz.to_string()),
+                    keep_variables: vec![],
+                    row_limit: None,
+                    preserve_interactivity: true,
+                },
             )
             .await
             .unwrap();
@@ -232,12 +238,14 @@ mod test_stringify_datetimes {
         let (spec, _warnings) = runtime
             .pre_transform_spec(
                 &spec,
-                local_tz,
-                &Some(default_input_tz.to_string()),
-                None,
-                true,
-                Default::default(),
-                Default::default(),
+                &Default::default(),
+                &PreTransformSpecOpts {
+                    local_tz: local_tz.to_string(),
+                    default_input_tz: Some(default_input_tz.to_string()),
+                    keep_variables: vec![],
+                    row_limit: None,
+                    preserve_interactivity: true,
+                },
             )
             .await
             .unwrap();
@@ -299,12 +307,14 @@ mod test_stringify_datetimes {
         let (spec, _warnings) = TOKIO_RUNTIME
             .block_on(runtime.pre_transform_spec(
                 &spec,
-                local_tz,
-                &Some(default_input_tz.to_string()),
-                None,
-                true,
-                Default::default(),
-                Default::default(),
+                &Default::default(),
+                &PreTransformSpecOpts {
+                    local_tz: local_tz.to_string(),
+                    default_input_tz: Some(default_input_tz.to_string()),
+                    keep_variables: vec![],
+                    row_limit: None,
+                    preserve_interactivity: true,
+                },
             ))
             .unwrap();
 
@@ -346,12 +356,14 @@ mod test_stringify_datetimes {
         let (spec, _warnings) = runtime
             .pre_transform_spec(
                 &spec,
-                "UTC",
-                &None,
-                None,
-                true,
-                Default::default(),
-                Default::default(),
+                &Default::default(),
+                &PreTransformSpecOpts {
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                    keep_variables: vec![],
+                    row_limit: None,
+                    preserve_interactivity: true,
+                },
             )
             .await
             .unwrap();

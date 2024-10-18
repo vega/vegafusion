@@ -8,6 +8,7 @@ use vegafusion_core::proto::gen::tasks::{
 use wasm_bindgen::prelude::*;
 
 use js_sys::Promise;
+use std::any::Any;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -107,6 +108,10 @@ impl VegaFusionWasmRuntime {
 }
 #[async_trait::async_trait]
 impl VegaFusionRuntimeTrait for VegaFusionWasmRuntime {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
     async fn query_request(
         &self,
         task_graph: Arc<TaskGraph>,

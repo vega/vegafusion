@@ -16,22 +16,12 @@ use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 use vegafusion_core::planning::watch::{ExportUpdateArrow, ExportUpdateNamespace};
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
 use vegafusion_core::proto::gen::pretransform::{
-    pre_transform_extract_warning, PlannerWarning, PreTransformExtractOpts,
-    PreTransformExtractResponse, PreTransformExtractWarning, PreTransformSpecOpts,
-    PreTransformSpecWarning, PreTransformValuesOpts, PreTransformValuesRequest,
-    PreTransformValuesResponse, PreTransformValuesWarning,
+    pre_transform_extract_warning, PlannerWarning, PreTransformExtractOpts, PreTransformExtractWarning, PreTransformSpecOpts,
+    PreTransformSpecWarning, PreTransformValuesOpts, PreTransformValuesWarning,
 };
-use vegafusion_core::proto::gen::pretransform::{
-    PreTransformRowLimitWarning, PreTransformSpecRequest, PreTransformSpecResponse,
-};
-use vegafusion_core::proto::gen::services::{
-    pre_transform_extract_result, pre_transform_spec_result, pre_transform_values_result,
-    query_request, query_result, PreTransformExtractResult, PreTransformSpecResult,
-    PreTransformValuesResult, QueryRequest, QueryResult,
-};
+use vegafusion_core::proto::gen::pretransform::PreTransformRowLimitWarning;
 use vegafusion_core::proto::gen::tasks::{
-    task::TaskKind, InlineDataset, NodeValueIndex, ResponseTaskValue, TaskGraph,
-    TaskGraphValueResponse, TaskValue as ProtoTaskValue, TzConfig, VariableNamespace,
+    task::TaskKind, InlineDataset, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskValue as ProtoTaskValue, TzConfig, VariableNamespace,
 };
 use vegafusion_core::runtime::{PreTransformExtractTable, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;

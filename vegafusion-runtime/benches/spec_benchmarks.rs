@@ -1,10 +1,11 @@
+use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
 use vegafusion_core::planning::plan::SpecPlan;
 use vegafusion_core::planning::watch::ExportUpdateBatch;
 use vegafusion_core::proto::gen::services::query_request::Request;
-use vegafusion_core::proto::gen::services::{QueryRequest, QueryResult};
-use vegafusion_core::proto::gen::tasks::{TaskGraph, TaskGraphValueRequest, TzConfig, Variable};
+use vegafusion_core::proto::gen::services::QueryRequest;
+use vegafusion_core::proto::gen::tasks::{ResponseTaskValue, TaskGraph, TaskGraphValueRequest, TzConfig, Variable};
 use vegafusion_core::spec::chart::ChartSpec;
 
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
@@ -34,7 +35,7 @@ fn load_updates(spec_name: &str) -> Vec<ExportUpdateBatch> {
     }
 }
 
-async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> QueryResult {
+async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> Vec<ResponseTaskValue> {
     let tz_config = TzConfig {
         local_tz: "America/New_York".to_string(),
         default_input_tz: None,
@@ -54,7 +55,7 @@ async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> Q
     let node_index = task_graph_mapping.get(var).unwrap();
 
     // Make Query request
-    let request = QueryRequest {
+    let _request = QueryRequest {
         request: Some(Request::TaskGraphValues(TaskGraphValueRequest {
             task_graph: Some(task_graph.clone()),
             indices: vec![node_index.clone()],
@@ -62,7 +63,7 @@ async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> Q
         })),
     };
 
-    runtime.query_request_message(request).await.unwrap()
+    runtime.query_request(Arc::new(task_graph), &[node_index.clone()], &HashMap::new()).await.unwrap()
 }
 
 async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdateBatch>) {
@@ -105,15 +106,7 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
         let node_index = task_graph_mapping.get(&var).unwrap();
         query_indices.push(node_index.clone());
     }
-    // Make Query request
-    let request = QueryRequest {
-        request: Some(Request::TaskGraphValues(TaskGraphValueRequest {
-            task_graph: Some(task_graph.clone()),
-            indices: query_indices,
-            inline_datasets: vec![],
-        })),
-    };
-    let _response = runtime.query_request_message(request).await.unwrap();
+    let _response = runtime.query_request(Arc::new(task_graph.clone()), &query_indices, &HashMap::new()).await.unwrap();
 
     // Get update values
     for update_batch in full_updates {
@@ -125,15 +118,7 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
             query_indices.extend(task_graph.update_value(node_index as usize, value).unwrap());
         }
 
-        // Make Query request
-        let request = QueryRequest {
-            request: Some(Request::TaskGraphValues(TaskGraphValueRequest {
-                task_graph: Some(task_graph.clone()),
-                indices: query_indices,
-                inline_datasets: vec![],
-            })),
-        };
-        let _response = runtime.query_request_message(request).await.unwrap();
+        let _response = runtime.query_request(Arc::new(task_graph.clone()), &query_indices, &HashMap::new()).await.unwrap();
     }
 }
 
