@@ -1,20 +1,33 @@
 use std::sync::Arc;
 use tonic::{transport::Server, Request, Response, Status};
 use vegafusion_core::error::{ResultWithContext, VegaFusionError};
+use vegafusion_core::proto::gen::errors::error::Errorkind;
+use vegafusion_core::proto::gen::errors::{Error, TaskGraphValueError};
 use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{
     VegaFusionRuntime as TonicVegaFusionRuntime,
     VegaFusionRuntimeServer as TonicVegaFusionRuntimeServer,
 };
 use vegafusion_core::proto::gen::services::{
-    PreTransformExtractResult, PreTransformSpecResult, PreTransformValuesResult, QueryRequest,
-    QueryResult,
+    pre_transform_extract_result, pre_transform_spec_result, pre_transform_values_result,
+    query_request, query_result, PreTransformExtractResult, PreTransformSpecResult,
+    PreTransformValuesResult, QueryRequest, QueryResult,
 };
+use vegafusion_core::proto::gen::tasks::TaskGraphValueResponse;
+use vegafusion_core::proto::gen::tasks::{
+    task::TaskKind, InlineDataset, NodeValueIndex, ResponseTaskValue, TaskGraph,
+    TaskValue as ProtoTaskValue, TzConfig, VariableNamespace,
+};
+use vegafusion_core::runtime::VegaFusionRuntimeTrait;
+use vegafusion_core::spec::chart::ChartSpec;
+use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 use clap::Parser;
 use regex::Regex;
 use vegafusion_core::proto::gen::pretransform::{
-    PreTransformExtractRequest, PreTransformSpecRequest, PreTransformValuesRequest,
+    PreTransformExtractDataset, PreTransformExtractRequest, PreTransformExtractResponse,
+    PreTransformSpecOpts, PreTransformSpecRequest, PreTransformSpecResponse,
+    PreTransformValuesOpts, PreTransformValuesRequest, PreTransformValuesResponse,
 };
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
@@ -27,6 +40,193 @@ impl VegaFusionRuntimeGrpc {
     pub fn new(runtime: VegaFusionRuntime) -> VegaFusionRuntimeGrpc {
         VegaFusionRuntimeGrpc { runtime }
     }
+
+    async fn query_request_message(
+        &self,
+        request: QueryRequest,
+    ) -> Result<QueryResult, VegaFusionError> {
+        match request.request {
+            Some(query_request::Request::TaskGraphValues(task_graph_values)) => {
+                let task_graph = Arc::new(task_graph_values.task_graph.unwrap());
+                let indices = &task_graph_values.indices;
+                let inline_datasets =
+                    VegaFusionRuntime::decode_inline_datasets(task_graph_values.inline_datasets)?;
+
+                match self
+                    .runtime
+                    .query_request(task_graph, indices.as_slice(), &inline_datasets)
+                    .await
+                {
+                    Ok(response_values) => {
+                        let response_msg = QueryResult {
+                            response: Some(query_result::Response::TaskGraphValues(
+                                TaskGraphValueResponse { response_values },
+                            )),
+                        };
+                        Ok(response_msg)
+                    }
+                    Err(e) => {
+                        let response_msg = QueryResult {
+                            response: Some(query_result::Response::Error(Error {
+                                errorkind: Some(Errorkind::Error(TaskGraphValueError {
+                                    msg: e.to_string(),
+                                })),
+                            })),
+                        };
+                        Ok(response_msg)
+                    }
+                }
+            }
+            _ => Err(VegaFusionError::internal(
+                "Invalid VegaFusionRuntimeRequest request",
+            )),
+        }
+    }
+
+    async fn pre_transform_spec_request(
+        &self,
+        request: PreTransformSpecRequest,
+    ) -> Result<PreTransformSpecResult, VegaFusionError> {
+        // Handle default options
+        let opts = request.opts.unwrap_or_else(|| PreTransformSpecOpts {
+            row_limit: None,
+            preserve_interactivity: true,
+            keep_variables: vec![],
+            local_tz: "UTC".to_string(),
+            default_input_tz: None,
+        });
+
+        // Decode inline datasets to VegaFusionDatasets
+        let inline_datasets = VegaFusionRuntime::decode_inline_datasets(request.inline_datasets)?;
+
+        // Parse spec
+        let spec: ChartSpec = serde_json::from_str(&request.spec)?;
+
+        // Apply pre-transform spec
+        let (transformed_spec, warnings) = self
+            .runtime
+            .pre_transform_spec(&spec, &inline_datasets, &opts)
+            .await?;
+
+        // Build result
+        let response = PreTransformSpecResult {
+            result: Some(pre_transform_spec_result::Result::Response(
+                PreTransformSpecResponse {
+                    spec: serde_json::to_string(&transformed_spec)
+                        .with_context(|| "Failed to convert chart spec to string")?,
+                    warnings,
+                },
+            )),
+        };
+
+        Ok(response)
+    }
+
+    async fn pre_transform_extract_request(
+        &self,
+        request: PreTransformExtractRequest,
+    ) -> Result<PreTransformExtractResult, VegaFusionError> {
+        // Extract and deserialize inline datasets
+        let inline_pretransform_datasets = request.inline_datasets;
+        let inline_datasets =
+            VegaFusionRuntime::decode_inline_datasets(inline_pretransform_datasets)?;
+        let opts = request.opts.unwrap();
+
+        // Parse spec
+        let spec_string = request.spec;
+        let spec: ChartSpec = serde_json::from_str(&spec_string)?;
+        let (spec, datasets, warnings) = self
+            .runtime
+            .pre_transform_extract(&spec, &inline_datasets, &opts)
+            .await?;
+
+        // Build Response
+        let proto_datasets = datasets
+            .into_iter()
+            .map(|dataset| {
+                Ok(PreTransformExtractDataset {
+                    name: dataset.name,
+                    scope: dataset.scope,
+                    table: dataset.table.to_ipc_bytes()?,
+                })
+            })
+            .collect::<Result<Vec<_>, VegaFusionError>>()?;
+
+        let response = PreTransformExtractResponse {
+            spec: serde_json::to_string(&spec)?,
+            datasets: proto_datasets,
+            warnings,
+        };
+
+        // Build result
+        let result = PreTransformExtractResult {
+            result: Some(pre_transform_extract_result::Result::Response(response)),
+        };
+
+        Ok(result)
+    }
+
+    pub async fn pre_transform_values_request(
+        &self,
+        request: PreTransformValuesRequest,
+    ) -> Result<PreTransformValuesResult, VegaFusionError> {
+        // Handle default options
+        let opts = request
+            .opts
+            .clone()
+            .unwrap_or_else(|| PreTransformValuesOpts {
+                variables: vec![],
+                row_limit: None,
+                local_tz: "UTC".to_string(),
+                default_input_tz: None,
+            });
+
+        // Extract and deserialize inline datasets
+        let inline_datasets = VegaFusionRuntime::decode_inline_datasets(request.inline_datasets)?;
+
+        // Extract requested variables
+        let variables: Vec<ScopedVariable> = request
+            .opts
+            .map(|opts| opts.variables)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|var| (var.variable.unwrap(), var.scope))
+            .collect();
+
+        // Parse spec
+        let spec_string = request.spec;
+        let spec: ChartSpec = serde_json::from_str(&spec_string)?;
+
+        let (values, warnings) = self
+            .runtime
+            .pre_transform_values(&spec, &inline_datasets, &opts)
+            .await?;
+
+        let response_values: Vec<_> = values
+            .iter()
+            .zip(&variables)
+            .map(|(value, var)| {
+                let proto_value = ProtoTaskValue::try_from(value)?;
+                Ok(ResponseTaskValue {
+                    variable: Some(var.0.clone()),
+                    scope: var.1.clone(),
+                    value: Some(proto_value),
+                })
+            })
+            .collect::<Result<Vec<_>, VegaFusionError>>()?;
+
+        // Build result
+        let result = PreTransformValuesResult {
+            result: Some(pre_transform_values_result::Result::Response(
+                PreTransformValuesResponse {
+                    values: response_values,
+                    warnings,
+                },
+            )),
+        };
+
+        Ok(result)
+    }
 }
 
 #[tonic::async_trait]
@@ -35,10 +235,7 @@ impl TonicVegaFusionRuntime for VegaFusionRuntimeGrpc {
         &self,
         request: Request<QueryRequest>,
     ) -> Result<Response<QueryResult>, Status> {
-        let result = self
-            .runtime
-            .query_request_message(request.into_inner())
-            .await;
+        let result = self.query_request_message(request.into_inner()).await;
         match result {
             Ok(result) => Ok(Response::new(result)),
             Err(err) => Err(Status::unknown(err.to_string())),
@@ -49,9 +246,19 @@ impl TonicVegaFusionRuntime for VegaFusionRuntimeGrpc {
         &self,
         request: Request<PreTransformSpecRequest>,
     ) -> Result<Response<PreTransformSpecResult>, Status> {
+        let result = self.pre_transform_spec_request(request.into_inner()).await;
+        match result {
+            Ok(result) => Ok(Response::new(result)),
+            Err(err) => Err(Status::unknown(err.to_string())),
+        }
+    }
+
+    async fn pre_transform_extract(
+        &self,
+        request: Request<PreTransformExtractRequest>,
+    ) -> Result<Response<PreTransformExtractResult>, Status> {
         let result = self
-            .runtime
-            .pre_transform_spec_request(request.into_inner())
+            .pre_transform_extract_request(request.into_inner())
             .await;
         match result {
             Ok(result) => Ok(Response::new(result)),
@@ -64,22 +271,7 @@ impl TonicVegaFusionRuntime for VegaFusionRuntimeGrpc {
         request: Request<PreTransformValuesRequest>,
     ) -> Result<Response<PreTransformValuesResult>, Status> {
         let result = self
-            .runtime
             .pre_transform_values_request(request.into_inner())
-            .await;
-        match result {
-            Ok(result) => Ok(Response::new(result)),
-            Err(err) => Err(Status::unknown(err.to_string())),
-        }
-    }
-
-    async fn pre_transform_extract(
-        &self,
-        request: Request<PreTransformExtractRequest>,
-    ) -> Result<Response<PreTransformExtractResult>, Status> {
-        let result = self
-            .runtime
-            .pre_transform_extract_request(request.into_inner())
             .await;
         match result {
             Ok(result) => Ok(Response::new(result)),

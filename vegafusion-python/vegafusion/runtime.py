@@ -10,7 +10,7 @@ from arro3.core import Table
 
 from vegafusion._vegafusion import get_cpu_count, get_virtual_memory
 from vegafusion.transformer import DataFrameLike
-from vegafusion.utils import get_column_usage
+from vegafusion.utils import get_inline_column_usage
 
 from .connection import SqlConnection
 from .dataset import SqlDataset
@@ -22,10 +22,13 @@ if TYPE_CHECKING:
     import polars as pl  # noqa: F401
     import pyarrow as pa
     from duckdb import DuckDBPyConnection
-    from grpc import Channel
     from narwhals.typing import IntoFrameT
 
-    from vegafusion._vegafusion import PyChartState, PyVegaFusionRuntime
+    from vegafusion._vegafusion import (
+        PyChartState,
+        PyChartStateGrpc,
+        PyVegaFusionRuntime,
+    )
 
 # This type isn't defined in the grpcio package, so let's at least name it
 UnaryUnaryMultiCallable = Any
@@ -83,7 +86,7 @@ class PreTransformWarning(TypedDict):
 
 
 class ChartState:
-    def __init__(self, chart_state: PyChartState) -> None:
+    def __init__(self, chart_state: PyChartState | PyChartStateGrpc) -> None:
         self._chart_state = chart_state
 
     def update(self, client_updates: list[VariableUpdate]) -> list[VariableUpdate]:
@@ -171,8 +174,8 @@ class VegaFusionRuntime:
             worker_threads: Number of worker threads.
             connection: SQL connection (optional).
         """
-        self._embedded_runtime = None
-        self._grpc_channel = None
+        self._runtime = None
+        self._grpc_runtime = None
         self._grpc_query = None
         self._cache_capacity = cache_capacity
         self._memory_limit = memory_limit
@@ -180,15 +183,15 @@ class VegaFusionRuntime:
         self._connection = connection
 
     @property
-    def embedded_runtime(self) -> PyVegaFusionRuntime:
+    def runtime(self) -> PyVegaFusionRuntime:
         """
-        Get or initialize the embedded runtime.
+        Get or initialize a VegaFusion runtime.
 
         Returns:
-            The embedded runtime.
+            The VegaFusion runtime.
         """
-        if self._embedded_runtime is None:
-            # Try to initialize an embedded runtime
+        if self._runtime is None:
+            # Try to initialize a VegaFusion runtime
             from vegafusion._vegafusion import PyVegaFusionRuntime
 
             if self.memory_limit is None:
@@ -196,13 +199,13 @@ class VegaFusionRuntime:
             if self.worker_threads is None:
                 self.worker_threads = get_cpu_count()
 
-            self._embedded_runtime = PyVegaFusionRuntime(
+            self._runtime = PyVegaFusionRuntime.new_embedded(
                 self.cache_capacity,
                 self.memory_limit,
                 self.worker_threads,
                 connection=self._connection,
             )
-        return self._embedded_runtime
+        return self._runtime
 
     def set_connection(
         self,
@@ -256,15 +259,16 @@ class VegaFusionRuntime:
         self._connection = connection
         self.reset()
 
-    def grpc_connect(self, channel: Channel) -> None:
+    def grpc_connect(self, url: str) -> None:
         """
-        Connect to a VegaFusion server over gRPC using the provided gRPC channel
+        Connect to a VegaFusion server over gRPC at the provided gRPC url
 
         Args:
-            channel: grpc.Channel instance configured with the address of a running
-                     VegaFusion server
+            url: URL of a running VegaFusion server
         """
-        self._grpc_channel = channel
+        from vegafusion._vegafusion import PyVegaFusionRuntime
+
+        self._runtime = PyVegaFusionRuntime.new_grpc(url)
 
     @property
     def using_grpc(self) -> bool:
@@ -274,46 +278,7 @@ class VegaFusionRuntime:
         Returns:
             True if using gRPC, False otherwise.
         """
-        return self._grpc_channel is not None
-
-    @property
-    def grpc_query(self) -> UnaryUnaryMultiCallable:
-        """
-        Get the gRPC query object.
-
-        Returns:
-            The gRPC query object.
-
-        Raises:
-            ValueError: If no gRPC channel is registered.
-        """
-        if self._grpc_channel is None:
-            raise ValueError(
-                "No grpc channel registered. Use runtime.grpc_connect to provide "
-                "a grpc channel"
-            )
-
-        if self._grpc_query is None:
-            self._grpc_query = self._grpc_channel.unary_unary(
-                "/services.VegaFusionRuntime/TaskGraphQuery",
-            )
-        return self._grpc_query
-
-    def process_request_bytes(self, request: bytes) -> bytes:
-        """
-        Process a request in bytes format.
-
-        Args:
-            request: The request in bytes format.
-
-        Returns:
-            The processed request in bytes format.
-        """
-        if self._grpc_channel:
-            return self.grpc_query(request)
-        else:
-            # No grpc channel, get or initialize an embedded runtime
-            return cast(bytes, self.embedded_runtime.process_request_bytes(request))
+        return self._grpc_runtime is not None
 
     def _import_or_register_inline_datasets(
         self,
@@ -410,57 +375,6 @@ class VegaFusionRuntime:
 
         return imported_inline_datasets
 
-    def build_pre_transform_spec_plan(
-        self,
-        spec: dict[str, Any] | str,
-        preserve_interactivity: bool = True,
-        keep_signals: list[str | tuple[str, list[int]]] | None = None,
-        keep_datasets: list[str | tuple[str, list[int]]] | None = None,
-    ) -> dict[str, Any]:
-        """
-        Diagnostic function that returns the plan used by the pre_transform_spec method
-
-        Args:
-            spec: A Vega specification dict or JSON string.
-            preserve_interactivity: If True (default), the interactive behavior of the
-                chart will be preserved. This requires that all the data that
-                participates in interactions be included in the resulting spec rather
-                than being pre-transformed. If False, all possible data transformations
-                are applied even if they break the original interactive behavior of the
-                chart.
-            keep_signals: Signals from the input spec that must be included in the
-                pre-transformed spec. A list with elements that are either:
-                - The name of a top-level signal as a string
-                - A two-element tuple where the first element is the name of a signal
-                  as a string and the second element is the nested scope of the dataset
-                  as a list of integers
-            keep_datasets: Datasets from the input spec that must be included in the
-                pre-transformed spec. A list with elements that are either:
-                - The name of a top-level dataset as a string
-                - A two-element tuple where the first element is the name of a dataset
-                  as a string and the second element is the nested scope of the dataset
-                  as a list of integers
-
-        Returns:
-            dict: A dictionary with the following keys:
-                - "client_spec": Planned client spec
-                - "server_spec": Planned server spec
-                - "comm_plan": Communication plan
-                - "warnings": List of planner warnings
-        """
-        if self._grpc_channel:
-            raise ValueError(
-                "build_pre_transform_spec_plan not yet supported over gRPC"
-            )
-        else:
-            plan = self.embedded_runtime.build_pre_transform_spec_plan(
-                spec,
-                preserve_interactivity=preserve_interactivity,
-                keep_signals=parse_variables(keep_signals),
-                keep_datasets=parse_variables(keep_datasets),
-            )
-            return cast(dict[str, Any], plan)
-
     def pre_transform_spec(
         self,
         spec: Union[dict[str, Any], str],
@@ -541,55 +455,50 @@ class VegaFusionRuntime:
                 'Unsupported': No transforms in the provided Vega specification were
                     eligible for pre-transforming
         """
-        if self._grpc_channel:
-            raise ValueError("pre_transform_spec not yet supported over gRPC")
-        else:
-            local_tz = local_tz or get_local_tz()
-            imported_inline_dataset = self._import_or_register_inline_datasets(
-                inline_datasets, get_inline_column_usage(spec)
-            )
+        local_tz = local_tz or get_local_tz()
+        imported_inline_dataset = self._import_or_register_inline_datasets(
+            inline_datasets, get_inline_column_usage(spec)
+        )
 
-            try:
-                if data_encoding_threshold is None:
-                    new_spec, warnings = self.embedded_runtime.pre_transform_spec(
-                        spec,
-                        local_tz=local_tz,
-                        default_input_tz=default_input_tz,
-                        row_limit=row_limit,
-                        preserve_interactivity=preserve_interactivity,
-                        inline_datasets=imported_inline_dataset,
-                        keep_signals=parse_variables(keep_signals),
-                        keep_datasets=parse_variables(keep_datasets),
-                    )
-                else:
-                    # Use pre_transform_extract to extract large datasets
-                    new_spec, datasets, warnings = (
-                        self.embedded_runtime.pre_transform_extract(
-                            spec,
-                            local_tz=local_tz,
-                            default_input_tz=default_input_tz,
-                            preserve_interactivity=preserve_interactivity,
-                            extract_threshold=data_encoding_threshold,
-                            extracted_format=data_encoding_format,
-                            inline_datasets=imported_inline_dataset,
-                            keep_signals=parse_variables(keep_signals),
-                            keep_datasets=parse_variables(keep_datasets),
-                        )
-                    )
+        try:
+            if data_encoding_threshold is None:
+                new_spec, warnings = self.runtime.pre_transform_spec(
+                    spec,
+                    local_tz=local_tz,
+                    default_input_tz=default_input_tz,
+                    row_limit=row_limit,
+                    preserve_interactivity=preserve_interactivity,
+                    inline_datasets=imported_inline_dataset,
+                    keep_signals=parse_variables(keep_signals),
+                    keep_datasets=parse_variables(keep_datasets),
+                )
+            else:
+                # Use pre_transform_extract to extract large datasets
+                new_spec, datasets, warnings = self.runtime.pre_transform_extract(
+                    spec,
+                    local_tz=local_tz,
+                    default_input_tz=default_input_tz,
+                    preserve_interactivity=preserve_interactivity,
+                    extract_threshold=data_encoding_threshold,
+                    extracted_format=data_encoding_format,
+                    inline_datasets=imported_inline_dataset,
+                    keep_signals=parse_variables(keep_signals),
+                    keep_datasets=parse_variables(keep_datasets),
+                )
 
-                    # Insert encoded datasets back into spec
-                    for name, scope, tbl in datasets:
-                        group = get_mark_group_for_scope(new_spec, scope) or {}
-                        for data in group.get("data", []):
-                            if data.get("name", None) == name:
-                                data["values"] = tbl
+                # Insert encoded datasets back into spec
+                for name, scope, tbl in datasets:
+                    group = get_mark_group_for_scope(new_spec, scope) or {}
+                    for data in group.get("data", []):
+                        if data.get("name", None) == name:
+                            data["values"] = tbl
 
-            finally:
-                # Clean up temporary tables
-                if self._connection is not None:
-                    self._connection.unregister_temporary_tables()
+        finally:
+            # Clean up temporary tables
+            if self._connection is not None:
+                self._connection.unregister_temporary_tables()
 
-            return new_spec, warnings
+        return new_spec, warnings
 
     def new_chart_state(
         self,
@@ -620,18 +529,15 @@ class VegaFusionRuntime:
         Returns:
             ChartState object.
         """
-        if self._grpc_channel:
-            raise ValueError("new_chart_state not yet supported over gRPC")
-        else:
-            local_tz = local_tz or get_local_tz()
-            inline_arrow_dataset = self._import_or_register_inline_datasets(
-                inline_datasets, get_inline_column_usage(spec)
+        local_tz = local_tz or get_local_tz()
+        inline_arrow_dataset = self._import_or_register_inline_datasets(
+            inline_datasets, get_inline_column_usage(spec)
+        )
+        return ChartState(
+            self.runtime.new_chart_state(
+                spec, local_tz, default_input_tz, row_limit, inline_arrow_dataset
             )
-            return ChartState(
-                self.embedded_runtime.new_chart_state(
-                    spec, local_tz, default_input_tz, row_limit, inline_arrow_dataset
-                )
-            )
+        )
 
     def pre_transform_datasets(
         self,
@@ -678,88 +584,83 @@ class VegaFusionRuntime:
                   key indicating the warning type, and a 'message' key containing a
                   description of the warning.
         """
-        if self._grpc_channel:
-            raise ValueError("pre_transform_datasets not yet supported over gRPC")
-        else:
-            if not TYPE_CHECKING:
-                pl = sys.modules.get("polars", None)
-                pa = sys.modules.get("pyarrow", None)
-                pd = sys.modules.get("pandas", None)
+        if not TYPE_CHECKING:
+            pl = sys.modules.get("polars", None)
+            pa = sys.modules.get("pyarrow", None)
+            pd = sys.modules.get("pandas", None)
 
-            local_tz = local_tz or get_local_tz()
+        local_tz = local_tz or get_local_tz()
 
-            # Build input variables
-            pre_tx_vars = parse_variables(datasets)
+        # Build input variables
+        pre_tx_vars = parse_variables(datasets)
 
-            # Serialize inline datasets
-            inline_arrow_dataset = self._import_or_register_inline_datasets(
-                inline_datasets,
-                inline_dataset_usage=get_inline_column_usage(spec)
-                if trim_unused_columns
-                else None,
+        # Serialize inline datasets
+        inline_arrow_dataset = self._import_or_register_inline_datasets(
+            inline_datasets,
+            inline_dataset_usage=get_inline_column_usage(spec)
+            if trim_unused_columns
+            else None,
+        )
+        try:
+            values, warnings = self.runtime.pre_transform_datasets(
+                spec,
+                pre_tx_vars,
+                local_tz=local_tz,
+                default_input_tz=default_input_tz,
+                row_limit=row_limit,
+                inline_datasets=inline_arrow_dataset,
             )
-            try:
-                values, warnings = self.embedded_runtime.pre_transform_datasets(
-                    spec,
-                    pre_tx_vars,
-                    local_tz=local_tz,
-                    default_input_tz=default_input_tz,
-                    row_limit=row_limit,
-                    inline_datasets=inline_arrow_dataset,
-                )
-            finally:
-                # Clean up registered tables (both inline and internal temporary tables)
-                if self._connection is not None:
-                    self._connection.unregister_temporary_tables()
+        finally:
+            # Clean up registered tables (both inline and internal temporary tables)
+            if self._connection is not None:
+                self._connection.unregister_temporary_tables()
 
-            # Wrap result dataframes in native format, then with Narwhals so that
-            # we can manipulate them with a uniform API
-            namespace = _get_common_namespace(inline_datasets)
-            if namespace == "polars" and pl is not None:
-                nw_dataframes = [
-                    nw.from_native(pl.DataFrame(value)) for value in values
-                ]
+        # Wrap result dataframes in native format, then with Narwhals so that
+        # we can manipulate them with a uniform API
+        namespace = _get_common_namespace(inline_datasets)
+        if namespace == "polars" and pl is not None:
+            nw_dataframes = [nw.from_native(pl.DataFrame(value)) for value in values]
 
-            elif namespace == "pyarrow" and pa is not None:
-                nw_dataframes = [nw.from_native(pa.table(value)) for value in values]
-            elif namespace == "pandas" and pd is not None and pa is not None:
+        elif namespace == "pyarrow" and pa is not None:
+            nw_dataframes = [nw.from_native(pa.table(value)) for value in values]
+        elif namespace == "pandas" and pd is not None and pa is not None:
+            nw_dataframes = [
+                nw.from_native(pa.table(value).to_pandas()) for value in values
+            ]
+        else:
+            # Either no inline datasets, inline datasets with mixed or
+            # unrecognized types
+            if pa is not None and pd is not None:
                 nw_dataframes = [
                     nw.from_native(pa.table(value).to_pandas()) for value in values
                 ]
+            elif pl is not None:
+                nw_dataframes = [
+                    nw.from_native(pl.DataFrame(value)) for value in values
+                ]
             else:
-                # Either no inline datasets, inline datasets with mixed or
-                # unrecognized types
-                if pa is not None and pd is not None:
-                    nw_dataframes = [
-                        nw.from_native(pa.table(value).to_pandas()) for value in values
-                    ]
-                elif pl is not None:
-                    nw_dataframes = [
-                        nw.from_native(pl.DataFrame(value)) for value in values
-                    ]
-                else:
-                    # Hopefully narwhals will eventually help us fall back to whatever
-                    # is installed here
-                    raise ValueError(
-                        "Either polars or pandas must be installed to extract "
-                        "transformed data"
+                # Hopefully narwhals will eventually help us fall back to whatever
+                # is installed here
+                raise ValueError(
+                    "Either polars or pandas must be installed to extract "
+                    "transformed data"
+                )
+
+        # Localize datetime columns to UTC, then extract the native DataFrame
+        # to return
+        processed_datasets = []
+        for df in nw_dataframes:
+            for name in df.columns:
+                dtype = df[name].dtype
+                if dtype == nw.Datetime:
+                    df = df.with_columns(
+                        df[name]
+                        .dt.replace_time_zone("UTC")
+                        .dt.convert_time_zone(local_tz)
                     )
+            processed_datasets.append(df.to_native())
 
-            # Localize datetime columns to UTC, then extract the native DataFrame
-            # to return
-            processed_datasets = []
-            for df in nw_dataframes:
-                for name in df.columns:
-                    dtype = df[name].dtype
-                    if dtype == nw.Datetime:
-                        df = df.with_columns(
-                            df[name]
-                            .dt.replace_time_zone("UTC")
-                            .dt.convert_time_zone(local_tz)
-                        )
-                processed_datasets.append(df.to_native())
-
-            return processed_datasets, warnings
+        return processed_datasets, warnings
 
     def pre_transform_extract(
         self,
@@ -832,34 +733,29 @@ class VegaFusionRuntime:
                of the warning. Potential warning types include:
                - 'Planner': Planner warning
         """
-        if self._grpc_channel:
-            raise ValueError("pre_transform_spec not yet supported over gRPC")
-        else:
-            local_tz = local_tz or get_local_tz()
+        local_tz = local_tz or get_local_tz()
 
-            inline_arrow_dataset = self._import_or_register_inline_datasets(
-                inline_datasets, get_inline_column_usage(spec)
+        inline_arrow_dataset = self._import_or_register_inline_datasets(
+            inline_datasets, get_inline_column_usage(spec)
+        )
+        try:
+            new_spec, datasets, warnings = self.runtime.pre_transform_extract(
+                spec,
+                local_tz=local_tz,
+                default_input_tz=default_input_tz,
+                preserve_interactivity=preserve_interactivity,
+                extract_threshold=extract_threshold,
+                extracted_format=extracted_format,
+                inline_datasets=inline_arrow_dataset,
+                keep_signals=keep_signals,
+                keep_datasets=keep_datasets,
             )
-            try:
-                new_spec, datasets, warnings = (
-                    self.embedded_runtime.pre_transform_extract(
-                        spec,
-                        local_tz=local_tz,
-                        default_input_tz=default_input_tz,
-                        preserve_interactivity=preserve_interactivity,
-                        extract_threshold=extract_threshold,
-                        extracted_format=extracted_format,
-                        inline_datasets=inline_arrow_dataset,
-                        keep_signals=keep_signals,
-                        keep_datasets=keep_datasets,
-                    )
-                )
-            finally:
-                # Clean up temporary tables
-                if self._connection is not None:
-                    self._connection.unregister_temporary_tables()
+        finally:
+            # Clean up temporary tables
+            if self._connection is not None:
+                self._connection.unregister_temporary_tables()
 
-            return new_spec, datasets, warnings
+        return new_spec, datasets, warnings
 
     def patch_pre_transformed_spec(
         self,
@@ -890,7 +786,7 @@ class VegaFusionRuntime:
         if self._grpc_channel:
             raise ValueError("patch_pre_transformed_spec not yet supported over gRPC")
         else:
-            pre_transformed_spec2 = self.embedded_runtime.patch_pre_transformed_spec(
+            pre_transformed_spec2 = self.runtime.patch_pre_transformed_spec(
                 spec1, pre_transformed_spec1, spec2
             )
             return cast(dict[str, Any], pre_transformed_spec2)
@@ -919,29 +815,29 @@ class VegaFusionRuntime:
 
     @property
     def total_memory(self) -> int | None:
-        if self._embedded_runtime:
-            return self._embedded_runtime.total_memory()
+        if self._runtime:
+            return self._runtime.total_memory()
         else:
             return None
 
     @property
     def _protected_memory(self) -> int | None:
-        if self._embedded_runtime:
-            return self._embedded_runtime.protected_memory()
+        if self._runtime:
+            return self._runtime.protected_memory()
         else:
             return None
 
     @property
     def _probationary_memory(self) -> int | None:
-        if self._embedded_runtime:
-            return self._embedded_runtime.probationary_memory()
+        if self._runtime:
+            return self._runtime.probationary_memory()
         else:
             return None
 
     @property
     def size(self) -> int | None:
-        if self._embedded_runtime:
-            return self._embedded_runtime.size()
+        if self._runtime:
+            return self._runtime.size()
         else:
             return None
 
@@ -978,9 +874,9 @@ class VegaFusionRuntime:
             self.reset()
 
     def reset(self) -> None:
-        if self._embedded_runtime is not None:
-            self._embedded_runtime.clear_cache()
-            self._embedded_runtime = None
+        if self._runtime is not None:
+            self._runtime.clear_cache()
+            self._runtime = None
 
     def __repr__(self) -> str:
         if self._grpc_channel:
@@ -1046,38 +942,6 @@ def get_mark_group_for_scope(
         group = child_group
 
     return group
-
-
-def get_inline_column_usage(
-    spec: dict[str, Any] | str,
-) -> dict[str, list[str]]:
-    """
-    Get the columns used by each inline dataset, if known
-    """
-    if isinstance(spec, str):
-        spec_dict = cast("dict[str, Any]", json.loads(spec))
-    else:
-        spec_dict = spec
-
-    # Build mapping from inline_dataset name to Vega dataset name
-    inline_dataset_mapping: dict[str, str] = {}
-    for dataset in spec_dict.get("data", []):
-        url = cast("str | None", dataset.get("url", None))
-        if url and (
-            url.startswith("vegafusion+dataset://") or url.startswith("table://")
-        ):
-            parts = url.split("//")
-            if len(parts) == 2:
-                inline_dataset_name = parts[1]
-                inline_dataset_mapping[inline_dataset_name] = dataset["name"]
-
-    # Compute column usage
-    usage = get_column_usage(spec_dict)
-    return {
-        inline_dataset_name: columns
-        for inline_dataset_name in inline_dataset_mapping
-        if (columns := usage[inline_dataset_mapping[inline_dataset_name]]) is not None
-    }
 
 
 runtime = VegaFusionRuntime(64, None, None)

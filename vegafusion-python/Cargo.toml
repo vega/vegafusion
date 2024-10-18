@@ -30,6 +30,10 @@ workspace = true
 [dependencies.prost]
 workspace = true
 
+[dependencies.tonic]
+version = "0.10.2"
+features = ["tls"]
+
 [dependencies.deterministic-hash]
 version = "1.0.1"
 
@@ -38,7 +42,7 @@ version = "1.0.137"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.79"
+workspace = true
 
 [dependencies.arrow]
 workspace = true
@@ -50,7 +54,7 @@ version = "1.6.9"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
-features = ["py"]
+features = ["py", "tonic_support"]
 version = "1.6.9"
 
 [dependencies.vegafusion-runtime]
