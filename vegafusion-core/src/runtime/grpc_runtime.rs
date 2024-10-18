@@ -7,7 +7,6 @@ use crate::{
                 PreTransformExtractOpts, PreTransformExtractRequest, PreTransformExtractWarning,
                 PreTransformSpecOpts, PreTransformSpecRequest, PreTransformSpecWarning,
                 PreTransformValuesOpts, PreTransformValuesRequest, PreTransformValuesWarning,
-                PreTransformVariable,
             },
             services::{
                 pre_transform_extract_result, pre_transform_spec_result,
@@ -19,7 +18,7 @@ use crate::{
         },
     },
     spec::chart::ChartSpec,
-    task_graph::{graph::ScopedVariable, task_value::TaskValue},
+    task_graph::task_value::TaskValue,
 };
 
 use async_mutex::Mutex;

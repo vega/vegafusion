@@ -16,6 +16,7 @@ use crate::{
     task_graph::task_value::TaskValue,
 };
 
+#[derive(Clone)]
 pub struct PreTransformExtractTable {
     pub name: String,
     pub scope: Vec<u32>,
