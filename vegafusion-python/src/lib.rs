@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use pyo3;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyList, PyTuple, PyType};
+use pyo3::types::{PyBytes, PyDict, PyList, PyTuple};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -18,8 +18,6 @@ use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::War
 use vegafusion_core::proto::gen::pretransform::{
     PreTransformExtractOpts, PreTransformSpecOpts, PreTransformValuesOpts, PreTransformVariable,
 };
-use vegafusion_core::proto::gen::services::vega_fusion_runtime_client::VegaFusionRuntimeClient;
-use vegafusion_core::proto::gen::services::{QueryRequest, QueryResult};
 use vegafusion_core::proto::gen::tasks::{TzConfig, Variable};
 use vegafusion_core::runtime::GrpcVegaFusionRuntime;
 
@@ -39,7 +37,7 @@ use vegafusion_core::planning::watch::{ExportUpdateJSON, WatchPlan};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_runtime::tokio_runtime::{self, TOKIO_THREAD_STACK_SIZE};
+use vegafusion_runtime::tokio_runtime::{TOKIO_THREAD_STACK_SIZE};
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 use vegafusion_sql::connection::Connection;
 

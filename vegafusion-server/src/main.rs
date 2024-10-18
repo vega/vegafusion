@@ -14,8 +14,8 @@ use vegafusion_core::proto::gen::services::{
 };
 use vegafusion_core::proto::gen::tasks::TaskGraphValueResponse;
 use vegafusion_core::proto::gen::tasks::{
-    task::TaskKind, InlineDataset, NodeValueIndex, ResponseTaskValue, TaskGraph,
-    TaskValue as ProtoTaskValue, TzConfig, VariableNamespace,
+    ResponseTaskValue,
+    TaskValue as ProtoTaskValue,
 };
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::spec::chart::ChartSpec;
