@@ -1,10 +1,13 @@
 use futures::{SinkExt, StreamExt};
 use prost::Message;
 
+use vegafusion_core::error::VegaFusionError;
+use vegafusion_core::proto::gen::pretransform::{PreTransformExtractOpts, PreTransformExtractWarning, PreTransformSpecOpts, PreTransformSpecWarning, PreTransformValuesOpts, PreTransformValuesWarning};
 use vegafusion_core::proto::gen::tasks::{
     NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueRequest, TzConfig,
     VariableNamespace,
 };
+use vegafusion_core::task_graph::task_value::TaskValue;
 use wasm_bindgen::prelude::*;
 
 use js_sys::Promise;
@@ -29,7 +32,7 @@ use vegafusion_core::spec::chart::ChartSpec;
 
 use vegafusion_core::chart_state::ChartState;
 use vegafusion_core::data::dataset::VegaFusionDataset;
-use vegafusion_core::runtime::VegaFusionRuntimeTrait;
+use vegafusion_core::runtime::{PreTransformExtractTable, VegaFusionRuntimeTrait};
 use web_sys::Element;
 
 pub fn set_panic_hook() {
@@ -134,6 +137,37 @@ impl VegaFusionRuntimeTrait for VegaFusionWasmRuntime {
         let response = rx.await.unwrap();
 
         response
+    }
+
+    async fn pre_transform_spec(
+        &self,
+        _spec: &ChartSpec,
+        _inline_datasets: &HashMap<String, VegaFusionDataset>,
+        _options: &PreTransformSpecOpts,
+    ) -> Result<(ChartSpec, Vec<PreTransformSpecWarning>), VegaFusionError> {
+        unimplemented!()
+    }
+
+    async fn pre_transform_extract(
+        &self,
+        _spec: &ChartSpec,
+        _inline_datasets: &HashMap<String, VegaFusionDataset>,
+        _options: &PreTransformExtractOpts,
+    ) -> Result<(
+        ChartSpec,
+        Vec<PreTransformExtractTable>,
+        Vec<PreTransformExtractWarning>,
+    ), VegaFusionError> {
+        unimplemented!()
+    }
+
+    async fn pre_transform_values(
+        &self,
+        _spec: &ChartSpec,
+        _inline_datasets: &HashMap<String, VegaFusionDataset>,
+        _options: &PreTransformValuesOpts,
+    ) -> Result<(Vec<TaskValue>, Vec<PreTransformValuesWarning>), VegaFusionError> {
+        unimplemented!()
     }
 }
 
