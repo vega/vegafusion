@@ -48,14 +48,15 @@ impl VegaFusionRuntimeTrait for GrpcVegaFusionRuntime {
         &self,
         task_graph: Arc<TaskGraph>,
         indices: &[NodeValueIndex],
-        _inline_datasets: &HashMap<String, VegaFusionDataset>,
+        inline_datasets: &HashMap<String, VegaFusionDataset>,
     ) -> Result<Vec<ResponseTaskValue>> {
+        let inline_datasets = encode_inline_datasets(&inline_datasets)?;
         let request = QueryRequest {
             request: Some(query_request::Request::TaskGraphValues(
                 TaskGraphValueRequest {
                     task_graph: Some(task_graph.as_ref().clone()),
                     indices: indices.to_vec(),
-                    inline_datasets: vec![], // inline_datasets.clone(),
+                    inline_datasets,
                 },
             )),
         };
