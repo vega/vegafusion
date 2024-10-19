@@ -15,17 +15,6 @@ here = Path(__file__).parent
 altair_mocks_dir = here / "altair_mocks"
 
 
-def get_connections():
-    connections = ["datafusion"]
-
-    from importlib.util import find_spec
-
-    if find_spec("duckdb") is not None:
-        connections.append("duckdb")
-
-    return connections
-
-
 @pytest.mark.parametrize(
     "mock_name,expected_len,expected_cols",
     [
@@ -203,10 +192,7 @@ def get_connections():
         ("simple/strip_chart", 400, ["Name", "Cylinders", "Origin"]),
     ],
 )
-@pytest.mark.parametrize("connection", get_connections())
-def test_transformed_data_for_mock(mock_name, expected_len, expected_cols, connection):
-    vf.runtime.set_connection(connection)
-
+def test_transformed_data_for_mock(mock_name, expected_len, expected_cols):
     mock_path = altair_mocks_dir / mock_name / "mock.py"
     mock_src = mock_path.read_text("utf8")
     chart = eval_block(mock_src)
@@ -358,11 +344,7 @@ def test_transformed_data_for_mock(mock_name, expected_len, expected_cols, conne
         ),
     ],
 )
-@pytest.mark.parametrize("connection", get_connections())
-def test_multi_transformed_data_for_mock(
-    mock_name, expected_lens, all_expected_cols, connection
-):
-    vf.runtime.set_connection(connection)
+def test_multi_transformed_data_for_mock(mock_name, expected_lens, all_expected_cols):
     mock_path = altair_mocks_dir / mock_name / "mock.py"
     mock_src = mock_path.read_text("utf8")
     chart = eval_block(mock_src)
@@ -407,7 +389,6 @@ def test_transformed_data_exclude():
 @pytest.mark.skipif(pa_major_minor < (11, 0), reason="pyarrow 11+ required")
 def test_gh_286():
     # https://github.com/hex-inc/vegafusion/issues/286
-    vf.runtime.set_connection("datafusion")
     source = pl.from_pandas(data.seattle_weather())
 
     chart = (
@@ -420,10 +401,7 @@ def test_gh_286():
     assert len(transformed) == 53
 
 
-@pytest.mark.parametrize("connection", get_connections())
-def test_categorical_columns(connection):
-    vf.runtime.set_connection(connection)
-
+def test_categorical_columns():
     df = pd.DataFrame(
         {
             "a": [0, 1, 2, 3, 4, 5],
@@ -435,18 +413,13 @@ def test_categorical_columns(connection):
     transformed = chart.transformed_data()
 
     # Normalize the order of the categories to match the expected output
-    if connection == "datafusion":
-        transformed["categorical"] = pd.Series(
-            transformed["categorical"].tolist(), dtype="category"
-        )
+    transformed["categorical"] = pd.Series(
+        transformed["categorical"].tolist(), dtype="category"
+    )
 
     expected = pd.DataFrame(
         {
-            "categorical": (
-                pd.Series(["A", "BB"], dtype="category")
-                if connection == "datafusion"
-                else ["A", "BB"]
-            ),
+            "categorical": (pd.Series(["A", "BB"], dtype="category")),
             "sum_a": [7, 8],
         }
     )

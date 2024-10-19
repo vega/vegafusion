@@ -11,16 +11,12 @@ from vegafusion._vegafusion import get_cpu_count, get_virtual_memory
 from vegafusion.transformer import DataFrameLike
 from vegafusion.utils import get_inline_column_usage
 
-from .connection import SqlConnection
-from .dataset import SqlDataset
 from .local_tz import get_local_tz
 
 if TYPE_CHECKING:
-    import duckdb  # noqa: F401
     import pandas as pd
     import polars as pl  # noqa: F401
     import pyarrow as pa
-    from duckdb import DuckDBPyConnection
     from narwhals.typing import IntoFrameT
 
     from vegafusion._vegafusion import (
@@ -162,7 +158,6 @@ class VegaFusionRuntime:
         cache_capacity: int = 64,
         memory_limit: int | None = None,
         worker_threads: int | None = None,
-        connection: SqlConnection | None = None,
     ) -> None:
         """
         Initialize a VegaFusionRuntime.
@@ -171,14 +166,12 @@ class VegaFusionRuntime:
             cache_capacity: Cache capacity.
             memory_limit: Memory limit.
             worker_threads: Number of worker threads.
-            connection: SQL connection (optional).
         """
         self._runtime = None
         self._grpc_url: str | None = None
         self._cache_capacity = cache_capacity
         self._memory_limit = memory_limit
         self._worker_threads = worker_threads
-        self._connection = connection
 
     @property
     def runtime(self) -> PyVegaFusionRuntime:
@@ -201,61 +194,8 @@ class VegaFusionRuntime:
                 self.cache_capacity,
                 self.memory_limit,
                 self.worker_threads,
-                connection=self._connection,
             )
         return self._runtime
-
-    def set_connection(
-        self,
-        connection: Literal["datafusion", "duckdb"]
-        | SqlConnection
-        | DuckDBPyConnection
-        | None = "datafusion",
-    ) -> None:
-        """
-        Sets the connection to use to evaluate Vega data transformations.
-
-        Named tables returned by the connection's `tables` method may be referenced in
-        Vega/Altair chart specifications using special dataset URLs. For example, if the
-        connection's `tables` method returns a dictionary that includes "tableA" as a
-        key, then this table may be referenced in a chart specification using the URL
-        "table://tableA" or "vegafusion+dataset://tableA".
-
-        Args:
-            connection: One of:
-              - An instance of vegafusion.connection.SqlConnection
-              - An instance of a duckdb connection
-              - A string, one of:
-                    - "datafusion" (default)
-                    - "duckdb"
-        """
-        # Don't import duckdb unless it's already loaded. If it's not loaded,
-        # then the input connection can't be a duckdb connection.
-        if not TYPE_CHECKING:
-            duckdb = sys.modules.get("duckdb", None)
-
-        if isinstance(connection, str):
-            if connection == "datafusion":
-                # Connection of None uses DataFusion
-                connection = None
-            elif connection == "duckdb":
-                from vegafusion.connection.duckdb import DuckDbConnection
-
-                connection = DuckDbConnection()
-            else:
-                raise ValueError(f"Unsupported connection name: {connection}")
-        elif duckdb is not None and isinstance(connection, duckdb.DuckDBPyConnection):
-            from vegafusion.connection.duckdb import DuckDbConnection
-
-            connection = DuckDbConnection(connection)
-        elif not isinstance(connection, SqlConnection):
-            raise ValueError(
-                "connection argument must be a string or an instance of SqlConnection\n"
-                f"Received value of type {type(connection).__name__}: {connection}"
-            )
-
-        self._connection = connection
-        self.reset()
 
     def grpc_connect(self, url: str) -> None:
         """
@@ -279,11 +219,11 @@ class VegaFusionRuntime:
         """
         return self._grpc_url is not None
 
-    def _import_or_register_inline_datasets(
+    def _import_inline_datasets(
         self,
-        inline_datasets: dict[str, IntoFrameT | SqlDataset] | None = None,
+        inline_datasets: dict[str, IntoFrameT] | None = None,
         inline_dataset_usage: dict[str, list[str]] | None = None,
-    ) -> dict[str, Table | SqlDataset]:
+    ) -> dict[str, Table]:
         """
         Import or register inline datasets.
 
@@ -292,6 +232,8 @@ class VegaFusionRuntime:
                 pyarrow Tables. Inline datasets may be referenced by the input
                 specification using the following url syntax
                 'vegafusion+dataset://{dataset_name}' or 'table://{dataset_name}'.
+            inline_dataset_usage: Columns that are referenced by datasets. If no
+                entry is found, then all columns should be included.
         """
         if not TYPE_CHECKING:
             pd = sys.modules.get("pandas", None)
@@ -299,12 +241,10 @@ class VegaFusionRuntime:
 
         inline_datasets = inline_datasets or {}
         inline_dataset_usage = inline_dataset_usage or {}
-        imported_inline_datasets: dict[str, SqlDataset | Table] = {}
+        imported_inline_datasets: dict[str, Table] = {}
         for name, value in inline_datasets.items():
             columns = inline_dataset_usage.get(name)
-            if isinstance(value, SqlDataset):
-                imported_inline_datasets[name] = value
-            elif pd is not None and pa is not None and isinstance(value, pd.DataFrame):
+            if pd is not None and pa is not None and isinstance(value, pd.DataFrame):
                 # rename to help mypy
                 inner_value: pd.DataFrame = value
                 del value
@@ -335,15 +275,6 @@ class VegaFusionRuntime:
                             inner_value = inner_value.assign(
                                 **{col: inner_value[col].astype("string[pyarrow]")}
                             )
-                if self._connection is not None:
-                    try:
-                        # Try registering DataFrame if supported
-                        self._connection.register_pandas(
-                            name, inner_value, temporary=True
-                        )
-                        continue
-                    except ValueError:
-                        pass
                 if hasattr(inner_value, "__arrow_c_stream__"):
                     # TODO: this requires pyarrow 14.0.0 or later
                     imported_inline_datasets[name] = Table(inner_value)
@@ -455,47 +386,41 @@ class VegaFusionRuntime:
                     eligible for pre-transforming
         """
         local_tz = local_tz or get_local_tz()
-        imported_inline_dataset = self._import_or_register_inline_datasets(
+        imported_inline_dataset = self._import_inline_datasets(
             inline_datasets, get_inline_column_usage(spec)
         )
 
-        try:
-            if data_encoding_threshold is None:
-                new_spec, warnings = self.runtime.pre_transform_spec(
-                    spec,
-                    local_tz=local_tz,
-                    default_input_tz=default_input_tz,
-                    row_limit=row_limit,
-                    preserve_interactivity=preserve_interactivity,
-                    inline_datasets=imported_inline_dataset,
-                    keep_signals=parse_variables(keep_signals),
-                    keep_datasets=parse_variables(keep_datasets),
-                )
-            else:
-                # Use pre_transform_extract to extract large datasets
-                new_spec, datasets, warnings = self.runtime.pre_transform_extract(
-                    spec,
-                    local_tz=local_tz,
-                    default_input_tz=default_input_tz,
-                    preserve_interactivity=preserve_interactivity,
-                    extract_threshold=data_encoding_threshold,
-                    extracted_format=data_encoding_format,
-                    inline_datasets=imported_inline_dataset,
-                    keep_signals=parse_variables(keep_signals),
-                    keep_datasets=parse_variables(keep_datasets),
-                )
+        if data_encoding_threshold is None:
+            new_spec, warnings = self.runtime.pre_transform_spec(
+                spec,
+                local_tz=local_tz,
+                default_input_tz=default_input_tz,
+                row_limit=row_limit,
+                preserve_interactivity=preserve_interactivity,
+                inline_datasets=imported_inline_dataset,
+                keep_signals=parse_variables(keep_signals),
+                keep_datasets=parse_variables(keep_datasets),
+            )
+        else:
+            # Use pre_transform_extract to extract large datasets
+            new_spec, datasets, warnings = self.runtime.pre_transform_extract(
+                spec,
+                local_tz=local_tz,
+                default_input_tz=default_input_tz,
+                preserve_interactivity=preserve_interactivity,
+                extract_threshold=data_encoding_threshold,
+                extracted_format=data_encoding_format,
+                inline_datasets=imported_inline_dataset,
+                keep_signals=parse_variables(keep_signals),
+                keep_datasets=parse_variables(keep_datasets),
+            )
 
-                # Insert encoded datasets back into spec
-                for name, scope, tbl in datasets:
-                    group = get_mark_group_for_scope(new_spec, scope) or {}
-                    for data in group.get("data", []):
-                        if data.get("name", None) == name:
-                            data["values"] = tbl
-
-        finally:
-            # Clean up temporary tables
-            if self._connection is not None:
-                self._connection.unregister_temporary_tables()
+            # Insert encoded datasets back into spec
+            for name, scope, tbl in datasets:
+                group = get_mark_group_for_scope(new_spec, scope) or {}
+                for data in group.get("data", []):
+                    if data.get("name", None) == name:
+                        data["values"] = tbl
 
         return new_spec, warnings
 
@@ -529,7 +454,7 @@ class VegaFusionRuntime:
             ChartState object.
         """
         local_tz = local_tz or get_local_tz()
-        inline_arrow_dataset = self._import_or_register_inline_datasets(
+        inline_arrow_dataset = self._import_inline_datasets(
             inline_datasets, get_inline_column_usage(spec)
         )
         return ChartState(
@@ -594,25 +519,21 @@ class VegaFusionRuntime:
         pre_tx_vars = parse_variables(datasets)
 
         # Serialize inline datasets
-        inline_arrow_dataset = self._import_or_register_inline_datasets(
+        inline_arrow_dataset = self._import_inline_datasets(
             inline_datasets,
             inline_dataset_usage=get_inline_column_usage(spec)
             if trim_unused_columns
             else None,
         )
-        try:
-            values, warnings = self.runtime.pre_transform_datasets(
-                spec,
-                pre_tx_vars,
-                local_tz=local_tz,
-                default_input_tz=default_input_tz,
-                row_limit=row_limit,
-                inline_datasets=inline_arrow_dataset,
-            )
-        finally:
-            # Clean up registered tables (both inline and internal temporary tables)
-            if self._connection is not None:
-                self._connection.unregister_temporary_tables()
+
+        values, warnings = self.runtime.pre_transform_datasets(
+            spec,
+            pre_tx_vars,
+            local_tz=local_tz,
+            default_input_tz=default_input_tz,
+            row_limit=row_limit,
+            inline_datasets=inline_arrow_dataset,
+        )
 
         # Wrap result dataframes in native format, then with Narwhals so that
         # we can manipulate them with a uniform API
@@ -734,25 +655,21 @@ class VegaFusionRuntime:
         """
         local_tz = local_tz or get_local_tz()
 
-        inline_arrow_dataset = self._import_or_register_inline_datasets(
+        inline_arrow_dataset = self._import_inline_datasets(
             inline_datasets, get_inline_column_usage(spec)
         )
-        try:
-            new_spec, datasets, warnings = self.runtime.pre_transform_extract(
-                spec,
-                local_tz=local_tz,
-                default_input_tz=default_input_tz,
-                preserve_interactivity=preserve_interactivity,
-                extract_threshold=extract_threshold,
-                extracted_format=extracted_format,
-                inline_datasets=inline_arrow_dataset,
-                keep_signals=keep_signals,
-                keep_datasets=keep_datasets,
-            )
-        finally:
-            # Clean up temporary tables
-            if self._connection is not None:
-                self._connection.unregister_temporary_tables()
+
+        new_spec, datasets, warnings = self.runtime.pre_transform_extract(
+            spec,
+            local_tz=local_tz,
+            default_input_tz=default_input_tz,
+            preserve_interactivity=preserve_interactivity,
+            extract_threshold=extract_threshold,
+            extracted_format=extracted_format,
+            inline_datasets=inline_arrow_dataset,
+            keep_signals=keep_signals,
+            keep_datasets=keep_datasets,
+        )
 
         return new_spec, datasets, warnings
 
