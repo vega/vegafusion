@@ -180,7 +180,7 @@ mod tests {
         if let Err(VegaFusionError::PreTransformError(err, _)) = result {
             assert_eq!(
                 err,
-                "Requested variable (Variable { name: \"source_0\", namespace: Data }, [])\n \
+                "Requested variable PreTransformVariable { variable: Some(Variable { name: \"source_0\", namespace: Data }), scope: [] }\n \
                 requires transforms or signal expressions that are not yet supported"
             )
         } else {
