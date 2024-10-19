@@ -65,9 +65,6 @@ workspace = true
 [dependencies.prost]
 workspace = true
 
-[dependencies.prost-types]
-workspace = true
-
 [dependencies.uuid]
 version = "^1.2"
 features = ["v4"]
