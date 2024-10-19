@@ -11,7 +11,7 @@ use crate::{
             query_request, query_result, vega_fusion_runtime_client::VegaFusionRuntimeClient,
             QueryRequest,
         },
-        tasks::{InlineDataset, NodeValueIndex, TaskGraph, TaskGraphValueRequest},
+        tasks::{NodeValueIndex, TaskGraph, TaskGraphValueRequest},
     },
     spec::chart::ChartSpec,
     task_graph::task_value::{NamedTaskValue, TaskValue},
@@ -26,7 +26,10 @@ use vegafusion_common::{
     error::{Result, VegaFusionError},
 };
 
-use super::{runtime::{encode_inline_datasets, PreTransformExtractTable}, VegaFusionRuntimeTrait};
+use super::{
+    runtime::{encode_inline_datasets, PreTransformExtractTable},
+    VegaFusionRuntimeTrait,
+};
 
 #[derive(Clone)]
 pub struct GrpcVegaFusionRuntime {
