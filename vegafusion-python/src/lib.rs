@@ -451,17 +451,18 @@ impl PyVegaFusionRuntime {
         }
 
         let (tx_spec, datasets, warnings) = py.allow_threads(|| {
-            self.tokio_runtime.block_on(self.runtime.pre_transform_extract(
-                &spec,
-                &inline_datasets,
-                &PreTransformExtractOpts {
-                    local_tz,
-                    default_input_tz,
-                    preserve_interactivity,
-                    extract_threshold: extract_threshold as i32,
-                    keep_variables,
-                },
-            ))
+            self.tokio_runtime
+                .block_on(self.runtime.pre_transform_extract(
+                    &spec,
+                    &inline_datasets,
+                    &PreTransformExtractOpts {
+                        local_tz,
+                        default_input_tz,
+                        preserve_interactivity,
+                        extract_threshold: extract_threshold as i32,
+                        keep_variables,
+                    },
+                ))
         })?;
 
         let warnings: Vec<_> = warnings
@@ -529,9 +530,7 @@ impl PyVegaFusionRuntime {
 
     pub fn clear_cache(&self) -> PyResult<()> {
         if let Some(runtime) = self.runtime.as_any().downcast_ref::<VegaFusionRuntime>() {
-            Ok(self
-                .tokio_runtime
-                .block_on(runtime.clear_cache()))
+            Ok(self.tokio_runtime.block_on(runtime.clear_cache()))
         } else {
             Err(PyValueError::new_err(
                 "Current Runtime does not support clear_cache",
