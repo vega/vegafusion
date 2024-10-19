@@ -10,10 +10,12 @@ mod tests {
     use std::fs;
     use std::sync::Arc;
     use vegafusion_common::error::VegaFusionError;
+    use vegafusion_core::proto::gen::pretransform::{PreTransformSpecOpts, PreTransformVariable};
     use vegafusion_core::proto::gen::tasks::Variable;
 
     use vegafusion_core::spec::chart::ChartSpec;
 
+    use vegafusion_core::runtime::VegaFusionRuntimeTrait;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
@@ -37,12 +39,14 @@ mod tests {
         let (tx_spec, warnings) = runtime
             .pre_transform_spec(
                 &spec,
-                "UTC",
-                &None,
-                None,
-                true,
-                Default::default(),
-                Default::default(),
+                &Default::default(),
+                &PreTransformSpecOpts {
+                    keep_variables: vec![],
+                    row_limit: None,
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                    preserve_interactivity: true,
+                },
             )
             .await
             .unwrap();
@@ -57,15 +61,19 @@ mod tests {
         let (tx_spec, warnings) = runtime
             .pre_transform_spec(
                 &spec,
-                "UTC",
-                &None,
-                None,
-                true,
-                Default::default(),
-                vec![(
-                    Variable::new_signal("layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins"),
-                    Vec::new(),
-                )],
+                &Default::default(),
+                &PreTransformSpecOpts {
+                    keep_variables: vec![PreTransformVariable {
+                        variable: Some(Variable::new_signal(
+                            "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins",
+                        )),
+                        scope: Vec::new(),
+                    }],
+                    row_limit: None,
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                    preserve_interactivity: true,
+                },
             )
             .await
             .unwrap();
@@ -83,12 +91,17 @@ mod tests {
         let pre_transform_result = runtime
             .pre_transform_spec(
                 &spec,
-                "UTC",
-                &None,
-                None,
-                true,
-                Default::default(),
-                vec![(Variable::new_signal("does_not_exist"), Vec::new())],
+                &Default::default(),
+                &PreTransformSpecOpts {
+                    keep_variables: vec![PreTransformVariable {
+                        variable: Some(Variable::new_signal("does_not_exist")),
+                        scope: Vec::new(),
+                    }],
+                    row_limit: None,
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                    preserve_interactivity: true,
+                },
             )
             .await;
 

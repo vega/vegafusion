@@ -20,6 +20,7 @@ chrono = "0.4.23"
 num-complex = "0.4.2"
 rand = "0.8.5"
 json-patch = "1.0.0"
+async-mutex = "1.4.0"
 
 [dependencies.lazy_static]
 workspace = true
@@ -44,7 +45,7 @@ workspace = true
 optional = true
 
 [dependencies.serde_json]
-version = "1.0.91"
+workspace = true
 features = ["preserve_order"]
 
 [dependencies.vegafusion-common]

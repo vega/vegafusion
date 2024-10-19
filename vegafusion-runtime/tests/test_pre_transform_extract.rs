@@ -7,12 +7,14 @@ fn crate_dir() -> String {
 mod tests {
     use crate::crate_dir;
     use serde_json::json;
+    use vegafusion_core::proto::gen::pretransform::PreTransformExtractOpts;
 
     use std::fs;
     use std::sync::Arc;
 
     use vegafusion_core::spec::chart::ChartSpec;
 
+    use vegafusion_core::runtime::VegaFusionRuntimeTrait;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
@@ -36,12 +38,14 @@ mod tests {
         let (tx_spec, datasets, warnings) = runtime
             .pre_transform_extract(
                 &spec,
-                "UTC",
-                &None,
-                true,
-                20,
-                Default::default(),
-                Default::default(),
+                &Default::default(),
+                &PreTransformExtractOpts {
+                    keep_variables: vec![],
+                    extract_threshold: 20,
+                    preserve_interactivity: false,
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                },
             )
             .await
             .unwrap();
@@ -51,10 +55,10 @@ mod tests {
 
         // Check single extracted dataset
         assert_eq!(datasets.len(), 1);
-        let dataset = datasets[0].clone();
-        assert_eq!(dataset.0.as_str(), "source_0");
-        assert_eq!(dataset.1, Vec::<u32>::new());
-        assert_eq!(dataset.2.num_rows(), 379);
+        let dataset = &datasets[0];
+        assert_eq!(dataset.name.as_str(), "source_0");
+        assert_eq!(dataset.scope, Vec::<u32>::new());
+        assert_eq!(dataset.table.num_rows(), 379);
 
         // Check that source_0 is included as a stub in the transformed spec
         let source_0 = &tx_spec.data[0];

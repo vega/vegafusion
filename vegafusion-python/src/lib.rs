@@ -7,12 +7,20 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyTuple};
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::str::FromStr;
 use std::sync::{Arc, Once};
 use tokio::runtime::Runtime;
+use tonic::transport::{Channel, Uri};
 use vegafusion_core::chart_state::ChartState as RsChartState;
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_extract_warning::WarningType as ExtractWarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
+use vegafusion_core::proto::gen::pretransform::{
+    PreTransformExtractOpts, PreTransformSpecOpts, PreTransformValuesOpts, PreTransformVariable,
+};
+use vegafusion_core::proto::gen::tasks::{TzConfig, Variable};
+use vegafusion_core::runtime::GrpcVegaFusionRuntime;
+
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 use crate::connection::{PySqlConnection, PySqlDataset};
@@ -25,13 +33,15 @@ use vegafusion_core::patch::patch_pre_transformed_spec;
 use vegafusion_core::planning::plan::{PlannerConfig, PreTransformSpecWarningSpec, SpecPlan};
 use vegafusion_core::planning::projection_pushdown::get_column_usage as rs_get_column_usage;
 use vegafusion_core::planning::watch::{ExportUpdateJSON, WatchPlan};
-use vegafusion_core::proto::gen::tasks::{TzConfig, Variable};
+
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 use vegafusion_sql::connection::Connection;
+
+use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 
 static INIT: Once = Once::new();
 
@@ -50,14 +60,14 @@ lazy_static! {
 
 #[pyclass]
 struct PyChartState {
-    runtime: Arc<VegaFusionRuntime>,
+    runtime: Arc<dyn VegaFusionRuntimeTrait>,
     state: RsChartState,
     tokio_runtime: Arc<Runtime>,
 }
 
 impl PyChartState {
     pub fn try_new(
-        runtime: Arc<VegaFusionRuntime>,
+        runtime: Arc<dyn VegaFusionRuntimeTrait>,
         tokio_runtime: Arc<Runtime>,
         spec: ChartSpec,
         inline_datasets: HashMap<String, VegaFusionDataset>,
@@ -140,7 +150,7 @@ impl PyChartState {
 
 #[pyclass]
 struct PyVegaFusionRuntime {
-    runtime: Arc<VegaFusionRuntime>,
+    runtime: Arc<dyn VegaFusionRuntimeTrait>,
     tokio_runtime_connection: Arc<Runtime>,
     tokio_runtime_current_thread: Arc<Runtime>,
 }
@@ -202,9 +212,9 @@ impl PyVegaFusionRuntime {
 
 #[pymethods]
 impl PyVegaFusionRuntime {
-    #[new]
+    #[staticmethod]
     #[pyo3(signature = (max_capacity=None, memory_limit=None, worker_threads=None, connection=None))]
-    pub fn new(
+    pub fn new_embedded(
         max_capacity: Option<usize>,
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
@@ -247,6 +257,32 @@ impl PyVegaFusionRuntime {
         })
     }
 
+    #[staticmethod]
+    pub fn new_grpc(url: &str) -> PyResult<Self> {
+        let tokio_runtime = Arc::new(
+            tokio::runtime::Builder::new_multi_thread()
+                .enable_io()
+                .build()?,
+        );
+        let runtime = tokio_runtime.block_on(async move {
+            let innter_url = url;
+            let uri =
+                Uri::from_str(&innter_url).map_err(|e| VegaFusionError::internal(e.to_string()))?;
+
+            GrpcVegaFusionRuntime::try_new(Channel::builder(uri).connect().await.map_err(|e| {
+                let msg = format!("Error connecting to gRPC server at {}: {}", innter_url, e);
+                VegaFusionError::internal(msg)
+            })?)
+            .await
+        })?;
+
+        Ok(Self {
+            runtime: Arc::new(runtime),
+            tokio_runtime_connection: tokio_runtime.clone(),
+            tokio_runtime_current_thread: tokio_runtime.clone(),
+        })
+    }
+
     #[pyo3(signature = (spec, local_tz, default_input_tz=None, row_limit=None, inline_datasets=None))]
     pub fn new_chart_state(
         &self,
@@ -283,59 +319,6 @@ impl PyVegaFusionRuntime {
                 tz_config,
                 row_limit,
             )
-        })
-    }
-
-    pub fn process_request_bytes(
-        &self,
-        py: Python,
-        request_bytes: &Bound<PyBytes>,
-    ) -> PyResult<PyObject> {
-        let request_bytes = request_bytes.as_bytes();
-        let response_bytes = py.allow_threads(|| {
-            self.tokio_runtime_connection
-                .block_on(self.runtime.query_request_bytes(request_bytes))
-        })?;
-        Ok(PyBytes::new_bound(py, &response_bytes).into())
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (spec, preserve_interactivity=None, keep_signals=None, keep_datasets=None))]
-    pub fn build_pre_transform_spec_plan(
-        &self,
-        spec: PyObject,
-        preserve_interactivity: Option<bool>,
-        keep_signals: Option<Vec<(String, Vec<u32>)>>,
-        keep_datasets: Option<Vec<(String, Vec<u32>)>>,
-    ) -> PyResult<PyObject> {
-        let spec = parse_json_spec(spec)?;
-        let preserve_interactivity = preserve_interactivity.unwrap_or(false);
-
-        // Build keep_variables
-        let mut keep_variables: Vec<ScopedVariable> = Vec::new();
-        for (name, scope) in keep_signals.unwrap_or_default() {
-            keep_variables.push((Variable::new_signal(&name), scope))
-        }
-        for (name, scope) in keep_datasets.unwrap_or_default() {
-            keep_variables.push((Variable::new_data(&name), scope))
-        }
-
-        let plan = SpecPlan::try_new(
-            &spec,
-            &PlannerConfig::pre_transformed_spec_config(preserve_interactivity, keep_variables),
-        )?;
-        let watch_plan = WatchPlan::from(plan.comm_plan);
-
-        let json_plan = json!({
-            "server_spec": plan.server_spec,
-            "client_spec": plan.client_spec,
-            "comm_plan": watch_plan,
-            "warnings": plan.warnings,
-        });
-
-        Python::with_gil(|py| -> PyResult<PyObject> {
-            let py_plan = pythonize::pythonize(py, &json_plan)?;
-            Ok(py_plan.into())
         })
     }
 
@@ -377,15 +360,25 @@ impl PyVegaFusionRuntime {
         };
 
         let (spec, warnings) = py.allow_threads(|| {
-            rt.block_on(self.runtime.pre_transform_spec(
-                &spec,
-                &local_tz,
-                &default_input_tz,
-                row_limit,
-                preserve_interactivity,
-                inline_datasets,
-                keep_variables,
-            ))
+            rt.block_on(
+                self.runtime.pre_transform_spec(
+                    &spec,
+                    &inline_datasets,
+                    &PreTransformSpecOpts {
+                        local_tz,
+                        default_input_tz,
+                        row_limit,
+                        preserve_interactivity,
+                        keep_variables: keep_variables
+                            .into_iter()
+                            .map(|v| PreTransformVariable {
+                                variable: Some(v.0),
+                                scope: v.1,
+                            })
+                            .collect(),
+                    },
+                ),
+            )
         })?;
 
         let warnings: Vec<_> = warnings
@@ -435,14 +428,24 @@ impl PyVegaFusionRuntime {
         };
 
         let (values, warnings) = py.allow_threads(|| {
-            rt.block_on(self.runtime.pre_transform_values(
-                &spec,
-                &variables,
-                &local_tz,
-                &default_input_tz,
-                row_limit,
-                inline_datasets,
-            ))
+            rt.block_on(
+                self.runtime.pre_transform_values(
+                    &spec,
+                    &inline_datasets,
+                    &PreTransformValuesOpts {
+                        variables: variables
+                            .into_iter()
+                            .map(|v| PreTransformVariable {
+                                variable: Some(v.0),
+                                scope: v.1,
+                            })
+                            .collect(),
+                        local_tz,
+                        default_input_tz,
+                        row_limit,
+                    },
+                ),
+            )
         })?;
 
         let warnings: Vec<_> = warnings
@@ -508,23 +511,31 @@ impl PyVegaFusionRuntime {
         };
 
         // Build keep_variables
-        let mut keep_variables: Vec<ScopedVariable> = Vec::new();
+        let mut keep_variables: Vec<PreTransformVariable> = Vec::new();
         for (name, scope) in keep_signals.unwrap_or_default() {
-            keep_variables.push((Variable::new_signal(&name), scope))
+            keep_variables.push(PreTransformVariable {
+                variable: Some(Variable::new_signal(&name)),
+                scope: scope,
+            });
         }
         for (name, scope) in keep_datasets.unwrap_or_default() {
-            keep_variables.push((Variable::new_data(&name), scope))
+            keep_variables.push(PreTransformVariable {
+                variable: Some(Variable::new_data(&name)),
+                scope: scope,
+            });
         }
 
         let (tx_spec, datasets, warnings) = py.allow_threads(|| {
             rt.block_on(self.runtime.pre_transform_extract(
                 &spec,
-                &local_tz,
-                &default_input_tz,
-                preserve_interactivity,
-                extract_threshold,
-                inline_datasets,
-                keep_variables,
+                &inline_datasets,
+                &PreTransformExtractOpts {
+                    local_tz,
+                    default_input_tz,
+                    preserve_interactivity,
+                    extract_threshold: extract_threshold as i32,
+                    keep_variables,
+                },
             ))
         })?;
 
@@ -543,16 +554,15 @@ impl PyVegaFusionRuntime {
 
             let datasets = datasets
                 .into_iter()
-                .map(|(name, scope, table)| {
-                    let name = name.into_py(py);
-                    let scope = scope.into_py(py);
+                .map(|tbl| {
+                    let name = tbl.name.into_py(py);
+                    let scope = tbl.scope.into_py(py);
                     let table = match extracted_format.as_str() {
-                        "arro3" => table.to_pyo3_arrow()?.into_py(py),
-                        "pyarrow" => table.to_pyo3_arrow()?.to_pyarrow(py)?.into_py(py),
-                        "arrow-ipc" => {
-                            PyBytes::new_bound(py, table.to_ipc_bytes()?.as_slice()).to_object(py)
-                        }
-                        "arrow-ipc-base64" => table.to_ipc_base64()?.into_py(py),
+                        "arro3" => tbl.table.to_pyo3_arrow()?.into_py(py),
+                        "pyarrow" => tbl.table.to_pyo3_arrow()?.to_pyarrow(py)?.into_py(py),
+                        "arrow-ipc" => PyBytes::new_bound(py, tbl.table.to_ipc_bytes()?.as_slice())
+                            .to_object(py),
+                        "arrow-ipc-base64" => tbl.table.to_ipc_base64()?.into_py(py),
                         _ => {
                             return Err(PyValueError::new_err(format!(
                                 "Invalid extracted_format: {}",
@@ -592,27 +602,56 @@ impl PyVegaFusionRuntime {
         })
     }
 
-    pub fn clear_cache(&self, py: Python) {
-        py.allow_threads(|| {
-            self.tokio_runtime_connection
-                .block_on(self.runtime.clear_cache())
-        });
+    pub fn clear_cache(&self) -> PyResult<()> {
+        if let Some(runtime) = self.runtime.as_any().downcast_ref::<VegaFusionRuntime>() {
+            Ok(self
+                .tokio_runtime_current_thread
+                .block_on(runtime.clear_cache()))
+        } else {
+            Err(PyValueError::new_err(
+                "Current Runtime does not support clear_cache",
+            ))
+        }
     }
 
-    pub fn size(&self) -> usize {
-        self.runtime.cache.size()
+    pub fn size(&self) -> PyResult<usize> {
+        if let Some(runtime) = self.runtime.as_any().downcast_ref::<VegaFusionRuntime>() {
+            Ok(runtime.cache.size())
+        } else {
+            Err(PyValueError::new_err(
+                "Current Runtime does not support size",
+            ))
+        }
     }
 
-    pub fn total_memory(&self) -> usize {
-        self.runtime.cache.total_memory()
+    pub fn total_memory(&self) -> PyResult<usize> {
+        if let Some(runtime) = self.runtime.as_any().downcast_ref::<VegaFusionRuntime>() {
+            Ok(runtime.cache.total_memory())
+        } else {
+            Err(PyValueError::new_err(
+                "Current Runtime does not support total_memory",
+            ))
+        }
     }
 
-    pub fn protected_memory(&self) -> usize {
-        self.runtime.cache.protected_memory()
+    pub fn protected_memory(&self) -> PyResult<usize> {
+        if let Some(runtime) = self.runtime.as_any().downcast_ref::<VegaFusionRuntime>() {
+            Ok(runtime.cache.protected_memory())
+        } else {
+            Err(PyValueError::new_err(
+                "Current Runtime does not support protected_memory",
+            ))
+        }
     }
 
-    pub fn probationary_memory(&self) -> usize {
-        self.runtime.cache.probationary_memory()
+    pub fn probationary_memory(&self) -> PyResult<usize> {
+        if let Some(runtime) = self.runtime.as_any().downcast_ref::<VegaFusionRuntime>() {
+            Ok(runtime.cache.probationary_memory())
+        } else {
+            Err(PyValueError::new_err(
+                "Current Runtime does not support probationary_memory",
+            ))
+        }
     }
 }
 
@@ -636,15 +675,56 @@ pub fn get_column_usage(py: Python, spec: PyObject) -> PyResult<PyObject> {
     Ok(pythonize::pythonize(py, &usage)?.into())
 }
 
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+#[pyo3(signature = (spec, preserve_interactivity=None, keep_signals=None, keep_datasets=None))]
+pub fn build_pre_transform_spec_plan(
+    spec: PyObject,
+    preserve_interactivity: Option<bool>,
+    keep_signals: Option<Vec<(String, Vec<u32>)>>,
+    keep_datasets: Option<Vec<(String, Vec<u32>)>>,
+) -> PyResult<PyObject> {
+    let spec = parse_json_spec(spec)?;
+    let preserve_interactivity = preserve_interactivity.unwrap_or(false);
+
+    // Build keep_variables
+    let mut keep_variables: Vec<ScopedVariable> = Vec::new();
+    for (name, scope) in keep_signals.unwrap_or_default() {
+        keep_variables.push((Variable::new_signal(&name), scope))
+    }
+    for (name, scope) in keep_datasets.unwrap_or_default() {
+        keep_variables.push((Variable::new_data(&name), scope))
+    }
+
+    let plan = SpecPlan::try_new(
+        &spec,
+        &PlannerConfig::pre_transformed_spec_config(preserve_interactivity, keep_variables),
+    )?;
+    let watch_plan = WatchPlan::from(plan.comm_plan);
+
+    let json_plan = json!({
+        "server_spec": plan.server_spec,
+        "client_spec": plan.client_spec,
+        "comm_plan": watch_plan,
+        "warnings": plan.warnings,
+    });
+
+    Python::with_gil(|py| -> PyResult<PyObject> {
+        let py_plan = pythonize::pythonize(py, &json_plan)?;
+        Ok(py_plan.into())
+    })
+}
+
 /// A Python module implemented in Rust. The name of this function must match
 /// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
 /// import the module.
 #[pymodule]
 fn _vegafusion(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     m.add_class::<PyVegaFusionRuntime>()?;
-    m.add_class::<PySqlConnection>()?;
     m.add_class::<PyChartState>()?;
+    m.add_class::<PySqlConnection>()?;
     m.add_function(wrap_pyfunction!(get_column_usage, m)?)?;
+    m.add_function(wrap_pyfunction!(build_pre_transform_spec_plan, m)?)?;
     m.add_function(wrap_pyfunction!(get_virtual_memory, m)?)?;
     m.add_function(wrap_pyfunction!(get_cpu_count, m)?)?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;

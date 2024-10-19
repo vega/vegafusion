@@ -6,16 +6,16 @@ import "tasks.proto";
 /// Pre transform spec messages
 message PreTransformSpecOpts {
   optional uint32 row_limit = 1;
-  repeated tasks.InlineDataset inline_datasets = 2;
-  bool preserve_interactivity = 3;
-  repeated PreTransformVariable keep_variables = 4;
+  bool preserve_interactivity = 2;
+  repeated PreTransformVariable keep_variables = 3;
+  string local_tz = 4;
+  optional string default_input_tz = 5;
 }
 
 message PreTransformSpecRequest {
   string spec = 1;
-  string local_tz = 2;
-  optional string output_tz = 3;
-  PreTransformSpecOpts opts = 4;
+  repeated tasks.InlineDataset inline_datasets = 2;
+  PreTransformSpecOpts opts = 3;
 }
 
 message PreTransformSpecResponse {
@@ -50,15 +50,15 @@ message PreTransformVariable {
 
 message PreTransformValuesOpts {
   repeated PreTransformVariable variables = 1;
-  repeated tasks.InlineDataset inline_datasets = 2;
-  optional uint32 row_limit = 3;
+  optional uint32 row_limit = 2;
+  string local_tz = 3;
+  optional string default_input_tz = 4;
 }
 
 message PreTransformValuesRequest {
   string spec = 1;
-  string local_tz = 2;
-  optional string default_input_tz = 3;
-  PreTransformValuesOpts opts = 4;
+  repeated tasks.InlineDataset inline_datasets = 2;
+  PreTransformValuesOpts opts = 3;
 }
 
 message PreTransformValuesResponse {
@@ -90,6 +90,14 @@ message PreTransformExtractDataset {
   bytes table = 3;
 }
 
+message PreTransformExtractOpts {
+  string local_tz = 1;
+  optional string default_input_tz = 2;
+  bool preserve_interactivity = 3;
+  int32 extract_threshold = 4;
+  repeated PreTransformVariable keep_variables = 5;
+}
+
 message PreTransformExtractWarning {
   oneof warning_type {
     PlannerWarning planner = 1;
@@ -104,10 +112,6 @@ message PreTransformExtractResponse {
 
 message PreTransformExtractRequest {
   string spec = 1;
-  string local_tz = 2;
-  optional string default_input_tz = 3;
-  bool preserve_interactivity = 4;
-  int32 extract_threshold = 5;
-  repeated tasks.InlineDataset inline_datasets = 6;
-  repeated PreTransformVariable keep_variables = 7;
+  repeated tasks.InlineDataset inline_datasets = 2;
+  PreTransformExtractOpts opts = 3;
 }

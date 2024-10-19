@@ -30,6 +30,9 @@ prost-build = "0.12.1"
 [dependencies.prost]
 workspace = true
 
+[dependencies.serde_json]
+workspace = true
+
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
 version = "1.6.9"

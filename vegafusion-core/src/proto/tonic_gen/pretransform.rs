@@ -5,23 +5,23 @@
 pub struct PreTransformSpecOpts {
     #[prost(uint32, optional, tag = "1")]
     pub row_limit: ::core::option::Option<u32>,
-    #[prost(message, repeated, tag = "2")]
-    pub inline_datasets: ::prost::alloc::vec::Vec<super::tasks::InlineDataset>,
-    #[prost(bool, tag = "3")]
+    #[prost(bool, tag = "2")]
     pub preserve_interactivity: bool,
-    #[prost(message, repeated, tag = "4")]
+    #[prost(message, repeated, tag = "3")]
     pub keep_variables: ::prost::alloc::vec::Vec<PreTransformVariable>,
+    #[prost(string, tag = "4")]
+    pub local_tz: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "5")]
+    pub default_input_tz: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformSpecRequest {
     #[prost(string, tag = "1")]
     pub spec: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub local_tz: ::prost::alloc::string::String,
-    #[prost(string, optional, tag = "3")]
-    pub output_tz: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(message, optional, tag = "4")]
+    #[prost(message, repeated, tag = "2")]
+    pub inline_datasets: ::prost::alloc::vec::Vec<super::tasks::InlineDataset>,
+    #[prost(message, optional, tag = "3")]
     pub opts: ::core::option::Option<PreTransformSpecOpts>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -82,21 +82,21 @@ pub struct PreTransformVariable {
 pub struct PreTransformValuesOpts {
     #[prost(message, repeated, tag = "1")]
     pub variables: ::prost::alloc::vec::Vec<PreTransformVariable>,
-    #[prost(message, repeated, tag = "2")]
-    pub inline_datasets: ::prost::alloc::vec::Vec<super::tasks::InlineDataset>,
-    #[prost(uint32, optional, tag = "3")]
+    #[prost(uint32, optional, tag = "2")]
     pub row_limit: ::core::option::Option<u32>,
+    #[prost(string, tag = "3")]
+    pub local_tz: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "4")]
+    pub default_input_tz: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformValuesRequest {
     #[prost(string, tag = "1")]
     pub spec: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub local_tz: ::prost::alloc::string::String,
-    #[prost(string, optional, tag = "3")]
-    pub default_input_tz: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(message, optional, tag = "4")]
+    #[prost(message, repeated, tag = "2")]
+    pub inline_datasets: ::prost::alloc::vec::Vec<super::tasks::InlineDataset>,
+    #[prost(message, optional, tag = "3")]
     pub opts: ::core::option::Option<PreTransformValuesOpts>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -147,6 +147,20 @@ pub struct PreTransformExtractDataset {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PreTransformExtractOpts {
+    #[prost(string, tag = "1")]
+    pub local_tz: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub default_input_tz: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, tag = "3")]
+    pub preserve_interactivity: bool,
+    #[prost(int32, tag = "4")]
+    pub extract_threshold: i32,
+    #[prost(message, repeated, tag = "5")]
+    pub keep_variables: ::prost::alloc::vec::Vec<PreTransformVariable>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PreTransformExtractWarning {
     #[prost(oneof = "pre_transform_extract_warning::WarningType", tags = "1")]
     pub warning_type: ::core::option::Option<pre_transform_extract_warning::WarningType>,
@@ -175,16 +189,8 @@ pub struct PreTransformExtractResponse {
 pub struct PreTransformExtractRequest {
     #[prost(string, tag = "1")]
     pub spec: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub local_tz: ::prost::alloc::string::String,
-    #[prost(string, optional, tag = "3")]
-    pub default_input_tz: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, tag = "4")]
-    pub preserve_interactivity: bool,
-    #[prost(int32, tag = "5")]
-    pub extract_threshold: i32,
-    #[prost(message, repeated, tag = "6")]
+    #[prost(message, repeated, tag = "2")]
     pub inline_datasets: ::prost::alloc::vec::Vec<super::tasks::InlineDataset>,
-    #[prost(message, repeated, tag = "7")]
-    pub keep_variables: ::prost::alloc::vec::Vec<PreTransformVariable>,
+    #[prost(message, optional, tag = "3")]
+    pub opts: ::core::option::Option<PreTransformExtractOpts>,
 }

@@ -34,6 +34,10 @@ lazy_static = { version = "1.5" }
 async-trait = "0.1.73"
 futures = "0.3.21"
 
+[workspace.dependencies.serde_json]
+version = "1.0.91"
+default-features = false
+
 [workspace.dependencies.datafusion]
 version = "42.0.0"
 

@@ -5,9 +5,11 @@ use vegafusion_core::proto::gen::tasks::{
     NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueRequest, TzConfig,
     VariableNamespace,
 };
+use vegafusion_core::task_graph::task_value::NamedTaskValue;
 use wasm_bindgen::prelude::*;
 
 use js_sys::Promise;
+use std::any::Any;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -24,11 +26,11 @@ use vegafusion_core::planning::watch::{ExportUpdateJSON, ExportUpdateNamespace, 
 use vegafusion_core::proto::gen::services::{
     query_request, query_result, QueryRequest, QueryResult,
 };
+use vegafusion_core::runtime::{encode_inline_datasets, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;
 
 use vegafusion_core::chart_state::ChartState;
 use vegafusion_core::data::dataset::VegaFusionDataset;
-use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use web_sys::Element;
 
 pub fn set_panic_hook() {
@@ -105,30 +107,38 @@ impl VegaFusionWasmRuntime {
         VegaFusionWasmRuntime { sender }
     }
 }
+
 #[async_trait::async_trait]
 impl VegaFusionRuntimeTrait for VegaFusionWasmRuntime {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
     async fn query_request(
         &self,
         task_graph: Arc<TaskGraph>,
         indices: &[NodeValueIndex],
-        _inline_datasets: &HashMap<String, VegaFusionDataset>,
-    ) -> vegafusion_common::error::Result<Vec<ResponseTaskValue>> {
+        inline_datasets: &HashMap<String, VegaFusionDataset>,
+    ) -> vegafusion_common::error::Result<Vec<NamedTaskValue>> {
         // Request initial values
         let request_msg = QueryRequest {
             request: Some(query_request::Request::TaskGraphValues(
                 TaskGraphValueRequest {
                     task_graph: Some(task_graph.as_ref().clone()),
                     indices: Vec::from(indices),
-                    inline_datasets: vec![], // TODO: inline datasets
+                    inline_datasets: encode_inline_datasets(inline_datasets)?,
                 },
             )),
         };
 
         let (tx, rx) = oneshot::channel();
         self.sender.clone().send((request_msg, tx)).await.unwrap();
-        let response = rx.await.unwrap();
+        let response = rx.await.unwrap()?;
 
-        response
+        Ok(response
+            .into_iter()
+            .map(|v| v.into())
+            .collect::<Vec<NamedTaskValue>>())
     }
 }
 
