@@ -8,6 +8,8 @@ mod tests {
     use crate::crate_dir;
     use std::fs;
     use std::sync::Arc;
+    use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
+    use vegafusion_core::runtime::VegaFusionRuntimeTrait;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_core::spec::transform::TransformSpec;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
@@ -33,12 +35,14 @@ mod tests {
         let (chart_spec, _warnings) = runtime
             .pre_transform_spec(
                 &spec,
-                "UTC",
-                &None,
-                None,
-                true,
-                Default::default(),
-                Default::default(),
+                &Default::default(),
+                &PreTransformSpecOpts {
+                    keep_variables: vec![],
+                    row_limit: None,
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                    preserve_interactivity: true,
+                },
             )
             .await
             .unwrap();

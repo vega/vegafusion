@@ -516,6 +516,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-mutex"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "479db852db25d9dbf6204e6cb6253698f175c15726470f78af0d918e99d6156e"
+dependencies = [
+ "event-listener 2.5.3",
+]
+
+[[package]]
 name = "async-recursion"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4934,6 +4943,7 @@ dependencies = [
  "serde_json",
  "sysinfo",
  "tokio",
+ "tonic",
  "uuid",
  "vegafusion-common",
  "vegafusion-core",
@@ -4968,6 +4978,7 @@ dependencies = [
 name = "vegafusion-core"
 version = "1.6.9"
 dependencies = [
+ "async-mutex",
  "async-trait",
  "bytes",
  "chrono",

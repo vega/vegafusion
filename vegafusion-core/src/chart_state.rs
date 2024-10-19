@@ -83,18 +83,10 @@ impl ChartState {
 
         let mut init = Vec::new();
         for response_value in response_task_values {
-            let variable = response_value
-                .variable
-                .with_context(|| "Missing variable for response value".to_string())?;
+            let variable = response_value.variable;
 
             let scope = response_value.scope;
-            let proto_value = response_value
-                .value
-                .with_context(|| "Missing value for response value".to_string())?;
-
-            let value = TaskValue::try_from(&proto_value).with_context(|| {
-                "Deserialization failed for value of response value".to_string()
-            })?;
+            let value = response_value.value;
 
             init.push(ExportUpdateArrow {
                 namespace: ExportUpdateNamespace::try_from(variable.ns()).unwrap(),
@@ -176,18 +168,10 @@ impl ChartState {
         let mut response_updates = response_task_values
             .into_iter()
             .map(|response_value| {
-                let variable = response_value
-                    .variable
-                    .with_context(|| "Missing variable for response value".to_string())?;
+                let variable = response_value.variable;
 
                 let scope = response_value.scope;
-                let proto_value = response_value
-                    .value
-                    .with_context(|| "missing value for response value: {:?}".to_string())?;
-
-                let value = TaskValue::try_from(&proto_value).with_context(|| {
-                    "Deserialization failed for value of response value: {:?}".to_string()
-                })?;
+                let value = response_value.value;
 
                 Ok(ExportUpdateJSON {
                     namespace: match variable.ns() {
