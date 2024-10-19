@@ -381,3 +381,22 @@ pub fn decode_inline_datasets(
         .collect::<Result<HashMap<_, _>>>()?;
     Ok(inline_datasets)
 }
+
+pub fn encode_inline_datasets(
+    datasets: &HashMap<String, VegaFusionDataset>,
+) -> Result<Vec<InlineDataset>> {
+    datasets
+        .into_iter()
+        .map(|(name, dataset)| {
+            let VegaFusionDataset::Table { table, hash: _ } = dataset else {
+                return Err(VegaFusionError::internal(
+                    "grpc runtime suppors Arrow tables only, not general Datasets".to_string(),
+                ));
+            };
+            Ok(InlineDataset {
+                name: name.clone(),
+                table: table.to_ipc_bytes()?,
+            })
+        })
+        .collect::<Result<Vec<InlineDataset>>>()
+}

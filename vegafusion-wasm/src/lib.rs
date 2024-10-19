@@ -26,11 +26,11 @@ use vegafusion_core::planning::watch::{ExportUpdateJSON, ExportUpdateNamespace, 
 use vegafusion_core::proto::gen::services::{
     query_request, query_result, QueryRequest, QueryResult,
 };
+use vegafusion_core::runtime::{encode_inline_datasets, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;
 
 use vegafusion_core::chart_state::ChartState;
 use vegafusion_core::data::dataset::VegaFusionDataset;
-use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use web_sys::Element;
 
 pub fn set_panic_hook() {
@@ -118,7 +118,7 @@ impl VegaFusionRuntimeTrait for VegaFusionWasmRuntime {
         &self,
         task_graph: Arc<TaskGraph>,
         indices: &[NodeValueIndex],
-        _inline_datasets: &HashMap<String, VegaFusionDataset>,
+        inline_datasets: &HashMap<String, VegaFusionDataset>,
     ) -> vegafusion_common::error::Result<Vec<NamedTaskValue>> {
         // Request initial values
         let request_msg = QueryRequest {
@@ -126,7 +126,7 @@ impl VegaFusionRuntimeTrait for VegaFusionWasmRuntime {
                 TaskGraphValueRequest {
                     task_graph: Some(task_graph.as_ref().clone()),
                     indices: Vec::from(indices),
-                    inline_datasets: vec![], // TODO: inline datasets
+                    inline_datasets: encode_inline_datasets(inline_datasets)?,
                 },
             )),
         };
