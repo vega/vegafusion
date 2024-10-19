@@ -26,9 +26,6 @@ wasm-bindgen-test = "0.3.13"
 [dependencies.prost]
 workspace = true
 
-[dependencies.prost-types]
-workspace = true
-
 [dependencies.futures]
 workspace = true
 
