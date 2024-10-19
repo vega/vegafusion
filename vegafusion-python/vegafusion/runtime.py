@@ -364,11 +364,11 @@ class VegaFusionRuntime:
                         # TODO: Nice error message when column is not found
                         df_nw = df_nw[columns]  # type: ignore[index]
 
-                    imported_inline_datasets[name] = Table(df_nw)
+                    imported_inline_datasets[name] = Table(df_nw)  # type: ignore[arg-type]
                 except TypeError:
                     # Not supported by Narwhals, try pycapsule interface directly
                     if hasattr(value, "__arrow_c_stream__"):
-                        imported_inline_datasets[name] = Table(value)
+                        imported_inline_datasets[name] = Table(value)  # type: ignore[arg-type]
                     else:
                         raise
 
