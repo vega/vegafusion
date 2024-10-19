@@ -41,7 +41,7 @@ default-features = false
 [workspace.dependencies.datafusion]
 version = "42.0.0"
 default-features = false
-features = ["parquet"]
+features = ["parquet", "nested_expressions"]
 
 [workspace.dependencies.datafusion-common]
 version = "42.0.0"

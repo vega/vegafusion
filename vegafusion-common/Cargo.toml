@@ -44,6 +44,9 @@ workspace = true
 workspace = true
 features = ["core_expressions", "string_expressions", "datetime_expressions", "hashbrown"]
 
+[dependencies.datafusion-functions-nested]
+workspace = true
+
 [dependencies.datafusion-proto]
 workspace = true
 optional = true
