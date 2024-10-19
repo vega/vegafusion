@@ -247,7 +247,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         inline_datasets: &HashMap<String, VegaFusionDataset>,
         options: &PreTransformValuesOpts,
     ) -> Result<(Vec<TaskValue>, Vec<PreTransformValuesWarning>)> {
-        // Check that requested variables exist
+        // Check that requested variables exist and collect indices
         for var in &options.variables {
             let scope = var.scope.as_slice();
             let variable = var.variable.clone().unwrap();
@@ -280,6 +280,8 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
             }
         }
 
+        // Make sure planner keeps the requested variables, event
+        // if they are not used elsewhere in the spec
         let keep_variables = options
             .variables
             .clone()
@@ -331,12 +333,22 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         }
 
         // Collect node indices for variables
-        let indices: Vec<NodeValueIndex> = plan
-            .comm_plan
-            .server_to_client
+        let indices: Vec<_> = options
+            .variables
             .iter()
-            .filter_map(|var| task_graph_mapping.get(var).cloned())
-            .collect();
+            .map(|var| {
+                if let Some(index) =
+                    task_graph_mapping.get(&(var.variable.clone().unwrap(), var.scope.clone()))
+                {
+                    Ok(index.clone())
+                } else {
+                    Err(VegaFusionError::pre_transform(format!(
+                        "Requested variable {var:?}\n requires transforms or signal \
+                            expressions that are not yet supported"
+                    )))
+                }
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         // perform query
         let named_task_values = self
