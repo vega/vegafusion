@@ -96,3 +96,11 @@ opt-level = 3
 codegen-units = 1
 lto = "fat"
 strip = "debuginfo"
+
+# Profile optimized for minimizing size for wasm builds
+# Unfortunately, wasm-pack can't use this directly yet.
+# See https://github.com/rustwasm/wasm-pack/issues/1111
+[profile.release-small]
+inherits = "release"
+opt-level = "z"
+codegen-units = 1
