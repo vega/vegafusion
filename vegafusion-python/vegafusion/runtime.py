@@ -174,8 +174,7 @@ class VegaFusionRuntime:
             connection: SQL connection (optional).
         """
         self._runtime = None
-        self._grpc_runtime = None
-        self._grpc_query = None
+        self._grpc_url: str | None = None
         self._cache_capacity = cache_capacity
         self._memory_limit = memory_limit
         self._worker_threads = worker_threads
@@ -267,6 +266,7 @@ class VegaFusionRuntime:
         """
         from vegafusion._vegafusion import PyVegaFusionRuntime
 
+        self._grpc_url = url
         self._runtime = PyVegaFusionRuntime.new_grpc(url)
 
     @property
@@ -277,7 +277,7 @@ class VegaFusionRuntime:
         Returns:
             True if using gRPC, False otherwise.
         """
-        return self._grpc_runtime is not None
+        return self._grpc_url is not None
 
     def _import_or_register_inline_datasets(
         self,
@@ -364,11 +364,11 @@ class VegaFusionRuntime:
                         # TODO: Nice error message when column is not found
                         df_nw = df_nw[columns]  # type: ignore[index]
 
-                    imported_inline_datasets[name] = Table(df_nw)  # type: ignore[arg-type]
+                    imported_inline_datasets[name] = Table(df_nw)
                 except TypeError:
                     # Not supported by Narwhals, try pycapsule interface directly
                     if hasattr(value, "__arrow_c_stream__"):
-                        imported_inline_datasets[name] = Table(value)  # type: ignore[arg-type]
+                        imported_inline_datasets[name] = Table(value)
                     else:
                         raise
 
@@ -782,7 +782,7 @@ class VegaFusionRuntime:
             applied cleanly, None is returned and spec2 should be passed through the
             pre_transform_spec method.
         """
-        if self._grpc_channel:
+        if self.using_grpc:
             raise ValueError("patch_pre_transformed_spec not yet supported over gRPC")
         else:
             pre_transformed_spec2 = self.runtime.patch_pre_transformed_spec(
@@ -878,8 +878,8 @@ class VegaFusionRuntime:
             self._runtime = None
 
     def __repr__(self) -> str:
-        if self._grpc_channel:
-            return f"VegaFusionRuntime(channel={self._grpc_channel})"
+        if self.using_grpc:
+            return f"VegaFusionRuntime(url={self._grpc_url})"
         else:
             return (
                 f"VegaFusionRuntime(cache_capacity={self.cache_capacity}, "
