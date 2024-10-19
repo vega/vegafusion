@@ -26,8 +26,5 @@ version = "1.6.9"
 path = "../vegafusion-core"
 version = "1.6.9"
 
-[dependencies.datafusion-physical-expr]
-workspace = true
-
 [dependencies.datafusion-functions]
 workspace = true

@@ -40,38 +40,59 @@ default-features = false
 
 [workspace.dependencies.datafusion]
 version = "42.0.0"
+default-features = false
+features = ["parquet"]
 
 [workspace.dependencies.datafusion-common]
 version = "42.0.0"
+# no default features
 
 [workspace.dependencies.datafusion-expr]
 version = "42.0.0"
+# no default features
 
 [workspace.dependencies.datafusion-proto]
 version = "42.0.0"
+default-features = false
+features = ["parquet"]
 
 [workspace.dependencies.datafusion-proto-common]
 version = "42.0.0"
+default-features = false
 
 [workspace.dependencies.datafusion-physical-expr]
 version = "42.0.0"
+default-features = false
 
 [workspace.dependencies.datafusion-optimizer]
 version = "42.0.0"
+default-features = false
 
 [workspace.dependencies.datafusion-functions]
 version = "42.0.0"
+default-features = false
 
 [workspace.dependencies.datafusion-functions-nested]
 version = "42.0.0"
+# no default features
 
 [workspace.dependencies.datafusion-functions-aggregate]
 version = "42.0.0"
+# no default features
 
 [workspace.dependencies.datafusion-functions-window]
 version = "42.0.0"
+# no default features
 
+# Profile with good speed for local development and testing
 [profile.release]
-## Tell `rustc` to use highest performance optimization and perform Link Time Optimization
 opt-level = 3
-# lto = true
+
+# Profile optimized for speed and small size,
+# but takes a long time to compile
+[profile.release-opt]
+inherits = "release"
+opt-level = 3
+codegen-units = 1
+lto = "fat"
+strip = "debuginfo"
