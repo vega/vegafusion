@@ -1,11 +1,7 @@
 import json
-from io import BytesIO
 from pathlib import Path
 
 import pytest
-from skimage.io import imread
-from skimage.metrics import structural_similarity as ssim
-from vl_convert import vega_to_png
 
 import vegafusion as vf
 
@@ -71,32 +67,14 @@ def test_it(category, name):
     # Define local timezone
     local_tz = "America/New_York"
 
-    # Pre-transform with DataFusion connection and convert to image
-    vf.runtime.set_connection("datafusion")
+    # Pre-transform and make sure there aren't errors
     (transformed, _) = vf.runtime.pre_transform_spec(spec, local_tz)
-    img_datafusion = imread(BytesIO(vega_to_png(transformed)))
-
-    # Pre-transform with DuckDB connection and convert to image
-    vf.runtime.set_connection("duckdb")
-    (transformed, _) = vf.runtime.pre_transform_spec(spec, local_tz)
-    img_duckdb = imread(BytesIO(vega_to_png(transformed)))
-
-    # Compare images
-    assert (
-        img_datafusion.shape == img_duckdb.shape
-    ), "Size mismatch between datafusion and duckdb connections"
-    similarity = ssim(img_datafusion, img_duckdb, channel_axis=2)
-    print(similarity)
-    assert (
-        similarity >= 0.998
-    ), "Similarity failed between datafusion and duckdb connections"
 
 
 def test_pretransform_extract():
     spec_file = spec_dir / "vegalite" / "rect_binned_heatmap.vg.json"
     spec = json.loads(spec_file.read_text("utf8"))
 
-    vf.runtime.set_connection("datafusion")
     (_transformed, datasets, warnings) = vf.runtime.pre_transform_extract(spec, "UTC")
 
     assert len(warnings) == 0
