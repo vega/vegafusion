@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import json
 from typing import Any, TypedDict, cast
 
 from ._vegafusion import (
-    get_column_usage as _get_column_usage,
     build_pre_transform_spec_plan as _build_pre_transform_spec_plan,
 )
-import json
+from ._vegafusion import (
+    get_column_usage as _get_column_usage,
+)
 
 
 def get_column_usage(spec: dict[str, Any]) -> dict[str, list[str] | None]:

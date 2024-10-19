@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import sys
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union, cast
