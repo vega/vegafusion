@@ -1,24 +1,14 @@
 use crate::{
     data::dataset::VegaFusionDataset,
-    proto::{
-        gen::services::vega_fusion_runtime_client::VegaFusionRuntimeClient,
-        gen::{
-            pretransform::{
+    proto::gen::{pretransform::{
                 PreTransformExtractOpts, PreTransformExtractRequest, PreTransformExtractWarning,
                 PreTransformSpecOpts, PreTransformSpecRequest, PreTransformSpecWarning,
                 PreTransformValuesOpts, PreTransformValuesRequest, PreTransformValuesWarning,
-            },
-            services::{
-                pre_transform_extract_result, pre_transform_spec_result,
-                pre_transform_values_result, query_request, query_result, QueryRequest,
-            },
-            tasks::{
+            }, services::{pre_transform_extract_result, pre_transform_spec_result, pre_transform_values_result, query_request, query_result, vega_fusion_runtime_client::VegaFusionRuntimeClient, QueryRequest}, tasks::{
                 InlineDataset, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueRequest,
-            },
-        },
-    },
+            }},
     spec::chart::ChartSpec,
-    task_graph::task_value::TaskValue,
+    task_graph::task_value::{NamedTaskValue, TaskValue},
 };
 
 use async_mutex::Mutex;
@@ -48,7 +38,7 @@ impl VegaFusionRuntimeTrait for GrpcVegaFusionRuntime {
         task_graph: Arc<TaskGraph>,
         indices: &[NodeValueIndex],
         inline_datasets: &HashMap<String, VegaFusionDataset>,
-    ) -> Result<Vec<ResponseTaskValue>> {
+    ) -> Result<Vec<NamedTaskValue>> {
         let inline_datasets = encode_inline_datasets(&inline_datasets)?;
         let request = QueryRequest {
             request: Some(query_request::Request::TaskGraphValues(
@@ -67,7 +57,7 @@ impl VegaFusionRuntimeTrait for GrpcVegaFusionRuntime {
             .map_err(|e| VegaFusionError::internal(e.to_string()))?;
         match response.into_inner().response.unwrap() {
             query_result::Response::TaskGraphValues(task_graph_values) => {
-                Ok(task_graph_values.response_values)
+                Ok(task_graph_values.response_values.into_iter().map(|v| v.into()).collect::<Vec<_>>())
             }
             _ => Err(VegaFusionError::internal(
                 "Invalid response type".to_string(),

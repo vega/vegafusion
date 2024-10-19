@@ -1,5 +1,6 @@
 use crate::proto::gen::tasks::task_value::Data;
 use crate::proto::gen::tasks::{TaskGraphValueResponse, TaskValue as ProtoTaskValue, Variable};
+use crate::proto::gen::tasks::ResponseTaskValue;
 use crate::task_graph::memory::{inner_size_of_scalar, inner_size_of_table};
 use datafusion_common::ScalarValue;
 use serde_json::Value;
@@ -105,5 +106,33 @@ impl TaskGraphValueResponse {
                 Ok((variable, scope, value))
             })
             .collect::<Result<Vec<_>>>()
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct NamedTaskValue {
+    pub variable: Variable,
+    pub scope: Vec<u32>,
+    pub value: TaskValue,
+}
+
+impl From<NamedTaskValue> for ResponseTaskValue {
+    fn from(value: NamedTaskValue) -> Self {
+        ResponseTaskValue {
+            variable: Some(value.variable),
+            scope: value.scope,
+            value: Some(ProtoTaskValue::try_from(&value.value).unwrap()),
+        }
+    }
+}
+
+impl From<ResponseTaskValue> for NamedTaskValue {
+    fn from(value: ResponseTaskValue) -> Self {
+        NamedTaskValue {
+            variable: value.variable.unwrap(),
+            scope: value.scope,
+            value: TaskValue::try_from(&value.value.unwrap()).unwrap(),
+        }
     }
 }

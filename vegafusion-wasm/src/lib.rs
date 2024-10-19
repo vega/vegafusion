@@ -7,7 +7,7 @@ use vegafusion_core::proto::gen::tasks::{
     NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueRequest, TzConfig,
     VariableNamespace,
 };
-use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_core::task_graph::task_value::{NamedTaskValue, TaskValue};
 use wasm_bindgen::prelude::*;
 
 use js_sys::Promise;
@@ -109,6 +109,7 @@ impl VegaFusionWasmRuntime {
         VegaFusionWasmRuntime { sender }
     }
 }
+
 #[async_trait::async_trait]
 impl VegaFusionRuntimeTrait for VegaFusionWasmRuntime {
     fn as_any(&self) -> &dyn Any {
@@ -120,7 +121,7 @@ impl VegaFusionRuntimeTrait for VegaFusionWasmRuntime {
         task_graph: Arc<TaskGraph>,
         indices: &[NodeValueIndex],
         _inline_datasets: &HashMap<String, VegaFusionDataset>,
-    ) -> vegafusion_common::error::Result<Vec<ResponseTaskValue>> {
+    ) -> vegafusion_common::error::Result<Vec<NamedTaskValue>> {
         // Request initial values
         let request_msg = QueryRequest {
             request: Some(query_request::Request::TaskGraphValues(
@@ -134,40 +135,9 @@ impl VegaFusionRuntimeTrait for VegaFusionWasmRuntime {
 
         let (tx, rx) = oneshot::channel();
         self.sender.clone().send((request_msg, tx)).await.unwrap();
-        let response = rx.await.unwrap();
+        let response = rx.await.unwrap()?;
 
-        response
-    }
-
-    async fn pre_transform_spec(
-        &self,
-        _spec: &ChartSpec,
-        _inline_datasets: &HashMap<String, VegaFusionDataset>,
-        _options: &PreTransformSpecOpts,
-    ) -> Result<(ChartSpec, Vec<PreTransformSpecWarning>), VegaFusionError> {
-        unimplemented!()
-    }
-
-    async fn pre_transform_extract(
-        &self,
-        _spec: &ChartSpec,
-        _inline_datasets: &HashMap<String, VegaFusionDataset>,
-        _options: &PreTransformExtractOpts,
-    ) -> Result<(
-        ChartSpec,
-        Vec<PreTransformExtractTable>,
-        Vec<PreTransformExtractWarning>,
-    ), VegaFusionError> {
-        unimplemented!()
-    }
-
-    async fn pre_transform_values(
-        &self,
-        _spec: &ChartSpec,
-        _inline_datasets: &HashMap<String, VegaFusionDataset>,
-        _options: &PreTransformValuesOpts,
-    ) -> Result<(Vec<TaskValue>, Vec<PreTransformValuesWarning>), VegaFusionError> {
-        unimplemented!()
+        Ok(response.into_iter().map(|v| v.into()).collect::<Vec<NamedTaskValue>>())
     }
 }
 
