@@ -9,11 +9,11 @@ mod tests {
     use std::fs;
     use std::sync::Arc;
     use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
+    use vegafusion_core::runtime::VegaFusionRuntimeTrait;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_core::spec::transform::TransformSpec;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
-    use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 
     #[tokio::test]
     async fn test_destringify_selection_datasets() {

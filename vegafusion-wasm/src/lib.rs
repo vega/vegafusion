@@ -1,13 +1,11 @@
 use futures::{SinkExt, StreamExt};
 use prost::Message;
 
-use vegafusion_core::error::VegaFusionError;
-use vegafusion_core::proto::gen::pretransform::{PreTransformExtractOpts, PreTransformExtractWarning, PreTransformSpecOpts, PreTransformSpecWarning, PreTransformValuesOpts, PreTransformValuesWarning};
 use vegafusion_core::proto::gen::tasks::{
     NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueRequest, TzConfig,
     VariableNamespace,
 };
-use vegafusion_core::task_graph::task_value::{NamedTaskValue, TaskValue};
+use vegafusion_core::task_graph::task_value::NamedTaskValue;
 use wasm_bindgen::prelude::*;
 
 use js_sys::Promise;
@@ -32,7 +30,7 @@ use vegafusion_core::spec::chart::ChartSpec;
 
 use vegafusion_core::chart_state::ChartState;
 use vegafusion_core::data::dataset::VegaFusionDataset;
-use vegafusion_core::runtime::{PreTransformExtractTable, VegaFusionRuntimeTrait};
+use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use web_sys::Element;
 
 pub fn set_panic_hook() {
@@ -115,7 +113,7 @@ impl VegaFusionRuntimeTrait for VegaFusionWasmRuntime {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    
+
     async fn query_request(
         &self,
         task_graph: Arc<TaskGraph>,
@@ -137,7 +135,10 @@ impl VegaFusionRuntimeTrait for VegaFusionWasmRuntime {
         self.sender.clone().send((request_msg, tx)).await.unwrap();
         let response = rx.await.unwrap()?;
 
-        Ok(response.into_iter().map(|v| v.into()).collect::<Vec<NamedTaskValue>>())
+        Ok(response
+            .into_iter()
+            .map(|v| v.into())
+            .collect::<Vec<NamedTaskValue>>())
     }
 }
 

@@ -168,8 +168,7 @@ impl ChartState {
         let mut response_updates = response_task_values
             .into_iter()
             .map(|response_value| {
-                let variable = response_value
-                    .variable;
+                let variable = response_value.variable;
 
                 let scope = response_value.scope;
                 let value = response_value.value;

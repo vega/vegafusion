@@ -1,6 +1,6 @@
 use crate::proto::gen::tasks::task_value::Data;
-use crate::proto::gen::tasks::{TaskGraphValueResponse, TaskValue as ProtoTaskValue, Variable};
 use crate::proto::gen::tasks::ResponseTaskValue;
+use crate::proto::gen::tasks::{TaskGraphValueResponse, TaskValue as ProtoTaskValue, Variable};
 use crate::task_graph::memory::{inner_size_of_scalar, inner_size_of_table};
 use datafusion_common::ScalarValue;
 use serde_json::Value;
@@ -108,7 +108,6 @@ impl TaskGraphValueResponse {
             .collect::<Result<Vec<_>>>()
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct NamedTaskValue {

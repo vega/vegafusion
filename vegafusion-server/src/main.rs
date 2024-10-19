@@ -13,11 +13,8 @@ use vegafusion_core::proto::gen::services::{
     PreTransformValuesResult, QueryRequest, QueryResult,
 };
 use vegafusion_core::proto::gen::tasks::TaskGraphValueResponse;
-use vegafusion_core::proto::gen::tasks::{
-    ResponseTaskValue,
-    TaskValue as ProtoTaskValue,
-};
-use vegafusion_core::runtime::{VegaFusionRuntimeTrait, decode_inline_datasets};
+use vegafusion_core::proto::gen::tasks::{ResponseTaskValue, TaskValue as ProtoTaskValue};
+use vegafusion_core::runtime::{decode_inline_datasets, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
@@ -49,8 +46,7 @@ impl VegaFusionRuntimeGrpc {
             Some(query_request::Request::TaskGraphValues(task_graph_values)) => {
                 let task_graph = Arc::new(task_graph_values.task_graph.unwrap());
                 let indices = &task_graph_values.indices;
-                let inline_datasets =
-                    decode_inline_datasets(task_graph_values.inline_datasets)?;
+                let inline_datasets = decode_inline_datasets(task_graph_values.inline_datasets)?;
 
                 match self
                     .runtime
@@ -60,8 +56,11 @@ impl VegaFusionRuntimeGrpc {
                     Ok(response_values) => {
                         let response_msg = QueryResult {
                             response: Some(query_result::Response::TaskGraphValues(
-                                TaskGraphValueResponse { 
-                                    response_values: response_values.into_iter().map(|v| v.into()).collect::<Vec<_>>() 
+                                TaskGraphValueResponse {
+                                    response_values: response_values
+                                        .into_iter()
+                                        .map(|v| v.into())
+                                        .collect::<Vec<_>>(),
                                 },
                             )),
                         };
@@ -130,8 +129,7 @@ impl VegaFusionRuntimeGrpc {
     ) -> Result<PreTransformExtractResult, VegaFusionError> {
         // Extract and deserialize inline datasets
         let inline_pretransform_datasets = request.inline_datasets;
-        let inline_datasets =
-            decode_inline_datasets(inline_pretransform_datasets)?;
+        let inline_datasets = decode_inline_datasets(inline_pretransform_datasets)?;
         let opts = request.opts.unwrap();
 
         // Parse spec

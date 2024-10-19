@@ -1,17 +1,34 @@
 use std::{any::Any, collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
-use vegafusion_common::{data::table::VegaFusionTable, error::{Result, ResultWithContext, VegaFusionError}};
+use vegafusion_common::{
+    data::table::VegaFusionTable,
+    error::{Result, ResultWithContext, VegaFusionError},
+};
 
+use crate::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
 use crate::{
-    chart_state::ChartState, data::dataset::VegaFusionDataset, planning::{apply_pre_transform::apply_pre_transform_datasets, destringify_selection_datetimes::destringify_selection_datetimes, plan::{PlannerConfig, SpecPlan}, watch::{ExportUpdateArrow, ExportUpdateNamespace}}, proto::gen::{
+    data::dataset::VegaFusionDataset,
+    planning::{
+        apply_pre_transform::apply_pre_transform_datasets,
+        destringify_selection_datetimes::destringify_selection_datetimes,
+        plan::{PlannerConfig, SpecPlan},
+        watch::{ExportUpdateArrow, ExportUpdateNamespace},
+    },
+    proto::gen::{
         pretransform::{
-            pre_transform_extract_warning, PlannerWarning, PreTransformExtractOpts, PreTransformExtractWarning, PreTransformRowLimitWarning, PreTransformSpecOpts, PreTransformSpecWarning, PreTransformValuesOpts, PreTransformValuesWarning
+            pre_transform_extract_warning, PlannerWarning, PreTransformExtractOpts,
+            PreTransformExtractWarning, PreTransformRowLimitWarning, PreTransformSpecOpts,
+            PreTransformSpecWarning, PreTransformValuesOpts, PreTransformValuesWarning,
         },
         tasks::{InlineDataset, NodeValueIndex, TaskGraph, TzConfig, VariableNamespace},
-    }, spec::{chart::ChartSpec, values::MissingNullOrValue}, task_graph::{graph::ScopedVariable, task_value::{NamedTaskValue, TaskValue}}
+    },
+    spec::{chart::ChartSpec, values::MissingNullOrValue},
+    task_graph::{
+        graph::ScopedVariable,
+        task_value::{NamedTaskValue, TaskValue},
+    },
 };
-use crate::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
 
 #[derive(Clone)]
 pub struct PreTransformExtractTable {
@@ -68,20 +85,17 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         // Gather values of server-to-client values
         let mut init = Vec::new();
         let task_graph = Arc::new(task_graph);
-        let indices: Vec<NodeValueIndex> = plan.comm_plan.server_to_client
+        let indices: Vec<NodeValueIndex> = plan
+            .comm_plan
+            .server_to_client
             .iter()
-            .filter_map(|var| {
-                task_graph_mapping.get(var).cloned()
-            })
+            .filter_map(|var| task_graph_mapping.get(var).cloned())
             .collect();
 
-        let response_values = self.query_request(
-            task_graph.clone(),
-            &indices,
-            inline_datasets,
-        )
-        .await
-        .with_context(|| "Failed to query node values")?;
+        let response_values = self
+            .query_request(task_graph.clone(), &indices, inline_datasets)
+            .await
+            .with_context(|| "Failed to query node values")?;
 
         for (var, response_value) in plan.comm_plan.server_to_client.iter().zip(response_values) {
             init.push(ExportUpdateArrow {
@@ -317,11 +331,11 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         }
 
         // Collect node indices for variables
-        let indices: Vec<NodeValueIndex> = plan.comm_plan.server_to_client
+        let indices: Vec<NodeValueIndex> = plan
+            .comm_plan
+            .server_to_client
             .iter()
-            .filter_map(|var| {
-                task_graph_mapping.get(var).cloned()
-            })
+            .filter_map(|var| task_graph_mapping.get(var).cloned())
             .collect();
 
         // perform query
@@ -337,19 +351,16 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
             let variable = named_task_value.variable;
 
             // Apply row_limit
-            let value =
-                if let (Some(row_limit), TaskValue::Table(table)) = (row_limit, &value) {
-                    warnings.push(PreTransformValuesWarning {
-                        warning_type: Some(ValuesWarningType::RowLimit(
-                            PreTransformRowLimitWarning {
-                                datasets: vec![variable.clone()],
-                            },
-                        )),
-                    });
-                    TaskValue::Table(table.head(row_limit))
-                } else {
-                    value
-                };
+            let value = if let (Some(row_limit), TaskValue::Table(table)) = (row_limit, &value) {
+                warnings.push(PreTransformValuesWarning {
+                    warning_type: Some(ValuesWarningType::RowLimit(PreTransformRowLimitWarning {
+                        datasets: vec![variable.clone()],
+                    })),
+                });
+                TaskValue::Table(table.head(row_limit))
+            } else {
+                value
+            };
 
             task_values.push(value);
         }
@@ -357,7 +368,6 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         Ok((task_values, warnings))
     }
 }
-
 
 pub fn decode_inline_datasets(
     inline_pretransform_datasets: Vec<InlineDataset>,

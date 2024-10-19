@@ -1,12 +1,18 @@
 use crate::{
     data::dataset::VegaFusionDataset,
-    proto::gen::{pretransform::{
-                PreTransformExtractOpts, PreTransformExtractRequest, PreTransformExtractWarning,
-                PreTransformSpecOpts, PreTransformSpecRequest, PreTransformSpecWarning,
-                PreTransformValuesOpts, PreTransformValuesRequest, PreTransformValuesWarning,
-            }, services::{pre_transform_extract_result, pre_transform_spec_result, pre_transform_values_result, query_request, query_result, vega_fusion_runtime_client::VegaFusionRuntimeClient, QueryRequest}, tasks::{
-                InlineDataset, NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueRequest,
-            }},
+    proto::gen::{
+        pretransform::{
+            PreTransformExtractOpts, PreTransformExtractRequest, PreTransformExtractWarning,
+            PreTransformSpecOpts, PreTransformSpecRequest, PreTransformSpecWarning,
+            PreTransformValuesOpts, PreTransformValuesRequest, PreTransformValuesWarning,
+        },
+        services::{
+            pre_transform_extract_result, pre_transform_spec_result, pre_transform_values_result,
+            query_request, query_result, vega_fusion_runtime_client::VegaFusionRuntimeClient,
+            QueryRequest,
+        },
+        tasks::{InlineDataset, NodeValueIndex, TaskGraph, TaskGraphValueRequest},
+    },
     spec::chart::ChartSpec,
     task_graph::task_value::{NamedTaskValue, TaskValue},
 };
@@ -56,9 +62,11 @@ impl VegaFusionRuntimeTrait for GrpcVegaFusionRuntime {
             .await
             .map_err(|e| VegaFusionError::internal(e.to_string()))?;
         match response.into_inner().response.unwrap() {
-            query_result::Response::TaskGraphValues(task_graph_values) => {
-                Ok(task_graph_values.response_values.into_iter().map(|v| v.into()).collect::<Vec<_>>())
-            }
+            query_result::Response::TaskGraphValues(task_graph_values) => Ok(task_graph_values
+                .response_values
+                .into_iter()
+                .map(|v| v.into())
+                .collect::<Vec<_>>()),
             _ => Err(VegaFusionError::internal(
                 "Invalid response type".to_string(),
             )),

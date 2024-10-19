@@ -17,8 +17,6 @@ fn setup_s3_environment_vars() {
 mod tests {
     use crate::{crate_dir, setup_s3_environment_vars};
     use serde_json::json;
-    use vegafusion_core::proto::gen::pretransform::PreTransformValuesOpts;
-    use vegafusion_core::proto::gen::pretransform::PreTransformVariable;
     use std::collections::HashMap;
     use std::env;
     use std::fs;
@@ -27,12 +25,14 @@ mod tests {
     use vegafusion_common::error::VegaFusionError;
     use vegafusion_core::data::dataset::VegaFusionDataset;
     use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType;
+    use vegafusion_core::proto::gen::pretransform::PreTransformValuesOpts;
+    use vegafusion_core::proto::gen::pretransform::PreTransformVariable;
     use vegafusion_core::proto::gen::tasks::Variable;
+    use vegafusion_core::runtime::VegaFusionRuntimeTrait;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_core::spec::values::StringOrSignalSpec;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
-    use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 
     #[tokio::test]
     async fn test_pre_transform_dataset() {
@@ -350,14 +350,16 @@ mod tests {
                 &spec,
                 &Default::default(),
                 &PreTransformValuesOpts {
-                    variables: vec![PreTransformVariable {
-                        variable: Some(Variable::new_data("click_selected")),
-                        scope: vec![],
-                    },
-                    PreTransformVariable {
-                        variable: Some(Variable::new_data("drag_selected")),
-                        scope: vec![],
-                    }],
+                    variables: vec![
+                        PreTransformVariable {
+                            variable: Some(Variable::new_data("click_selected")),
+                            scope: vec![],
+                        },
+                        PreTransformVariable {
+                            variable: Some(Variable::new_data("drag_selected")),
+                            scope: vec![],
+                        },
+                    ],
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,

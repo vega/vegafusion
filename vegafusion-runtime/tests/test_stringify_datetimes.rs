@@ -14,13 +14,13 @@ lazy_static! {
 mod test_stringify_datetimes {
     use crate::{crate_dir, TOKIO_RUNTIME};
     use rstest::rstest;
-    use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
     use std::fs;
     use std::sync::Arc;
+    use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
+    use vegafusion_core::runtime::VegaFusionRuntimeTrait;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
-    use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 
     #[rstest(
         local_tz,

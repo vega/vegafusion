@@ -1,5 +1,5 @@
 mod runtime;
-pub use runtime::{PreTransformExtractTable, VegaFusionRuntimeTrait, decode_inline_datasets};
+pub use runtime::{decode_inline_datasets, PreTransformExtractTable, VegaFusionRuntimeTrait};
 
 #[cfg(feature = "tonic_support")]
 mod grpc_runtime;

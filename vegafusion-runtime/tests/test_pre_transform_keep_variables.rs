@@ -15,8 +15,8 @@ mod tests {
 
     use vegafusion_core::spec::chart::ChartSpec;
 
-    use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_core::runtime::VegaFusionRuntimeTrait;
+    use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
     #[tokio::test]
@@ -64,14 +64,16 @@ mod tests {
                 &Default::default(),
                 &PreTransformSpecOpts {
                     keep_variables: vec![PreTransformVariable {
-                        variable: Some(Variable::new_signal("layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins")),
+                        variable: Some(Variable::new_signal(
+                            "layer_0_layer_0_bin_maxbins_10_IMDB_Rating_bins",
+                        )),
                         scope: Vec::new(),
                     }],
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
                     preserve_interactivity: true,
-                }
+                },
             )
             .await
             .unwrap();
@@ -99,7 +101,7 @@ mod tests {
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
                     preserve_interactivity: true,
-                }
+                },
             )
             .await;
 

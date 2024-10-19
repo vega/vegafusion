@@ -37,7 +37,7 @@ use vegafusion_core::planning::watch::{ExportUpdateJSON, WatchPlan};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_runtime::tokio_runtime::{TOKIO_THREAD_STACK_SIZE};
+use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 use vegafusion_sql::connection::Connection;
 

@@ -10,23 +10,8 @@ use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-use vegafusion_core::planning::apply_pre_transform::apply_pre_transform_datasets;
-use vegafusion_core::planning::destringify_selection_datetimes::destringify_selection_datetimes;
-use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
-use vegafusion_core::planning::watch::{ExportUpdateArrow, ExportUpdateNamespace};
-use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
-use vegafusion_core::proto::gen::pretransform::{
-    pre_transform_extract_warning, PlannerWarning, PreTransformExtractOpts, PreTransformExtractWarning, PreTransformSpecOpts,
-    PreTransformSpecWarning, PreTransformValuesOpts, PreTransformValuesWarning,
-};
-use vegafusion_core::proto::gen::pretransform::PreTransformRowLimitWarning;
-use vegafusion_core::proto::gen::tasks::{
-    task::TaskKind, InlineDataset, NodeValueIndex, TaskGraph, TzConfig, VariableNamespace,
-};
-use vegafusion_core::runtime::{PreTransformExtractTable, VegaFusionRuntimeTrait};
-use vegafusion_core::spec::chart::ChartSpec;
-use vegafusion_core::spec::values::MissingNullOrValue;
-use vegafusion_core::task_graph::graph::ScopedVariable;
+use vegafusion_core::proto::gen::tasks::{task::TaskKind, NodeValueIndex, TaskGraph};
+use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::task_graph::task_value::{NamedTaskValue, TaskValue};
 use vegafusion_dataframe::connection::Connection;
 
@@ -50,7 +35,7 @@ impl VegaFusionRuntime {
         }
     }
 
-    async fn get_node_value(
+    pub async fn get_node_value(
         &self,
         task_graph: Arc<TaskGraph>,
         node_value_index: &NodeValueIndex,

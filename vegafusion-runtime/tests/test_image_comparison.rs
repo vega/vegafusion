@@ -7,7 +7,6 @@ use std::sync::Once;
 use crate::util::vegajs_runtime::{vegajs_runtime, ExportImageFormat};
 use datafusion_common::ScalarValue;
 use rstest::rstest;
-use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fs;
@@ -15,6 +14,7 @@ use std::sync::Arc;
 use tokio::runtime::Runtime;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 
 use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 
@@ -1199,9 +1199,10 @@ mod test_pre_transform_inline {
 
         // Load csv file as inline dataset
         let movies_table = vega_json_dataset_async("movies").await;
-        let inline_datasets = HashMap::from([
-            ("movies".to_string(), VegaFusionDataset::from_table(movies_table, None).unwrap())]
-        );
+        let inline_datasets = HashMap::from([(
+            "movies".to_string(),
+            VegaFusionDataset::from_table(movies_table, None).unwrap(),
+        )]);
 
         // Pre-transform specs
         let opts = PreTransformSpecOpts {
@@ -1212,7 +1213,10 @@ mod test_pre_transform_inline {
             ..Default::default()
         };
 
-        let response = runtime.pre_transform_spec(&inline_spec, &inline_datasets, &opts).await.unwrap();
+        let response = runtime
+            .pre_transform_spec(&inline_spec, &inline_datasets, &opts)
+            .await
+            .unwrap();
 
         let pre_transform_spec: ChartSpec = response.0;
 
@@ -1354,9 +1358,10 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
         ..Default::default()
     };
 
-    let (pre_transform_spec, _warnings) = runtime.pre_transform_spec(
-        &full_spec, &Default::default(), &opts
-    ).await.unwrap();
+    let (pre_transform_spec, _warnings) = runtime
+        .pre_transform_spec(&full_spec, &Default::default(), &opts)
+        .await
+        .unwrap();
 
     // println!(
     //     "pre-transformed: {}",

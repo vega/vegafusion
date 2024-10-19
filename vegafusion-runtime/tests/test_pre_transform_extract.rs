@@ -14,9 +14,9 @@ mod tests {
 
     use vegafusion_core::spec::chart::ChartSpec;
 
+    use vegafusion_core::runtime::VegaFusionRuntimeTrait;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
     use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
-    use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 
     #[tokio::test]
     async fn test_pre_transform_extract_scatter() {
