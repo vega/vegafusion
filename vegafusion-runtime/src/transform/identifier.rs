@@ -22,32 +22,30 @@ impl TransformTrait for Identifier {
         dataframe: DataFrame,
         _config: &CompilationConfig,
     ) -> Result<(DataFrame, Vec<TaskValue>)> {
-        todo!()
-        // // Add row number column with the desired name, sorted by the input order column
-        // let row_number_expr = Expr::WindowFunction(expr::WindowFunction {
-        //     fun: WindowFunctionDefinition::WindowUDF(Arc::new(RowNumber::new().into())),
-        //     args: Vec::new(),
-        //     partition_by: Vec::new(),
-        //     order_by: vec![expr::Sort {
-        //         expr: flat_col(ORDER_COL),
-        //         asc: true,
-        //         nulls_first: false,
-        //     }],
-        //     window_frame: WindowFrame::new(Some(true)),
-        //     null_treatment: Some(NullTreatment::IgnoreNulls),
-        // })
-        // .alias(&self.r#as);
-        //
-        // let result = dataframe
-        //     .select(vec![
-        //         Expr::Wildcard {
-        //             qualifier: None,
-        //             options: WildcardOptions::default(),
-        //         },
-        //         row_number_expr,
-        //     ])
-        //     .await?;
-        //
-        // Ok((result, Default::default()))
+        // Add row number column with the desired name, sorted by the input order column
+        let row_number_expr = Expr::WindowFunction(expr::WindowFunction {
+            fun: WindowFunctionDefinition::WindowUDF(Arc::new(RowNumber::new().into())),
+            args: Vec::new(),
+            partition_by: Vec::new(),
+            order_by: vec![expr::Sort {
+                expr: flat_col(ORDER_COL),
+                asc: true,
+                nulls_first: false,
+            }],
+            window_frame: WindowFrame::new(Some(true)),
+            null_treatment: Some(NullTreatment::IgnoreNulls),
+        })
+        .alias(&self.r#as);
+
+        let result = dataframe
+            .select(vec![
+                Expr::Wildcard {
+                    qualifier: None,
+                    options: WildcardOptions::default(),
+                },
+                row_number_expr,
+            ])?;
+
+        Ok((result, Default::default()))
     }
 }

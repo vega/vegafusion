@@ -21,45 +21,44 @@ impl TransformTrait for Formula {
         dataframe: DataFrame,
         config: &CompilationConfig,
     ) -> Result<(DataFrame, Vec<TaskValue>)> {
-        todo!()
-        // let formula_expr = compile(
-        //     self.expr.as_ref().unwrap(),
-        //     config,
-        //     Some(&dataframe.schema_df()?),
-        // )?;
-        //
-        // // Simplify expression prior to evaluation
-        // let simplifier = ExprSimplifier::new(VfSimplifyInfo::from(dataframe.schema_df()?));
-        // let formula_expr = simplifier.simplify(formula_expr)?;
-        //
-        // // Rename with alias
-        // let formula_expr = formula_expr.alias(&self.r#as);
-        //
-        // // Build selections. If as field name is already present, replace it with
-        // // formula expression at the same position. Otherwise append formula expression
-        // // to the end of the selection list
-        // let mut selections = Vec::new();
-        // let mut as_field_added = false;
-        // for field in dataframe.schema().fields().iter() {
-        //     if field.name() == &self.r#as {
-        //         selections.push(formula_expr.clone());
-        //         as_field_added = true;
-        //     } else {
-        //         selections.push(flat_col(field.name()))
-        //     }
-        // }
-        // if !as_field_added {
-        //     selections.push(formula_expr);
-        // }
-        //
-        // // dataframe
-        // let result = dataframe.select(selections).await.with_context(|| {
-        //     format!(
-        //         "Formula transform failed with expression: {}",
-        //         &self.expr.as_ref().unwrap()
-        //     )
-        // })?;
-        //
-        // Ok((result, Default::default()))
+        let formula_expr = compile(
+            self.expr.as_ref().unwrap(),
+            config,
+            Some(&dataframe.schema()),
+        )?;
+
+        // Simplify expression prior to evaluation
+        let simplifier = ExprSimplifier::new(VfSimplifyInfo::from(dataframe.schema().clone()));
+        let formula_expr = simplifier.simplify(formula_expr)?;
+
+        // Rename with alias
+        let formula_expr = formula_expr.alias(&self.r#as);
+
+        // Build selections. If as field name is already present, replace it with
+        // formula expression at the same position. Otherwise append formula expression
+        // to the end of the selection list
+        let mut selections = Vec::new();
+        let mut as_field_added = false;
+        for field in dataframe.schema().fields().iter() {
+            if field.name() == &self.r#as {
+                selections.push(formula_expr.clone());
+                as_field_added = true;
+            } else {
+                selections.push(flat_col(field.name()))
+            }
+        }
+        if !as_field_added {
+            selections.push(formula_expr);
+        }
+
+        // dataframe
+        let result = dataframe.select(selections).with_context(|| {
+            format!(
+                "Formula transform failed with expression: {}",
+                &self.expr.as_ref().unwrap()
+            )
+        })?;
+
+        Ok((result, Default::default()))
     }
 }

@@ -19,22 +19,15 @@ impl TransformTrait for Filter {
         dataframe: DataFrame,
         config: &CompilationConfig,
     ) -> Result<(DataFrame, Vec<TaskValue>)> {
-        todo!()
-        // let filter_expr = compile(
-        //     self.expr.as_ref().unwrap(),
-        //     config,
-        //     Some(&dataframe.schema_df()?),
-        // )?;
-        //
-        // // Cast filter expr to boolean
-        // let filter_expr = to_boolean(filter_expr, &dataframe.schema_df()?)?;
-        //
-        // // Simplify expression prior to evaluation
-        // let simplifier = ExprSimplifier::new(VfSimplifyInfo::from(dataframe.schema_df()?));
-        // let simplified_expr = simplifier.simplify(filter_expr)?;
-        //
-        // let result = dataframe.filter(simplified_expr).await?;
-        //
-        // Ok((result, Default::default()))
+        let filter_expr = compile(
+            self.expr.as_ref().unwrap(),
+            config,
+            Some(dataframe.schema()),
+        )?;
+
+        // Cast filter expr to boolean
+        let filter_expr = to_boolean(filter_expr, dataframe.schema())?;
+        let result = dataframe.filter(filter_expr)?;
+        Ok((result, Default::default()))
     }
 }

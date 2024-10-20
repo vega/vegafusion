@@ -7,6 +7,7 @@ use datafusion_common::{DFSchema, ScalarValue};
 use datafusion_expr::Expr;
 use datafusion_functions_aggregate::expr_fn::{max, min};
 use std::sync::Arc;
+use datafusion::arrow::array::RecordBatch;
 use datafusion::prelude::DataFrame;
 use vegafusion_common::column::unescaped_col;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -14,7 +15,7 @@ use vegafusion_common::datatypes::to_numeric;
 use vegafusion_common::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Extent;
 use vegafusion_core::task_graph::task_value::TaskValue;
-
+use crate::data::util::DataFrameUtils;
 
 #[async_trait]
 impl TransformTrait for Extent {
@@ -23,24 +24,22 @@ impl TransformTrait for Extent {
         sql_df: DataFrame,
         _config: &CompilationConfig,
     ) -> Result<(DataFrame, Vec<TaskValue>)> {
-        todo!()
-        // let output_values = if self.signal.is_some() {
-        //     let (min_expr, max_expr) = min_max_exprs(self.field.as_str(), &sql_df.schema_df()?)?;
-        //
-        //     let extent_df = sql_df
-        //         .aggregate(Vec::new(), vec![min_expr, max_expr])
-        //         .await
-        //         .unwrap();
-        //
-        //     // Eval to single row dataframe and extract scalar values
-        //     let result_table = extent_df.collect().await?;
-        //     let extent_list = extract_extent_list(&result_table)?;
-        //     vec![extent_list]
-        // } else {
-        //     Vec::new()
-        // };
-        //
-        // Ok((sql_df, output_values))
+        let output_values = if self.signal.is_some() {
+            let (min_expr, max_expr) = min_max_exprs(self.field.as_str(), &sql_df.schema())?;
+
+            let extent_df = sql_df
+                .clone()
+                .aggregate(Vec::new(), vec![min_expr, max_expr])?;
+
+            // Eval to single row dataframe and extract scalar values
+            let result_batch = extent_df.collect_flat().await?;
+            let extent_list = extract_extent_list(&result_batch)?;
+            vec![extent_list]
+        } else {
+            Vec::new()
+        };
+
+        Ok((sql_df, output_values))
     }
 }
 
@@ -51,12 +50,11 @@ fn min_max_exprs(field: &str, schema: &DFSchema) -> Result<(Expr, Expr)> {
     Ok((min_expr, max_expr))
 }
 
-fn extract_extent_list(table: &VegaFusionTable) -> Result<TaskValue> {
-    let result_rb = table.to_record_batch()?;
-    let min_val_array = result_rb
+fn extract_extent_list(batch: &RecordBatch) -> Result<TaskValue> {
+    let min_val_array = batch
         .column_by_name("__min_val")
         .with_context(|| "No column named __min_val".to_string())?;
-    let max_val_array = result_rb
+    let max_val_array = batch
         .column_by_name("__max_val")
         .with_context(|| "No column named __max_val".to_string())?;
 
