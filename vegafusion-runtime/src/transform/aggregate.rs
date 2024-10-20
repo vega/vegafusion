@@ -25,6 +25,7 @@ use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::aggregate::op_name;
 use vegafusion_datafusion_udfs::udafs::{Q1_UDF, Q3_UDF};
+use crate::data::util::DataFrameUtils;
 
 #[async_trait]
 impl TransformTrait for Aggregate {
@@ -33,31 +34,31 @@ impl TransformTrait for Aggregate {
         dataframe: DataFrame,
         _config: &CompilationConfig,
     ) -> Result<(DataFrame, Vec<TaskValue>)> {
-        todo!()
-        // let group_exprs: Vec<_> = self
-        //     .groupby
-        //     .iter()
-        //     .filter(|c| {
-        //         dataframe
-        //             .schema()
-        //             .column_with_name(&unescape_field(c))
-        //             .is_some()
-        //     })
-        //     .map(|c| unescaped_col(c))
-        //     .collect();
-        //
-        // let (mut agg_exprs, projections) = get_agg_and_proj_exprs(self, &dataframe.schema_df()?)?;
-        //
-        // // Append ordering column to aggregations
-        // agg_exprs.push(min(flat_col(ORDER_COL)).alias(ORDER_COL));
-        //
-        // // Perform aggregation
-        // let grouped_dataframe = dataframe.aggregate(group_exprs, agg_exprs).await?;
-        //
-        // // Make final projection
-        // let grouped_dataframe = grouped_dataframe.select(projections).await?;
-        //
-        // Ok((grouped_dataframe, Vec::new()))
+        let group_exprs: Vec<_> = self
+            .groupby
+            .iter()
+            .filter(|c| {
+                dataframe
+                    .schema()
+                    .inner()
+                    .column_with_name(&unescape_field(c))
+                    .is_some()
+            })
+            .map(|c| unescaped_col(c))
+            .collect();
+
+        let (mut agg_exprs, projections) = get_agg_and_proj_exprs(self, &dataframe.schema())?;
+
+        // Append ordering column to aggregations
+        agg_exprs.push(min(flat_col(ORDER_COL)).alias(ORDER_COL));
+
+        // Perform aggregation
+        let grouped_dataframe = dataframe.aggregate_mixed(group_exprs, agg_exprs)?;
+
+        // Make final projection
+        let grouped_dataframe = grouped_dataframe.select(projections)?;
+
+        Ok((grouped_dataframe, Vec::new()))
     }
 }
 

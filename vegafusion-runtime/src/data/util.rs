@@ -2,8 +2,9 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use datafusion::datasource::MemTable;
 use datafusion::prelude::{DataFrame, SessionContext};
-use datafusion_expr::Expr;
-use datafusion_expr::expr::WildcardOptions;
+use datafusion_common::tree_node::{Transformed, TreeNode, TreeNodeRewriter};
+use datafusion_expr::{col, Expr};
+use datafusion_expr::expr::{AggregateFunction, WildcardOptions};
 use datafusion_functions_window::row_number::row_number;
 use vegafusion_common::arrow::array::RecordBatch;
 use vegafusion_common::arrow::compute::concat_batches;
@@ -31,6 +32,10 @@ pub trait DataFrameUtils {
     async fn collect_to_table(self) -> vegafusion_common::error::Result<VegaFusionTable>;
     async fn collect_flat(self) -> vegafusion_common::error::Result<RecordBatch>;
     async fn with_index(self, index_name: &str) -> vegafusion_common::error::Result<DataFrame>;
+
+    /// Variant of aggregate that can handle agg expressions that include projections on top
+    /// of aggregations. Also includes groupby expressions in the final result
+    fn aggregate_mixed(self, group_expr: Vec<Expr>, aggr_expr: Vec<Expr>) -> vegafusion_common::error::Result<DataFrame>;
 }
 
 
@@ -68,6 +73,66 @@ impl DataFrameUtils for DataFrame {
                 },
             ];
             Ok(self.select(selections)?)
+        }
+    }
+
+    fn aggregate_mixed(self, group_expr: Vec<Expr>, aggr_expr: Vec<Expr>) -> vegafusion_common::error::Result<DataFrame> {
+        let mut select_exprs: Vec<Expr> = Vec::new();
+
+        // Extract pure agg expressions
+        let mut agg_rewriter = PureAggRewriter::new();
+
+        for agg_expr in aggr_expr {
+            let select_expr = agg_expr.rewrite(&mut agg_rewriter)?;
+            select_exprs.push(select_expr.data)
+        }
+
+        // Apply pure agg functions
+        let df = self.aggregate(group_expr.clone(), agg_rewriter.pure_aggs)?;
+
+        // Add groupby exprs to selection
+        select_exprs.extend(group_expr);
+
+        // Apply projection on top of aggs
+        Ok(df.select(select_exprs)?)
+    }
+}
+
+
+pub struct PureAggRewriter {
+
+    pub pure_aggs: Vec<Expr>,
+    pub next_id: usize,
+}
+
+impl PureAggRewriter {
+    pub fn new() -> Self {
+        Self {
+            pure_aggs: vec![],
+            next_id: 0,
+        }
+    }
+
+    fn new_agg_name(&mut self) -> String {
+        let name = format!("_agg_{}", self.next_id);
+        self.next_id += 1;
+        name
+    }
+}
+
+impl TreeNodeRewriter for PureAggRewriter {
+    type Node = Expr;
+
+    fn f_down(&mut self, node: Expr) -> datafusion_common::Result<Transformed<Self::Node>> {
+        if let Expr::AggregateFunction(agg) = node {
+            // extract agg and replace with column
+            let name = self.new_agg_name();
+            self.pure_aggs.push(Expr::AggregateFunction(agg).alias(&name));
+            Ok(Transformed::new_transformed(col(name), true))
+
+        } else {
+            // Return expr node unchanged
+            Ok(Transformed::no(node))
         }
     }
 }
