@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use datafusion_expr::expr;
 use std::sync::Arc;
+use datafusion::prelude::DataFrame;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::data::ORDER_COL;
@@ -15,13 +16,13 @@ use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::TransformDependencies;
-use vegafusion_dataframe::dataframe::DataFrame;
+use crate::data::util::DataFrameUtils;
 
 #[async_trait]
 pub trait TransformPipelineUtils {
     async fn eval_sql(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: DataFrame,
         config: &CompilationConfig,
     ) -> Result<(VegaFusionTable, Vec<TaskValue>)>;
 }
@@ -30,14 +31,14 @@ pub trait TransformPipelineUtils {
 impl TransformPipelineUtils for TransformPipeline {
     async fn eval_sql(
         &self,
-        sql_df: Arc<dyn DataFrame>,
+        sql_df: DataFrame,
         config: &CompilationConfig,
     ) -> Result<(VegaFusionTable, Vec<TaskValue>)> {
         let mut result_sql_df = sql_df;
         let mut result_outputs: HashMap<Variable, TaskValue> = Default::default();
         let mut config = config.clone();
 
-        if result_sql_df.schema().column_with_name(ORDER_COL).is_none() {
+        if result_sql_df.schema().inner().column_with_name(ORDER_COL).is_none() {
             return Err(VegaFusionError::internal(format!(
                 "DataFrame input to eval_sql does not have the expected {ORDER_COL} ordering column"
             )));
@@ -70,7 +71,7 @@ impl TransformPipelineUtils for TransformPipeline {
 
             result_sql_df = tx_result.0;
 
-            if result_sql_df.schema().column_with_name(ORDER_COL).is_none() {
+            if result_sql_df.schema().inner().column_with_name(ORDER_COL).is_none() {
                 return Err(VegaFusionError::internal(
                     format!("DataFrame output of transform does not have the expected {ORDER_COL} ordering column: {tx:?}")
                 ));
@@ -93,12 +94,10 @@ impl TransformPipelineUtils for TransformPipeline {
                     expr: flat_col(ORDER_COL),
                     asc: true,
                     nulls_first: false,
-                }],
-                None,
-            )
-            .await?;
+                }]
+            )?;
 
-        let table = result_sql_df.collect().await?.without_ordering()?;
+        let table = result_sql_df.collect_to_table().await?.without_ordering()?;
 
         // Sort result signal value by signal name
         let (_, signals_values): (Vec<_>, Vec<_>) = result_outputs

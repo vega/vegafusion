@@ -11,9 +11,9 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::is_numeric_datatype;
 use vegafusion_common::error::Result;
-use vegafusion_dataframe::connection::Connection;
+use vegafusion_runtime::data::util::{DataFrameUtils, SessionContextUtils};
+use vegafusion_runtime::task_graph::context::make_datafusion_context;
 use vegafusion_runtime::tokio_runtime::TOKIO_RUNTIME;
-use vegafusion_sql::connection::datafusion_conn::{make_datafusion_context, DataFusionConnection};
 
 const DROP_COLS: &[&str] = &[ORDER_COL, "_impute"];
 
@@ -81,8 +81,7 @@ pub fn assert_tables_equal(
         rhs.num_rows()
     );
 
-    let ctx = make_datafusion_context();
-    let conn = Arc::new(DataFusionConnection::new(Arc::new(ctx)));
+    let ctx = Arc::new(make_datafusion_context());
 
     // Flatten to single record batch
     let (lhs_rb, rhs_rb) = if config.row_order {
@@ -109,16 +108,15 @@ pub fn assert_tables_equal(
             .collect();
 
         let lhs_df = TOKIO_RUNTIME
-            .block_on(conn.scan_arrow(lhs.clone()))
+            .block_on(ctx.vegafusion_table(lhs.clone()))
             .unwrap();
         let rhs_df = TOKIO_RUNTIME
-            .block_on(conn.scan_arrow(rhs.clone()))
+            .block_on(ctx.vegafusion_table(rhs.clone()))
             .unwrap();
 
         let lhs_rb = TOKIO_RUNTIME.block_on(async {
             lhs_df
-                .sort(sort_exprs.clone(), None)
-                .await
+                .sort(sort_exprs.clone())
                 .unwrap()
                 .collect_flat()
                 .await
@@ -127,8 +125,7 @@ pub fn assert_tables_equal(
 
         let rhs_rb = TOKIO_RUNTIME.block_on(async {
             rhs_df
-                .sort(sort_exprs.clone(), None)
-                .await
+                .sort(sort_exprs.clone())
                 .unwrap()
                 .collect_flat()
                 .await

@@ -5048,6 +5048,7 @@ dependencies = [
  "chrono",
  "chrono-tz 0.9.0",
  "criterion",
+ "datafusion",
  "datafusion-common",
  "datafusion-expr",
  "datafusion-functions",
@@ -5086,9 +5087,7 @@ dependencies = [
  "uuid",
  "vegafusion-common",
  "vegafusion-core",
- "vegafusion-dataframe",
  "vegafusion-datafusion-udfs",
- "vegafusion-sql",
 ]
 
 [[package]]
@@ -5097,6 +5096,7 @@ version = "1.6.9"
 dependencies = [
  "assert_cmd",
  "clap 4.5.19",
+ "datafusion",
  "futures-util",
  "h2 0.3.26",
  "predicates",

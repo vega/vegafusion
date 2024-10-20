@@ -12,6 +12,7 @@ use datafusion_expr::expr;
 use datafusion_functions_aggregate::expr_fn::{avg, count, count_distinct, max, min, sum};
 use datafusion_functions_aggregate::stddev::{stddev_pop_udaf, stddev_udaf};
 use std::sync::Arc;
+use datafusion::prelude::DataFrame;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
@@ -23,40 +24,40 @@ use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::aggregate::op_name;
-use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udafs::{Q1_UDF, Q3_UDF};
 
 #[async_trait]
 impl TransformTrait for Aggregate {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: DataFrame,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
-        let group_exprs: Vec<_> = self
-            .groupby
-            .iter()
-            .filter(|c| {
-                dataframe
-                    .schema()
-                    .column_with_name(&unescape_field(c))
-                    .is_some()
-            })
-            .map(|c| unescaped_col(c))
-            .collect();
-
-        let (mut agg_exprs, projections) = get_agg_and_proj_exprs(self, &dataframe.schema_df()?)?;
-
-        // Append ordering column to aggregations
-        agg_exprs.push(min(flat_col(ORDER_COL)).alias(ORDER_COL));
-
-        // Perform aggregation
-        let grouped_dataframe = dataframe.aggregate(group_exprs, agg_exprs).await?;
-
-        // Make final projection
-        let grouped_dataframe = grouped_dataframe.select(projections).await?;
-
-        Ok((grouped_dataframe, Vec::new()))
+    ) -> Result<(DataFrame, Vec<TaskValue>)> {
+        todo!()
+        // let group_exprs: Vec<_> = self
+        //     .groupby
+        //     .iter()
+        //     .filter(|c| {
+        //         dataframe
+        //             .schema()
+        //             .column_with_name(&unescape_field(c))
+        //             .is_some()
+        //     })
+        //     .map(|c| unescaped_col(c))
+        //     .collect();
+        //
+        // let (mut agg_exprs, projections) = get_agg_and_proj_exprs(self, &dataframe.schema_df()?)?;
+        //
+        // // Append ordering column to aggregations
+        // agg_exprs.push(min(flat_col(ORDER_COL)).alias(ORDER_COL));
+        //
+        // // Perform aggregation
+        // let grouped_dataframe = dataframe.aggregate(group_exprs, agg_exprs).await?;
+        //
+        // // Make final projection
+        // let grouped_dataframe = grouped_dataframe.select(projections).await?;
+        //
+        // Ok((grouped_dataframe, Vec::new()))
     }
 }
 

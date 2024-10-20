@@ -20,6 +20,7 @@ use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 use clap::Parser;
+use datafusion::prelude::SessionContext;
 use regex::Regex;
 use vegafusion_core::proto::gen::pretransform::{
     PreTransformExtractDataset, PreTransformExtractRequest, PreTransformExtractResponse,
@@ -326,7 +327,7 @@ async fn main() -> Result<(), VegaFusionError> {
     };
 
     let tg_runtime = VegaFusionRuntime::new(
-        Arc::new(DataFusionConnection::default()),
+        Arc::new(SessionContext::new()),
         Some(args.capacity),
         memory_limit,
     );

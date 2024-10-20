@@ -8,30 +8,31 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
+use datafusion::prelude::SessionContext;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::tasks::{task::TaskKind, NodeValueIndex, TaskGraph};
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::task_graph::task_value::{NamedTaskValue, TaskValue};
-use vegafusion_dataframe::connection::Connection;
+
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
 #[derive(Clone)]
 pub struct VegaFusionRuntime {
     pub cache: VegaFusionCache,
-    pub conn: Arc<dyn Connection>,
+    pub ctx: Arc<SessionContext>,
 }
 
 impl VegaFusionRuntime {
     pub fn new(
-        conn: Arc<dyn Connection>,
+        ctx: Arc<SessionContext>,
         capacity: Option<usize>,
         memory_limit: Option<usize>,
     ) -> Self {
         Self {
             cache: VegaFusionCache::new(capacity, memory_limit),
-            conn,
+            ctx,
         }
     }
 
@@ -48,7 +49,7 @@ impl VegaFusionRuntime {
             node_value_index.node_index as usize,
             self.cache.clone(),
             inline_datasets,
-            self.conn.clone(),
+            self.ctx.clone(),
         ))
         .catch_unwind()
         .await;
@@ -132,7 +133,7 @@ async fn get_or_compute_node_value(
     node_index: usize,
     cache: VegaFusionCache,
     inline_datasets: HashMap<String, VegaFusionDataset>,
-    conn: Arc<dyn Connection>,
+    ctx: Arc<SessionContext>,
 ) -> Result<CacheValue> {
     // Get the cache key for requested node
     let node = task_graph.node(node_index).unwrap();
@@ -164,7 +165,7 @@ async fn get_or_compute_node_value(
                     input_node_index,
                     cloned_cache.clone(),
                     inline_datasets.clone(),
-                    conn.clone(),
+                    ctx.clone(),
                 )));
             }
 
@@ -191,7 +192,7 @@ async fn get_or_compute_node_value(
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            task.eval(&input_values, &tz_config, inline_datasets, conn)
+            task.eval(&input_values, &tz_config, inline_datasets, ctx)
                 .await
         };
 

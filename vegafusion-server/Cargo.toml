@@ -55,6 +55,9 @@ features = ["datafusion-conn"]
 workspace = true
 features = ["rt-multi-thread", "macros"]
 
+[dependencies.datafusion]
+workspace = true
+
 [dependencies.tonic-web]
 version = "0.10.2"
 

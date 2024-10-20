@@ -7,38 +7,40 @@ use datafusion_common::{DFSchema, ScalarValue};
 use datafusion_expr::Expr;
 use datafusion_functions_aggregate::expr_fn::{max, min};
 use std::sync::Arc;
+use datafusion::prelude::DataFrame;
 use vegafusion_common::column::unescaped_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datatypes::to_numeric;
 use vegafusion_common::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Extent;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_dataframe::dataframe::DataFrame;
+
 
 #[async_trait]
 impl TransformTrait for Extent {
     async fn eval(
         &self,
-        sql_df: Arc<dyn DataFrame>,
+        sql_df: DataFrame,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
-        let output_values = if self.signal.is_some() {
-            let (min_expr, max_expr) = min_max_exprs(self.field.as_str(), &sql_df.schema_df()?)?;
-
-            let extent_df = sql_df
-                .aggregate(Vec::new(), vec![min_expr, max_expr])
-                .await
-                .unwrap();
-
-            // Eval to single row dataframe and extract scalar values
-            let result_table = extent_df.collect().await?;
-            let extent_list = extract_extent_list(&result_table)?;
-            vec![extent_list]
-        } else {
-            Vec::new()
-        };
-
-        Ok((sql_df, output_values))
+    ) -> Result<(DataFrame, Vec<TaskValue>)> {
+        todo!()
+        // let output_values = if self.signal.is_some() {
+        //     let (min_expr, max_expr) = min_max_exprs(self.field.as_str(), &sql_df.schema_df()?)?;
+        //
+        //     let extent_df = sql_df
+        //         .aggregate(Vec::new(), vec![min_expr, max_expr])
+        //         .await
+        //         .unwrap();
+        //
+        //     // Eval to single row dataframe and extract scalar values
+        //     let result_table = extent_df.collect().await?;
+        //     let extent_list = extract_extent_list(&result_table)?;
+        //     vec![extent_list]
+        // } else {
+        //     Vec::new()
+        // };
+        //
+        // Ok((sql_df, output_values))
     }
 }
 

@@ -86,13 +86,12 @@ version = "1.6.9"
 path = "../vegafusion-datafusion-udfs"
 version = "1.6.9"
 
-[dependencies.vegafusion-dataframe]
-path = "../vegafusion-dataframe"
-version = "1.6.9"
-
 [dependencies.serde]
 version = "1.0.137"
 features = ["derive"]
+
+[dependencies.datafusion]
+workspace = true
 
 [dependencies.datafusion-common]
 workspace = true
@@ -135,8 +134,3 @@ features = ["blocking", "rustls-tls"]
 [dev-dependencies.criterion]
 version = "0.4.0"
 features = ["async_tokio"]
-
-[dev-dependencies.vegafusion-sql]
-path = "../vegafusion-sql"
-version = "1.6.9"
-features = ["datafusion-conn"]

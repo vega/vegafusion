@@ -11,6 +11,10 @@ use std::path::Path;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 
 use std::sync::Arc;
+use datafusion::datasource::listing::ListingTableUrl;
+use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
+use datafusion::prelude::{CsvReadOptions, DataFrame, ParquetReadOptions, SessionContext};
+use datafusion_common::config::TableOptions;
 use tokio::io::AsyncReadExt;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -38,13 +42,11 @@ use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::spec::visitors::extract_inline_dataset;
-use vegafusion_dataframe::connection::Connection;
-use vegafusion_dataframe::csv::CsvReadOptions;
-use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udfs::datetime::date_to_utc_timestamp::DATE_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
+use crate::data::util::{DataFrameUtils, SessionContextUtils};
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
@@ -76,6 +78,8 @@ pub fn build_compilation_config(
     }
 }
 
+
+
 #[async_trait]
 impl TaskCall for DataUrlTask {
     async fn eval(
@@ -83,7 +87,7 @@ impl TaskCall for DataUrlTask {
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
-        conn: Arc<dyn Connection>,
+        ctx: Arc<SessionContext>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Build compilation config for url signal (if any) and transforms (if any)
         let config = build_compilation_config(&self.input_vars(), values, tz_config);
@@ -117,37 +121,37 @@ impl TaskCall for DataUrlTask {
             file_type.as_deref()
         };
 
-        let registered_tables = conn.tables().await?;
+        // let registered_tables = ctx.tables().await?;
         let df = if let Some(inline_name) = extract_inline_dataset(&url) {
             let inline_name = inline_name.trim().to_string();
             if let Some(inline_dataset) = inline_datasets.get(&inline_name) {
                 match inline_dataset {
                     VegaFusionDataset::Table { table, .. } => {
-                        conn.scan_arrow(table.clone().with_ordering()?).await?
+                        let table = table.clone().with_ordering()?;
+                        ctx.vegafusion_table(table).await?
                     }
-                    VegaFusionDataset::DataFrame(df) => df.clone(),
                 }
-            } else if registered_tables.contains_key(&inline_name) {
-                conn.scan_table(&inline_name).await?
+            } else if let Ok(df) = ctx.table(&inline_name).await {
+                df
             } else {
                 return Err(VegaFusionError::internal(format!(
                     "No inline dataset named {inline_name}"
                 )));
             }
         } else if file_type == Some("csv") || (file_type.is_none() && url.ends_with(".csv")) {
-            read_csv(&url, &parse, conn, false).await?
+            read_csv(&url, &parse, ctx, false).await?
         } else if file_type == Some("tsv") || (file_type.is_none() && url.ends_with(".tsv")) {
-            read_csv(&url, &parse, conn, true).await?
+            read_csv(&url, &parse, ctx, true).await?
         } else if file_type == Some("json") || (file_type.is_none() && url.ends_with(".json")) {
-            read_json(&url, conn).await?
+            read_json(&url, ctx).await?
         } else if file_type == Some("arrow")
             || (file_type.is_none() && (url.ends_with(".arrow") || url.ends_with(".feather")))
         {
-            read_arrow(&url, conn).await?
+            read_arrow(&url, ctx).await?
         } else if file_type == Some("parquet")
             || (file_type.is_none() && (url.ends_with(".parquet")))
         {
-            read_parquet(&url, conn).await?
+            read_parquet(&url, ctx).await?
         } else {
             return Err(VegaFusionError::internal(format!(
                 "Invalid url file extension {url}"
@@ -155,7 +159,7 @@ impl TaskCall for DataUrlTask {
         };
 
         // Ensure there is an ordering column present
-        let df = if df.schema().column_with_name(ORDER_COL).is_none() {
+        let df = if df.schema().inner().column_with_name(ORDER_COL).is_none() {
             df.with_index(ORDER_COL).await?
         } else {
             df
@@ -172,7 +176,7 @@ impl TaskCall for DataUrlTask {
 }
 
 async fn eval_sql_df(
-    sql_df: Arc<dyn DataFrame>,
+    sql_df: DataFrame,
     pipeline: &Option<TransformPipeline>,
     config: &CompilationConfig,
 ) -> Result<(TaskValue, Vec<TaskValue>)> {
@@ -186,7 +190,7 @@ async fn eval_sql_df(
         pipeline.eval_sql(sql_df, config).await?
     } else {
         // No transforms, just remove any ordering column
-        (sql_df.collect().await?.without_ordering()?, Vec::new())
+        (sql_df.collect_to_table().await?.without_ordering()?, Vec::new())
     };
 
     let table_value = TaskValue::Table(transformed_df);
@@ -289,10 +293,10 @@ fn check_builtin_dataset(url: String) -> String {
     }
 }
 
-async fn pre_process_column_types(df: Arc<dyn DataFrame>) -> Result<Arc<dyn DataFrame>> {
+async fn pre_process_column_types(df: DataFrame) -> Result<DataFrame> {
     let mut selections: Vec<Expr> = Vec::new();
     let mut pre_proc_needed = false;
-    for field in df.schema().fields.iter() {
+    for field in df.schema().fields().iter() {
         if field.data_type() == &DataType::LargeUtf8 {
             // Work around https://github.com/apache/arrow-rs/issues/2654 by converting
             // LargeUtf8 to Utf8
@@ -309,7 +313,7 @@ async fn pre_process_column_types(df: Arc<dyn DataFrame>) -> Result<Arc<dyn Data
         }
     }
     if pre_proc_needed {
-        df.select(selections).await
+        Ok(df.select(selections)?)
     } else {
         Ok(df)
     }
@@ -317,9 +321,9 @@ async fn pre_process_column_types(df: Arc<dyn DataFrame>) -> Result<Arc<dyn Data
 
 async fn process_datetimes(
     parse: &Option<Parse>,
-    sql_df: Arc<dyn DataFrame>,
+    sql_df: DataFrame,
     tz_config: &Option<RuntimeTzConfig>,
-) -> Result<Arc<dyn DataFrame>> {
+) -> Result<DataFrame> {
     // Perform specialized date parsing
     let mut date_fields: Vec<String> = Vec::new();
     let mut df = sql_df;
@@ -327,7 +331,7 @@ async fn process_datetimes(
         for spec in &formats.specs {
             let datatype = &spec.datatype;
             if datatype.starts_with("date") || datatype.starts_with("utc") {
-                let schema = df.schema_df()?;
+                let schema = df.schema();
                 if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
@@ -376,7 +380,7 @@ async fn process_datetimes(
                         })
                         .collect();
                     columns.push(date_expr.alias(&spec.name));
-                    df = df.select(columns).await?
+                    df = df.select(columns)?
                 }
             }
         }
@@ -448,7 +452,7 @@ async fn process_datetimes(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    df.select(selection).await
+    Ok(df.select(selection)?)
 }
 
 #[async_trait]
@@ -458,7 +462,7 @@ impl TaskCall for DataValuesTask {
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
         _inline_datasets: HashMap<String, VegaFusionDataset>,
-        conn: Arc<dyn Connection>,
+        ctx: Arc<SessionContext>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Deserialize data into table
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
@@ -496,7 +500,7 @@ impl TaskCall for DataValuesTask {
             let config = build_compilation_config(&self.input_vars(), values, tz_config);
 
             // Process datetime columns
-            let df = conn.scan_arrow(values_table).await?;
+            let df = ctx.vegafusion_table(values_table).await?;
             let sql_df = process_datetimes(&parse, df, &config.tz_config).await?;
 
             let (table, output_values) = pipeline.eval_sql(sql_df, &config).await?;
@@ -504,9 +508,9 @@ impl TaskCall for DataValuesTask {
             (table, output_values)
         } else {
             // No transforms
-            let values_df = conn.scan_arrow(values_table).await?;
+            let values_df = ctx.vegafusion_table(values_table).await?;
             let values_df = process_datetimes(&parse, values_df, tz_config).await?;
-            (values_df.collect().await?, Vec::new())
+            (values_df.collect_to_table().await?, Vec::new())
         };
 
         let table_value = TaskValue::Table(transformed_table);
@@ -522,7 +526,7 @@ impl TaskCall for DataSourceTask {
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
         _inline_datasets: HashMap<String, VegaFusionDataset>,
-        conn: Arc<dyn Connection>,
+        ctx: Arc<SessionContext>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         let input_vars = self.input_vars();
         let mut config = build_compilation_config(&input_vars, values, tz_config);
@@ -546,7 +550,7 @@ impl TaskCall for DataSourceTask {
             .unwrap_or(false)
         {
             let pipeline = self.pipeline.as_ref().unwrap();
-            let sql_df = conn.scan_arrow(source_table).await?;
+            let sql_df = ctx.vegafusion_table(source_table).await?;
             let (table, output_values) = pipeline.eval_sql(sql_df, &config).await?;
 
             (table, output_values)
@@ -563,9 +567,9 @@ impl TaskCall for DataSourceTask {
 async fn read_csv(
     url: &str,
     parse: &Option<Parse>,
-    conn: Arc<dyn Connection>,
+    ctx: Arc<SessionContext>,
     is_tsv: bool,
-) -> Result<Arc<dyn DataFrame>> {
+) -> Result<DataFrame> {
     // Build base CSV options
     let mut csv_opts = if is_tsv {
         CsvReadOptions {
@@ -577,38 +581,47 @@ async fn read_csv(
     };
 
     // Add file extension based on URL
-    if let Some(ext) = Path::new(url).extension().and_then(|ext| ext.to_str()) {
-        csv_opts.file_extension = ext.to_string();
+    let ext = if let Some(ext) = Path::new(url).extension().and_then(|ext| ext.to_str()) {
+        ext.to_string()
     } else {
-        csv_opts.file_extension = "".to_string();
-    }
+        "".to_string()
+    };
+
+    csv_opts.file_extension = ext.as_str();
 
     // Build schema from Vega parse options
-    let schema = build_csv_schema(parse);
-    csv_opts.schema = schema;
-
-    conn.scan_csv(url, csv_opts).await
+    let schema = build_csv_schema(&csv_opts, parse, url, &ctx).await?;
+    csv_opts.schema = Some(&schema);
+    Ok(ctx.read_csv(url, csv_opts).await?)
 }
 
-fn build_csv_schema(parse: &Option<Parse>) -> Option<Schema> {
+/// Build final schema by combining the input and inferred schemas
+async fn build_csv_schema(
+    csv_opts: &CsvReadOptions<'_>,
+    parse: &Option<Parse>,
+    uri: impl Into<String>,
+    ctx: &SessionContext,
+) -> Result<Schema> {
+
     // Get HashMap of provided columns formats
     let format_specs = if let Some(parse) = parse {
         match parse {
             Parse::String(_) => {
                 // auto, use inferred schema
-                return None;
+                HashMap::new()
             }
             Parse::Object(field_specs) => field_specs
                 .specs
                 .iter()
                 .map(|spec| (spec.name.clone(), spec.datatype.clone()))
-                .collect(),
+                .collect()
         }
     } else {
         HashMap::new()
     };
 
-    let new_fields: Vec<_> = format_specs
+    // Map formats to fields
+    let field_types: HashMap<_, _> = format_specs
         .iter()
         .map(|(name, vega_type)| {
             let dtype = match vega_type.as_str() {
@@ -618,14 +631,35 @@ fn build_csv_schema(parse: &Option<Parse>) -> Option<Schema> {
                 "string" => DataType::Utf8,
                 _ => DataType::Utf8,
             };
-            Field::new(name, dtype, true)
+            (name.clone(), dtype)
         })
         .collect();
 
-    Some(Schema::new(new_fields))
+    // Get inferred schema
+    let table_path = ListingTableUrl::parse(uri.into().as_str())?;
+    let listing_options =
+        csv_opts.to_listing_options(&ctx.copied_config(), TableOptions::default());
+    let inferred_schema = listing_options
+        .infer_schema(&ctx.state(), &table_path)
+        .await?;
+
+    // Override inferred schema based on parse options
+    let new_fields: Vec<_> = inferred_schema
+        .fields()
+        .iter()
+        .map(|field| {
+            // Use provided field type, but fall back to string for unprovided columns
+            let dtype = field_types
+                .get(field.name())
+                .cloned()
+                .unwrap_or(DataType::Utf8);
+            Field::new(field.name(), dtype, true)
+        })
+        .collect();
+    Ok(Schema::new(new_fields))
 }
 
-async fn read_json(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
+async fn read_json(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
     // Read to json Value from local file or url.
     let value: serde_json::Value = if url.starts_with("http://") || url.starts_with("https://") {
         // Perform get request to collect file contents as text
@@ -669,16 +703,15 @@ async fn read_json(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataF
     };
 
     let table = VegaFusionTable::from_json(&value)?.with_ordering()?;
-
-    conn.scan_arrow(table).await
+    return ctx.vegafusion_table(table).await
 }
 
-async fn read_arrow(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
-    conn.scan_arrow_file(url).await
+async fn read_arrow(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
+    Ok(ctx.read_arrow(url, ArrowReadOptions::default()).await?)
 }
 
-async fn read_parquet(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
-    conn.scan_parquet(url).await
+async fn read_parquet(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
+    Ok(ctx.read_parquet(url, ParquetReadOptions::default()).await?)
 }
 
 pub fn make_request_client() -> ClientWithMiddleware {

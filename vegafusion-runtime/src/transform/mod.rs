@@ -21,20 +21,20 @@ use crate::expression::compiler::config::CompilationConfig;
 
 use async_trait::async_trait;
 use std::sync::Arc;
+use datafusion::prelude::DataFrame;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::proto::gen::transforms::Transform;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::TransformDependencies;
-use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 pub trait TransformTrait: TransformDependencies {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: DataFrame,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)>;
+    ) -> Result<(DataFrame, Vec<TaskValue>)>;
 }
 
 pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
@@ -62,9 +62,9 @@ pub fn to_transform_trait(tx: &TransformKind) -> &dyn TransformTrait {
 impl TransformTrait for Transform {
     async fn eval(
         &self,
-        sql_df: Arc<dyn DataFrame>,
+        sql_df: DataFrame,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(DataFrame, Vec<TaskValue>)> {
         to_transform_trait(self.transform_kind())
             .eval(sql_df, config)
             .await

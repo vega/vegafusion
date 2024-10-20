@@ -7,15 +7,13 @@ use vegafusion_dataframe::dataframe::DataFrame;
 
 #[derive(Clone)]
 pub enum VegaFusionDataset {
-    Table { table: VegaFusionTable, hash: u64 },
-    DataFrame(Arc<dyn DataFrame>),
+    Table { table: VegaFusionTable, hash: u64 }
 }
 
 impl VegaFusionDataset {
     pub fn fingerprint(&self) -> String {
         match self {
-            VegaFusionDataset::Table { hash, .. } => hash.to_string(),
-            VegaFusionDataset::DataFrame(df) => df.fingerprint().to_string(),
+            VegaFusionDataset::Table { hash, .. } => hash.to_string()
         }
     }
 
