@@ -26,9 +26,10 @@ use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_runtime::task_graph::context::make_datafusion_context;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
-use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
+
 
 lazy_static! {
     static ref TOKIO_RUNTIME: Runtime = tokio::runtime::Builder::new_multi_thread()
@@ -1175,7 +1176,7 @@ mod test_pre_transform_inline {
     use super::*;
     use crate::util::datasets::vega_json_dataset_async;
     use vegafusion_core::{data::dataset::VegaFusionDataset, runtime::VegaFusionRuntimeTrait};
-    use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
+    use vegafusion_runtime::task_graph::context::make_datafusion_context;
 
     #[tokio::test]
     async fn test() {
@@ -1185,7 +1186,7 @@ mod test_pre_transform_inline {
 
         // Initialize task graph runtime
         let runtime = VegaFusionRuntime::new(
-            Arc::new(DataFusionConnection::default()),
+            Arc::new(make_datafusion_context()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
         );
@@ -1341,7 +1342,7 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
 
     // Initialize task graph runtime
     let runtime = VegaFusionRuntime::new(
-        Arc::new(DataFusionConnection::default()),
+        Arc::new(make_datafusion_context()),
         Some(16),
         Some(1024_i32.pow(3) as usize),
     );
@@ -1462,7 +1463,7 @@ async fn check_spec_sequence(
 
     // Initialize task graph runtime
     let runtime = VegaFusionRuntime::new(
-        Arc::new(DataFusionConnection::default()),
+        Arc::new(make_datafusion_context()),
         Some(16),
         Some(1024_i32.pow(3) as usize),
     );

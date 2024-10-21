@@ -10,7 +10,7 @@ use vegafusion_core::planning::split_domain_data::split_domain_data;
 
 use vegafusion_core::planning::stitch::stitch_specs;
 use vegafusion_core::planning::strip_encodings::strip_encodings;
-use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
+use vegafusion_runtime::task_graph::context::make_datafusion_context;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_extract_server_data() {
@@ -63,7 +63,7 @@ async fn test_extract_server_data() {
     // println!("{:#?}", mapping);
 
     let graph_runtime = VegaFusionRuntime::new(
-        Arc::new(DataFusionConnection::default()),
+        Arc::new(make_datafusion_context()),
         Some(20),
         Some(1024_i32.pow(3) as usize),
     );

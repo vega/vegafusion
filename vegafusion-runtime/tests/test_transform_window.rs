@@ -40,7 +40,10 @@ mod test_window_single {
         )]
         frame: serde_json::Value,
 
-        #[values(true, false)] ignore_peers: bool,
+        #[values(
+            true,
+            false
+        )] ignore_peers: bool,
     ) {
         if frame == json!([null, 0])
             && matches!(op, AggregateOpSpec::Stdevp | AggregateOpSpec::Variancep)
