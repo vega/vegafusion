@@ -70,15 +70,15 @@ impl VegaFusionTable {
             .map(|f| f.as_ref().clone().with_nullable(true))
             .collect();
         let schema = Arc::new(Schema::new(schema_fields));
-        if partitions.iter().all(|batches| {
-            let batch_schema_fields: Vec<_> = batches
+        if partitions.iter().all(|batch| {
+            let batch_schema_fields: Vec<_> = batch
                 .schema()
                 .fields
                 .iter()
                 .map(|f| f.as_ref().clone().with_nullable(true))
                 .collect();
             let batch_schema = Arc::new(Schema::new(batch_schema_fields));
-            schema.contains(&batch_schema)
+            schema.fields.contains(&batch_schema.fields)
         }) {
             Ok(Self {
                 schema,
