@@ -351,190 +351,189 @@ impl TransformTrait for TimeUnit {
         dataframe: DataFrame,
         config: &CompilationConfig,
     ) -> Result<(DataFrame, Vec<TaskValue>)> {
-        todo!()
-        // let tz_config = config
-        //     .tz_config
-        //     .with_context(|| "No local timezone info provided".to_string())?;
-        //
-        // let local_tz = if self.timezone != Some(TimeUnitTimeZone::Utc as i32) {
-        //     Some(tz_config.local_tz)
-        // } else {
-        //     None
-        // };
-        //
-        // let local_tz = local_tz.map(|tz| tz.to_string());
-        // let schema = dataframe.schema_df()?;
-        // let default_input_tz = tz_config.default_input_tz.to_string();
-        //
-        // // Compute Apply alias
-        // let timeunit_start_alias = if let Some(alias_0) = &self.alias_0 {
-        //     alias_0.clone()
-        // } else {
-        //     "unit0".to_string()
-        // };
-        //
-        // let units_vec = self
-        //     .units
-        //     .iter()
-        //     .sorted()
-        //     .map(|unit_i32| TimeUnitUnit::try_from(*unit_i32).unwrap())
-        //     .collect::<Vec<TimeUnitUnit>>();
-        //
-        // // Add timeunit start
-        // let (timeunit_start_expr, interval) = match *units_vec.as_slice() {
-        //     [TimeUnitUnit::Year] => timeunit_date_trunc(
-        //         &self.field,
-        //         TimeUnitUnit::Year,
-        //         &schema,
-        //         &default_input_tz,
-        //         &local_tz,
-        //     )?,
-        //     [TimeUnitUnit::Year, TimeUnitUnit::Quarter] => timeunit_date_trunc(
-        //         &self.field,
-        //         TimeUnitUnit::Quarter,
-        //         &schema,
-        //         &default_input_tz,
-        //         &local_tz,
-        //     )?,
-        //     [TimeUnitUnit::Year, TimeUnitUnit::Month] => timeunit_date_trunc(
-        //         &self.field,
-        //         TimeUnitUnit::Month,
-        //         &schema,
-        //         &default_input_tz,
-        //         &local_tz,
-        //     )?,
-        //     [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date] => timeunit_date_trunc(
-        //         &self.field,
-        //         TimeUnitUnit::Date,
-        //         &schema,
-        //         &default_input_tz,
-        //         &local_tz,
-        //     )?,
-        //     [TimeUnitUnit::Year, TimeUnitUnit::DayOfYear] => timeunit_date_trunc(
-        //         &self.field,
-        //         TimeUnitUnit::Date,
-        //         &schema,
-        //         &default_input_tz,
-        //         &local_tz,
-        //     )?,
-        //     [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours] => {
-        //         timeunit_date_trunc(
-        //             &self.field,
-        //             TimeUnitUnit::Hours,
-        //             &schema,
-        //             &default_input_tz,
-        //             &local_tz,
-        //         )?
-        //     }
-        //     [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes] => {
-        //         timeunit_date_trunc(
-        //             &self.field,
-        //             TimeUnitUnit::Minutes,
-        //             &schema,
-        //             &default_input_tz,
-        //             &local_tz,
-        //         )?
-        //     }
-        //     [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes, TimeUnitUnit::Seconds] => {
-        //         timeunit_date_trunc(
-        //             &self.field,
-        //             TimeUnitUnit::Seconds,
-        //             &schema,
-        //             &default_input_tz,
-        //             &local_tz,
-        //         )?
-        //     }
-        //     [TimeUnitUnit::Day] => {
-        //         timeunit_weekday(&self.field, &schema, &default_input_tz, &local_tz)?
-        //     }
-        //     _ => {
-        //         // Check if timeunit can be handled by make_utc_timestamp
-        //         let units_set = units_vec.iter().cloned().collect::<HashSet<_>>();
-        //         let date_part_units = vec![
-        //             TimeUnitUnit::Year,
-        //             TimeUnitUnit::Quarter,
-        //             TimeUnitUnit::Month,
-        //             TimeUnitUnit::Date,
-        //             TimeUnitUnit::Hours,
-        //             TimeUnitUnit::Minutes,
-        //             TimeUnitUnit::Seconds,
-        //         ]
-        //         .into_iter()
-        //         .collect::<HashSet<_>>();
-        //         if units_set.is_subset(&date_part_units) {
-        //             timeunit_date_part_tz(
-        //                 &self.field,
-        //                 &units_set,
-        //                 &schema,
-        //                 &default_input_tz,
-        //                 &local_tz,
-        //             )?
-        //         } else {
-        //             // Fallback to custom UDF
-        //             timeunit_custom_udf(
-        //                 &self.field,
-        //                 &units_set,
-        //                 &schema,
-        //                 &default_input_tz,
-        //                 &local_tz,
-        //             )?
-        //         }
-        //     }
-        // };
-        //
-        // let timeunit_start_expr = timeunit_start_expr.alias(&timeunit_start_alias);
-        //
-        // // Add timeunit start value to the dataframe
-        // let mut select_exprs: Vec<_> = dataframe
-        //     .schema_df()?
-        //     .fields()
-        //     .iter()
-        //     .filter_map(|field| {
-        //         if field.name() != &timeunit_start_alias {
-        //             Some(flat_col(field.name()))
-        //         } else {
-        //             None
-        //         }
-        //     })
-        //     .collect();
-        // select_exprs.push(timeunit_start_expr);
-        //
-        // let dataframe = dataframe.select(select_exprs).await?;
-        //
-        // // Add timeunit end value to the dataframe
-        // let timeunit_end_alias = if let Some(alias_1) = &self.alias_1 {
-        //     alias_1.clone()
-        // } else {
-        //     "unit1".to_string()
-        // };
-        //
-        // let tz_str = local_tz.unwrap_or_else(|| "UTC".to_string());
-        // let timeunit_end_expr = Expr::ScalarFunction(expr::ScalarFunction {
-        //     func: Arc::new((*DATE_ADD_TZ_UDF).clone()),
-        //     args: vec![
-        //         lit(&interval.1),
-        //         lit(interval.0),
-        //         flat_col(&timeunit_start_alias),
-        //         lit(tz_str),
-        //     ],
-        // })
-        // .alias(&timeunit_end_alias);
-        //
-        // let mut select_exprs: Vec<_> = dataframe
-        //     .schema_df()?
-        //     .fields()
-        //     .iter()
-        //     .filter_map(|field| {
-        //         if field.name() != &timeunit_end_alias {
-        //             Some(flat_col(field.name()))
-        //         } else {
-        //             None
-        //         }
-        //     })
-        //     .collect();
-        // select_exprs.push(timeunit_end_expr);
-        // let dataframe = dataframe.select(select_exprs).await?;
-        //
-        // Ok((dataframe, Vec::new()))
+        let tz_config = config
+            .tz_config
+            .with_context(|| "No local timezone info provided".to_string())?;
+
+        let local_tz = if self.timezone != Some(TimeUnitTimeZone::Utc as i32) {
+            Some(tz_config.local_tz)
+        } else {
+            None
+        };
+
+        let local_tz = local_tz.map(|tz| tz.to_string());
+        let schema = dataframe.schema();
+        let default_input_tz = tz_config.default_input_tz.to_string();
+
+        // Compute Apply alias
+        let timeunit_start_alias = if let Some(alias_0) = &self.alias_0 {
+            alias_0.clone()
+        } else {
+            "unit0".to_string()
+        };
+
+        let units_vec = self
+            .units
+            .iter()
+            .sorted()
+            .map(|unit_i32| TimeUnitUnit::try_from(*unit_i32).unwrap())
+            .collect::<Vec<TimeUnitUnit>>();
+
+        // Add timeunit start
+        let (timeunit_start_expr, interval) = match *units_vec.as_slice() {
+            [TimeUnitUnit::Year] => timeunit_date_trunc(
+                &self.field,
+                TimeUnitUnit::Year,
+                &schema,
+                &default_input_tz,
+                &local_tz,
+            )?,
+            [TimeUnitUnit::Year, TimeUnitUnit::Quarter] => timeunit_date_trunc(
+                &self.field,
+                TimeUnitUnit::Quarter,
+                &schema,
+                &default_input_tz,
+                &local_tz,
+            )?,
+            [TimeUnitUnit::Year, TimeUnitUnit::Month] => timeunit_date_trunc(
+                &self.field,
+                TimeUnitUnit::Month,
+                &schema,
+                &default_input_tz,
+                &local_tz,
+            )?,
+            [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date] => timeunit_date_trunc(
+                &self.field,
+                TimeUnitUnit::Date,
+                &schema,
+                &default_input_tz,
+                &local_tz,
+            )?,
+            [TimeUnitUnit::Year, TimeUnitUnit::DayOfYear] => timeunit_date_trunc(
+                &self.field,
+                TimeUnitUnit::Date,
+                &schema,
+                &default_input_tz,
+                &local_tz,
+            )?,
+            [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours] => {
+                timeunit_date_trunc(
+                    &self.field,
+                    TimeUnitUnit::Hours,
+                    &schema,
+                    &default_input_tz,
+                    &local_tz,
+                )?
+            }
+            [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes] => {
+                timeunit_date_trunc(
+                    &self.field,
+                    TimeUnitUnit::Minutes,
+                    &schema,
+                    &default_input_tz,
+                    &local_tz,
+                )?
+            }
+            [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date, TimeUnitUnit::Hours, TimeUnitUnit::Minutes, TimeUnitUnit::Seconds] => {
+                timeunit_date_trunc(
+                    &self.field,
+                    TimeUnitUnit::Seconds,
+                    &schema,
+                    &default_input_tz,
+                    &local_tz,
+                )?
+            }
+            [TimeUnitUnit::Day] => {
+                timeunit_weekday(&self.field, &schema, &default_input_tz, &local_tz)?
+            }
+            _ => {
+                // Check if timeunit can be handled by make_utc_timestamp
+                let units_set = units_vec.iter().cloned().collect::<HashSet<_>>();
+                let date_part_units = vec![
+                    TimeUnitUnit::Year,
+                    TimeUnitUnit::Quarter,
+                    TimeUnitUnit::Month,
+                    TimeUnitUnit::Date,
+                    TimeUnitUnit::Hours,
+                    TimeUnitUnit::Minutes,
+                    TimeUnitUnit::Seconds,
+                ]
+                .into_iter()
+                .collect::<HashSet<_>>();
+                if units_set.is_subset(&date_part_units) {
+                    timeunit_date_part_tz(
+                        &self.field,
+                        &units_set,
+                        &schema,
+                        &default_input_tz,
+                        &local_tz,
+                    )?
+                } else {
+                    // Fallback to custom UDF
+                    timeunit_custom_udf(
+                        &self.field,
+                        &units_set,
+                        &schema,
+                        &default_input_tz,
+                        &local_tz,
+                    )?
+                }
+            }
+        };
+
+        let timeunit_start_expr = timeunit_start_expr.alias(&timeunit_start_alias);
+
+        // Add timeunit start value to the dataframe
+        let mut select_exprs: Vec<_> = dataframe
+            .schema()
+            .fields()
+            .iter()
+            .filter_map(|field| {
+                if field.name() != &timeunit_start_alias {
+                    Some(flat_col(field.name()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        select_exprs.push(timeunit_start_expr);
+
+        let dataframe = dataframe.select(select_exprs)?;
+
+        // Add timeunit end value to the dataframe
+        let timeunit_end_alias = if let Some(alias_1) = &self.alias_1 {
+            alias_1.clone()
+        } else {
+            "unit1".to_string()
+        };
+
+        let tz_str = local_tz.unwrap_or_else(|| "UTC".to_string());
+        let timeunit_end_expr = Expr::ScalarFunction(expr::ScalarFunction {
+            func: Arc::new((*DATE_ADD_TZ_UDF).clone()),
+            args: vec![
+                lit(&interval.1),
+                lit(interval.0),
+                flat_col(&timeunit_start_alias),
+                lit(tz_str),
+            ],
+        })
+        .alias(&timeunit_end_alias);
+
+        let mut select_exprs: Vec<_> = dataframe
+            .schema()
+            .fields()
+            .iter()
+            .filter_map(|field| {
+                if field.name() != &timeunit_end_alias {
+                    Some(flat_col(field.name()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        select_exprs.push(timeunit_end_expr);
+        let dataframe = dataframe.select(select_exprs)?;
+
+        Ok((dataframe, Vec::new()))
     }
 }
