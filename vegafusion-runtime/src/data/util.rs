@@ -42,9 +42,13 @@ pub trait DataFrameUtils {
 #[async_trait]
 impl DataFrameUtils for DataFrame {
     async fn collect_to_table(self) -> vegafusion_common::error::Result<VegaFusionTable> {
-        let schema = self.schema().inner().clone();
+        let mut arrow_schema = self.schema().inner().clone();
         let batches = self.collect().await?;
-        VegaFusionTable::try_new(schema, batches)
+        if let Some(batch) = batches.first() {
+            // use first batch schema if present
+            arrow_schema = batch.schema()
+        }
+        VegaFusionTable::try_new(arrow_schema, batches)
     }
 
     async fn collect_flat(self) -> vegafusion_common::error::Result<RecordBatch> {
