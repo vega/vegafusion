@@ -24,8 +24,8 @@ mod test_stack_no_group {
         offset,
         case(None),
         case(Some(StackOffsetSpec::Zero)),
-        // case(Some(StackOffsetSpec::Normalize)),
-        // case(Some(StackOffsetSpec::Center))
+        case(Some(StackOffsetSpec::Normalize)),
+        case(Some(StackOffsetSpec::Center))
     )]
     fn test(offset: Option<StackOffsetSpec>) {
         let dataset = vega_json_dataset("penguins");
@@ -70,8 +70,8 @@ mod test_stack_with_group {
         offset,
         case(None),
         case(Some(StackOffsetSpec::Zero)),
-        // case(Some(StackOffsetSpec::Normalize)),
-        // case(Some(StackOffsetSpec::Center))
+        case(Some(StackOffsetSpec::Normalize)),
+        case(Some(StackOffsetSpec::Center))
     )]
     fn test(offset: Option<StackOffsetSpec>) {
         let dataset = vega_json_dataset("penguins");
@@ -114,8 +114,8 @@ mod test_stack_with_group_sort {
         offset,
         case(None),
         case(Some(StackOffsetSpec::Zero)),
-        // case(Some(StackOffsetSpec::Normalize)),
-        // case(Some(StackOffsetSpec::Center))
+        case(Some(StackOffsetSpec::Normalize)),
+        case(Some(StackOffsetSpec::Center))
     )]
     fn test(offset: Option<StackOffsetSpec>) {
         let dataset = vega_json_dataset("penguins");
@@ -167,8 +167,8 @@ mod test_stack_with_group_sort_negative {
         offset,
         case(None),
         case(Some(StackOffsetSpec::Zero)),
-        // case(Some(StackOffsetSpec::Normalize)),
-        // case(Some(StackOffsetSpec::Center))
+        case(Some(StackOffsetSpec::Normalize)),
+        case(Some(StackOffsetSpec::Center))
     )]
     fn test(offset: Option<StackOffsetSpec>) {
         let dataset = vega_json_dataset("penguins");
@@ -323,8 +323,8 @@ mod test_stack_timestamp_group {
         offset,
         case(None),
         case(Some(StackOffsetSpec::Zero)),
-        // case(Some(StackOffsetSpec::Normalize)),
-        // case(Some(StackOffsetSpec::Center))
+        case(Some(StackOffsetSpec::Normalize)),
+        case(Some(StackOffsetSpec::Center))
     )]
     fn test(offset: Option<StackOffsetSpec>) {
         let dataset = VegaFusionTable::from_json(&json!([

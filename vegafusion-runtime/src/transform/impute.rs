@@ -11,7 +11,7 @@ use datafusion_functions::expr_fn::coalesce;
 use datafusion_functions_aggregate::expr_fn::min;
 use datafusion_functions_window::row_number::RowNumber;
 use sqlparser::ast::NullTreatment;
-use vegafusion_common::column::flat_col;
+use vegafusion_common::column::{flat_col, relation_col};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::error::{Result, ResultWithContext};
@@ -98,15 +98,6 @@ impl TransformTrait for Impute {
             let order_group = format!("{ORDER_COL}_groups");
             let order_group_col = flat_col(&order_group);
 
-            // Build mangled names for use in the join. DataFusion's DataFrame.join doesn't
-            // support duplicate unqualified column names, so we mangle the names of the columns
-            // we're joining into.
-            let mangled_suffix = "_tmp";
-            let mangled_key = format!("{key}{mangled_suffix}");
-            let manged_group_col_names = groupby.iter().map(
-                |c| format!("{c}{mangled_suffix}")
-            ).collect::<Vec<_>>();
-
             // Create DataFrame with unique key values, and an internal ordering column
             let key_col = flat_col(&key);
             let key_df = dataframe.clone()
@@ -122,46 +113,26 @@ impl TransformTrait for Impute {
             let groups_df = dataframe.clone()
                 .aggregate_mixed(group_cols, vec![min(order_col.clone()).alias(&order_group)])?;
 
-            // Now cross join the keys and group_by DataFrames, then left join back to the original
-            // DataFrame on the key and group_by columns. We'll make the names of these cols in the
-            // original DataFrame and then throw them away after the join.
-            let mangled_groupby_and_key_cols: Vec<_> = schema
-                .fields()
-                .iter()
-                .map(
-                    // |field| if field.name() == &key || self.groupby.contains(field.name()) {
-                    |field| if self.groupby.contains(field.name()) || field.name() == &key{
-                        flat_col(field.name()).alias(format!("{}{}", field.name(), mangled_suffix))
-                    } else {
-                        flat_col(field.name())
-                    }
-                )
-                .collect();
-
-            let left_on = [
-                vec![key.as_str()],
-                self.groupby.iter().map(|g| g.as_str()).collect(),
-            ].concat();
-
-            // Use mangled references to group cols and key
-            let right_on = [
-                vec![mangled_key.as_str()],
-                manged_group_col_names.iter().map(|g| g.as_str()).collect()
-            ].concat();
+            // Build join conditions
+            let mut on_exprs = groupby.iter().map(
+                |c| relation_col(c, "lhs").eq(relation_col(c, "rhs"))
+            ).collect::<Vec<_>>();
+            on_exprs.push(relation_col(&key, "lhs").eq(relation_col(&key, "rhs")));
 
             let pre_ordered_df = key_df
-                .join(groups_df, JoinType::Inner, &[], &[], None)?
-                .join(
-                    dataframe.clone().select(mangled_groupby_and_key_cols)?,
+                .join_on(groups_df, JoinType::Inner, vec![])?
+                .alias("lhs")?
+                .join_on(
+                    dataframe.clone().alias("rhs")?,
                     JoinType::Left,
-                    &left_on,
-                    &right_on,
-                    None
+                    on_exprs
                 )?;
 
             // Build final selection that fills in missing values and adds ordering column
             let mut final_selections = Vec::new();
-            for f in schema.fields() {
+            for field_index in 0..schema.fields().len() {
+                let (q, f) = schema.qualified_field(field_index);
+
                 if f.name().starts_with(ORDER_COL) {
                     // Skip all order cols
                     continue
@@ -174,7 +145,14 @@ impl TransformTrait for Impute {
                         .alias(f.name()));
                 } else {
                     // Keep other columns
-                    final_selections.push(flat_col(f.name()));
+                    if f.name() == &key || groupby.contains(f.name()) {
+                        // Pull key and groupby columns from the "lhs" table (which won't have nulls
+                        // introduced by the left join)
+                        final_selections.push(relation_col(f.name(), "lhs"));
+                    } else {
+                        // Pull all other columns from the rhs table
+                        final_selections.push(relation_col(f.name(), "rhs"));
+                    }
                 }
             }
 

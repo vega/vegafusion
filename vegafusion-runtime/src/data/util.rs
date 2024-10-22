@@ -2,8 +2,9 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use datafusion::datasource::MemTable;
 use datafusion::prelude::{DataFrame, SessionContext};
+use datafusion_common::TableReference;
 use datafusion_common::tree_node::{Transformed, TreeNode, TreeNodeRewriter};
-use datafusion_expr::{col, Expr};
+use datafusion_expr::{col, Expr, LogicalPlanBuilder};
 use datafusion_expr::expr::{AggregateFunction, WildcardOptions};
 use datafusion_functions_window::row_number::row_number;
 use vegafusion_common::arrow::array::RecordBatch;
@@ -36,6 +37,7 @@ pub trait DataFrameUtils {
     /// Variant of aggregate that can handle agg expressions that include projections on top
     /// of aggregations. Also includes groupby expressions in the final result
     fn aggregate_mixed(self, group_expr: Vec<Expr>, aggr_expr: Vec<Expr>) -> vegafusion_common::error::Result<DataFrame>;
+    fn alias(self, name: impl Into<TableReference>) -> vegafusion_common::error::Result<DataFrame>;
 }
 
 
@@ -99,6 +101,11 @@ impl DataFrameUtils for DataFrame {
 
         // Apply projection on top of aggs
         Ok(df.select(select_exprs)?)
+    }
+
+    fn alias(self, name: impl Into<TableReference>) -> vegafusion_common::error::Result<DataFrame>{
+        let (state, plan) = self.into_parts();
+        Ok(DataFrame::new(state, LogicalPlanBuilder::new(plan).alias(name)?.build()?))
     }
 }
 

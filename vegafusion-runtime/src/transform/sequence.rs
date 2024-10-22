@@ -5,7 +5,7 @@ use crate::transform::TransformTrait;
 use crate::expression::compiler::utils::ExprHelpers;
 use async_trait::async_trait;
 use std::sync::Arc;
-use datafusion::prelude::DataFrame;
+use datafusion::prelude::{DataFrame, SessionContext};
 use vegafusion_common::arrow::array::{ArrayRef, Float64Array};
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::arrow::datatypes::{Field, Schema, SchemaRef};
@@ -67,7 +67,9 @@ impl TransformTrait for Sequence {
         let data_batch = RecordBatch::try_new(data_schema, vec![data_array])?;
         let data_table = VegaFusionTable::from(data_batch);
 
-        let ctx = make_datafusion_context();
+        // Build session context from input DataFrame
+        let (state, _) = dataframe.into_parts();
+        let ctx = SessionContext::from(state);
         let result = ctx.vegafusion_table(data_table.with_ordering()?).await?;
 
         Ok((result, Default::default()))
