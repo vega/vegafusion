@@ -40,6 +40,9 @@ pixelmatch = "0.1.0"
 rgb = "0.8.32"
 lodepng = "3.6.1"
 
+[dependencies.url]
+workspace = true
+
 [dependencies.serde_json]
 workspace = true
 
@@ -54,7 +57,7 @@ workspace = true
 
 [dependencies.object_store]
 workspace = true
-features = ["aws"]
+features = ["aws", "http"]
 
 [dependencies.chrono]
 workspace = true
@@ -74,7 +77,7 @@ workspace = true
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-features = ["json", "sqlparser", "prettyprint", "object_store"]
+features = ["json", "sqlparser", "prettyprint", "object_store", "url"]
 version = "1.6.9"
 
 [dependencies.vegafusion-core]

@@ -12,7 +12,9 @@ use vegafusion_core::data::dataset::VegaFusionDataset;
 
 use std::sync::Arc;
 use datafusion::datasource::listing::ListingTableUrl;
+use datafusion::datasource::object_store::ObjectStoreUrl;
 use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
+use datafusion::parquet::data_type::AsBytes;
 use datafusion::prelude::{CsvReadOptions, DataFrame, ParquetReadOptions, SessionContext};
 use datafusion_common::config::TableOptions;
 use tokio::io::AsyncReadExt;
@@ -32,6 +34,7 @@ use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 use object_store::aws::AmazonS3Builder;
+use object_store::http::HttpBuilder;
 use object_store::ObjectStore;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
@@ -589,10 +592,66 @@ async fn read_csv(
 
     csv_opts.file_extension = ext.as_str();
 
+    maybe_register_object_stores_for_url(&ctx, url)?;
+
     // Build schema from Vega parse options
     let schema = build_csv_schema(&csv_opts, parse, url, &ctx).await?;
     csv_opts.schema = Some(&schema);
+
     Ok(ctx.read_csv(url, csv_opts).await?)
+}
+
+fn maybe_register_object_stores_for_url(ctx: &SessionContext, url: &str) -> Result<()> {
+    // Handle object store registration for non-local sources
+    let maybe_register_http_store = |prefix: &str| -> Result<()> {
+        if let Some(path) = url.strip_prefix("https://") {
+            let Some((root, _)) = path.split_once('/') else {
+                return Err(VegaFusionError::specification(format!(
+                    "Invalid https URL: {url}"
+                )));
+            };
+            let base_url_str = format!("https://{root}");
+
+            // Register store for url if not already registered
+            let object_store_url = ObjectStoreUrl::parse(&base_url_str)?;
+            if !ctx.runtime_env().object_store(object_store_url.clone()).is_ok() {
+                let base_url = url::Url::parse(&base_url_str)?;
+                let http_store = HttpBuilder::new()
+                    .with_url(base_url.clone())
+                    .build()?;
+                ctx.register_object_store(&base_url, Arc::new(http_store));
+            }
+        }
+        Ok(())
+    };
+
+    // Register https://
+    maybe_register_http_store("https://")?;
+
+    // Register http://
+    maybe_register_http_store("http://")?;
+
+    // Register s3://
+    if let Some(bucket_path) = url.strip_prefix("s3://") {
+        let Some((bucket, _)) = bucket_path.split_once('/') else {
+            return Err(VegaFusionError::specification(format!(
+                "Invalid s3 URL: {url}"
+            )));
+        };
+        // Register store for url if not already registered
+        let base_url_str = format!("s3://{bucket}/");
+        let object_store_url = ObjectStoreUrl::parse(&base_url_str)?;
+        if !ctx.runtime_env().object_store(object_store_url.clone()).is_ok() {
+            let base_url = url::Url::parse(&base_url_str)?;
+            let s3 = AmazonS3Builder::from_env().with_url(base_url.clone()).build().with_context(||
+            "Failed to initialize s3 connection from environment variables.\n\
+                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env".to_string()
+            )?;
+            ctx.register_object_store(&base_url, Arc::new(s3));
+        }
+    }
+
+    Ok(())
 }
 
 /// Build final schema by combining the input and inferred schemas
@@ -662,17 +721,12 @@ async fn build_csv_schema(
 async fn read_json(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
     // Read to json Value from local file or url.
     let value: serde_json::Value = if url.starts_with("http://") || url.starts_with("https://") {
-        // Perform get request to collect file contents as text
-        let body = make_request_client()
-            .get(url)
-            .send()
-            .await
-            .external(&format!("Failed to get URL data from {url}"))?
-            .text()
-            .await
-            .external("Failed to convert URL data to text")?;
-
-        serde_json::from_str(&body)?
+        // Create single use object store that points directly to file
+        let store = HttpBuilder::new().with_url(url).build()?;
+        let get_res = store.get(&"".into()).await?;
+        let bytes = get_res.bytes().await?;
+        let text = String::from_utf8_lossy(bytes.as_bytes());
+        serde_json::from_str(text.as_ref())?
     } else if let Some(bucket_path) = url.strip_prefix("s3://") {
         let s3= AmazonS3Builder::from_env().with_url(url).build().with_context(||
             "Failed to initialize s3 connection from environment variables.\n\
@@ -702,15 +756,18 @@ async fn read_json(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
         serde_json::from_str(&json_str)?
     };
 
+
     let table = VegaFusionTable::from_json(&value)?.with_ordering()?;
     return ctx.vegafusion_table(table).await
 }
 
 async fn read_arrow(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
+    maybe_register_object_stores_for_url(&ctx, url)?;
     Ok(ctx.read_arrow(url, ArrowReadOptions::default()).await?)
 }
 
 async fn read_parquet(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
+    maybe_register_object_stores_for_url(&ctx, url)?;
     Ok(ctx.read_parquet(url, ParquetReadOptions::default()).await?)
 }
 

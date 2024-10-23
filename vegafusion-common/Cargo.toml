@@ -63,6 +63,10 @@ optional = true
 workspace = true
 optional = true
 
+[dependencies.url]
+workspace = true
+optional = true
+
 [dependencies.jni]
 version = "0.21.1"
 optional = true

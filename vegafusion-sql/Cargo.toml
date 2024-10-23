@@ -106,7 +106,7 @@ optional = true
 features = ["aws"]
 
 [dependencies.url]
-version = "2.3.1"
+workspace = true
 optional = true
 
 [dependencies.pyo3]

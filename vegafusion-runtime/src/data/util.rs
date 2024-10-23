@@ -1,10 +1,10 @@
 use std::sync::Arc;
 use async_trait::async_trait;
-use datafusion::datasource::MemTable;
+use datafusion::datasource::{MemTable, provider_as_source};
 use datafusion::prelude::{DataFrame, SessionContext};
 use datafusion_common::TableReference;
 use datafusion_common::tree_node::{Transformed, TreeNode, TreeNodeRewriter};
-use datafusion_expr::{col, Expr, LogicalPlanBuilder};
+use datafusion_expr::{col, Expr, LogicalPlanBuilder, UNNAMED_TABLE};
 use datafusion_expr::expr::{AggregateFunction, WildcardOptions};
 use datafusion_functions_window::row_number::row_number;
 use vegafusion_common::arrow::array::RecordBatch;
@@ -22,8 +22,17 @@ pub trait SessionContextUtils {
 impl SessionContextUtils for SessionContext {
     async fn vegafusion_table(&self, tbl: VegaFusionTable) -> vegafusion_common::error::Result<DataFrame> {
         let mem_table = MemTable::try_new(tbl.schema.clone(), vec![tbl.batches])?;
-        self.register_table("tbl", Arc::new(mem_table))?;
-        Ok(self.table("tbl").await?)
+
+        // Based on self.read_batch()
+        Ok(DataFrame::new(
+            self.state(),
+            LogicalPlanBuilder::scan(
+                UNNAMED_TABLE,
+                provider_as_source(Arc::new(mem_table)),
+                None,
+            )?
+                .build()?,
+        ))
     }
 }
 

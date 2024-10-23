@@ -19,6 +19,9 @@ use base64::DecodeError as Base64DecodeError;
 #[cfg(feature = "object_store")]
 use object_store::{path::Error as ObjectStorePathError, Error as ObjectStoreError};
 
+#[cfg(feature = "url")]
+use url::{ParseError as UrlParseError};
+
 pub type Result<T> = result::Result<T, VegaFusionError>;
 
 #[derive(Clone, Debug, Default)]
@@ -97,6 +100,10 @@ pub enum VegaFusionError {
     #[cfg(feature = "object_store")]
     #[error("ObjectStoreError Error: {0}\n{1}")]
     ObjectStoreError(ObjectStoreError, ErrorContext),
+
+    #[cfg(feature = "url")]
+    #[error("url::ParseError Error: {0}\n{1}")]
+    UrlParseError(UrlParseError, ErrorContext)
 }
 
 impl VegaFusionError {
@@ -186,6 +193,11 @@ impl VegaFusionError {
             ObjectStoreError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::ObjectStoreError(err, context)
+            }
+            #[cfg(feature = "url")]
+            UrlParseError(err, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::UrlParseError(err, context)
             }
         }
     }
@@ -279,6 +291,10 @@ impl VegaFusionError {
             #[cfg(feature = "object_store")]
             ObjectStoreError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
+            }
+            #[cfg(feature = "url")]
+            UrlParseError(err, context) => {
+                VegaFusionError::UrlParseError(err.clone(), context.clone())
             }
         }
     }
@@ -412,6 +428,12 @@ impl From<ObjectStorePathError> for VegaFusionError {
     }
 }
 
+#[cfg(feature = "url")]
+impl From<UrlParseError> for VegaFusionError {
+    fn from(err: UrlParseError) -> Self {
+        Self::UrlParseError(err, Default::default())
+    }
+}
 pub trait ToExternalError<T> {
     fn external<S: Into<String>>(self, context: S) -> Result<T>;
 }

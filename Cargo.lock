@@ -4972,6 +4972,7 @@ dependencies = [
  "serde_json",
  "sqlparser",
  "thiserror",
+ "url",
 ]
 
 [[package]]
@@ -5084,6 +5085,7 @@ dependencies = [
  "tempfile",
  "test-case",
  "tokio",
+ "url",
  "uuid",
  "vegafusion-common",
  "vegafusion-core",
