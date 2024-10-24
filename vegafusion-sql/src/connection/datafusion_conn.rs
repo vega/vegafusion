@@ -34,12 +34,11 @@ use vegafusion_dataframe::csv::CsvReadOptions;
 use vegafusion_dataframe::dataframe::DataFrame;
 use vegafusion_datafusion_udfs::udafs::{Q1_UDF, Q3_UDF};
 use vegafusion_datafusion_udfs::udfs::array::indexof::IndexOfUDF;
-use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::date_to_utc_timestamp::DATE_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::format_timestamp::FORMAT_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
+use vegafusion_datafusion_udfs::udfs::datetime::make_timestamptz::MAKE_UTC_TIMESTAMP;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
@@ -477,7 +476,6 @@ pub fn make_datafusion_context() -> SessionContext {
     ctx.register_udf(ScalarUDF::from(IsFiniteUDF::new()));
 
     // datetime
-    ctx.register_udf((*DATE_PART_TZ_UDF).clone());
     ctx.register_udf((*UTC_TIMESTAMP_TO_STR_UDF).clone());
     ctx.register_udf((*TO_UTC_TIMESTAMP_UDF).clone());
     ctx.register_udf((*FROM_UTC_TIMESTAMP_UDF).clone());

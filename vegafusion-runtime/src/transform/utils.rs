@@ -91,7 +91,6 @@ pub fn str_to_timestamp(s: Expr, default_input_tz: &str, schema: &DFSchema) -> R
         make_timestamp_parse_formats()
     ].concat()).cast_to(
         &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz.into())),
-        // &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
         schema
     )?;
 

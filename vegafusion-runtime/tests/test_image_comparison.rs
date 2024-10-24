@@ -948,14 +948,14 @@ mod test_image_comparison_timeunit {
     fn test_image_comparison(
         #[values(
             vec![TimeUnitUnitSpec::Year],
-            // vec![TimeUnitUnitSpec::Quarter],
-            // vec![TimeUnitUnitSpec::Month],
-            // vec![TimeUnitUnitSpec::Week],
-            // vec![TimeUnitUnitSpec::Date],
-            // vec![TimeUnitUnitSpec::Day],
-            // vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Quarter],
-            // vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Month],
-            // vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Week],
+            vec![TimeUnitUnitSpec::Quarter],
+            vec![TimeUnitUnitSpec::Month],
+            vec![TimeUnitUnitSpec::Week],
+            vec![TimeUnitUnitSpec::Date],
+            vec![TimeUnitUnitSpec::Day],
+            vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Quarter],
+            vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Month],
+            vec![TimeUnitUnitSpec::Year, TimeUnitUnitSpec::Week],
         )]
         units: Vec<TimeUnitUnitSpec>,
 
@@ -967,9 +967,9 @@ mod test_image_comparison_timeunit {
 
         #[values(
             "custom/bar_month_temporal_initial_parameterize",
-            // "custom/bar_month_temporal_initial_parameterize_local",
-            // "custom/stacked_bar_weather_timeunit_parameterize",
-            // "custom/stacked_bar_weather_timeunit_parameterize_local",
+            "custom/bar_month_temporal_initial_parameterize_local",
+            "custom/stacked_bar_weather_timeunit_parameterize",
+            "custom/stacked_bar_weather_timeunit_parameterize_local",
         )]
         spec_name: &str,
     ) {
@@ -1480,8 +1480,6 @@ async fn check_spec_sequence(
             .get_node_value(Arc::new(task_graph.clone()), node_index, Default::default())
             .await
             .expect("Failed to get node value");
-
-        println!("{var:?}\n{:?}", value.to_json().unwrap());
 
         init.push(ExportUpdateJSON {
             namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),

@@ -881,7 +881,7 @@ mod test_make_timestamp_tz {
     use datafusion_expr::{expr, lit, Expr};
     use std::sync::Arc;
     use vegafusion_common::column::flat_col;
-    use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
+    use vegafusion_datafusion_udfs::udfs::datetime::make_timestamptz::MAKE_UTC_TIMESTAMP;
     #[apply(dialect_names)]
     async fn test(dialect_name: &str) {
         println!("{dialect_name}");

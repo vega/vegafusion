@@ -2,7 +2,7 @@ use chrono::{DateTime, TimeZone, Timelike};
 use std::any::Any;
 use std::str::FromStr;
 use std::sync::Arc;
-use vegafusion_common::datafusion_expr::ScalarUDFImpl;
+use vegafusion_common::datafusion_expr::{Expr, expr, lit, ScalarUDFImpl};
 use vegafusion_common::{
     arrow::{
         array::{Array, ArrayRef, Int64Array, TimestampMillisecondBuilder},
@@ -14,19 +14,23 @@ use vegafusion_common::{
 };
 
 #[derive(Debug, Clone)]
-pub struct MakeUtcTimestampUDF {
+pub struct MakeTimestamptzUDF {
     signature: Signature,
 }
 
-impl Default for MakeUtcTimestampUDF {
+impl Default for MakeTimestamptzUDF {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl MakeUtcTimestampUDF {
+impl MakeTimestamptzUDF {
     pub fn new() -> Self {
-        let signature = Signature::exact(
+        // Use Signature::coercible instead of Signature::exact because we don't
+        // want ints and decimals to actually be converted to floats before our function
+        // is called.  Our function will cast everything to int, so we just want DataFusion to
+        // enforce that the arguments are numeric.
+        let signature = Signature::coercible(
             vec![
                 DataType::Float64, // year
                 DataType::Float64, // month
@@ -43,7 +47,7 @@ impl MakeUtcTimestampUDF {
     }
 }
 
-impl ScalarUDFImpl for MakeUtcTimestampUDF {
+impl ScalarUDFImpl for MakeTimestamptzUDF {
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -60,7 +64,7 @@ impl ScalarUDFImpl for MakeUtcTimestampUDF {
         &self,
         _arg_types: &[DataType],
     ) -> vegafusion_common::datafusion_common::Result<DataType> {
-        Ok(DataType::Timestamp(TimeUnit::Millisecond, None))
+        Ok(DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())))
     }
 
     fn invoke(
@@ -103,6 +107,7 @@ impl ScalarUDFImpl for MakeUtcTimestampUDF {
         let years = cast(&args[0], &DataType::Int64).unwrap();
         let years = years.as_any().downcast_ref::<Int64Array>().unwrap();
 
+        // Months are one-based.
         let months = cast(&args[1], &DataType::Int64).unwrap();
         let months = months.as_any().downcast_ref::<Int64Array>().unwrap();
 
@@ -122,7 +127,7 @@ impl ScalarUDFImpl for MakeUtcTimestampUDF {
         let millis = millis.as_any().downcast_ref::<Int64Array>().unwrap();
 
         let num_rows = years.len();
-        let mut datetime_builder = TimestampMillisecondBuilder::new();
+        let mut datetime_builder = TimestampMillisecondBuilder::new().with_timezone("UTC");
 
         for i in 0..num_rows {
             if years.is_null(i)
@@ -153,7 +158,7 @@ impl ScalarUDFImpl for MakeUtcTimestampUDF {
                 let datetime: Option<DateTime<_>> = input_tz
                     .with_ymd_and_hms(
                         year as i32,
-                        month as u32 + 1,
+                        month as u32,
                         day as u32,
                         hour as u32,
                         minute as u32,
@@ -184,6 +189,22 @@ impl ScalarUDFImpl for MakeUtcTimestampUDF {
     }
 }
 
+pub fn make_timestamptz(
+    year: Expr,
+    month: Expr,
+    date: Expr,
+    hour: Expr,
+    minute: Expr,
+    second: Expr,
+    millisecond: Expr,
+    tz: &str
+) -> Expr {
+    Expr::ScalarFunction(expr::ScalarFunction {
+        func: Arc::new(ScalarUDF::from(MakeTimestamptzUDF::new())),
+        args: vec![year, month, date, hour, minute, second, millisecond, lit(tz)],
+    })
+}
+
 lazy_static! {
-    pub static ref MAKE_UTC_TIMESTAMP: ScalarUDF = ScalarUDF::from(MakeUtcTimestampUDF::new());
+    pub static ref MAKE_UTC_TIMESTAMP: ScalarUDF = ScalarUDF::from(MakeTimestamptzUDF::new());
 }

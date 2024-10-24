@@ -1,6 +1,6 @@
 use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion_expr::{expr, lit, Expr, ExprSchemable};
-use std::ops::Deref;
+use std::ops::Add;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
@@ -8,8 +8,9 @@ use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_common::datatypes::{cast_to, is_numeric_datatype, is_string_datatype};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
+use vegafusion_datafusion_udfs::udfs::datetime::make_timestamptz::make_timestamptz;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
+use crate::transform::timeunit::to_timestamp_col;
 
 pub fn to_date_transform(
     tz_config: &RuntimeTzConfig,
@@ -77,14 +78,22 @@ pub fn datetime_transform_fn(
             })
         }
 
-        cast_to(arg, &DataType::Int64, schema)
+        // cast to timestamptz column
+        to_timestamp_col(arg, schema, &tz_config.default_input_tz.to_string())
     } else {
         let udf_args =
             extract_datetime_component_args(args, &tz_config.default_input_tz.to_string(), schema)?;
-        Ok(Expr::ScalarFunction(expr::ScalarFunction {
-            func: Arc::new((*MAKE_UTC_TIMESTAMP).clone()),
-            args: udf_args,
-        }))
+
+        Ok(make_timestamptz(
+            udf_args[0].clone(),  // year
+            udf_args[1].clone().add(lit(1)),  // month (arg 1-based, vega uses zero-based)
+            udf_args[2].clone(),  // day
+            udf_args[3].clone(),  // hour
+            udf_args[4].clone(),  // minute
+            udf_args[5].clone(),  // second
+            udf_args[6].clone(),  // millisecond
+            &tz_config.local_tz.to_string(),
+        ))
     }
 }
 
@@ -95,10 +104,17 @@ pub fn make_datetime_components_fn(
 ) -> Result<Expr> {
     let udf_args =
         extract_datetime_component_args(args, &tz_config.default_input_tz.to_string(), schema)?;
-    Ok(Expr::ScalarFunction(expr::ScalarFunction {
-        func: Arc::new(MAKE_UTC_TIMESTAMP.deref().clone()),
-        args: udf_args,
-    }))
+
+    Ok(make_timestamptz(
+        udf_args[0].clone(),  // year
+        udf_args[1].clone().add(lit(1)),  // month (arg 1-based, vega uses zero-based)
+        udf_args[2].clone(),  // day
+        udf_args[3].clone(),  // hour
+        udf_args[4].clone(),  // minute
+        udf_args[5].clone(),  // second
+        udf_args[6].clone(),  // millisecond
+        "UTC",
+    ))
 }
 
 fn extract_datetime_component_args(
