@@ -51,7 +51,7 @@ use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIM
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
 use crate::data::util::{DataFrameUtils, SessionContextUtils};
-use crate::transform::utils::make_timestamp_parse_formats;
+use crate::transform::utils::{make_timestamp_parse_formats, str_to_timestamp};
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
@@ -346,13 +346,7 @@ async fn process_datetimes(
                             .unwrap_or_else(|| "UTC".to_string());
 
                         // Parse with a variety of formats, then localize to default_input_tz
-                        to_timestamp_millis(vec![
-                            vec![flat_col(&spec.name)],
-                            make_timestamp_parse_formats()
-                        ].concat()).cast_to(
-                            &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz_str.into())),
-                            schema
-                        )?
+                        str_to_timestamp(flat_col(&spec.name), &default_input_tz_str, schema)?
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically, return Date32
                         make_date(flat_col(&spec.name), lit(1), lit(1))

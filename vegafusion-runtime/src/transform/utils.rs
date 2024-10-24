@@ -1,5 +1,9 @@
-use datafusion_expr::{Expr, lit};
+use datafusion::arrow::datatypes::{DataType, TimeUnit};
+use datafusion_common::DFSchema;
+use datafusion_expr::{case, Expr, ExprSchemable, lit, when};
+use datafusion_functions::expr_fn::{regexp_like, to_timestamp_millis};
 use vegafusion_common::arrow::record_batch::RecordBatch;
+use vegafusion_common::error::Result;
 
 pub trait RecordBatchUtils {
     fn equals(&self, other: &RecordBatch) -> bool;
@@ -68,4 +72,28 @@ pub fn make_timestamp_parse_formats() -> Vec<Expr> {
         "%B %d, %Y %H:%M:%S",
         "%B %d, %Y %H:%M",
     ].into_iter().map(lit).collect()
+}
+
+
+/// Build an expression that converts string to timestamps, following the browser's unfortunate
+/// convention where ISO8601 dates (not timestamps) are always interpreted as UTC,
+/// but all other formats are interpreted as the local timezone.
+pub fn str_to_timestamp(s: Expr, default_input_tz: &str, schema: &DFSchema) -> Result<Expr> {
+    let condition = regexp_like(s.clone(), lit(r"^\d{4}-\d{2}-\d{2}$"), None);
+
+    let if_true = to_timestamp_millis(vec![s.clone()]).cast_to(
+        &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
+        schema
+    )?;
+
+    let if_false = to_timestamp_millis(vec![
+        vec![s],
+        make_timestamp_parse_formats()
+    ].concat()).cast_to(
+        &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz.into())),
+        // &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
+        schema
+    )?;
+
+    Ok(when(condition, if_true).otherwise(if_false)?)
 }
