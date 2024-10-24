@@ -5,7 +5,7 @@ use crate::task_graph::task::TaskCall;
 
 use async_trait::async_trait;
 
-use datafusion_expr::{expr, lit, Expr};
+use datafusion_expr::{expr, lit, Expr, ExprSchemable};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use vegafusion_core::data::dataset::VegaFusionDataset;
@@ -17,6 +17,7 @@ use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
 use datafusion::parquet::data_type::AsBytes;
 use datafusion::prelude::{CsvReadOptions, DataFrame, ParquetReadOptions, SessionContext};
 use datafusion_common::config::TableOptions;
+use datafusion_functions::expr_fn::{make_date, to_timestamp_millis};
 use tokio::io::AsyncReadExt;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -38,7 +39,7 @@ use object_store::http::HttpBuilder;
 use object_store::ObjectStore;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
-use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
+use vegafusion_common::arrow::datatypes::{DataType, Field, Schema, TimeUnit};
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::data::ORDER_COL;
@@ -50,6 +51,7 @@ use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIM
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
 use crate::data::util::{DataFrameUtils, SessionContextUtils};
+use crate::transform::utils::make_timestamp_parse_formats;
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
@@ -322,6 +324,7 @@ async fn pre_process_column_types(df: DataFrame) -> Result<DataFrame> {
     }
 }
 
+/// After processing, all datetime columns are converted to Timestamptz and Date32
 async fn process_datetimes(
     parse: &Option<Parse>,
     sql_df: DataFrame,
@@ -342,27 +345,17 @@ async fn process_datetimes(
                             .map(|tz_config| tz_config.default_input_tz.to_string())
                             .unwrap_or_else(|| "UTC".to_string());
 
-                        Expr::ScalarFunction(expr::ScalarFunction {
-                            func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
-                            args: vec![flat_col(&spec.name), lit(default_input_tz_str)],
-                        })
+                        // Parse with a variety of formats, then localize to default_input_tz
+                        to_timestamp_millis(vec![
+                            vec![flat_col(&spec.name)],
+                            make_timestamp_parse_formats()
+                        ].concat()).cast_to(
+                            &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz_str.into())),
+                            schema
+                        )?
                     } else if is_integer_datatype(dtype) {
-                        // Assume Year was parsed numerically, use local time
-                        let tz_config =
-                            tz_config.with_context(|| "No local timezone info provided")?;
-                        Expr::ScalarFunction(expr::ScalarFunction {
-                            func: Arc::new((*MAKE_UTC_TIMESTAMP).clone()),
-                            args: vec![
-                                flat_col(&spec.name),                        // year
-                                lit(0),                                      // month
-                                lit(1),                                      // day
-                                lit(0),                                      // hour
-                                lit(0),                                      // minute
-                                lit(0),                                      // second
-                                lit(0),                                      // millisecond
-                                lit(tz_config.default_input_tz.to_string()), // time zone
-                            ],
-                        })
+                        // Assume Year was parsed numerically, return Date32
+                        make_date(flat_col(&spec.name), lit(1), lit(1))
                     } else {
                         continue;
                     };
@@ -399,47 +392,33 @@ async fn process_datetimes(
             if !date_fields.contains(field.name()) {
                 let expr = match field.data_type() {
                     DataType::Timestamp(_, tz) => match tz {
-                        Some(tz) => {
-                            // Timestamp has explicit timezone
-                            Expr::ScalarFunction(expr::ScalarFunction {
-                                func: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
-                                args: vec![flat_col(field.name()), lit(tz.as_ref())],
-                            })
+                        Some(_) => {
+                            // Timestamp has explicit timezone, all good
+                            flat_col(field.name())
                         }
                         _ => {
-                            // Naive timestamp, interpret as default_input_tz
+                            // Naive timestamp, localize to default_input_tz
                             let tz_config =
                                 tz_config.with_context(|| "No local timezone info provided")?;
 
-                            Expr::ScalarFunction(expr::ScalarFunction {
-                                func: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
-                                args: vec![
-                                    flat_col(field.name()),
-                                    lit(tz_config.default_input_tz.to_string()),
-                                ],
-                            })
+                            flat_col(field.name()).cast_to(
+                                &DataType::Timestamp(TimeUnit::Nanosecond, Some(tz_config.default_input_tz.to_string().into())),
+                                schema
+                            )?
                         }
                     },
                     DataType::Date64 => {
                         let tz_config =
                             tz_config.with_context(|| "No local timezone info provided")?;
 
-                        Expr::ScalarFunction(expr::ScalarFunction {
-                            func: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
-                            args: vec![
-                                flat_col(field.name()),
-                                lit(tz_config.default_input_tz.to_string()),
-                            ],
-                        })
-                    }
-                    DataType::Date32 => {
-                        let tz_config =
-                            tz_config.with_context(|| "No local timezone info provided")?;
-
-                        Expr::ScalarFunction(expr::ScalarFunction {
-                            func: Arc::new((*DATE_TO_UTC_TIMESTAMP_UDF).clone()),
-                            args: vec![flat_col(field.name()), lit(tz_config.local_tz.to_string())],
-                        })
+                        // Cast to naive timestamp, then localize to timestamp with timezone
+                        flat_col(field.name()).cast_to(
+                            &DataType::Timestamp(TimeUnit::Nanosecond, None),
+                            schema
+                        )?.cast_to(
+                            &DataType::Timestamp(TimeUnit::Nanosecond, Some(tz_config.default_input_tz.to_string().into())),
+                            schema,
+                        )?
                     }
                     _ => flat_col(field.name()),
                 };

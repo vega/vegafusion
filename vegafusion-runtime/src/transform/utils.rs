@@ -1,3 +1,4 @@
+use datafusion_expr::{Expr, lit};
 use vegafusion_common::arrow::record_batch::RecordBatch;
 
 pub trait RecordBatchUtils {
@@ -24,4 +25,47 @@ impl RecordBatchUtils for RecordBatch {
 
         true
     }
+}
+
+pub fn make_timestamp_parse_formats() -> Vec<Expr> {
+    return vec![
+        // ISO 8601 with and without time and 'T' separator
+        "%Y-%m-%d",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S%.3f",
+        "%Y-%m-%dT%H:%M",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M:%S%.3f",
+        "%Y-%m-%d %H:%M",
+        // With UTC timezone offset
+        "%Y-%m-%dT%H:%M:%S%:z",
+        "%Y-%m-%dT%H:%M:%S%.3f%:z",
+        "%Y-%m-%dT%H:%M%:z",
+        "%Y-%m-%d %H:%M:%S%:z",
+        "%Y-%m-%d %H:%M:%S%.3f%:z",
+        "%Y-%m-%d %H:%M%:z",
+        // ISO 8601 with forward slashes
+        "%m/%d/%Y",
+        "%m/%d/%Y %H:%M:%S",
+        "%m/%d/%Y %H:%M",
+        // e.g. May 1 2003
+        "%b %-d %Y",
+        "%b %-d %Y %H:%M:%S",
+        "%b %-d %Y %H:%M",
+        // ctime format (e.g. Sun Jul 8 00:34:60 2001)
+        "%a %b %-d %H:%M:%S %Y",
+        "%a %b %-d %H:%M %Y",
+        // e.g. 01 Jan 2012 00:00:00
+        "%d %b %Y",
+        "%d %b %Y %H:%M:%S",
+        "%d %b %Y %H:%M",
+        // e.g. Sun, 01 Jan 2012 00:00:00
+        "%a, %d %b %Y",
+        "%a, %d %b %Y %H:%M:%S",
+        "%a, %d %b %Y %H:%M",
+        // e.g. December 17, 1995 03:00:00
+        "%B %d, %Y",
+        "%B %d, %Y %H:%M:%S",
+        "%B %d, %Y %H:%M",
+    ].into_iter().map(lit).collect()
 }

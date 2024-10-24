@@ -37,15 +37,17 @@
 
 use std::iter;
 use std::{fmt::Debug, io::Write};
-
+use std::str::FromStr;
 use serde_json::map::Map as JsonMap;
 use serde_json::Value;
 
 use arrow::array::*;
+use arrow::array::timezone::Tz;
 use arrow::datatypes::*;
 use arrow::error::{ArrowError, Result};
 use arrow::json::JsonSerializable;
 use arrow::record_batch::RecordBatch;
+use chrono::{Timelike, TimeZone, Utc};
 
 fn primitive_array_to_json<T>(array: &ArrayRef) -> Result<Vec<Value>>
 where
@@ -305,45 +307,190 @@ fn set_column_for_json_rows(
                     }
                 });
         }
-        DataType::Timestamp(TimeUnit::Second, _) => {
-            set_temporal_column_as_millis_by_array_type!(
-                TimestampSecondArray,
-                col_name,
-                rows,
-                array,
-                row_count,
-                value_as_datetime
-            );
+        DataType::Timestamp(TimeUnit::Second, tz) => {
+            let tz = if let Some(tz) = tz {
+                let tz = Tz::from_str(tz)?;
+                Some(tz)
+            } else {
+                None
+            };
+            let arr = array.as_any().downcast_ref::<TimestampSecondArray>().unwrap();
+            rows
+                .iter_mut()
+                .enumerate()
+                .take(row_count)
+                .for_each(|(i, row)| {
+                    if !arr.is_null(i) {
+                        if let Some(tz) = tz {
+                            if let Some(v) = arr.value_as_datetime_with_tz(i, tz) {
+                                row.insert(col_name.to_string(), v.timestamp_millis().into());
+                            } else {
+                                row.insert(col_name.to_string(), Value::Null);
+                            }
+                        } else {
+                            if let Some(v) = arr.value_as_datetime(i) {
+                                row.insert(col_name.to_string(), v.and_utc().timestamp_millis().into());
+                            } else {
+                                row.insert(col_name.to_string(), Value::Null);
+                            }
+                        }
+                    } else {
+                        row.insert(col_name.to_string(), Value::Null);
+                    }
+                })
+
+
+            // set_temporal_column_as_millis_by_array_type!(
+            //     TimestampSecondArray,
+            //     col_name,
+            //     rows,
+            //     array,
+            //     row_count,
+            //     value_as_datetime
+            // );
         }
-        DataType::Timestamp(TimeUnit::Millisecond, _) => {
-            set_temporal_column_as_millis_by_array_type!(
-                TimestampMillisecondArray,
-                col_name,
-                rows,
-                array,
-                row_count,
-                value_as_datetime
-            );
+        DataType::Timestamp(TimeUnit::Millisecond, tz) => {
+            let tz = if let Some(tz) = tz {
+                let tz = Tz::from_str(tz)?;
+                Some(tz)
+            } else {
+                None
+            };
+            let arr = array.as_any().downcast_ref::<TimestampMillisecondArray>().unwrap();
+            rows
+                .iter_mut()
+                .enumerate()
+                .take(row_count)
+                .for_each(|(i, row)| {
+                    if !arr.is_null(i) {
+                        if let Some(tz) = tz {
+                            if let Some(v) = arr.value_as_datetime_with_tz(i, tz) {
+                                row.insert(col_name.to_string(), v.timestamp_millis().into());
+                            } else {
+                                row.insert(col_name.to_string(), Value::Null);
+                            }
+                        } else {
+                            if let Some(v) = arr.value_as_datetime(i) {
+                                row.insert(col_name.to_string(), v.and_utc().timestamp_millis().into());
+                            } else {
+                                row.insert(col_name.to_string(), Value::Null);
+                            }
+                        }
+                    } else {
+                        row.insert(col_name.to_string(), Value::Null);
+                    }
+                });
+
+            // set_temporal_column_as_millis_by_array_type!(
+            //     TimestampMillisecondArray,
+            //     col_name,
+            //     rows,
+            //     array,
+            //     row_count,
+            //     value_as_datetime
+            // );
         }
-        DataType::Timestamp(TimeUnit::Microsecond, _) => {
-            set_temporal_column_as_millis_by_array_type!(
-                TimestampMicrosecondArray,
-                col_name,
-                rows,
-                array,
-                row_count,
-                value_as_datetime
-            );
+        DataType::Timestamp(TimeUnit::Microsecond, tz) => {
+            let tz = if let Some(tz) = tz {
+                let tz = Tz::from_str(tz)?;
+                Some(tz)
+            } else {
+                None
+            };
+            let arr = array.as_any().downcast_ref::<TimestampMicrosecondArray>().unwrap();
+            rows
+                .iter_mut()
+                .enumerate()
+                .take(row_count)
+                .for_each(|(i, row)| {
+                    if !arr.is_null(i) {
+                        if let Some(tz) = tz {
+                            if let Some(v) = arr.value_as_datetime_with_tz(i, tz) {
+                                row.insert(col_name.to_string(), v.timestamp_millis().into());
+                            } else {
+                                row.insert(col_name.to_string(), Value::Null);
+                            }
+                        } else {
+                            if let Some(v) = arr.value_as_datetime(i) {
+                                row.insert(col_name.to_string(), v.and_utc().timestamp_millis().into());
+                            } else {
+                                row.insert(col_name.to_string(), Value::Null);
+                            }
+                        }
+                    } else {
+                        row.insert(col_name.to_string(), Value::Null);
+                    }
+                });
+
+            // set_temporal_column_as_millis_by_array_type!(
+            //     TimestampMicrosecondArray,
+            //     col_name,
+            //     rows,
+            //     array,
+            //     row_count,
+            //     value_as_datetime
+            // );
         }
-        DataType::Timestamp(TimeUnit::Nanosecond, _) => {
-            set_temporal_column_as_millis_by_array_type!(
-                TimestampNanosecondArray,
-                col_name,
-                rows,
-                array,
-                row_count,
-                value_as_datetime
-            );
+        DataType::Timestamp(TimeUnit::Nanosecond, tz) => {
+            println!("{tz:?}");
+            let tz = if let Some(tz) = tz {
+                let tz = Tz::from_str(tz)?;
+                Some(tz)
+            } else {
+                None
+            };
+            let arr = array.as_any().downcast_ref::<TimestampNanosecondArray>().unwrap();
+            rows
+                .iter_mut()
+                .enumerate()
+                .take(row_count)
+                .for_each(|(i, row)| {
+                    if !arr.is_null(i) {
+                        if let Some(tz) = tz {
+                            if let Some(v) = arr.value_as_datetime(i) {
+
+                                // Get UTC offset when the naive datetime is considered to be in local time
+                                let local_datetime = if let Some(local_datetime) =
+                                    tz.from_local_datetime(&v).earliest()
+                                {
+                                    Some(local_datetime)
+                                } else {
+                                    // Try adding 1 hour to handle daylight savings boundaries
+                                    v.with_hour(v.hour() + 1)
+                                        .and_then(|new_naive_local_datetime| {
+                                            tz.from_local_datetime(&new_naive_local_datetime).earliest()
+                                        })
+                                };
+                                if let Some(local_datetime) = local_datetime {
+                                    println!("t2: {}", local_datetime.timestamp_millis());
+                                    row.insert(col_name.to_string(), local_datetime.timestamp_millis().into());
+                                } else {
+                                    row.insert(col_name.to_string(), Value::Null);
+                                }
+                            } else {
+                                row.insert(col_name.to_string(), Value::Null);
+                            }
+                        } else {
+                            if let Some(v) = arr.value_as_datetime(i) {
+                                row.insert(col_name.to_string(), v.and_utc().timestamp_millis().into());
+                            } else {
+                                row.insert(col_name.to_string(), Value::Null);
+                            }
+                        }
+                    } else {
+                        row.insert(col_name.to_string(), Value::Null);
+                    }
+                });
+
+
+            // set_temporal_column_as_millis_by_array_type!(
+            //     TimestampNanosecondArray,
+            //     col_name,
+            //     rows,
+            //     array,
+            //     row_count,
+            //     value_as_datetime
+            // );
         }
         DataType::Time32(TimeUnit::Second) => {
             set_temporal_column_by_array_type!(
