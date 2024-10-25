@@ -1,9 +1,11 @@
+use std::ops::{Add, Mul};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::DFSchema;
 use datafusion_expr::{case, Expr, ExprSchemable, lit, when};
-use datafusion_functions::expr_fn::{regexp_like, to_timestamp_millis};
+use datafusion_functions::expr_fn::{date_part, regexp_like, to_timestamp_millis, to_unixtime};
 use vegafusion_common::arrow::record_batch::RecordBatch;
-use vegafusion_common::error::Result;
+use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
+use vegafusion_common::error::{Result, VegaFusionError};
 
 pub trait RecordBatchUtils {
     fn equals(&self, other: &RecordBatch) -> bool;
@@ -49,9 +51,9 @@ pub fn make_timestamp_parse_formats() -> Vec<Expr> {
         "%Y-%m-%d %H:%M:%S%.3f%:z",
         "%Y-%m-%d %H:%M%:z",
         // ISO 8601 with forward slashes
-        "%m/%d/%Y",
-        "%m/%d/%Y %H:%M:%S",
-        "%m/%d/%Y %H:%M",
+        "%Y/%m/%d",
+        "%Y/%m/%d %H:%M:%S",
+        "%Y/%m/%d %H:%M",
         // e.g. May 1 2003
         "%b %-d %Y",
         "%b %-d %Y %H:%M:%S",
@@ -101,4 +103,44 @@ pub fn str_to_timestamp(s: Expr, default_input_tz: &str, schema: &DFSchema) -> R
 
     let expr = when(condition, if_true).otherwise(if_false)?;
     Ok(expr)
+}
+
+
+pub fn to_epoch_millis(expr: Expr, default_input_tz: &str, schema: &DFSchema) -> Result<Expr> {
+    // Dispatch handling on data type
+    Ok(match expr.get_type(schema)? {
+        DataType::Date32 | DataType::Date64 | DataType::Timestamp(_, None)=> {
+            // Interpret as utc milliseconds
+            let millis = date_part(lit("millisecond"), expr.clone()).cast_to(&DataType::Int64, schema)?;
+            to_unixtime(
+                vec![expr.clone()]
+            ).mul(lit(1000)).add(millis)
+        }
+        DataType::Timestamp(_, Some(_)) => {
+            // Convert to UTC, then drop timezone
+            let millis = date_part(lit("millisecond"), expr.clone()).cast_to(&DataType::Int64, schema)?;
+            let expr = expr.cast_to(&DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), schema)?
+                .cast_to(&DataType::Timestamp(TimeUnit::Millisecond, None), schema)?;
+            to_unixtime(vec![expr.clone()]).mul(lit(1000)).add(millis)
+        }
+        DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View => {
+            let millis = date_part(lit("millisecond"), expr.clone()).cast_to(&DataType::Int64, schema)?;
+            to_unixtime(
+                vec![str_to_timestamp(expr.clone(), default_input_tz, schema)?]
+            ).mul(lit(1000)).add(millis)
+        }
+        DataType::Int64 => {
+            // Keep int argument as-is
+            expr.clone()
+        }
+        dtype if is_numeric_datatype(&dtype) || matches!(dtype, DataType::Boolean) => {
+            // Cast other numeric types to Int64
+            cast_to(expr.clone(), &DataType::Int64, schema)?
+        }
+        dtype => {
+            return Err(VegaFusionError::internal(format!(
+                "Invalid argument type to time function: {dtype:?}"
+            )))
+        }
+    })
 }
