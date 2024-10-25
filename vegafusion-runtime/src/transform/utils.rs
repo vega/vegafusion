@@ -81,8 +81,13 @@ pub fn make_timestamp_parse_formats() -> Vec<Expr> {
 pub fn str_to_timestamp(s: Expr, default_input_tz: &str, schema: &DFSchema) -> Result<Expr> {
     let condition = regexp_like(s.clone(), lit(r"^\d{4}-\d{2}-\d{2}$"), None);
 
+    // Note: it's important for the express to always return values in the same timezone,
+    // so we cast the UTC case back to the local timezone
     let if_true = to_timestamp_millis(vec![s.clone()]).cast_to(
         &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
+        schema
+    )?.cast_to(
+        &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz.into())),
         schema
     )?;
 
@@ -94,5 +99,6 @@ pub fn str_to_timestamp(s: Expr, default_input_tz: &str, schema: &DFSchema) -> R
         schema
     )?;
 
-    Ok(when(condition, if_true).otherwise(if_false)?)
+    let expr = when(condition, if_true).otherwise(if_false)?;
+    Ok(expr)
 }

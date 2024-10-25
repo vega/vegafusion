@@ -11,6 +11,7 @@ use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS
 use vegafusion_datafusion_udfs::udfs::datetime::make_timestamptz::make_timestamptz;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 use crate::transform::timeunit::to_timestamp_col;
+use crate::transform::utils::str_to_timestamp;
 
 pub fn to_date_transform(
     tz_config: &RuntimeTzConfig,
@@ -25,7 +26,7 @@ pub fn to_date_transform(
 
     if is_string_datatype(&dtype) {
         let default_input_tz = if args.len() == 2 {
-            // Second argument is a an override local timezone string
+            // Second argument is an override local timezone string
             let input_tz_expr = &args[1];
             if let Expr::Literal(ScalarValue::Utf8(Some(input_tz_str))) = input_tz_expr {
                 if input_tz_str == "local" {
@@ -44,10 +45,7 @@ pub fn to_date_transform(
             tz_config.default_input_tz
         };
 
-        Ok(Expr::ScalarFunction(expr::ScalarFunction {
-            func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
-            args: vec![arg, lit(default_input_tz.to_string())],
-        }))
+        str_to_timestamp(arg, &default_input_tz.to_string(), schema)
     } else if is_numeric_datatype(&dtype) {
         Ok(Expr::ScalarFunction(expr::ScalarFunction {
             func: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
