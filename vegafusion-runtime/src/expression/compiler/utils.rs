@@ -1,13 +1,15 @@
-use datafusion_common::ScalarValue;
+use datafusion_common::{ExprSchema, plan_err, ScalarValue};
 use datafusion_expr::utils::expr_to_columns;
-use datafusion_expr::{Expr, ExprSchemable};
+use datafusion_expr::{Cast, Expr, ExprSchemable, TryCast};
 use datafusion_optimizer::simplify_expressions::{ExprSimplifier, SimplifyInfo};
 use datafusion_physical_expr::execution_props::ExecutionProps;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 use std::sync::Arc;
+use datafusion_expr::expr_schema::cast_subquery;
 use vegafusion_common::arrow::array::{ArrayRef, BooleanArray};
+use vegafusion_common::arrow::compute::can_cast_types;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::datafusion_common::{Column, DFSchema, DataFusionError};
@@ -28,6 +30,7 @@ lazy_static! {
 pub trait ExprHelpers {
     fn columns(&self) -> Result<HashSet<Column>>;
     fn eval_to_scalar(&self) -> Result<ScalarValue>;
+    fn try_cast_to(self, cast_to_type: &DataType, schema: &dyn ExprSchema) -> datafusion_common::Result<Expr>;
 }
 
 impl ExprHelpers for Expr {
@@ -48,6 +51,15 @@ impl ExprHelpers for Expr {
                 "Failed to evaluate expression to scalar value: {self}\nsimplified to: {simplified_expr}\n"
             )))
         }
+    }
+
+    fn try_cast_to(self, cast_to_type: &DataType, schema: &dyn ExprSchema) -> datafusion_common::Result<Expr> {
+        // Based on cast_to, using TryCast instead of Cast
+        let this_type = self.get_type(schema)?;
+        if this_type == *cast_to_type {
+            return Ok(self);
+        }
+        Ok(Expr::TryCast(TryCast::new(Box::new(self), cast_to_type.clone())))
     }
 }
 

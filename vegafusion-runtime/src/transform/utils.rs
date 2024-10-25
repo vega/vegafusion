@@ -6,6 +6,7 @@ use datafusion_functions::expr_fn::{date_part, regexp_like, to_timestamp_millis,
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
 use vegafusion_common::error::{Result, VegaFusionError};
+use crate::expression::compiler::utils::ExprHelpers;
 
 pub trait RecordBatchUtils {
     fn equals(&self, other: &RecordBatch) -> bool;
@@ -45,10 +46,14 @@ pub fn make_timestamp_parse_formats() -> Vec<Expr> {
         "%Y-%m-%d %H:%M",
         // With UTC timezone offset
         "%Y-%m-%dT%H:%M:%S%:z",
+        "%Y-%m-%dT%H:%M:%SZ",
         "%Y-%m-%dT%H:%M:%S%.3f%:z",
+        "%Y-%m-%dT%H:%M:%S%.3fZ",
         "%Y-%m-%dT%H:%M%:z",
         "%Y-%m-%d %H:%M:%S%:z",
+        "%Y-%m-%d %H:%M:%SZ",
         "%Y-%m-%d %H:%M:%S%.3f%:z",
+        "%Y-%m-%d %H:%M:%S%.3fZ",
         "%Y-%m-%d %H:%M%:z",
         // ISO 8601 with forward slashes
         "%Y/%m/%d",
@@ -81,14 +86,24 @@ pub fn make_timestamp_parse_formats() -> Vec<Expr> {
 /// convention where ISO8601 dates (not timestamps) are always interpreted as UTC,
 /// but all other formats are interpreted as the local timezone.
 pub fn str_to_timestamp(s: Expr, default_input_tz: &str, schema: &DFSchema) -> Result<Expr> {
-    let condition = regexp_like(s.clone(), lit(r"^\d{4}-\d{2}-\d{2}$"), None);
+    // Create condition for whether the parsed timestamp (which always starts as naive) should
+    // be interpreted as UTC, or as the default_input_tz.
+    // There are two cases where we always use UTC:
+    //   1. To follow the browser, timestamps of the form 2020-01-01 are always interpreted as UTC
+    //   2. Timestamps that have an offset suffix (e.g. '+05:00', '-09:00', or 'Z') are parsed by
+    //      datafusion as UTC
+    let is_utc_condition = regexp_like(s.clone(), lit(r"^\d{4}-\d{2}-\d{2}$"), None).or(
+        regexp_like(s.clone(), lit(r"[+-]\d{2}:\d{2}$"), None)
+    ).or(
+        regexp_like(s.clone(), lit(r"Z$"), None)
+    );
 
     // Note: it's important for the express to always return values in the same timezone,
     // so we cast the UTC case back to the local timezone
-    let if_true = to_timestamp_millis(vec![s.clone()]).cast_to(
+    let if_true = to_timestamp_millis(vec![s.clone()]).try_cast_to(
         &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
         schema
-    )?.cast_to(
+    )?.try_cast_to(
         &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz.into())),
         schema
     )?;
@@ -96,12 +111,12 @@ pub fn str_to_timestamp(s: Expr, default_input_tz: &str, schema: &DFSchema) -> R
     let if_false = to_timestamp_millis(vec![
         vec![s],
         make_timestamp_parse_formats()
-    ].concat()).cast_to(
+    ].concat()).try_cast_to(
         &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz.into())),
         schema
     )?;
 
-    let expr = when(condition, if_true).otherwise(if_false)?;
+    let expr = when(is_utc_condition, if_true).otherwise(if_false)?;
     Ok(expr)
 }
 
@@ -119,15 +134,16 @@ pub fn to_epoch_millis(expr: Expr, default_input_tz: &str, schema: &DFSchema) ->
         DataType::Timestamp(_, Some(_)) => {
             // Convert to UTC, then drop timezone
             let millis = date_part(lit("millisecond"), expr.clone()).cast_to(&DataType::Int64, schema)?;
-            let expr = expr.cast_to(&DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), schema)?
-                .cast_to(&DataType::Timestamp(TimeUnit::Millisecond, None), schema)?;
+            let expr = expr.try_cast_to(&DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), schema)?
+                .try_cast_to(&DataType::Timestamp(TimeUnit::Millisecond, None), schema)?;
+
             to_unixtime(vec![expr.clone()]).mul(lit(1000)).add(millis)
         }
         DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View => {
             let millis = date_part(lit("millisecond"), expr.clone()).cast_to(&DataType::Int64, schema)?;
-            to_unixtime(
-                vec![str_to_timestamp(expr.clone(), default_input_tz, schema)?]
-            ).mul(lit(1000)).add(millis)
+            let expr = str_to_timestamp(expr.clone(), default_input_tz, schema)?
+                .try_cast_to(&DataType::Timestamp(TimeUnit::Millisecond, None), schema)?;;
+            to_unixtime(vec![expr]).mul(lit(1000)).add(millis)
         }
         DataType::Int64 => {
             // Keep int argument as-is

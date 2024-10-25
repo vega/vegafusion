@@ -5,8 +5,8 @@ use async_trait::async_trait;
 use std::sync::Arc;
 use datafusion::prelude::DataFrame;
 use datafusion_common::{JoinType, ScalarValue};
-use datafusion_expr::Expr;
-use vegafusion_common::column::{flat_col, unescaped_col};
+use datafusion_expr::{Expr, qualified_wildcard};
+use vegafusion_common::column::{flat_col, relation_col, unescaped_col};
 use vegafusion_common::escape::escape_field;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::{AggregateOp, JoinAggregate};
@@ -52,18 +52,21 @@ impl TransformTrait for JoinAggregate {
             agg_exprs.push(agg_expr);
         }
         // Perform regular aggregation on clone of input DataFrame
-        let agged_df = dataframe.clone().aggregate_mixed(group_exprs, agg_exprs)?;
+        let agged_df = dataframe.clone().aggregate_mixed(group_exprs, agg_exprs)?.alias("rhs")?;
 
         // Join with the input dataframe on the grouping columns
-        let on = self.groupby.iter().map(|g| format!("\"{}\"", escape_field(g))).collect::<Vec<_>>();
-        let on = on.iter().map(|g| g.as_str()).collect::<Vec<_>>();
-        let result = dataframe.clone().join(
+        let on = self.groupby.iter().map(
+            |g| relation_col(&escape_field(g), "lhs").eq(relation_col(&escape_field(g), "rhs"))
+        ).collect::<Vec<_>>();
+
+        let result = dataframe.clone().alias("lhs")?.join_on(
             agged_df,
-            JoinType::Inner,
-            &on,
-            &on,
-            None
-        )?;
+            JoinType::Left,
+            on,
+        )?.select(vec![
+            vec![qualified_wildcard("lhs")],
+            new_col_exprs
+        ].concat())?;
 
         Ok((result, Vec::new()))
     }

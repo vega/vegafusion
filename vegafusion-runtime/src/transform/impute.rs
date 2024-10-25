@@ -19,6 +19,7 @@ use vegafusion_common::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::Impute;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use crate::data::util::DataFrameUtils;
+use crate::expression::compiler::utils::ExprHelpers;
 
 #[async_trait]
 impl TransformTrait for Impute {
@@ -78,7 +79,7 @@ impl TransformTrait for Impute {
                     Ok(if col_name == &field {
                         coalesce(vec![
                             flat_col(&field),
-                            lit(value.clone()).cast_to(field_type, schema)?,
+                            lit(value.clone()).try_cast_to(field_type, schema)?,
                         ])
                             .alias(col_name)
                     } else {
@@ -140,7 +141,7 @@ impl TransformTrait for Impute {
                     // Coalesce to fill in null values in field
                     final_selections.push(coalesce(vec![
                         flat_col(&field),
-                        lit(value.clone()).cast_to(field_type, schema)?,
+                        lit(value.clone()).try_cast_to(field_type, schema)?,
                     ])
                         .alias(f.name()));
                 } else {

@@ -392,7 +392,7 @@ async fn process_datetimes(
                             let tz_config =
                                 tz_config.with_context(|| "No local timezone info provided")?;
 
-                            flat_col(field.name()).cast_to(
+                            flat_col(field.name()).try_cast_to(
                                 &DataType::Timestamp(TimeUnit::Nanosecond, Some(tz_config.default_input_tz.to_string().into())),
                                 schema
                             )?
@@ -403,10 +403,10 @@ async fn process_datetimes(
                             tz_config.with_context(|| "No local timezone info provided")?;
 
                         // Cast to naive timestamp, then localize to timestamp with timezone
-                        flat_col(field.name()).cast_to(
+                        flat_col(field.name()).try_cast_to(
                             &DataType::Timestamp(TimeUnit::Nanosecond, None),
                             schema
-                        )?.cast_to(
+                        )?.try_cast_to(
                             &DataType::Timestamp(TimeUnit::Nanosecond, Some(tz_config.default_input_tz.to_string().into())),
                             schema,
                         )?

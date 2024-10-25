@@ -6,6 +6,7 @@ use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::{Result, VegaFusionError};
+use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::timeunit::to_timestamp_col;
 
 pub fn make_local_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -> TzTransformFn {
@@ -18,7 +19,7 @@ pub fn make_local_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -
         let arg = to_timestamp_col(arg, schema, &tz_config.default_input_tz.to_string())?;
         let mut expr = date_part(
             lit(part.clone()),
-            arg.cast_to(
+            arg.try_cast_to(
             &DataType::Timestamp(TimeUnit::Millisecond, Some(tz_config.local_tz.to_string().into())),
             schema,
         )?);
@@ -41,7 +42,7 @@ pub fn make_utc_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -> 
         let arg = to_timestamp_col(args.first().unwrap().clone(), schema, &tz_config.default_input_tz.to_string())?;
         let mut expr = date_part(
             lit(part.clone()),
-            arg.cast_to(
+            arg.try_cast_to(
                 &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
                 schema,
             )?);

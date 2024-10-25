@@ -18,6 +18,7 @@ use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
 use vegafusion_datafusion_udfs::udfs::datetime::make_timestamptz::{make_timestamptz};
 use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
+use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::utils::{make_timestamp_parse_formats, str_to_timestamp};
 
 /// Implementation of timeunit start using the SQL date_trunc function
@@ -29,7 +30,7 @@ fn timeunit_date_trunc(
     tz: &str,
 ) -> Result<(Expr, Expr)> {
     // Convert field to timestamp in target timezone
-    let field_col = to_timestamp_col(unescaped_col(field), schema, default_input_tz)?.cast_to(
+    let field_col = to_timestamp_col(unescaped_col(field), schema, default_input_tz)?.try_cast_to(
         &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(tz.into())),
         schema
     )?;
@@ -88,7 +89,7 @@ fn timeunit_date_part_tz(
     let mut interval = interval_year_month_lit("1 year");
 
     // Convert field column to timestamp
-    let field_col = to_timestamp_col(unescaped_col(field), schema, default_input_tz)?.cast_to(
+    let field_col = to_timestamp_col(unescaped_col(field), schema, default_input_tz)?.try_cast_to(
         &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(tz.into())),
         schema
     )?;
@@ -170,7 +171,7 @@ fn timeunit_weekday(
     tz: &str,
 ) -> Result<(Expr, Expr)> {
     let field_col = to_timestamp_col(unescaped_col(field), schema, default_input_tz)?
-        .cast_to(&DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(tz.into())), schema)?;
+        .try_cast_to(&DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(tz.into())), schema)?;
 
     // Use DATE_PART_TZ to extract the weekday
     // where Sunday is 0, Saturday is 6
@@ -218,7 +219,7 @@ fn timeunit_custom_udf(
 
     let timeunit_start_udf = &TIMEUNIT_START_UDF;
 
-    let field_col = to_timestamp_col(unescaped_col(field), schema, default_input_tz)?.cast_to(
+    let field_col = to_timestamp_col(unescaped_col(field), schema, default_input_tz)?.try_cast_to(
         &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some("UTC".into())),
         schema
     )?;
@@ -292,11 +293,11 @@ fn timeunit_custom_udf(
 pub fn to_timestamp_col(expr: Expr, schema: &DFSchema, default_input_tz: &String) -> Result<Expr> {
     Ok(match expr.get_type(schema)? {
         DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(_)) => expr,
-        DataType::Timestamp(_, Some(tz)) => expr.cast_to(
+        DataType::Timestamp(_, Some(tz)) => expr.try_cast_to(
             &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(tz)),
             schema
         )?,
-        DataType::Timestamp(_, None) => expr.cast_to(
+        DataType::Timestamp(_, None) => expr.try_cast_to(
             &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(default_input_tz.as_str().into())),
             schema
         )?,
@@ -304,7 +305,7 @@ pub fn to_timestamp_col(expr: Expr, schema: &DFSchema, default_input_tz: &String
             expr,
             &DataType::Timestamp(ArrowTimeUnit::Millisecond, None),
             schema,
-        )?.cast_to(
+        )?.try_cast_to(
             &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(default_input_tz.as_str().into())),
             schema
         )?,
@@ -314,7 +315,7 @@ pub fn to_timestamp_col(expr: Expr, schema: &DFSchema, default_input_tz: &String
         dtype if is_numeric_datatype(&dtype) => {
             // Convert to timestamp then localize to UTC
             let nanos = expr * lit(1e6);
-            from_unixtime(nanos).cast_to(
+            from_unixtime(nanos).try_cast_to(
                 &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some("UTC".into())),
                 schema
             )?

@@ -12,6 +12,7 @@ use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS
 use vegafusion_datafusion_udfs::udfs::datetime::format_timestamp::FORMAT_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_str::UTC_TIMESTAMP_TO_STR_UDF;
+use crate::expression::compiler::utils::ExprHelpers;
 
 pub fn time_format_fn(
     tz_config: &RuntimeTzConfig,
@@ -36,7 +37,7 @@ pub fn time_format_fn(
     };
 
     let timestamptz_expr =
-        to_timestamptz_expr(&args[0], schema, &tz_config.default_input_tz.to_string())?.cast_to(
+        to_timestamptz_expr(&args[0], schema, &tz_config.default_input_tz.to_string())?.try_cast_to(
             &DataType::Timestamp(TimeUnit::Millisecond, Some(format_tz_str.into())),
             schema
         )?;
@@ -51,7 +52,7 @@ pub fn utc_format_fn(
 ) -> Result<Expr> {
     let format_str = d3_to_chrono_format(&extract_format_str(args)?);
     let timestamptz_expr =
-        to_timestamptz_expr(&args[0], schema, &tz_config.default_input_tz.to_string())?.cast_to(
+        to_timestamptz_expr(&args[0], schema, &tz_config.default_input_tz.to_string())?.try_cast_to(
             &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
             schema
         )?;
